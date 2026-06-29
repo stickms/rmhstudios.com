@@ -26,12 +26,25 @@ export type LocaleBundle = Record<string, JsonValue>;
 export const EN_RESOURCES: LocaleBundle = en as LocaleBundle;
 
 /**
- * Lazy loader per language. `en` resolves to the already-bundled copy; zh / ar
- * resolve to their own dynamically-imported chunks so they only download when
- * the user actually uses that language.
+ * Lazy loader per language. `en` resolves to the already-bundled copy; every
+ * other language resolves to its own dynamically-imported chunk so it only
+ * downloads when the user actually selects that language.
  */
 export const LOCALE_LOADERS: Record<Locale, () => Promise<LocaleBundle>> = {
   en: async () => en as LocaleBundle,
   zh: () => import("@/lib/i18n/resources.zh").then((m) => m.default as LocaleBundle),
   ar: () => import("@/lib/i18n/resources.ar").then((m) => m.default as LocaleBundle),
+  hi: () => import("@/lib/i18n/resources.hi").then((m) => m.default as LocaleBundle),
+  es: () => import("@/lib/i18n/resources.es").then((m) => m.default as LocaleBundle),
+  fr: () => import("@/lib/i18n/resources.fr").then((m) => m.default as LocaleBundle),
+  pt: () => import("@/lib/i18n/resources.pt").then((m) => m.default as LocaleBundle),
+  ru: () => import("@/lib/i18n/resources.ru").then((m) => m.default as LocaleBundle),
+  de: () => import("@/lib/i18n/resources.de").then((m) => m.default as LocaleBundle),
+  ja: () => import("@/lib/i18n/resources.ja").then((m) => m.default as LocaleBundle),
+  ko: () => import("@/lib/i18n/resources.ko").then((m) => m.default as LocaleBundle),
+  it: () => import("@/lib/i18n/resources.it").then((m) => m.default as LocaleBundle),
+  id: () => import("@/lib/i18n/resources.id").then((m) => m.default as LocaleBundle),
+  vi: () => import("@/lib/i18n/resources.vi").then((m) => m.default as LocaleBundle),
+  tr: () => import("@/lib/i18n/resources.tr").then((m) => m.default as LocaleBundle),
+  ur: () => import("@/lib/i18n/resources.ur").then((m) => m.default as LocaleBundle),
 };

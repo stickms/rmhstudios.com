@@ -16,7 +16,7 @@ import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
 import { auth } from "@/lib/auth";
 import appCss from "@/app/globals.css?url";
 import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
-import { dirFor, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
+import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from "@/lib/i18n/config";
 import { localeResources } from "@/lib/i18n/resources.server";
 
 /**
@@ -57,7 +57,7 @@ const themeScript = `(function(){try{var m={default:"#000",light:"#f5f5f7",gamer
  * (important for Arabic RTL). Works as a fallback for the SSR-set lang/dir
  * attribute and also for client navigations.
  */
-const localeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )rmh-lang=([^;]+)/);var l=m?decodeURIComponent(m[1]):"en";if(["en","zh","ar"].indexOf(l)<0)l="en";document.documentElement.lang=l;document.documentElement.setAttribute("dir",l==="ar"?"rtl":"ltr")}catch(e){}})()`;
+const localeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )rmh-lang=([^;]+)/);var l=m?decodeURIComponent(m[1]):"en";var S=${JSON.stringify([...LOCALES])};var R=${JSON.stringify([...RTL_LOCALES])};if(S.indexOf(l)<0)l="en";document.documentElement.lang=l;document.documentElement.setAttribute("dir",R.indexOf(l)>=0?"rtl":"ltr")}catch(e){}})()`;
 
 
 const bodyThemeScript = `if(window.__themeBg)document.body.style.backgroundColor=window.__themeBg`;
