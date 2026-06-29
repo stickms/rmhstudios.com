@@ -8,8 +8,8 @@ const validV2 = () => ({
   discoveredRecipes: [],
 });
 
-describe('save v3', () => {
-  it('createNewSave is v3 with defaulted Phase-3 fields', () => {
+describe('save v4 (core)', () => {
+  it('createNewSave is v4 with defaulted Phase-3+4 fields', () => {
     const s = createNewSave();
     expect(s.version).toBe(CURRENT_VERSION);
     expect(CURRENT_VERSION).toBe(4);
@@ -37,7 +37,7 @@ describe('save v3', () => {
   });
 });
 
-describe('v2 -> v3 migration rejects bad v2 shape', () => {
+describe('v2 -> v4 migration rejects bad v2 shape', () => {
   it('rejects when inventory.plots is not an array', () => {
     const bad = { ...validV2(), inventory: { ...validV2().inventory, plots: 'x' } };
     expect(parseSave(JSON.stringify(bad))).toBeNull();
@@ -56,7 +56,7 @@ describe('v2 -> v3 migration rejects bad v2 shape', () => {
   });
 });
 
-describe('v2 -> v3 migration', () => {
+describe('v2 -> v4 migration', () => {
   it('upgrades a valid v2 save, defaulting the new fields and preserving the rest', () => {
     const v2 = { ...validV2(), cash: 999, discoveredRecipes: ['energizing'] };
     const out = parseSave(JSON.stringify(v2))!;

@@ -27,12 +27,20 @@ describe('demandPriceMult', () => {
     expect(demandPriceMult(1)).toBeCloseTo(1.3, 9);
     expect(demandPriceMult(0.5)).toBeCloseTo(0.95, 9);
   });
+  it('clamps out-of-range demand', () => {
+    expect(demandPriceMult(2)).toBeCloseTo(1.3, 9);
+    expect(demandPriceMult(-1)).toBeCloseTo(0.6, 9);
+  });
 });
 
 describe('reputationPriceMult', () => {
   it('rises from 1.0 to 1.15', () => {
     expect(reputationPriceMult(0)).toBeCloseTo(1.0, 9);
     expect(reputationPriceMult(1)).toBeCloseTo(1.15, 9);
+  });
+  it('clamps out-of-range reputation', () => {
+    expect(reputationPriceMult(2)).toBeCloseTo(1.15, 9);
+    expect(reputationPriceMult(-1)).toBeCloseTo(1.0, 9);
   });
 });
 
