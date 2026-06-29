@@ -28,6 +28,7 @@ import {
   DROP_HEART_CHANCE, HEART_PICKUP_LIFETIME, HEART_HEAL_AMOUNT,
   MAX_HEART_PICKUPS, HEART_MAGNET_RANGE, HEART_PULL_SPEED,
   SHIELD_HALF_ARC, SHIELD_TURN_RATE,
+  SPAWN_ANIM_TIME, DEATH_ANIM_TIME,
 } from './constants';
 import { preloadAll } from './SpriteLoader';
 import { getAllSpriteUrls } from './sprites';
@@ -210,6 +211,7 @@ export class VoidBreakerEngine {
       telegraphTimer: 0, isElite: false,
       bossSpecialTimer: 0, bossSpecialActive: false, bossSpecialAngle: 0,
       hitFlashUntil: 0,
+      anim: 'alive', animTimer: 0,
     };
   }
 
@@ -828,6 +830,8 @@ export class VoidBreakerEngine {
     slot.bossSpecialTimer = pattern.special === 'void_form' ? 5 : 0;
     slot.bossSpecialActive = false;
     slot.bossSpecialAngle = Math.random() * Math.PI * 2;
+    // Dramatic warp-in: a longer telegraph than a regular enemy.
+    slot.anim = 'spawning'; slot.animTimer = SPAWN_ANIM_TIME * 2;
     this.currentBossName = pattern.title;
 
     this.waveEnemiesAlive = 1;
@@ -888,6 +892,8 @@ export class VoidBreakerEngine {
     if (isElite) slot.tentacleTimer = 2 + Math.random() * 2;
     // Hive / bomber wait a beat before their first action.
     if (type === 'hive' || type === 'bomber') slot.bossSpecialTimer = 1.5 + Math.random();
+    // Warp-in telegraph: inert + intangible until the spawn animation finishes.
+    slot.anim = 'spawning'; slot.animTimer = SPAWN_ANIM_TIME;
   }
 
   /** Spawn a mini_drifter near (x, y) with positional jitter. Returns success. */
@@ -911,6 +917,7 @@ export class VoidBreakerEngine {
     slot.tentacleTimer = 0; slot.telegraphTimer = 0;
     slot.isElite = false;
     slot.bossSpecialTimer = 0; slot.bossSpecialActive = false; slot.bossSpecialAngle = 0;
+    slot.anim = 'spawning'; slot.animTimer = SPAWN_ANIM_TIME;
     this.waveEnemiesAlive++;
     return true;
   }
@@ -921,6 +928,17 @@ export class VoidBreakerEngine {
     const px = this.player.x, py = this.player.y;
     for (const e of this.enemies) {
       if (!e.active) continue;
+      // Lifecycle: warp-in and death-dissolve are inert + intangible phases.
+      if (e.anim === 'spawning') {
+        e.animTimer -= dt;
+        if (e.animTimer <= 0) { e.anim = 'alive'; e.animTimer = 0; }
+        continue;
+      }
+      if (e.anim === 'dying') {
+        e.animTimer -= dt;
+        if (e.animTimer <= 0) e.active = false;
+        continue;
+      }
       if (e.isBoss) { this.aiBoss(e, dt, px, py); }
       else {
         switch (e.type) {
@@ -1062,7 +1080,7 @@ export class VoidBreakerEngine {
       e.bossSpecialTimer = 2.5;
       let healed = false;
       for (const o of this.enemies) {
-        if (!o.active || o === e || o.isBoss) continue;
+        if (!o.active || o.anim !== 'alive' || o === e || o.isBoss) continue;
         if (o.hp < o.maxHp && dist(o.x, o.y, e.x, e.y) < 220) {
           o.hp = Math.min(o.maxHp, o.hp + 1);
           this.spawnParticles(o.x, o.y, '#33ff99', 4, 60);
@@ -1477,7 +1495,7 @@ export class VoidBreakerEngine {
     for (const p of this.projectiles) {
       if (!p.active || !p.isPlayer) continue;
       for (const e of this.enemies) {
-        if (!e.active || p.lastHitId === e.id) continue;
+        if (!e.active || e.anim !== 'alive' || p.lastHitId === e.id) continue;
         if (e.isBoss && e.bossSpecialActive) continue; // void form is intangible
         if (dist(p.x, p.y, e.x, e.y) < p.radius + e.radius) {
           // Shielded enemy: shots into its frontal arc are deflected — flank it.
@@ -1541,7 +1559,7 @@ export class VoidBreakerEngine {
     const pl = this.player;
     if (this.elapsedMs < pl.invincibleUntil) return;
     for (const e of this.enemies) {
-      if (!e.active) continue;
+      if (!e.active || e.anim !== 'alive') continue;
       if (e.isBoss && e.bossSpecialActive) continue; // void form is intangible
       if (dist(e.x, e.y, pl.x, pl.y) < e.radius + pl.radius) {
         this.damagePlayer(1);
@@ -1631,7 +1649,12 @@ export class VoidBreakerEngine {
     if (e.type === 'splitter' && !e.isBoss) {
       for (let i = 0; i < 2; i++) this.spawnMiniDrifter(e.x, e.y, 15);
     }
-    e.active = false;
+    // Defer the pool free until the death-dissolve animation finishes. The kill
+    // is fully accounted for now (count/score/drops above) so gameplay outcomes
+    // are unchanged; only the visual slot-free is delayed.
+    e.anim = 'dying';
+    e.animTimer = DEATH_ANIM_TIME;
+    e.hp = 0;
     this.waveEnemiesAlive--;
     this.waveEnemiesKilledCount++;
   }
@@ -1691,7 +1714,7 @@ export class VoidBreakerEngine {
     // Damage scales with the shards you spend — a full ring is devastating.
     const detDamage = DET_DAMAGE + this.stats.detonateDamageBonus + Math.floor(shardsBefore * DET_DMG_PER_SHARD);
     for (const e of this.enemies) {
-      if (!e.active) continue;
+      if (!e.active || e.anim !== 'alive') continue;
       if (e.isBoss && e.bossSpecialActive) continue; // void form is intangible
       if (dist(e.x, e.y, p.x, p.y) < blast) {
         e.hp -= detDamage;
@@ -1872,7 +1895,7 @@ export class VoidBreakerEngine {
     const p = this.player;
     // Damage all enemies in radius
     for (const e of this.enemies) {
-      if (!e.active) continue;
+      if (!e.active || e.anim !== 'alive') continue;
       if (e.isBoss && e.bossSpecialActive) continue; // void form is intangible
       const d = Math.hypot(e.x - p.x, e.y - p.y);
       if (d < VOID_PULSE_RADIUS) {

@@ -75,6 +75,10 @@ export interface Enemy {
   bossSpecialAngle: number;
   /** Timestamp — draw hit flash until this time */
   hitFlashUntil: number;
+  /** Animation lifecycle: warping in, alive (tangible), or dissolving on death. */
+  anim: 'spawning' | 'alive' | 'dying';
+  /** Seconds remaining in the current spawning/dying phase (0 while alive). */
+  animTimer: number;
 }
 
 /** Heart pickup dropped by enemies — heals player by 1 HP */
