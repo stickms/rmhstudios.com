@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { GameEngine } from '@/lib/game/GameEngine';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { AudioManager } from '@/lib/audio/AudioManager';
-import { Slice, Difficulty } from '@/lib/game/types';
 import { HUD } from './HUD';
 import { GameOver } from './GameOver';
 import { MainMenu } from './MainMenu';
@@ -16,39 +15,7 @@ import { MultiplayerSidebar } from './MultiplayerSidebar';
 import { MatchResults } from './MatchResults';
 import { MultiplayerFactory } from '@/lib/game/MultiplayerFactory';
 import { authClient } from '@/lib/auth-client';
-
-// Neumorphic Palette (dark-mode-aware colors are read from CSS vars at render time)
-const COLORS = {
-    lane1: '#3b82f6', // Blue
-    lane2: '#f472b6', // Pink
-    grid: '#cbd5e0',
-    bomb: '#ef4444',
-    slice: {
-        SPEED: '#a78bfa',
-        MOVING: '#facc15',
-        SILENT: '#94a3b8',
-        BOMB: '#ef4444',
-        DEFAULT: 'var(--slice-shadow-light)'
-    }
-};
-
-// Helper to interpolate between two hex colors
-function interpolateHex(hex1: string, hex2: string, ratio: number): string {
-    const r1 = parseInt(hex1.slice(1, 3), 16);
-    const g1 = parseInt(hex1.slice(3, 5), 16);
-    const b1 = parseInt(hex1.slice(5, 7), 16);
-
-    const r2 = parseInt(hex2.slice(1, 3), 16);
-    const g2 = parseInt(hex2.slice(3, 5), 16);
-    const b2 = parseInt(hex2.slice(5, 7), 16);
-
-    const r = Math.round(r1 + (r2 - r1) * ratio);
-    const g = Math.round(g1 + (g2 - g1) * ratio);
-    const b = Math.round(b1 + (b2 - b1) * ratio);
-
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
+import { SliceRenderer3D } from '@/lib/game/render3d/render3d-barrel';
 
 // Gamepad button indices (Standard Gamepad mapping)
 const GAMEPAD_LANE0_BUTTONS = [2, 3, 4, 6, 12, 14]; // X, Y, LB, LT, D-Up, D-Left
@@ -60,6 +27,9 @@ export function GameCanvas() {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const [engine, setEngine] = useState<GameEngine | null>(null);
     const rafRef = useRef<number | null>(null);
+    const rendererRef = useRef<SliceRenderer3D | null>(null);
+    const webglFailedRef = useRef(false);
+    const [webglFailed, setWebglFailed] = useState(false);
     const [showMobileButtons, setShowMobileButtons] = useState(false);
     const [isPortrait, setIsPortrait] = useState(false);
 
@@ -111,6 +81,7 @@ export function GameCanvas() {
             if (width > 0 && height > 0) {
                 canvas.width  = Math.round(width  * window.devicePixelRatio);
                 canvas.height = Math.round(height * window.devicePixelRatio);
+                rendererRef.current?.resize(width, height, window.devicePixelRatio);
             }
         };
         sync();
@@ -261,29 +232,32 @@ export function GameCanvas() {
 
         const loop = () => {
             frameRef.current++;
-            // Update debug info every 60 frames to avoid render thrashing
             if (frameRef.current % 60 === 0) {
                 setDebugInfo(prev => ({ ...prev, frames: frameRef.current }));
             }
-
             try {
                 const canvas = canvasRef.current;
-                if (!canvas) return; // Gracefully exit loop if component unmounted
-                
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-                
-                // RENDER FIRST (Even if update fails, we want to see something)
-                render(ctx, newEngine, keybindsRef.current);
-                
-                // Then Update
-                newEngine.update();
+                if (!canvas) return;
 
-                // Then Update
-                newEngine.update();
+                if (!rendererRef.current && !webglFailedRef.current) {
+                    try {
+                        rendererRef.current = new SliceRenderer3D(canvas);
+                        const r = wrapperRef.current!.getBoundingClientRect();
+                        rendererRef.current.resize(r.width, r.height, window.devicePixelRatio);
+                        rendererRef.current.setReducedFx(
+                            window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                        );
+                    } catch (err) {
+                        console.error('WebGL init failed:', err);
+                        webglFailedRef.current = true;
+                        setWebglFailed(true);
+                    }
+                }
 
+                rendererRef.current?.renderFrame(newEngine, AudioManager.getInstance().getCurrentTime());
+                newEngine.update();
             } catch (e: any) {
-                console.error("GameCanvas Render Error:", e);
+                console.error('GameCanvas Render Error:', e);
                 setDebugInfo(prev => ({ ...prev, error: e.message || 'Unknown Error' }));
             }
             rafRef.current = requestAnimationFrame(loop);
@@ -314,6 +288,8 @@ export function GameCanvas() {
         return () => {
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
+            rendererRef.current?.dispose();
+            rendererRef.current = null;
             AudioManager.getInstance().stop();
             useGameStore.getState().reset();
         };
@@ -564,552 +540,6 @@ export function GameCanvas() {
         }
     }, [status, engine]);
 
-    // ── Render ─────────────────────────────────────────────────────────────────
-    // ── Particle System ────────────────────────────────────────────────────────
-    const particlesRef = useRef<{x:number, y:number, vx:number, vy:number, life:number, color:string, size:number}[]>([]);
-    const lastHitTimeRef = useRef(0);
-
-    const spawnParticles = (x: number, y: number, color: string, hitResult: string = 'GOOD') => {
-        // Particle intensity scales with hit accuracy
-        const configs: Record<string, { count: number; minSpeed: number; maxSpeed: number; minSize: number; maxSize: number }> = {
-            'MARVELOUS': { count: 18, minSpeed: 4,   maxSpeed: 11, minSize: 4, maxSize: 9  },
-            'PERFECT':   { count: 13, minSpeed: 3,   maxSpeed: 8,  minSize: 3, maxSize: 7  },
-            'GREAT':     { count: 9,  minSpeed: 2,   maxSpeed: 6,  minSize: 2, maxSize: 5  },
-            'GOOD':      { count: 5,  minSpeed: 1.5, maxSpeed: 4,  minSize: 1, maxSize: 4  },
-            'HOLD OK':   { count: 10, minSpeed: 2,   maxSpeed: 6,  minSize: 2, maxSize: 5  },
-        };
-        const cfg = configs[hitResult] ?? configs['GOOD'];
-        for (let i = 0; i < cfg.count; i++) {
-            const angle = Math.random() * Math.PI * 2;
-            const speed = Math.random() * (cfg.maxSpeed - cfg.minSpeed) + cfg.minSpeed;
-            particlesRef.current.push({
-                x, y,
-                vx: Math.cos(angle) * speed,
-                vy: Math.sin(angle) * speed,
-                life: 1.0,
-                color,
-                size: Math.random() * (cfg.maxSize - cfg.minSize) + cfg.minSize
-            });
-        }
-    };
-
-    // ── Render ─────────────────────────────────────────────────────────────────
-    const render = (
-        ctx: CanvasRenderingContext2D,
-        engine: GameEngine,
-        currentKeybinds: { lane1: string; lane2: string }
-    ) => {
-        const W = ctx.canvas.width;
-        const H = ctx.canvas.height;
-        const dpr = window.devicePixelRatio || 1;
-
-        // Reset & Clear — read background color from CSS variable so dark mode works
-        const canvasStyle = getComputedStyle(ctx.canvas);
-        const bgColor = canvasStyle.getPropertyValue('--slice-bg').trim() || '#e0e5ec';
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = bgColor;
-        ctx.fillRect(0, 0, W, H);
-
-        // Setup Scale
-        ctx.save();
-        ctx.scale(dpr, dpr);
-        const w = W / dpr;
-        const h = H / dpr;
-
-        // Spin modifier: slowly slowly rotate counter-clockwise based on song time
-        const isSpinMod = useGameStore.getState().modifiers.spin;
-        if (isSpinMod) {
-            const t = AudioManager.getInstance().getCurrentTime();
-            // Slow counter-clockwise rotation based on seconds
-            const rotation = -t * 0.25; 
-            
-            // Dynamic scale: shrink just enough so the rotated rectangle fits in the viewport
-            // For a WxH rect rotated by θ, bounding box is:
-            //   bw = |W·cosθ| + |H·sinθ|, bh = |W·sinθ| + |H·cosθ|
-            const abscos = Math.abs(Math.cos(rotation));
-            const absSin = Math.abs(Math.sin(rotation));
-            const boundW = w * abscos + h * absSin;
-            const boundH = w * absSin + h * abscos;
-            const spinScale = Math.min(w / boundW, h / boundH);
-            
-            // No translations, just rotation anchored exactly at the center
-            ctx.translate(w / 2, h / 2);
-            ctx.scale(spinScale, spinScale);
-            ctx.rotate(rotation);
-            ctx.translate(-w / 2, -h / 2);
-        }
-
-        // Constants - SCALING UPDATE
-        // We want ~3 seconds visibility at 1.0x speed.
-        // PPS = scroll-axis-length / 3.0, scaled by speed modifier.
-        const speedMod = useGameStore.getState().modifiers.speed || 1.0;
-        const isOneTrack = useGameStore.getState().modifiers.oneTrack;
-        const isMobileV = h > w; // portrait canvas = mobile vertical mode
-        const currentTime = AudioManager.getInstance().getCurrentTime();
-
-        // In mobile vertical mode, notes scroll top-to-bottom with lanes left/right.
-        // In desktop mode, notes scroll right-to-left with lanes top/bottom.
-        const PPS = isMobileV ? (h / 3.0) * speedMod : (w / 3.0) * speedMod;
-        const CURSOR_MAIN = isMobileV ? h * 0.85 : w * 0.15;
-        const LANE_POS = isMobileV
-            ? (isOneTrack ? [w * 0.5] : [w * 0.3, w * 0.7])
-            : (isOneTrack ? [h * 0.5] : [h * 0.3, h * 0.7]);
-        const BAR_H = isMobileV ? Math.max(15, w * 0.06) : Math.max(15, h * 0.04);
-        const CURSOR_R = isMobileV ? Math.max(10, h * 0.008) : Math.max(10, w * 0.008);
-
-        // Helper: convert scroll-axis + lane-axis to canvas (x, y)
-        const toCanvas = (scrollVal: number, laneVal: number) =>
-            isMobileV ? { x: laneVal, y: scrollVal } : { x: scrollVal, y: laneVal };
-
-        // Helper: compute scroll position from time delta
-        const scrollPos = (timeDelta: number) =>
-            isMobileV ? CURSOR_MAIN - timeDelta * PPS : CURSOR_MAIN + timeDelta * PPS;
-
-        // 1. Draw Tracks (Neumorphic Trough)
-        const shadowDark = canvasStyle.getPropertyValue('--slice-shadow-dark').trim() || '#a3b1c6';
-        const shadowLight = canvasStyle.getPropertyValue('--slice-shadow-light').trim() || '#ffffff';
-        LANE_POS.forEach((laneVal, i) => {
-            const trackThickness = BAR_H * 1.5;
-
-            if (isMobileV) {
-                // Vertical tracks running top-to-bottom
-                ctx.shadowColor = shadowDark;
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetX = 3;
-                ctx.shadowOffsetY = 3;
-                ctx.fillStyle = bgColor;
-                ctx.fillRect(laneVal - trackThickness/2, 0, trackThickness, h);
-                ctx.shadowColor = shadowLight;
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetX = -3;
-                ctx.shadowOffsetY = -3;
-                ctx.fillRect(laneVal - trackThickness/2, 0, trackThickness, h);
-                ctx.shadowColor = 'transparent';
-                ctx.strokeStyle = '#cbd5e0';
-                ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.moveTo(laneVal, 0); ctx.lineTo(laneVal, h); ctx.stroke();
-            } else {
-                // Horizontal tracks running left-to-right (desktop)
-                ctx.shadowColor = shadowDark;
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetX = 3;
-                ctx.shadowOffsetY = 3;
-                ctx.fillStyle = bgColor;
-                ctx.fillRect(0, laneVal - trackThickness/2, w, trackThickness);
-                ctx.shadowColor = shadowLight;
-                ctx.shadowBlur = 10;
-                ctx.shadowOffsetX = -3;
-                ctx.shadowOffsetY = -3;
-                ctx.fillRect(0, laneVal - trackThickness/2, w, trackThickness);
-                ctx.shadowColor = 'transparent';
-                ctx.strokeStyle = '#cbd5e0';
-                ctx.lineWidth = 2;
-                ctx.beginPath(); ctx.moveTo(0, laneVal); ctx.lineTo(w, laneVal); ctx.stroke();
-            }
-        });
-
-        // 2. Render Check & Spawn Particles
-        // We check processed slices to trigger effects. 
-        // A better way is to check the `feedbackQueue` for new hits.
-        // But for visual sync, let's look at `feedbackQueue`.
-        const latestFeedback = engine.feedbackQueue[engine.feedbackQueue.length - 1];
-        if (latestFeedback && latestFeedback.time > lastHitTimeRef.current) {
-             lastHitTimeRef.current = latestFeedback.time;
-             if (latestFeedback.text !== 'MISS' && latestFeedback.text !== 'BAD' && latestFeedback.text !== 'RELEASED') {
-                 const particleLaneIdx = Math.max(0, Math.min(latestFeedback.lane, LANE_POS.length - 1));
-                 const particleLaneVal = isOneTrack ? LANE_POS[0] : LANE_POS[particleLaneIdx];
-
-                 // Offset particle emission based on timing offset
-                 const offsetPixels = (latestFeedback.offset || 0) * PPS;
-                 const particleScroll = isMobileV
-                     ? CURSOR_MAIN + offsetPixels   // late = below cursor in vertical
-                     : CURSOR_MAIN - offsetPixels;   // late = left of cursor in horizontal
-                 const { x: particleX, y: particleY } = toCanvas(particleScroll, particleLaneVal);
-
-                 spawnParticles(particleX, particleY, latestFeedback.color, latestFeedback.text);
-             }
-        }
-
-        // 3. Slices
-        const map = engine.getActiveMap();
-        if (map) {
-            // Shadow for floating notes
-            ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
-            ctx.shadowBlur = 8;
-            ctx.shadowOffsetX = 4;
-            ctx.shadowOffsetY = 4;
-
-            // Determine the targeted (next hittable) note per lane for glow
-            const targetedIds = new Set<string>();
-            const targeted0 = engine.getTargetedSlice(0);
-            const targeted1 = engine.getTargetedSlice(1);
-            if (targeted0) targetedIds.add(targeted0.id);
-            if (targeted1) targetedIds.add(targeted1.id);
-
-            (map.slices as Slice[]).forEach(slice => {
-                ctx.globalAlpha = 1;
-
-                // Compute scroll position along the movement axis
-                const timeDelta = slice.time - currentTime;
-                let scrollVal = scrollPos(timeDelta);
-                // If this is a LONG note that has been hit and is active, clamp to cursor
-                const isHeldActive = slice.hit && slice.type === 'LONG' && currentTime >= slice.time && currentTime <= slice.time + (slice.duration || 0);
-                if (isHeldActive) {
-                    scrollVal = CURSOR_MAIN;
-                }
-
-                // Fade out on hit (50ms) or spatially behind the reticle
-                let noteAlpha = 1.0;
-                if (slice.hit && slice.type !== 'LONG') {
-                    const elapsed = performance.now() - (slice.hitTime ?? 0);
-                    noteAlpha = Math.max(0, 1 - elapsed / 50);
-                    if (noteAlpha <= 0) return; // Fully faded
-                } else {
-                    // Check if note is behind the cursor
-                    const distBehind = isMobileV
-                        ? scrollVal - CURSOR_MAIN   // past notes are below cursor in vertical
-                        : CURSOR_MAIN - scrollVal;   // past notes are left of cursor in horizontal
-                    if (distBehind > 0 && !isHeldActive) {
-                        const fadeDist = (isMobileV ? h : w) * 0.08;
-                        noteAlpha *= Math.max(0, 1 - (distBehind / fadeDist));
-                        if (noteAlpha <= 0) return;
-                    }
-                }
-
-                // Cull off-screen in the "future" direction
-                if (isMobileV) {
-                    if (scrollVal < -100) return; // above screen
-                } else {
-                    if (scrollVal > w + 100) return; // right of screen
-                }
-
-                // Compute effective lane (SWITCH notes flip lanes near the hit line)
-                let effectiveLane = slice.lane;
-                let switchProgress = 0; // 0 = original lane, 1 = switched lane
-                if (slice.type === 'SWITCH') {
-                    const switchLeadTime = 0.8 / speedMod;
-                    const switchTime = slice.time - switchLeadTime;
-                    const timeUntilSwitch = switchTime - currentTime;
-                    const animDuration = 0.15 / speedMod;
-                    if (currentTime >= switchTime) {
-                        switchProgress = 1;
-                        effectiveLane = slice.lane === 0 ? 1 : 0;
-                    } else if (timeUntilSwitch < animDuration) {
-                        switchProgress = 1 - (timeUntilSwitch / animDuration);
-                        effectiveLane = slice.lane;
-                    }
-                }
-
-                // Interpolate lane position for switch animation
-                const origLane = isOneTrack ? LANE_POS[0] : LANE_POS[slice.lane];
-                const destLane = isOneTrack ? LANE_POS[0] : LANE_POS[slice.lane === 0 ? 1 : 0];
-                const laneVal = slice.type === 'SWITCH' && !isOneTrack
-                    ? origLane + (destLane - origLane) * switchProgress
-                    : isOneTrack ? LANE_POS[0] : LANE_POS[slice.lane];
-
-                // Convert to canvas coordinates
-                const { x: nx, y: ny } = toCanvas(scrollVal, laneVal);
-
-                // Invisible modifier: notes fade out as they approach the hit line
-                // Similar to osu! Hidden — notes appear, then fade to invisible
-                // Fade starts at ~60% of the visible distance, fully invisible at ~30%
-                const isInvisibleMod = useGameStore.getState().modifiers.invisible;
-                if (isInvisibleMod && slice.type !== 'BOMB') {
-                    const timeUntilHit = slice.time - currentTime; // audio-seconds until hit
-                    const visibleWindow = 3.0 / speedMod; // total visible window in audio-seconds
-                    const travelRatio = timeUntilHit / visibleWindow; // 1.0 = just spawned, 0.0 = at hit line
-                    // Fade: fully visible from 1.0 to 0.20, fade from 0.20 to 0.08, invisible below 0.08
-                    if (travelRatio < 0.08) {
-                        ctx.globalAlpha = 0;
-                        // Skip rendering entirely
-                        return;
-                    } else if (travelRatio < 0.20) {
-                        ctx.globalAlpha = noteAlpha * ((travelRatio - 0.08) / 0.12); // 0→1 over the fade range
-                    } else {
-                        ctx.globalAlpha = noteAlpha;
-                    }
-                } else {
-                    ctx.globalAlpha = noteAlpha;
-                }
-                
-                // Color mapping
-                let color = '#475569';
-                if (slice.type === 'BOMB') color = '#ef4444';
-                // Hold notes and standard notes match their lane color
-                else if (slice.type === 'LONG') color = slice.lane === 0 ? COLORS.lane1 : COLORS.lane2;
-                else if (slice.type === 'SWITCH') {
-                    const startCol = slice.lane === 0 ? COLORS.lane1 : COLORS.lane2;
-                    const endCol = slice.lane === 0 ? COLORS.lane2 : COLORS.lane1;
-                    color = interpolateHex(startCol, endCol, switchProgress);
-                }
-                // @ts-expect-error — COLORS.slice is typed loosely
-                else if (COLORS.slice[slice.type]) color = COLORS.slice[slice.type]; 
-                else if (slice.lane === 0) color = COLORS.lane1;
-                else color = COLORS.lane2;
-
-                ctx.fillStyle = color;
-
-                // Soft glow around the targeted (next hittable) note per lane
-                const isTargeted = targetedIds.has(slice.id);
-                if (isTargeted && slice.type !== 'BOMB') {
-                    ctx.save();
-                    ctx.shadowColor = color;
-                    ctx.shadowBlur = 18;
-                    ctx.shadowOffsetX = 0;
-                    ctx.shadowOffsetY = 0;
-                    // Draw a transparent filled shape at the note position to produce the glow
-                    ctx.globalAlpha = (ctx.globalAlpha || 1) * 0.45 * (slice.hit ? 0.3 : 1.0); // Reduce glow if hit
-                    ctx.beginPath();
-                    if (slice.type === 'LONG') {
-                        const len = (slice.duration || 0.5) * PPS;
-                        if (isMobileV) {
-                            ctx.roundRect(nx - BAR_H / 2 - 2, ny - len - 2, BAR_H + 4, len + 4, 12);
-                        } else {
-                            ctx.roundRect(nx - 2, ny - BAR_H / 2 - 2, len + 4, BAR_H + 4, 12);
-                        }
-                    } else if (slice.type === 'SWITCH') {
-                        ctx.arc(nx, ny, BAR_H * 0.7, 0, Math.PI * 2);
-                    } else {
-                        ctx.arc(nx, ny, BAR_H * 0.7, 0, Math.PI * 2);
-                    }
-                    ctx.fill();
-                    ctx.restore();
-                    // Re-set fillStyle after restore — the glow pass consumed it
-                    ctx.fillStyle = color;
-                    // Restore the normal note shadow
-                    ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
-                    ctx.shadowBlur = 8;
-                    ctx.shadowOffsetX = 4;
-                    ctx.shadowOffsetY = 4;
-                }
-
-                if (slice.type === 'BOMB') {
-                    ctx.beginPath();
-                    ctx.arc(nx, ny, CURSOR_R, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    if (isTargeted) {
-                        ctx.save();
-                        ctx.strokeStyle = 'rgba(239, 68, 68, 0.8)';
-                        ctx.lineWidth = 3;
-                        ctx.shadowColor = '#ef4444';
-                        ctx.shadowBlur = 12;
-                        ctx.beginPath();
-                        ctx.arc(nx, ny, CURSOR_R + 6, 0, Math.PI * 2);
-                        ctx.stroke();
-                        ctx.restore();
-
-                        ctx.shadowColor = 'rgba(163, 177, 198, 0.6)';
-                        ctx.shadowBlur = 8;
-                        ctx.shadowOffsetX = 4;
-                        ctx.shadowOffsetY = 4;
-                    }
-
-                    ctx.fillStyle = 'white';
-                    ctx.font = 'bold 20px sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('!', nx, ny + 7);
-                 } else if (slice.type === 'LONG') {
-                     // Long note: tail extends in the "future" direction from the head
-                     let remainingDuration = slice.duration || 0.5;
-                     if (isHeldActive) {
-                         remainingDuration = (slice.time + (slice.duration || 0)) - currentTime;
-                     }
-
-                     if (remainingDuration > 0) {
-                         const len = remainingDuration * PPS;
-                         const trailColor = getComputedStyle(document.documentElement).getPropertyValue('--slice-hold-trail').trim() || 'rgba(255, 255, 255, 0.5)';
-                         ctx.fillStyle = isHeldActive ? trailColor.replace(/,\s*[\d.]+\)$/, ', 0.9)') : trailColor;
-                         ctx.globalAlpha = noteAlpha;
-                         ctx.beginPath();
-                         if (isMobileV) {
-                             // Tail extends upward from head
-                             ctx.roundRect(nx - (BAR_H * 0.3), ny - len, BAR_H * 0.6, len, 4);
-                         } else {
-                             // Tail extends rightward from head
-                             ctx.roundRect(nx, ny - (BAR_H * 0.3), len, BAR_H * 0.6, 4);
-                         }
-                         ctx.fill();
-
-                         // Head of the hold note
-                         ctx.fillStyle = color;
-                         ctx.globalAlpha = noteAlpha;
-                         let headW: number, headH: number;
-                         if (isMobileV) {
-                             // Horizontal bar head for vertical mode
-                             headW = BAR_H * 1.4;
-                             headH = Math.max(8, BAR_H * 0.4);
-                         } else {
-                             // Tall narrow head for horizontal mode
-                             headW = Math.max(8, BAR_H * 0.4);
-                             headH = BAR_H * 1.4;
-                         }
-
-                         if (isHeldActive) {
-                             ctx.save();
-                             ctx.shadowColor = color;
-                             ctx.shadowBlur = 10;
-                             ctx.beginPath();
-                             ctx.roundRect(nx - headW/2, ny - headH/2, headW, headH, 4);
-                             ctx.fill();
-                             ctx.restore();
-                         } else {
-                             ctx.beginPath();
-                             ctx.roundRect(nx - headW/2, ny - headH/2, headW, headH, 4);
-                             ctx.fill();
-                         }
-                     }
-                 } else if (slice.type === 'SWITCH') {
-                    // Switch Note — diamond shape with arrow indicator
-                    const size = BAR_H;
-                    ctx.save();
-                    ctx.translate(nx, ny);
-                    ctx.rotate(Math.PI / 4);
-                    ctx.beginPath();
-                    ctx.roundRect(-size / 2, -size / 2, size, size, 4);
-                    ctx.fill();
-                    ctx.restore();
-                    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-                    ctx.font = `bold ${Math.round(size * 0.55)}px sans-serif`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    const arrow = switchProgress < 1
-                        ? (isMobileV
-                            ? (slice.lane === 0 ? '→' : '←')   // mobile: lanes are left/right
-                            : (slice.lane === 0 ? '↓' : '↑'))  // desktop: lanes are top/bottom
-                        : '⇄';
-                    ctx.fillText(arrow, nx, ny);
-                    ctx.textBaseline = 'alphabetic';
-                } else {
-                    // Standard Note
-                    const size = BAR_H;
-                    ctx.beginPath();
-                    ctx.roundRect(nx - size/2, ny - size/2, size, size, 8);
-                    ctx.fill();
-
-                    // Shine
-                    ctx.fillStyle = 'rgba(255,255,255,0.3)';
-                    ctx.beginPath();
-                    ctx.arc(nx - size*0.15, ny - size*0.15, size/4, 0, Math.PI*2);
-                    ctx.fill();
-                }
-
-            });
-            ctx.shadowColor = 'transparent'; // Reset
-        }
-
-        // 4. Update & Draw Particles
-        for (let i = particlesRef.current.length - 1; i >= 0; i--) {
-            const p = particlesRef.current[i];
-            p.x += p.vx;
-            p.y += p.vy;
-            p.vy += 0.2; // Gravity
-            p.life -= 0.05;
-            
-            if (p.life <= 0) {
-                particlesRef.current.splice(i, 1);
-            } else {
-                ctx.globalAlpha = p.life;
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-        ctx.globalAlpha = 1;
-
-        // Feedback / Judgment Text
-        if (latestFeedback && performance.now() - latestFeedback.time < 1000) {
-            const timeDiff = performance.now() - latestFeedback.time;
-            const alpha = 1 - Math.pow(timeDiff / 1000, 3); // Fade out
-
-            ctx.save();
-            ctx.globalAlpha = alpha;
-            ctx.textAlign = 'center';
-
-            // Position feedback: above hit line on mobile, centered on desktop
-            const feedbackX = w / 2;
-            const feedbackY = isMobileV
-                ? CURSOR_MAIN - BAR_H * 2 - 50
-                : (isOneTrack ? LANE_POS[0] - BAR_H * 1.5 - 40 : h * 0.5);
-
-            ctx.fillStyle = latestFeedback.color;
-            ctx.font = `900 ${isMobileV ? 28 : 32}px sans-serif`;
-            ctx.shadowColor = latestFeedback.color;
-            ctx.shadowBlur = 6;
-            ctx.fillText(latestFeedback.text, feedbackX, feedbackY);
-
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
-
-            if (latestFeedback.offset !== undefined) {
-                 const ms = Math.round(latestFeedback.offset * 1000);
-                 const sign = ms > 0 ? '+' : '';
-                 const offsetText = `${sign}${ms}ms`;
-
-                 ctx.font = 'bold 16px monospace';
-                 ctx.fillStyle = Math.abs(ms) < 20 ? '#334155' : '#64748b';
-                 ctx.fillText(offsetText, feedbackX, feedbackY + 30);
-            }
-
-            ctx.restore();
-        }
-
-        // 5. Cursors (Receptors)
-        const textColor = canvasStyle.getPropertyValue('--slice-text-muted').trim() || '#64748b';
-        const textShadowColor = canvasStyle.getPropertyValue('--slice-text-shadow').trim() || 'rgba(0,0,0,0.3)';
-
-        const drawCursor = (cx: number, cy: number, color: string, label?: string) => {
-            ctx.shadowColor = shadowLight;
-            ctx.shadowBlur = 5;
-            ctx.shadowOffsetX = -2;
-            ctx.shadowOffsetY = -2;
-            ctx.strokeStyle = bgColor;
-            ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.arc(cx, cy, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-            ctx.shadowColor = shadowDark;
-            ctx.shadowBlur = 5;
-            ctx.shadowOffsetX = 2;
-            ctx.shadowOffsetY = 2;
-            ctx.stroke();
-            ctx.shadowColor = 'transparent';
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.arc(cx, cy, CURSOR_R * 1.5, 0, Math.PI * 2); ctx.stroke();
-            if (label) {
-                ctx.fillStyle = textColor;
-                ctx.font = 'bold 12px sans-serif';
-                ctx.textAlign = 'center';
-                ctx.shadowColor = textShadowColor;
-                ctx.shadowBlur = 2;
-                ctx.shadowOffsetX = 1;
-                ctx.shadowOffsetY = 1;
-                ctx.fillText(label, cx, cy + 4);
-                ctx.shadowColor = 'transparent';
-            }
-        };
-
-        const formatBind = (b: string) => b.replace('Mouse0','LMB').replace('Mouse1','MMB').replace('Mouse2','RMB').replace('ArrowUp', '↑').replace('ArrowDown', '↓').replace('ArrowLeft', '←').replace('ArrowRight', '→').replace('Key', '');
-
-        if (isOneTrack) {
-            const { x: cx, y: cy } = toCanvas(CURSOR_MAIN, LANE_POS[0]);
-            const label = isMobileV ? undefined : `${formatBind(currentKeybinds.lane1)}/${formatBind(currentKeybinds.lane2)}`;
-            drawCursor(cx, cy, shadowLight, label);
-        } else {
-            LANE_POS.forEach((laneVal, i) => {
-                const { x: cx, y: cy } = toCanvas(CURSOR_MAIN, laneVal);
-                const color = i === 0 ? COLORS.lane1 : COLORS.lane2;
-                const label = isMobileV ? undefined : formatBind(i === 0 ? currentKeybinds.lane1 : currentKeybinds.lane2);
-                drawCursor(cx, cy, color, label);
-            });
-        }
-
-        ctx.restore();
-    };
-
     return (
         <div className="flex w-full h-full bg-slice-bg">
             {/* Game Area Container - Flex Grow */}
@@ -1122,6 +552,12 @@ export function GameCanvas() {
                         ref={canvasRef}
                         className="w-full h-full cursor-pointer block"
                     />
+
+                    {webglFailed && (
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/90 text-center p-6 text-white">
+                            <p>Your browser or GPU doesn&apos;t support WebGL, which Slice It needs to render. Try a different browser or enable hardware acceleration.</p>
+                        </div>
+                    )}
 
                     {/* Mobile Buttons — left/right split for portrait, top/bottom for landscape */}
                     {showMobileButtons && status === 'PLAYING' && !isPaused && countdown === 0 && (

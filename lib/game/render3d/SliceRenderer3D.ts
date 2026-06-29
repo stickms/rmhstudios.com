@@ -1,0 +1,74 @@
+// lib/game/render3d/SliceRenderer3D.ts
+import * as THREE from 'three';
+import type { GameEngine } from '@/lib/game/GameEngine';
+import { BG_COLOR } from './palette';
+
+export class SliceRenderer3D {
+  private renderer: THREE.WebGLRenderer;
+  private scene: THREE.Scene;
+  private camera: THREE.PerspectiveCamera;
+  private reducedFx = false;
+  public isMobileV = false;
+
+  constructor(canvas: HTMLCanvasElement) {
+    // Throws on failure; GameCanvas catches and shows a fallback message.
+    this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMappingExposure = 1.1;
+
+    this.scene = new THREE.Scene();
+    this.scene.background = new THREE.Color(BG_COLOR);
+    this.scene.fog = new THREE.FogExp2(BG_COLOR, 0.012);
+
+    this.camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
+
+    // Base lighting (Environment task adds reactive lights later).
+    const ambient = new THREE.AmbientLight(0xffffff, 0.25);
+    this.scene.add(ambient);
+  }
+
+  setReducedFx(reduced: boolean): void {
+    this.reducedFx = reduced;
+  }
+
+  /**
+   * Position/aim the camera to frame the field. Desktop: look down the −X scroll
+   * axis from a tilted vantage. Mobile-vertical: rotate the framing 90° so the
+   * scroll axis reads top→bottom on screen.
+   */
+  resize(cssWidth: number, cssHeight: number, dpr: number): void {
+    this.isMobileV = cssHeight > cssWidth;
+    this.renderer.setPixelRatio(Math.min(dpr, 2));
+    this.renderer.setSize(cssWidth, cssHeight, false);
+    this.camera.aspect = cssWidth / cssHeight;
+
+    if (this.isMobileV) {
+      // Field scroll axis (world X) is shown vertically: roll the camera 90°.
+      this.camera.position.set(0, 2.5, 9);
+      this.camera.up.set(1, 0, 0);
+      this.camera.lookAt(0, 0, 0);
+    } else {
+      this.camera.position.set(6, 3.2, 9);
+      this.camera.up.set(0, 1, 0);
+      this.camera.lookAt(0, 0, 0);
+    }
+    this.camera.updateProjectionMatrix();
+  }
+
+  renderFrame(_engine: GameEngine, _audioTime: number): void {
+    // Subsystems are wired into this method in later tasks.
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  dispose(): void {
+    this.scene.traverse((obj) => {
+      const mesh = obj as THREE.Mesh;
+      if (mesh.geometry) mesh.geometry.dispose();
+      const mat = mesh.material as THREE.Material | THREE.Material[] | undefined;
+      if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+      else if (mat) mat.dispose();
+    });
+    this.renderer.dispose();
+  }
+}
