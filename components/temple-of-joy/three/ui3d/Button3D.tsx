@@ -6,6 +6,7 @@ import { useFrame, type ThreeEvent } from '@react-three/fiber';
 import { Billboard, RoundedBox } from '@react-three/drei';
 import { makeLabelTexture } from './canvasLabel';
 import { getGlowTexture } from '../glowTexture';
+import { templeAudio } from '@/lib/temple-of-joy/audio';
 import { useTap } from '../useTap';
 
 interface Button3DProps {
@@ -78,7 +79,7 @@ export function Button3D({
     }
   });
 
-  const tap = useTap(() => { if (enabled) onClick(); });
+  const tap = useTap(() => { if (enabled) { templeAudio.playClick(); onClick(); } });
 
   const content = (
     <group ref={group} position={position}>

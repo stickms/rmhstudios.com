@@ -4,12 +4,6 @@ import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { saveDataToState, computeOfflineProgress, useAutoSave, saveToServer } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type { SaveData } from '@/lib/temple-of-joy/types';
-import VibeCheck from '@/components/temple-of-joy/ui/VibeCheck';
-import EventModal from '@/components/temple-of-joy/ui/EventModal';
-import EventEffectSummary from '@/components/temple-of-joy/ui/EventEffectSummary';
-import TranscendenceModal from '@/components/temple-of-joy/ui/TranscendenceModal';
-import OfflineModal from '@/components/temple-of-joy/ui/OfflineModal';
-import AchievementToast from '@/components/temple-of-joy/ui/AchievementToast';
 
 // The Three.js world is heavy; load it lazily so the rest of the game shell
 // (and the loading fallback) can paint immediately.
@@ -163,13 +157,8 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
         </Suspense>
       </div>
 
-      {/* Transient overlays (still DOM — being converted last) */}
-      <VibeCheck />
-      <EventModal />
-      <EventEffectSummary />
-      <TranscendenceModal />
-      <OfflineModal />
-      <AchievementToast />
+      {/* All UI — HUD, tabs, controls, panels and modals — now lives inside the
+          3D scene (Chrome3D / Modals3D in the Hud layer). Nothing else here. */}
     </div>
   );
 }

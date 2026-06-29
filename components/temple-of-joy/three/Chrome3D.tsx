@@ -11,6 +11,7 @@ import type { GameState } from '@/lib/temple-of-joy/types';
 import { Button3D } from './ui3d/Button3D';
 import { Label3D } from './ui3d/Label3D';
 import { CodexPanel3D } from './CodexPanel3D';
+import { Modals3D } from './Modals3D';
 
 type Tab = GameState['activeTab'];
 
@@ -162,6 +163,7 @@ function Layout() {
       <Controls h={h} />
       <TabBar w={w} h={h} />
       {active !== 'temple' && <CodexPanel3D tab={active} w={w} h={h} />}
+      <Modals3D />
     </>
   );
 }
