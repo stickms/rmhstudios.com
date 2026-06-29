@@ -9,8 +9,9 @@
  *
  * Usage: pnpm exec tsx scripts/gen-i18n-resources.ts es fr de ...
  */
-import { readdirSync, writeFileSync } from "node:fs";
+import { existsSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { LOCALES } from "../lib/i18n/config.ts";
 
 const ROOT = process.cwd();
 
@@ -25,10 +26,14 @@ function pascal(ns: string): string {
 
 function genLocale(locale: string): void {
   const dir = join(ROOT, "locales", locale);
-  const namespaces = readdirSync(dir)
-    .filter((f) => f.endsWith(".json") && !f.startsWith("."))
-    .map((f) => f.slice(0, -".json".length))
-    .sort();
+  // A not-yet-translated locale has no directory: emit an empty bundle so the
+  // build resolves its import and every key falls back to English at runtime.
+  const namespaces = existsSync(dir)
+    ? readdirSync(dir)
+        .filter((f) => f.endsWith(".json") && !f.startsWith("."))
+        .map((f) => f.slice(0, -".json".length))
+        .sort()
+    : [];
 
   const varName = (ns: string) => `${locale}${pascal(ns)}`;
   const imports = namespaces
@@ -54,9 +59,8 @@ export default ${locale}Resources;
   console.log(`[i18n] wrote lib/i18n/resources.${locale}.ts (${namespaces.length} namespaces)`);
 }
 
-const locales = process.argv.slice(2);
-if (locales.length === 0) {
-  console.error("usage: pnpm exec tsx scripts/gen-i18n-resources.ts <locale>...");
-  process.exit(1);
-}
-for (const locale of locales) genLocale(locale);
+// Explicit args → just those locales. No args → regenerate every non-default
+// locale (used by the deploy pipeline after a full translate run).
+const args = process.argv.slice(2);
+const targets = args.length > 0 ? args : LOCALES.filter((l) => l !== "en");
+for (const locale of targets) genLocale(locale);

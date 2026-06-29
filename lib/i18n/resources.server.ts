@@ -23,6 +23,22 @@ import id from "@/lib/i18n/resources.id";
 import vi from "@/lib/i18n/resources.vi";
 import tr from "@/lib/i18n/resources.tr";
 import ur from "@/lib/i18n/resources.ur";
+import bn from "@/lib/i18n/resources.bn";
+import pa from "@/lib/i18n/resources.pa";
+import ta from "@/lib/i18n/resources.ta";
+import te from "@/lib/i18n/resources.te";
+import mr from "@/lib/i18n/resources.mr";
+import fa from "@/lib/i18n/resources.fa";
+import th from "@/lib/i18n/resources.th";
+import pl from "@/lib/i18n/resources.pl";
+import uk from "@/lib/i18n/resources.uk";
+import nl from "@/lib/i18n/resources.nl";
+import fil from "@/lib/i18n/resources.fil";
+import ms from "@/lib/i18n/resources.ms";
+import ro from "@/lib/i18n/resources.ro";
+import el from "@/lib/i18n/resources.el";
+import cs from "@/lib/i18n/resources.cs";
+import sv from "@/lib/i18n/resources.sv";
 
 const ALL: Record<Locale, LocaleBundle> = {
   en: en as LocaleBundle,
@@ -41,6 +57,22 @@ const ALL: Record<Locale, LocaleBundle> = {
   vi: vi as LocaleBundle,
   tr: tr as LocaleBundle,
   ur: ur as LocaleBundle,
+  bn: bn as LocaleBundle,
+  pa: pa as LocaleBundle,
+  ta: ta as LocaleBundle,
+  te: te as LocaleBundle,
+  mr: mr as LocaleBundle,
+  fa: fa as LocaleBundle,
+  th: th as LocaleBundle,
+  pl: pl as LocaleBundle,
+  uk: uk as LocaleBundle,
+  nl: nl as LocaleBundle,
+  fil: fil as LocaleBundle,
+  ms: ms as LocaleBundle,
+  ro: ro as LocaleBundle,
+  el: el as LocaleBundle,
+  cs: cs as LocaleBundle,
+  sv: sv as LocaleBundle,
 };
 
 /** The full resource bundle (all namespaces) for one language. Server use only. */

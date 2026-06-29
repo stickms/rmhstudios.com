@@ -11,6 +11,8 @@ const ALLOWED_LANGS = new Set([
   'English', 'Spanish', 'French', 'German', 'Portuguese', 'Italian', 'Dutch',
   'Japanese', 'Korean', 'Chinese', 'Russian', 'Arabic', 'Hindi', 'Turkish', 'Polish',
   'Indonesian', 'Vietnamese', 'Urdu',
+  'Bengali', 'Punjabi', 'Tamil', 'Telugu', 'Marathi', 'Persian', 'Thai',
+  'Ukrainian', 'Filipino', 'Malay', 'Romanian', 'Greek', 'Czech', 'Swedish',
 ]);
 
 /** GET /api/rmharks/$id/translate?to=English — AI translation of a post. */
