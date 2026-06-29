@@ -67,6 +67,8 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private spritePool: THREE.Mesh[] = [];
   /** Soft contact shadows grounding the player + enemies on the floor. */
   private shadowPool: THREE.Mesh[] = [];
+  /** Sniper charge-up aim beams (ground telegraphs). */
+  private telegraphPool: THREE.Mesh[] = [];
   private projMesh!: THREE.InstancedMesh;
   private shardMesh!: THREE.InstancedMesh;
   private obstacleMesh!: THREE.InstancedMesh;
@@ -341,6 +343,22 @@ export class VoidBreakerRenderer3D implements VBRenderer {
       this.shadowPool.push(sh);
     }
 
+    // Sniper telegraph beams — thin ground strips that brighten as the shot locks.
+    const beamGeo = new THREE.PlaneGeometry(1, 1);
+    beamGeo.rotateX(-Math.PI / 2);
+    for (let i = 0; i < 12; i++) {
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xff4030, transparent: true, opacity: 0,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+      });
+      const beam = new THREE.Mesh(beamGeo, mat);
+      beam.position.y = 2.5;
+      beam.visible = false;
+      beam.frustumCulled = false;
+      this.scene.add(beam);
+      this.telegraphPool.push(beam);
+    }
+
     // Projectiles — pure bright spheres (unlit; bloom carries the glow).
     const projMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     this.projMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 8, 8), projMat, MAX_PROJECTILES);
@@ -457,6 +475,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     pmat.emissiveIntensity = p.focusActive ? 2.6 : p.dashActive ? 3.2 : 1.4;
 
     this.syncShadows(game);
+    this.syncTelegraphs(game);
     this.syncEnemies(game);
     this.syncBoss(game);
     this.syncProjectiles(game);
@@ -587,6 +606,25 @@ export class VoidBreakerRenderer3D implements VBRenderer {
       m.setMatrixAt(i, tmpObj.matrix);
     }
     m.instanceMatrix.needsUpdate = true;
+  }
+
+  private syncTelegraphs(game: VoidBreakerEngine): void {
+    let idx = 0;
+    const LEN = 700, WIDTH = 7;
+    for (const e of game.enemies) {
+      if (idx >= this.telegraphPool.length) break;
+      if (!e.active || e.type !== 'sniper' || !e.bossSpecialActive || e.telegraphTimer <= 0) continue;
+      const beam = this.telegraphPool[idx++];
+      const ang = e.bossSpecialAngle;            // locked aim (game angle)
+      const dx = Math.cos(ang), dz = Math.sin(ang);
+      beam.visible = true;
+      beam.position.set(e.x + dx * LEN / 2, 2.5, e.y + dz * LEN / 2);
+      beam.rotation.y = -ang;
+      beam.scale.set(LEN, 1, WIDTH);
+      const charge = 1 - Math.max(0, e.telegraphTimer) / 0.85; // 0 → 1
+      (beam.material as THREE.MeshBasicMaterial).opacity = 0.15 + charge * 0.5;
+    }
+    for (let s = idx; s < this.telegraphPool.length; s++) this.telegraphPool[s].visible = false;
   }
 
   private syncShadows(game: VoidBreakerEngine): void {
