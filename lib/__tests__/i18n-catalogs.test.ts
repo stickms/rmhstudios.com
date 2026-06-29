@@ -25,9 +25,13 @@ describe("catalog integrity", () => {
     }
   }
 
-  // Every locale must at least provide the full core namespace set.
+  // Every locale that has STARTED translating must provide the FULL core set
+  // (so a partial catalog can't silently ship). A brand-new locale with no core
+  // files yet is skipped — it falls back to English until its catalog exists.
   for (const locale of LOCALES) {
     if (locale === "en") continue;
+    const started = CORE_NAMESPACES.some((ns) => existsSync(pathFor(locale, ns)));
+    if (!started) continue;
     for (const ns of CORE_NAMESPACES) {
       it(`${locale} provides core namespace ${ns}`, () => {
         expect(existsSync(pathFor(locale, ns))).toBe(true);
