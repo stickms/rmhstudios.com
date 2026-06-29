@@ -94,6 +94,15 @@ export class SliceRenderer3D {
       reducedFx: this.reducedFx,
     };
 
+    // Spin modifier: slowly roll the whole view (parity with 2D field rotation).
+    if (mods.spin) {
+      const roll = -audioTime * 0.25;
+      const baseUp = this.isMobileV ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+      const forward = new THREE.Vector3().subVectors(new THREE.Vector3(0, 0, 0), this.camera.position).normalize();
+      this.camera.up.copy(baseUp).applyAxisAngle(forward, roll);
+      this.camera.lookAt(0, 0, 0);
+    }
+
     const now = performance.now() / 1000;
     const dt = this.lastT ? now - this.lastT : 0.016;
     this.lastT = now;

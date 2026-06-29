@@ -70,6 +70,14 @@ export function GameCanvas() {
         AudioManager.getInstance().setVolume(volume / 100);
     }, [volume]);
 
+    // ── Live reduced-motion forwarding ─────────────────────────────────────────
+    useEffect(() => {
+        const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const on = () => rendererRef.current?.setReducedFx(mq.matches);
+        mq.addEventListener('change', on);
+        return () => mq.removeEventListener('change', on);
+    }, []);
+
     // ── Resize canvas to fill its wrapper ──────────────────────────────────────
     useEffect(() => {
         const wrapper = wrapperRef.current;
@@ -230,6 +238,11 @@ export function GameCanvas() {
         const newEngine = new GameEngine();
         setEngine(newEngine);
 
+        // Track canvas + handler so we can remove the webglcontextlost listener
+        // using the exact same canvas reference that was used to add it.
+        let contextLostCanvas: HTMLCanvasElement | null = null;
+        let onContextLost: ((e: Event) => void) | null = null;
+
         const loop = () => {
             frameRef.current++;
             if (frameRef.current % 60 === 0) {
@@ -247,6 +260,15 @@ export function GameCanvas() {
                         rendererRef.current.setReducedFx(
                             window.matchMedia('(prefers-reduced-motion: reduce)').matches
                         );
+                        // WebGL context-loss: surface the fallback overlay instead of a frozen canvas.
+                        // Store canvas + handler in closure vars so cleanup removes the exact listener.
+                        contextLostCanvas = canvas;
+                        onContextLost = (e: Event) => {
+                            e.preventDefault();
+                            webglFailedRef.current = true;
+                            setWebglFailed(true);
+                        };
+                        contextLostCanvas.addEventListener('webglcontextlost', onContextLost as EventListener);
                     } catch (err) {
                         console.error('WebGL init failed:', err);
                         webglFailedRef.current = true;
@@ -288,6 +310,9 @@ export function GameCanvas() {
         return () => {
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
             document.removeEventListener('visibilitychange', handleVisibilityChange);
+            if (contextLostCanvas && onContextLost) {
+                contextLostCanvas.removeEventListener('webglcontextlost', onContextLost as EventListener);
+            }
             rendererRef.current?.dispose();
             rendererRef.current = null;
             AudioManager.getInstance().stop();
