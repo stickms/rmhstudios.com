@@ -1,12 +1,14 @@
 'use client';
-import { useCallback, useEffect, useRef } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { saveDataToState, computeOfflineProgress, useAutoSave, saveToServer } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
-import type { SaveData } from '@/lib/temple-of-joy/types';
+import type { SaveData, GameState } from '@/lib/temple-of-joy/types';
 import TabBar from '@/components/temple-of-joy/ui/TabBar';
-import SmileButton from '@/components/temple-of-joy/ui/SmileButton';
+import HUD from '@/components/temple-of-joy/ui/HUD';
+import TempleControls from '@/components/temple-of-joy/ui/TempleControls';
+import PanelOverlay from '@/components/temple-of-joy/ui/PanelOverlay';
 import StatsPanel from '@/components/temple-of-joy/ui/StatsPanel';
 import SourcesPanel from '@/components/temple-of-joy/ui/SourcesPanel';
 import UpgradesPanel from '@/components/temple-of-joy/ui/UpgradesPanel';
@@ -21,6 +23,12 @@ import EventEffectSummary from '@/components/temple-of-joy/ui/EventEffectSummary
 import TranscendenceModal from '@/components/temple-of-joy/ui/TranscendenceModal';
 import OfflineModal from '@/components/temple-of-joy/ui/OfflineModal';
 import AchievementToast from '@/components/temple-of-joy/ui/AchievementToast';
+
+// The Three.js world is heavy; load it lazily so the rest of the game shell
+// (and the loading fallback) can paint immediately.
+const TempleScene = lazy(() =>
+  import('@/components/temple-of-joy/three/TempleScene').then((m) => ({ default: m.TempleScene })),
+);
 
 export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveData | null }) {
   const { t } = useTranslation("c-temple-of-joy");
@@ -160,82 +168,68 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
   }, []);
 
   // ── Render ────────────────────────────────────────────────────────────────
+  const PANELS: Partial<Record<GameState['activeTab'], { title: string; node: React.ReactNode }>> = {
+    sources:      { title: t('tab-sources',      { defaultValue: 'Sources' }),      node: <SourcesPanel /> },
+    upgrades:     { title: t('tab-upgrades',     { defaultValue: 'Upgrades' }),     node: <UpgradesPanel /> },
+    relics:       { title: t('tab-relics',       { defaultValue: 'Relics' }),       node: <RelicsPanel /> },
+    wheel:        { title: t('tab-wheel',        { defaultValue: 'Wheel' }),        node: <WheelOfSamsara /> },
+    achievements: { title: t('tab-achievements', { defaultValue: 'Achievements' }), node: <><StatsPanel /><div className="h-4" /><AchievementsPanel /><MilestonesPanel /></> },
+    settings:     { title: t('tab-settings',     { defaultValue: 'Settings' }),     node: <SettingsPanel /> },
+  };
+  const panel = PANELS[activeTab];
+
   return (
     <div
       ref={gameContainerRef}
       data-theme={theme}
-      className="h-screen flex flex-col overflow-hidden font-sans"
+      className="relative h-screen w-screen overflow-hidden font-sans"
       style={{
-        background: theme === 'dark' ? '#1a120b' : '#f5f0e8',
-        color: theme === 'dark' ? '#e8d5b0' : '#3d2c1e',
+        background: theme === 'dark' ? '#0d0904' : '#ece0c8',
+        color: 'var(--temple-text)',
       }}
     >
-      {/* Header */}
-      <header
-        className="flex items-center px-4 py-3 border-b shrink-0"
-        style={{
-          borderColor: theme === 'dark' ? '#6b4c2a' : '#c4a97a',
-          background: theme === 'dark' ? '#2c1d12' : '#ede7d9',
-        }}
-      >
+      {/* 3D temple world — always-on backdrop */}
+      <div className="absolute inset-0">
+        <Suspense fallback={null}>
+          <TempleScene />
+        </Suspense>
+      </div>
+
+      {/* Header — floats over the scene */}
+      <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center px-4 py-3">
         <a
           href="/builds"
           onClick={handleBackToGames}
-          className="w-24 text-sm opacity-70 hover:opacity-100 transition-opacity shrink-0"
-          style={{ color: theme === 'dark' ? '#d4a847' : '#8b6914' }}
+          className="pointer-events-auto w-24 shrink-0 text-sm opacity-70 transition-opacity hover:opacity-100"
+          style={{ color: 'var(--temple-accent)' }}
         >
           {t("back-to-builds", { defaultValue: "← Builds" })}
         </a>
         <h1
           className="flex-1 text-center text-xl font-bold tracking-wide"
-          style={{ fontFamily: 'var(--font-cormorant, Georgia, serif)' }}
+          style={{ fontFamily: 'var(--font-cormorant, Georgia, serif)', textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
         >
           {t("game-title", { defaultValue: "Temple of Joy" })}
         </h1>
         <div className="w-24 shrink-0" />
       </header>
 
-      {/* Tab Bar — sticky below header */}
-      <div className="shrink-0">
+      {/* Happiness HUD + temple controls (hidden while a panel is open) */}
+      {!panel && (
+        <>
+          <HUD />
+          <TempleControls />
+        </>
+      )}
+
+      {/* Active data panel as a themed overlay drawer */}
+      {panel && <PanelOverlay title={panel.title}>{panel.node}</PanelOverlay>}
+
+      {/* Tab bar — TabBar renders its own responsive variants (desktop top row
+          here, mobile fixed bottom bar via its internal `fixed` styling). */}
+      <div className="pointer-events-auto absolute inset-x-0 top-14 z-40">
         <TabBar />
       </div>
-
-      {/* Main content — scrollable area */}
-      <main className="flex-1 min-h-0 w-full mx-auto">
-        {activeTab === 'temple' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 overflow-y-auto gap-4 p-4 pb-16 md:pb-4 h-full min-h-0">
-            {/* Left: Sources panel */}
-            <div className="hidden lg:flex lg:flex-col min-h-0">
-              <div className="flex-1 min-h-0">
-                <SourcesPanel />
-              </div>
-            </div>
-            {/* Center: SmileButton + StatsPanel */}
-            <div className="flex flex-col items-center gap-4">
-              <SmileButton />
-              <StatsPanel />
-            </div>
-            {/* Right: Upgrades summary */}
-            <div className="hidden lg:flex lg:flex-col min-h-0">
-              <div className="flex-1 min-h-0">
-                <UpgradesPanel />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'sources'    && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><SourcesPanel /></div>}
-        {activeTab === 'upgrades'     && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><UpgradesPanel /></div>}
-        {activeTab === 'relics'       && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><RelicsPanel /></div>}
-        {activeTab === 'wheel'        && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><WheelOfSamsara /></div>}
-        {activeTab === 'achievements' && (
-          <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0">
-            <AchievementsPanel />
-            <MilestonesPanel />
-          </div>
-        )}
-        {activeTab === 'settings'     && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><SettingsPanel /></div>}
-      </main>
 
       {/* Overlays */}
       <VibeCheck />
