@@ -7,7 +7,11 @@ import * as THREE from 'three';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
 import { SceneEnvironment } from './SceneEnvironment';
-import { TempleModel } from './TempleModel';
+import { GrandTemple } from './GrandTemple';
+import { SunCore } from './SunCore';
+import { SourceStructures } from './SourceStructures';
+import { UpgradeOrbs } from './UpgradeOrbs';
+import { AchievementStars } from './AchievementStars';
 import { ClickBurst, type ClickBurstHandle } from './ClickBurst';
 import { FloatingJoy } from './FloatingJoy';
 import { AmbientJoy } from './AmbientJoy';
@@ -37,7 +41,11 @@ function SceneContents() {
   return (
     <>
       <SceneEnvironment />
-      <TempleModel onJoy={handleJoy} />
+      <AchievementStars />
+      <GrandTemple />
+      <SunCore onJoy={handleJoy} />
+      <SourceStructures />
+      <UpgradeOrbs />
       <AmbientJoy />
       <ClickBurst ref={burst} />
       {floats.map((f) => (
@@ -45,16 +53,16 @@ function SceneContents() {
       ))}
       <OrbitControls
         makeDefault
-        target={[0, 1.6, 0]}
+        target={[0, 3, 0]}
         enablePan={false}
         enableDamping
         dampingFactor={0.08}
-        minDistance={7}
-        maxDistance={17}
-        minPolarAngle={0.35}
-        maxPolarAngle={1.45}
+        minDistance={9}
+        maxDistance={24}
+        minPolarAngle={0.3}
+        maxPolarAngle={1.5}
         autoRotate
-        autoRotateSpeed={0.35}
+        autoRotateSpeed={0.3}
         rotateSpeed={0.7}
         zoomSpeed={0.7}
       />
@@ -73,7 +81,7 @@ export function TempleScene() {
       shadows={false}
       dpr={dpr}
       gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }}
-      camera={{ position: [0, 4.5, 12], fov: 42, near: 0.1, far: 100 }}
+      camera={{ position: [0, 7, 16], fov: 45, near: 0.1, far: 120 }}
       style={{ touchAction: 'none' }}
     >
       <PerformanceMonitor
