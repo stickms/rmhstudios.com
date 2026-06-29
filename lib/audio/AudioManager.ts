@@ -1,12 +1,8 @@
-import { computeBeatEnergy } from '@/lib/game/render3d/audioAnalysis';
-
 export class AudioManager {
   private static instance: AudioManager;
   private audioContext: AudioContext | null = null;
   private source: AudioBufferSourceNode | null = null;
   private gainNode: GainNode | null = null;
-  private analyser: AnalyserNode | null = null;
-  private freqData: Uint8Array<ArrayBuffer> | null = null;
   private buffer: AudioBuffer | null = null;
   private startTime: number = 0;
   private pauseTime: number = 0;
@@ -33,14 +29,6 @@ export class AudioManager {
       this.gainNode = this.audioContext.createGain();
       this.gainNode.connect(this.audioContext.destination);
       this.gainNode.gain.value = this.volume;
-
-      // Parallel analyser tap for beat-reactive visuals (does NOT reach destination,
-      // so it never alters the audible signal).
-      this.analyser = this.audioContext.createAnalyser();
-      this.analyser.fftSize = 256;
-      this.analyser.smoothingTimeConstant = 0.8;
-      this.gainNode.connect(this.analyser);
-      this.freqData = new Uint8Array(this.analyser.frequencyBinCount);
     }
   }
 
@@ -175,13 +163,6 @@ export class AudioManager {
       if (this.gainNode) {
           this.gainNode.gain.value = this.volume;
       }
-  }
-
-  /** Smoothed low-frequency (bass) energy of current playback, 0..1. 0 if no audio. */
-  public getBeatEnergy(): number {
-    if (!this.analyser || !this.freqData) return 0;
-    this.analyser.getByteFrequencyData(this.freqData);
-    return computeBeatEnergy(this.freqData);
   }
 
   public getCurrentTime(): number {
