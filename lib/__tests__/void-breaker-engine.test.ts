@@ -20,6 +20,18 @@ function advanceToPlaying(g: VoidBreakerEngine): void {
   for (let i = 0; i < 200 && g.state !== 'playing'; i++) g.update(0.05, input);
 }
 
+/**
+ * Isolate the arena for a deterministic combat test: clear the random wave
+ * enemies + projectiles and obstacles, and keep waveEnemiesAlive high so the
+ * clear doesn't fire (which would flip state to 'upgrade').
+ */
+function isolate(g: VoidBreakerEngine): void {
+  g.enemies.forEach(e => (e.active = false));
+  g.projectiles.forEach(p => (p.active = false));
+  g.obstacles = [];
+  g.waveEnemiesAlive = 99;
+}
+
 /** Activate a pooled enemy at a position with given hp. Returns it. */
 function placeEnemy(g: VoidBreakerEngine, x: number, y: number, hp: number) {
   const e = g.enemies.find(en => !en.active)!;
@@ -27,6 +39,9 @@ function placeEnemy(g: VoidBreakerEngine, x: number, y: number, hp: number) {
   e.type = 'drifter'; e.x = x; e.y = y; e.radius = 10;
   e.hp = hp; e.maxHp = hp; e.shardCount = 1; e.value = 10;
   e.color = '#8866cc'; e.hitFlashUntil = 0; e.bossSpecialActive = false;
+  // Fully inert so it stays put (no stale speed/AI state from the pooled slot).
+  e.speed = 0; e.vx = 0; e.vy = 0; e.dashState = 'idle'; e.dashTimer = 0;
+  e.orbitFireTimer = 99; e.telegraphTimer = 0; e.bossSpecialTimer = 0;
   return e;
 }
 
@@ -124,7 +139,7 @@ describe('VoidBreakerEngine', () => {
     const g = new VoidBreakerEngine();
     g.startGame();
     advanceToPlaying(g);
-    g.obstacles = [];
+    isolate(g);
     g.stats.lifestealChance = 1;        // guaranteed
     g.player.hp = 1;                     // below max
     g.player.x = 800; g.player.y = 500;
@@ -138,7 +153,7 @@ describe('VoidBreakerEngine', () => {
     const g = new VoidBreakerEngine();
     g.startGame();
     advanceToPlaying(g);
-    g.obstacles = [];
+    isolate(g);
     g.stats.critChance = 1;             // guaranteed crit, critMult = 2
     const e = placeEnemy(g, 1200, 500, 10);
     placePlayerProj(g, 1200, 500, 1, 0);
@@ -151,7 +166,7 @@ describe('VoidBreakerEngine', () => {
     const g = new VoidBreakerEngine();
     g.startGame();
     advanceToPlaying(g);
-    g.obstacles = [];
+    isolate(g);
     g.player.x = 800; g.player.y = 500;
     const hive = placeEnemy(g, 1300, 500, 6);
     hive.type = 'hive';
@@ -163,21 +178,46 @@ describe('VoidBreakerEngine', () => {
     expect(hive.active).toBe(true);     // hive itself persists
   });
 
+  it('bomber lobs a fused bomb that explodes for AoE damage', () => {
+    const g = new VoidBreakerEngine();
+    g.startGame();
+    advanceToPlaying(g);
+    isolate(g);
+    g.player.x = 800; g.player.y = 500;
+    const bomber = placeEnemy(g, 1100, 500, 3);
+    bomber.type = 'bomber';
+    bomber.bossSpecialTimer = 0;        // lob immediately
+    g.update(0.05, makeInput());
+    const bomb = g.projectiles.find(pr => pr.active && pr.fuse > 0);
+    expect(bomb).toBeTruthy();          // a fused bomb exists
+    // Park the bomb on the (invincibility-cleared) player and burn the fuse.
+    bomb!.x = 800; bomb!.y = 500; bomb!.vx = 0; bomb!.vy = 0;
+    g.player.invincibleUntil = 0; g.elapsedMs = 9000;
+    const hpBefore = g.player.hp;
+    for (let i = 0; i < 40 && bomb!.active; i++) { g.elapsedMs = 9000; g.player.invincibleUntil = 0; g.update(0.05, makeInput()); }
+    expect(bomb!.active).toBe(false);   // detonated
+    expect(g.player.hp).toBeLessThan(hpBefore); // caught in the blast
+  });
+
   it('void thorns reflects contact damage to the attacker', () => {
     const g = new VoidBreakerEngine();
     g.startGame();
     advanceToPlaying(g);
-    g.obstacles = [];
-    g.projectiles.forEach(pr => (pr.active = false));
+    isolate(g);
     g.player.fireTimer = 99;            // suppress auto-fire interference
     g.player.invincibleUntil = 0;
     g.elapsedMs = 5000;                 // ensure not invincible
     g.stats.thornsDamage = 3;
     g.player.x = 800; g.player.y = 500;
-    const e = placeEnemy(g, 800, 500, 3); // overlapping, hp == thorns
-    g.update(0.05, makeInput());
-    expect(e.active).toBe(false);       // killed by thorns on contact
-    expect(g.player.hp).toBe(2);        // still took the contact hit
+    // hp == thornsDamage: a plain drifter contact can't kill it, so the enemy
+    // dying *proves* thorns reflected. (We don't assert player HP — a contact
+    // kill can drop a heart onto the player and heal the hit back.)
+    const e = placeEnemy(g, 800, 500, 3);
+    for (let i = 0; i < 4 && e.active; i++) {
+      g.player.invincibleUntil = 0; g.elapsedMs = 5000;
+      g.update(0.05, makeInput());
+    }
+    expect(e.active).toBe(false);       // could only die to thorns
   });
 
   it('applies the selected character at run start', () => {
@@ -225,7 +265,7 @@ describe('VoidBreakerEngine', () => {
     const g = new VoidBreakerEngine();
     g.startGame();
     advanceToPlaying(g);
-    g.obstacles = [];
+    isolate(g);
     const e = placeEnemy(g, 1200, 500, 10);
     const proj = placePlayerProj(g, 1200, 500, 1, 1); // pierce 1
     g.update(0.05, makeInput());

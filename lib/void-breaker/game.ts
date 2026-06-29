@@ -172,7 +172,7 @@ export class VoidBreakerEngine {
     this.projectiles = Array.from({ length: MAX_PROJECTILES }, () => ({
       active: false, x: 0, y: 0, vx: 0, vy: 0,
       radius: 0, damage: 0, isPlayer: true, life: 0,
-      pierce: 0, lastHitId: -1,
+      pierce: 0, lastHitId: -1, fuse: 0, blastRadius: 0,
     }));
     this.shards = Array.from({ length: MAX_SHARDS_POOL }, () => ({
       active: false, x: 0, y: 0, vx: 0, vy: 0,
@@ -874,8 +874,8 @@ export class VoidBreakerEngine {
     }
     // Stagger elites' first burst so they don't all fire on spawn.
     if (isElite) slot.tentacleTimer = 2 + Math.random() * 2;
-    // Hive waits a beat before its first brood.
-    if (type === 'hive') slot.bossSpecialTimer = 2 + Math.random();
+    // Hive / bomber wait a beat before their first action.
+    if (type === 'hive' || type === 'bomber') slot.bossSpecialTimer = 1.5 + Math.random();
   }
 
   /** Spawn a mini_drifter near (x, y) with positional jitter. Returns success. */
@@ -926,6 +926,8 @@ export class VoidBreakerEngine {
             this.aiShielded(e, dt, px, py); break;
           case 'hive':
             this.aiHive(e, dt, px, py); break;
+          case 'bomber':
+            this.aiBomber(e, dt, px, py); break;
         }
         // Elites periodically loose a radial burst — a real threat, not just stats.
         if (e.isElite) {
@@ -1088,6 +1090,44 @@ export class VoidBreakerEngine {
         this.spawnParticles(e.x, e.y, '#66dd55', 7, 90);
         this.emitSfx('enemyShoot', { pitch: 0.7 });
       }
+    }
+  }
+
+  /** Bomber: holds medium range and lobs telegraphed AoE bombs. */
+  private aiBomber(e: Enemy, dt: number, px: number, py: number): void {
+    const d = dist(e.x, e.y, px, py);
+    const [tx, ty] = norm(px - e.x, py - e.y);
+    if (d < 220) { e.x -= tx * e.speed * dt; e.y -= ty * e.speed * dt; }
+    else if (d > 340) { e.x += tx * e.speed * dt; e.y += ty * e.speed * dt; }
+    else { e.x += -ty * e.speed * 0.5 * dt; e.y += tx * e.speed * 0.5 * dt; }
+    e.bossSpecialTimer -= dt;
+    if (e.bossSpecialTimer <= 0) { e.bossSpecialTimer = 3.2 + Math.random() * 0.9; this.fireBomb(e); }
+  }
+
+  /** Lob a fused AoE bomb toward the player's current position. */
+  private fireBomb(e: Enemy): void {
+    const slot = this.projectiles.find(pr => !pr.active);
+    if (!slot) return;
+    const a = Math.atan2(this.player.y - e.y, this.player.x - e.x);
+    const speed = 210;
+    slot.active = true; slot.x = e.x; slot.y = e.y;
+    slot.vx = Math.cos(a) * speed; slot.vy = Math.sin(a) * speed;
+    slot.radius = 6; slot.damage = getScaledEnemyDamage(1, this.wave);
+    slot.isPlayer = false; slot.life = 5;
+    slot.pierce = 0; slot.lastHitId = -1;
+    slot.fuse = 1.3; slot.blastRadius = 80;
+    this.emitSfx('enemyShoot', { pitch: 0.55 });
+  }
+
+  /** Detonate a bomb: AoE damage to the player + spectacle. */
+  private explodeBomb(p: Projectile): void {
+    const pl = this.player;
+    this.spawnShockwave(p.x, p.y, p.blastRadius, '#ff8844', 5);
+    this.spawnParticles(p.x, p.y, '#ff8844', 14, 180);
+    this.emitSfx('detonate', { gain: 0.55 });
+    this.triggerShake(5, 250);
+    if (this.elapsedMs >= pl.invincibleUntil && dist(p.x, p.y, pl.x, pl.y) < p.blastRadius) {
+      this.damagePlayer(p.damage);
     }
   }
 
@@ -1384,6 +1424,14 @@ export class VoidBreakerEngine {
   private updateProjectiles(dt: number): void {
     for (const p of this.projectiles) {
       if (!p.active) continue;
+      // Lobbed bombs: decelerate, ignore contact, explode (AoE) when the fuse ends.
+      if (p.fuse > 0) {
+        p.x += p.vx * dt; p.y += p.vy * dt;
+        p.vx *= 0.95; p.vy *= 0.95;
+        p.fuse -= dt;
+        if (p.fuse <= 0) { this.explodeBomb(p); p.active = false; }
+        continue;
+      }
       p.x += p.vx * dt; p.y += p.vy * dt;
       p.life -= dt;
       if (p.x < -20 || p.x > ARENA_W + 20 || p.y < -20 || p.y > ARENA_H + 20 || p.life <= 0) {

@@ -7,7 +7,7 @@ export type BossPhase = 1 | 2 | 3;
 
 export type EnemyType =
   | 'drifter' | 'dasher' | 'orbiter' | 'tank' | 'splitter' | 'mini_drifter'
-  | 'sniper' | 'healer' | 'shielded' | 'hive';
+  | 'sniper' | 'healer' | 'shielded' | 'hive' | 'bomber';
 
 export interface Player {
   x: number;
@@ -102,6 +102,10 @@ export interface Projectile {
   pierce: number;
   /** Last enemy id hit — prevents re-hitting the same enemy while overlapping. */
   lastHitId: number;
+  /** >0 marks a lobbed bomb: it ignores contact and explodes (AoE) when fuse hits 0. */
+  fuse: number;
+  /** Explosion radius for a bomb (only read when fuse > 0). */
+  blastRadius: number;
 }
 
 export interface Shard {
