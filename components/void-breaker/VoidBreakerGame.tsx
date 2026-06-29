@@ -648,7 +648,13 @@ export function VoidBreakerGame() {
 
   return (
     <div
-      className="w-full h-full relative bg-[#050508] flex flex-col items-center justify-center overflow-hidden"
+      // translate="no" + notranslate: the game UI has its own i18n (t()). Browser
+      // auto-translate / extensions rewrite React-managed text nodes (wrapping them
+      // in <font>), which makes React's later removeChild fail with
+      // "NotFoundError: ... not a child of this node" and crashes the whole game via
+      // the error boundary. Opting the subtree out of translation prevents that.
+      translate="no"
+      className="notranslate w-full h-full relative bg-[#050508] flex flex-col items-center justify-center overflow-hidden"
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
       {/* Void Breaker UI juice — shared keyframes (consumed by this file + VoidBreakerUI).
@@ -724,8 +730,10 @@ export function VoidBreakerGame() {
                 }`}>
                 {hud.multiplier.toFixed(1)}x
                 {hud.combo > 1 && (
+                  // No key={hud.combo}: re-keying remounted this text node every combo
+                  // tick (~10×/s), churning DOM that external tools may have mutated.
+                  // The element stays stable; only its text/size/color update.
                   <span
-                    key={hud.combo}
                     className="vb-anim inline-block ml-1 origin-left font-black"
                     style={{
                       color: hud.combo >= 15 ? '#ff2266' : hud.combo >= 8 ? '#ff00cc' : '#ff66cc',
