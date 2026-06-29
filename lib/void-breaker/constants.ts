@@ -137,6 +137,8 @@ export const ENEMY_CONFIGS: Record<string, EnemyConfig> = {
   healer: { hp: 4, radius: 13, speed: 55, value: 45, color: '#33ff99', shardCount: 3, waveCost: 4, minWave: 14 },
   // Armored — a directional shield blocks frontal shots; must be flanked.
   shielded: { hp: 4, radius: 16, speed: 48, value: 50, color: '#5577ff', shardCount: 3, waveCost: 4, minWave: 12 },
+  // Hive — hangs back and spews mini-drifters; a priority target or you drown.
+  hive: { hp: 6, radius: 17, speed: 34, value: 60, color: '#66dd55', shardCount: 3, waveCost: 5, minWave: 14 },
 };
 
 // Shielded enemy: half-arc (radians) of its frontal shield that blocks shots.
