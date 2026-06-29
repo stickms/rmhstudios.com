@@ -56,6 +56,11 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   /** Chromatic-aberration impact pulse (decays each frame). */
   private caPulse = 0;
   private lastDetonations = 0;
+  // Smoothed camera state (aim lookahead + zoom punch).
+  private focusX = ARENA_HW;
+  private focusZ = ARENA_HH;
+  private camH = CAM_HEIGHT;
+  private camPunch = 0;
 
   private readonly raycaster = new THREE.Raycaster();
   private readonly groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -483,10 +488,29 @@ export class VoidBreakerRenderer3D implements VBRenderer {
       this.applyMapPalette(game.currentMapConfig);
     }
 
-    // Camera follows the player (+ shake jitter).
+    // Impact events (detect once per frame; drive camera punch + CA pulse).
+    if (game.detonations !== this.lastDetonations) {
+      this.lastDetonations = game.detonations;
+      this.caPulse = 1;
+      this.camPunch = 70;
+    }
+    this.caPulse = Math.max(0, this.caPulse - dt * 3);
+    this.camPunch = Math.max(0, this.camPunch - dt * 120);
+
+    const bossActive = game.enemies.some(e => e.active && e.isBoss);
+
+    // Smoothed follow with aim lookahead — you see ahead of where you aim.
+    const k = 1 - Math.exp(-6 * dt);
+    const aimLA = 80;
+    this.focusX += (p.x + Math.cos(p.aimAngle) * aimLA - this.focusX) * k;
+    this.focusZ += (p.y + Math.sin(p.aimAngle) * aimLA - this.focusZ) * k;
+    // Pull back during boss fights; punch in on detonate.
+    const targetH = CAM_HEIGHT + (bossActive ? 120 : 0) - this.camPunch;
+    this.camH += (targetH - this.camH) * k;
+
     const sx = game.shakeX * 1.5, sz = game.shakeY * 1.5;
-    this.camera.position.set(p.x + sx, CAM_HEIGHT, p.y + CAM_BACK + sz);
-    this.camera.lookAt(p.x + sx, 0, p.y + sz);
+    this.camera.position.set(this.focusX + sx, this.camH, this.focusZ + CAM_BACK + sz);
+    this.camera.lookAt(this.focusX + sx, 0, this.focusZ + sz);
 
     // Player transform.
     this.player.position.set(p.x, 0, p.y);
@@ -511,12 +535,9 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.rift.scale.setScalar(riftPulse);
 
     // Bloom reacts to the moment: bosses flare, Focus swells into a dreamy glow.
-    const bossActive = game.enemies.some(e => e.active && e.isBoss);
     this.bloom.strength = (bossActive ? 1.15 : 0.9) + (p.focusActive ? 0.55 : 0);
 
     // Chromatic aberration: a base shimmer that punches on detonate / hits / boss.
-    if (game.detonations !== this.lastDetonations) { this.lastDetonations = game.detonations; this.caPulse = 1; }
-    if (this.caPulse > 0) this.caPulse = Math.max(0, this.caPulse - dt * 3);
     let ca = 0.0012 + (bossActive ? 0.0008 : 0) + this.caPulse * 0.005;
     if (game.elapsedMs < p.hitFlashUntil + 130) ca += 0.0035;
     this.rgbShift.uniforms.amount.value = ca;
