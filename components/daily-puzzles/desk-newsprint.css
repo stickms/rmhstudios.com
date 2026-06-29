@@ -1,0 +1,19 @@
+/* components/daily-puzzles/desk-newsprint.css */
+.desk-newsprint {
+  width: 720px;
+  min-height: 1000px;
+  padding: 32px 36px;
+  background: #efeae0;
+  color: #1c1a16;
+  font-family: Georgia, 'Times New Roman', serif;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  border: 1px solid #d8d2c4;
+  column-rule: 1px solid rgba(28, 26, 22, 0.25);
+}
+/* Tone the embedded game toward ink-on-paper without rewriting each game:
+   neutralize dark backgrounds and map accents to ink. */
+.desk-newsprint :is(h1, h2, h3) {
+  font-family: Georgia, 'Times New Roman', serif;
+  letter-spacing: -0.01em;
+}
+.desk-newsprint a { color: #5a3a86; }
