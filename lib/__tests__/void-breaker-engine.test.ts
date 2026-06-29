@@ -146,6 +146,21 @@ describe('VoidBreakerEngine', () => {
     expect(g.popups.some(p => p.text === 'CRIT')).toBe(true);
   });
 
+  it('applies meta-progression bonuses at run start', () => {
+    const g = new VoidBreakerEngine();
+    g.metaBonuses = {
+      bonusMaxHp: 2, damageBonus: 1, moveSpeedMult: 1.12,
+      startShards: 6, fireRateMult: 0.85,
+    };
+    g.startGame();
+    expect(g.player.maxHp).toBe(3 + 2);
+    expect(g.player.hp).toBe(5);
+    expect(g.player.shards).toBe(6);
+    expect(g.stats.damageBonus).toBe(1);
+    expect(g.stats.moveSpeedMult).toBeCloseTo(1.12, 5);
+    expect(g.stats.fireRateMult).toBeCloseTo(0.85, 5);
+  });
+
   it('piercing rounds pass through an enemy instead of stopping', () => {
     const g = new VoidBreakerEngine();
     g.startGame();
