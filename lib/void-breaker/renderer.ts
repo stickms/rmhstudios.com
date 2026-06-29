@@ -700,12 +700,38 @@ export class VoidBreakerRenderer {
         continue;
       }
       const r = Math.max(2, pr.radius * scale);
-      const projColor = pr.isPlayer ? NEON_CYAN : NEON_MAGENTA;
+      // Arc Coil bolts (chain hops) read as a jagged violet spark.
+      const arc = pr.isPlayer && pr.chains > 0;
+      const projColor = arc ? '#cc66ff' : pr.isPlayer ? NEON_CYAN : NEON_MAGENTA;
       // Task 5 — build-distinct projectiles: piercing rounds elongate into a
       // beam; high-caliber (large) rounds are bigger with a heavier glow.
       const heavy = pr.radius >= 6;
       const piercing = pr.pierce > 0;
-      if (piercing || heavy) {
+      if (arc) {
+        const ang = Math.atan2(pr.vy, pr.vx);
+        const nx = -Math.sin(ang), ny = Math.cos(ang); // perpendicular
+        const len = r * 5;
+        ctx.save();
+        if (!this.reducedFx) { ctx.shadowColor = projColor; ctx.shadowBlur = 10; }
+        ctx.strokeStyle = projColor;
+        ctx.lineWidth = Math.max(1, r * 0.6);
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        // A short zig-zag bolt along the travel direction (seeded, stable-ish).
+        const segs = 4;
+        for (let s = 0; s <= segs; s++) {
+          const f = s / segs;
+          const along = (f - 0.5) * len;
+          const jag = (s % 2 === 0 ? 1 : -1) * r * 0.9 * (s === 0 || s === segs ? 0 : 1);
+          const x = pos.x + Math.cos(ang) * along + nx * jag;
+          const y = pos.y + Math.sin(ang) * along + ny * jag;
+          if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, r * 0.7, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      } else if (piercing || heavy) {
         ctx.save();
         ctx.shadowColor = projColor;
         ctx.shadowBlur = (heavy ? 14 : 8) * (this.reducedFx ? 0.5 : 1);
@@ -731,6 +757,36 @@ export class VoidBreakerRenderer {
         ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
         ctx.fill();
       }
+    }
+
+    // ── Post-sort: Orbital blades (spinning shard-blades that ring the player) ─
+    if (game.orbitals.length > 0) {
+      const spin = t * 5;
+      for (let i = 0; i < game.orbitals.length; i++) {
+        const o = game.orbitals[i];
+        const pos = toScreen(o.x, o.y);
+        const br = Math.max(4, 7 * scale);
+        const ang = spin + i * 1.3;
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+        ctx.rotate(ang);
+        if (!this.reducedFx) { ctx.shadowColor = NEON_CYAN; ctx.shadowBlur = 12; }
+        // A thin diamond blade.
+        ctx.fillStyle = NEON_CYAN;
+        ctx.beginPath();
+        ctx.moveTo(0, -br);
+        ctx.lineTo(br * 0.45, 0);
+        ctx.lineTo(0, br);
+        ctx.lineTo(-br * 0.45, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, br * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.shadowBlur = 0;
     }
 
     // ── Post-sort: Particles ─────────────────────────────────────────────────

@@ -6,7 +6,7 @@ import type { SfxEvent, SfxName } from './audio';
 import {
   ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
   PLAYER_RADIUS, PLAYER_SPEED, PLAYER_HP,
-  PLAYER_FIRE_RATE, PROJ_SPEED, PROJ_RADIUS, PROJ_DAMAGE,
+  PROJ_SPEED, PROJ_DAMAGE,
   INVINCIBILITY_MS,
   DASH_SPEED, DASH_DURATION, DASH_COOLDOWN,
   FOCUS_DURATION, FOCUS_COOLDOWN, FOCUS_WORLD_SLOW, FOCUS_PLAYER_SLOW, FOCUS_COMBO_REDUCE,
@@ -52,6 +52,7 @@ import {
 import type { PlayerStats, UpgradeId, UpgradeChoice } from './upgrades';
 import type { MetaBonuses } from './metaProgression';
 import type { CharacterDef } from './characters';
+import { getWeapon, type WeaponDef } from './weapons';
 import { neutralModifiers } from './modifiers';
 import type { RunModifiers } from './modifiers';
 
@@ -133,6 +134,12 @@ export class VoidBreakerEngine {
   metaBonuses: MetaBonuses | null = null;
   /** Selected character (set by the component before startGame). */
   character: CharacterDef | null = null;
+  /** Selected weapon (set by the component before startGame; default Pulse Blaster). */
+  weapon: WeaponDef = getWeapon('pulse');
+  /** Orbiting blade positions (Orbitals transformer); read by the renderers. */
+  orbitals: { x: number; y: number }[] = [];
+  /** Shared rotation phase for the orbital blades. */
+  private orbitalPhase = 0;
   /** Active run modifiers (set by the component before startGame). */
   runModifiers: RunModifiers = neutralModifiers();
 
@@ -170,6 +177,8 @@ export class VoidBreakerEngine {
   /** Peak shake pixels at trauma = 1 (renderer still applies its own multiplier). */
   private readonly TRAUMA_MAX_SHAKE = 9;
   private nextId = 0;
+  /** Total player shots fired this run (for Overcharge cadence). */
+  private shotCount = 0;
   private prevPause = false;
   private prevDet = false;
   private prevDash = false;
@@ -185,6 +194,7 @@ export class VoidBreakerEngine {
       active: false, x: 0, y: 0, vx: 0, vy: 0,
       radius: 0, damage: 0, isPlayer: true, life: 0,
       pierce: 0, lastHitId: -1, fuse: 0, blastRadius: 0,
+      bounces: 0, chains: 0, explodeOnHit: false, explodeRadius: 0, homing: 0,
     }));
     this.shards = Array.from({ length: MAX_SHARDS_POOL }, () => ({
       active: false, x: 0, y: 0, vx: 0, vy: 0,
@@ -223,7 +233,7 @@ export class VoidBreakerEngine {
       radius: PLAYER_RADIUS, speed: PLAYER_SPEED,
       hp: PLAYER_HP, maxHp: PLAYER_HP,
       invincibleUntil: 0, fireTimer: 0,
-      fireRate: PLAYER_FIRE_RATE, aimAngle: 0,
+      fireRate: this.weapon.baseFireInterval, aimAngle: 0,
       shards: 0, detonateCooldown: 0,
       dashCooldown: 0, dashActive: false,
       dashTimer: 0, dashVx: 0, dashVy: 0,
@@ -260,6 +270,9 @@ export class VoidBreakerEngine {
     this.bossesKilled = 0;
     this.focusUsed = 0;
     this.nextId = 0;
+    this.shotCount = 0;
+    this.orbitals = [];
+    this.orbitalPhase = 0;
     this.shakeX = 0; this.shakeY = 0;
     this.trauma = 0;
     this.slowMoTimer = 0;
@@ -414,6 +427,7 @@ export class VoidBreakerEngine {
       this.updateProjectiles(worldDt);
       this.updateEnemies(worldDt);
       this.updateShards(playerDt);
+      this.updateOrbitals(worldDt);
       this.checkPlayerHits();
       this.checkEnemyProjHits();
       this.checkContact();
@@ -654,11 +668,22 @@ export class VoidBreakerEngine {
   private firePlayerProj(): void {
     const p = this.player;
     const s = this.stats;
-    const count = Math.max(1, s.projectileCount);
-    const speed = PROJ_SPEED * s.projSpeedMult;
-    const damage = PROJ_DAMAGE + s.damageBonus;
+    const w = this.weapon;
+    const f = w.fire;
+    const count = Math.max(1, (f.pellets ?? 1) + (s.projectileCount - 1));
+    const speed = w.baseProjSpeed * s.projSpeedMult;
+    let damage = w.baseDamage + s.damageBonus;
+    // Overcharge: every Nth shot is empowered (guaranteed crit-tier hit).
+    let empowered = false;
+    if (s.overchargeEvery > 0) {
+      this.shotCount++;
+      if (this.shotCount % s.overchargeEvery === 0) {
+        empowered = true;
+        damage = Math.round(damage * Math.max(2, s.critMult));
+      }
+    }
     // Symmetric fan when multishot — total spread grows gently with bullet count.
-    const spreadStep = 0.12;
+    const spreadStep = f.spread ?? 0.12;
     const baseAngle = p.aimAngle - (count - 1) * spreadStep * 0.5;
     for (let i = 0; i < count; i++) {
       const slot = this.projectiles.find(pr => !pr.active);
@@ -670,12 +695,24 @@ export class VoidBreakerEngine {
       slot.y = p.y + sin * (p.radius + 4);
       slot.vx = cos * speed;
       slot.vy = sin * speed;
-      slot.radius = PROJ_RADIUS;
+      slot.radius = w.baseProjRadius;
       slot.damage = damage;
       slot.isPlayer = true;
-      slot.life = 2.5;
-      slot.pierce = s.pierce;
+      slot.life = w.baseProjLife;
+      slot.pierce = (f.pierce ?? 0) + s.pierce;
       slot.lastHitId = -1;
+      // Lob (grenade): fused AoE round.
+      slot.fuse = f.mode === 'lob' ? (f.fuse ?? 1.1) : 0;
+      slot.blastRadius = f.mode === 'lob' ? (f.blastRadius ?? 90) : 0;
+      // Transformer flags (weapon base + PlayerStats stack).
+      slot.bounces = s.bounceCount;
+      slot.chains = (f.chains ?? 0) + s.chainCount;
+      slot.explodeOnHit = s.explodeOnHit;
+      slot.explodeRadius = s.explodeRadius;
+      slot.homing = s.homingTurn;
+    }
+    if (empowered) {
+      this.popups.push({ text: 'OVERCHARGE', x: p.x, y: p.y - 26, life: 0.5, maxLife: 0.5, color: '#ffe066' });
     }
     // Visual recoil kick (renderers offset the player backward along the aim).
     this.player.recoil = 1;
@@ -1177,6 +1214,86 @@ export class VoidBreakerEngine {
     }
   }
 
+  /** Detonate a player-lobbed bomb / explosive round: AoE damage to enemies. */
+  private explodePlayerBomb(p: Projectile): void {
+    this.spawnShockwave(p.x, p.y, p.blastRadius, '#ffaa44', 5);
+    this.spawnParticles(p.x, p.y, '#ffaa44', 14, 180);
+    this.emitSfx('detonate', { gain: 0.5 });
+    this.addTrauma(0.35);
+    this.aoeDamage(p.x, p.y, p.blastRadius, p.damage, -1);
+  }
+
+  /** Damage every live enemy within `radius` of (x, y), excluding `exclId`. */
+  private aoeDamage(x: number, y: number, radius: number, damage: number, exclId: number): void {
+    for (const e of this.enemies) {
+      if (!e.active || e.anim !== 'alive' || e.id === exclId) continue;
+      if (e.isBoss && e.bossSpecialActive) continue;
+      if (dist(e.x, e.y, x, y) < radius + e.radius) {
+        e.hp -= damage;
+        e.hitFlashUntil = this.elapsedMs + 80;
+        if (e.hp <= 0) this.killEnemy(e);
+      }
+    }
+  }
+
+  /** Nearest live, tangible enemy to (x, y), excluding `exclId` (-1 = none). */
+  private nearestLiveEnemy(x: number, y: number, exclId: number): Enemy | null {
+    let best: Enemy | null = null;
+    let bestD = Infinity;
+    for (const e of this.enemies) {
+      if (!e.active || e.anim !== 'alive' || e.id === exclId) continue;
+      if (e.isBoss && e.bossSpecialActive) continue;
+      const d = dist(e.x, e.y, x, y);
+      if (d < bestD) { bestD = d; best = e; }
+    }
+    return best;
+  }
+
+  /** Chain lightning: hop to the nearest other live enemy, damaging it; recurse. */
+  private chainBolt(fromX: number, fromY: number, hitId: number, damage: number, hops: number): void {
+    let best: Enemy | null = null;
+    let bestD = 260; // max chain range
+    for (const e of this.enemies) {
+      if (!e.active || e.anim !== 'alive' || e.id === hitId) continue;
+      if (e.isBoss && e.bossSpecialActive) continue;
+      const d = dist(e.x, e.y, fromX, fromY);
+      if (d < bestD) { bestD = d; best = e; }
+    }
+    if (!best) return;
+    best.hp -= damage;
+    best.hitFlashUntil = this.elapsedMs + 80;
+    this.spawnParticles(best.x, best.y, '#cc88ff', 4, 90);
+    this.emitSfx('hit', { pitch: 1.3 });
+    if (best.hp <= 0) this.killEnemy(best);
+    else if (hops > 1) this.chainBolt(best.x, best.y, best.id, damage, hops - 1);
+  }
+
+  /** Orbiting blades (Orbitals transformer): spin around the player, shred contact. */
+  private updateOrbitals(dt: number): void {
+    const count = this.stats.orbitalCount;
+    if (count <= 0) { if (this.orbitals.length) this.orbitals = []; return; }
+    const RADIUS = 70, HIT = 22, DPS = 9, SPIN = 2.4;
+    this.orbitalPhase += SPIN * dt;
+    if (this.orbitals.length !== count) {
+      this.orbitals = Array.from({ length: count }, () => ({ x: 0, y: 0 }));
+    }
+    const p = this.player;
+    for (let i = 0; i < count; i++) {
+      const a = this.orbitalPhase + (Math.PI * 2 * i) / count;
+      const bx = p.x + Math.cos(a) * RADIUS;
+      const by = p.y + Math.sin(a) * RADIUS;
+      this.orbitals[i].x = bx; this.orbitals[i].y = by;
+      for (const e of this.enemies) {
+        if (!e.active || e.anim !== 'alive') continue;
+        if (e.isBoss && e.bossSpecialActive) continue;
+        if (dist(e.x, e.y, bx, by) < HIT + e.radius) {
+          e.hp -= DPS * dt;
+          if (e.hp <= 0) this.killEnemy(e);
+        }
+      }
+    }
+  }
+
   /** Elite signature: a telegraphed 6-shot radial burst. */
   private eliteBurst(e: Enemy): void {
     const speed = getScaledProjSpeed(190, this.wave);
@@ -1475,8 +1592,19 @@ export class VoidBreakerEngine {
         p.x += p.vx * dt; p.y += p.vy * dt;
         p.vx *= 0.95; p.vy *= 0.95;
         p.fuse -= dt;
-        if (p.fuse <= 0) { this.explodeBomb(p); p.active = false; }
+        if (p.fuse <= 0) { p.isPlayer ? this.explodePlayerBomb(p) : this.explodeBomb(p); p.active = false; }
         continue;
+      }
+      // Homing: steer player bullets toward the nearest live enemy.
+      if (p.isPlayer && p.homing > 0) {
+        const t = this.nearestLiveEnemy(p.x, p.y, -1);
+        if (t) {
+          const desired = Math.atan2(t.y - p.y, t.x - p.x);
+          const cur = Math.atan2(p.vy, p.vx);
+          const spd = Math.hypot(p.vx, p.vy);
+          const next = cur + Math.max(-p.homing * dt, Math.min(p.homing * dt, angleDiff(desired, cur)));
+          p.vx = Math.cos(next) * spd; p.vy = Math.sin(next) * spd;
+        }
       }
       p.x += p.vx * dt; p.y += p.vy * dt;
       p.life -= dt;
@@ -1537,6 +1665,25 @@ export class VoidBreakerEngine {
           }
           if (e.hp <= 0) this.killEnemy(e);
           else this.emitSfx(e.isBoss ? 'bossHit' : 'hit', { pitch: 0.9 + Math.random() * 0.2 });
+          // Transformer: chain lightning arcs out from the hit (once per bullet).
+          if (p.chains > 0) { this.chainBolt(e.x, e.y, e.id, p.damage, p.chains); p.chains = 0; }
+          // Transformer: explosive rounds blast on impact.
+          if (p.explodeOnHit) {
+            this.spawnShockwave(p.x, p.y, p.explodeRadius, '#ffaa44', 4);
+            this.aoeDamage(p.x, p.y, p.explodeRadius, p.damage, e.id);
+            this.addTrauma(0.15);
+          }
+          // Transformer: ricochet — redirect to a new target instead of stopping.
+          if (p.bounces > 0) {
+            const next = this.nearestLiveEnemy(p.x, p.y, e.id);
+            if (next) {
+              const ang = Math.atan2(next.y - p.y, next.x - p.x);
+              const spd = Math.hypot(p.vx, p.vy) || 400;
+              p.vx = Math.cos(ang) * spd; p.vy = Math.sin(ang) * spd;
+              p.lastHitId = -1; p.bounces--;
+              break; // keep flying toward the new target
+            }
+          }
           // Pierce: pass through this enemy and keep flying; otherwise stop.
           if (p.pierce > 0) p.pierce--;
           else p.active = false;

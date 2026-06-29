@@ -112,6 +112,16 @@ export interface Projectile {
   fuse: number;
   /** Explosion radius for a bomb (only read when fuse > 0). */
   blastRadius: number;
+  /** Transformer: ricochet hops remaining (0 = none). */
+  bounces: number;
+  /** Transformer: chain-lightning hops remaining (0 = none). */
+  chains: number;
+  /** Transformer: explode on first hit. */
+  explodeOnHit: boolean;
+  /** Explosion radius when explodeOnHit. */
+  explodeRadius: number;
+  /** Transformer: homing turn rate (rad/s, 0 = none). */
+  homing: number;
 }
 
 export interface Shard {

@@ -1,9 +1,17 @@
 /* eslint-disable no-console */
 // Headless balance simulation: a kiting bot plays full runs; we measure how far
 // it gets. The simulation (game.ts) is node-safe (sprite preload is SSR-guarded).
-// Run: node_modules/.bin/tsx scripts/void-breaker-balance-sim.ts [runs]
+// Run: node_modules/.bin/tsx scripts/void-breaker-balance-sim.ts [runs] [--weapon=<id>]
+//
+// Phase 2a per-weapon medians (40 runs each): pulse ~12, railgun ~10, arc ~10,
+// scatter ~6, grenade ~5. NOTE: the bot KITES (keeps max distance), which
+// structurally underrates short-range (scatter) and lobbed-AoE (grenade) weapons —
+// their sim floor is lower than a positioning human would achieve. None are
+// dead-on-arrival (scatter/grenade still reach wave 14-15 on good rolls) and none
+// dominate. Re-run this after any weapon/upgrade change.
 import { VoidBreakerEngine } from '../lib/void-breaker/game';
 import { ARENA_W, ARENA_H, DET_MIN_SHARDS } from '../lib/void-breaker/constants';
+import { getWeapon, isWeaponId, type WeaponId } from '../lib/void-breaker/weapons';
 import type { InputState } from '../lib/void-breaker/types';
 
 function fresh(): InputState {
@@ -42,7 +50,11 @@ function botInput(g: VoidBreakerEngine): InputState {
   return input;
 }
 
-const UPGRADE_PRIORITY = ['multishot', 'rapid_fire', 'piercing', 'high_caliber', 'deadeye', 'vitality', 'siphon', 'swift'];
+const UPGRADE_PRIORITY = [
+  'explosive_rounds', 'chain_lightning', 'orbitals', 'overcharge', 'ricochet',
+  'multishot', 'rapid_fire', 'piercing', 'high_caliber', 'heavy_rounds', 'deadeye',
+  'napalm', 'tesla_capacitor', 'vitality', 'siphon', 'bloodlust', 'swift',
+];
 function pickUpgrade(g: VoidBreakerEngine): void {
   const choices = g.pendingUpgrades;
   if (choices.length === 0) { return; }
@@ -54,9 +66,10 @@ function pickUpgrade(g: VoidBreakerEngine): void {
   g.applyUpgrade(best.id);
 }
 
-function runSim(): { wave: number; won: boolean; secs: number } {
+function runSim(weaponId: WeaponId): { wave: number; won: boolean; secs: number } {
   const g = new VoidBreakerEngine();
   g.headless = true; // disable presentation-only hitstop/slow-mo so sim time isn't distorted
+  g.weapon = getWeapon(weaponId);
   g.startGame();
   let ticks = 0;
   const maxTicks = 60 * 60 * 12; // 12 sim-minutes cap
@@ -69,16 +82,20 @@ function runSim(): { wave: number; won: boolean; secs: number } {
   return { wave: g.wave, won: g.player.hp > 0 && g.wave >= 40, secs: ticks / 60 };
 }
 
-const N = parseInt(process.argv[2] ?? '24', 10);
+// Args: a numeric run count and/or --weapon=<id> (default pulse), in any order.
+const args = process.argv.slice(2);
+const weaponArg = args.find(a => a.startsWith('--weapon='))?.split('=')[1] ?? 'pulse';
+const weaponId: WeaponId = isWeaponId(weaponArg) ? weaponArg : 'pulse';
+const N = parseInt(args.find(a => /^\d+$/.test(a)) ?? '24', 10);
 const waves: number[] = [];
 let wins = 0;
 for (let i = 0; i < N; i++) {
-  const r = runSim();
+  const r = runSim(weaponId);
   waves.push(r.wave);
   if (r.won) wins++;
 }
 waves.sort((a, b) => a - b);
 const avg = waves.reduce((s, v) => s + v, 0) / N;
 const median = waves[Math.floor(N / 2)];
-console.log(`runs=${N}  avgWave=${avg.toFixed(1)}  medianWave=${median}  min=${waves[0]}  max=${waves[N - 1]}  winRate=${(wins / N * 100).toFixed(0)}%`);
+console.log(`weapon=${weaponId}  runs=${N}  avgWave=${avg.toFixed(1)}  medianWave=${median}  min=${waves[0]}  max=${waves[N - 1]}  winRate=${(wins / N * 100).toFixed(0)}%`);
 console.log('wave distribution:', waves.join(','));

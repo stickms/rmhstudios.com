@@ -35,6 +35,7 @@ const CAM_BACK = 150;   // how far "south" the camera sits (slight tilt for dept
 // Entity heights above the ground plane.
 const PROJ_Y = 14;
 const SHARD_Y = 20;
+const MAX_ORBITALS = 8;
 const SHOCKWAVE_POOL = 24;
 
 const tmpObj = new THREE.Object3D();
@@ -96,6 +97,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private shockwaves: THREE.Mesh[] = [];
   /** Danger discs telegraphing where bomber bombs will explode. */
   private bombRings: THREE.Mesh[] = [];
+  private orbitalMesh!: THREE.InstancedMesh;
   private floor!: THREE.Mesh;
   private grid!: THREE.LineSegments;
   private border!: THREE.LineSegments;
@@ -415,6 +417,15 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.shardMesh.frustumCulled = false;
     this.scene.add(this.shardMesh);
 
+    // Orbital blades — bright cyan diamonds ringing the player (bloom glows them).
+    const orbGeo = new THREE.OctahedronGeometry(1, 0);
+    orbGeo.scale(0.45, 0.45, 1.1); // flatten into a blade
+    const orbMat = new THREE.MeshBasicMaterial({ color: 0xaef6ff });
+    this.orbitalMesh = new THREE.InstancedMesh(orbGeo, orbMat, MAX_ORBITALS);
+    this.orbitalMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.orbitalMesh.frustumCulled = false;
+    this.scene.add(this.orbitalMesh);
+
     // Obstacles — extruded neon-trimmed boxes (buildings/barriers).
     const winTex = this.buildWindowTexture();
     const obsMat = new THREE.MeshStandardMaterial({
@@ -589,6 +600,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.syncEnemies(game);
     this.syncBoss(game);
     this.syncProjectiles(game);
+    this.syncOrbitals(game);
     this.syncShards(game);
     this.syncObstacles(game);
     this.syncHearts(game);
@@ -733,12 +745,13 @@ export class VoidBreakerRenderer3D implements VBRenderer {
         // rounds elongate into a beam; high-caliber (large) rounds are bigger.
         const ang = Math.atan2(pr.vy, pr.vx);
         const heavy = pr.radius >= 6;
-        const lenMul = pr.pierce > 0 ? 8 : 4.5;
-        const girth = heavy ? 1.9 : 1.3;
+        const arc = pr.isPlayer && pr.chains > 0;
+        const lenMul = pr.pierce > 0 ? 8 : arc ? 6 : 4.5;
+        const girth = heavy ? 1.9 : arc ? 1.0 : 1.3;
         tmpObj.position.set(pr.x, PROJ_Y, pr.y);
         tmpObj.rotation.set(0, -ang, 0);
         tmpObj.scale.set(pr.radius * lenMul, pr.radius * girth, pr.radius * girth);
-        tmpColor.set(pr.isPlayer ? (heavy ? '#bfffff' : '#66f5ff') : '#ff3bd0');
+        tmpColor.set(arc ? '#cc77ff' : pr.isPlayer ? (heavy ? '#bfffff' : '#66f5ff') : '#ff3bd0');
         m.setColorAt(i, tmpColor);
       }
       tmpObj.updateMatrix();
@@ -746,6 +759,24 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     }
     m.instanceMatrix.needsUpdate = true;
     if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }
+
+  private syncOrbitals(game: VoidBreakerEngine): void {
+    const m = this.orbitalMesh;
+    const spin = this.time * 5;
+    for (let i = 0; i < MAX_ORBITALS; i++) {
+      const o = game.orbitals[i];
+      if (!o) { tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0); }
+      else {
+        tmpObj.position.set(o.x, PROJ_Y, o.y);
+        // Spin each blade about its own axis, fanned around the ring.
+        tmpObj.rotation.set(0, spin + i * 1.3, this.time * 3);
+        tmpObj.scale.setScalar(9);
+      }
+      tmpObj.updateMatrix();
+      m.setMatrixAt(i, tmpObj.matrix);
+    }
+    m.instanceMatrix.needsUpdate = true;
   }
 
   private syncShards(game: VoidBreakerEngine): void {

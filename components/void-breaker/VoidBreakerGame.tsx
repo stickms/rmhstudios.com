@@ -13,9 +13,11 @@ import type { UpgradeId } from '@/lib/void-breaker/upgrades';
 import {
   loadMeta, saveMeta, metaBonuses, buyNode, awardCores, emptyMeta,
   isCharUnlocked, canUnlockChar, unlockChar,
+  isWeaponUnlocked, canUnlockWeapon, unlockWeapon,
   type MetaState, type MetaNodeId,
 } from '@/lib/void-breaker/metaProgression';
 import { getCharacter, isCharacterId, type CharacterId } from '@/lib/void-breaker/characters';
+import { getWeapon, isWeaponId, type WeaponId } from '@/lib/void-breaker/weapons';
 import { combineModifiers, isModifierId, type ModifierId } from '@/lib/void-breaker/modifiers';
 import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
@@ -78,6 +80,7 @@ export function VoidBreakerGame() {
   const [reducedFx, setReducedFx] = useState(false);
   const reducedFxRef = useRef(false);
   const [characterId, setCharacterId] = useState<CharacterId>('striker');
+  const [weaponId, setWeaponId] = useState<WeaponId>('pulse');
   const [activeMods, setActiveMods] = useState<ModifierId[]>([]);
   const runCoreMultRef = useRef(1);
   const [saveInfo, setSaveInfo] = useState<{ wave: number; savedAt: Date } | null>(null);
@@ -111,6 +114,8 @@ export function VoidBreakerGame() {
     setReducedFx(storedFx !== null ? storedFx === 'true' : prefersReduced);
     const storedChar = localStorage.getItem('vb-character');
     if (isCharacterId(storedChar)) setCharacterId(storedChar);
+    const storedWeapon = localStorage.getItem('vb-weapon');
+    if (isWeaponId(storedWeapon)) setWeaponId(storedWeapon);
     try {
       const storedMods = JSON.parse(localStorage.getItem('vb-mods') ?? '[]');
       if (Array.isArray(storedMods)) setActiveMods(storedMods.filter(isModifierId));
@@ -459,6 +464,7 @@ export function VoidBreakerGame() {
     if (gameRef.current) {
       gameRef.current.metaBonuses = metaBonuses(meta);
       gameRef.current.character = getCharacter(characterId);
+      gameRef.current.weapon = getWeapon(weaponId);
       const mods = combineModifiers(activeMods);
       gameRef.current.runModifiers = mods.effects;
       runCoreMultRef.current = mods.coreMult;
@@ -607,6 +613,24 @@ export function VoidBreakerGame() {
     localStorage.setItem('vb-character', id);
   }, [meta]);
 
+  const handleSelectWeapon = useCallback((id: WeaponId) => {
+    // Locked weapon: spend cores to unlock (then select), or no-op if too poor.
+    if (!isWeaponUnlocked(meta, id)) {
+      if (canUnlockWeapon(meta, id)) {
+        const next = unlockWeapon(meta, id);
+        saveMeta(next);
+        setMeta(next);
+        sfxRef.current?.play('unlock');
+        setWeaponId(id);
+        localStorage.setItem('vb-weapon', id);
+      }
+      return;
+    }
+    sfxRef.current?.play('uiClick');
+    setWeaponId(id);
+    localStorage.setItem('vb-weapon', id);
+  }, [meta]);
+
   /** Switch renderer (persisted) — reloads so the canvas gets a fresh context. */
   const handleSetRenderer = useCallback((to3D: boolean) => {
     localStorage.setItem('vb-render-3d', to3D ? 'true' : 'false');
@@ -631,6 +655,7 @@ export function VoidBreakerGame() {
     if (!game) return;
     game.metaBonuses = metaBonuses(meta);
     game.character = getCharacter(characterId);
+    game.weapon = getWeapon(weaponId);
     const mods = combineModifiers(activeMods);
     game.runModifiers = mods.effects;
     runCoreMultRef.current = mods.coreMult;
@@ -1222,6 +1247,8 @@ export function VoidBreakerGame() {
         onSetReducedFx={handleSetReducedFx}
         characterId={characterId}
         onSelectCharacter={handleSelectCharacter}
+        weaponId={weaponId}
+        onSelectWeapon={handleSelectWeapon}
         activeMods={activeMods}
         onToggleModifier={handleToggleModifier}
         meta={meta}
