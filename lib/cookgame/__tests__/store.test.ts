@@ -304,6 +304,21 @@ describe('cookgame store — stash cap + income', () => {
     expect(useCookgameStore.getState().buyBase('greenstart', 10)).toBe(true);
   });
 
+  it('packageBench refuses (no-op) when the batch would overflow the stash cap', () => {
+    const cap = propertyEffects(0).stashCap; // 60 at tier 0
+    useCookgameStore.setState((s) => ({
+      inventory: {
+        ...s.inventory,
+        workProduct: { baseId: 'greenstart', effects: [], qualityMult: 1 },
+        packaged: [{ product: { baseId: 'greenstart', effects: [] }, units: cap - 4 }], // +5 would overflow
+      },
+    }));
+    expect(useCookgameStore.getState().packageBench()).toBe(false);
+    const s = useCookgameStore.getState();
+    expect(s.inventory.workProduct).not.toBeNull();        // batch left on the bench
+    expect(s.inventory.packaged[0].units).toBe(cap - 4);    // nothing packaged
+  });
+
   it('tickPassiveIncome adds cash only when the tier has income', () => {
     const st = useCookgameStore.getState();
     st.tickPassiveIncome(10);

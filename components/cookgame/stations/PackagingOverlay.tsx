@@ -3,6 +3,8 @@ import { OverlayFrame } from '@/components/cookgame/ui/OverlayFrame';
 import { useCookgameStore } from '@/lib/cookgame/store';
 import { EFFECTS } from '@/lib/cookgame/content';
 import { productValue } from '@/lib/cookgame/effects';
+import { UNITS_PER_BATCH } from '@/lib/cookgame/economy';
+import { propertyEffects, stashCount } from '@/lib/cookgame/property';
 import type { EffectId } from '@/lib/cookgame/types';
 
 function EffectChips({ effects }: { effects: EffectId[] }) {
@@ -26,12 +28,20 @@ function EffectChips({ effects }: { effects: EffectId[] }) {
 
 export function PackagingOverlay() {
   const activeOverlay = useCookgameStore((s) => s.activeOverlay);
-  const workProduct = useCookgameStore((s) => s.inventory.workProduct);
-  const packaged = useCookgameStore((s) => s.inventory.packaged);
+  const inventory = useCookgameStore((s) => s.inventory);
+  const ownedPropertyTier = useCookgameStore((s) => s.ownedPropertyTier);
 
   if (activeOverlay !== 'packaging') return null;
 
+  const { workProduct, packaged } = inventory;
   const packageBench = useCookgameStore.getState().packageBench;
+
+  // Packaging refuses (silently, in the store) when a full batch would overflow
+  // the stash cap. Surface that here so the button explains itself instead of
+  // appearing broken.
+  const stashCap = propertyEffects(ownedPropertyTier).stashCap;
+  const stashUsed = stashCount(inventory);
+  const stashFull = stashUsed + UNITS_PER_BATCH > stashCap;
 
   return (
     <OverlayFrame title="Packaging">
@@ -54,10 +64,16 @@ export function PackagingOverlay() {
             <EffectChips effects={workProduct.effects} />
             <button
               onClick={() => packageBench()}
-              className="px-3 py-1.5 rounded bg-lime-600 hover:bg-lime-500 text-sm font-medium"
+              disabled={stashFull}
+              className="px-3 py-1.5 rounded bg-lime-600 hover:bg-lime-500 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400 text-sm font-medium"
             >
-              Package (×5 units)
+              Package (×{UNITS_PER_BATCH} units)
             </button>
+            {stashFull && (
+              <p className="font-mono text-xs text-amber-400">
+                Storage full ({stashUsed}/{stashCap}) — sell some stock or upgrade your property to make room.
+              </p>
+            )}
           </div>
         ) : (
           <p className="font-mono text-xs text-neutral-500">
@@ -67,8 +83,9 @@ export function PackagingOverlay() {
       </section>
 
       <section>
-        <h3 className="mb-2 font-mono text-xs uppercase tracking-widest text-neutral-400">
-          Packaged stock
+        <h3 className="mb-2 flex items-center justify-between font-mono text-xs uppercase tracking-widest text-neutral-400">
+          <span>Packaged stock</span>
+          <span className={stashFull ? 'text-amber-400' : 'text-neutral-500'}>Storage {stashUsed}/{stashCap}</span>
         </h3>
         {packaged.length === 0 ? (
           <p className="font-mono text-xs text-neutral-500">No packaged stacks yet.</p>
