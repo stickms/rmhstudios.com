@@ -44,9 +44,11 @@ const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
   books: await listAllBooks(),
 }));
 
-// Collections are seeded from the loader (not fetched on mount) so they're
-// present at first paint and the entrance animation can flow blog → collections
-// → books in true document order instead of popping in late.
+// Albums and collections are both seeded from the loader (not fetched on mount)
+// so they're present at first paint and the entrance animation can flow
+// blog → albums → collections → books in true document order (the LibraryReveal
+// observer sorts by on-screen position, so this follows the JSX order below)
+// instead of popping in late.
 const fetchCollections = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
@@ -281,6 +283,8 @@ function Library() {
           </div>
         )}
 
+        <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />
+
         <LibraryCollections
           books={books}
           collections={collections}
@@ -289,8 +293,6 @@ function Library() {
           myHandle={myHandle}
           canCreate={Boolean(session.data)}
         />
-
-        <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />
 
         {filtered.length === 0 ? (
           <p className="vibe-hint lib__empty">{t('no-results', { defaultValue: 'No books match that search.' })}</p>

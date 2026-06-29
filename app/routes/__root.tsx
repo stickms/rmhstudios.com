@@ -16,7 +16,8 @@ import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
 import { auth } from "@/lib/auth";
 import appCss from "@/app/globals.css?url";
 import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
-import { dirFor, type Locale } from "@/lib/i18n/config";
+import { dirFor, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
+import { localeResources } from "@/lib/i18n/resources.server";
 
 /**
  * Resolve the signed-in user from the session cookie on the server. Runs in the
@@ -72,10 +73,15 @@ const deferredFontsScript = `(function(){var u="https://fonts.googleapis.com/css
  * Accept-Language header (browser default) on the server, so SSR renders in
  * the correct language on the very first paint.
  */
-const getInitialLocale = createServerFn({ method: "GET" }).handler(async () => {
+const getInitialI18n = createServerFn({ method: "GET" }).handler(async () => {
   const request = getRequest();
   const cookie = parseLocaleCookie(request.headers.get("cookie"));
-  return resolveLocale({ cookie, acceptLanguage: request.headers.get("accept-language") });
+  const locale = resolveLocale({ cookie, acceptLanguage: request.headers.get("accept-language") });
+  // en is bundled on the client; for zh/ar we serialize the active language's
+  // resources into the loader payload so the client hydrates synchronously in the
+  // right language (no flash, no mismatch) without shipping all languages.
+  const resources = locale === DEFAULT_LOCALE ? null : localeResources(locale);
+  return { locale, resources };
 });
 
 /** Check if a URL path is a Discord Activity route (embedded iframe) */
@@ -84,10 +90,10 @@ function isDiscordRoute(pathname: string): boolean {
 }
 
 export const Route = createRootRoute({
-  loader: async () => ({
-    user: await getInitialUser(),
-    locale: await getInitialLocale(),
-  }),
+  loader: async () => {
+    const [user, i18n] = await Promise.all([getInitialUser(), getInitialI18n()]);
+    return { user, locale: i18n.locale, i18nResources: i18n.resources };
+  },
   head: (ctx) => {
     const discord = ctx.matches?.some(m =>
       m.fullPath?.startsWith('/discord')
@@ -172,7 +178,7 @@ function RootDocument({ children }: { children: ReactNode }) {
 function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const { user: initialUser, locale } = Route.useLoaderData();
+  const { user: initialUser, locale, i18nResources } = Route.useLoaderData();
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK
@@ -188,7 +194,7 @@ function RootComponent() {
   }, [pathname, navigate]);
 
   return (
-    <Providers initialUser={initialUser} locale={(locale ?? "en") as Locale}>
+    <Providers initialUser={initialUser} locale={(locale ?? "en") as Locale} i18nResources={i18nResources}>
       <TwemojiProvider>
         <Outlet />
       </TwemojiProvider>

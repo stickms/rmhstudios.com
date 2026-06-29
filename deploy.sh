@@ -557,17 +557,38 @@ step_done
 #   - Best-effort: any failure (no prior image, no toolchain, render error)
 #     falls back to the committed metadata and NEVER blocks the deploy.
 if "$DOCKER_BIN" image inspect "${IMAGE_NAME}:latest" >/dev/null 2>&1; then
-    step_start "Generating library covers + metadata..."
-    "$DOCKER_BIN" run --rm \
-        --user "$(id -u):$(id -g)" \
-        --env-file "$ENV_FILE" \
-        -v "${REPO_DIR}/public:/app/public" \
-        -v "${REPO_DIR}/data:/app/data" \
-        --entrypoint node \
-        "${IMAGE_NAME}:latest" \
-        scripts/generate-library-metadata.ts \
-        || log "WARNING: library cover/metadata generation failed — using committed metadata."
-    step_done
+    # The PDFs live on the host only (untracked by git — see .dockerignore), so
+    # `git reset --hard` never touches them and their on-disk fingerprint is a
+    # stable trigger. Hash the set of library PDFs (name + size + mtime) and only
+    # boot the renderer (a one-shot node + pdfjs/canvas container, ~5–10s of pure
+    # startup) when that set CHANGED since the last successful generation —
+    # otherwise the run is a guaranteed no-op the deploy paid for on every push.
+    # Set DEPLOY_FORCE_LIBRARY=1 to force it (e.g. after manually deleting a cover).
+    LIB_HASH=$(find "${REPO_DIR}/public/library" -maxdepth 1 -name '*.pdf' -printf '%f %s %T@\n' 2>/dev/null | sort | sha256sum | awk '{print $1}')
+    LIB_HASH_DIR="${REPO_DIR}/.deploy"
+    LIB_HASH_FILE="${LIB_HASH_DIR}/${ENVIRONMENT}-library.hash"
+    mkdir -p "$LIB_HASH_DIR"
+    if [ "${DEPLOY_FORCE_LIBRARY:-0}" != "1" ] && [ -n "$LIB_HASH" ] && \
+       [ "$(cat "$LIB_HASH_FILE" 2>/dev/null)" = "$LIB_HASH" ]; then
+        log "No library PDF changes since last generation (${LIB_HASH:0:12}) — skipping cover/metadata generation."
+    else
+        step_start "Generating library covers + metadata..."
+        if "$DOCKER_BIN" run --rm \
+            --user "$(id -u):$(id -g)" \
+            --env-file "$ENV_FILE" \
+            -v "${REPO_DIR}/public:/app/public" \
+            -v "${REPO_DIR}/data:/app/data" \
+            --entrypoint node \
+            "${IMAGE_NAME}:latest" \
+            scripts/generate-library-metadata.ts; then
+            # Record the fingerprint only after a SUCCESSFUL run so a failure
+            # retries next deploy instead of being wrongly skipped.
+            printf '%s\n' "$LIB_HASH" > "$LIB_HASH_FILE"
+        else
+            log "WARNING: library cover/metadata generation failed — using committed metadata."
+        fi
+        step_done
+    fi
 else
     log "No prior ${IMAGE_NAME}:latest image — skipping library cover generation (first deploy; using committed metadata)."
 fi
@@ -608,7 +629,16 @@ else
     # They share the entire build graph (deps/prisma/server/vite/go), so the second
     # target is just the extra Chromium+git+Go-binary layers on top of the slim
     # image — near-zero added build time on a warm cache.
-    if ! dc build web supervisor; then
+    #
+    # COMPOSE_BAKE=1 lowers both services into ONE buildx-bake graph instead of
+    # two serial `compose build` invocations. BuildKit then schedules every
+    # independent stage concurrently — crucially, `go-builder` (Go compile of
+    # cmd/...) runs IN PARALLEL with `vite-builder` rather than only starting
+    # after the entire web build finishes — and the shared deps/prisma/server
+    # stages execute once instead of being re-walked per target. On a build where
+    # go-services or the Go layer is cold this overlaps the Go compile under the
+    # Vite build's shadow; on a fully warm cache it's a no-op.
+    if ! COMPOSE_BAKE=1 dc build web supervisor; then
         log "ERROR: Docker build failed."
         update_deploy_status fail "docker build failed"
         exit 1
