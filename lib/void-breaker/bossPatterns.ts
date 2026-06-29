@@ -34,7 +34,7 @@ export const BOSS_PATTERNS: BossPatternConfig[] = [
     {
         tier: 1, wave: 5,
         name: 'Void Construct I', title: '虚空构体',
-        special: 'standard', phases: 1, popupColor: '#ff3355', hpMult: 1.0,
+        special: 'standard', phases: 1, popupColor: '#ff3355', hpMult: 0.7,
         arrivalText: '虚空构体 EMERGES',
     },
     {
