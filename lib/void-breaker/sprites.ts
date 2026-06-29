@@ -44,7 +44,8 @@ export interface SpriteConfig {
 
 export const PLAYER_SPRITE: SpriteConfig = {
     url: '/sprites/void-breaker/player/void-runner.png',
-    leftUrl: '/sprites/void-breaker/player/void-runner-left.png',
+    // No leftUrl: the pre-mirrored asset isn't on the CDN (404 every load), and
+    // drawSprite already horizontally flips the base sprite for left-facing aim.
     anchorX: 0.5,
     anchorY: 0.5,
     scale: 2.2,

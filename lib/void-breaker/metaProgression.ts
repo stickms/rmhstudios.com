@@ -4,6 +4,7 @@
 // a localStorage load/save (SSR/test-guarded) so it's fully unit-testable.
 
 import { getCharacter, type CharacterId } from './characters';
+import { getWeapon, type WeaponId } from './weapons';
 
 export type MetaNodeId = 'vitality' | 'arsenal' | 'swift' | 'reserves' | 'quickdraw';
 
@@ -12,6 +13,8 @@ export interface MetaState {
   levels: Partial<Record<MetaNodeId, number>>;
   /** Characters bought with cores (Striker is always available). */
   unlocked?: CharacterId[];
+  /** Weapons bought with cores (Pulse Blaster is always available). */
+  unlockedWeapons?: WeaponId[];
 }
 
 export interface MetaNodeDef {
@@ -91,6 +94,26 @@ export function unlockChar(state: MetaState, id: CharacterId): MetaState {
   };
 }
 
+// ── Weapon unlocks ───────────────────────────────────────────────────────────
+
+export function isWeaponUnlocked(state: MetaState, id: WeaponId): boolean {
+  return getWeapon(id).unlockCost === 0 || (state.unlockedWeapons ?? []).includes(id);
+}
+
+export function canUnlockWeapon(state: MetaState, id: WeaponId): boolean {
+  return !isWeaponUnlocked(state, id) && state.cores >= getWeapon(id).unlockCost;
+}
+
+/** Spend cores to permanently unlock a weapon. Returns a NEW state. */
+export function unlockWeapon(state: MetaState, id: WeaponId): MetaState {
+  if (!canUnlockWeapon(state, id)) return state;
+  return {
+    ...state,
+    cores: state.cores - getWeapon(id).unlockCost,
+    unlockedWeapons: [...(state.unlockedWeapons ?? []), id],
+  };
+}
+
 /** Cores awarded for a finished run. */
 export function awardCores(score: number, bossesKilled: number, wave: number): number {
   return Math.floor(score / 800) + bossesKilled * 3 + Math.floor(wave / 2);
@@ -127,6 +150,7 @@ export function loadMeta(): MetaState {
       cores: Math.max(0, Math.floor(parsed.cores ?? 0)),
       levels: parsed.levels ?? {},
       unlocked: Array.isArray(parsed.unlocked) ? parsed.unlocked : [],
+      unlockedWeapons: Array.isArray(parsed.unlockedWeapons) ? parsed.unlockedWeapons : [],
     };
   } catch {
     return emptyMeta();

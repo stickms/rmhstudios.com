@@ -13,7 +13,6 @@
     --slice-lane-bottom: #f472b6;
     --slice-text-muted: #64748b;
     --slice-text-shadow: rgba(0, 0, 0, 0.3);
-    --slice-hold-trail: rgba(30, 30, 50, 0.65);
     --slice-text-darker: #2d3748;
     --slice-input-bg: #dce1e9;
     --slice-input-border: rgba(163, 177, 198, 0.8);
@@ -31,7 +30,6 @@
     --slice-card-bg: #1e1e24;
     --slice-primary: #60a5fa;
     --slice-accent: #f472b6;
-    --slice-hold-trail: rgba(255, 255, 255, 0.5);
     --slice-input-bg: #121216;
     --slice-input-border: rgba(0, 0, 0, 0.5);
   }

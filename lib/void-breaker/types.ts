@@ -32,6 +32,8 @@ export interface Player {
   focusTimer: number;
   /** Timestamp — draw hit flash until this time */
   hitFlashUntil: number;
+  /** Visual recoil kick, 1 on fire decaying to 0 (presentation only). */
+  recoil: number;
 }
 
 export interface Enemy {
@@ -75,6 +77,10 @@ export interface Enemy {
   bossSpecialAngle: number;
   /** Timestamp — draw hit flash until this time */
   hitFlashUntil: number;
+  /** Animation lifecycle: warping in, alive (tangible), or dissolving on death. */
+  anim: 'spawning' | 'alive' | 'dying';
+  /** Seconds remaining in the current spawning/dying phase (0 while alive). */
+  animTimer: number;
 }
 
 /** Heart pickup dropped by enemies — heals player by 1 HP */
@@ -106,6 +112,16 @@ export interface Projectile {
   fuse: number;
   /** Explosion radius for a bomb (only read when fuse > 0). */
   blastRadius: number;
+  /** Transformer: ricochet hops remaining (0 = none). */
+  bounces: number;
+  /** Transformer: chain-lightning hops remaining (0 = none). */
+  chains: number;
+  /** Transformer: explode on first hit. */
+  explodeOnHit: boolean;
+  /** Explosion radius when explodeOnHit. */
+  explodeRadius: number;
+  /** Transformer: homing turn rate (rad/s, 0 = none). */
+  homing: number;
 }
 
 export interface Shard {

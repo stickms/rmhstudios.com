@@ -3,9 +3,31 @@ import {
   META_NODES, emptyMeta, nodeCost, nodeLevel, canBuy, buyNode,
   awardCores, metaBonuses, getNodeDef,
   isCharUnlocked, canUnlockChar, unlockChar,
+  isWeaponUnlocked, canUnlockWeapon, unlockWeapon,
   type MetaState,
 } from '@/lib/void-breaker/metaProgression';
 import { getCharacter } from '@/lib/void-breaker/characters';
+import { getWeapon } from '@/lib/void-breaker/weapons';
+
+describe('void-breaker weapon unlocks', () => {
+  it('the default weapon (pulse) is always unlocked', () => {
+    expect(isWeaponUnlocked(emptyMeta(), 'pulse')).toBe(true);
+  });
+  it('a costed weapon is locked until bought, then unlocked', () => {
+    const cost = getWeapon('railgun').unlockCost;
+    let m: MetaState = { ...emptyMeta(), cores: cost };
+    expect(isWeaponUnlocked(m, 'railgun')).toBe(false);
+    expect(canUnlockWeapon(m, 'railgun')).toBe(true);
+    m = unlockWeapon(m, 'railgun');
+    expect(isWeaponUnlocked(m, 'railgun')).toBe(true);
+    expect(m.cores).toBe(0);
+  });
+  it('cannot unlock a weapon without enough cores', () => {
+    const m: MetaState = { ...emptyMeta(), cores: 0 };
+    expect(canUnlockWeapon(m, 'arc')).toBe(false);
+    expect(unlockWeapon(m, 'arc')).toBe(m); // unchanged
+  });
+});
 
 describe('void-breaker meta-progression', () => {
   it('starts empty', () => {

@@ -13,9 +13,11 @@ import type { UpgradeId } from '@/lib/void-breaker/upgrades';
 import {
   loadMeta, saveMeta, metaBonuses, buyNode, awardCores, emptyMeta,
   isCharUnlocked, canUnlockChar, unlockChar,
+  isWeaponUnlocked, canUnlockWeapon, unlockWeapon,
   type MetaState, type MetaNodeId,
 } from '@/lib/void-breaker/metaProgression';
 import { getCharacter, isCharacterId, type CharacterId } from '@/lib/void-breaker/characters';
+import { getWeapon, isWeaponId, type WeaponId } from '@/lib/void-breaker/weapons';
 import { combineModifiers, isModifierId, type ModifierId } from '@/lib/void-breaker/modifiers';
 import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
@@ -78,11 +80,18 @@ export function VoidBreakerGame() {
   const [reducedFx, setReducedFx] = useState(false);
   const reducedFxRef = useRef(false);
   const [characterId, setCharacterId] = useState<CharacterId>('striker');
+  const [weaponId, setWeaponId] = useState<WeaponId>('pulse');
   const [activeMods, setActiveMods] = useState<ModifierId[]>([]);
   const runCoreMultRef = useRef(1);
   const [saveInfo, setSaveInfo] = useState<{ wave: number; savedAt: Date } | null>(null);
   // Pause menu: 'ingame' pause vs menu
   const [showPauseMenu, setShowPauseMenu] = useState(false);
+  // Boss intro nameplate — shown briefly when a boss first appears.
+  const [bossIntro, setBossIntro] = useState<{ name: string; phase: number } | null>(null);
+  // Animated wave number for the wave-clear celebration banner.
+  const [waveCount, setWaveCount] = useState(0);
+  // Latest HUD snapshot, so transition effects can read fresh values without re-firing.
+  const hudRef = useRef<HUDState>(EMPTY_HUD);
 
   // Load persisted settings + check for existing save
   useEffect(() => {
@@ -105,6 +114,8 @@ export function VoidBreakerGame() {
     setReducedFx(storedFx !== null ? storedFx === 'true' : prefersReduced);
     const storedChar = localStorage.getItem('vb-character');
     if (isCharacterId(storedChar)) setCharacterId(storedChar);
+    const storedWeapon = localStorage.getItem('vb-weapon');
+    if (isWeaponId(storedWeapon)) setWeaponId(storedWeapon);
     try {
       const storedMods = JSON.parse(localStorage.getItem('vb-mods') ?? '[]');
       if (Array.isArray(storedMods)) setActiveMods(storedMods.filter(isModifierId));
@@ -416,6 +427,36 @@ export function VoidBreakerGame() {
     }
   }, [showPauseMenu, playMusic]);
 
+  // Keep a fresh HUD snapshot for transition effects (boss intro reads name/phase
+  // at the moment the boss appears without re-firing when the phase later changes).
+  hudRef.current = hud;
+
+  // Boss intro nameplate — fire on the rising edge of bossActive, auto-dismiss.
+  useEffect(() => {
+    if (!hud.bossActive) return;
+    setBossIntro({ name: hudRef.current.bossName, phase: hudRef.current.bossPhase });
+    const id = setTimeout(() => setBossIntro(null), 3400);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hud.bossActive]);
+
+  // Wave-clear celebration: roll the wave number up (0 → current) over ~0.6s.
+  useEffect(() => {
+    if (!hud.waveBreak) return;
+    const target = hud.wave;
+    const start = performance.now();
+    const dur = 600;
+    let raf = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setWaveCount(Math.round(eased * target));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [hud.waveBreak, hud.wave]);
+
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleStart = useCallback(() => {
     sfxRef.current?.unlock();
@@ -423,6 +464,7 @@ export function VoidBreakerGame() {
     if (gameRef.current) {
       gameRef.current.metaBonuses = metaBonuses(meta);
       gameRef.current.character = getCharacter(characterId);
+      gameRef.current.weapon = getWeapon(weaponId);
       const mods = combineModifiers(activeMods);
       gameRef.current.runModifiers = mods.effects;
       runCoreMultRef.current = mods.coreMult;
@@ -571,6 +613,24 @@ export function VoidBreakerGame() {
     localStorage.setItem('vb-character', id);
   }, [meta]);
 
+  const handleSelectWeapon = useCallback((id: WeaponId) => {
+    // Locked weapon: spend cores to unlock (then select), or no-op if too poor.
+    if (!isWeaponUnlocked(meta, id)) {
+      if (canUnlockWeapon(meta, id)) {
+        const next = unlockWeapon(meta, id);
+        saveMeta(next);
+        setMeta(next);
+        sfxRef.current?.play('unlock');
+        setWeaponId(id);
+        localStorage.setItem('vb-weapon', id);
+      }
+      return;
+    }
+    sfxRef.current?.play('uiClick');
+    setWeaponId(id);
+    localStorage.setItem('vb-weapon', id);
+  }, [meta]);
+
   /** Switch renderer (persisted) — reloads so the canvas gets a fresh context. */
   const handleSetRenderer = useCallback((to3D: boolean) => {
     localStorage.setItem('vb-render-3d', to3D ? 'true' : 'false');
@@ -595,6 +655,7 @@ export function VoidBreakerGame() {
     if (!game) return;
     game.metaBonuses = metaBonuses(meta);
     game.character = getCharacter(characterId);
+    game.weapon = getWeapon(weaponId);
     const mods = combineModifiers(activeMods);
     game.runModifiers = mods.effects;
     runCoreMultRef.current = mods.coreMult;
@@ -612,9 +673,55 @@ export function VoidBreakerGame() {
 
   return (
     <div
-      className="w-full h-full relative bg-[#050508] flex flex-col items-center justify-center overflow-hidden"
+      // translate="no" + notranslate: the game UI has its own i18n (t()). Browser
+      // auto-translate / extensions rewrite React-managed text nodes (wrapping them
+      // in <font>), which makes React's later removeChild fail with
+      // "NotFoundError: ... not a child of this node" and crashes the whole game via
+      // the error boundary. Opting the subtree out of translation prevents that.
+      translate="no"
+      className="notranslate w-full h-full relative bg-[#050508] flex flex-col items-center justify-center overflow-hidden"
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
+      {/* Void Breaker UI juice — shared keyframes (consumed by this file + VoidBreakerUI).
+          Disabled under prefers-reduced-motion so resting state stays fully visible. */}
+      <style>{`
+        @keyframes vb-fade-in { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes vb-scale-in {
+          from { opacity: 0; transform: scale(0.94) }
+          to   { opacity: 1; transform: scale(1) }
+        }
+        @keyframes vb-card-in {
+          from { opacity: 0; transform: translateY(18px) scale(0.9) }
+          to   { opacity: 1; transform: translateY(0) scale(1) }
+        }
+        @keyframes vb-banner-pop {
+          0%   { opacity: 0; transform: scale(0.6) translateY(12px) }
+          55%  { opacity: 1; transform: scale(1.12) translateY(0) }
+          100% { opacity: 1; transform: scale(1) translateY(0) }
+        }
+        @keyframes vb-boss-in {
+          0%   { opacity: 0; transform: translateY(-26px) scale(0.92) }
+          60%  { opacity: 1; transform: translateY(0) scale(1.04) }
+          100% { opacity: 1; transform: translateY(0) scale(1) }
+        }
+        @keyframes vb-gold-pulse {
+          0%,100% { box-shadow: 0 0 22px rgba(255,215,0,0.35), inset 0 0 18px rgba(255,215,0,0.12) }
+          50%     { box-shadow: 0 0 40px rgba(255,215,0,0.65), inset 0 0 26px rgba(255,215,0,0.22) }
+        }
+        @keyframes vb-combo-bump {
+          0%   { transform: scale(1) }
+          40%  { transform: scale(1.3) }
+          100% { transform: scale(1) }
+        }
+        @keyframes vb-sheen {
+          0%   { transform: translateX(-130%) skewX(-12deg) }
+          100% { transform: translateX(160%) skewX(-12deg) }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .vb-anim { animation: none !important; }
+        }
+      `}</style>
+
       {/* Background music — loops during gameplay */}
       <audio ref={audioRef} src={MUSIC_SRC} loop preload="auto" />
 
@@ -647,10 +754,32 @@ export function VoidBreakerGame() {
                 hud.multiplier > 2 ? 'text-[#d4af37]' : 'text-zinc-400'
                 }`}>
                 {hud.multiplier.toFixed(1)}x
-                {hud.combo > 1 && <span className="text-[#ff00cc] ml-1">{t('combo', { defaultValue: 'COMBO {{combo}}', combo: hud.combo })}</span>}
+                {hud.combo > 1 && (
+                  // No key={hud.combo}: re-keying remounted this text node every combo
+                  // tick (~10×/s), churning DOM that external tools may have mutated.
+                  // The element stays stable; only its text/size/color update.
+                  <span
+                    className="vb-anim inline-block ml-1 origin-left font-black"
+                    style={{
+                      color: hud.combo >= 15 ? '#ff2266' : hud.combo >= 8 ? '#ff00cc' : '#ff66cc',
+                      fontSize: `${1 + Math.min(hud.combo, 25) * 0.02}em`,
+                      textShadow: `0 0 ${4 + Math.min(hud.combo, 25) * 0.6}px rgba(255,0,204,0.85)`,
+                      animation: 'vb-combo-bump 0.3s ease-out',
+                    }}
+                  >
+                    {t('combo', { defaultValue: 'COMBO {{combo}}', combo: hud.combo })}
+                  </span>
+                )}
               </div>
               {hud.surge > 1.05 && (
-                <div className="font-mono text-[10px] font-bold text-[#ff6644] animate-pulse drop-shadow-[0_0_6px_rgba(255,102,68,0.8)]">
+                <div
+                  className="font-mono text-[10px] font-bold animate-pulse origin-left"
+                  style={{
+                    color: hud.surge >= 3 ? '#ff2a00' : '#ff6644',
+                    transform: `scale(${Math.min(1 + (hud.surge - 1) * 0.18, 1.6)})`,
+                    textShadow: `0 0 ${6 + Math.min(hud.surge, 5) * 2}px rgba(255,102,68,0.85)`,
+                  }}
+                >
                   {t('surge', { defaultValue: '⚡ SURGE {{surge}}×', surge: hud.surge.toFixed(1) })}
                 </div>
               )}
@@ -869,6 +998,36 @@ export function VoidBreakerGame() {
         </div>
       )}
 
+      {/* ── Boss Intro Nameplate ─────────────────────────────────────────── */}
+      {showGame && bossIntro && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+          <div className="vb-anim relative px-6 py-3 rounded-lg border border-[#ff2244]/50 bg-black/80 backdrop-blur-md text-center overflow-hidden"
+            style={{ animation: 'vb-boss-in 0.6s cubic-bezier(0.22,1.2,0.36,1) both', boxShadow: '0 0 40px rgba(255,34,68,0.35)' }}>
+            <div className="vb-anim absolute inset-0 bg-linear-to-r from-transparent via-[#ff2244]/15 to-transparent"
+              style={{ animation: 'vb-sheen 1.2s ease-in-out 0.25s both' }} />
+            <div className="relative">
+              <div className="text-[9px] font-mono tracking-[0.4em] text-[#ff2244]/70 uppercase">
+                {t('boss-warning', { defaultValue: '⚠ FALLEN ANGEL' })}
+              </div>
+              <div className="text-2xl font-black text-[#ff3355] tracking-widest drop-shadow-[0_0_18px_rgba(255,34,68,0.7)] mt-0.5">
+                {bossIntro.name || '堕落天使'}
+              </div>
+              <div className="flex items-center justify-center gap-1.5 mt-1.5">
+                {[1, 2, 3].map((p) => (
+                  <span key={p}
+                    className="h-1.5 rounded-full transition-all duration-300"
+                    style={{
+                      width: p === bossIntro.phase ? '18px' : '8px',
+                      background: p <= bossIntro.phase ? '#ff2244' : '#3a1a22',
+                      boxShadow: p === bossIntro.phase ? '0 0 8px rgba(255,34,68,0.8)' : 'none',
+                    }} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Map Transition Overlay ───────────────────────────────────────── */}
       {showGame && hud.mapTransition && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
@@ -923,19 +1082,30 @@ export function VoidBreakerGame() {
         </div>
       )}
 
-      {/* Wave break */}
+      {/* Wave break — celebration banner */}
       {showGame && hud.waveBreak && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="text-xl font-black text-[#d4af37] opacity-60 drop-shadow-[0_0_20px_rgba(212,175,55,0.5)] tracking-widest">
-            {t('wave-clear', { defaultValue: 'WAVE CLEAR' })}
+          <div className="vb-anim relative px-8 py-4 rounded-2xl border border-[#d4af37]/40 bg-black/40 backdrop-blur-sm text-center overflow-hidden"
+            style={{ animation: 'vb-banner-pop 0.5s cubic-bezier(0.22,1.2,0.36,1) both', boxShadow: '0 0 44px rgba(212,175,55,0.25)' }}>
+            <div className="vb-anim absolute inset-0 bg-linear-to-r from-transparent via-[#d4af37]/25 to-transparent"
+              style={{ animation: 'vb-sheen 1.1s ease-in-out 0.2s both' }} />
+            <div className="relative">
+              <div className="text-[10px] font-mono tracking-[0.4em] text-[#d4af37]/70 uppercase">
+                {t('wave-clear', { defaultValue: 'WAVE CLEAR' })}
+              </div>
+              <div className="text-4xl font-black text-[#d4af37] tracking-widest drop-shadow-[0_0_22px_rgba(212,175,55,0.6)]">
+                {t('wave', { defaultValue: 'WAVE {{wave}}', wave: waveCount })}
+              </div>
+            </div>
           </div>
         </div>
       )}
 
       {/* ── Roguelite Upgrade Cards ─────────────────────────────────────── */}
       {showGame && hud.pendingUpgrades.length > 0 && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md z-50 pointer-events-auto px-3">
-          <div className="text-center mb-5">
+        <div className="vb-anim absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md z-50 pointer-events-auto px-3"
+          style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
+          <div className="vb-anim text-center mb-5" style={{ animation: 'vb-scale-in 0.35s cubic-bezier(0.22,1.2,0.36,1) both' }}>
             <div className={`text-[10px] font-mono tracking-[0.3em] uppercase mb-1 ${hud.upgradeIsBossReward ? 'text-[#ffd700]' : 'text-zinc-500'}`}>
               {hud.upgradeIsBossReward
                 ? t('boss-reward', { defaultValue: 'BOSS REWARD' })
@@ -949,14 +1119,24 @@ export function VoidBreakerGame() {
           <div className="flex flex-wrap gap-3 justify-center max-w-2xl">
             {hud.pendingUpgrades.map((u, i) => {
               const isRare = u.rarity === 'rare';
+              const boss = hud.upgradeIsBossReward;
+              const delay = i * 90;
+              // Stagger-in with `backwards` fill so the resting state reverts to base
+              // (keeps the hover lift working). Boss rewards add a looping gold pulse.
+              const entrance = boss
+                ? `vb-card-in 0.5s cubic-bezier(0.22,1.2,0.36,1) ${delay}ms backwards, vb-gold-pulse 2.4s ease-in-out ${delay + 500}ms infinite`
+                : `vb-card-in 0.42s cubic-bezier(0.22,1.2,0.36,1) ${delay}ms backwards`;
               return (
                 <button
                   key={u.id}
                   onClick={() => handlePickUpgrade(u.id)}
-                  className="group relative w-40 sm:w-44 rounded-xl border bg-black/70 px-4 pt-5 pb-4 text-center transition-all duration-150 hover:-translate-y-1 hover:bg-black/90 focus:outline-none"
+                  className="vb-anim group relative w-40 sm:w-44 rounded-xl border bg-black/70 px-4 pt-5 pb-4 text-center transition-all duration-150 hover:-translate-y-1 hover:bg-black/90 focus:outline-none"
                   style={{
-                    borderColor: u.color + (isRare ? 'cc' : '66'),
-                    boxShadow: `0 0 ${isRare ? 26 : 14}px ${u.color}${isRare ? '55' : '33'}, inset 0 0 18px ${u.color}14`,
+                    borderColor: boss ? '#ffd700' + (isRare ? 'cc' : '88') : u.color + (isRare ? 'cc' : '66'),
+                    boxShadow: boss
+                      ? '0 0 26px rgba(255,215,0,0.4), inset 0 0 20px rgba(255,215,0,0.14)'
+                      : `0 0 ${isRare ? 26 : 14}px ${u.color}${isRare ? '55' : '33'}, inset 0 0 18px ${u.color}14`,
+                    animation: entrance,
                   }}
                 >
                   {/* Accent bar */}
@@ -1007,9 +1187,10 @@ export function VoidBreakerGame() {
 
       {/* ── ESC Pause Menu ──────────────────────────────────────────────── */}
       {showGame && showPauseMenu && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/85 backdrop-blur-md z-50 pointer-events-auto">
-          <div className="text-center space-y-4 bg-black/40 border border-[#00f5ff]/20 rounded-xl p-8 max-w-xs w-full mx-4"
-            style={{ boxShadow: '0 0 40px rgba(0,245,255,0.1)' }}>
+        <div className="vb-anim absolute inset-0 flex items-center justify-center bg-black/85 backdrop-blur-md z-50 pointer-events-auto"
+          style={{ animation: 'vb-fade-in 0.22s ease-out both' }}>
+          <div className="vb-anim text-center space-y-4 bg-black/40 border border-[#00f5ff]/20 rounded-xl p-8 max-w-xs w-full mx-4"
+            style={{ boxShadow: '0 0 40px rgba(0,245,255,0.1)', animation: 'vb-scale-in 0.3s cubic-bezier(0.22,1.2,0.36,1) both' }}>
             <div className="text-3xl font-black text-[#00f5ff] tracking-widest drop-shadow-[0_0_20px_rgba(0,245,255,0.5)]">
               {t('paused', { defaultValue: 'PAUSED' })}
             </div>
@@ -1066,6 +1247,8 @@ export function VoidBreakerGame() {
         onSetReducedFx={handleSetReducedFx}
         characterId={characterId}
         onSelectCharacter={handleSelectCharacter}
+        weaponId={weaponId}
+        onSelectWeapon={handleSelectWeapon}
         activeMods={activeMods}
         onToggleModifier={handleToggleModifier}
         meta={meta}

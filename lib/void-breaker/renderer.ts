@@ -10,6 +10,7 @@ import {
   CANVAS_WIDTH, CANVAS_HEIGHT,
   ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
   MAX_SHARDS, BOSS_WAVE_INTERVAL, SHIELD_HALF_ARC,
+  SPAWN_ANIM_TIME, DEATH_ANIM_TIME,
 } from './constants';
 import { drawSprite, drawPickupSprite } from './drawSprite';
 import { PLAYER_SPRITE, ENEMY_SPRITES, BOSS_SPRITES, HEART_PICKUP_SPRITE } from './sprites';
@@ -416,8 +417,39 @@ export class VoidBreakerRenderer {
           const baseColor = e.isElite ? NEON_MAGENTA : (e.color || '#cc4466');
           // Void form: boss is phased-out / intangible — render as a faint apparition.
           const voidPhased = e.isBoss && e.bossSpecialActive;
+          const fxBoost = this.reducedFx ? 0.4 : 1;
+
+          // Task 4 — spawn warp-in / death dissolve lifecycle.
+          let animScale = 1, animAlpha = 1, animT = 1;
+          if (e.anim === 'spawning') {
+            animT = Math.max(0, Math.min(1, 1 - e.animTimer / SPAWN_ANIM_TIME));
+            animScale = 0.3 + 0.7 * animT;
+            animAlpha = animT;
+          } else if (e.anim === 'dying') {
+            animT = Math.max(0, Math.min(1, e.animTimer / DEATH_ANIM_TIME));
+            animScale = 1 + (1 - animT) * 0.6;
+            animAlpha = animT;
+          }
+
           const prevAlpha = ctx.globalAlpha;
-          if (voidPhased) ctx.globalAlpha = prevAlpha * 0.16;
+
+          // Expanding telegraph ring that resolves inward as the enemy warps in.
+          if (e.anim === 'spawning') {
+            ctx.globalAlpha = prevAlpha * (1 - animT) * 0.7 * fxBoost;
+            ctx.strokeStyle = baseColor;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, r * (2 - animT), 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          ctx.globalAlpha = prevAlpha * (voidPhased ? 0.16 : 1) * animAlpha;
+          ctx.save();
+          if (animScale !== 1) {
+            ctx.translate(pos.x, pos.y);
+            ctx.scale(animScale, animScale);
+            ctx.translate(-pos.x, -pos.y);
+          }
           if (e.isBoss && e.telegraphTimer > 0) {
             const telegraphAlpha = Math.min(1, e.telegraphTimer * 2);
             ctx.strokeStyle = `rgba(255, 0, 80, ${telegraphAlpha})`;
@@ -528,7 +560,19 @@ export class VoidBreakerRenderer {
             ctx.fillStyle = e.isElite ? NEON_MAGENTA : NEON_CYAN;
             ctx.fillRect(bx, by, barW * (e.hp / e.maxHp), barH);
           }
-          if (voidPhased) ctx.globalAlpha = prevAlpha;
+          // Death dissolve — flash toward white as the body scales out.
+          if (e.anim === 'dying') {
+            ctx.globalAlpha = prevAlpha * (1 - animT) * 0.6;
+            const wg = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, r * 1.2);
+            wg.addColorStop(0, 'rgba(255,255,255,0.9)');
+            wg.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = wg;
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, r * 1.2, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+          ctx.globalAlpha = prevAlpha;
         },
       });
     }
@@ -538,6 +582,10 @@ export class VoidBreakerRenderer {
       sortY: p.y,
       draw: () => {
         const playerPos = toScreen(p.x, p.y);
+        // Task 5 — recoil kick: shove the sprite backward along the aim (visual only).
+        const recoilK = p.recoil * 6 * (this.reducedFx ? 0.5 : 1);
+        playerPos.x -= Math.cos(p.aimAngle) * recoilK;
+        playerPos.y -= Math.sin(p.aimAngle) * recoilK;
         const pr = p.radius * scale;
         const isInvincible = game.elapsedMs < p.invincibleUntil && Math.floor(game.elapsedMs / 80) % 2 === 0;
         if (!isInvincible) {
@@ -652,10 +700,93 @@ export class VoidBreakerRenderer {
         continue;
       }
       const r = Math.max(2, pr.radius * scale);
-      ctx.fillStyle = pr.isPlayer ? NEON_CYAN : NEON_MAGENTA;
-      ctx.beginPath();
-      ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
-      ctx.fill();
+      // Arc Coil bolts (chain hops) read as a jagged violet spark.
+      const arc = pr.isPlayer && pr.chains > 0;
+      const projColor = arc ? '#cc66ff' : pr.isPlayer ? NEON_CYAN : NEON_MAGENTA;
+      // Task 5 — build-distinct projectiles: piercing rounds elongate into a
+      // beam; high-caliber (large) rounds are bigger with a heavier glow.
+      const heavy = pr.radius >= 6;
+      const piercing = pr.pierce > 0;
+      if (arc) {
+        const ang = Math.atan2(pr.vy, pr.vx);
+        const nx = -Math.sin(ang), ny = Math.cos(ang); // perpendicular
+        const len = r * 5;
+        ctx.save();
+        if (!this.reducedFx) { ctx.shadowColor = projColor; ctx.shadowBlur = 10; }
+        ctx.strokeStyle = projColor;
+        ctx.lineWidth = Math.max(1, r * 0.6);
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        // A short zig-zag bolt along the travel direction (seeded, stable-ish).
+        const segs = 4;
+        for (let s = 0; s <= segs; s++) {
+          const f = s / segs;
+          const along = (f - 0.5) * len;
+          const jag = (s % 2 === 0 ? 1 : -1) * r * 0.9 * (s === 0 || s === segs ? 0 : 1);
+          const x = pos.x + Math.cos(ang) * along + nx * jag;
+          const y = pos.y + Math.sin(ang) * along + ny * jag;
+          if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, r * 0.7, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      } else if (piercing || heavy) {
+        ctx.save();
+        ctx.shadowColor = projColor;
+        ctx.shadowBlur = (heavy ? 14 : 8) * (this.reducedFx ? 0.5 : 1);
+        if (piercing) {
+          const ang = Math.atan2(pr.vy, pr.vx);
+          const len = r * 4;
+          ctx.strokeStyle = projColor;
+          ctx.lineCap = 'round';
+          ctx.lineWidth = r * 1.5;
+          ctx.beginPath();
+          ctx.moveTo(pos.x - Math.cos(ang) * len, pos.y - Math.sin(ang) * len);
+          ctx.lineTo(pos.x + Math.cos(ang) * len * 0.3, pos.y + Math.sin(ang) * len * 0.3);
+          ctx.stroke();
+        }
+        ctx.fillStyle = projColor;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, heavy ? r * 1.4 : r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else {
+        ctx.fillStyle = projColor;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // ── Post-sort: Orbital blades (spinning shard-blades that ring the player) ─
+    if (game.orbitals.length > 0) {
+      const spin = t * 5;
+      for (let i = 0; i < game.orbitals.length; i++) {
+        const o = game.orbitals[i];
+        const pos = toScreen(o.x, o.y);
+        const br = Math.max(4, 7 * scale);
+        const ang = spin + i * 1.3;
+        ctx.save();
+        ctx.translate(pos.x, pos.y);
+        ctx.rotate(ang);
+        if (!this.reducedFx) { ctx.shadowColor = NEON_CYAN; ctx.shadowBlur = 12; }
+        // A thin diamond blade.
+        ctx.fillStyle = NEON_CYAN;
+        ctx.beginPath();
+        ctx.moveTo(0, -br);
+        ctx.lineTo(br * 0.45, 0);
+        ctx.lineTo(0, br);
+        ctx.lineTo(-br * 0.45, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, br * 0.28, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.shadowBlur = 0;
     }
 
     // ── Post-sort: Particles ─────────────────────────────────────────────────
@@ -716,15 +847,57 @@ export class VoidBreakerRenderer {
       }
     }
 
-    // ── 16. Popups ────────────────────────────────────────────────────────────
+    // ── Task 6: hit sparks on freshly-hit enemies (cheap, capped) ─────────────
+    let sparkBudget = this.reducedFx ? 6 : 16;
+    const sparkN = this.reducedFx ? 2 : 4;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < game.enemies.length && sparkBudget > 0; i++) {
+      const e = game.enemies[i];
+      if (!e.active || e.anim !== 'alive' || game.elapsedMs >= e.hitFlashUntil) continue;
+      const pos = toScreen(e.x, e.y);
+      const er = e.radius * scale;
+      for (let k = 0; k < sparkN && sparkBudget > 0; k++, sparkBudget--) {
+        const a = seed(i * 7.3 + k * 2.1) * Math.PI * 2;
+        const d0 = er * 0.8;
+        const d1 = d0 + (4 + seed(i * 3.1 + k) * 7) * scale;
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.moveTo(pos.x + Math.cos(a) * d0, pos.y + Math.sin(a) * d0);
+        ctx.lineTo(pos.x + Math.cos(a) * d1, pos.y + Math.sin(a) * d1);
+        ctx.stroke();
+      }
+    }
+    ctx.globalAlpha = 1;
 
+    // ── 16. Popups — damage numbers scaled/colored by magnitude, CRIT pop-in ──
     for (const pop of game.popups) {
       const pos = toScreen(pop.x, pop.y);
-      const alpha = pop.life / pop.maxLife;
-      ctx.font = 'bold 14px monospace';
-      ctx.fillStyle = pop.color + Math.floor(alpha * 255).toString(16).padStart(2, '0');
+      const lifeFrac = pop.life / pop.maxLife;   // 1 → 0
+      const age = 1 - lifeFrac;                   // 0 → 1
+      const alpha = Math.min(1, lifeFrac * 1.5);  // hold then fade out
+      const isCrit = pop.text.includes('CRIT');
+      const m = /([+-]?\d+)/.exec(pop.text);
+      const mag = m ? Math.abs(parseInt(m[1], 10)) : 0;
+      let size = 13 + Math.min(18, mag / 12);     // bigger hits read bigger
+      let scl = 1;
+      let color = pop.color;
+      if (isCrit) {
+        // Punchy pop-in: scale from 1.6 → 1 over the first third of life.
+        scl = 1 + Math.max(0, 1 - age / 0.35) * 0.6;
+        size += 4;
+        color = '#ffe24a';
+      } else if (mag >= 80) color = '#ff7b3a';
+      else if (mag >= 30) color = '#ffd24a';
+      const drift = age * 22 * scale;
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.font = `bold ${Math.round(size * scl)}px monospace`;
+      ctx.fillStyle = color;
       ctx.textAlign = 'center';
-      ctx.fillText(pop.text, pos.x, pos.y);
+      if (isCrit) { ctx.shadowColor = color; ctx.shadowBlur = 8; }
+      ctx.fillText(pop.text, pos.x, pos.y - drift);
+      ctx.restore();
     }
     ctx.textAlign = 'left';
 
@@ -733,6 +906,41 @@ export class VoidBreakerRenderer {
 
     // ── 18. Vignette ─────────────────────────────────────────────────────────
     this.drawVignette(ctx, game);
+
+    // ── 19. Combat escalation glow + boss-death flash (Tasks 6 & 8) ──────────
+    this.drawCombatGlow(ctx, game);
+  }
+
+  /**
+   * Screen-space combat juice: a white boss-death flash driven by slowMoTimer,
+   * plus a combo/surge escalation edge-glow that intensifies (and shifts hue on
+   * a surge takeover) as the streak climbs. Presentation only; honors reducedFx.
+   */
+  private drawCombatGlow(ctx: CanvasRenderingContext2D, game: VoidBreakerEngine): void {
+    const fx = this.reducedFx ? 0.4 : 1;
+
+    // Task 8 — boss-death white flash (the slow-mo "moment").
+    if (game.slowMoTimer > 0) {
+      const f = game.slowMoTimer / 0.6;
+      ctx.fillStyle = `rgba(255,255,255,${(f * f * 0.5 * fx).toFixed(3)})`;
+      ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    }
+
+    // Task 6/8 — combo + surge escalation edge-glow.
+    const combo = game.comboMultiplier, surge = game.surgeMultiplier;
+    const escal = Math.max(0, Math.min(1, (Math.max(combo, surge) - 1.4) / 1.6));
+    if (escal <= 0.001) return;
+    const surgeHot = Math.max(0, Math.min(1, (surge - 1.4) / 1.6));
+    const pulse = 0.6 + 0.4 * Math.sin(this.time * 8);
+    const cx = CANVAS_WIDTH / 2, cy = CANVAS_HEIGHT / 2;
+    // Surge takeover dials up intensity and shifts the hue cyan → magenta.
+    const col = surgeHot > 0.5 ? '255,90,210' : '0,230,255';
+    const a = escal * (0.1 + 0.12 * surgeHot) * pulse * fx;
+    const g = ctx.createRadialGradient(cx, cy, CANVAS_HEIGHT * 0.45, cx, cy, CANVAS_HEIGHT * 0.95);
+    g.addColorStop(0, `rgba(${col},0)`);
+    g.addColorStop(1, `rgba(${col},${a.toFixed(3)})`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
   }
 
   /**

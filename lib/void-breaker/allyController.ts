@@ -82,7 +82,7 @@ export class AllyController {
         let nearest: Enemy | null = null;
         let nearestDist = Infinity;
         for (const e of enemies) {
-            if (!e.active) continue;
+            if (!e.active || e.anim !== 'alive') continue;
             // Avoid bosses 80% of the time
             if (e.isBoss && Math.random() < 0.80) continue;
             const d = Math.hypot(e.x - a.x, e.y - a.y);

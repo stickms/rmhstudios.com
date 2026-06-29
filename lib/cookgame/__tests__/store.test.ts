@@ -6,6 +6,7 @@ import { rankForXp, xpForRecipe } from '../progression';
 import { propertyEffects } from '../property';
 import { KEY_PRICES, NIGHT_WINDOW } from '../shops';
 import { DAY_LENGTH_MS } from '../timeOfDay';
+import { DEPLETE_PER_UNIT } from '../demand';
 
 const reset = () => useCookgameStore.getState().resetGame();
 
@@ -303,6 +304,21 @@ describe('cookgame store — stash cap + income', () => {
     expect(useCookgameStore.getState().buyBase('greenstart', 10)).toBe(true);
   });
 
+  it('packageBench refuses (no-op) when the batch would overflow the stash cap', () => {
+    const cap = propertyEffects(0).stashCap; // 60 at tier 0
+    useCookgameStore.setState((s) => ({
+      inventory: {
+        ...s.inventory,
+        workProduct: { baseId: 'greenstart', effects: [], qualityMult: 1 },
+        packaged: [{ product: { baseId: 'greenstart', effects: [] }, units: cap - 4 }], // +5 would overflow
+      },
+    }));
+    expect(useCookgameStore.getState().packageBench()).toBe(false);
+    const s = useCookgameStore.getState();
+    expect(s.inventory.workProduct).not.toBeNull();        // batch left on the bench
+    expect(s.inventory.packaged[0].units).toBe(cap - 4);    // nothing packaged
+  });
+
   it('tickPassiveIncome adds cash only when the tier has income', () => {
     const st = useCookgameStore.getState();
     st.tickPassiveIncome(10);
@@ -472,5 +488,78 @@ describe('recipe meta actions', () => {
   it('setRecipeName on an unknown key with an empty name creates no ghost entry', () => {
     useCookgameStore.getState().setRecipeName('a+b', '   ');
     expect(useCookgameStore.getState().recipeMeta['a+b']).toBeUndefined();
+  });
+});
+
+describe('dynamic demand', () => {
+  beforeEach(reset);
+
+  function giveSellable() {
+    // One packaged unit with no effects (so it never matches a preference) sold to 'doug'.
+    useCookgameStore.setState((s) => ({
+      inventory: { ...s.inventory, packaged: [{ product: { baseId: 'greenstart', effects: [] }, units: 1 }] },
+    }));
+  }
+
+  it('selling depletes the buyer demand and grants reputation', () => {
+    giveSellable();
+    const before = useCookgameStore.getState().buyerState['doug'];
+    expect(before.demand).toBe(1);
+    expect(before.reputation).toBe(0);
+    useCookgameStore.getState().sellUnit('doug', 0, 1);
+    const after = useCookgameStore.getState().buyerState['doug'];
+    expect(after.demand).toBeCloseTo(1 - DEPLETE_PER_UNIT, 9);
+    expect(after.reputation).toBeGreaterThan(0);
+  });
+
+  it('a saturated buyer pays less than a fresh buyer for the same product', () => {
+    giveSellable();
+    const fresh = useCookgameStore.getState().sellUnit('doug', 0, 1);
+    // Saturate doug, then sell an identical unit.
+    useCookgameStore.setState((s) => ({
+      buyerState: { ...s.buyerState, doug: { ...s.buyerState['doug'], demand: 0 } },
+      inventory: { ...s.inventory, packaged: [{ product: { baseId: 'greenstart', effects: [] }, units: 1 }] },
+    }));
+    const saturated = useCookgameStore.getState().sellUnit('doug', 0, 1);
+    expect(saturated).toBeLessThan(fresh);
+  });
+
+  it('tickDemand restocks a depleted buyer over time', () => {
+    useCookgameStore.setState((s) => ({
+      buyerState: { ...s.buyerState, doug: { ...s.buyerState['doug'], demand: 0 } },
+    }));
+    useCookgameStore.getState().tickDemand(10000);
+    expect(useCookgameStore.getState().buyerState['doug'].demand).toBeGreaterThan(0);
+  });
+
+  it('restocks continuously but does not roll preference drift before the drift interval', () => {
+    reset();
+    // Deplete doug so restock has visible work; capture its preference.
+    useCookgameStore.setState((s) => ({
+      buyerState: { ...s.buyerState, doug: { ...s.buyerState['doug'], demand: 0.5 } },
+    }));
+    const pref0 = useCookgameStore.getState().buyerState['doug'].preferredEffect;
+    useCookgameStore.getState().tickDemand(999); // < DRIFT_INTERVAL_MS (1000): no drift roll occurs
+    const doug = useCookgameStore.getState().buyerState['doug'];
+    expect(doug.demand).toBeGreaterThan(0.5);          // restock ran
+    expect(doug.preferredEffect).toBe(pref0);          // drift was gated (deterministic — no roll happened)
+  });
+
+  it('price preference premium follows the dynamic (drifted) preferred effect', () => {
+    reset();
+    // Force doug's dynamic preference to 'spicy' (his static pref is 'energizing').
+    useCookgameStore.setState((s) => ({
+      buyerState: { ...s.buyerState, doug: { ...s.buyerState['doug'], preferredEffect: 'spicy' } },
+      inventory: { ...s.inventory, packaged: [{ product: { baseId: 'greenstart', effects: ['spicy'] }, units: 1 }] },
+    }));
+    const withPref = useCookgameStore.getState().sellUnit('doug', 0, 1);
+    // Reset and sell an identical product WITHOUT the dynamic preferred effect.
+    reset();
+    useCookgameStore.setState((s) => ({
+      buyerState: { ...s.buyerState, doug: { ...s.buyerState['doug'], preferredEffect: 'spicy' } },
+      inventory: { ...s.inventory, packaged: [{ product: { baseId: 'greenstart', effects: [] }, units: 1 }] },
+    }));
+    const without = useCookgameStore.getState().sellUnit('doug', 0, 1);
+    expect(withPref).toBeGreaterThan(without);
   });
 });

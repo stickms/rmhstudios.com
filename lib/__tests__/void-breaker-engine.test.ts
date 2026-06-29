@@ -40,6 +40,7 @@ function placeEnemy(g: VoidBreakerEngine, x: number, y: number, hp: number) {
   e.type = 'drifter'; e.x = x; e.y = y; e.radius = 10;
   e.hp = hp; e.maxHp = hp; e.shardCount = 1; e.value = 10;
   e.color = '#8866cc'; e.hitFlashUntil = 0; e.bossSpecialActive = false;
+  e.anim = 'alive'; e.animTimer = 0;
   // Fully inert so it stays put (no stale speed/AI state from the pooled slot).
   e.speed = 0; e.vx = 0; e.vy = 0; e.dashState = 'idle'; e.dashTimer = 0;
   e.orbitFireTimer = 99; e.telegraphTimer = 0; e.bossSpecialTimer = 0;
@@ -214,11 +215,11 @@ describe('VoidBreakerEngine', () => {
     // dying *proves* thorns reflected. (We don't assert player HP — a contact
     // kill can drop a heart onto the player and heal the hit back.)
     const e = placeEnemy(g, 800, 500, 3);
-    for (let i = 0; i < 4 && e.active; i++) {
+    for (let i = 0; i < 4 && e.anim === 'alive'; i++) {
       g.player.invincibleUntil = 0; g.elapsedMs = 5000;
       g.update(0.05, makeInput());
     }
-    expect(e.active).toBe(false);       // could only die to thorns
+    expect(e.anim).not.toBe('alive');   // killed (dying/freed) — could only die to thorns
   });
 
   it('applies run modifiers to the loadout', () => {

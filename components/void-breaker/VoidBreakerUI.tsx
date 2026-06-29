@@ -6,10 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings, Gamepad2, Hexagon } from 'lucide-react';
 import {
-  META_NODES, nodeCost, nodeLevel, canBuy, isCharUnlocked,
+  META_NODES, nodeCost, nodeLevel, canBuy, isCharUnlocked, isWeaponUnlocked,
   type MetaState, type MetaNodeId,
 } from '@/lib/void-breaker/metaProgression';
 import { CHARACTERS, getCharacter, type CharacterId } from '@/lib/void-breaker/characters';
+import { WEAPONS, getWeapon, type WeaponId } from '@/lib/void-breaker/weapons';
 import { MODIFIERS, combineModifiers, type ModifierId } from '@/lib/void-breaker/modifiers';
 import { authClient } from '@/lib/auth-client';
 import { useNavigate } from '@tanstack/react-router';
@@ -23,6 +24,7 @@ export function VoidBreakerUI({
   use3D, onSetRenderer,
   reducedFx, onSetReducedFx,
   characterId, onSelectCharacter,
+  weaponId, onSelectWeapon,
   activeMods, onToggleModifier,
   meta, onBuyNode, earnedCores,
   saveInfo, onClearSave, onContinueGame,
@@ -43,6 +45,8 @@ export function VoidBreakerUI({
   onSetReducedFx: (on: boolean) => void;
   characterId: CharacterId;
   onSelectCharacter: (id: CharacterId) => void;
+  weaponId: WeaponId;
+  onSelectWeapon: (id: WeaponId) => void;
   activeMods: ModifierId[];
   onToggleModifier: (id: ModifierId) => void;
   meta: MetaState;
@@ -109,7 +113,7 @@ export function VoidBreakerUI({
   if (showSettings) {
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-sm mx-auto px-6 py-10 space-y-6">
+        <div className="vb-anim max-w-sm mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
           <button onClick={() => setShowSettings(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
@@ -198,7 +202,7 @@ export function VoidBreakerUI({
   if (showForge) {
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-md mx-auto px-6 py-10 space-y-5">
+        <div className="vb-anim max-w-md mx-auto px-6 py-10 space-y-5" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
           <button onClick={() => setShowForge(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors">
             <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
@@ -276,7 +280,7 @@ export function VoidBreakerUI({
     ];
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-lg mx-auto px-6 py-10 space-y-6">
+        <div className="vb-anim max-w-lg mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
           <button onClick={() => setShowHelp(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-2">
             <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
@@ -320,7 +324,7 @@ export function VoidBreakerUI({
   if (showLore) {
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
+        <div className="vb-anim max-w-2xl mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
           <button onClick={() => setShowLore(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
@@ -429,7 +433,8 @@ export function VoidBreakerUI({
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-hidden bg-[#0d0d14]">
         <div className="relative h-full flex items-center justify-center overflow-y-auto py-8">
-          <div className="text-center space-y-4 sm:space-y-5 w-full max-w-md px-4 py-6">
+          <div className="vb-anim text-center space-y-4 sm:space-y-5 w-full max-w-md px-4 py-6"
+            style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>
             <div className="absolute top-4 right-4 flex items-center gap-2">
               <button onClick={() => setShowSettings(true)}
                 className="w-9 h-9 rounded-full bg-[#1a1a24] border border-[#c9a227]/30 flex items-center justify-center hover:bg-[#252530] transition-colors">
@@ -481,6 +486,36 @@ export function VoidBreakerUI({
               </div>
               <div className="text-[10px] text-zinc-400 mt-2 leading-snug min-h-[28px]">
                 {getCharacter(characterId).description}
+              </div>
+            </div>
+
+            {/* Weapon picker */}
+            <div className="bg-[#0a0a18] border border-[#ffaa00]/15 rounded-lg p-2.5 text-left">
+              <div className="text-[9px] text-[#ffaa00]/60 font-mono mb-2 tracking-[0.2em] uppercase">
+                {t("weapon", { defaultValue: "Weapon" })}
+              </div>
+              <div className="flex gap-1.5">
+                {WEAPONS.map((w) => {
+                  const sel = w.id === weaponId;
+                  const unlocked = isWeaponUnlocked(meta, w.id);
+                  const affordable = meta.cores >= w.unlockCost;
+                  return (
+                    <button key={w.id} onClick={() => onSelectWeapon(w.id)}
+                      title={unlocked ? `${w.name} — ${w.title}` : `${w.name} — ◈${w.unlockCost}`}
+                      className={`relative flex-1 rounded-lg py-2 border flex flex-col items-center gap-0.5 transition-all ${sel ? '' : 'opacity-60 hover:opacity-100'}`}
+                      style={{ borderColor: sel ? w.color : '#2a2a3a', background: sel ? w.color + '18' : 'transparent' }}>
+                      <span className="text-lg leading-none" style={{ color: unlocked ? w.color : '#555' }}>{w.icon}</span>
+                      {unlocked ? (
+                        <span className="text-[9px] font-mono truncate max-w-full px-0.5" style={{ color: sel ? w.color : '#888' }}>{w.name}</span>
+                      ) : (
+                        <span className={`text-[9px] font-mono ${affordable ? 'text-[#d4af37]' : 'text-zinc-600'}`}>🔒 ◈{w.unlockCost}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="text-[10px] text-zinc-400 mt-2 leading-snug min-h-[28px]">
+                {getWeapon(weaponId).description}
               </div>
             </div>
 
@@ -603,7 +638,8 @@ export function VoidBreakerUI({
     const timeStr = `${Math.floor(secs / 60)}:${(secs % 60).toString().padStart(2, '0')}`;
     return (
       <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-md w-full px-4 space-y-3 py-6">
+        <div className="vb-anim max-w-md w-full px-4 space-y-3 py-6"
+          style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>
           <div className="text-center space-y-1">
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#d4af37]">
               {t("game-over", { defaultValue: "GAME OVER" })}

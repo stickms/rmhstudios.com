@@ -101,6 +101,11 @@ export const MAP_TRANSITION_DURATION = 1.8; // seconds for fade
 
 // ── Heart Drops ──────────────────────────────────────────────────────────────
 /** Chance an enemy drops a heart on death (8%) */
+/** Enemy warp-in telegraph duration before it becomes active (seconds). */
+export const SPAWN_ANIM_TIME = 0.35;
+/** Enemy death dissolve duration before its pool slot is freed (seconds). */
+export const DEATH_ANIM_TIME = 0.3;
+
 export const DROP_HEART_CHANCE = 0.08;
 /** How long a heart pickup persists before despawning (seconds) */
 export const HEART_PICKUP_LIFETIME = 12;

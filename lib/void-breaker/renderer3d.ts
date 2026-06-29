@@ -24,6 +24,7 @@ import { ENEMY_SPRITES } from './sprites';
 import {
   CANVAS_WIDTH, CANVAS_HEIGHT, ARENA_W, ARENA_H, ARENA_HW, ARENA_HH,
   MAX_ENEMIES, MAX_PROJECTILES, MAX_SHARDS_POOL, MAX_PARTICLES, MAX_HEART_PICKUPS,
+  SPAWN_ANIM_TIME, DEATH_ANIM_TIME,
 } from './constants';
 
 // ── Camera framing ───────────────────────────────────────────────────────────
@@ -34,6 +35,7 @@ const CAM_BACK = 150;   // how far "south" the camera sits (slight tilt for dept
 // Entity heights above the ground plane.
 const PROJ_Y = 14;
 const SHARD_Y = 20;
+const MAX_ORBITALS = 8;
 const SHOCKWAVE_POOL = 24;
 
 const tmpObj = new THREE.Object3D();
@@ -95,6 +97,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private shockwaves: THREE.Mesh[] = [];
   /** Danger discs telegraphing where bomber bombs will explode. */
   private bombRings: THREE.Mesh[] = [];
+  private orbitalMesh!: THREE.InstancedMesh;
   private floor!: THREE.Mesh;
   private grid!: THREE.LineSegments;
   private border!: THREE.LineSegments;
@@ -107,6 +110,11 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private flashIntensity = 0;
   private muzzleFlash = 0;
   private lastFireTimer = 0;
+  /** Boss-death white flash (rising edge of slowMoTimer), decays to 0. */
+  private bossFlash = 0;
+  private lastSlowMo = 0;
+  /** Stored so combo/surge escalation can pulse the vignette darkness. */
+  private vignette!: ShaderPass;
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -409,6 +417,15 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.shardMesh.frustumCulled = false;
     this.scene.add(this.shardMesh);
 
+    // Orbital blades — bright cyan diamonds ringing the player (bloom glows them).
+    const orbGeo = new THREE.OctahedronGeometry(1, 0);
+    orbGeo.scale(0.45, 0.45, 1.1); // flatten into a blade
+    const orbMat = new THREE.MeshBasicMaterial({ color: 0xaef6ff });
+    this.orbitalMesh = new THREE.InstancedMesh(orbGeo, orbMat, MAX_ORBITALS);
+    this.orbitalMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.orbitalMesh.frustumCulled = false;
+    this.scene.add(this.orbitalMesh);
+
     // Obstacles — extruded neon-trimmed boxes (buildings/barriers).
     const winTex = this.buildWindowTexture();
     const obsMat = new THREE.MeshStandardMaterial({
@@ -488,10 +505,10 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.rgbShift.uniforms.amount.value = 0.0012;
     this.composer.addPass(this.rgbShift);
 
-    const vignette = new ShaderPass(VignetteShader);
-    vignette.uniforms.offset.value = 1.0;
-    vignette.uniforms.darkness.value = 1.05;
-    this.composer.addPass(vignette);
+    this.vignette = new ShaderPass(VignetteShader);
+    this.vignette.uniforms.offset.value = 1.0;
+    this.vignette.uniforms.darkness.value = 1.05;
+    this.composer.addPass(this.vignette);
 
     this.filmPass = new FilmPass(0.22);
     this.composer.addPass(this.filmPass);
@@ -536,7 +553,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     if (game.detonations !== this.lastDetonations) {
       this.lastDetonations = game.detonations;
       this.caPulse = 1;
-      this.camPunch = 70;
+      this.camPunch = 22; // gentle detonate zoom-punch (was 70 — too lurchy)
       this.flashIntensity = 11;
     }
     this.caPulse = Math.max(0, this.caPulse - dt * 3);
@@ -551,27 +568,30 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     if (p.fireTimer > this.lastFireTimer + 0.001) this.muzzleFlash = 2.2;
     this.lastFireTimer = p.fireTimer;
     this.muzzleFlash = Math.max(0, this.muzzleFlash - dt * 22);
-    this.muzzleLight.intensity = this.muzzleFlash * (this.reducedFx ? 0.4 : 1);
+    // Task 5 — scale the muzzle flash by the recoil kick for a weightier shot.
+    this.muzzleLight.intensity = this.muzzleFlash * (this.reducedFx ? 0.4 : 1) * (0.7 + p.recoil * 0.6);
     this.muzzleLight.position.set(p.x + Math.cos(p.aimAngle) * 16, 22, p.y + Math.sin(p.aimAngle) * 16);
 
     const bossActive = game.enemies.some(e => e.active && e.isBoss);
 
-    // Smoothed follow with aim lookahead — you see ahead of where you aim.
-    const k = 1 - Math.exp(-6 * dt);
-    const aimLA = 80;
+    // Camera stays largely locked on the player — snappy follow, only a tiny aim
+    // hint, minimal boss/detonate movement (kept subtle so it doesn't feel floaty).
+    const k = 1 - Math.exp(-9 * dt);
+    const aimLA = 14;
     this.focusX += (p.x + Math.cos(p.aimAngle) * aimLA - this.focusX) * k;
     this.focusZ += (p.y + Math.sin(p.aimAngle) * aimLA - this.focusZ) * k;
-    // Pull back during boss fights; punch in on detonate.
-    const targetH = CAM_HEIGHT + (bossActive ? 120 : 0) - this.camPunch * (this.reducedFx ? 0.3 : 1);
+    // Slight pull-back during boss fights; gentle punch-in on detonate.
+    const targetH = CAM_HEIGHT + (bossActive ? 40 : 0) - this.camPunch * (this.reducedFx ? 0.3 : 1);
     this.camH += (targetH - this.camH) * k;
 
-    const ss = this.reducedFx ? 0.3 : 1.5;
+    const ss = this.reducedFx ? 0.25 : 0.5;
     const sx = game.shakeX * ss, sz = game.shakeY * ss;
     this.camera.position.set(this.focusX + sx, this.camH, this.focusZ + CAM_BACK + sz);
     this.camera.lookAt(this.focusX + sx, 0, this.focusZ + sz);
 
-    // Player transform.
-    this.player.position.set(p.x, 0, p.y);
+    // Player transform — recoil shoves the craft backward along the aim (visual).
+    const recK = p.recoil * 8 * (this.reducedFx ? 0.5 : 1);
+    this.player.position.set(p.x - Math.cos(p.aimAngle) * recK, 0, p.y - Math.sin(p.aimAngle) * recK);
     this.player.rotation.y = -p.aimAngle; // game angle is in XZ; +Y rotation maps aim
     const pmat = (this.player.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial;
     pmat.emissiveIntensity = p.focusActive ? 2.6 : p.dashActive ? 3.2 : 1.4;
@@ -581,6 +601,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.syncEnemies(game);
     this.syncBoss(game);
     this.syncProjectiles(game);
+    this.syncOrbitals(game);
     this.syncShards(game);
     this.syncObstacles(game);
     this.syncHearts(game);
@@ -593,12 +614,31 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     const riftPulse = 1 + Math.sin(this.time * 2.5) * 0.15;
     this.rift.scale.setScalar(riftPulse);
 
-    // Bloom reacts to the moment: bosses flare, Focus swells into a dreamy glow.
-    this.bloom.strength = (bossActive ? 1.15 : 0.9) + (p.focusActive ? 0.55 : 0);
+    // Task 8 — boss-death white flash: a rising edge of slowMoTimer blows the
+    // exposure out to white and spikes bloom, decaying over ~0.3s.
+    if (game.slowMoTimer > this.lastSlowMo + 1e-4) this.bossFlash = 1;
+    this.lastSlowMo = game.slowMoTimer;
+    this.bossFlash = Math.max(0, this.bossFlash - dt * 3);
+    this.renderer.toneMappingExposure = 1.1 + this.bossFlash * (this.reducedFx ? 0.6 : 1.8);
+
+    // Task 6/8 — combo + surge escalation: the scene swells (bloom) and a surge
+    // takeover deepens the vignette for a clear "state change" feel.
+    const escal = Math.max(0, Math.min(1, (Math.max(game.comboMultiplier, game.surgeMultiplier) - 1.4) / 1.6));
+    const surgeHot = Math.max(0, Math.min(1, (game.surgeMultiplier - 1.4) / 1.6));
+    const escalFx = this.reducedFx ? 0.35 : 1;
+
+    // Bloom reacts to the moment: bosses flare, Focus swells into a dreamy glow,
+    // high combo/surge escalates, and a boss death briefly over-blooms.
+    this.bloom.strength = (bossActive ? 1.15 : 0.9)
+      + (p.focusActive ? 0.55 : 0)
+      + escal * 0.5 * escalFx
+      + this.bossFlash * 0.8;
+    this.vignette.uniforms.darkness.value = 1.05 + surgeHot * 0.5 * escalFx;
 
     // Chromatic aberration: a base shimmer that punches on detonate / hits / boss.
     let ca = 0.0012 + (bossActive ? 0.0008 : 0) + this.caPulse * 0.005;
     if (game.elapsedMs < p.hitFlashUntil + 130) ca += 0.0035;
+    ca += surgeHot * 0.0015 * escalFx;
     this.rgbShift.uniforms.amount.value = ca;
 
     this.composer.render();
@@ -619,16 +659,32 @@ export class VoidBreakerRenderer3D implements VBRenderer {
         const dedicated = (e.type === 'sniper' || e.type === 'shielded' || e.type === 'healer')
           ? this.typeMeshes[e.type] : undefined;
 
+        // Task 4 — spawn warp-in / death dissolve. Scale lerps 0.2→1 (spawn) and
+        // 1→1.6 (death); opacity tracks t (only the per-material sprite path can
+        // fade per-instance, so the instanced paths communicate via scale + white).
+        let animScale = 1, animAlpha = 1, dyingWhite = 0;
+        if (e.anim === 'spawning') {
+          const tt = Math.max(0, Math.min(1, 1 - e.animTimer / SPAWN_ANIM_TIME));
+          animScale = 0.2 + 0.8 * tt;
+          animAlpha = tt;
+        } else if (e.anim === 'dying') {
+          const tt = Math.max(0, Math.min(1, e.animTimer / DEATH_ANIM_TIME));
+          animScale = 1 + (1 - tt) * 0.6;
+          animAlpha = tt;
+          dyingWhite = 1 - tt;
+        }
+
         if (tex) {
           // Old model: flat ground sprite (additive glow).
           const plane = this.spritePool[spriteIdx++];
           const mat = plane.material as THREE.MeshBasicMaterial;
           if (mat.map !== tex) { mat.map = tex; mat.needsUpdate = true; }
-          const sz = e.radius * 3.4 * (e.isElite ? 1.3 : 1);
+          const sz = e.radius * 3.4 * (e.isElite ? 1.3 : 1) * animScale;
           plane.visible = true;
           plane.position.set(e.x, 7, e.y);
           plane.scale.set(sz, sz, sz);
-          if (game.elapsedMs < e.hitFlashUntil) mat.color.setRGB(2.2, 2.2, 2.2);
+          mat.opacity = animAlpha; // restored to 1 once 'alive' (animAlpha === 1)
+          if (game.elapsedMs < e.hitFlashUntil || dyingWhite > 0.01) mat.color.setRGB(2.2, 2.2, 2.2);
           else if (e.isElite) mat.color.setRGB(1.4, 0.7, 1.1);
           else mat.color.setRGB(1, 1, 1);
         } else if (dedicated) {
@@ -640,7 +696,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
           } else {
             tmpObj.rotation.set(this.time * 0.8 + i, this.time * 1.0 + i, 0);
           }
-          tmpObj.scale.setScalar(r);
+          tmpObj.scale.setScalar(r * animScale);
           tmpObj.updateMatrix();
           dedicated.setMatrixAt(tIdx[e.type as 'sniper' | 'shielded' | 'healer']++, tmpObj.matrix);
         } else {
@@ -648,8 +704,8 @@ export class VoidBreakerRenderer3D implements VBRenderer {
           const r = e.radius * 1.15;
           tmpObj.position.set(e.x, r, e.y);
           tmpObj.rotation.set(this.time * 0.8 + i, this.time * 1.1 + i, 0);
-          tmpObj.scale.setScalar(r);
-          const hot = game.elapsedMs < e.hitFlashUntil;
+          tmpObj.scale.setScalar(r * animScale);
+          const hot = game.elapsedMs < e.hitFlashUntil || dyingWhite > 0.01;
           tmpColor.set(hot ? '#ffffff' : (e.color || '#cc4466'));
           octa.setColorAt(i, tmpColor);
           tmpObj.updateMatrix();
@@ -686,12 +742,17 @@ export class VoidBreakerRenderer3D implements VBRenderer {
       const pr = game.projectiles[i];
       if (!pr || !pr.active || pr.fuse > 0) { tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0); }
       else {
-        // Stretch into a tracer along the travel direction.
+        // Stretch into a tracer along the travel direction. Task 5: piercing
+        // rounds elongate into a beam; high-caliber (large) rounds are bigger.
         const ang = Math.atan2(pr.vy, pr.vx);
+        const heavy = pr.radius >= 6;
+        const arc = pr.isPlayer && pr.chains > 0;
+        const lenMul = pr.pierce > 0 ? 8 : arc ? 6 : 4.5;
+        const girth = heavy ? 1.9 : arc ? 1.0 : 1.3;
         tmpObj.position.set(pr.x, PROJ_Y, pr.y);
         tmpObj.rotation.set(0, -ang, 0);
-        tmpObj.scale.set(pr.radius * 4.5, pr.radius * 1.3, pr.radius * 1.3);
-        tmpColor.set(pr.isPlayer ? '#66f5ff' : '#ff3bd0');
+        tmpObj.scale.set(pr.radius * lenMul, pr.radius * girth, pr.radius * girth);
+        tmpColor.set(arc ? '#cc77ff' : pr.isPlayer ? (heavy ? '#bfffff' : '#66f5ff') : '#ff3bd0');
         m.setColorAt(i, tmpColor);
       }
       tmpObj.updateMatrix();
@@ -699,6 +760,24 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     }
     m.instanceMatrix.needsUpdate = true;
     if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }
+
+  private syncOrbitals(game: VoidBreakerEngine): void {
+    const m = this.orbitalMesh;
+    const spin = this.time * 5;
+    for (let i = 0; i < MAX_ORBITALS; i++) {
+      const o = game.orbitals[i];
+      if (!o) { tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0); }
+      else {
+        tmpObj.position.set(o.x, PROJ_Y, o.y);
+        // Spin each blade about its own axis, fanned around the ring.
+        tmpObj.rotation.set(0, spin + i * 1.3, this.time * 3);
+        tmpObj.scale.setScalar(9);
+      }
+      tmpObj.updateMatrix();
+      m.setMatrixAt(i, tmpObj.matrix);
+    }
+    m.instanceMatrix.needsUpdate = true;
   }
 
   private syncShards(game: VoidBreakerEngine): void {
@@ -764,18 +843,33 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     const r = b.radius;
     const float = r + 18 + Math.sin(this.time * 1.5) * 4;
     this.boss.position.set(b.x, float, b.y);
+
+    // Task 4 — boss warp-in / death dissolve (same lifecycle as regular enemies).
+    let bScale = 1, bAlpha = 1;
+    if (b.anim === 'spawning') {
+      const tt = Math.max(0, Math.min(1, 1 - b.animTimer / SPAWN_ANIM_TIME));
+      bScale = 0.2 + 0.8 * tt;
+      bAlpha = tt;
+    } else if (b.anim === 'dying') {
+      const tt = Math.max(0, Math.min(1, b.animTimer / DEATH_ANIM_TIME));
+      bScale = 1 + (1 - tt) * 0.6;
+      bAlpha = tt;
+    }
+
     // Void form: fade out while intangible.
     const phased = b.bossSpecialActive;
     const coreMat = this.bossCore.material as THREE.MeshStandardMaterial;
     coreMat.emissiveIntensity = phased ? 0.4 : (game.elapsedMs < b.hitFlashUntil ? 4 : 2);
-    this.bossCore.scale.setScalar(r);
+    coreMat.transparent = bAlpha < 0.999; // restored to opaque once 'alive'
+    coreMat.opacity = bAlpha;
+    this.bossCore.scale.setScalar(r * bScale);
     this.bossCore.rotation.set(this.time * 0.5, this.time * 0.7, 0);
     // Orbiting rings.
     for (let i = 1; i < this.boss.children.length; i++) {
       const ring = this.boss.children[i] as THREE.Mesh;
-      ring.scale.setScalar(r);
+      ring.scale.setScalar(r * bScale);
       ring.rotation.z = this.time * (ring.userData.spin as number);
-      (ring.material as THREE.MeshBasicMaterial).opacity = phased ? 0.15 : 0.7;
+      (ring.material as THREE.MeshBasicMaterial).opacity = (phased ? 0.15 : 0.7) * bAlpha;
     }
   }
 
