@@ -56,6 +56,7 @@ function pickUpgrade(g: VoidBreakerEngine): void {
 
 function runSim(): { wave: number; won: boolean; secs: number } {
   const g = new VoidBreakerEngine();
+  g.headless = true; // disable presentation-only hitstop/slow-mo so sim time isn't distorted
   g.startGame();
   let ticks = 0;
   const maxTicks = 60 * 60 * 12; // 12 sim-minutes cap
