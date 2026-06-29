@@ -6,11 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings, Gamepad2, Hexagon } from 'lucide-react';
 import {
-  META_NODES, nodeCost, nodeLevel, canBuy, isCharUnlocked,
+  META_NODES, nodeCost, nodeLevel, canBuy, isCharUnlocked, isWeaponUnlocked,
   type MetaState, type MetaNodeId,
 } from '@/lib/void-breaker/metaProgression';
 import { CHARACTERS, getCharacter, type CharacterId } from '@/lib/void-breaker/characters';
-import type { WeaponId } from '@/lib/void-breaker/weapons';
+import { WEAPONS, getWeapon, type WeaponId } from '@/lib/void-breaker/weapons';
 import { MODIFIERS, combineModifiers, type ModifierId } from '@/lib/void-breaker/modifiers';
 import { authClient } from '@/lib/auth-client';
 import { useNavigate } from '@tanstack/react-router';
@@ -24,6 +24,7 @@ export function VoidBreakerUI({
   use3D, onSetRenderer,
   reducedFx, onSetReducedFx,
   characterId, onSelectCharacter,
+  weaponId, onSelectWeapon,
   activeMods, onToggleModifier,
   meta, onBuyNode, earnedCores,
   saveInfo, onClearSave, onContinueGame,
@@ -485,6 +486,36 @@ export function VoidBreakerUI({
               </div>
               <div className="text-[10px] text-zinc-400 mt-2 leading-snug min-h-[28px]">
                 {getCharacter(characterId).description}
+              </div>
+            </div>
+
+            {/* Weapon picker */}
+            <div className="bg-[#0a0a18] border border-[#ffaa00]/15 rounded-lg p-2.5 text-left">
+              <div className="text-[9px] text-[#ffaa00]/60 font-mono mb-2 tracking-[0.2em] uppercase">
+                {t("weapon", { defaultValue: "Weapon" })}
+              </div>
+              <div className="flex gap-1.5">
+                {WEAPONS.map((w) => {
+                  const sel = w.id === weaponId;
+                  const unlocked = isWeaponUnlocked(meta, w.id);
+                  const affordable = meta.cores >= w.unlockCost;
+                  return (
+                    <button key={w.id} onClick={() => onSelectWeapon(w.id)}
+                      title={unlocked ? `${w.name} — ${w.title}` : `${w.name} — ◈${w.unlockCost}`}
+                      className={`relative flex-1 rounded-lg py-2 border flex flex-col items-center gap-0.5 transition-all ${sel ? '' : 'opacity-60 hover:opacity-100'}`}
+                      style={{ borderColor: sel ? w.color : '#2a2a3a', background: sel ? w.color + '18' : 'transparent' }}>
+                      <span className="text-lg leading-none" style={{ color: unlocked ? w.color : '#555' }}>{w.icon}</span>
+                      {unlocked ? (
+                        <span className="text-[9px] font-mono truncate max-w-full px-0.5" style={{ color: sel ? w.color : '#888' }}>{w.name}</span>
+                      ) : (
+                        <span className={`text-[9px] font-mono ${affordable ? 'text-[#d4af37]' : 'text-zinc-600'}`}>🔒 ◈{w.unlockCost}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="text-[10px] text-zinc-400 mt-2 leading-snug min-h-[28px]">
+                {getWeapon(weaponId).description}
               </div>
             </div>
 
