@@ -8,14 +8,14 @@
 import { Link } from '@tanstack/react-router';
 import { Images, Play } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ALBUMS, albumCount, type Album } from '@/lib/albums';
+import { albumCount, type Album } from '@/lib/albums';
 import { useReveal } from '@/components/library/LibraryReveal';
 import { BlurImage } from '@/components/ui/BlurImage';
 
-export function LibraryAlbums({ query }: { query: string }) {
+export function LibraryAlbums({ albums: allAlbums, query }: { albums: Album[]; query: string }) {
   const { t } = useTranslation('library');
   const q = query.trim().toLowerCase();
-  const albums = q ? ALBUMS.filter((a) => a.title.toLowerCase().includes(q)) : ALBUMS;
+  const albums = q ? allAlbums.filter((a) => a.title.toLowerCase().includes(q)) : allAlbums;
 
   if (albums.length === 0) return null;
 

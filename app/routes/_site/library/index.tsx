@@ -21,6 +21,8 @@ import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
 import { listAllBooks } from '@/lib/library/library.server';
+import { listAlbums } from '@/lib/albums.server';
+import { type Album } from '@/lib/albums';
 import { listCollectionsView, type Viewer } from '@/lib/library/collections.server';
 import { auth } from '@/lib/auth';
 import { getAllPosts, type Post } from '@/lib/blog';
@@ -60,6 +62,10 @@ const fetchBlogPosts = createServerFn({ method: 'GET' }).handler(async () => ({
   posts: (await getAllPosts(['title', 'date', 'slug', 'description', 'tags'])) as Partial<Post>[],
 }));
 
+const fetchAlbums = createServerFn({ method: 'GET' }).handler(async () => ({
+  albums: await listAlbums(),
+}));
+
 export const Route = createFileRoute('/_site/library/')({
   head: () => ({
     meta: [
@@ -71,6 +77,7 @@ export const Route = createFileRoute('/_site/library/')({
     ...(await fetchBooks()),
     ...(await fetchBlogPosts()),
     ...(await fetchCollections()),
+    ...(await fetchAlbums()),
   }),
   component: Library,
 });
@@ -78,7 +85,7 @@ export const Route = createFileRoute('/_site/library/')({
 function Library() {
   const { t } = useTranslation('library');
   const { open: openSidebar } = useMobileSidebar();
-  const { books: initialBooks, posts: blogPosts, collections: initialCollections } = Route.useLoaderData();
+  const { books: initialBooks, posts: blogPosts, collections: initialCollections, albums } = Route.useLoaderData();
   const session = useSession();
   const sessionUser = session.data?.user as { isAdmin?: boolean; handle?: string | null } | undefined;
   const isAdmin = Boolean(sessionUser?.isAdmin);
@@ -283,7 +290,7 @@ function Library() {
           canCreate={Boolean(session.data)}
         />
 
-        <LibraryAlbums query={query} />
+        <LibraryAlbums albums={albums} query={query} />
 
         {filtered.length === 0 ? (
           <p className="vibe-hint lib__empty">{t('no-results', { defaultValue: 'No books match that search.' })}</p>

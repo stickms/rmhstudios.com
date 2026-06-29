@@ -23,6 +23,7 @@
     "feed:reconcile-counts": "pnpm exec tsx scripts/reconcile-feed-counts.ts",
     "backfill-vibe-thumbs": "pnpm exec tsx scripts/backfill-vibe-thumbs.ts",
     "library:metadata": "pnpm exec tsx scripts/generate-library-metadata.ts",
+    "albums:migrate": "pnpm exec tsx scripts/migrate-albums-to-storage.ts",
     "audit": "pnpm audit --audit-level=moderate",
     "epic:test": "node_modules/.bin/vitest run --config vitest.epic.config.ts",
     "epic:build": "node_modules/.bin/tsx scripts/epic/build-epic.ts",

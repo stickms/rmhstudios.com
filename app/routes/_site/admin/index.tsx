@@ -138,6 +138,16 @@ function AdminDashboardPage() {
           </Link>
 
           <Link
+            to="/admin/albums"
+            className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("albums-title", { defaultValue: "Library Albums" })}</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              {t("albums-description", { defaultValue: "Create photo/video albums and bulk-upload media. Images are compressed to WebP and videos transcoded, then stored in object storage." })}
+            </p>
+          </Link>
+
+          <Link
             to="/admin/audit"
             className="block p-6 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
