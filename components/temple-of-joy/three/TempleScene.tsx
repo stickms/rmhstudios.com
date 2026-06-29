@@ -12,6 +12,8 @@ import { SunCore } from './SunCore';
 import { SourceStructures } from './SourceStructures';
 import { UpgradeOrbs } from './UpgradeOrbs';
 import { AscensionMonument } from './AscensionMonument';
+import { RelicAltar } from './RelicAltar';
+import { SamsaraWheel } from './SamsaraWheel';
 import { AchievementStars } from './AchievementStars';
 import { ClickBurst, type ClickBurstHandle } from './ClickBurst';
 import { FloatingJoy } from './FloatingJoy';
@@ -48,6 +50,8 @@ function SceneContents() {
       <SourceStructures />
       <UpgradeOrbs />
       <AscensionMonument />
+      <RelicAltar />
+      <SamsaraWheel />
       <AmbientJoy />
       <ClickBurst ref={burst} />
       {floats.map((f) => (

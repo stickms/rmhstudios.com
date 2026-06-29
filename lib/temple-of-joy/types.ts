@@ -19,7 +19,10 @@ export type SourceId =
   | 'gravitySpa' | 'euterpeHall' | 'ambrosiaTap' | 'joySatellite'
   | 'elysiumGate' | 'cosmicHamper' | 'eternitySofa' | 'nirvanaCore'
   | 'transcendenceLab' | 'celestialBath' | 'euphoriaReactor' | 'pleasurePlanet'
-  | 'karmaFountain' | 'infiniteHug' | 'joyNova' | 'omegaTemple';
+  | 'karmaFountain' | 'infiniteHug' | 'joyNova' | 'omegaTemple'
+  // ── Radiant tier (post-Omega, deep late-game) ──
+  | 'radiantSpring' | 'sunforge' | 'joyConstellation' | 'theFirstMorning'
+  | 'infinitePrism' | 'edenEngine';
 
 export type UpgradePath =
   | 'carnal' | 'social' | 'mind' | 'spirit' | 'indulgence' | 'philosophy' | 'offering' | 'synergy';

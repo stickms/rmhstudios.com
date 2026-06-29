@@ -28,12 +28,13 @@ export function SunCore({ onJoy }: SunCoreProps) {
   const coreMat = useRef<THREE.MeshStandardMaterial>(null);
   const halo = useRef<THREE.Sprite>(null);
   const corona = useRef<THREE.Sprite>(null);
+  const flares = useRef<THREE.Group>(null);
   const light = useRef<THREE.PointLight>(null);
 
   const flash = useRef(0);
   const punch = useRef(0);
   const sampler = useRef(0);
-  const cached = useRef({ scale: 1, intensity: 0.4, heat: 0, hps: 0 });
+  const cached = useRef({ scale: 1, intensity: 0.4, heat: 0, hps: 0, ascension: 0 });
   const color = useMemo(() => new THREE.Color('#ffcf6b'), []);
   const emissive = useMemo(() => new THREE.Color('#ffaa2c'), []);
   const lightColor = useMemo(() => new THREE.Color('#ffc964'), []);
@@ -51,6 +52,7 @@ export function SunCore({ onJoy }: SunCoreProps) {
       cached.current.intensity = p.intensity;
       cached.current.heat = p.heat;
       cached.current.hps = gs.getHPS();
+      cached.current.ascension = gs.ascensionCount;
       const c = sunColors(p.heat);
       color.set(c.core);
       emissive.set(c.emissive);
@@ -60,10 +62,11 @@ export function SunCore({ onJoy }: SunCoreProps) {
     flash.current = Math.max(0, flash.current - dt * 2.4);
     punch.current = Math.max(0, punch.current - dt * 3.5);
 
-    const { scale, intensity, hps } = cached.current;
+    const { scale, intensity, hps, ascension } = cached.current;
     const hpsFactor = THREE.MathUtils.clamp(Math.log10(hps + 1) / 11, 0, 1);
+    const ascFactor = Math.min(1.5, ascension * 0.15); // post-ascension escalation
     const breathe = Math.sin(t * (1.0 + hpsFactor * 1.8)) * (0.03 + hpsFactor * 0.04);
-    const s = scale * (1 + breathe) * (1 + punch.current * 0.3);
+    const s = scale * (1 + ascFactor * 0.4) * (1 + breathe) * (1 + punch.current * 0.3);
 
     if (group.current) {
       group.current.scale.setScalar(s);
@@ -89,7 +92,19 @@ export function SunCore({ onJoy }: SunCoreProps) {
     }
     if (light.current) {
       light.current.color.copy(lightColor);
-      light.current.intensity = (dark ? 14 : 7) + intensity * 30 + flash.current * 40;
+      light.current.intensity = (dark ? 14 : 7) + intensity * 30 + flash.current * 40 + ascFactor * 20;
+    }
+    if (flares.current) {
+      flares.current.rotation.z += dt * 0.25;
+      flares.current.visible = ascFactor > 0.01;
+      const baseScale = 1.2 + ascFactor + Math.sin(t * 1.5) * 0.1;
+      flares.current.children.forEach((flare, i) => {
+        const sprite = flare as THREE.Sprite;
+        sprite.scale.setScalar(baseScale * (0.85 + ((i % 3) * 0.12)));
+        const m = sprite.material as THREE.SpriteMaterial;
+        m.color.copy(emissive);
+        m.opacity = Math.min(0.6, ascFactor * 0.4) + flash.current * 0.2;
+      });
     }
   });
 
@@ -136,6 +151,19 @@ export function SunCore({ onJoy }: SunCoreProps) {
       <sprite ref={corona} scale={6}>
         <spriteMaterial map={glow} color="#ffd27a" transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} opacity={0.2} />
       </sprite>
+
+      {/* Post-ascension solar flares — a rotating ring that grows with ascensions */}
+      <group ref={flares} visible={false}>
+        {Array.from({ length: 10 }).map((_, i) => {
+          const a = (i / 10) * Math.PI * 2;
+          const r = 1.7;
+          return (
+            <sprite key={i} position={[Math.cos(a) * r, Math.sin(a) * r, 0]} scale={1.2}>
+              <spriteMaterial map={glow} color="#ffd27a" transparent depthWrite={false} blending={THREE.AdditiveBlending} toneMapped={false} opacity={0} />
+            </sprite>
+          );
+        })}
+      </group>
 
       <pointLight ref={light} intensity={16} distance={40} decay={2} color="#ffc964" />
     </group>
