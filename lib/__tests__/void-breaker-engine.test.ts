@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { VoidBreakerEngine } from '@/lib/void-breaker/game';
 import { SHARD_MULT_PER, SURGE_DURATION, DET_MIN_SHARDS } from '@/lib/void-breaker/constants';
+import { getCharacter } from '@/lib/void-breaker/characters';
 import type { InputState } from '@/lib/void-breaker/types';
 
 function makeInput(over: Partial<InputState> = {}): InputState {
@@ -161,6 +162,32 @@ describe('VoidBreakerEngine', () => {
     g.update(0.05, makeInput());
     expect(e.active).toBe(false);       // killed by thorns on contact
     expect(g.player.hp).toBe(2);        // still took the contact hit
+  });
+
+  it('applies the selected character at run start', () => {
+    const jug = new VoidBreakerEngine();
+    jug.character = getCharacter('juggernaut');
+    jug.startGame();
+    expect(jug.player.maxHp).toBe(3 + 2);
+    expect(jug.stats.damageBonus).toBe(1);
+    expect(jug.stats.moveSpeedMult).toBeCloseTo(0.85, 5);
+    expect(jug.stats.dashCooldownMult).toBeCloseTo(1.25, 5);
+
+    const gun = new VoidBreakerEngine();
+    gun.character = getCharacter('gunner');
+    gun.startGame();
+    expect(gun.player.shards).toBe(3);
+    expect(gun.stats.fireRateMult).toBeCloseTo(0.68, 5);
+  });
+
+  it('character and meta bonuses stack at run start', () => {
+    const g = new VoidBreakerEngine();
+    g.character = getCharacter('juggernaut');     // +2 HP, x0.85 move
+    g.metaBonuses = { bonusMaxHp: 1, damageBonus: 0, moveSpeedMult: 1.06, startShards: 3, fireRateMult: 1 };
+    g.startGame();
+    expect(g.player.maxHp).toBe(3 + 2 + 1);
+    expect(g.player.shards).toBe(3);
+    expect(g.stats.moveSpeedMult).toBeCloseTo(0.85 * 1.06, 5);
   });
 
   it('applies meta-progression bonuses at run start', () => {

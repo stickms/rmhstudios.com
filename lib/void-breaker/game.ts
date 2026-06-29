@@ -50,6 +50,7 @@ import {
 } from './upgrades';
 import type { PlayerStats, UpgradeId, UpgradeChoice } from './upgrades';
 import type { MetaBonuses } from './metaProgression';
+import type { CharacterDef } from './characters';
 
 function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
@@ -121,6 +122,8 @@ export class VoidBreakerEngine {
   upgradeIsBossReward = false;
   /** Permanent meta-progression bonuses (set by the component before startGame). */
   metaBonuses: MetaBonuses | null = null;
+  /** Selected character (set by the component before startGame). */
+  character: CharacterDef | null = null;
 
   /** Sound events emitted this frame; drained by the component each frame. */
   sfxEvents: SfxEvent[] = [];
@@ -273,24 +276,38 @@ export class VoidBreakerEngine {
     this.invertCooldown = 0;
     this.currentBossName = '';
 
-    // Apply permanent meta-progression bonuses (Void Forge purchases).
+    // Character identity + permanent meta-progression bonuses (both modify the
+    // starting loadout; character is the playstyle, meta is earned power).
+    let maxHp = PLAYER_HP;
+    let startShards = 0;
+    if (this.character) {
+      const c = this.character;
+      maxHp += c.maxHpDelta;
+      this.stats.damageBonus += c.damageBonus;
+      this.stats.moveSpeedMult *= c.moveSpeedMult;
+      this.stats.fireRateMult *= c.fireRateMult;
+      this.stats.dashCooldownMult *= c.dashCooldownMult;
+      startShards += c.startShards;
+    }
     if (this.metaBonuses) {
       const mb = this.metaBonuses;
-      this.player.maxHp = PLAYER_HP + mb.bonusMaxHp;
-      this.player.hp = this.player.maxHp;
+      maxHp += mb.bonusMaxHp;
       this.stats.damageBonus += mb.damageBonus;
       this.stats.moveSpeedMult *= mb.moveSpeedMult;
       this.stats.fireRateMult *= mb.fireRateMult;
-      // Grant starting shards as real orbiting shards (shield + multiplier).
-      for (let i = 0; i < mb.startShards && this.player.shards < MAX_SHARDS; i++) {
-        const s = this.shards.find(sh => !sh.active);
-        if (!s) break;
-        s.active = true; s.collected = true;
-        s.orbitAngle = Math.random() * Math.PI * 2;
-        s.orbitSpeed = 2 + Math.random() * 2;
-        s.x = this.player.x; s.y = this.player.y;
-        this.player.shards++;
-      }
+      startShards += mb.startShards;
+    }
+    this.player.maxHp = Math.max(1, maxHp);
+    this.player.hp = this.player.maxHp;
+    // Grant starting shards as real orbiting shards (shield + multiplier).
+    for (let i = 0; i < startShards && this.player.shards < MAX_SHARDS; i++) {
+      const s = this.shards.find(sh => !sh.active);
+      if (!s) break;
+      s.active = true; s.collected = true;
+      s.orbitAngle = Math.random() * Math.PI * 2;
+      s.orbitSpeed = 2 + Math.random() * 2;
+      s.x = this.player.x; s.y = this.player.y;
+      this.player.shards++;
     }
 
     this.countdownTimer = COUNTDOWN_S;
