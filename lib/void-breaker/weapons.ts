@@ -50,7 +50,7 @@ export const WEAPONS: WeaponDef[] = [
     id: 'scatter', name: 'Scattergun', title: '散射', icon: '⁂', color: '#ff8844',
     description: 'A short-range cone of pellets. Devastating up close, slow to cycle.',
     unlockCost: 60,
-    baseFireInterval: 0.55, baseDamage: 1, baseProjSpeed: 600, baseProjRadius: 4, baseProjLife: 0.45,
+    baseFireInterval: 0.38, baseDamage: 2, baseProjSpeed: 720, baseProjRadius: 4, baseProjLife: 0.7,
     fire: { mode: 'spread', pellets: 5, spread: 0.16 },
   },
   {
@@ -64,8 +64,8 @@ export const WEAPONS: WeaponDef[] = [
     id: 'grenade', name: 'Grenade Launcher', title: '榴弹', icon: '✸', color: '#ffaa00',
     description: 'Lobs fused charges that blast on a timer. Area denial.',
     unlockCost: 90,
-    baseFireInterval: 0.9, baseDamage: 3, baseProjSpeed: 360, baseProjRadius: 6, baseProjLife: 5,
-    fire: { mode: 'lob', pellets: 1, spread: 0, fuse: 1.1, blastRadius: 95 },
+    baseFireInterval: 0.55, baseDamage: 4, baseProjSpeed: 640, baseProjRadius: 6, baseProjLife: 5,
+    fire: { mode: 'lob', pellets: 1, spread: 0, fuse: 1.25, blastRadius: 135 },
   },
   {
     id: 'arc', name: 'Arc Coil', title: '电弧', icon: '⚡', color: '#cc66ff',
