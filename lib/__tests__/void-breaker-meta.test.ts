@@ -2,8 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   META_NODES, emptyMeta, nodeCost, nodeLevel, canBuy, buyNode,
   awardCores, metaBonuses, getNodeDef,
+  isCharUnlocked, canUnlockChar, unlockChar,
   type MetaState,
 } from '@/lib/void-breaker/metaProgression';
+import { getCharacter } from '@/lib/void-breaker/characters';
 
 describe('void-breaker meta-progression', () => {
   it('starts empty', () => {
@@ -50,6 +52,27 @@ describe('void-breaker meta-progression', () => {
     expect(b.startShards).toBe(9);
     expect(b.moveSpeedMult).toBeCloseTo(1.06, 5);
     expect(b.fireRateMult).toBeCloseTo(0.92, 5);
+  });
+
+  it('striker is always unlocked; others gate behind cores', () => {
+    const fresh = emptyMeta();
+    expect(isCharUnlocked(fresh, 'striker')).toBe(true);
+    expect(isCharUnlocked(fresh, 'phantom')).toBe(false);
+    expect(canUnlockChar(fresh, 'phantom')).toBe(false); // no cores
+    const rich: MetaState = { cores: 1000, levels: {} };
+    expect(canUnlockChar(rich, 'phantom')).toBe(true);
+  });
+
+  it('unlocking a character spends cores and persists, immutably', () => {
+    const rich: MetaState = { cores: 1000, levels: {} };
+    const after = unlockChar(rich, 'gunner');
+    expect(after).not.toBe(rich);
+    expect(rich.unlocked).toBeUndefined();              // original untouched
+    expect(after.cores).toBe(1000 - getCharacter('gunner').unlockCost);
+    expect(isCharUnlocked(after, 'gunner')).toBe(true);
+    // Can't re-unlock or unlock when broke.
+    expect(unlockChar(after, 'gunner')).toBe(after);
+    expect(unlockChar({ cores: 0, levels: {} }, 'phantom').unlocked).toBeUndefined();
   });
 
   it('every node def is resolvable with a positive max level', () => {

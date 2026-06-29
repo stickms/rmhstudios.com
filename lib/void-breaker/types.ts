@@ -7,7 +7,7 @@ export type BossPhase = 1 | 2 | 3;
 
 export type EnemyType =
   | 'drifter' | 'dasher' | 'orbiter' | 'tank' | 'splitter' | 'mini_drifter'
-  | 'sniper' | 'healer' | 'shielded';
+  | 'sniper' | 'healer' | 'shielded' | 'hive';
 
 export interface Player {
   x: number;

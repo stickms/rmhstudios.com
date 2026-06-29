@@ -50,6 +50,7 @@ import {
 } from './upgrades';
 import type { PlayerStats, UpgradeId, UpgradeChoice } from './upgrades';
 import type { MetaBonuses } from './metaProgression';
+import type { CharacterDef } from './characters';
 
 function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
@@ -121,6 +122,8 @@ export class VoidBreakerEngine {
   upgradeIsBossReward = false;
   /** Permanent meta-progression bonuses (set by the component before startGame). */
   metaBonuses: MetaBonuses | null = null;
+  /** Selected character (set by the component before startGame). */
+  character: CharacterDef | null = null;
 
   /** Sound events emitted this frame; drained by the component each frame. */
   sfxEvents: SfxEvent[] = [];
@@ -273,24 +276,38 @@ export class VoidBreakerEngine {
     this.invertCooldown = 0;
     this.currentBossName = '';
 
-    // Apply permanent meta-progression bonuses (Void Forge purchases).
+    // Character identity + permanent meta-progression bonuses (both modify the
+    // starting loadout; character is the playstyle, meta is earned power).
+    let maxHp = PLAYER_HP;
+    let startShards = 0;
+    if (this.character) {
+      const c = this.character;
+      maxHp += c.maxHpDelta;
+      this.stats.damageBonus += c.damageBonus;
+      this.stats.moveSpeedMult *= c.moveSpeedMult;
+      this.stats.fireRateMult *= c.fireRateMult;
+      this.stats.dashCooldownMult *= c.dashCooldownMult;
+      startShards += c.startShards;
+    }
     if (this.metaBonuses) {
       const mb = this.metaBonuses;
-      this.player.maxHp = PLAYER_HP + mb.bonusMaxHp;
-      this.player.hp = this.player.maxHp;
+      maxHp += mb.bonusMaxHp;
       this.stats.damageBonus += mb.damageBonus;
       this.stats.moveSpeedMult *= mb.moveSpeedMult;
       this.stats.fireRateMult *= mb.fireRateMult;
-      // Grant starting shards as real orbiting shards (shield + multiplier).
-      for (let i = 0; i < mb.startShards && this.player.shards < MAX_SHARDS; i++) {
-        const s = this.shards.find(sh => !sh.active);
-        if (!s) break;
-        s.active = true; s.collected = true;
-        s.orbitAngle = Math.random() * Math.PI * 2;
-        s.orbitSpeed = 2 + Math.random() * 2;
-        s.x = this.player.x; s.y = this.player.y;
-        this.player.shards++;
-      }
+      startShards += mb.startShards;
+    }
+    this.player.maxHp = Math.max(1, maxHp);
+    this.player.hp = this.player.maxHp;
+    // Grant starting shards as real orbiting shards (shield + multiplier).
+    for (let i = 0; i < startShards && this.player.shards < MAX_SHARDS; i++) {
+      const s = this.shards.find(sh => !sh.active);
+      if (!s) break;
+      s.active = true; s.collected = true;
+      s.orbitAngle = Math.random() * Math.PI * 2;
+      s.orbitSpeed = 2 + Math.random() * 2;
+      s.x = this.player.x; s.y = this.player.y;
+      this.player.shards++;
     }
 
     this.countdownTimer = COUNTDOWN_S;
@@ -857,6 +874,33 @@ export class VoidBreakerEngine {
     }
     // Stagger elites' first burst so they don't all fire on spawn.
     if (isElite) slot.tentacleTimer = 2 + Math.random() * 2;
+    // Hive waits a beat before its first brood.
+    if (type === 'hive') slot.bossSpecialTimer = 2 + Math.random();
+  }
+
+  /** Spawn a mini_drifter near (x, y) with positional jitter. Returns success. */
+  private spawnMiniDrifter(x: number, y: number, jitter: number): boolean {
+    const slot = this.enemies.find(en => !en.active);
+    if (!slot) return false;
+    const cfg = ENEMY_CONFIGS['mini_drifter'];
+    const a = Math.random() * Math.PI * 2;
+    slot.active = true; slot.id = this.nextId++;
+    slot.type = 'mini_drifter'; slot.isBoss = false;
+    slot.x = x + Math.cos(a) * jitter; slot.y = y + Math.sin(a) * jitter;
+    slot.radius = cfg.radius; slot.hp = cfg.hp; slot.maxHp = cfg.hp;
+    slot.speed = cfg.speed * this.waveSpeedMult();
+    slot.value = cfg.value; slot.color = cfg.color; slot.shardCount = cfg.shardCount;
+    slot.vx = 0; slot.vy = 0; slot.angle = 0;
+    slot.dashTimer = 0; slot.dashState = 'idle';
+    slot.dashTargetX = 0; slot.dashTargetY = 0;
+    slot.orbitAngle = 0; slot.orbitFireTimer = 99;
+    slot.bossAttackTimer = 0; slot.bossSummonTimer = 0;
+    slot.bossPhase = 1; slot.tentacleAngle = 0;
+    slot.tentacleTimer = 0; slot.telegraphTimer = 0;
+    slot.isElite = false;
+    slot.bossSpecialTimer = 0; slot.bossSpecialActive = false; slot.bossSpecialAngle = 0;
+    this.waveEnemiesAlive++;
+    return true;
   }
 
   // ── Enemy AI ──
@@ -880,6 +924,8 @@ export class VoidBreakerEngine {
             this.aiHealer(e, dt, px, py); break;
           case 'shielded':
             this.aiShielded(e, dt, px, py); break;
+          case 'hive':
+            this.aiHive(e, dt, px, py); break;
         }
         // Elites periodically loose a radial burst — a real threat, not just stats.
         if (e.isElite) {
@@ -1024,6 +1070,25 @@ export class VoidBreakerEngine {
     const diff = angleDiff(want, e.bossSpecialAngle);
     const maxStep = SHIELD_TURN_RATE * dt;
     e.bossSpecialAngle += clamp(diff, -maxStep, maxStep);
+  }
+
+  /** Hive: hangs back and periodically broods a pair of mini-drifters. */
+  private aiHive(e: Enemy, dt: number, px: number, py: number): void {
+    const d = dist(e.x, e.y, px, py);
+    const [tx, ty] = norm(px - e.x, py - e.y);
+    if (d < 320) { e.x -= tx * e.speed * dt; e.y -= ty * e.speed * dt; }
+    else { e.x += -ty * e.speed * 0.4 * dt; e.y += tx * e.speed * 0.4 * dt; } // slow strafe
+
+    e.bossSpecialTimer -= dt;
+    if (e.bossSpecialTimer <= 0) {
+      e.bossSpecialTimer = 3.6;
+      let spawned = 0;
+      for (let k = 0; k < 2; k++) if (this.spawnMiniDrifter(e.x, e.y, 22)) spawned++;
+      if (spawned > 0) {
+        this.spawnParticles(e.x, e.y, '#66dd55', 7, 90);
+        this.emitSfx('enemyShoot', { pitch: 0.7 });
+      }
+    }
   }
 
   /** Elite signature: a telegraphed 6-shot radial burst. */
@@ -1501,30 +1566,7 @@ export class VoidBreakerEngine {
     }
 
     if (e.type === 'splitter' && !e.isBoss) {
-      for (let i = 0; i < 2; i++) {
-        const slot = this.enemies.find(en => !en.active);
-        if (!slot) continue;
-        const cfg = ENEMY_CONFIGS['mini_drifter'];
-        const a = Math.random() * Math.PI * 2;
-        slot.active = true; slot.id = this.nextId++;
-        slot.type = 'mini_drifter'; slot.isBoss = false;
-        slot.x = e.x + Math.cos(a) * 15; slot.y = e.y + Math.sin(a) * 15;
-        slot.radius = cfg.radius; slot.hp = cfg.hp; slot.maxHp = cfg.hp;
-        slot.speed = cfg.speed * this.waveSpeedMult();
-        slot.value = cfg.value; slot.color = cfg.color; slot.shardCount = cfg.shardCount;
-        slot.vx = 0; slot.vy = 0; slot.angle = 0;
-        slot.dashTimer = 0; slot.dashState = 'idle';
-        slot.dashTargetX = 0; slot.dashTargetY = 0;
-        slot.orbitAngle = 0; slot.orbitFireTimer = 99;
-        slot.bossAttackTimer = 0; slot.bossSummonTimer = 0;
-        // New fields — reset all pooled-slot state so nothing leaks from the
-        // slot's prior occupant (e.g. a sniper mid-charge or shielded enemy).
-        slot.bossPhase = 1; slot.tentacleAngle = 0;
-        slot.tentacleTimer = 0; slot.telegraphTimer = 0;
-        slot.isElite = false;
-        slot.bossSpecialTimer = 0; slot.bossSpecialActive = false; slot.bossSpecialAngle = 0;
-        this.waveEnemiesAlive++;
-      }
+      for (let i = 0; i < 2; i++) this.spawnMiniDrifter(e.x, e.y, 15);
     }
     e.active = false;
     this.waveEnemiesAlive--;
