@@ -290,7 +290,7 @@ function Library() {
           canCreate={Boolean(session.data)}
         />
 
-        <LibraryAlbums albums={albums} query={query} />
+        <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />
 
         {filtered.length === 0 ? (
           <p className="vibe-hint lib__empty">{t('no-results', { defaultValue: 'No books match that search.' })}</p>
