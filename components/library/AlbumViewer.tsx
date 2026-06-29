@@ -67,9 +67,14 @@ export function AlbumViewer({ album }: { album: Album }) {
   const [toast, setToast] = useState<string | null>(null);
   // Which toolbar action's "full vs optimized" menu is open (images only).
   const [menu, setMenu] = useState<'download' | 'share' | null>(null);
+  // Which slide index has fully loaded (drives the blur-up). Deriving `loaded`
+  // from this means it flips to false the instant we navigate, so the blurred
+  // thumbnail shows immediately instead of flashing a blank frame.
+  const [loadedKey, setLoadedKey] = useState<number | null>(null);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const stripRef = useRef<HTMLDivElement>(null);
+  const mainImgRef = useRef<HTMLImageElement>(null);
   const drag = useRef<{
     startX: number;
     startY: number;
@@ -99,6 +104,27 @@ export function AlbumViewer({ album }: { album: Album }) {
     const active = stripRef.current?.querySelector<HTMLElement>('[data-active="true"]');
     active?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }, [pos]);
+
+  // Reconcile the blur-up on slide change: if the (often preloaded) image is
+  // already cached its `load` event won't fire again, so read `.complete`.
+  useEffect(() => {
+    const img = mainImgRef.current;
+    if (img && img.complete && img.naturalWidth > 0) setLoadedKey(order[pos]);
+  }, [pos, order]);
+
+  // Preload the images on either side of the current one so clicking through
+  // them is instant (uses the optimized display copies, not the full originals).
+  useEffect(() => {
+    const RADIUS = 3;
+    for (let d = -RADIUS; d <= RADIUS; d++) {
+      if (d === 0) continue;
+      const s = slides[order[(pos + d + slides.length) % slides.length]];
+      if (!s) continue;
+      // Warm the optimized image, or the (tiny) poster for a video.
+      const im = new Image();
+      im.src = s.type === 'image' ? s.src : s.thumb;
+    }
+  }, [pos, order, slides]);
 
   // Toast auto-dismiss.
   useEffect(() => {
@@ -335,6 +361,7 @@ export function AlbumViewer({ album }: { album: Album }) {
 
   const isZoomed = scale > 1;
   const dragging = drag.current !== null;
+  const loaded = loadedKey === order[pos];
   const imgTransform = `translate(${offset.x + swipeDX}px, ${offset.y}px) scale(${scale})`;
 
   return (
@@ -422,26 +449,40 @@ export function AlbumViewer({ album }: { album: Album }) {
         onDoubleClick={onDoubleClick}
       >
         {slide.type === 'image' ? (
-          <img
-            key={order[pos]}
-            src={slide.src}
-            alt={slide.alt}
-            className={[
-              'av__img',
-              isZoomed ? 'is-zoomed' : '',
-              grabbing ? 'is-grabbing' : '',
-              dragging || swipeDX ? 'is-active' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            style={{ transform: imgTransform }}
-            draggable={false}
-          />
+          <>
+            <img
+              key={`ph-${order[pos]}`}
+              src={slide.thumb}
+              alt=""
+              aria-hidden="true"
+              className={`av__placeholder ${loaded ? 'is-hidden' : ''}`}
+              draggable={false}
+            />
+            <img
+              key={order[pos]}
+              ref={mainImgRef}
+              src={slide.src}
+              alt={slide.alt}
+              onLoad={() => setLoadedKey(order[pos])}
+              className={[
+                'av__img',
+                loaded ? 'is-loaded' : '',
+                isZoomed ? 'is-zoomed' : '',
+                grabbing ? 'is-grabbing' : '',
+                dragging || swipeDX ? 'is-active' : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              style={{ transform: imgTransform }}
+              draggable={false}
+            />
+          </>
         ) : (
           <video
             key={order[pos]}
             className="av__video"
             src={slide.src}
+            poster={slide.thumb}
             controls
             autoPlay
             loop
@@ -512,7 +553,8 @@ const AlbumStrip = memo(function AlbumStrip({
               <img src={s.thumb} alt="" loading="lazy" draggable={false} />
             ) : (
               <span className="av__thumb-video">
-                <Play size={16} />
+                <img src={s.thumb} alt="" loading="lazy" draggable={false} />
+                <Play size={16} className="av__thumb-play" />
               </span>
             )}
           </button>

@@ -28,6 +28,8 @@ export type AlbumVideoSlide = {
   type: 'video';
   /** Video file played in the viewer. */
   src: string;
+  /** Poster frame used as the <video> poster + nav-strip thumbnail. */
+  thumb: string;
   /** MIME type for the <video> source. */
   mime: string;
   /** Accessible description. */
@@ -64,19 +66,20 @@ const alexWu: Album = (() => {
     src: `${base}/img/alexboba${i}.jpg`,
     full: `${base}/full/alexboba${i}.jpg`,
     thumb: `${base}/thumb/alexboba${i}.jpg`,
-    alt: `Alex Wu — photo ${i}`,
-    download: `alex-wu-${i}.jpg`,
+    alt: `Alex Wu Boba — photo ${i}`,
+    download: `alex-wu-boba-${i}.jpg`,
   }));
   const videos: AlbumSlide[] = range(7).map((i) => ({
     type: 'video',
     src: `${base}/vid/alexbobavid${i}.mp4`,
+    thumb: `${base}/thumb/alexbobavid${i}.jpg`,
     mime: 'video/mp4',
-    alt: `Alex Wu — video ${i}`,
-    download: `alex-wu-video-${i}.mp4`,
+    alt: `Alex Wu Boba — video ${i}`,
+    download: `alex-wu-boba-video-${i}.mp4`,
   }));
   return {
     id: 'alex-wu',
-    title: 'Alex Wu',
+    title: 'Alex Wu Boba',
     description: 'A boba-fuelled collection of photos and clips of Alex Wu.',
     cover: `${base}/thumb/alexboba1.jpg`,
     slides: [...images, ...videos],
