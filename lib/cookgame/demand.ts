@@ -1,5 +1,5 @@
-import type { BuyerDynamicState } from './types';
-import { BUYERS } from './content';
+import type { BuyerDynamicState, EffectId } from './types';
+import { BUYERS, EFFECTS } from './content';
 
 export const RESTOCK_PER_MS = 1 / 45000; // full recovery over ~45s real (~a few in-game hours)
 export const DEPLETE_PER_UNIT = 0.08;     // each unit sold saturates the buyer a little
@@ -38,4 +38,20 @@ export function initialBuyerStates(): Record<string, BuyerDynamicState> {
   const out: Record<string, BuyerDynamicState> = {};
   for (const b of BUYERS) out[b.id] = { demand: 1, reputation: 0, preferredEffect: b.preferredEffect };
   return out;
+}
+
+export const DRIFT_CHANCE = 0.0008; // per drift-tick chance a buyer's preference shifts
+
+const EFFECT_IDS = Object.keys(EFFECTS) as EffectId[];
+
+/**
+ * Occasionally shift a buyer's preferred effect. Deterministic from `roll ∈ [0,1)`:
+ * no drift unless roll < DRIFT_CHANCE; the sub-range then selects the new (different) effect.
+ * Returns the same reference when no drift occurs.
+ */
+export function driftPreference(state: BuyerDynamicState, roll: number): BuyerDynamicState {
+  if (roll >= DRIFT_CHANCE) return state;
+  const others = EFFECT_IDS.filter((e) => e !== state.preferredEffect);
+  const idx = Math.min(others.length - 1, Math.floor((roll / DRIFT_CHANCE) * others.length));
+  return { ...state, preferredEffect: others[idx] };
 }

@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import {
   restockDemand, depleteDemand, demandPriceMult, reputationPriceMult,
-  gainReputation, initialBuyerStates, RESTOCK_PER_MS, DEPLETE_PER_UNIT,
+  gainReputation, initialBuyerStates, driftPreference, RESTOCK_PER_MS, DEPLETE_PER_UNIT, DRIFT_CHANCE,
 } from '../demand';
 import { BUYERS } from '../content';
+import type { BuyerDynamicState } from '../types';
 
 describe('restockDemand', () => {
   it('regenerates toward 1 and clamps', () => {
@@ -50,5 +51,29 @@ describe('initialBuyerStates', () => {
     for (const b of BUYERS) {
       expect(s[b.id]).toEqual({ demand: 1, reputation: 0, preferredEffect: b.preferredEffect });
     }
+  });
+});
+
+describe('driftPreference', () => {
+  const base: BuyerDynamicState = { demand: 0.5, reputation: 0.2, preferredEffect: 'energizing' };
+
+  it('returns the same reference when roll is above the drift chance', () => {
+    expect(driftPreference(base, 0.5)).toBe(base);
+  });
+
+  it('drifts to a different effect when roll is below the drift chance', () => {
+    const out = driftPreference(base, 0); // 0 < DRIFT_CHANCE
+    expect(out).not.toBe(base);
+    expect(out.preferredEffect).not.toBe('energizing');
+    expect(out.demand).toBe(0.5);        // other fields preserved
+    expect(out.reputation).toBe(0.2);
+  });
+
+  it('is deterministic for a given roll', () => {
+    expect(driftPreference(base, 0).preferredEffect).toBe(driftPreference(base, 0).preferredEffect);
+  });
+
+  it('drift chance boundary is exclusive', () => {
+    expect(driftPreference(base, DRIFT_CHANCE)).toBe(base); // roll === DRIFT_CHANCE → no drift
   });
 });
