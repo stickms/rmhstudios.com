@@ -1,8 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Hud, PerspectiveCamera } from '@react-three/drei';
-import { useThree } from '@react-three/fiber';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { saveToServer } from '@/lib/temple-of-joy/persistence';
@@ -10,6 +8,7 @@ import { fmt } from '@/lib/temple-of-joy/numbers';
 import type { GameState } from '@/lib/temple-of-joy/types';
 import { Button3D } from './ui3d/Button3D';
 import { Label3D } from './ui3d/Label3D';
+import { CameraOverlay, useOverlaySize } from './ui3d/overlay';
 import { CodexPanel3D } from './CodexPanel3D';
 import { Modals3D } from './Modals3D';
 
@@ -152,9 +151,7 @@ function BackButton({ w, h }: { w: number; h: number }) {
 }
 
 function Layout() {
-  const { viewport } = useThree();
-  const w = viewport.width;
-  const h = viewport.height;
+  const { w, h } = useOverlaySize();
   const active = useSnap((s) => s.activeTab, 150);
   return (
     <>
@@ -175,16 +172,9 @@ function Layout() {
  * camera orbits.
  */
 export function Chrome3D() {
-    // NOTE: renderPriority MUST be 1 — drei's <Hud> only renders the underlying
-    // main scene when renderPriority === 1 (and any value > 0 disables R3F's
-    // automatic render). With a higher value the temple world never draws.
   return (
-    <Hud renderPriority={1}>
-      <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={50} />
-      <ambientLight intensity={1.2} />
-      <pointLight position={[3, 4, 8]} intensity={40} color="#ffe6b0" decay={2} />
-      <pointLight position={[-4, -2, 6]} intensity={20} color="#9bbcff" decay={2} />
+    <CameraOverlay distance={6}>
       <Layout />
-    </Hud>
+    </CameraOverlay>
   );
 }
