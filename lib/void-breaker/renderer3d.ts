@@ -93,6 +93,8 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private heartMesh!: THREE.InstancedMesh;
   private particles!: THREE.Points;
   private shockwaves: THREE.Mesh[] = [];
+  /** Danger discs telegraphing where bomber bombs will explode. */
+  private bombRings: THREE.Mesh[] = [];
   private floor!: THREE.Mesh;
   private grid!: THREE.LineSegments;
   private border!: THREE.LineSegments;
@@ -451,6 +453,22 @@ export class VoidBreakerRenderer3D implements VBRenderer {
       this.scene.add(m);
       this.shockwaves.push(m);
     }
+
+    // Bomb danger discs (flat, additive) — telegraph the blast zone.
+    const discGeo = new THREE.CircleGeometry(1, 32);
+    discGeo.rotateX(-Math.PI / 2);
+    for (let i = 0; i < 10; i++) {
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xff8a3a, transparent: true, opacity: 0,
+        blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+      });
+      const disc = new THREE.Mesh(discGeo, mat);
+      disc.position.y = 2;
+      disc.visible = false;
+      disc.frustumCulled = false;
+      this.scene.add(disc);
+      this.bombRings.push(disc);
+    }
   }
 
   private setupComposer(): void {
@@ -568,6 +586,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.syncHearts(game);
     this.syncParticles(game);
     this.syncShockwaves(game);
+    this.syncBombs(game);
 
     // Rift animation.
     this.rift.rotation.y = this.time * 0.6;
@@ -665,7 +684,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     const m = this.projMesh;
     for (let i = 0; i < MAX_PROJECTILES; i++) {
       const pr = game.projectiles[i];
-      if (!pr || !pr.active) { tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0); }
+      if (!pr || !pr.active || pr.fuse > 0) { tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0); }
       else {
         // Stretch into a tracer along the travel direction.
         const ang = Math.atan2(pr.vy, pr.vx);
@@ -790,6 +809,21 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     }
     pos.needsUpdate = true;
     col.needsUpdate = true;
+  }
+
+  private syncBombs(game: VoidBreakerEngine): void {
+    let idx = 0;
+    for (const pr of game.projectiles) {
+      if (!pr.active || pr.fuse <= 0) continue;
+      if (idx >= this.bombRings.length) break;
+      const disc = this.bombRings[idx++];
+      const fill = 1 - Math.max(0, pr.fuse) / 1.3;
+      disc.visible = true;
+      disc.position.set(pr.x, 2, pr.y);
+      disc.scale.set(pr.blastRadius, 1, pr.blastRadius);
+      (disc.material as THREE.MeshBasicMaterial).opacity = 0.12 + fill * 0.3;
+    }
+    for (let s = idx; s < this.bombRings.length; s++) this.bombRings[s].visible = false;
   }
 
   private syncShockwaves(game: VoidBreakerEngine): void {

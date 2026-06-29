@@ -638,6 +638,19 @@ export class VoidBreakerRenderer {
     for (const pr of game.projectiles) {
       if (!pr.active) continue;
       const pos = toScreen(pr.x, pr.y);
+      if (pr.fuse > 0) {
+        // Bomb telegraph: a danger ring that fills in as the fuse runs out.
+        const fill = 1 - Math.max(0, pr.fuse) / 1.3;
+        const br = pr.blastRadius * scale;
+        ctx.fillStyle = `rgba(255,120,40,${0.05 + fill * 0.18})`;
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, br, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = `rgba(255,150,60,${0.5 + fill * 0.5})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, br, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#ffcc66';
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, Math.max(2, 5 * scale), 0, Math.PI * 2); ctx.fill();
+        continue;
+      }
       const r = Math.max(2, pr.radius * scale);
       ctx.fillStyle = pr.isPlayer ? NEON_CYAN : NEON_MAGENTA;
       ctx.beginPath();
