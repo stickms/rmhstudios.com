@@ -146,6 +146,23 @@ describe('VoidBreakerEngine', () => {
     expect(g.popups.some(p => p.text === 'CRIT')).toBe(true);
   });
 
+  it('void thorns reflects contact damage to the attacker', () => {
+    const g = new VoidBreakerEngine();
+    g.startGame();
+    advanceToPlaying(g);
+    g.obstacles = [];
+    g.projectiles.forEach(pr => (pr.active = false));
+    g.player.fireTimer = 99;            // suppress auto-fire interference
+    g.player.invincibleUntil = 0;
+    g.elapsedMs = 5000;                 // ensure not invincible
+    g.stats.thornsDamage = 3;
+    g.player.x = 800; g.player.y = 500;
+    const e = placeEnemy(g, 800, 500, 3); // overlapping, hp == thorns
+    g.update(0.05, makeInput());
+    expect(e.active).toBe(false);       // killed by thorns on contact
+    expect(g.player.hp).toBe(2);        // still took the contact hit
+  });
+
   it('applies meta-progression bonuses at run start', () => {
     const g = new VoidBreakerEngine();
     g.metaBonuses = {

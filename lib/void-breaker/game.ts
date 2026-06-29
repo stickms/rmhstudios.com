@@ -1420,6 +1420,12 @@ export class VoidBreakerEngine {
         this.damagePlayer(1);
         const [nx, ny] = norm(e.x - pl.x, e.y - pl.y);
         e.x += nx * 30; e.y += ny * 30;
+        // Void Thorns: contact reflects damage back to the attacker.
+        if (this.stats.thornsDamage > 0 && !e.isBoss) {
+          e.hp -= this.stats.thornsDamage;
+          e.hitFlashUntil = this.elapsedMs + 80;
+          if (e.hp <= 0) this.killEnemy(e);
+        }
         break;
       }
     }
