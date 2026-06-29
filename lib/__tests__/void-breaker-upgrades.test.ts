@@ -35,6 +35,16 @@ describe('void-breaker upgrades', () => {
     expect(s.maxHpBonus).toBe(1);
   });
 
+  it('thorns and executioner apply their stats', () => {
+    const s = makePlayerStats();
+    getUpgradeDef('thorns')!.apply(s);
+    expect(s.thornsDamage).toBe(2);
+    const before = s.critMult;
+    getUpgradeDef('executioner')!.apply(s);
+    expect(s.critChance).toBeCloseTo(0.06, 5);
+    expect(s.critMult).toBeCloseTo(before + 0.3, 5);
+  });
+
   it('caps siphon and deadeye at their ceilings even when over-stacked', () => {
     const s = makePlayerStats();
     const siphon = getUpgradeDef('siphon')!;

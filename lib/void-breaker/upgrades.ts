@@ -17,7 +17,9 @@ export type UpgradeId =
   | 'siphon'
   | 'deadeye'
   | 'magnetism'
-  | 'focus_flow';
+  | 'focus_flow'
+  | 'thorns'
+  | 'executioner';
 
 export type UpgradeRarity = 'common' | 'rare';
 
@@ -53,6 +55,8 @@ export interface PlayerStats {
   magnetMult: number;
   /** Focus cooldown multiplier (<1 = faster). */
   focusCooldownMult: number;
+  /** Contact damage reflected back to enemies that hit the player. */
+  thornsDamage: number;
 }
 
 export function makePlayerStats(): PlayerStats {
@@ -72,6 +76,7 @@ export function makePlayerStats(): PlayerStats {
     critMult: 2,
     magnetMult: 1,
     focusCooldownMult: 1,
+    thornsDamage: 0,
   };
 }
 
@@ -169,6 +174,18 @@ export const UPGRADE_DEFS: UpgradeDef[] = [
     color: '#44ffff', icon: '◓',
     description: '-20% Focus cooldown.',
     apply: (s) => { s.focusCooldownMult *= 0.8; },
+  },
+  {
+    id: 'thorns', name: 'Void Thorns', rarity: 'rare', maxStacks: 3,
+    color: '#ff5599', icon: '✺',
+    description: 'Enemies that touch you take 2 damage.',
+    apply: (s) => { s.thornsDamage += 2; },
+  },
+  {
+    id: 'executioner', name: 'Executioner', rarity: 'rare', maxStacks: 3,
+    color: '#ffe066', icon: '☠',
+    description: '+6% crit chance and +0.3× crit damage.',
+    apply: (s) => { s.critChance = Math.min(0.75, s.critChance + 0.06); s.critMult += 0.3; },
   },
 ];
 
