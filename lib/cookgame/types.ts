@@ -23,6 +23,8 @@ export interface Buyer {
   timeWindow?: TimeWindow;   // when set, this buyer only deals during the window (M4)
 }
 
+export interface BuyerDynamicState { demand: number; reputation: number; preferredEffect: EffectId; }
+
 export interface Product { baseId: BaseId; effects: EffectId[]; qualityMult?: number; }
 
 export interface PlotState {
