@@ -46,6 +46,19 @@ describe('feel layer — trauma shake', () => {
   });
 });
 
+describe('feel layer — impact events add trauma', () => {
+  it('detonation adds significant trauma', () => {
+    const g = new VoidBreakerEngine();
+    g.startGame();
+    advanceToPlaying(g);
+    g.trauma = 0;
+    g.player.shards = 20;
+    g.player.detonateCooldown = 0;
+    g.update(0.016, makeInput({ detonate: true }));
+    expect(g.trauma).toBeGreaterThan(0.3);
+  });
+});
+
 describe('feel layer — headless flag', () => {
   it('headless disables hitstop so the sim is not time-distorted', () => {
     const g = new VoidBreakerEngine();

@@ -1498,6 +1498,8 @@ export class VoidBreakerEngine {
           this.spawnParticles(p.x, p.y, isCrit ? '#ffe066' : e.color, isCrit ? 8 : 4, isCrit ? 150 : 100);
           if (isCrit) {
             this.popups.push({ text: 'CRIT', x: e.x, y: e.y - 18, life: 0.5, maxLife: 0.5, color: '#ffe066' });
+            this.addTrauma(0.12);
+            this.requestHitStop(45);
           }
           if (e.hp <= 0) this.killEnemy(e);
           else this.emitSfx(e.isBoss ? 'bossHit' : 'hit', { pitch: 0.9 + Math.random() * 0.2 });
@@ -1598,6 +1600,7 @@ export class VoidBreakerEngine {
       this.triggerShake(7, 250);
     } else {
       this.emitSfx('kill', { pitch: 0.85 + Math.random() * 0.3 });
+      this.addTrauma(0.04); // tiny kick per kill (no hitstop — too frequent)
     }
     const points = Math.round(e.value * this.totalMultiplier);
     this.score += points;
