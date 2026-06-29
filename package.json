@@ -29,7 +29,8 @@
     "epic:build": "node_modules/.bin/tsx scripts/epic/build-epic.ts",
     "i18n:extract": "i18next 'app/**/*.{ts,tsx}' 'components/**/*.{ts,tsx}'",
     "i18n:translate": "pnpm exec tsx scripts/translate-locales.ts",
-    "i18n:resources": "pnpm exec tsx scripts/gen-i18n-resources.ts"
+    "i18n:resources": "pnpm exec tsx scripts/gen-i18n-resources.ts",
+    "i18n:translate:local": "bash scripts/translate-i18n-local.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
