@@ -2,11 +2,14 @@
 import * as THREE from 'three';
 import type { GameEngine } from '@/lib/game/GameEngine';
 import { BG_COLOR } from './palette';
+import { NoteField, type FieldCtx } from './NoteField';
+import { useGameStore } from '@/lib/store/useGameStore';
 
 export class SliceRenderer3D {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
+  private noteField: NoteField;
   private reducedFx = false;
   public isMobileV = false;
 
@@ -26,6 +29,8 @@ export class SliceRenderer3D {
     // Base lighting (Environment task adds reactive lights later).
     const ambient = new THREE.AmbientLight(0xffffff, 0.25);
     this.scene.add(ambient);
+
+    this.noteField = new NoteField(this.scene);
   }
 
   setReducedFx(reduced: boolean): void {
@@ -56,12 +61,21 @@ export class SliceRenderer3D {
     this.camera.updateProjectionMatrix();
   }
 
-  renderFrame(_engine: GameEngine, _audioTime: number): void {
-    // Subsystems are wired into this method in later tasks.
+  renderFrame(engine: GameEngine, audioTime: number): void {
+    const mods = useGameStore.getState().modifiers;
+    const ctx: FieldCtx = {
+      isMobileV: this.isMobileV,
+      speedMod: mods.speed || 1,
+      oneTrack: mods.oneTrack,
+      invisible: mods.invisible,
+      reducedFx: this.reducedFx,
+    };
+    this.noteField.update(engine, audioTime, ctx);
     this.renderer.render(this.scene, this.camera);
   }
 
   dispose(): void {
+    this.noteField.dispose();
     this.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (mesh.geometry) mesh.geometry.dispose();
