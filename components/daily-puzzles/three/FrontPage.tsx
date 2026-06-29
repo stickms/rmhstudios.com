@@ -13,10 +13,7 @@ import { PAGE_W, PAGE_H } from './Newspaper';
 import { hasCompleted } from '@/lib/daily-puzzles/persistence';
 import { formatDateKey, getTodayEST } from '@/lib/daily-puzzles/seed';
 
-// SP1 wires only Spectrum into the desk; others arrive in SP2–SP7.
-const WIRED_MODES = new Set<string>(['spectrum']);
-
-export function FrontPage({ onSelect }: { onSelect: (id: string) => void }) {
+export function FrontPage() {
   const { t } = useTranslation('c-daily-puzzles');
   const navigate = useNavigate();
   const dateKey = formatDateKey(getTodayEST());
@@ -40,17 +37,12 @@ export function FrontPage({ onSelect }: { onSelect: (id: string) => void }) {
         {DESK_MODES.map((m, i) => {
           const [x, y] = layout.positions[i];
           const done = hasCompleted(m.id, dateKey);
-          const wired = WIRED_MODES.has(m.id);
-          const label = wired
-            ? `${m.emoji}  ${m.title}${done ? '  ✓' : ''}`
-            : `${m.emoji}  ${m.title}  · soon`;
           return (
             <Button3D
               key={m.id}
-              label={label}
+              label={`${m.emoji}  ${m.title}${done ? '  ✓' : ''}`}
               onClick={() => {
                 useDeskStore.getState().setFocusedMode(m.id);
-                onSelect(m.id);
                 navigate({ to: `/daily/${m.id}` as string });
               }}
               billboard={false}
@@ -58,8 +50,7 @@ export function FrontPage({ onSelect }: { onSelect: (id: string) => void }) {
               height={layout.cellH}
               fontSize={32}
               color={m.accent}
-              enabled={wired}
-              pulse={wired && !done}
+              pulse={!done}
               position={[x, y, 0]}
             />
           );

@@ -72,7 +72,7 @@ function Contents({ children }: { children?: React.ReactNode }) {
       {playing ? (
         <DeskGameFrame onBack={back}>{children}</DeskGameFrame>
       ) : (
-        <FrontPage onSelect={() => {}} />
+        <FrontPage />
       )}
       <CameraRig focused={playing} />
     </>
