@@ -88,7 +88,7 @@ export function TempleScene() {
       shadows={false}
       dpr={dpr}
       gl={{ antialias: true, powerPreference: 'high-performance', alpha: false }}
-      camera={{ position: [0, 7, 16], fov: 45, near: 0.1, far: 120 }}
+      camera={{ position: [0, 6, 17], fov: 45, near: 0.1, far: 140 }}
       style={{ touchAction: 'none' }}
     >
       <PerformanceMonitor

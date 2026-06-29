@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { useThree } from '@react-three/fiber';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt, formatDuration } from '@/lib/temple-of-joy/numbers';
@@ -12,6 +11,7 @@ import { templeAudio } from '@/lib/temple-of-joy/audio';
 import { Panel3D } from './ui3d/Panel3D';
 import { Label3D } from './ui3d/Label3D';
 import { Button3D } from './ui3d/Button3D';
+import { useOverlaySize } from './ui3d/overlay';
 
 const S = () => useTempleStore.getState();
 
@@ -176,9 +176,7 @@ function AchievementToast3D({ w, h }: { w: number; h: number }) {
  * leave the DOM. Centred modals dim the scene behind them.
  */
 export function Modals3D() {
-  const { viewport } = useThree();
-  const w = viewport.width;
-  const h = viewport.height;
+  const { w, h } = useOverlaySize();
   return (
     <>
       <EventModal3D w={w} h={h} />
