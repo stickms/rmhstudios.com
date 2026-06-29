@@ -29,7 +29,9 @@ export type SfxName =
   | 'waveClear'
   | 'unlock'
   | 'gameOver'
-  | 'uiClick';
+  | 'uiClick'
+  | 'slowmo'
+  | 'surge';
 
 export interface SfxEvent {
   name: SfxName;
@@ -268,6 +270,20 @@ export class VoidBreakerAudio {
         break;
       case 'uiClick':
         this.tone({ freq: 900, freqEnd: 1300, type: 'square', dur: 0.04, gain: 0.06 });
+        break;
+      case 'slowmo':
+        // Cinematic time-dilation whoosh for the boss-death slow-mo moment.
+        // (Vocabulary only — not yet wired into the engine; see renderer Task 8.)
+        this.tone({ freq: 600, freqEnd: 90, type: 'sine', dur: 0.7, gain: 0.18 });
+        this.tone({ freq: 140, freqEnd: 55, type: 'sine', dur: 0.9, gain: 0.16 });
+        this.noise({ dur: 0.8, gain: 0.10, freq: 1800, freqEnd: 200, q: 0.5, filterType: 'lowpass' });
+        break;
+      case 'surge':
+        // Rising power swell signaling a surge takeover (state-change cue).
+        // (Vocabulary only — not yet wired into the engine.)
+        this.tone({ freq: 220, freqEnd: 880, type: 'sawtooth', dur: 0.5, gain: 0.14 });
+        this.tone({ freq: 330, freqEnd: 1320, type: 'triangle', dur: 0.5, gain: 0.08, delay: 0.04 });
+        this.noise({ dur: 0.4, gain: 0.06, freq: 400, freqEnd: 3000, q: 0.7 });
         break;
     }
   }
