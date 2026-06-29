@@ -6,6 +6,8 @@ import { NoteField, type FieldCtx } from './NoteField';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { PostFX } from './PostFX';
 import { EffectsLayer } from './EffectsLayer';
+import { Environment } from './Environment';
+import { AudioManager } from '@/lib/audio/AudioManager';
 
 export class SliceRenderer3D {
   private renderer: THREE.WebGLRenderer;
@@ -14,6 +16,7 @@ export class SliceRenderer3D {
   private noteField: NoteField;
   private postfx!: PostFX;
   private fx!: EffectsLayer;
+  private env!: Environment;
   private lastT = 0;
   private camBase = new THREE.Vector3();
   private reducedFx = false;
@@ -38,6 +41,7 @@ export class SliceRenderer3D {
 
     this.noteField = new NoteField(this.scene);
     this.fx = new EffectsLayer(this.scene);
+    this.env = new Environment(this.scene);
   }
 
   setReducedFx(reduced: boolean): void {
@@ -93,6 +97,8 @@ export class SliceRenderer3D {
     this.noteField.update(engine, audioTime, ctx);
     this.fx.consume(engine, ctx, audioTime);
     this.fx.update(dt);
+    const energy = AudioManager.getInstance().getBeatEnergy();
+    this.env.update(dt, energy);
 
     // Apply decaying screen shake around the framed base position.
     const s = this.fx.getShake() * (this.reducedFx ? 0 : 0.25);
@@ -108,6 +114,7 @@ export class SliceRenderer3D {
   dispose(): void {
     this.noteField.dispose();
     this.fx.dispose();
+    this.env.dispose();
     this.postfx?.dispose();
     this.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
