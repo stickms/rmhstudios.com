@@ -19,6 +19,8 @@ export class SliceRenderer3D {
   private env!: Environment;
   private lastT = 0;
   private camBase = new THREE.Vector3();
+  private camBaseRest = new THREE.Vector3();
+  private breathDir = new THREE.Vector3();
   private reducedFx = false;
   public isMobileV = false;
 
@@ -70,7 +72,9 @@ export class SliceRenderer3D {
       this.camera.up.set(0, 1, 0);
       this.camera.lookAt(0, 0, 0);
     }
+    this.camBaseRest.copy(this.camera.position);
     this.camBase.copy(this.camera.position);
+    this.breathDir.copy(this.camera.position).sub(new THREE.Vector3(0, 0, 0)).normalize();
     this.camera.updateProjectionMatrix();
 
     const w = Math.floor(cssWidth * Math.min(dpr, 2));
@@ -99,6 +103,15 @@ export class SliceRenderer3D {
     this.fx.update(dt);
     const energy = AudioManager.getInstance().getBeatEnergy();
     this.env.update(dt, energy);
+
+    // Beat-reactive bloom swell (base 0.9 → up to ~1.7 on strong bass).
+    this.postfx.setBloom(0.9 + energy * 0.8);
+
+    // Subtle camera "breath": dolly slightly toward the field on the beat.
+    // camBase is recomputed from camBaseRest each frame — no cumulative drift.
+    // The shake block below then jitters camera.position around this breathed base.
+    const breath = this.reducedFx ? 0 : energy * 0.4;
+    this.camBase.copy(this.camBaseRest).addScaledVector(this.breathDir, -breath);
 
     // Apply decaying screen shake around the framed base position.
     const s = this.fx.getShake() * (this.reducedFx ? 0 : 0.25);
