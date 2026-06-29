@@ -45,6 +45,8 @@ export class MissionManager {
         this.scene = scene;          // CyberpunkScene
         this.vehicle = vehicle;
         this.onToast = opts.onToast || (() => {});
+        this.onEvent = opts.onEvent || null; // Story Mode hook: (type, payload)
+        this._storyMode = false;     // when true, no auto courier fares
 
         this.credits = 0;
         this.best = this._loadBest();
@@ -92,9 +94,28 @@ export class MissionManager {
         this.credits = 0;
         this.combo = 1;
         this.heat = 0;
+        this._lastEvent = null;  // don't let a bust/escape from a prior run flash on frame 1
         this._clearPolice();
+        // Story Mode drives its own objectives — don't auto-offer courier fares.
+        if (this._storyMode) return;
         this._offerDelivery(true);
         this.onToast('接单 — 前往取货点  ·  PICK UP CARGO', 'info');
+    }
+
+    /* ── Story Mode control surface (additive; free roam unaffected) ── */
+
+    setStoryMode(on) { this._storyMode = !!on; }
+
+    /** Raise the wanted level toward a target, spawning pursuit. */
+    commandWanted(level, msg) {
+        const target = Math.max(0, Math.min(HEAT_MAX, level || 0));
+        if (target > this.heat) this._raiseHeat(target - this.heat, msg || null);
+    }
+
+    /** Drop all pursuit immediately. */
+    clearPursuit() {
+        this._clearPolice();
+        this.heat = 0;
     }
 
     /** Pause/clean up world objects when leaving the simulation (back to menu). */
@@ -203,6 +224,7 @@ export class MissionManager {
                 this.onToast(`通缉等级 ★${this.heat}  ·  WANTED`, 'bad');
             }
             this._escapeTimer = 0;
+            if (this.onEvent) this.onEvent('heatRaised', this.heat);
         }
     }
 
@@ -378,9 +400,8 @@ export class MissionManager {
         p.hp -= amount;
         if (p.hp > 0) {
             // brief hit flash on the body
-            if (p.mesh.children[0] && p.mesh.children[0].material) {
-                p.mesh.children[0].material.emissive && p.mesh.children[0].material.emissive.setHex(0xff4444);
-            }
+            const hitMat = p.mesh.children[0] && p.mesh.children[0].material;
+            if (hitMat && hitMat.emissive) hitMat.emissive.setHex(0xff4444);
             return;
         }
         // Destroyed
@@ -396,6 +417,7 @@ export class MissionManager {
         this.credits += bounty;
         this._saveBest();
         this.onToast(`击毁警车  +¥${bounty}  ·  COP DOWN`, 'good');
+        if (this.onEvent) this.onEvent('copDestroyed');
 
         // Shooting cops escalates the wanted level (GTA-style)
         this._raiseHeat(1, null);
@@ -442,6 +464,7 @@ export class MissionManager {
         this.onToast(`被捕！  -¥${penalty}  ·  BUSTED`, 'bad');
         this.heat = 0;
         this._clearPolice();
+        if (this.onEvent) this.onEvent('busted');
         if (this.phase === 'deliver' || this.phase === 'pickup') this._endDelivery(2.5);
     }
 
@@ -452,6 +475,7 @@ export class MissionManager {
         this.onToast(`成功甩开警方  +¥${bonus}  ·  ESCAPED`, 'good');
         this.heat = 0;
         this._clearPolice();
+        if (this.onEvent) this.onEvent('escaped');
         this._saveBest();
     }
 
@@ -460,8 +484,8 @@ export class MissionManager {
     update(dt) {
         if (this._collisionCd > 0) this._collisionCd -= dt;
 
-        // Offer the next delivery after the cooldown
-        if (this.phase === 'idle') {
+        // Offer the next delivery after the cooldown (free roam only)
+        if (!this._storyMode && this.phase === 'idle') {
             this._nextDelay -= dt;
             if (this._nextDelay <= 0) this._offerDelivery(false);
         }
@@ -543,6 +567,8 @@ export class MissionManager {
     }
 
     _saveBest() {
+        // Story Mode credits must never touch the free-roam sandbox high score.
+        if (this._storyMode) return;
         if (this.credits > this.best) {
             this.best = this.credits;
             try { localStorage.setItem(BEST_KEY, String(this.best)); } catch { /* ignore */ }
