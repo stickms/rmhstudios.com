@@ -19,6 +19,25 @@ function advanceToPlaying(g: VoidBreakerEngine): void {
   for (let i = 0; i < 200 && g.state !== 'playing'; i++) g.update(0.05, input);
 }
 
+/** Activate a pooled enemy at a position with given hp. Returns it. */
+function placeEnemy(g: VoidBreakerEngine, x: number, y: number, hp: number) {
+  const e = g.enemies.find(en => !en.active)!;
+  e.active = true; e.isBoss = false; e.isElite = false;
+  e.type = 'drifter'; e.x = x; e.y = y; e.radius = 10;
+  e.hp = hp; e.maxHp = hp; e.shardCount = 1; e.value = 10;
+  e.color = '#8866cc'; e.hitFlashUntil = 0; e.bossSpecialActive = false;
+  return e;
+}
+
+/** Activate a pooled, stationary player bullet at a position. Returns it. */
+function placePlayerProj(g: VoidBreakerEngine, x: number, y: number, dmg: number, pierce: number) {
+  const p = g.projectiles.find(pr => !pr.active)!;
+  p.active = true; p.isPlayer = true; p.x = x; p.y = y;
+  p.vx = 0; p.vy = 0; p.radius = 4; p.damage = dmg; p.life = 2;
+  p.pierce = pierce; p.lastHitId = -1;
+  return p;
+}
+
 describe('VoidBreakerEngine', () => {
   it('initializes a fresh run', () => {
     const g = new VoidBreakerEngine();
@@ -98,5 +117,45 @@ describe('VoidBreakerEngine', () => {
     g.player.x = 800;
     g.update(0.05, makeInput({ right: true }));
     expect(g.player.x).toBeLessThan(800);
+  });
+
+  it('siphon (lifesteal) heals on kill', () => {
+    const g = new VoidBreakerEngine();
+    g.startGame();
+    advanceToPlaying(g);
+    g.obstacles = [];
+    g.stats.lifestealChance = 1;        // guaranteed
+    g.player.hp = 1;                     // below max
+    g.player.x = 800; g.player.y = 500;
+    placeEnemy(g, 1200, 500, 1);
+    placePlayerProj(g, 1200, 500, 1, 0);
+    g.update(0.05, makeInput());
+    expect(g.player.hp).toBe(2);
+  });
+
+  it('deadeye crit deals extra damage and flags a CRIT', () => {
+    const g = new VoidBreakerEngine();
+    g.startGame();
+    advanceToPlaying(g);
+    g.obstacles = [];
+    g.stats.critChance = 1;             // guaranteed crit, critMult = 2
+    const e = placeEnemy(g, 1200, 500, 10);
+    placePlayerProj(g, 1200, 500, 1, 0);
+    g.update(0.05, makeInput());
+    expect(e.hp).toBe(8);               // 10 - round(1 * 2)
+    expect(g.popups.some(p => p.text === 'CRIT')).toBe(true);
+  });
+
+  it('piercing rounds pass through an enemy instead of stopping', () => {
+    const g = new VoidBreakerEngine();
+    g.startGame();
+    advanceToPlaying(g);
+    g.obstacles = [];
+    const e = placeEnemy(g, 1200, 500, 10);
+    const proj = placePlayerProj(g, 1200, 500, 1, 1); // pierce 1
+    g.update(0.05, makeInput());
+    expect(e.hp).toBe(9);
+    expect(proj.active).toBe(true);     // still flying
+    expect(proj.pierce).toBe(0);        // one pierce spent
   });
 });
