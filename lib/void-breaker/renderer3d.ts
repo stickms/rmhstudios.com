@@ -60,6 +60,8 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private boss!: THREE.Group;
   private bossCore!: THREE.Mesh;
   private enemyMesh!: THREE.InstancedMesh;
+  /** Distinct meshes for the sprite-less enemy types. */
+  private typeMeshes!: Record<'sniper' | 'shielded' | 'healer', THREE.InstancedMesh>;
   /** Old enemy sprite art, laid flat on the ground for types that have it. */
   private readonly enemyTextures = new Map<string, THREE.Texture>();
   private spritePool: THREE.Mesh[] = [];
@@ -284,6 +286,24 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.enemyMesh.frustumCulled = false;
     this.scene.add(this.enemyMesh);
 
+    // Distinct meshes for the sprite-less newcomers: sniper dart, shielded cube,
+    // healer orb. Each is a single-colored emissive instanced mesh.
+    const mkType = (geo: THREE.BufferGeometry, color: number, emissive: number): THREE.InstancedMesh => {
+      const mat = new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: 1.5, roughness: 0.35, metalness: 0.45 });
+      const im = new THREE.InstancedMesh(geo, mat, 48);
+      im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+      im.frustumCulled = false;
+      this.scene.add(im);
+      return im;
+    };
+    const dart = new THREE.ConeGeometry(0.8, 2.6, 6);
+    dart.rotateZ(-Math.PI / 2); // apex points +X (toward aim after Y-rotation)
+    this.typeMeshes = {
+      sniper: mkType(dart, 0x551015, 0xff5544),
+      shielded: mkType(new THREE.BoxGeometry(1.5, 1.5, 1.5), 0x101d3a, 0x5577ff),
+      healer: mkType(new THREE.IcosahedronGeometry(1, 0), 0x0d3325, 0x33ff99),
+    };
+
     // Old enemy sprite art → textures (additive blending makes the black bg
     // vanish and the art glow), plus a pool of flat ground planes to show them.
     const texLoader = new THREE.TextureLoader();
@@ -459,46 +479,79 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   }
 
   private syncEnemies(game: VoidBreakerEngine): void {
-    const m = this.enemyMesh;
+    const octa = this.enemyMesh;
     let spriteIdx = 0;
+    const tIdx = { sniper: 0, shielded: 0, healer: 0 };
     for (let i = 0; i < MAX_ENEMIES; i++) {
       const e = game.enemies[i];
       // Bosses render via the dedicated boss group, not the instanced octahedra.
       const active = !!e && e.active && !e.isBoss;
-      const tex = active ? this.enemyTextures.get(e.type) : undefined;
+      let octaUsed = false;
 
-      if (active && tex) {
-        // Old model: flat ground sprite (additive glow). Hide the octahedron slot.
-        const plane = this.spritePool[spriteIdx++];
-        const mat = plane.material as THREE.MeshBasicMaterial;
-        if (mat.map !== tex) { mat.map = tex; mat.needsUpdate = true; }
-        const sz = e.radius * 3.4 * (e.isElite ? 1.3 : 1);
-        plane.visible = true;
-        plane.position.set(e.x, 7, e.y);
-        plane.scale.set(sz, sz, sz);
-        if (game.elapsedMs < e.hitFlashUntil) mat.color.setRGB(2.2, 2.2, 2.2);
-        else if (e.isElite) mat.color.setRGB(1.4, 0.7, 1.1);
-        else mat.color.setRGB(1, 1, 1);
-        tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0);
-      } else if (active) {
-        // New enemy types (sniper/healer/shielded) keep a 3D crystal.
-        const r = e.radius * 1.15;
-        tmpObj.position.set(e.x, r, e.y);
-        tmpObj.rotation.set(this.time * 0.8 + i, this.time * 1.1 + i, 0);
-        tmpObj.scale.setScalar(r);
-        const hot = game.elapsedMs < e.hitFlashUntil;
-        tmpColor.set(hot ? '#ffffff' : (e.color || '#cc4466'));
-        m.setColorAt(i, tmpColor);
-      } else {
-        tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0);
+      if (active) {
+        const tex = this.enemyTextures.get(e.type);
+        const dedicated = (e.type === 'sniper' || e.type === 'shielded' || e.type === 'healer')
+          ? this.typeMeshes[e.type] : undefined;
+
+        if (tex) {
+          // Old model: flat ground sprite (additive glow).
+          const plane = this.spritePool[spriteIdx++];
+          const mat = plane.material as THREE.MeshBasicMaterial;
+          if (mat.map !== tex) { mat.map = tex; mat.needsUpdate = true; }
+          const sz = e.radius * 3.4 * (e.isElite ? 1.3 : 1);
+          plane.visible = true;
+          plane.position.set(e.x, 7, e.y);
+          plane.scale.set(sz, sz, sz);
+          if (game.elapsedMs < e.hitFlashUntil) mat.color.setRGB(2.2, 2.2, 2.2);
+          else if (e.isElite) mat.color.setRGB(1.4, 0.7, 1.1);
+          else mat.color.setRGB(1, 1, 1);
+        } else if (dedicated) {
+          // Distinct shape: sniper dart aims at the player; others tumble.
+          const r = e.radius * (e.isElite ? 1.3 : 1.1);
+          tmpObj.position.set(e.x, r + 2, e.y);
+          if (e.type === 'sniper') {
+            tmpObj.rotation.set(0, -Math.atan2(game.player.y - e.y, game.player.x - e.x), 0);
+          } else {
+            tmpObj.rotation.set(this.time * 0.8 + i, this.time * 1.0 + i, 0);
+          }
+          tmpObj.scale.setScalar(r);
+          tmpObj.updateMatrix();
+          dedicated.setMatrixAt(tIdx[e.type as 'sniper' | 'shielded' | 'healer']++, tmpObj.matrix);
+        } else {
+          // Fallback crystal for any other type.
+          const r = e.radius * 1.15;
+          tmpObj.position.set(e.x, r, e.y);
+          tmpObj.rotation.set(this.time * 0.8 + i, this.time * 1.1 + i, 0);
+          tmpObj.scale.setScalar(r);
+          const hot = game.elapsedMs < e.hitFlashUntil;
+          tmpColor.set(hot ? '#ffffff' : (e.color || '#cc4466'));
+          octa.setColorAt(i, tmpColor);
+          tmpObj.updateMatrix();
+          octa.setMatrixAt(i, tmpObj.matrix);
+          octaUsed = true;
+        }
       }
-      tmpObj.updateMatrix();
-      m.setMatrixAt(i, tmpObj.matrix);
+
+      if (!octaUsed) {
+        tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0);
+        tmpObj.updateMatrix();
+        octa.setMatrixAt(i, tmpObj.matrix);
+      }
     }
-    m.instanceMatrix.needsUpdate = true;
-    if (m.instanceColor) m.instanceColor.needsUpdate = true;
-    // Hide any sprite planes not used this frame.
+    octa.instanceMatrix.needsUpdate = true;
+    if (octa.instanceColor) octa.instanceColor.needsUpdate = true;
+
+    // Hide unused sprite planes + dedicated-mesh instances.
     for (let s = spriteIdx; s < this.spritePool.length; s++) this.spritePool[s].visible = false;
+    for (const key of ['sniper', 'shielded', 'healer'] as const) {
+      const mesh = this.typeMeshes[key];
+      for (let s = tIdx[key]; s < mesh.count; s++) {
+        tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0);
+        tmpObj.updateMatrix();
+        mesh.setMatrixAt(s, tmpObj.matrix);
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
   }
 
   private syncProjectiles(game: VoidBreakerEngine): void {
