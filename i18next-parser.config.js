@@ -3,6 +3,8 @@ export default {
   locales: [
     "en", "zh", "ar", "hi", "es", "fr", "pt", "ru",
     "de", "ja", "ko", "it", "id", "vi", "tr", "ur",
+    "bn", "pa", "ta", "te", "mr", "fa", "th", "pl",
+    "uk", "nl", "fil", "ms", "ro", "el", "cs", "sv",
   ],
   defaultNamespace: "common",
   namespaceSeparator: ":",

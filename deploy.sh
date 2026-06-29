@@ -596,6 +596,67 @@ fi
 # (R2 static asset sync runs post-build as Step 2a, using the freshly built
 #  image — see below.)
 
+# ── Step 1d: One-time FULL-SITE i18n translation (DeepSeek) ──────────────────
+# TEMPORARY — delete this whole block after the one-time full translation deploy.
+#
+# DeepSeek is reachable from this server (it is blocked from the dev sandbox), so
+# the complete translated catalogs for every non-English locale are generated
+# HERE, before the image build, and baked into THIS build. They are ALSO pushed
+# to a NEW branch on origin (direct commits to "$BRANCH" are not allowed) so you
+# can open a PR and keep them — then remove this block.
+#
+# The translate code is run inside the PREVIOUS image (for node + node_modules),
+# but scripts/, lib/i18n/ and locales/ are bind-mounted from the freshly checked
+# out tree so the CURRENT code and catalogs are what actually run / get written.
+#
+# Enable:  DEPLOY_RUN_I18N=1        (requires DEEPSEEK_API_KEY in "$ENV_FILE")
+# Tune:    I18N_MODEL=deepseek-reasoner (default)   I18N_BATCH=40
+if [ "${DEPLOY_RUN_I18N:-0}" = "1" ]; then
+    if "$DOCKER_BIN" image inspect "${IMAGE_NAME}:latest" >/dev/null 2>&1; then
+        step_start "One-time DeepSeek full-site translation + bundle regen..."
+        i18n_run() {
+            "$DOCKER_BIN" run --rm \
+                --user "$(id -u):$(id -g)" \
+                --env-file "$ENV_FILE" \
+                -e RMHARK_AI_MODEL="${I18N_MODEL:-deepseek-reasoner}" \
+                -e I18N_BATCH="${I18N_BATCH:-40}" \
+                -v "${REPO_DIR}/scripts:/app/scripts" \
+                -v "${REPO_DIR}/lib/i18n:/app/lib/i18n" \
+                -v "${REPO_DIR}/locales:/app/locales" \
+                --entrypoint node \
+                "${IMAGE_NAME}:latest" "$@"
+        }
+        # 1) translate every non-English locale, 2) regenerate the per-locale bundles.
+        if i18n_run scripts/translate-locales.ts && i18n_run scripts/gen-i18n-resources.ts; then
+            log "Catalogs translated and resource bundles regenerated."
+            if [ -n "$("$GIT_BIN" status --porcelain locales lib/i18n 2>/dev/null)" ]; then
+                I18N_BRANCH="i18n/full-translation-$(date +%Y%m%d-%H%M%S)"
+                if "$GIT_BIN" checkout -b "$I18N_BRANCH" \
+                   && "$GIT_BIN" add locales lib/i18n \
+                   && "$GIT_BIN" -c user.name="rmh-deploy" -c user.email="deploy@rmhstudios.com" \
+                        commit -q -m "chore(i18n): full DeepSeek translation of all locales [one-time deploy]" \
+                   && "$GIT_BIN" push -u "$REMOTE_REPO" "$I18N_BRANCH"; then
+                    log "Pushed translations to '$I18N_BRANCH' on origin — open a PR to merge them."
+                else
+                    log "WARNING: could not create/push '$I18N_BRANCH' (deploy key may be read-only) — translations are baked into THIS build only."
+                fi
+                # Return to the deploy branch and re-stage the catalogs as
+                # working-tree changes so the build below still includes them
+                # (and build_inputs_hash sees a dirty tree → no build skip).
+                "$GIT_BIN" checkout "$BRANCH" 2>/dev/null || true
+                "$GIT_BIN" checkout "$I18N_BRANCH" -- locales lib/i18n 2>/dev/null || true
+            else
+                log "Translation produced no catalog changes — nothing to push."
+            fi
+        else
+            log "WARNING: i18n translation step failed — continuing with the committed catalogs."
+        fi
+        step_done
+    else
+        log "DEPLOY_RUN_I18N=1 but no ${IMAGE_NAME}:latest image to run it in — skipping (deploy once to build an image first)."
+    fi
+fi
+
 # ── Step 2: Build Docker image ──────────────────────────────────────────────
 # The Dockerfile uses parallel BuildKit stages:
 #   - server-builder (esbuild, env-agnostic → fully cached between envs)
