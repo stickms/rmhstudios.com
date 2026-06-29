@@ -87,8 +87,6 @@ export function GameCanvas() {
         const sync = () => {
             const { width, height } = wrapper.getBoundingClientRect();
             if (width > 0 && height > 0) {
-                canvas.width  = Math.round(width  * window.devicePixelRatio);
-                canvas.height = Math.round(height * window.devicePixelRatio);
                 rendererRef.current?.resize(width, height, window.devicePixelRatio);
             }
         };

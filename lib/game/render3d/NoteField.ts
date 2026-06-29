@@ -11,6 +11,8 @@ export type FieldCtx = {
 };
 
 const MAX_NOTES = 256; // instanced cap; far above on-screen note count
+const MAX_ORBS = 64;
+const MAX_TAILS = 64;
 
 export class NoteField {
   private group = new THREE.Group();
@@ -18,6 +20,7 @@ export class NoteField {
   private orbs: THREE.InstancedMesh;        // BOMB
   private tails: THREE.InstancedMesh;       // LONG tails
   private rails: THREE.Mesh[] = [];
+  private railsOneTrack: boolean | null = null;
   private dummy = new THREE.Object3D();
   private color = new THREE.Color();
   private targetedIds = new Set<string>();  // Fix 3: reuse per-frame targeted set
@@ -31,12 +34,12 @@ export class NoteField {
 
     const orbGeo = new THREE.SphereGeometry(0.32, 16, 16);
     const orbMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 1.6, roughness: 0.4 });
-    this.orbs = new THREE.InstancedMesh(orbGeo, orbMat, 64);
+    this.orbs = new THREE.InstancedMesh(orbGeo, orbMat, MAX_ORBS);
 
     const tailGeo = new THREE.BoxGeometry(1, 0.18, 0.18); // scaled per-instance along X
     const tailMat = new THREE.MeshStandardMaterial({ emissiveIntensity: 0.8, transparent: true, opacity: 0.6 });
-    this.tails = new THREE.InstancedMesh(tailGeo, tailMat, 64);
-    this.tails.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(64 * 3), 3);
+    this.tails = new THREE.InstancedMesh(tailGeo, tailMat, MAX_TAILS);
+    this.tails.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(MAX_TAILS * 3), 3);
     this.applyEmissiveFromColor(tailMat);
 
     this.group.add(this.cubes, this.orbs, this.tails);
@@ -102,12 +105,12 @@ export class NoteField {
 
         if (slice.type === 'BOMB') {
           // Orbs use scale-based glow (fixed material color, cannot be per-instance brightened).
-          if (orbI < 64) this.place(this.orbs, orbI++, x, y, 0, glow);
+          if (orbI < MAX_ORBS) this.place(this.orbs, orbI++, x, y, 0, glow);
         } else {
           if (slice.type === 'LONG' && (slice.duration ?? 0) > 0) {
             const len = scrollWorldX(slice.duration!, ctx.speedMod);
             // Fix 4: guard tail instanced-array bounds independently.
-            if (tailI < 64) this.placeTail(tailI++, x, y, len, c);
+            if (tailI < MAX_TAILS) this.placeTail(tailI++, x, y, len, c);
           }
           // Fix 2: pass scale only (no glow multiplier); glow drives color brightness.
           // Fix 4: guard cube instanced-array bounds independently.
@@ -147,7 +150,14 @@ export class NoteField {
   }
 
   private ensureRails(ctx: FieldCtx) {
-    if (this.rails.length) return;
+    if (this.railsOneTrack === ctx.oneTrack) return;
+    // dispose any existing rails before rebuilding for the new layout
+    for (const rail of this.rails) {
+      rail.geometry.dispose();
+      (rail.material as THREE.Material).dispose();
+      rail.removeFromParent();
+    }
+    this.rails = [];
     const lanes = ctx.oneTrack ? [0] : [0, 1];
     const depth = scrollWorldX(WORLD_LOOKAHEAD_S / ctx.speedMod, ctx.speedMod);
     lanes.forEach((lane) => {
@@ -162,6 +172,7 @@ export class NoteField {
       this.group.add(rail);
       this.rails.push(rail);
     });
+    this.railsOneTrack = ctx.oneTrack;
   }
 
   dispose(): void {

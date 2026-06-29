@@ -23,6 +23,9 @@ export class SliceRenderer3D {
   private breathDir = new THREE.Vector3();
   private reducedFx = false;
   public isMobileV = false;
+  private _spinUp = new THREE.Vector3();
+  private _spinForward = new THREE.Vector3();
+  private _origin = new THREE.Vector3(0, 0, 0);
 
   constructor(canvas: HTMLCanvasElement) {
     // Throws on failure; GameCanvas catches and shows a fallback message.
@@ -74,7 +77,7 @@ export class SliceRenderer3D {
     }
     this.camBaseRest.copy(this.camera.position);
     this.camBase.copy(this.camera.position);
-    this.breathDir.copy(this.camera.position).sub(new THREE.Vector3(0, 0, 0)).normalize();
+    this.breathDir.copy(this.camera.position).normalize();
     this.camera.updateProjectionMatrix();
 
     const w = Math.floor(cssWidth * Math.min(dpr, 2));
@@ -97,9 +100,9 @@ export class SliceRenderer3D {
     // Spin modifier: slowly roll the whole view (parity with 2D field rotation).
     if (mods.spin) {
       const roll = -audioTime * 0.25;
-      const baseUp = this.isMobileV ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
-      const forward = new THREE.Vector3().subVectors(new THREE.Vector3(0, 0, 0), this.camera.position).normalize();
-      this.camera.up.copy(baseUp).applyAxisAngle(forward, roll);
+      this._spinUp.set(this.isMobileV ? 1 : 0, this.isMobileV ? 0 : 1, 0);
+      this._spinForward.subVectors(this._origin, this.camera.position).normalize();
+      this.camera.up.copy(this._spinUp).applyAxisAngle(this._spinForward, roll);
       this.camera.lookAt(0, 0, 0);
     }
 

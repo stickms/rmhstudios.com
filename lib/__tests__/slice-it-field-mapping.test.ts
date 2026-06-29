@@ -33,4 +33,10 @@ describe('fieldMapping', () => {
     expect(laneWorldY(0, { speedMod: 1, oneTrack: true })).toBe(0);
     expect(laneWorldY(1, { speedMod: 1, oneTrack: true })).toBe(0);
   });
+
+  it('a full lookahead window maps to the field depth (12) for any speedMod', () => {
+    expect(scrollWorldX(WORLD_LOOKAHEAD_S / 1, 1)).toBeCloseTo(12, 6);
+    expect(scrollWorldX(WORLD_LOOKAHEAD_S / 2, 2)).toBeCloseTo(12, 6);
+    expect(scrollWorldX(WORLD_LOOKAHEAD_S / 1.5, 1.5)).toBeCloseTo(12, 6);
+  });
 });

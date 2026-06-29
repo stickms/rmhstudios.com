@@ -63,6 +63,9 @@ export class PostFX {
   }
 
   dispose(): void {
+    for (const pass of this.composer.passes) {
+      (pass as { dispose?: () => void }).dispose?.();
+    }
     this.composer.dispose();
   }
 }
