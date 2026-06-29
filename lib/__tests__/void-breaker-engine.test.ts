@@ -147,6 +147,22 @@ describe('VoidBreakerEngine', () => {
     expect(g.popups.some(p => p.text === 'CRIT')).toBe(true);
   });
 
+  it('hive broods mini-drifters', () => {
+    const g = new VoidBreakerEngine();
+    g.startGame();
+    advanceToPlaying(g);
+    g.obstacles = [];
+    g.player.x = 800; g.player.y = 500;
+    const hive = placeEnemy(g, 1300, 500, 6);
+    hive.type = 'hive';
+    hive.bossSpecialTimer = 0;          // brood on the next tick
+    const before = g.enemies.filter(e => e.active && e.type === 'mini_drifter').length;
+    g.update(0.05, makeInput());
+    const after = g.enemies.filter(e => e.active && e.type === 'mini_drifter').length;
+    expect(after).toBeGreaterThan(before);
+    expect(hive.active).toBe(true);     // hive itself persists
+  });
+
   it('void thorns reflects contact damage to the attacker', () => {
     const g = new VoidBreakerEngine();
     g.startGame();
