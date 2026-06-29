@@ -213,7 +213,7 @@ function RmhCodePage() {
               {installTab === 'binary' && (
                 <div className="space-y-3">
                   <p className="text-sm text-site-text-muted">{t("binary-desc", { defaultValue: "Pre-built binaries — no Node.js required. Download, make executable (" })}<code className="text-violet-400">chmod +x</code>{t("binary-desc-2", { defaultValue: " on Linux/macOS), and place in your PATH." })}</p>
-                  <div className="rounded-lg border border-site-border bg-site-bg overflow-hidden">
+                  <div className="rounded-lg border border-site-border bg-site-bg overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead><tr className="border-b border-site-border bg-site-surface-hover"><th className="text-left py-2.5 px-3 font-medium text-site-text text-xs">{t("col-platform", { defaultValue: "Platform" })}</th><th className="text-left py-2.5 px-3 font-medium text-site-text text-xs">{t("col-arch", { defaultValue: "Arch" })}</th><th className="text-left py-2.5 px-3 font-medium text-site-text text-xs">{t("col-binary", { defaultValue: "Binary" })}</th></tr></thead>
                       <tbody className="divide-y divide-site-border">
@@ -268,7 +268,7 @@ function RmhCodePage() {
           <div className="rounded-xl border border-site-border bg-site-surface p-6">
             <h2 className="text-lg font-semibold text-site-text mb-4 flex items-center gap-2"><Globe className="w-5 h-5 text-violet-400" />{t("ai-providers-heading", { defaultValue: "AI Providers" })}</h2>
             <p className="text-sm text-site-text-muted mb-4">{t("ai-providers-desc", { defaultValue: "rmhcode supports multiple AI coding backends. By default, it uses Claude." })}</p>
-            <div className="rounded-lg border border-site-border bg-site-bg overflow-hidden mb-4">
+            <div className="rounded-lg border border-site-border bg-site-bg overflow-x-auto mb-4">
               <table className="w-full text-sm">
                 <thead><tr className="border-b border-site-border bg-site-surface-hover"><th className="text-left py-2.5 px-4 font-medium text-site-text">{t("col-provider", { defaultValue: "Provider" })}</th><th className="text-left py-2.5 px-4 font-medium text-site-text">{t("col-flag", { defaultValue: "Flag" })}</th><th className="text-left py-2.5 px-4 font-medium text-site-text">{t("col-requires", { defaultValue: "Requires" })}</th></tr></thead>
                 <tbody className="divide-y divide-site-border">
@@ -336,7 +336,7 @@ function RmhCodePage() {
 
         <motion.div {...inViewProps}>
           <h2 className="text-xl font-semibold text-site-text mb-6">{t("cli-commands-heading", { defaultValue: "CLI Commands" })}</h2>
-          <div className="rounded-xl border border-site-border bg-site-surface overflow-hidden">
+          <div className="rounded-xl border border-site-border bg-site-surface overflow-x-auto">
             <table className="w-full text-sm">
               <thead><tr className="border-b border-site-border bg-site-surface-hover"><th className="text-left py-3 px-4 font-medium text-site-text">{t("col-command", { defaultValue: "Command" })}</th><th className="text-left py-3 px-4 font-medium text-site-text">{t("col-description", { defaultValue: "Description" })}</th></tr></thead>
               <tbody className="divide-y divide-site-border">

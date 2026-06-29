@@ -711,6 +711,7 @@ export function ComposeBox({
               <Coins className="h-4 w-4 text-site-text-muted" />
               <input
                 type="number"
+                inputMode="numeric"
                 min={0}
                 autoFocus
                 value={unlockPrice}

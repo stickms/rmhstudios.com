@@ -178,7 +178,7 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
             )}
           </div>
           {revealed ? (
-            <div className="mt-4 grid grid-cols-4 gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
               {GRADES.map((g) => (
                 <Button key={g.grade} variant="outline" disabled={reviewBusy} onClick={() => grade(g.grade)} className={`flex-col ${g.cls}`}>
                   {t(`grade-${g.grade}`, { defaultValue: g.label })}

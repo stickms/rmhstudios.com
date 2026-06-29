@@ -86,6 +86,7 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
             <span className="text-xs text-[var(--site-muted)]">BPM</span>
             <input
               type="number"
+              inputMode="numeric"
               value={bpm}
               onChange={handleBpmChange}
               className="w-14 rounded bg-black/30 px-1.5 py-0.5 text-center text-sm text-[var(--site-text)] outline-none focus:ring-1 focus:ring-cyan-500"
@@ -149,6 +150,7 @@ function TransportBar({ compact = false, onSettingsToggle }: { compact?: boolean
         <span className="text-xs text-[var(--site-muted)]">BPM</span>
         <input
           type="number"
+          inputMode="numeric"
           value={bpm}
           onChange={handleBpmChange}
           className="w-16 rounded bg-black/30 px-2 py-1 text-center text-sm text-[var(--site-text)] outline-none focus:ring-1 focus:ring-cyan-500"

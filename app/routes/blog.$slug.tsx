@@ -83,7 +83,7 @@ function BlogPost() {
           </p>
         </header>
 
-        <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-xl prose-img:border prose-img:border-site-border">
+        <div className="prose prose-invert prose-lg max-w-none break-words prose-code:break-words prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-xl prose-img:border prose-img:border-site-border">
           <ReactMarkdown components={animatedComponents}>{post.content as string}</ReactMarkdown>
         </div>
 

@@ -1,6 +1,6 @@
 # Mobile-Friendliness Audit — rmhstudios.com
 
-**Document status:** Findings & recommendations — *awaiting sign-off before any code changes.*
+**Document status:** Findings & recommendations — **all findings (F1–F17) implemented** on `claude/mobile-friendliness-audit-edr36k` (signed off 2026-06-29). A confirmatory pass on real iOS Safari + Android Chrome is still recommended where a staging URL / seeded DB is available.
 **Prepared:** 2026-06-29
 **Branch:** `claude/mobile-friendliness-audit-edr36k`
 **Scope:** Full web application — public site (`_site/*`), shared UI primitives, games, and full-screen apps.

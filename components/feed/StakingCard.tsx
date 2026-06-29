@@ -88,7 +88,7 @@ export function StakingCard() {
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
+      <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3">
         <div className="rounded-lg bg-site-bg p-2">
           <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-text">
             <CoinIcon className="h-3.5 w-3.5" /> {fmt(data.principal)}

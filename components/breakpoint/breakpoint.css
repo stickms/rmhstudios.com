@@ -272,9 +272,11 @@
 .bp-look-layer { position: absolute; inset: 0 0 0 45%; pointer-events: auto; touch-action: none; }
 .bp-m-util { position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; pointer-events: auto; }
 .bp-m-util button { background: rgba(8,11,16,.7); border: 1px solid var(--line); color: #fff; width: 40px; height: 34px; font-size: 16px; }
-.bp-joy { position: absolute; left: 22px; bottom: 26px; width: 116px; height: 116px; border-radius: 50%; border: 2px solid rgba(255,70,85,.4); background: radial-gradient(circle, rgba(255,70,85,.1), transparent); pointer-events: auto; touch-action: none; }
+.bp-joy { position: absolute; left: 22px; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); width: 116px; height: 116px; border-radius: 50%; border: 2px solid rgba(255,70,85,.4); background: radial-gradient(circle, rgba(255,70,85,.1), transparent); pointer-events: auto; touch-action: none; }
 .bp-joy-knob { position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; border-radius: 50%; background: rgba(255,70,85,.65); box-shadow: 0 0 14px var(--att); transform: translate(-50%,-50%); }
-.bp-m-actions { position: absolute; right: 18px; bottom: 24px; width: 168px; height: 168px; pointer-events: none; }
+/* Lift the cluster 14px above its old anchor (so the CRCH/RELOAD buttons, which
+   sit at negative offsets, clear the screen edge) plus the home-indicator inset. */
+.bp-m-actions { position: absolute; right: 18px; bottom: calc(38px + env(safe-area-inset-bottom, 0px)); width: 168px; height: 168px; pointer-events: none; }
 .bp-m-actions button { position: absolute; pointer-events: auto; border-radius: 50%; font-family: var(--disp); letter-spacing: 1px; background: rgba(8,11,16,.7); border: 2px solid var(--line); color: #fff; }
 .bp-m-fire { right: 6px; bottom: 56px; width: 84px; height: 84px; font-size: 18px; border-color: var(--att) !important; background: rgba(255,70,85,.25) !important; }
 .bp-m-btn { width: 50px; height: 50px; font-size: 11px; }
@@ -283,7 +285,7 @@
 .bp-m-actions .bp-m-btn:nth-of-type(3) { left: 30px; bottom: 38px; } /* JUMP */
 .bp-m-actions .bp-m-btn:nth-of-type(4) { left: 6px; bottom: -10px; } /* CRCH */
 .bp-m-actions .bp-m-btn:nth-of-type(5) { left: 78px; bottom: -6px; } /* RELOAD */
-.bp-m-abilities { position: absolute; left: 150px; bottom: 30px; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+.bp-m-abilities { position: absolute; left: 150px; bottom: calc(30px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
 .bp-m-ability { pointer-events: auto; width: 46px; height: 46px; border-radius: 8px; border: 2px solid; background: rgba(8,11,16,.7); font-family: var(--disp); font-size: 20px; }
 .bp-m-plant { pointer-events: auto; border-radius: 8px; border: 2px solid var(--gold); background: rgba(236,232,216,.15); color: var(--gold); font-family: var(--disp); letter-spacing: 1px; font-size: 13px; padding: 8px; }
 

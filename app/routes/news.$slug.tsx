@@ -122,7 +122,7 @@ function NewsArticlePage() {
           </div>
         )}
 
-        <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-(--site-text) prose-p:text-(--site-text-muted) prose-a:text-(--site-accent) hover:prose-a:text-(--site-accent-hover) prose-img:rounded-xl prose-img:border prose-img:border-(--site-border) prose-li:text-(--site-text-muted) prose-strong:text-(--site-text) prose-blockquote:border-l-(--site-accent)">
+        <div className="prose prose-invert prose-lg max-w-none break-words prose-code:break-words prose-headings:font-bold prose-headings:text-(--site-text) prose-p:text-(--site-text-muted) prose-a:text-(--site-accent) hover:prose-a:text-(--site-accent-hover) prose-img:rounded-xl prose-img:border prose-img:border-(--site-border) prose-li:text-(--site-text-muted) prose-strong:text-(--site-text) prose-blockquote:border-l-(--site-accent)">
           <ReactMarkdown components={animatedComponents}>{article.content}</ReactMarkdown>
         </div>
 
