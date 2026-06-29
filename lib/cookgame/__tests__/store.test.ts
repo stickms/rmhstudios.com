@@ -529,4 +529,22 @@ describe('dynamic demand', () => {
     expect(doug.demand).toBeGreaterThan(0.5);          // restock ran
     expect(doug.preferredEffect).toBe(pref0);          // drift was gated (deterministic — no roll happened)
   });
+
+  it('price preference premium follows the dynamic (drifted) preferred effect', () => {
+    reset();
+    // Force doug's dynamic preference to 'spicy' (his static pref is 'energizing').
+    useCookgameStore.setState((s) => ({
+      buyerState: { ...s.buyerState, doug: { ...s.buyerState['doug'], preferredEffect: 'spicy' } },
+      inventory: { ...s.inventory, packaged: [{ product: { baseId: 'greenstart', effects: ['spicy'] }, units: 1 }] },
+    }));
+    const withPref = useCookgameStore.getState().sellUnit('doug', 0, 1);
+    // Reset and sell an identical product WITHOUT the dynamic preferred effect.
+    reset();
+    useCookgameStore.setState((s) => ({
+      buyerState: { ...s.buyerState, doug: { ...s.buyerState['doug'], preferredEffect: 'spicy' } },
+      inventory: { ...s.inventory, packaged: [{ product: { baseId: 'greenstart', effects: [] }, units: 1 }] },
+    }));
+    const without = useCookgameStore.getState().sellUnit('doug', 0, 1);
+    expect(withPref).toBeGreaterThan(without);
+  });
 });

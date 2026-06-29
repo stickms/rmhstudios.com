@@ -5,6 +5,8 @@ import { buyerOffer } from '@/lib/cookgame/economy';
 import { OverlayFrame } from '@/components/cookgame/ui/OverlayFrame';
 import type { EffectId } from '@/lib/cookgame/types';
 import { isOpenAt } from '@/lib/cookgame/timeOfDay';
+import { perksAtRank, rankForXp } from '@/lib/cookgame/progression';
+import { demandPriceMult, reputationPriceMult } from '@/lib/cookgame/demand';
 
 function EffectChips({ effects }: { effects: EffectId[] }) {
   return (
@@ -27,6 +29,7 @@ export function SellOverlay() {
   const packaged = useCookgameStore((s) => s.inventory.packaged);
   const heat = useCookgameStore((s) => s.heat);
   const buyerState = useCookgameStore((s) => s.buyerState);
+  const xp = useCookgameStore((s) => s.xp);
   // Quantize to whole-second granularity — closed/open gate doesn't need
   // sub-second precision, drops re-renders from every frame to ~1 Hz.
   const clockSec = useCookgameStore((s) => Math.floor(s.clock / 1000));
@@ -38,6 +41,9 @@ export function SellOverlay() {
   const closed = buyer.timeWindow ? !isOpenAt(buyer.timeWindow, clock) : false;
 
   const bs = buyerState[buyer.id] ?? { demand: 1, reputation: 0, preferredEffect: buyer.preferredEffect };
+  const perk = perksAtRank(rankForXp(xp).rank);
+  const priceMult = perk.priceMult * demandPriceMult(bs.demand) * reputationPriceMult(bs.reputation);
+  const pricingBuyer = { ...buyer, preferredEffect: bs.preferredEffect };
   const demandPct = Math.round(bs.demand * 100);
   const stars = Math.min(5, Math.max(0, Math.round(bs.reputation * 5)));
   const wanted = EFFECTS[bs.preferredEffect];
@@ -73,7 +79,7 @@ export function SellOverlay() {
       ) : (
         <div className="space-y-2">
           {packaged.map((stack, i) => {
-            const offer = buyerOffer(stack.product, buyer, heat, 1);
+            const offer = buyerOffer(stack.product, pricingBuyer, heat, 1, priceMult);
             return (
               <div
                 key={i}

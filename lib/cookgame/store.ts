@@ -218,7 +218,8 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     const bs = buyerState[buyerId] ?? { demand: 1, reputation: 0, preferredEffect: buyer.preferredEffect };
     const perk = perksAtRank(rankForXp(xp).rank);
     const priceMult = perk.priceMult * demandPriceMult(bs.demand) * reputationPriceMult(bs.reputation);
-    const offer = buyerOffer(stack.product, buyer, heat, variance, priceMult);
+    const pricingBuyer = { ...buyer, preferredEffect: bs.preferredEffect };
+    const offer = buyerOffer(stack.product, pricingBuyer, heat, variance, priceMult);
     const matchesPref = stack.product.effects.includes(bs.preferredEffect);
     const nextBs = {
       ...bs,
