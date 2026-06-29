@@ -180,6 +180,9 @@ export class App {
             case 'start':
                 this._startSimulation();
                 break;
+            case 'story':
+                this._openStory();
+                break;
             case 'multiplayer':
                 this._openLobby();
                 break;
@@ -217,9 +220,48 @@ export class App {
         this._lobby.show();
     }
 
+    /** Open the Story Mode (GHOST ROUTE) menu overlay. */
+    async _openStory() {
+        const [{ StorySave }, { StoryMenu }] = await Promise.all([
+            import('./story/StorySave'),
+            import('./story/StoryMenu'),
+        ]);
+        if (this._destroyed) return;
+
+        if (!this._storySave) this._storySave = new StorySave();
+        this.terminal.hide();
+        this.canvasEl.style.display = 'none';
+
+        if (this._storyMenu) { this._storyMenu.dispose(); this._storyMenu = null; }
+        this._storyMenu = new StoryMenu(this._container, this._storySave, {
+            onPlay: (missionId) => {
+                if (this._storyMenu) { this._storyMenu.dispose(); this._storyMenu = null; }
+                this._startSimulation({ story: true, missionId });
+            },
+            onExit: () => {
+                if (this._storyMenu) { this._storyMenu.dispose(); this._storyMenu = null; }
+                this.terminal.show();
+            },
+        });
+        this._storyMenu.show();
+    }
+
+    /** Tear down the running simulation and return to the Story Mode menu. */
+    _exitStoryToMenu() {
+        this._teardownSimulation();
+        this._openStory();
+    }
+
+    /** ESC / mobile-exit router: Story Mode returns to its menu, else the terminal. */
+    _exitSimulation() {
+        if (this._storyActive) this._exitStoryToMenu();
+        else this._stopSimulation();
+    }
+
     async _startSimulation(opts = {}) {
         const multiplayer = !!opts.multiplayer;
         this._multiplayer = multiplayer;
+        this._storyActive = !!opts.story;
         this._mpRoomId = opts.roomId || this._mpRoomId || null;
 
         // Ensure simulation modules are loaded
@@ -265,9 +307,9 @@ export class App {
             if (e.code === 'KeyC') {
                 this._captureRequested = true;
             }
-            // ESC returns to menu
+            // ESC returns to menu (Story Mode → story menu, else terminal)
             if (e.code === 'Escape') {
-                this._stopSimulation();
+                this._exitSimulation();
             }
             // Cycle palette with E
             if (e.code === 'KeyE') {
@@ -347,6 +389,9 @@ export class App {
                 onToast: (text, kind) => { if (this._gameHud) this._gameHud.toast(text, kind); },
             });
         }
+        // Story Mode drives the pursuit system itself; free roam clears the hook.
+        this._mission.setStoryMode(!!opts.story);
+        if (!opts.story) this._mission.onEvent = null;
         this._mission.startSession();
 
         // ── Laser cannon ──
@@ -366,7 +411,7 @@ export class App {
         if (MobileControls.isTouch()) {
             if (!this._mobileControls) {
                 this._mobileControls = new MobileControls(this._container, this.vehicle, {
-                    onExit: () => this._stopSimulation(),
+                    onExit: () => this._exitSimulation(),
                 });
             }
             this._mobileControls.show();
@@ -379,6 +424,19 @@ export class App {
         if (multiplayer) {
             await this._setupMultiplayer();
             if (this._destroyed) return;
+        }
+
+        // ── Story Mode (GHOST ROUTE): objective engine over the live world ──
+        if (opts.story && this._storySave) {
+            const { StoryManager } = await import('./story/StoryManager');
+            if (this._destroyed) return;
+            if (this._story) { this._story.dispose(); this._story = null; }
+            this._story = new StoryManager(this.scene, this.vehicle, this._mission, this._storySave, {
+                container: this._container,
+                gameHud: this._gameHud,
+                onExit: () => this._exitStoryToMenu(),
+            });
+            this._story.startMission(opts.missionId);
         }
 
         // Start game loop
@@ -472,6 +530,13 @@ export class App {
             this._mission.reportCollisions(collisions);
             this._mission.update(dt);
 
+            // Story Mode objective engine — drives objectives, dialogue and markers,
+            // and (when active) supplies the objective/timer shown on the gameplay HUD.
+            if (this._story) {
+                this._story.reportCollisions(collisions);
+                this._story.update(dt);
+            }
+
             // Laser cannon — fire while held (respects cooldown/overheat)
             if (this._weapon) {
                 const firing = this._fireHeld ||
@@ -481,7 +546,8 @@ export class App {
             }
 
             if (this._gameHud) {
-                this._gameHud.update(this._mission.getState(), this._weapon ? this._weapon.getState() : null);
+                const hudState = this._story ? this._story.getHudState() : this._mission.getState();
+                this._gameHud.update(hudState, this._weapon ? this._weapon.getState() : null);
                 this._gameHud.tickToasts(dt);
             }
             if (this._minimap) this._minimap.update(dt);
@@ -575,7 +641,8 @@ export class App {
         });
     }
 
-    _stopSimulation() {
+    /** Tear down all running-simulation state (without choosing where to go next). */
+    _teardownSimulation() {
         this.running = false;
         if (this._animFrameId) {
             cancelAnimationFrame(this._animFrameId);
@@ -611,16 +678,28 @@ export class App {
         // Multiplayer cleanup (leave lobby, drop ghosts, unsubscribe)
         if (this._multiplayer) this._teardownMultiplayer();
 
+        // Story Mode cleanup (dispose engine + overlays, drop pursuit hook)
+        if (this._story) { this._story.dispose(); this._story = null; }
+        this._storyActive = false;
+
         // Gameplay HUD + mobile controls + pursuit cleanup
-        if (this._mission) this._mission.suspend();
+        if (this._mission) {
+            this._mission.setStoryMode(false);
+            this._mission.onEvent = null;
+            this._mission.suspend();
+        }
         if (this._gameHud) this._gameHud.hide();
         if (this._minimap) this._minimap.hide();
         if (this._mobileControls) this._mobileControls.hide();
 
-        // Hide canvas, VHS overlay, and FPS counter, show terminal
+        // Hide canvas, VHS overlay, and FPS counter
         this.canvasEl.style.display = 'none';
         if (this._vhsEl) this._vhsEl.style.display = 'none';
         if (this._fpsEl) this._fpsEl.style.display = 'none';
+    }
+
+    _stopSimulation() {
+        this._teardownSimulation();
         this.terminal.show();
     }
 
@@ -815,6 +894,10 @@ export class App {
         // Clean up multiplayer (lobby overlay + networking + ghosts)
         if (this._lobby) { this._lobby.dispose(); this._lobby = null; }
         if (this._multiplayer || this._mpClient) this._teardownMultiplayer();
+
+        // Clean up Story Mode (engine overlays + pre-game menu)
+        if (this._story) { this._story.dispose(); this._story = null; }
+        if (this._storyMenu) { this._storyMenu.dispose(); this._storyMenu = null; }
 
         // Clean up gameplay systems
         if (this._weapon) { this._weapon.dispose(); this._weapon = null; }

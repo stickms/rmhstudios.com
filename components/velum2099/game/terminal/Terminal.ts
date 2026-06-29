@@ -37,9 +37,10 @@ const BOOT_SEQUENCE = [
 
 const MENU_ITEMS = [
     { key: '1', label: '[ 1 ] 单人模拟  ·  SOLO DRIVE', action: 'start' },
-    { key: '2', label: '[ 2 ] 多人巡航  ·  MULTIPLAYER', action: 'multiplayer' },
-    { key: '3', label: '[ 3 ] 数据导出  ·  EXPORT', action: 'export' },
-    { key: '4', label: '[ 4 ] 系统设置  ·  SETTINGS', action: 'settings' },
+    { key: '2', label: '[ 2 ] 剧情模式  ·  STORY MODE — GHOST ROUTE', action: 'story' },
+    { key: '3', label: '[ 3 ] 多人巡航  ·  MULTIPLAYER', action: 'multiplayer' },
+    { key: '4', label: '[ 4 ] 数据导出  ·  EXPORT', action: 'export' },
+    { key: '5', label: '[ 5 ] 系统设置  ·  SETTINGS', action: 'settings' },
 ];
 
 const PALETTE_NAMES = [
