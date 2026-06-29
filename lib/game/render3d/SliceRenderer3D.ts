@@ -4,12 +4,14 @@ import type { GameEngine } from '@/lib/game/GameEngine';
 import { BG_COLOR } from './palette';
 import { NoteField, type FieldCtx } from './NoteField';
 import { useGameStore } from '@/lib/store/useGameStore';
+import { PostFX } from './PostFX';
 
 export class SliceRenderer3D {
   private renderer: THREE.WebGLRenderer;
   private scene: THREE.Scene;
   private camera: THREE.PerspectiveCamera;
   private noteField: NoteField;
+  private postfx!: PostFX;
   private reducedFx = false;
   public isMobileV = false;
 
@@ -35,6 +37,7 @@ export class SliceRenderer3D {
 
   setReducedFx(reduced: boolean): void {
     this.reducedFx = reduced;
+    this.postfx?.setReducedFx(reduced);
   }
 
   /**
@@ -59,6 +62,12 @@ export class SliceRenderer3D {
       this.camera.lookAt(0, 0, 0);
     }
     this.camera.updateProjectionMatrix();
+
+    const w = Math.floor(cssWidth * Math.min(dpr, 2));
+    const h = Math.floor(cssHeight * Math.min(dpr, 2));
+    if (!this.postfx) this.postfx = new PostFX(this.renderer, this.scene, this.camera, w, h);
+    else this.postfx.resize(w, h);
+    this.postfx.setReducedFx(this.reducedFx);
   }
 
   renderFrame(engine: GameEngine, audioTime: number): void {
@@ -71,11 +80,12 @@ export class SliceRenderer3D {
       reducedFx: this.reducedFx,
     };
     this.noteField.update(engine, audioTime, ctx);
-    this.renderer.render(this.scene, this.camera);
+    this.postfx.render();
   }
 
   dispose(): void {
     this.noteField.dispose();
+    this.postfx?.dispose();
     this.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
       if (mesh.geometry) mesh.geometry.dispose();
