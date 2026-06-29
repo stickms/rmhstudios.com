@@ -15,6 +15,10 @@ import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { FilmPass } from 'three/examples/jsm/postprocessing/FilmPass.js';
+import { RGBShiftShader } from 'three/examples/jsm/shaders/RGBShiftShader.js';
+import { VignetteShader } from 'three/examples/jsm/shaders/VignetteShader.js';
 import type { VoidBreakerEngine } from './game';
 import { ENEMY_SPRITES } from './sprites';
 import {
@@ -48,6 +52,10 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private camera: THREE.PerspectiveCamera;
   private composer!: EffectComposer;
   private bloom!: UnrealBloomPass;
+  private rgbShift!: ShaderPass;
+  /** Chromatic-aberration impact pulse (decays each frame). */
+  private caPulse = 0;
+  private lastDetonations = 0;
 
   private readonly raycaster = new THREE.Raycaster();
   private readonly groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -432,6 +440,18 @@ export class VoidBreakerRenderer3D implements VBRenderer {
       0.2,  // threshold
     );
     this.composer.addPass(this.bloom);
+
+    // Cinematic stack: chromatic aberration → vignette → film grain.
+    this.rgbShift = new ShaderPass(RGBShiftShader);
+    this.rgbShift.uniforms.amount.value = 0.0012;
+    this.composer.addPass(this.rgbShift);
+
+    const vignette = new ShaderPass(VignetteShader);
+    vignette.uniforms.offset.value = 1.0;
+    vignette.uniforms.darkness.value = 1.05;
+    this.composer.addPass(vignette);
+
+    this.composer.addPass(new FilmPass(0.22));
   }
 
   // ── Aim ──────────────────────────────────────────────────────────────────────
@@ -493,6 +513,13 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     // Bloom reacts to the moment: bosses flare, Focus swells into a dreamy glow.
     const bossActive = game.enemies.some(e => e.active && e.isBoss);
     this.bloom.strength = (bossActive ? 1.15 : 0.9) + (p.focusActive ? 0.55 : 0);
+
+    // Chromatic aberration: a base shimmer that punches on detonate / hits / boss.
+    if (game.detonations !== this.lastDetonations) { this.lastDetonations = game.detonations; this.caPulse = 1; }
+    if (this.caPulse > 0) this.caPulse = Math.max(0, this.caPulse - dt * 3);
+    let ca = 0.0012 + (bossActive ? 0.0008 : 0) + this.caPulse * 0.005;
+    if (game.elapsedMs < p.hitFlashUntil + 130) ca += 0.0035;
+    this.rgbShift.uniforms.amount.value = ca;
 
     this.composer.render();
   }
