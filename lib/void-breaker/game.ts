@@ -136,6 +136,10 @@ export class VoidBreakerEngine {
   character: CharacterDef | null = null;
   /** Selected weapon (set by the component before startGame; default Pulse Blaster). */
   weapon: WeaponDef = getWeapon('pulse');
+  /** Orbiting blade positions (Orbitals transformer); read by the renderers. */
+  orbitals: { x: number; y: number }[] = [];
+  /** Shared rotation phase for the orbital blades. */
+  private orbitalPhase = 0;
   /** Active run modifiers (set by the component before startGame). */
   runModifiers: RunModifiers = neutralModifiers();
 
@@ -267,6 +271,8 @@ export class VoidBreakerEngine {
     this.focusUsed = 0;
     this.nextId = 0;
     this.shotCount = 0;
+    this.orbitals = [];
+    this.orbitalPhase = 0;
     this.shakeX = 0; this.shakeY = 0;
     this.trauma = 0;
     this.slowMoTimer = 0;
@@ -421,6 +427,7 @@ export class VoidBreakerEngine {
       this.updateProjectiles(worldDt);
       this.updateEnemies(worldDt);
       this.updateShards(playerDt);
+      this.updateOrbitals(worldDt);
       this.checkPlayerHits();
       this.checkEnemyProjHits();
       this.checkContact();
@@ -1259,6 +1266,32 @@ export class VoidBreakerEngine {
     this.emitSfx('hit', { pitch: 1.3 });
     if (best.hp <= 0) this.killEnemy(best);
     else if (hops > 1) this.chainBolt(best.x, best.y, best.id, damage, hops - 1);
+  }
+
+  /** Orbiting blades (Orbitals transformer): spin around the player, shred contact. */
+  private updateOrbitals(dt: number): void {
+    const count = this.stats.orbitalCount;
+    if (count <= 0) { if (this.orbitals.length) this.orbitals = []; return; }
+    const RADIUS = 70, HIT = 22, DPS = 9, SPIN = 2.4;
+    this.orbitalPhase += SPIN * dt;
+    if (this.orbitals.length !== count) {
+      this.orbitals = Array.from({ length: count }, () => ({ x: 0, y: 0 }));
+    }
+    const p = this.player;
+    for (let i = 0; i < count; i++) {
+      const a = this.orbitalPhase + (Math.PI * 2 * i) / count;
+      const bx = p.x + Math.cos(a) * RADIUS;
+      const by = p.y + Math.sin(a) * RADIUS;
+      this.orbitals[i].x = bx; this.orbitals[i].y = by;
+      for (const e of this.enemies) {
+        if (!e.active || e.anim !== 'alive') continue;
+        if (e.isBoss && e.bossSpecialActive) continue;
+        if (dist(e.x, e.y, bx, by) < HIT + e.radius) {
+          e.hp -= DPS * dt;
+          if (e.hp <= 0) this.killEnemy(e);
+        }
+      }
+    }
   }
 
   /** Elite signature: a telegraphed 6-shot radial burst. */

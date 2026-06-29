@@ -19,7 +19,22 @@ export type UpgradeId =
   | 'magnetism'
   | 'focus_flow'
   | 'thorns'
-  | 'executioner';
+  | 'executioner'
+  // ── Phase 2a transformers (build-defining) ──
+  | 'ricochet'
+  | 'chain_lightning'
+  | 'explosive_rounds'
+  | 'homing_rounds'
+  | 'orbitals'
+  | 'overcharge'
+  // ── Phase 2a synergy fillers ──
+  | 'glass_core'
+  | 'napalm'
+  | 'tesla_capacitor'
+  | 'gyro_rounds'
+  | 'bloodlust'
+  | 'heavy_rounds'
+  | 'tachyon';
 
 export type UpgradeRarity = 'common' | 'rare';
 
@@ -207,6 +222,88 @@ export const UPGRADE_DEFS: UpgradeDef[] = [
     color: '#ffe066', icon: '☠',
     description: '+6% crit chance and +0.3× crit damage.',
     apply: (s) => { s.critChance = Math.min(0.75, s.critChance + 0.06); s.critMult += 0.3; },
+  },
+
+  // ── Transformers (build-defining; rare) ──────────────────────────────────────
+  {
+    id: 'ricochet', name: 'Ricochet', rarity: 'rare', maxStacks: 2,
+    color: '#7dffea', icon: '⟲',
+    description: 'Bullets bounce to a new target after a hit (+1 hop).',
+    apply: (s) => { s.bounceCount += 1; },
+  },
+  {
+    id: 'chain_lightning', name: 'Chain Lightning', rarity: 'rare', maxStacks: 2,
+    color: '#b388ff', icon: '⚡',
+    description: 'Hits arc to +2 nearby enemies.',
+    apply: (s) => { s.chainCount += 2; },
+  },
+  {
+    id: 'explosive_rounds', name: 'Explosive Rounds', rarity: 'rare', maxStacks: 1,
+    color: '#ff7a33', icon: '✸',
+    description: 'Bullets explode on impact for area damage.',
+    apply: (s) => { s.explodeOnHit = true; s.explodeRadius = Math.max(s.explodeRadius, 70); },
+  },
+  {
+    id: 'homing_rounds', name: 'Seeker Rounds', rarity: 'rare', maxStacks: 2,
+    color: '#66ffb3', icon: '⌖',
+    description: 'Bullets curve toward the nearest enemy.',
+    apply: (s) => { s.homingTurn += 4; },
+  },
+  {
+    id: 'orbitals', name: 'Void Orbitals', rarity: 'rare', maxStacks: 3,
+    color: '#00f5ff', icon: '◓',
+    description: '+1 orbiting blade that shreds enemies on contact.',
+    apply: (s) => { s.orbitalCount += 1; },
+  },
+  {
+    id: 'overcharge', name: 'Overcharge', rarity: 'rare', maxStacks: 3,
+    color: '#ffe066', icon: '↯',
+    description: 'Every Nth shot is empowered (cadence improves per stack).',
+    apply: (s) => { s.overchargeEvery = s.overchargeEvery === 0 ? 5 : Math.max(3, s.overchargeEvery - 1); },
+  },
+
+  // ── Synergy fillers ──────────────────────────────────────────────────────────
+  {
+    id: 'glass_core', name: 'Glass Core', rarity: 'rare', maxStacks: 1,
+    color: '#ff5577', icon: '◈',
+    description: '+3 bullet damage, but -1 max HP.',
+    apply: (s) => { s.damageBonus += 3; s.maxHpBonus -= 1; },
+  },
+  {
+    id: 'napalm', name: 'Napalm', rarity: 'rare', maxStacks: 3,
+    color: '#ff7a33', icon: '✺',
+    description: '+25 explosion radius (needs Explosive Rounds).',
+    apply: (s) => { s.explodeRadius += 25; },
+  },
+  {
+    id: 'tesla_capacitor', name: 'Tesla Capacitor', rarity: 'rare', maxStacks: 2,
+    color: '#b388ff', icon: '⌁',
+    description: '+1 chain hop (needs Chain Lightning).',
+    apply: (s) => { s.chainCount += 1; },
+  },
+  {
+    id: 'gyro_rounds', name: 'Gyro Rounds', rarity: 'common', maxStacks: 3,
+    color: '#66ffb3', icon: '➶',
+    description: '+turn rate on homing bullets (needs Seeker Rounds).',
+    apply: (s) => { s.homingTurn += 2; },
+  },
+  {
+    id: 'bloodlust', name: 'Bloodlust', rarity: 'rare', maxStacks: 3,
+    color: '#cc3366', icon: '❥',
+    description: '+8% chance to heal on kill.',
+    apply: (s) => { s.lifestealChance = Math.min(0.4, s.lifestealChance + 0.08); },
+  },
+  {
+    id: 'heavy_rounds', name: 'Heavy Rounds', rarity: 'common', maxStacks: 4,
+    color: '#ffaa00', icon: '◆',
+    description: '+2 bullet damage.',
+    apply: (s) => { s.damageBonus += 2; },
+  },
+  {
+    id: 'tachyon', name: 'Tachyon Drive', rarity: 'common', maxStacks: 3,
+    color: '#88ddff', icon: '➤',
+    description: '+30% bullet speed.',
+    apply: (s) => { s.projSpeedMult *= 1.3; },
   },
 ];
 

@@ -147,4 +147,24 @@ describe('transformer behaviors', () => {
     const after = Math.atan2(p.vy, p.vx);
     expect(after).not.toBeCloseTo(before, 3); // heading changed (curved upward)
   });
+
+  it('orbitals damage an enemy adjacent to the player', () => {
+    const g = new VoidBreakerEngine(); g.startGame(); toPlaying(g); isolateArena(g);
+    g.stats.orbitalCount = 1;
+    g.player.x = 800; g.player.y = 500;
+    const e = placeE(g, 800 + 70, 500, 50); // sit on the orbital ring radius
+    const before = e.hp;
+    for (let i = 0; i < 20; i++) g.update(0.05, mk()); // let a blade sweep through
+    expect(e.hp).toBeLessThan(before);
+    expect(g.orbitals.length).toBe(1);
+  });
+
+  it('overcharge empowers the Nth shot above base damage', () => {
+    const g = new VoidBreakerEngine(); g.startGame(); toPlaying(g); isolateArena(g);
+    g.stats.overchargeEvery = 1; // every shot empowered
+    g.player.fireTimer = 0; g.player.x = 800; g.player.y = 500;
+    g.update(0.016, mk());
+    const proj = g.projectiles.find(p => p.active && p.isPlayer)!;
+    expect(proj.damage).toBeGreaterThan(g.weapon.baseDamage);
+  });
 });

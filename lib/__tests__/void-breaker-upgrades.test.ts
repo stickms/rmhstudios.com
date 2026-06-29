@@ -25,6 +25,29 @@ describe('void-breaker upgrades', () => {
     }
   });
 
+  it('applies the new transformer + filler upgrades correctly', () => {
+    const s = makePlayerStats();
+    getUpgradeDef('ricochet')!.apply(s);
+    expect(s.bounceCount).toBe(1);
+    getUpgradeDef('chain_lightning')!.apply(s);
+    expect(s.chainCount).toBe(2);
+    getUpgradeDef('explosive_rounds')!.apply(s);
+    expect(s.explodeOnHit).toBe(true);
+    expect(s.explodeRadius).toBeGreaterThanOrEqual(70);
+    getUpgradeDef('homing_rounds')!.apply(s);
+    expect(s.homingTurn).toBeGreaterThan(0);
+    getUpgradeDef('orbitals')!.apply(s);
+    expect(s.orbitalCount).toBe(1);
+    // Overcharge: starts at every-5, then tightens per stack.
+    getUpgradeDef('overcharge')!.apply(s);
+    expect(s.overchargeEvery).toBe(5);
+    getUpgradeDef('overcharge')!.apply(s);
+    expect(s.overchargeEvery).toBe(4);
+    getUpgradeDef('glass_core')!.apply(s);
+    expect(s.damageBonus).toBe(3);
+    expect(s.maxHpBonus).toBe(-1);
+  });
+
   it('applies representative upgrades correctly', () => {
     const s = makePlayerStats();
     getUpgradeDef('rapid_fire')!.apply(s);
