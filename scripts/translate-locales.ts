@@ -9,7 +9,7 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { translateText } from "@/lib/ai/text.server";
-import { LOCALES, NAMESPACES, TRANSLATE_TARGETS } from "@/lib/i18n/config";
+import { LOCALES, NAMESPACES, TRANSLATE_TARGETS, type Locale } from "@/lib/i18n/config";
 import { keysToTranslate, type Catalog } from "@/lib/i18n/diff";
 
 const ROOT = join(process.cwd(), "locales");
@@ -40,7 +40,7 @@ async function run() {
       console.log(`[i18n] ${locale}/${ns}: translating ${todo.length} key(s)`);
       for (const key of todo) {
         try {
-          target[key] = await translateText(source[key], TRANSLATE_TARGETS[locale as "zh" | "ar"]);
+          target[key] = await translateText(source[key], TRANSLATE_TARGETS[locale as Exclude<Locale, "en">]);
           sources[key] = source[key];
         } catch (err) {
           console.warn(`[i18n]   skip "${key}": ${(err as Error).message}`);

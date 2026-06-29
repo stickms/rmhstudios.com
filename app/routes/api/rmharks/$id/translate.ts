@@ -10,6 +10,7 @@ const TTL_MS = 60 * 60 * 1000;
 const ALLOWED_LANGS = new Set([
   'English', 'Spanish', 'French', 'German', 'Portuguese', 'Italian', 'Dutch',
   'Japanese', 'Korean', 'Chinese', 'Russian', 'Arabic', 'Hindi', 'Turkish', 'Polish',
+  'Indonesian', 'Vietnamese', 'Urdu',
 ]);
 
 /** GET /api/rmharks/$id/translate?to=English — AI translation of a post. */

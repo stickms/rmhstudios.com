@@ -28,7 +28,8 @@
     "epic:test": "node_modules/.bin/vitest run --config vitest.epic.config.ts",
     "epic:build": "node_modules/.bin/tsx scripts/epic/build-epic.ts",
     "i18n:extract": "i18next 'app/**/*.{ts,tsx}' 'components/**/*.{ts,tsx}'",
-    "i18n:translate": "pnpm exec tsx scripts/translate-locales.ts"
+    "i18n:translate": "pnpm exec tsx scripts/translate-locales.ts",
+    "i18n:resources": "pnpm exec tsx scripts/gen-i18n-resources.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

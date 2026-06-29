@@ -6,13 +6,13 @@ describe("resolveLocale", () => {
     expect(resolveLocale({ cookie: "ar", acceptLanguage: "en-US,en" })).toBe("ar");
   });
   it("ignores an invalid cookie and falls back to Accept-Language", () => {
-    expect(resolveLocale({ cookie: "fr", acceptLanguage: "zh-CN,zh;q=0.9,en;q=0.8" })).toBe("zh");
+    expect(resolveLocale({ cookie: "xx", acceptLanguage: "zh-CN,zh;q=0.9,en;q=0.8" })).toBe("zh");
   });
   it("matches Accept-Language by base language", () => {
     expect(resolveLocale({ cookie: null, acceptLanguage: "ar-EG,ar;q=0.9" })).toBe("ar");
   });
   it("defaults to en when nothing matches", () => {
-    expect(resolveLocale({ cookie: null, acceptLanguage: "de-DE,de" })).toBe("en");
+    expect(resolveLocale({ cookie: null, acceptLanguage: "sw-KE,sw" })).toBe("en");
   });
   it("defaults to en when no signal at all", () => {
     expect(resolveLocale({})).toBe("en");
