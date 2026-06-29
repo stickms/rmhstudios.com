@@ -5,6 +5,7 @@ import { BG_COLOR } from './palette';
 import { NoteField, type FieldCtx } from './NoteField';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { PostFX } from './PostFX';
+import { EffectsLayer } from './EffectsLayer';
 
 export class SliceRenderer3D {
   private renderer: THREE.WebGLRenderer;
@@ -12,6 +13,9 @@ export class SliceRenderer3D {
   private camera: THREE.PerspectiveCamera;
   private noteField: NoteField;
   private postfx!: PostFX;
+  private fx!: EffectsLayer;
+  private lastT = 0;
+  private camBase = new THREE.Vector3();
   private reducedFx = false;
   public isMobileV = false;
 
@@ -33,6 +37,7 @@ export class SliceRenderer3D {
     this.scene.add(ambient);
 
     this.noteField = new NoteField(this.scene);
+    this.fx = new EffectsLayer(this.scene);
   }
 
   setReducedFx(reduced: boolean): void {
@@ -61,6 +66,7 @@ export class SliceRenderer3D {
       this.camera.up.set(0, 1, 0);
       this.camera.lookAt(0, 0, 0);
     }
+    this.camBase.copy(this.camera.position);
     this.camera.updateProjectionMatrix();
 
     const w = Math.floor(cssWidth * Math.min(dpr, 2));
@@ -79,12 +85,29 @@ export class SliceRenderer3D {
       invisible: mods.invisible,
       reducedFx: this.reducedFx,
     };
+
+    const now = performance.now() / 1000;
+    const dt = this.lastT ? now - this.lastT : 0.016;
+    this.lastT = now;
+
     this.noteField.update(engine, audioTime, ctx);
+    this.fx.consume(engine, ctx, audioTime);
+    this.fx.update(dt);
+
+    // Apply decaying screen shake around the framed base position.
+    const s = this.fx.getShake() * (this.reducedFx ? 0 : 0.25);
+    this.camera.position.set(
+      this.camBase.x + (Math.random() - 0.5) * s,
+      this.camBase.y + (Math.random() - 0.5) * s,
+      this.camBase.z + (Math.random() - 0.5) * s,
+    );
+
     this.postfx.render();
   }
 
   dispose(): void {
     this.noteField.dispose();
+    this.fx.dispose();
     this.postfx?.dispose();
     this.scene.traverse((obj) => {
       const mesh = obj as THREE.Mesh;
