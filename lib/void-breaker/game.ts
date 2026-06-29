@@ -51,6 +51,8 @@ import {
 import type { PlayerStats, UpgradeId, UpgradeChoice } from './upgrades';
 import type { MetaBonuses } from './metaProgression';
 import type { CharacterDef } from './characters';
+import { neutralModifiers } from './modifiers';
+import type { RunModifiers } from './modifiers';
 
 function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
@@ -124,6 +126,8 @@ export class VoidBreakerEngine {
   metaBonuses: MetaBonuses | null = null;
   /** Selected character (set by the component before startGame). */
   character: CharacterDef | null = null;
+  /** Active run modifiers (set by the component before startGame). */
+  runModifiers: RunModifiers = neutralModifiers();
 
   /** Sound events emitted this frame; drained by the component each frame. */
   sfxEvents: SfxEvent[] = [];
@@ -297,6 +301,9 @@ export class VoidBreakerEngine {
       this.stats.fireRateMult *= mb.fireRateMult;
       startShards += mb.startShards;
     }
+    // Run modifiers (mutators) adjust the loadout too.
+    maxHp += this.runModifiers.maxHpDelta;
+    this.stats.damageBonus += this.runModifiers.damageBonus;
     this.player.maxHp = Math.max(1, maxHp);
     this.player.hp = this.player.maxHp;
     // Grant starting shards as real orbiting shards (shield + multiplier).
@@ -720,7 +727,7 @@ export class VoidBreakerEngine {
 
     // Clamp wave count for very late waves
     const capWave = Math.min(this.wave, MAX_WAVE);
-    const budget = 3 + capWave * 2;
+    const budget = Math.round((3 + capWave * 2) * this.runModifiers.spawnBudgetMult);
     const available = Object.entries(ENEMY_CONFIGS)
       .filter(([, cfg]) => cfg.minWave <= capWave && cfg.waveCost > 0)
       .map(([type, cfg]) => ({ type: type as EnemyType, ...cfg }));
@@ -848,7 +855,7 @@ export class VoidBreakerEngine {
     slot.radius = cfg.radius * (isElite ? 1.3 : 1);
     slot.hp = scaledHp * (isElite ? 2 : 1);
     slot.maxHp = slot.hp;
-    slot.speed = cfg.speed * sm * (isElite ? 1.25 : 1);
+    slot.speed = cfg.speed * sm * (isElite ? 1.25 : 1) * this.runModifiers.enemySpeedMult;
     slot.value = cfg.value * (isElite ? 3 : 1);
     slot.color = isElite ? '#ff44aa' : cfg.color;
     slot.shardCount = cfg.shardCount * (isElite ? 2 : 1);
@@ -1188,7 +1195,7 @@ export class VoidBreakerEngine {
     const attackInterval = getScaledBossAttackInterval(
       BOSS_ATTACK_INTERVAL * (e.bossPhase === 3 ? 0.55 : e.bossPhase === 2 ? 0.75 : 1.0),
       tier
-    );
+    ) * this.runModifiers.bossAttackMult;
     e.bossAttackTimer -= dt;
     if (e.bossAttackTimer <= 0) {
       e.bossAttackTimer = attackInterval;

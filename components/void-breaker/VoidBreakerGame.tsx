@@ -16,6 +16,7 @@ import {
   type MetaState, type MetaNodeId,
 } from '@/lib/void-breaker/metaProgression';
 import { getCharacter, isCharacterId, type CharacterId } from '@/lib/void-breaker/characters';
+import { combineModifiers, isModifierId, type ModifierId } from '@/lib/void-breaker/modifiers';
 import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
 import { saveGame, loadGame, deleteSave, getSaveInfo } from '@/lib/void-breaker/saveSystem';
@@ -77,6 +78,8 @@ export function VoidBreakerGame() {
   const [reducedFx, setReducedFx] = useState(false);
   const reducedFxRef = useRef(false);
   const [characterId, setCharacterId] = useState<CharacterId>('striker');
+  const [activeMods, setActiveMods] = useState<ModifierId[]>([]);
+  const runCoreMultRef = useRef(1);
   const [saveInfo, setSaveInfo] = useState<{ wave: number; savedAt: Date } | null>(null);
   // Pause menu: 'ingame' pause vs menu
   const [showPauseMenu, setShowPauseMenu] = useState(false);
@@ -102,6 +105,10 @@ export function VoidBreakerGame() {
     setReducedFx(storedFx !== null ? storedFx === 'true' : prefersReduced);
     const storedChar = localStorage.getItem('vb-character');
     if (isCharacterId(storedChar)) setCharacterId(storedChar);
+    try {
+      const storedMods = JSON.parse(localStorage.getItem('vb-mods') ?? '[]');
+      if (Array.isArray(storedMods)) setActiveMods(storedMods.filter(isModifierId));
+    } catch { /* ignore */ }
     setMeta(loadMeta());
     setSaveInfo(getSaveInfo());
   }, []);
@@ -416,6 +423,9 @@ export function VoidBreakerGame() {
     if (gameRef.current) {
       gameRef.current.metaBonuses = metaBonuses(meta);
       gameRef.current.character = getCharacter(characterId);
+      const mods = combineModifiers(activeMods);
+      gameRef.current.runModifiers = mods.effects;
+      runCoreMultRef.current = mods.coreMult;
     }
     gameRef.current?.startGame();
     setRunStats(null);
@@ -423,7 +433,7 @@ export function VoidBreakerGame() {
     setShowPauseMenu(false);
     showPauseMenuRef.current = false;
     playMusic();
-  }, [playMusic, meta, characterId]);
+  }, [playMusic, meta, characterId, activeMods]);
 
   /** Save current game state and go to menu. */
   const handleSaveAndQuit = useCallback(() => {
@@ -448,7 +458,7 @@ export function VoidBreakerGame() {
   /** Award Void Cores once per game over. */
   useEffect(() => {
     if (uiState !== 'gameOver' || !runStats) { return; }
-    const earned = awardCores(runStats.score, runStats.bossesKilled, runStats.wave);
+    const earned = Math.floor(awardCores(runStats.score, runStats.bossesKilled, runStats.wave) * runCoreMultRef.current);
     setEarnedCores(earned);
     if (earned > 0) {
       setMeta(prev => {
@@ -534,6 +544,15 @@ export function VoidBreakerGame() {
     localStorage.setItem('vb-reduced-fx', on ? 'true' : 'false');
   }, []);
 
+  const handleToggleModifier = useCallback((id: ModifierId) => {
+    sfxRef.current?.play('uiClick');
+    setActiveMods(prev => {
+      const next = prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id];
+      localStorage.setItem('vb-mods', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
   const handleSelectCharacter = useCallback((id: CharacterId) => {
     // Locked character: spend cores to unlock (then select), or no-op if too poor.
     if (!isCharUnlocked(meta, id)) {
@@ -576,6 +595,9 @@ export function VoidBreakerGame() {
     if (!game) return;
     game.metaBonuses = metaBonuses(meta);
     game.character = getCharacter(characterId);
+    const mods = combineModifiers(activeMods);
+    game.runModifiers = mods.effects;
+    runCoreMultRef.current = mods.coreMult;
     const ok = game.hydrateGameState(save.stateJson as Record<string, unknown>);
     if (ok) {
       setRunStats(null);
@@ -584,7 +606,7 @@ export function VoidBreakerGame() {
       showPauseMenuRef.current = false;
       playMusic();
     }
-  }, [playMusic, meta, characterId]);
+  }, [playMusic, meta, characterId, activeMods]);
 
   const showGame = uiState === 'playing';
 
@@ -1044,6 +1066,8 @@ export function VoidBreakerGame() {
         onSetReducedFx={handleSetReducedFx}
         characterId={characterId}
         onSelectCharacter={handleSelectCharacter}
+        activeMods={activeMods}
+        onToggleModifier={handleToggleModifier}
         meta={meta}
         onBuyNode={handleBuyNode}
         earnedCores={earnedCores}

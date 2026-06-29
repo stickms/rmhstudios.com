@@ -10,6 +10,7 @@ import {
   type MetaState, type MetaNodeId,
 } from '@/lib/void-breaker/metaProgression';
 import { CHARACTERS, getCharacter, type CharacterId } from '@/lib/void-breaker/characters';
+import { MODIFIERS, combineModifiers, type ModifierId } from '@/lib/void-breaker/modifiers';
 import { authClient } from '@/lib/auth-client';
 import { useNavigate } from '@tanstack/react-router';
 import type { RunStats } from '@/lib/void-breaker/types';
@@ -22,6 +23,7 @@ export function VoidBreakerUI({
   use3D, onSetRenderer,
   reducedFx, onSetReducedFx,
   characterId, onSelectCharacter,
+  activeMods, onToggleModifier,
   meta, onBuyNode, earnedCores,
   saveInfo, onClearSave, onContinueGame,
 }: {
@@ -41,6 +43,8 @@ export function VoidBreakerUI({
   onSetReducedFx: (on: boolean) => void;
   characterId: CharacterId;
   onSelectCharacter: (id: CharacterId) => void;
+  activeMods: ModifierId[];
+  onToggleModifier: (id: ModifierId) => void;
   meta: MetaState;
   onBuyNode: (id: MetaNodeId) => void;
   earnedCores: number;
@@ -477,6 +481,30 @@ export function VoidBreakerUI({
               </div>
               <div className="text-[10px] text-zinc-400 mt-2 leading-snug min-h-[28px]">
                 {getCharacter(characterId).description}
+              </div>
+            </div>
+
+            {/* Run modifiers — harder rules for more Void Cores */}
+            <div className="bg-[#0a0a18] border border-[#ff5577]/15 rounded-lg p-2.5 text-left">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[9px] text-[#ff5577]/70 font-mono tracking-[0.2em] uppercase">
+                  {t("modifiers", { defaultValue: "Modifiers" })}
+                </span>
+                {activeMods.length > 0 && (
+                  <span className="text-[9px] text-[#d4af37] font-mono">◈ ×{combineModifiers(activeMods).coreMult.toFixed(2)}</span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {MODIFIERS.map((m) => {
+                  const on = activeMods.includes(m.id);
+                  return (
+                    <button key={m.id} onClick={() => onToggleModifier(m.id)} title={m.description}
+                      className={`text-[10px] font-mono px-2 py-1 rounded border transition-all ${on ? '' : 'opacity-50 hover:opacity-90'}`}
+                      style={{ borderColor: on ? m.color : '#2a2a3a', background: on ? m.color + '18' : 'transparent', color: on ? m.color : '#888' }}>
+                      {m.icon} {m.name} <span className="opacity-70">+{Math.round(m.coreBonus * 100)}%</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
