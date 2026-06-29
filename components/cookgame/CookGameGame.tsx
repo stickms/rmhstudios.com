@@ -48,6 +48,7 @@ function WorldTicker() {
     s.tickHeat(delta);
     s.tickPassiveIncome(delta);
     s.tickClock(delta * 1000); // delta is seconds; clock is ms
+    s.tickDemand(delta * 1000); // delta is seconds; demand restock is in ms
   });
   return null;
 }
@@ -85,6 +86,7 @@ export function CookGameGame() {
       discoveredEffects: initState.discoveredEffects,
       recipeMeta: initState.recipeMeta,
       currentDistrict: initState.currentDistrict,
+      buyerState: initState.buyerState,
     };
     const unsub = useCookgameStore.subscribe(() => {
       const s = useCookgameStore.getState();
@@ -99,7 +101,8 @@ export function CookGameGame() {
         s.keys === prev.keys &&
         s.discoveredEffects === prev.discoveredEffects &&
         s.recipeMeta === prev.recipeMeta &&
-        s.currentDistrict === prev.currentDistrict
+        s.currentDistrict === prev.currentDistrict &&
+        s.buyerState === prev.buyerState
       ) return;
       // At least one real field changed — update snapshot and schedule save.
       prev = {
@@ -113,6 +116,7 @@ export function CookGameGame() {
         discoveredEffects: s.discoveredEffects,
         recipeMeta: s.recipeMeta,
         currentDistrict: s.currentDistrict,
+        buyerState: s.buyerState,
       };
       if (t) return;
       t = setTimeout(() => {

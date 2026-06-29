@@ -41,6 +41,7 @@ export function initialBuyerStates(): Record<string, BuyerDynamicState> {
 }
 
 export const DRIFT_CHANCE = 0.0008; // per drift-tick chance a buyer's preference shifts
+export const DRIFT_INTERVAL_MS = 1000; // roll preference drift at most once per game-second (FPS-independent)
 
 const EFFECT_IDS = Object.keys(EFFECTS) as EffectId[];
 

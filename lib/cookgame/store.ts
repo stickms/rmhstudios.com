@@ -17,12 +17,13 @@ import { KEY_PRICES } from './shops';
 import { advanceClock, isOpenAt } from './timeOfDay';
 import {
   restockDemand, depleteDemand, demandPriceMult, reputationPriceMult,
-  gainReputation, driftPreference, REP_PER_SALE, REP_PREF_BONUS,
+  gainReputation, driftPreference, REP_PER_SALE, REP_PREF_BONUS, DRIFT_INTERVAL_MS,
 } from './demand';
 
 // Transient accumulator for sub-dollar passive income — kept outside the store
 // so it survives re-renders but is reset by resetGame (see below).
 let incomeAccum = 0;
+let driftAccum = 0; // accumulates dtMs; drift is rolled once per DRIFT_INTERVAL_MS (FPS-independent)
 
 function sameStock(a: BaseStockEntry, b: BaseStockEntry): boolean {
   return a.baseId === b.baseId && a.qualityMult === b.qualityMult &&
@@ -244,17 +245,24 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
   tickDemand: (dtMs) => {
     const { buyerState } = get();
-    let changed = false;
-    const next: Record<string, BuyerDynamicState> = {};
+    driftAccum += dtMs;
+    const doDrift = driftAccum >= DRIFT_INTERVAL_MS;
+    if (doDrift) driftAccum = 0;
+    let next: Record<string, BuyerDynamicState> | null = null;
     for (const id of Object.keys(buyerState)) {
       const bs = buyerState[id];
-      const restocked = bs.demand < 1 ? restockDemand(bs.demand, dtMs) : bs.demand;
-      const afterRestock = restocked === bs.demand ? bs : { ...bs, demand: restocked };
-      const drifted = driftPreference(afterRestock, Math.random());
-      if (drifted !== bs) changed = true;
-      next[id] = drifted;
+      let ns = bs;
+      if (bs.demand < 1) {
+        const restocked = restockDemand(bs.demand, dtMs);
+        if (restocked !== bs.demand) ns = { ...ns, demand: restocked };
+      }
+      if (doDrift) ns = driftPreference(ns, Math.random());
+      if (ns !== bs) {
+        if (!next) next = { ...buyerState };
+        next[id] = ns;
+      }
     }
-    if (changed) set({ buyerState: next });
+    if (next) set({ buyerState: next });
   },
   tickPassiveIncome: (dtSeconds) => {
     const rate = propertyEffects(get().ownedPropertyTier).passiveIncomePerSec;
@@ -275,7 +283,7 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     saveGame({ version: CURRENT_VERSION, cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict, buyerState });
   },
   loadOrNew: () => set(fromSave(loadGame() ?? createNewSave())),
-  resetGame: () => { incomeAccum = 0; set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null, cookSession: null }); },
+  resetGame: () => { incomeAccum = 0; driftAccum = 0; set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null, cookSession: null }); },
 
   buyInput: (id) => {
     const { cash, inventory } = get();

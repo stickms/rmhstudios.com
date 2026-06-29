@@ -516,4 +516,17 @@ describe('dynamic demand', () => {
     useCookgameStore.getState().tickDemand(10000);
     expect(useCookgameStore.getState().buyerState['doug'].demand).toBeGreaterThan(0);
   });
+
+  it('restocks continuously but does not roll preference drift before the drift interval', () => {
+    reset();
+    // Deplete doug so restock has visible work; capture its preference.
+    useCookgameStore.setState((s) => ({
+      buyerState: { ...s.buyerState, doug: { ...s.buyerState['doug'], demand: 0.5 } },
+    }));
+    const pref0 = useCookgameStore.getState().buyerState['doug'].preferredEffect;
+    useCookgameStore.getState().tickDemand(999); // < DRIFT_INTERVAL_MS (1000): no drift roll occurs
+    const doug = useCookgameStore.getState().buyerState['doug'];
+    expect(doug.demand).toBeGreaterThan(0.5);          // restock ran
+    expect(doug.preferredEffect).toBe(pref0);          // drift was gated (deterministic — no roll happened)
+  });
 });
