@@ -553,7 +553,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     if (game.detonations !== this.lastDetonations) {
       this.lastDetonations = game.detonations;
       this.caPulse = 1;
-      this.camPunch = 70;
+      this.camPunch = 22; // gentle detonate zoom-punch (was 70 — too lurchy)
       this.flashIntensity = 11;
     }
     this.caPulse = Math.max(0, this.caPulse - dt * 3);
@@ -574,16 +574,17 @@ export class VoidBreakerRenderer3D implements VBRenderer {
 
     const bossActive = game.enemies.some(e => e.active && e.isBoss);
 
-    // Smoothed follow with aim lookahead — you see ahead of where you aim.
-    const k = 1 - Math.exp(-6 * dt);
-    const aimLA = 80;
+    // Camera stays largely locked on the player — snappy follow, only a tiny aim
+    // hint, minimal boss/detonate movement (kept subtle so it doesn't feel floaty).
+    const k = 1 - Math.exp(-9 * dt);
+    const aimLA = 14;
     this.focusX += (p.x + Math.cos(p.aimAngle) * aimLA - this.focusX) * k;
     this.focusZ += (p.y + Math.sin(p.aimAngle) * aimLA - this.focusZ) * k;
-    // Pull back during boss fights; punch in on detonate.
-    const targetH = CAM_HEIGHT + (bossActive ? 120 : 0) - this.camPunch * (this.reducedFx ? 0.3 : 1);
+    // Slight pull-back during boss fights; gentle punch-in on detonate.
+    const targetH = CAM_HEIGHT + (bossActive ? 40 : 0) - this.camPunch * (this.reducedFx ? 0.3 : 1);
     this.camH += (targetH - this.camH) * k;
 
-    const ss = this.reducedFx ? 0.3 : 1.5;
+    const ss = this.reducedFx ? 0.25 : 0.5;
     const sx = game.shakeX * ss, sz = game.shakeY * ss;
     this.camera.position.set(this.focusX + sx, this.camH, this.focusZ + CAM_BACK + sz);
     this.camera.lookAt(this.focusX + sx, 0, this.focusZ + sz);
