@@ -24,28 +24,30 @@ export interface CharacterDef {
   dashCooldownMult: number;
   /** Shards orbiting at run start. */
   startShards: number;
+  /** Void Cores to unlock (0 = unlocked from the start). */
+  unlockCost: number;
 }
 
 export const CHARACTERS: CharacterDef[] = [
   {
     id: 'striker', name: 'Striker', title: '均衡', icon: '✦', color: '#00f5ff',
     description: 'The all-rounder. No weaknesses, no crutches.',
-    maxHpDelta: 0, damageBonus: 0, moveSpeedMult: 1, fireRateMult: 1, dashCooldownMult: 1, startShards: 0,
+    maxHpDelta: 0, damageBonus: 0, moveSpeedMult: 1, fireRateMult: 1, dashCooldownMult: 1, startShards: 0, unlockCost: 0,
   },
   {
     id: 'juggernaut', name: 'Juggernaut', title: '铁壁', icon: '⛨', color: '#ff6644',
     description: 'Tanky bruiser: +2 HP and harder hits, but slow and heavy.',
-    maxHpDelta: 2, damageBonus: 1, moveSpeedMult: 0.85, fireRateMult: 1.1, dashCooldownMult: 1.25, startShards: 0,
+    maxHpDelta: 2, damageBonus: 1, moveSpeedMult: 0.85, fireRateMult: 1.1, dashCooldownMult: 1.25, startShards: 0, unlockCost: 60,
   },
   {
     id: 'phantom', name: 'Phantom', title: '幽影', icon: '➶', color: '#cc66ff',
     description: 'Glass dodger: fast and a lightning dash, but fragile (-1 HP).',
-    maxHpDelta: -1, damageBonus: 0, moveSpeedMult: 1.2, fireRateMult: 1, dashCooldownMult: 0.55, startShards: 0,
+    maxHpDelta: -1, damageBonus: 0, moveSpeedMult: 1.2, fireRateMult: 1, dashCooldownMult: 0.55, startShards: 0, unlockCost: 80,
   },
   {
     id: 'gunner', name: 'Gunner', title: '连射', icon: '⟫', color: '#ffd24a',
     description: 'Bullet hose: very high fire rate, but lighter shots and footwork.',
-    maxHpDelta: 0, damageBonus: 0, moveSpeedMult: 0.95, fireRateMult: 0.68, dashCooldownMult: 1, startShards: 3,
+    maxHpDelta: 0, damageBonus: 0, moveSpeedMult: 0.95, fireRateMult: 0.68, dashCooldownMult: 1, startShards: 3, unlockCost: 100,
   },
 ];
 

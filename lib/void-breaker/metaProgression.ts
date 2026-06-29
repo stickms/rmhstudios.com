@@ -3,11 +3,15 @@
 // bosses), spent in the Void Forge on permanent starting bonuses. Pure logic +
 // a localStorage load/save (SSR/test-guarded) so it's fully unit-testable.
 
+import { getCharacter, type CharacterId } from './characters';
+
 export type MetaNodeId = 'vitality' | 'arsenal' | 'swift' | 'reserves' | 'quickdraw';
 
 export interface MetaState {
   cores: number;
   levels: Partial<Record<MetaNodeId, number>>;
+  /** Characters bought with cores (Striker is always available). */
+  unlocked?: CharacterId[];
 }
 
 export interface MetaNodeDef {
@@ -67,6 +71,26 @@ export function buyNode(state: MetaState, id: MetaNodeId): MetaState {
   };
 }
 
+// ── Character unlocks ────────────────────────────────────────────────────────
+
+export function isCharUnlocked(state: MetaState, id: CharacterId): boolean {
+  return getCharacter(id).unlockCost === 0 || (state.unlocked ?? []).includes(id);
+}
+
+export function canUnlockChar(state: MetaState, id: CharacterId): boolean {
+  return !isCharUnlocked(state, id) && state.cores >= getCharacter(id).unlockCost;
+}
+
+/** Spend cores to permanently unlock a character. Returns a NEW state. */
+export function unlockChar(state: MetaState, id: CharacterId): MetaState {
+  if (!canUnlockChar(state, id)) return state;
+  return {
+    ...state,
+    cores: state.cores - getCharacter(id).unlockCost,
+    unlocked: [...(state.unlocked ?? []), id],
+  };
+}
+
 /** Cores awarded for a finished run. */
 export function awardCores(score: number, bossesKilled: number, wave: number): number {
   return Math.floor(score / 800) + bossesKilled * 3 + Math.floor(wave / 2);
@@ -102,6 +126,7 @@ export function loadMeta(): MetaState {
     return {
       cores: Math.max(0, Math.floor(parsed.cores ?? 0)),
       levels: parsed.levels ?? {},
+      unlocked: Array.isArray(parsed.unlocked) ? parsed.unlocked : [],
     };
   } catch {
     return emptyMeta();

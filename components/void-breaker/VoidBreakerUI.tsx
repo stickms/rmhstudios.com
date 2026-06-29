@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings, Gamepad2, Hexagon } from 'lucide-react';
 import {
-  META_NODES, nodeCost, nodeLevel, canBuy,
+  META_NODES, nodeCost, nodeLevel, canBuy, isCharUnlocked,
   type MetaState, type MetaNodeId,
 } from '@/lib/void-breaker/metaProgression';
 import { CHARACTERS, getCharacter, type CharacterId } from '@/lib/void-breaker/characters';
@@ -458,12 +458,19 @@ export function VoidBreakerUI({
               <div className="flex gap-1.5">
                 {CHARACTERS.map((c) => {
                   const sel = c.id === characterId;
+                  const unlocked = isCharUnlocked(meta, c.id);
+                  const affordable = meta.cores >= c.unlockCost;
                   return (
                     <button key={c.id} onClick={() => onSelectCharacter(c.id)}
-                      className={`flex-1 rounded-lg py-2 border flex flex-col items-center gap-0.5 transition-all ${sel ? '' : 'opacity-50 hover:opacity-90'}`}
+                      title={unlocked ? c.name : `${c.name} — ◈${c.unlockCost}`}
+                      className={`relative flex-1 rounded-lg py-2 border flex flex-col items-center gap-0.5 transition-all ${sel ? '' : 'opacity-60 hover:opacity-100'}`}
                       style={{ borderColor: sel ? c.color : '#2a2a3a', background: sel ? c.color + '18' : 'transparent' }}>
-                      <span className="text-lg leading-none" style={{ color: c.color }}>{c.icon}</span>
-                      <span className="text-[9px] font-mono" style={{ color: sel ? c.color : '#888' }}>{c.name}</span>
+                      <span className="text-lg leading-none" style={{ color: unlocked ? c.color : '#555' }}>{c.icon}</span>
+                      {unlocked ? (
+                        <span className="text-[9px] font-mono" style={{ color: sel ? c.color : '#888' }}>{c.name}</span>
+                      ) : (
+                        <span className={`text-[9px] font-mono ${affordable ? 'text-[#d4af37]' : 'text-zinc-600'}`}>🔒 ◈{c.unlockCost}</span>
+                      )}
                     </button>
                   );
                 })}
