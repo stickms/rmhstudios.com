@@ -97,6 +97,10 @@ export class VoidBreakerRenderer {
     this.ctx = ctx;
   }
 
+  /** Accessibility: dampen screen shake. */
+  private reducedFx = false;
+  setReducedFx(on: boolean): void { this.reducedFx = on; }
+
   getAimPoint(canvasX: number, canvasY: number, game: VoidBreakerEngine): { x: number; y: number } {
     const p = game.player;
     const viewW = ARENA_W * 0.4;
@@ -118,8 +122,9 @@ export class VoidBreakerRenderer {
     const viewW = ARENA_W * 0.4;
     const viewH = ARENA_H * 0.4;
     const scale = Math.min(CANVAS_WIDTH / viewW, CANVAS_HEIGHT / viewH);
-    const camX = p.x - viewW / 2 + game.shakeX * 4;
-    const camY = p.y - viewH / 2 + game.shakeY * 4;
+    const shakeMul = this.reducedFx ? 1 : 4;
+    const camX = p.x - viewW / 2 + game.shakeX * shakeMul;
+    const camY = p.y - viewH / 2 + game.shakeY * shakeMul;
 
     const toScreen = (wx: number, wy: number) => ({
       x: (wx - camX) * scale + (CANVAS_WIDTH - viewW * scale) / 2,
