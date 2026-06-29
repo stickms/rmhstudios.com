@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
@@ -11,6 +10,9 @@ import { UPGRADES, UPGRADE_MAP } from '@/lib/temple-of-joy/data/upgrades';
 import { computeIsUpgradeVisible, computeUpgradeCost } from '@/lib/temple-of-joy/engine';
 import type { UpgradePath } from '@/lib/temple-of-joy/types';
 import { useTap } from './useTap';
+import { Panel3D } from './ui3d/Panel3D';
+import { Label3D } from './ui3d/Label3D';
+import { Button3D } from './ui3d/Button3D';
 
 const PATH_COLOR: Record<UpgradePath, string> = {
   carnal: '#ff6b6b',
@@ -116,47 +118,36 @@ export function UpgradeOrbs() {
       ))}
 
       {selected && selSlot >= 0 && (
-        <Html
+        <UpgradeCard3D
+          id={selected}
           position={[
             Math.cos((selSlot / Math.max(1, snap.ids.length)) * Math.PI * 2) * 4.6,
-            4.6 + Math.sin(selSlot * 1.3) * 1.2 + 0.8,
+            4.6 + Math.sin(selSlot * 1.3) * 1.2 + 1.4,
             Math.sin((selSlot / Math.max(1, snap.ids.length)) * Math.PI * 2) * 4.6,
           ]}
-          center
-          distanceFactor={14}
-          zIndexRange={[40, 0]}
-          style={{ pointerEvents: 'none' }}
-        >
-          <UpgradeCard id={selected} onClose={() => setSelected(null)} />
-        </Html>
+          onClose={() => setSelected(null)}
+        />
       )}
     </group>
   );
 }
 
-function UpgradeCard({ id, onClose }: { id: string; onClose: () => void }) {
+function UpgradeCard3D({ id, position, onClose }: { id: string; position: [number, number, number]; onClose: () => void }) {
   const { t } = useTranslation('c-temple-of-joy');
   const numberFormat = useTempleStore((st) => st.numberFormat);
   const s = useTempleStore.getState();
   const def = UPGRADE_MAP[id];
   const cost = computeUpgradeCost(id, s);
   const canAfford = s.happiness >= cost;
+  const accent = PATH_COLOR[def.path] ?? '#d4a847';
 
   return (
-    <div className="temple-world-card" style={{ pointerEvents: 'auto', borderColor: PATH_COLOR[def.path] }}>
-      <div className="temple-world-card-head">
-        <span className="temple-world-card-title">{def.name}</span>
-        <button className="temple-world-card-x" onClick={onClose} aria-label="close">✕</button>
-      </div>
-      <div className="temple-world-card-sub">{def.flavor}</div>
-      <button
-        className="temple-world-buy"
-        disabled={!canAfford}
-        onClick={() => useTempleStore.getState().purchaseUpgrade(id)}
-      >
-        <span style={{ opacity: 0.85, fontSize: 11 }}>💰 {fmt(cost, numberFormat)}</span>
-        <span>{t('purchase', { defaultValue: 'Purchase' })}</span>
-      </button>
-    </div>
+    <Panel3D width={3} height={2} position={position} accent={accent}>
+      <Label3D text={def.name} height={0.24} options={{ color: accent, fontSize: 50, maxWidth: 580 }} position={[0, 0.66, 0.05]} />
+      <Label3D text={def.flavor} height={0.5} options={{ color: '#cbb48a', fontSize: 30, italic: true, maxWidth: 560 }} position={[0, 0.12, 0.05]} />
+      <Label3D text={`💰 ${fmt(cost, numberFormat)}`} height={0.2} options={{ color: '#e8d5b0', fontSize: 38 }} position={[0, -0.3, 0.05]} />
+      <Button3D label={t('purchase', { defaultValue: 'Purchase' })} onClick={() => useTempleStore.getState().purchaseUpgrade(id)} enabled={canAfford} pulse={canAfford} width={2.2} height={0.45} fontSize={40} color={accent} position={[-0.4, -0.7, 0.08]} billboard={false} />
+      <Button3D label="✕" onClick={onClose} width={0.5} height={0.45} fontSize={40} color="#6b4c2a" position={[1.05, -0.7, 0.08]} billboard={false} />
+    </Panel3D>
   );
 }

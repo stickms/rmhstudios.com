@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { fmt } from '@/lib/temple-of-joy/numbers';
@@ -16,6 +15,9 @@ import {
 } from '@/lib/temple-of-joy/engine';
 import type { SourceId, GameState } from '@/lib/temple-of-joy/types';
 import { useTap } from './useTap';
+import { Panel3D } from './ui3d/Panel3D';
+import { Label3D } from './ui3d/Label3D';
+import { Button3D } from './ui3d/Button3D';
 
 function isUnlocked(state: GameState, id: SourceId): boolean {
   const def = SOURCES.find((s) => s.id === id)!;
@@ -163,39 +165,35 @@ export function SourceStructures() {
       ))}
 
       {selDef && (
-        <Html position={[selPos[0], 3.2, selPos[2]]} center distanceFactor={14} zIndexRange={[40, 0]} style={{ pointerEvents: 'none' }}>
-          <BuyCard id={selDef.id} onClose={() => setSelected(null)} />
-        </Html>
+        <SourceBuyCard3D id={selDef.id} position={[selPos[0], 4.2, selPos[2]]} onClose={() => setSelected(null)} />
       )}
 
       {/* Hint when nothing selected */}
       {!selDef && snap.unlocked.length > 0 && (
-        <Html position={[0, 0.4, 9.5]} center distanceFactor={16} style={{ pointerEvents: 'none' }}>
-          <div className="temple-world-hint">{t('tap-a-source', { defaultValue: 'Tap a structure to expand it' })}</div>
-        </Html>
+        <Label3D text={t('tap-a-source', { defaultValue: 'Tap a structure to expand it' })} height={0.4} options={{ color: '#e8d5b0', fontSize: 40 }} position={[0, 0.8, 9.5]} />
       )}
     </group>
   );
 }
 
-function BuyCard({ id, onClose }: { id: SourceId; onClose: () => void }) {
+function SourceBuyCard3D({ id, position, onClose }: { id: SourceId; position: [number, number, number]; onClose: () => void }) {
   const { t } = useTranslation('c-temple-of-joy');
-  // Pull a fresh snapshot each render (parent re-renders on the 400ms tick).
+  const buyQty = useTempleStore((st) => st.sourceBuyQty);
+  const numberFormat = useTempleStore((st) => st.numberFormat);
+  // Re-render on the parent's 400ms tick is enough for cost/affordability.
   const s = useTempleStore.getState();
   const def = SOURCES.find((x) => x.id === id)!;
   const count = s.sources[id] ?? 0;
-  const buyQty = useTempleStore((st) => st.sourceBuyQty);
-  const numberFormat = useTempleStore((st) => st.numberFormat);
 
   let cost: number;
-  let label: string;
+  let qtyLabel: string;
   if (buyQty === 'max') {
     const n = computeMaxAffordable(id, s);
     cost = n > 0 ? computeSourceCostN(id, count, n, s) : computeSourceCost(id, count, s);
-    label = t('buy-max-n', { defaultValue: 'MAX ({{n}})', n });
+    qtyLabel = t('buy-max-n', { defaultValue: 'MAX ({{n}})', n });
   } else {
     cost = computeSourceCostN(id, count, buyQty, s);
-    label = `×${buyQty}`;
+    qtyLabel = `×${buyQty}`;
   }
   const canAfford = buyQty === 'max' ? computeMaxAffordable(id, s) > 0 : s.happiness >= cost;
 
@@ -207,20 +205,12 @@ function BuyCard({ id, onClose }: { id: SourceId; onClose: () => void }) {
   };
 
   return (
-    <div className="temple-world-card" style={{ pointerEvents: 'auto' }}>
-      <div className="temple-world-card-head">
-        <span style={{ fontSize: 20 }}>{def.icon}</span>
-        <span className="temple-world-card-title">{def.name}</span>
-        <button className="temple-world-card-x" onClick={onClose} aria-label="close">✕</button>
-      </div>
-      <div className="temple-world-card-sub">{def.tagline}</div>
-      <div className="temple-world-card-row">
-        <span>{t('owned', { defaultValue: 'Owned' })}: <b>{count}</b></span>
-      </div>
-      <button className="temple-world-buy" disabled={!canAfford} onClick={buy}>
-        <span style={{ opacity: 0.85, fontSize: 11 }}>💰 {fmt(cost, numberFormat)}</span>
-        <span>{t('buy', { defaultValue: 'Buy' })} {label}</span>
-      </button>
-    </div>
+    <Panel3D width={3} height={2} position={position}>
+      <Label3D text={`${def.icon} ${def.name}`} height={0.26} options={{ color: '#f0c84a', fontSize: 52 }} position={[0, 0.66, 0.05]} />
+      <Label3D text={def.tagline} height={0.34} options={{ color: '#cbb48a', fontSize: 30, italic: true, maxWidth: 560 }} position={[0, 0.24, 0.05]} />
+      <Label3D text={`${t('owned', { defaultValue: 'Owned' })}: ${count}   💰 ${fmt(cost, numberFormat)}`} height={0.2} options={{ color: '#e8d5b0', fontSize: 38 }} position={[0, -0.22, 0.05]} />
+      <Button3D label={`${t('buy', { defaultValue: 'Buy' })} ${qtyLabel}`} onClick={buy} enabled={canAfford} pulse={canAfford} width={2.2} height={0.45} fontSize={40} position={[-0.4, -0.66, 0.08]} billboard={false} />
+      <Button3D label="✕" onClick={onClose} width={0.5} height={0.45} fontSize={40} color="#6b4c2a" position={[1.05, -0.66, 0.08]} billboard={false} />
+    </Panel3D>
   );
 }
