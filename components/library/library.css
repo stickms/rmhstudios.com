@@ -1784,6 +1784,69 @@
   margin-left: auto;
   margin-right: auto;
 }
+/* Keep the centered section title; tuck the admin action neatly to the right. */
+.lib-albums__head {
+  position: relative;
+  align-items: center;
+}
+.lib-albums__new {
+  position: absolute;
+  right: clamp(16px, 4vw, 44px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(245, 245, 247, 0.18);
+  background: rgba(245, 245, 247, 0.04);
+  color: rgba(245, 245, 247, 0.82);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.lib-albums__new:hover {
+  background: color-mix(in srgb, var(--site-accent, #9b7ad8) 16%, transparent);
+  border-color: var(--site-accent, #9b7ad8);
+  color: #fff;
+}
+@media (max-width: 640px) {
+  .lib-albums__new-label {
+    display: none;
+  }
+  .lib-albums__new {
+    padding: 6px;
+  }
+}
+.lib-albums__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 16px 8px;
+  color: rgba(245, 245, 247, 0.5);
+  font-size: 14px;
+}
+.lib-albums__empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--site-border, rgba(245, 245, 247, 0.18));
+  background: var(--site-surface, rgba(245, 245, 247, 0.04));
+  color: var(--site-text, #e8e8ec);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.lib-albums__empty-cta:hover {
+  background: color-mix(in srgb, var(--site-accent, #9b7ad8) 16%, transparent);
+  border-color: var(--site-accent, #9b7ad8);
+}
 .lib-albums__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
