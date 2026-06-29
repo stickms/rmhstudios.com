@@ -30,8 +30,15 @@ export function CameraOverlay({ children, distance = 6 }: { children: ReactNode;
     if (!g) return;
     g.position.copy(camera.position);
     g.quaternion.copy(camera.quaternion);
+    // Disable depth testing (so the world never occludes the UI) and assign a
+    // UNIQUE, increasing renderOrder in depth-first order. Because depth testing
+    // is off, paint order is decided purely by renderOrder — giving every element
+    // a distinct value removes the z-fighting/flicker that ties (equal
+    // renderOrder + near-coplanar z) were causing. DFS order = parent→children,
+    // so panel surfaces paint before their labels/buttons, as intended.
+    let order = 1000;
     g.traverse((o) => {
-      o.renderOrder = 20;
+      o.renderOrder = order++;
       const mat = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
       if (!mat) return;
       const arr = Array.isArray(mat) ? mat : [mat];
