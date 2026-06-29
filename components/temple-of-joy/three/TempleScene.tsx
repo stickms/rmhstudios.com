@@ -18,6 +18,7 @@ import { AchievementStars } from './AchievementStars';
 import { ClickBurst, type ClickBurstHandle } from './ClickBurst';
 import { FloatingJoy } from './FloatingJoy';
 import { AmbientJoy } from './AmbientJoy';
+import { Chrome3D } from './Chrome3D';
 
 interface Float {
   id: number;
@@ -98,6 +99,7 @@ export function TempleScene() {
       <AdaptiveEvents />
       <Suspense fallback={null}>
         <SceneContents />
+        <Chrome3D />
       </Suspense>
     </Canvas>
   );
