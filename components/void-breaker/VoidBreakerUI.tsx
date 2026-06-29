@@ -14,6 +14,7 @@ type LBEntry = { username: string; highScore: number };
 export function VoidBreakerUI({
   uiState, runStats, onStartGame, onGoToMenu, muted, onToggleMute,
   musicVolume, onMusicVolumeChange, sfxVolume, onSfxVolumeChange,
+  use3D, onSetRenderer,
   saveInfo, onClearSave, onContinueGame,
 }: {
   uiState: 'menu' | 'playing' | 'gameOver';
@@ -26,6 +27,8 @@ export function VoidBreakerUI({
   onMusicVolumeChange: (v: number) => void;
   sfxVolume: number;
   onSfxVolumeChange: (v: number) => void;
+  use3D: boolean;
+  onSetRenderer: (to3D: boolean) => void;
   saveInfo: { wave: number; savedAt: Date; score?: number } | null;
   onClearSave: () => void;
   onContinueGame?: () => void;
@@ -124,6 +127,23 @@ export function VoidBreakerUI({
                 step={5}
                 className="w-full"
               />
+            </div>
+
+            <div>
+              <label className="text-sm text-zinc-400">{t("renderer", { defaultValue: "Renderer" })}</label>
+              <div className="flex gap-2 mt-2">
+                <Button onClick={() => onSetRenderer(true)}
+                  className={`flex-1 ${use3D ? 'bg-[#00f5ff]/15 text-[#00f5ff] border border-[#00f5ff]/50' : 'bg-[#1a1a24] text-zinc-400 border border-[#2a2a3a]'}`}>
+                  {t("renderer-3d", { defaultValue: "3D" })}
+                </Button>
+                <Button onClick={() => onSetRenderer(false)}
+                  className={`flex-1 ${!use3D ? 'bg-[#d4af37]/15 text-[#d4af37] border border-[#c9a227]/50' : 'bg-[#1a1a24] text-zinc-400 border border-[#2a2a3a]'}`}>
+                  {t("renderer-2d", { defaultValue: "2D" })}
+                </Button>
+              </div>
+              <p className="text-[10px] text-zinc-600 font-mono mt-1.5">
+                {t("renderer-note", { defaultValue: "Switching reloads the page." })}
+              </p>
             </div>
           </div>
 
