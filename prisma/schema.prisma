@@ -3512,8 +3512,13 @@ model AlbumSlide {
   alt      String @default("")
   /// Suggested filename on download.
   download String @default("")
+  /// Client-supplied idempotency key, stable across upload retries. Lets a
+  /// retried upload (e.g. after a lost response) resolve to the same slide
+  /// instead of creating a duplicate. Null for migrated/legacy rows.
+  uploadKey String?
   createdAt DateTime @default(now())
 
+  @@unique([albumId, uploadKey])
   @@index([albumId, position])
   @@map("album_slide")
 }

@@ -11,6 +11,7 @@ import { Images, Plus, Video } from 'lucide-react';
 import { toast } from 'sonner';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
+import '@/components/library/album-admin.css';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -84,64 +85,53 @@ function AdminAlbumsPage() {
 
   return (
     <PageLayout title="Library Albums" wide>
-      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
+      <div className="aa">
         <div>
-          <h1 className="text-2xl font-bold font-display text-site-text">Library Albums</h1>
-          <p className="text-site-text-muted mt-1">
-            Create an album, then bulk-upload photos and videos. Images are compressed to WebP and
-            videos transcoded before being stored in object storage.
+          <h1 className="aa__intro-title">Library Albums</h1>
+          <p className="aa__intro-sub">
+            Create an album, then bulk-upload photos and videos. Images are compressed to WebP and videos
+            transcoded before being stored in object storage.
           </p>
         </div>
 
-        <form onSubmit={createAlbum} className="flex flex-col sm:flex-row gap-2">
+        <form onSubmit={createAlbum} className="aa__create">
           <input
             type="text"
+            className="aa__input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="New album title…"
             maxLength={120}
-            className="flex-1 rounded-lg border border-site-border bg-site-surface px-3 py-2 text-site-text outline-none focus:border-site-accent"
           />
-          <button
-            type="submit"
-            disabled={creating || !title.trim()}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-site-accent px-4 py-2 font-semibold text-white disabled:opacity-50"
-          >
-            <Plus size={16} /> {creating ? 'Creating…' : 'Create album'}
+          <button type="submit" className="aa__btn aa__btn--primary" disabled={creating || !title.trim()}>
+            <Plus size={16} aria-hidden="true" /> {creating ? 'Creating…' : 'Create album'}
           </button>
         </form>
 
         {loading ? (
-          <p className="text-site-text-muted">Loading…</p>
+          <p className="aa__empty">Loading…</p>
         ) : albums.length === 0 ? (
-          <p className="text-site-text-muted">No albums yet. Create one above.</p>
+          <p className="aa__empty">No albums yet. Create one above.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="aa__cards">
             {albums.map((album) => {
               const cover = album.slides[0]?.thumb;
               const images = album.slides.filter((s) => s.type === 'image').length;
               const videos = album.slides.length - images;
               return (
-                <Link
-                  key={album.id}
-                  to="/admin/albums/$id"
-                  params={{ id: album.id }}
-                  className="flex gap-3 p-3 rounded-xl border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors"
-                >
-                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-site-bg">
-                    {cover && <img src={cover} alt="" className="h-full w-full object-cover" />}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-semibold text-site-text truncate">{album.title}</p>
-                    <p className="text-sm text-site-text-muted">/library/albums/{album.slug}</p>
-                    <p className="text-xs text-site-text-muted mt-1 inline-flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1">
-                        <Images size={12} /> {images}
+                <Link key={album.id} to="/admin/albums/$id" params={{ id: album.id }} className="aa__card">
+                  <div className="aa__card-cover">{cover && <img src={cover} alt="" />}</div>
+                  <div className="aa__card-body">
+                    <span className="aa__card-title">{album.title}</span>
+                    <span className="aa__card-sub">/library/albums/{album.slug}</span>
+                    <span className="aa__card-stats">
+                      <span>
+                        <Images size={12} aria-hidden="true" /> {images}
                       </span>
-                      <span className="inline-flex items-center gap-1">
-                        <Video size={12} /> {videos}
+                      <span>
+                        <Video size={12} aria-hidden="true" /> {videos}
                       </span>
-                    </p>
+                    </span>
                   </div>
                 </Link>
               );

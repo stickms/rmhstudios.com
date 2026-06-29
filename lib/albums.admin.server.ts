@@ -58,13 +58,54 @@ export async function uniqueAlbumSlug(title: string): Promise<string> {
   return `${base}-${n}`;
 }
 
-async function nextPosition(albumId: string): Promise<number> {
-  const last = await prisma.albumSlide.findFirst({
-    where: { albumId },
-    orderBy: { position: 'desc' },
-    select: { position: true },
-  });
-  return last ? last.position + 1 : 0;
+/** Existing slide with this idempotency key, if any (for retry-safe uploads). */
+async function existingByUploadKey(albumId: string, uploadKey?: string): Promise<SlideRecord | null> {
+  if (!uploadKey) return null;
+  return (await prisma.albumSlide.findFirst({
+    where: { albumId, uploadKey },
+    select: SLIDE_RECORD_SELECT,
+  })) as SlideRecord | null;
+}
+
+type SlideData = {
+  id: string;
+  albumId: string;
+  type: string;
+  fullKey?: string;
+  srcKey: string;
+  thumbKey: string;
+  mime?: string;
+  alt: string;
+  download: string;
+  uploadKey: string | null;
+};
+
+/**
+ * Create a slide, assigning the next position atomically. A per-album Postgres
+ * advisory lock (held only for this short DB transaction, not during media
+ * processing) serializes concurrent uploads so positions never collide. If the
+ * (albumId, uploadKey) unique constraint trips — a retry that already committed —
+ * the existing slide is returned instead of erroring.
+ */
+async function commitSlide(data: SlideData): Promise<SlideRecord> {
+  try {
+    return (await prisma.$transaction(async (tx) => {
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`album:${data.albumId}`}))`;
+      const last = await tx.albumSlide.findFirst({
+        where: { albumId: data.albumId },
+        orderBy: { position: 'desc' },
+        select: { position: true },
+      });
+      const position = last ? last.position + 1 : 0;
+      return tx.albumSlide.create({ data: { ...data, position }, select: SLIDE_RECORD_SELECT });
+    })) as SlideRecord;
+  } catch (err) {
+    if ((err as { code?: string }).code === 'P2002' && data.uploadKey) {
+      const existing = await existingByUploadKey(data.albumId, data.uploadKey);
+      if (existing) return existing;
+    }
+    throw err;
+  }
 }
 
 async function placeholderPosterWebp(): Promise<Buffer> {
@@ -84,8 +125,10 @@ async function placeholderPosterWebp(): Promise<Buffer> {
 export async function addImageSlide(
   albumId: string,
   raw: Buffer,
-  opts: { alt?: string; download?: string } = {}
+  opts: { alt?: string; download?: string; uploadKey?: string } = {}
 ): Promise<SlideRecord> {
+  const dup = await existingByUploadKey(albumId, opts.uploadKey);
+  if (dup) return dup; // idempotent: a retried upload resolves to the same slide
   const slideId = nanoid();
   const [full, src, thumb] = await Promise.all([
     optimizeImage(raw, { width: FULL_MAX_DIM, height: FULL_MAX_DIM, quality: QUALITY_FULL, format: 'webp', autoOrient: true }),
@@ -100,21 +143,17 @@ export async function addImageSlide(
     putObject(srcKey, src.buffer, src.contentType),
     putObject(thumbKey, thumb.buffer, thumb.contentType),
   ]);
-  const position = await nextPosition(albumId);
-  return prisma.albumSlide.create({
-    data: {
-      id: slideId,
-      albumId,
-      type: 'image',
-      position,
-      fullKey,
-      srcKey,
-      thumbKey,
-      alt: opts.alt ?? '',
-      download: opts.download || `${slideId}.webp`,
-    },
-    select: SLIDE_RECORD_SELECT,
-  }) as Promise<SlideRecord>;
+  return commitSlide({
+    id: slideId,
+    albumId,
+    type: 'image',
+    fullKey,
+    srcKey,
+    thumbKey,
+    alt: opts.alt ?? '',
+    download: opts.download || `${slideId}.webp`,
+    uploadKey: opts.uploadKey ?? null,
+  });
 }
 
 /**
@@ -124,8 +163,10 @@ export async function addImageSlide(
 export async function addVideoSlide(
   albumId: string,
   raw: Buffer,
-  opts: { alt?: string; download?: string } = {}
+  opts: { alt?: string; download?: string; uploadKey?: string } = {}
 ): Promise<SlideRecord> {
+  const dup = await existingByUploadKey(albumId, opts.uploadKey);
+  if (dup) return dup; // idempotent: a retried upload resolves to the same slide
   const slideId = nanoid();
   let videoBuf = raw;
   let mime = 'video/mp4';
@@ -155,21 +196,17 @@ export async function addVideoSlide(
     putObject(srcKey, videoBuf, mime),
     putObject(thumbKey, thumb.buffer, thumb.contentType),
   ]);
-  const position = await nextPosition(albumId);
-  return prisma.albumSlide.create({
-    data: {
-      id: slideId,
-      albumId,
-      type: 'video',
-      position,
-      srcKey,
-      thumbKey,
-      mime,
-      alt: opts.alt ?? '',
-      download: opts.download || `${slideId}.mp4`,
-    },
-    select: SLIDE_RECORD_SELECT,
-  }) as Promise<SlideRecord>;
+  return commitSlide({
+    id: slideId,
+    albumId,
+    type: 'video',
+    srcKey,
+    thumbKey,
+    mime,
+    alt: opts.alt ?? '',
+    download: opts.download || `${slideId}.mp4`,
+    uploadKey: opts.uploadKey ?? null,
+  });
 }
 
 const SLIDE_RECORD_SELECT = {

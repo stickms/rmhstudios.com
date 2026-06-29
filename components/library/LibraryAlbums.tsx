@@ -32,25 +32,27 @@ export function LibraryAlbums({
 
   return (
     <section className="lib__section lib-albums">
-      <div className="lib__section-head">
+      <div className="lib__section-head lib-albums__head">
         <h2 className="lib__section-title">{t('section-albums', { defaultValue: 'Albums' })}</h2>
         {isAdmin && (
           <Link
             to="/admin/albums"
-            className="lib-upload__btn lib-upload__btn--primary"
+            className="lib-albums__new"
             aria-label={t('manage-albums', { defaultValue: 'Create or manage albums' })}
           >
-            <Plus size={14} aria-hidden="true" />
-            {t('new-album', { defaultValue: 'New album' })}
+            <Plus size={13} aria-hidden="true" />
+            <span className="lib-albums__new-label">{t('new-album', { defaultValue: 'New album' })}</span>
           </Link>
         )}
       </div>
       {albums.length === 0 ? (
-        <p className="vibe-hint lib__empty">
-          {t('no-albums-admin', {
-            defaultValue: 'No albums yet. Create one to bulk-upload photos and videos.',
-          })}
-        </p>
+        <div className="lib-albums__empty">
+          <p>{t('no-albums-admin', { defaultValue: 'No albums yet.' })}</p>
+          <Link to="/admin/albums" className="lib-albums__empty-cta">
+            <Plus size={14} aria-hidden="true" />
+            {t('create-first-album', { defaultValue: 'Create your first album' })}
+          </Link>
+        </div>
       ) : (
         <div className="lib-albums__grid" role="list">
           {albums.map((album) => (

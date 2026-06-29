@@ -40,7 +40,7 @@ export const Route = createFileRoute('/api/admin/albums/')({
             description: true,
             position: true,
             slides: {
-              orderBy: { position: 'asc' },
+              orderBy: [{ position: 'asc' }, { createdAt: 'asc' }],
               select: { id: true, type: true, position: true, srcKey: true, thumbKey: true },
             },
           },

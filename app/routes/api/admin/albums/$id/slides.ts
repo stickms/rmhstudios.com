@@ -74,7 +74,18 @@ export const Route = createFileRoute('/api/admin/albums/$id/slides')({
 
         const formData = await request.formData().catch(() => null);
         if (!formData) return Response.json({ error: 'Invalid upload.' }, { status: 400 });
-        const files = formData.getAll('files').filter((f): f is File => f instanceof File && f.size > 0);
+        // Idempotency keys aligned to `files` by index (client sends one per file)
+        // so a retried upload resolves to the same slide instead of duplicating.
+        const rawFiles = formData.getAll('files');
+        const rawKeys = formData.getAll('uploadKey');
+        const indexed: { file: File; key?: string }[] = [];
+        rawFiles.forEach((f, i) => {
+          if (f instanceof File && f.size > 0) {
+            const k = rawKeys[i];
+            indexed.push({ file: f, key: typeof k === 'string' ? k : undefined });
+          }
+        });
+        const files = indexed.map((e) => e.file);
         if (files.length === 0) return Response.json({ error: 'No files provided.' }, { status: 400 });
         if (files.length > MAX_FILES_PER_REQUEST) {
           return Response.json(
@@ -88,7 +99,8 @@ export const Route = createFileRoute('/api/admin/albums/$id/slides')({
 
         // Sequential to bound memory (sharp/ffmpeg are heavy) and keep slide
         // order stable to the selection order.
-        for (const file of files) {
+        for (const { file, key } of indexed) {
+          const uploadKey = key || undefined;
           try {
             const video = isVideo(file);
             if (!video && !isImage(file)) {
@@ -107,8 +119,8 @@ export const Route = createFileRoute('/api/admin/albums/$id/slides')({
             const raw = Buffer.from(await file.arrayBuffer());
             const stem = baseName(file.name);
             const slide = video
-              ? await addVideoSlide(album.id, raw, { download: `${stem}.mp4` })
-              : await addImageSlide(album.id, raw, { download: `${stem}.webp` });
+              ? await addVideoSlide(album.id, raw, { download: `${stem}.mp4`, uploadKey })
+              : await addImageSlide(album.id, raw, { download: `${stem}.webp`, uploadKey });
             created.push(publicSlide(slide));
           } catch (err) {
             console.error('[albums] slide upload failed:', file.name, err);

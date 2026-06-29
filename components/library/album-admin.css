@@ -1,0 +1,208 @@
+/**
+ * Admin album manager styling — matches the library/site dark theme (lib-* look)
+ * using the --site-* design tokens. Self-contained (no Tailwind utilities) so the
+ * admin album pages read like the rest of the site.
+ */
+
+.aa {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 20px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.aa__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--site-text-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  width: fit-content;
+  padding: 0;
+}
+.aa__back:hover { color: var(--site-text); }
+
+.aa__intro-title { font-size: 22px; font-weight: 700; color: var(--site-text); }
+.aa__intro-sub { margin-top: 4px; color: var(--site-text-muted); font-size: 14px; line-height: 1.5; }
+
+/* ── Inputs ─────────────────────────────────────────────────────────────── */
+.aa__input,
+.aa__textarea {
+  width: 100%;
+  background: var(--site-surface);
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  color: var(--site-text);
+  padding: 10px 12px;
+  font: inherit;
+  outline: none;
+  transition: border-color 0.15s;
+}
+.aa__input:focus,
+.aa__textarea:focus { border-color: var(--site-accent); }
+.aa__textarea { resize: vertical; min-height: 56px; }
+.aa__title-input { font-size: 18px; font-weight: 600; }
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.aa__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--site-border);
+  background: var(--site-surface);
+  color: var(--site-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+  text-decoration: none;
+}
+.aa__btn:hover { background: var(--site-surface-hover); border-color: var(--site-border-bright); }
+.aa__btn:disabled { opacity: 0.5; cursor: default; }
+.aa__btn--primary {
+  background: var(--site-accent);
+  border-color: var(--site-accent);
+  color: var(--site-accent-fg);
+}
+.aa__btn--primary:hover { background: var(--site-accent-hover); border-color: var(--site-accent-hover); }
+.aa__btn--danger { color: var(--site-danger, #ff8585); border-color: color-mix(in srgb, var(--site-danger, #ff5a5a) 50%, transparent); background: transparent; }
+.aa__btn--danger:hover { background: color-mix(in srgb, var(--site-danger, #ff5a5a) 14%, transparent); }
+.aa__btn--ghost { background: transparent; }
+
+.aa__meta-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.aa__slug { font-size: 13px; color: var(--site-text-muted); }
+.aa__fields { display: flex; flex-direction: column; gap: 10px; }
+
+/* ── Upload panel ───────────────────────────────────────────────────────── */
+.aa__panel {
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius, 12px);
+  background: color-mix(in srgb, var(--site-surface) 45%, transparent);
+  padding: 16px;
+}
+
+.aa__drop {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  padding: 30px 20px;
+  border: 1.5px dashed var(--site-border-bright);
+  border-radius: var(--site-radius, 12px);
+  background: color-mix(in srgb, var(--site-text) 3%, transparent);
+  color: var(--site-text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.aa__drop:hover,
+.aa__drop.is-drag {
+  border-color: var(--site-accent);
+  background: color-mix(in srgb, var(--site-accent) 8%, transparent);
+  color: var(--site-text);
+}
+.aa__drop-strong { font-weight: 600; color: var(--site-text); display: inline-flex; align-items: center; gap: 8px; }
+.aa__drop-hint { font-size: 12px; }
+
+/* Overall progress */
+.aa__overall { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.aa__overall-label { font-size: 13px; color: var(--site-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.aa__track { flex: 1; height: 8px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--site-text) 12%, transparent); }
+.aa__fill { height: 100%; background: var(--site-accent); border-radius: 999px; transition: width 0.25s ease; }
+
+/* Per-file queue */
+.aa__queue { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 440px; overflow-y: auto; }
+@media (max-width: 600px) {
+  .aa__queue { max-height: min(60vh, 320px); }
+}
+.aa__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px;
+  border: 1px solid var(--site-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--site-surface) 55%, transparent);
+}
+.aa__thumb { position: relative; width: 48px; height: 48px; flex: none; border-radius: 8px; overflow: hidden; border: 1px solid var(--site-border); background: color-mix(in srgb, var(--site-text) 6%, transparent); }
+.aa__thumb img, .aa__thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.aa__thumb-badge { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #fff; background: rgba(0,0,0,0.35); }
+
+.aa__info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.aa__name { font-size: 13px; color: var(--site-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aa__meta { font-size: 11px; color: var(--site-text-muted); display: flex; align-items: center; gap: 8px; }
+.aa__rowtrack { height: 4px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--site-text) 12%, transparent); }
+.aa__rowfill { height: 100%; background: var(--site-accent); border-radius: 999px; transition: width 0.15s ease; }
+
+.aa__state { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; }
+.aa__state--done { color: var(--site-success, #67d18b); }
+.aa__state--err { color: var(--site-danger, #ff8585); }
+.aa__state--proc, .aa__state--up, .aa__state--queued { color: var(--site-text-muted); }
+
+.aa__rowbtn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  flex: none;
+  height: 28px; min-width: 28px; padding: 0 8px;
+  border-radius: 8px; border: 1px solid var(--site-border);
+  background: transparent; color: var(--site-text-muted);
+  cursor: pointer; font: inherit; font-size: 12px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.aa__rowbtn:hover { color: var(--site-text); border-color: var(--site-border-bright); }
+.aa__rowbtn:focus-visible { outline: 2px solid var(--site-accent); outline-offset: 2px; }
+.aa__rowbtn--retry { color: var(--site-accent); border-color: color-mix(in srgb, var(--site-accent) 45%, transparent); }
+.aa__rowbtn--retry:hover { background: color-mix(in srgb, var(--site-accent) 12%, transparent); }
+.aa__rowbtn--remove:hover { color: var(--site-danger, #ff8585); border-color: color-mix(in srgb, var(--site-danger, #ff5a5a) 50%, transparent); background: color-mix(in srgb, var(--site-danger, #ff5a5a) 12%, transparent); }
+
+.aa__spin { animation: aa-spin 0.8s linear infinite; }
+@keyframes aa-spin { to { transform: rotate(360deg); } }
+
+/* ── Slide grid ─────────────────────────────────────────────────────────── */
+.aa__section-label { font-size: 13px; color: var(--site-text-muted); margin-bottom: 8px; }
+.aa__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.aa__tile { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; border: 1px solid var(--site-border); background: var(--site-bg-subtle); }
+.aa__tile.is-drag { border-color: var(--site-accent); opacity: 0.6; }
+.aa__tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.aa__tile-badge { position: absolute; left: 5px; top: 5px; display: inline-flex; padding: 3px; border-radius: 6px; background: rgba(0,0,0,0.55); color: #fff; }
+.aa__tile-remove {
+  position: absolute; right: 5px; top: 5px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 6px; border: 0;
+  background: rgba(0,0,0,0.55); color: #fff; cursor: pointer;
+  opacity: 0; transition: opacity 0.15s, background 0.15s;
+}
+.aa__tile:hover .aa__tile-remove,
+.aa__tile-remove:focus-visible { opacity: 1; }
+.aa__tile-remove:focus-visible { outline: 2px solid var(--site-accent); outline-offset: 2px; }
+.aa__tile-remove:hover { background: var(--site-danger, #d33); }
+
+.aa__empty { color: var(--site-text-muted); font-size: 14px; padding: 8px 0; }
+.aa__danger-zone { border-top: 1px solid var(--site-border); padding-top: 16px; }
+
+/* ── Album list (index) ─────────────────────────────────────────────────── */
+.aa__create { display: flex; gap: 10px; flex-wrap: wrap; }
+.aa__create .aa__input { flex: 1; min-width: 200px; }
+.aa__cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.aa__card {
+  display: flex; gap: 12px; padding: 12px;
+  border: 1px solid var(--site-border); border-radius: 12px;
+  background: var(--site-surface); text-decoration: none; color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+.aa__card:hover { border-color: color-mix(in srgb, var(--site-accent) 50%, var(--site-border)); background: var(--site-surface-hover); }
+.aa__card-cover { width: 64px; height: 64px; flex: none; border-radius: 8px; overflow: hidden; background: var(--site-bg-subtle); border: 1px solid var(--site-border); }
+.aa__card-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.aa__card-body { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.aa__card-title { font-weight: 600; color: var(--site-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aa__card-sub { font-size: 12px; color: var(--site-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.aa__card-stats { font-size: 12px; color: var(--site-text-muted); display: inline-flex; gap: 12px; margin-top: 4px; }
+.aa__card-stats span { display: inline-flex; align-items: center; gap: 4px; }

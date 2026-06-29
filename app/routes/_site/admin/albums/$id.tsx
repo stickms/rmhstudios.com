@@ -1,17 +1,19 @@
 /**
- * Admin → manage one album: edit meta, bulk-upload media (many files at once),
- * reorder slides, delete slides, delete the album. Admin-gated by the parent
- * /_site/admin route.
+ * Admin → manage one album: edit meta, bulk-upload media (many files at once,
+ * with per-item progress + retry), reorder slides, delete slides, delete the
+ * album. Admin-gated by the parent /_site/admin route.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { ArrowLeft, Loader2, Play, Trash2, Upload } from 'lucide-react';
+import { ArrowLeft, Play, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { AlbumUploader, type AdminSlide } from '@/components/library/AlbumUploader';
+import '@/components/library/album-admin.css';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -28,7 +30,6 @@ export const Route = createFileRoute('/_site/admin/albums/$id')({
   component: ManageAlbumPage,
 });
 
-type AdminSlide = { id: string; type: string; position: number; thumb: string; src: string };
 type AdminAlbum = {
   id: string;
   slug: string;
@@ -38,20 +39,15 @@ type AdminAlbum = {
   slides: AdminSlide[];
 };
 
-const UPLOAD_BATCH = 8;
-
 function ManageAlbumPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  const fileInput = useRef<HTMLInputElement | null>(null);
 
   const [album, setAlbum] = useState<AdminAlbum | null>(null);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   async function load() {
@@ -99,42 +95,9 @@ function ManageAlbumPage() {
     }
   }
 
-  async function uploadFiles(fileList: FileList | null) {
-    if (!album || !fileList || fileList.length === 0) return;
-    const files = Array.from(fileList);
-    setUploading(true);
-    setProgress({ done: 0, total: files.length });
-    let added = 0;
-    const failures: string[] = [];
-    try {
-      for (let i = 0; i < files.length; i += UPLOAD_BATCH) {
-        const batch = files.slice(i, i + UPLOAD_BATCH);
-        const form = new FormData();
-        for (const f of batch) form.append('files', f);
-        const res = await fetch(`/api/admin/albums/${album.id}/slides`, { method: 'POST', body: form });
-        const data = await res.json().catch(() => null);
-        if (!res.ok) {
-          failures.push(data?.error || `Batch failed (${batch.length} files)`);
-        } else {
-          const created = (data?.created as AdminSlide[] | undefined) ?? [];
-          added += created.length;
-          if (created.length) {
-            setAlbum((prev) => (prev ? { ...prev, slides: [...prev.slides, ...created] } : prev));
-          }
-          for (const e of (data?.errors as { name: string; error: string }[] | undefined) ?? []) {
-            failures.push(`${e.name}: ${e.error}`);
-          }
-        }
-        setProgress({ done: Math.min(i + batch.length, files.length), total: files.length });
-      }
-      if (added > 0) toast.success(`Uploaded ${added} item${added === 1 ? '' : 's'}.`);
-      if (failures.length > 0) toast.error(`${failures.length} failed. ${failures.slice(0, 3).join(' · ')}`);
-      if (added === 0 && failures.length === 0) toast.error('Nothing uploaded.');
-    } finally {
-      setUploading(false);
-      setProgress(null);
-      if (fileInput.current) fileInput.current.value = '';
-    }
+  // Append freshly-uploaded slides as the uploader finishes each one.
+  function onUploaded(created: AdminSlide[]) {
+    setAlbum((prev) => (prev ? { ...prev, slides: [...prev.slides, ...created] } : prev));
   }
 
   async function deleteSlide(slideId: string) {
@@ -186,116 +149,90 @@ function ManageAlbumPage() {
   if (loading) {
     return (
       <PageLayout title="Manage Album" wide>
-        <div className="p-8 text-site-text-muted">Loading…</div>
+        <div className="aa">
+          <p className="aa__empty">Loading…</p>
+        </div>
       </PageLayout>
     );
   }
   if (!album) {
     return (
       <PageLayout title="Manage Album" wide>
-        <div className="p-8 text-site-text-muted">Album not found.</div>
+        <div className="aa">
+          <p className="aa__empty">Album not found.</p>
+        </div>
       </PageLayout>
     );
   }
 
   return (
     <PageLayout title={album.title} wide>
-      <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-        <button
-          type="button"
-          onClick={() => navigate({ to: '/admin/albums' })}
-          className="inline-flex items-center gap-1 text-sm text-site-text-muted hover:text-site-text"
-        >
-          <ArrowLeft size={14} /> All albums
+      <div className="aa">
+        <button type="button" className="aa__back" onClick={() => navigate({ to: '/admin/albums' })}>
+          <ArrowLeft size={14} aria-hidden="true" /> All albums
         </button>
 
-        <div className="space-y-3">
+        <div className="aa__fields">
           <input
             type="text"
+            className="aa__input aa__title-input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             maxLength={120}
-            className="w-full rounded-lg border border-site-border bg-site-surface px-3 py-2 text-lg font-semibold text-site-text outline-none focus:border-site-accent"
+            placeholder="Album title"
           />
           <textarea
+            className="aa__textarea"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description (shown on the card + share preview)…"
             rows={2}
             maxLength={2000}
-            className="w-full rounded-lg border border-site-border bg-site-surface px-3 py-2 text-site-text outline-none focus:border-site-accent"
           />
-          <div className="flex items-center gap-3">
+          <div className="aa__meta-row">
             <button
               type="button"
+              className="aa__btn aa__btn--primary"
               onClick={saveMeta}
               disabled={!dirty || saving || !title.trim()}
-              className="rounded-lg bg-site-accent px-4 py-2 font-semibold text-white disabled:opacity-50"
             >
               {saving ? 'Saving…' : 'Save details'}
             </button>
-            <span className="text-sm text-site-text-muted">/library/albums/{album.slug}</span>
+            <span className="aa__slug">/library/albums/{album.slug}</span>
           </div>
         </div>
 
-        <div className="rounded-xl border border-dashed border-site-border bg-site-surface p-6 text-center">
-          <input
-            ref={fileInput}
-            type="file"
-            multiple
-            accept="image/*,video/*"
-            className="hidden"
-            onChange={(e) => uploadFiles(e.target.files)}
-          />
-          <button
-            type="button"
-            onClick={() => fileInput.current?.click()}
-            disabled={uploading}
-            className="inline-flex items-center gap-2 rounded-lg bg-site-accent px-5 py-2.5 font-semibold text-white disabled:opacity-60"
-          >
-            {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
-            {uploading
-              ? progress
-                ? `Uploading ${progress.done}/${progress.total}…`
-                : 'Uploading…'
-              : 'Upload photos & videos'}
-          </button>
-          <p className="mt-2 text-sm text-site-text-muted">
-            Select many files at once. Images become WebP; videos are transcoded to MP4 with a poster.
-          </p>
-        </div>
+        <AlbumUploader albumId={album.id} onUploaded={onUploaded} />
 
         {slides.length > 0 && (
           <div>
-            <p className="mb-2 text-sm text-site-text-muted">
+            <p className="aa__section-label">
               {slides.length} item{slides.length === 1 ? '' : 's'} · drag to reorder
             </p>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+            <div className="aa__grid">
               {slides.map((slide, index) => (
                 <div
                   key={slide.id}
+                  className={`aa__tile${dragIndex === index ? ' is-drag' : ''}`}
                   draggable
                   onDragStart={() => setDragIndex(index)}
                   onDragOver={(e) => e.preventDefault()}
                   onDrop={() => onDrop(index)}
                   onDragEnd={() => setDragIndex(null)}
-                  className={`group relative aspect-square overflow-hidden rounded-lg border bg-site-bg ${
-                    dragIndex === index ? 'border-site-accent opacity-60' : 'border-site-border'
-                  }`}
                 >
-                  <img src={slide.thumb} alt="" className="h-full w-full object-cover" draggable={false} />
+                  <img src={slide.thumb} alt="" draggable={false} />
                   {slide.type === 'video' && (
-                    <span className="absolute left-1 top-1 rounded bg-black/60 p-1 text-white">
-                      <Play size={12} />
+                    <span className="aa__tile-badge">
+                      <Play size={12} aria-hidden="true" />
                     </span>
                   )}
                   <button
                     type="button"
+                    className="aa__tile-remove"
                     onClick={() => deleteSlide(slide.id)}
-                    aria-label="Delete"
-                    className="absolute right-1 top-1 rounded bg-black/60 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-600"
+                    aria-label={`Delete ${slide.type} ${index + 1}`}
                   >
-                    <Trash2 size={12} />
+                    <Trash2 size={12} aria-hidden="true" />
                   </button>
                 </div>
               ))}
@@ -303,13 +240,9 @@ function ManageAlbumPage() {
           </div>
         )}
 
-        <div className="border-t border-site-border pt-4">
-          <button
-            type="button"
-            onClick={deleteAlbum}
-            className="inline-flex items-center gap-2 rounded-lg border border-red-600/50 px-4 py-2 font-semibold text-red-500 hover:bg-red-600/10"
-          >
-            <Trash2 size={16} /> Delete album
+        <div className="aa__danger-zone">
+          <button type="button" className="aa__btn aa__btn--danger" onClick={deleteAlbum}>
+            <Trash2 size={16} aria-hidden="true" /> Delete album
           </button>
         </div>
       </div>
