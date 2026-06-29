@@ -52,6 +52,8 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private readonly raycaster = new THREE.Raycaster();
   private readonly groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   private time = 0;
+  /** Tracks the active map so we only re-tint the palette on zone change. */
+  private lastMapId = -1;
 
   // Scene objects
   private player!: THREE.Group;
@@ -180,6 +182,42 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     return g;
   }
 
+  /** Procedural neon-window texture used for building map + emissiveMap. */
+  private buildWindowTexture(): THREE.CanvasTexture {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 64;
+    const x = c.getContext('2d')!;
+    x.fillStyle = '#08080f';
+    x.fillRect(0, 0, 64, 64);
+    const cols = ['#00f5ff', '#ff00cc', '#ffaa33', '#66ffcc'];
+    for (let gy = 0; gy < 8; gy++) {
+      for (let gx = 0; gx < 8; gx++) {
+        if (Math.random() > 0.5) {
+          x.fillStyle = cols[Math.floor(Math.random() * cols.length)];
+          x.globalAlpha = 0.55 + Math.random() * 0.45;
+          x.fillRect(gx * 8 + 2, gy * 8 + 2, 4, 5);
+        }
+      }
+    }
+    x.globalAlpha = 1;
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 2);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  /** Re-tint floor/grid/border/fog/ambient to the current zone's palette. */
+  private applyMapPalette(cfg: VoidBreakerEngine['currentMapConfig']): void {
+    const amb = new THREE.Color(cfg.ambientGlow);
+    (this.floor.material as THREE.MeshStandardMaterial).color.set(cfg.floorColor);
+    (this.grid.material as THREE.LineBasicMaterial).color.set(cfg.gridColor);
+    (this.border.material as THREE.LineBasicMaterial).color.set(cfg.borderColor);
+    if (this.scene.fog) (this.scene.fog as THREE.Fog).color.copy(amb).multiplyScalar(0.12);
+    this.renderer.setClearColor(amb.clone().multiplyScalar(0.05), 1);
+    this.ambient.color.copy(amb).lerp(new THREE.Color(0x6688aa), 0.4);
+  }
+
   private setupEntities(): void {
     // Player — a stylized craft: body + a forward spike to show facing.
     this.player = new THREE.Group();
@@ -268,8 +306,10 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.scene.add(this.shardMesh);
 
     // Obstacles — extruded neon-trimmed boxes (buildings/barriers).
+    const winTex = this.buildWindowTexture();
     const obsMat = new THREE.MeshStandardMaterial({
-      color: 0x12121e, emissive: 0x0a1a2a, emissiveIntensity: 0.5, roughness: 0.7, metalness: 0.3,
+      color: 0x0d0d18, map: winTex, emissive: 0xffffff, emissiveMap: winTex,
+      emissiveIntensity: 1.1, roughness: 0.7, metalness: 0.3,
     });
     this.obstacleMesh = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), obsMat, 96);
     this.obstacleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -347,6 +387,12 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     const p = game.player;
     if (!p) { this.composer.render(); return; }
 
+    // Re-tint the world when the player advances to a new zone.
+    if (game.currentMapConfig.id !== this.lastMapId) {
+      this.lastMapId = game.currentMapConfig.id;
+      this.applyMapPalette(game.currentMapConfig);
+    }
+
     // Camera follows the player (+ shake jitter).
     const sx = game.shakeX * 1.5, sz = game.shakeY * 1.5;
     this.camera.position.set(p.x + sx, CAM_HEIGHT, p.y + CAM_BACK + sz);
@@ -372,9 +418,9 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     const riftPulse = 1 + Math.sin(this.time * 2.5) * 0.15;
     this.rift.scale.setScalar(riftPulse);
 
-    // Boss-aware bloom flare.
+    // Bloom reacts to the moment: bosses flare, Focus swells into a dreamy glow.
     const bossActive = game.enemies.some(e => e.active && e.isBoss);
-    this.bloom.strength = bossActive ? 1.15 : 0.9;
+    this.bloom.strength = (bossActive ? 1.15 : 0.9) + (p.focusActive ? 0.55 : 0);
 
     this.composer.render();
   }
