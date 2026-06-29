@@ -1,6 +1,6 @@
 // lib/cookgame/store.ts
 import { create } from 'zustand';
-import type { AdditiveId, BaseId, BuyerId, InputId, InventoryState, Product, BaseStockEntry, CookSession, RecipeMeta } from './types';
+import type { AdditiveId, BaseId, BuyerId, InputId, InventoryState, Product, BaseStockEntry, CookSession, RecipeMeta, BuyerDynamicState } from './types';
 import { cookQuality, cookOutput, DIAL_COUNT } from './chemistry';
 import { ADDITIVES, BUYERS, INPUTS, GROWABLE } from './content';
 import { mix, effectSetKey, productValue } from './effects';
@@ -15,6 +15,10 @@ import {
 import { PROPERTY_TIERS, propertyEffects, stashCount } from './property';
 import { KEY_PRICES } from './shops';
 import { advanceClock, isOpenAt } from './timeOfDay';
+import {
+  restockDemand, depleteDemand, demandPriceMult, reputationPriceMult,
+  gainReputation, driftPreference, REP_PER_SALE, REP_PREF_BONUS,
+} from './demand';
 
 // Transient accumulator for sub-dollar passive income — kept outside the store
 // so it survives re-renders but is reset by resetGame (see below).
@@ -44,6 +48,7 @@ interface CookgameState {
   discoveredEffects: string[];
   recipeMeta: Record<string, RecipeMeta>;
   currentDistrict: string;
+  buyerState: Record<string, BuyerDynamicState>;
   nearbyInteractable: string | null;
   activeOverlay: string | null;
   playerPosition: [number, number, number];
@@ -60,6 +65,7 @@ interface CookgameState {
   packageBench: () => boolean;
   sellUnit: (buyerId: BuyerId, packagedIndex: number, variance: number) => number;
   tickHeat: (dt: number) => void;
+  tickDemand: (dtMs: number) => void;
   tickPassiveIncome: (dtSeconds: number) => void;
   tickClock: (dtMs: number) => void;
   setNearbyInteractable: (id: string | null) => void;
@@ -84,6 +90,7 @@ const fromSave = (s: SaveState) => ({
   cash: s.cash, heat: s.heat, inventory: s.inventory, discoveredRecipes: s.discoveredRecipes,
   xp: s.xp, ownedPropertyTier: s.ownedPropertyTier, keys: s.keys, clock: s.clock,
   discoveredEffects: s.discoveredEffects, recipeMeta: s.recipeMeta, currentDistrict: s.currentDistrict,
+  buyerState: s.buyerState,
 });
 
 export const useCookgameStore = create<CookgameState>((set, get) => ({
@@ -202,13 +209,21 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   },
 
   sellUnit: (buyerId, packagedIndex, variance) => {
-    const { inventory, cash, heat, xp } = get();
+    const { inventory, cash, heat, xp, buyerState } = get();
     const stack = inventory.packaged[packagedIndex];
     const buyer = BUYERS.find((b) => b.id === buyerId);
     if (!stack || stack.units <= 0 || !buyer) return 0;
     if (buyer.timeWindow && !isOpenAt(buyer.timeWindow, get().clock)) return 0;
+    const bs = buyerState[buyerId] ?? { demand: 1, reputation: 0, preferredEffect: buyer.preferredEffect };
     const perk = perksAtRank(rankForXp(xp).rank);
-    const offer = buyerOffer(stack.product, buyer, heat, variance, perk.priceMult);
+    const priceMult = perk.priceMult * demandPriceMult(bs.demand) * reputationPriceMult(bs.reputation);
+    const offer = buyerOffer(stack.product, buyer, heat, variance, priceMult);
+    const matchesPref = stack.product.effects.includes(bs.preferredEffect);
+    const nextBs = {
+      ...bs,
+      demand: depleteDemand(bs.demand, 1),
+      reputation: gainReputation(bs.reputation, REP_PER_SALE + (matchesPref ? REP_PREF_BONUS : 0)),
+    };
     const packaged = inventory.packaged
       .map((s, i) => (i === packagedIndex ? { ...s, units: s.units - 1 } : s))
       .filter((s) => s.units > 0);
@@ -217,6 +232,7 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
       heat: applyHeatOnSale(heat, perk.heatMult),
       inventory: { ...inventory, packaged },
       xp: xp + xpForSale(offer),
+      buyerState: { ...buyerState, [buyerId]: nextBs },
     });
     return offer;
   },
@@ -225,6 +241,20 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
     const heat = get().heat;
     if (heat === 0) return; // avoid per-frame state churn (and autosave) on an idle tab
     set({ heat: decayHeat(heat, dt) });
+  },
+  tickDemand: (dtMs) => {
+    const { buyerState } = get();
+    let changed = false;
+    const next: Record<string, BuyerDynamicState> = {};
+    for (const id of Object.keys(buyerState)) {
+      const bs = buyerState[id];
+      const restocked = bs.demand < 1 ? restockDemand(bs.demand, dtMs) : bs.demand;
+      const afterRestock = restocked === bs.demand ? bs : { ...bs, demand: restocked };
+      const drifted = driftPreference(afterRestock, Math.random());
+      if (drifted !== bs) changed = true;
+      next[id] = drifted;
+    }
+    if (changed) set({ buyerState: next });
   },
   tickPassiveIncome: (dtSeconds) => {
     const rate = propertyEffects(get().ownedPropertyTier).passiveIncomePerSec;
@@ -241,8 +271,8 @@ export const useCookgameStore = create<CookgameState>((set, get) => ({
   setPlayerPosition: (p) => set({ playerPosition: p }),
 
   saveNow: () => {
-    const { cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict } = get();
-    saveGame({ version: CURRENT_VERSION, cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict });
+    const { cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict, buyerState } = get();
+    saveGame({ version: CURRENT_VERSION, cash, heat, inventory, discoveredRecipes, xp, ownedPropertyTier, keys, clock, discoveredEffects, recipeMeta, currentDistrict, buyerState });
   },
   loadOrNew: () => set(fromSave(loadGame() ?? createNewSave())),
   resetGame: () => { incomeAccum = 0; set({ ...fromSave(createNewSave()), nearbyInteractable: null, activeOverlay: null, cookSession: null }); },

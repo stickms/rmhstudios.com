@@ -6,6 +6,7 @@ import { rankForXp, xpForRecipe } from '../progression';
 import { propertyEffects } from '../property';
 import { KEY_PRICES, NIGHT_WINDOW } from '../shops';
 import { DAY_LENGTH_MS } from '../timeOfDay';
+import { DEPLETE_PER_UNIT } from '../demand';
 
 const reset = () => useCookgameStore.getState().resetGame();
 
@@ -472,5 +473,47 @@ describe('recipe meta actions', () => {
   it('setRecipeName on an unknown key with an empty name creates no ghost entry', () => {
     useCookgameStore.getState().setRecipeName('a+b', '   ');
     expect(useCookgameStore.getState().recipeMeta['a+b']).toBeUndefined();
+  });
+});
+
+describe('dynamic demand', () => {
+  beforeEach(reset);
+
+  function giveSellable() {
+    // One packaged unit with no effects (so it never matches a preference) sold to 'doug'.
+    useCookgameStore.setState((s) => ({
+      inventory: { ...s.inventory, packaged: [{ product: { baseId: 'greenstart', effects: [] }, units: 1 }] },
+    }));
+  }
+
+  it('selling depletes the buyer demand and grants reputation', () => {
+    giveSellable();
+    const before = useCookgameStore.getState().buyerState['doug'];
+    expect(before.demand).toBe(1);
+    expect(before.reputation).toBe(0);
+    useCookgameStore.getState().sellUnit('doug', 0, 1);
+    const after = useCookgameStore.getState().buyerState['doug'];
+    expect(after.demand).toBeCloseTo(1 - DEPLETE_PER_UNIT, 9);
+    expect(after.reputation).toBeGreaterThan(0);
+  });
+
+  it('a saturated buyer pays less than a fresh buyer for the same product', () => {
+    giveSellable();
+    const fresh = useCookgameStore.getState().sellUnit('doug', 0, 1);
+    // Saturate doug, then sell an identical unit.
+    useCookgameStore.setState((s) => ({
+      buyerState: { ...s.buyerState, doug: { ...s.buyerState['doug'], demand: 0 } },
+      inventory: { ...s.inventory, packaged: [{ product: { baseId: 'greenstart', effects: [] }, units: 1 }] },
+    }));
+    const saturated = useCookgameStore.getState().sellUnit('doug', 0, 1);
+    expect(saturated).toBeLessThan(fresh);
+  });
+
+  it('tickDemand restocks a depleted buyer over time', () => {
+    useCookgameStore.setState((s) => ({
+      buyerState: { ...s.buyerState, doug: { ...s.buyerState['doug'], demand: 0 } },
+    }));
+    useCookgameStore.getState().tickDemand(10000);
+    expect(useCookgameStore.getState().buyerState['doug'].demand).toBeGreaterThan(0);
   });
 });
