@@ -12,17 +12,16 @@ const FIELD_DEPTH = 12;
 /**
  * Scroll position along world X for a note.
  * @param timeDelta slice.time − audioTime (seconds; 0 = now/at hit line, >0 = future)
- * @param speedMod the `modifiers.speed` value (higher = faster scroll = closer)
+ * @param speedMod the `modifiers.speed` value (higher = faster scroll = farther out)
  *
- * Parity with the 2D renderer: position is linear in timeDelta and inversely
- * scaled by speedMod, with a full lookahead window (WORLD_LOOKAHEAD_S / speedMod
- * seconds) spanning FIELD_DEPTH world units.
+ * Parity with the 2D renderer (PPS = axisLength/3 × speedMod): a note's distance
+ * from the hit line is proportional to speedMod, so higher speed places the same
+ * time-delta note farther out and scrolls it faster. The visible window is
+ * WORLD_LOOKAHEAD_S / speedMod seconds, mapped onto FIELD_DEPTH world units.
  */
 export function scrollWorldX(timeDelta: number, speedMod: number): number {
-  // Parity: position is inversely proportional to speedMod — higher speed means
-  // the same time-delta note maps closer to the hit line (x=0), matching the 2D
-  // renderer's effective PPS = FIELD_DEPTH / (WORLD_LOOKAHEAD_S * speedMod).
-  return (timeDelta / (WORLD_LOOKAHEAD_S * speedMod)) * FIELD_DEPTH;
+  const windowSeconds = WORLD_LOOKAHEAD_S / speedMod;
+  return (timeDelta / windowSeconds) * FIELD_DEPTH;
 }
 
 /** Lane center on world Y. Lane 0 above (+), lane 1 below (−); oneTrack → 0. */

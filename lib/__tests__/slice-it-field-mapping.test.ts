@@ -18,8 +18,8 @@ describe('fieldMapping', () => {
     expect(scrollWorldX(WORLD_LOOKAHEAD_S, 1)).toBeCloseTo(WORLD_LOOKAHEAD_S * scrollWorldX(1, 1), 6);
   });
 
-  it('higher speedMod pushes the same note closer (faster scroll)', () => {
-    expect(scrollWorldX(1, 2)).toBeLessThan(scrollWorldX(1, 1));
+  it('higher speedMod pushes the same note farther out (faster scroll)', () => {
+    expect(scrollWorldX(1, 2)).toBeGreaterThan(scrollWorldX(1, 1));
   });
 
   it('two lanes are symmetric about 0, LANE_SPREAD apart', () => {
