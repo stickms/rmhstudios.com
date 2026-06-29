@@ -1618,6 +1618,7 @@ export class VoidBreakerEngine {
     // Death feedback — scale juice with the kill's importance.
     if (e.isBoss) {
       this.emitSfx('bossKill');
+      this.emitSfx('slowmo');
       this.requestHitStop(220);
       this.triggerShake(16, 700);
       if (!this.headless) this.slowMoTimer = 0.6; // cinematic boss-death slow-mo
@@ -1770,6 +1771,7 @@ export class VoidBreakerEngine {
     this.surgeTimer = SURGE_DURATION;
     this.spawnShockwave(p.x, p.y, blast, '#ff8855', 6);
     this.emitSfx('detonate', { gain: Math.min(1.3, 0.7 + blast / 300) });
+    if (peak > 1.5) this.emitSfx('surge'); // power-swell when a meaningful Surge banks
     this.requestHitStop(90);
     this.triggerShake(12, 450);
     this.popups.push({
