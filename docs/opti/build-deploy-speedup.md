@@ -13,20 +13,28 @@
 The pipeline is genuinely well-engineered, so the remaining wins are specific,
 not sweeping. Ranked by **(impact ÷ risk)**:
 
-| # | Lever | Where | Est. saving / deploy | Risk | Effort |
-|---|---|---|---|---|---|
-| 1 | `COMPOSE_BAKE=1` — build `web`+`supervisor` as one parallel DAG | `deploy.sh` build step | **30–90 s** on changed builds | low | 1 line |
-| 2 | Gate the per-deploy `library:metadata` container boot | `deploy.sh` Step 1e | **5–10 s** every deploy | low | ~15 lines |
-| 3 | Drop the redundant `cp -a .output build-output` (~1.5 GB copy) | `Dockerfile` vite-builder | **3–8 s** every changed build | low–med | ~5 lines |
-| 4 | Lazy-load heavy game/tool routes (shrink Vite module graph) | `app/**` routes | **large** (cuts the long pole) | med | large refactor |
-| 5 | Surgical cache-mount trimming instead of full `builder prune -af` | `deploy.sh` Step 1b | avoids occasional **cold** build (~2–4 min) | med | ~20 lines |
-| 6 | `pnpm prune --prod` instead of a second `pnpm install --prod` | `Dockerfile` prod-deps | seconds, only on lockfile/schema change | low | 1 line |
-| 7 | Offload image build to CI + ship via registry (multi-node path) | CI + `make prod` | moves build off the request path | high | large |
+| # | Lever | Where | Est. saving / deploy | Risk | Effort | Status |
+|---|---|---|---|---|---|---|
+| 1 | `COMPOSE_BAKE=1` — build `web`+`supervisor` as one parallel DAG | `deploy.sh` build step | **30–90 s** on changed builds | low | 1 line | ✅ done 2026-06-29 |
+| 2 | Gate the per-deploy `library:metadata` container boot | `deploy.sh` Step 1e | **5–10 s** every deploy | low | ~15 lines | ✅ done 2026-06-29 |
+| 3 | Drop the redundant `cp -a .output build-output` (~1.5 GB copy) | `Dockerfile` vite-builder | **3–8 s** every changed build | low–med | ~5 lines | ✅ done 2026-06-29 |
+| 4 | Lazy-load heavy game/tool routes (shrink Vite module graph) | `app/**` routes | **large** (cuts the long pole) | med | large refactor | ⏳ staged — needs build+measure loop |
+| 5 | Surgical cache-mount trimming instead of full `builder prune -af` | `deploy.sh` Step 1b | avoids occasional **cold** build (~2–4 min) | med | ~20 lines | ⏳ deferred — see note |
+| 6 | `pnpm prune --prod` instead of a second `pnpm install --prod` | `Dockerfile` prod-deps | seconds, only on lockfile/schema change | low | 1 line | ⚠️ kept as-is — see note |
+| 7 | Offload image build to CI + ship via registry (multi-node path) | CI + `make prod` | moves build off the request path | high | large | ⛔ not recommended (needs infra) |
 
-Items **1–3** are the recommended first batch: low risk, touch only the deploy
-edges, and together remove a meaningful chunk of wall-clock from *every* deploy.
-Item **4** is the highest *ceiling* but is a real refactor. Items 5–7 are
-situational.
+Items **1–3 (Batch A) are implemented** (2026-06-29): low risk, touch only the
+deploy edges, and together remove ~40–110 s of wall-clock from a typical changed
+deploy. Item **4** is the highest *ceiling* but is a real refactor (a build +
+bundle-diff loop per route batch) — staged as its own PR. Items **5–7** are
+situational; see the per-item notes below for why each is deferred rather than
+applied blind.
+
+> **Verify Batch A on the first real deploy.** All three changes fail *safely*
+> (the build-validation `test -f` / `test -d` aborts before any bad image ships,
+> so the old container keeps serving), but none could be run against the actual
+> ARM64 prod host from the dev environment. Watch the first deploy's per-step
+> `step_done` timings and confirm both `:latest` + `:${GIT_SHA}` images rebuild.
 
 ---
 
@@ -225,6 +233,15 @@ build (~2–4 min). Frequency depends entirely on the VPS disk — needs the rea
 `pnpm store prune` against the mounted store doesn't corrupt an in-flight build
 (run it only when the deploy lock is held, which it already is).
 
+**Status: deferred.** A host-side `pnpm store prune` does *not* reach the
+BuildKit cache *mount* (that store lives inside BuildKit at
+`/root/.local/share/pnpm/store`, not on the host) — trimming inside the mount
+needs a dedicated build stage that runs the prune, which is more involved and
+can't be validated from the dev environment. It also needs the VPS's real
+`df -h` to tune the ceilings (same open question as build-audit.md §A). Batch A's
+#3 (−1.5 GB/build) already buys disk headroom that makes the full nuke fire less
+often, which is the cheaper half of this win. Revisit with the host disk numbers.
+
 ---
 
 ## 6. `pnpm prune --prod` instead of a second full `pnpm install --prod`
@@ -241,6 +258,16 @@ existing `node_modules` without a full re-resolve/re-link pass.
 install-based one (esp. `@prisma/client` from the prod generate, and the
 `.pnpm` store links). If parity isn't exact, leave as-is — the stage is well
 cached.
+
+**Status: kept as-is.** `pnpm prune --prod` removes "extraneous" packages, and
+the generated Prisma client lives at `node_modules/.prisma/client` — generated
+output, not a registry package — so there's a real risk prune treats it as
+extraneous and deletes it, breaking the runtime image. That can't be verified
+without running the actual Docker build (not possible from the dev environment),
+and the stage only re-runs on a lockfile/schema change (rare, and well cached),
+so the upside is small. Per this doc's own guidance ("if parity isn't exact,
+leave as-is"), kept the `pnpm install --prod` form. Revisit only with a tested
+build that confirms `.prisma/client` survives the prune.
 
 ---
 
@@ -285,12 +312,14 @@ No frontend/Docker-image build runs in CI today (deploy is host-side), so CI is
 
 ## Recommended order
 
-1. **Batch A (safe, do first):** #1 `COMPOSE_BAKE=1`, #2 gate library-metadata,
-   #3 drop the `.output` copy. Touch only the deploy edges; together they remove
-   ~40–110 s from a typical changed deploy and never risk a wrong skip. Measure
-   each with `step_done` timings already in `deploy.sh`.
+1. ✅ **Batch A (safe, done 2026-06-29):** #1 `COMPOSE_BAKE=1`, #2 gate
+   library-metadata, #3 drop the `.output` copy. Touch only the deploy edges;
+   together they remove ~40–110 s from a typical changed deploy and never risk a
+   wrong skip. Measure each with `step_done` timings already in `deploy.sh`.
 2. **Then #4** (route lazy-loading) as the dedicated structural project — biggest
-   ceiling, needs its own PR and bundle-diff discipline.
+   ceiling, needs its own PR and bundle-diff discipline. Suggested first batch:
+   the heaviest game/tool routes (`altair`, `velum2099`, `void-breaker`,
+   `rmhcode`/Monaco, `temple-of-joy`, `dream-rift`, `synapse-storm`).
 3. **#5** once the VPS `df -h` numbers are known (also resolves build-audit.md §A).
 4. **#6/#7** only if a measured need appears.
 

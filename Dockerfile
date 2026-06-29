@@ -171,13 +171,16 @@ RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi
     rm -rf .output \
     && VIBE_PKG_CACHE_DIR=/app/.cache/vibe-packages pnpm run build-vibe-packages \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
-    && node scripts/fix-ssr-css-hash.mjs \
-    && cp -a .output /app/build-output
+    && node scripts/fix-ssr-css-hash.mjs
 
-RUN test -d /app/build-output && \
-    test -f /app/build-output/server/index.mjs && \
-    test -f /app/build-output/public/models/marlonjack.glb && \
-    test -f /app/build-output/public/vibe-packages/react.js
+# Validate, prune, and COPY straight from /app/.output. `.output` is a plain
+# layer dir (only .vinxi / .cache are cache mounts), so the runner stage can
+# COPY --from it directly — no need to first `cp -a` the (~1.5 GB) tree to a
+# second path, which only cost disk + wall-clock every build.
+RUN test -d /app/.output && \
+    test -f /app/.output/server/index.mjs && \
+    test -f /app/.output/public/models/marlonjack.glb && \
+    test -f /app/.output/public/vibe-packages/react.js
 
 # ── Slim runtime image: drop assets that Apache serves off the host disk ──────
 # In production, Apache serves /library, /music, /models and /sprites directly
@@ -190,10 +193,10 @@ RUN test -d /app/build-output && \
 # favicon, brand, etc. — is intentionally kept. (music/ and sprites/ are already
 # excluded from the build context via .dockerignore; the rm is a harmless no-op
 # for them.)
-RUN rm -rf /app/build-output/public/library \
-           /app/build-output/public/models \
-           /app/build-output/public/music \
-           /app/build-output/public/sprites
+RUN rm -rf /app/.output/public/library \
+           /app/.output/public/models \
+           /app/.output/public/music \
+           /app/.output/public/sprites
 
 # ── Stage 3b: Go binaries ────────────────────────────────────────────────
 # Builds supervisor, status, and bot-worker (plus all other cmd/ packages)
@@ -265,7 +268,7 @@ COPY --from=prod-deps --chown=app:nodejs /app/node_modules ./node_modules
 
 # ─── Nitro server output ────────────────────────────────────────────────
 # .output/ contains the Nitro server bundle, static assets, and public files.
-COPY --from=vite-builder --chown=app:nodejs /app/build-output ./.output
+COPY --from=vite-builder --chown=app:nodejs /app/.output ./.output
 
 # ─── Custom server bundles (from env-agnostic stage) ────────────────────
 COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server
