@@ -1,21 +1,9 @@
 'use client';
 import { Suspense, lazy, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { saveDataToState, computeOfflineProgress, useAutoSave, saveToServer } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
-import type { SaveData, GameState } from '@/lib/temple-of-joy/types';
-import PanelOverlay from '@/components/temple-of-joy/ui/PanelOverlay';
-import StatsPanel from '@/components/temple-of-joy/ui/StatsPanel';
-import SourcesPanel from '@/components/temple-of-joy/ui/SourcesPanel';
-import UpgradesPanel from '@/components/temple-of-joy/ui/UpgradesPanel';
-import RelicsPanel from '@/components/temple-of-joy/ui/RelicsPanel';
-import WheelOfSamsara from '@/components/temple-of-joy/ui/WheelOfSamsara';
-import AscensionPanel from '@/components/temple-of-joy/ui/AscensionPanel';
-import ObjectivesPanel from '@/components/temple-of-joy/ui/ObjectivesPanel';
-import AchievementsPanel from '@/components/temple-of-joy/ui/AchievementsPanel';
-import SettingsPanel from '@/components/temple-of-joy/ui/SettingsPanel';
-import MilestonesPanel from '@/components/temple-of-joy/ui/MilestonesPanel';
+import type { SaveData } from '@/lib/temple-of-joy/types';
 import VibeCheck from '@/components/temple-of-joy/ui/VibeCheck';
 import EventModal from '@/components/temple-of-joy/ui/EventModal';
 import EventEffectSummary from '@/components/temple-of-joy/ui/EventEffectSummary';
@@ -30,8 +18,6 @@ const TempleScene = lazy(() =>
 );
 
 export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveData | null }) {
-  const { t } = useTranslation("c-temple-of-joy");
-  const activeTab = useTempleStore(s => s.activeTab);
   const theme = useTempleStore(s => s.theme);
 
   // ── Initialization ────────────────────────────────────────────────────────
@@ -159,18 +145,6 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
   }, []);
 
   // ── Render ────────────────────────────────────────────────────────────────
-  const PANELS: Partial<Record<GameState['activeTab'], { title: string; node: React.ReactNode }>> = {
-    sources:      { title: t('tab-sources',      { defaultValue: 'Sources' }),      node: <SourcesPanel /> },
-    upgrades:     { title: t('tab-upgrades',     { defaultValue: 'Upgrades' }),     node: <UpgradesPanel /> },
-    relics:       { title: t('tab-relics',       { defaultValue: 'Relics' }),       node: <RelicsPanel /> },
-    wheel:        { title: t('tab-wheel',        { defaultValue: 'Wheel' }),        node: <WheelOfSamsara /> },
-    ascension:    { title: t('tab-ascension',    { defaultValue: 'Ascension' }),    node: <AscensionPanel /> },
-    objectives:   { title: t('tab-objectives',   { defaultValue: 'Objectives' }),   node: <ObjectivesPanel /> },
-    achievements: { title: t('tab-achievements', { defaultValue: 'Achievements' }), node: <><StatsPanel /><div className="h-4" /><AchievementsPanel /><MilestonesPanel /></> },
-    settings:     { title: t('tab-settings',     { defaultValue: 'Settings' }),     node: <SettingsPanel /> },
-  };
-  const panel = PANELS[activeTab];
-
   return (
     <div
       ref={gameContainerRef}
@@ -189,11 +163,7 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
         </Suspense>
       </div>
 
-      {/* Active data panel — opened by the 3D tab bar. (Modals + dense list
-          panels are the final piece still being converted to in-world 3D.) */}
-      {panel && <PanelOverlay title={panel.title}>{panel.node}</PanelOverlay>}
-
-      {/* Transient overlays */}
+      {/* Transient overlays (still DOM — being converted last) */}
       <VibeCheck />
       <EventModal />
       <EventEffectSummary />

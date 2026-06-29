@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { computeCanAscend } from '@/lib/temple-of-joy/engine';
 import { getGlowTexture } from './glowTexture';
 import { useTap } from './useTap';
+import { Label3D } from './ui3d/Label3D';
 
 /**
  * A radiant obelisk on the temple grounds representing Ascension. It brightens
@@ -70,11 +70,7 @@ export function AscensionMonument() {
       </sprite>
 
       {snap.canAscend && (
-        <Html position={[0, 4.1, 0]} center distanceFactor={16} style={{ pointerEvents: 'none' }}>
-          <div className="temple-world-hint" style={{ color: 'var(--temple-accent-bright, #f0c84a)' }}>
-            ☀️ {t('ascension-ready', { defaultValue: 'Ascension ready' })}
-          </div>
-        </Html>
+        <Label3D text={`☀ ${t('ascension-ready', { defaultValue: 'Ascension ready' })}`} height={0.4} options={{ color: '#f0c84a', fontSize: 44 }} position={[0, 4.3, 0]} />
       )}
     </group>
   );

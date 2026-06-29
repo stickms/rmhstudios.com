@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { useTap } from './useTap';
+import { Label3D } from './ui3d/Label3D';
 
 const SPOKES = 10; // one per wheel tier
 
@@ -92,9 +92,7 @@ export function SamsaraWheel() {
         })}
       </group>
 
-      <Html position={[0, -3, 0]} center distanceFactor={18} style={{ pointerEvents: 'none' }}>
-        <div className="temple-world-hint">🔄 {t('wheel-of-samsara', { defaultValue: 'Wheel of Samsara' })}</div>
-      </Html>
+      <Label3D text={`🔄 ${t('wheel-of-samsara', { defaultValue: 'Wheel of Samsara' })}`} height={0.5} options={{ color: '#e8d5b0', fontSize: 44 }} position={[0, -3, 0]} />
     </group>
   );
 }

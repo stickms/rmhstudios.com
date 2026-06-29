@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
 import { useTranslation } from 'react-i18next';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import type { RelicId } from '@/lib/temple-of-joy/types';
 import { getGlowTexture } from './glowTexture';
 import { useTap } from './useTap';
+import { Label3D } from './ui3d/Label3D';
 
 interface GemProps {
   relicId: RelicId;
@@ -104,9 +104,7 @@ export function RelicAltar() {
       ))}
 
       {equipped.length === 0 && (
-        <Html position={[0, 2.6, 0]} center distanceFactor={16} style={{ pointerEvents: 'none' }}>
-          <div className="temple-world-hint">💍 {t('relic-altar', { defaultValue: 'Relic Altar' })}</div>
-        </Html>
+        <Label3D text={`💍 ${t('relic-altar', { defaultValue: 'Relic Altar' })}`} height={0.36} options={{ color: '#cfe2ff', fontSize: 40 }} position={[0, 2.7, 0]} />
       )}
     </group>
   );

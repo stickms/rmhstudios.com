@@ -10,6 +10,7 @@ import { fmt } from '@/lib/temple-of-joy/numbers';
 import type { GameState } from '@/lib/temple-of-joy/types';
 import { Button3D } from './ui3d/Button3D';
 import { Label3D } from './ui3d/Label3D';
+import { CodexPanel3D } from './CodexPanel3D';
 
 type Tab = GameState['activeTab'];
 
@@ -153,12 +154,14 @@ function Layout() {
   const { viewport } = useThree();
   const w = viewport.width;
   const h = viewport.height;
+  const active = useSnap((s) => s.activeTab, 150);
   return (
     <>
       <BackButton w={w} h={h} />
       <HudReadout w={w} h={h} />
       <Controls h={h} />
       <TabBar w={w} h={h} />
+      {active !== 'temple' && <CodexPanel3D tab={active} w={w} h={h} />}
     </>
   );
 }
