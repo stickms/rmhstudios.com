@@ -63,6 +63,8 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   /** Old enemy sprite art, laid flat on the ground for types that have it. */
   private readonly enemyTextures = new Map<string, THREE.Texture>();
   private spritePool: THREE.Mesh[] = [];
+  /** Soft contact shadows grounding the player + enemies on the floor. */
+  private shadowPool: THREE.Mesh[] = [];
   private projMesh!: THREE.InstancedMesh;
   private shardMesh!: THREE.InstancedMesh;
   private obstacleMesh!: THREE.InstancedMesh;
@@ -182,6 +184,20 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     return g;
   }
 
+  /** Soft radial shadow texture (black, alpha fades to the edge). */
+  private buildShadowTexture(): THREE.CanvasTexture {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 64;
+    const x = c.getContext('2d')!;
+    const g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+    g.addColorStop(0, 'rgba(0,0,0,0.75)');
+    g.addColorStop(0.6, 'rgba(0,0,0,0.4)');
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    x.fillStyle = g;
+    x.fillRect(0, 0, 64, 64);
+    return new THREE.CanvasTexture(c);
+  }
+
   /** Procedural neon-window texture used for building map + emissiveMap. */
   private buildWindowTexture(): THREE.CanvasTexture {
     const c = document.createElement('canvas');
@@ -287,6 +303,22 @@ export class VoidBreakerRenderer3D implements VBRenderer {
       plane.frustumCulled = false;
       this.scene.add(plane);
       this.spritePool.push(plane);
+    }
+
+    // Contact shadows — one soft dark disc per entity (player + enemies).
+    const shadowTex = this.buildShadowTexture();
+    const shadowGeo = new THREE.PlaneGeometry(1, 1);
+    shadowGeo.rotateX(-Math.PI / 2);
+    const shadowMat = new THREE.MeshBasicMaterial({
+      map: shadowTex, transparent: true, opacity: 0.55, depthWrite: false,
+    });
+    for (let i = 0; i < MAX_ENEMIES + 1; i++) {
+      const sh = new THREE.Mesh(shadowGeo, shadowMat);
+      sh.position.y = 1.5;
+      sh.visible = false;
+      sh.frustumCulled = false;
+      this.scene.add(sh);
+      this.shadowPool.push(sh);
     }
 
     // Projectiles — pure bright spheres (unlit; bloom carries the glow).
@@ -404,6 +436,7 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     const pmat = (this.player.children[0] as THREE.Mesh).material as THREE.MeshStandardMaterial;
     pmat.emissiveIntensity = p.focusActive ? 2.6 : p.dashActive ? 3.2 : 1.4;
 
+    this.syncShadows(game);
     this.syncEnemies(game);
     this.syncBoss(game);
     this.syncProjectiles(game);
@@ -501,6 +534,27 @@ export class VoidBreakerRenderer3D implements VBRenderer {
       m.setMatrixAt(i, tmpObj.matrix);
     }
     m.instanceMatrix.needsUpdate = true;
+  }
+
+  private syncShadows(game: VoidBreakerEngine): void {
+    let idx = 0;
+    // Player shadow.
+    const p = game.player;
+    const ps = this.shadowPool[idx++];
+    ps.visible = true;
+    ps.position.set(p.x, 1.5, p.y);
+    ps.scale.set(p.radius * 3, 1, p.radius * 3);
+    // Enemy shadows (bosses included — bigger).
+    for (let i = 0; i < MAX_ENEMIES && idx < this.shadowPool.length; i++) {
+      const e = game.enemies[i];
+      if (!e || !e.active) continue;
+      const sh = this.shadowPool[idx++];
+      sh.visible = true;
+      const s = e.radius * (e.isBoss ? 3.6 : 3);
+      sh.position.set(e.x, 1.5, e.y);
+      sh.scale.set(s, 1, s);
+    }
+    for (let s = idx; s < this.shadowPool.length; s++) this.shadowPool[s].visible = false;
   }
 
   private syncBoss(game: VoidBreakerEngine): void {
