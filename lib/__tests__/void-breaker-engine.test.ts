@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { VoidBreakerEngine } from '@/lib/void-breaker/game';
 import { SHARD_MULT_PER, SURGE_DURATION, DET_MIN_SHARDS } from '@/lib/void-breaker/constants';
 import { getCharacter } from '@/lib/void-breaker/characters';
+import { combineModifiers } from '@/lib/void-breaker/modifiers';
 import type { InputState } from '@/lib/void-breaker/types';
 
 function makeInput(over: Partial<InputState> = {}): InputState {
@@ -218,6 +219,19 @@ describe('VoidBreakerEngine', () => {
       g.update(0.05, makeInput());
     }
     expect(e.active).toBe(false);       // could only die to thorns
+  });
+
+  it('applies run modifiers to the loadout', () => {
+    const frail = new VoidBreakerEngine();
+    frail.runModifiers = combineModifiers(['frail']).effects;
+    frail.startGame();
+    expect(frail.player.maxHp).toBe(2);            // 3 - 1
+
+    const glass = new VoidBreakerEngine();
+    glass.runModifiers = combineModifiers(['glasscannon']).effects;
+    glass.startGame();
+    expect(glass.player.maxHp).toBe(1);            // 3 - 2 (floored at 1)
+    expect(glass.stats.damageBonus).toBe(2);
   });
 
   it('applies the selected character at run start', () => {
