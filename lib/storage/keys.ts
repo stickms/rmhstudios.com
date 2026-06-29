@@ -15,6 +15,9 @@ const CONTENT_TYPES: Record<string, string> = {
   ".jpeg": "image/jpeg",
   ".webp": "image/webp",
   ".gif": "image/gif",
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+  ".mov": "video/quicktime",
 };
 
 export function contentTypeForFilename(filename: string): string {
@@ -93,6 +96,35 @@ export function vibeThumbUrl(slug: string, version: number | string): string {
 // still serves any covers left in object storage from before, so the prefix
 // stays for that lookup.
 export const BUILD_COVER_PREFIX = "build-covers/";
+
+// ─── Library albums ──────────────────────────────────────────────────────────
+// Album media (photos + clips) for the library carousel. Heavy originals live in
+// object storage keyed by album + slide id — never in the repo / build image —
+// served from the CDN in prod, else the Node proxy that streams from storage.
+export const ALBUM_PREFIX = "albums/";
+
+const SAFE_KEY_SEGMENT_RE = /^[A-Za-z0-9._-]+$/;
+
+/** A path under albums/ is safe if every segment is a plain filename (no traversal). */
+export function isSafeAlbumPath(suffix: string): boolean {
+  if (!suffix) return false;
+  return suffix.split("/").every((seg) => seg && seg !== "." && seg !== ".." && SAFE_KEY_SEGMENT_RE.test(seg));
+}
+
+/** Object key for an album asset, namespaced under albums/<albumId>/<name>. */
+export function albumAssetKey(albumId: string, name: string): string {
+  return `${ALBUM_PREFIX}${albumId}/${name}`;
+}
+
+/**
+ * Resolve an `albums/...` object key to a browser URL. Same CDN-vs-proxy split as
+ * feed images: served from the edge when a public CDN domain is set, else through
+ * the Node proxy (app/routes/api/albums/asset/$.ts) that streams from storage.
+ */
+export function albumAssetUrl(key: string): string {
+  const suffix = key.startsWith(ALBUM_PREFIX) ? key.slice(ALBUM_PREFIX.length) : key;
+  return CDN_BASE ? `${CDN_BASE}/${ALBUM_PREFIX}${suffix}` : `/api/albums/asset/${suffix}`;
+}
 
 /**
  * Extract the safe filename from a stored avatar URL, or null. Accepts every

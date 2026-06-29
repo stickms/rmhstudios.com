@@ -3467,3 +3467,53 @@ model LibraryQuotaRequest {
   @@index([userId])
   @@map("library_quota_request")
 }
+
+// ─── Albums (library photo/video carousels) ─────────────────────────────────
+/// A library album: an ordered set of image/video slides shown in the
+/// fullscreen carousel viewer at /library/albums/$slug. Heavy media lives in
+/// object storage (R2/S3) keyed by slide id — not in the repo / build image —
+/// and is served via the CDN (prod) or the /api/albums/asset proxy (dev).
+model Album {
+  id          String       @id @default(cuid())
+  /// URL slug, e.g. "alex-wu".
+  slug        String       @unique
+  title       String
+  description String       @default("") @db.Text
+  /// Manual ordering on the library page (ascending).
+  position    Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  slides AlbumSlide[]
+
+  @@index([position])
+  @@map("album")
+}
+
+/// One slide in an album. `type` is "image" or "video". Storage keys point at
+/// objects in the `albums/` key space (see lib/storage/keys.ts):
+///  - images: fullKey (full-res original), srcKey (web-optimized webp), thumbKey
+///  - videos: srcKey (compressed mp4), thumbKey (poster frame); fullKey is null.
+model AlbumSlide {
+  id       String @id @default(cuid())
+  albumId  String
+  album    Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  /// "image" | "video".
+  type     String
+  position Int    @default(0)
+  /// Full-resolution original object key (images only; null for video).
+  fullKey  String?
+  /// Web-optimized image / compressed video object key.
+  srcKey   String
+  /// Thumbnail (image) or poster frame (video) object key.
+  thumbKey String
+  /// Video MIME type (e.g. "video/mp4"); null for images.
+  mime     String?
+  alt      String @default("")
+  /// Suggested filename on download.
+  download String @default("")
+  createdAt DateTime @default(now())
+
+  @@index([albumId, position])
+  @@map("album_slide")
+}

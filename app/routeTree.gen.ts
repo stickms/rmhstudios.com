@@ -96,7 +96,6 @@ import { Route as RmhCapitalCareersRouteImport } from './routes/rmh-capital/care
 import { Route as RmhCapitalBusinessesRouteImport } from './routes/rmh-capital/businesses'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
-import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
 import { Route as ForestExplorerExploreRouteImport } from './routes/forest-explorer/explore'
 import { Route as DiscordRmhboxRouteImport } from './routes/discord/rmhbox'
@@ -186,6 +185,7 @@ import { Route as StrategiesPuzzlesArchiveRouteImport } from './routes/strategie
 import { Route as StrategiesPuzzlesModeRouteImport } from './routes/strategies/puzzles/$mode'
 import { Route as StrategiesProfileSettingsRouteImport } from './routes/strategies/profile/settings'
 import { Route as StrategiesProfileReputationRouteImport } from './routes/strategies/profile/reputation'
+import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as EmbedPostIdRouteImport } from './routes/embed.post.$id'
 import { Route as ApiWheelSpinRouteImport } from './routes/api/wheel/spin'
 import { Route as ApiVoidBreakerScoreRouteImport } from './routes/api/void-breaker/score'
@@ -345,8 +345,10 @@ import { Route as ApiDeveloperKeysIndexRouteImport } from './routes/api/develope
 import { Route as ApiCommunitiesSlugIndexRouteImport } from './routes/api/communities/$slug/index'
 import { Route as ApiAdminPredictionsIndexRouteImport } from './routes/api/admin/predictions/index'
 import { Route as ApiAdminLibraryIndexRouteImport } from './routes/api/admin/library/index'
+import { Route as ApiAdminAlbumsIndexRouteImport } from './routes/api/admin/albums/index'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
+import { Route as SiteAdminAlbumsIndexRouteImport } from './routes/_site/admin/albums/index'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
 import { Route as ApiVibeThumbSlugRouteImport } from './routes/api/vibe/thumb/$slug'
 import { Route as ApiVibePkgFileRouteImport } from './routes/api/vibe/pkg/$file'
@@ -426,6 +428,7 @@ import { Route as ApiCommunitiesSlugAnnouncementsRouteImport } from './routes/ap
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
+import { Route as ApiAlbumsAssetSplatRouteImport } from './routes/api/albums/asset/$'
 import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/admin/vibe/backfill-thumbs'
 import { Route as ApiAdminRideshareRidesRouteImport } from './routes/api/admin/rideshare/rides'
 import { Route as ApiAdminRideshareApplicationsRouteImport } from './routes/api/admin/rideshare/applications'
@@ -437,7 +440,10 @@ import { Route as ApiAdminLibraryMigrateRouteImport } from './routes/api/admin/l
 import { Route as ApiAdminLibraryIdRouteImport } from './routes/api/admin/library/$id'
 import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/admin/curated-builds/image'
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
+import { Route as ApiAdminAlbumsReorderRouteImport } from './routes/api/admin/albums/reorder'
+import { Route as ApiAdminAlbumsIdRouteImport } from './routes/api/admin/albums/$id'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
+import { Route as SiteAdminAlbumsIdRouteImport } from './routes/_site/admin/albums/$id'
 import { Route as ApiStudyDecksIdIndexRouteImport } from './routes/api/study/decks/$id/index'
 import { Route as ApiStorefrontProductsIdIndexRouteImport } from './routes/api/storefront/products/$id/index'
 import { Route as ApiRmhmusicGuessIdIndexRouteImport } from './routes/api/rmhmusic/guess/$id/index'
@@ -467,12 +473,15 @@ import { Route as ApiAdminPredictionsIdResolveRouteImport } from './routes/api/a
 import { Route as ApiAdminPredictionsIdModerateRouteImport } from './routes/api/admin/predictions/$id/moderate'
 import { Route as ApiAdminCuratedBuildsImageProxyRouteImport } from './routes/api/admin/curated-builds/image/proxy'
 import { Route as ApiAdminCuratedBuildsImageFilenameRouteImport } from './routes/api/admin/curated-builds/image/$filename'
+import { Route as ApiAdminAlbumsIdSlidesRouteImport } from './routes/api/admin/albums/$id/slides'
+import { Route as ApiAdminAlbumsIdReorderRouteImport } from './routes/api/admin/albums/$id/reorder'
 import { Route as SiteUUseridPostPostidRouteImport } from './routes/_site/u/$userid/post/$postid'
 import { Route as SiteAdminBlogSlugEditRouteImport } from './routes/_site/admin/blog/$slug/edit'
 import { Route as ApiRmharksIdCommentCommentIdViewRouteImport } from './routes/api/rmharks/$id/comment/$commentId/view'
 import { Route as ApiRmharksIdCommentCommentIdRepostRouteImport } from './routes/api/rmharks/$id/comment/$commentId/repost'
 import { Route as ApiRmharksIdCommentCommentIdLikeRouteImport } from './routes/api/rmharks/$id/comment/$commentId/like'
 import { Route as ApiGroupChatsIdMessagesMessageIdVoteRouteImport } from './routes/api/group-chats/$id/messages/$messageId/vote'
+import { Route as ApiAdminAlbumsIdSlidesSlideIdRouteImport } from './routes/api/admin/albums/$id/slides/$slideId'
 
 const VoidBreakerRoute = VoidBreakerRouteImport.update({
   id: '/void-breaker',
@@ -906,11 +915,6 @@ const NewsSlugRoute = NewsSlugRouteImport.update({
 const LibrarySlugRoute = LibrarySlugRouteImport.update({
   id: '/library/$slug',
   path: '/library/$slug',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LibraryAlbumsAlbumIdRoute = LibraryAlbumsAlbumIdRouteImport.update({
-  id: '/library/albums/$albumId',
-  path: '/library/albums/$albumId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ForestExplorerStoryRoute = ForestExplorerStoryRouteImport.update({
@@ -1365,6 +1369,11 @@ const StrategiesProfileReputationRoute =
     path: '/profile/reputation',
     getParentRoute: () => StrategiesRoute,
   } as any)
+const LibraryAlbumsAlbumIdRoute = LibraryAlbumsAlbumIdRouteImport.update({
+  id: '/library/albums/$albumId',
+  path: '/library/albums/$albumId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EmbedPostIdRoute = EmbedPostIdRouteImport.update({
   id: '/embed/post/$id',
   path: '/embed/post/$id',
@@ -2174,6 +2183,11 @@ const ApiAdminLibraryIndexRoute = ApiAdminLibraryIndexRouteImport.update({
   path: '/api/admin/library/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminAlbumsIndexRoute = ApiAdminAlbumsIndexRouteImport.update({
+  id: '/api/admin/albums/',
+  path: '/api/admin/albums/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SiteUUseridIndexRoute = SiteUUseridIndexRouteImport.update({
   id: '/u/$userid/',
   path: '/u/$userid/',
@@ -2182,6 +2196,11 @@ const SiteUUseridIndexRoute = SiteUUseridIndexRouteImport.update({
 const SiteAdminBlogIndexRoute = SiteAdminBlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminAlbumsIndexRoute = SiteAdminAlbumsIndexRouteImport.update({
+  id: '/albums/',
+  path: '/albums/',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const RmhboxMinigamesMinigameIdHistoryRoute =
@@ -2604,6 +2623,11 @@ const ApiAnnouncementsIdVoteRoute = ApiAnnouncementsIdVoteRouteImport.update({
   path: '/$id/vote',
   getParentRoute: () => ApiAnnouncementsRoute,
 } as any)
+const ApiAlbumsAssetSplatRoute = ApiAlbumsAssetSplatRouteImport.update({
+  id: '/api/albums/asset/$',
+  path: '/api/albums/asset/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminVibeBackfillThumbsRoute =
   ApiAdminVibeBackfillThumbsRouteImport.update({
     id: '/api/admin/vibe/backfill-thumbs',
@@ -2664,9 +2688,24 @@ const ApiAdminAnnouncementsIdRoute = ApiAdminAnnouncementsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiAdminAnnouncementsRoute,
 } as any)
+const ApiAdminAlbumsReorderRoute = ApiAdminAlbumsReorderRouteImport.update({
+  id: '/api/admin/albums/reorder',
+  path: '/api/admin/albums/reorder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAlbumsIdRoute = ApiAdminAlbumsIdRouteImport.update({
+  id: '/api/admin/albums/$id',
+  path: '/api/admin/albums/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SiteAdminBlogNewRoute = SiteAdminBlogNewRouteImport.update({
   id: '/blog/new',
   path: '/blog/new',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
+const SiteAdminAlbumsIdRoute = SiteAdminAlbumsIdRouteImport.update({
+  id: '/albums/$id',
+  path: '/albums/$id',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const ApiStudyDecksIdIndexRoute = ApiStudyDecksIdIndexRouteImport.update({
@@ -2831,6 +2870,16 @@ const ApiAdminCuratedBuildsImageFilenameRoute =
     path: '/$filename',
     getParentRoute: () => ApiAdminCuratedBuildsImageRoute,
   } as any)
+const ApiAdminAlbumsIdSlidesRoute = ApiAdminAlbumsIdSlidesRouteImport.update({
+  id: '/slides',
+  path: '/slides',
+  getParentRoute: () => ApiAdminAlbumsIdRoute,
+} as any)
+const ApiAdminAlbumsIdReorderRoute = ApiAdminAlbumsIdReorderRouteImport.update({
+  id: '/reorder',
+  path: '/reorder',
+  getParentRoute: () => ApiAdminAlbumsIdRoute,
+} as any)
 const SiteUUseridPostPostidRoute = SiteUUseridPostPostidRouteImport.update({
   id: '/u/$userid/post/$postid',
   path: '/u/$userid/post/$postid',
@@ -2864,6 +2913,12 @@ const ApiGroupChatsIdMessagesMessageIdVoteRoute =
     id: '/$messageId/vote',
     path: '/$messageId/vote',
     getParentRoute: () => ApiGroupChatsIdMessagesRoute,
+  } as any)
+const ApiAdminAlbumsIdSlidesSlideIdRoute =
+  ApiAdminAlbumsIdSlidesSlideIdRouteImport.update({
+    id: '/$slideId',
+    path: '/$slideId',
+    getParentRoute: () => ApiAdminAlbumsIdSlidesRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -2956,7 +3011,6 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
-  '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/news/$slug': typeof NewsSlugRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -3152,6 +3206,7 @@ export interface FileRoutesByFullPath {
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
+  '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -3191,7 +3246,10 @@ export interface FileRoutesByFullPath {
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
+  '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
+  '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
+  '/api/admin/albums/reorder': typeof ApiAdminAlbumsReorderRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
@@ -3203,6 +3261,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
+  '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -3282,8 +3341,10 @@ export interface FileRoutesByFullPath {
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
+  '/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/u/$userid/': typeof SiteUUseridIndexRoute
+  '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
@@ -3297,6 +3358,8 @@ export interface FileRoutesByFullPath {
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
+  '/api/admin/albums/$id/reorder': typeof ApiAdminAlbumsIdReorderRoute
+  '/api/admin/albums/$id/slides': typeof ApiAdminAlbumsIdSlidesRouteWithChildren
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/admin/predictions/$id/moderate': typeof ApiAdminPredictionsIdModerateRoute
@@ -3326,6 +3389,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
+  '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
   '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
@@ -3399,7 +3463,6 @@ export interface FileRoutesByTo {
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
-  '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/news/$slug': typeof NewsSlugRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -3595,6 +3658,7 @@ export interface FileRoutesByTo {
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
+  '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -3634,7 +3698,10 @@ export interface FileRoutesByTo {
   '/strategies/profile': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse': typeof StrategiesSafehouseIndexRoute
+  '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
+  '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
+  '/api/admin/albums/reorder': typeof ApiAdminAlbumsReorderRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
@@ -3646,6 +3713,7 @@ export interface FileRoutesByTo {
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
+  '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -3725,8 +3793,10 @@ export interface FileRoutesByTo {
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
+  '/admin/albums': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
   '/u/$userid': typeof SiteUUseridIndexRoute
+  '/api/admin/albums': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions': typeof ApiAdminPredictionsIndexRoute
   '/api/communities/$slug': typeof ApiCommunitiesSlugIndexRoute
@@ -3740,6 +3810,8 @@ export interface FileRoutesByTo {
   '/api/study/decks': typeof ApiStudyDecksIndexRoute
   '/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
+  '/api/admin/albums/$id/reorder': typeof ApiAdminAlbumsIdReorderRoute
+  '/api/admin/albums/$id/slides': typeof ApiAdminAlbumsIdSlidesRouteWithChildren
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/admin/predictions/$id/moderate': typeof ApiAdminPredictionsIdModerateRoute
@@ -3769,6 +3841,7 @@ export interface FileRoutesByTo {
   '/api/rmhmusic/guess/$id': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id': typeof ApiStudyDecksIdIndexRoute
+  '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
   '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
@@ -3865,7 +3938,6 @@ export interface FileRoutesById {
   '/forest-explorer/explore': typeof ForestExplorerExploreRoute
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
-  '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/news/$slug': typeof NewsSlugRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -4062,6 +4134,7 @@ export interface FileRoutesById {
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
   '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
+  '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
   '/strategies/profile/reputation': typeof StrategiesProfileReputationRoute
   '/strategies/profile/settings': typeof StrategiesProfileSettingsRoute
   '/strategies/puzzles/$mode': typeof StrategiesPuzzlesModeRoute
@@ -4101,7 +4174,10 @@ export interface FileRoutesById {
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
   '/strategies/puzzles/': typeof StrategiesPuzzlesIndexRoute
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
+  '/_site/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/_site/admin/blog/new': typeof SiteAdminBlogNewRoute
+  '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
+  '/api/admin/albums/reorder': typeof ApiAdminAlbumsReorderRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
   '/api/admin/curated-builds/image': typeof ApiAdminCuratedBuildsImageRouteWithChildren
   '/api/admin/library/$id': typeof ApiAdminLibraryIdRoute
@@ -4113,6 +4189,7 @@ export interface FileRoutesById {
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
+  '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -4192,8 +4269,10 @@ export interface FileRoutesById {
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
+  '/_site/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
   '/_site/u/$userid/': typeof SiteUUseridIndexRoute
+  '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
@@ -4207,6 +4286,8 @@ export interface FileRoutesById {
   '/api/study/decks/': typeof ApiStudyDecksIndexRoute
   '/_site/admin/blog/$slug/edit': typeof SiteAdminBlogSlugEditRoute
   '/_site/u/$userid/post/$postid': typeof SiteUUseridPostPostidRoute
+  '/api/admin/albums/$id/reorder': typeof ApiAdminAlbumsIdReorderRoute
+  '/api/admin/albums/$id/slides': typeof ApiAdminAlbumsIdSlidesRouteWithChildren
   '/api/admin/curated-builds/image/$filename': typeof ApiAdminCuratedBuildsImageFilenameRoute
   '/api/admin/curated-builds/image/proxy': typeof ApiAdminCuratedBuildsImageProxyRoute
   '/api/admin/predictions/$id/moderate': typeof ApiAdminPredictionsIdModerateRoute
@@ -4236,6 +4317,7 @@ export interface FileRoutesById {
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
+  '/api/admin/albums/$id/slides/$slideId': typeof ApiAdminAlbumsIdSlidesSlideIdRoute
   '/api/group-chats/$id/messages/$messageId/vote': typeof ApiGroupChatsIdMessagesMessageIdVoteRoute
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
@@ -4333,7 +4415,6 @@ export interface FileRouteTypes {
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/library/$slug'
-    | '/library/albums/$albumId'
     | '/news/$slug'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -4529,6 +4610,7 @@ export interface FileRouteTypes {
     | '/api/void-breaker/score'
     | '/api/wheel/spin'
     | '/embed/post/$id'
+    | '/library/albums/$albumId'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -4568,7 +4650,10 @@ export interface FileRouteTypes {
     | '/strategies/profile/'
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
+    | '/admin/albums/$id'
     | '/admin/blog/new'
+    | '/api/admin/albums/$id'
+    | '/api/admin/albums/reorder'
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
@@ -4580,6 +4665,7 @@ export interface FileRouteTypes {
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
     | '/api/admin/vibe/backfill-thumbs'
+    | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
@@ -4659,8 +4745,10 @@ export interface FileRouteTypes {
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
+    | '/admin/albums/'
     | '/admin/blog/'
     | '/u/$userid/'
+    | '/api/admin/albums/'
     | '/api/admin/library/'
     | '/api/admin/predictions/'
     | '/api/communities/$slug/'
@@ -4674,6 +4762,8 @@ export interface FileRouteTypes {
     | '/api/study/decks/'
     | '/admin/blog/$slug/edit'
     | '/u/$userid/post/$postid'
+    | '/api/admin/albums/$id/reorder'
+    | '/api/admin/albums/$id/slides'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/admin/predictions/$id/moderate'
@@ -4703,6 +4793,7 @@ export interface FileRouteTypes {
     | '/api/rmhmusic/guess/$id/'
     | '/api/storefront/products/$id/'
     | '/api/study/decks/$id/'
+    | '/api/admin/albums/$id/slides/$slideId'
     | '/api/group-chats/$id/messages/$messageId/vote'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
@@ -4776,7 +4867,6 @@ export interface FileRouteTypes {
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/library/$slug'
-    | '/library/albums/$albumId'
     | '/news/$slug'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -4972,6 +5062,7 @@ export interface FileRouteTypes {
     | '/api/void-breaker/score'
     | '/api/wheel/spin'
     | '/embed/post/$id'
+    | '/library/albums/$albumId'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -5011,7 +5102,10 @@ export interface FileRouteTypes {
     | '/strategies/profile'
     | '/strategies/puzzles'
     | '/strategies/safehouse'
+    | '/admin/albums/$id'
     | '/admin/blog/new'
+    | '/api/admin/albums/$id'
+    | '/api/admin/albums/reorder'
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
@@ -5023,6 +5117,7 @@ export interface FileRouteTypes {
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
     | '/api/admin/vibe/backfill-thumbs'
+    | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
@@ -5102,8 +5197,10 @@ export interface FileRouteTypes {
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
+    | '/admin/albums'
     | '/admin/blog'
     | '/u/$userid'
+    | '/api/admin/albums'
     | '/api/admin/library'
     | '/api/admin/predictions'
     | '/api/communities/$slug'
@@ -5117,6 +5214,8 @@ export interface FileRouteTypes {
     | '/api/study/decks'
     | '/admin/blog/$slug/edit'
     | '/u/$userid/post/$postid'
+    | '/api/admin/albums/$id/reorder'
+    | '/api/admin/albums/$id/slides'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/admin/predictions/$id/moderate'
@@ -5146,6 +5245,7 @@ export interface FileRouteTypes {
     | '/api/rmhmusic/guess/$id'
     | '/api/storefront/products/$id'
     | '/api/study/decks/$id'
+    | '/api/admin/albums/$id/slides/$slideId'
     | '/api/group-chats/$id/messages/$messageId/vote'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
@@ -5241,7 +5341,6 @@ export interface FileRouteTypes {
     | '/forest-explorer/explore'
     | '/forest-explorer/story'
     | '/library/$slug'
-    | '/library/albums/$albumId'
     | '/news/$slug'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -5438,6 +5537,7 @@ export interface FileRouteTypes {
     | '/api/void-breaker/score'
     | '/api/wheel/spin'
     | '/embed/post/$id'
+    | '/library/albums/$albumId'
     | '/strategies/profile/reputation'
     | '/strategies/profile/settings'
     | '/strategies/puzzles/$mode'
@@ -5477,7 +5577,10 @@ export interface FileRouteTypes {
     | '/strategies/profile/'
     | '/strategies/puzzles/'
     | '/strategies/safehouse/'
+    | '/_site/admin/albums/$id'
     | '/_site/admin/blog/new'
+    | '/api/admin/albums/$id'
+    | '/api/admin/albums/reorder'
     | '/api/admin/announcements/$id'
     | '/api/admin/curated-builds/image'
     | '/api/admin/library/$id'
@@ -5489,6 +5592,7 @@ export interface FileRouteTypes {
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
     | '/api/admin/vibe/backfill-thumbs'
+    | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
@@ -5568,8 +5672,10 @@ export interface FileRouteTypes {
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
+    | '/_site/admin/albums/'
     | '/_site/admin/blog/'
     | '/_site/u/$userid/'
+    | '/api/admin/albums/'
     | '/api/admin/library/'
     | '/api/admin/predictions/'
     | '/api/communities/$slug/'
@@ -5583,6 +5689,8 @@ export interface FileRouteTypes {
     | '/api/study/decks/'
     | '/_site/admin/blog/$slug/edit'
     | '/_site/u/$userid/post/$postid'
+    | '/api/admin/albums/$id/reorder'
+    | '/api/admin/albums/$id/slides'
     | '/api/admin/curated-builds/image/$filename'
     | '/api/admin/curated-builds/image/proxy'
     | '/api/admin/predictions/$id/moderate'
@@ -5612,6 +5720,7 @@ export interface FileRouteTypes {
     | '/api/rmhmusic/guess/$id/'
     | '/api/storefront/products/$id/'
     | '/api/study/decks/$id/'
+    | '/api/admin/albums/$id/slides/$slideId'
     | '/api/group-chats/$id/messages/$messageId/vote'
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
@@ -5678,7 +5787,6 @@ export interface RootRouteChildren {
   DiscordLightsOutRoute: typeof DiscordLightsOutRoute
   DiscordRmhboxRoute: typeof DiscordRmhboxRoute
   LibrarySlugRoute: typeof LibrarySlugRoute
-  LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
   NewsSlugRoute: typeof NewsSlugRoute
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
@@ -5792,6 +5900,7 @@ export interface RootRouteChildren {
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
   ApiWheelSpinRoute: typeof ApiWheelSpinRoute
   EmbedPostIdRoute: typeof EmbedPostIdRoute
+  LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
   ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
@@ -5804,6 +5913,8 @@ export interface RootRouteChildren {
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiStakingIndexRoute: typeof ApiStakingIndexRoute
   ApiWheelIndexRoute: typeof ApiWheelIndexRoute
+  ApiAdminAlbumsIdRoute: typeof ApiAdminAlbumsIdRouteWithChildren
+  ApiAdminAlbumsReorderRoute: typeof ApiAdminAlbumsReorderRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
   ApiAdminLibraryIdRoute: typeof ApiAdminLibraryIdRoute
   ApiAdminLibraryMigrateRoute: typeof ApiAdminLibraryMigrateRoute
@@ -5813,6 +5924,7 @@ export interface RootRouteChildren {
   ApiAdminRideshareApplicationsRoute: typeof ApiAdminRideshareApplicationsRoute
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
   ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
+  ApiAlbumsAssetSplatRoute: typeof ApiAlbumsAssetSplatRoute
   ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
   ApiCommunitiesSlugAnnouncementsRoute: typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
@@ -5860,6 +5972,7 @@ export interface RootRouteChildren {
   ApiStorefrontCreatorUseridRoute: typeof ApiStorefrontCreatorUseridRoute
   ApiVibePkgFileRoute: typeof ApiVibePkgFileRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
+  ApiAdminAlbumsIndexRoute: typeof ApiAdminAlbumsIndexRoute
   ApiAdminLibraryIndexRoute: typeof ApiAdminLibraryIndexRoute
   ApiAdminPredictionsIndexRoute: typeof ApiAdminPredictionsIndexRoute
   ApiCommunitiesSlugIndexRoute: typeof ApiCommunitiesSlugIndexRoute
@@ -6493,13 +6606,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibrarySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/library/albums/$albumId': {
-      id: '/library/albums/$albumId'
-      path: '/library/albums/$albumId'
-      fullPath: '/library/albums/$albumId'
-      preLoaderRoute: typeof LibraryAlbumsAlbumIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/forest-explorer/story': {
       id: '/forest-explorer/story'
       path: '/story'
@@ -7122,6 +7228,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/strategies/profile/reputation'
       preLoaderRoute: typeof StrategiesProfileReputationRouteImport
       parentRoute: typeof StrategiesRoute
+    }
+    '/library/albums/$albumId': {
+      id: '/library/albums/$albumId'
+      path: '/library/albums/$albumId'
+      fullPath: '/library/albums/$albumId'
+      preLoaderRoute: typeof LibraryAlbumsAlbumIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/embed/post/$id': {
       id: '/embed/post/$id'
@@ -8236,6 +8349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminLibraryIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/admin/albums/': {
+      id: '/api/admin/albums/'
+      path: '/api/admin/albums'
+      fullPath: '/api/admin/albums/'
+      preLoaderRoute: typeof ApiAdminAlbumsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_site/u/$userid/': {
       id: '/_site/u/$userid/'
       path: '/u/$userid'
@@ -8248,6 +8368,13 @@ declare module '@tanstack/react-router' {
       path: '/blog'
       fullPath: '/admin/blog/'
       preLoaderRoute: typeof SiteAdminBlogIndexRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/albums/': {
+      id: '/_site/admin/albums/'
+      path: '/albums'
+      fullPath: '/admin/albums/'
+      preLoaderRoute: typeof SiteAdminAlbumsIndexRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/rmhbox/minigames/$minigameId/history': {
@@ -8803,6 +8930,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAnnouncementsIdVoteRouteImport
       parentRoute: typeof ApiAnnouncementsRoute
     }
+    '/api/albums/asset/$': {
+      id: '/api/albums/asset/$'
+      path: '/api/albums/asset/$'
+      fullPath: '/api/albums/asset/$'
+      preLoaderRoute: typeof ApiAlbumsAssetSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/vibe/backfill-thumbs': {
       id: '/api/admin/vibe/backfill-thumbs'
       path: '/api/admin/vibe/backfill-thumbs'
@@ -8880,11 +9014,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAnnouncementsIdRouteImport
       parentRoute: typeof ApiAdminAnnouncementsRoute
     }
+    '/api/admin/albums/reorder': {
+      id: '/api/admin/albums/reorder'
+      path: '/api/admin/albums/reorder'
+      fullPath: '/api/admin/albums/reorder'
+      preLoaderRoute: typeof ApiAdminAlbumsReorderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/albums/$id': {
+      id: '/api/admin/albums/$id'
+      path: '/api/admin/albums/$id'
+      fullPath: '/api/admin/albums/$id'
+      preLoaderRoute: typeof ApiAdminAlbumsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_site/admin/blog/new': {
       id: '/_site/admin/blog/new'
       path: '/blog/new'
       fullPath: '/admin/blog/new'
       preLoaderRoute: typeof SiteAdminBlogNewRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
+    '/_site/admin/albums/$id': {
+      id: '/_site/admin/albums/$id'
+      path: '/albums/$id'
+      fullPath: '/admin/albums/$id'
+      preLoaderRoute: typeof SiteAdminAlbumsIdRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/api/study/decks/$id/': {
@@ -9090,6 +9245,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminCuratedBuildsImageFilenameRouteImport
       parentRoute: typeof ApiAdminCuratedBuildsImageRoute
     }
+    '/api/admin/albums/$id/slides': {
+      id: '/api/admin/albums/$id/slides'
+      path: '/slides'
+      fullPath: '/api/admin/albums/$id/slides'
+      preLoaderRoute: typeof ApiAdminAlbumsIdSlidesRouteImport
+      parentRoute: typeof ApiAdminAlbumsIdRoute
+    }
+    '/api/admin/albums/$id/reorder': {
+      id: '/api/admin/albums/$id/reorder'
+      path: '/reorder'
+      fullPath: '/api/admin/albums/$id/reorder'
+      preLoaderRoute: typeof ApiAdminAlbumsIdReorderRouteImport
+      parentRoute: typeof ApiAdminAlbumsIdRoute
+    }
     '/_site/u/$userid/post/$postid': {
       id: '/_site/u/$userid/post/$postid'
       path: '/u/$userid/post/$postid'
@@ -9132,6 +9301,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGroupChatsIdMessagesMessageIdVoteRouteImport
       parentRoute: typeof ApiGroupChatsIdMessagesRoute
     }
+    '/api/admin/albums/$id/slides/$slideId': {
+      id: '/api/admin/albums/$id/slides/$slideId'
+      path: '/$slideId'
+      fullPath: '/api/admin/albums/$id/slides/$slideId'
+      preLoaderRoute: typeof ApiAdminAlbumsIdSlidesSlideIdRouteImport
+      parentRoute: typeof ApiAdminAlbumsIdSlidesRoute
+    }
   }
 }
 
@@ -9147,7 +9323,9 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminUserBuildsRoute: typeof SiteAdminUserBuildsRoute
   SiteAdminUsersRoute: typeof SiteAdminUsersRoute
   SiteAdminIndexRoute: typeof SiteAdminIndexRoute
+  SiteAdminAlbumsIdRoute: typeof SiteAdminAlbumsIdRoute
   SiteAdminBlogNewRoute: typeof SiteAdminBlogNewRoute
+  SiteAdminAlbumsIndexRoute: typeof SiteAdminAlbumsIndexRoute
   SiteAdminBlogIndexRoute: typeof SiteAdminBlogIndexRoute
   SiteAdminBlogSlugEditRoute: typeof SiteAdminBlogSlugEditRoute
 }
@@ -9164,7 +9342,9 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminUserBuildsRoute: SiteAdminUserBuildsRoute,
   SiteAdminUsersRoute: SiteAdminUsersRoute,
   SiteAdminIndexRoute: SiteAdminIndexRoute,
+  SiteAdminAlbumsIdRoute: SiteAdminAlbumsIdRoute,
   SiteAdminBlogNewRoute: SiteAdminBlogNewRoute,
+  SiteAdminAlbumsIndexRoute: SiteAdminAlbumsIndexRoute,
   SiteAdminBlogIndexRoute: SiteAdminBlogIndexRoute,
   SiteAdminBlogSlugEditRoute: SiteAdminBlogSlugEditRoute,
 }
@@ -9973,6 +10153,33 @@ const ApiSliceItSongsRouteWithChildren = ApiSliceItSongsRoute._addFileChildren(
   ApiSliceItSongsRouteChildren,
 )
 
+interface ApiAdminAlbumsIdSlidesRouteChildren {
+  ApiAdminAlbumsIdSlidesSlideIdRoute: typeof ApiAdminAlbumsIdSlidesSlideIdRoute
+}
+
+const ApiAdminAlbumsIdSlidesRouteChildren: ApiAdminAlbumsIdSlidesRouteChildren =
+  {
+    ApiAdminAlbumsIdSlidesSlideIdRoute: ApiAdminAlbumsIdSlidesSlideIdRoute,
+  }
+
+const ApiAdminAlbumsIdSlidesRouteWithChildren =
+  ApiAdminAlbumsIdSlidesRoute._addFileChildren(
+    ApiAdminAlbumsIdSlidesRouteChildren,
+  )
+
+interface ApiAdminAlbumsIdRouteChildren {
+  ApiAdminAlbumsIdReorderRoute: typeof ApiAdminAlbumsIdReorderRoute
+  ApiAdminAlbumsIdSlidesRoute: typeof ApiAdminAlbumsIdSlidesRouteWithChildren
+}
+
+const ApiAdminAlbumsIdRouteChildren: ApiAdminAlbumsIdRouteChildren = {
+  ApiAdminAlbumsIdReorderRoute: ApiAdminAlbumsIdReorderRoute,
+  ApiAdminAlbumsIdSlidesRoute: ApiAdminAlbumsIdSlidesRouteWithChildren,
+}
+
+const ApiAdminAlbumsIdRouteWithChildren =
+  ApiAdminAlbumsIdRoute._addFileChildren(ApiAdminAlbumsIdRouteChildren)
+
 interface ApiAdminCuratedBuildsImageRouteChildren {
   ApiAdminCuratedBuildsImageFilenameRoute: typeof ApiAdminCuratedBuildsImageFilenameRoute
   ApiAdminCuratedBuildsImageProxyRoute: typeof ApiAdminCuratedBuildsImageProxyRoute
@@ -10110,7 +10317,6 @@ const rootRouteChildren: RootRouteChildren = {
   DiscordLightsOutRoute: DiscordLightsOutRoute,
   DiscordRmhboxRoute: DiscordRmhboxRoute,
   LibrarySlugRoute: LibrarySlugRoute,
-  LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
   NewsSlugRoute: NewsSlugRoute,
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
@@ -10224,6 +10430,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
   ApiWheelSpinRoute: ApiWheelSpinRoute,
   EmbedPostIdRoute: EmbedPostIdRoute,
+  LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
   ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
@@ -10236,6 +10443,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiStakingIndexRoute: ApiStakingIndexRoute,
   ApiWheelIndexRoute: ApiWheelIndexRoute,
+  ApiAdminAlbumsIdRoute: ApiAdminAlbumsIdRouteWithChildren,
+  ApiAdminAlbumsReorderRoute: ApiAdminAlbumsReorderRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
   ApiAdminLibraryIdRoute: ApiAdminLibraryIdRoute,
   ApiAdminLibraryMigrateRoute: ApiAdminLibraryMigrateRoute,
@@ -10245,6 +10454,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminRideshareApplicationsRoute: ApiAdminRideshareApplicationsRoute,
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
   ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
+  ApiAlbumsAssetSplatRoute: ApiAlbumsAssetSplatRoute,
   ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
   ApiCommunitiesSlugAnnouncementsRoute:
@@ -10293,6 +10503,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStorefrontCreatorUseridRoute: ApiStorefrontCreatorUseridRoute,
   ApiVibePkgFileRoute: ApiVibePkgFileRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
+  ApiAdminAlbumsIndexRoute: ApiAdminAlbumsIndexRoute,
   ApiAdminLibraryIndexRoute: ApiAdminLibraryIndexRoute,
   ApiAdminPredictionsIndexRoute: ApiAdminPredictionsIndexRoute,
   ApiCommunitiesSlugIndexRoute: ApiCommunitiesSlugIndexRoute,

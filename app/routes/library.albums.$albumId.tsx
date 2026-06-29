@@ -8,12 +8,17 @@
  */
 
 import { createFileRoute, notFound } from '@tanstack/react-router';
-import { getAlbum } from '@/lib/albums';
+import { createServerFn } from '@tanstack/react-start';
+import { getAlbumBySlug } from '@/lib/albums.server';
 import { AlbumViewer } from '@/components/library/AlbumViewer';
 
+const fetchAlbum = createServerFn({ method: 'GET' })
+  .validator((slug: string) => slug)
+  .handler(async ({ data: slug }) => ({ album: await getAlbumBySlug(slug) }));
+
 export const Route = createFileRoute('/library/albums/$albumId')({
-  loader: ({ params }) => {
-    const album = getAlbum(params.albumId);
+  loader: async ({ params }) => {
+    const { album } = await fetchAlbum({ data: params.albumId });
     if (!album) throw notFound();
     return { album };
   },
