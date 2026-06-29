@@ -286,8 +286,8 @@ describe('fieldMapping', () => {
     expect(scrollWorldX(WORLD_LOOKAHEAD_S, 1)).toBeCloseTo(WORLD_LOOKAHEAD_S * scrollWorldX(1, 1), 6);
   });
 
-  it('higher speedMod pushes the same note closer (faster scroll)', () => {
-    expect(scrollWorldX(1, 2)).toBeLessThan(scrollWorldX(1, 1));
+  it('higher speedMod pushes the same note farther out (faster scroll)', () => {
+    expect(scrollWorldX(1, 2)).toBeGreaterThan(scrollWorldX(1, 1));
   });
 
   it('two lanes are symmetric about 0, LANE_SPREAD apart', () => {
@@ -345,7 +345,7 @@ export function laneWorldY(lane: number, opts: FieldOpts): number {
 }
 ```
 
-Note: the `speedMod` test for `scrollWorldX(1,2) < scrollWorldX(1,1)` holds because `windowSeconds` shrinks with higher speedMod, so a fixed 1s-out note maps closer to the hit line — same felt behavior as the 2D `PPS × speedMod`.
+Note: parity with the 2D renderer requires `worldX ∝ speedMod` (distance from hit line = `timeDelta × PPS`, `PPS = axisLen/3 × speedMod`). Here `windowSeconds = WORLD_LOOKAHEAD_S / speedMod` shrinks with higher speedMod, so `timeDelta / windowSeconds` — and thus `scrollWorldX` — GROWS with speedMod: a fixed 1s-out note maps *farther* from the hit line and scrolls faster, exactly like 2D. (Rail depth and culling in Task 6 depend on this: `scrollWorldX(WORLD_LOOKAHEAD_S/speedMod, speedMod) === FIELD_DEPTH`.)
 
 - [ ] **Step 4: Run test to verify it passes**
 
