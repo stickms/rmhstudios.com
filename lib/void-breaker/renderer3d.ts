@@ -94,6 +94,12 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private rift!: THREE.Group;
   private keyLight!: THREE.DirectionalLight;
   private ambient!: THREE.AmbientLight;
+  /** Dynamic lights: a big orange flash on detonate + a cyan muzzle flash. */
+  private flashLight!: THREE.PointLight;
+  private muzzleLight!: THREE.PointLight;
+  private flashIntensity = 0;
+  private muzzleFlash = 0;
+  private lastFireTimer = 0;
 
   constructor(canvas: HTMLCanvasElement) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
@@ -128,6 +134,14 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     const rim = new THREE.DirectionalLight(0xff3370, 0.25);
     rim.position.set(-0.3, 0.2, -0.6);
     this.scene.add(rim);
+
+    // Dynamic point lights (driven each frame by combat events).
+    this.flashLight = new THREE.PointLight(0xff8a4a, 0, 900, 2);
+    this.flashLight.position.set(ARENA_HW, 70, ARENA_HH);
+    this.scene.add(this.flashLight);
+    this.muzzleLight = new THREE.PointLight(0x66f5ff, 0, 220, 2);
+    this.muzzleLight.position.set(ARENA_HW, 24, ARENA_HH);
+    this.scene.add(this.muzzleLight);
   }
 
   private setupEnvironment(): void {
@@ -493,9 +507,22 @@ export class VoidBreakerRenderer3D implements VBRenderer {
       this.lastDetonations = game.detonations;
       this.caPulse = 1;
       this.camPunch = 70;
+      this.flashIntensity = 11;
     }
     this.caPulse = Math.max(0, this.caPulse - dt * 3);
     this.camPunch = Math.max(0, this.camPunch - dt * 120);
+
+    // Detonate flash light — a bright orange burst that decays over ~0.4s.
+    this.flashIntensity = Math.max(0, this.flashIntensity - dt * 28);
+    this.flashLight.intensity = this.flashIntensity;
+    this.flashLight.position.set(p.x, 70, p.y);
+
+    // Muzzle flash — pulse when the fire timer resets (a shot was fired).
+    if (p.fireTimer > this.lastFireTimer + 0.001) this.muzzleFlash = 2.2;
+    this.lastFireTimer = p.fireTimer;
+    this.muzzleFlash = Math.max(0, this.muzzleFlash - dt * 22);
+    this.muzzleLight.intensity = this.muzzleFlash;
+    this.muzzleLight.position.set(p.x + Math.cos(p.aimAngle) * 16, 22, p.y + Math.sin(p.aimAngle) * 16);
 
     const bossActive = game.enemies.some(e => e.active && e.isBoss);
 
@@ -627,9 +654,11 @@ export class VoidBreakerRenderer3D implements VBRenderer {
       const pr = game.projectiles[i];
       if (!pr || !pr.active) { tmpObj.scale.setScalar(0); tmpObj.position.set(0, -9999, 0); }
       else {
+        // Stretch into a tracer along the travel direction.
+        const ang = Math.atan2(pr.vy, pr.vx);
         tmpObj.position.set(pr.x, PROJ_Y, pr.y);
-        tmpObj.rotation.set(0, 0, 0);
-        tmpObj.scale.setScalar(pr.radius * 1.4);
+        tmpObj.rotation.set(0, -ang, 0);
+        tmpObj.scale.set(pr.radius * 4.5, pr.radius * 1.3, pr.radius * 1.3);
         tmpColor.set(pr.isPlayer ? '#66f5ff' : '#ff3bd0');
         m.setColorAt(i, tmpColor);
       }
