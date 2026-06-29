@@ -175,8 +175,11 @@ function Layout() {
  * camera orbits.
  */
 export function Chrome3D() {
+    // NOTE: renderPriority MUST be 1 — drei's <Hud> only renders the underlying
+    // main scene when renderPriority === 1 (and any value > 0 disables R3F's
+    // automatic render). With a higher value the temple world never draws.
   return (
-    <Hud renderPriority={2}>
+    <Hud renderPriority={1}>
       <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={50} />
       <ambientLight intensity={1.2} />
       <pointLight position={[3, 4, 8]} intensity={40} color="#ffe6b0" decay={2} />
