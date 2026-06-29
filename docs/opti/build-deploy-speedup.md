@@ -19,7 +19,7 @@ not sweeping. Ranked by **(impact ÷ risk)**:
 | 2 | Gate the per-deploy `library:metadata` container boot | `deploy.sh` Step 1e | **5–10 s** every deploy | low | ~15 lines | ✅ done 2026-06-29 |
 | 3 | Drop the redundant `cp -a .output build-output` (~1.5 GB copy) | `Dockerfile` vite-builder | **3–8 s** every changed build | low–med | ~5 lines | ✅ done 2026-06-29 |
 | 4 | ~~Lazy-load heavy routes~~ → **investigated, premise wrong** (see §4) | `app/**` routes | ~0 build-time | — | — | ❌ not a build win — routes already split |
-| 4b | Lazy-load i18n per language (eager 2.2 MB → active lang only) | `lib/i18n/resources.ts` | **runtime**: ~600 KB initial JS | med (SSR) | medium refactor | 🔎 found 2026-06-29 — see §4 |
+| 4b | Lazy-load i18n per language (eager 2.2 MB → active lang only) | `lib/i18n/*` | **runtime**: eager locale chunk 866 KB → 292 KB | med (SSR) | medium refactor | ✅ done 2026-06-29 — measured |
 | 4c | `stub-server-files` resolveId pre-filter (skip needless `this.resolve`) | `vite.config.ts` | ~3–4% client build (more when cold) | low | 1 line | ✅ done 2026-06-29 |
 | 5 | Surgical cache-mount trimming instead of full `builder prune -af` | `deploy.sh` Step 1b | avoids occasional **cold** build (~2–4 min) | med | ~20 lines | ⏳ deferred — see note |
 | 6 | `pnpm prune --prod` instead of a second `pnpm install --prod` | `Dockerfile` prod-deps | seconds, only on lockfile/schema change | low | 1 line | ⚠️ kept as-is — see note |
@@ -232,13 +232,34 @@ visitor downloads English + Arabic + Chinese** even though they render one.
 the cookie/`Accept-Language`) and lazy-load the others on switch → ~600 KB+ less
 initial JS for the typical English visitor, and ~1.4 MB less for everyone.
 
-**Risk: med (SSR-sensitive).** The server must render synchronously in the active
-language, so the refactor has to keep the active language's namespaces available
-at SSR time and only defer the *other* languages. Needs a build + an SSR smoke
-test in `en`/`ar`/`zh` to rule out missing-namespace fallbacks and hydration
-mismatches. Tracked as its own task — it's a runtime/TTI improvement, **not** a
-build/deploy speedup, so it's out of this doc's primary scope but recorded here
-because it's the highest-value eager-payload finding.
+**Implemented (2026-06-29).** Design that keeps SSR synchronous *and* preserves
+JS caching for the common case:
+
+- `lib/i18n/resources.{en,zh,ar}.ts` — one bundle module per language (generated;
+  explicit JSON imports). `en` (the default + i18next fallback) is statically
+  imported by the client, so it's a single **cacheable** chunk; `zh`/`ar` are
+  reached only through dynamic `import()` (`LOCALE_LOADERS` in `resources.ts`) →
+  their own async chunks.
+- `lib/i18n/resources.server.ts` — server-only (stubbed out of the client bundle
+  by `stubServerFiles()`); statically holds all three languages so SSR can read
+  any language synchronously.
+- `__root.tsx` root loader serializes the active language's bundle into the loader
+  payload **only for non-en locales** (`getInitialI18n`). The client then
+  initializes i18n synchronously with it (`Providers` → `AppI18nProvider` →
+  `ensureClientLocale(locale, resources)`), so zh/ar hydrate without a flash or
+  mismatch. en needs nothing extra (always bundled).
+- `instances.ts` — `getServerI18n` builds `{ en, [active] }`; `ensureClientLocale`
+  inits with `{ en }` (+ serialized active) and `loadAndSwitch()` pulls a
+  language's chunk on demand (`addResourceBundle` + `changeLanguage`) when the
+  user switches.
+
+**Measured:** the eager locale chunk dropped **866 KB → 292 KB** (en-only +
+store); `zh` (487 KB) and `ar` (574 KB) are now lazy chunks fetched only when
+used. For the typical en visitor that's ~575 KB less eager JS and ~1.06 MB never
+downloaded. **Verified:** SSR renders en/zh/ar each in their own language (not en
+fallback); zh hydration is synchronous with the en fallback present; switching
+en→ar loads the chunk and applies it while keeping en available. `tsc` clean on
+all touched files. (Note: this is a **runtime/TTI** win, not a build/deploy one.)
 
 ### 4c. `stub-server-files` resolveId pre-filter (done)
 

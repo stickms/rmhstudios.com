@@ -11,6 +11,7 @@ import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
 import { AppI18nProvider } from "@/components/i18n/AppI18nProvider";
 import type { Locale } from "@/lib/i18n/config";
+import type { LocaleBundle } from "@/lib/i18n/resources";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -123,6 +124,13 @@ interface ProvidersProps {
    * tree render in the correct language from the first paint.
    */
   locale?: Locale;
+  /**
+   * The active language's resource bundle, serialized by the server for the first
+   * render (non-en only — en is always bundled client-side). Passed straight to
+   * AppI18nProvider so the client i18n initializes synchronously with the same
+   * translations the server rendered (no hydration mismatch, no flash).
+   */
+  i18nResources?: LocaleBundle | null;
 }
 
 const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
@@ -172,7 +180,7 @@ const THEME_EXCLUDED_ROUTES = [
   ...apps.map((a) => a.href),
 ].filter((href) => href.startsWith("/"));
 
-export function Providers({ children, initialUser = null, locale = "en" }: ProvidersProps) {
+export function Providers({ children, initialUser = null, locale = "en", i18nResources = null }: ProvidersProps) {
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
   const { pathname } = useLocation();
@@ -316,7 +324,7 @@ export function Providers({ children, initialUser = null, locale = "en" }: Provi
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AppI18nProvider locale={locale}>
+      <AppI18nProvider locale={locale} resources={i18nResources}>
       {/* Honor the OS "reduce motion" setting across all framer-motion animations. */}
       <MotionConfig reducedMotion="user">
       <SessionCtx.Provider value={effectiveSession}>
