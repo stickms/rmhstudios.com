@@ -65,6 +65,7 @@ export function VoidBreakerGame() {
   const [muted, setMuted] = useState(false);
   const [musicVolume, setMusicVolume] = useState(70);
   const [sfxVolume, setSfxVolume] = useState(85);
+  const [use3D, setUse3D] = useState(true);
   const [saveInfo, setSaveInfo] = useState<{ wave: number; savedAt: Date } | null>(null);
   // Pause menu: 'ingame' pause vs menu
   const [showPauseMenu, setShowPauseMenu] = useState(false);
@@ -84,6 +85,7 @@ export function VoidBreakerGame() {
       const v = parseInt(storedSfx, 10);
       if (!isNaN(v) && v >= 0 && v <= 100) setSfxVolume(v);
     }
+    if (localStorage.getItem('vb-render-3d') === 'false') setUse3D(false);
     setSaveInfo(getSaveInfo());
   }, []);
 
@@ -245,12 +247,17 @@ export function VoidBreakerGame() {
 
     if (!gameRef.current) gameRef.current = new VoidBreakerEngine();
     if (!rendererRef.current) {
-      // Prefer the 3D (WebGL) renderer; fall back to the 2D canvas renderer if
-      // WebGL is unavailable or initialization fails.
-      try {
-        rendererRef.current = new VoidBreakerRenderer3D(canvas);
-      } catch (err) {
-        console.warn('[VoidBreaker] 3D renderer unavailable, using 2D fallback:', err);
+      // Renderer preference (persisted): 3D WebGL by default, or 2D if the
+      // player picked it / if WebGL init fails.
+      const want3D = localStorage.getItem('vb-render-3d') !== 'false';
+      if (want3D) {
+        try {
+          rendererRef.current = new VoidBreakerRenderer3D(canvas);
+        } catch (err) {
+          console.warn('[VoidBreaker] 3D renderer unavailable, using 2D fallback:', err);
+          rendererRef.current = new VoidBreakerRenderer(canvas);
+        }
+      } else {
         rendererRef.current = new VoidBreakerRenderer(canvas);
       }
     }
@@ -467,6 +474,12 @@ export function VoidBreakerGame() {
   const setVolume = useCallback((v: number) => {
     setMusicVolume(v);
     localStorage.setItem('vb-music-volume', String(v));
+  }, []);
+
+  /** Switch renderer (persisted) — reloads so the canvas gets a fresh context. */
+  const handleSetRenderer = useCallback((to3D: boolean) => {
+    localStorage.setItem('vb-render-3d', to3D ? 'true' : 'false');
+    window.location.reload();
   }, []);
 
   const setSfx = useCallback((v: number) => {
@@ -947,6 +960,8 @@ export function VoidBreakerGame() {
         onMusicVolumeChange={setVolume}
         sfxVolume={sfxVolume}
         onSfxVolumeChange={setSfx}
+        use3D={use3D}
+        onSetRenderer={handleSetRenderer}
         saveInfo={saveInfo}
         onClearSave={() => { deleteSave(); setSaveInfo(null); }}
         onContinueGame={saveInfo ? handleContinue : undefined}
