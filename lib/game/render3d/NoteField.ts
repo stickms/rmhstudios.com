@@ -20,6 +20,7 @@ export class NoteField {
   private rails: THREE.Mesh[] = [];
   private dummy = new THREE.Object3D();
   private color = new THREE.Color();
+  private targetedIds = new Set<string>();  // Fix 3: reuse per-frame targeted set
 
   constructor(scene: THREE.Scene) {
     const cubeGeo = new THREE.BoxGeometry(0.55, 0.55, 0.55);
@@ -58,17 +59,25 @@ export class NoteField {
     const map = engine.getActiveMap();
     const opts: FieldOpts = { speedMod: ctx.speedMod, oneTrack: ctx.oneTrack };
 
-    const targeted = new Set<string>();
-    const t0 = engine.getTargetedSlice(0); if (t0) targeted.add(t0.id);
-    const t1 = engine.getTargetedSlice(1); if (t1) targeted.add(t1.id);
+    // Fix 3: reuse persistent Set instead of allocating per frame
+    this.targetedIds.clear();
+    const t0 = engine.getTargetedSlice(0); if (t0) this.targetedIds.add(t0.id);
+    const t1 = engine.getTargetedSlice(1); if (t1) this.targetedIds.add(t1.id);
 
     let cubeI = 0, orbI = 0, tailI = 0;
 
     if (map) {
       for (const slice of map.slices as Slice[]) {
         const dt = slice.time - audioTime;
-        // Cull: behind hit line (with brief fade window) or beyond spawn edge.
-        if (dt < -0.25 || dt > WORLD_LOOKAHEAD_S / ctx.speedMod + 0.2) continue;
+        // Fix 1: type-aware cull so LONG notes survive their full hold duration.
+        const far = WORLD_LOOKAHEAD_S / ctx.speedMod + 0.2;
+        if (dt > far) continue;
+        if (slice.type === 'LONG') {
+          // keep LONG note alive until the hold ends (plus 50ms grace)
+          if (dt < -(slice.duration ?? 0) - 0.05) continue;
+        } else if (dt < -0.25) {
+          continue;
+        }
 
         const lane = engine.getEffectiveLane(slice, audioTime);
         const x = scrollWorldX(dt, ctx.speedMod);
@@ -88,16 +97,21 @@ export class NoteField {
           scale = fade;
         }
 
-        const glow = targeted.has(slice.id) ? 1.4 : 1.0;
+        // Fix 2: targeted notes brighten via emissive color, not scale.
+        const glow = this.targetedIds.has(slice.id) ? 1.4 : 1.0;
 
         if (slice.type === 'BOMB') {
-          this.place(this.orbs, orbI++, x, y, 0, glow);
+          // Orbs use scale-based glow (fixed material color, cannot be per-instance brightened).
+          if (orbI < 64) this.place(this.orbs, orbI++, x, y, 0, glow);
         } else {
           if (slice.type === 'LONG' && (slice.duration ?? 0) > 0) {
             const len = scrollWorldX(slice.duration!, ctx.speedMod);
-            this.placeTail(tailI++, x, y, len, c);
+            // Fix 4: guard tail instanced-array bounds independently.
+            if (tailI < 64) this.placeTail(tailI++, x, y, len, c);
           }
-          this.placeColored(this.cubes, cubeI++, x, y, scale * glow, c);
+          // Fix 2: pass scale only (no glow multiplier); glow drives color brightness.
+          // Fix 4: guard cube instanced-array bounds independently.
+          if (cubeI < MAX_NOTES) this.placeColored(this.cubes, cubeI++, x, y, scale, c, glow);
         }
       }
     }
@@ -117,9 +131,10 @@ export class NoteField {
     mesh.setMatrixAt(i, this.dummy.matrix);
   }
 
-  private placeColored(mesh: THREE.InstancedMesh, i: number, x: number, y: number, s: number, hex: number) {
+  // Fix 2: bright > 1 intentionally overdrives emissive (bloom harder for targeted notes).
+  private placeColored(mesh: THREE.InstancedMesh, i: number, x: number, y: number, s: number, hex: number, bright = 1) {
     this.place(mesh, i, x, y, 0, s);
-    mesh.setColorAt(i, this.color.setHex(hex));
+    mesh.setColorAt(i, this.color.setHex(hex).multiplyScalar(bright));
   }
 
   private placeTail(i: number, x: number, y: number, len: number, hex: number) {
