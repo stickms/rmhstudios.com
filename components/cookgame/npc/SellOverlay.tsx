@@ -39,7 +39,7 @@ export function SellOverlay() {
 
   const bs = buyerState[buyer.id] ?? { demand: 1, reputation: 0, preferredEffect: buyer.preferredEffect };
   const demandPct = Math.round(bs.demand * 100);
-  const stars = Math.round(bs.reputation * 5);
+  const stars = Math.min(5, Math.max(0, Math.round(bs.reputation * 5)));
   const wanted = EFFECTS[bs.preferredEffect];
 
   return (
