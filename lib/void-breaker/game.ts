@@ -110,6 +110,10 @@ export class VoidBreakerEngine {
 
   shakeX = 0;
   shakeY = 0;
+  /** Presentation-only time distortion disabled when true (set by the headless sim). */
+  headless = false;
+  /** Screen-shake trauma accumulator, 0–1. Shake magnitude = trauma². */
+  trauma = 0;
   arenaPhase = 0;
   wingLevel = 0;
 
@@ -158,9 +162,10 @@ export class VoidBreakerEngine {
   /** Display title of the active boss (Chinese title from its pattern). */
   currentBossName = '';
 
-  private shakeDur = 0;
-  private shakeT = 0;
-  private shakeMag = 0;
+  /** Trauma decays this much per second (full → 0 in ~0.8s). */
+  private readonly TRAUMA_DECAY = 1.25;
+  /** Peak shake pixels at trauma = 1 (renderer still applies its own multiplier). */
+  private readonly TRAUMA_MAX_SHAKE = 9;
   private nextId = 0;
   private prevPause = false;
   private prevDet = false;
@@ -251,7 +256,7 @@ export class VoidBreakerEngine {
     this.focusUsed = 0;
     this.nextId = 0;
     this.shakeX = 0; this.shakeY = 0;
-    this.shakeDur = 0; this.shakeT = 0; this.shakeMag = 0;
+    this.trauma = 0;
     this.hitStopTimer = 0;
     this.heartbeatTimer = 0;
     this.sfxEvents.length = 0;
@@ -361,7 +366,7 @@ export class VoidBreakerEngine {
 
     // Hit-stop: briefly freeze the simulation on big impacts for punch.
     // Time keeps ticking (so the freeze ends) but nothing else updates.
-    if (this.hitStopTimer > 0 && (this.state === 'playing' || this.state === 'waveBreak')) {
+    if (!this.headless && this.hitStopTimer > 0 && (this.state === 'playing' || this.state === 'waveBreak')) {
       this.hitStopTimer -= dt;
       this.prevPause = input.pause;
       return;
@@ -1818,26 +1823,26 @@ export class VoidBreakerEngine {
     }
   }
 
-  private triggerShake(mag: number, ms: number): void {
-    // Don't let a small shake stomp a bigger one already in flight.
-    const dur = ms / 1000;
-    if (this.shakeT > 0 && mag < this.shakeMag) return;
-    this.shakeDur = dur;
-    this.shakeT = dur;
-    this.shakeMag = mag;
+  /** Add screen-shake trauma (0–1 accumulator). Big events add more. */
+  addTrauma(amount: number): void {
+    this.trauma = Math.max(0, Math.min(1, this.trauma + amount));
+  }
+
+  /** Legacy shake API — maps a magnitude/duration request onto the trauma model. */
+  private triggerShake(mag: number, _ms: number): void {
+    // Old magnitudes ranged ~3–16; normalize to a 0–1 trauma add.
+    this.addTrauma(Math.min(1, mag / 16));
   }
 
   private updateShake(dt: number): void {
-    if (this.shakeT > 0) {
-      this.shakeT -= dt;
-      // Ease-out: amplitude scales with the requested magnitude and decays over time.
-      // (renderer multiplies shakeX/Y by 4, so effective peak ≈ 2 × magnitude px.)
-      const intensity = (this.shakeT / this.shakeDur) * this.shakeMag;
-      this.shakeX = (Math.random() - 0.5) * intensity;
-      this.shakeY = (Math.random() - 0.5) * intensity;
+    this.trauma = Math.max(0, this.trauma - this.TRAUMA_DECAY * dt);
+    // Quadratic curve: small trauma barely registers, big trauma slams.
+    const shake = this.trauma * this.trauma * this.TRAUMA_MAX_SHAKE;
+    if (shake > 0.001) {
+      this.shakeX = (Math.random() - 0.5) * 2 * shake;
+      this.shakeY = (Math.random() - 0.5) * 2 * shake;
     } else {
       this.shakeX = 0; this.shakeY = 0;
-      this.shakeMag = 0;
     }
   }
 
@@ -1852,6 +1857,7 @@ export class VoidBreakerEngine {
 
   /** Request a freeze-frame of `ms` milliseconds (takes the longest pending). */
   private requestHitStop(ms: number): void {
+    if (this.headless) return;
     const s = ms / 1000;
     if (s > this.hitStopTimer) this.hitStopTimer = Math.min(s, 0.25);
   }
