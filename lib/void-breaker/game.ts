@@ -49,6 +49,7 @@ import {
   makePlayerStats, rollUpgradeChoices, getUpgradeDef,
 } from './upgrades';
 import type { PlayerStats, UpgradeId, UpgradeChoice } from './upgrades';
+import type { MetaBonuses } from './metaProgression';
 
 function dist(ax: number, ay: number, bx: number, by: number): number {
   return Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
@@ -118,6 +119,8 @@ export class VoidBreakerEngine {
   pendingUpgrades: UpgradeChoice[] = [];
   /** Whether the current offer is a boss reward. */
   upgradeIsBossReward = false;
+  /** Permanent meta-progression bonuses (set by the component before startGame). */
+  metaBonuses: MetaBonuses | null = null;
 
   /** Sound events emitted this frame; drained by the component each frame. */
   sfxEvents: SfxEvent[] = [];
@@ -269,6 +272,26 @@ export class VoidBreakerEngine {
     this.invertTimer = 0;
     this.invertCooldown = 0;
     this.currentBossName = '';
+
+    // Apply permanent meta-progression bonuses (Void Forge purchases).
+    if (this.metaBonuses) {
+      const mb = this.metaBonuses;
+      this.player.maxHp = PLAYER_HP + mb.bonusMaxHp;
+      this.player.hp = this.player.maxHp;
+      this.stats.damageBonus += mb.damageBonus;
+      this.stats.moveSpeedMult *= mb.moveSpeedMult;
+      this.stats.fireRateMult *= mb.fireRateMult;
+      // Grant starting shards as real orbiting shards (shield + multiplier).
+      for (let i = 0; i < mb.startShards && this.player.shards < MAX_SHARDS; i++) {
+        const s = this.shards.find(sh => !sh.active);
+        if (!s) break;
+        s.active = true; s.collected = true;
+        s.orbitAngle = Math.random() * Math.PI * 2;
+        s.orbitSpeed = 2 + Math.random() * 2;
+        s.x = this.player.x; s.y = this.player.y;
+        this.player.shards++;
+      }
+    }
 
     this.countdownTimer = COUNTDOWN_S;
     this.state = 'countdown';

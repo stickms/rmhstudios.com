@@ -4,7 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings, Gamepad2 } from 'lucide-react';
+import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings, Gamepad2, Hexagon } from 'lucide-react';
+import {
+  META_NODES, nodeCost, nodeLevel, canBuy,
+  type MetaState, type MetaNodeId,
+} from '@/lib/void-breaker/metaProgression';
 import { authClient } from '@/lib/auth-client';
 import { useNavigate } from '@tanstack/react-router';
 import type { RunStats } from '@/lib/void-breaker/types';
@@ -15,6 +19,7 @@ export function VoidBreakerUI({
   uiState, runStats, onStartGame, onGoToMenu, muted, onToggleMute,
   musicVolume, onMusicVolumeChange, sfxVolume, onSfxVolumeChange,
   use3D, onSetRenderer,
+  meta, onBuyNode, earnedCores,
   saveInfo, onClearSave, onContinueGame,
 }: {
   uiState: 'menu' | 'playing' | 'gameOver';
@@ -29,6 +34,9 @@ export function VoidBreakerUI({
   onSfxVolumeChange: (v: number) => void;
   use3D: boolean;
   onSetRenderer: (to3D: boolean) => void;
+  meta: MetaState;
+  onBuyNode: (id: MetaNodeId) => void;
+  earnedCores: number;
   saveInfo: { wave: number; savedAt: Date; score?: number } | null;
   onClearSave: () => void;
   onContinueGame?: () => void;
@@ -39,6 +47,7 @@ export function VoidBreakerUI({
   const [showLore, setShowLore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showForge, setShowForge] = useState(false);
   const session = authClient.useSession();
   const navigate = useNavigate();
 
@@ -56,6 +65,7 @@ export function VoidBreakerUI({
     if (uiState === 'menu') setShowLore(false);
     if (uiState === 'menu') setShowSettings(false);
     if (uiState === 'menu') setShowHelp(false);
+    if (uiState === 'menu') setShowForge(false);
   }, [uiState, fetchLb]);
 
   useEffect(() => {
@@ -151,6 +161,68 @@ export function VoidBreakerUI({
             className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] border border-[#c9a227]/40">
             {t("done", { defaultValue: "Done" })}
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Void Forge (meta-progression) ──
+  if (showForge) {
+    return (
+      <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
+        <div className="max-w-md mx-auto px-6 py-10 space-y-5">
+          <button onClick={() => setShowForge(false)}
+            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors">
+            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
+          </button>
+
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-[#d4af37] flex items-center gap-2">
+              <Hexagon className="w-5 h-5" /> {t("void-forge", { defaultValue: "Void Forge" })}
+            </h2>
+            <div className="text-[#d4af37] font-mono font-bold text-sm">
+              ◈ {meta.cores.toLocaleString()}
+            </div>
+          </div>
+          <p className="text-[11px] text-zinc-500 -mt-2">
+            {t("forge-blurb", { defaultValue: "Spend Void Cores on permanent upgrades. Cores are earned every run." })}
+          </p>
+
+          <div className="space-y-2">
+            {META_NODES.map((n) => {
+              const lvl = nodeLevel(meta, n.id);
+              const maxed = lvl >= n.maxLevel;
+              const cost = nodeCost(n, lvl);
+              const affordable = canBuy(meta, n.id);
+              return (
+                <div key={n.id} className="bg-[#1a1a24] border border-[#2a2a3a] rounded-lg p-3 flex items-center gap-3">
+                  <div className="text-2xl w-7 text-center shrink-0" style={{ color: n.color }}>{n.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold font-mono text-sm" style={{ color: n.color }}>{n.name}</span>
+                      <span className="text-[9px] font-mono text-zinc-500">{t("forge-lvl", { defaultValue: "LV {{lvl}}/{{max}}", lvl, max: n.maxLevel })}</span>
+                    </div>
+                    <div className="text-[11px] text-zinc-400 leading-snug">{n.description}</div>
+                    <div className="flex gap-1 mt-1">
+                      {Array.from({ length: n.maxLevel }, (_, i) => (
+                        <div key={i} className="h-1 flex-1 rounded-full" style={{ background: i < lvl ? n.color : '#2a2a3a' }} />
+                      ))}
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => onBuyNode(n.id)}
+                    disabled={maxed || !affordable}
+                    className={`shrink-0 text-xs font-mono px-3 ${maxed
+                      ? 'bg-[#1a1a24] text-zinc-600 border border-[#2a2a3a]'
+                      : affordable
+                        ? 'bg-[#d4af37]/15 text-[#d4af37] border border-[#c9a227]/50 hover:bg-[#d4af37]/25'
+                        : 'bg-[#1a1a24] text-zinc-600 border border-[#2a2a3a]'}`}>
+                    {maxed ? t("forge-max", { defaultValue: "MAX" }) : `◈ ${cost}`}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
@@ -400,6 +472,12 @@ export function VoidBreakerUI({
                 <Play className="w-5 h-5 mr-2" /> {saveInfo ? t("new-game", { defaultValue: "New Game" }) : t("play", { defaultValue: "Play" })}
               </Button>
             )}
+            <Button onClick={() => setShowForge(true)} variant="outline"
+              className="w-full py-2 border-[#c9a227]/30 text-[#d4af37] hover:bg-[#d4af37]/10 hover:border-[#c9a227]/60 flex items-center justify-center gap-2">
+              <Hexagon className="w-4 h-4" /> {t("void-forge", { defaultValue: "Void Forge" })}
+              <span className="font-mono text-xs opacity-80">◈ {meta.cores.toLocaleString()}</span>
+            </Button>
+
             <div className="flex gap-2">
               <Button onClick={() => setShowHelp(true)} variant="outline"
                 className="flex-1 py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
@@ -471,6 +549,18 @@ export function VoidBreakerUI({
               ))}
             </div>
           </div>
+
+          {earnedCores > 0 && (
+            <button onClick={() => setShowForge(true)}
+              className="w-full bg-[#d4af37]/10 border border-[#c9a227]/40 rounded-lg p-2.5 text-center hover:bg-[#d4af37]/20 transition-colors">
+              <span className="text-[#d4af37] font-mono font-bold text-sm">
+                {t("cores-earned", { defaultValue: "+{{n}} ◈ Void Cores", n: earnedCores.toLocaleString() })}
+              </span>
+              <span className="block text-[9px] text-zinc-500 font-mono mt-0.5">
+                {t("spend-in-forge", { defaultValue: "Spend in the Void Forge →" })}
+              </span>
+            </button>
+          )}
 
           {runStats.upgrades.length > 0 && (
             <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3">

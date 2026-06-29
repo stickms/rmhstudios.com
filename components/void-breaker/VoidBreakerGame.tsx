@@ -10,6 +10,10 @@ import { VoidBreakerAudio } from '@/lib/void-breaker/audio';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, MAX_SHARDS, DET_MIN_SHARDS, DASH_COOLDOWN, FOCUS_COOLDOWN } from '@/lib/void-breaker/constants';
 import type { InputState, RunStats, GameState, HUDState } from '@/lib/void-breaker/types';
 import type { UpgradeId } from '@/lib/void-breaker/upgrades';
+import {
+  loadMeta, saveMeta, metaBonuses, buyNode, awardCores, emptyMeta,
+  type MetaState, type MetaNodeId,
+} from '@/lib/void-breaker/metaProgression';
 import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
 import { saveGame, loadGame, deleteSave, getSaveInfo } from '@/lib/void-breaker/saveSystem';
@@ -66,6 +70,8 @@ export function VoidBreakerGame() {
   const [musicVolume, setMusicVolume] = useState(70);
   const [sfxVolume, setSfxVolume] = useState(85);
   const [use3D, setUse3D] = useState(true);
+  const [meta, setMeta] = useState<MetaState>(emptyMeta);
+  const [earnedCores, setEarnedCores] = useState(0);
   const [saveInfo, setSaveInfo] = useState<{ wave: number; savedAt: Date } | null>(null);
   // Pause menu: 'ingame' pause vs menu
   const [showPauseMenu, setShowPauseMenu] = useState(false);
@@ -86,6 +92,7 @@ export function VoidBreakerGame() {
       if (!isNaN(v) && v >= 0 && v <= 100) setSfxVolume(v);
     }
     if (localStorage.getItem('vb-render-3d') === 'false') setUse3D(false);
+    setMeta(loadMeta());
     setSaveInfo(getSaveInfo());
   }, []);
 
@@ -395,13 +402,14 @@ export function VoidBreakerGame() {
   const handleStart = useCallback(() => {
     sfxRef.current?.unlock();
     sfxRef.current?.play('uiClick');
+    if (gameRef.current) gameRef.current.metaBonuses = metaBonuses(meta);
     gameRef.current?.startGame();
     setRunStats(null);
     setUiState('playing');
     setShowPauseMenu(false);
     showPauseMenuRef.current = false;
     playMusic();
-  }, [playMusic]);
+  }, [playMusic, meta]);
 
   /** Save current game state and go to menu. */
   const handleSaveAndQuit = useCallback(() => {
@@ -421,6 +429,31 @@ export function VoidBreakerGame() {
     setShowPauseMenu(false);
     showPauseMenuRef.current = false;
     // playMusic called via useEffect watching showPauseMenu
+  }, []);
+
+  /** Award Void Cores once per game over. */
+  useEffect(() => {
+    if (uiState !== 'gameOver' || !runStats) { return; }
+    const earned = awardCores(runStats.score, runStats.bossesKilled, runStats.wave);
+    setEarnedCores(earned);
+    if (earned > 0) {
+      setMeta(prev => {
+        const next = { ...prev, cores: prev.cores + earned };
+        saveMeta(next);
+        return next;
+      });
+    }
+    // Award once per distinct game-over (runStats is a fresh object each run).
+  }, [uiState, runStats]);
+
+  /** Buy a permanent Void Forge upgrade. */
+  const handleBuyNode = useCallback((id: MetaNodeId) => {
+    sfxRef.current?.play('uiClick');
+    setMeta(prev => {
+      const next = buyNode(prev, id);
+      if (next !== prev) saveMeta(next);
+      return next;
+    });
   }, []);
 
   /** Apply a chosen roguelite upgrade and dismiss the card overlay instantly. */
@@ -498,6 +531,7 @@ export function VoidBreakerGame() {
     if (!save || !save.stateJson) return;
     const game = gameRef.current;
     if (!game) return;
+    game.metaBonuses = metaBonuses(meta);
     const ok = game.hydrateGameState(save.stateJson as Record<string, unknown>);
     if (ok) {
       setRunStats(null);
@@ -506,7 +540,7 @@ export function VoidBreakerGame() {
       showPauseMenuRef.current = false;
       playMusic();
     }
-  }, [playMusic]);
+  }, [playMusic, meta]);
 
   const showGame = uiState === 'playing';
 
@@ -962,6 +996,9 @@ export function VoidBreakerGame() {
         onSfxVolumeChange={setSfx}
         use3D={use3D}
         onSetRenderer={handleSetRenderer}
+        meta={meta}
+        onBuyNode={handleBuyNode}
+        earnedCores={earnedCores}
         saveInfo={saveInfo}
         onClearSave={() => { deleteSave(); setSaveInfo(null); }}
         onContinueGame={saveInfo ? handleContinue : undefined}
