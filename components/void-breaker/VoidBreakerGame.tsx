@@ -12,6 +12,7 @@ import type { InputState, RunStats, GameState, HUDState } from '@/lib/void-break
 import type { UpgradeId } from '@/lib/void-breaker/upgrades';
 import {
   loadMeta, saveMeta, metaBonuses, buyNode, awardCores, emptyMeta,
+  isCharUnlocked, canUnlockChar, unlockChar,
   type MetaState, type MetaNodeId,
 } from '@/lib/void-breaker/metaProgression';
 import { getCharacter, isCharacterId, type CharacterId } from '@/lib/void-breaker/characters';
@@ -534,10 +535,22 @@ export function VoidBreakerGame() {
   }, []);
 
   const handleSelectCharacter = useCallback((id: CharacterId) => {
+    // Locked character: spend cores to unlock (then select), or no-op if too poor.
+    if (!isCharUnlocked(meta, id)) {
+      if (canUnlockChar(meta, id)) {
+        const next = unlockChar(meta, id);
+        saveMeta(next);
+        setMeta(next);
+        sfxRef.current?.play('unlock');
+        setCharacterId(id);
+        localStorage.setItem('vb-character', id);
+      }
+      return;
+    }
     sfxRef.current?.play('uiClick');
     setCharacterId(id);
     localStorage.setItem('vb-character', id);
-  }, []);
+  }, [meta]);
 
   /** Switch renderer (persisted) — reloads so the canvas gets a fresh context. */
   const handleSetRenderer = useCallback((to3D: boolean) => {
