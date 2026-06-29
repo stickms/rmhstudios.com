@@ -109,7 +109,7 @@ export function VoidBreakerUI({
   if (showSettings) {
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-sm mx-auto px-6 py-10 space-y-6">
+        <div className="vb-anim max-w-sm mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
           <button onClick={() => setShowSettings(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
@@ -198,7 +198,7 @@ export function VoidBreakerUI({
   if (showForge) {
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-md mx-auto px-6 py-10 space-y-5">
+        <div className="vb-anim max-w-md mx-auto px-6 py-10 space-y-5" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
           <button onClick={() => setShowForge(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors">
             <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
@@ -276,7 +276,7 @@ export function VoidBreakerUI({
     ];
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-lg mx-auto px-6 py-10 space-y-6">
+        <div className="vb-anim max-w-lg mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
           <button onClick={() => setShowHelp(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-2">
             <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
@@ -320,7 +320,7 @@ export function VoidBreakerUI({
   if (showLore) {
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
+        <div className="vb-anim max-w-2xl mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
           <button onClick={() => setShowLore(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-4">
             <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
@@ -429,7 +429,8 @@ export function VoidBreakerUI({
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-hidden bg-[#0d0d14]">
         <div className="relative h-full flex items-center justify-center overflow-y-auto py-8">
-          <div className="text-center space-y-4 sm:space-y-5 w-full max-w-md px-4 py-6">
+          <div className="vb-anim text-center space-y-4 sm:space-y-5 w-full max-w-md px-4 py-6"
+            style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>
             <div className="absolute top-4 right-4 flex items-center gap-2">
               <button onClick={() => setShowSettings(true)}
                 className="w-9 h-9 rounded-full bg-[#1a1a24] border border-[#c9a227]/30 flex items-center justify-center hover:bg-[#252530] transition-colors">
@@ -603,7 +604,8 @@ export function VoidBreakerUI({
     const timeStr = `${Math.floor(secs / 60)}:${(secs % 60).toString().padStart(2, '0')}`;
     return (
       <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-md w-full px-4 space-y-3 py-6">
+        <div className="vb-anim max-w-md w-full px-4 space-y-3 py-6"
+          style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>
           <div className="text-center space-y-1">
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#d4af37]">
               {t("game-over", { defaultValue: "GAME OVER" })}
