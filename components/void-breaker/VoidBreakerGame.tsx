@@ -72,6 +72,8 @@ export function VoidBreakerGame() {
   const [use3D, setUse3D] = useState(true);
   const [meta, setMeta] = useState<MetaState>(emptyMeta);
   const [earnedCores, setEarnedCores] = useState(0);
+  const [reducedFx, setReducedFx] = useState(false);
+  const reducedFxRef = useRef(false);
   const [saveInfo, setSaveInfo] = useState<{ wave: number; savedAt: Date } | null>(null);
   // Pause menu: 'ingame' pause vs menu
   const [showPauseMenu, setShowPauseMenu] = useState(false);
@@ -92,6 +94,9 @@ export function VoidBreakerGame() {
       if (!isNaN(v) && v >= 0 && v <= 100) setSfxVolume(v);
     }
     if (localStorage.getItem('vb-render-3d') === 'false') setUse3D(false);
+    const storedFx = localStorage.getItem('vb-reduced-fx');
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    setReducedFx(storedFx !== null ? storedFx === 'true' : prefersReduced);
     setMeta(loadMeta());
     setSaveInfo(getSaveInfo());
   }, []);
@@ -267,6 +272,7 @@ export function VoidBreakerGame() {
       } else {
         rendererRef.current = new VoidBreakerRenderer(canvas);
       }
+      rendererRef.current.setReducedFx?.(reducedFxRef.current);
     }
 
     let lastT = 0;
@@ -507,6 +513,17 @@ export function VoidBreakerGame() {
   const setVolume = useCallback((v: number) => {
     setMusicVolume(v);
     localStorage.setItem('vb-music-volume', String(v));
+  }, []);
+
+  // Apply the reduced-effects setting to the live renderer whenever it changes.
+  useEffect(() => {
+    reducedFxRef.current = reducedFx;
+    rendererRef.current?.setReducedFx?.(reducedFx);
+  }, [reducedFx]);
+
+  const handleSetReducedFx = useCallback((on: boolean) => {
+    setReducedFx(on);
+    localStorage.setItem('vb-reduced-fx', on ? 'true' : 'false');
   }, []);
 
   /** Switch renderer (persisted) — reloads so the canvas gets a fresh context. */
@@ -996,6 +1013,8 @@ export function VoidBreakerGame() {
         onSfxVolumeChange={setSfx}
         use3D={use3D}
         onSetRenderer={handleSetRenderer}
+        reducedFx={reducedFx}
+        onSetReducedFx={handleSetReducedFx}
         meta={meta}
         onBuyNode={handleBuyNode}
         earnedCores={earnedCores}

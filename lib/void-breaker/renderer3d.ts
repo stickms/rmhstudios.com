@@ -44,6 +44,8 @@ export interface VBRenderer {
   getAimPoint(canvasX: number, canvasY: number, game: VoidBreakerEngine): { x: number; y: number };
   draw(game: VoidBreakerEngine, dt: number): void;
   dispose(): void;
+  /** Accessibility: dampen shake, disable CA/grain, soften flashes. */
+  setReducedFx?(on: boolean): void;
 }
 
 export class VoidBreakerRenderer3D implements VBRenderer {
@@ -53,6 +55,9 @@ export class VoidBreakerRenderer3D implements VBRenderer {
   private composer!: EffectComposer;
   private bloom!: UnrealBloomPass;
   private rgbShift!: ShaderPass;
+  private filmPass!: FilmPass;
+  /** Accessibility: when true, dampen shake + flashes, disable CA/grain. */
+  private reducedFx = false;
   /** Chromatic-aberration impact pulse (decays each frame). */
   private caPulse = 0;
   private lastDetonations = 0;
@@ -470,7 +475,14 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     vignette.uniforms.darkness.value = 1.05;
     this.composer.addPass(vignette);
 
-    this.composer.addPass(new FilmPass(0.22));
+    this.filmPass = new FilmPass(0.22);
+    this.composer.addPass(this.filmPass);
+  }
+
+  setReducedFx(on: boolean): void {
+    this.reducedFx = on;
+    this.rgbShift.enabled = !on;   // no chromatic aberration
+    this.filmPass.enabled = !on;   // no film grain
   }
 
   // ── Aim ──────────────────────────────────────────────────────────────────────
@@ -514,14 +526,14 @@ export class VoidBreakerRenderer3D implements VBRenderer {
 
     // Detonate flash light — a bright orange burst that decays over ~0.4s.
     this.flashIntensity = Math.max(0, this.flashIntensity - dt * 28);
-    this.flashLight.intensity = this.flashIntensity;
+    this.flashLight.intensity = this.flashIntensity * (this.reducedFx ? 0.35 : 1);
     this.flashLight.position.set(p.x, 70, p.y);
 
     // Muzzle flash — pulse when the fire timer resets (a shot was fired).
     if (p.fireTimer > this.lastFireTimer + 0.001) this.muzzleFlash = 2.2;
     this.lastFireTimer = p.fireTimer;
     this.muzzleFlash = Math.max(0, this.muzzleFlash - dt * 22);
-    this.muzzleLight.intensity = this.muzzleFlash;
+    this.muzzleLight.intensity = this.muzzleFlash * (this.reducedFx ? 0.4 : 1);
     this.muzzleLight.position.set(p.x + Math.cos(p.aimAngle) * 16, 22, p.y + Math.sin(p.aimAngle) * 16);
 
     const bossActive = game.enemies.some(e => e.active && e.isBoss);
@@ -532,10 +544,11 @@ export class VoidBreakerRenderer3D implements VBRenderer {
     this.focusX += (p.x + Math.cos(p.aimAngle) * aimLA - this.focusX) * k;
     this.focusZ += (p.y + Math.sin(p.aimAngle) * aimLA - this.focusZ) * k;
     // Pull back during boss fights; punch in on detonate.
-    const targetH = CAM_HEIGHT + (bossActive ? 120 : 0) - this.camPunch;
+    const targetH = CAM_HEIGHT + (bossActive ? 120 : 0) - this.camPunch * (this.reducedFx ? 0.3 : 1);
     this.camH += (targetH - this.camH) * k;
 
-    const sx = game.shakeX * 1.5, sz = game.shakeY * 1.5;
+    const ss = this.reducedFx ? 0.3 : 1.5;
+    const sx = game.shakeX * ss, sz = game.shakeY * ss;
     this.camera.position.set(this.focusX + sx, this.camH, this.focusZ + CAM_BACK + sz);
     this.camera.lookAt(this.focusX + sx, 0, this.focusZ + sz);
 

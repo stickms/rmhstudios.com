@@ -19,6 +19,7 @@ export function VoidBreakerUI({
   uiState, runStats, onStartGame, onGoToMenu, muted, onToggleMute,
   musicVolume, onMusicVolumeChange, sfxVolume, onSfxVolumeChange,
   use3D, onSetRenderer,
+  reducedFx, onSetReducedFx,
   meta, onBuyNode, earnedCores,
   saveInfo, onClearSave, onContinueGame,
 }: {
@@ -34,6 +35,8 @@ export function VoidBreakerUI({
   onSfxVolumeChange: (v: number) => void;
   use3D: boolean;
   onSetRenderer: (to3D: boolean) => void;
+  reducedFx: boolean;
+  onSetReducedFx: (on: boolean) => void;
   meta: MetaState;
   onBuyNode: (id: MetaNodeId) => void;
   earnedCores: number;
@@ -153,6 +156,23 @@ export function VoidBreakerUI({
               </div>
               <p className="text-[10px] text-zinc-600 font-mono mt-1.5">
                 {t("renderer-note", { defaultValue: "Switching reloads the page." })}
+              </p>
+            </div>
+
+            <div>
+              <label className="text-sm text-zinc-400">{t("reduced-effects", { defaultValue: "Reduced Effects" })}</label>
+              <div className="flex gap-2 mt-2">
+                <Button onClick={() => onSetReducedFx(false)}
+                  className={`flex-1 ${!reducedFx ? 'bg-[#00f5ff]/15 text-[#00f5ff] border border-[#00f5ff]/50' : 'bg-[#1a1a24] text-zinc-400 border border-[#2a2a3a]'}`}>
+                  {t("fx-full", { defaultValue: "Full" })}
+                </Button>
+                <Button onClick={() => onSetReducedFx(true)}
+                  className={`flex-1 ${reducedFx ? 'bg-[#00ff88]/15 text-[#00ff88] border border-[#00ff88]/50' : 'bg-[#1a1a24] text-zinc-400 border border-[#2a2a3a]'}`}>
+                  {t("fx-reduced", { defaultValue: "Reduced" })}
+                </Button>
+              </div>
+              <p className="text-[10px] text-zinc-600 font-mono mt-1.5">
+                {t("reduced-effects-note", { defaultValue: "Less shake, flashing, and chromatic aberration." })}
               </p>
             </div>
           </div>
