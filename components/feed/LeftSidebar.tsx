@@ -18,37 +18,39 @@ import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
 
-type NavLeaf = { href: string; label: string; icon: LucideIcon; requiresAuth?: boolean; requiresAdmin?: boolean; badge?: 'inbox'; external?: boolean };
-type NavGroup = { group: string; label: string; icon: LucideIcon; children: NavLeaf[] };
+// `tKey` is the i18n key (namespace "feed"); `label` is the English fallback.
+type NavLeaf = { href: string; tKey: string; label: string; icon: LucideIcon; requiresAuth?: boolean; requiresAdmin?: boolean; badge?: 'inbox'; external?: boolean };
+type NavGroup = { group: string; tKey: string; label: string; icon: LucideIcon; children: NavLeaf[] };
 type NavItem = NavLeaf | NavGroup;
 const isGroup = (item: NavItem): item is NavGroup => 'group' in item;
 
 // Top-level nav. Singles stay flat; related destinations are merged into
 // collapsible groups to keep the rail short.
 const NAV: NavItem[] = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/search', label: 'Explore', icon: Compass },
-  { href: '/messages', label: 'Inbox', icon: Inbox, requiresAuth: true, badge: 'inbox' },
-  { href: '/create', label: 'Creator Studio', icon: Wand2 },
-  { href: '/library', label: 'Library', icon: Library },
-  { href: '/communities', label: 'Communities', icon: Users },
-  { href: '/store', label: 'Store', icon: ShoppingBag },
-  { href: '/predictions', label: 'Predictions', icon: TrendingUp },
+  { href: '/', tKey: 'nav-home', label: 'Home', icon: Home },
+  { href: '/search', tKey: 'nav-explore', label: 'Explore', icon: Compass },
+  { href: '/messages', tKey: 'nav-inbox', label: 'Inbox', icon: Inbox, requiresAuth: true, badge: 'inbox' },
+  { href: '/create', tKey: 'nav-creator-studio', label: 'Creator Studio', icon: Wand2 },
+  { href: '/library', tKey: 'nav-library', label: 'Library', icon: Library },
+  { href: '/communities', tKey: 'nav-communities', label: 'Communities', icon: Users },
+  { href: '/store', tKey: 'nav-store', label: 'Store', icon: ShoppingBag },
+  { href: '/predictions', tKey: 'nav-predictions', label: 'Predictions', icon: TrendingUp },
   {
     group: 'more',
+    tKey: 'nav-more',
     label: 'More',
     icon: MoreHorizontal,
     children: [
-      { href: '/rideshare', label: 'Rideshare', icon: Car },
-      { href: '/developer', label: 'Developer', icon: Terminal },
-      { href: '/rmh-capital', label: 'RMH Capital', icon: Landmark },
-      { href: '/rmh-pmc', label: 'RMH PMC', icon: Shield },
-      { href: '/adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
-      { href: '/deeplink', label: 'RMH Deeplink', icon: Brain, external: true },
+      { href: '/rideshare', tKey: 'nav-rideshare', label: 'Rideshare', icon: Car },
+      { href: '/developer', tKey: 'nav-developer', label: 'Developer', icon: Terminal },
+      { href: '/rmh-capital', tKey: 'nav-rmh-capital', label: 'RMH Capital', icon: Landmark },
+      { href: '/rmh-pmc', tKey: 'nav-rmh-pmc', label: 'RMH PMC', icon: Shield },
+      { href: '/adaptive-intelligence', tKey: 'nav-adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
+      { href: '/deeplink', tKey: 'nav-rmh-deeplink', label: 'RMH Deeplink', icon: Brain, external: true },
     ],
   },
   // Admin lives at the bottom of the rail and is only rendered for admins.
-  { href: '/admin', label: 'Admin', icon: ShieldCheck, requiresAdmin: true },
+  { href: '/admin', tKey: 'nav-admin', label: 'Admin', icon: ShieldCheck, requiresAdmin: true },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
@@ -110,6 +112,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
 
   const renderLeaf = (link: NavLeaf, nested = false) => {
     const Icon = link.icon;
+    const label = t(link.tKey, { defaultValue: link.label });
     const isActive = link.badge === 'inbox'
       ? !!(pathname?.startsWith('/messages') || pathname?.startsWith('/notifications') || pathname?.startsWith('/groups'))
       : pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));
@@ -135,20 +138,20 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ) : (
           <Icon className="w-5 h-5 shrink-0" />
         )}
-        <span className={labelClass}>{link.label}</span>
+        <span className={labelClass}>{label}</span>
       </>
     );
     // External/static destinations (e.g. the standalone Deeplink site) need a
     // full page load, so they render a plain anchor rather than a router Link.
     if (link.external) {
       return (
-        <a key={link.href} href={link.href} className={leafClass} title={link.label} aria-current={isActive ? 'page' : undefined}>
+        <a key={link.href} href={link.href} className={leafClass} title={label} aria-current={isActive ? 'page' : undefined}>
           {leafInner}
         </a>
       );
     }
     return (
-      <Link key={link.href} to={link.href} className={leafClass} title={link.label} aria-current={isActive ? 'page' : undefined}>
+      <Link key={link.href} to={link.href} className={leafClass} title={label} aria-current={isActive ? 'page' : undefined}>
         {leafInner}
       </Link>
     );
@@ -175,6 +178,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             return renderLeaf(item);
           }
           const Icon = item.icon;
+          const groupLabel = t(item.tKey, { defaultValue: item.label });
           const isOpen = !!openGroups[item.group];
           const groupActive = item.children.some((c) => pathname?.startsWith(c.href));
           return (
@@ -188,10 +192,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                     ? 'text-site-accent bg-site-accent-dim'
                     : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
                 }`}
-                title={item.label}
+                title={groupLabel}
               >
                 <Icon className="w-5 h-5 shrink-0" />
-                <span className={labelClass}>{item.label}</span>
+                <span className={labelClass}>{groupLabel}</span>
                 <ChevronDown
                   className={`w-4 h-4 shrink-0 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''} ${labelClass}`}
                 />

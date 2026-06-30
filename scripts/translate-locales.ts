@@ -28,6 +28,9 @@ import { keysToTranslate, type Catalog } from "../lib/i18n/diff.ts";
 const ROOT = join(process.cwd(), "locales");
 const MODEL = process.env.RMHARK_AI_MODEL || "deepseek-chat";
 const BATCH = Math.max(1, Number(process.env.I18N_BATCH || 40));
+// How many batch requests to keep in flight at once. DeepSeek tolerates several
+// concurrent requests; raise it to go faster, lower it if you hit rate limits.
+const CONCURRENCY = Math.max(1, Number(process.env.I18N_CONCURRENCY || 8));
 
 const client = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || "missing",
@@ -94,13 +97,47 @@ function localesToRun(): Locale[] {
   return LOCALES.filter((l) => l !== "en" && (!only || only.has(l)));
 }
 
+/** One (locale, namespace) catalog with work to do, plus its in-memory state. */
+interface Job {
+  locale: Locale;
+  ns: string;
+  targetPath: string;
+  sourcesPath: string;
+  source: Catalog;
+  target: Catalog;
+  sources: Catalog;
+  remaining: number; // batches not yet completed; the last one writes the files
+}
+/** One batch request belonging to a job. */
+interface Task {
+  job: Job;
+  keys: string[];
+}
+
+/** Run `worker` over `items`, keeping at most `limit` in flight at once. */
+async function pool<T>(items: T[], limit: number, worker: (item: T) => Promise<void>): Promise<void> {
+  let next = 0;
+  const runners = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    while (next < items.length) {
+      await worker(items[next++]);
+    }
+  });
+  await Promise.all(runners);
+}
+
 async function run() {
   if (!process.env.DEEPSEEK_API_KEY) {
     throw new Error("DEEPSEEK_API_KEY is not set — cannot translate.");
   }
   const targets = localesToRun();
-  console.log(`[i18n] model=${MODEL} batch=${BATCH} locales=${targets.join(",")}`);
+  console.log(
+    `[i18n] model=${MODEL} batch=${BATCH} concurrency=${CONCURRENCY} locales=${targets.join(",")}`,
+  );
 
+  // Plan every batch up front so we can report overall progress and run them
+  // through a fixed-size pool instead of strictly one-at-a-time.
+  const tasks: Task[] = [];
+  let totalKeys = 0;
   for (const ns of NAMESPACES) {
     const source = read(join(ROOT, "en", `${ns}.json`));
     if (Object.keys(source).length === 0) continue;
@@ -111,29 +148,56 @@ async function run() {
       const target = read(targetPath);
       const sources = read(sourcesPath);
       const todo = keysToTranslate({ source, sources, target });
-      if (todo.length === 0) {
-        console.log(`[i18n] ${locale}/${ns}: up to date`);
-        continue;
-      }
-      console.log(`[i18n] ${locale}/${ns}: ${todo.length} key(s) in ${Math.ceil(todo.length / BATCH)} batch(es)`);
+      if (todo.length === 0) continue;
+
+      const job: Job = { locale, ns, targetPath, sourcesPath, source, target, sources, remaining: 0 };
       for (let i = 0; i < todo.length; i += BATCH) {
-        const chunk = todo.slice(i, i + BATCH);
-        const entries: Catalog = {};
-        for (const k of chunk) entries[k] = source[k];
-        try {
-          const translated = await translateBatch(entries, TRANSLATE_TARGETS[locale as Exclude<Locale, "en">]);
-          for (const k of chunk) {
-            target[k] = translated[k];
-            sources[k] = source[k];
-          }
-        } catch (err) {
-          console.warn(`[i18n]   ${locale}/${ns} batch @${i} failed: ${(err as Error).message}`);
-        }
+        job.remaining++;
+        tasks.push({ job, keys: todo.slice(i, i + BATCH) });
+        totalKeys += Math.min(BATCH, todo.length - i);
       }
-      write(targetPath, target);
-      write(sourcesPath, sources);
     }
   }
+
+  const totalBatches = tasks.length;
+  if (totalBatches === 0) {
+    console.log("[i18n] everything is already up to date — nothing to translate.");
+    return;
+  }
+  console.log(`[i18n] ${totalBatches} batch(es) · ${totalKeys} key(s) across ${targets.length} locale(s)`);
+
+  let doneBatches = 0;
+  let doneKeys = 0;
+  const startedAt = Date.now();
+
+  await pool(tasks, CONCURRENCY, async ({ job, keys }) => {
+    const entries: Catalog = {};
+    for (const k of keys) entries[k] = job.source[k];
+    try {
+      const translated = await translateBatch(entries, TRANSLATE_TARGETS[job.locale as Exclude<Locale, "en">]);
+      for (const k of keys) {
+        job.target[k] = translated[k];
+        job.sources[k] = job.source[k];
+      }
+    } catch (err) {
+      console.warn(`[i18n]   ${job.locale}/${job.ns} batch failed: ${(err as Error).message}`);
+    }
+
+    doneBatches++;
+    doneKeys += keys.length;
+    const pct = Math.round((doneBatches / totalBatches) * 100);
+    const elapsed = (Date.now() - startedAt) / 1000;
+    const eta = doneBatches > 0 ? Math.round((elapsed / doneBatches) * (totalBatches - doneBatches)) : 0;
+    console.log(
+      `[i18n] ${pct}% · ${doneBatches}/${totalBatches} batches · ${doneKeys}/${totalKeys} keys · ETA ~${eta}s · ${job.locale}/${job.ns}`,
+    );
+
+    // Last batch for this catalog flushes it to disk.
+    if (--job.remaining === 0) {
+      write(job.targetPath, job.target);
+      write(job.sourcesPath, job.sources);
+    }
+  });
 }
 
 run().then(() => console.log("[i18n] done")).catch((e) => {
