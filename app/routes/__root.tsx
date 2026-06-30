@@ -13,6 +13,9 @@ import { getRequest } from "@tanstack/react-start/server";
 import { isDiscordActivity } from "@/lib/discord-sdk";
 import { Providers } from "@/components/Providers";
 import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
+import { RouteErrorFallback } from "@/components/errors/RouteErrorFallback";
+import { NotFound } from "@/components/errors/NotFound";
+import { installGlobalErrorHandlers } from "@/lib/client-errors";
 import { auth } from "@/lib/auth";
 import appCss from "@/app/globals.css?url";
 import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
@@ -141,6 +144,8 @@ export const Route = createRootRoute({
     };
   },
   component: RootComponent,
+  errorComponent: RouteErrorFallback,
+  notFoundComponent: NotFound,
   shellComponent: RootDocument,
 });
 
@@ -179,6 +184,12 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { user: initialUser, locale, i18nResources } = Route.useLoaderData();
+
+  // Install global error/unhandled-rejection reporting once on the client so
+  // runtime errors surface in the server logs instead of failing silently.
+  useEffect(() => {
+    installGlobalErrorHandlers();
+  }, []);
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK

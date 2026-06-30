@@ -1,6 +1,7 @@
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
 import reactHooks from "eslint-plugin-react-hooks";
+import jsxA11y from "eslint-plugin-jsx-a11y";
 
 export default tseslint.config(
   // ── Global ignores ────────────────────────────────────────────────────────
@@ -35,6 +36,33 @@ export default tseslint.config(
       "react-hooks/purity": "off",
       "react-hooks/immutability": "off",
       "react-hooks/refs": "off",
+    },
+  },
+
+  // ── Accessibility (jsx-a11y) ──────────────────────────────────────────────
+  // A curated set kept at "warn" so it surfaces real a11y regressions in PRs
+  // without blocking the build while the existing backlog is worked down.
+  // Tighten to "error" rule-by-rule as each is driven to zero.
+  {
+    files: ["**/*.{jsx,tsx}"],
+    plugins: { "jsx-a11y": jsxA11y },
+    rules: {
+      "jsx-a11y/alt-text": "warn",
+      "jsx-a11y/anchor-has-content": "warn",
+      "jsx-a11y/anchor-is-valid": "warn",
+      "jsx-a11y/aria-props": "warn",
+      "jsx-a11y/aria-proptypes": "warn",
+      "jsx-a11y/aria-role": "warn",
+      "jsx-a11y/aria-unsupported-elements": "warn",
+      "jsx-a11y/click-events-have-key-events": "warn",
+      "jsx-a11y/heading-has-content": "warn",
+      "jsx-a11y/iframe-has-title": "warn",
+      "jsx-a11y/img-redundant-alt": "warn",
+      "jsx-a11y/label-has-associated-control": "warn",
+      "jsx-a11y/no-redundant-roles": "warn",
+      "jsx-a11y/no-static-element-interactions": "warn",
+      "jsx-a11y/role-has-required-aria-props": "warn",
+      "jsx-a11y/role-supports-aria-props": "warn",
     },
   },
 

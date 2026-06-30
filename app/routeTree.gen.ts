@@ -123,6 +123,7 @@ import { Route as ApiImageProxyRouteImport } from './routes/api/image-proxy'
 import { Route as ApiGiftSubRouteImport } from './routes/api/gift-sub'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as ApiExploreRouteImport } from './routes/api/explore'
+import { Route as ApiClientErrorRouteImport } from './routes/api/client-error'
 import { Route as ApiBookmarksRouteImport } from './routes/api/bookmarks'
 import { Route as ApiAnnouncementsRouteImport } from './routes/api/announcements'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
@@ -1078,6 +1079,11 @@ const ApiFeedbackRoute = ApiFeedbackRouteImport.update({
 const ApiExploreRoute = ApiExploreRouteImport.update({
   id: '/api/explore',
   path: '/api/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiClientErrorRoute = ApiClientErrorRouteImport.update({
+  id: '/api/client-error',
+  path: '/api/client-error',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBookmarksRoute = ApiBookmarksRouteImport.update({
@@ -3153,6 +3159,7 @@ export interface FileRoutesByFullPath {
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/bookmarks': typeof ApiBookmarksRoute
+  '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
@@ -3632,6 +3639,7 @@ export interface FileRoutesByTo {
   '/wrapped': typeof SiteWrappedRoute
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/bookmarks': typeof ApiBookmarksRoute
+  '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
@@ -4134,6 +4142,7 @@ export interface FileRoutesById {
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/bookmarks': typeof ApiBookmarksRoute
+  '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
@@ -4639,6 +4648,7 @@ export interface FileRouteTypes {
     | '/altair/multiplayer'
     | '/api/announcements'
     | '/api/bookmarks'
+    | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
     | '/api/gift-sub'
@@ -5118,6 +5128,7 @@ export interface FileRouteTypes {
     | '/wrapped'
     | '/api/announcements'
     | '/api/bookmarks'
+    | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
     | '/api/gift-sub'
@@ -5619,6 +5630,7 @@ export interface FileRouteTypes {
     | '/altair/multiplayer'
     | '/api/announcements'
     | '/api/bookmarks'
+    | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
     | '/api/gift-sub'
@@ -6102,6 +6114,7 @@ export interface RootRouteChildren {
   VoidBreakerRoute: typeof VoidBreakerRoute
   ApiAnnouncementsRoute: typeof ApiAnnouncementsRouteWithChildren
   ApiBookmarksRoute: typeof ApiBookmarksRoute
+  ApiClientErrorRoute: typeof ApiClientErrorRoute
   ApiExploreRoute: typeof ApiExploreRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
   ApiGiftSubRoute: typeof ApiGiftSubRoute
@@ -7135,6 +7148,13 @@ declare module '@tanstack/react-router' {
       path: '/api/explore'
       fullPath: '/api/explore'
       preLoaderRoute: typeof ApiExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/client-error': {
+      id: '/api/client-error'
+      path: '/api/client-error'
+      fullPath: '/api/client-error'
+      preLoaderRoute: typeof ApiClientErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/bookmarks': {
@@ -10975,6 +10995,7 @@ const rootRouteChildren: RootRouteChildren = {
   VoidBreakerRoute: VoidBreakerRoute,
   ApiAnnouncementsRoute: ApiAnnouncementsRouteWithChildren,
   ApiBookmarksRoute: ApiBookmarksRoute,
+  ApiClientErrorRoute: ApiClientErrorRoute,
   ApiExploreRoute: ApiExploreRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
   ApiGiftSubRoute: ApiGiftSubRoute,
