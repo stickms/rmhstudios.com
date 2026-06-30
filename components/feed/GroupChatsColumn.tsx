@@ -151,14 +151,14 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
               onChange={(e) => setName(e.target.value)}
               placeholder={t("group-name-placeholder", { defaultValue: "Group name" })}
               maxLength={60}
-              className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <HandleInput
               value={members}
               onChange={setMembers}
               multiple
               placeholder={t("members-placeholder", { defaultValue: "Members by @handle, comma-separated" })}
-              className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             {error && <p className="text-xs text-site-danger">{error}</p>}
             <div className="flex justify-end">

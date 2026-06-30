@@ -59,7 +59,7 @@ function AuditLogPage() {
         ) : items.length === 0 ? (
           <p className="py-12 text-center text-sm text-site-text-muted">{t("no-admin-actions", { defaultValue: "No admin actions logged yet." })}</p>
         ) : (
-          <ul className="divide-y divide-site-border rounded-xl border border-site-border bg-site-surface">
+          <ul className="divide-y divide-site-border rounded-site border border-site-border bg-site-surface">
             {items.map((e) => (
               <li key={e.id} className="flex items-center gap-3 px-4 py-2.5">
                 <UserAvatar src={e.admin.image} alt={e.admin.name || 'Admin'} size={28} fallbackName={e.admin.name || 'A'} />

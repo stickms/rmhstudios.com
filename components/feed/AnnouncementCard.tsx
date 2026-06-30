@@ -70,7 +70,7 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
 
           {/* Image preview */}
           {item.imagePath && (
-            <div className="mt-3 rounded-xl overflow-hidden border border-site-border">
+            <div className="mt-3 rounded-site overflow-hidden border border-site-border">
               <img
                 src={item.imagePath}
                 alt={item.title || ''}

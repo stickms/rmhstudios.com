@@ -30,7 +30,7 @@ export function PostImageGrid({ urls, className = '' }: PostImageGridProps) {
               e.stopPropagation();
               setLightboxIndex(i);
             }}
-            className={`group relative block overflow-hidden rounded-lg ${single ? '' : 'aspect-square'}`}
+            className={`group relative block overflow-hidden rounded-site-sm ${single ? '' : 'aspect-square'}`}
             aria-label={t('open-image', { defaultValue: 'Open image' })}
           >
             {single ? (
@@ -40,7 +40,7 @@ export function PostImageGrid({ urls, className = '' }: PostImageGridProps) {
                 fit="contain"
                 width={1024}
                 sizes="(max-width: 640px) 100vw, 600px"
-                className="mx-auto block w-fit max-w-full rounded-lg"
+                className="mx-auto block w-fit max-w-full rounded-site-sm"
                 imgClassName="max-h-[80vh] max-w-full"
               />
             ) : (
@@ -158,7 +158,7 @@ function Lightbox({ urls, index, onIndexChange, onClose }: LightboxProps) {
         quality={85}
         sizes="100vw"
         loading="eager"
-        className="max-h-full max-w-full rounded-lg"
+        className="max-h-full max-w-full rounded-site-sm"
         imgClassName="max-h-[90vh] max-w-full"
         onClick={(e) => e.stopPropagation()}
       />

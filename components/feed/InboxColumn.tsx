@@ -55,7 +55,7 @@ export function InboxColumn({ initialTab = 'messages' }: { initialTab?: InboxTab
                 role="tab"
                 aria-selected={active}
                 onClick={() => setTab(t.id)}
-                className={`relative flex flex-1 items-center justify-center gap-2 rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
+                className={`relative flex flex-1 items-center justify-center gap-2 rounded-site px-3 py-2 text-sm font-medium transition-colors ${
                   active
                     ? 'text-site-accent bg-site-accent-dim'
                     : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -64,7 +64,7 @@ export function InboxColumn({ initialTab = 'messages' }: { initialTab?: InboxTab
                 <Icon className="w-4 h-4 shrink-0" />
                 <span className="hidden sm:inline">{t.label}</span>
                 {t.badge && t.badge > 0 ? (
-                  <span className="flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                  <span className="flex items-center justify-center min-w-4 h-4 rounded-full bg-site-danger text-white text-[10px] font-bold px-1 leading-none">
                     {t.badge > 99 ? '99+' : t.badge}
                   </span>
                 ) : null}

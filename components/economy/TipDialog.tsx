@@ -66,7 +66,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
               key={a}
               onClick={() => setAmount(a)}
               aria-pressed={amount === a}
-              className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition-colors ${
+              className={`rounded-site-sm border px-3 py-1.5 text-sm font-semibold transition-colors ${
                 amount === a ? 'border-site-accent bg-site-accent-dim text-site-text' : 'border-site-border text-site-text-muted hover:bg-site-surface'
               }`}
             >
@@ -82,7 +82,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
             min={1}
             value={amount}
             onChange={(e) => setAmount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-            className="mt-1 w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text focus:border-site-accent focus:outline-none"
+            className="mt-1 w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text focus:border-site-accent focus:outline-none"
           />
         </label>
 
@@ -92,7 +92,7 @@ export function TipDialog({ open, onOpenChange, recipientId, recipientName, enti
           maxLength={280}
           rows={2}
           placeholder={t("note-placeholder", { defaultValue: "Add a note (optional)" })}
-          className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+          className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
         />
 
         <DialogFooter>

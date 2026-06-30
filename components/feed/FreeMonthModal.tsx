@@ -86,14 +86,14 @@ export function FreeMonthModal() {
       aria-modal="true"
       aria-labelledby="freemonth-title"
     >
-      <div className="relative w-full max-w-sm rounded-2xl border border-site-border bg-site-surface p-6 text-center shadow-2xl">
-        <button onClick={snooze} aria-label={t("close", { defaultValue: "Close" })} className="absolute right-3 top-3 rounded-md p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text">
+      <div className="relative w-full max-w-sm rounded-site border border-site-border bg-site-surface p-6 text-center shadow-2xl">
+        <button onClick={snooze} aria-label={t("close", { defaultValue: "Close" })} className="absolute right-3 top-3 rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text">
           <X className="h-4 w-4" />
         </button>
 
         <div className="mb-3 flex justify-center">
-          <div className="rounded-2xl border border-site-accent/30 bg-site-accent-dim p-3">
-            {claimed ? <Check className="h-7 w-7 text-emerald-400" /> : <Gift className="h-7 w-7 text-site-accent" />}
+          <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-3">
+            {claimed ? <Check className="h-7 w-7 text-site-success" /> : <Gift className="h-7 w-7 text-site-accent" />}
           </div>
         </div>
 

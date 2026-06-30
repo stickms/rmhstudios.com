@@ -189,7 +189,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder={t('title-placeholder', { defaultValue: 'Title' })}
               maxLength={80}
-              className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <textarea
               value={form.description}
@@ -197,7 +197,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
               placeholder={t('description-optional-placeholder', { defaultValue: 'Description (optional)' })}
               maxLength={500}
               rows={2}
-              className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <input
               type="number"
@@ -205,7 +205,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
               value={form.price}
               onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
               placeholder={t('price-coins-placeholder', { defaultValue: 'Price (coins)' })}
-              className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <textarea
               value={form.deliverable}
@@ -213,7 +213,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
               placeholder={t('deliverable-placeholder', { defaultValue: 'Deliverable — link, code, or message revealed to buyers (optional)' })}
               maxLength={2000}
               rows={2}
-              className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             {error && <p className="text-xs text-site-danger">{error}</p>}
             <div className="flex justify-end">
@@ -234,7 +234,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
           products.map((p) => (
             <div
               key={p.id}
-              className={`rounded-xl border p-4 ${p.active ? 'border-site-border bg-site-surface' : 'border-site-border/60 bg-site-bg opacity-70'}`}
+              className={`rounded-site border p-4 ${p.active ? 'border-site-border bg-site-surface' : 'border-site-border/60 bg-site-bg opacity-70'}`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -250,7 +250,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
               </div>
 
               {p.deliverable && (
-                <div className="mt-2 rounded-lg border border-site-accent/30 bg-site-accent/5 p-2 text-sm text-site-text">
+                <div className="mt-2 rounded-site-sm border border-site-accent/30 bg-site-accent/5 p-2 text-sm text-site-text">
                   <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-wide text-site-accent">{t('deliverable-label', { defaultValue: 'Deliverable' })}</p>
                   <p className="whitespace-pre-wrap break-words">{p.deliverable}</p>
                 </div>

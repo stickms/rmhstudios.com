@@ -167,13 +167,13 @@ export function RankedColumn() {
         {signedIn && (
           <>
             {/* Issue a challenge */}
-            <section className="rounded-xl border border-site-border bg-site-surface p-4">
+            <section className="rounded-site border border-site-border bg-site-surface p-4">
               <h2 className="mb-2 text-sm font-bold text-site-text">{t('challenge-a-player', { defaultValue: 'Challenge a player' })}</h2>
               <div className="flex flex-wrap items-center gap-2">
                 <select
                   value={game}
                   onChange={(e) => setGame(e.target.value)}
-                  className="rounded-lg border border-site-border bg-site-bg px-2.5 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
+                  className="rounded-site-sm border border-site-border bg-site-bg px-2.5 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
                 >
                   {games.map((g) => (
                     <option key={g.id} value={g.id}>
@@ -186,7 +186,7 @@ export function RankedColumn() {
                     value={opponent}
                     onChange={setOpponent}
                     placeholder={t('handle-placeholder', { defaultValue: '@handle' })}
-                    className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
+                    className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
                   />
                 </div>
                 <Button size="sm" variant="accent" disabled={busy === 'send' || !opponent.trim()} onClick={sendChallenge}>
@@ -202,7 +202,7 @@ export function RankedColumn() {
                 <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('challenges-for-you', { defaultValue: 'Challenges for you' })}</h2>
                 <div className="space-y-2">
                   {incoming.map((c) => (
-                    <div key={c.id} className="flex items-center gap-2 rounded-xl border border-site-border bg-site-surface p-2.5">
+                    <div key={c.id} className="flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5">
                       <UserAvatar user={c.user} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-site-text">{c.user.name || c.user.handle || t('player-fallback', { defaultValue: 'Player' })}</p>
@@ -232,7 +232,7 @@ export function RankedColumn() {
                 <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-challenges', { defaultValue: 'Your challenges' })}</h2>
                 <div className="space-y-2">
                   {outgoing.map((c) => (
-                    <div key={c.id} className="flex items-center gap-2 rounded-xl border border-site-border bg-site-surface p-2.5">
+                    <div key={c.id} className="flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5">
                       <UserAvatar user={c.user} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-site-text">{c.user.name || c.user.handle || t('player-fallback', { defaultValue: 'Player' })}</p>
@@ -251,7 +251,7 @@ export function RankedColumn() {
                 <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-ratings', { defaultValue: 'Your ratings' })}</h2>
                 <div className="space-y-1">
                   {ratings.map((r) => (
-                    <div key={r.game} className="flex items-center justify-between rounded-xl border border-site-border bg-site-surface px-3 py-2.5">
+                    <div key={r.game} className="flex items-center justify-between rounded-site border border-site-border bg-site-surface px-3 py-2.5">
                       <span className="text-sm font-medium text-site-text">{nameOf(r.game)}</span>
                       <span className="text-sm text-site-text-dim">
                         <strong className="text-site-text">{fmt(r.rating)}</strong> · {r.wins}W {r.losses}L {r.draws}D
@@ -273,7 +273,7 @@ export function RankedColumn() {
             <select
               value={lbGame}
               onChange={(e) => setLbGame(e.target.value)}
-              className="rounded-lg border border-site-border bg-site-bg px-2 py-1 text-xs text-site-text outline-none focus:border-site-accent"
+              className="rounded-site-sm border border-site-border bg-site-bg px-2 py-1 text-xs text-site-text outline-none focus:border-site-accent"
             >
               {games.map((g) => (
                 <option key={g.id} value={g.id}>
@@ -291,7 +291,7 @@ export function RankedColumn() {
           ) : (
             <div className="space-y-1">
               {lb.map((row) => (
-                <div key={row.user.id} className="flex items-center gap-3 rounded-xl border border-site-border bg-site-surface p-2.5">
+                <div key={row.user.id} className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5">
                   <span className="w-5 text-center text-xs font-bold text-site-text-dim">{row.rank}</span>
                   <UserAvatar user={row.user} />
                   <div className="min-w-0 flex-1">

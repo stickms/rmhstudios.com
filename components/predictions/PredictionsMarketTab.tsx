@@ -59,7 +59,7 @@ export function PredictionsMarketTab({ coins, setCoins }: Props) {
             <button
               key={f.id}
               onClick={() => setFilter(f.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-3 py-1.5 rounded-site-sm text-sm font-medium transition-colors ${
                 filter === f.id
                   ? 'bg-site-accent-dim text-site-accent'
                   : 'text-site-text-dim hover:text-site-text hover:bg-site-surface'

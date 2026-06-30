@@ -142,7 +142,7 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
                         aria-label={t("search-aria-label", { defaultValue: "Search builds" })}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
+                        className="w-full pl-10 pr-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
                     />
                     {search && (
                         <button
@@ -163,7 +163,7 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
                         aria-expanded={sortOpen}
                         aria-haspopup="listbox"
                         aria-controls="sort-listbox"
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-colors cursor-pointer whitespace-nowrap ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded-site-sm border text-sm transition-colors cursor-pointer whitespace-nowrap ${
                             sort !== 'default'
                                 ? 'bg-site-accent/10 border-site-accent/30 text-site-accent'
                                 : 'bg-site-surface border-site-border text-site-text hover:border-site-accent/50'
@@ -174,7 +174,7 @@ export function OfficialBuildGrid({ builds, initialLikedIds = [] }: OfficialBuil
                         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
                     </button>
                     {sortOpen && (
-                        <div id="sort-listbox" role="listbox" aria-label={t("sort-options", { defaultValue: "Sort options" })} className="absolute z-40 top-full right-0 mt-1.5 w-48 bg-site-surface border border-site-border rounded-xl shadow-lg overflow-hidden py-1">
+                        <div id="sort-listbox" role="listbox" aria-label={t("sort-options", { defaultValue: "Sort options" })} className="absolute z-40 top-full right-0 mt-1.5 w-48 bg-site-surface border border-site-border rounded-site shadow-lg overflow-hidden py-1">
                             {SORT_OPTIONS.map(opt => (
                                 <button
                                     key={opt.value}

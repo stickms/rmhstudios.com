@@ -223,7 +223,7 @@ export function PostDetail({ postId }: PostDetailProps) {
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             onClick={() => window.history.back()}
-            className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors"
+            className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </button>
@@ -244,7 +244,7 @@ export function PostDetail({ postId }: PostDetailProps) {
             <MoreHorizontal className="w-5 h-5" />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+            <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
               <button
                 onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
@@ -321,7 +321,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
         {/* Quoted original */}
         {post.original && (
-          <div className="mb-3 border border-site-border rounded-xl p-3 bg-site-surface/30">
+          <div className="mb-3 border border-site-border rounded-site p-3 bg-site-surface/30">
             <div className="flex items-center gap-1.5 text-sm mb-1">
               {freshOriginalUser ? (
                 <Link to={`/u/${freshOriginalUser.handle || freshOriginalUser.id}` as string} className="flex items-center gap-1.5 min-w-0 hover:underline">
@@ -404,7 +404,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                 placeholder={t("reply-placeholder", { defaultValue: "Post your reply..." })}
                 rows={2}
                 maxLength={MAX_COMMENT_LENGTH}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
+                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                     handleSubmit();

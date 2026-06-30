@@ -76,7 +76,7 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
           <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total} {t("unlocked", { defaultValue: "unlocked" })}
         </span>
         <span aria-hidden>·</span>
-        <span className="inline-flex items-center gap-1"><Coins className="h-3.5 w-3.5 text-amber-400" /> {data.stats.coinsEarned} {t("earned", { defaultValue: "earned" })}</span>
+        <span className="inline-flex items-center gap-1"><Coins className="h-3.5 w-3.5 text-site-warning" /> {data.stats.coinsEarned} {t("earned", { defaultValue: "earned" })}</span>
       </div>
       <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-site-surface">
         <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${pct}%` }} />
@@ -113,7 +113,7 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
                   return (
                     <div
                       key={a.id}
-                      className={`flex items-start gap-3 rounded-xl border p-3 transition-colors ${
+                      className={`flex items-start gap-3 rounded-site border p-3 transition-colors ${
                         a.unlocked
                           ? 'border-site-border bg-site-surface'
                           : 'border-site-border/60 bg-site-bg opacity-70'
@@ -123,7 +123,7 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
                         const Icon = a.secret && !a.unlocked ? Lock : CATEGORY_ICON[a.category];
                         return (
                           <div
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-site-sm"
                             style={{ background: a.unlocked ? `${TIER_COLORS[a.tier]}22` : 'var(--site-surface)' }}
                           >
                             <Icon
@@ -159,7 +159,7 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
                         )}
                         {a.unlocked && a.coinReward > 0 && (
                           <p className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] text-site-text-dim">
-                            <Coins className="h-3 w-3 text-amber-400" /> +{a.coinReward}
+                            <Coins className="h-3 w-3 text-site-warning" /> +{a.coinReward}
                           </p>
                         )}
                       </div>

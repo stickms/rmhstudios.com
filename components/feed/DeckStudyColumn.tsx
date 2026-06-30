@@ -21,10 +21,10 @@ interface Deck {
 }
 
 const GRADES: { grade: number; label: string; cls: string }[] = [
-  { grade: 0, label: 'Again', cls: 'text-red-400' },
-  { grade: 1, label: 'Hard', cls: 'text-amber-400' },
+  { grade: 0, label: 'Again', cls: 'text-site-danger' },
+  { grade: 1, label: 'Hard', cls: 'text-site-warning' },
   { grade: 2, label: 'Good', cls: 'text-site-accent' },
-  { grade: 3, label: 'Easy', cls: 'text-emerald-400' },
+  { grade: 3, label: 'Easy', cls: 'text-site-success' },
 ];
 
 export function DeckStudyColumn({ deckId }: { deckId: string }) {
@@ -168,7 +168,7 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
           <span className="ml-auto text-xs text-site-text-dim">{idx + 1} / {queue.length}</span>
         </header>
         <div className="p-4">
-          <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-site-border bg-site-surface p-8 text-center">
+          <div className="flex min-h-64 flex-col items-center justify-center rounded-site border border-site-border bg-site-surface p-8 text-center">
             <p className="text-lg font-semibold text-site-text">{card.front}</p>
             {revealed && (
               <>
@@ -221,7 +221,7 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
         )}
 
         {deck.isOwner && (
-          <div className="rounded-xl border border-site-border bg-site-surface p-3">
+          <div className="rounded-site border border-site-border bg-site-surface p-3">
             <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
               <Plus className="h-3.5 w-3.5" /> {t('add-a-card', { defaultValue: 'Add a card' })}
             </p>
@@ -231,7 +231,7 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
                 onChange={(e) => setFront(e.target.value)}
                 placeholder={t('front-placeholder', { defaultValue: 'Front (question)' })}
                 maxLength={500}
-                className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+                className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
               <textarea
                 value={back}
@@ -239,7 +239,7 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
                 placeholder={t('back-placeholder', { defaultValue: 'Back (answer)' })}
                 maxLength={500}
                 rows={2}
-                className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+                className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
               <div className="flex justify-end">
                 <Button size="sm" variant="accent" disabled={adding || !front.trim() || !back.trim()} onClick={addCard} className="gap-1">
@@ -256,7 +256,7 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
           </h2>
           <div className="space-y-1">
             {cards.map((c) => (
-              <div key={c.id} className="rounded-lg border border-site-border bg-site-surface p-3">
+              <div key={c.id} className="rounded-site-sm border border-site-border bg-site-surface p-3">
                 <p className="text-sm font-medium text-site-text">{c.front}</p>
                 <p className="mt-0.5 text-sm text-site-text-muted">{c.back}</p>
               </div>

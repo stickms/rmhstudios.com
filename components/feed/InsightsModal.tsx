@@ -77,7 +77,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       <div
-        className="relative z-10 flex max-h-[80vh] w-full max-w-md flex-col rounded-2xl border border-site-border bg-site-bg shadow-xl"
+        className="relative z-10 flex max-h-[80vh] w-full max-w-md flex-col rounded-site border border-site-border bg-site-bg shadow-xl"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between border-b border-site-border px-5 py-4">
@@ -87,7 +87,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
           </h2>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text"
+            className="rounded-site-sm p-1.5 text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text"
             aria-label={t('close', { defaultValue: 'Close' })}
           >
             <X className="h-5 w-5" />
@@ -109,13 +109,13 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
             <>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {stats.map((s) => (
-                  <div key={s.label} className="rounded-xl border border-site-border bg-site-surface p-3">
+                  <div key={s.label} className="rounded-site border border-site-border bg-site-surface p-3">
                     <s.icon className="h-4 w-4 text-site-text-dim" />
                     <p className="mt-1 text-lg font-bold text-site-text">{fmt(s.value)}</p>
                     <p className="text-[11px] text-site-text-dim">{s.label}</p>
                   </div>
                 ))}
-                <div className="rounded-xl border border-site-border bg-site-surface p-3">
+                <div className="rounded-site border border-site-border bg-site-surface p-3">
                   <TrendingUp className="h-4 w-4 text-site-text-dim" />
                   <p className="mt-1 text-lg font-bold text-site-text">
                     {(data.engagementRate * 100).toFixed(1)}%
@@ -125,7 +125,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
               </div>
 
               {data.isPaid && (
-                <div className="mt-3 flex items-center justify-between rounded-xl border border-site-border bg-site-surface p-3">
+                <div className="mt-3 flex items-center justify-between rounded-site border border-site-border bg-site-surface p-3">
                   <div className="flex items-center gap-2">
                     <Unlock className="h-4 w-4 text-site-accent" />
                     <div>

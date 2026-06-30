@@ -1038,6 +1038,7 @@
   --color-site-bg-subtle: var(--site-bg-subtle);
   --color-site-surface: var(--site-surface);
   --color-site-surface-hover: var(--site-surface-hover);
+  --color-site-surface-active: var(--site-surface-active);
   --color-site-border: var(--site-border);
   --color-site-border-bright: var(--site-border-bright);
   --color-site-text: var(--site-text);
@@ -1050,6 +1051,12 @@
   --color-site-success: var(--site-success);
   --color-site-danger: var(--site-danger);
   --color-site-warning: var(--site-warning);
+
+  /* Site radius scale → rounded-site / rounded-site-sm (theme-aware) */
+  --radius-site: var(--site-radius);
+  --radius-site-sm: var(--site-radius-sm);
+  /* Site elevation → shadow-site (theme-aware) */
+  --shadow-site: var(--site-shadow);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);

@@ -289,7 +289,7 @@ export function ComposeBox({
 
           {/* Poll creator */}
           {attachment === 'poll' && (
-            <div className="mt-2 border border-site-border rounded-xl p-3 bg-site-surface/20">
+            <div className="mt-2 border border-site-border rounded-site p-3 bg-site-surface/20">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">{t("poll-heading", { defaultValue: "Poll" })}</span>
                 <button
@@ -309,7 +309,7 @@ export function ComposeBox({
                 onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
                 placeholder={t("poll-question-placeholder", { defaultValue: "Ask a question..." })}
                 maxLength={MAX_POLL_QUESTION_LENGTH}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
+                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
               />
 
               <div className="space-y-2">
@@ -325,7 +325,7 @@ export function ComposeBox({
                       }}
                       placeholder={t("poll-option-placeholder", { count: i + 1, defaultValue: "Option {{count}}" })}
                       maxLength={MAX_POLL_OPTION_LENGTH}
-                      className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
+                      className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
                     />
                     {poll.options.length > MIN_POLL_OPTIONS && (
                       <button
@@ -366,7 +366,7 @@ export function ComposeBox({
                 <select
                   value={pollDuration}
                   onChange={(e) => setPollDuration(Number(e.target.value))}
-                  className="rounded-lg border border-site-border bg-site-surface px-2 py-1 text-xs text-site-text focus:outline-none"
+                  className="rounded-site-sm border border-site-border bg-site-surface px-2 py-1 text-xs text-site-text focus:outline-none"
                 >
                   <option value={0}>{t("poll-duration-no-limit", { defaultValue: "No limit" })}</option>
                   <option value={1}>{t("poll-duration-1h", { defaultValue: "1 hour" })}</option>
@@ -381,7 +381,7 @@ export function ComposeBox({
 
           {/* GIF picker */}
           {attachment === 'gif' && (
-            <div className="mt-2 border border-site-border rounded-xl p-3 bg-site-surface/20">
+            <div className="mt-2 border border-site-border rounded-site p-3 bg-site-surface/20">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">{t("gif-heading", { defaultValue: "GIF" })}</span>
                 <button
@@ -423,7 +423,7 @@ export function ComposeBox({
                     src={url}
                     alt=""
                     loading="lazy"
-                    className="w-full rounded-lg object-cover max-h-48"
+                    className="w-full rounded-site-sm object-cover max-h-48"
                   />
                   <button
                     type="button"
@@ -453,14 +453,14 @@ export function ComposeBox({
 
           {/* Schedule panel */}
           {showSchedule && (
-            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-site-border bg-site-surface/20 p-3">
+            <div className="mt-2 flex flex-wrap items-center gap-2 rounded-site border border-site-border bg-site-surface/20 p-3">
               <CalendarClock className="h-4 w-4 text-site-text-dim" />
               <span className="text-xs text-site-text-dim">{t("schedule-publish-at", { defaultValue: "Publish at" })}</span>
               <input
                 type="datetime-local"
                 value={scheduleAt}
                 onChange={(e) => setScheduleAt(e.target.value)}
-                className="rounded-lg border border-site-border bg-site-surface px-2 py-1 text-xs text-site-text outline-none focus:border-site-accent"
+                className="rounded-site-sm border border-site-border bg-site-surface px-2 py-1 text-xs text-site-text outline-none focus:border-site-accent"
               />
               <Button
                 size="sm"
@@ -511,7 +511,7 @@ export function ComposeBox({
                 </button>
 
                 {audienceOpen && (
-                  <div role="listbox" className="absolute bottom-full left-0 mb-1 w-40 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30 animate-in fade-in slide-in-from-bottom-1 duration-150">
+                  <div role="listbox" className="absolute bottom-full left-0 mb-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30 animate-in fade-in slide-in-from-bottom-1 duration-150">
                     {audienceOptions.map(({ value, label, icon: Icon }) => (
                       <button
                         key={value}
@@ -578,7 +578,7 @@ export function ComposeBox({
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute bottom-full right-0 mb-1 w-40 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+                  <div className="absolute bottom-full right-0 mb-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
                     <button
                       type="button"
                       disabled={imageUrls.length >= MAX_IMAGES}
@@ -689,7 +689,7 @@ export function ComposeBox({
       {showPriceModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPriceModal(false)} />
-          <div className="relative w-full max-w-xs rounded-2xl border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+          <div className="relative w-full max-w-xs rounded-site border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
                 <Lock className="h-4 w-4 text-site-text-muted" />
@@ -707,7 +707,7 @@ export function ComposeBox({
             <p className="mb-3 text-xs text-site-text-muted">
               {t("unlock-price-help", { defaultValue: "Charge coins to unlock this post. Leave empty to keep it free." })}
             </p>
-            <div className="flex items-center gap-2 rounded-xl border border-site-border bg-site-surface px-3 py-2">
+            <div className="flex items-center gap-2 rounded-site border border-site-border bg-site-surface px-3 py-2">
               <Coins className="h-4 w-4 text-site-text-muted" />
               <input
                 type="number"
@@ -742,7 +742,7 @@ export function ComposeBox({
       {showCheatSheet && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCheatSheet(false)} />
-          <div className="relative w-full max-w-sm rounded-2xl border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+          <div className="relative w-full max-w-sm rounded-site border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
                 <Type className="h-4 w-4 text-site-text-muted" />

@@ -45,16 +45,16 @@ const CATEGORY_CONFIG: Record<
   FeedbackCategory,
   { label: string; icon: typeof Bug; color: string }
 > = {
-  bug: { label: "Bug", icon: Bug, color: "text-red-400 bg-red-400/10" },
+  bug: { label: "Bug", icon: Bug, color: "text-site-danger bg-site-danger/10" },
   feature: {
     label: "Feature",
     icon: Lightbulb,
-    color: "text-amber-400 bg-amber-400/10",
+    color: "text-site-warning bg-site-warning/10",
   },
   general: {
     label: "General",
     icon: MessageCircle,
-    color: "text-blue-400 bg-blue-400/10",
+    color: "text-site-accent bg-site-accent/10",
   },
   other: {
     label: "Other",
@@ -223,7 +223,7 @@ export function FeedbackModal() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i < 10 ? i * 0.03 : 0 }}
-                      className="rounded-lg border border-site-border bg-site-bg p-3"
+                      className="rounded-site-sm border border-site-border bg-site-bg p-3"
                     >
                       <div className="flex items-start gap-3">
                         {/* Avatar */}
@@ -278,7 +278,7 @@ export function FeedbackModal() {
                   onChange={(e) =>
                     setCategory(e.target.value as FeedbackCategory)
                   }
-                  className="h-9 rounded-md border border-site-border bg-site-bg px-2 text-sm text-site-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--site-accent)"
+                  className="h-9 rounded-site-sm border border-site-border bg-site-bg px-2 text-sm text-site-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--site-accent)"
                 >
                   <option value="" disabled>
                     {t("category-placeholder", { defaultValue: "Category" })}
@@ -290,7 +290,7 @@ export function FeedbackModal() {
                   ))}
                 </select>
                 {errors.category && (
-                  <p className="text-xs text-red-400 self-center">
+                  <p className="text-xs text-site-danger self-center">
                     {errors.category}
                   </p>
                 )}
@@ -305,12 +305,12 @@ export function FeedbackModal() {
                 />
                 <div className="flex items-center justify-between">
                   {errors.message ? (
-                    <p className="text-xs text-red-400">{errors.message}</p>
+                    <p className="text-xs text-site-danger">{errors.message}</p>
                   ) : (
                     <span />
                   )}
                   <span
-                    className={`text-xs ${message.length > 2000 ? "text-red-400" : "text-site-text-dim"}`}
+                    className={`text-xs ${message.length > 2000 ? "text-site-danger" : "text-site-text-dim"}`}
                   >
                     {message.length}/2000
                   </span>

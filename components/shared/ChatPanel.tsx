@@ -180,7 +180,7 @@ export default function ChatPanel({
                   if (el) messageRefsMap.current.set(msg.id, el);
                   else messageRefsMap.current.delete(msg.id);
                 }}
-                className="group rounded-md px-2 py-1 transition-colors"
+                className="group rounded-site-sm px-2 py-1 transition-colors"
                 onMouseEnter={() => setHoveredMessageId(msg.id)}
                 onMouseLeave={() => {
                   // Don't clear hover if picker is open for this message
@@ -262,7 +262,7 @@ export default function ChatPanel({
         if (!pos) return null;
         return createPortal(
           <div
-            className="flex items-center gap-0.5 rounded-md shadow-sm"
+            className="flex items-center gap-0.5 rounded-site-sm shadow-sm"
             style={{
               position: 'fixed',
               top: pos.top,
@@ -298,7 +298,7 @@ export default function ChatPanel({
       {/* Fixed-position emoji picker (rendered via portal to avoid overflow clip) */}
       {reactionPickerMessageId && pickerPos && createPortal(
         <div
-          className="flex items-center gap-0.5 rounded-lg shadow-lg px-1 py-0.5"
+          className="flex items-center gap-0.5 rounded-site-sm shadow-lg px-1 py-0.5"
           style={{
             position: 'fixed',
             top: pickerPos.top - 30,
@@ -337,7 +337,7 @@ export default function ChatPanel({
           onChange={(e) => setMessage(e.target.value)}
           maxLength={CHAT_MAX_LENGTH}
           placeholder={placeholder ?? t('chat-placeholder', { defaultValue: 'Chat...' })}
-          className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm outline-none"
+          className="flex-1 min-w-0 px-3 py-2 rounded-site-sm text-sm outline-none"
           style={{
             borderWidth: 1,
             borderStyle: 'solid',
@@ -349,7 +349,7 @@ export default function ChatPanel({
         <button
           type="submit"
           disabled={!message.trim()}
-          className="shrink-0 rounded-lg px-3 py-2 transition-colors disabled:opacity-50 text-white"
+          className="shrink-0 rounded-site-sm px-3 py-2 transition-colors disabled:opacity-50 text-white"
           style={{ backgroundColor: `var(--${themePrefix}-accent)` }}
         >
           <Send className="h-4 w-4" />

@@ -110,7 +110,7 @@ function AdminPredictionsPage() {
                 <p className="text-sm text-site-text-dim">{t('none-pending', { defaultValue: 'Nothing waiting for review.' })}</p>
               ) : (
                 pending.map((m) => (
-                  <div key={m.id} className="rounded-xl border border-site-border bg-site-surface p-4 flex items-start justify-between gap-4">
+                  <div key={m.id} className="rounded-site border border-site-border bg-site-surface p-4 flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <h3 className="font-semibold text-site-text">{m.title}</h3>
                       {m.description && <p className="text-sm text-site-text-dim mt-1">{m.description}</p>}
@@ -123,14 +123,14 @@ function AdminPredictionsPage() {
                       <button
                         onClick={() => moderate(m.id, 'approve')}
                         disabled={busy === m.id}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/25 disabled:opacity-50"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-site-sm text-sm font-medium bg-site-success/15 text-site-success border border-site-success/40 hover:bg-site-success/25 disabled:opacity-50"
                       >
                         <Check className="w-4 h-4" /> {t('approve', { defaultValue: 'Approve' })}
                       </button>
                       <button
                         onClick={() => moderate(m.id, 'deny')}
                         disabled={busy === m.id}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium bg-rose-500/15 text-rose-400 border border-rose-500/40 hover:bg-rose-500/25 disabled:opacity-50"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-site-sm text-sm font-medium bg-site-danger/15 text-site-danger border border-site-danger/40 hover:bg-site-danger/25 disabled:opacity-50"
                       >
                         <X className="w-4 h-4" /> {t('deny', { defaultValue: 'Deny' })}
                       </button>
@@ -149,7 +149,7 @@ function AdminPredictionsPage() {
                 <p className="text-sm text-site-text-dim">{t('none-open', { defaultValue: 'No open markets.' })}</p>
               ) : (
                 open.map((m) => (
-                  <div key={m.id} className="rounded-xl border border-site-border bg-site-surface p-4 flex items-start justify-between gap-4">
+                  <div key={m.id} className="rounded-site border border-site-border bg-site-surface p-4 flex items-start justify-between gap-4">
                     <div className="min-w-0">
                       <h3 className="font-semibold text-site-text flex items-center gap-2">
                         {m.title}
@@ -164,14 +164,14 @@ function AdminPredictionsPage() {
                       <button
                         onClick={() => resolve(m.id, 'YES')}
                         disabled={busy === m.id}
-                        className="px-3 py-1.5 rounded-lg text-sm font-medium bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/25 disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-site-sm text-sm font-medium bg-site-success/15 text-site-success border border-site-success/40 hover:bg-site-success/25 disabled:opacity-50"
                       >
                         {t('resolve-yes', { defaultValue: 'Resolve YES' })}
                       </button>
                       <button
                         onClick={() => resolve(m.id, 'NO')}
                         disabled={busy === m.id}
-                        className="px-3 py-1.5 rounded-lg text-sm font-medium bg-rose-500/15 text-rose-400 border border-rose-500/40 hover:bg-rose-500/25 disabled:opacity-50"
+                        className="px-3 py-1.5 rounded-site-sm text-sm font-medium bg-site-danger/15 text-site-danger border border-site-danger/40 hover:bg-site-danger/25 disabled:opacity-50"
                       >
                         {t('resolve-no', { defaultValue: 'Resolve NO' })}
                       </button>

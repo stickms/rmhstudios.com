@@ -77,18 +77,18 @@ export function WhatsNewModal() {
       aria-modal="true"
       aria-labelledby="whatsnew-title"
     >
-      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-2xl border border-site-border bg-site-surface shadow-2xl">
+      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-site border border-site-border bg-site-surface shadow-2xl">
         <button
           onClick={dismiss}
           aria-label={t("close", { defaultValue: "Close" })}
-          className="absolute right-3 top-3 rounded-md p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
+          className="absolute right-3 top-3 rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
         >
           <X className="h-4 w-4" />
         </button>
 
         <div className="px-6 pt-6 text-center">
           <div className="mb-3 flex justify-center">
-            <div className="rounded-2xl border border-site-accent/30 bg-site-accent-dim p-3">
+            <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-3">
               <Sparkles className="h-7 w-7 text-site-accent" />
             </div>
           </div>
@@ -104,8 +104,8 @@ export function WhatsNewModal() {
           {FEATURES_DEF.map((f) => {
             const Icon = f.icon;
             const inner = (
-              <div className="flex items-start gap-3 rounded-xl border border-site-border bg-site-bg p-3 transition-colors hover:border-site-accent/60">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-site-accent/12 text-site-accent">
+              <div className="flex items-start gap-3 rounded-site border border-site-border bg-site-bg p-3 transition-colors hover:border-site-accent/60">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm bg-site-accent/12 text-site-accent">
                   <Icon className="h-4 w-4" />
                 </div>
                 <div className="min-w-0">

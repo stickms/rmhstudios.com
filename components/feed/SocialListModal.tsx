@@ -156,7 +156,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
 
       {/* Modal panel */}
       <div
-        className="relative z-10 w-full max-w-md bg-site-bg border border-site-border rounded-2xl shadow-xl flex flex-col max-h-[80vh]"
+        className="relative z-10 w-full max-w-md bg-site-bg border border-site-border rounded-site shadow-xl flex flex-col max-h-[80vh]"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -166,7 +166,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+            className="p-1.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -210,7 +210,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
                 <button
                   onClick={() => handleFollowToggle(user)}
                   disabled={followingInProgress.has(user.id)}
-                  className={`shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                  className={`shrink-0 px-4 py-1.5 rounded-site-sm text-xs font-bold transition-colors ${
                     user.isFollowing
                       ? 'border border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10'
                       : 'bg-site-accent text-site-bg hover:bg-site-accent-hover'

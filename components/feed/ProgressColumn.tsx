@@ -180,10 +180,10 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
 
       <div className="space-y-8 p-4">
         {/* Level card */}
-        <section className="rounded-xl border border-site-border bg-site-surface p-4">
+        <section className="rounded-site border border-site-border bg-site-surface p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-site-accent/15 text-site-accent">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-site bg-site-accent/15 text-site-accent">
                 <span className="text-lg font-extrabold">{lvl.level}</span>
               </div>
               <div>
@@ -191,7 +191,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
                 <p className="text-xs text-site-text-muted">{t('total-xp', { xp: lvl.xp.toLocaleString(), defaultValue: '{{xp}} total XP' })}</p>
               </div>
             </div>
-            <div className="inline-flex items-center gap-1.5 rounded-lg bg-site-bg px-2.5 py-1.5 text-sm font-semibold text-site-text">
+            <div className="inline-flex items-center gap-1.5 rounded-site-sm bg-site-bg px-2.5 py-1.5 text-sm font-semibold text-site-text">
               <CoinIcon className="h-4 w-4" />
               {data.coins.toLocaleString()}
             </div>
@@ -237,7 +237,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
                 <h2 className="text-sm font-bold text-site-text">{pass.season.name}</h2>
               </div>
               {pass.premium ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/15 px-2.5 py-1 text-[11px] font-semibold text-amber-400">
+                <span className="inline-flex items-center gap-1 rounded-full bg-site-warning/15 px-2.5 py-1 text-[11px] font-semibold text-site-warning">
                   <Crown className="h-3.5 w-3.5" /> {t('premium-unlocked', { defaultValue: 'Premium unlocked' })}
                 </span>
               ) : (
@@ -312,9 +312,9 @@ function QuestSection({
           return (
             <div
               key={q.id}
-              className="flex items-start gap-3 rounded-xl border border-site-border bg-site-surface p-3"
+              className="flex items-start gap-3 rounded-site border border-site-border bg-site-surface p-3"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-site-accent/12 text-site-accent">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm bg-site-accent/12 text-site-accent">
                 <Target className="h-4 w-4" />
               </div>
               <div className="min-w-0 flex-1">
@@ -401,12 +401,12 @@ function TierRow({
   const { t } = useTranslation('feed');
   return (
     <div
-      className={`grid grid-cols-[auto_1fr_1fr] items-center gap-3 rounded-xl border p-3 ${
+      className={`grid grid-cols-[auto_1fr_1fr] items-center gap-3 rounded-site border p-3 ${
         reached ? 'border-site-border bg-site-surface' : 'border-site-border/60 bg-site-bg opacity-70'
       }`}
     >
       <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-sm font-bold ${
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm text-sm font-bold ${
           reached ? 'bg-site-accent/15 text-site-accent' : 'bg-site-surface text-site-text-dim'
         }`}
       >
@@ -468,7 +468,7 @@ function TierCell({
     <div className="min-w-0">
       <p
         className={`mb-1 inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide ${
-          premium ? 'text-amber-400' : 'text-site-text-dim'
+          premium ? 'text-site-warning' : 'text-site-text-dim'
         }`}
       >
         {premium && <Crown className="h-3 w-3" />}

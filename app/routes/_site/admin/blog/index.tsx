@@ -48,12 +48,12 @@ function AdminBlogDashboard() {
             </div>
           </div>
 
-          <Link to="/admin/blog/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors h-10 px-4 py-2 gap-2 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg self-end sm:self-auto shrink-0">
+          <Link to="/admin/blog/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-site-sm text-sm font-medium transition-colors h-10 px-4 py-2 gap-2 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg self-end sm:self-auto shrink-0">
             <Plus className="w-4 h-4" /> {t("new-post", { defaultValue: "New Post" })}
           </Link>
         </div>
 
-        <div className="bg-site-surface border border-site-border rounded-xl divide-y divide-site-border overflow-hidden">
+        <div className="bg-site-surface border border-site-border rounded-site divide-y divide-site-border overflow-hidden">
           {posts.length === 0 ? (
             <div className="p-8 text-center text-site-text-dim">
               {t("no-blog-posts-found", { defaultValue: "No blog posts found. Create one to get started!" })}
@@ -68,7 +68,7 @@ function AdminBlogDashboard() {
                 <div className="flex items-center gap-2 shrink-0">
                   <Link
                     to={`/admin/blog/${post.slug as string}/edit` as string}
-                    className="inline-flex items-center justify-center p-2 rounded-md hover:bg-site-border text-site-text-dim hover:text-site-text transition-colors"
+                    className="inline-flex items-center justify-center p-2 rounded-site-sm hover:bg-site-border text-site-text-dim hover:text-site-text transition-colors"
                     title={t("edit-post", { defaultValue: "Edit Post" })}
                   >
                     <Edit className="w-4 h-4" />

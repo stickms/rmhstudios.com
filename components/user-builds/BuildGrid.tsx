@@ -143,7 +143,7 @@ export function BuildGrid({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+        <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
       </div>
     );
   }
@@ -179,7 +179,7 @@ export function BuildGrid({
 
       {/* Load more trigger */}
       <div ref={loadMoreRef} className="py-8 flex justify-center">
-        {loadingMore && <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />}
+        {loadingMore && <Loader2 className="w-6 h-6 text-site-accent animate-spin" />}
         {!hasMore && builds.length > 0 && (
           <div className="h-px" />
         )}

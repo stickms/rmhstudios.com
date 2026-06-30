@@ -24,9 +24,9 @@ interface Announcement {
 
 const VARIANT_STYLES: Record<string, string> = {
   info: 'border-site-accent/40 bg-site-accent-dim',
-  success: 'border-emerald-500/40 bg-emerald-500/10',
-  warning: 'border-amber-500/40 bg-amber-500/10',
-  event: 'border-violet-500/40 bg-violet-500/10',
+  success: 'border-site-success/40 bg-site-success/10',
+  warning: 'border-site-warning/40 bg-site-warning/10',
+  event: 'border-site-accent/40 bg-site-accent/10',
 };
 
 const DISMISS_KEY = 'rmh-dismissed-announcements';
@@ -75,12 +75,12 @@ export function FeedAnnouncements() {
       {visible.map((a) => (
         <div
           key={a.id}
-          className={`relative rounded-xl border p-3 pr-9 ${VARIANT_STYLES[a.variant] ?? VARIANT_STYLES.info}`}
+          className={`relative rounded-site border p-3 pr-9 ${VARIANT_STYLES[a.variant] ?? VARIANT_STYLES.info}`}
         >
           <button
             onClick={() => dismiss(a.id)}
             aria-label={t("dismiss-announcement", { defaultValue: "Dismiss announcement" })}
-            className="absolute right-2 top-2 rounded-md p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
+            className="absolute right-2 top-2 rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
           >
             <X className="h-4 w-4" />
           </button>

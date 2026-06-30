@@ -36,7 +36,7 @@ function renderTokens(text: string, keyPrefix: string): React.ReactNode {
           to="/u/$userid"
           params={{ userid: part.slice(1) }}
           onClick={(e) => e.stopPropagation()}
-          className="text-sky-400 hover:text-sky-300 hover:underline"
+          className="text-site-accent hover:text-site-accent hover:underline"
         >
           {part}
         </Link>
@@ -48,7 +48,7 @@ function renderTokens(text: string, keyPrefix: string): React.ReactNode {
           key={key}
           to={`/tag/${part.slice(1)}` as string}
           onClick={(e) => e.stopPropagation()}
-          className="text-sky-400 hover:text-sky-300 hover:underline font-medium"
+          className="text-site-accent hover:text-site-accent hover:underline font-medium"
         >
           {part}
         </Link>

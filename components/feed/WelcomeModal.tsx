@@ -61,17 +61,17 @@ export function WelcomeModal() {
       aria-modal="true"
       aria-labelledby="welcome-title"
     >
-      <div className="relative w-full max-w-md rounded-2xl border border-site-border bg-site-surface p-6 shadow-2xl">
+      <div className="relative w-full max-w-md rounded-site border border-site-border bg-site-surface p-6 shadow-2xl">
         <button
           onClick={dismiss}
           aria-label={t('close-label', { defaultValue: 'Close' })}
-          className="absolute right-3 top-3 rounded-md p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
+          className="absolute right-3 top-3 rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
         >
           <X className="h-4 w-4" />
         </button>
 
         <div className="mb-4 flex justify-center">
-          <div className="rounded-2xl border border-site-accent/30 bg-site-accent-dim p-3">
+          <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-3">
             <Icon className="h-7 w-7 text-site-accent" />
           </div>
         </div>

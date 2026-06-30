@@ -68,17 +68,17 @@ function AdminLibraryStoragePage() {
         <div className="flex flex-col gap-5">
           {/* Backend banner */}
           <div
-            className={`rounded-lg border p-4 ${
+            className={`rounded-site-sm border p-4 ${
               health.durable
-                ? 'border-emerald-600/40 bg-emerald-600/10'
-                : 'border-red-600/50 bg-red-600/10'
+                ? 'border-site-success/40 bg-site-success/10'
+                : 'border-site-danger/50 bg-site-danger/10'
             }`}
           >
             <div className="flex items-center gap-2 font-semibold text-site-text">
               {health.durable ? (
-                <CheckCircle2 size={18} className="text-emerald-400" />
+                <CheckCircle2 size={18} className="text-site-success" />
               ) : (
-                <AlertTriangle size={18} className="text-red-400" />
+                <AlertTriangle size={18} className="text-site-danger" />
               )}
               {health.backend}
             </div>
@@ -88,7 +88,7 @@ function AdminLibraryStoragePage() {
               </p>
             )}
             {!health.durable && (
-              <p className="text-sm text-red-300 mt-2">
+              <p className="text-sm text-site-danger mt-2">
                 {t('storage-fix', {
                   defaultValue:
                     'Set S3_ENDPOINT / S3_REGION / S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY / S3_BUCKET (Cloudflare R2) in the production runtime. Until then, uploads land on disposable local disk and disappear when the container recycles.',
@@ -113,7 +113,7 @@ function AdminLibraryStoragePage() {
             ) : (
               <ul className="flex flex-col gap-2">
                 {health.missing.map((m) => (
-                  <li key={m.slug} className="rounded-md border border-site-border bg-site-card px-3 py-2">
+                  <li key={m.slug} className="rounded-site-sm border border-site-border bg-site-card px-3 py-2">
                     <p className="text-sm font-medium text-site-text">{m.title}</p>
                     <p className="text-xs text-site-text-muted font-mono">{m.key}</p>
                   </li>

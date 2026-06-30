@@ -78,7 +78,7 @@ export function WrappedColumn() {
 
       <div className="space-y-6 p-4">
         {/* Hero */}
-        <section className="overflow-hidden rounded-2xl border border-site-border bg-gradient-to-br from-site-accent/20 via-site-surface to-site-surface p-6">
+        <section className="overflow-hidden rounded-site border border-site-border bg-gradient-to-br from-site-accent/20 via-site-surface to-site-surface p-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-site-accent">{t('your-year-on-rmh', { defaultValue: 'Your year on RMH' })}</p>
           <p className="mt-2 text-2xl font-extrabold leading-snug text-site-text">{data.blurb}</p>
           <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-site-bg px-3 py-1.5 text-sm font-semibold text-site-text">
@@ -89,19 +89,19 @@ export function WrappedColumn() {
         {/* Stat tiles */}
         <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {tiles.map((t) => (
-            <div key={t.label} className="rounded-xl border border-site-border bg-site-surface p-4">
+            <div key={t.label} className="rounded-site border border-site-border bg-site-surface p-4">
               <t.icon className="h-5 w-5 text-site-accent" />
               <p className="mt-2 text-2xl font-extrabold text-site-text">{t.value}</p>
               <p className="text-xs text-site-text-dim">{t.label}</p>
             </div>
           ))}
-          <div className="rounded-xl border border-site-border bg-site-surface p-4">
+          <div className="rounded-site border border-site-border bg-site-surface p-4">
             <CoinIcon className="h-5 w-5" />
             <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.coinsEarned)}</p>
             <p className="text-xs text-site-text-dim">{t('tile-coins-earned', { defaultValue: 'Coins earned' })}</p>
           </div>
           {data.busiestMonth && (
-            <div className="rounded-xl border border-site-border bg-site-surface p-4">
+            <div className="rounded-site border border-site-border bg-site-surface p-4">
               <CalendarDays className="h-5 w-5 text-site-accent" />
               <p className="mt-2 text-2xl font-extrabold text-site-text">{data.busiestMonth}</p>
               <p className="text-xs text-site-text-dim">{t('tile-busiest-month', { defaultValue: 'Busiest month' })}</p>
@@ -117,7 +117,7 @@ export function WrappedColumn() {
             </h2>
             <Link
               to={`/u/me/post/${data.topPost.id}` as string}
-              className="block rounded-xl border border-site-border bg-site-surface p-4 transition-colors hover:border-site-accent/60"
+              className="block rounded-site border border-site-border bg-site-surface p-4 transition-colors hover:border-site-accent/60"
             >
               <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-site-text">
                 {data.topPost.content || t('media-post-fallback', { defaultValue: '(media post)' })}

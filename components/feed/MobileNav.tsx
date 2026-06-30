@@ -84,7 +84,7 @@ export function MobileNav() {
             <div className="relative">
               <Inbox className="w-6 h-6" />
               {inboxCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
+                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-site-danger text-white text-[10px] font-bold px-1 leading-none">
                   {inboxCount > 99 ? '99+' : inboxCount}
                 </span>
               )}

@@ -41,7 +41,7 @@ export function DeleteBlogButton({ slug, title }: { slug: string, title: string 
             size="sm"
             onClick={handleDelete}
             disabled={isDeleting}
-            className="text-red-500 hover:text-red-400 hover:bg-red-500/10"
+            className="text-site-danger hover:text-site-danger hover:bg-site-danger/10"
             title={t("delete-post", { defaultValue: "Delete Post" })}
         >
             <Trash2 className="w-4 h-4" />

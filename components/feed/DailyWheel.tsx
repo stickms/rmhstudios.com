@@ -84,7 +84,7 @@ export function DailyWheel() {
     .join(', ');
 
   return (
-    <section className="rounded-xl border border-site-border bg-site-surface p-4">
+    <section className="rounded-site border border-site-border bg-site-surface p-4">
       <div className="mb-3 flex items-center gap-2">
         <Sparkles className="h-4 w-4 text-site-accent" />
         <h2 className="text-sm font-bold text-site-text">{t('daily-wheel', { defaultValue: 'Daily wheel' })}</h2>

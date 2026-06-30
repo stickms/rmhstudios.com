@@ -204,7 +204,7 @@ function AdminAnnouncementsPage() {
   };
 
   const inputCls =
-    'w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
+    'w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
 
   return (
     <PageLayout title="Announcements" wide>
@@ -218,7 +218,7 @@ function AdminAnnouncementsPage() {
         </div>
 
         {/* Create form */}
-        <div className="space-y-3 rounded-xl border border-site-border bg-site-surface p-4">
+        <div className="space-y-3 rounded-site border border-site-border bg-site-surface p-4">
           <div className="relative">
             <input className={`${inputCls} pr-10`} placeholder={t('title-placeholder', { defaultValue: 'Title' })} value={title} maxLength={120} onChange={(e) => setTitle(e.target.value)} />
             <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
@@ -254,7 +254,7 @@ function AdminAnnouncementsPage() {
 
           {/* Poll creator */}
           {attachment === 'poll' && (
-            <div className="rounded-xl border border-site-border bg-site-bg p-3">
+            <div className="rounded-site border border-site-border bg-site-bg p-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">Poll</span>
                 <button
@@ -326,7 +326,7 @@ function AdminAnnouncementsPage() {
                 <select
                   value={pollDuration}
                   onChange={(e) => setPollDuration(Number(e.target.value))}
-                  className="rounded-lg border border-site-border bg-site-bg px-2 py-1 text-xs text-site-text focus:outline-none"
+                  className="rounded-site-sm border border-site-border bg-site-bg px-2 py-1 text-xs text-site-text focus:outline-none"
                 >
                   <option value={0}>{t('poll-no-limit', { defaultValue: 'No limit' })}</option>
                   <option value={1}>{t('poll-1-hour', { defaultValue: '1 hour' })}</option>
@@ -341,7 +341,7 @@ function AdminAnnouncementsPage() {
 
           {/* GIF input */}
           {attachment === 'gif' && (
-            <div className="rounded-xl border border-site-border bg-site-bg p-3">
+            <div className="rounded-site border border-site-border bg-site-bg p-3">
               <div className="mb-2 flex items-center justify-between">
                 <span className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">Image / GIF</span>
                 <button
@@ -374,7 +374,7 @@ function AdminAnnouncementsPage() {
             <div className={`grid gap-1 ${imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
               {imageUrls.map((url) => (
                 <div key={url} className="group relative">
-                  <img src={url} alt="" loading="lazy" className="max-h-48 w-full rounded-lg object-cover" />
+                  <img src={url} alt="" loading="lazy" className="max-h-48 w-full rounded-site-sm object-cover" />
                   <button
                     type="button"
                     aria-label={t('remove-image', { defaultValue: 'Remove image' })}
@@ -470,7 +470,7 @@ function AdminAnnouncementsPage() {
         ) : (
           <ul className="space-y-2">
             {list.map((a) => (
-              <li key={a.id} className="rounded-xl border border-site-border bg-site-surface p-3">
+              <li key={a.id} className="rounded-site border border-site-border bg-site-surface p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">

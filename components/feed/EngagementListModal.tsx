@@ -58,7 +58,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       <div
-        className="relative z-10 w-full max-w-md bg-site-bg border border-site-border rounded-2xl shadow-xl flex flex-col max-h-[80vh]"
+        className="relative z-10 w-full max-w-md bg-site-bg border border-site-border rounded-site shadow-xl flex flex-col max-h-[80vh]"
         onMouseDown={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
@@ -67,7 +67,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
           </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+            className="p-1.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
           >
             <X className="w-5 h-5" />
           </button>

@@ -177,7 +177,7 @@ export function MembershipPanel({
         {/* ── Status banner ──────────────────────────────────── */}
         {status && (
           <div
-            className={`pricing-fade mb-10 flex items-center justify-between gap-3 rounded-2xl border px-5 py-3.5 text-sm ${
+            className={`pricing-fade mb-10 flex items-center justify-between gap-3 rounded-site border px-5 py-3.5 text-sm ${
               status === 'success'
                 ? 'border-[color:var(--site-success)]/30 bg-[color:var(--site-success)]/10 text-[color:var(--site-success)]'
                 : 'border-site-border bg-site-surface/60 text-site-text-muted'

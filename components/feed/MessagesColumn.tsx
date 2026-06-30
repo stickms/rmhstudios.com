@@ -526,7 +526,7 @@ function NewChatDialog({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t('search-people-placeholder', { defaultValue: 'Search people…' })}
-            className="w-full rounded-lg border border-site-border bg-site-bg py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+            className="w-full rounded-site-sm border border-site-border bg-site-bg py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
           />
         </div>
         <div className="max-h-[50vh] overflow-y-auto">
@@ -544,7 +544,7 @@ function NewChatDialog({
                     type="button"
                     disabled={starting === u.id}
                     onClick={() => start(u.id)}
-                    className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-site-surface-hover disabled:opacity-50"
+                    className="flex w-full items-center gap-3 rounded-site-sm px-2 py-2 text-left hover:bg-site-surface-hover disabled:opacity-50"
                   >
                     <UserAvatar src={u.image ?? undefined} alt={u.name ?? ''} size={36} fallbackName={u.name ?? undefined} className="rounded-full" />
                     <div className="min-w-0 flex-1">

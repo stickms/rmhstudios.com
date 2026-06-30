@@ -159,7 +159,7 @@ function Section({
         {rows.map((r) => {
           const AudienceIcon = AUDIENCE_ICON[r.audience];
           return (
-            <div key={r.id} className="rounded-xl border border-site-border bg-site-surface p-3">
+            <div key={r.id} className="rounded-site border border-site-border bg-site-surface p-3">
               <p className="whitespace-pre-wrap break-words text-sm text-site-text">
                 {r.content || <span className="text-site-text-dim">{t('no-text', { defaultValue: '(no text)' })}</span>}
               </p>

@@ -465,7 +465,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
       {/* Header */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border shrink-0">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link to="/messages" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
+          <Link to="/messages" className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </Link>
           {otherUser && (
@@ -529,22 +529,22 @@ export function ConversationView({ conversationId }: { conversationId: string })
                 : { image: otherUser?.image, name: otherUser?.name };
 
               // Build per-corner rounding for grouped bubbles
-              // Fully rounded = rounded-2xl (16px). Tight side = rounded-md (6px).
+              // Fully rounded = rounded-site (16px). Tight side = rounded-site-sm (6px).
               // The "inner" side (facing own messages) gets tightened when grouped.
               let bubbleRounding: string;
               if (isSelf) {
                 // Right-aligned: inner side is right
-                const tl = 'rounded-tl-2xl';
-                const bl = 'rounded-bl-2xl';
-                const tr = isFirstInGroup ? 'rounded-tr-2xl' : 'rounded-tr-md';
-                const br = isLastInGroup ? 'rounded-br-md' : 'rounded-br-md';
+                const tl = 'rounded-tl-site';
+                const bl = 'rounded-bl-site';
+                const tr = isFirstInGroup ? 'rounded-tr-site' : 'rounded-tr-site-sm';
+                const br = isLastInGroup ? 'rounded-br-site-sm' : 'rounded-br-site-sm';
                 bubbleRounding = `${tl} ${tr} ${bl} ${br}`;
               } else {
                 // Left-aligned: inner side is left
-                const tr = 'rounded-tr-2xl';
-                const br = 'rounded-br-2xl';
-                const tl = isFirstInGroup ? 'rounded-tl-2xl' : 'rounded-tl-md';
-                const bl = isLastInGroup ? 'rounded-bl-md' : 'rounded-bl-md';
+                const tr = 'rounded-tr-site';
+                const br = 'rounded-br-site';
+                const tl = isFirstInGroup ? 'rounded-tl-site' : 'rounded-tl-site-sm';
+                const bl = isLastInGroup ? 'rounded-bl-site-sm' : 'rounded-bl-site-sm';
                 bubbleRounding = `${tl} ${tr} ${bl} ${br}`;
               }
 
@@ -580,13 +580,13 @@ export function ConversationView({ conversationId }: { conversationId: string })
                       )}
                       {/* Structured rich media. */}
                       {msg.imageUrls && msg.imageUrls.length > 0 && (
-                        <PostImageGrid urls={msg.imageUrls} className="mt-1.5 rounded-lg overflow-hidden" />
+                        <PostImageGrid urls={msg.imageUrls} className="mt-1.5 rounded-site-sm overflow-hidden" />
                       )}
                       {msg.gifUrl && (
                         <img
                           src={msg.gifUrl}
                           alt=""
-                          className="mt-1.5 max-h-60 w-auto rounded-lg"
+                          className="mt-1.5 max-h-60 w-auto rounded-site-sm"
                           loading="lazy"
                         />
                       )}
@@ -607,7 +607,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
                   size={28}
                   fallbackName={otherUser?.name ?? undefined}
                 />
-                <div className="bg-site-text text-site-bg rounded-tl-md rounded-tr-2xl rounded-br-2xl rounded-bl-md px-4 py-3">
+                <div className="bg-site-text text-site-bg rounded-tl-site-sm rounded-tr-site rounded-br-site rounded-bl-site-sm px-4 py-3">
                   <div className="flex items-center gap-1" aria-label={t("user-is-typing", { name: otherUser?.name || t("user-fallback", { defaultValue: "User" }), defaultValue: "{{name}} is typing" })}>
                     <span className="w-1.5 h-1.5 rounded-full bg-site-bg/50 animate-bounce [animation-delay:-0.3s]" />
                     <span className="w-1.5 h-1.5 rounded-full bg-site-bg/50 animate-bounce [animation-delay:-0.15s]" />
@@ -648,7 +648,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
           <div className="mb-2 flex flex-wrap gap-2">
             {imageUrls.map((url) => (
               <div key={url} className="relative">
-                <img src={url} alt="" className="h-20 w-20 rounded-lg object-cover" />
+                <img src={url} alt="" className="h-20 w-20 rounded-site-sm object-cover" />
                 <button
                   type="button"
                   aria-label={t('remove-image', { defaultValue: 'Remove image' })}
@@ -661,7 +661,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
             ))}
             {gifUrl && (
               <div className="relative">
-                <img src={gifUrl} alt="" className="h-20 w-auto rounded-lg" />
+                <img src={gifUrl} alt="" className="h-20 w-auto rounded-site-sm" />
                 <button
                   type="button"
                   aria-label={t('remove-gif', { defaultValue: 'Remove GIF' })}
@@ -702,7 +702,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
             placeholder={t("type-a-message", { defaultValue: "Type a message..." })}
             rows={1}
             maxLength={2000}
-            className="bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
+            className="bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
             style={{ minHeight: '42px' }}
           />
           {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer. */}
@@ -713,12 +713,12 @@ export function ConversationView({ conversationId }: { conversationId: string })
               aria-expanded={attachOpen}
               onClick={() => setAttachOpen((v) => !v)}
               disabled={uploading}
-              className="h-[42px] rounded-xl px-3 text-site-text-dim transition-colors hover:bg-site-surface hover:text-site-accent disabled:opacity-50"
+              className="h-[42px] rounded-site px-3 text-site-text-dim transition-colors hover:bg-site-surface hover:text-site-accent disabled:opacity-50"
             >
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
             </button>
             {attachOpen && (
-              <div className="absolute bottom-full right-0 z-30 mb-1 w-40 rounded-xl border border-site-border bg-site-bg py-1 shadow-xl">
+              <div className="absolute bottom-full right-0 z-30 mb-1 w-40 rounded-site border border-site-border bg-site-bg py-1 shadow-xl">
                 <button
                   type="button"
                   disabled={imageUrls.length >= MAX_DM_IMAGES}
@@ -742,7 +742,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
             size="sm"
             disabled={(!input.trim() && !gifUrl && imageUrls.length === 0) || sending}
             onClick={handleSend}
-            className="rounded-xl h-[42px] px-3"
+            className="rounded-site h-[42px] px-3"
           >
             <Send className="w-4 h-4" />
           </Button>

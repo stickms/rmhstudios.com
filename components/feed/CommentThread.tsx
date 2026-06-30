@@ -77,7 +77,7 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
 
       {/* Dialog */}
       <div
-        className="relative bg-site-bg border border-site-border rounded-2xl shadow-xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col"
+        className="relative bg-site-bg border border-site-border rounded-site shadow-xl w-full max-w-lg mx-4 max-h-[80vh] flex flex-col"
         onMouseDown={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -85,7 +85,7 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
           <h2 className="font-bold text-site-text">{t("comments-heading", { defaultValue: "Comments" })}</h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+            className="p-1.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -117,7 +117,7 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
               placeholder={t("write-comment-placeholder", { defaultValue: "Write a comment..." })}
               rows={2}
               maxLength={MAX_COMMENT_LENGTH}
-              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
+              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
             />
             <div className="flex items-center justify-between mt-2">
               <div className="flex items-center gap-1.5">

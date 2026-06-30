@@ -102,8 +102,8 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
           onClick={(e) => { e.stopPropagation(); setRepostMenu((v) => !v); }}
           className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-colors group active:scale-95 ${
             item.reposted
-              ? 'text-emerald-400'
-              : 'text-site-text-dim hover:text-emerald-400 hover:bg-emerald-400/10'
+              ? 'text-site-success'
+              : 'text-site-text-dim hover:text-site-success hover:bg-site-success/10'
           }`}
           title="reRMHark"
         >
@@ -111,7 +111,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
           <span className="text-xs">{formatCount(item.repostCount)}</span>
         </button>
         {repostMenu && (
-          <div className="absolute left-0 top-full mt-1 w-40 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute left-0 top-full mt-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30" onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => { setRepostMenu(false); toggleRepost(); }}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
@@ -141,8 +141,8 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
         onClick={toggleLike}
         className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-colors group active:scale-95 ${
           item.liked
-            ? 'text-rose-400'
-            : 'text-site-text-dim hover:text-rose-400 hover:bg-rose-400/10'
+            ? 'text-site-danger'
+            : 'text-site-text-dim hover:text-site-danger hover:bg-site-danger/10'
         }`}
         title={t('like', { defaultValue: 'Like' })}
       >

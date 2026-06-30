@@ -234,7 +234,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                 {freshCommentUser.name || 'Unknown'}
               </span>
               {freshCommentUser.isVerified && (
-                <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                <BadgeCheck className="w-4 h-4 text-site-success shrink-0" />
               )}
               {freshCommentUser.isAdmin && (
                 <span title={t('admin-title', { defaultValue: 'Admin' })} className="inline-flex items-center shrink-0">
@@ -261,7 +261,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                   <MoreHorizontal className="w-3.5 h-3.5" />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
                     <button
                       onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
@@ -307,7 +307,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
             <ChatMediaEmbed content={comment.content} themePrefix="site" />
           )}
           {showTranslated && translatedText && (
-            <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-site-surface/50 p-2 text-sm text-site-text">
+            <p className="mt-1 whitespace-pre-wrap break-words rounded-site-sm bg-site-surface/50 p-2 text-sm text-site-text">
               {translatedText}
             </p>
           )}
@@ -327,11 +327,11 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
 
               {/* reRMHark */}
               <div className={`flex items-center rounded-full transition-colors ${
-                reposted ? 'text-emerald-400' : 'text-site-text-dim'
+                reposted ? 'text-site-success' : 'text-site-text-dim'
               }`}>
                 <button
                   onClick={toggleRepost}
-                  className="p-1 rounded-full hover:bg-emerald-400/10 transition-colors group"
+                  className="p-1 rounded-full hover:bg-site-success/10 transition-colors group"
                   title="reRMHark"
                 >
                   <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
@@ -343,11 +343,11 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
 
               {/* Like */}
               <div className={`flex items-center rounded-full transition-colors ${
-                liked ? 'text-rose-400' : 'text-site-text-dim'
+                liked ? 'text-site-danger' : 'text-site-text-dim'
               }`}>
                 <button
                   onClick={toggleLike}
-                  className="p-1 rounded-full hover:bg-rose-400/10 transition-colors group"
+                  className="p-1 rounded-full hover:bg-site-danger/10 transition-colors group"
                   title="Like"
                 >
                   <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`} />
@@ -383,7 +383,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                   placeholder={t('reply-placeholder', { handle: freshCommentUser.handle || freshCommentUser.name || 'Unknown', defaultValue: 'Reply to @{{handle}}...' })}
                   rows={2}
                   maxLength={MAX_COMMENT_LENGTH}
-                  className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-xs rounded-lg p-2 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
+                  className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-xs rounded-site-sm p-2 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                       handleSubmitReply();

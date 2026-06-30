@@ -93,7 +93,7 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
             {onSwitchToForYou && (
               <button
                 onClick={onSwitchToForYou}
-                className="px-5 py-2 rounded-lg bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
+                className="px-5 py-2 rounded-site-sm bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
               >
                 {t('browse-for-you', { defaultValue: 'Browse For You' })}
               </button>

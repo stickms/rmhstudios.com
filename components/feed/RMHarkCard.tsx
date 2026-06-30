@@ -269,7 +269,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             <MoreHorizontal className="w-4 h-4" />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30" onClick={(e) => e.stopPropagation()}>
+            <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30" onClick={(e) => e.stopPropagation()}>
               {session && (
                 <button
                   onClick={handleBookmark}
@@ -349,7 +349,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                       onClick={() => { setMenuOpen(false); setTipOpen(true); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                     >
-                      <Coins className="w-4 h-4 text-amber-400" />
+                      <Coins className="w-4 h-4 text-site-warning" />
                       {t('send-tip', { defaultValue: 'Send tip' })}
                     </button>
                   )}
@@ -426,7 +426,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 <span className="shrink-0" title="Equipped badge">{displayUser.cosmetics.badge.emoji}</span>
               )}
               {item.user.isVerified && (
-                <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                <BadgeCheck className="w-4 h-4 text-site-success shrink-0" />
               )}
               {item.user.isAdmin && (
                 <span title="Admin" className="inline-flex items-center shrink-0">
@@ -467,7 +467,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           )}
           {/* AI translation (toggled from the ⋯ menu) */}
           {showTranslated && translatedText && (
-            <p className="mt-1 whitespace-pre-wrap break-words rounded-lg bg-site-surface/50 p-2 text-[15px] text-site-text">
+            <p className="mt-1 whitespace-pre-wrap break-words rounded-site-sm bg-site-surface/50 p-2 text-[15px] text-site-text">
               {translatedText}
             </p>
           )}
@@ -496,7 +496,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
           {/* Quoted original (if repost) */}
           {item.original && (
-            <div className="mt-3 border border-site-border rounded-xl p-3 bg-site-surface/30">
+            <div className="mt-3 border border-site-border rounded-site p-3 bg-site-surface/30">
               <div className="flex items-center gap-1.5 text-sm mb-1">
                 {freshOriginalUser ? (
                   <Link to={userProfileHref(freshOriginalUser)} className="flex items-center gap-1.5 min-w-0 hover:underline">
@@ -504,7 +504,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                       {freshOriginalUser.name || t('unknown-user', { defaultValue: 'Unknown' })}
                     </span>
                     {freshOriginalUser.isVerified && (
-                      <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                      <BadgeCheck className="w-3.5 h-3.5 text-site-success shrink-0" />
                     )}
                     {freshOriginalUser.isAdmin && (
                       <span title="Admin" className="inline-flex items-center shrink-0">

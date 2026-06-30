@@ -132,7 +132,7 @@ export function LanguageSwitcher() {
         aria-label={label}
         title={label}
         className={cn(
-          "inline-flex items-center gap-2 rounded-lg border border-site-border bg-site-surface px-2.5 py-1.5",
+          "inline-flex items-center gap-2 rounded-site-sm border border-site-border bg-site-surface px-2.5 py-1.5",
           "text-sm text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text",
           "focus:outline-none focus-visible:ring-2 focus-visible:ring-site-accent focus-visible:ring-offset-1 focus-visible:ring-offset-site-bg",
           open && "bg-site-surface-hover text-site-text",
@@ -163,7 +163,7 @@ export function LanguageSwitcher() {
               width: rect.width,
               maxHeight: rect.maxHeight,
             }}
-            className="z-[100] overflow-y-auto overscroll-contain rounded-xl border border-site-border bg-site-surface p-1 shadow-[var(--site-shadow)]"
+            className="z-[100] overflow-y-auto overscroll-contain rounded-site border border-site-border bg-site-surface p-1 shadow-[var(--site-shadow)]"
           >
             {LOCALES.map((l) => {
               const active = l === locale;
@@ -176,7 +176,7 @@ export function LanguageSwitcher() {
                   data-active={active}
                   onClick={() => choose(l)}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm transition-colors",
+                    "flex w-full items-center gap-2 rounded-site-sm px-2.5 py-2 text-left text-sm transition-colors",
                     "focus:outline-none focus-visible:bg-site-surface-hover",
                     active
                       ? "bg-site-accent-dim text-site-text"

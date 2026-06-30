@@ -69,7 +69,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated }: Props) {
   const hasPos = pos && (pos.yesShares > 0.5 || pos.noShares > 0.5);
 
   return (
-    <div className="rounded-xl border border-site-border bg-site-surface p-4 flex flex-col gap-3">
+    <div className="rounded-site border border-site-border bg-site-surface p-4 flex flex-col gap-3">
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -87,7 +87,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated }: Props) {
         </div>
         {/* Big probability */}
         <div className="text-right shrink-0">
-          <div className="text-2xl font-bold text-emerald-400 tabular-nums">{yes}%</div>
+          <div className="text-2xl font-bold text-site-success tabular-nums">{yes}%</div>
           <div className="text-[11px] uppercase tracking-wide text-site-text-dim">
             {t('chance-yes', { defaultValue: 'chance' })}
           </div>
@@ -95,17 +95,17 @@ export function PredictionCard({ market, coins, setCoins, onUpdated }: Props) {
       </div>
 
       {/* Probability bar */}
-      <div className="h-2 rounded-full overflow-hidden bg-rose-500/30 flex">
-        <div className="bg-emerald-500/70" style={{ width: `${yes}%` }} />
+      <div className="h-2 rounded-full overflow-hidden bg-site-danger/30 flex">
+        <div className="bg-site-success/70" style={{ width: `${yes}%` }} />
       </div>
 
       {/* Resolved / closed state, or trade controls */}
       {resolved ? (
         <div className="text-sm font-semibold">
           {market.status === 'RESOLVED_YES' ? (
-            <span className="text-emerald-400">{t('resolved-yes', { defaultValue: 'Resolved: YES' })}</span>
+            <span className="text-site-success">{t('resolved-yes', { defaultValue: 'Resolved: YES' })}</span>
           ) : (
-            <span className="text-rose-400">{t('resolved-no', { defaultValue: 'Resolved: NO' })}</span>
+            <span className="text-site-danger">{t('resolved-no', { defaultValue: 'Resolved: NO' })}</span>
           )}
         </div>
       ) : !tradable ? (
@@ -119,7 +119,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated }: Props) {
               <button
                 key={a}
                 onClick={() => setAmount(a)}
-                className={`px-2 py-1 rounded-md text-xs font-medium border transition-colors ${
+                className={`px-2 py-1 rounded-site-sm text-xs font-medium border transition-colors ${
                   amount === a
                     ? 'border-site-accent text-site-accent bg-site-accent-dim'
                     : 'border-site-border text-site-text-dim hover:text-site-text'
@@ -135,7 +135,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated }: Props) {
                 min={1}
                 value={amount}
                 onChange={(e) => setAmount(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
-                className="w-20 bg-site-bg border border-site-border rounded-md px-2 py-1 text-sm text-site-text text-right tabular-nums"
+                className="w-20 bg-site-bg border border-site-border rounded-site-sm px-2 py-1 text-sm text-site-text text-right tabular-nums"
               />
             </div>
           </div>
@@ -143,14 +143,14 @@ export function PredictionCard({ market, coins, setCoins, onUpdated }: Props) {
             <button
               onClick={() => trade('YES')}
               disabled={!!pending}
-              className="flex items-center justify-center gap-1.5 py-2 rounded-lg font-semibold text-sm bg-emerald-500/15 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/25 transition-colors disabled:opacity-50"
+              className="flex items-center justify-center gap-1.5 py-2 rounded-site-sm font-semibold text-sm bg-site-success/15 text-site-success border border-site-success/40 hover:bg-site-success/25 transition-colors disabled:opacity-50"
             >
               {pending === 'YES' ? <Loader2 className="w-4 h-4 animate-spin" /> : `${t('buy-yes', { defaultValue: 'Buy YES' })} · ${yes}%`}
             </button>
             <button
               onClick={() => trade('NO')}
               disabled={!!pending}
-              className="flex items-center justify-center gap-1.5 py-2 rounded-lg font-semibold text-sm bg-rose-500/15 text-rose-400 border border-rose-500/40 hover:bg-rose-500/25 transition-colors disabled:opacity-50"
+              className="flex items-center justify-center gap-1.5 py-2 rounded-site-sm font-semibold text-sm bg-site-danger/15 text-site-danger border border-site-danger/40 hover:bg-site-danger/25 transition-colors disabled:opacity-50"
             >
               {pending === 'NO' ? <Loader2 className="w-4 h-4 animate-spin" /> : `${t('buy-no', { defaultValue: 'Buy NO' })} · ${no}%`}
             </button>

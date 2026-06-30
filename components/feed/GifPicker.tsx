@@ -60,7 +60,7 @@ export function GifPicker({ onSelect, onClose, className = '' }: GifPickerProps)
   if (error === 'unavailable') return null; // feature off → hide entirely
 
   return (
-    <div className={`border border-site-border rounded-xl bg-site-bg p-2 ${className}`}>
+    <div className={`border border-site-border rounded-site bg-site-bg p-2 ${className}`}>
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="relative flex-1">
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim" />
@@ -69,7 +69,7 @@ export function GifPicker({ onSelect, onClose, className = '' }: GifPickerProps)
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('gif-search-placeholder', { defaultValue: 'Search GIFs...' })}
-            className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg pl-8 pr-2 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
+            className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm pl-8 pr-2 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
           />
         </div>
         {onClose && (
@@ -98,7 +98,7 @@ export function GifPicker({ onSelect, onClose, className = '' }: GifPickerProps)
               key={g.id}
               type="button"
               onClick={() => { onSelect(g.url); onClose?.(); }}
-              className="block rounded-lg overflow-hidden border border-site-border hover:border-site-accent transition-colors"
+              className="block rounded-site-sm overflow-hidden border border-site-border hover:border-site-accent transition-colors"
             >
               <img src={g.preview} alt={g.description || t('gif-alt', { defaultValue: 'GIF' })} loading="lazy" className="w-full h-auto" />
             </button>
@@ -106,8 +106,8 @@ export function GifPicker({ onSelect, onClose, className = '' }: GifPickerProps)
         </div>
         {loading && (
           <div className="grid grid-cols-2 gap-1 mt-1">
-            <div className="h-24 rounded-lg bg-site-surface animate-pulse" />
-            <div className="h-24 rounded-lg bg-site-surface animate-pulse" />
+            <div className="h-24 rounded-site-sm bg-site-surface animate-pulse" />
+            <div className="h-24 rounded-site-sm bg-site-surface animate-pulse" />
           </div>
         )}
         <div ref={sentinelRef} className="h-2" />

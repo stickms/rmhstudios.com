@@ -140,7 +140,7 @@ export function ExploreRecommendations({
               <Link
                 key={u.id}
                 to={`/u/${u.handle || u.id}` as string}
-                className="flex items-center gap-3 rounded-xl border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
               >
                 <UserAvatar src={u.image} alt={u.name || t('user-alt', { defaultValue: 'User' })} size={36} fallbackName={u.name || 'U'} />
                 <div className="min-w-0">
@@ -164,10 +164,10 @@ export function ExploreRecommendations({
               <Link
                 key={c.id}
                 to={`/c/${c.slug}` as string}
-                className="flex items-center gap-3 rounded-xl border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
               >
                 <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-site text-xl"
                   style={{ background: (c.color || 'var(--site-accent)') + '22' }}
                 >
                   {c.icon || '👥'}
@@ -197,7 +197,7 @@ export function ExploreRecommendations({
                 <a
                   key={b.id}
                   href={b.href}
-                  className="flex items-center gap-3 rounded-xl border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                  className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
                 >
                   <BuildThumb src={b.thumbnailUrl} title={b.title} />
                   <div className="min-w-0">
@@ -210,7 +210,7 @@ export function ExploreRecommendations({
                 <Link
                   key={b.id}
                   to={`/user-builds/${b.slug}` as string}
-                  className="flex items-center gap-3 rounded-xl border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                  className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
                 >
                   <BuildThumb src={b.thumbnailUrl} title={b.title} />
                   <div className="min-w-0">
@@ -281,13 +281,13 @@ export function ExploreRecommendations({
 function BuildThumb({ src, title }: { src: string | null; title: string }) {
   if (!src) {
     return (
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-site-surface-hover text-sm font-bold text-site-text/70">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-site bg-site-surface-hover text-sm font-bold text-site-text/70">
         {title.slice(0, 1).toUpperCase()}
       </div>
     );
   }
   return (
-    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-xl bg-site-bg">
+    <div className="h-10 w-10 shrink-0 overflow-hidden rounded-site bg-site-bg">
       <OptimizedImage src={src} alt={title} width={40} height={40} className="h-full w-full object-cover" />
     </div>
   );

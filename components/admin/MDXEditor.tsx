@@ -143,18 +143,18 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
                         <form id="blog-form" onSubmit={handleSubmit} className="space-y-4 shrink-0">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="title">{t('title-label', { defaultValue: 'Title' })} <span className="text-red-500">*</span></Label>
+                              <Label htmlFor="title">{t('title-label', { defaultValue: 'Title' })} <span className="text-site-danger">*</span></Label>
                               <Input id="title" name="title" required value={formData.title} onChange={handleChange} placeholder={t('title-placeholder', { defaultValue: 'My Awesome Post' })} />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="slug">{t('slug-label', { defaultValue: 'Slug' })} <span className="text-red-500">*</span></Label>
+                              <Label htmlFor="slug">{t('slug-label', { defaultValue: 'Slug' })} <span className="text-site-danger">*</span></Label>
                               <Input id="slug" name="slug" required value={formData.slug} onChange={handleChange} placeholder="my-awesome-post" pattern="[a-z0-9-]+" title={t('slug-title', { defaultValue: 'Only lowercase letters, numbers, and hyphens' })} />
                             </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="date">{t('date-label', { defaultValue: 'Date' })} <span className="text-red-500">*</span></Label>
+                              <Label htmlFor="date">{t('date-label', { defaultValue: 'Date' })} <span className="text-site-danger">*</span></Label>
                               <Input id="date" name="date" type="date" required value={formData.date} onChange={handleChange} />
                             </div>
                             <div className="space-y-2">
@@ -169,15 +169,15 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="description">{t('description-label', { defaultValue: 'Description' })} <span className="text-red-500">*</span></Label>
+                            <Label htmlFor="description">{t('description-label', { defaultValue: 'Description' })} <span className="text-site-danger">*</span></Label>
                             <Textarea id="description" name="description" required value={formData.description} onChange={handleChange} placeholder={t('description-placeholder', { defaultValue: 'A short summary of the post...' })} rows={3} />
                           </div>
                         </form>
 
                         <div className="flex-1 flex flex-col min-h-0 h-full">
-                            <Label className="mb-2">{t('content-label', { defaultValue: 'Content' })} <span className="text-red-500">*</span></Label>
-                            <div className="flex-1 border border-site-border rounded-md overflow-hidden relative min-h-75 sm:min-h-0">
-                              <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-site-surface border border-site-border rounded-md text-site-text-muted">{t('loading-editor', { defaultValue: 'Loading Editor...' })}</div>}>
+                            <Label className="mb-2">{t('content-label', { defaultValue: 'Content' })} <span className="text-site-danger">*</span></Label>
+                            <div className="flex-1 border border-site-border rounded-site-sm overflow-hidden relative min-h-75 sm:min-h-0">
+                              <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-site-surface border border-site-border rounded-site-sm text-site-text-muted">{t('loading-editor', { defaultValue: 'Loading Editor...' })}</div>}>
                                 <Editor
                                   height="100%"
                                   defaultLanguage="markdown"
@@ -204,7 +204,7 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
                         <Button type="button" variant="ghost" size="sm" onClick={generatePreview} className="h-8">{t('refresh', { defaultValue: 'Refresh' })}</Button>
                     </div>
                     
-                    <div className="p-6 lg:p-10 prose prose-invert max-w-3xl mx-auto prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-xl prose-img:border prose-img:border-site-border">
+                    <div className="p-6 lg:p-10 prose prose-invert max-w-3xl mx-auto prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-site prose-img:border prose-img:border-site-border">
                       {previewContent ? (
                          <>
                            <h1 className="text-4xl lg:text-5xl font-black mb-4 tracking-tight leading-tight">{formData.title || t('untitled-post', { defaultValue: 'Untitled Post' })}</h1>

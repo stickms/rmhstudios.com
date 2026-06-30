@@ -25,12 +25,12 @@ function Preview({ item }: { item: ShopItemView }) {
   const { t } = useTranslation("feed");
   const { kind, data } = item;
   if (kind === 'BADGE' || kind === 'PET') {
-    return <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-site-bg text-2xl">{data.emoji}</div>;
+    return <div className="flex h-12 w-12 items-center justify-center rounded-site-sm bg-site-bg text-2xl">{data.emoji}</div>;
   }
   if (kind === 'NAME_COLOR') {
     return (
       <div
-        className="flex h-12 items-center justify-center rounded-lg px-3 text-sm font-bold"
+        className="flex h-12 items-center justify-center rounded-site-sm px-3 text-sm font-bold"
         style={data.gradient ? { background: data.gradient, color: '#fff' } : { color: data.color }}
       >
         {t("name-preview", { defaultValue: "Name" })}
@@ -45,7 +45,7 @@ function Preview({ item }: { item: ShopItemView }) {
     );
   }
   // BANNER / POST_FLAIR / THEME
-  return <div className="h-12 w-20 rounded-lg" style={{ background: data.gradient ?? data.color ?? 'var(--site-surface)' }} />;
+  return <div className="h-12 w-20 rounded-site-sm" style={{ background: data.gradient ?? data.color ?? 'var(--site-surface)' }} />;
 }
 
 export function ShopColumn() {
@@ -168,7 +168,7 @@ export function ShopColumn() {
           {visible.map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-3 rounded-xl border bg-site-surface p-3"
+              className="flex items-center gap-3 rounded-site border bg-site-surface p-3"
               style={{ borderColor: `${RARITY_COLORS[item.rarity]}55` }}
             >
               <Preview item={item} />

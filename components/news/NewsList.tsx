@@ -158,7 +158,7 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
                     <NewsCategoryTabs activeCategory={selectedCategory} onCategoryChange={setSelectedCategory} availableCategories={availableCategories} />
 
                     {/* Search + Sort Row */}
-                    <div className="flex flex-col gap-3 bg-(--site-surface) p-3 rounded-xl border border-(--site-border)">
+                    <div className="flex flex-col gap-3 bg-(--site-surface) p-3 rounded-site border border-(--site-border)">
                         <div className="relative w-full">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <Search className="h-4 w-4 text-(--site-text-dim)" />
@@ -166,7 +166,7 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
                             <input
                                 type="text"
                                 placeholder={t("search-placeholder", { defaultValue: "Search articles..." })}
-                                className="w-full bg-(--site-bg) border border-(--site-border) rounded-lg py-2 pl-9 pr-9 text-sm text-(--site-text) placeholder-(--site-text-dim) focus:outline-none focus:border-(--site-accent) focus:ring-1 focus:ring-(--site-accent) transition-all"
+                                className="w-full bg-(--site-bg) border border-(--site-border) rounded-site-sm py-2 pl-9 pr-9 text-sm text-(--site-text) placeholder-(--site-text-dim) focus:outline-none focus:border-(--site-accent) focus:ring-1 focus:ring-(--site-accent) transition-all"
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
                             />
@@ -190,7 +190,7 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
                             <select
                                 value={sortMode}
                                 onChange={(e) => setSortMode(e.target.value as 'newest' | 'oldest')}
-                                className="bg-(--site-bg) border border-(--site-border) rounded-lg py-1 px-3 text-sm text-(--site-text) focus:outline-none focus:border-(--site-accent)"
+                                className="bg-(--site-bg) border border-(--site-border) rounded-site-sm py-1 px-3 text-sm text-(--site-text) focus:outline-none focus:border-(--site-accent)"
                             >
                                 <option value="newest">{t("sort-newest", { defaultValue: "Newest" })}</option>
                                 <option value="oldest">{t("sort-oldest", { defaultValue: "Oldest" })}</option>
@@ -235,10 +235,10 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
             {totalPages > 1 && (
                 <motion.div className="mt-8 flex flex-col items-center gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
                     <div className="flex items-center gap-1 sm:gap-2">
-                        <button onClick={() => goToPage(1)} disabled={safePage === 1} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("first-page", { defaultValue: "First page" })}>
+                        <button onClick={() => goToPage(1)} disabled={safePage === 1} className="p-2 rounded-site-sm text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("first-page", { defaultValue: "First page" })}>
                             <ChevronsLeft className="w-4 h-4" />
                         </button>
-                        <button onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("prev-page", { defaultValue: "Previous page" })}>
+                        <button onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} className="p-2 rounded-site-sm text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("prev-page", { defaultValue: "Previous page" })}>
                             <ChevronLeft className="w-4 h-4" />
                         </button>
                         {pageNumbers.map((page, i) =>
@@ -251,16 +251,16 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
                                     key={page}
                                     onClick={() => goToPage(page as number)}
                                     aria-current={safePage === page ? "page" : undefined}
-                                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-[transform,color,background-color] duration-150 active:scale-95 ${safePage === page ? 'bg-(--site-accent) text-site-accent-fg' : 'text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface)'}`}
+                                    className={`w-9 h-9 rounded-site-sm text-sm font-bold transition-[transform,color,background-color] duration-150 active:scale-95 ${safePage === page ? 'bg-(--site-accent) text-site-accent-fg' : 'text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface)'}`}
                                 >
                                     {page}
                                 </button>
                             ),
                         )}
-                        <button onClick={() => goToPage(safePage + 1)} disabled={safePage === totalPages} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("next-page", { defaultValue: "Next page" })}>
+                        <button onClick={() => goToPage(safePage + 1)} disabled={safePage === totalPages} className="p-2 rounded-site-sm text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("next-page", { defaultValue: "Next page" })}>
                             <ChevronRight className="w-4 h-4" />
                         </button>
-                        <button onClick={() => goToPage(totalPages)} disabled={safePage === totalPages} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("last-page", { defaultValue: "Last page" })}>
+                        <button onClick={() => goToPage(totalPages)} disabled={safePage === totalPages} className="p-2 rounded-site-sm text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100" aria-label={t("last-page", { defaultValue: "Last page" })}>
                             <ChevronsRight className="w-4 h-4" />
                         </button>
                     </div>
