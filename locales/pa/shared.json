@@ -1,0 +1,15 @@
+{
+  "chat-placeholder": "ਗੱਲਬਾਤ...",
+  "error-boundary-message": "ਇੱਕ ਅਚਾਨਕ ਗਲਤੀ ਆਈ।",
+  "error-boundary-retry": "ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ",
+  "error-boundary-title": "ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ",
+  "failed-to-load-media": "ਮੀਡੀਆ ਲੋਡ ਕਰਨ ਵਿੱਚ ਅਸਫਲ",
+  "game-crashed": "ਗੇਮ ਕਰੈਸ਼ ਹੋ ਗਈ",
+  "game-crashed-named": "{{gameName}} ਕਰੈਸ਼ ਹੋ ਗਈ",
+  "loading": "ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ…",
+  "no-messages-yet": "ਅਜੇ ਤੱਕ ਕੋਈ ਸੁਨੇਹਾ ਨਹੀਂ",
+  "react": "ਪ੍ਰਤੀਕਿਰਿਆ ਕਰੋ",
+  "return-home": "ਘਰ ਵਾਪਸ ਜਾਓ",
+  "try-again": "ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ",
+  "unexpected-error": "ਇੱਕ ਅਚਾਨਕ ਗਲਤੀ ਆਈ।"
+}

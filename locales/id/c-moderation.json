@@ -1,0 +1,20 @@
+{
+  "cancel": "Batal",
+  "details-placeholder": "Tambahkan detail (opsional)",
+  "dialog-description": "Beri tahu kami apa yang salah. Laporan bersifat anonim bagi orang yang Anda laporkan.",
+  "dialog-title": "Laporkan konten",
+  "reason-harassment": "Pelecehan atau perundungan",
+  "reason-hate": "Ujaran kebencian",
+  "reason-illegal": "Konten ilegal",
+  "reason-misinformation": "Misinformasi",
+  "reason-other": "Lainnya",
+  "reason-self-harm": "Menyakiti diri sendiri",
+  "reason-sexual": "Konten seksual atau eksplisit",
+  "reason-spam": "Spam atau penipuan",
+  "reason-violence": "Kekerasan atau ancaman",
+  "submit-report": "Kirim laporan",
+  "submitting": "Mengirim…",
+  "toast-error": "Gagal mengirim laporan. Silakan coba lagi.",
+  "toast-sign-in": "Silakan masuk untuk melaporkan konten.",
+  "toast-success": "Terima kasih — tim kami akan meninjau ini."
+}

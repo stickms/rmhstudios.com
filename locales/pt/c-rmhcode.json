@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "Copiar token",
+  "created-date": "Criado em {{date}}",
+  "expired": "Expirado",
+  "generate-token": "Gerar Token",
+  "last-used-date": "Último uso em {{date}}",
+  "no-active-tokens": "Nenhum token ativo. Gere um para começar.",
+  "revoke-token-label": "Revogar token",
+  "token-auth-instruction-post": "para autenticar.",
+  "token-auth-instruction-pre": "Execute",
+  "token-generated-notice": "Token gerado! Copie-o agora — ele não será mostrado novamente.",
+  "token-name-placeholder": "Nome do token (opcional)",
+  "unnamed-token": "Token sem nome",
+  "your-tokens": "Seus Tokens"
+}

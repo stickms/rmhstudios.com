@@ -1,0 +1,23 @@
+{
+  "cancel": "Cancelar",
+  "custom-amount": "Valor personalizado",
+  "duration": "Duração",
+  "gift-a-membership": "Presentear uma assinatura",
+  "gift-desc": "Dê a este usuário uma assinatura com moedas.",
+  "gift-desc-named": "Dê a {{name}} uma assinatura com moedas.",
+  "gift-error": "Não foi possível presentear a assinatura",
+  "gift-for": "Presente para",
+  "gift-sign-in": "Faça login para presentear uma assinatura.",
+  "gift-success": "Presenteou {{months}} mês{{s}} de {{tier}}!",
+  "gift-success-named": "Presenteou {{months}} mês{{s}} de {{tier}} para {{name}}!",
+  "note-placeholder": "Adicionar uma nota (opcional)",
+  "sending": "Enviando…",
+  "tier": "Nível",
+  "tip-amount-group-label": "Valor da gorjeta",
+  "tip-btn": "Gorjeta",
+  "tip-dialog-description": "Envie moedas{{recipient}} para mostrar apreço.",
+  "tip-dialog-title": "Enviar uma gorjeta",
+  "tip-error": "Não foi possível enviar a gorjeta",
+  "tip-sign-in": "Faça login para dar gorjeta.",
+  "tip-success": "Deu gorjeta de {{amount}} moedas{{recipient}}!"
+}

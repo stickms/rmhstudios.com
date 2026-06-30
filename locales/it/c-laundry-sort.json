@@ -1,0 +1,22 @@
+{
+  "correct-sort": "Ordinamento corretto:",
+  "failed-to-load-leaderboard": "Impossibile caricare la classifica",
+  "game-description": "Guarda i vestiti colorati cadere dall'alto. Lasciali cadere nei contenitori del colore corrispondente per guadagnare punti. I contenitori sbagliati fanno perdere punti!",
+  "game-over": "GAME OVER",
+  "leaderboard": "CLASSIFICA",
+  "loading": "Caricamento…",
+  "no-scores-yet": "Nessun punteggio ancora. Sii il primo!",
+  "play-again": "Gioca di nuovo",
+  "points": "punti",
+  "score": "PUNTEGGIO",
+  "score-submitted": "✓ Punteggio inviato!",
+  "sign-in-to-play": "Accedi per giocare",
+  "sign-in-to-save": "Accedi per salvare il tuo punteggio!",
+  "sign-in-to-submit": "Accedi per inviare",
+  "sort-the-laundry": "ORDINA IL BUCATO!",
+  "start-game": "Avvia gioco",
+  "submitting-score": "Invio del punteggio…",
+  "time": "TEMPO",
+  "time-limit": "Limite di tempo: 1 minuto",
+  "wrong-bin": "Contenitore sbagliato:"
+}

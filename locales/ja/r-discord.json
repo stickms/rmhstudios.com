@@ -1,0 +1,7 @@
+{
+  "connecting-to-discord": "Discordに接続中...",
+  "connection-failed": "接続に失敗しました",
+  "loading-game": "ゲームを読み込み中...",
+  "loading-rmhbox": "RMHBoxを読み込み中...",
+  "run-inside-discord-activity": "Discordアクティビティ内で実行していることを確認してください。"
+}

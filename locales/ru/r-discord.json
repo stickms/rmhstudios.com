@@ -1,0 +1,7 @@
+{
+  "connecting-to-discord": "Подключение к Discord...",
+  "connection-failed": "Ошибка подключения",
+  "loading-game": "Загрузка игры...",
+  "loading-rmhbox": "Загрузка RMHBox...",
+  "run-inside-discord-activity": "Убедитесь, что вы запускаете это внутри Discord Activity."
+}

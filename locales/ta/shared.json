@@ -1,0 +1,15 @@
+{
+  "chat-placeholder": "அரட்டை...",
+  "error-boundary-message": "எதிர்பாராத பிழை ஏற்பட்டது.",
+  "error-boundary-retry": "மீண்டும் முயற்சிக்கவும்",
+  "error-boundary-title": "ஏதோ தவறு ஏற்பட்டது",
+  "failed-to-load-media": "ஊடகத்தை ஏற்ற முடியவில்லை",
+  "game-crashed": "விளையாட்டு செயலிழந்தது",
+  "game-crashed-named": "{{gameName}} செயலிழந்தது",
+  "loading": "ஏற்றுகிறது…",
+  "no-messages-yet": "இதுவரை செய்திகள் இல்லை",
+  "react": "எதிர்வினை",
+  "return-home": "முகப்புக்குத் திரும்பு",
+  "try-again": "மீண்டும் முயற்சிக்கவும்",
+  "unexpected-error": "எதிர்பாராத பிழை ஏற்பட்டது."
+}

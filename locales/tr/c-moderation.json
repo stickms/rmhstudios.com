@@ -1,0 +1,20 @@
+{
+  "cancel": "İptal",
+  "details-placeholder": "Ayrıntı ekleyin (isteğe bağlı)",
+  "dialog-description": "Bize neyin yanlış olduğunu söyleyin. Raporlar, bildirdiğiniz kişiye karşı anonimdir.",
+  "dialog-title": "İçeriği bildir",
+  "reason-harassment": "Taciz veya zorbalık",
+  "reason-hate": "Nefret söylemi",
+  "reason-illegal": "Yasa dışı içerik",
+  "reason-misinformation": "Yanlış bilgi",
+  "reason-other": "Başka bir şey",
+  "reason-self-harm": "Kendine zarar verme",
+  "reason-sexual": "Cinsel veya açık içerik",
+  "reason-spam": "Spam veya dolandırıcılık",
+  "reason-violence": "Şiddet veya tehdit",
+  "submit-report": "Raporu gönder",
+  "submitting": "Gönderiliyor…",
+  "toast-error": "Rapor gönderilemedi. Lütfen tekrar deneyin.",
+  "toast-sign-in": "İçerik bildirmek için lütfen oturum açın.",
+  "toast-success": "Teşekkürler — ekibimiz bunu inceleyecek."
+}

@@ -1,0 +1,23 @@
+{
+  "cancel": "Batal",
+  "custom-amount": "Jumlah tersuai",
+  "duration": "Tempoh",
+  "gift-a-membership": "Hadiahkan keahlian",
+  "gift-desc": "Berikan pengguna ini keahlian dengan syiling.",
+  "gift-desc-named": "Berikan {{name}} keahlian dengan syiling.",
+  "gift-error": "Tidak dapat menghadiahkan keahlian",
+  "gift-for": "Hadiah untuk",
+  "gift-sign-in": "Sila log masuk untuk menghadiahkan keahlian.",
+  "gift-success": "Berjaya menghadiahkan {{months}} bulan {{s}} {{tier}}!",
+  "gift-success-named": "Berjaya menghadiahkan {{months}} bulan {{s}} {{tier}} kepada {{name}}!",
+  "note-placeholder": "Tambah nota (pilihan)",
+  "sending": "Menghantar…",
+  "tier": "Tier",
+  "tip-amount-group-label": "Jumlah tip",
+  "tip-btn": "Tip",
+  "tip-dialog-description": "Hantar syiling{{recipient}} untuk menunjukkan penghargaan.",
+  "tip-dialog-title": "Hantar tip",
+  "tip-error": "Tidak dapat menghantar tip",
+  "tip-sign-in": "Sila log masuk untuk memberi tip.",
+  "tip-success": "Berjaya memberi tip {{amount}} syiling{{recipient}}!"
+}

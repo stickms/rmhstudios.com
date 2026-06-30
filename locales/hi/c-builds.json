@@ -1,0 +1,18 @@
+{
+  "clear-filters": "फ़िल्टर साफ़ करें",
+  "clear-search": "खोज साफ़ करें",
+  "like-this-build": "इस बिल्ड को पसंद करें",
+  "no-builds-found": "कोई बिल्ड नहीं मिला",
+  "read-more": "और पढ़ें",
+  "screenshot-of": "{{title}} का स्क्रीनशॉट",
+  "search-aria-label": "बिल्ड खोजें",
+  "search-placeholder": "बिल्ड खोजें...",
+  "sort-builds": "बिल्ड को क्रमबद्ध करें",
+  "sort-default": "डिफ़ॉल्ट",
+  "sort-most-discussed": "सबसे अधिक चर्चित",
+  "sort-most-liked": "सबसे अधिक पसंद किया गया",
+  "sort-most-viewed": "सबसे अधिक देखा गया",
+  "sort-options": "क्रमबद्ध विकल्प",
+  "unlike-this-build": "इस बिल्ड को नापसंद करें",
+  "view-comments": "टिप्पणियाँ देखें"
+}

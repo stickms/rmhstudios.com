@@ -1,0 +1,23 @@
+{
+  "cancel": "Batal",
+  "custom-amount": "Jumlah kustom",
+  "duration": "Durasi",
+  "gift-a-membership": "Hadiahkan keanggotaan",
+  "gift-desc": "Berikan pengguna ini keanggotaan dengan koin.",
+  "gift-desc-named": "Berikan {{name}} keanggotaan dengan koin.",
+  "gift-error": "Gagal menghadiahkan keanggotaan",
+  "gift-for": "Hadiah untuk",
+  "gift-sign-in": "Silakan masuk untuk menghadiahkan keanggotaan.",
+  "gift-success": "Berhasil menghadiahkan {{months}} bulan keanggotaan {{tier}}!",
+  "gift-success-named": "Berhasil menghadiahkan {{months}} bulan keanggotaan {{tier}} kepada {{name}}!",
+  "note-placeholder": "Tambahkan catatan (opsional)",
+  "sending": "Mengirim…",
+  "tier": "Tingkat",
+  "tip-amount-group-label": "Jumlah tip",
+  "tip-btn": "Tip",
+  "tip-dialog-description": "Kirim koin{{recipient}} untuk menunjukkan apresiasi.",
+  "tip-dialog-title": "Kirim tip",
+  "tip-error": "Gagal mengirim tip",
+  "tip-sign-in": "Silakan masuk untuk memberi tip.",
+  "tip-success": "Berhasil memberi tip {{amount}} koin{{recipient}}!"
+}

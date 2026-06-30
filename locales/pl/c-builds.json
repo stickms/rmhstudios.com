@@ -1,0 +1,18 @@
+{
+  "clear-filters": "Wyczyść filtry",
+  "clear-search": "Wyczyść wyszukiwanie",
+  "like-this-build": "Polub tę konfigurację",
+  "no-builds-found": "Nie znaleziono konfiguracji",
+  "read-more": "Czytaj więcej",
+  "screenshot-of": "Zrzut ekranu {{title}}",
+  "search-aria-label": "Szukaj konfiguracji",
+  "search-placeholder": "Szukaj konfiguracji...",
+  "sort-builds": "Sortuj konfiguracje",
+  "sort-default": "Domyślne",
+  "sort-most-discussed": "Najczęściej komentowane",
+  "sort-most-liked": "Najbardziej lubiane",
+  "sort-most-viewed": "Najczęściej oglądane",
+  "sort-options": "Opcje sortowania",
+  "unlike-this-build": "Przestań lubić tę konfigurację",
+  "view-comments": "Zobacz komentarze"
+}

@@ -1,0 +1,22 @@
+{
+  "correct-sort": "Tri correct :",
+  "failed-to-load-leaderboard": "Échec du chargement du classement",
+  "game-description": "Regardez des vêtements colorés tomber d'en haut. Laissez-les tomber dans les bacs de couleur correspondants pour gagner des points. Les mauvais bacs font perdre des points !",
+  "game-over": "JEU TERMINÉ",
+  "leaderboard": "CLASSEMENT",
+  "loading": "Chargement…",
+  "no-scores-yet": "Pas encore de scores. Soyez le premier !",
+  "play-again": "Rejouer",
+  "points": "points",
+  "score": "SCORE",
+  "score-submitted": "✓ Score soumis !",
+  "sign-in-to-play": "Connectez-vous pour jouer",
+  "sign-in-to-save": "Connectez-vous pour sauvegarder votre score !",
+  "sign-in-to-submit": "Connectez-vous pour soumettre",
+  "sort-the-laundry": "TRIEZ LE LINGE !",
+  "start-game": "Commencer la partie",
+  "submitting-score": "Soumission du score…",
+  "time": "TEMPS",
+  "time-limit": "Limite de temps : 1 minute",
+  "wrong-bin": "Mauvais bac :"
+}

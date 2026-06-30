@@ -1,0 +1,15 @@
+{
+  "chat-placeholder": "చాట్...",
+  "error-boundary-message": "ఊహించని లోపం సంభవించింది.",
+  "error-boundary-retry": "మళ్ళీ ప్రయత్నించండి",
+  "error-boundary-title": "ఏదో తప్పు జరిగింది",
+  "failed-to-load-media": "మీడియా లోడ్ చేయడంలో విఫలమైంది",
+  "game-crashed": "గేమ్ క్రాష్ అయింది",
+  "game-crashed-named": "{{gameName}} క్రాష్ అయింది",
+  "loading": "లోడ్ అవుతోంది…",
+  "no-messages-yet": "ఇంకా సందేశాలు లేవు",
+  "react": "ప్రతిస్పందించండి",
+  "return-home": "హోమ్‌కు తిరిగి వెళ్ళండి",
+  "try-again": "మళ్ళీ ప్రయత్నించండి",
+  "unexpected-error": "ఊహించని లోపం సంభవించింది."
+}

@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "Скопировать токен",
+  "created-date": "Создан {{date}}",
+  "expired": "Истёк",
+  "generate-token": "Сгенерировать токен",
+  "last-used-date": "Последнее использование {{date}}",
+  "no-active-tokens": "Нет активных токенов. Сгенерируйте один, чтобы начать.",
+  "revoke-token-label": "Отозвать токен",
+  "token-auth-instruction-post": "для аутентификации.",
+  "token-auth-instruction-pre": "Запустите",
+  "token-generated-notice": "Токен сгенерирован! Скопируйте его сейчас — он больше не будет показан.",
+  "token-name-placeholder": "Имя токена (необязательно)",
+  "unnamed-token": "Токен без имени",
+  "your-tokens": "Ваши токены"
+}

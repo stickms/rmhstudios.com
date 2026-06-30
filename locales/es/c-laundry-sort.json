@@ -1,0 +1,22 @@
+{
+  "correct-sort": "Orden correcto:",
+  "failed-to-load-leaderboard": "Error al cargar la clasificación",
+  "game-description": "Observa cómo caen prendas de colores desde arriba. Déjalas caer en los contenedores del color correspondiente para ganar puntos. ¡Los contenedores incorrectos restan puntos!",
+  "game-over": "JUEGO TERMINADO",
+  "leaderboard": "CLASIFICACIÓN",
+  "loading": "Cargando…",
+  "no-scores-yet": "Aún no hay puntuaciones. ¡Sé el primero!",
+  "play-again": "Jugar de nuevo",
+  "points": "puntos",
+  "score": "PUNTUACIÓN",
+  "score-submitted": "✓ ¡Puntuación enviada!",
+  "sign-in-to-play": "Inicia sesión para jugar",
+  "sign-in-to-save": "¡Inicia sesión para guardar tu puntuación!",
+  "sign-in-to-submit": "Inicia sesión para enviar",
+  "sort-the-laundry": "¡ORDENA LA ROPA!",
+  "start-game": "Iniciar juego",
+  "submitting-score": "Enviando puntuación…",
+  "time": "TIEMPO",
+  "time-limit": "Límite de tiempo: 1 minuto",
+  "wrong-bin": "Contenedor incorrecto:"
+}

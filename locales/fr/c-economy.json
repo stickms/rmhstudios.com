@@ -1,0 +1,23 @@
+{
+  "cancel": "Annuler",
+  "custom-amount": "Montant personnalisé",
+  "duration": "Durée",
+  "gift-a-membership": "Offrir un abonnement",
+  "gift-desc": "Offrir un abonnement avec des pièces à cet utilisateur.",
+  "gift-desc-named": "Offrir un abonnement avec des pièces à {{name}}.",
+  "gift-error": "Impossible d'offrir l'abonnement",
+  "gift-for": "Cadeau pour",
+  "gift-sign-in": "Veuillez vous connecter pour offrir un abonnement.",
+  "gift-success": "{{months}} mois de {{tier}} offerts !",
+  "gift-success-named": "{{months}} mois de {{tier}} offerts à {{name}} !",
+  "note-placeholder": "Ajouter une note (facultatif)",
+  "sending": "Envoi en cours…",
+  "tier": "Niveau",
+  "tip-amount-group-label": "Montant du pourboire",
+  "tip-btn": "Pourboire",
+  "tip-dialog-description": "Envoyer des pièces{{recipient}} pour montrer votre appréciation.",
+  "tip-dialog-title": "Envoyer un pourboire",
+  "tip-error": "Impossible d'envoyer le pourboire",
+  "tip-sign-in": "Veuillez vous connecter pour donner un pourboire.",
+  "tip-success": "{{amount}} pièces envoyées{{recipient}} !"
+}

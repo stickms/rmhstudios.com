@@ -1,0 +1,20 @@
+{
+  "cancel": "Abbrechen",
+  "details-placeholder": "Details hinzufügen (optional)",
+  "dialog-description": "Teilen Sie uns mit, was nicht stimmt. Meldungen sind für die gemeldete Person anonym.",
+  "dialog-title": "Inhalt melden",
+  "reason-harassment": "Belästigung oder Mobbing",
+  "reason-hate": "Hassrede",
+  "reason-illegal": "Illegale Inhalte",
+  "reason-misinformation": "Fehlinformationen",
+  "reason-other": "Sonstiges",
+  "reason-self-harm": "Selbstverletzung",
+  "reason-sexual": "Sexuelle oder explizite Inhalte",
+  "reason-spam": "Spam oder Betrug",
+  "reason-violence": "Gewalt oder Drohungen",
+  "submit-report": "Meldung absenden",
+  "submitting": "Wird gesendet…",
+  "toast-error": "Meldung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+  "toast-sign-in": "Bitte melden Sie sich an, um Inhalte zu melden.",
+  "toast-success": "Vielen Dank – unser Team wird dies überprüfen."
+}

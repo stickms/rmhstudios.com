@@ -1,0 +1,18 @@
+{
+  "back-home": "Назад домой",
+  "controls-hint": "WASD/← → Двигаться • Space Прыжок • Shift Рывок • E Взаимодействие • M Меню",
+  "controls-interact": "E — Взаимодействие",
+  "controls-jump": "Space — Прыжок",
+  "controls-menu": "M — Меню",
+  "controls-move": "WASD / Стрелки — Двигаться",
+  "debt": "ДОЛГ",
+  "e-continue": "[E] Продолжить",
+  "loading": "ЗАГРУЗКА...",
+  "login-to-play": "Войдите, чтобы играть",
+  "menu-title": "Меню",
+  "music-volume": "Громкость музыки",
+  "resume": "Продолжить [M]",
+  "sign-in-prompt": "Вам нужно войти, прежде чем попасть в казино. Ваши долги будут записаны.",
+  "subtitle": "Стол ждёт",
+  "title": "Дом всегда выигрывает"
+}

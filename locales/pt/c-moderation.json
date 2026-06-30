@@ -1,0 +1,20 @@
+{
+  "cancel": "Cancelar",
+  "details-placeholder": "Adicione detalhes (opcional)",
+  "dialog-description": "Conte-nos o que está errado. As denúncias são anônimas para a pessoa que você está denunciando.",
+  "dialog-title": "Denunciar conteúdo",
+  "reason-harassment": "Assédio ou bullying",
+  "reason-hate": "Discurso de ódio",
+  "reason-illegal": "Conteúdo ilegal",
+  "reason-misinformation": "Desinformação",
+  "reason-other": "Outro motivo",
+  "reason-self-harm": "Automutilação",
+  "reason-sexual": "Conteúdo sexual ou explícito",
+  "reason-spam": "Spam ou golpe",
+  "reason-violence": "Violência ou ameaças",
+  "submit-report": "Enviar denúncia",
+  "submitting": "Enviando…",
+  "toast-error": "Não foi possível enviar a denúncia. Tente novamente.",
+  "toast-sign-in": "Faça login para denunciar conteúdo.",
+  "toast-success": "Obrigado — nossa equipe analisará isso."
+}

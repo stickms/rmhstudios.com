@@ -1,0 +1,20 @@
+{
+  "cancel": "Anulează",
+  "details-placeholder": "Adaugă detalii (opțional)",
+  "dialog-description": "Spune-ne ce este în neregulă. Rapoartele sunt anonime pentru persoana raportată.",
+  "dialog-title": "Raportează conținut",
+  "reason-harassment": "Hărțuire sau intimidare",
+  "reason-hate": "Discurs instigator la ură",
+  "reason-illegal": "Conținut ilegal",
+  "reason-misinformation": "Dezinformare",
+  "reason-other": "Altceva",
+  "reason-self-harm": "Auto-vătămare",
+  "reason-sexual": "Conținut sexual sau explicit",
+  "reason-spam": "Spam sau înșelătorie",
+  "reason-violence": "Violență sau amenințări",
+  "submit-report": "Trimite raportul",
+  "submitting": "Se trimite…",
+  "toast-error": "Nu s-a putut trimite raportul. Încearcă din nou.",
+  "toast-sign-in": "Autentifică-te pentru a raporta conținut.",
+  "toast-success": "Mulțumim — echipa noastră va analiza acest raport."
+}

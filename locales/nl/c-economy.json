@@ -1,0 +1,23 @@
+{
+  "cancel": "Annuleren",
+  "custom-amount": "Eigen bedrag",
+  "duration": "Duur",
+  "gift-a-membership": "Lidmaatschap cadeau doen",
+  "gift-desc": "Geef deze gebruiker een lidmaatschap met coins.",
+  "gift-desc-named": "Geef {{name}} een lidmaatschap met coins.",
+  "gift-error": "Kon lidmaatschap niet cadeau doen",
+  "gift-for": "Cadeau voor",
+  "gift-sign-in": "Log in om een lidmaatschap cadeau te doen.",
+  "gift-success": "{{months}} maand{{s}} van {{tier}} cadeau gedaan!",
+  "gift-success-named": "{{months}} maand{{s}} van {{tier}} cadeau gedaan aan {{name}}!",
+  "note-placeholder": "Notitie toevoegen (optioneel)",
+  "sending": "Verzenden…",
+  "tier": "Niveau",
+  "tip-amount-group-label": "Fooibedrag",
+  "tip-btn": "Fooi",
+  "tip-dialog-description": "Stuur coins{{recipient}} om waardering te tonen.",
+  "tip-dialog-title": "Een fooi sturen",
+  "tip-error": "Kon fooi niet versturen",
+  "tip-sign-in": "Log in om een fooi te geven.",
+  "tip-success": "{{amount}} coins{{recipient}} als fooi gegeven!"
+}

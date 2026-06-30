@@ -1,0 +1,23 @@
+{
+  "cancel": "रद्द करें",
+  "custom-amount": "अन्य राशि",
+  "duration": "अवधि",
+  "gift-a-membership": "सदस्यता उपहार दें",
+  "gift-desc": "इस उपयोगकर्ता को सिक्कों के साथ सदस्यता उपहार दें।",
+  "gift-desc-named": "{{name}} को सिक्कों के साथ सदस्यता उपहार दें।",
+  "gift-error": "सदस्यता उपहार नहीं दे सके",
+  "gift-for": "के लिए उपहार",
+  "gift-sign-in": "कृपया सदस्यता उपहार देने के लिए साइन इन करें।",
+  "gift-success": "{{tier}} के {{months}} महीने उपहार दिए!",
+  "gift-success-named": "{{name}} को {{tier}} के {{months}} महीने उपहार दिए!",
+  "note-placeholder": "एक नोट जोड़ें (वैकल्पिक)",
+  "sending": "भेजा जा रहा है…",
+  "tier": "स्तर",
+  "tip-amount-group-label": "टिप राशि",
+  "tip-btn": "टिप",
+  "tip-dialog-description": "प्रशंसा दिखाने के लिए {{recipient}} को सिक्के भेजें।",
+  "tip-dialog-title": "टिप भेजें",
+  "tip-error": "टिप नहीं भेज सके",
+  "tip-sign-in": "कृपया टिप देने के लिए साइन इन करें।",
+  "tip-success": "{{recipient}} को {{amount}} सिक्के टिप दिए!"
+}

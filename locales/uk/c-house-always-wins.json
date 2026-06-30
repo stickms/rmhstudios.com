@@ -1,0 +1,18 @@
+{
+  "back-home": "На головну",
+  "controls-hint": "WASD/← → Рух • Space Стрибок • Shift Ривок • E Взаємодія • M Меню",
+  "controls-interact": "E — Взаємодія",
+  "controls-jump": "Space — Стрибок",
+  "controls-menu": "M — Меню",
+  "controls-move": "WASD / Стрілки — Рух",
+  "debt": "БОРГ",
+  "e-continue": "[E] Продовжити",
+  "loading": "ЗАВАНТАЖЕННЯ...",
+  "login-to-play": "Увійдіть, щоб грати",
+  "menu-title": "Меню",
+  "music-volume": "Гучність музики",
+  "resume": "Продовжити [M]",
+  "sign-in-prompt": "Вам потрібно увійти, перш ніж зайти в казино. Ваші борги будуть записані.",
+  "subtitle": "Стіл чекає",
+  "title": "Дім завжди виграє"
+}

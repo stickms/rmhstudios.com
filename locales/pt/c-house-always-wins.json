@@ -1,0 +1,18 @@
+{
+  "back-home": "Voltar ao Início",
+  "controls-hint": "WASD/← → Mover • Espaço Pular • Shift Correr • E Interagir • M Menu",
+  "controls-interact": "E — Interagir",
+  "controls-jump": "Espaço — Pular",
+  "controls-menu": "M — Menu",
+  "controls-move": "WASD / Setas — Mover",
+  "debt": "DÍVIDA",
+  "e-continue": "[E] Continuar",
+  "loading": "CARREGANDO...",
+  "login-to-play": "Faça Login para Jogar",
+  "menu-title": "Menu",
+  "music-volume": "Volume da Música",
+  "resume": "Continuar [M]",
+  "sign-in-prompt": "Você precisa fazer login antes de entrar no cassino. Suas dívidas serão registradas.",
+  "subtitle": "A mesa está esperando",
+  "title": "A Casa Sempre Vence"
+}

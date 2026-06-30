@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "토큰 복사",
+  "created-date": "생성일 {{date}}",
+  "expired": "만료됨",
+  "generate-token": "토큰 생성",
+  "last-used-date": "마지막 사용일 {{date}}",
+  "no-active-tokens": "활성 토큰이 없습니다. 시작하려면 토큰을 생성하세요.",
+  "revoke-token-label": "토큰 취소",
+  "token-auth-instruction-post": "을(를) 실행하여 인증하세요.",
+  "token-auth-instruction-pre": "실행",
+  "token-generated-notice": "토큰이 생성되었습니다! 지금 복사하세요. 다시 표시되지 않습니다.",
+  "token-name-placeholder": "토큰 이름 (선택 사항)",
+  "unnamed-token": "이름 없는 토큰",
+  "your-tokens": "내 토큰"
+}

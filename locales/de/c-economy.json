@@ -1,0 +1,23 @@
+{
+  "cancel": "Abbrechen",
+  "custom-amount": "Eigener Betrag",
+  "duration": "Dauer",
+  "gift-a-membership": "Mitgliedschaft verschenken",
+  "gift-desc": "Gib diesem Benutzer eine Mitgliedschaft mit Münzen.",
+  "gift-desc-named": "Gib {{name}} eine Mitgliedschaft mit Münzen.",
+  "gift-error": "Mitgliedschaft konnte nicht verschenkt werden",
+  "gift-for": "Geschenk für",
+  "gift-sign-in": "Bitte melde dich an, um eine Mitgliedschaft zu verschenken.",
+  "gift-success": "{{months}} Monat{{s}} von {{tier}} verschenkt!",
+  "gift-success-named": "{{months}} Monat{{s}} von {{tier}} an {{name}} verschenkt!",
+  "note-placeholder": "Notiz hinzufügen (optional)",
+  "sending": "Senden…",
+  "tier": "Stufe",
+  "tip-amount-group-label": "Trinkgeldbetrag",
+  "tip-btn": "Trinkgeld",
+  "tip-dialog-description": "Sende Münzen{{recipient}}, um Wertschätzung zu zeigen.",
+  "tip-dialog-title": "Trinkgeld senden",
+  "tip-error": "Trinkgeld konnte nicht gesendet werden",
+  "tip-sign-in": "Bitte melde dich an, um Trinkgeld zu geben.",
+  "tip-success": "{{amount}} Münzen{{recipient}} als Trinkgeld gesendet!"
+}

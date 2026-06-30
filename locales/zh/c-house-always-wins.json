@@ -1,6 +1,6 @@
 {
   "back-home": "回家",
-  "controls-hint": "WASD/方向键 • 空格跳跃 • E互动 • M菜单",
+  "controls-hint": "WASD/← → 移动 • 空格跳跃 • Shift冲刺 • E互动 • M菜单",
   "controls-interact": "E — 互动",
   "controls-jump": "太空 — 跳跃",
   "controls-menu": "M — 菜单",

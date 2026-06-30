@@ -1,0 +1,7 @@
+{
+  "connecting-to-discord": "กำลังเชื่อมต่อไปยัง Discord...",
+  "connection-failed": "การเชื่อมต่อล้มเหลว",
+  "loading-game": "กำลังโหลดเกม...",
+  "loading-rmhbox": "กำลังโหลด RMHBox...",
+  "run-inside-discord-activity": "โปรดตรวจสอบว่าคุณกำลังรันสิ่งนี้ภายใน Discord Activity"
+}

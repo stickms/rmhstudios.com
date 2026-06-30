@@ -1,0 +1,22 @@
+{
+  "correct-sort": "Poprawny sort:",
+  "failed-to-load-leaderboard": "Nie udało się załadować rankingu",
+  "game-description": "Obserwuj, jak kolorowe ubrania spadają z góry. Wrzuć je do pasujących pojemników, aby zdobyć punkty. Niewłaściwe pojemniki kosztują punkty!",
+  "game-over": "KONIEC GRY",
+  "leaderboard": "RANKING",
+  "loading": "Ładowanie…",
+  "no-scores-yet": "Brak wyników. Bądź pierwszy!",
+  "play-again": "Zagraj ponownie",
+  "points": "punktów",
+  "score": "WYNIK",
+  "score-submitted": "✓ Wynik przesłany!",
+  "sign-in-to-play": "Zaloguj się, aby grać",
+  "sign-in-to-save": "Zaloguj się, aby zapisać swój wynik!",
+  "sign-in-to-submit": "Zaloguj się, aby przesłać",
+  "sort-the-laundry": "POSORTUJ PRANIE!",
+  "start-game": "Rozpocznij grę",
+  "submitting-score": "Przesyłanie wyniku…",
+  "time": "CZAS",
+  "time-limit": "Limit czasu: 1 minuta",
+  "wrong-bin": "Niewłaściwy pojemnik:"
+}
