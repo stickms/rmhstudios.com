@@ -79,3 +79,4 @@ MODULE.bazel.lock
 
 # deploy.sh content-addressed build-skip hashes (host-local)
 .deploy/
+.prisma-engines/

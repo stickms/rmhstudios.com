@@ -1,212 +1,89 @@
 # RMH Studios Developer API
 
-The RMH Studios REST API lets you build on the platform programmatically —
-read your account, fetch the public feed, and post on your own behalf.
+The canonical, always-current documentation is the in-app **wiki** at
+[`/developer/docs`](https://rmhstudios.com/developer/docs), generated from the
+same endpoint registry that powers the API. A machine-readable **OpenAPI 3.1**
+spec is served at [`/api/v1/openapi.json`](https://rmhstudios.com/api/v1/openapi.json)
+— point your codegen at it. This file is a high-level summary for contributors.
 
-- **Availability:** the API requires an active **Starter** subscription or
-  higher. Entitlement is re-checked on every request, so access tracks your
-  subscription in real time.
 - **Base URL:** `https://rmhstudios.com`
-- **Format:** JSON request/response bodies; UTF-8.
-- **Stability:** the current version is `v1`. Breaking changes ship under a new
-  version prefix.
+- **Version:** `v1` (breaking changes ship under a new prefix).
+- **Availability:** an active **Starter** subscription or higher; entitlement is
+  re-checked on every request.
 
-Manage keys and see a live reference in-app at **`/developer`**.
+## Authentication, scopes & keys
 
----
-
-## Authentication
-
-Every request must include an API key. Two equivalent options:
+Send the key on every request, either way:
 
 ```http
 Authorization: Bearer rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx
-```
-
-```http
 X-API-Key: rmh_live_xxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-API keys authenticate as **your user account**. Writes are scoped to your own
-account; you cannot act on behalf of others.
+Keys are random 256-bit secrets; only a SHA-256 hash is stored (plaintext shown
+once, plus a 4-char display suffix). Keys carry **granular scopes**
+(`read:profile`, `write:posts`, `manage:webhooks`, …; `*` / `read:*` / `write:*`
+wildcards accepted), an optional **expiry**, and support **rotation** and
+**revocation** from `/developer`. The scope catalog lives in
+`lib/api/scopes.ts`.
 
-### Key security
+## Conventions
 
-- Keys are random 256-bit secrets formatted `rmh_live_<base62>`.
-- The server stores **only a SHA-256 hash** of each key — the plaintext is
-  shown **once** at creation and can never be retrieved again.
-- Treat a key like a password. Keep it server-side; never embed it in a public
-  client, repo, or browser bundle you don't control.
-- Revoke a key any time from `/developer`; revocation takes effect immediately.
-- If a subscription lapses or the account is suspended, all of that account's
-  keys stop working until the subscription is restored.
+- **Errors:** `{ "error": { "type", "code", "message", "request_id" } }`. Catalog
+  in `lib/api/errors.ts`.
+- **Request IDs:** every response carries `X-Request-Id` (echoed as `request_id`).
+- **Rate limits:** per-key, per-minute (Starter 120, Pro+ 600). `X-RateLimit-Limit`,
+  `X-RateLimit-Remaining`, `X-RateLimit-Reset` on every response; `Retry-After` on 429.
+- **Pagination:** keyset — `?limit=&cursor=` → `{ data, nextCursor }`.
+- **Idempotency:** writes honor the `Idempotency-Key` header (24h replay window).
+- **CORS:** permissive; auth is via bearer key (never cookies), so it is not a
+  CSRF surface — never ship a secret key in a public browser bundle.
 
----
+## Endpoint groups
 
-## Rate limits
+Account, Posts, Engagement (likes/comments/bookmarks), Feed, Users (profiles +
+social graph), Media, Content (builds / blog / news), Leaderboards, Webhooks,
+and Meta (`openapi.json`). The exhaustive, example-rich reference is in the wiki
+and the OpenAPI document.
 
-Limits are enforced **per key**, per minute:
+## Webhooks
 
-| Tier          | Requests / minute |
-| ------------- | ----------------- |
-| Starter       | 120               |
-| Pro / higher  | 600               |
+Register endpoints with the `manage:webhooks` scope. Events
+(`post.created`, `follow.created`, `like.created`, `comment.created`,
+`bookmark.created`, plus deletions) are delivered as HMAC-signed `POST`s:
 
-Exceeding the limit returns `429 Too Many Requests` with a `Retry-After`
-header (seconds) and `X-RateLimit-Limit`.
-
----
-
-## Errors
-
-Non-2xx responses use a stable envelope:
-
-```json
-{ "error": { "code": "subscription_required", "message": "The developer API requires an active Starter subscription or higher." } }
+```
+X-RMH-Signature: t=<unix-seconds>,v1=<hex hmac-sha256 of `${t}.${rawBody}`>
 ```
 
-| Status | `code`                  | Meaning                                            |
-| ------ | ----------------------- | -------------------------------------------------- |
-| 400    | `invalid_request`       | Malformed body or parameters                       |
-| 401    | `missing_key`           | No API key was provided                            |
-| 401    | `invalid_key`           | Key is malformed, unknown, or revoked              |
-| 403    | `subscription_required` | The owner has no active qualifying subscription    |
-| 403    | `account_suspended`     | The owner's account is suspended                   |
-| 429    | `rate_limited`          | Too many requests — back off and retry             |
-| 500    | `internal_error`        | Unexpected server error                            |
+Failures retry with exponential backoff (up to 6 attempts); persistent failures
+auto-disable the endpoint. The retry queue is drained by `POST /api/cron/webhooks`
+(guarded by `INTERNAL_API_SECRET`).
 
----
+## Architecture (for contributors)
 
-## Endpoints
-
-### `GET /api/v1/me`
-
-Your account summary.
-
-```bash
-curl https://rmhstudios.com/api/v1/me \
-  -H "Authorization: Bearer rmh_live_..."
-```
-
-```json
-{
-  "id": "ck...",
-  "name": "Ada",
-  "handle": "ada",
-  "image": "https://...",
-  "createdAt": "2026-01-02T03:04:05.000Z",
-  "tier": "pro",
-  "stats": { "coins": 1234, "xp": 5200, "level": 7, "followers": 12, "following": 30, "posts": 88 }
-}
-```
-
-### `GET /api/v1/posts`
-
-Your recent posts, newest first.
-
-Query params: `limit` (1–50, default 20), `cursor` (ISO `createdAt` from a
-previous `nextCursor`).
-
-```bash
-curl "https://rmhstudios.com/api/v1/posts?limit=20" \
-  -H "Authorization: Bearer rmh_live_..."
-```
-
-```json
-{
-  "data": [
-    { "id": "ck...", "content": "hello", "audience": "PUBLIC", "createdAt": "...",
-      "metrics": { "likes": 3, "comments": 1, "reposts": 0, "views": 42 } }
-  ],
-  "nextCursor": "2026-06-20T10:00:00.000Z"
-}
-```
-
-Paginate by passing the returned `nextCursor` as `cursor` on the next call;
-`nextCursor` is `null` on the last page.
-
-### `POST /api/v1/posts`
-
-Create a text post on your account.
-
-Body:
-
-| Field      | Type     | Required | Notes                                   |
-| ---------- | -------- | -------- | --------------------------------------- |
-| `content`  | string   | yes      | 1–280 characters                        |
-| `audience` | string   | no       | `PUBLIC` (default), `FOLLOWERS`, `PRIVATE` |
-
-```bash
-curl -X POST https://rmhstudios.com/api/v1/posts \
-  -H "Authorization: Bearer rmh_live_..." \
-  -H "Content-Type: application/json" \
-  -d '{"content":"Posted via the API!"}'
-```
-
-```json
-{ "id": "ck...", "content": "Posted via the API!", "audience": "PUBLIC", "createdAt": "..." }
-```
-
-Returns `201 Created`. Posting awards XP and progresses quests exactly like the
-in-app composer. Suspended accounts receive `403 account_suspended`.
-
-### `POST /api/v1/images`
-
-Upload one image and receive an opaque `media_id` to attach to a post. Send
-`multipart/form-data` with a single `image` field. Max 5 MB; png/jpg/webp/gif.
-
-```bash
-curl -X POST https://rmhstudios.com/api/v1/images \
-  -H "Authorization: Bearer rmh_live_..." \
-  -F "image=@./photo.png"
-# → 201 { "id": "media_...", "type": "image", "expires_at": "..." }
-```
-
-Unattached media expires ~24h after upload. Attach within that window:
-
-```bash
-curl -X POST https://rmhstudios.com/api/v1/posts \
-  -H "Authorization: Bearer rmh_live_..." -H "Content-Type: application/json" \
-  -d '{"content":"hello","media_ids":["media_..."]}'
-```
-
-`POST /api/v1/posts` now accepts `media_ids` (array, max 4). `content` is
-optional when at least one `media_id` is supplied.
-
-### `GET /api/v1/feed`
-
-The public global feed. Only public, free, non-community posts are returned.
-
-Query params: `limit` (1–50, default 20), `cursor` (ISO `createdAt`).
-
-```bash
-curl "https://rmhstudios.com/api/v1/feed?limit=20" \
-  -H "Authorization: Bearer rmh_live_..."
-```
-
-```json
-{
-  "data": [
-    { "id": "ck...", "content": "gm", "createdAt": "...",
-      "author": { "id": "ck...", "name": "Ada", "handle": "ada", "image": "https://..." },
-      "metrics": { "likes": 9, "comments": 2, "reposts": 1, "views": 120 } }
-  ],
-  "nextCursor": "2026-06-20T09:59:00.000Z"
-}
-```
-
----
-
-## CORS
-
-The `v1` endpoints send permissive CORS headers and answer `OPTIONS`
-preflights, so they can be called from a browser. Because authentication is via
-the bearer key (never cookies), this is not a CSRF surface — but it also means
-**you must not ship a secret key in a public browser app**.
-
----
+- `lib/api/scopes.ts`, `lib/api/errors.ts` — pure catalogs (scopes, error taxonomy).
+- `lib/api/developer-auth.server.ts` — key generation + authentication (scopes, expiry).
+- `lib/api/with-developer-api.server.ts` — the wrapper: IP gate, auth, per-key
+  rate limiting + headers, scope enforcement, idempotency replay, request IDs,
+  and the bound `json`/`error`/`noContent` response helpers.
+- `lib/api/registry.ts` — the single source of truth for endpoints; drives both
+  the OpenAPI generator (`lib/api/openapi.ts`) and the wiki (`components/developer/wiki.tsx`).
+- `lib/api/serializers.server.ts` — shared shaping + pagination.
+- `lib/social/engagement.server.ts` — canonical like/comment/bookmark/follow/post
+  mutations (counters, SSE, notifications, XP, quests, achievements, webhooks),
+  shared by both the in-app routes and the API so they never drift.
+- `lib/webhooks/` — `signature.ts` (pure HMAC + SSRF guard), `events.ts` (catalog),
+  `emit.server.ts` (delivery + retry drain).
+- Routes under `app/routes/api/v1/`; key management under `app/routes/api/developer/keys/`.
 
 ## Changelog
 
-- **v1.1 (2026-06)** — image upload: `POST /api/v1/images`; `media_ids` field on `POST /api/v1/posts`.
-- **v1 (2026-06)** — initial release: `me`, `posts` (list + create), `feed`.
+- **v1.2 (2026-06)** — Scoped/expiring keys + rotation; standardized errors with
+  `type` + `request_id`; `X-RateLimit-*` on every response; idempotency keys;
+  outbound webhooks; new endpoints (single post read/delete, like/comment/bookmark,
+  public profiles + social graph, your followers/following/notifications/bookmarks,
+  builds, blog, news, leaderboards); OpenAPI 3.1 at `/api/v1/openapi.json`; the
+  single-page reference became the `/developer/docs` wiki.
+- **v1.1 (2026-06)** — Image upload: `POST /api/v1/images`; `media_ids` on `POST /api/v1/posts`.
+- **v1 (2026-06)** — Initial release: `me`, `posts` (list + create), `feed`.

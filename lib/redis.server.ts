@@ -115,18 +115,19 @@ export async function redisRateLimit(
   key: string,
   limit: number,
   windowMs: number
-): Promise<{ allowed: boolean; retryAfter: number } | null> {
+): Promise<{ allowed: boolean; retryAfter: number; limit: number; remaining: number; reset: number } | null> {
   init();
   if (!publisher) return null;
   try {
     const k = `rl:${key}`;
     const count = await publisher.incr(k);
     if (count === 1) await publisher.pexpire(k, windowMs);
+    const ttl = await publisher.pttl(k);
+    const reset = Date.now() + (ttl > 0 ? ttl : windowMs);
     if (count > limit) {
-      const ttl = await publisher.pttl(k);
-      return { allowed: false, retryAfter: Math.ceil((ttl > 0 ? ttl : windowMs) / 1000) };
+      return { allowed: false, retryAfter: Math.ceil((ttl > 0 ? ttl : windowMs) / 1000), limit, remaining: 0, reset };
     }
-    return { allowed: true, retryAfter: 0 };
+    return { allowed: true, retryAfter: 0, limit, remaining: Math.max(0, limit - count), reset };
   } catch (e) {
     console.error('[redis] rate limit failed:', (e as Error)?.message);
     return null;

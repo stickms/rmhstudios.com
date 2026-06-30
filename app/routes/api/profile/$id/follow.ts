@@ -2,10 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { createNotification, removeNotification } from "@/lib/notifications.server";
-import { progressAchievement } from "@/lib/achievements/engine.server";
-import { awardXp } from "@/lib/xp/engine.server";
-import { progressQuests } from "@/lib/quests/engine.server";
+import { toggleFollow } from "@/lib/social/engagement.server";
 
 export const Route = createFileRoute('/api/profile/$id/follow')({
   server: {
@@ -34,61 +31,12 @@ export const Route = createFileRoute('/api/profile/$id/follow')({
     const resolvedUser = await prisma.user.findUnique({ where: { handle: idOrHandle }, select: { id: true } });
     const followingId = resolvedUser?.id ?? idOrHandle;
     const followerId = session.user.id;
+    const followerHandle = (session.user as { handle?: string }).handle ?? null;
 
-    if (followingId === followerId) {
-      return Response.json({ error: "Cannot follow yourself" }, { status: 400 });
-    }
-
-    const existingFollow = await prisma.follow.findUnique({
-      where: {
-        followerId_followingId: {
-          followerId,
-          followingId,
-        },
-      },
-    });
-
-    if (existingFollow) {
-      await prisma.follow.delete({ where: { id: existingFollow.id } });
-      await removeNotification({
-        userId: followingId,
-        actorId: followerId,
-        type: "FOLLOW",
-        entityType: "user",
-        entityId: followerId,
-      });
-      return Response.json({ success: true, following: false });
-    } else {
-      await prisma.follow.create({
-        data: { followerId, followingId },
-      });
-      const followerHandle = (session.user as { handle?: string }).handle;
-      await createNotification({
-        userId: followingId,
-        actorId: followerId,
-        type: "FOLLOW",
-        entityType: "user",
-        entityId: followerId,
-        link: followerHandle ? `/u/${followerHandle}` : `/profile/${followerId}`,
-        dedupeUnread: true,
-      });
-
-      // Follower-count milestones for the user who was followed.
-      try {
-        const followerCount = await prisma.follow.count({ where: { followingId } });
-        await progressAchievement(followingId, "social.first_follower", { setProgress: followerCount });
-        await progressAchievement(followingId, "social.followers_50", { setProgress: followerCount });
-        await progressAchievement(followingId, "social.followers_500", { setProgress: followerCount });
-      } catch (e) {
-        console.error("follow achievement error:", e);
-      }
-
-      // Progression: XP + quests for the follower taking the action.
-      await awardXp(followerId, 5);
-      await progressQuests(followerId, "follow");
-
-      return Response.json({ success: true, following: true });
-    }
+    const result = await toggleFollow({ followerId, followingId, followerHandle });
+    if (result.selfFollow) return Response.json({ error: "Cannot follow yourself" }, { status: 400 });
+    if (!result.found) return Response.json({ error: "User not found" }, { status: 404 });
+    return Response.json({ success: true, following: result.following });
   } catch (error) {
     console.error("Toggle follow error:", error);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });

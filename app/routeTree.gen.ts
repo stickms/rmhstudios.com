@@ -141,10 +141,10 @@ import { Route as SiteNotificationsRouteImport } from './routes/_site/notificati
 import { Route as SiteMusicTriviaRouteImport } from './routes/_site/music-trivia'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
-import { Route as SiteDeveloperRouteImport } from './routes/_site/developer'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
 import { Route as SiteAchievementsRouteImport } from './routes/_site/achievements'
+import { Route as SiteDeveloperRouteRouteImport } from './routes/_site/developer/route'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
 import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/puzzles/index'
@@ -174,6 +174,7 @@ import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
 import { Route as SiteLibraryIndexRouteImport } from './routes/_site/library/index'
 import { Route as SiteGroupsIndexRouteImport } from './routes/_site/groups/index'
+import { Route as SiteDeveloperIndexRouteImport } from './routes/_site/developer/index'
 import { Route as SiteCreateIndexRouteImport } from './routes/_site/create/index'
 import { Route as SiteBuildsIndexRouteImport } from './routes/_site/builds/index'
 import { Route as SiteBlogIndexRouteImport } from './routes/_site/blog/index'
@@ -199,10 +200,15 @@ import { Route as ApiVersecraftOutlineRouteImport } from './routes/api/versecraf
 import { Route as ApiVersecraftChapterRouteImport } from './routes/api/versecraft/chapter'
 import { Route as ApiVegaScoreRouteImport } from './routes/api/vega/score'
 import { Route as ApiVegaLeaderboardRouteImport } from './routes/api/vega/leaderboard'
+import { Route as ApiV1WebhooksRouteImport } from './routes/api/v1/webhooks'
 import { Route as ApiV1PostsRouteImport } from './routes/api/v1/posts'
+import { Route as ApiV1OpenapiDotjsonRouteImport } from './routes/api/v1/openapi[.]json'
+import { Route as ApiV1NewsRouteImport } from './routes/api/v1/news'
 import { Route as ApiV1MeRouteImport } from './routes/api/v1/me'
 import { Route as ApiV1ImagesRouteImport } from './routes/api/v1/images'
 import { Route as ApiV1FeedRouteImport } from './routes/api/v1/feed'
+import { Route as ApiV1BuildsRouteImport } from './routes/api/v1/builds'
+import { Route as ApiV1BlogRouteImport } from './routes/api/v1/blog'
 import { Route as ApiUsersSearchRouteImport } from './routes/api/users/search'
 import { Route as ApiUserBuildsFeaturedRouteImport } from './routes/api/user-builds/featured'
 import { Route as ApiUserBuildsCategoriesRouteImport } from './routes/api/user-builds/categories'
@@ -290,6 +296,7 @@ import { Route as ApiDiscordActivityImageRouteImport } from './routes/api/discor
 import { Route as ApiDailyPuzzlesScoreRouteImport } from './routes/api/daily-puzzles/score'
 import { Route as ApiDailyPuzzlesResultsRouteImport } from './routes/api/daily-puzzles/results'
 import { Route as ApiDailyPuzzlesLeaderboardRouteImport } from './routes/api/daily-puzzles/leaderboard'
+import { Route as ApiCronWebhooksRouteImport } from './routes/api/cron/webhooks'
 import { Route as ApiCoinsTipRouteImport } from './routes/api/coins/tip'
 import { Route as ApiCoinsPurchaseRouteImport } from './routes/api/coins/purchase'
 import { Route as ApiCoinsClaimRouteImport } from './routes/api/coins/claim'
@@ -334,6 +341,7 @@ import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/
 import { Route as SiteAdminAuditRouteImport } from './routes/_site/admin/audit'
 import { Route as SiteAdminAnnouncementsRouteImport } from './routes/_site/admin/announcements'
 import { Route as SiteAdminAnalyticsRouteImport } from './routes/_site/admin/analytics'
+import { Route as SiteDeveloperDocsRouteRouteImport } from './routes/_site/developer/docs/route'
 import { Route as ApiStudyDecksIndexRouteImport } from './routes/api/study/decks/index'
 import { Route as ApiStorefrontProductsIndexRouteImport } from './routes/api/storefront/products/index'
 import { Route as ApiRmhmusicGuessIndexRouteImport } from './routes/api/rmhmusic/guess/index'
@@ -347,11 +355,23 @@ import { Route as ApiAdminPredictionsIndexRouteImport } from './routes/api/admin
 import { Route as ApiAdminLibraryIndexRouteImport } from './routes/api/admin/library/index'
 import { Route as ApiAdminAlbumsIndexRouteImport } from './routes/api/admin/albums/index'
 import { Route as SiteUUseridIndexRouteImport } from './routes/_site/u/$userid/index'
+import { Route as SiteDeveloperDocsIndexRouteImport } from './routes/_site/developer/docs/index'
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SiteAdminAlbumsIndexRouteImport } from './routes/_site/admin/albums/index'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
 import { Route as ApiVibeThumbSlugRouteImport } from './routes/api/vibe/thumb/$slug'
 import { Route as ApiVibePkgFileRouteImport } from './routes/api/vibe/pkg/$file'
+import { Route as ApiV1WebhooksIdRouteImport } from './routes/api/v1/webhooks/$id'
+import { Route as ApiV1UsersHandleRouteImport } from './routes/api/v1/users/$handle'
+import { Route as ApiV1PostsIdRouteImport } from './routes/api/v1/posts/$id'
+import { Route as ApiV1NewsSlugRouteImport } from './routes/api/v1/news/$slug'
+import { Route as ApiV1MeNotificationsRouteImport } from './routes/api/v1/me/notifications'
+import { Route as ApiV1MeFollowingRouteImport } from './routes/api/v1/me/following'
+import { Route as ApiV1MeFollowersRouteImport } from './routes/api/v1/me/followers'
+import { Route as ApiV1MeBookmarksRouteImport } from './routes/api/v1/me/bookmarks'
+import { Route as ApiV1LeaderboardsGameRouteImport } from './routes/api/v1/leaderboards/$game'
+import { Route as ApiV1BuildsSlugRouteImport } from './routes/api/v1/builds/$slug'
+import { Route as ApiV1BlogSlugRouteImport } from './routes/api/v1/blog/$slug'
 import { Route as ApiUserBuildsIdViewRouteImport } from './routes/api/user-builds/$id/view'
 import { Route as ApiUserBuildsIdUnlockRouteImport } from './routes/api/user-builds/$id/unlock'
 import { Route as ApiUserBuildsIdLikeRouteImport } from './routes/api/user-builds/$id/like'
@@ -442,11 +462,19 @@ import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/adm
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
 import { Route as ApiAdminAlbumsReorderRouteImport } from './routes/api/admin/albums/reorder'
 import { Route as ApiAdminAlbumsIdRouteImport } from './routes/api/admin/albums/$id'
+import { Route as SiteDeveloperDocsPageRouteImport } from './routes/_site/developer/docs/$page'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
 import { Route as SiteAdminAlbumsIdRouteImport } from './routes/_site/admin/albums/$id'
 import { Route as ApiStudyDecksIdIndexRouteImport } from './routes/api/study/decks/$id/index'
 import { Route as ApiStorefrontProductsIdIndexRouteImport } from './routes/api/storefront/products/$id/index'
 import { Route as ApiRmhmusicGuessIdIndexRouteImport } from './routes/api/rmhmusic/guess/$id/index'
+import { Route as ApiV1UsersHandlePostsRouteImport } from './routes/api/v1/users/$handle/posts'
+import { Route as ApiV1UsersHandleFollowingRouteImport } from './routes/api/v1/users/$handle/following'
+import { Route as ApiV1UsersHandleFollowersRouteImport } from './routes/api/v1/users/$handle/followers'
+import { Route as ApiV1UsersHandleFollowRouteImport } from './routes/api/v1/users/$handle/follow'
+import { Route as ApiV1PostsIdLikeRouteImport } from './routes/api/v1/posts/$id/like'
+import { Route as ApiV1PostsIdCommentsRouteImport } from './routes/api/v1/posts/$id/comments'
+import { Route as ApiV1PostsIdBookmarkRouteImport } from './routes/api/v1/posts/$id/bookmark'
 import { Route as ApiStudyDecksIdReviewRouteImport } from './routes/api/study/decks/$id/review'
 import { Route as ApiStudyCardsIdReviewRouteImport } from './routes/api/study/cards/$id/review'
 import { Route as ApiStorefrontProductsIdBuyRouteImport } from './routes/api/storefront/products/$id/buy'
@@ -1142,11 +1170,6 @@ const SiteDraftsRoute = SiteDraftsRouteImport.update({
   path: '/drafts',
   getParentRoute: () => SiteRoute,
 } as any)
-const SiteDeveloperRoute = SiteDeveloperRouteImport.update({
-  id: '/developer',
-  path: '/developer',
-  getParentRoute: () => SiteRoute,
-} as any)
 const SiteCommunitiesRoute = SiteCommunitiesRouteImport.update({
   id: '/communities',
   path: '/communities',
@@ -1160,6 +1183,11 @@ const SiteBookmarksRoute = SiteBookmarksRouteImport.update({
 const SiteAchievementsRoute = SiteAchievementsRouteImport.update({
   id: '/achievements',
   path: '/achievements',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteDeveloperRouteRoute = SiteDeveloperRouteRouteImport.update({
+  id: '/developer',
+  path: '/developer',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteAdminRouteRoute = SiteAdminRouteRouteImport.update({
@@ -1308,6 +1336,11 @@ const SiteGroupsIndexRoute = SiteGroupsIndexRouteImport.update({
   path: '/groups/',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteDeveloperIndexRoute = SiteDeveloperIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SiteDeveloperRouteRoute,
+} as any)
 const SiteCreateIndexRoute = SiteCreateIndexRouteImport.update({
   id: '/create/',
   path: '/create/',
@@ -1440,9 +1473,24 @@ const ApiVegaLeaderboardRoute = ApiVegaLeaderboardRouteImport.update({
   path: '/api/vega/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiV1WebhooksRoute = ApiV1WebhooksRouteImport.update({
+  id: '/api/v1/webhooks',
+  path: '/api/v1/webhooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiV1PostsRoute = ApiV1PostsRouteImport.update({
   id: '/api/v1/posts',
   path: '/api/v1/posts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1OpenapiDotjsonRoute = ApiV1OpenapiDotjsonRouteImport.update({
+  id: '/api/v1/openapi.json',
+  path: '/api/v1/openapi.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1NewsRoute = ApiV1NewsRouteImport.update({
+  id: '/api/v1/news',
+  path: '/api/v1/news',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiV1MeRoute = ApiV1MeRouteImport.update({
@@ -1458,6 +1506,16 @@ const ApiV1ImagesRoute = ApiV1ImagesRouteImport.update({
 const ApiV1FeedRoute = ApiV1FeedRouteImport.update({
   id: '/api/v1/feed',
   path: '/api/v1/feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1BuildsRoute = ApiV1BuildsRouteImport.update({
+  id: '/api/v1/builds',
+  path: '/api/v1/builds',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1BlogRoute = ApiV1BlogRouteImport.update({
+  id: '/api/v1/blog',
+  path: '/api/v1/blog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiUsersSearchRoute = ApiUsersSearchRouteImport.update({
@@ -1902,6 +1960,11 @@ const ApiDailyPuzzlesLeaderboardRoute =
     path: '/api/daily-puzzles/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCronWebhooksRoute = ApiCronWebhooksRouteImport.update({
+  id: '/api/cron/webhooks',
+  path: '/api/cron/webhooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCoinsTipRoute = ApiCoinsTipRouteImport.update({
   id: '/api/coins/tip',
   path: '/api/coins/tip',
@@ -2124,6 +2187,11 @@ const SiteAdminAnalyticsRoute = SiteAdminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteDeveloperDocsRouteRoute = SiteDeveloperDocsRouteRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => SiteDeveloperRouteRoute,
+} as any)
 const ApiStudyDecksIndexRoute = ApiStudyDecksIndexRouteImport.update({
   id: '/api/study/decks/',
   path: '/api/study/decks/',
@@ -2193,6 +2261,11 @@ const SiteUUseridIndexRoute = SiteUUseridIndexRouteImport.update({
   path: '/u/$userid/',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteDeveloperDocsIndexRoute = SiteDeveloperDocsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SiteDeveloperDocsRouteRoute,
+} as any)
 const SiteAdminBlogIndexRoute = SiteAdminBlogIndexRouteImport.update({
   id: '/blog/',
   path: '/blog/',
@@ -2218,6 +2291,61 @@ const ApiVibePkgFileRoute = ApiVibePkgFileRouteImport.update({
   id: '/api/vibe/pkg/$file',
   path: '/api/vibe/pkg/$file',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1WebhooksIdRoute = ApiV1WebhooksIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiV1WebhooksRoute,
+} as any)
+const ApiV1UsersHandleRoute = ApiV1UsersHandleRouteImport.update({
+  id: '/api/v1/users/$handle',
+  path: '/api/v1/users/$handle',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1PostsIdRoute = ApiV1PostsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiV1PostsRoute,
+} as any)
+const ApiV1NewsSlugRoute = ApiV1NewsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ApiV1NewsRoute,
+} as any)
+const ApiV1MeNotificationsRoute = ApiV1MeNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
+const ApiV1MeFollowingRoute = ApiV1MeFollowingRouteImport.update({
+  id: '/following',
+  path: '/following',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
+const ApiV1MeFollowersRoute = ApiV1MeFollowersRouteImport.update({
+  id: '/followers',
+  path: '/followers',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
+const ApiV1MeBookmarksRoute = ApiV1MeBookmarksRouteImport.update({
+  id: '/bookmarks',
+  path: '/bookmarks',
+  getParentRoute: () => ApiV1MeRoute,
+} as any)
+const ApiV1LeaderboardsGameRoute = ApiV1LeaderboardsGameRouteImport.update({
+  id: '/api/v1/leaderboards/$game',
+  path: '/api/v1/leaderboards/$game',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1BuildsSlugRoute = ApiV1BuildsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ApiV1BuildsRoute,
+} as any)
+const ApiV1BlogSlugRoute = ApiV1BlogSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => ApiV1BlogRoute,
 } as any)
 const ApiUserBuildsIdViewRoute = ApiUserBuildsIdViewRouteImport.update({
   id: '/view',
@@ -2698,6 +2826,11 @@ const ApiAdminAlbumsIdRoute = ApiAdminAlbumsIdRouteImport.update({
   path: '/api/admin/albums/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SiteDeveloperDocsPageRoute = SiteDeveloperDocsPageRouteImport.update({
+  id: '/$page',
+  path: '/$page',
+  getParentRoute: () => SiteDeveloperDocsRouteRoute,
+} as any)
 const SiteAdminBlogNewRoute = SiteAdminBlogNewRouteImport.update({
   id: '/blog/new',
   path: '/blog/new',
@@ -2723,6 +2856,43 @@ const ApiRmhmusicGuessIdIndexRoute = ApiRmhmusicGuessIdIndexRouteImport.update({
   id: '/api/rmhmusic/guess/$id/',
   path: '/api/rmhmusic/guess/$id/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiV1UsersHandlePostsRoute = ApiV1UsersHandlePostsRouteImport.update({
+  id: '/posts',
+  path: '/posts',
+  getParentRoute: () => ApiV1UsersHandleRoute,
+} as any)
+const ApiV1UsersHandleFollowingRoute =
+  ApiV1UsersHandleFollowingRouteImport.update({
+    id: '/following',
+    path: '/following',
+    getParentRoute: () => ApiV1UsersHandleRoute,
+  } as any)
+const ApiV1UsersHandleFollowersRoute =
+  ApiV1UsersHandleFollowersRouteImport.update({
+    id: '/followers',
+    path: '/followers',
+    getParentRoute: () => ApiV1UsersHandleRoute,
+  } as any)
+const ApiV1UsersHandleFollowRoute = ApiV1UsersHandleFollowRouteImport.update({
+  id: '/follow',
+  path: '/follow',
+  getParentRoute: () => ApiV1UsersHandleRoute,
+} as any)
+const ApiV1PostsIdLikeRoute = ApiV1PostsIdLikeRouteImport.update({
+  id: '/like',
+  path: '/like',
+  getParentRoute: () => ApiV1PostsIdRoute,
+} as any)
+const ApiV1PostsIdCommentsRoute = ApiV1PostsIdCommentsRouteImport.update({
+  id: '/comments',
+  path: '/comments',
+  getParentRoute: () => ApiV1PostsIdRoute,
+} as any)
+const ApiV1PostsIdBookmarkRoute = ApiV1PostsIdBookmarkRouteImport.update({
+  id: '/bookmark',
+  path: '/bookmark',
+  getParentRoute: () => ApiV1PostsIdRoute,
 } as any)
 const ApiStudyDecksIdReviewRoute = ApiStudyDecksIdReviewRouteImport.update({
   id: '/api/study/decks/$id/review',
@@ -2961,10 +3131,10 @@ export interface FileRoutesByFullPath {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
+  '/developer': typeof SiteDeveloperRouteRouteWithChildren
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/communities': typeof SiteCommunitiesRoute
-  '/developer': typeof SiteDeveloperRoute
   '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
@@ -3058,6 +3228,7 @@ export interface FileRoutesByFullPath {
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
+  '/developer/docs': typeof SiteDeveloperDocsRouteRouteWithChildren
   '/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/admin/audit': typeof SiteAdminAuditRoute
@@ -3102,6 +3273,7 @@ export interface FileRoutesByFullPath {
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
   '/api/coins/tip': typeof ApiCoinsTipRoute
+  '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
@@ -3189,10 +3361,15 @@ export interface FileRoutesByFullPath {
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
   '/api/users/search': typeof ApiUsersSearchRoute
+  '/api/v1/blog': typeof ApiV1BlogRouteWithChildren
+  '/api/v1/builds': typeof ApiV1BuildsRouteWithChildren
   '/api/v1/feed': typeof ApiV1FeedRoute
   '/api/v1/images': typeof ApiV1ImagesRoute
-  '/api/v1/me': typeof ApiV1MeRoute
-  '/api/v1/posts': typeof ApiV1PostsRoute
+  '/api/v1/me': typeof ApiV1MeRouteWithChildren
+  '/api/v1/news': typeof ApiV1NewsRouteWithChildren
+  '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/webhooks': typeof ApiV1WebhooksRouteWithChildren
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/chapter': typeof ApiVersecraftChapterRoute
@@ -3218,6 +3395,7 @@ export interface FileRoutesByFullPath {
   '/blog/': typeof SiteBlogIndexRoute
   '/builds/': typeof SiteBuildsIndexRoute
   '/create/': typeof SiteCreateIndexRoute
+  '/developer/': typeof SiteDeveloperIndexRoute
   '/groups/': typeof SiteGroupsIndexRoute
   '/library/': typeof SiteLibraryIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
@@ -3248,6 +3426,7 @@ export interface FileRoutesByFullPath {
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
   '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
+  '/developer/docs/$page': typeof SiteDeveloperDocsPageRoute
   '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
   '/api/admin/albums/reorder': typeof ApiAdminAlbumsReorderRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
@@ -3338,11 +3517,23 @@ export interface FileRoutesByFullPath {
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
+  '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
+  '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
+  '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
+  '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
+  '/api/v1/me/following': typeof ApiV1MeFollowingRoute
+  '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
+  '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
+  '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
+  '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
+  '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
+  '/developer/docs/': typeof SiteDeveloperDocsIndexRoute
   '/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
@@ -3386,6 +3577,13 @@ export interface FileRoutesByFullPath {
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
+  '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
+  '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
+  '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
+  '/api/v1/users/$handle/follow': typeof ApiV1UsersHandleFollowRoute
+  '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
+  '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
+  '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
@@ -3417,7 +3615,6 @@ export interface FileRoutesByTo {
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/communities': typeof SiteCommunitiesRoute
-  '/developer': typeof SiteDeveloperRoute
   '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
@@ -3554,6 +3751,7 @@ export interface FileRoutesByTo {
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
   '/api/coins/tip': typeof ApiCoinsTipRoute
+  '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
@@ -3641,10 +3839,15 @@ export interface FileRoutesByTo {
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
   '/api/users/search': typeof ApiUsersSearchRoute
+  '/api/v1/blog': typeof ApiV1BlogRouteWithChildren
+  '/api/v1/builds': typeof ApiV1BuildsRouteWithChildren
   '/api/v1/feed': typeof ApiV1FeedRoute
   '/api/v1/images': typeof ApiV1ImagesRoute
-  '/api/v1/me': typeof ApiV1MeRoute
-  '/api/v1/posts': typeof ApiV1PostsRoute
+  '/api/v1/me': typeof ApiV1MeRouteWithChildren
+  '/api/v1/news': typeof ApiV1NewsRouteWithChildren
+  '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/webhooks': typeof ApiV1WebhooksRouteWithChildren
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/chapter': typeof ApiVersecraftChapterRoute
@@ -3670,6 +3873,7 @@ export interface FileRoutesByTo {
   '/blog': typeof SiteBlogIndexRoute
   '/builds': typeof SiteBuildsIndexRoute
   '/create': typeof SiteCreateIndexRoute
+  '/developer': typeof SiteDeveloperIndexRoute
   '/groups': typeof SiteGroupsIndexRoute
   '/library': typeof SiteLibraryIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
@@ -3700,6 +3904,7 @@ export interface FileRoutesByTo {
   '/strategies/safehouse': typeof StrategiesSafehouseIndexRoute
   '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
+  '/developer/docs/$page': typeof SiteDeveloperDocsPageRoute
   '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
   '/api/admin/albums/reorder': typeof ApiAdminAlbumsReorderRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
@@ -3790,11 +3995,23 @@ export interface FileRoutesByTo {
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
+  '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
+  '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
+  '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
+  '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
+  '/api/v1/me/following': typeof ApiV1MeFollowingRoute
+  '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
+  '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
+  '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
+  '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
+  '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/admin/albums': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
+  '/developer/docs': typeof SiteDeveloperDocsIndexRoute
   '/u/$userid': typeof SiteUUseridIndexRoute
   '/api/admin/albums': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library': typeof ApiAdminLibraryIndexRoute
@@ -3838,6 +4055,13 @@ export interface FileRoutesByTo {
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
+  '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
+  '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
+  '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
+  '/api/v1/users/$handle/follow': typeof ApiV1UsersHandleFollowRoute
+  '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
+  '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
+  '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/api/rmhmusic/guess/$id': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id': typeof ApiStudyDecksIdIndexRoute
@@ -3888,10 +4112,10 @@ export interface FileRoutesById {
   '/versecraft': typeof VersecraftRouteWithChildren
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
+  '/_site/developer': typeof SiteDeveloperRouteRouteWithChildren
   '/_site/achievements': typeof SiteAchievementsRoute
   '/_site/bookmarks': typeof SiteBookmarksRoute
   '/_site/communities': typeof SiteCommunitiesRoute
-  '/_site/developer': typeof SiteDeveloperRoute
   '/_site/drafts': typeof SiteDraftsRoute
   '/_site/explore': typeof SiteExploreRoute
   '/_site/music-trivia': typeof SiteMusicTriviaRoute
@@ -3986,6 +4210,7 @@ export interface FileRoutesById {
   '/studio/': typeof StudioIndexRoute
   '/temple-of-joy/': typeof TempleOfJoyIndexRoute
   '/versecraft/': typeof VersecraftIndexRoute
+  '/_site/developer/docs': typeof SiteDeveloperDocsRouteRouteWithChildren
   '/_site/admin/analytics': typeof SiteAdminAnalyticsRoute
   '/_site/admin/announcements': typeof SiteAdminAnnouncementsRoute
   '/_site/admin/audit': typeof SiteAdminAuditRoute
@@ -4030,6 +4255,7 @@ export interface FileRoutesById {
   '/api/coins/claim': typeof ApiCoinsClaimRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
   '/api/coins/tip': typeof ApiCoinsTipRoute
+  '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
@@ -4117,10 +4343,15 @@ export interface FileRoutesById {
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
   '/api/users/search': typeof ApiUsersSearchRoute
+  '/api/v1/blog': typeof ApiV1BlogRouteWithChildren
+  '/api/v1/builds': typeof ApiV1BuildsRouteWithChildren
   '/api/v1/feed': typeof ApiV1FeedRoute
   '/api/v1/images': typeof ApiV1ImagesRoute
-  '/api/v1/me': typeof ApiV1MeRoute
-  '/api/v1/posts': typeof ApiV1PostsRoute
+  '/api/v1/me': typeof ApiV1MeRouteWithChildren
+  '/api/v1/news': typeof ApiV1NewsRouteWithChildren
+  '/api/v1/openapi.json': typeof ApiV1OpenapiDotjsonRoute
+  '/api/v1/posts': typeof ApiV1PostsRouteWithChildren
+  '/api/v1/webhooks': typeof ApiV1WebhooksRouteWithChildren
   '/api/vega/leaderboard': typeof ApiVegaLeaderboardRoute
   '/api/vega/score': typeof ApiVegaScoreRoute
   '/api/versecraft/chapter': typeof ApiVersecraftChapterRoute
@@ -4146,6 +4377,7 @@ export interface FileRoutesById {
   '/_site/blog/': typeof SiteBlogIndexRoute
   '/_site/builds/': typeof SiteBuildsIndexRoute
   '/_site/create/': typeof SiteCreateIndexRoute
+  '/_site/developer/': typeof SiteDeveloperIndexRoute
   '/_site/groups/': typeof SiteGroupsIndexRoute
   '/_site/library/': typeof SiteLibraryIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
@@ -4176,6 +4408,7 @@ export interface FileRoutesById {
   '/strategies/safehouse/': typeof StrategiesSafehouseIndexRoute
   '/_site/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/_site/admin/blog/new': typeof SiteAdminBlogNewRoute
+  '/_site/developer/docs/$page': typeof SiteDeveloperDocsPageRoute
   '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
   '/api/admin/albums/reorder': typeof ApiAdminAlbumsReorderRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
@@ -4266,11 +4499,23 @@ export interface FileRoutesById {
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
+  '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
+  '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
+  '/api/v1/me/bookmarks': typeof ApiV1MeBookmarksRoute
+  '/api/v1/me/followers': typeof ApiV1MeFollowersRoute
+  '/api/v1/me/following': typeof ApiV1MeFollowingRoute
+  '/api/v1/me/notifications': typeof ApiV1MeNotificationsRoute
+  '/api/v1/news/$slug': typeof ApiV1NewsSlugRoute
+  '/api/v1/posts/$id': typeof ApiV1PostsIdRouteWithChildren
+  '/api/v1/users/$handle': typeof ApiV1UsersHandleRouteWithChildren
+  '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/_site/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
+  '/_site/developer/docs/': typeof SiteDeveloperDocsIndexRoute
   '/_site/u/$userid/': typeof SiteUUseridIndexRoute
   '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
@@ -4314,6 +4559,13 @@ export interface FileRoutesById {
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
+  '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
+  '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
+  '/api/v1/posts/$id/like': typeof ApiV1PostsIdLikeRoute
+  '/api/v1/users/$handle/follow': typeof ApiV1UsersHandleFollowRoute
+  '/api/v1/users/$handle/followers': typeof ApiV1UsersHandleFollowersRoute
+  '/api/v1/users/$handle/following': typeof ApiV1UsersHandleFollowingRoute
+  '/api/v1/users/$handle/posts': typeof ApiV1UsersHandlePostsRoute
   '/api/rmhmusic/guess/$id/': typeof ApiRmhmusicGuessIdIndexRoute
   '/api/storefront/products/$id/': typeof ApiStorefrontProductsIdIndexRoute
   '/api/study/decks/$id/': typeof ApiStudyDecksIdIndexRoute
@@ -4365,10 +4617,10 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/admin'
+    | '/developer'
     | '/achievements'
     | '/bookmarks'
     | '/communities'
-    | '/developer'
     | '/drafts'
     | '/explore'
     | '/music-trivia'
@@ -4462,6 +4714,7 @@ export interface FileRouteTypes {
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
+    | '/developer/docs'
     | '/admin/analytics'
     | '/admin/announcements'
     | '/admin/audit'
@@ -4506,6 +4759,7 @@ export interface FileRouteTypes {
     | '/api/coins/claim'
     | '/api/coins/purchase'
     | '/api/coins/tip'
+    | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
@@ -4593,10 +4847,15 @@ export interface FileRouteTypes {
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
     | '/api/users/search'
+    | '/api/v1/blog'
+    | '/api/v1/builds'
     | '/api/v1/feed'
     | '/api/v1/images'
     | '/api/v1/me'
+    | '/api/v1/news'
+    | '/api/v1/openapi.json'
     | '/api/v1/posts'
+    | '/api/v1/webhooks'
     | '/api/vega/leaderboard'
     | '/api/vega/score'
     | '/api/versecraft/chapter'
@@ -4622,6 +4881,7 @@ export interface FileRouteTypes {
     | '/blog/'
     | '/builds/'
     | '/create/'
+    | '/developer/'
     | '/groups/'
     | '/library/'
     | '/messages/'
@@ -4652,6 +4912,7 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/'
     | '/admin/albums/$id'
     | '/admin/blog/new'
+    | '/developer/docs/$page'
     | '/api/admin/albums/$id'
     | '/api/admin/albums/reorder'
     | '/api/admin/announcements/$id'
@@ -4742,11 +5003,23 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
+    | '/api/v1/blog/$slug'
+    | '/api/v1/builds/$slug'
+    | '/api/v1/leaderboards/$game'
+    | '/api/v1/me/bookmarks'
+    | '/api/v1/me/followers'
+    | '/api/v1/me/following'
+    | '/api/v1/me/notifications'
+    | '/api/v1/news/$slug'
+    | '/api/v1/posts/$id'
+    | '/api/v1/users/$handle'
+    | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
     | '/admin/albums/'
     | '/admin/blog/'
+    | '/developer/docs/'
     | '/u/$userid/'
     | '/api/admin/albums/'
     | '/api/admin/library/'
@@ -4790,6 +5063,13 @@ export interface FileRouteTypes {
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
     | '/api/study/decks/$id/review'
+    | '/api/v1/posts/$id/bookmark'
+    | '/api/v1/posts/$id/comments'
+    | '/api/v1/posts/$id/like'
+    | '/api/v1/users/$handle/follow'
+    | '/api/v1/users/$handle/followers'
+    | '/api/v1/users/$handle/following'
+    | '/api/v1/users/$handle/posts'
     | '/api/rmhmusic/guess/$id/'
     | '/api/storefront/products/$id/'
     | '/api/study/decks/$id/'
@@ -4821,7 +5101,6 @@ export interface FileRouteTypes {
     | '/achievements'
     | '/bookmarks'
     | '/communities'
-    | '/developer'
     | '/drafts'
     | '/explore'
     | '/music-trivia'
@@ -4958,6 +5237,7 @@ export interface FileRouteTypes {
     | '/api/coins/claim'
     | '/api/coins/purchase'
     | '/api/coins/tip'
+    | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
@@ -5045,10 +5325,15 @@ export interface FileRouteTypes {
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
     | '/api/users/search'
+    | '/api/v1/blog'
+    | '/api/v1/builds'
     | '/api/v1/feed'
     | '/api/v1/images'
     | '/api/v1/me'
+    | '/api/v1/news'
+    | '/api/v1/openapi.json'
     | '/api/v1/posts'
+    | '/api/v1/webhooks'
     | '/api/vega/leaderboard'
     | '/api/vega/score'
     | '/api/versecraft/chapter'
@@ -5074,6 +5359,7 @@ export interface FileRouteTypes {
     | '/blog'
     | '/builds'
     | '/create'
+    | '/developer'
     | '/groups'
     | '/library'
     | '/messages'
@@ -5104,6 +5390,7 @@ export interface FileRouteTypes {
     | '/strategies/safehouse'
     | '/admin/albums/$id'
     | '/admin/blog/new'
+    | '/developer/docs/$page'
     | '/api/admin/albums/$id'
     | '/api/admin/albums/reorder'
     | '/api/admin/announcements/$id'
@@ -5194,11 +5481,23 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
+    | '/api/v1/blog/$slug'
+    | '/api/v1/builds/$slug'
+    | '/api/v1/leaderboards/$game'
+    | '/api/v1/me/bookmarks'
+    | '/api/v1/me/followers'
+    | '/api/v1/me/following'
+    | '/api/v1/me/notifications'
+    | '/api/v1/news/$slug'
+    | '/api/v1/posts/$id'
+    | '/api/v1/users/$handle'
+    | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
     | '/admin/albums'
     | '/admin/blog'
+    | '/developer/docs'
     | '/u/$userid'
     | '/api/admin/albums'
     | '/api/admin/library'
@@ -5242,6 +5541,13 @@ export interface FileRouteTypes {
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
     | '/api/study/decks/$id/review'
+    | '/api/v1/posts/$id/bookmark'
+    | '/api/v1/posts/$id/comments'
+    | '/api/v1/posts/$id/like'
+    | '/api/v1/users/$handle/follow'
+    | '/api/v1/users/$handle/followers'
+    | '/api/v1/users/$handle/following'
+    | '/api/v1/users/$handle/posts'
     | '/api/rmhmusic/guess/$id'
     | '/api/storefront/products/$id'
     | '/api/study/decks/$id'
@@ -5291,10 +5597,10 @@ export interface FileRouteTypes {
     | '/versecraft'
     | '/void-breaker'
     | '/_site/admin'
+    | '/_site/developer'
     | '/_site/achievements'
     | '/_site/bookmarks'
     | '/_site/communities'
-    | '/_site/developer'
     | '/_site/drafts'
     | '/_site/explore'
     | '/_site/music-trivia'
@@ -5389,6 +5695,7 @@ export interface FileRouteTypes {
     | '/studio/'
     | '/temple-of-joy/'
     | '/versecraft/'
+    | '/_site/developer/docs'
     | '/_site/admin/analytics'
     | '/_site/admin/announcements'
     | '/_site/admin/audit'
@@ -5433,6 +5740,7 @@ export interface FileRouteTypes {
     | '/api/coins/claim'
     | '/api/coins/purchase'
     | '/api/coins/tip'
+    | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
@@ -5520,10 +5828,15 @@ export interface FileRouteTypes {
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
     | '/api/users/search'
+    | '/api/v1/blog'
+    | '/api/v1/builds'
     | '/api/v1/feed'
     | '/api/v1/images'
     | '/api/v1/me'
+    | '/api/v1/news'
+    | '/api/v1/openapi.json'
     | '/api/v1/posts'
+    | '/api/v1/webhooks'
     | '/api/vega/leaderboard'
     | '/api/vega/score'
     | '/api/versecraft/chapter'
@@ -5549,6 +5862,7 @@ export interface FileRouteTypes {
     | '/_site/blog/'
     | '/_site/builds/'
     | '/_site/create/'
+    | '/_site/developer/'
     | '/_site/groups/'
     | '/_site/library/'
     | '/_site/messages/'
@@ -5579,6 +5893,7 @@ export interface FileRouteTypes {
     | '/strategies/safehouse/'
     | '/_site/admin/albums/$id'
     | '/_site/admin/blog/new'
+    | '/_site/developer/docs/$page'
     | '/api/admin/albums/$id'
     | '/api/admin/albums/reorder'
     | '/api/admin/announcements/$id'
@@ -5669,11 +5984,23 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
+    | '/api/v1/blog/$slug'
+    | '/api/v1/builds/$slug'
+    | '/api/v1/leaderboards/$game'
+    | '/api/v1/me/bookmarks'
+    | '/api/v1/me/followers'
+    | '/api/v1/me/following'
+    | '/api/v1/me/notifications'
+    | '/api/v1/news/$slug'
+    | '/api/v1/posts/$id'
+    | '/api/v1/users/$handle'
+    | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
     | '/rmhbox/minigames/$minigameId/history'
     | '/_site/admin/albums/'
     | '/_site/admin/blog/'
+    | '/_site/developer/docs/'
     | '/_site/u/$userid/'
     | '/api/admin/albums/'
     | '/api/admin/library/'
@@ -5717,6 +6044,13 @@ export interface FileRouteTypes {
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
     | '/api/study/decks/$id/review'
+    | '/api/v1/posts/$id/bookmark'
+    | '/api/v1/posts/$id/comments'
+    | '/api/v1/posts/$id/like'
+    | '/api/v1/users/$handle/follow'
+    | '/api/v1/users/$handle/followers'
+    | '/api/v1/users/$handle/following'
+    | '/api/v1/users/$handle/posts'
     | '/api/rmhmusic/guess/$id/'
     | '/api/storefront/products/$id/'
     | '/api/study/decks/$id/'
@@ -5812,6 +6146,7 @@ export interface RootRouteChildren {
   ApiCoinsClaimRoute: typeof ApiCoinsClaimRoute
   ApiCoinsPurchaseRoute: typeof ApiCoinsPurchaseRoute
   ApiCoinsTipRoute: typeof ApiCoinsTipRoute
+  ApiCronWebhooksRoute: typeof ApiCronWebhooksRoute
   ApiDailyPuzzlesLeaderboardRoute: typeof ApiDailyPuzzlesLeaderboardRoute
   ApiDailyPuzzlesResultsRoute: typeof ApiDailyPuzzlesResultsRoute
   ApiDailyPuzzlesScoreRoute: typeof ApiDailyPuzzlesScoreRoute
@@ -5883,10 +6218,15 @@ export interface RootRouteChildren {
   ApiTempleOfJoySaveRoute: typeof ApiTempleOfJoySaveRoute
   ApiTipsLeaderboardRoute: typeof ApiTipsLeaderboardRoute
   ApiUsersSearchRoute: typeof ApiUsersSearchRoute
+  ApiV1BlogRoute: typeof ApiV1BlogRouteWithChildren
+  ApiV1BuildsRoute: typeof ApiV1BuildsRouteWithChildren
   ApiV1FeedRoute: typeof ApiV1FeedRoute
   ApiV1ImagesRoute: typeof ApiV1ImagesRoute
-  ApiV1MeRoute: typeof ApiV1MeRoute
-  ApiV1PostsRoute: typeof ApiV1PostsRoute
+  ApiV1MeRoute: typeof ApiV1MeRouteWithChildren
+  ApiV1NewsRoute: typeof ApiV1NewsRouteWithChildren
+  ApiV1OpenapiDotjsonRoute: typeof ApiV1OpenapiDotjsonRoute
+  ApiV1PostsRoute: typeof ApiV1PostsRouteWithChildren
+  ApiV1WebhooksRoute: typeof ApiV1WebhooksRouteWithChildren
   ApiVegaLeaderboardRoute: typeof ApiVegaLeaderboardRoute
   ApiVegaScoreRoute: typeof ApiVegaScoreRoute
   ApiVersecraftChapterRoute: typeof ApiVersecraftChapterRoute
@@ -5970,6 +6310,8 @@ export interface RootRouteChildren {
   ApiRmhmusicSpotifySearchRoute: typeof ApiRmhmusicSpotifySearchRoute
   ApiRmhtubeSubscribeChannelIdRoute: typeof ApiRmhtubeSubscribeChannelIdRoute
   ApiStorefrontCreatorUseridRoute: typeof ApiStorefrontCreatorUseridRoute
+  ApiV1LeaderboardsGameRoute: typeof ApiV1LeaderboardsGameRoute
+  ApiV1UsersHandleRoute: typeof ApiV1UsersHandleRouteWithChildren
   ApiVibePkgFileRoute: typeof ApiVibePkgFileRoute
   ApiVibeThumbSlugRoute: typeof ApiVibeThumbSlugRoute
   ApiAdminAlbumsIndexRoute: typeof ApiAdminAlbumsIndexRoute
@@ -6921,13 +7263,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteDraftsRouteImport
       parentRoute: typeof SiteRoute
     }
-    '/_site/developer': {
-      id: '/_site/developer'
-      path: '/developer'
-      fullPath: '/developer'
-      preLoaderRoute: typeof SiteDeveloperRouteImport
-      parentRoute: typeof SiteRoute
-    }
     '/_site/communities': {
       id: '/_site/communities'
       path: '/communities'
@@ -6947,6 +7282,13 @@ declare module '@tanstack/react-router' {
       path: '/achievements'
       fullPath: '/achievements'
       preLoaderRoute: typeof SiteAchievementsRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/developer': {
+      id: '/_site/developer'
+      path: '/developer'
+      fullPath: '/developer'
+      preLoaderRoute: typeof SiteDeveloperRouteRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/admin': {
@@ -7152,6 +7494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteGroupsIndexRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/developer/': {
+      id: '/_site/developer/'
+      path: '/'
+      fullPath: '/developer/'
+      preLoaderRoute: typeof SiteDeveloperIndexRouteImport
+      parentRoute: typeof SiteDeveloperRouteRoute
+    }
     '/_site/create/': {
       id: '/_site/create/'
       path: '/create'
@@ -7327,11 +7676,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiVegaLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/v1/webhooks': {
+      id: '/api/v1/webhooks'
+      path: '/api/v1/webhooks'
+      fullPath: '/api/v1/webhooks'
+      preLoaderRoute: typeof ApiV1WebhooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/v1/posts': {
       id: '/api/v1/posts'
       path: '/api/v1/posts'
       fullPath: '/api/v1/posts'
       preLoaderRoute: typeof ApiV1PostsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/openapi.json': {
+      id: '/api/v1/openapi.json'
+      path: '/api/v1/openapi.json'
+      fullPath: '/api/v1/openapi.json'
+      preLoaderRoute: typeof ApiV1OpenapiDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/news': {
+      id: '/api/v1/news'
+      path: '/api/v1/news'
+      fullPath: '/api/v1/news'
+      preLoaderRoute: typeof ApiV1NewsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/v1/me': {
@@ -7353,6 +7723,20 @@ declare module '@tanstack/react-router' {
       path: '/api/v1/feed'
       fullPath: '/api/v1/feed'
       preLoaderRoute: typeof ApiV1FeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/builds': {
+      id: '/api/v1/builds'
+      path: '/api/v1/builds'
+      fullPath: '/api/v1/builds'
+      preLoaderRoute: typeof ApiV1BuildsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/blog': {
+      id: '/api/v1/blog'
+      path: '/api/v1/blog'
+      fullPath: '/api/v1/blog'
+      preLoaderRoute: typeof ApiV1BlogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/users/search': {
@@ -7964,6 +8348,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDailyPuzzlesLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/cron/webhooks': {
+      id: '/api/cron/webhooks'
+      path: '/api/cron/webhooks'
+      fullPath: '/api/cron/webhooks'
+      preLoaderRoute: typeof ApiCronWebhooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/coins/tip': {
       id: '/api/coins/tip'
       path: '/api/coins/tip'
@@ -8272,6 +8663,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminAnalyticsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/developer/docs': {
+      id: '/_site/developer/docs'
+      path: '/docs'
+      fullPath: '/developer/docs'
+      preLoaderRoute: typeof SiteDeveloperDocsRouteRouteImport
+      parentRoute: typeof SiteDeveloperRouteRoute
+    }
     '/api/study/decks/': {
       id: '/api/study/decks/'
       path: '/api/study/decks'
@@ -8363,6 +8761,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteUUseridIndexRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/developer/docs/': {
+      id: '/_site/developer/docs/'
+      path: '/'
+      fullPath: '/developer/docs/'
+      preLoaderRoute: typeof SiteDeveloperDocsIndexRouteImport
+      parentRoute: typeof SiteDeveloperDocsRouteRoute
+    }
     '/_site/admin/blog/': {
       id: '/_site/admin/blog/'
       path: '/blog'
@@ -8397,6 +8802,83 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/vibe/pkg/$file'
       preLoaderRoute: typeof ApiVibePkgFileRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/webhooks/$id': {
+      id: '/api/v1/webhooks/$id'
+      path: '/$id'
+      fullPath: '/api/v1/webhooks/$id'
+      preLoaderRoute: typeof ApiV1WebhooksIdRouteImport
+      parentRoute: typeof ApiV1WebhooksRoute
+    }
+    '/api/v1/users/$handle': {
+      id: '/api/v1/users/$handle'
+      path: '/api/v1/users/$handle'
+      fullPath: '/api/v1/users/$handle'
+      preLoaderRoute: typeof ApiV1UsersHandleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/posts/$id': {
+      id: '/api/v1/posts/$id'
+      path: '/$id'
+      fullPath: '/api/v1/posts/$id'
+      preLoaderRoute: typeof ApiV1PostsIdRouteImport
+      parentRoute: typeof ApiV1PostsRoute
+    }
+    '/api/v1/news/$slug': {
+      id: '/api/v1/news/$slug'
+      path: '/$slug'
+      fullPath: '/api/v1/news/$slug'
+      preLoaderRoute: typeof ApiV1NewsSlugRouteImport
+      parentRoute: typeof ApiV1NewsRoute
+    }
+    '/api/v1/me/notifications': {
+      id: '/api/v1/me/notifications'
+      path: '/notifications'
+      fullPath: '/api/v1/me/notifications'
+      preLoaderRoute: typeof ApiV1MeNotificationsRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
+    '/api/v1/me/following': {
+      id: '/api/v1/me/following'
+      path: '/following'
+      fullPath: '/api/v1/me/following'
+      preLoaderRoute: typeof ApiV1MeFollowingRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
+    '/api/v1/me/followers': {
+      id: '/api/v1/me/followers'
+      path: '/followers'
+      fullPath: '/api/v1/me/followers'
+      preLoaderRoute: typeof ApiV1MeFollowersRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
+    '/api/v1/me/bookmarks': {
+      id: '/api/v1/me/bookmarks'
+      path: '/bookmarks'
+      fullPath: '/api/v1/me/bookmarks'
+      preLoaderRoute: typeof ApiV1MeBookmarksRouteImport
+      parentRoute: typeof ApiV1MeRoute
+    }
+    '/api/v1/leaderboards/$game': {
+      id: '/api/v1/leaderboards/$game'
+      path: '/api/v1/leaderboards/$game'
+      fullPath: '/api/v1/leaderboards/$game'
+      preLoaderRoute: typeof ApiV1LeaderboardsGameRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/builds/$slug': {
+      id: '/api/v1/builds/$slug'
+      path: '/$slug'
+      fullPath: '/api/v1/builds/$slug'
+      preLoaderRoute: typeof ApiV1BuildsSlugRouteImport
+      parentRoute: typeof ApiV1BuildsRoute
+    }
+    '/api/v1/blog/$slug': {
+      id: '/api/v1/blog/$slug'
+      path: '/$slug'
+      fullPath: '/api/v1/blog/$slug'
+      preLoaderRoute: typeof ApiV1BlogSlugRouteImport
+      parentRoute: typeof ApiV1BlogRoute
     }
     '/api/user-builds/$id/view': {
       id: '/api/user-builds/$id/view'
@@ -9028,6 +9510,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminAlbumsIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_site/developer/docs/$page': {
+      id: '/_site/developer/docs/$page'
+      path: '/$page'
+      fullPath: '/developer/docs/$page'
+      preLoaderRoute: typeof SiteDeveloperDocsPageRouteImport
+      parentRoute: typeof SiteDeveloperDocsRouteRoute
+    }
     '/_site/admin/blog/new': {
       id: '/_site/admin/blog/new'
       path: '/blog/new'
@@ -9062,6 +9551,55 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/rmhmusic/guess/$id/'
       preLoaderRoute: typeof ApiRmhmusicGuessIdIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/v1/users/$handle/posts': {
+      id: '/api/v1/users/$handle/posts'
+      path: '/posts'
+      fullPath: '/api/v1/users/$handle/posts'
+      preLoaderRoute: typeof ApiV1UsersHandlePostsRouteImport
+      parentRoute: typeof ApiV1UsersHandleRoute
+    }
+    '/api/v1/users/$handle/following': {
+      id: '/api/v1/users/$handle/following'
+      path: '/following'
+      fullPath: '/api/v1/users/$handle/following'
+      preLoaderRoute: typeof ApiV1UsersHandleFollowingRouteImport
+      parentRoute: typeof ApiV1UsersHandleRoute
+    }
+    '/api/v1/users/$handle/followers': {
+      id: '/api/v1/users/$handle/followers'
+      path: '/followers'
+      fullPath: '/api/v1/users/$handle/followers'
+      preLoaderRoute: typeof ApiV1UsersHandleFollowersRouteImport
+      parentRoute: typeof ApiV1UsersHandleRoute
+    }
+    '/api/v1/users/$handle/follow': {
+      id: '/api/v1/users/$handle/follow'
+      path: '/follow'
+      fullPath: '/api/v1/users/$handle/follow'
+      preLoaderRoute: typeof ApiV1UsersHandleFollowRouteImport
+      parentRoute: typeof ApiV1UsersHandleRoute
+    }
+    '/api/v1/posts/$id/like': {
+      id: '/api/v1/posts/$id/like'
+      path: '/like'
+      fullPath: '/api/v1/posts/$id/like'
+      preLoaderRoute: typeof ApiV1PostsIdLikeRouteImport
+      parentRoute: typeof ApiV1PostsIdRoute
+    }
+    '/api/v1/posts/$id/comments': {
+      id: '/api/v1/posts/$id/comments'
+      path: '/comments'
+      fullPath: '/api/v1/posts/$id/comments'
+      preLoaderRoute: typeof ApiV1PostsIdCommentsRouteImport
+      parentRoute: typeof ApiV1PostsIdRoute
+    }
+    '/api/v1/posts/$id/bookmark': {
+      id: '/api/v1/posts/$id/bookmark'
+      path: '/bookmark'
+      fullPath: '/api/v1/posts/$id/bookmark'
+      preLoaderRoute: typeof ApiV1PostsIdBookmarkRouteImport
+      parentRoute: typeof ApiV1PostsIdRoute
     }
     '/api/study/decks/$id/review': {
       id: '/api/study/decks/$id/review'
@@ -9353,12 +9891,41 @@ const SiteAdminRouteRouteWithChildren = SiteAdminRouteRoute._addFileChildren(
   SiteAdminRouteRouteChildren,
 )
 
+interface SiteDeveloperDocsRouteRouteChildren {
+  SiteDeveloperDocsPageRoute: typeof SiteDeveloperDocsPageRoute
+  SiteDeveloperDocsIndexRoute: typeof SiteDeveloperDocsIndexRoute
+}
+
+const SiteDeveloperDocsRouteRouteChildren: SiteDeveloperDocsRouteRouteChildren =
+  {
+    SiteDeveloperDocsPageRoute: SiteDeveloperDocsPageRoute,
+    SiteDeveloperDocsIndexRoute: SiteDeveloperDocsIndexRoute,
+  }
+
+const SiteDeveloperDocsRouteRouteWithChildren =
+  SiteDeveloperDocsRouteRoute._addFileChildren(
+    SiteDeveloperDocsRouteRouteChildren,
+  )
+
+interface SiteDeveloperRouteRouteChildren {
+  SiteDeveloperDocsRouteRoute: typeof SiteDeveloperDocsRouteRouteWithChildren
+  SiteDeveloperIndexRoute: typeof SiteDeveloperIndexRoute
+}
+
+const SiteDeveloperRouteRouteChildren: SiteDeveloperRouteRouteChildren = {
+  SiteDeveloperDocsRouteRoute: SiteDeveloperDocsRouteRouteWithChildren,
+  SiteDeveloperIndexRoute: SiteDeveloperIndexRoute,
+}
+
+const SiteDeveloperRouteRouteWithChildren =
+  SiteDeveloperRouteRoute._addFileChildren(SiteDeveloperRouteRouteChildren)
+
 interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
+  SiteDeveloperRouteRoute: typeof SiteDeveloperRouteRouteWithChildren
   SiteAchievementsRoute: typeof SiteAchievementsRoute
   SiteBookmarksRoute: typeof SiteBookmarksRoute
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
-  SiteDeveloperRoute: typeof SiteDeveloperRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
   SiteExploreRoute: typeof SiteExploreRoute
   SiteMusicTriviaRoute: typeof SiteMusicTriviaRoute
@@ -9406,10 +9973,10 @@ interface SiteRouteChildren {
 
 const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
+  SiteDeveloperRouteRoute: SiteDeveloperRouteRouteWithChildren,
   SiteAchievementsRoute: SiteAchievementsRoute,
   SiteBookmarksRoute: SiteBookmarksRoute,
   SiteCommunitiesRoute: SiteCommunitiesRoute,
-  SiteDeveloperRoute: SiteDeveloperRoute,
   SiteDraftsRoute: SiteDraftsRoute,
   SiteExploreRoute: SiteExploreRoute,
   SiteMusicTriviaRoute: SiteMusicTriviaRoute,
@@ -10153,6 +10720,99 @@ const ApiSliceItSongsRouteWithChildren = ApiSliceItSongsRoute._addFileChildren(
   ApiSliceItSongsRouteChildren,
 )
 
+interface ApiV1BlogRouteChildren {
+  ApiV1BlogSlugRoute: typeof ApiV1BlogSlugRoute
+}
+
+const ApiV1BlogRouteChildren: ApiV1BlogRouteChildren = {
+  ApiV1BlogSlugRoute: ApiV1BlogSlugRoute,
+}
+
+const ApiV1BlogRouteWithChildren = ApiV1BlogRoute._addFileChildren(
+  ApiV1BlogRouteChildren,
+)
+
+interface ApiV1BuildsRouteChildren {
+  ApiV1BuildsSlugRoute: typeof ApiV1BuildsSlugRoute
+}
+
+const ApiV1BuildsRouteChildren: ApiV1BuildsRouteChildren = {
+  ApiV1BuildsSlugRoute: ApiV1BuildsSlugRoute,
+}
+
+const ApiV1BuildsRouteWithChildren = ApiV1BuildsRoute._addFileChildren(
+  ApiV1BuildsRouteChildren,
+)
+
+interface ApiV1MeRouteChildren {
+  ApiV1MeBookmarksRoute: typeof ApiV1MeBookmarksRoute
+  ApiV1MeFollowersRoute: typeof ApiV1MeFollowersRoute
+  ApiV1MeFollowingRoute: typeof ApiV1MeFollowingRoute
+  ApiV1MeNotificationsRoute: typeof ApiV1MeNotificationsRoute
+}
+
+const ApiV1MeRouteChildren: ApiV1MeRouteChildren = {
+  ApiV1MeBookmarksRoute: ApiV1MeBookmarksRoute,
+  ApiV1MeFollowersRoute: ApiV1MeFollowersRoute,
+  ApiV1MeFollowingRoute: ApiV1MeFollowingRoute,
+  ApiV1MeNotificationsRoute: ApiV1MeNotificationsRoute,
+}
+
+const ApiV1MeRouteWithChildren =
+  ApiV1MeRoute._addFileChildren(ApiV1MeRouteChildren)
+
+interface ApiV1NewsRouteChildren {
+  ApiV1NewsSlugRoute: typeof ApiV1NewsSlugRoute
+}
+
+const ApiV1NewsRouteChildren: ApiV1NewsRouteChildren = {
+  ApiV1NewsSlugRoute: ApiV1NewsSlugRoute,
+}
+
+const ApiV1NewsRouteWithChildren = ApiV1NewsRoute._addFileChildren(
+  ApiV1NewsRouteChildren,
+)
+
+interface ApiV1PostsIdRouteChildren {
+  ApiV1PostsIdBookmarkRoute: typeof ApiV1PostsIdBookmarkRoute
+  ApiV1PostsIdCommentsRoute: typeof ApiV1PostsIdCommentsRoute
+  ApiV1PostsIdLikeRoute: typeof ApiV1PostsIdLikeRoute
+}
+
+const ApiV1PostsIdRouteChildren: ApiV1PostsIdRouteChildren = {
+  ApiV1PostsIdBookmarkRoute: ApiV1PostsIdBookmarkRoute,
+  ApiV1PostsIdCommentsRoute: ApiV1PostsIdCommentsRoute,
+  ApiV1PostsIdLikeRoute: ApiV1PostsIdLikeRoute,
+}
+
+const ApiV1PostsIdRouteWithChildren = ApiV1PostsIdRoute._addFileChildren(
+  ApiV1PostsIdRouteChildren,
+)
+
+interface ApiV1PostsRouteChildren {
+  ApiV1PostsIdRoute: typeof ApiV1PostsIdRouteWithChildren
+}
+
+const ApiV1PostsRouteChildren: ApiV1PostsRouteChildren = {
+  ApiV1PostsIdRoute: ApiV1PostsIdRouteWithChildren,
+}
+
+const ApiV1PostsRouteWithChildren = ApiV1PostsRoute._addFileChildren(
+  ApiV1PostsRouteChildren,
+)
+
+interface ApiV1WebhooksRouteChildren {
+  ApiV1WebhooksIdRoute: typeof ApiV1WebhooksIdRoute
+}
+
+const ApiV1WebhooksRouteChildren: ApiV1WebhooksRouteChildren = {
+  ApiV1WebhooksIdRoute: ApiV1WebhooksIdRoute,
+}
+
+const ApiV1WebhooksRouteWithChildren = ApiV1WebhooksRoute._addFileChildren(
+  ApiV1WebhooksRouteChildren,
+)
+
 interface ApiAdminAlbumsIdSlidesRouteChildren {
   ApiAdminAlbumsIdSlidesSlideIdRoute: typeof ApiAdminAlbumsIdSlidesSlideIdRoute
 }
@@ -10257,6 +10917,23 @@ const ApiLibraryCollectionIdRouteWithChildren =
     ApiLibraryCollectionIdRouteChildren,
   )
 
+interface ApiV1UsersHandleRouteChildren {
+  ApiV1UsersHandleFollowRoute: typeof ApiV1UsersHandleFollowRoute
+  ApiV1UsersHandleFollowersRoute: typeof ApiV1UsersHandleFollowersRoute
+  ApiV1UsersHandleFollowingRoute: typeof ApiV1UsersHandleFollowingRoute
+  ApiV1UsersHandlePostsRoute: typeof ApiV1UsersHandlePostsRoute
+}
+
+const ApiV1UsersHandleRouteChildren: ApiV1UsersHandleRouteChildren = {
+  ApiV1UsersHandleFollowRoute: ApiV1UsersHandleFollowRoute,
+  ApiV1UsersHandleFollowersRoute: ApiV1UsersHandleFollowersRoute,
+  ApiV1UsersHandleFollowingRoute: ApiV1UsersHandleFollowingRoute,
+  ApiV1UsersHandlePostsRoute: ApiV1UsersHandlePostsRoute,
+}
+
+const ApiV1UsersHandleRouteWithChildren =
+  ApiV1UsersHandleRoute._addFileChildren(ApiV1UsersHandleRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   SiteRoute: SiteRouteWithChildren,
   AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
@@ -10342,6 +11019,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCoinsClaimRoute: ApiCoinsClaimRoute,
   ApiCoinsPurchaseRoute: ApiCoinsPurchaseRoute,
   ApiCoinsTipRoute: ApiCoinsTipRoute,
+  ApiCronWebhooksRoute: ApiCronWebhooksRoute,
   ApiDailyPuzzlesLeaderboardRoute: ApiDailyPuzzlesLeaderboardRoute,
   ApiDailyPuzzlesResultsRoute: ApiDailyPuzzlesResultsRoute,
   ApiDailyPuzzlesScoreRoute: ApiDailyPuzzlesScoreRoute,
@@ -10413,10 +11091,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTempleOfJoySaveRoute: ApiTempleOfJoySaveRoute,
   ApiTipsLeaderboardRoute: ApiTipsLeaderboardRoute,
   ApiUsersSearchRoute: ApiUsersSearchRoute,
+  ApiV1BlogRoute: ApiV1BlogRouteWithChildren,
+  ApiV1BuildsRoute: ApiV1BuildsRouteWithChildren,
   ApiV1FeedRoute: ApiV1FeedRoute,
   ApiV1ImagesRoute: ApiV1ImagesRoute,
-  ApiV1MeRoute: ApiV1MeRoute,
-  ApiV1PostsRoute: ApiV1PostsRoute,
+  ApiV1MeRoute: ApiV1MeRouteWithChildren,
+  ApiV1NewsRoute: ApiV1NewsRouteWithChildren,
+  ApiV1OpenapiDotjsonRoute: ApiV1OpenapiDotjsonRoute,
+  ApiV1PostsRoute: ApiV1PostsRouteWithChildren,
+  ApiV1WebhooksRoute: ApiV1WebhooksRouteWithChildren,
   ApiVegaLeaderboardRoute: ApiVegaLeaderboardRoute,
   ApiVegaScoreRoute: ApiVegaScoreRoute,
   ApiVersecraftChapterRoute: ApiVersecraftChapterRoute,
@@ -10501,6 +11184,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhmusicSpotifySearchRoute: ApiRmhmusicSpotifySearchRoute,
   ApiRmhtubeSubscribeChannelIdRoute: ApiRmhtubeSubscribeChannelIdRoute,
   ApiStorefrontCreatorUseridRoute: ApiStorefrontCreatorUseridRoute,
+  ApiV1LeaderboardsGameRoute: ApiV1LeaderboardsGameRoute,
+  ApiV1UsersHandleRoute: ApiV1UsersHandleRouteWithChildren,
   ApiVibePkgFileRoute: ApiVibePkgFileRoute,
   ApiVibeThumbSlugRoute: ApiVibeThumbSlugRoute,
   ApiAdminAlbumsIndexRoute: ApiAdminAlbumsIndexRoute,

@@ -3,11 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
-import { feedEventBus } from "@/lib/feed-sse";
-import { createNotification, removeNotification } from "@/lib/notifications.server";
-import { grantAchievement } from "@/lib/achievements/engine.server";
-import { awardXp } from "@/lib/xp/engine.server";
-import { progressQuests } from "@/lib/quests/engine.server";
+import { togglePostLike } from "@/lib/social/engagement.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/like')({
   server: {
@@ -52,84 +48,13 @@ export const Route = createFileRoute('/api/rmharks/$id/like')({
     const { id } = params;
     const userId = session.user.id;
 
-    // Post owner (for notifications). Cheap, indexed lookup by primary key.
-    const post = await prisma.rMHark.findUnique({
-      where: { id },
-      select: { userId: true, content: true, user: { select: { handle: true } } },
-    });
-    // Always link to the post; the route resolves by post id, so a handle-less
-    // author falls back to their user id in the (decorative) handle segment.
-    const postLink = post ? `/u/${post.user?.handle ?? post.userId}/post/${id}` : undefined;
-
-    const existingLike = await prisma.rMHarkLike.findUnique({
-      where: { rmheetId_userId: { rmheetId: id, userId } },
-    });
-
-    if (existingLike) {
-      // Delete the like and decrement the denormalized counter atomically.
-      const [, updated] = await prisma.$transaction([
-        prisma.rMHarkLike.delete({ where: { id: existingLike.id } }),
-        prisma.rMHark.update({
-          where: { id },
-          data: { likeCount: { decrement: 1 } },
-          select: { likeCount: true },
-        }),
-      ]);
-
-      feedEventBus.publish({
-        type: "rmhark.unliked",
-        rmharkId: id,
-        payload: { id, likeCount: updated.likeCount },
-        timestamp: new Date().toISOString(),
-      });
-
-      if (post) {
-        await removeNotification({
-          userId: post.userId,
-          actorId: userId,
-          type: "LIKE",
-          entityType: "rmhark",
-          entityId: id,
-        });
-      }
-
-      return Response.json({ success: true, liked: false });
-    } else {
-      const [, updated] = await prisma.$transaction([
-        prisma.rMHarkLike.create({ data: { rmheetId: id, userId } }),
-        prisma.rMHark.update({
-          where: { id },
-          data: { likeCount: { increment: 1 } },
-          select: { likeCount: true },
-        }),
-      ]);
-
-      feedEventBus.publish({
-        type: "rmhark.liked",
-        rmharkId: id,
-        payload: { id, likeCount: updated.likeCount },
-        timestamp: new Date().toISOString(),
-      });
-
-      if (post) {
-        await createNotification({
-          userId: post.userId,
-          actorId: userId,
-          type: "LIKE",
-          entityType: "rmhark",
-          entityId: id,
-          preview: post.content ?? null,
-          link: postLink,
-          dedupeUnread: true,
-        });
-      }
-
-      await grantAchievement(userId, "social.first_like_given");
-      await awardXp(userId, 5);
-      await progressQuests(userId, "like_given");
-
-      return Response.json({ success: true, liked: true });
+    // Toggle via the shared engagement service (counters, SSE, notifications,
+    // XP, quests, achievements, and webhooks all live there).
+    const result = await togglePostLike(userId, id);
+    if (!result.found) {
+      return Response.json({ error: "Post not found" }, { status: 404 });
     }
+    return Response.json({ success: true, liked: result.liked });
   } catch (error) {
     console.error("Toggle like error:", error);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
