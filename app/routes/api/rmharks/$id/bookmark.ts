@@ -1,9 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { grantAchievement } from '@/lib/achievements/engine.server';
-import { progressQuests } from '@/lib/quests/engine.server';
+import { toggleBookmark } from '@/lib/social/engagement.server';
 
 /** POST /api/rmharks/$id/bookmark — toggle a bookmark on a post. */
 export const Route = createFileRoute('/api/rmharks/$id/bookmark')({
@@ -19,25 +17,9 @@ export const Route = createFileRoute('/api/rmharks/$id/bookmark')({
           if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
           const { id } = params;
-          const userId = session.user.id;
-
-          const existing = await prisma.rMHarkBookmark.findUnique({
-            where: { userId_rmheetId: { userId, rmheetId: id } },
-          });
-
-          if (existing) {
-            await prisma.rMHarkBookmark.delete({ where: { id: existing.id } });
-            return Response.json({ success: true, bookmarked: false });
-          }
-
-          // Ensure the post exists before bookmarking.
-          const post = await prisma.rMHark.findUnique({ where: { id }, select: { id: true } });
-          if (!post) return Response.json({ error: 'Post not found' }, { status: 404 });
-
-          await prisma.rMHarkBookmark.create({ data: { userId, rmheetId: id } });
-          await grantAchievement(userId, 'social.first_bookmark');
-          await progressQuests(userId, 'bookmark');
-          return Response.json({ success: true, bookmarked: true });
+          const result = await toggleBookmark(session.user.id, id);
+          if (!result.found) return Response.json({ error: 'Post not found' }, { status: 404 });
+          return Response.json({ success: true, bookmarked: result.bookmarked });
         } catch (error) {
           console.error('Toggle bookmark error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });

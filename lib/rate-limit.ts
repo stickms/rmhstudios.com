@@ -48,7 +48,20 @@ const RATE_LIMIT_MULTIPLIER = (() => {
     return Math.min(20, Math.max(1, raw));
 })();
 
-export function rateLimit(ip: string, opts: RateLimitOptions): { allowed: boolean; retryAfter: number } {
+/**
+ * Result of a rate-limit check. `limit`/`remaining`/`reset` are additive fields
+ * (existing callers only read `allowed`/`retryAfter`) used to emit standard
+ * `X-RateLimit-*` headers. `reset` is an epoch-ms timestamp for the window end.
+ */
+export interface RateLimitResult {
+    allowed: boolean;
+    retryAfter: number;
+    limit: number;
+    remaining: number;
+    reset: number;
+}
+
+export function rateLimit(ip: string, opts: RateLimitOptions): RateLimitResult {
     const key = `${opts.prefix ?? 'rl'}:${ip}`;
     const limit = Math.ceil(opts.limit * RATE_LIMIT_MULTIPLIER);
     const now = Date.now();
@@ -60,17 +73,19 @@ export function rateLimit(ip: string, opts: RateLimitOptions): { allowed: boolea
             const oldest = store.keys().next().value;
             if (oldest !== undefined) store.delete(oldest);
         }
-        store.set(key, { count: 1, resetAt: now + opts.windowMs });
-        return { allowed: true, retryAfter: 0 };
+        const reset = now + opts.windowMs;
+        store.set(key, { count: 1, resetAt: reset });
+        return { allowed: true, retryAfter: 0, limit, remaining: limit - 1, reset };
     }
 
     entry.count++;
+    const remaining = Math.max(0, limit - entry.count);
     if (entry.count > limit) {
         const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-        return { allowed: false, retryAfter };
+        return { allowed: false, retryAfter, limit, remaining: 0, reset: entry.resetAt };
     }
 
-    return { allowed: true, retryAfter: 0 };
+    return { allowed: true, retryAfter: 0, limit, remaining, reset: entry.resetAt };
 }
 
 /**

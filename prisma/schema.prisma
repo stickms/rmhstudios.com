@@ -177,6 +177,7 @@ model User {
 
   // Developer API keys + one-time promo claims
   developerApiKeys DeveloperApiKey[]
+  webhookEndpoints WebhookEndpoint[] @relation("UserWebhookEndpoints")
   promoClaims      PromoClaim[]
 
   // Economy: shop inventory, coin ledger (tips/gifts)
@@ -1648,14 +1649,104 @@ model DeveloperApiKey {
   name       String    @db.VarChar(100)
   prefix     String    @db.VarChar(16)
   hashedKey  String    @unique
+  /// Last 4 chars of the plaintext secret, kept for display so a user can tell
+  /// keys apart in the dashboard without the secret ever being recoverable.
+  lastFour   String?   @db.VarChar(8)
+  /// Granular permission grants (e.g. "read:profile", "write:posts"). An empty
+  /// array means the key has no permissions and every scoped endpoint rejects
+  /// it. Enforced per-request against the endpoint's required scope.
+  scopes     String[]  @default([])
+  /// Optional hard expiry. Once past, the key is rejected exactly like a
+  /// revoked key (re-checked on every request, never trusted from a cache).
+  expiresAt  DateTime?
   lastUsedAt DateTime?
   revokedAt  DateTime?
   createdAt  DateTime  @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idempotencyKeys  ApiIdempotencyKey[]
 
   @@index([userId])
   @@map("developer_api_key")
+}
+
+/// Stores the first response produced for a given (key, Idempotency-Key) so a
+/// retried write replays the original result instead of acting twice. Rows are
+/// short-lived; a periodic sweep removes entries older than the replay window.
+model ApiIdempotencyKey {
+  id           String   @id @default(cuid())
+  keyId        String
+  idempotency  String   @db.VarChar(255)
+  method       String   @db.VarChar(8)
+  path         String   @db.VarChar(255)
+  /// SHA-256 of the request body, so the same Idempotency-Key sent with a
+  /// different payload is flagged as a conflict rather than silently replayed.
+  requestHash  String   @db.VarChar(64)
+  statusCode   Int
+  responseBody String   @db.Text
+  createdAt    DateTime @default(now())
+
+  key DeveloperApiKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+
+  @@unique([keyId, idempotency])
+  @@index([createdAt])
+  @@map("api_idempotency_key")
+}
+
+/// A user-registered webhook subscription. Events the owner produces (posts,
+/// follows, likes, …) are delivered to `url` as HMAC-signed POSTs. The `secret`
+/// is shown once at creation and used to sign every delivery so receivers can
+/// verify authenticity.
+model WebhookEndpoint {
+  id           String   @id @default(cuid())
+  userId       String
+  url          String   @db.VarChar(2048)
+  /// Signing secret (whsec_…). Stored to compute the HMAC on each delivery.
+  secret       String   @db.VarChar(128)
+  /// Subscribed event names. "*" matches every event.
+  events       String[] @default([])
+  description  String?  @db.VarChar(200)
+  enabled      Boolean  @default(true)
+  /// Consecutive delivery failures; the endpoint auto-disables past a threshold.
+  failureCount Int      @default(0)
+  lastDeliveryAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User              @relation("UserWebhookEndpoints", fields: [userId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([userId])
+  @@map("webhook_endpoint")
+}
+
+/// One delivery attempt record for a webhook event. Pending rows are drained by
+/// a retry sweep with exponential backoff; terminal rows are kept for the
+/// recent-deliveries view in the dashboard.
+model WebhookDelivery {
+  id             String    @id @default(cuid())
+  endpointId     String
+  event          String    @db.VarChar(64)
+  payload        Json
+  status         WebhookDeliveryStatus @default(PENDING)
+  attempts       Int       @default(0)
+  responseStatus Int?
+  error          String?   @db.VarChar(500)
+  nextAttemptAt  DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  deliveredAt    DateTime?
+
+  endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@index([endpointId, createdAt(sort: Desc)])
+  @@map("webhook_delivery")
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
 }
 
 /// Records a one-time promotional claim (e.g. the free-month offer) so the
