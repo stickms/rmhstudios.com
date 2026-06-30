@@ -4,7 +4,8 @@ import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { Search, Calendar, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, X } from "lucide-react";
+import { Search, Calendar, Filter, X } from "lucide-react";
+import { Pagination } from "@/components/ui/pagination";
 import { ShareButton } from "@/components/blog/ShareButton";
 import { Post } from "@/lib/blog";
 
@@ -330,71 +331,12 @@ export function BlogList({ initialPosts, filtersOpen = false }: BlogListProps) {
       {/* Pagination Controls */}
       {totalPages > 1 && (
         <motion.div
-          className="mt-8 flex flex-col items-center gap-4"
+          className="mt-8"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3 }}
         >
-          <div className="flex items-center gap-1 sm:gap-2">
-            <button
-              onClick={() => goToPage(1)}
-              disabled={safePage === 1}
-              className="p-2 rounded-site-sm text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100"
-              aria-label={t("first-page", { defaultValue: "First page" })}
-            >
-              <ChevronsLeft className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => goToPage(safePage - 1)}
-              disabled={safePage === 1}
-              className="p-2 rounded-site-sm text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100"
-              aria-label={t("prev-page", { defaultValue: "Previous page" })}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            {pageNumbers.map((page, i) =>
-              page === "..." ? (
-                <span key={`ellipsis-${i}`} className="px-2 text-site-text-dim text-sm">...</span>
-              ) : (
-                <button
-                  key={page}
-                  onClick={() => goToPage(page as number)}
-                  aria-current={safePage === page ? "page" : undefined}
-                  className={`w-9 h-9 rounded-site-sm text-sm font-bold transition-[transform,color,background-color] duration-150 active:scale-95 ${
-                    safePage === page
-                      ? "bg-site-accent text-site-accent-fg"
-                      : "text-site-text-dim hover:text-site-text hover:bg-site-surface"
-                  }`}
-                >
-                  {page}
-                </button>
-              )
-            )}
-
-            <button
-              onClick={() => goToPage(safePage + 1)}
-              disabled={safePage === totalPages}
-              className="p-2 rounded-site-sm text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100"
-              aria-label={t("next-page", { defaultValue: "Next page" })}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={() => goToPage(totalPages)}
-              disabled={safePage === totalPages}
-              className="p-2 rounded-site-sm text-site-text-dim hover:text-site-text hover:bg-site-surface disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100"
-              aria-label={t("last-page", { defaultValue: "Last page" })}
-            >
-              <ChevronsRight className="w-4 h-4" />
-            </button>
-          </div>
-
-          <p className="text-xs text-site-text-dim font-mono">
-            {t("page-of", { defaultValue: "Page {{page}} of {{total}}", page: safePage, total: totalPages })}
-          </p>
+          <Pagination page={safePage} totalPages={totalPages} onPageChange={goToPage} />
         </motion.div>
       )}
     </div>
