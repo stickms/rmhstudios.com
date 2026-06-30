@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Link2, Check, Code2 } from 'lucide-react';
+import { Link2, Check, Code2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 interface ShareModalProps {
   open: boolean;
@@ -15,7 +16,6 @@ interface ShareModalProps {
 
 export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProps) {
   const { t } = useTranslation('feed');
-  const contentRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [embedCopied, setEmbedCopied] = useState(false);
 
@@ -39,12 +39,6 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
   };
 
   useEffect(() => {
-    if (!open) return;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = ''; };
-  }, [open]);
-
-  useEffect(() => {
     if (copied) {
       const t = setTimeout(() => setCopied(false), 2000);
       return () => clearTimeout(t);
@@ -57,8 +51,6 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
       return () => clearTimeout(t);
     }
   }, [embedCopied]);
-
-  if (!open) return null;
 
   const handleCopy = () => copyText(url, setCopied);
 
@@ -79,24 +71,12 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
   };
 
   return (
-    <div className="fixed inset-0 z-50" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className="absolute inset-0 flex items-center justify-center p-4">
-        <div
-          ref={contentRef}
-          onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-sm bg-site-bg border border-site-border rounded-site shadow-2xl overflow-hidden"
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
-            <h2 className="font-bold text-site-text">{t('share-title', { defaultValue: 'Share' })}</h2>
-            <button
-              onClick={onClose}
-              className="p-1 rounded-full hover:bg-site-surface transition-colors text-site-text-dim hover:text-site-text"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-sm p-0 gap-0 overflow-hidden bg-site-bg">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
+          <DialogTitle className="font-bold text-site-text">{t('share-title', { defaultValue: 'Share' })}</DialogTitle>
+        </div>
 
           {/* Share options */}
           <div className="p-3 space-y-1">
@@ -167,8 +147,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
               <span className="truncate">{url}</span>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

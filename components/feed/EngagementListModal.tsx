@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
 import { Spinner } from '@/components/ui/spinner';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { UserAvatar } from './UserAvatar';
 
 interface EngagementUser {
@@ -33,12 +33,6 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
   const endpoint = `${base}/${type === 'likes' ? 'like' : 'repost'}`;
 
   useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
-  }, [open]);
-
-  useEffect(() => {
     if (!open) return;
     setLoading(true);
     setUsers([]);
@@ -49,29 +43,13 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
       .finally(() => setLoading(false));
   }, [open, endpoint]);
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onMouseDown={(e) => { e.stopPropagation(); onClose(); }}
-    >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
-      <div
-        className="relative z-10 w-full max-w-md bg-site-bg border border-site-border rounded-site shadow-xl flex flex-col max-h-[80vh]"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80vh] overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
-          <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
+          <DialogTitle className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
             {title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          </DialogTitle>
         </div>
 
         <div className="overflow-y-auto flex-1">
@@ -108,7 +86,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

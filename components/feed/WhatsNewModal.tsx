@@ -13,10 +13,10 @@ import {
   Music,
   BookOpen,
   Store,
-  X,
 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 // Bump this key when the next big update ships to show the modal again.
 const STORAGE_KEY = 'rmh-whatsnew-seen-v2';
@@ -68,33 +68,18 @@ export function WhatsNewModal() {
     setOpen(false);
   };
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="whatsnew-title"
-    >
-      <div className="relative flex max-h-[85vh] w-full max-w-lg flex-col rounded-site border border-site-border bg-site-surface shadow-2xl">
-        <button
-          onClick={dismiss}
-          aria-label={t("close", { defaultValue: "Close" })}
-          className="absolute right-3 top-3 rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
+    <Dialog open={open} onOpenChange={(o) => { if (!o) dismiss(); }}>
+      <DialogContent className="max-w-lg p-0 gap-0 flex flex-col max-h-[85dvh] overflow-hidden">
         <div className="px-6 pt-6 text-center">
           <div className="mb-3 flex justify-center">
             <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-3">
               <Sparkles className="h-7 w-7 text-site-accent" />
             </div>
           </div>
-          <h2 id="whatsnew-title" className="text-xl font-bold text-site-text">
+          <DialogTitle className="text-xl font-bold text-site-text">
             {t("whatsnew-title", { defaultValue: "A big update just landed" })}
-          </h2>
+          </DialogTitle>
           <p className="mx-auto mt-2 max-w-sm text-sm text-site-text-muted">
             {t("whatsnew-subtitle", { defaultValue: "We shipped a wave of new features. Here’s a quick tour — tap any to jump in." })}
           </p>
@@ -129,7 +114,7 @@ export function WhatsNewModal() {
             {t("got-it", { defaultValue: "Got it" })}
           </Button>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

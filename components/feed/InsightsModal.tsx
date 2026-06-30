@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Eye, Heart, MessageCircle, Repeat, Bookmark, TrendingUp, Unlock } from 'lucide-react';
+import { Eye, Heart, MessageCircle, Repeat, Bookmark, TrendingUp, Unlock } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
 interface Insights {
@@ -35,14 +36,6 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [open]);
-
-  useEffect(() => {
     if (!open) return;
     setLoading(true);
     setData(null);
@@ -52,8 +45,6 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, [open, postId]);
-
-  if (!open) return null;
 
   const stats = data
     ? [
@@ -68,31 +59,13 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
   const maxTrend = data ? Math.max(1, ...data.likeTrend.map((d) => d.count)) : 1;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onMouseDown={(e) => {
-        e.stopPropagation();
-        onClose();
-      }}
-    >
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
-      <div
-        className="relative z-10 flex max-h-[80vh] w-full max-w-md flex-col rounded-site border border-site-border bg-site-bg shadow-xl"
-        onMouseDown={(e) => e.stopPropagation()}
-      >
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80vh] overflow-hidden">
         <div className="flex shrink-0 items-center justify-between border-b border-site-border px-5 py-4">
-          <h2 className="flex items-center gap-2 font-(family-name:--site-font-display) text-lg font-bold text-site-text">
+          <DialogTitle className="flex items-center gap-2 font-(family-name:--site-font-display) text-lg font-bold text-site-text">
             <TrendingUp className="h-5 w-5 text-site-accent" />
             {t('post-insights', { defaultValue: 'Post insights' })}
-          </h2>
-          <button
-            onClick={onClose}
-            className="rounded-site-sm p-1.5 text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text"
-            aria-label={t('close', { defaultValue: 'Close' })}
-          >
-            <X className="h-5 w-5" />
-          </button>
+          </DialogTitle>
         </div>
 
         <div className="flex-1 overflow-y-auto p-5">
@@ -168,7 +141,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
             </>
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Sparkles, Gamepad2, Search, UserCircle, X } from 'lucide-react';
+import { Sparkles, Gamepad2, Search, UserCircle } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useTranslation } from 'react-i18next';
 
 const STORAGE_KEY = 'rmh-welcome-seen-v1';
@@ -48,37 +49,22 @@ export function WelcomeModal() {
     setOpen(false);
   };
 
-  if (!open) return null;
-
   const current = STEPS[step];
   const Icon = current.icon;
   const isLast = step === STEPS.length - 1;
 
   return (
-    <div
-      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="welcome-title"
-    >
-      <div className="relative w-full max-w-md rounded-site border border-site-border bg-site-surface p-6 shadow-2xl">
-        <button
-          onClick={dismiss}
-          aria-label={t('close-label', { defaultValue: 'Close' })}
-          className="absolute right-3 top-3 rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
-        >
-          <X className="h-4 w-4" />
-        </button>
-
+    <Dialog open={open} onOpenChange={(o) => { if (!o) dismiss(); }}>
+      <DialogContent className="max-w-md gap-0">
         <div className="mb-4 flex justify-center">
           <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-3">
             <Icon className="h-7 w-7 text-site-accent" />
           </div>
         </div>
 
-        <h2 id="welcome-title" className="text-center text-xl font-bold text-site-text">
+        <DialogTitle className="text-center text-xl font-bold text-site-text">
           {current.title}
-        </h2>
+        </DialogTitle>
         <p className="mx-auto mt-2 max-w-sm text-center text-sm text-site-text-muted">{current.body}</p>
 
         {/* Step dots */}
@@ -112,7 +98,7 @@ export function WelcomeModal() {
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

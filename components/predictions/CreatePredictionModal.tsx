@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import type { Market } from './types';
 
 interface Props {
@@ -19,8 +20,6 @@ export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
   const [description, setDescription] = useState('');
   const [closesAt, setClosesAt] = useState('');
   const [submitting, setSubmitting] = useState(false);
-
-  if (!open) return null;
 
   async function submit() {
     if (submitting) return;
@@ -58,21 +57,13 @@ export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md max-h-[85dvh] overflow-y-auto rounded-site border border-site-border bg-site-bg p-5 flex flex-col gap-4"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md p-0 gap-0 bg-site-bg">
+        <div className="p-5 flex flex-col gap-4">
         <div className="flex items-center justify-between">
-          <h2 className="font-semibold text-lg text-site-text">
+          <DialogTitle className="font-semibold text-lg text-site-text">
             {t('new-prediction', { defaultValue: 'New prediction' })}
-          </h2>
-          <button onClick={onClose} className="text-site-text-dim hover:text-site-text">
-            <X className="w-5 h-5" />
-          </button>
+          </DialogTitle>
         </div>
 
         <p className="text-sm text-site-text-dim">
@@ -123,7 +114,8 @@ export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
         <Button variant="accent" onClick={submit} disabled={submitting} className="w-full">
           {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : t('submit', { defaultValue: 'Submit for review' })}
         </Button>
-      </div>
-    </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
