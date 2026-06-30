@@ -1,0 +1,18 @@
+{
+  "clear-filters": "ఫిల్టర్లను తొలగించండి",
+  "clear-search": "శోధనను తొలగించండి",
+  "like-this-build": "ఈ బిల్డ్‌ను ఇష్టపడండి",
+  "no-builds-found": "బిల్డ్‌లు ఏవీ కనుగొనబడలేదు",
+  "read-more": "మరింత చదవండి",
+  "screenshot-of": "{{title}} యొక్క స్క్రీన్‌షాట్",
+  "search-aria-label": "బిల్డ్‌లను శోధించండి",
+  "search-placeholder": "బిల్డ్‌లను శోధించండి...",
+  "sort-builds": "బిల్డ్‌లను క్రమబద్ధీకరించండి",
+  "sort-default": "డిఫాల్ట్",
+  "sort-most-discussed": "అత్యధికంగా చర్చించబడినవి",
+  "sort-most-liked": "అత్యధికంగా ఇష్టపడినవి",
+  "sort-most-viewed": "అత్యధికంగా వీక్షించబడినవి",
+  "sort-options": "క్రమబద్ధీకరణ ఎంపికలు",
+  "unlike-this-build": "ఈ బిల్డ్‌ను ఇష్టపడకండి",
+  "view-comments": "వ్యాఖ్యలను వీక్షించండి"
+}

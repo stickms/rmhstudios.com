@@ -1,0 +1,18 @@
+{
+  "back-home": "Πίσω στην Αρχή",
+  "controls-hint": "WASD/← → Μετακίνηση • Space Άλμα • Shift Dash • E Αλληλεπίδραση • M Μενού",
+  "controls-interact": "E — Αλληλεπίδραση",
+  "controls-jump": "Space — Άλμα",
+  "controls-menu": "M — Μενού",
+  "controls-move": "WASD / Βέλη — Μετακίνηση",
+  "debt": "ΧΡΕΟΣ",
+  "e-continue": "[E] Συνέχεια",
+  "loading": "ΦΟΡΤΩΣΗ...",
+  "login-to-play": "Σύνδεση για Παιχνίδι",
+  "menu-title": "Μενού",
+  "music-volume": "Ένταση Μουσικής",
+  "resume": "Συνέχεια [M]",
+  "sign-in-prompt": "Πρέπει να συνδεθείτε πριν μπείτε στο καζίνο. Τα χρέη σας θα καταγραφούν.",
+  "subtitle": "Το τραπέζι περιμένει",
+  "title": "Το Σπίτι Πάντα Κερδίζει"
+}

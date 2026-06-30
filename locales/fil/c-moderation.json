@@ -1,0 +1,20 @@
+{
+  "cancel": "Kanselahin",
+  "details-placeholder": "Magdagdag ng anumang detalye (opsyonal)",
+  "dialog-description": "Sabihin sa amin kung ano ang mali. Ang mga ulat ay hindi nagpapakilala sa taong iniuulat mo.",
+  "dialog-title": "Iulat ang nilalaman",
+  "reason-harassment": "Panliligalig o pambu-bully",
+  "reason-hate": "Pagsasalita ng poot",
+  "reason-illegal": "Illegal na nilalaman",
+  "reason-misinformation": "Maling impormasyon",
+  "reason-other": "Iba pa",
+  "reason-self-harm": "Pinsala sa sarili",
+  "reason-sexual": "Sekswal o tahasang nilalaman",
+  "reason-spam": "Spam o scam",
+  "reason-violence": "Karahasan o pagbabanta",
+  "submit-report": "Isumite ang ulat",
+  "submitting": "Isinusumite…",
+  "toast-error": "Hindi maisumite ang ulat. Pakisubukan muli.",
+  "toast-sign-in": "Mangyaring mag-sign in upang mag-ulat ng nilalaman.",
+  "toast-success": "Salamat — susuriin ito ng aming koponan."
+}

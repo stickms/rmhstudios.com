@@ -1,0 +1,20 @@
+{
+  "cancel": "Cancelar",
+  "details-placeholder": "Añade cualquier detalle (opcional)",
+  "dialog-description": "Cuéntanos qué está mal. Los informes son anónimos para la persona que estás reportando.",
+  "dialog-title": "Reportar contenido",
+  "reason-harassment": "Acoso o intimidación",
+  "reason-hate": "Discurso de odio",
+  "reason-illegal": "Contenido ilegal",
+  "reason-misinformation": "Desinformación",
+  "reason-other": "Otra cosa",
+  "reason-self-harm": "Autolesión",
+  "reason-sexual": "Contenido sexual o explícito",
+  "reason-spam": "Spam o estafa",
+  "reason-violence": "Violencia o amenazas",
+  "submit-report": "Enviar informe",
+  "submitting": "Enviando…",
+  "toast-error": "No se pudo enviar el informe. Inténtalo de nuevo.",
+  "toast-sign-in": "Inicia sesión para reportar contenido.",
+  "toast-success": "Gracias: nuestro equipo revisará esto."
+}

@@ -1,0 +1,23 @@
+{
+  "cancel": "취소",
+  "custom-amount": "사용자 지정 금액",
+  "duration": "기간",
+  "gift-a-membership": "멤버십 선물하기",
+  "gift-desc": "이 사용자에게 코인으로 멤버십을 선물하세요.",
+  "gift-desc-named": "{{name}}님에게 코인으로 멤버십을 선물하세요.",
+  "gift-error": "멤버십을 선물할 수 없습니다",
+  "gift-for": "선물 대상",
+  "gift-sign-in": "멤버십을 선물하려면 로그인해 주세요.",
+  "gift-success": "{{tier}}의 {{months}}개월을 선물했습니다!",
+  "gift-success-named": "{{name}}님에게 {{tier}}의 {{months}}개월을 선물했습니다!",
+  "note-placeholder": "메모 추가 (선택 사항)",
+  "sending": "보내는 중…",
+  "tier": "등급",
+  "tip-amount-group-label": "팁 금액",
+  "tip-btn": "팁",
+  "tip-dialog-description": "감사를 표시하려면 {{recipient}}에게 코인을 보내세요.",
+  "tip-dialog-title": "팁 보내기",
+  "tip-error": "팁을 보낼 수 없습니다",
+  "tip-sign-in": "팁을 보내려면 로그인해 주세요.",
+  "tip-success": "{{recipient}}에게 {{amount}}코인을 팁으로 보냈습니다!"
+}

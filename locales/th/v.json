@@ -1,0 +1,12 @@
+{
+  "empty-gallery": "ยังไม่มีหน้าใดเลย — เป็นคนแรกที่สร้างหน้า",
+  "generate-aria-label": "สร้าง",
+  "hero-headline": "แพลตฟอร์มที่ครบทุกอย่าง",
+  "loading": "กำลังโหลด…",
+  "no-results": "ไม่มีหน้าที่ตรงกับการค้นหา",
+  "pages-title": "หน้า",
+  "prompt-aria-label": "อธิบายหน้าที่คุณต้องการสร้าง",
+  "prompt-placeholder": "คุณต้องการไปที่ไหน?",
+  "search-aria-label": "ค้นหาหน้า",
+  "search-placeholder": "ค้นหาหน้า..."
+}

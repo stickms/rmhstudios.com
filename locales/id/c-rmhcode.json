@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "Salin token",
+  "created-date": "Dibuat {{date}}",
+  "expired": "Kedaluwarsa",
+  "generate-token": "Buat Token",
+  "last-used-date": "Terakhir digunakan {{date}}",
+  "no-active-tokens": "Tidak ada token aktif. Buat satu untuk memulai.",
+  "revoke-token-label": "Cabut token",
+  "token-auth-instruction-post": "untuk mengautentikasi.",
+  "token-auth-instruction-pre": "Jalankan",
+  "token-generated-notice": "Token berhasil dibuat! Salin sekarang - tidak akan ditampilkan lagi.",
+  "token-name-placeholder": "Nama token (opsional)",
+  "unnamed-token": "Token tanpa nama",
+  "your-tokens": "Token Anda"
+}

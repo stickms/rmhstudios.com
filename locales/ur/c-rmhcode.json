@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "ٹوکن کاپی کریں",
+  "created-date": "تاریخ تخلیق {{date}}",
+  "expired": "میعاد ختم",
+  "generate-token": "ٹوکن بنائیں",
+  "last-used-date": "آخری استعمال {{date}}",
+  "no-active-tokens": "کوئی فعال ٹوکن نہیں۔ شروع کرنے کے لیے ایک بنائیں۔",
+  "revoke-token-label": "ٹوکن منسوخ کریں",
+  "token-auth-instruction-post": "تصدیق کے لیے۔",
+  "token-auth-instruction-pre": "چلائیں",
+  "token-generated-notice": "ٹوکن بن گیا! ابھی کاپی کریں - یہ دوبارہ نہیں دکھایا جائے گا۔",
+  "token-name-placeholder": "ٹوکن کا نام (اختیاری)",
+  "unnamed-token": "بغیر نام کا ٹوکن",
+  "your-tokens": "آپ کے ٹوکنز"
+}

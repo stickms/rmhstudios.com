@@ -1,0 +1,22 @@
+{
+  "correct-sort": "Tamang pag-uuri:",
+  "failed-to-load-leaderboard": "Hindi na-load ang leaderboard",
+  "game-description": "Panoorin ang mga makukulay na damit na nahuhulog mula sa itaas. Hayaang mahulog ang mga ito sa tamang kulay na lalagyan upang makakuha ng puntos. Ang maling lalagyan ay magbabawas ng puntos!",
+  "game-over": "TAPOS NA ANG LARO",
+  "leaderboard": "TALAAN NG PUNTOS",
+  "loading": "Naglo-load…",
+  "no-scores-yet": "Wala pang puntos. Ikaw na mauna!",
+  "play-again": "Maglaro Muli",
+  "points": "puntos",
+  "score": "PUNTOS",
+  "score-submitted": "✓ Naipasa na ang puntos!",
+  "sign-in-to-play": "Mag-sign In para Maglaro",
+  "sign-in-to-save": "Mag-sign in para i-save ang iyong puntos!",
+  "sign-in-to-submit": "Mag-sign In para Ipasa",
+  "sort-the-laundry": "AYUSIN ANG LABADA!",
+  "start-game": "Simulan ang Laro",
+  "submitting-score": "Ini-submit ang puntos…",
+  "time": "ORAS",
+  "time-limit": "Limitasyon ng oras: 1 minuto",
+  "wrong-bin": "Maling lalagyan:"
+}

@@ -1,0 +1,22 @@
+{
+  "correct-sort": "正しい仕分け：",
+  "failed-to-load-leaderboard": "ランキングの読み込みに失敗しました",
+  "game-description": "カラフルな衣類が上から落ちてきます。同じ色のゴミ箱に落としてポイントを獲得しましょう。間違ったゴミ箱に入れるとポイントが減ります！",
+  "game-over": "ゲームオーバー",
+  "leaderboard": "ランキング",
+  "loading": "読み込み中…",
+  "no-scores-yet": "まだスコアはありません。最初に挑戦しよう！",
+  "play-again": "もう一度プレイ",
+  "points": "ポイント",
+  "score": "スコア",
+  "score-submitted": "✓ スコアを送信しました！",
+  "sign-in-to-play": "ログインしてプレイ",
+  "sign-in-to-save": "ログインしてスコアを保存！",
+  "sign-in-to-submit": "ログインして送信",
+  "sort-the-laundry": "洗濯物を仕分けよう！",
+  "start-game": "ゲームを開始",
+  "submitting-score": "スコアを送信中…",
+  "time": "時間",
+  "time-limit": "制限時間：1分",
+  "wrong-bin": "間違ったゴミ箱："
+}

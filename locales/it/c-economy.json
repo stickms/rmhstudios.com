@@ -1,0 +1,23 @@
+{
+  "cancel": "Annulla",
+  "custom-amount": "Importo personalizzato",
+  "duration": "Durata",
+  "gift-a-membership": "Regala un abbonamento",
+  "gift-desc": "Regala a questo utente un abbonamento con monete.",
+  "gift-desc-named": "Regala a {{name}} un abbonamento con monete.",
+  "gift-error": "Impossibile regalare l'abbonamento",
+  "gift-for": "Regalo per",
+  "gift-sign-in": "Accedi per regalare un abbonamento.",
+  "gift-success": "Regalati {{months}} mese{{s}} di {{tier}}!",
+  "gift-success-named": "Regalati {{months}} mese{{s}} di {{tier}} a {{name}}!",
+  "note-placeholder": "Aggiungi una nota (opzionale)",
+  "sending": "Invio in corso…",
+  "tier": "Livello",
+  "tip-amount-group-label": "Importo della mancia",
+  "tip-btn": "Mancia",
+  "tip-dialog-description": "Invia monete{{recipient}} per mostrare apprezzamento.",
+  "tip-dialog-title": "Invia una mancia",
+  "tip-error": "Impossibile inviare la mancia",
+  "tip-sign-in": "Accedi per lasciare una mancia.",
+  "tip-success": "Inviate {{amount}} monete{{recipient}} come mancia!"
+}

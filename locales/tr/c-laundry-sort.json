@@ -1,0 +1,22 @@
+{
+  "correct-sort": "Doğru sıralama:",
+  "failed-to-load-leaderboard": "Liderlik tablosu yüklenemedi",
+  "game-description": "Yukarıdan düşen renkli çamaşırları izleyin. Puan kazanmak için onları doğru renkli kutulara düşürün. Yanlış kutular puan kaybettirir!",
+  "game-over": "OYUN BİTTİ",
+  "leaderboard": "LİDERLİK TABLOSU",
+  "loading": "Yükleniyor…",
+  "no-scores-yet": "Henüz puan yok. İlk siz olun!",
+  "play-again": "Tekrar Oyna",
+  "points": "puan",
+  "score": "PUAN",
+  "score-submitted": "✓ Puan gönderildi!",
+  "sign-in-to-play": "Oynamak İçin Giriş Yap",
+  "sign-in-to-save": "Puanınızı kaydetmek için giriş yapın!",
+  "sign-in-to-submit": "Göndermek İçin Giriş Yap",
+  "sort-the-laundry": "ÇAMAŞIRLARI AYIR!",
+  "start-game": "Oyuna Başla",
+  "submitting-score": "Puan gönderiliyor…",
+  "time": "SÜRE",
+  "time-limit": "Süre sınırı: 1 dakika",
+  "wrong-bin": "Yanlış kutu:"
+}

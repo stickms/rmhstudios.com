@@ -4,7 +4,7 @@
   "chapters": "Chapters",
   "close": "Close",
   "couldnt-open-pdf": "Couldn't open this PDF.",
-  "dialog-label": "Upload a PDF",
+  "dialog-label": "Upload a book",
   "download-pdf": "Download PDF",
   "drop-prompt": "Drop a PDF here, or click to choose one.",
   "error-not-pdf": "That doesn't look like a PDF.",
@@ -24,7 +24,7 @@
   "placeholder-title": "Book title",
   "previous-page": "Previous page",
   "publish": "Publish",
-  "status-analyzing": "Reading the PDF…",
+  "status-analyzing": "Reading the file…",
   "status-drafting": "Drafting a title…",
   "status-uploading": "Publishing…"
 }

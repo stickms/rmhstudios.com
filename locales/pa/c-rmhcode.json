@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "ਟੋਕਨ ਕਾਪੀ ਕਰੋ",
+  "created-date": "{{date}} ਨੂੰ ਬਣਾਇਆ ਗਿਆ",
+  "expired": "ਮਿਆਦ ਪੁੱਗ ਗਈ",
+  "generate-token": "ਟੋਕਨ ਤਿਆਰ ਕਰੋ",
+  "last-used-date": "ਆਖਰੀ ਵਰਤੋਂ {{date}}",
+  "no-active-tokens": "ਕੋਈ ਸਰਗਰਮ ਟੋਕਨ ਨਹੀਂ। ਸ਼ੁਰੂ ਕਰਨ ਲਈ ਇੱਕ ਤਿਆਰ ਕਰੋ।",
+  "revoke-token-label": "ਟੋਕਨ ਰੱਦ ਕਰੋ",
+  "token-auth-instruction-post": "ਪ੍ਰਮਾਣਿਤ ਕਰਨ ਲਈ।",
+  "token-auth-instruction-pre": "ਚਲਾਓ",
+  "token-generated-notice": "ਟੋਕਨ ਤਿਆਰ ਹੋ ਗਿਆ! ਇਸਨੂੰ ਹੁਣ ਕਾਪੀ ਕਰੋ - ਇਹ ਦੁਬਾਰਾ ਨਹੀਂ ਦਿਖਾਇਆ ਜਾਵੇਗਾ।",
+  "token-name-placeholder": "ਟੋਕਨ ਦਾ ਨਾਮ (ਵਿਕਲਪਿਕ)",
+  "unnamed-token": "ਬਿਨਾਂ ਨਾਮ ਦਾ ਟੋਕਨ",
+  "your-tokens": "ਤੁਹਾਡੇ ਟੋਕਨ"
+}

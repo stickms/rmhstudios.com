@@ -1,0 +1,22 @@
+{
+  "correct-sort": "Sắp xếp đúng:",
+  "failed-to-load-leaderboard": "Không thể tải bảng xếp hạng",
+  "game-description": "Hãy nhìn những bộ quần áo đầy màu sắc rơi từ trên cao. Thả chúng vào các thùng màu phù hợp để ghi điểm. Sai thùng sẽ bị mất điểm!",
+  "game-over": "KẾT THÚC",
+  "leaderboard": "BẢNG XẾP HẠNG",
+  "loading": "Đang tải…",
+  "no-scores-yet": "Chưa có điểm nào. Hãy là người đầu tiên!",
+  "play-again": "Chơi lại",
+  "points": "điểm",
+  "score": "ĐIỂM",
+  "score-submitted": "✓ Điểm đã được gửi!",
+  "sign-in-to-play": "Đăng nhập để chơi",
+  "sign-in-to-save": "Đăng nhập để lưu điểm của bạn!",
+  "sign-in-to-submit": "Đăng nhập để gửi",
+  "sort-the-laundry": "PHÂN LOẠI QUẦN ÁO!",
+  "start-game": "Bắt đầu trò chơi",
+  "submitting-score": "Đang gửi điểm…",
+  "time": "THỜI GIAN",
+  "time-limit": "Giới hạn thời gian: 1 phút",
+  "wrong-bin": "Sai thùng:"
+}

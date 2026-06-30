@@ -1,0 +1,18 @@
+{
+  "back-home": "홈으로 돌아가기",
+  "controls-hint": "WASD/← → 이동 • Space 점프 • Shift 대시 • E 상호작용 • M 메뉴",
+  "controls-interact": "E — 상호작용",
+  "controls-jump": "Space — 점프",
+  "controls-menu": "M — 메뉴",
+  "controls-move": "WASD / 방향키 — 이동",
+  "debt": "빚",
+  "e-continue": "[E] 계속",
+  "loading": "로딩 중...",
+  "login-to-play": "로그인 후 플레이",
+  "menu-title": "메뉴",
+  "music-volume": "음악 볼륨",
+  "resume": "재개 [M]",
+  "sign-in-prompt": "카지노에 입장하려면 로그인이 필요합니다. 당신의 빚이 기록됩니다.",
+  "subtitle": "테이블이 기다리고 있다",
+  "title": "하우스는 항상 이긴다"
+}

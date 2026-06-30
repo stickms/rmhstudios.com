@@ -1,0 +1,18 @@
+{
+  "back-home": "वापस घर",
+  "controls-hint": "WASD/← → चलें • Space कूदें • Shift डैश • E बातचीत • M मेन्यू",
+  "controls-interact": "E — बातचीत",
+  "controls-jump": "Space — कूदें",
+  "controls-menu": "M — मेन्यू",
+  "controls-move": "WASD / तीर — चलें",
+  "debt": "कर्ज",
+  "e-continue": "[E] जारी रखें",
+  "loading": "लोड हो रहा है...",
+  "login-to-play": "खेलने के लिए लॉगिन करें",
+  "menu-title": "मेन्यू",
+  "music-volume": "संगीत वॉल्यूम",
+  "resume": "जारी रखें [M]",
+  "sign-in-prompt": "कैसीनो में प्रवेश करने से पहले आपको साइन इन करना होगा। आपके कर्ज दर्ज किए जाएंगे।",
+  "subtitle": "टेबल इंतजार कर रही है",
+  "title": "हाउस हमेशा जीतता है"
+}

@@ -1,0 +1,15 @@
+{
+  "chat-placeholder": "พิมพ์ข้อความ...",
+  "error-boundary-message": "เกิดข้อผิดพลาดที่ไม่คาดคิด",
+  "error-boundary-retry": "ลองอีกครั้ง",
+  "error-boundary-title": "มีบางอย่างผิดพลาด",
+  "failed-to-load-media": "ไม่สามารถโหลดสื่อได้",
+  "game-crashed": "เกมล่ม",
+  "game-crashed-named": "{{gameName}} ล่ม",
+  "loading": "กำลังโหลด…",
+  "no-messages-yet": "ยังไม่มีข้อความ",
+  "react": "ตอบกลับ",
+  "return-home": "กลับหน้าหลัก",
+  "try-again": "ลองอีกครั้ง",
+  "unexpected-error": "เกิดข้อผิดพลาดที่ไม่คาดคิด"
+}

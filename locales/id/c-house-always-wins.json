@@ -1,0 +1,18 @@
+{
+  "back-home": "Kembali ke Beranda",
+  "controls-hint": "WASD/← → Bergerak • Space Melompat • Shift Meluncur • E Berinteraksi • M Menu",
+  "controls-interact": "E — Berinteraksi",
+  "controls-jump": "Space — Melompat",
+  "controls-menu": "M — Menu",
+  "controls-move": "WASD / Panah — Bergerak",
+  "debt": "HUTANG",
+  "e-continue": "[E] Lanjutkan",
+  "loading": "MEMUAT...",
+  "login-to-play": "Masuk untuk Bermain",
+  "menu-title": "Menu",
+  "music-volume": "Volume Musik",
+  "resume": "Lanjutkan [M]",
+  "sign-in-prompt": "Anda harus masuk sebelum dapat memasuki kasino. Utang Anda akan dicatat.",
+  "subtitle": "Meja sedang menunggu",
+  "title": "House Always Wins"
+}

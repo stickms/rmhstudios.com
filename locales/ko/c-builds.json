@@ -1,0 +1,18 @@
+{
+  "clear-filters": "필터 지우기",
+  "clear-search": "검색 지우기",
+  "like-this-build": "이 빌드 좋아요",
+  "no-builds-found": "빌드를 찾을 수 없습니다",
+  "read-more": "더 읽기",
+  "screenshot-of": "{{title}}의 스크린샷",
+  "search-aria-label": "빌드 검색",
+  "search-placeholder": "빌드 검색...",
+  "sort-builds": "빌드 정렬",
+  "sort-default": "기본",
+  "sort-most-discussed": "가장 많이 논의된",
+  "sort-most-liked": "가장 많이 좋아요를 받은",
+  "sort-most-viewed": "가장 많이 본",
+  "sort-options": "정렬 옵션",
+  "unlike-this-build": "이 빌드 좋아요 취소",
+  "view-comments": "댓글 보기"
+}

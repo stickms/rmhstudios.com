@@ -1,6 +1,6 @@
 {
   "back-home": "العودة إلى المنزل",
-  "controls-hint": "WASD/الأسهم • مسافة للقفز • E للتفاعل • M للقائمة",
+  "controls-hint": "WASD/← → تحرك • مسافة قفز • Shift اندفاع • E تفاعل • M قائمة",
   "controls-interact": "هـ — تفاعل",
   "controls-jump": "الفضاء — قفز",
   "controls-menu": "م — القائمة",

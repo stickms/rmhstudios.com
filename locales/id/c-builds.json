@@ -1,0 +1,18 @@
+{
+  "clear-filters": "Hapus filter",
+  "clear-search": "Hapus pencarian",
+  "like-this-build": "Sukai build ini",
+  "no-builds-found": "Tidak ada build ditemukan",
+  "read-more": "Baca Selengkapnya",
+  "screenshot-of": "Tangkapan layar dari {{title}}",
+  "search-aria-label": "Cari build",
+  "search-placeholder": "Cari build...",
+  "sort-builds": "Urutkan build",
+  "sort-default": "Default",
+  "sort-most-discussed": "Paling Banyak Dibahas",
+  "sort-most-liked": "Paling Banyak Disukai",
+  "sort-most-viewed": "Paling Banyak Dilihat",
+  "sort-options": "Opsi pengurutan",
+  "unlike-this-build": "Batal sukai build ini",
+  "view-comments": "Lihat komentar"
+}

@@ -1,0 +1,22 @@
+{
+  "correct-sort": "Richtige Sortierung:",
+  "failed-to-load-leaderboard": "Bestenliste konnte nicht geladen werden",
+  "game-description": "Beobachte, wie bunte Kleidungsstücke von oben fallen. Lass sie in die passenden Farbbehälter fallen, um Punkte zu sammeln. Falsche Behälter kosten Punkte!",
+  "game-over": "SPIEL VORBEI",
+  "leaderboard": "BESTENLISTE",
+  "loading": "Lädt…",
+  "no-scores-yet": "Noch keine Punkte. Sei der Erste!",
+  "play-again": "Erneut spielen",
+  "points": "Punkte",
+  "score": "PUNKTZAHL",
+  "score-submitted": "✓ Punktzahl übermittelt!",
+  "sign-in-to-play": "Anmelden zum Spielen",
+  "sign-in-to-save": "Melde dich an, um deine Punktzahl zu speichern!",
+  "sign-in-to-submit": "Anmelden zum Übermitteln",
+  "sort-the-laundry": "SORTIERE DIE WÄSCHE!",
+  "start-game": "Spiel starten",
+  "submitting-score": "Punktzahl wird übermittelt…",
+  "time": "ZEIT",
+  "time-limit": "Zeitlimit: 1 Minute",
+  "wrong-bin": "Falscher Behälter:"
+}
