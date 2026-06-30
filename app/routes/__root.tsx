@@ -16,6 +16,8 @@ import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
 import { RouteErrorFallback } from "@/components/errors/RouteErrorFallback";
 import { NotFound } from "@/components/errors/NotFound";
 import { installGlobalErrorHandlers } from "@/lib/client-errors";
+import { initWebVitals } from "@/lib/rum";
+import { organizationSchema, websiteSchema, jsonLdScript } from "@/lib/schema";
 import { auth } from "@/lib/auth";
 import appCss from "@/app/globals.css?url";
 import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
@@ -140,6 +142,8 @@ export const Route = createRootRoute({
         { children: themeScript },
         { children: localeScript },
         { children: deferredFontsScript },
+        // Site-wide structured data (Organization + WebSite w/ SearchAction).
+        jsonLdScript([organizationSchema(), websiteSchema()]),
       ],
     };
   },
@@ -185,10 +189,12 @@ function RootComponent() {
   const navigate = useNavigate();
   const { user: initialUser, locale, i18nResources } = Route.useLoaderData();
 
-  // Install global error/unhandled-rejection reporting once on the client so
-  // runtime errors surface in the server logs instead of failing silently.
+  // Install global error/unhandled-rejection reporting + Core Web Vitals
+  // collection once on the client so runtime errors and perf regressions
+  // surface in the server logs instead of failing silently.
   useEffect(() => {
     installGlobalErrorHandlers();
+    initWebVitals();
   }, []);
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.

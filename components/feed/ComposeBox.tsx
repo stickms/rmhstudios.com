@@ -308,6 +308,7 @@ export function ComposeBox({
                 value={poll.question}
                 onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
                 placeholder={t("poll-question-placeholder", { defaultValue: "Ask a question..." })}
+                aria-label={t("poll-question-aria", { defaultValue: "Poll question" })}
                 maxLength={MAX_POLL_QUESTION_LENGTH}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
               />
@@ -324,18 +325,21 @@ export function ComposeBox({
                         setPoll((p) => ({ ...p, options: newOptions }));
                       }}
                       placeholder={t("poll-option-placeholder", { count: i + 1, defaultValue: "Option {{count}}" })}
+                      aria-label={t("poll-option-aria", { count: i + 1, defaultValue: "Poll option {{count}}" })}
                       maxLength={MAX_POLL_OPTION_LENGTH}
                       className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
                     />
                     {poll.options.length > MIN_POLL_OPTIONS && (
                       <button
+                        type="button"
                         onClick={() => {
                           const newOptions = poll.options.filter((_, j) => j !== i);
                           setPoll((p) => ({ ...p, options: newOptions }));
                         }}
+                        aria-label={t("poll-remove-option", { count: i + 1, defaultValue: "Remove option {{count}}" })}
                         className="p-1 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
                       >
-                        <X className="w-3.5 h-3.5" />
+                        <X className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
                     )}
                   </div>

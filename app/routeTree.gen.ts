@@ -113,6 +113,7 @@ import { Route as ApiWrappedRouteImport } from './routes/api/wrapped'
 import { Route as ApiUserBuildsRouteImport } from './routes/api/user-builds'
 import { Route as ApiStreakRouteImport } from './routes/api/streak'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
+import { Route as ApiRumRouteImport } from './routes/api/rum'
 import { Route as ApiRmharksRouteImport } from './routes/api/rmharks'
 import { Route as ApiRecapRouteImport } from './routes/api/recap'
 import { Route as ApiProgressRouteImport } from './routes/api/progress'
@@ -1029,6 +1030,11 @@ const ApiStreakRoute = ApiStreakRouteImport.update({
 const ApiSearchRoute = ApiSearchRouteImport.update({
   id: '/api/search',
   path: '/api/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiRumRoute = ApiRumRouteImport.update({
+  id: '/api/rum',
+  path: '/api/rum',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRmharksRoute = ApiRmharksRouteImport.update({
@@ -3170,6 +3176,7 @@ export interface FileRoutesByFullPath {
   '/api/progress': typeof ApiProgressRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
+  '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
@@ -3650,6 +3657,7 @@ export interface FileRoutesByTo {
   '/api/progress': typeof ApiProgressRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
+  '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
@@ -4153,6 +4161,7 @@ export interface FileRoutesById {
   '/api/progress': typeof ApiProgressRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
+  '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
@@ -4659,6 +4668,7 @@ export interface FileRouteTypes {
     | '/api/progress'
     | '/api/recap'
     | '/api/rmharks'
+    | '/api/rum'
     | '/api/search'
     | '/api/streak'
     | '/api/user-builds'
@@ -5139,6 +5149,7 @@ export interface FileRouteTypes {
     | '/api/progress'
     | '/api/recap'
     | '/api/rmharks'
+    | '/api/rum'
     | '/api/search'
     | '/api/streak'
     | '/api/user-builds'
@@ -5641,6 +5652,7 @@ export interface FileRouteTypes {
     | '/api/progress'
     | '/api/recap'
     | '/api/rmharks'
+    | '/api/rum'
     | '/api/search'
     | '/api/streak'
     | '/api/user-builds'
@@ -6125,6 +6137,7 @@ export interface RootRouteChildren {
   ApiProgressRoute: typeof ApiProgressRoute
   ApiRecapRoute: typeof ApiRecapRoute
   ApiRmharksRoute: typeof ApiRmharksRouteWithChildren
+  ApiRumRoute: typeof ApiRumRoute
   ApiSearchRoute: typeof ApiSearchRoute
   ApiStreakRoute: typeof ApiStreakRoute
   ApiUserBuildsRoute: typeof ApiUserBuildsRouteWithChildren
@@ -7078,6 +7091,13 @@ declare module '@tanstack/react-router' {
       path: '/api/search'
       fullPath: '/api/search'
       preLoaderRoute: typeof ApiSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/rum': {
+      id: '/api/rum'
+      path: '/api/rum'
+      fullPath: '/api/rum'
+      preLoaderRoute: typeof ApiRumRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rmharks': {
@@ -11006,6 +11026,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProgressRoute: ApiProgressRoute,
   ApiRecapRoute: ApiRecapRoute,
   ApiRmharksRoute: ApiRmharksRouteWithChildren,
+  ApiRumRoute: ApiRumRoute,
   ApiSearchRoute: ApiSearchRoute,
   ApiStreakRoute: ApiStreakRoute,
   ApiUserBuildsRoute: ApiUserBuildsRouteWithChildren,

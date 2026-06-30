@@ -11,6 +11,7 @@ import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
+import { personSchema, jsonLdScript } from '@/lib/schema';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
@@ -45,7 +46,15 @@ const fetchProfileData = createServerFn({ method: 'GET' })
       });
     }
 
-    let meta = { title: 'User Not Found | RMH', description: '', ogType: 'profile' as const, ogUrl: '', ogImage: '' };
+    let meta = {
+      title: 'User Not Found | RMH',
+      description: '',
+      ogType: 'profile' as const,
+      ogUrl: '',
+      ogImage: '',
+      name: '',
+      handle: null as string | null,
+    };
     if (user) {
       const resolved = resolveUserDisplay(user);
       const name = resolved.name || 'Unknown';
@@ -58,6 +67,8 @@ const fetchProfileData = createServerFn({ method: 'GET' })
         ogType: 'profile',
         ogUrl: `https://rmhstudios.com/u/${handle || id}`,
         ogImage: resolved.image || '',
+        name,
+        handle: handle ?? null,
       };
     }
 
@@ -81,6 +92,20 @@ export const Route = createFileRoute('/_site/u/$userid/')({
       { name: 'twitter:description', content: loaderData?.meta.description ?? '' },
       ...(loaderData?.meta.ogImage ? [{ name: 'twitter:image', content: loaderData.meta.ogImage }] : []),
     ],
+    links: loaderData?.meta.ogUrl ? [{ rel: 'canonical', href: loaderData.meta.ogUrl }] : [],
+    scripts: loaderData?.meta.name
+      ? [
+          jsonLdScript(
+            personSchema({
+              name: loaderData.meta.name,
+              handle: loaderData.meta.handle,
+              description: loaderData.meta.description,
+              path: loaderData.meta.ogUrl,
+              image: loaderData.meta.ogImage || undefined,
+            }),
+          ),
+        ]
+      : [],
   }),
   component: ProfilePage,
 });
