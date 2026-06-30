@@ -8,6 +8,7 @@ import { ComposeModal } from './ComposeModal';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
+import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useTranslation } from "react-i18next";
 
 export function MobileNav() {
@@ -83,11 +84,7 @@ export function MobileNav() {
             {activeBar(isInbox)}
             <div className="relative">
               <Inbox className="w-6 h-6" />
-              {inboxCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-site-danger text-white text-[10px] font-bold px-1 leading-none">
-                  {inboxCount > 99 ? '99+' : inboxCount}
-                </span>
-              )}
+              <NotificationBadge count={inboxCount} className="absolute -top-1.5 -right-1.5" />
             </div>
           </Link>
 

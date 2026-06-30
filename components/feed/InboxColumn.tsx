@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { MobileMenuButton } from './MobileMenuButton';
 import { MobileBrandPrefix } from './MobileHeader';
 import { useSession } from '@/components/Providers';
+import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { MessagesColumn } from './MessagesColumn';
@@ -63,11 +64,7 @@ export function InboxColumn({ initialTab = 'messages' }: { initialTab?: InboxTab
               >
                 <Icon className="w-4 h-4 shrink-0" />
                 <span className="hidden sm:inline">{t.label}</span>
-                {t.badge && t.badge > 0 ? (
-                  <span className="flex items-center justify-center min-w-4 h-4 rounded-full bg-site-danger text-white text-[10px] font-bold px-1 leading-none">
-                    {t.badge > 99 ? '99+' : t.badge}
-                  </span>
-                ) : null}
+                <NotificationBadge count={t.badge ?? 0} />
               </button>
             );
           })}

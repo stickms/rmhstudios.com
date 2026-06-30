@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
+import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useStreak } from '@/lib/useStreak';
@@ -129,11 +130,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         {link.badge === 'inbox' ? (
           <div className="relative shrink-0">
             <Icon className="w-5 h-5" />
-            {inboxCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-site-danger text-white text-[10px] font-bold px-1 leading-none">
-                {inboxCount > 99 ? '99+' : inboxCount}
-              </span>
-            )}
+            <NotificationBadge count={inboxCount} className="absolute -top-1.5 -right-1.5" />
           </div>
         ) : (
           <Icon className="w-5 h-5 shrink-0" />
