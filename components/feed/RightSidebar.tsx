@@ -71,7 +71,7 @@ export function RightSidebar({
   return (
     <div className="p-4 space-y-6">
       {/* Official Builds */}
-      <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
+      <section className="bg-site-surface rounded-site p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
           <Package className="w-5 h-5 text-site-accent" />
           {t('official-builds', { defaultValue: 'Official Builds' })}
@@ -83,9 +83,9 @@ export function RightSidebar({
               <Link
                 key={build.id}
                 to={build.href}
-                className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors group"
+                className="-mx-2 px-2 flex items-center gap-2.5 rounded-site-sm py-1.5 hover:bg-site-surface-hover transition-colors group"
               >
-                <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
+                <div className="relative w-10 h-10 rounded-site-sm overflow-hidden bg-site-bg shrink-0 border border-site-border">
                   {build.thumbnailUrl ? (
                     <OptimizedImage src={build.thumbnailUrl} alt={build.title} width={40} height={40} className="w-full h-full object-cover" />
                   ) : (
@@ -107,9 +107,9 @@ export function RightSidebar({
                 href={build.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors group"
+                className="-mx-2 px-2 flex items-center gap-2.5 rounded-site-sm py-1.5 hover:bg-site-surface-hover transition-colors group"
               >
-                <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
+                <div className="relative w-10 h-10 rounded-site-sm overflow-hidden bg-site-bg shrink-0 border border-site-border">
                   {build.thumbnailUrl ? (
                     <OptimizedImage src={build.thumbnailUrl} alt={build.title} width={40} height={40} className="w-full h-full object-cover" />
                   ) : (
@@ -134,7 +134,7 @@ export function RightSidebar({
       </section>
 
       {/* User Builds */}
-      <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
+      <section className="bg-site-surface rounded-site p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
           <Hammer className="w-5 h-5 text-site-accent" />
           {t('user-builds', { defaultValue: 'User Builds' })}
@@ -144,9 +144,9 @@ export function RightSidebar({
             <Link
               key={build.id}
               to={`/builds/${build.slug}` as string}
-              className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors group"
+              className="-mx-2 px-2 flex items-center gap-2.5 rounded-site-sm py-1.5 hover:bg-site-surface-hover transition-colors group"
             >
-              <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-site-bg shrink-0 border border-site-border">
+              <div className="relative w-10 h-10 rounded-site-sm overflow-hidden bg-site-bg shrink-0 border border-site-border">
                 {build.thumbnailUrl ? (
                   <OptimizedImage src={build.thumbnailUrl} alt={build.title} width={40} height={40} className="w-full h-full object-cover" />
                 ) : (
@@ -177,7 +177,7 @@ export function RightSidebar({
       </section>
 
       {/* Recommended Users */}
-      <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
+      <section className="bg-site-surface rounded-site p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
           <UserPlus className="w-5 h-5 text-site-accent" />
           {t('recommended-users', { defaultValue: 'Recommended Users' })}
@@ -186,7 +186,7 @@ export function RightSidebar({
           {recommendedUsers.map((user) => {
             const profileHref = user.handle ? `/u/${user.handle}` : `/profile/${user.id}`;
             return (
-              <div key={user.id} className="-mx-2 px-2 flex items-center gap-2.5 rounded-lg py-1.5 hover:bg-site-surface-hover transition-colors">
+              <div key={user.id} className="-mx-2 px-2 flex items-center gap-2.5 rounded-site-sm py-1.5 hover:bg-site-surface-hover transition-colors">
                 <Link to={profileHref as string} className="flex items-center gap-2.5 min-w-0 flex-1">
                   <UserAvatar src={user.image ?? undefined} alt={user.name || user.username || t('user', { defaultValue: 'User' })} size={36} fallbackName={(user.name || user.username) ?? undefined} />
                   <div className="min-w-0">
@@ -206,7 +206,7 @@ export function RightSidebar({
       </section>
 
       {/* Blog */}
-      <section className="bg-site-surface rounded-2xl p-4 border border-site-border">
+      <section className="bg-site-surface rounded-site p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
           <BookOpen className="w-5 h-5 text-site-accent" />
           {t('blog', { defaultValue: 'Blog' })}

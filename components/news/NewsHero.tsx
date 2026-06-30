@@ -77,13 +77,13 @@ export function NewsHero({ articles }: NewsHeroProps) {
 
     return (
         <div ref={containerRef} className="relative mb-12" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
-            <div className="overflow-hidden rounded-2xl -mx-3" ref={emblaRef}>
+            <div className="overflow-hidden rounded-site -mx-3" ref={emblaRef}>
                 <div className="flex">
                     {articles.map((article, index) => {
                         const categoryColor = getCategoryColor(article.category ?? '');
                         return (
                             <div key={article.slug} className="flex-[0_0_100%] min-w-0 px-3">
-                                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-(--site-surface) via-(--site-bg-subtle) to-(--site-surface) border border-(--site-border) p-8 md:p-12 min-h-[320px] flex flex-col justify-end">
+                                <div className="relative overflow-hidden rounded-site bg-gradient-to-br from-(--site-surface) via-(--site-bg-subtle) to-(--site-surface) border border-(--site-border) p-8 md:p-12 min-h-[320px] flex flex-col justify-end">
                                     {/* Decorative gradient overlay */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-(--site-bg)/80 via-transparent to-transparent" />
                                     <div className="absolute top-0 right-0 w-1/2 h-full opacity-10">
@@ -114,7 +114,7 @@ export function NewsHero({ articles }: NewsHeroProps) {
 
                                         <Link
                                             to={`/news/${article.slug}` as string}
-                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-(--site-accent) text-site-accent-fg text-sm font-bold hover:opacity-90 active:scale-95 transition-[transform,opacity] duration-150"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-site-sm bg-(--site-accent) text-site-accent-fg text-sm font-bold hover:opacity-90 active:scale-95 transition-[transform,opacity] duration-150"
                                         >
                                             {t("read-our-take", { defaultValue: "Read Our Take" })} <ArrowRight className="w-4 h-4" />
                                         </Link>

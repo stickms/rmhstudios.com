@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { ActiveRidePanel } from '@/components/rideshare/ActiveRidePanel';
 import { DriverEarnings } from '@/components/rideshare/DriverEarnings';
@@ -95,7 +96,7 @@ function DrivePage() {
     return (
       <PageLayout title="Drive" wide>
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-text-muted" />
+          <Spinner className="text-site-text-muted" />
         </div>
       </PageLayout>
     );
@@ -111,7 +112,7 @@ function DrivePage() {
           <Link
             to="/login"
             search={{ callbackURL: '/rideshare/drive' }}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105"
+            className="mt-5 inline-flex items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105"
           >
             <LogIn className="h-4 w-4" /> {t('sign-in', { defaultValue: 'Sign in' })}
           </Link>
@@ -144,9 +145,9 @@ function PendingState() {
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-2xl border border-site-border bg-site-surface/80 p-8 text-center"
+      className="rounded-site border border-site-border bg-site-surface/80 p-8 text-center"
     >
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400/15 text-amber-400">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-site bg-site-warning/15 text-site-warning">
         <Clock className="h-7 w-7" />
       </div>
       <h2 className="mt-4 text-xl font-bold text-site-text">{t('application-under-review', { defaultValue: 'Application under review' })}</h2>
@@ -211,7 +212,7 @@ function ApplicationForm({
   }
 
   const inputClass =
-    'w-full rounded-lg border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm';
+    'w-full rounded-site-sm border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm';
 
   return (
     <form onSubmit={submit} className="space-y-6">
@@ -229,17 +230,17 @@ function ApplicationForm({
       </div>
 
       {rejected?.rejectionReason && (
-        <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+        <div className="flex items-start gap-3 rounded-site border border-site-danger/30 bg-site-danger/10 p-4 text-sm text-site-danger">
           <XCircle className="mt-0.5 h-5 w-5 shrink-0" />
           <div>
             <p className="font-semibold">{t('previous-application-rejected', { defaultValue: "Your previous application wasn't approved" })}</p>
-            <p className="mt-0.5 text-red-300/90">{rejected.rejectionReason}</p>
-            <p className="mt-1 text-red-300/70">{t('reapply-hint', { defaultValue: 'You can update your details and re-apply below.' })}</p>
+            <p className="mt-0.5 text-site-danger/90">{rejected.rejectionReason}</p>
+            <p className="mt-1 text-site-danger/70">{t('reapply-hint', { defaultValue: 'You can update your details and re-apply below.' })}</p>
           </div>
         </div>
       )}
 
-      <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+      <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
         <h3 className="mb-4 font-semibold text-site-text">{t('vehicle-details', { defaultValue: 'Vehicle details' })}</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
@@ -273,7 +274,7 @@ function ApplicationForm({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+      <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
         <h3 className="mb-1 font-semibold text-site-text">{t('which-class-drive', { defaultValue: 'Which class will you drive?' })}</h3>
         <p className="mb-4 text-xs text-site-text-muted">{t('class-hint', { defaultValue: 'Pick the option that best matches your vehicle.' })}</p>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -282,7 +283,7 @@ function ApplicationForm({
               key={cls.id}
               type="button"
               onClick={() => setVehicleClass(cls.id)}
-              className={`rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
+              className={`rounded-site-sm border px-3 py-2 text-sm font-medium transition-all ${
                 vehicleClass === cls.id
                   ? 'border-site-accent bg-site-accent/10 text-site-accent'
                   : 'border-site-border bg-site-surface text-site-text hover:border-site-border-bright'
@@ -297,7 +298,7 @@ function ApplicationForm({
       <button
         type="submit"
         disabled={submitting}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
         {t('submit-application', { defaultValue: 'Submit application' })}
@@ -398,15 +399,15 @@ function DriverDashboard({
   return (
     <div className="space-y-6">
       {/* Approved banner + availability toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-site border border-site-success/30 bg-site-success/10 p-4">
         <div className="flex items-center gap-3">
-          <CheckCircle2 className="h-6 w-6 shrink-0 text-emerald-400" />
+          <CheckCircle2 className="h-6 w-6 shrink-0 text-site-success" />
           <div className="min-w-0">
             <p className="flex items-center gap-2 font-semibold text-site-text">
               {t('approved-driver', { defaultValue: "You're an approved RMH driver" })}
               {driver.ratingAvg != null && (
-                <span className="flex items-center gap-0.5 text-xs text-amber-400">
-                  <Star className="h-3 w-3 fill-amber-400" /> {driver.ratingAvg.toFixed(1)}
+                <span className="flex items-center gap-0.5 text-xs text-site-warning">
+                  <Star className="h-3 w-3 fill-site-warning" /> {driver.ratingAvg.toFixed(1)}
                 </span>
               )}
             </p>
@@ -421,7 +422,7 @@ function DriverDashboard({
           disabled={togglingOnline}
           className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-50 ${
             online
-              ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-400'
+              ? 'border-site-success/40 bg-site-success/15 text-site-success'
               : 'border-site-border bg-site-surface text-site-text-muted'
           }`}
         >
@@ -431,7 +432,7 @@ function DriverDashboard({
       </div>
 
       {!online && (
-        <p className="rounded-xl border border-dashed border-site-border px-4 py-3 text-center text-sm text-site-text-muted">
+        <p className="rounded-site border border-dashed border-site-border px-4 py-3 text-center text-sm text-site-text-muted">
           {t('offline-hint', { defaultValue: "You're offline. Go online to receive new ride requests." })}
         </p>
       )}
@@ -460,16 +461,16 @@ function DriverDashboard({
           <button onClick={load} className="text-xs text-site-accent hover:underline">{t('refresh', { defaultValue: 'Refresh' })}</button>
         </div>
         {loading ? (
-          <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-site-text-muted" /></div>
+          <div className="flex justify-center py-8"><Spinner size={20} className="text-site-text-muted" /></div>
         ) : available.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-site-border px-4 py-6 text-center text-sm text-site-text-muted">
+          <p className="rounded-site border border-dashed border-site-border px-4 py-6 text-center text-sm text-site-text-muted">
             {t('no-open-requests', { defaultValue: 'No open requests right now. Check back soon!' })}
           </p>
         ) : (
           <ul className="space-y-3">
             {available.map((ride) => (
               <RideCard key={ride.id} ride={ride} busy={busy === ride.id} showRider>
-                <button onClick={() => accept(ride.id)} disabled={busy === ride.id} className="flex items-center gap-1.5 rounded-lg bg-site-accent px-4 py-1.5 text-xs font-semibold text-(--site-accent-fg) disabled:opacity-50">
+                <button onClick={() => accept(ride.id)} disabled={busy === ride.id} className="flex items-center gap-1.5 rounded-site-sm bg-site-accent px-4 py-1.5 text-xs font-semibold text-(--site-accent-fg) disabled:opacity-50">
                   {busy === ride.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Car className="h-3.5 w-3.5" />}
                   {t('accept', { defaultValue: 'Accept' })}
                 </button>
@@ -501,13 +502,13 @@ function RideCard({
     <motion.li
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-xl border border-site-border bg-site-surface/80 p-4 ${busy ? 'opacity-70' : ''}`}
+      className={`rounded-site border border-site-border bg-site-surface/80 p-4 ${busy ? 'opacity-70' : ''}`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="flex items-center gap-2 text-sm font-semibold text-site-text">
           {rideClassName(ride.rideClass)}
           {ride.status === 'SCHEDULED' && ride.scheduledFor && (
-            <span className="flex items-center gap-1 rounded-full bg-sky-400/10 px-2 py-0.5 text-xs font-normal text-sky-400">
+            <span className="flex items-center gap-1 rounded-full bg-site-accent/10 px-2 py-0.5 text-xs font-normal text-site-accent">
               <CalendarClock className="h-3 w-3" /> {format(new Date(ride.scheduledFor), 'EEE h:mm a')}
             </span>
           )}
@@ -518,7 +519,7 @@ function RideCard({
       </div>
       <div className="mt-2 space-y-1 text-xs text-site-text-muted">
         <div className="flex items-center gap-1.5">
-          <MapPin className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+          <MapPin className="h-3.5 w-3.5 shrink-0 text-site-success" />
           <span className="truncate" title={ride.pickupLabel}>{ride.pickupLabel}</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -527,12 +528,12 @@ function RideCard({
         </div>
       </div>
       {ride.notes && (
-        <p className="mt-2 rounded-lg bg-site-surface px-3 py-2 text-xs text-site-text-muted">"{ride.notes}"</p>
+        <p className="mt-2 rounded-site-sm bg-site-surface px-3 py-2 text-xs text-site-text-muted">"{ride.notes}"</p>
       )}
       <div className="mt-3 flex items-center justify-between gap-2 border-t border-site-border pt-3">
         <div className="min-w-0">
           <div className="flex items-baseline gap-1.5">
-            <span className="text-sm font-bold text-emerald-400">
+            <span className="text-sm font-bold text-site-success">
               {formatUsd(payoutBreakdown(ride.estimatedFareCents).driverEarningsCents)}
             </span>
             <span className="text-[11px] text-site-text-dim">{t('est-pay', { defaultValue: 'est. pay' })}</span>

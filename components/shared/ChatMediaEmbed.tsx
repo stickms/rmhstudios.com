@@ -174,7 +174,7 @@ function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix:
     if (embed.type === 'tenor-pending' && tenor.loading) {
       return (
         <div
-          className="mt-1 w-48 h-32 rounded-lg animate-pulse"
+          className="mt-1 w-48 h-32 rounded-site-sm animate-pulse"
           style={{ backgroundColor: `var(--${themePrefix}-surface)` }}
         />
       );
@@ -182,7 +182,7 @@ function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix:
     if (error) {
       return (
         <div
-          className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs"
+          className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-site-sm text-xs"
           style={{
             backgroundColor: `var(--${themePrefix}-surface)`,
             color: `var(--${themePrefix}-text-dim)`,
@@ -208,7 +208,7 @@ function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix:
         alt=""
         loading="lazy"
         onError={() => setError(true)}
-        className="rounded-lg max-h-48 max-w-full object-contain"
+        className="rounded-site-sm max-h-48 max-w-full object-contain"
         style={{ borderWidth: 1, borderStyle: 'solid', borderColor: `var(--${themePrefix}-border)` }}
       />
     </a>

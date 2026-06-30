@@ -39,7 +39,7 @@ export function NewsPageContent({ articles, featured, rightSidebar }: NewsPageCo
                     onClick={() => setFiltersOpen(!filtersOpen)}
                     aria-pressed={filtersOpen}
                     aria-label={t("toggle-filters", { defaultValue: "Toggle filters" })}
-                    className={`p-2 rounded-lg active:scale-95 transition-[transform,color,background-color] duration-150 ${
+                    className={`p-2 rounded-site-sm active:scale-95 transition-[transform,color,background-color] duration-150 ${
                         filtersOpen
                             ? 'text-site-accent bg-site-accent-dim'
                             : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'

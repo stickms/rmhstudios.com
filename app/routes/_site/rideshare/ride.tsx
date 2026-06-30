@@ -19,6 +19,7 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { LocationSearch, type SavedPlaceOption } from '@/components/rideshare/LocationSearch';
 import { RideMap } from '@/components/rideshare/RideMap';
@@ -67,11 +68,11 @@ interface Ride {
 }
 
 const STATUS_META: Record<Ride['status'], { label: string; className: string }> = {
-  SCHEDULED: { label: 'Scheduled', className: 'text-sky-400 bg-sky-400/10' },
-  REQUESTED: { label: 'Finding a driver', className: 'text-amber-400 bg-amber-400/10' },
-  ACCEPTED: { label: 'Driver on the way', className: 'text-sky-400 bg-sky-400/10' },
+  SCHEDULED: { label: 'Scheduled', className: 'text-site-accent bg-site-accent/10' },
+  REQUESTED: { label: 'Finding a driver', className: 'text-site-warning bg-site-warning/10' },
+  ACCEPTED: { label: 'Driver on the way', className: 'text-site-accent bg-site-accent/10' },
   IN_PROGRESS: { label: 'On your trip', className: 'text-site-accent bg-site-accent/10' },
-  COMPLETED: { label: 'Completed', className: 'text-emerald-400 bg-emerald-400/10' },
+  COMPLETED: { label: 'Completed', className: 'text-site-success bg-site-success/10' },
   CANCELLED: { label: 'Cancelled', className: 'text-site-text-muted bg-site-surface-hover' },
 };
 
@@ -255,7 +256,7 @@ function RequestRidePage() {
     return (
       <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-text-muted" />
+          <Spinner className="text-site-text-muted" />
         </div>
       </PageLayout>
     );
@@ -271,7 +272,7 @@ function RequestRidePage() {
           <Link
             to="/login"
             search={{ callbackURL: '/rideshare/ride' }}
-            className="mt-5 inline-flex items-center gap-2 rounded-xl bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105"
+            className="mt-5 inline-flex items-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:scale-105"
           >
             <LogIn className="h-4 w-4" /> {t('sign-in-button', { defaultValue: 'Sign in' })}
           </Link>
@@ -301,14 +302,14 @@ function RequestRidePage() {
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {/* Left: form */}
             <div className="space-y-5">
-              <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+              <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
                 <h2 className="mb-4 text-lg font-bold text-site-text">{t('where-to-heading', { defaultValue: 'Where to?' })}</h2>
                 <div className="space-y-3">
                   <LocationSearch
                     label={t('pickup-label', { defaultValue: 'Pickup' })}
                     value={pickup}
                     onSelect={setPickup}
-                    dotClassName="bg-emerald-400"
+                    dotClassName="bg-site-success"
                     placeholder={t('pickup-placeholder', { defaultValue: 'Enter pickup location' })}
                     savedPlaces={savedPlaces}
                     allowCurrentLocation
@@ -325,13 +326,13 @@ function RequestRidePage() {
                 </div>
 
                 {routing && !routeInfo && (
-                  <div className="mt-4 flex items-center gap-2 rounded-xl border border-site-border bg-site-surface px-4 py-3 text-sm text-site-text-muted">
+                  <div className="mt-4 flex items-center gap-2 rounded-site border border-site-border bg-site-surface px-4 py-3 text-sm text-site-text-muted">
                     <Loader2 className="h-4 w-4 animate-spin" /> {t('calculating-route', { defaultValue: 'Calculating route…' })}
                   </div>
                 )}
               </div>
 
-              <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+              <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
                 <h2 className="mb-3 text-lg font-bold text-site-text">{t('pick-your-ride-heading', { defaultValue: 'Pick your ride' })}</h2>
                 <RideClassPicker value={rideClass} onChange={setRideClass} fareLabels={fareLabels} />
               </div>
@@ -344,7 +345,7 @@ function RequestRidePage() {
                 />
               )}
 
-              <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+              <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
                 <label className="mb-1.5 block text-xs font-medium text-site-text-muted">
                   {t('notes-label', { defaultValue: 'Notes for your driver (optional)' })}
                 </label>
@@ -354,12 +355,12 @@ function RequestRidePage() {
                   maxLength={500}
                   rows={2}
                   placeholder={t('notes-placeholder', { defaultValue: "e.g. I'll be by the main entrance" })}
-                  className="w-full resize-none rounded-lg border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
+                  className="w-full resize-none rounded-site-sm border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
                 />
               </div>
 
               {/* Schedule for later */}
-              <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+              <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
                 <label className="flex cursor-pointer items-center justify-between gap-3">
                   <span className="flex items-center gap-2 text-sm font-medium text-site-text">
                     <CalendarClock className="h-4 w-4 text-site-accent" /> {t('schedule-for-later', { defaultValue: 'Schedule for later' })}
@@ -377,7 +378,7 @@ function RequestRidePage() {
                     value={scheduledFor}
                     min={minScheduleValue()}
                     onChange={(e) => setScheduledFor(e.target.value)}
-                    className="mt-3 w-full rounded-lg border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors focus:border-site-accent/60 sm:py-2 sm:text-sm"
+                    className="mt-3 w-full rounded-site-sm border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors focus:border-site-accent/60 sm:py-2 sm:text-sm"
                   />
                 )}
               </div>
@@ -385,7 +386,7 @@ function RequestRidePage() {
               <button
                 onClick={submit}
                 disabled={submitting || !pickup || !dropoff}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex w-full items-center justify-center gap-2 rounded-site bg-site-accent px-6 py-3 text-sm font-semibold text-(--site-accent-fg) transition-all hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {submitting ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -420,7 +421,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center justify-between gap-3 rounded-xl border border-site-border bg-site-surface/80 p-4"
+                  className="flex items-center justify-between gap-3 rounded-site border border-site-border bg-site-surface/80 p-4"
                 >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
@@ -437,7 +438,7 @@ function RequestRidePage() {
                   </div>
                   <button
                     onClick={() => cancelScheduled(ride.id)}
-                    className="flex shrink-0 items-center gap-1 text-xs text-red-400 transition-colors hover:text-red-300"
+                    className="flex shrink-0 items-center gap-1 text-xs text-site-danger transition-colors hover:text-site-danger"
                   >
                     <XCircle className="h-3.5 w-3.5" /> {t('cancel-button', { defaultValue: 'Cancel' })}
                   </button>
@@ -458,10 +459,10 @@ function RequestRidePage() {
 
           {loadingRides ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-site-text-muted" />
+              <Spinner size={20} className="text-site-text-muted" />
             </div>
           ) : pastRides.length === 0 ? (
-            <p className="rounded-xl border border-dashed border-site-border px-4 py-8 text-center text-sm text-site-text-muted">
+            <p className="rounded-site border border-dashed border-site-border px-4 py-8 text-center text-sm text-site-text-muted">
               {focusRideId || upcomingRides.length > 0
                 ? t('past-trips-placeholder', { defaultValue: 'Your past trips will appear here.' })
                 : t('no-rides-placeholder', { defaultValue: 'No rides yet. Request your first ride!' })}
@@ -473,7 +474,7 @@ function RequestRidePage() {
                   key={ride.id}
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl border border-site-border bg-site-surface/80 p-4"
+                  className="rounded-site border border-site-border bg-site-surface/80 p-4"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-sm font-semibold text-site-text">{rideClassName(ride.rideClass)}</span>
@@ -483,7 +484,7 @@ function RequestRidePage() {
                   </div>
                   <div className="mt-2 space-y-1 text-xs text-site-text-muted">
                     <div className="flex items-center gap-1.5">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                      <span className="h-2 w-2 rounded-full bg-site-success" />
                       <span className="truncate" title={ride.pickupLabel}>{ride.pickupLabel}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -498,7 +499,7 @@ function RequestRidePage() {
                       </span>
                     )}
                     {ride.status === 'COMPLETED' && (
-                      <span className="flex items-center gap-1 text-emerald-400">
+                      <span className="flex items-center gap-1 text-site-success">
                         <CheckCircle2 className="h-3 w-3" /> {t('done-label', { defaultValue: 'Done' })}
                       </span>
                     )}

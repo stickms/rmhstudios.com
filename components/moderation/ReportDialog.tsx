@@ -83,7 +83,7 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
           {REASONS.map((r) => (
             <label
               key={r.value}
-              className={`flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors ${
+              className={`flex cursor-pointer items-center gap-3 rounded-site-sm border px-3 py-2 text-sm transition-colors ${
                 reason === r.value
                   ? 'border-site-accent bg-site-accent-dim text-site-text'
                   : 'border-site-border text-site-text-muted hover:bg-site-surface'
@@ -108,7 +108,7 @@ export function ReportDialog({ open, onOpenChange, entityType, entityId }: Repor
           maxLength={1000}
           placeholder={t("details-placeholder", { defaultValue: "Add any details (optional)" })}
           rows={3}
-          className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+          className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
         />
 
         <DialogFooter>

@@ -4,7 +4,8 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState } from 'react';
-import { BarChart3, Loader2, Users, FileText, Flag, Coins } from 'lucide-react';
+import { BarChart3, Users, FileText, Flag, Coins } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
@@ -30,7 +31,7 @@ interface Analytics {
 
 function Stat({ icon: Icon, label, value, sub }: { icon: typeof Users; label: string; value: number; sub?: string }) {
   return (
-    <div className="rounded-xl border border-site-border bg-site-surface p-4">
+    <div className="rounded-site border border-site-border bg-site-surface p-4">
       <div className="flex items-center gap-2 text-site-text-muted">
         <Icon className="h-4 w-4 text-site-accent" />
         <span className="text-xs uppercase tracking-wide">{label}</span>
@@ -65,7 +66,7 @@ function AnalyticsPage() {
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+            <Spinner />
           </div>
         ) : !data ? (
           <p className="text-center text-sm text-site-text-muted">{t('analytics-load-error', { defaultValue: 'Could not load analytics.' })}</p>
@@ -82,7 +83,7 @@ function AnalyticsPage() {
               <Stat icon={Coins} label={t('stat-coins-in-circulation', { defaultValue: 'Coins in circulation' })} value={data.economy.coinsInCirculation} />
             </div>
 
-            <div className="rounded-xl border border-site-border bg-site-surface p-4">
+            <div className="rounded-site border border-site-border bg-site-surface p-4">
               <h2 className="mb-3 text-sm font-semibold text-site-text">{t('posts-per-day-14d', { defaultValue: 'Posts per day (14 days)' })}</h2>
               <div className="flex h-40 items-end gap-1">
                 {data.postsPerDay.map((d) => (

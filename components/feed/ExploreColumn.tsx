@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Compass, Hash, Loader2, Sparkles, TrendingUp, Coins } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
+import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import type { FeedItem } from '@/lib/feed-types';
@@ -81,18 +82,18 @@ export function ExploreColumn() {
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && ask()}
             placeholder={t('ask-placeholder', { defaultValue: "What's everyone talking about?" })}
-            className="flex-1 rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+            className="flex-1 rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
           />
           <Button variant="accent" onClick={ask} disabled={asking || question.trim().length < 3}>
             {asking ? <Loader2 className="h-4 w-4 animate-spin" /> : t('ask-button', { defaultValue: 'Ask' })}
           </Button>
         </div>
-        {answer && <p className="mt-3 whitespace-pre-line rounded-lg bg-site-surface p-3 text-sm text-site-text">{answer}</p>}
+        {answer && <p className="mt-3 whitespace-pre-line rounded-site-sm bg-site-surface p-3 text-sm text-site-text">{answer}</p>}
       </section>
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+          <Spinner />
         </div>
       ) : (
         <>
@@ -127,7 +128,7 @@ export function ExploreColumn() {
                   <Link
                     key={u.id}
                     to={`/u/${u.handle || u.id}` as string}
-                    className="flex items-center gap-3 rounded-xl border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                    className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
                   >
                     <UserAvatar src={u.image} alt={u.name || t('user-fallback', { defaultValue: 'User' })} size={36} fallbackName={u.name || 'U'} />
                     <div className="min-w-0">
@@ -144,19 +145,19 @@ export function ExploreColumn() {
           {tipLeaders.length > 0 && (
             <section className="border-b border-site-border p-4">
               <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-                <Coins className="h-3.5 w-3.5 text-amber-400" /> {t('top-supported-this-week', { defaultValue: 'Top supported this week' })}
+                <Coins className="h-3.5 w-3.5 text-site-warning" /> {t('top-supported-this-week', { defaultValue: 'Top supported this week' })}
               </h2>
               <div className="space-y-1.5">
                 {tipLeaders.slice(0, 5).map((l, i) => (
                   <Link
                     key={l.user.id}
                     to={`/u/${l.user.handle || l.user.id}` as string}
-                    className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-site-surface"
+                    className="flex items-center gap-3 rounded-site-sm px-2 py-1.5 hover:bg-site-surface"
                   >
                     <span className="w-5 text-center text-sm font-bold text-site-text-dim">{i + 1}</span>
                     <UserAvatar src={l.user.image} alt={l.user.name || t('user-fallback', { defaultValue: 'User' })} size={28} fallbackName={l.user.name || 'U'} />
                     <span className="min-w-0 flex-1 truncate text-sm font-medium text-site-text">{l.user.name || l.user.handle}</span>
-                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-amber-500">
+                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-site-warning">
                       <Coins className="h-3.5 w-3.5" /> {l.total.toLocaleString()}
                     </span>
                   </Link>

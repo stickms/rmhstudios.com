@@ -4,7 +4,8 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFeedStore } from '@/stores/feedStore';
 import { FeedItem } from './FeedItem';
-import { Loader2, ArrowUp } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 interface FeedListProps {
   /** Whether this is the Following surface — drives empty-state copy. */
@@ -78,7 +79,7 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
           never flashes before the first page resolves. */}
       {(loading || !initialized) && (
         <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+          <Spinner />
         </div>
       )}
 
@@ -93,7 +94,7 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
             {onSwitchToForYou && (
               <button
                 onClick={onSwitchToForYou}
-                className="px-5 py-2 rounded-lg bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
+                className="px-5 py-2 rounded-site-sm bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
               >
                 {t('browse-for-you', { defaultValue: 'Browse For You' })}
               </button>

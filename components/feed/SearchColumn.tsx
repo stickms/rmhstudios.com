@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Search, Loader2, Package, BookOpen } from 'lucide-react';
+import { Search, Package, BookOpen } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import {
   ExploreRecommendations,
   type DiscoveryOfficialBuild,
@@ -111,7 +113,7 @@ export function SearchColumn({
             placeholder={t('search-placeholder', { defaultValue: 'Search people, posts, builds…' })}
             className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
           />
-          {loading && <Loader2 className="h-4 w-4 animate-spin text-site-text-muted" />}
+          {loading && <Spinner size={16} className="text-site-text-muted" />}
         </div>
         <div className="mt-3 flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}>
           {TABS.map((tab_item) => (
@@ -140,9 +142,7 @@ export function SearchColumn({
           blogPosts={blogPosts}
         />
       ) : !hasResults && !loading ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">
-          {t('no-results', { query, defaultValue: 'No results for "{{query}}".' })}
-        </p>
+        <EmptyState description={t('no-results', { query, defaultValue: 'No results for "{{query}}".' })} />
       ) : (
         <div className="divide-y divide-site-border">
           {showPeople && results.people.length > 0 && (

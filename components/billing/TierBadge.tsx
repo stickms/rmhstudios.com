@@ -12,7 +12,7 @@ const LABELS: Record<Tier, string> = {
 export function TierBadge({ tier }: { tier: Tier }) {
   if (!hasBadge(tier)) return null;
   return (
-    <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-400 ring-1 ring-amber-500/30">
+    <span className="inline-flex items-center rounded-full bg-site-warning/15 px-2 py-0.5 text-xs font-semibold text-site-warning ring-1 ring-site-warning/30">
       {LABELS[tier]}
     </span>
   );

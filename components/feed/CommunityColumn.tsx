@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Loader2, Users, MessageSquare, Megaphone, Shield, ShieldOff, UserX, X, Send } from 'lucide-react';
+import { ArrowLeft, Users, MessageSquare, Megaphone, Shield, ShieldOff, UserX, X, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { RMHarkCard } from './RMHarkCard';
 import { ComposeBox } from './ComposeBox';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -104,12 +106,12 @@ export function CommunityColumn({ slug }: { slug: string }) {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
   if (!community) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('community-not-found', { defaultValue: 'Community not found.' })}</p>;
+    return <EmptyState description={t('community-not-found', { defaultValue: 'Community not found.' })} />;
   }
 
   const isMod = canModerate(community.role);
@@ -126,7 +128,7 @@ export function CommunityColumn({ slug }: { slug: string }) {
       <div className="border-b border-site-border p-4">
         <div className="flex items-start gap-3">
           <div
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-2xl"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-2xl"
             style={{ background: (community.color || 'var(--site-accent)') + '22' }}
           >
             {community.icon || '👥'}
@@ -181,7 +183,7 @@ export function CommunityColumn({ slug }: { slug: string }) {
           ) : (
             <ul className="flex flex-col gap-2">
               {community.announcements.map((a) => (
-                <li key={a.id} className="rounded-xl border border-site-border bg-site-surface p-3">
+                <li key={a.id} className="rounded-site border border-site-border bg-site-surface p-3">
                   <div className="flex items-start gap-2">
                     <UserAvatar src={a.author.image} alt={a.author.name ?? ''} size={28} fallbackName={a.author.name ?? undefined} className="mt-0.5 rounded-full" />
                     <div className="min-w-0 flex-1">
@@ -196,7 +198,7 @@ export function CommunityColumn({ slug }: { slug: string }) {
                       <button
                         type="button"
                         onClick={() => removeAnnouncement(a.id)}
-                        className="shrink-0 rounded-md p-1 text-site-text-dim hover:bg-site-surface-hover hover:text-site-text"
+                        className="shrink-0 rounded-site-sm p-1 text-site-text-dim hover:bg-site-surface-hover hover:text-site-text"
                         aria-label={t('delete', { defaultValue: 'Delete' })}
                       >
                         <X className="h-4 w-4" />
@@ -219,7 +221,7 @@ export function CommunityColumn({ slug }: { slug: string }) {
       )}
 
       {items.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('no-posts-yet', { defaultValue: 'No posts yet. Be the first!' })}</p>
+        <EmptyState description={t('no-posts-yet', { defaultValue: 'No posts yet. Be the first!' })} />
       ) : (
         <div className="divide-y divide-site-border">
           {items.map((item) => (
@@ -278,7 +280,7 @@ function AnnounceDialog({ slug, onClose, onPosted }: { slug: string; onClose: ()
           rows={4}
           onChange={(e) => setBody(e.target.value)}
           placeholder={t('announcement-placeholder', { defaultValue: 'Share an update with the community…' })}
-          className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+          className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
         />
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose} disabled={submitting}>{t('cancel-button', { defaultValue: 'Cancel' })}</Button>
@@ -361,7 +363,7 @@ function MembersDialog({ slug, viewerId, onClose }: { slug: string; viewerId: st
           <DialogTitle>{t('members-title', { defaultValue: 'Members' })}</DialogTitle>
         </DialogHeader>
         {loading ? (
-          <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-site-accent" /></div>
+          <div className="flex justify-center py-10"><Spinner size={20} /></div>
         ) : (
           <ul className="max-h-[60vh] divide-y divide-site-border overflow-y-auto">
             {members.map((m) => {
@@ -381,7 +383,7 @@ function MembersDialog({ slug, viewerId, onClose }: { slug: string; viewerId: st
                       type="button"
                       disabled={busy === m.id}
                       onClick={() => setRole(m, m.role === 'MOD' ? 'MEMBER' : 'MOD')}
-                      className="rounded-md p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text disabled:opacity-50"
+                      className="rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text disabled:opacity-50"
                       title={m.role === 'MOD' ? t('remove-mod', { defaultValue: 'Remove mod' }) : t('make-mod', { defaultValue: 'Make mod' })}
                     >
                       {m.role === 'MOD' ? <ShieldOff className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
@@ -392,7 +394,7 @@ function MembersDialog({ slug, viewerId, onClose }: { slug: string; viewerId: st
                       type="button"
                       disabled={busy === m.id}
                       onClick={() => kick(m)}
-                      className="rounded-md p-1.5 text-site-text-muted hover:bg-red-500/15 hover:text-red-400 disabled:opacity-50"
+                      className="rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-danger/15 hover:text-site-danger disabled:opacity-50"
                       title={t('remove-member', { defaultValue: 'Remove' })}
                     >
                       <UserX className="h-4 w-4" />

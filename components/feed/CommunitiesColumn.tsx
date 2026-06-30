@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Users, Plus, Loader2, MessageSquare, Search } from 'lucide-react';
+import { Users, Plus, MessageSquare, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
 import { toast } from 'sonner';
@@ -86,7 +88,7 @@ export function CommunitiesColumn() {
   };
 
   const inputCls =
-    'w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
+    'w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
 
   return (
     <div className="min-h-screen">
@@ -111,21 +113,23 @@ export function CommunitiesColumn() {
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t('search-communities', { defaultValue: 'Search communities…' })}
             aria-label={t('search-communities', { defaultValue: 'Search communities' })}
-            className="w-full rounded-lg border border-site-border bg-site-bg py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+            className="w-full rounded-site-sm border border-site-border bg-site-bg py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
           />
         </div>
       </div>
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+          <Spinner />
         </div>
       ) : items.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">
-          {query.trim()
-            ? t('no-communities-found', { defaultValue: 'No communities match your search.' })
-            : t('no-communities', { defaultValue: 'No communities yet — create the first one!' })}
-        </p>
+        <EmptyState
+          description={
+            query.trim()
+              ? t('no-communities-found', { defaultValue: 'No communities match your search.' })
+              : t('no-communities', { defaultValue: 'No communities yet — create the first one!' })
+          }
+        />
       ) : (
         <ul className="flex flex-col gap-3 p-3">
           {items.map((c) => {
@@ -141,10 +145,10 @@ export function CommunitiesColumn() {
               <li key={c.id}>
                 <Link
                   to={`/c/${c.slug}` as string}
-                  className="flex items-start gap-4 rounded-2xl border border-site-border bg-site-surface p-4 transition-colors hover:border-site-accent/50 hover:bg-site-surface-hover"
+                  className="flex items-start gap-4 rounded-site border border-site-border bg-site-surface p-4 transition-colors hover:border-site-accent/50 hover:bg-site-surface-hover"
                 >
                   <div
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl"
+                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-3xl"
                     style={{ background: (c.color || 'var(--site-accent)') + '22' }}
                   >
                     {c.icon || '👥'}

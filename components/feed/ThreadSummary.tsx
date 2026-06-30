@@ -39,7 +39,7 @@ export function ThreadSummary({ postId, commentCount }: { postId: string; commen
   };
 
   return (
-    <div className="my-3 rounded-xl border border-site-border bg-site-surface p-3">
+    <div className="my-3 rounded-site border border-site-border bg-site-surface p-3">
       {!requested ? (
         <button
           onClick={run}

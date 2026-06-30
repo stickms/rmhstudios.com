@@ -110,7 +110,7 @@ function AdminLibraryQuotaPage() {
           {requests.map((req) => {
             const who = req.user.handle ? `@${req.user.handle}` : req.user.name ?? req.user.id;
             return (
-              <li key={req.id} className="rounded-lg border border-site-border bg-site-card p-4">
+              <li key={req.id} className="rounded-site-sm border border-site-border bg-site-card p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-semibold text-site-text">{who}</p>

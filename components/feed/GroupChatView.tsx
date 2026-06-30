@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, ArrowLeft, Send, Users, LogOut, ImagePlus, ImagePlay, X, BarChart3, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from './UserAvatar';
 import { MentionTextarea } from './MentionTextarea';
 import { GifPicker } from './GifPicker';
@@ -302,7 +303,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
@@ -351,15 +352,15 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
                   // Received bubbles use a high-contrast light fill so they read
                   // clearly against the black chat background; sent bubbles keep
                   // the accent colour. (`bg-site-text` is theme-adaptive.)
-                  <div className={`whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm ${mine ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-text text-site-bg'}`}>
+                  <div className={`whitespace-pre-wrap break-words rounded-site px-3 py-2 text-sm ${mine ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-text text-site-bg'}`}>
                     {m.content}
                   </div>
                 )}
                 {m.imageUrls && m.imageUrls.length > 0 && (
-                  <PostImageGrid urls={m.imageUrls} className="mt-1.5 overflow-hidden rounded-lg" />
+                  <PostImageGrid urls={m.imageUrls} className="mt-1.5 overflow-hidden rounded-site-sm" />
                 )}
                 {m.gifUrl && (
-                  <img src={m.gifUrl} alt="" className="mt-1.5 max-h-60 w-auto rounded-lg" loading="lazy" />
+                  <img src={m.gifUrl} alt="" className="mt-1.5 max-h-60 w-auto rounded-site-sm" loading="lazy" />
                 )}
                 {m.poll && <PollView poll={m.poll} onVote={(idx) => vote(m.id, idx)} t={t} />}
               </div>
@@ -390,7 +391,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
         <div className="flex flex-wrap gap-2 border-t border-site-border px-3 pt-2">
           {imageUrls.map((url) => (
             <div key={url} className="relative">
-              <img src={url} alt="" className="h-20 w-20 rounded-lg object-cover" />
+              <img src={url} alt="" className="h-20 w-20 rounded-site-sm object-cover" />
               <button
                 type="button"
                 onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
@@ -403,7 +404,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
           ))}
           {gifUrl && (
             <div className="relative">
-              <img src={gifUrl} alt="" className="h-20 w-auto rounded-lg" />
+              <img src={gifUrl} alt="" className="h-20 w-auto rounded-site-sm" />
               <button
                 type="button"
                 onClick={() => setGifUrl(null)}
@@ -440,7 +441,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
             </button>
             {attachOpen && (
-              <div className="absolute bottom-full left-0 z-30 mb-1 w-40 rounded-xl border border-site-border bg-site-bg py-1 shadow-xl">
+              <div className="absolute bottom-full left-0 z-30 mb-1 w-40 rounded-site border border-site-border bg-site-bg py-1 shadow-xl">
                 <button
                   type="button"
                   disabled={imageUrls.length >= MAX_IMAGES}
@@ -480,7 +481,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               placeholder={t("message-placeholder", { name: group.name, defaultValue: "Message…" })}
               rows={1}
               maxLength={2000}
-              className="max-h-32 w-full resize-none rounded-xl border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="max-h-32 w-full resize-none rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
           </div>
           <Button variant="accent" size="sm" disabled={!canSend} onClick={send} className="h-9">
@@ -497,7 +498,7 @@ type TFn = ReturnType<typeof useTranslation>['t'];
 function PollView({ poll, onVote, t }: { poll: Poll; onVote: (idx: number) => void; t: TFn }) {
   const voted = poll.myVote !== null;
   return (
-    <div className="mt-1.5 w-64 max-w-full rounded-2xl border border-site-border bg-site-surface p-3">
+    <div className="mt-1.5 w-64 max-w-full rounded-site border border-site-border bg-site-surface p-3">
       <p className="mb-2 text-sm font-semibold text-site-text">{poll.question}</p>
       <div className="flex flex-col gap-1.5">
         {poll.options.map((o, i) => {
@@ -508,7 +509,7 @@ function PollView({ poll, onVote, t }: { poll: Poll; onVote: (idx: number) => vo
               key={i}
               type="button"
               onClick={() => onVote(i)}
-              className={`relative overflow-hidden rounded-lg border px-3 py-1.5 text-left text-sm transition-colors ${chosen ? 'border-site-accent' : 'border-site-border hover:border-site-accent/60'}`}
+              className={`relative overflow-hidden rounded-site-sm border px-3 py-1.5 text-left text-sm transition-colors ${chosen ? 'border-site-accent' : 'border-site-border hover:border-site-accent/60'}`}
             >
               {voted && (
                 <span
@@ -561,7 +562,7 @@ function PollComposer({
         onChange={(e) => onChange({ ...draft, question: e.target.value })}
         maxLength={300}
         placeholder={t('poll-question-placeholder', { defaultValue: 'Ask a question…' })}
-        className="mb-2 w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+        className="mb-2 w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
       />
       <div className="flex flex-col gap-1.5">
         {draft.options.map((o, i) => (
@@ -571,7 +572,7 @@ function PollComposer({
             onChange={(e) => setOption(i, e.target.value)}
             maxLength={100}
             placeholder={t('poll-option-placeholder', { index: i + 1, defaultValue: 'Option {{index}}' })}
-            className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-1.5 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+            className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-1.5 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
           />
         ))}
       </div>

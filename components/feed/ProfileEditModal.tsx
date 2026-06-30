@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, X, Check, Loader2, RotateCcw } from 'lucide-react';
+import { Camera, X, Check, RotateCcw } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { ImageCropModal } from './ImageCropModal';
 import { SpotifySongSearch, type SpotifyTrack } from './SpotifySongSearch';
@@ -321,7 +322,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
         <div
-          className="relative bg-site-bg border border-site-border rounded-2xl shadow-xl w-full max-w-md mx-4 flex flex-col max-h-[90vh]"
+          className="relative bg-site-bg border border-site-border rounded-site shadow-xl w-full max-w-md mx-4 flex flex-col max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -330,7 +331,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
             <button
               onClick={onClose}
               aria-label={t("close", { defaultValue: "Close" })}
-              className="p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors active:scale-95"
+              className="p-1.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors active:scale-95"
             >
               <X className="w-5 h-5" />
             </button>
@@ -388,24 +389,24 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                   placeholder={t("handle-placeholder", { defaultValue: "your_handle" })}
                   maxLength={MAX_HANDLE}
                   disabled={handleOnCooldown}
-                  className={`w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 pl-7 border outline-none transition-colors ${
+                  className={`w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 pl-7 border outline-none transition-colors ${
                     handleOnCooldown
                       ? 'border-site-border opacity-60 cursor-not-allowed'
                       : handleStatus === 'available'
-                      ? 'border-emerald-500'
+                      ? 'border-site-success'
                       : handleStatus === 'taken' || handleStatus === 'invalid'
-                      ? 'border-red-400'
+                      ? 'border-site-danger'
                       : 'border-site-border focus:border-site-accent'
                   }`}
                 />
                 {handleChanged && handleStatus === 'checking' && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim animate-spin" />
+                  <Spinner size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-site-text-dim" />
                 )}
                 {handleChanged && handleStatus === 'available' && (
-                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-success" />
                 )}
                 {handleChanged && handleStatus === 'taken' && (
-                  <X className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-red-400" />
+                  <X className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-danger" />
                 )}
               </div>
               <div className="mt-1">
@@ -414,11 +415,11 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                     {t("handle-cooldown", { cooldown: formatCooldown(initial.handleCooldownMs, t), defaultValue: "You can change your handle again in {{cooldown}}" })}
                   </p>
                 ) : handleChanged && handleStatus === 'available' ? (
-                  <p className="text-xs text-emerald-500">{t("handle-available", { defaultValue: "Handle is available" })}</p>
+                  <p className="text-xs text-site-success">{t("handle-available", { defaultValue: "Handle is available" })}</p>
                 ) : handleChanged && handleStatus === 'taken' ? (
-                  <p className="text-xs text-red-400">{t("handle-taken", { defaultValue: "Handle is already taken" })}</p>
+                  <p className="text-xs text-site-danger">{t("handle-taken", { defaultValue: "Handle is already taken" })}</p>
                 ) : handleChanged && handleStatus === 'invalid' ? (
-                  <p className="text-xs text-red-400">{t("handle-invalid-hint", { defaultValue: "Must start with a letter, 3-20 chars, lowercase letters/numbers/underscores only" })}</p>
+                  <p className="text-xs text-site-danger">{t("handle-invalid-hint", { defaultValue: "Must start with a letter, 3-20 chars, lowercase letters/numbers/underscores only" })}</p>
                 ) : (
                   <p className="text-xs text-site-text-dim">{t("handle-hint", { defaultValue: "Your unique handle for @mentions and profile URL" })}</p>
                 )}
@@ -434,7 +435,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder={t("display-name-placeholder", { defaultValue: "Your display name" })}
                 maxLength={MAX_NAME}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
+                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
               />
               <span className={`text-xs font-mono ${nameRemaining <= 10 ? 'text-site-warning' : 'text-site-text-dim'}`}>
                 {nameRemaining}
@@ -450,7 +451,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 placeholder={t("bio-placeholder", { defaultValue: "Tell people about yourself" })}
                 rows={3}
                 maxLength={MAX_BIO}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
+                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
               />
               <span className={`text-xs font-mono ${bioRemaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
                 {bioRemaining}
@@ -466,7 +467,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder={t("location-placeholder", { defaultValue: "Where are you based?" })}
                 maxLength={MAX_LOCATION}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
+                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
               />
             </div>
 
@@ -479,7 +480,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 onChange={(e) => setWebsite(e.target.value)}
                 placeholder="https://example.com"
                 maxLength={MAX_WEBSITE}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
+                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
               />
             </div>
 
@@ -493,7 +494,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                   value={tipGoal}
                   onChange={(e) => setTipGoal(e.target.value)}
                   placeholder="e.g. 1000"
-                  className="w-32 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
+                  className="w-32 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
                 />
                 <input
                   type="text"
@@ -501,7 +502,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                   onChange={(e) => setTipGoalLabel(e.target.value)}
                   placeholder={t("tip-goal-label-placeholder", { defaultValue: "Goal label (e.g. New mic fund)" })}
                   maxLength={80}
-                  className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
+                  className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
                 />
               </div>
             </div>
@@ -536,7 +537,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
               <select
                 value={dmPrivacy}
                 onChange={(e) => setDmPrivacy(e.target.value)}
-                className="w-full bg-site-surface text-site-text text-sm rounded-xl p-3 border border-site-border outline-none focus:border-site-accent transition-colors appearance-none cursor-pointer"
+                className="w-full bg-site-surface text-site-text text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors appearance-none cursor-pointer"
               >
                 <option value="EVERYONE">{t("dm-everyone", { defaultValue: "Everyone" })}</option>
                 <option value="FOLLOWERS">{t("dm-followers", { defaultValue: "People I follow" })}</option>
@@ -586,7 +587,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         <div className="fixed inset-0 z-300 flex items-center justify-center" onClick={() => setShowResetConfirm(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative bg-site-bg border border-site-border rounded-2xl shadow-xl w-full max-w-sm mx-4 p-5"
+            className="relative bg-site-bg border border-site-border rounded-site shadow-xl w-full max-w-sm mx-4 p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-bold text-site-text mb-2">{t("reset-avatar-confirm-title", { defaultValue: "Reset avatar?" })}</h3>

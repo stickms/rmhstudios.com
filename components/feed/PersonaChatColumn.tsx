@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Loader2, Bot, Send, ArrowLeft, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Msg {
   role: string;
@@ -98,7 +99,7 @@ export function PersonaChatColumn({ id }: { id: string }) {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
@@ -121,7 +122,7 @@ export function PersonaChatColumn({ id }: { id: string }) {
         <Link to="/personas" className="text-site-text-dim hover:text-site-text">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-lg bg-site-accent/12 text-lg">
+        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-lg">
           {persona.avatarUrl ? (
             <img src={persona.avatarUrl} alt="" className="h-full w-full object-cover" />
           ) : (
@@ -174,7 +175,7 @@ export function PersonaChatColumn({ id }: { id: string }) {
               placeholder={t('message-placeholder', { name: persona.name, defaultValue: 'Message {{name}}…' })}
               rows={1}
               maxLength={1000}
-              className="max-h-32 flex-1 resize-none rounded-xl border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="max-h-32 flex-1 resize-none rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <Button variant="accent" size="sm" disabled={!input.trim() || sending} onClick={send} className="h-9 gap-1">
               <Send className="h-4 w-4" />
@@ -202,7 +203,7 @@ function Bubble({ role, emoji, avatarUrl, children }: { role: string; emoji: str
   return (
     <div className={`flex gap-2 ${isUser ? 'flex-row-reverse' : ''}`}>
       {!isUser && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-site-accent/12 text-sm">
+        <div className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-sm">
           {avatarUrl ? (
             <img src={avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
           ) : (
@@ -211,7 +212,7 @@ function Bubble({ role, emoji, avatarUrl, children }: { role: string; emoji: str
         </div>
       )}
       <div
-        className={`max-w-[80%] whitespace-pre-wrap break-words rounded-2xl px-3 py-2 text-sm ${
+        className={`max-w-[80%] whitespace-pre-wrap break-words rounded-site px-3 py-2 text-sm ${
           isUser ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-surface text-site-text'
         }`}
       >

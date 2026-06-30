@@ -129,7 +129,7 @@ export function GifEmbed({ url, className = '' }: GifEmbedProps) {
   // Loading skeleton for Tenor resolution
   if (info.needsResolve && tenor.loading) {
     return (
-      <div className={`rounded-xl overflow-hidden border border-site-border ${className}`}>
+      <div className={`rounded-site overflow-hidden border border-site-border ${className}`}>
         <div className="w-full h-48 bg-site-surface animate-pulse" />
       </div>
     );
@@ -138,7 +138,7 @@ export function GifEmbed({ url, className = '' }: GifEmbedProps) {
   if (!src || error) {
     if (error) {
       return (
-        <div className={`rounded-xl overflow-hidden border border-site-border p-4 flex items-center justify-center gap-2 ${className}`}>
+        <div className={`rounded-site overflow-hidden border border-site-border p-4 flex items-center justify-center gap-2 ${className}`}>
           <ImageOff className="h-4 w-4 text-site-text-dim" />
           <span className="text-xs text-site-text-dim">{t("failed-to-load-image", { defaultValue: "Failed to load image" })}</span>
         </div>
@@ -152,7 +152,7 @@ export function GifEmbed({ url, className = '' }: GifEmbedProps) {
       href={info.originalUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className={`block rounded-xl overflow-hidden border border-site-border ${className}`}
+      className={`block rounded-site overflow-hidden border border-site-border ${className}`}
     >
       <img
         src={src}

@@ -39,7 +39,7 @@ export function PostLockedCard({
   };
 
   return (
-    <div className="mt-2 flex flex-col items-center gap-2 rounded-xl border border-dashed border-site-border bg-site-surface/40 px-4 py-6 text-center">
+    <div className="mt-2 flex flex-col items-center gap-2 rounded-site border border-dashed border-site-border bg-site-surface/40 px-4 py-6 text-center">
       <div className="rounded-full border border-site-border bg-site-bg p-2">
         <Lock className="h-5 w-5 text-site-accent" />
       </div>

@@ -7,6 +7,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ArrowLeft, Loader2, Search, CheckCircle, Shield, AlertCircle, Pencil, Check, X, Crown, Coins } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 
 interface User {
@@ -170,14 +171,14 @@ function AdminUsersPage() {
           </div>
         </div>
 
-        <div className="bg-site-surface border border-site-border rounded-xl overflow-hidden p-4">
+        <div className="bg-site-surface border border-site-border rounded-site overflow-hidden p-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-site-text-dim" />
-            <input type="text" placeholder={t("search-placeholder", { defaultValue: "Search by name, handle, or email..." })} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-site-bg border border-site-border rounded-lg pl-10 pr-4 py-2.5 text-site-text focus:outline-none focus:border-site-accent/50 focus:ring-1 focus:ring-site-accent/50 transition-all placeholder:text-site-text-dim/50" />
+            <input type="text" placeholder={t("search-placeholder", { defaultValue: "Search by name, handle, or email..." })} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-site-bg border border-site-border rounded-site-sm pl-10 pr-4 py-2.5 text-site-text focus:outline-none focus:border-site-accent/50 focus:ring-1 focus:ring-site-accent/50 transition-all placeholder:text-site-text-dim/50" />
           </div>
         </div>
 
-        <div className="bg-site-surface border border-site-border rounded-xl overflow-x-auto min-h-[400px]">
+        <div className="bg-site-surface border border-site-border rounded-site overflow-x-auto min-h-[400px]">
           {/* min-w keeps the header and rows column-aligned; the container scrolls
               horizontally on narrow screens instead of crushing the name column. */}
           <div className="min-w-[600px]">
@@ -193,7 +194,7 @@ function AdminUsersPage() {
           <div className="divide-y divide-site-border relative">
             {loading && (
               <div className="absolute inset-0 bg-site-surface/50 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-8">
-                <Loader2 className="w-8 h-8 text-site-accent animate-spin mb-4" />
+                <Spinner size={32} className="mb-4" />
                 <span className="text-site-text-muted">{t("loading-users", { defaultValue: "Loading users..." })}</span>
               </div>
             )}
@@ -223,17 +224,17 @@ function AdminUsersPage() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <Link to={`/u/${user.handle || user.id}` as string} className="font-semibold text-site-text hover:text-site-accent truncate">{user.name || user.handle || user.username}</Link>
-                        {user.isVerified && <CheckCircle className="w-3.5 h-3.5 text-blue-400 shrink-0" />}
-                        {user.isAdmin && <Shield className="w-3.5 h-3.5 text-red-400 shrink-0" />}
+                        {user.isVerified && <CheckCircle className="w-3.5 h-3.5 text-site-accent shrink-0" />}
+                        {user.isAdmin && <Shield className="w-3.5 h-3.5 text-site-danger shrink-0" />}
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2 text-sm text-site-text-dim">
                         {isEditingThis ? (
                           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                             <span className="text-site-text-dim">@</span>
                             <input type="text" value={handleInput} onChange={(e) => setHandleInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} className="bg-site-bg border border-site-border rounded px-1.5 py-0.5 text-sm text-site-text w-32 focus:outline-none focus:border-site-accent" autoFocus maxLength={20} onKeyDown={(e) => { if (e.key === 'Enter') saveHandle(user.id); if (e.key === 'Escape') cancelEditHandle(); }} />
-                            <button onClick={() => saveHandle(user.id)} className="p-0.5 text-emerald-400 hover:text-emerald-300" disabled={updating === user.id}><Check className="w-3.5 h-3.5" /></button>
+                            <button onClick={() => saveHandle(user.id)} className="p-0.5 text-site-success hover:text-site-success" disabled={updating === user.id}><Check className="w-3.5 h-3.5" /></button>
                             <button onClick={cancelEditHandle} className="p-0.5 text-site-text-dim hover:text-site-text"><X className="w-3.5 h-3.5" /></button>
-                            {handleError && <span className="text-xs text-red-400">{handleError}</span>}
+                            {handleError && <span className="text-xs text-site-danger">{handleError}</span>}
                           </div>
                         ) : (
                           <span className="flex items-center gap-1 truncate">
@@ -251,25 +252,25 @@ function AdminUsersPage() {
                     </div>
                   </div>
                   <div className="w-20 flex-shrink-0 flex justify-center">
-                    <button onClick={() => toggleStatus(user.id, 'isVerified', user.isVerified)} disabled={updating === user.id} className={`p-1.5 rounded-lg transition-colors border ${user.isVerified ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 hover:bg-blue-500/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={user.isVerified ? t("title-remove-verification", { defaultValue: "Remove Verification" }) : t("title-verify-user", { defaultValue: "Verify User" })}>
+                    <button onClick={() => toggleStatus(user.id, 'isVerified', user.isVerified)} disabled={updating === user.id} className={`p-1.5 rounded-site-sm transition-colors border ${user.isVerified ? 'bg-site-accent/10 text-site-accent border-site-accent/20 hover:bg-site-accent/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={user.isVerified ? t("title-remove-verification", { defaultValue: "Remove Verification" }) : t("title-verify-user", { defaultValue: "Verify User" })}>
                       <CheckCircle className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="w-28 flex-shrink-0 flex justify-center gap-1">
-                    <button onClick={() => setCoins(user)} disabled={updating === user.id} className={`p-1.5 rounded-lg transition-colors border bg-transparent text-site-text-dim border-site-border hover:border-yellow-500/40 hover:text-yellow-400 ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })}>
+                    <button onClick={() => setCoins(user)} disabled={updating === user.id} className={`p-1.5 rounded-site-sm transition-colors border bg-transparent text-site-text-dim border-site-border hover:border-site-warning/40 hover:text-site-warning ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={t("title-set-coins", { coins: user.profile?.coins ?? 0, defaultValue: "Set RMH coins (currently {{coins}})" })}>
                       <Coins className="w-4 h-4" />
                     </button>
-                    <button onClick={() => grantMembership(user.id)} disabled={updating === user.id} className={`p-1.5 rounded-lg transition-colors border bg-transparent text-site-text-dim border-site-border hover:border-amber-500/40 hover:text-amber-400 ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })}>
+                    <button onClick={() => grantMembership(user.id)} disabled={updating === user.id} className={`p-1.5 rounded-site-sm transition-colors border bg-transparent text-site-text-dim border-site-border hover:border-site-warning/40 hover:text-site-warning ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={t("title-grant-revoke-membership", { defaultValue: "Grant / revoke membership" })}>
                       <Crown className="w-4 h-4" />
                     </button>
-                    <button onClick={() => toggleStatus(user.id, 'isAdmin', user.isAdmin)} disabled={updating === user.id} className={`p-1.5 rounded-lg transition-colors border ${user.isAdmin ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={user.isAdmin ? t("title-remove-admin", { defaultValue: "Remove Admin" }) : t("title-make-admin", { defaultValue: "Make Admin" })}>
+                    <button onClick={() => toggleStatus(user.id, 'isAdmin', user.isAdmin)} disabled={updating === user.id} className={`p-1.5 rounded-site-sm transition-colors border ${user.isAdmin ? 'bg-site-danger/10 text-site-danger border-site-danger/20 hover:bg-site-danger/20' : 'bg-transparent text-site-text-dim border-site-border hover:border-site-text-muted'} ${updating === user.id ? 'opacity-50 cursor-not-allowed' : ''}`} title={user.isAdmin ? t("title-remove-admin", { defaultValue: "Remove Admin" }) : t("title-make-admin", { defaultValue: "Make Admin" })}>
                       <Shield className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="w-24 flex-shrink-0 flex flex-col items-end text-xs text-site-text-dim">
                     <span>{t("user-builds", { count: user._count.userBuilds, defaultValue: "{{count}} builds" })}</span>
                     <span>{t("user-posts", { count: user._count.rmharks, defaultValue: "{{count}} posts" })}</span>
-                    <span className="flex items-center gap-1 text-yellow-500/80"><Coins className="w-3 h-3" />{(user.profile?.coins ?? 0).toLocaleString()}</span>
+                    <span className="flex items-center gap-1 text-site-warning/80"><Coins className="w-3 h-3" />{(user.profile?.coins ?? 0).toLocaleString()}</span>
                   </div>
                 </div>
               )

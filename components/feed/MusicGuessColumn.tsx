@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, Music, Plus, X, Check, Lightbulb, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from './UserAvatar';
 
 interface PuzzleRow {
@@ -77,7 +79,7 @@ export function MusicGuessColumn() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
@@ -106,9 +108,9 @@ export function MusicGuessColumn() {
             </button>
           </div>
           <div className="mt-3 space-y-2">
-            <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder={t('song-title-placeholder', { defaultValue: 'Song title (the answer)' })} maxLength={160} className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
-            <input value={form.artist} onChange={(e) => setForm((f) => ({ ...f, artist: e.target.value }))} placeholder={t('artist-placeholder', { defaultValue: 'Artist (shown to players)' })} maxLength={160} className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
-            <textarea value={form.hints} onChange={(e) => setForm((f) => ({ ...f, hints: e.target.value }))} placeholder={t('hints-placeholder', { defaultValue: 'Hints, one per line (revealed progressively). e.g. a lyric, the year, the genre…' })} rows={4} className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
+            <input value={form.title} onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))} placeholder={t('song-title-placeholder', { defaultValue: 'Song title (the answer)' })} maxLength={160} className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
+            <input value={form.artist} onChange={(e) => setForm((f) => ({ ...f, artist: e.target.value }))} placeholder={t('artist-placeholder', { defaultValue: 'Artist (shown to players)' })} maxLength={160} className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
+            <textarea value={form.hints} onChange={(e) => setForm((f) => ({ ...f, hints: e.target.value }))} placeholder={t('hints-placeholder', { defaultValue: 'Hints, one per line (revealed progressively). e.g. a lyric, the year, the genre…' })} rows={4} className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent" />
             {error && <p className="text-xs text-site-danger">{error}</p>}
             <div className="flex justify-end">
               <Button size="sm" variant="accent" disabled={busy || !validForm} onClick={create}>
@@ -120,16 +122,16 @@ export function MusicGuessColumn() {
       )}
 
       {puzzles.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('no-puzzles-yet', { defaultValue: 'No puzzles yet — create the first!' })}</p>
+        <EmptyState description={t('no-puzzles-yet', { defaultValue: 'No puzzles yet — create the first!' })} />
       ) : (
         <div className="space-y-2 p-4">
           {puzzles.map((p) => (
             <button
               key={p.id}
               onClick={() => setPlayId(p.id)}
-              className="flex w-full items-center gap-3 rounded-xl border border-site-border bg-site-surface p-3 text-left transition-colors hover:border-site-accent/60"
+              className="flex w-full items-center gap-3 rounded-site border border-site-border bg-site-surface p-3 text-left transition-colors hover:border-site-accent/60"
             >
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-site-accent/12 text-site-accent">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-site bg-site-accent/12 text-site-accent">
                 <Music className="h-5 w-5" />
               </div>
               <div className="min-w-0 flex-1">
@@ -142,7 +144,7 @@ export function MusicGuessColumn() {
                 </div>
               </div>
               {p.solved && (
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-400">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-site-success">
                   <Check className="h-4 w-4" /> {t('solved', { defaultValue: 'Solved' })}
                 </span>
               )}
@@ -205,7 +207,7 @@ function PlayModal({ id, signedIn, onClose }: { id: string; signedIn: boolean; o
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onMouseDown={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-site-border bg-site-bg p-5 shadow-xl" onMouseDown={(e) => e.stopPropagation()}>
+      <div className="relative z-10 w-full max-w-md rounded-site border border-site-border bg-site-bg p-5 shadow-xl" onMouseDown={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-bold text-site-text">
             <Music className="h-5 w-5 text-site-accent" /> {t('guess-the-song', { defaultValue: 'Guess the Song' })}
@@ -217,7 +219,7 @@ function PlayModal({ id, signedIn, onClose }: { id: string; signedIn: boolean; o
 
         {!puzzle ? (
           <div className="flex justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+            <Spinner />
           </div>
         ) : (
           <>
@@ -225,15 +227,15 @@ function PlayModal({ id, signedIn, onClose }: { id: string; signedIn: boolean; o
 
             <div className="mt-3 space-y-2">
               {puzzle.hints.slice(0, revealed).map((h, i) => (
-                <div key={i} className="flex items-start gap-2 rounded-lg bg-site-surface p-2.5 text-sm text-site-text">
-                  <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" /> {h}
+                <div key={i} className="flex items-start gap-2 rounded-site-sm bg-site-surface p-2.5 text-sm text-site-text">
+                  <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0 text-site-warning" /> {h}
                 </div>
               ))}
             </div>
 
             {result?.correct ? (
-              <div className="mt-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center">
-                <p className="inline-flex items-center gap-1.5 font-semibold text-emerald-400">
+              <div className="mt-4 rounded-site border border-site-success/30 bg-site-success/10 p-3 text-center">
+                <p className="inline-flex items-center gap-1.5 font-semibold text-site-success">
                   <Trophy className="h-4 w-4" /> {t('correct-answer', { title: result.title, defaultValue: 'Correct! It\'s "{{title}}"' })}
                 </p>
                 {result.reward != null && (
@@ -255,7 +257,7 @@ function PlayModal({ id, signedIn, onClose }: { id: string; signedIn: boolean; o
                     onChange={(e) => setGuess(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && submit()}
                     placeholder={t('your-guess-placeholder', { defaultValue: 'Your guess…' })}
-                    className="flex-1 rounded-lg border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+                    className="flex-1 rounded-site-sm border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
                   />
                   <Button variant="accent" size="sm" disabled={!guess.trim() || busy} onClick={submit}>
                     {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : t('guess-button', { defaultValue: 'Guess' })}

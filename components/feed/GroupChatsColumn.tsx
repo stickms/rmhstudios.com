@@ -4,6 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, Users, Plus, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { HandleInput } from './HandleInput';
 import { useTranslation } from 'react-i18next';
 
@@ -80,7 +82,7 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
@@ -151,14 +153,14 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
               onChange={(e) => setName(e.target.value)}
               placeholder={t("group-name-placeholder", { defaultValue: "Group name" })}
               maxLength={60}
-              className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <HandleInput
               value={members}
               onChange={setMembers}
               multiple
               placeholder={t("members-placeholder", { defaultValue: "Members by @handle, comma-separated" })}
-              className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             {error && <p className="text-xs text-site-danger">{error}</p>}
             <div className="flex justify-end">
@@ -171,9 +173,9 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
       )}
 
       {groups.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t("no-group-chats-yet", { defaultValue: "No group chats yet." })}</p>
+        <EmptyState description={t("no-group-chats-yet", { defaultValue: "No group chats yet." })} />
       ) : visibleGroups.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t("no-groups-match", { defaultValue: "No groups match your search." })}</p>
+        <EmptyState description={t("no-groups-match", { defaultValue: "No groups match your search." })} />
       ) : (
         <div className="divide-y divide-site-border/60">
           {visibleGroups.map((g) => (

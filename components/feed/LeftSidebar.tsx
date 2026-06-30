@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
+import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useStreak } from '@/lib/useStreak';
@@ -121,7 +122,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ? 'pl-10'
         : 'md:justify-center xl:justify-start xl:pl-10'
       : itemJustifyClass;
-    const leafClass = `flex items-center gap-3 px-3 ${nested ? 'py-2' : 'py-2.5'} rounded-xl text-sm font-medium transition-colors ${indent} ${
+    const leafClass = `flex items-center gap-3 px-3 ${nested ? 'py-2' : 'py-2.5'} rounded-site text-sm font-medium transition-colors ${indent} ${
       isActive ? 'text-site-accent bg-site-accent-dim' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
     }`;
     const leafInner = (
@@ -129,11 +130,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         {link.badge === 'inbox' ? (
           <div className="relative shrink-0">
             <Icon className="w-5 h-5" />
-            {inboxCount > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-4 h-4 rounded-full bg-red-500 text-white text-[10px] font-bold px-1 leading-none">
-                {inboxCount > 99 ? '99+' : inboxCount}
-              </span>
-            )}
+            <NotificationBadge count={inboxCount} className="absolute -top-1.5 -right-1.5" />
           </div>
         ) : (
           <Icon className="w-5 h-5 shrink-0" />
@@ -187,7 +184,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 type="button"
                 onClick={() => toggleGroup(item.group)}
                 aria-expanded={isOpen}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-site text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
                   groupActive
                     ? 'text-site-accent bg-site-accent-dim'
                     : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -214,12 +211,12 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       {/* Auth Section — pinned to bottom */}
       <div className="border-t border-site-border pt-3 shrink-0">
         {isPending ? (
-          <div className="h-10 bg-site-surface rounded-xl animate-pulse" />
+          <div className="h-10 bg-site-surface rounded-site animate-pulse" />
         ) : session ? (
           <div className="relative flex items-center gap-2" ref={userMenuRef}>
             <Link
               to={`/u/${(session.user as any).handle || session.user.id}` as string}
-              className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-xl transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
+              className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-site transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
             >
               <UserAvatar src={resolvedUser?.image || session.user.image} alt={resolvedUser?.name || session.user.name || t('user-avatar-alt', { defaultValue: 'User' })} size={32} fallbackName={resolvedUser?.name || session.user.name} className="ring-2 ring-site-bg" />
               <span className={`${labelClass} text-sm text-site-text truncate max-w-30`}>
@@ -251,14 +248,14 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 }
                 setShowUserMenu(!showUserMenu);
               }}
-              className={`p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${expanded ? '' : 'hidden xl:block'}`}
+              className={`p-1.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${expanded ? '' : 'hidden xl:block'}`}
               title={t('more-options', { defaultValue: 'More options' })}
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
             {showUserMenu && (
               <div
-                className="vibe-glass fixed w-48 border border-site-border rounded-2xl shadow-lg py-1 z-50"
+                className="vibe-glass fixed w-48 border border-site-border rounded-site shadow-lg py-1 z-50"
                 style={{ bottom: `${userMenuPos.bottom}px`, right: `${userMenuPos.right}px`, background: 'rgba(12, 12, 13, 0.96)' }}
               >
                 <Link

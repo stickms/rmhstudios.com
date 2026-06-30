@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, BookOpen, Plus, Sparkles, X, Globe, Lock, Layers } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 
 interface Deck {
@@ -80,7 +81,7 @@ export function FlashcardsColumn() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
@@ -89,9 +90,9 @@ export function FlashcardsColumn() {
     <Link
       key={d.id}
       to={`/study/${d.id}` as string}
-      className="flex items-center gap-3 rounded-xl border border-site-border bg-site-surface p-3 transition-colors hover:border-site-accent/60"
+      className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-3 transition-colors hover:border-site-accent/60"
     >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-site-accent/12 text-site-accent">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-site bg-site-accent/12 text-site-accent">
         <Layers className="h-5 w-5" />
       </div>
       <div className="min-w-0 flex-1">
@@ -132,16 +133,16 @@ export function FlashcardsColumn() {
               onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
               placeholder={t('deck-title-placeholder', { defaultValue: 'Deck title' })}
               maxLength={100}
-              className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <input
               value={form.description}
               onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               placeholder={t('description-placeholder', { defaultValue: 'Description (optional)' })}
               maxLength={500}
-              className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
-            <div className="rounded-lg border border-site-accent/30 bg-site-accent/5 p-2">
+            <div className="rounded-site-sm border border-site-accent/30 bg-site-accent/5 p-2">
               <label className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-site-accent">
                 <Sparkles className="h-3 w-3" /> {t('ai-tutor-label', { defaultValue: 'AI tutor — auto-generate cards' })}
               </label>
@@ -150,14 +151,14 @@ export function FlashcardsColumn() {
                 onChange={(e) => setForm((f) => ({ ...f, generateTopic: e.target.value }))}
                 placeholder={t('generate-topic-placeholder', { defaultValue: "Topic, e.g. 'French Revolution causes' (optional)" })}
                 maxLength={200}
-                className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+                className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
             </div>
             <div className="flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, isPublic: !f.isPublic }))}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-site-border px-2.5 py-1.5 text-xs font-medium text-site-text-muted hover:text-site-text"
+                className="inline-flex items-center gap-1.5 rounded-site-sm border border-site-border px-2.5 py-1.5 text-xs font-medium text-site-text-muted hover:text-site-text"
               >
                 {form.isPublic ? <Globe className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
                 {form.isPublic ? t('public', { defaultValue: 'Public' }) : t('private', { defaultValue: 'Private' })}

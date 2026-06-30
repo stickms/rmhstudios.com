@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Loader2, KeyRound, Plus, Trash2, Copy, Check, Terminal, ShieldCheck, BookOpen, X } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 
 interface ApiKey {
@@ -54,7 +55,7 @@ function CodeBlock({ code }: { code: string }) {
   const [copied, setCopied] = useState(false);
   return (
     <div className="relative">
-      <pre className="overflow-x-auto rounded-lg border border-site-border bg-site-bg p-3 text-[12px] leading-relaxed text-site-text">
+      <pre className="overflow-x-auto rounded-site-sm border border-site-border bg-site-bg p-3 text-[12px] leading-relaxed text-site-text">
         <code>{code}</code>
       </pre>
       <button
@@ -64,10 +65,10 @@ function CodeBlock({ code }: { code: string }) {
             setTimeout(() => setCopied(false), 1500);
           });
         }}
-        className="absolute right-2 top-2 rounded-md p-1 text-site-text-dim hover:bg-site-surface hover:text-site-text"
+        className="absolute right-2 top-2 rounded-site-sm p-1 text-site-text-dim hover:bg-site-surface hover:text-site-text"
         aria-label={t('copy', { defaultValue: 'Copy' })}
       >
-        {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
+        {copied ? <Check className="h-3.5 w-3.5 text-site-success" /> : <Copy className="h-3.5 w-3.5" />}
       </button>
     </div>
   );
@@ -138,7 +139,7 @@ export function DeveloperColumn() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
@@ -162,7 +163,7 @@ export function DeveloperColumn() {
 
         {/* Subscription gate / keys */}
         {!hasAccess ? (
-          <section className="rounded-xl border border-site-border bg-site-surface p-5 text-center">
+          <section className="rounded-site border border-site-border bg-site-surface p-5 text-center">
             <ShieldCheck className="mx-auto mb-2 h-7 w-7 text-site-accent" />
             <p className="font-semibold text-site-text">{t('subscription-required', { defaultValue: 'A subscription is required' })}</p>
             <p className="mx-auto mt-1 max-w-sm text-sm text-site-text-muted">
@@ -180,7 +181,7 @@ export function DeveloperColumn() {
             </div>
 
             {newKey && (
-              <div className="mb-3 rounded-xl border border-site-accent/40 bg-site-accent/5 p-3">
+              <div className="mb-3 rounded-site border border-site-accent/40 bg-site-accent/5 p-3">
                 <div className="mb-1 flex items-center justify-between">
                   <p className="text-xs font-semibold text-site-accent">{t('copy-key-now', { defaultValue: "Copy your key now — it won't be shown again." })}</p>
                   <button onClick={() => setNewKey(null)} className="text-site-text-dim hover:text-site-text" aria-label={t('dismiss', { defaultValue: 'Dismiss' })}>
@@ -188,7 +189,7 @@ export function DeveloperColumn() {
                   </button>
                 </div>
                 <div className="flex items-center gap-2">
-                  <code className="min-w-0 flex-1 truncate rounded-lg border border-site-border bg-site-bg px-3 py-2 text-xs text-site-text">{newKey}</code>
+                  <code className="min-w-0 flex-1 truncate rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-xs text-site-text">{newKey}</code>
                   <Button
                     size="sm"
                     variant="accent"
@@ -212,7 +213,7 @@ export function DeveloperColumn() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t('key-name-placeholder', { defaultValue: 'Key name (e.g. "My bot")' })}
                 maxLength={100}
-                className="flex-1 rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+                className="flex-1 rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
               <Button size="sm" variant="accent" disabled={creating || !name.trim()} onClick={create} className="gap-1">
                 {creating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />} {t('create', { defaultValue: 'Create' })}
@@ -220,13 +221,13 @@ export function DeveloperColumn() {
             </div>
 
             {keys.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-site-border py-6 text-center text-sm text-site-text-muted">
+              <p className="rounded-site-sm border border-dashed border-site-border py-6 text-center text-sm text-site-text-muted">
                 {t('no-keys-yet', { defaultValue: 'No keys yet. Create one to get started.' })}
               </p>
             ) : (
               <div className="space-y-2">
                 {keys.map((k) => (
-                  <div key={k.id} className="flex items-center gap-3 rounded-xl border border-site-border bg-site-surface p-3">
+                  <div key={k.id} className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-3">
                     <KeyRound className="h-4 w-4 shrink-0 text-site-text-dim" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-site-text">{k.name}</p>
@@ -251,7 +252,7 @@ export function DeveloperColumn() {
             <h2 className="text-sm font-bold text-site-text">{t('api-reference', { defaultValue: 'API reference' })}</h2>
           </div>
 
-          <div className="space-y-2 rounded-xl border border-site-border bg-site-surface p-4 text-sm text-site-text-muted">
+          <div className="space-y-2 rounded-site border border-site-border bg-site-surface p-4 text-sm text-site-text-muted">
             <p><strong className="text-site-text">{t('base-url', { defaultValue: 'Base URL' })}</strong> — <code className="rounded bg-site-bg px-1">{BASE}</code></p>
             <p><strong className="text-site-text">{t('auth', { defaultValue: 'Auth' })}</strong> — {t('auth-desc', { defaultValue: 'send' })} <code className="rounded bg-site-bg px-1">Authorization: Bearer &lt;key&gt;</code> ({t('auth-or', { defaultValue: 'or' })} <code className="rounded bg-site-bg px-1">X-API-Key</code>) {t('on-every-request', { defaultValue: 'on every request.' })}</p>
             <p><strong className="text-site-text">{t('rate-limits', { defaultValue: 'Rate limits' })}</strong> — {t('rate-limits-desc', { defaultValue: '120 req/min (Starter), 600 req/min (Pro+), per key. A' })} <code className="rounded bg-site-bg px-1">429</code> {t('rate-limits-includes', { defaultValue: 'includes' })} <code className="rounded bg-site-bg px-1">Retry-After</code>.</p>
@@ -260,11 +261,11 @@ export function DeveloperColumn() {
 
           <div className="mt-3 space-y-3">
             {ENDPOINTS.map((e) => (
-              <div key={`${e.method} ${e.path}`} className="rounded-xl border border-site-border bg-site-surface p-3">
+              <div key={`${e.method} ${e.path}`} className="rounded-site border border-site-border bg-site-surface p-3">
                 <div className="flex items-center gap-2">
                   <span
                     className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${
-                      e.method === 'GET' ? 'bg-sky-500/15 text-sky-400' : 'bg-emerald-500/15 text-emerald-400'
+                      e.method === 'GET' ? 'bg-site-accent/15 text-site-accent' : 'bg-site-success/15 text-site-success'
                     }`}
                   >
                     {e.method}

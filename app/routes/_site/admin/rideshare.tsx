@@ -13,6 +13,7 @@ import { Loader2, ArrowLeft, ShieldCheck, Car, Check, X, MapPin, Search, Route a
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { auth } from '@/lib/auth';
+import { Spinner } from '@/components/ui/spinner';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { rideClassName } from '@/lib/rideshare/classes';
@@ -60,11 +61,11 @@ const RIDE_STATUS_FILTERS: ('ALL' | RideStatus)[] = [
   'ALL', 'REQUESTED', 'SCHEDULED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED',
 ];
 const RIDE_STATUS_META: Record<RideStatus, { label: string; className: string }> = {
-  SCHEDULED: { label: 'Scheduled', className: 'text-sky-400 bg-sky-400/10' },
-  REQUESTED: { label: 'Awaiting driver', className: 'text-amber-400 bg-amber-400/10' },
-  ACCEPTED: { label: 'Accepted', className: 'text-sky-400 bg-sky-400/10' },
+  SCHEDULED: { label: 'Scheduled', className: 'text-site-accent bg-site-accent/10' },
+  REQUESTED: { label: 'Awaiting driver', className: 'text-site-warning bg-site-warning/10' },
+  ACCEPTED: { label: 'Accepted', className: 'text-site-accent bg-site-accent/10' },
   IN_PROGRESS: { label: 'In progress', className: 'text-site-accent bg-site-accent/10' },
-  COMPLETED: { label: 'Completed', className: 'text-emerald-400 bg-emerald-400/10' },
+  COMPLETED: { label: 'Completed', className: 'text-site-success bg-site-success/10' },
   CANCELLED: { label: 'Cancelled', className: 'text-site-text-muted bg-site-surface-hover' },
 };
 
@@ -187,12 +188,12 @@ function AdminRidesharePage() {
         </div>
 
         {/* View switcher */}
-        <div className="flex gap-1 rounded-xl border border-site-border bg-site-surface/80 p-1">
+        <div className="flex gap-1 rounded-site border border-site-border bg-site-surface/80 p-1">
           {([[`applications`, t('view-driver-applications', { defaultValue: 'Driver applications' })], [`rides`, t('view-ride-history', { defaultValue: 'Ride history' })]] as const).map(([v, label]) => (
             <button
               key={v}
               onClick={() => setView(v)}
-              className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+              className={`flex-1 rounded-site-sm px-3 py-1.5 text-sm font-semibold transition-colors ${
                 view === v ? 'bg-site-accent text-(--site-accent-fg)' : 'text-site-text-muted hover:text-site-text'
               }`}
             >
@@ -212,12 +213,12 @@ function AdminRidesharePage() {
           />
         ) : (
         <>
-        <div className="flex gap-1 rounded-xl border border-site-border bg-site-surface/80 p-1">
+        <div className="flex gap-1 rounded-site border border-site-border bg-site-surface/80 p-1">
           {TABS.map((t) => (
             <button
               key={t}
               onClick={() => setStatus(t)}
-              className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
+              className={`flex-1 rounded-site-sm px-3 py-1.5 text-sm font-medium capitalize transition-colors ${
                 status === t ? 'bg-site-accent text-(--site-accent-fg)' : 'text-site-text-muted hover:text-site-text'
               }`}
             >
@@ -227,15 +228,15 @@ function AdminRidesharePage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-site-text-muted" /></div>
+          <div className="flex justify-center py-16"><Spinner className="text-site-text-muted" /></div>
         ) : items.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-site-border px-4 py-16 text-center text-site-text-muted">
+          <p className="rounded-site border border-dashed border-site-border px-4 py-16 text-center text-site-text-muted">
             {t('no-applications', { status: status.toLowerCase(), defaultValue: 'No {{status}} applications.' })}
           </p>
         ) : (
           <ul className="space-y-4">
             {items.map((app) => (
-              <li key={app.id} className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+              <li key={app.id} className="rounded-site border border-site-border bg-site-surface/80 p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={app.user.image} alt={app.user.name ?? t('user-alt', { defaultValue: 'User' })} size={40} />
@@ -253,7 +254,7 @@ function AdminRidesharePage() {
 
                 <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                   {/* Vehicle */}
-                  <div className="rounded-xl border border-site-border bg-site-surface p-4">
+                  <div className="rounded-site border border-site-border bg-site-surface p-4">
                     <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
                       <Car className="h-4 w-4 text-site-accent" /> {t('vehicle-section', { defaultValue: 'Vehicle' })}
                     </div>
@@ -267,7 +268,7 @@ function AdminRidesharePage() {
                   </div>
 
                   {/* License */}
-                  <div className="rounded-xl border border-site-border bg-site-surface p-4">
+                  <div className="rounded-site border border-site-border bg-site-surface p-4">
                     <div className="mb-2 text-sm font-semibold text-site-text">{t('drivers-license-section', { defaultValue: "Driver's license" })}</div>
                     <dl className="space-y-1.5">
                       <Row label={t('license-number-label', { defaultValue: 'License #' })} value={app.licenseNumber || '—'} />
@@ -276,7 +277,7 @@ function AdminRidesharePage() {
                 </div>
 
                 {app.status === 'REJECTED' && app.rejectionReason && (
-                  <p className="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                  <p className="mt-3 rounded-site-sm bg-site-danger/10 px-3 py-2 text-sm text-site-danger">
                     {t('rejection-reason', { reason: app.rejectionReason, defaultValue: 'Reason: {{reason}}' })}
                   </p>
                 )}
@@ -291,20 +292,20 @@ function AdminRidesharePage() {
                           rows={2}
                           maxLength={500}
                           placeholder={t('rejection-reason-placeholder', { defaultValue: 'Reason for rejection (shared with the applicant)' })}
-                          className="w-full resize-none rounded-lg border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent/60"
+                          className="w-full resize-none rounded-site-sm border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent/60"
                         />
                         <div className="flex gap-2">
                           <button
                             onClick={() => decide(app.id, 'reject', reason.trim() || undefined)}
                             disabled={busy === app.id}
-                            className="flex items-center gap-1.5 rounded-lg bg-red-500 px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                            className="flex items-center gap-1.5 rounded-site-sm bg-site-danger px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
                           >
                             {busy === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
                             {t('confirm-reject', { defaultValue: 'Confirm reject' })}
                           </button>
                           <button
                             onClick={() => { setRejecting(null); setReason(''); }}
-                            className="rounded-lg border border-site-border px-4 py-1.5 text-sm text-site-text-muted hover:text-site-text"
+                            className="rounded-site-sm border border-site-border px-4 py-1.5 text-sm text-site-text-muted hover:text-site-text"
                           >
                             {t('cancel', { defaultValue: 'Cancel' })}
                           </button>
@@ -315,7 +316,7 @@ function AdminRidesharePage() {
                         <button
                           onClick={() => decide(app.id, 'approve')}
                           disabled={busy === app.id}
-                          className="flex items-center gap-1.5 rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                          className="flex items-center gap-1.5 rounded-site-sm bg-site-success px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
                         >
                           {busy === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
                           {t('approve', { defaultValue: 'Approve' })}
@@ -323,7 +324,7 @@ function AdminRidesharePage() {
                         <button
                           onClick={() => setRejecting(app.id)}
                           disabled={busy === app.id}
-                          className="flex items-center gap-1.5 rounded-lg border border-site-border px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                          className="flex items-center gap-1.5 rounded-site-sm border border-site-border px-4 py-2 text-sm font-medium text-site-danger hover:bg-site-danger/10 disabled:opacity-50"
                         >
                           <X className="h-4 w-4" /> {t('reject', { defaultValue: 'Reject' })}
                         </button>
@@ -367,7 +368,7 @@ function RideHistory({
           value={query}
           onChange={(e) => onQuery(e.target.value)}
           placeholder={t('ride-search-placeholder', { defaultValue: 'Search rider, driver, or address…' })}
-          className="w-full rounded-xl border border-site-border bg-site-surface/80 py-2.5 pl-9 pr-3 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
+          className="w-full rounded-site border border-site-border bg-site-surface/80 py-2.5 pl-9 pr-3 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
         />
       </div>
 
@@ -377,7 +378,7 @@ function RideHistory({
           <button
             key={s}
             onClick={() => onStatus(s)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+            className={`rounded-site-sm px-3 py-1.5 text-xs font-medium transition-colors ${
               status === s
                 ? 'bg-site-accent text-(--site-accent-fg)'
                 : 'border border-site-border bg-site-surface/80 text-site-text-muted hover:text-site-text'
@@ -389,9 +390,9 @@ function RideHistory({
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-site-text-muted" /></div>
+        <div className="flex justify-center py-16"><Spinner className="text-site-text-muted" /></div>
       ) : rides.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-site-border px-4 py-16 text-center text-site-text-muted">
+        <p className="rounded-site border border-dashed border-site-border px-4 py-16 text-center text-site-text-muted">
           {t('no-rides-found', { defaultValue: 'No rides found.' })}
         </p>
       ) : (
@@ -399,7 +400,7 @@ function RideHistory({
           {rides.map((ride) => {
             const meta = RIDE_STATUS_META[ride.status];
             return (
-              <li key={ride.id} className="rounded-2xl border border-site-border bg-site-surface/80 p-4">
+              <li key={ride.id} className="rounded-site border border-site-border bg-site-surface/80 p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={ride.rider?.image ?? null} alt={ride.rider?.name ?? t('rider-alt', { defaultValue: 'Rider' })} size={36} />
@@ -418,7 +419,7 @@ function RideHistory({
 
                 <div className="mt-3 space-y-1 text-xs text-site-text-muted">
                   <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+                    <span className="h-2 w-2 shrink-0 rounded-full bg-site-success" />
                     <span className="truncate" title={ride.pickupLabel}>{ride.pickupLabel}</span>
                   </div>
                   <div className="flex items-center gap-1.5">

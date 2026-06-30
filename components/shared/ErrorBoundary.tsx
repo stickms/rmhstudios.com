@@ -23,7 +23,7 @@ function ErrorFallback({ error, onRetry }: { error: Error | null; onRetry: () =>
       </p>
       <button
         onClick={onRetry}
-        className="mt-2 rounded-md px-4 py-2 text-sm font-medium transition-colors"
+        className="mt-2 rounded-site-sm px-4 py-2 text-sm font-medium transition-colors"
         style={{
           background: "var(--site-accent, #3b82f6)",
           color: "#fff",

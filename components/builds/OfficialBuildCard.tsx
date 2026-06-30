@@ -74,9 +74,9 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
             onMouseMove={sheenHandlers.onMouseMove}
             title={build.description}
         >
-            <div className="group relative rounded-xl ring-1 ring-site-border bg-site-surface hover:ring-site-accent/50 transition-all overflow-hidden h-full">
+            <div className="group relative rounded-site ring-1 ring-site-border bg-site-surface hover:ring-site-accent/50 transition-all overflow-hidden h-full">
                 {/* Mouse-tracking sheen */}
-                <div style={sheenStyle} className="rounded-xl" />
+                <div style={sheenStyle} className="rounded-site" />
                 {/* Thumbnail */}
                 {build.thumbnailUrl ? (
                     <div className="absolute inset-0 w-full h-full overflow-hidden bg-site-bg">
@@ -122,7 +122,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                         onClick={handleLike}
                                         aria-label={build.liked ? t("unlike-this-build", { defaultValue: "Unlike this build" }) : t("like-this-build", { defaultValue: "Like this build" })}
                                         className={`flex items-center gap-1.5 transition-colors ${
-                                            build.liked ? 'text-red-400' : 'hover:text-red-400'
+                                            build.liked ? 'text-site-danger' : 'hover:text-site-danger'
                                         }`}
                                     >
                                         <Heart className={`w-4 h-4 ${build.liked ? 'fill-current' : ''}`} />
@@ -135,7 +135,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                             router.navigate({ to: detailUrl });
                                         }}
                                         aria-label={t("view-comments", { defaultValue: "View comments" })}
-                                        className="flex items-center gap-1.5 hover:text-blue-400 transition-colors"
+                                        className="flex items-center gap-1.5 hover:text-site-accent transition-colors"
                                     >
                                         <MessageCircle className="w-4 h-4" />
                                         <span>{formatCount(build.commentCount)}</span>
@@ -151,7 +151,7 @@ export function OfficialBuildCard({ build, onLike, onView }: OfficialBuildCardPr
                                         e.stopPropagation();
                                         onView?.(build.id);
                                     }}
-                                    className="flex items-center justify-center gap-1.5 text-xs text-blue-400 border border-blue-400/50 bg-transparent font-semibold w-full py-2 rounded-lg hover:bg-blue-400 hover:text-white hover:border-transparent transition-all"
+                                    className="flex items-center justify-center gap-1.5 text-xs text-site-accent border border-site-accent/50 bg-transparent font-semibold w-full py-2 rounded-site-sm hover:bg-site-accent hover:text-white hover:border-transparent transition-all"
                                 >
                                     {t("read-more", { defaultValue: "Read More" })}
                                     <ArrowRight className="w-3.5 h-3.5" />

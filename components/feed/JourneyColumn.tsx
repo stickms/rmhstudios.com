@@ -60,7 +60,7 @@ export function JourneyColumn({ userId, initialTab = 'progress' }: { userId: str
                     : 'border-transparent text-site-text-muted hover:text-site-text'
                 }`}
               >
-                <Icon className={`h-4 w-4 ${id === 'streaks' && active ? 'text-orange-400' : ''}`} />
+                <Icon className={`h-4 w-4 ${id === 'streaks' && active ? 'text-site-warning' : ''}`} />
                 <span>{t(labelKey, { defaultValue: defaultLabel })}</span>
               </button>
             );

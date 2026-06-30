@@ -101,7 +101,7 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
   const maxVotes = Math.max(...localPoll.options.map((o) => o.voteCount), 1);
 
   return (
-    <div className="mt-3 border border-site-border rounded-xl p-3 bg-site-surface/20">
+    <div className="mt-3 border border-site-border rounded-site p-3 bg-site-surface/20">
       <p className="text-sm font-semibold text-site-text mb-2">{localPoll.question}</p>
 
       {localPoll.multiSelect && !showResults && (
@@ -121,7 +121,7 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
                 key={option.id}
                 onClick={() => handleVote(option.id)}
                 disabled={!session || voting || isClosed}
-                className="w-full text-left relative overflow-hidden rounded-lg border border-site-border transition-colors hover:border-site-accent/50 disabled:opacity-70"
+                className="w-full text-left relative overflow-hidden rounded-site-sm border border-site-border transition-colors hover:border-site-accent/50 disabled:opacity-70"
               >
                 {/* Progress bar background */}
                 <div
@@ -150,7 +150,7 @@ export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProp
               key={option.id}
               onClick={() => handleVote(option.id)}
               disabled={!session || voting || isClosed}
-              className="w-full text-left px-3 py-2 rounded-lg border border-site-border text-sm text-site-text hover:border-site-accent hover:bg-site-accent/5 transition-colors disabled:opacity-50"
+              className="w-full text-left px-3 py-2 rounded-site-sm border border-site-border text-sm text-site-text hover:border-site-accent hover:bg-site-accent/5 transition-colors disabled:opacity-50"
             >
               {option.text}
             </button>

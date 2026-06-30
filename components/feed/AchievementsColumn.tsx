@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from 'lucide-react';
+import { Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { TIER_COLORS, CATEGORY_LABELS, type AchievementCategory, type AchievementTier } from '@/lib/achievements/catalog';
 
 // Library icons per achievement category (replaces emoji badges).
@@ -59,12 +61,12 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
   if (!data) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t("could-not-load-achievements", { defaultValue: "Could not load achievements." })}</p>;
+    return <EmptyState description={t("could-not-load-achievements", { defaultValue: "Could not load achievements." })} />;
   }
 
   const pct = data.stats.total ? Math.round((data.stats.unlocked / data.stats.total) * 100) : 0;
@@ -76,7 +78,7 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
           <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total} {t("unlocked", { defaultValue: "unlocked" })}
         </span>
         <span aria-hidden>·</span>
-        <span className="inline-flex items-center gap-1"><Coins className="h-3.5 w-3.5 text-amber-400" /> {data.stats.coinsEarned} {t("earned", { defaultValue: "earned" })}</span>
+        <span className="inline-flex items-center gap-1"><Coins className="h-3.5 w-3.5 text-site-warning" /> {data.stats.coinsEarned} {t("earned", { defaultValue: "earned" })}</span>
       </div>
       <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-site-surface">
         <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${pct}%` }} />
@@ -113,7 +115,7 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
                   return (
                     <div
                       key={a.id}
-                      className={`flex items-start gap-3 rounded-xl border p-3 transition-colors ${
+                      className={`flex items-start gap-3 rounded-site border p-3 transition-colors ${
                         a.unlocked
                           ? 'border-site-border bg-site-surface'
                           : 'border-site-border/60 bg-site-bg opacity-70'
@@ -123,7 +125,7 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
                         const Icon = a.secret && !a.unlocked ? Lock : CATEGORY_ICON[a.category];
                         return (
                           <div
-                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-site-sm"
                             style={{ background: a.unlocked ? `${TIER_COLORS[a.tier]}22` : 'var(--site-surface)' }}
                           >
                             <Icon
@@ -159,7 +161,7 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
                         )}
                         {a.unlocked && a.coinReward > 0 && (
                           <p className="mt-0.5 inline-flex items-center gap-0.5 text-[10px] text-site-text-dim">
-                            <Coins className="h-3 w-3 text-amber-400" /> +{a.coinReward}
+                            <Coins className="h-3 w-3 text-site-warning" /> +{a.coinReward}
                           </p>
                         )}
                       </div>

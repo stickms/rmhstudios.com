@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, CheckCheck, Loader2, Trophy, Sparkles, Zap, Gift, Car, MapPin } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 
 type NotificationType = 'LIKE' | 'COMMENT' | 'REPLY' | 'FOLLOW' | 'MENTION' | 'REPOST' | 'SYSTEM';
@@ -31,12 +32,12 @@ interface NotificationItem {
 }
 
 const TYPE_META: Record<NotificationType, { icon: typeof Heart; color: string; verb: string }> = {
-  LIKE: { icon: Heart, color: 'text-rose-500', verb: 'liked your post' },
-  COMMENT: { icon: MessageCircle, color: 'text-sky-500', verb: 'commented on your post' },
-  REPLY: { icon: MessageCircle, color: 'text-sky-500', verb: 'replied to you' },
+  LIKE: { icon: Heart, color: 'text-site-danger', verb: 'liked your post' },
+  COMMENT: { icon: MessageCircle, color: 'text-site-accent', verb: 'commented on your post' },
+  REPLY: { icon: MessageCircle, color: 'text-site-accent', verb: 'replied to you' },
   FOLLOW: { icon: UserPlus, color: 'text-site-accent', verb: 'followed you' },
-  MENTION: { icon: AtSign, color: 'text-violet-500', verb: 'mentioned you' },
-  REPOST: { icon: Repeat2, color: 'text-emerald-500', verb: 'reposted your post' },
+  MENTION: { icon: AtSign, color: 'text-site-accent', verb: 'mentioned you' },
+  REPOST: { icon: Repeat2, color: 'text-site-success', verb: 'reposted your post' },
   SYSTEM: { icon: Bell, color: 'text-site-text-muted', verb: '' },
 };
 
@@ -45,15 +46,15 @@ const TYPE_META: Record<NotificationType, { icon: typeof Heart; color: string; v
 function systemIdentity(entityType: string | null): { label: string; Icon: typeof Heart; tint: string; bg: string } {
   switch (entityType) {
     case 'achievement':
-      return { label: 'Achievement', Icon: Trophy, tint: 'text-amber-400', bg: 'bg-amber-400/15' };
+      return { label: 'Achievement', Icon: Trophy, tint: 'text-site-warning', bg: 'bg-site-warning/15' };
     case 'level':
       return { label: 'Level up', Icon: Zap, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
     case 'membership':
       return { label: 'Membership', Icon: Gift, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
     case 'ride':
-      return { label: 'RMH Rideshare', Icon: Car, tint: 'text-emerald-400', bg: 'bg-emerald-400/15' };
+      return { label: 'RMH Rideshare', Icon: Car, tint: 'text-site-success', bg: 'bg-site-success/15' };
     case 'ride_request':
-      return { label: 'New ride request', Icon: MapPin, tint: 'text-sky-400', bg: 'bg-sky-400/15' };
+      return { label: 'New ride request', Icon: MapPin, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
     case 'ride_message':
       return { label: 'Ride message', Icon: MessageCircle, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
     default:
@@ -177,11 +178,11 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+          <Spinner />
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
-          <div className="rounded-2xl border border-site-border bg-site-surface p-4">
+          <div className="rounded-site border border-site-border bg-site-surface p-4">
             <Bell className="h-8 w-8 text-site-text-muted" />
           </div>
           <p className="font-medium text-site-text">{t('no-notifications-yet', { defaultValue: 'No notifications yet' })}</p>

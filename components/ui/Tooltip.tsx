@@ -85,14 +85,14 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
                     left: 0,
                 }}
                 className={cn(
-                    "px-2 py-1 text-[10px] font-bold text-white whitespace-nowrap",
-                    "bg-slate-900/95 backdrop-blur-md rounded-md shadow-lg border border-white/10",
+                    "px-2 py-1 text-[10px] font-bold text-site-text whitespace-nowrap",
+                    "bg-site-surface backdrop-blur-md rounded-site-sm shadow-site border border-site-border",
                     className
                 )}
             >
                 {content}
                 {/* Arrow */}
-                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 border-4 border-transparent border-t-slate-900/95" />
+                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 border-4 border-transparent border-t-site-border" />
             </motion.div>
         </div>
       )}

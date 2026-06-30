@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, MessageCircle, CheckCheck, Plus, Search, X } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { MobileMenuButton } from './MobileMenuButton';
@@ -335,7 +336,7 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
       {query.trim() ? (
         searching ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+            <Spinner size={32} />
           </div>
         ) : searchResults.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
@@ -351,7 +352,7 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
         )
       ) : /* Conversation list */ loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+          <Spinner size={32} />
         </div>
       ) : conversations.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
@@ -369,7 +370,7 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
 
           {loadingMore && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+              <Spinner />
             </div>
           )}
 
@@ -526,12 +527,12 @@ function NewChatDialog({
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder={t('search-people-placeholder', { defaultValue: 'Search people…' })}
-            className="w-full rounded-lg border border-site-border bg-site-bg py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
+            className="w-full rounded-site-sm border border-site-border bg-site-bg py-2 pl-9 pr-3 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
           />
         </div>
         <div className="max-h-[50vh] overflow-y-auto">
           {loading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-site-accent" /></div>
+            <div className="flex justify-center py-8"><Spinner size={20} /></div>
           ) : users.length === 0 ? (
             <p className="py-8 text-center text-sm text-site-text-dim">
               {q.trim() ? t('no-people-found', { defaultValue: 'No people found.' }) : t('type-to-search-people', { defaultValue: 'Type a name to search.' })}
@@ -544,14 +545,14 @@ function NewChatDialog({
                     type="button"
                     disabled={starting === u.id}
                     onClick={() => start(u.id)}
-                    className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-site-surface-hover disabled:opacity-50"
+                    className="flex w-full items-center gap-3 rounded-site-sm px-2 py-2 text-left hover:bg-site-surface-hover disabled:opacity-50"
                   >
                     <UserAvatar src={u.image ?? undefined} alt={u.name ?? ''} size={36} fallbackName={u.name ?? undefined} className="rounded-full" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-site-text">{u.name ?? (u.handle ? `@${u.handle}` : t('unknown-user', { defaultValue: 'Unknown' }))}</p>
                       {(u.username || u.handle) && <p className="truncate text-xs text-site-text-dim">@{u.username ?? u.handle}</p>}
                     </div>
-                    {starting === u.id && <Loader2 className="h-4 w-4 animate-spin text-site-accent" />}
+                    {starting === u.id && <Spinner size={16} />}
                   </button>
                 </li>
               ))}

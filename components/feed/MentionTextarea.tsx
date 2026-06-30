@@ -235,7 +235,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
 
         {isOpen && position && (
           <div
-            className="absolute z-50 w-64 max-h-64 overflow-y-auto bg-site-bg border border-site-border rounded-xl shadow-xl py-1"
+            className="absolute z-50 w-64 max-h-64 overflow-y-auto bg-site-bg border border-site-border rounded-site shadow-xl py-1"
             style={{ top: position.top, left: Math.max(0, position.left) }}
             // Keep focus in the textarea when clicking a row.
             onMouseDown={(e) => e.preventDefault()}
@@ -293,7 +293,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
                     onMouseEnter={() => setActiveIndex(i)}
                     onClick={() => applySuggestion(suggestion)}
                   >
-                    <span className="w-7 h-7 rounded-full bg-sky-400/15 text-sky-400 shrink-0 flex items-center justify-center text-sm font-bold">
+                    <span className="w-7 h-7 rounded-full bg-site-accent/15 text-site-accent shrink-0 flex items-center justify-center text-sm font-bold">
                       #
                     </span>
                     <span className="min-w-0 flex-1">

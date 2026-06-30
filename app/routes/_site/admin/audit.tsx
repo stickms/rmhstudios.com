@@ -4,8 +4,10 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState } from 'react';
-import { ScrollText, Loader2 } from 'lucide-react';
+import { ScrollText } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useTranslation } from 'react-i18next';
 
@@ -54,12 +56,12 @@ function AuditLogPage() {
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+            <Spinner />
           </div>
         ) : items.length === 0 ? (
-          <p className="py-12 text-center text-sm text-site-text-muted">{t("no-admin-actions", { defaultValue: "No admin actions logged yet." })}</p>
+          <EmptyState description={t("no-admin-actions", { defaultValue: "No admin actions logged yet." })} />
         ) : (
-          <ul className="divide-y divide-site-border rounded-xl border border-site-border bg-site-surface">
+          <ul className="divide-y divide-site-border rounded-site border border-site-border bg-site-surface">
             {items.map((e) => (
               <li key={e.id} className="flex items-center gap-3 px-4 py-2.5">
                 <UserAvatar src={e.admin.image} alt={e.admin.name || 'Admin'} size={28} fallbackName={e.admin.name || 'A'} />

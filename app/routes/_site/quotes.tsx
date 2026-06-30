@@ -184,7 +184,7 @@ function QuotesPage() {
       <div className="px-4 pt-4 pb-12 max-w-2xl mx-auto">
         {/* Hero section */}
         <div className="text-center mb-12">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-site-surface border border-site-border flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-site bg-site-surface border border-site-border flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-site-accent">
               <path d="M3 21c3 0 7-1 7-8" />
               <path d="M13 21c3 0 7-1 7-8" />

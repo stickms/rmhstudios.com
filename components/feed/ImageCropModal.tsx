@@ -65,7 +65,7 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       <div
-        className="relative bg-site-bg border border-site-border rounded-2xl shadow-xl w-full max-w-lg flex flex-col max-h-[90dvh] overflow-y-auto"
+        className="relative bg-site-bg border border-site-border rounded-site shadow-xl w-full max-w-lg flex flex-col max-h-[90dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -73,7 +73,7 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
           <h2 className="font-bold text-site-text">{t('crop-image', { defaultValue: 'Crop Image' })}</h2>
           <button
             onClick={onCancel}
-            className="p-2.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+            className="p-2.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
             aria-label={t('close-crop-modal', { defaultValue: 'Close crop modal' })}
           >
             <X className="w-5 h-5" />
@@ -123,7 +123,7 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
             <button
               type="button"
               onClick={() => setRotation((r) => r - 90)}
-              className="p-3 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+              className="p-3 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
               title={t('rotate-left', { defaultValue: 'Rotate left' })}
               aria-label={t('rotate-left', { defaultValue: 'Rotate left' })}
             >
@@ -132,7 +132,7 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
             <button
               type="button"
               onClick={() => setRotation((r) => r + 90)}
-              className="p-3 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+              className="p-3 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
               title={t('rotate-right', { defaultValue: 'Rotate right' })}
               aria-label={t('rotate-right', { defaultValue: 'Rotate right' })}
             >
@@ -141,7 +141,7 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
             <button
               type="button"
               onClick={() => setFlipH((f) => !f)}
-              className={`p-3 rounded-lg transition-colors ${flipH ? 'text-site-accent bg-site-accent/10' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
+              className={`p-3 rounded-site-sm transition-colors ${flipH ? 'text-site-accent bg-site-accent/10' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
               title={t('flip-horizontal', { defaultValue: 'Flip horizontal' })}
               aria-label={t('flip-horizontal', { defaultValue: 'Flip horizontal' })}
             >
@@ -150,7 +150,7 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
             <button
               type="button"
               onClick={() => setFlipV((f) => !f)}
-              className={`p-3 rounded-lg transition-colors ${flipV ? 'text-site-accent bg-site-accent/10' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
+              className={`p-3 rounded-site-sm transition-colors ${flipV ? 'text-site-accent bg-site-accent/10' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'}`}
               title={t('flip-vertical', { defaultValue: 'Flip vertical' })}
               aria-label={t('flip-vertical', { defaultValue: 'Flip vertical' })}
             >

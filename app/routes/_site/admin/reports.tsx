@@ -5,7 +5,8 @@ import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Loader2, Flag, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Flag, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -152,10 +153,10 @@ function AdminReportsPage() {
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+            <Spinner />
           </div>
         ) : reports.length === 0 ? (
-          <div className="rounded-xl border border-site-border bg-site-surface p-10 text-center text-site-text-muted">
+          <div className="rounded-site border border-site-border bg-site-surface p-10 text-center text-site-text-muted">
             {t('queue-empty', { defaultValue: 'Nothing here. The queue is clear.' })}
           </div>
         ) : (
@@ -163,12 +164,12 @@ function AdminReportsPage() {
             {reports.map((r) => {
               const link = entityLink(r);
               return (
-                <li key={r.id} className="rounded-xl border border-site-border bg-site-surface p-4">
+                <li key={r.id} className="rounded-site border border-site-border bg-site-surface p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-md bg-site-danger/15 px-2 py-0.5 text-xs font-semibold text-site-danger">
+                    <span className="rounded-site-sm bg-site-danger/15 px-2 py-0.5 text-xs font-semibold text-site-danger">
                       {r.reason.replace('_', ' ')}
                     </span>
-                    <span className="rounded-md bg-site-bg px-2 py-0.5 text-xs text-site-text-muted border border-site-border">
+                    <span className="rounded-site-sm bg-site-bg px-2 py-0.5 text-xs text-site-text-muted border border-site-border">
                       {r.entityType}
                     </span>
                     <span className="text-xs text-site-text-dim">

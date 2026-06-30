@@ -72,7 +72,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
     return (
       <div className="space-y-2">
         <label className="block text-xs font-medium text-site-text-dim">{t("profile-song", { defaultValue: "Profile Song" })}</label>
-        <div className="flex items-center gap-3 p-3 bg-site-surface rounded-xl border border-site-border">
+        <div className="flex items-center gap-3 p-3 bg-site-surface rounded-site border border-site-border">
           {selected.albumArt ? (
             <img src={selected.albumArt} alt={selected.title} className="w-10 h-10 rounded object-cover shrink-0" />
           ) : (
@@ -125,7 +125,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
         <button
           type="button"
           onClick={() => setShowSearch(true)}
-          className="w-full flex items-center gap-2 p-3 bg-site-surface rounded-xl border border-site-border text-sm text-site-text-dim hover:border-site-accent transition-colors"
+          className="w-full flex items-center gap-2 p-3 bg-site-surface rounded-site border border-site-border text-sm text-site-text-dim hover:border-site-accent transition-colors"
         >
           <Music className="w-4 h-4" />
           {t("add-profile-song", { defaultValue: "Add a profile song" })}
@@ -141,7 +141,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
               onChange={(e) => handleQueryChange(e.target.value)}
               placeholder={t("search-for-a-song", { defaultValue: "Search for a song..." })}
               autoFocus
-              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl pl-9 pr-3 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors"
+              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site pl-9 pr-3 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors"
             />
           </div>
 
@@ -151,7 +151,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
           )}
 
           {!loading && results.length > 0 && (
-            <div className="max-h-48 overflow-y-auto space-y-0.5 rounded-xl border border-site-border bg-site-surface">
+            <div className="max-h-48 overflow-y-auto space-y-0.5 rounded-site border border-site-border bg-site-surface">
               {results.map((track) => {
                 const isSelected = selected?.id === track.id;
                 return (

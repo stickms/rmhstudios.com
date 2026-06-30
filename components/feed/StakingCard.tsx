@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, PiggyBank, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
 interface Stake {
@@ -64,9 +65,9 @@ export function StakingCard() {
 
   if (loading) {
     return (
-      <section className="rounded-xl border border-site-border bg-site-surface p-4">
+      <section className="rounded-site border border-site-border bg-site-surface p-4">
         <div className="flex justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-site-accent" />
+          <Spinner size={20} />
         </div>
       </section>
     );
@@ -77,7 +78,7 @@ export function StakingCard() {
   const validAmt = Number.isFinite(amt) && amt > 0;
 
   return (
-    <section className="rounded-xl border border-site-border bg-site-surface p-4">
+    <section className="rounded-site border border-site-border bg-site-surface p-4">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <PiggyBank className="h-4 w-4 text-site-accent" />
@@ -89,19 +90,19 @@ export function StakingCard() {
       </div>
 
       <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-3">
-        <div className="rounded-lg bg-site-bg p-2">
+        <div className="rounded-site-sm bg-site-bg p-2">
           <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-text">
             <CoinIcon className="h-3.5 w-3.5" /> {fmt(data.principal)}
           </p>
           <p className="text-[10px] text-site-text-dim">{t("staked", { defaultValue: "Staked" })}</p>
         </div>
-        <div className="rounded-lg bg-site-bg p-2">
+        <div className="rounded-site-sm bg-site-bg p-2">
           <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-accent">
             <CoinIcon className="h-3.5 w-3.5" /> {fmt(data.accrued)}
           </p>
           <p className="text-[10px] text-site-text-dim">{t("interest", { defaultValue: "Interest" })}</p>
         </div>
-        <div className="rounded-lg bg-site-bg p-2">
+        <div className="rounded-site-sm bg-site-bg p-2">
           <p className="inline-flex items-center gap-0.5 text-sm font-bold text-site-text">
             <CoinIcon className="h-3.5 w-3.5" /> {fmt(data.balance)}
           </p>
@@ -117,7 +118,7 @@ export function StakingCard() {
           onChange={(e) => setAmount(e.target.value)}
           placeholder={t("amount-placeholder", { defaultValue: "Amount" })}
           aria-label={t("coins-aria-label", { defaultValue: "Coins to stake or unstake" })}
-          className="w-full rounded-lg border border-site-border bg-site-bg px-2.5 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
+          className="w-full rounded-site-sm border border-site-border bg-site-bg px-2.5 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
         />
         <Button
           size="sm"

@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, ShoppingBag, Check } from 'lucide-react';
+import { ShoppingBag, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 import { KIND_LABELS, KIND_ORDER, RARITY_COLORS, RARITY_ORDER, type ShopItemKind, type Rarity } from '@/lib/shop/catalog';
 
@@ -25,12 +26,12 @@ function Preview({ item }: { item: ShopItemView }) {
   const { t } = useTranslation("feed");
   const { kind, data } = item;
   if (kind === 'BADGE' || kind === 'PET') {
-    return <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-site-bg text-2xl">{data.emoji}</div>;
+    return <div className="flex h-12 w-12 items-center justify-center rounded-site-sm bg-site-bg text-2xl">{data.emoji}</div>;
   }
   if (kind === 'NAME_COLOR') {
     return (
       <div
-        className="flex h-12 items-center justify-center rounded-lg px-3 text-sm font-bold"
+        className="flex h-12 items-center justify-center rounded-site-sm px-3 text-sm font-bold"
         style={data.gradient ? { background: data.gradient, color: '#fff' } : { color: data.color }}
       >
         {t("name-preview", { defaultValue: "Name" })}
@@ -45,7 +46,7 @@ function Preview({ item }: { item: ShopItemView }) {
     );
   }
   // BANNER / POST_FLAIR / THEME
-  return <div className="h-12 w-20 rounded-lg" style={{ background: data.gradient ?? data.color ?? 'var(--site-surface)' }} />;
+  return <div className="h-12 w-20 rounded-site-sm" style={{ background: data.gradient ?? data.color ?? 'var(--site-surface)' }} />;
 }
 
 export function ShopColumn() {
@@ -161,14 +162,14 @@ export function ShopColumn() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+          <Spinner />
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2">
           {visible.map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-3 rounded-xl border bg-site-surface p-3"
+              className="flex items-center gap-3 rounded-site border bg-site-surface p-3"
               style={{ borderColor: `${RARITY_COLORS[item.rarity]}55` }}
             >
               <Preview item={item} />

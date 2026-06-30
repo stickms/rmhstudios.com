@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { TipDialog } from '@/components/economy/TipDialog';
 import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
 import { useNavigate } from '@tanstack/react-router';
@@ -397,7 +398,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+        <Spinner size={32} />
       </div>
     );
   }
@@ -443,7 +444,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text truncate">
                 {displayName || profile.username || 'User'}
               </h1>
-              {profile.isVerified && <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />}
+              {profile.isVerified && <BadgeCheck className="w-4 h-4 text-site-success shrink-0" />}
               {profile.isAdmin && (
                 <span title={t('admin', { defaultValue: 'Admin' })} className="inline-flex items-center shrink-0">
                   <ShieldCheck className="w-4 h-4 text-site-accent" />
@@ -482,7 +483,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               )}
               {profile.isOnline && (
                 <span
-                  className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-site-bg bg-emerald-500"
+                  className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-site-bg bg-site-success"
                   title={t('online-now', { defaultValue: 'Online now' })}
                   aria-label={t('online-now', { defaultValue: 'Online now' })}
                 />
@@ -523,7 +524,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               {profile.cosmetics?.badge?.emoji && (
                 <span className="shrink-0 text-lg" title={t('equipped-badge', { defaultValue: 'Equipped badge' })}>{profile.cosmetics.badge.emoji}</span>
               )}
-              {profile.isVerified && <BadgeCheck className="w-5 h-5 text-emerald-500 shrink-0" />}
+              {profile.isVerified && <BadgeCheck className="w-5 h-5 text-site-success shrink-0" />}
               {profile.isAdmin && (
                 <span title={t('admin', { defaultValue: 'Admin' })} className="inline-flex items-center shrink-0">
                   <ShieldCheck className="w-5 h-5 text-site-accent" />
@@ -536,7 +537,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 title={t('rmh-coins-count', { count: profile.coins, defaultValue: '{{count}} RMH Coins' })}
               >
                 <CoinIcon className="w-4 h-4" />
-                <span className="text-sm font-bold text-yellow-500">{profile.coins}</span>
+                <span className="text-sm font-bold text-site-warning">{profile.coins}</span>
               </Link>
             </div>
             {profile.handle && (
@@ -548,7 +549,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-lg border-site-border text-site-text hover:bg-site-surface active:scale-95"
+                className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
               >
                 <Store className="w-4 h-4" />
               </Button>
@@ -558,7 +559,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 variant="outline"
                 size="sm"
                 onClick={() => setShowEdit(true)}
-                className="rounded-lg border-site-border text-site-text hover:bg-site-surface active:scale-95"
+                className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
               >
                 {t('edit-profile', { defaultValue: 'Edit Profile' })}
               </Button>
@@ -568,17 +569,17 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   variant="outline"
                   size="sm"
                   onClick={() => setTipOpen(true)}
-                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface active:scale-95"
+                  className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
                   title={t('send-a-tip', { defaultValue: 'Send a tip' })}
                   aria-label={t('send-a-tip', { defaultValue: 'Send a tip' })}
                 >
-                  <Coins className="w-4 h-4 text-amber-400" />
+                  <Coins className="w-4 h-4 text-site-warning" />
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setGiftOpen(true)}
-                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface active:scale-95"
+                  className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
                   title={t('gift-a-membership', { defaultValue: 'Gift a membership' })}
                   aria-label={t('gift-a-membership', { defaultValue: 'Gift a membership' })}
                 >
@@ -589,7 +590,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   size="sm"
                   onClick={handleMessage}
                   disabled={messageSending}
-                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface active:scale-95"
+                  className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
                   title={t('message', { defaultValue: 'Message' })}
                   aria-label={t('message', { defaultValue: 'Message' })}
                 >
@@ -600,7 +601,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   size="sm"
                   onClick={handleFollowToggle}
                   aria-pressed={profile.isFollowing}
-                  className={`rounded-lg active:scale-95 ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
+                  className={`rounded-site-sm active:scale-95 ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
                 >
                   {profile.isFollowing ? t('following', { defaultValue: 'Following' }) : t('follow', { defaultValue: 'Follow' })}
                 </Button>
@@ -617,7 +618,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
         {/* Creator tip goal */}
         {profile.tipGoal && profile.tipGoal > 0 && (
-          <div className="mb-3 rounded-xl border border-site-border bg-site-surface p-3">
+          <div className="mb-3 rounded-site border border-site-border bg-site-surface p-3">
             <div className="mb-1 flex items-center justify-between text-sm">
               <span className="inline-flex items-center gap-1.5 font-medium text-site-text">
                 <CoinIcon className="h-4 w-4" /> {profile.tipGoalLabel || t('tip-goal', { defaultValue: 'Tip goal' })}
@@ -628,7 +629,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-site-bg">
               <div
-                className="h-full rounded-full bg-amber-400 transition-all"
+                className="h-full rounded-full bg-site-warning transition-all"
                 style={{ width: `${Math.min(100, ((profile.tipsThisMonth ?? 0) / profile.tipGoal) * 100)}%` }}
               />
             </div>
@@ -737,7 +738,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
           {loadingItems && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+              <Spinner />
             </div>
           )}
 
@@ -771,7 +772,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
           {loadingLiked && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+              <Spinner />
             </div>
           )}
 

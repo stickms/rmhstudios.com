@@ -155,7 +155,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
       />
 
       {/* Modal */}
-      <div className="absolute inset-x-4 top-[5vh] sm:top-[10vh] mx-auto max-w-lg max-h-[90dvh] overflow-y-auto bg-site-bg border border-site-border rounded-2xl shadow-xl animate-in zoom-in-95 fade-in duration-200">
+      <div className="absolute inset-x-4 top-[5vh] sm:top-[10vh] mx-auto max-w-lg max-h-[90dvh] overflow-y-auto bg-site-bg border border-site-border rounded-site shadow-xl animate-in zoom-in-95 fade-in duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
           <button
@@ -211,7 +211,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
               </button>
 
               {menuOpen && (
-                <div className="absolute top-full right-0 mt-1 w-40 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+                <div className="absolute top-full right-0 mt-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
                   <button
                     onClick={() => {
                       setAttachment('poll');
@@ -273,7 +273,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
 
               {/* Quoted post preview */}
               {quoteItem && (
-                <div className="mt-2 rounded-xl border border-site-border p-3">
+                <div className="mt-2 rounded-site border border-site-border p-3">
                   <p className="text-xs font-semibold text-site-text">
                     {quoteItem.user?.name || quoteItem.user?.handle || 'Someone'}
                   </p>
@@ -283,7 +283,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
 
               {/* Poll creator */}
               {attachment === 'poll' && (
-                <div className="mt-2 border border-site-border rounded-xl p-3 bg-site-surface/20">
+                <div className="mt-2 border border-site-border rounded-site p-3 bg-site-surface/20">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">Poll</span>
                     <button
@@ -303,7 +303,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                     onChange={(e) => setPoll((p) => ({ ...p, question: e.target.value }))}
                     placeholder={t("poll-question-placeholder", { defaultValue: "Ask a question..." })}
                     maxLength={MAX_POLL_QUESTION_LENGTH}
-                    className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
+                    className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors mb-2"
                   />
 
                   <div className="space-y-2">
@@ -319,7 +319,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                           }}
                           placeholder={t("poll-option-placeholder", { count: i + 1, defaultValue: "Option {{count}}" })}
                           maxLength={MAX_POLL_OPTION_LENGTH}
-                          className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
+                          className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm p-2 border border-site-border outline-none focus:border-site-accent transition-colors"
                         />
                         {poll.options.length > MIN_POLL_OPTIONS && (
                           <button
@@ -359,7 +359,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
 
               {/* GIF picker */}
               {attachment === 'gif' && (
-                <div className="mt-2 border border-site-border rounded-xl p-3 bg-site-surface/20">
+                <div className="mt-2 border border-site-border rounded-site p-3 bg-site-surface/20">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-site-text-dim uppercase tracking-wide">{t("gif-heading", { defaultValue: "GIF" })}</span>
                     <button
@@ -401,7 +401,7 @@ export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
                         src={url}
                         alt=""
                         loading="lazy"
-                        className="w-full rounded-lg object-cover max-h-48"
+                        className="w-full rounded-site-sm object-cover max-h-48"
                       />
                       <button
                         type="button"

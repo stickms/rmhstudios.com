@@ -51,9 +51,9 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
       {...sheenHandlers}
     >
       <Link to={`/user-builds/${build.slug}` as string} className="block h-full">
-        <div className="group relative rounded-xl border border-site-border bg-site-surface hover:border-violet-500/50 transition-all overflow-hidden flex flex-col h-full">
+        <div className="group relative rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden flex flex-col h-full">
           {/* Mouse-tracking sheen */}
-          <div style={sheenStyle} className="rounded-xl" />
+          <div style={sheenStyle} className="rounded-site" />
         {/* Thumbnail */}
         <div className="relative">
           {build.thumbnailUrl ? (
@@ -71,14 +71,14 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
             </div>
           ) : (
             <div className="aspect-video w-full bg-gradient-to-br from-violet-500/20 to-fuchsia-600/20 flex items-center justify-center">
-              <div className="text-4xl font-bold text-violet-400/50">
+              <div className="text-4xl font-bold text-site-accent/50">
                 {build.title[0]?.toUpperCase()}
               </div>
             </div>
           )}
           {build.featured && (
-            <div className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 backdrop-blur-sm" title={t("curated", { defaultValue: "Curated" })}>
-              <Award className="w-4 h-4 text-amber-400" />
+            <div className="absolute top-2 right-2 p-1.5 rounded-site-sm bg-black/60 backdrop-blur-sm" title={t("curated", { defaultValue: "Curated" })}>
+              <Award className="w-4 h-4 text-site-warning" />
             </div>
           )}
         </div>
@@ -95,7 +95,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
           )}
 
           {/* Title */}
-          <h3 className="font-semibold text-site-text group-hover:text-violet-400 transition-colors line-clamp-1 mb-1">
+          <h3 className="font-semibold text-site-text group-hover:text-site-accent transition-colors line-clamp-1 mb-1">
             {build.title}
           </h3>
 
@@ -157,13 +157,13 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
             <button
               onClick={handleLike}
               className={`flex items-center gap-1 transition-colors ${
-                build.liked ? 'text-red-400' : 'hover:text-red-400'
+                build.liked ? 'text-site-danger' : 'hover:text-site-danger'
               }`}
             >
               <Heart className={`w-4 h-4 ${build.liked ? 'fill-current' : ''}`} />
               {formatCount(build.likeCount)}
             </button>
-            <span className="flex items-center gap-1 hover:text-blue-400 transition-colors">
+            <span className="flex items-center gap-1 hover:text-site-accent transition-colors">
               <MessageCircle className="w-4 h-4" />
               {formatCount(build.commentCount)}
             </span>

@@ -132,7 +132,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-3 text-red-400">
+        <div className="p-4 rounded-site-sm bg-site-danger/10 border border-site-danger/30 flex items-center gap-3 text-site-danger">
           <AlertCircle className="w-5 h-5 shrink-0" />
           {error}
         </div>
@@ -141,14 +141,14 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
       {/* Title */}
       <div>
         <label className="block text-sm font-medium text-site-text mb-2">
-          {t("label-title", { defaultValue: "Title" })} <span className="text-red-400">*</span>
+          {t("label-title", { defaultValue: "Title" })} <span className="text-site-danger">*</span>
         </label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder={t("placeholder-title", { defaultValue: "My Awesome Project" })}
-          className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text outline-none focus:border-violet-500/50 transition-colors"
+          className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text outline-none focus:border-site-accent/50 transition-colors"
           maxLength={100}
           required
         />
@@ -158,13 +158,13 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
       {/* Description */}
       <div>
         <label className="block text-sm font-medium text-site-text mb-2">
-          {t("label-description", { defaultValue: "Description" })} <span className="text-red-400">*</span>
+          {t("label-description", { defaultValue: "Description" })} <span className="text-site-danger">*</span>
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t("placeholder-description", { defaultValue: "A brief description of your project..." })}
-          className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text outline-none focus:border-violet-500/50 transition-colors resize-none"
+          className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text outline-none focus:border-site-accent/50 transition-colors resize-none"
           rows={3}
           maxLength={500}
           required
@@ -178,7 +178,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text outline-none focus:border-violet-500/50 transition-colors"
+          className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text outline-none focus:border-site-accent/50 transition-colors"
         >
           <option value="">{t("select-category", { defaultValue: "Select a category..." })}</option>
           {categories.map((cat) => (
@@ -200,8 +200,8 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
               onClick={() => toggleTechnology(tech)}
               className={`px-3 py-1 rounded-full text-xs border transition-colors ${
                 technologies.includes(tech)
-                  ? 'bg-violet-500/20 text-violet-400 border-violet-500/30'
-                  : 'bg-site-surface text-site-text-muted border-site-border hover:border-violet-500/30'
+                  ? 'bg-site-accent/20 text-site-accent border-site-accent/30'
+                  : 'bg-site-surface text-site-text-muted border-site-border hover:border-site-accent/30'
               }`}
             >
               {tech}
@@ -215,7 +215,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
             onChange={(e) => setNewTech(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomTech())}
             placeholder={t("placeholder-custom-tech", { defaultValue: "Add custom technology..." })}
-            className="flex-1 px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
+            className="flex-1 px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
           />
           <Button type="button" onClick={addCustomTech} variant="secondary" size="sm">
             <Plus className="w-4 h-4" />
@@ -226,10 +226,10 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
             {technologies.map((tech) => (
               <span
                 key={tech}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-violet-500/20 text-violet-400 text-xs"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-site-accent/20 text-site-accent text-xs"
               >
                 {tech}
-                <button type="button" onClick={() => toggleTechnology(tech)} className="p-0.5 hover:bg-violet-500/30 rounded transition-colors" aria-label={t("remove-item", { defaultValue: "Remove {{name}}", name: tech })}>
+                <button type="button" onClick={() => toggleTechnology(tech)} className="p-0.5 hover:bg-site-accent/30 rounded transition-colors" aria-label={t("remove-item", { defaultValue: "Remove {{name}}", name: tech })}>
                   <X className="w-3.5 h-3.5" />
                 </button>
               </span>
@@ -248,7 +248,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
             onChange={(e) => setNewTag(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
             placeholder={t("placeholder-tag", { defaultValue: "Add a tag..." })}
-            className="flex-1 px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
+            className="flex-1 px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
             maxLength={30}
           />
           <Button type="button" onClick={addTag} variant="secondary" size="sm">
@@ -282,7 +282,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
             value={repoUrl}
             onChange={(e) => setRepoUrl(e.target.value)}
             placeholder="https://github.com/..."
-            className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
+            className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
           />
         </div>
         <div>
@@ -292,7 +292,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
             value={demoUrl}
             onChange={(e) => setDemoUrl(e.target.value)}
             placeholder="https://..."
-            className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
+            className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
           />
         </div>
       </div>
@@ -305,10 +305,10 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           value={thumbnailUrl}
           onChange={(e) => setThumbnailUrl(e.target.value)}
           placeholder="https://..."
-          className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
+          className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
         />
         {thumbnailUrl && (
-          <div className="mt-3 rounded-lg overflow-hidden border border-site-border max-w-xs">
+          <div className="mt-3 rounded-site-sm overflow-hidden border border-site-border max-w-xs">
             <img src={thumbnailUrl} alt={t("thumbnail-preview", { defaultValue: "Thumbnail preview" })} className="w-full" />
           </div>
         )}
@@ -321,7 +321,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           value={readme}
           onChange={(e) => setReadme(e.target.value)}
           placeholder="# Project Name&#10;&#10;Description of your project..."
-          className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text font-mono text-sm outline-none focus:border-violet-500/50 transition-colors resize-none"
+          className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text font-mono text-sm outline-none focus:border-site-accent/50 transition-colors resize-none"
           rows={10}
         />
       </div>
@@ -335,7 +335,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           placeholder={t("placeholder-price", { defaultValue: "0 (free)" })}
-          className="w-full rounded-lg border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+          className="w-full rounded-site-sm border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
         />
         <p className="mt-1 text-xs text-site-text-dim">
           {t("price-description", { defaultValue: "Charge coins to unlock the README, source, and demo. Leave 0 to keep it free. A 10% platform fee applies to sales." })}
@@ -354,7 +354,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
                 value={v}
                 checked={visibility === v}
                 onChange={() => setVisibility(v)}
-                className="w-5 h-5 text-violet-500"
+                className="w-5 h-5 text-site-accent"
               />
               <span className="text-sm text-site-text capitalize">{v.toLowerCase()}</span>
             </label>
@@ -367,7 +367,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         <Button
           type="submit"
           variant="accent"
-          className="bg-violet-600 hover:bg-violet-500 w-full md:w-auto px-8"
+          className="bg-site-accent hover:bg-site-accent w-full md:w-auto px-8"
           disabled={loading}
         >
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : isEditing ? t("update-build", { defaultValue: "Update Build" }) : t("save-build", { defaultValue: "Save Build" })}

@@ -77,7 +77,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
                   key={tierOpt}
                   type="button"
                   onClick={() => setTier(tierOpt)}
-                  className={`rounded-xl border px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`rounded-site border px-3 py-2 text-sm font-medium transition-colors ${
                     tier === tierOpt ? 'border-site-accent bg-site-accent/10 text-site-text' : 'border-site-border text-site-text-muted hover:text-site-text'
                   }`}
                 >
@@ -98,7 +98,7 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
                   key={m}
                   type="button"
                   onClick={() => setMonths(m)}
-                  className={`flex-1 rounded-lg border px-2 py-1.5 text-sm font-medium transition-colors ${
+                  className={`flex-1 rounded-site-sm border px-2 py-1.5 text-sm font-medium transition-colors ${
                     months === m ? 'border-site-accent bg-site-accent/10 text-site-text' : 'border-site-border text-site-text-muted hover:text-site-text'
                   }`}
                 >

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Loader2, Bot, Plus, MessageSquare, X, Globe, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Persona {
   id: string;
@@ -87,7 +88,7 @@ export function PersonasColumn({ hideHeader = false }: { hideHeader?: boolean } 
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
@@ -98,9 +99,9 @@ export function PersonasColumn({ hideHeader = false }: { hideHeader?: boolean } 
     <Link
       key={p.id}
       to={`/personas/${p.id}` as string}
-      className="flex items-start gap-3 rounded-xl border border-site-border bg-site-surface p-3 transition-colors hover:border-site-accent/60"
+      className="flex items-start gap-3 rounded-site border border-site-border bg-site-surface p-3 transition-colors hover:border-site-accent/60"
     >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-site-accent/12 text-xl">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-site bg-site-accent/12 text-xl">
         {p.avatarUrl ? (
           <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : (
@@ -164,14 +165,14 @@ export function PersonasColumn({ hideHeader = false }: { hideHeader?: boolean } 
                 value={form.emoji}
                 onChange={(e) => setForm((f) => ({ ...f, emoji: e.target.value.slice(0, 4) }))}
                 placeholder="🤖"
-                className="w-14 rounded-lg border border-site-border bg-site-bg px-3 py-2 text-center text-sm outline-none focus:border-site-accent"
+                className="w-14 rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-center text-sm outline-none focus:border-site-accent"
               />
               <input
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                 placeholder={t('name-placeholder', { defaultValue: 'Name' })}
                 maxLength={40}
-                className="flex-1 rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+                className="flex-1 rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
             </div>
             <input
@@ -179,7 +180,7 @@ export function PersonasColumn({ hideHeader = false }: { hideHeader?: boolean } 
               onChange={(e) => setForm((f) => ({ ...f, tagline: e.target.value }))}
               placeholder={t('tagline-placeholder', { defaultValue: 'Short tagline (optional)' })}
               maxLength={120}
-              className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <textarea
               value={form.systemPrompt}
@@ -187,20 +188,20 @@ export function PersonasColumn({ hideHeader = false }: { hideHeader?: boolean } 
               placeholder={t('system-prompt-placeholder', { defaultValue: 'Personality & instructions — who is this character, how do they talk, what do they know?' })}
               maxLength={2000}
               rows={4}
-              className="w-full resize-none rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full resize-none rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <input
               value={form.greeting}
               onChange={(e) => setForm((f) => ({ ...f, greeting: e.target.value }))}
               placeholder={t('greeting-placeholder', { defaultValue: 'Opening greeting (optional)' })}
               maxLength={500}
-              className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             <div className="flex items-center justify-between">
               <button
                 type="button"
                 onClick={() => setForm((f) => ({ ...f, isPublic: !f.isPublic }))}
-                className="inline-flex items-center gap-1.5 rounded-lg border border-site-border px-2.5 py-1.5 text-xs font-medium text-site-text-muted hover:text-site-text"
+                className="inline-flex items-center gap-1.5 rounded-site-sm border border-site-border px-2.5 py-1.5 text-xs font-medium text-site-text-muted hover:text-site-text"
               >
                 {form.isPublic ? <Globe className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
                 {form.isPublic ? t('public', { defaultValue: 'Public' }) : t('private-label', { defaultValue: 'Private' })}

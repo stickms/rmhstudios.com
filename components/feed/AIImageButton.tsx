@@ -110,7 +110,7 @@ export function AIImageButton({
           onClick={() => setShowUpgrade(false)}
         >
           <div
-            className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-site-border bg-site-surface text-center shadow-2xl"
+            className="relative w-full max-w-sm overflow-hidden rounded-site border border-site-border bg-site-surface text-center shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Decorative gradient header */}
@@ -118,11 +118,11 @@ export function AIImageButton({
               <button
                 onClick={() => setShowUpgrade(false)}
                 aria-label={t('close', { defaultValue: 'Close' })}
-                className="absolute right-3 top-3 rounded-md p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
+                className="absolute right-3 top-3 rounded-site-sm p-1 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text"
               >
                 <X className="h-4 w-4" />
               </button>
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-site-accent/30 bg-site-accent-dim">
+              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-site border border-site-accent/30 bg-site-accent-dim">
                 <Wand2 className="h-7 w-7 text-site-accent" />
               </div>
             </div>

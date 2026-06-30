@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Loader2, Sparkles, Heart, MessageCircle, UserPlus, Trophy, Flame, PenSquare } from 'lucide-react';
+import { Sparkles, Heart, MessageCircle, UserPlus, Trophy, Flame, PenSquare } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useTranslation } from 'react-i18next';
 
 interface Recap {
@@ -56,19 +58,19 @@ export function RecapColumn() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+          <Spinner />
         </div>
       ) : !recap ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('recap-load-error', { defaultValue: 'Could not load your recap.' })}</p>
+        <EmptyState description={t('recap-load-error', { defaultValue: 'Could not load your recap.' })} />
       ) : (
         <div className="space-y-4 p-4">
-          <div className="rounded-2xl border border-site-accent/30 bg-site-accent-dim p-4">
+          <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-4">
             <p className="text-sm text-site-text">{recap.blurb}</p>
           </div>
 
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {STAT_META.map(({ key, labelKey, labelDefault, icon: Icon }) => (
-              <div key={key} className="rounded-xl border border-site-border bg-site-surface p-3 text-center">
+              <div key={key} className="rounded-site border border-site-border bg-site-surface p-3 text-center">
                 <Icon className="mx-auto h-5 w-5 text-site-accent" />
                 <p className="mt-1 text-2xl font-bold text-site-text">{recap[key] as number}</p>
                 <p className="text-xs text-site-text-muted">{t(labelKey, { defaultValue: labelDefault })}</p>
@@ -77,7 +79,7 @@ export function RecapColumn() {
           </div>
 
           {recap.topPost && (
-            <div className="rounded-xl border border-site-border bg-site-surface p-4">
+            <div className="rounded-site border border-site-border bg-site-surface p-4">
               <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('recap-top-post', { defaultValue: 'Your top post' })}</p>
               <p className="line-clamp-3 text-sm text-site-text">{recap.topPost.content}</p>
               <p className="mt-1 text-xs text-site-text-muted">❤️ {recap.topPost.likeCount} {t('recap-likes', { defaultValue: 'likes' })}</p>
@@ -86,7 +88,7 @@ export function RecapColumn() {
 
           <Link
             to="/achievements"
-            className="block rounded-xl border border-site-border bg-site-surface p-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover"
+            className="block rounded-site border border-site-border bg-site-surface p-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover"
           >
             {t('recap-view-achievements', { defaultValue: 'View your achievements →' })}
           </Link>

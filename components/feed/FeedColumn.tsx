@@ -107,7 +107,7 @@ export function FeedColumn() {
           {/* Mobile: sandwich menu left, RMH center, filters right */}
           <button
             onClick={openSidebar}
-            className="md:hidden p-2 -ml-2 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
+            className="md:hidden p-2 -ml-2 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
             aria-label={t("open-menu", { defaultValue: "Open menu" })}
           >
             <Menu className="w-5 h-5" />
@@ -150,7 +150,7 @@ export function FeedColumn() {
 
           <button
             onClick={() => setFiltersOpen(!filtersOpen)}
-            className={`p-2 rounded-lg transition-colors ${
+            className={`p-2 rounded-site-sm transition-colors ${
               filtersOpen
                 ? 'text-site-accent bg-site-accent-dim'
                 : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -182,7 +182,7 @@ export function FeedColumn() {
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder={t("search-placeholder", { defaultValue: "Search..." })}
-              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-lg pl-9 pr-9 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
+              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm pl-9 pr-9 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
               onKeyDown={(e) => {
                 if (e.key === 'Escape') clearSearch();
               }}
@@ -215,7 +215,7 @@ export function FeedColumn() {
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1">
                   <span className="font-semibold text-sm text-site-text truncate">{user.name || t("unknown-user", { defaultValue: "Unknown" })}</span>
-                  {user.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />}
+                  {user.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-site-success shrink-0" />}
                   {user.isAdmin && <ShieldCheck className="w-3.5 h-3.5 text-site-accent shrink-0" />}
                 </div>
                 {user.handle && (
@@ -241,7 +241,7 @@ export function FeedColumn() {
           <Link
             to="/login"
             search={{ callbackURL: undefined }}
-            className="px-5 py-2 rounded-lg bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
+            className="px-5 py-2 rounded-site-sm bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
           >
             {t("sign-in", { defaultValue: "Sign in" })}
           </Link>
