@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Loader2, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide-react';
+import { ArrowLeft, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
@@ -201,7 +202,7 @@ export function PostDetail({ postId }: PostDetailProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+        <Spinner size={32} />
       </div>
     );
   }
@@ -448,7 +449,7 @@ export function PostDetail({ postId }: PostDetailProps) {
         )}
         {loadingComments ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+            <Spinner />
           </div>
         ) : comments.length === 0 ? (
           <p className="text-center text-sm text-site-text-dim py-8">

@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Loader2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { Spinner } from '@/components/ui/spinner';
 import { Link } from '@tanstack/react-router';
 import { authClient } from '@/lib/auth-client';
 
@@ -224,7 +225,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
 
           {loading && (
             <div className="flex justify-center py-6">
-              <Loader2 className="w-5 h-5 text-site-accent animate-spin" />
+              <Spinner size={20} />
             </div>
           )}
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, PiggyBank, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
 interface Stake {
@@ -66,7 +67,7 @@ export function StakingCard() {
     return (
       <section className="rounded-site border border-site-border bg-site-surface p-4">
         <div className="flex justify-center py-4">
-          <Loader2 className="h-5 w-5 animate-spin text-site-accent" />
+          <Spinner size={20} />
         </div>
       </section>
     );

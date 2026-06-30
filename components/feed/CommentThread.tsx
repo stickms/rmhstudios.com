@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Loader2, Image as ImageIcon } from 'lucide-react';
+import { X, Image as ImageIcon } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth-client';
 import { CommentItem } from './CommentItem';
@@ -95,7 +96,7 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-1">
           {loading ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+              <Spinner />
             </div>
           ) : comments.length === 0 ? (
             <p className="text-center text-sm text-site-text-dim py-8">

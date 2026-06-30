@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, Store, Plus, Trash2, Check, ShoppingBag, X, EyeOff, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from './UserAvatar';
 
 interface Product {
@@ -141,12 +143,12 @@ export function StorefrontColumn({ userid }: { userid: string }) {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
   if (notFound || !creator) {
-    return <p className="px-4 py-24 text-center text-sm text-site-text-muted">{t('storefront-not-found', { defaultValue: 'Storefront not found.' })}</p>;
+    return <EmptyState description={t('storefront-not-found', { defaultValue: 'Storefront not found.' })} />;
   }
 
   const validForm = form.title.trim().length >= 2 && parseInt(form.price, 10) > 0;
@@ -227,9 +229,7 @@ export function StorefrontColumn({ userid }: { userid: string }) {
 
       <div className="space-y-2 p-4">
         {products.length === 0 ? (
-          <p className="py-16 text-center text-sm text-site-text-muted">
-            {isOwner ? t('no-products-owner', { defaultValue: 'No products yet — list your first one!' }) : t('no-products-visitor', { defaultValue: 'This creator has no products yet.' })}
-          </p>
+          <EmptyState description={isOwner ? t('no-products-owner', { defaultValue: 'No products yet — list your first one!' }) : t('no-products-visitor', { defaultValue: 'This creator has no products yet.' })} />
         ) : (
           products.map((p) => (
             <div

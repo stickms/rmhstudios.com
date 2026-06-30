@@ -21,6 +21,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import {
   feedbackSchema,
@@ -204,7 +205,7 @@ export function FeedbackModal() {
           <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 -mr-1">
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-5 w-5 animate-spin text-site-text-dim" />
+                <Spinner size={20} className="text-site-text-dim" />
               </div>
             ) : feedbacks.length === 0 ? (
               <p className="text-center text-site-text-dim py-8 text-sm">

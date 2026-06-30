@@ -3,6 +3,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, FileText, CalendarClock, Send, Trash2, Globe, Users, Lock, BarChart3, Image as ImageIcon } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
@@ -89,7 +91,7 @@ export function DraftsColumn() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
@@ -106,9 +108,7 @@ export function DraftsColumn() {
       </header>
 
       {empty ? (
-        <p className="px-4 py-20 text-center text-sm text-site-text-muted">
-          {t('no-drafts-yet', { defaultValue: 'No drafts yet. Use the "Save as draft" or "Schedule" options in the composer.' })}
-        </p>
+        <EmptyState description={t('no-drafts-yet', { defaultValue: 'No drafts yet. Use the "Save as draft" or "Schedule" options in the composer.' })} />
       ) : (
         <div className="space-y-8 p-4">
           <Section

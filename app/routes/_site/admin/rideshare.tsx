@@ -13,6 +13,7 @@ import { Loader2, ArrowLeft, ShieldCheck, Car, Check, X, MapPin, Search, Route a
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { auth } from '@/lib/auth';
+import { Spinner } from '@/components/ui/spinner';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { rideClassName } from '@/lib/rideshare/classes';
@@ -227,7 +228,7 @@ function AdminRidesharePage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-site-text-muted" /></div>
+          <div className="flex justify-center py-16"><Spinner className="text-site-text-muted" /></div>
         ) : items.length === 0 ? (
           <p className="rounded-site border border-dashed border-site-border px-4 py-16 text-center text-site-text-muted">
             {t('no-applications', { status: status.toLowerCase(), defaultValue: 'No {{status}} applications.' })}
@@ -389,7 +390,7 @@ function RideHistory({
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Loader2 className="h-6 w-6 animate-spin text-site-text-muted" /></div>
+        <div className="flex justify-center py-16"><Spinner className="text-site-text-muted" /></div>
       ) : rides.length === 0 ? (
         <p className="rounded-site border border-dashed border-site-border px-4 py-16 text-center text-site-text-muted">
           {t('no-rides-found', { defaultValue: 'No rides found.' })}

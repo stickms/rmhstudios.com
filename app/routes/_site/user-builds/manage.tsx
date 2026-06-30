@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Boxes, Plus, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import type { Build } from '@/lib/user-builds-types';
 import { useTranslation } from 'react-i18next';
 
@@ -63,7 +64,7 @@ function ManageContent() {
   if (isPending) {
     return (
       <div className="min-h-screen bg-site-bg pt-20 pb-12 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+        <Spinner size={32} />
       </div>
     );
   }
@@ -105,7 +106,7 @@ function ManageContent() {
 
         {loading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+            <Spinner size={32} />
           </div>
         ) : builds.length === 0 ? (
           <div className="text-center py-12 rounded-site border border-site-border bg-site-surface">
@@ -164,7 +165,7 @@ function ManageContent() {
 
 function ManageBuildsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-site-bg pt-20 pb-12 flex items-center justify-center"><Loader2 className="w-8 h-8 text-site-accent animate-spin" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-site-bg pt-20 pb-12 flex items-center justify-center"><Spinner size={32} /></div>}>
       <ManageContent />
     </Suspense>
   );

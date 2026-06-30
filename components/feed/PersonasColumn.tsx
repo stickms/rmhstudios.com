@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Loader2, Bot, Plus, MessageSquare, X, Globe, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 
 interface Persona {
   id: string;
@@ -87,7 +88,7 @@ export function PersonasColumn({ hideHeader = false }: { hideHeader?: boolean } 
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }

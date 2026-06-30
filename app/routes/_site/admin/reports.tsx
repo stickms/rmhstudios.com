@@ -5,7 +5,8 @@ import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Loader2, Flag, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Flag, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -152,7 +153,7 @@ function AdminReportsPage() {
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+            <Spinner />
           </div>
         ) : reports.length === 0 ? (
           <div className="rounded-site border border-site-border bg-site-surface p-10 text-center text-site-text-muted">

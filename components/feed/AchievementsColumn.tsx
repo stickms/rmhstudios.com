@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from 'lucide-react';
+import { Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { TIER_COLORS, CATEGORY_LABELS, type AchievementCategory, type AchievementTier } from '@/lib/achievements/catalog';
 
 // Library icons per achievement category (replaces emoji badges).
@@ -59,12 +61,12 @@ export function AchievementsColumn({ userId, hideHeader = false }: { userId: str
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
   if (!data) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t("could-not-load-achievements", { defaultValue: "Could not load achievements." })}</p>;
+    return <EmptyState description={t("could-not-load-achievements", { defaultValue: "Could not load achievements." })} />;
   }
 
   const pct = data.stats.total ? Math.round((data.stats.unlocked / data.stats.total) * 100) : 0;

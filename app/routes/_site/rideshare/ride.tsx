@@ -19,6 +19,7 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { LocationSearch, type SavedPlaceOption } from '@/components/rideshare/LocationSearch';
 import { RideMap } from '@/components/rideshare/RideMap';
@@ -255,7 +256,7 @@ function RequestRidePage() {
     return (
       <PageLayout title={t('page-title', { defaultValue: 'Request a ride' })} wide>
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-text-muted" />
+          <Spinner className="text-site-text-muted" />
         </div>
       </PageLayout>
     );
@@ -458,7 +459,7 @@ function RequestRidePage() {
 
           {loadingRides ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-site-text-muted" />
+              <Spinner size={20} className="text-site-text-muted" />
             </div>
           ) : pastRides.length === 0 ? (
             <p className="rounded-site border border-dashed border-site-border px-4 py-8 text-center text-sm text-site-text-muted">

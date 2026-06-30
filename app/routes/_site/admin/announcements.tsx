@@ -5,8 +5,10 @@ import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Megaphone, Loader2, Trash2, BarChart3, Image as ImageIcon, ImagePlus, X } from 'lucide-react';
+import { Megaphone, Trash2, BarChart3, Image as ImageIcon, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { AIGenerateButton } from '@/components/feed/AIGenerateButton';
 import { MentionTextarea } from '@/components/feed/MentionTextarea';
 import { GifEmbed } from '@/components/feed/GifEmbed';
@@ -463,10 +465,10 @@ function AdminAnnouncementsPage() {
         {/* List */}
         {loading ? (
           <div className="flex justify-center py-12">
-            <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+            <Spinner />
           </div>
         ) : list.length === 0 ? (
-          <p className="py-12 text-center text-sm text-site-text-muted">{t('no-announcements', { defaultValue: 'No announcements yet.' })}</p>
+          <EmptyState description={t('no-announcements', { defaultValue: 'No announcements yet.' })} />
         ) : (
           <ul className="space-y-2">
             {list.map((a) => (

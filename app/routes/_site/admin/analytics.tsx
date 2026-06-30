@@ -4,7 +4,8 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState } from 'react';
-import { BarChart3, Loader2, Users, FileText, Flag, Coins } from 'lucide-react';
+import { BarChart3, Users, FileText, Flag, Coins } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
@@ -65,7 +66,7 @@ function AnalyticsPage() {
 
         {loading ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+            <Spinner />
           </div>
         ) : !data ? (
           <p className="text-center text-sm text-site-text-muted">{t('analytics-load-error', { defaultValue: 'Could not load analytics.' })}</p>

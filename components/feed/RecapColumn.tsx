@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Loader2, Sparkles, Heart, MessageCircle, UserPlus, Trophy, Flame, PenSquare } from 'lucide-react';
+import { Sparkles, Heart, MessageCircle, UserPlus, Trophy, Flame, PenSquare } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useTranslation } from 'react-i18next';
 
 interface Recap {
@@ -56,10 +58,10 @@ export function RecapColumn() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+          <Spinner />
         </div>
       ) : !recap ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('recap-load-error', { defaultValue: 'Could not load your recap.' })}</p>
+        <EmptyState description={t('recap-load-error', { defaultValue: 'Could not load your recap.' })} />
       ) : (
         <div className="space-y-4 p-4">
           <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-4">

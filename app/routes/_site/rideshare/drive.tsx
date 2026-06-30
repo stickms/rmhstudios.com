@@ -22,6 +22,7 @@ import {
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 import { ActiveRidePanel } from '@/components/rideshare/ActiveRidePanel';
 import { DriverEarnings } from '@/components/rideshare/DriverEarnings';
@@ -95,7 +96,7 @@ function DrivePage() {
     return (
       <PageLayout title="Drive" wide>
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-text-muted" />
+          <Spinner className="text-site-text-muted" />
         </div>
       </PageLayout>
     );
@@ -460,7 +461,7 @@ function DriverDashboard({
           <button onClick={load} className="text-xs text-site-accent hover:underline">{t('refresh', { defaultValue: 'Refresh' })}</button>
         </div>
         {loading ? (
-          <div className="flex justify-center py-8"><Loader2 className="h-5 w-5 animate-spin text-site-text-muted" /></div>
+          <div className="flex justify-center py-8"><Spinner size={20} className="text-site-text-muted" /></div>
         ) : available.length === 0 ? (
           <p className="rounded-site border border-dashed border-site-border px-4 py-6 text-center text-sm text-site-text-muted">
             {t('no-open-requests', { defaultValue: 'No open requests right now. Check back soon!' })}

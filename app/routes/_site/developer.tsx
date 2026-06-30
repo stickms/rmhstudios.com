@@ -4,7 +4,7 @@ import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { DeveloperColumn } from '@/components/feed/DeveloperColumn';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute('/_site/developer')({
@@ -23,7 +23,7 @@ function DeveloperPage() {
       >
         {isPending ? (
           <div className="flex justify-center py-20">
-            <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+            <Spinner />
           </div>
         ) : !session ? (
           <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">

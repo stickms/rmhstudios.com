@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Link as LinkIcon, Calendar, Loader2, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift } from 'lucide-react';
+import { MapPin, Link as LinkIcon, Calendar, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { TipDialog } from '@/components/economy/TipDialog';
 import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
 import { useNavigate } from '@tanstack/react-router';
@@ -397,7 +398,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+        <Spinner size={32} />
       </div>
     );
   }
@@ -737,7 +738,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
           {loadingItems && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+              <Spinner />
             </div>
           )}
 
@@ -771,7 +772,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
           {loadingLiked && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+              <Spinner />
             </div>
           )}
 

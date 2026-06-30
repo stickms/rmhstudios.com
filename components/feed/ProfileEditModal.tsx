@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, X, Check, Loader2, RotateCcw } from 'lucide-react';
+import { Camera, X, Check, RotateCcw } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { ImageCropModal } from './ImageCropModal';
 import { SpotifySongSearch, type SpotifyTrack } from './SpotifySongSearch';
@@ -399,7 +400,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                   }`}
                 />
                 {handleChanged && handleStatus === 'checking' && (
-                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim animate-spin" />
+                  <Spinner size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-site-text-dim" />
                 )}
                 {handleChanged && handleStatus === 'available' && (
                   <Check className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-success" />

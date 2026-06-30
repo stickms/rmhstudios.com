@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Loader2, Flame, Trophy, CalendarCheck, Check } from 'lucide-react';
+import { Flame, Trophy, CalendarCheck, Check } from 'lucide-react';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useTranslation } from 'react-i18next';
 
 interface StreakState {
@@ -43,12 +45,12 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
   if (!streak) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('streak-load-error', { defaultValue: 'Could not load your streak.' })}</p>;
+    return <EmptyState description={t('streak-load-error', { defaultValue: 'Could not load your streak.' })} />;
   }
 
   const next = MILESTONES.find((m) => m.day > streak.current);

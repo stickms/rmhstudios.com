@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
 interface WheelState {
@@ -38,7 +39,7 @@ export function DailyWheel() {
   if (!state) {
     return (
       <div className="flex justify-center py-8">
-        <Loader2 className="h-5 w-5 animate-spin text-site-accent" />
+        <Spinner size={20} />
       </div>
     );
   }

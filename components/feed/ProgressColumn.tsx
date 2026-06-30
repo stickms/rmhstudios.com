@@ -17,6 +17,8 @@ import {
 } from 'lucide-react';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { DailyWheel } from './DailyWheel';
 import { StakingCard } from './StakingCard';
 
@@ -154,12 +156,12 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
   if (!data) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('could-not-load-progress', { defaultValue: 'Could not load progress.' })}</p>;
+    return <EmptyState description={t('could-not-load-progress', { defaultValue: 'Could not load progress.' })} />;
   }
 
   const lvl = data.level;

@@ -2,10 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Loader2, Users, MessageSquare, Megaphone, Shield, ShieldOff, UserX, X, Send } from 'lucide-react';
+import { ArrowLeft, Users, MessageSquare, Megaphone, Shield, ShieldOff, UserX, X, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { RMHarkCard } from './RMHarkCard';
 import { ComposeBox } from './ComposeBox';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -104,12 +106,12 @@ export function CommunityColumn({ slug }: { slug: string }) {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
   if (!community) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('community-not-found', { defaultValue: 'Community not found.' })}</p>;
+    return <EmptyState description={t('community-not-found', { defaultValue: 'Community not found.' })} />;
   }
 
   const isMod = canModerate(community.role);
@@ -219,7 +221,7 @@ export function CommunityColumn({ slug }: { slug: string }) {
       )}
 
       {items.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('no-posts-yet', { defaultValue: 'No posts yet. Be the first!' })}</p>
+        <EmptyState description={t('no-posts-yet', { defaultValue: 'No posts yet. Be the first!' })} />
       ) : (
         <div className="divide-y divide-site-border">
           {items.map((item) => (
@@ -361,7 +363,7 @@ function MembersDialog({ slug, viewerId, onClose }: { slug: string; viewerId: st
           <DialogTitle>{t('members-title', { defaultValue: 'Members' })}</DialogTitle>
         </DialogHeader>
         {loading ? (
-          <div className="flex justify-center py-10"><Loader2 className="h-5 w-5 animate-spin text-site-accent" /></div>
+          <div className="flex justify-center py-10"><Spinner size={20} /></div>
         ) : (
           <ul className="max-h-[60vh] divide-y divide-site-border overflow-y-auto">
             {members.map((m) => {

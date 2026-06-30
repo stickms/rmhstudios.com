@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import {
-  Loader2,
   Sparkles,
   PenSquare,
   Heart,
@@ -16,6 +15,8 @@ import {
   Star,
 } from 'lucide-react';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 
 interface Wrapped {
   year: number;
@@ -50,12 +51,12 @@ export function WrappedColumn() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
   if (!data) {
-    return <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('wrapped-load-error', { defaultValue: 'Could not load your Wrapped.' })}</p>;
+    return <EmptyState description={t('wrapped-load-error', { defaultValue: 'Could not load your Wrapped.' })} />;
   }
 
   const tiles = [

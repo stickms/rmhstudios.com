@@ -3,8 +3,10 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Users, Plus, Loader2, MessageSquare, Search } from 'lucide-react';
+import { Users, Plus, MessageSquare, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
 import { toast } from 'sonner';
@@ -118,14 +120,16 @@ export function CommunitiesColumn() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+          <Spinner />
         </div>
       ) : items.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">
-          {query.trim()
-            ? t('no-communities-found', { defaultValue: 'No communities match your search.' })
-            : t('no-communities', { defaultValue: 'No communities yet — create the first one!' })}
-        </p>
+        <EmptyState
+          description={
+            query.trim()
+              ? t('no-communities-found', { defaultValue: 'No communities match your search.' })
+              : t('no-communities', { defaultValue: 'No communities yet — create the first one!' })
+          }
+        />
       ) : (
         <ul className="flex flex-col gap-3 p-3">
           {items.map((c) => {

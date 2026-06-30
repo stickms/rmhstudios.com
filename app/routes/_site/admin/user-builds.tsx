@@ -7,6 +7,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ArrowLeft, Loader2, Search, AlertCircle, Edit, ExternalLink, Lock, Award } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 
 interface Build {
@@ -113,7 +114,7 @@ function AdminUserBuildsPage() {
           <div className="divide-y divide-site-border relative">
             {loading && (
               <div className="absolute inset-0 bg-site-surface/50 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-8">
-                <Loader2 className="w-8 h-8 text-site-accent animate-spin mb-4" />
+                <Spinner size={32} className="mb-4" />
                 <span className="text-site-text-muted">{t("loading-builds", { defaultValue: "Loading builds..." })}</span>
               </div>
             )}

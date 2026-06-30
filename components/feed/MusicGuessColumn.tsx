@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, Music, Plus, X, Check, Lightbulb, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from './UserAvatar';
 
 interface PuzzleRow {
@@ -77,7 +79,7 @@ export function MusicGuessColumn() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
@@ -120,7 +122,7 @@ export function MusicGuessColumn() {
       )}
 
       {puzzles.length === 0 ? (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">{t('no-puzzles-yet', { defaultValue: 'No puzzles yet — create the first!' })}</p>
+        <EmptyState description={t('no-puzzles-yet', { defaultValue: 'No puzzles yet — create the first!' })} />
       ) : (
         <div className="space-y-2 p-4">
           {puzzles.map((p) => (
@@ -217,7 +219,7 @@ function PlayModal({ id, signedIn, onClose }: { id: string; signedIn: boolean; o
 
         {!puzzle ? (
           <div className="flex justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+            <Spinner />
           </div>
         ) : (
           <>

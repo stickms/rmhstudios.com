@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Star, TrendingUp, Clock, Loader2 } from 'lucide-react';
+import { Star, TrendingUp, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Spinner } from '@/components/ui/spinner';
 import type { Build } from '@/lib/user-builds-types';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 
@@ -78,7 +79,7 @@ export function BuildSidebar({ className = '' }: BuildSidebarProps) {
   if (loading) {
     return (
       <div className={`flex justify-center py-8 ${className}`}>
-        <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+        <Spinner />
       </div>
     );
   }

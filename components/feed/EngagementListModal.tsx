@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Link } from '@tanstack/react-router';
+import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from './UserAvatar';
 
 interface EngagementUser {
@@ -103,7 +104,7 @@ export function EngagementListModal({ open, onClose, postId, commentId, type }: 
 
           {loading && (
             <div className="flex justify-center py-6">
-              <Loader2 className="w-5 h-5 text-site-accent animate-spin" />
+              <Spinner size={20} />
             </div>
           )}
         </div>

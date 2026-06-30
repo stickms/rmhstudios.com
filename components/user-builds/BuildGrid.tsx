@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { LayoutGroup, motion } from 'framer-motion';
 import { BuildCard } from './BuildCard';
 import type { Build, BuildSortOption } from '@/lib/user-builds-types';
@@ -143,7 +143,7 @@ export function BuildGrid({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+        <Spinner size={32} />
       </div>
     );
   }
@@ -179,7 +179,7 @@ export function BuildGrid({
 
       {/* Load more trigger */}
       <div ref={loadMoreRef} className="py-8 flex justify-center">
-        {loadingMore && <Loader2 className="w-6 h-6 text-site-accent animate-spin" />}
+        {loadingMore && <Spinner />}
         {!hasMore && builds.length > 0 && (
           <div className="h-px" />
         )}

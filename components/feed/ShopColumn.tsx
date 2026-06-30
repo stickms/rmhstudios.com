@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, ShoppingBag, Check } from 'lucide-react';
+import { ShoppingBag, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 import { KIND_LABELS, KIND_ORDER, RARITY_COLORS, RARITY_ORDER, type ShopItemKind, type Rarity } from '@/lib/shop/catalog';
 
@@ -161,7 +162,7 @@ export function ShopColumn() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+          <Spinner />
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2">

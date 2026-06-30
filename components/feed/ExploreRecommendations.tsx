@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Hash, Loader2, TrendingUp, Users, Package, BookOpen } from 'lucide-react';
+import { Hash, TrendingUp, Users, Package, BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RMHarkCard } from './RMHarkCard';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import type { FeedItem } from '@/lib/feed-types';
@@ -100,7 +102,7 @@ export function ExploreRecommendations({
   if (needsExploreData && loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
@@ -222,9 +224,7 @@ export function ExploreRecommendations({
             </div>
           </section>
         ) : (
-          <p className="px-4 py-16 text-center text-sm text-site-text-muted">
-            {t('search-builds-hint', { defaultValue: 'Type to search games, apps, and community builds.' })}
-          </p>
+          <EmptyState description={t('search-builds-hint', { defaultValue: 'Type to search games, apps, and community builds.' })} />
         )
       )}
 
@@ -250,9 +250,7 @@ export function ExploreRecommendations({
             ))}
           </section>
         ) : (
-          <p className="px-4 py-16 text-center text-sm text-site-text-muted">
-            {t('search-blog-hint', { defaultValue: 'Type to search the blog.' })}
-          </p>
+          <EmptyState description={t('search-blog-hint', { defaultValue: 'Type to search the blog.' })} />
         )
       )}
 
@@ -270,9 +268,7 @@ export function ExploreRecommendations({
 
       {/* Nothing to show for the social tabs (no data yet). */}
       {needsExploreData && !data && (
-        <p className="px-4 py-16 text-center text-sm text-site-text-muted">
-          {t('explore-empty-hint', { defaultValue: 'Start typing to search across people, posts, builds, and the blog.' })}
-        </p>
+        <EmptyState description={t('explore-empty-hint', { defaultValue: 'Start typing to search across people, posts, builds, and the blog.' })} />
       )}
     </div>
   );

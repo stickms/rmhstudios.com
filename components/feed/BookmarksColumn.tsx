@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Bookmark, Loader2 } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import type { FeedItem } from '@/lib/feed-types';
 
 export function BookmarksColumn() {
@@ -50,7 +51,7 @@ export function BookmarksColumn() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+          <Spinner />
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">

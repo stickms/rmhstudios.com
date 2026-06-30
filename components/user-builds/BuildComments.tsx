@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send, Loader2, MessageCircle, ChevronDown } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { authClient } from '@/lib/auth-client';
 import type { BuildComment } from '@/lib/user-builds-types';
@@ -230,7 +231,7 @@ export function BuildComments({ buildId }: BuildCommentsProps) {
       {/* Comments List */}
       {loading ? (
         <div className="flex justify-center py-8">
-          <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+          <Spinner />
         </div>
       ) : comments.length === 0 ? (
         <p className="text-center text-site-text-dim py-8">{t("no-comments", { defaultValue: "No comments yet. Be the first!" })}</p>

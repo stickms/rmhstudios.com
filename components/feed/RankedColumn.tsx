@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Swords, Trophy, Check, X, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from './UserAvatar';
 import { HandleInput } from './HandleInput';
 
@@ -151,7 +152,7 @@ export function RankedColumn() {
   if (loading) {
     return (
       <div className="flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+        <Spinner />
       </div>
     );
   }
@@ -284,7 +285,7 @@ export function RankedColumn() {
           </div>
           {lbLoading ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-5 w-5 animate-spin text-site-accent" />
+              <Spinner size={20} />
             </div>
           ) : lb.length === 0 ? (
             <p className="py-8 text-center text-sm text-site-text-muted">{t('no-ranked-players', { defaultValue: 'No ranked players yet.' })}</p>

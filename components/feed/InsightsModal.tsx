@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Loader2, Eye, Heart, MessageCircle, Repeat, Bookmark, TrendingUp, Unlock } from 'lucide-react';
+import { X, Eye, Heart, MessageCircle, Repeat, Bookmark, TrendingUp, Unlock } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 
 interface Insights {
@@ -97,7 +98,7 @@ export function InsightsModal({ open, onClose, postId }: InsightsModalProps) {
         <div className="flex-1 overflow-y-auto p-5">
           {loading && (
             <div className="flex justify-center py-12">
-              <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+              <Spinner />
             </div>
           )}
 

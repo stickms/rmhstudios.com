@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Loader2, ArrowLeft, Send, ImagePlus, ImagePlay, X, Plus } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
@@ -491,7 +492,7 @@ export function ConversationView({ conversationId }: { conversationId: string })
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-4">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+            <Spinner size={32} />
           </div>
         ) : (
           <>

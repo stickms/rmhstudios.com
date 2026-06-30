@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, CheckCheck, Loader2, Trophy, Sparkles, Zap, Gift, Car, MapPin } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 
 type NotificationType = 'LIKE' | 'COMMENT' | 'REPLY' | 'FOLLOW' | 'MENTION' | 'REPOST' | 'SYSTEM';
@@ -177,7 +178,7 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+          <Spinner />
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">

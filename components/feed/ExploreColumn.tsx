@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Compass, Hash, Loader2, Sparkles, TrendingUp, Coins } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
+import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import type { FeedItem } from '@/lib/feed-types';
@@ -92,7 +93,7 @@ export function ExploreColumn() {
 
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="h-6 w-6 animate-spin text-site-accent" />
+          <Spinner />
         </div>
       ) : (
         <>
