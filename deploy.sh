@@ -313,17 +313,25 @@ build_cache_gb() {
 
 # ── Helper: dynamic build-cache keep target (whole GB) ───────────────────────
 # Self-calibrates to the actual disk: keep as much warm cache as fits while still
-# leaving room for the SHA-tagged images plus the deploy headroom. Floored so a
-# small disk still keeps a little cache for incremental builds. All inputs are
-# env-overridable. This replaces the old hardcoded BUILD_CACHE_KEEP_GB=20, which
-# could exceed total free space on a small disk and let the cache fill it.
+# leaving room for the SHA-tagged images, a rebuild's transient layers, AND the
+# deploy headroom. Floored so a small disk still keeps a little cache for
+# incremental builds. All inputs are env-overridable.
+#
+# The keep target MUST leave (build_reserve + headroom) free even when the cache
+# is sitting at the cap — otherwise the LRU trim "succeeds" but the very next
+# build still can't get its 10G and escalates to the destructive full-cache wipe
+# (which also evicts the pnpm-store + .vinxi mounts, forcing a cold vite build).
+# That is exactly what happened on the 45G prod host: keep was 45−12−2=31, so a
+# cache at 31G left only ~9G free while the build needs ≥10G → wipe every deploy.
+# Subtracting build_reserve makes the warm cache self-consistent with the build.
 cache_keep_gb() {
-    local total reserve floor headroom keep
+    local total reserve build_reserve floor headroom keep
     total=$(total_disk_gb)
-    reserve=${DEPLOY_IMAGE_RESERVE_GB:-12}   # room for current + rollback images
+    reserve=${DEPLOY_IMAGE_RESERVE_GB:-12}         # room for current + rollback images
+    build_reserve=${DEPLOY_BUILD_RESERVE_GB:-8}    # transient space a full rebuild needs
     floor=${BUILD_CACHE_MIN_KEEP_GB:-3}
     headroom=${DEPLOY_HEADROOM_GB:-2}
-    keep=$(( total - reserve - headroom ))
+    keep=$(( total - reserve - build_reserve - headroom ))
     [ "$keep" -lt "$floor" ] && keep=$floor
     echo "$keep"
 }
@@ -682,10 +690,29 @@ else
         fi
     }
 
+    # Registry-cache activation. mode=max export to a registry needs a buildx
+    # container-driver builder (the default `docker` driver can't), so we only
+    # turn the cache on when DEPLOY_BUILDKIT_CACHE is set AND that builder exists.
+    # Provision it once with `deploy/setup-buildx-cache.sh`. If it's missing we
+    # DON'T fail — we warn and fall back to the local cache, so a misconfigured or
+    # not-yet-provisioned host still deploys. CACHE_ACTIVE gates the container
+    # builder's own cache prune in the post-deploy step (its cache lives separately
+    # from the default builder, so the normal `builder prune` doesn't reach it).
+    CACHE_ACTIVE=0
     if [ -n "${DEPLOY_BUILDKIT_CACHE:-}" ]; then
-        export BUILDKIT_CACHE_WEB="$DEPLOY_BUILDKIT_CACHE"
-        export BUILDKIT_CACHE_FULL="${DEPLOY_BUILDKIT_CACHE}-full"
-        log "Using shared BuildKit registry cache: ${DEPLOY_BUILDKIT_CACHE} (+ -full for runner-full)."
+        BUILDX_CACHE_BUILDER="${DEPLOY_BUILDX_BUILDER:-rmhstudios-cache}"
+        if "$DOCKER_BIN" buildx inspect "$BUILDX_CACHE_BUILDER" >/dev/null 2>&1; then
+            export BUILDX_BUILDER="$BUILDX_CACHE_BUILDER"
+            export BUILDKIT_CACHE_WEB="$DEPLOY_BUILDKIT_CACHE"
+            export BUILDKIT_CACHE_FULL="${DEPLOY_BUILDKIT_CACHE}-full"
+            CACHE_ACTIVE=1
+            log "Shared BuildKit registry cache ON (builder '${BUILDX_CACHE_BUILDER}', ref ${DEPLOY_BUILDKIT_CACHE} + -full)."
+        else
+            log "WARN: DEPLOY_BUILDKIT_CACHE is set but buildx builder '${BUILDX_CACHE_BUILDER}' does not exist."
+            log "      Run deploy/setup-buildx-cache.sh once to create it. Falling back to LOCAL cache this deploy."
+        fi
+    fi
+    if [ "$CACHE_ACTIVE" -eq 1 ]; then
         run_build -f docker-compose.yml -f docker-compose.cache.yml || BUILD_OK=0
     else
         run_build || BUILD_OK=0
@@ -1012,14 +1039,25 @@ log "Pruning dangling images..."
 prune_rollback_images
 
 # Cap BuildKit build cache. The keep target self-calibrates to the disk
-# (cache_keep_gb: total − image reserve − headroom) so it can never exceed
-# available space — the old fixed BUILD_CACHE_KEEP_GB=20 was larger than total
-# free on a small disk, so it never trimmed and the cache could fill the disk.
+# (cache_keep_gb: total − image reserve − build reserve − headroom) so it can
+# never exceed available space AND always leaves room for the next build — the
+# old fixed BUILD_CACHE_KEEP_GB=20 was larger than total free on a small disk, so
+# it never trimmed and the cache could fill the disk.
 # The LRU trim keeps the pnpm store + .vinxi warm (incremental `vite build`)
 # while staying under the cap. Still env-overridable via BUILD_CACHE_KEEP_GB.
 BUILD_CACHE_KEEP_GB="${BUILD_CACHE_KEEP_GB:-$(cache_keep_gb)}"
 log "Pruning build cache (LRU trim toward ≤${BUILD_CACHE_KEEP_GB} GB)..."
 "$DOCKER_BIN" builder prune --keep-storage "${BUILD_CACHE_KEEP_GB}g" -f > /dev/null 2>&1 || true
+
+# When the registry cache is active, the build ran on a separate container-driver
+# builder whose cache lives OUTSIDE the default builder that the line above trims
+# (and outside `docker system df`'s "Build Cache" accounting). Trim it to the same
+# cap so it can't grow unbounded and silently fill the disk. Guarded so it's a
+# no-op on hosts without the registry cache. Best-effort — never fails the deploy.
+if [ "${CACHE_ACTIVE:-0}" -eq 1 ] && [ -n "${BUILDX_BUILDER:-}" ]; then
+    log "Trimming container builder '${BUILDX_BUILDER}' cache (LRU trim toward ≤${BUILD_CACHE_KEEP_GB} GB)..."
+    "$DOCKER_BIN" buildx prune --builder "$BUILDX_BUILDER" --keep-storage "${BUILD_CACHE_KEEP_GB}g" -f > /dev/null 2>&1 || true
+fi
 
 # Headroom enforcement: `--keep-storage` can't trim WITHIN the long-lived
 # pnpm-store / vinxi cache mounts, so real free space can still drift below the
