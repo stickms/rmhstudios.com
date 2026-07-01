@@ -348,7 +348,7 @@ build_inputs_hash() {
     local p
     local paths=(app components lib public prisma server go-services scripts \
         package.json pnpm-lock.yaml vite.config.ts tsconfig.json \
-        tsconfig.server.json Dockerfile docker-compose.yml)
+        tsconfig.server.json Dockerfile .dockerignore docker-compose.yml)
     {
         for p in "${paths[@]}"; do
             git -C "$REPO_DIR" rev-parse "HEAD:$p" 2>/dev/null || echo "missing:$p"

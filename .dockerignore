@@ -10,6 +10,14 @@ node_modules
 .tanstack
 dist-server
 .pnpm-store
+# Deploy state written on the HOST by deploy.sh (the content-hash file + the
+# build-timing progress log). Not part of the image — and critically, the
+# progress log is appended DURING the build via `tee`, so leaving .deploy/ in the
+# context makes the sequential supervisor→web builds see DIFFERENT contexts,
+# busting the `COPY --exclude=go-services . .` cache and rebuilding the expensive
+# vite stage a second time. (`deploy` further down excludes the deploy/ SOURCE
+# dir — a different name; this dot-prefixed state dir needs its own entry.)
+.deploy
 
 # ─── Version control ────────────────────────────────────────────────
 .git
