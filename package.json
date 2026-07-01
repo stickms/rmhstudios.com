@@ -106,7 +106,7 @@
     "lru-cache": "^11.5.1",
     "lucide-react": "^0.577.0",
     "maplibre-gl": "^5.24.0",
-    "marked": "^17.0.6",
+    "marked": "^18.0.5",
     "monaco-editor": "^0.55.1",
     "music-metadata-browser": "^2.5.11",
     "nanoid": "^5.1.11",
