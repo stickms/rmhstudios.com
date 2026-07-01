@@ -626,18 +626,21 @@ if [ "$SKIP_BUILD" -eq 1 ]; then
     log "No build-relevant changes since last build (${BUILD_HASH:0:12}) — skipping rebuild, re-tagging existing images."
 else
     # Build BOTH targets: `web` → runner (slim), `supervisor` → runner-full.
-    # They share the entire build graph (deps/prisma/server/vite/go), so the second
-    # target is just the extra Chromium+git+Go-binary layers on top of the slim
-    # image — near-zero added build time on a warm cache.
+    # runner-full is `FROM runner`, so it is a strict superset — the slim image
+    # plus the extra Chromium+git+Go-binary layers.
     #
-    # COMPOSE_BAKE=1 lowers both services into ONE buildx-bake graph instead of
-    # two serial `compose build` invocations. BuildKit then schedules every
-    # independent stage concurrently — crucially, `go-builder` (Go compile of
-    # cmd/...) runs IN PARALLEL with `vite-builder` rather than only starting
-    # after the entire web build finishes — and the shared deps/prisma/server
-    # stages execute once instead of being re-walked per target. On a build where
-    # go-services or the Go layer is cold this overlaps the Go compile under the
-    # Vite build's shadow; on a fully warm cache it's a no-op.
+    # We build them as TWO sequential `dc build` calls — supervisor FIRST, then
+    # web — NOT one two-target bake. Reason (measured, see the timing report):
+    # `dc build web supervisor` lowers both targets into one buildx-bake graph,
+    # but bake does NOT share the `vite-builder` vertex across the two targets, so
+    # the (expensive) frontend `vite build` runs TWICE — once per image — costing
+    # ~110s + ~60s of duplicated work every deploy. Building supervisor first
+    # builds the whole chain (deps→prisma→vite-builder→runner→runner-full) exactly
+    # once; the subsequent web build is then a pure cache hit on `runner` and its
+    # ancestors (only the final image export runs). Crucially this keeps the
+    # go∥vite parallelism the old bake gave us: `go-builder` is an independent
+    # branch feeding runner-full's `COPY --from=go-builder`, so BuildKit still runs
+    # the Go compile concurrently with `vite build` inside the supervisor graph.
     # Optional shared/remote BuildKit layer cache. When DEPLOY_BUILDKIT_CACHE is
     # set to a registry ref (e.g. registry.example.com/rmhstudios/buildcache), the
     # build imports AND exports the layer cache to that registry via the
@@ -662,14 +665,20 @@ else
     BUILD_LOG="${HASH_DIR}/${ENVIRONMENT}-build-progress.log"
     [ "$PROFILE_BUILD" = "1" ] && : > "$BUILD_LOG"
 
-    # Builds both bake targets. $@ carries optional extra `-f` compose files (the
-    # cache overlay). When profiling, force plain progress and capture it; the
-    # pass-through tee keeps the live output flowing to the deploy log/console.
+    # Build supervisor (runner-full) then web (runner) as two sequential invocations
+    # so the shared vite-builder stage runs once (see the block comment above); the
+    # web build lands on a warm cache. $@ carries optional extra `-f` compose files
+    # (the cache overlay). When profiling, force plain progress and append both
+    # builds to the same log; the pass-through tee keeps live output flowing to the
+    # deploy log/console. `|| return 1` stops at the first failing build and makes
+    # the caller's `|| BUILD_OK=0` fire (set -e is suppressed inside a `||` list).
     run_build() {
         if [ "$PROFILE_BUILD" = "1" ]; then
-            COMPOSE_BAKE=1 BUILDKIT_PROGRESS=plain dc "$@" build web supervisor 2>&1 | tee -a "$BUILD_LOG"
+            COMPOSE_BAKE=1 BUILDKIT_PROGRESS=plain dc "$@" build supervisor 2>&1 | tee -a "$BUILD_LOG" || return 1
+            COMPOSE_BAKE=1 BUILDKIT_PROGRESS=plain dc "$@" build web        2>&1 | tee -a "$BUILD_LOG" || return 1
         else
-            COMPOSE_BAKE=1 dc "$@" build web supervisor
+            COMPOSE_BAKE=1 dc "$@" build supervisor || return 1
+            COMPOSE_BAKE=1 dc "$@" build web        || return 1
         fi
     }
 
