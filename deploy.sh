@@ -638,7 +638,50 @@ else
     # stages execute once instead of being re-walked per target. On a build where
     # go-services or the Go layer is cold this overlaps the Go compile under the
     # Vite build's shadow; on a fully warm cache it's a no-op.
-    if ! COMPOSE_BAKE=1 dc build web supervisor; then
+    # Optional shared/remote BuildKit layer cache. When DEPLOY_BUILDKIT_CACHE is
+    # set to a registry ref (e.g. registry.example.com/rmhstudios/buildcache), the
+    # build imports AND exports the layer cache to that registry via the
+    # docker-compose.cache.yml overlay, so a fresh or disk-pressure-wiped host
+    # repopulates the deps/prisma/server/vite stages from remote instead of the
+    # slow cold path this script otherwise falls back to (see the cache-wipe note
+    # above). The `-full` image gets its own cache ref. Inert when unset — the
+    # local BuildKit cache is used exactly as before. NOTE: registry cache export
+    # needs a buildx/docker-container builder; the default `docker` driver can't
+    # export mode=max cache. Failures to *export* cache never fail the build (they
+    # print a warning), but a misconfigured builder can, so keep it opt-in.
+    BUILD_OK=1
+
+    # Per-stage build profiling: capture BuildKit's plain progress to a log so the
+    # post-build report can attribute wall-clock per stage (vite vs go vs deps vs
+    # image assembly) — the durable answer to "what dominates the build?". On by
+    # default; set DEPLOY_PROFILE_BUILD=0 to skip it and keep BuildKit's default
+    # tty progress. The non-interactive webhook deploy already effectively gets
+    # plain progress, so this only changes the console for manual runs. The log
+    # lives under the gitignored .deploy/ dir and is overwritten each build.
+    PROFILE_BUILD="${DEPLOY_PROFILE_BUILD:-1}"
+    BUILD_LOG="${HASH_DIR}/${ENVIRONMENT}-build-progress.log"
+    [ "$PROFILE_BUILD" = "1" ] && : > "$BUILD_LOG"
+
+    # Builds both bake targets. $@ carries optional extra `-f` compose files (the
+    # cache overlay). When profiling, force plain progress and capture it; the
+    # pass-through tee keeps the live output flowing to the deploy log/console.
+    run_build() {
+        if [ "$PROFILE_BUILD" = "1" ]; then
+            COMPOSE_BAKE=1 BUILDKIT_PROGRESS=plain dc "$@" build web supervisor 2>&1 | tee -a "$BUILD_LOG"
+        else
+            COMPOSE_BAKE=1 dc "$@" build web supervisor
+        fi
+    }
+
+    if [ -n "${DEPLOY_BUILDKIT_CACHE:-}" ]; then
+        export BUILDKIT_CACHE_WEB="$DEPLOY_BUILDKIT_CACHE"
+        export BUILDKIT_CACHE_FULL="${DEPLOY_BUILDKIT_CACHE}-full"
+        log "Using shared BuildKit registry cache: ${DEPLOY_BUILDKIT_CACHE} (+ -full for runner-full)."
+        run_build -f docker-compose.yml -f docker-compose.cache.yml || BUILD_OK=0
+    else
+        run_build || BUILD_OK=0
+    fi
+    if [ "$BUILD_OK" -ne 1 ]; then
         log "ERROR: Docker build failed."
         update_deploy_status fail "docker build failed"
         exit 1
@@ -646,6 +689,14 @@ else
     # Record the hash only after a SUCCESSFUL build, so a failed build never lets
     # the next deploy wrongly skip.
     printf '%s\n' "$BUILD_HASH" > "$HASH_FILE"
+
+    # Print the per-stage timing breakdown. Best-effort: a parse hiccup must never
+    # fail a build that already succeeded.
+    if [ "$PROFILE_BUILD" = "1" ] && [ -s "$BUILD_LOG" ]; then
+        log "Build stage timing breakdown (uncached wall-clock):"
+        sh "${REPO_DIR}/scripts/build-timing-report.sh" "$BUILD_LOG" 2>/dev/null \
+            || log "  (build timing report unavailable — skipped)"
+    fi
 fi
 
 # Tag both images with the git SHA for instant rollback (docker compose up with

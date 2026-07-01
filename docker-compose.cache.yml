@@ -1,0 +1,38 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Optional shared/remote BuildKit layer-cache overlay.
+#
+# Loaded by deploy.sh ONLY when DEPLOY_BUILDKIT_CACHE is set (see Step 2 build).
+# It adds registry-backed cache import/export to the web (slim `runner`) and
+# supervisor (full `runner-full`) image builds so a fresh — or disk-pressure
+# cache-wiped — host repopulates the BuildKit layer cache from a registry
+# instead of rebuilding cold. That cold path is exactly what deploy.sh warns
+# about: a full cache wipe evicts the BuildKit layer cache AND the .vinxi/pnpm
+# cache mounts, turning the next `vite build` into a slow cold build. A shared
+# registry cache lets the wiped host pull those stages back instead.
+#
+# Requires a buildx / docker-container builder: the default `docker` driver
+# cannot export mode=max cache to a registry. This file is NEVER loaded when
+# DEPLOY_BUILDKIT_CACHE is unset, so a stock single-host build is unaffected.
+#
+# Env vars (exported by deploy.sh from DEPLOY_BUILDKIT_CACHE):
+#   BUILDKIT_CACHE_WEB   — registry ref for the slim (runner) image cache
+#   BUILDKIT_CACHE_FULL  — registry ref for the full (runner-full) image cache
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  web:
+    build:
+      cache_from:
+        - type=registry,ref=${BUILDKIT_CACHE_WEB}
+      cache_to:
+        # mode=max caches every intermediate stage (deps/prisma/server/vite), not
+        # just the final image layers — so the cold stages that dominate build
+        # wall-clock are what gets restored. zstd keeps the exported cache compact
+        # in transfer; image-manifest+oci-mediatypes make it a portable OCI artifact
+        # that plain registries (not just BuildKit-aware ones) can store.
+        - type=registry,ref=${BUILDKIT_CACHE_WEB},mode=max,compression=zstd,image-manifest=true,oci-mediatypes=true
+  supervisor:
+    build:
+      cache_from:
+        - type=registry,ref=${BUILDKIT_CACHE_FULL}
+      cache_to:
+        - type=registry,ref=${BUILDKIT_CACHE_FULL},mode=max,compression=zstd,image-manifest=true,oci-mediatypes=true
