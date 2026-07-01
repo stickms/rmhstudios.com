@@ -47,8 +47,20 @@ done
 die() { echo "ERROR: $*" >&2; exit 1; }
 
 [ "$(id -u)" -eq 0 ] || die "must run as root (Docker data-root migration needs it)."
-command -v rsync >/dev/null 2>&1 || die "rsync is required."
 "$DOCKER_BIN" info >/dev/null 2>&1 || die "cannot talk to Docker."
+
+# Pick a copy tool that preserves hardlinks + xattrs (both critical for overlay2:
+# it hardlinks shared layer files and stores trusted.overlay.* xattrs). Prefer
+# rsync; fall back to GNU tar. Decide NOW, before stopping Docker, so we never
+# take the site down only to find we can't copy.
+COPY_METHOD=""
+if command -v rsync >/dev/null 2>&1; then
+    COPY_METHOD="rsync"
+elif tar --version 2>/dev/null | grep -qi 'GNU tar'; then
+    COPY_METHOD="tar"
+else
+    die "need rsync or GNU tar to copy the data-root safely (hardlinks + xattrs). Install one, e.g. 'apt-get install -y rsync'."
+fi
 
 # ── Resolve the target dir on the large storage volume ───────────────────────
 if [ -z "$TARGET_DIR" ]; then
@@ -93,7 +105,15 @@ systemctl stop docker
 
 # ── Copy data-root (rsync; source is preserved) ──────────────────────────────
 echo "Copying ${CURRENT_ROOT}/ → ${TARGET_DIR}/ (this can take a while)…"
-rsync -aHAX --numeric-ids --info=progress2 "${CURRENT_ROOT}/" "${TARGET_DIR}/"
+if [ "$COPY_METHOD" = "rsync" ]; then
+    rsync -aHAX --numeric-ids --info=progress2 "${CURRENT_ROOT}/" "${TARGET_DIR}/"
+else
+    # GNU tar: hardlinks preserved by default; --xattrs-include='*' + --acls +
+    # root pull in the trusted.overlay.* xattrs overlay2 relies on.
+    echo "(rsync not found — copying with GNU tar)"
+    ( cd "$CURRENT_ROOT" && tar --numeric-owner --xattrs --xattrs-include='*' --acls -cf - . ) \
+        | ( cd "$TARGET_DIR" && tar --numeric-owner --xattrs --xattrs-include='*' --acls -xf - )
+fi
 
 # ── Point the daemon at the new data-root (merge, with backup) ────────────────
 DAEMON_JSON=/etc/docker/daemon.json
