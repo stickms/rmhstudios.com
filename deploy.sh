@@ -258,7 +258,12 @@ dc() {
 # pressure we call it with 1 to reclaim a rollback image's GBs BEFORE resorting
 # to a full build-cache wipe that would evict the warm pnpm-store/.vinxi mounts.
 prune_rollback_images() {
-    local keep="${1:-2}"
+    # Default keep=1 (one rollback target per image). These images are LARGE
+    # (this monorepo's node_modules + ~1.5GB .output + Chromium on the full image),
+    # and on the small root disk each retained SHA is several GB of unique layers.
+    # Keeping 1 instead of 2 frees a full image set and is the cheapest way to stop
+    # the disk-pressure cache wipes. Callers pass an explicit count to override.
+    local keep="${1:-1}"
     # Both the slim (${IMAGE_NAME}) and full (${FULL_IMAGE_NAME}) images are
     # SHA-tagged each deploy; trim each repo to its N newest tags. They share
     # most layers on disk, so this is mostly about untagging — but untagged old

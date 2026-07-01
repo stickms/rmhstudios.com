@@ -98,11 +98,29 @@ as the local one, so it can't grow unbounded. Disable any time by unsetting
 
 ### Disk pressure
 
-`deploy.sh` caps the local build cache at `cache_keep_gb = total − image reserve
-− build reserve − headroom` so a cache at the cap still leaves room for the next
-build (previously it omitted the build reserve, so a 45 GB host trimmed to 31 GB
-and then wiped the whole cache every deploy). Tune via `DEPLOY_IMAGE_RESERVE_GB`
-(default 12), `DEPLOY_BUILD_RESERVE_GB` (8), `DEPLOY_HEADROOM_GB` (2).
+On the small root disk the real hog is **images**, not cache: this monorepo's
+`node_modules` + ~1.5 GB `.output`, plus Chromium on the full image, mean a
+couple of image + rollback copies pin ~30 GB. That leaves too little room to
+build, so the deploy wipes the whole BuildKit cache to make space — forcing a
+cold `vite build` every deploy.
+
+**The fix — put Docker's storage on the large volume** you already use for DB
+storage (`STORAGE_PATH`). One-time, host-level, brief downtime (Docker restarts):
+
+```bash
+sudo ./deploy/move-docker-storage.sh          # target defaults to <STORAGE volume>/docker
+```
+
+It rsyncs `/var/lib/docker` to the big volume and repoints the daemon (the old
+copy is kept until you remove it, so it's reversible). Afterwards images live on
+the big volume, `deploy.sh`'s cache cap self-calibrates to it (`cache_keep_gb`
+reads the volume backing Docker's data dir), and the warm `.vinxi`/pnpm cache
+survives between deploys — no more wipes, no new deploy env var.
+
+Interim relief without the migration: the deploy keeps only **1** rollback image
+per environment (was 2) and caps the cache at `total − image reserve − build
+reserve − headroom`. Tune via `DEPLOY_IMAGE_RESERVE_GB` (12),
+`DEPLOY_BUILD_RESERVE_GB` (8), `DEPLOY_HEADROOM_GB` (2).
 
 See where the disk actually goes (read-only):
 
