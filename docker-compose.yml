@@ -44,6 +44,12 @@ x-build: &build-common
     - "host.docker.internal:host-gateway"
   args:
     COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-rmhstudios}
+    # Base image for the runner-full stage. Defaults to the `runner` stage (so a
+    # plain `compose build` is self-contained); the deploy sets WEB_IMAGE to the
+    # already-built slim web image tag when building `supervisor`, so runner-full
+    # starts FROM that image and doesn't re-run the vite build. The `web` service
+    # (target runner) doesn't reference it, so carrying it here is harmless.
+    WEB_IMAGE: ${WEB_IMAGE:-runner}
     DATABASE_URL: ${DATABASE_URL}
     BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
     BETTER_AUTH_URL: ${BETTER_AUTH_URL}
