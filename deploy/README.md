@@ -63,6 +63,53 @@ curl -fsS -H "Host: <app_host>" http://127.0.0.1/    # via Traefik
 - Tail a service:  `kubectl -n rmhstudios logs -f deploy/rmhstudios-socket`
 - DNS changes:  see `deploy/terraform/README.md`
 
+## Faster builds (`deploy.sh` compose path)
+
+The single-host `deploy.sh` build is dominated by the Vite frontend build. Two
+opt-in knobs keep it fast, especially on a disk-constrained host that keeps
+wiping its local BuildKit cache.
+
+### Shared / remote BuildKit cache
+
+Import & export the BuildKit layer cache to a registry so a fresh — or
+disk-pressure-wiped — host repopulates the deps / prisma / vite stages from
+remote instead of rebuilding them cold.
+
+```bash
+# 1. Provision the container-driver builder once (mode=max registry export needs
+#    it; the default docker driver can't). Idempotent.
+./deploy/setup-buildx-cache.sh
+
+# 2. If the registry is private, log in once so the builder can push/pull cache.
+docker login ghcr.io
+
+# 3. Set on the deploy env (webhook unit / .env):
+DEPLOY_BUILDKIT_CACHE=ghcr.io/stickms/rmh/buildcache
+# optional, only if you renamed the builder:
+DEPLOY_BUILDX_BUILDER=rmhstudios-cache
+```
+
+`deploy.sh` enables the cache only when the env var is set **and** the builder
+exists; otherwise it warns and falls back to the local cache (never fails the
+build). The `-full` image gets its own `…-full` cache ref automatically. The
+deploy LRU-trims the container builder's cache to the same disk-calibrated cap
+as the local one, so it can't grow unbounded. Disable any time by unsetting
+`DEPLOY_BUILDKIT_CACHE`.
+
+### Disk pressure
+
+`deploy.sh` caps the local build cache at `cache_keep_gb = total − image reserve
+− build reserve − headroom` so a cache at the cap still leaves room for the next
+build (previously it omitted the build reserve, so a 45 GB host trimmed to 31 GB
+and then wiped the whole cache every deploy). Tune via `DEPLOY_IMAGE_RESERVE_GB`
+(default 12), `DEPLOY_BUILD_RESERVE_GB` (8), `DEPLOY_HEADROOM_GB` (2).
+
+See where the disk actually goes (read-only):
+
+```bash
+./deploy/disk-report.sh
+```
+
 ## Multi-node scaling
 
 The deploy is already **wired for a registry** — switching to multi-node is an

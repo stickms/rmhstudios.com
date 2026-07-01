@@ -31,6 +31,9 @@
 #   - server-builder is env-agnostic → 100% cache hit between prod/staging
 #   - node_modules copied from prisma-generate (not builder) → stable layer
 #     that includes @prisma/client and only rebuilds on lockfile/schema changes
+#   - Optional shared/remote layer cache: set DEPLOY_BUILDKIT_CACHE so a fresh or
+#     cache-wiped host repopulates deps/prisma/vite from a registry instead of a
+#     cold rebuild (needs a buildx container builder — deploy/setup-buildx-cache.sh)
 # ─────────────────────────────────────────────────────────────────────────────
 
 # ── Stage 1: Install dependencies ──────────────────────────────────────────
