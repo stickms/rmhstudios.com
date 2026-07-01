@@ -18,6 +18,23 @@ import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
+import { AnimatePresence, motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+
+// Dropdown motion for collapsible nav groups (e.g. "More"): the panel expands
+// its height while its items fade/slide in with a slight stagger.
+const SUBMENU_PANEL = {
+  open: { height: 'auto' as const, opacity: 1 },
+  closed: { height: 0, opacity: 0 },
+};
+const SUBMENU_LIST = {
+  open: { transition: { staggerChildren: 0.04, delayChildren: 0.03 } },
+  closed: {},
+};
+const SUBMENU_ITEM = {
+  open: { opacity: 1, y: 0, transition: { duration: 0.18 } },
+  closed: { opacity: 0, y: -6 },
+};
 
 // `tKey` is the i18n key (namespace "feed"); `label` is the English fallback.
 type NavLeaf = { href: string; tKey: string; label: string; icon: LucideIcon; requiresAuth?: boolean; requiresAdmin?: boolean; badge?: 'inbox'; external?: boolean };
@@ -75,6 +92,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     return init;
   });
   const toggleGroup = (g: string) => setOpenGroups((s) => ({ ...s, [g]: !s[g] }));
+  const reduced = useReducedMotion();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -197,7 +215,36 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   className={`w-4 h-4 shrink-0 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''} ${labelClass}`}
                 />
               </button>
-              {isOpen && item.children.map((c) => renderLeaf(c, true))}
+              {reduced ? (
+                isOpen && item.children.map((c) => renderLeaf(c, true))
+              ) : (
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      key="submenu"
+                      variants={SUBMENU_PANEL}
+                      initial="closed"
+                      animate="open"
+                      exit="closed"
+                      transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <motion.div
+                        className="flex flex-col gap-1 pt-1"
+                        variants={SUBMENU_LIST}
+                        initial="closed"
+                        animate="open"
+                      >
+                        {item.children.map((c) => (
+                          <motion.div key={c.href} variants={SUBMENU_ITEM}>
+                            {renderLeaf(c, true)}
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              )}
             </div>
           );
         })}

@@ -11,6 +11,47 @@
 
 ---
 
+## Implementation status (branch `claude/website-improvement-ideas-mq41th`)
+
+Shipped on this branch so far. Items that need a **staging URL / seeded DB** for
+visual/scroll QA, or a **product/infra decision**, are intentionally not shipped
+blind and are listed as deferred.
+
+| Phase | Item | Status |
+|---|---|---|
+| 0 | Error tracking + route error boundaries + styled 404 | ✅ done |
+| 0 | Default OG image (`/images/og/default.png`) | ✅ done |
+| 0 | `<main>` landmark so the skip link works | ✅ done |
+| 0 | `eslint-plugin-jsx-a11y` (warn) | ✅ done |
+| 0 | Security-header parity (Apache CSP Report-Only + Traefik middleware) | ✅ done |
+| 0 | Frontend CI gate (typecheck/lint/test/build) | ⏸️ skipped by request (no test gate for now) |
+| 1 | Client RUM (Core Web Vitals → `/api/rum`) | ✅ done |
+| 1 | JSON-LD structured data (`lib/schema.ts`, wired 4 route types + site-wide) | ✅ done |
+| 1 | Canonical URLs on content routes | ✅ done |
+| 1 | `hreflang` | ⏸️ deferred — needs per-locale URLs (architectural); same-URL alternates would be invalid |
+| 1 | Security VERIFY sweep | ✅ done — Range bounds & Socket CORS confirmed already-fixed; PAT/AI quotas flagged for owner |
+| 1 | Form labels + Escape-to-close (first pass) | ✅ done (ComposeBox poll, ImageCropModal) |
+| 1 | Stripe payment tests | ⏸️ skipped by request (no tests) |
+| 2 | Reduced-motion global gate + `useReducedMotion()` | ✅ done |
+| 2 | High-Contrast theme (WCAG AAA) | ✅ done |
+| 2 | Skeletons + `useCelebration()` hook | ✅ done |
+| 2 | `React.memo` on hot leaves (UserAvatar, OptimizedImage) | ✅ done |
+| 2 | PWA manifest (PNG/maskable icons, shortcuts, categories) | ✅ done |
+| 2 | Feed list virtualization | ⏸️ deferred — needs scroll/visual QA on dynamic-height feeds |
+| 2 | Service worker + Web Push | ⏸️ deferred — a bad SW breaks prod caching; push needs VAPID keys + rollout |
+| 2 | Responsive-image rework | ⏸️ deferred — needs per-image above/below-fold judgment on the running app |
+| 3 | Dependabot | ✅ done |
+| 3 | Docs & DX (rewrite this overview, CONTRIBUTING, Prettier, PR template, `i18n:coverage`) | ✅ done |
+| 3 | CSP enforcement | ⏸️ deferred — promote from Report-Only after collecting real violation data |
+| 3 | Product features (referral, quote-repost, badges, creator coins, digests) | ⏸️ deferred — schema-changing features; need product sign-off + migration/QA |
+| 3 | Resilience (backoff/breaker/DB-retry) + migration/e2e tests | ⏸️ deferred — server behavior needs a runtime to validate; tests skipped by request |
+
+**Verification standard used:** every code change was typechecked (`tsc --noEmit`
+stays at the repo's pre-existing baseline with zero new errors in changed files)
+and linted, and generated assets were visually checked.
+
+---
+
 ## Table of contents
 
 1. [Executive summary](#1-executive-summary)
