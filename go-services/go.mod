@@ -1,6 +1,6 @@
 module github.com/rmhstudios/rmh-go
 
-go 1.23
+go 1.25.0
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.36.3
@@ -51,7 +51,7 @@ require (
 	github.com/prometheus/common v0.48.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	golang.org/x/crypto v0.17.0 // indirect
-	golang.org/x/sync v0.3.0
+	golang.org/x/sync v0.21.0
 	golang.org/x/sys v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
