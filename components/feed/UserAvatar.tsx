@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { FeedItemUser } from '@/lib/feed-types';
@@ -26,7 +26,7 @@ function userProfileHref(user: FeedItemUser): string {
   return `/u/${user.handle || user.id}`;
 }
 
-export function UserAvatar({ user, size = 'md', linkToProfile = true }: UserAvatarProps) {
+function UserAvatarImpl({ user, size = 'md', linkToProfile = true }: UserAvatarProps) {
   const { t } = useTranslation('feed');
   const [imgError, setImgError] = useState(false);
 
@@ -69,3 +69,9 @@ export function UserAvatar({ user, size = 'md', linkToProfile = true }: UserAvat
 
   return avatar;
 }
+
+/**
+ * Memoized: avatars render in long feed/message/leaderboard lists, so skipping
+ * re-renders when the `user`/`size` props are unchanged avoids wasted work.
+ */
+export const UserAvatar = memo(UserAvatarImpl);

@@ -3,6 +3,7 @@ import { create } from "zustand";
 export const SITE_STYLES = [
   { id: "default", label: "Default", icon: "🌙", group: "Base" },
   { id: "light", label: "Light", icon: "☀️", group: "Base" },
+  { id: "high-contrast", label: "High Contrast", icon: "◐", group: "Base" },
   { id: "gamer", label: "Gamer", icon: "🎮", group: "Vibes" },
   { id: "anime", label: "Anime", icon: "🌸", group: "Vibes" },
   { id: "musical", label: "Musical", icon: "🎻", group: "Vibes" },

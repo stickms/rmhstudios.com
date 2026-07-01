@@ -20,7 +20,7 @@
 import { useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import confetti from 'canvas-confetti';
+import { useCelebration } from '@/hooks/useCelebration';
 import { Trophy, Medal, Award as AwardIcon, ChevronRight } from 'lucide-react';
 import LucideAwardIcon from './LucideAwardIcon';
 import { emit } from '@/lib/rmhbox/socket';
@@ -65,18 +65,16 @@ export default function ResultsScreen({
     emit(C2S.GAME_FORCE_SKIP, { lobbyId });
   }, [lobbyId]);
 
-  // Fire confetti for the winner
+  const celebrate = useCelebration();
+
+  // Fire confetti for the winner (skipped automatically under reduced motion).
   useEffect(() => {
     if (rankings.length === 0) return;
     const timer = setTimeout(() => {
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.6 },
-      });
+      void celebrate();
     }, 600);
     return () => clearTimeout(timer);
-  }, [rankings]);
+  }, [rankings, celebrate]);
 
   const top3 = rankings.slice(0, 3);
   // Reorder for podium display: 2nd, 1st, 3rd

@@ -7,6 +7,7 @@ import { Search, Package, BookOpen } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
 import {
   ExploreRecommendations,
   type DiscoveryOfficialBuild,
@@ -141,6 +142,8 @@ export function SearchColumn({
           userBuilds={userBuilds}
           blogPosts={blogPosts}
         />
+      ) : loading && !hasResults ? (
+        <PostListSkeleton count={6} />
       ) : !hasResults && !loading ? (
         <EmptyState description={t('no-results', { query, defaultValue: 'No results for "{{query}}".' })} />
       ) : (
