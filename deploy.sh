@@ -633,22 +633,28 @@ fi
 if [ "$SKIP_BUILD" -eq 1 ]; then
     log "No build-relevant changes since last build (${BUILD_HASH:0:12}) — skipping rebuild, re-tagging existing images."
 else
-    # Build BOTH targets: `web` → runner (slim), `supervisor` → runner-full.
-    # runner-full is `FROM runner`, so it is a strict superset — the slim image
-    # plus the extra Chromium+git+Go-binary layers.
+    # Build BOTH images: `web` → runner (slim), `supervisor` → runner-full
+    # (Chromium + git + Go binaries on top of the slim image).
     #
-    # We build them as TWO sequential `dc build` calls — supervisor FIRST, then
-    # web — NOT one two-target bake. Reason (measured, see the timing report):
-    # `dc build web supervisor` lowers both targets into one buildx-bake graph,
-    # but bake does NOT share the `vite-builder` vertex across the two targets, so
-    # the (expensive) frontend `vite build` runs TWICE — once per image — costing
-    # ~110s + ~60s of duplicated work every deploy. Building supervisor first
-    # builds the whole chain (deps→prisma→vite-builder→runner→runner-full) exactly
-    # once; the subsequent web build is then a pure cache hit on `runner` and its
-    # ancestors (only the final image export runs). Crucially this keeps the
-    # go∥vite parallelism the old bake gave us: `go-builder` is an independent
-    # branch feeding runner-full's `COPY --from=go-builder`, so BuildKit still runs
-    # the Go compile concurrently with `vite build` inside the supervisor graph.
+    # We build them as TWO sequential `dc build` calls — WEB FIRST, then supervisor
+    # — and runner-full is `FROM ${WEB_IMAGE}` (Dockerfile). The web build runs the
+    # single (expensive) `vite build` and compose tags it ${IMAGE_NAME}:latest; we
+    # then build supervisor with WEB_IMAGE=${IMAGE_NAME}:latest so runner-full starts
+    # FROM that concrete image and its graph does NOT include vite-builder — the
+    # frontend is built exactly ONCE per deploy.
+    #
+    # Why not a two-target bake, or sequential `FROM runner`? Both were measured to
+    # build vite TWICE (~50–110s wasted): BuildKit does not share the vite-builder /
+    # `COPY --exclude … . .` layer across the two target builds (their contexts
+    # differ byte-for-byte — 461kB vs 407kB in the logs). Building runner-full FROM
+    # the already-produced web IMAGE sidesteps layer sharing entirely.
+    #
+    # Exception: a container-driver builder (registry cache, below) can't FROM a
+    # local-only image tag, so on that path we keep WEB_IMAGE=runner and let the
+    # registry cache dedupe the second vite build instead (web exports the vite
+    # layer, supervisor imports it). go-builder is an independent branch feeding
+    # runner-full's `COPY --from=go-builder`, so the Go compile still runs (in
+    # parallel with the Chromium apk layer) during the supervisor build.
     # Optional shared/remote BuildKit layer cache. When DEPLOY_BUILDKIT_CACHE is
     # set to a registry ref (e.g. registry.example.com/rmhstudios/buildcache), the
     # build imports AND exports the layer cache to that registry via the
@@ -673,20 +679,25 @@ else
     BUILD_LOG="${HASH_DIR}/${ENVIRONMENT}-build-progress.log"
     [ "$PROFILE_BUILD" = "1" ] && : > "$BUILD_LOG"
 
-    # Build supervisor (runner-full) then web (runner) as two sequential invocations
-    # so the shared vite-builder stage runs once (see the block comment above); the
-    # web build lands on a warm cache. $@ carries optional extra `-f` compose files
-    # (the cache overlay). When profiling, force plain progress and append both
-    # builds to the same log; the pass-through tee keeps live output flowing to the
-    # deploy log/console. `|| return 1` stops at the first failing build and makes
-    # the caller's `|| BUILD_OK=0` fire (set -e is suppressed inside a `||` list).
+    # Build web (runner) FIRST — it runs the one vite build and is tagged
+    # ${IMAGE_NAME}:latest — then supervisor (runner-full) FROM that image so vite
+    # isn't re-run (see the block comment above). $@ carries optional extra `-f`
+    # compose files (the cache overlay). When profiling, force plain progress and
+    # append both builds to the same log; the pass-through tee keeps live output
+    # flowing. `|| return 1` stops at the first failing build so the caller's
+    # `|| BUILD_OK=0` fires (set -e is suppressed inside a `||` list).
     run_build() {
+        # runner-full's base image: the just-built local web image on the default
+        # builder; `runner` (rebuild-in-graph) when the registry-cache container
+        # builder is active, since it can't FROM a local-only tag.
+        local sup_web_image="${IMAGE_NAME}:latest"
+        [ "${CACHE_ACTIVE:-0}" -eq 1 ] && sup_web_image="runner"
         if [ "$PROFILE_BUILD" = "1" ]; then
-            COMPOSE_BAKE=1 BUILDKIT_PROGRESS=plain dc "$@" build supervisor 2>&1 | tee -a "$BUILD_LOG" || return 1
-            COMPOSE_BAKE=1 BUILDKIT_PROGRESS=plain dc "$@" build web        2>&1 | tee -a "$BUILD_LOG" || return 1
+            COMPOSE_BAKE=1 BUILDKIT_PROGRESS=plain dc "$@" build web 2>&1 | tee -a "$BUILD_LOG" || return 1
+            COMPOSE_BAKE=1 BUILDKIT_PROGRESS=plain WEB_IMAGE="$sup_web_image" dc "$@" build supervisor 2>&1 | tee -a "$BUILD_LOG" || return 1
         else
-            COMPOSE_BAKE=1 dc "$@" build supervisor || return 1
-            COMPOSE_BAKE=1 dc "$@" build web        || return 1
+            COMPOSE_BAKE=1 dc "$@" build web || return 1
+            COMPOSE_BAKE=1 WEB_IMAGE="$sup_web_image" dc "$@" build supervisor || return 1
         fi
     }
 

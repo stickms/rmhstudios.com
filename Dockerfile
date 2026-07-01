@@ -36,6 +36,16 @@
 #     cold rebuild (needs a buildx container builder — deploy/setup-buildx-cache.sh)
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Base image for the runner-full stage (see Stage 4b). Declared here as a global
+# ARG so the FROM below can interpolate it. Default `runner` keeps a standalone
+# `docker build --target runner-full` self-contained (builds the whole graph). The
+# deploy overrides it with the ALREADY-BUILT slim web image tag so runner-full
+# starts FROM a concrete image and never re-derives the vite-builder stage — that
+# is what guarantees the expensive frontend build runs exactly once per deploy
+# (BuildKit won't share the `COPY --exclude … . .` layer across the two target
+# builds, so building runner-full FROM the stage rebuilt vite a second time).
+ARG WEB_IMAGE=runner
+
 # ── Stage 1: Install dependencies ──────────────────────────────────────────
 # Cached as long as package.json / lockfile don't change.
 # Prisma files are NOT copied here — schema changes should only trigger
@@ -302,7 +312,13 @@ CMD ["node", ".output/server/index.mjs"]
 # Used ONLY by the `supervisor` and `status` compose services. Because Chromium
 # is the slow apk layer, isolating it here means a web/source change never
 # re-runs it, and a go-services change never touches the slim web image.
-FROM runner AS runner-full
+#
+# FROM ${WEB_IMAGE} (default `runner`; the deploy passes the already-built slim
+# web image tag). Building FROM the concrete web image means this stage does NOT
+# depend on `runner`/`vite-builder` in the graph, so the deploy's supervisor build
+# skips the vite build entirely — the web build already produced it. WEB_IMAGE is
+# the global ARG declared before the first FROM (in scope for every FROM line).
+FROM ${WEB_IMAGE} AS runner-full
 
 USER root
 RUN apk add --no-cache git \
