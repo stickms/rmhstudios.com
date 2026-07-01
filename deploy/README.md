@@ -98,29 +98,57 @@ as the local one, so it can't grow unbounded. Disable any time by unsetting
 
 ### Disk pressure
 
-On the small root disk the real hog is **images**, not cache: this monorepo's
-`node_modules` + ~1.5 GB `.output`, plus Chromium on the full image, mean a
-couple of image + rollback copies pin ~30 GB. That leaves too little room to
-build, so the deploy wipes the whole BuildKit cache to make space — forcing a
-cold `vite build` every deploy.
-
-**The fix — put Docker's storage on the large volume** you already use for DB
-storage (`STORAGE_PATH`). One-time, host-level, brief downtime (Docker restarts):
+When the deploy keeps wiping the BuildKit cache (`wiping ALL build cache` in the
+log), free space on the disk backing Docker has dropped below the ~10 GB a build
+needs. **Find out what's actually filling the disk before assuming it's Docker** —
+on this host it turned out NOT to be:
 
 ```bash
-sudo ./deploy/move-docker-storage.sh          # target defaults to <STORAGE volume>/docker
+df -h /                                   # is the disk really full? one disk or several?
+sudo du -xh --max-depth=1 / | sort -h     # where the space is: /var/lib/docker vs /home vs …
+docker system df                          # Docker's own split: images vs build cache
 ```
 
-It rsyncs `/var/lib/docker` to the big volume and repoints the daemon (the old
-copy is kept until you remove it, so it's reversible). Afterwards images live on
-the big volume, `deploy.sh`'s cache cap self-calibrates to it (`cache_keep_gb`
-reads the volume backing Docker's data dir), and the warm `.vinxi`/pnpm cache
-survives between deploys — no more wipes, no new deploy env var.
+Common findings, in order of how often they're the culprit here:
 
-Interim relief without the migration: the deploy keeps only **1** rollback image
-per environment (was 2) and caps the cache at `total − image reserve − build
-reserve − headroom`. Tune via `DEPLOY_IMAGE_RESERVE_GB` (12),
-`DEPLOY_BUILD_RESERVE_GB` (8), `DEPLOY_HEADROOM_GB` (2).
+1. **Non-Docker cruft in `/home`** — the usual real cause. Dev-tool caches
+   (`~/.vscode-server`, `~/.cache`, `~/.npm`, `~/go`) and other users' home dirs
+   can quietly eat 5–15 GB. `docker system df` won't show any of it. Clearing the
+   regenerable caches (`rm -rf ~/.vscode-server ~/.cache ~/.npm ~/go`) is usually
+   enough to let the ~6 GB build cache survive between deploys → warm builds. Do
+   NOT `docker builder prune` — that throws away the very cache you want warm.
+2. **Docker footprint** — images here are small (the `runner-full` image is
+   `FROM` the slim one, so they largely share layers). The deploy keeps only **1**
+   rollback image per environment and caps the cache at `total − image reserve −
+   build reserve − headroom`. Tune via `DEPLOY_IMAGE_RESERVE_GB` (12),
+   `DEPLOY_BUILD_RESERVE_GB` (8), `DEPLOY_HEADROOM_GB` (2).
+3. **Genuinely out of disk** — only if the above don't free enough. Check for a
+   real second volume first (`lsblk`): on a single-disk host (one `/dev/sda1` at
+   `/`, with `/mnt/*` just folders on it) there is nowhere to move to — relocating
+   Docker within the same disk gains nothing. If you attach a separate volume, see
+   below.
+
+**If you attach a genuinely separate large volume**, move Docker's data-root onto
+it so images + cache no longer compete with the root disk. One-time, host-level,
+brief downtime (Docker restarts):
+
+```bash
+sudo ./deploy/move-docker-storage.sh /mnt/<separate-volume>/docker
+```
+
+It copies `/var/lib/docker` (rsync, or GNU tar if rsync is absent) and repoints
+the daemon (old copy kept → reversible). The script refuses if the target volume
+lacks room (`used + 5 GB` headroom), so it won't half-migrate onto a full disk.
+Afterwards `deploy.sh`'s cache cap self-calibrates to the new volume
+(`cache_keep_gb` reads the fs backing Docker's data dir) and the warm
+`.vinxi`/pnpm cache survives between deploys.
+
+**Footprint reduction (no extra disk needed):** the deploy keeps only **1**
+rollback image per environment (was 2, frees a full image set) and caps the cache
+at `total − image reserve − build reserve − headroom`. Tune via
+`DEPLOY_IMAGE_RESERVE_GB` (12), `DEPLOY_BUILD_RESERVE_GB` (8),
+`DEPLOY_HEADROOM_GB` (2). With images trimmed, more of the 45 GB stays free for a
+warm cache, so wipes become rarer even without a second disk.
 
 See where the disk actually goes (read-only):
 
