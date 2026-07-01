@@ -14,6 +14,8 @@
     "rmhbox-server": "pnpm exec tsx watch --include \"server/rmhbox/**/*\" --include \"server/shared/**/*\" server/rmhbox/index.ts",
     "rmhtube-server": "pnpm exec tsx watch --include \"server/rmhtube/**/*\" --include \"server/shared/**/*\" server/rmhtube/index.ts",
     "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "postinstall": "prisma generate",
     "db:push": "prisma db push --accept-data-loss",
     "db:generate": "prisma generate",
@@ -30,7 +32,8 @@
     "i18n:extract": "i18next 'app/**/*.{ts,tsx}' 'components/**/*.{ts,tsx}'",
     "i18n:translate": "pnpm exec tsx scripts/translate-locales.ts",
     "i18n:resources": "pnpm exec tsx scripts/gen-i18n-resources.ts",
-    "i18n:translate:local": "bash scripts/translate-i18n-local.sh"
+    "i18n:translate:local": "bash scripts/translate-i18n-local.sh",
+    "i18n:coverage": "pnpm exec tsx scripts/check-i18n-coverage.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -141,6 +144,7 @@
     "turndown": "^7.2.4",
     "twemoji-parser": "^14.0.0",
     "uuid": "^14.0.0",
+    "web-vitals": "^5.3.0",
     "ws": "^8.21.0",
     "zod": "^4.4.3",
     "zustand": "^5.0.14"
@@ -170,6 +174,7 @@
     "d3": "^7.9.0",
     "esbuild": "^0.27.7",
     "eslint": "^9.39.4",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react-hooks": "^7.1.1",
     "gsap": "^3.15.0",
     "i18next-parser": "^9.4.0",
@@ -177,6 +182,7 @@
     "matter-js": "^0.20.0",
     "nitro": "3.0.1-alpha.2",
     "p5": "^2.3.0",
+    "prettier": "^3.9.4",
     "tailwindcss": "^4.3.0",
     "tsx": "^4.22.4",
     "typescript": "^5.9.3",

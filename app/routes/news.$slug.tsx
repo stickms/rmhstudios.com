@@ -5,6 +5,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getNewsArticleBySlug } from '@/lib/news';
+import { buildCanonical } from '@/lib/seo';
+import { articleSchema, jsonLdScript } from '@/lib/schema';
 import ReactMarkdown from 'react-markdown';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Calendar, ExternalLink } from 'lucide-react';
@@ -32,13 +34,28 @@ const fetchArticle = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/news/$slug')({
   loader: ({ params }) => fetchArticle({ data: params.slug }),
-  head: ({ loaderData }) => ({
+  head: ({ loaderData, params }) => ({
     meta: loaderData
       ? [
           { title: `${loaderData.title} | RMH News` },
           { name: 'description', content: loaderData.description },
         ]
       : [{ title: 'Article Not Found | RMH Studios' }],
+    links: [buildCanonical(`/news/${params.slug}`)],
+    scripts: loaderData
+      ? [
+          jsonLdScript(
+            articleSchema({
+              title: loaderData.title,
+              description: loaderData.description,
+              datePublished: loaderData.date,
+              path: `/news/${params.slug}`,
+              type: 'NewsArticle',
+              section: loaderData.category ?? undefined,
+            }),
+          ),
+        ]
+      : [],
   }),
   component: NewsArticlePage,
 });

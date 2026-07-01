@@ -1,261 +1,169 @@
-Comprehensive Repository Overview: rmhstudios.com
-1. Overall Project Structure
-Next.js 16.1 Full-Stack Application with concurrent frontend and WebSocket server:
+# Codebase Overview — rmhstudios.com
 
-Frontend: Next.js 16 App Router (port 7000)
-Backend: Node.js HTTP + Socket.io server (port 7001)
-Database: PostgreSQL with Prisma ORM
-Package Manager: pnpm workspaces
-Scripts:
-pnpm dev: Runs Next.js + Socket.io server concurrently
-pnpm build: Compiles Next.js + TypeScript server code
-pnpm socket-server: Standalone socket server with tsx
-2. Game Routes & Structure (/app/)
-Playable Games (8 currently):
+A single, ambitious web platform: a social feed, ~20 browser games (several
+multiplayer/3D), full apps (RMHTube, RMHMusic, RMHType, RMHStudy, RMHCode), a
+blog/research system, a coin economy, and a scoped developer API — served by a
+React SSR tier with a fleet of Go realtime microservices behind it.
 
-Slice-It (/slice-it) - Rhythm game with custom songs
-Signal Forge (/signal-forge) - Roguelike deck-building game
-Temple of Joy (/temple-of-joy) - Incremental/progression game
-Altair (/echoes) - 3D dungeon crawler with combat
-Neon Driftway (/neon-driftway) - Racing game (multiplayer support)
-Vega (/vega) - Loop-based roguelike
-Laundry Sort (/laundry-sort) - Puzzle game
-House Always Wins (/house-always-wins) - Text-based narrative game
-Other Routes:
+> **Stack of record:** TanStack Start + Vite 8 + React 19 + Nitro SSR. (This
+> project is **not** Next.js — earlier revisions of this doc said so; that is
+> stale.)
 
-/ - Landing page with Hero, Projects, About, Testimonials, Blog, Merch sections
-/games - Games hub/carousel
-/blog - Blog listing
-/blog/[slug] - MDX blog posts
-/login - Auth login page
-/roadmap - Game roadmap
-3. WebSocket Server (/server/socket-server.ts)
-Runs on port 7001 with CORS support Features:
+---
 
-Slice-It Multiplayer: Lobby system with host management, difficulty modifiers, real-time score/combo/health tracking, song selection
+## 1. Tech stack
 
-Events: join_lobby, select_song, start_game, player_loaded, score_update, player_finished, leave_lobby, toggle_ready, update_difficulty
-Multi-track system with bombs, switching, sudden death, invisible, spin, strict timing modifiers
-Neon Driftway Multiplayer: Racing game lobbies with ability system
+| Layer | Choice |
+|---|---|
+| Framework / router | [TanStack Start](https://tanstack.com/start) (file-based routing) on [Vite 8](https://vite.dev) |
+| SSR runtime | [Nitro](https://nitro.build) |
+| Language | TypeScript (strict) |
+| UI | React 19, Tailwind CSS v4, Framer Motion, Radix primitives |
+| State / data | Zustand, TanStack React Query |
+| DB / ORM | PostgreSQL + Prisma 7 (`@prisma/adapter-pg`) |
+| Auth | Better Auth (email/password + Discord/GitHub/Google), Stripe via `@better-auth/stripe` |
+| Realtime | Socket.io (Node) + a Go microservice fleet (Bazel) |
+| 3D / audio / canvas | React Three Fiber + Rapier, Pixi.js, Howler, Tone.js |
+| i18n | i18next / react-i18next — 32 locales, RTL for ar/ur/fa |
+| Media / OG | satori + `@resvg/resvg-js` (dynamic OG cards), sharp |
 
-Events: ndw:joinLobby, ndw:toggleReady, ndw:startGame, ndw:playerUpdate, ndw:scoreUpdate, ndw:abilityUsed, ndw:playerFinished, ndw:leaveLobby
-Anti-cheat: Ability cooldown (5s), charge limits, position relay at 10Hz
-Lobby Management: Sanitization of inputs, auto-host reassignment on disconnect, cleanup of empty lobbies
+---
 
-4. Authentication System (/lib/auth.ts + /app/api/auth/[...all]/route.ts)
-Using Better Auth v1.4.18 with Prisma adapter:
+## 2. Repository layout
 
-Methods:
-Email/password registration & login
-Discord OAuth integration
-Session-based authentication
-User Model: Includes username, email, password, image, emailVerified
-Client-side: authClient from better-auth/react
-API Route: Catch-all route at /api/auth/[...all] handling all auth flows
-5. Database Schema (/prisma/schema.prisma)
-Auth Models:
+```
+app/                TanStack Start routes (file-based)
+  routes/
+    __root.tsx      Root document: head, theme/locale bootstrap, error + 404 boundaries,
+                    client error reporting + Core Web Vitals (RUM), site-wide JSON-LD
+    _site.tsx       Pathless layout for the public site (sidebar, mobile nav, <main> landmark)
+    _site/          Public pages: feed (index), profiles (u/$userid), messages, explore,
+                    search, achievements, ranked, wallet, admin, developer docs, …
+    api/            Server routes (~316 files): feed, auth, games, AI, og, rum, client-error, …
+    <game>.tsx      Full-screen games/apps (altair, rmhbox, velum2099, slice-it, …)
+    sitemap[.]xml.ts  Dynamic sitemap
+  globals.css       Theme tokens (20+ themes), High-Contrast theme, reduced-motion gate
+  router.tsx        Router config (intent preloading), routeTree.gen.ts (generated)
+components/          React components by feature (~778 files); ui/ holds shared primitives
+lib/                Utilities, schemas, server helpers (~748 files); seo.ts, schema.ts, rum.ts,
+                    client-errors.ts, rate-limit.ts, auth.ts, prisma.server.ts, i18n/
+server/             Node service entrypoints (socket-server, rmhbox, rmhtube, rmhmusic, shared/)
+go-services/        Go port of the backend fleet (Bazel + gazelle) — see §4
+stores/             Zustand stores (theme, locale, feed, …)
+hooks/              Custom hooks (useReducedMotion, useCelebration, useIsMobile, …)
+prisma/             schema.prisma + migrations
+data/               Static game data (JSON)
+scripts/            One-off scripts (seeding, i18n, OG/icon generation, coverage, …)
+public/             Static assets (favicon, manifest, og/icons, robots.txt)
+deploy/             Apache vhosts, Helm chart (Traefik), Docker bases, runbooks
+testing/            Vitest tests (RMHBox phases, game logic, auth)
+docs/               This overview, the improvement plan, per-feature design docs, runbooks
+locales/            32 locale dirs × 66 namespaces (en is the reference)
+```
 
-User - Primary user with sessions/accounts
-Session - Tokenized sessions with IP/User-Agent tracking
-Account - OAuth providers (Discord)
-Verification - Email verification tokens
-Game Profile Models (all linked to User):
+---
 
-AltairPlayer - bestTime, totalKills, totalXP
-LaundryPlayer - highScore, gamesPlayed
-Player (Slice-It) - totalScore, gamesPlayed
-VegaPlayer - highestLoop, highestLevel
-SignalForgePlayer - highScore, floorReached, savedRunState (JSON)
-TempleOfJoySave - Full game state as JSON
-NeonDriftwayPlayer - highScore, bestDistance, bestTimeMs, bestLevel
-Slice-It Music Library Models:
+## 3. Runtime & ports (local `pnpm dev`)
 
-Song - Uploaded songs with analysisData (JSON beatmap), plays counter
-SongLeaderboard - High scores per song with modifiers
-SongPlay - Play count tracking per user
-SongLike / SongRating - User engagement
-SongComment - Community comments
-Indexes on title, artist, uploadedBy for fast queries
-6. Documentation (/docs/)
-Game Design Docs:
+`pnpm dev` runs Vite (the SSR app) plus the Node WebSocket servers concurrently.
 
-temple-of-joy/ - Game design, implementation plan, patches 1-2, content expansion
-signal-forge/ - Production spec, improvement plan, design docs
-rmhbox/ - Minigame ideas
-7. Specifications (/specs/)
-Game Specifications:
+| Service | Port | Role |
+|---|---|---|
+| web (Vite/Nitro) | 7005 | React SSR app + API routes |
+| socket-server | 7001 | Games realtime hub (Slice It!, Neon Driftway, …) |
+| rmhmusic | 7002 | Collaborative listening |
+| rmhtube | 7003 | Watch-together |
+| rmhbox | 7676 | Party-game hub |
 
-slice-it.md - Detailed rhythm game spec
-signal-forge.md - Deck-building roguelike spec
-vega.md - Loop-based game spec
-house-always-wins.md - Narrative game spec
-neon-driftway.md + neon-driftway-update.md - Racing game specs
-8. Component Organization (/components/)
-Structure:
+In production these are fronted by the Go **gateway** (§4).
 
-Code
-/components/
-  /ui/               - Reusable UI: button, card, dialog, slider, input, 
-                      custom (NeonButton, GlitchText, FlipCard, PulsatingOrb, etc.)
-  /site/             - Global: Navbar, Shell (layout wrapper)
-  /homepage/         - HeroSection, ProjectsSection, AboutSection, 
-                      TestimonialsSection, BlogSection, MerchSection, FooterSection
-  /effects/          - ParticleField, FloatingShapes
-  /blog/             - BlogList, MDXAnimations, ShareButton
-  /[game-name]/      - Game-specific: AltairGame, SignalForgeGame, 
-                      TempleOfJoyGame, NeonDriftwayGame, etc.
-  /Providers.tsx     - Root context/provider setup
-Game-Specific Components:
+---
 
-Slice-It: GameCanvas, HUD, SongLibrary, CalibrationScreen, MultiplayerSidebar, MiniTrack
-Signal Forge: SignalForgeGame + 8 UI screens (Landing, Combat HUD, Pause Menu, Victory, CardModals, etc.) + canvas helpers
-Temple of Joy: TempleOfJoyGame + 13 UI panels (Upgrades, Relics, Events, Achievements, Stats, etc.)
-Altair: 3D/2D modes with GameCanvas3D, PlayerController, EnemyManager, DungeonGenerator, LeaderboardUI
-Neon Driftway: NeonDriftwayGame + MultiplayerLobby
-9. Public Assets (/public/)
-Structure:
+## 4. Go microservice fleet (`go-services/`)
 
-/images - Game graphics, merch photos (mug, tee, stickers)
-/music - Audio tracks and soundscapes
-/neon-driftway-sprites - Sprite assets for racing game
-favicon.svg - Site favicon
-10. Key Libraries (/lib/)
-Utilities & Services:
+The backend service layer is ported to Go (built with Bazel + gazelle). The
+React SSR `web` tier stays on Node; everything behind it has a Go equivalent.
+The Node services are preserved as reversible fallbacks.
 
-auth.ts / auth-client.ts - Better Auth setup
-prisma.ts - Prisma client singleton
-rate-limit.ts - IP-based rate limiting for API endpoints
-blog.ts - MDX blog post parsing
-utils.ts - Common utilities
-Game-specific:
-/game/ - GameEngine, BeatMapGenerator, MultiplayerFactory, types
-/slice-it/ - Slice-It specific logic
-/signal-forge/ - Signal Forge specific logic
-/temple-of-joy/ - Temple of Joy logic
-/altair/, /neon-driftway/, /vega/, /cursed-logic/, /house-always-wins/ - Game logic
-11. API Endpoints (/app/api/)
-Game Scores:
+| Service | Port | Role |
+|---|---|---|
+| `gateway` | 7005 | Edge/BFF: reverse-proxies the SSR app + hubs, validates sessions into trusted headers, `/health` + `/metrics` |
+| `gamehub` | 7001 | Games realtime hub |
+| `rmhmusic` | 7002 | Collaborative listening hub |
+| `rmhtube` | 7003 | Watch-together hub |
+| `rmhbox` | 7676 | Party-game hub |
+| `assets` | 7007 | Range-aware S3/R2 asset streaming (`/library` `/music` `/models` `/sprites`) |
+| `status` | 7008 | Standalone health dashboard; survives outages |
+| `supervisor` | 9090 | Runs background workers (discord-bot, recap, doctrine, vibe, bot) as goroutines |
 
-POST /api/[game-name]/score - Submit score (rate-limited)
-GET /api/[game-name]/leaderboard - Fetch leaderboard
-Slice-It Specific (Music Library):
+```bash
+cd go-services
+bazel run //:gazelle              # regenerate BUILD files after adding Go files
+bazel test //go-services/...      # run all Go tests
+bazel build //go-services/images/...
+```
 
-POST /api/slice-it/songs/upload - Upload song
-GET /api/slice-it/songs - List songs
-GET /api/slice-it/songs/[id] - Song details
-GET /api/slice-it/songs/stream/[id] - Stream audio
-POST /api/slice-it/songs/[id]/like - Like song
-POST /api/slice-it/songs/[id]/comments - Add comment
-POST /api/slice-it/songs/[id]/play - Track play
-PATCH /api/slice-it/songs/[id]/patch-analysis - Update beatmap analysis
-Signal Forge (Saves):
+---
 
-POST /api/signal-forge/save - Save game state
-GET /api/signal-forge/load - Load game state
-POST /api/signal-forge/abandon - Abandon run
-Temple of Joy:
+## 5. Cross-cutting conventions
 
-POST /api/temple-of-joy/save - Save game state
-Auth:
+- **Routing/data:** routes live in `app/routes`; `routeTree.gen.ts` is generated
+  by the TanStack plugin on dev/build — **add a route file, then let a `vite dev`
+  or build regenerate the tree** (there is no standalone CLI wired). API routes
+  use `createFileRoute('/api/...')({ server: { handlers: { GET, POST } } })`.
+- **Server-only code:** `*.server.ts(x)` files are stubbed out of the client
+  bundle by a Vite plugin (`vite.config.ts`). Heavy client-only deps (three,
+  monaco, pixi, tone, …) are externalized from the Nitro server bundle and
+  manually chunked.
+- **Head / SEO:** per-route `head()` returns `{ meta, links, scripts }`. Use
+  `lib/seo.ts` (`buildMeta`, `buildCanonical`) and `lib/schema.ts` (JSON-LD
+  builders). Site-wide Organization/WebSite JSON-LD is emitted from `__root`.
+- **Errors & telemetry:** route `errorComponent`/`notFoundComponent` render
+  `components/errors/*`; uncaught client errors and Core Web Vitals are beaconed
+  to `/api/client-error` and `/api/rum` (see `lib/client-errors.ts`, `lib/rum.ts`).
+- **Auth/validation:** `auth` from `lib/auth.ts`; validate API input with zod and
+  rate-limit writes/AI/uploads via `lib/rate-limit.ts` (`rateLimit`, `getClientIp`).
+- **i18n:** user-facing strings go through `t(...)`. Run `pnpm i18n:coverage` to
+  see per-locale key coverage vs. `en`.
+- **Theming/motion:** 20+ themes as `.style-*` classes over CSS tokens in
+  `globals.css`; a global `prefers-reduced-motion` gate is respected there and via
+  the `useReducedMotion()` hook.
+- **Accessibility:** `eslint-plugin-jsx-a11y` runs at "warn"; native/Radix
+  primitives preferred; the site shell exposes a `<main>` landmark + skip link.
 
-[...all] /api/auth/* - Better Auth endpoints
-12. Build & Deployment
-Production Build:
+---
 
-Compiles Next.js app + TypeScript server code to dist-server/
-Runs concurrent processes on ports 7000 (Next.js) and 7001 (Socket.io)
-Database:
+## 6. Build, test, deploy
 
-PostgreSQL with Prisma migrations
-Commands: db:push, db:migrate, db:migrate:prod, db:reset
-Key Dependencies:
+```bash
+pnpm install
+pnpm db:push            # apply schema to a local Postgres
+pnpm dev                # Vite + WS servers → http://localhost:7005
+pnpm exec tsc --noEmit  # typecheck    pnpm lint    pnpm format
+pnpm build              # Vite/Nitro build + esbuild bundles the WS servers
+```
 
-React 19.2 + Next.js 16
-Prisma 7.4 + PostgreSQL adapter
-Socket.io 4.8 (realtime multiplayer)
-Three.js + React Three Fiber + Rapier (3D games)
-Zustand (state management)
-Tailwind CSS 4 (styling)
-Framer Motion (animations)
-MDX Remote (blog)
-Better Auth (authentication)
-This is a sophisticated indie game studio platform with 8 playable games, real-time multiplayer support, persistent user accounts, social features (Discord OAuth, comments, ratings), and a blog system. The architecture cleanly separates game logic, UI, multiplayer sync, and persistent storage.
+- **Web tier:** production runs the Nitro server + WS servers under PM2; a
+  blue-green `deploy/hotswap-web.sh` swaps the web container with a health-gated
+  flip. Apache (behind Cloudflare TLS) sets security headers today; the Helm
+  path fronts everything with the Go **gateway** via Traefik, and a Traefik
+  middleware replicates those headers.
+- **Go tier:** Bazel build/test + a Postgres-backed e2e + `helm lint`, all in
+  `.github/workflows/go-microservices.yml`.
+- **CI overall:** Go microservices workflow + an LLM `senior-review` gate +
+  Dependabot. (A dedicated frontend typecheck/lint/build gate is recommended —
+  see `docs/website-improvement-plan.md`.)
 
-Summary of Patterns in rmhstudios.com Codebase
-1. Design Documentation Structure
-Signal Forge (docs/signal-forge/)
+---
 
-Files: 5 docs (signal-forge.md, signal-forge-production-spec.md, signal-forge-better.md, improvement-plan.md, web-game-design-idea.md)
-Document Format: Comprehensive markdown with numbered sections (1-20+)
-Starts with high-level overview (genre, session length, pillars)
-Detailed systems breakdown (combat, progression, cards, relics, enemies)
-Technical implementation notes (Canvas 2D, WebGL considerations, deterministic RNG)
-MVP scope and risk mitigation
-Metrics for success (player retention, session length targets)
-Style: Implementation-ready, technical depth with tuning parameters
-Temple of Joy (docs/temple-of-joy/)
+## 7. Where to look first
 
-Files: 5 docs (game-design.md, implementation-plan.md, patch-1.md, patch-2.md, content-expansion.md)
-Document Format: Modular, iterative design with visual design specs
-Detailed color palettes for light/dark modes (hex values)
-Typography specs (serif for headings, sans-serif for numbers)
-Philosophical framing (Hedonism doctrine)
-Core loop diagrams with currency systems
-Patch/update structure tracks evolution
-2. Game Specifications Structure (specs/)
-neon-driftway.md - Exhaustive implementation spec (950+ lines)
-
-Format: 40+ numbered sections with extreme detail
-Includes: quick summary, goals/non-goals, pillars, core loop
-Technical architecture: state machine, input handling, physics
-Data-driven obstacle definitions with pooling strategies
-Hard requirements: "Impossible spawn" prevention algorithm
-Deterministic debug mode spec (seed management, frame stepping)
-Milestone breakdown: 4 phases from prototype to leaderboards
-Cursor implementation instructions embedded
-"Definition of Done" checklist (v1 release)
-Other specs: slice-it.md, vega.md, house-always-wins.md — similar exhaustive approach
-
-3. Authentication Setup
-lib/auth.ts (Server-side)
-
-Uses better-auth framework with Prisma adapter
-PostgreSQL provider
-Social auth: Discord (with clientId/clientSecret)
-Email/password auth enabled
-Custom user field: username (optional, input-enabled)
-lib/auth-client.ts (Client-side)
-
-React client from better-auth
-Base URL: NEXT_PUBLIC_BETTER_AUTH_URL env var (fallback to localhost:3000)
-Minimal—just initialization
-app/login/page.tsx
-
-'use client' directive (React component)
-Supports dual auth: Discord OAuth + email/password
-Form states: sign-up toggle, username/email/password fields
-callbackURL parameter for post-login redirect
-Error handling with visual feedback
-Loading states on buttons
-4. Auth Gating Pattern (Game Pages)
-Game pages (slice-it/page.tsx, signal-forge/page.tsx, neon-driftway/page.tsx)
-
-No explicit auth checks visible—pages are public
-Architecture: Simple layout wrapper + game component
-Structure:
-Code
-<main> (fixed inset-0)
-  <header> (back button | title)
-  <div> (game canvas/component)
-</main>
-Uses DarkModeWrapper for theme support
-Suspense fallback for lazy-loaded GameCanvas
-Pattern identified: Auth is optional/implicit—games run without login, but can use authClient for features (leaderboards, score submission).
-
-Key Patterns Summary
-Pattern	Location	Details
-Doc Structure	docs/	Numbered sections, implementation-ready, technical depth
-Auth	lib/auth*.ts	Better-auth + Prisma; Discord + email/password
-Game Pages	app/[game]/page.tsx	Public routes; minimal layout wrapper; Suspense boundaries
-Scoring	GameOver.tsx	Server submission; modifiers tracked; unranked filtering
-State	lib/store/ (useGameStore)	Centralized game state (score, combo, multiplier, userName, modifiers)
+| I want to… | Start at |
+|---|---|
+| Understand the shell / global setup | `app/routes/__root.tsx`, `app/routes/_site.tsx`, `components/Providers.tsx` |
+| Add a page | a new file under `app/routes/_site/` |
+| Add an API endpoint | a new file under `app/routes/api/` (then regenerate the route tree) |
+| Work on the feed | `components/feed/*`, `app/routes/api/rmharks.ts`, `lib/feed/*` |
+| Work on a game | `app/routes/<game>.tsx` + `components/<game>/*` + `server/socket-server/*` (or `go-services/`) |
+| Change theming | `app/globals.css`, `stores/themeStore.ts` |
+| Understand priorities / open work | `docs/website-improvement-plan.md` |

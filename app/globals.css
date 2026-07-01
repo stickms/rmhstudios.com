@@ -186,6 +186,55 @@
   --foreground: #2a2b30;
 }
 
+/* High Contrast — maximal legibility (WCAG AAA): pure black, pure white text,
+   yellow accent, bright white borders. For low-vision / high-glare users. */
+.style-high-contrast {
+  --site-bg: #000000;
+  --site-bg-subtle: #000000;
+  --site-surface: #000000;
+  --site-surface-hover: #1a1a1a;
+  --site-surface-active: #2a2a2a;
+  --site-border: #ffffff;
+  --site-border-bright: #ffffff;
+  --site-text: #ffffff;
+  --site-text-muted: #ededed;
+  --site-text-dim: #cfcfcf;
+  --site-accent: #ffff00;
+  --site-accent-fg: #000000;
+  --site-accent-hover: #e6e600;
+  --site-accent-dim: rgba(255, 255, 0, 0.18);
+  --site-success: #00e676;
+  --site-danger: #ff8080;
+  --site-warning: #ffd54a;
+  --site-shadow: 0 0 0 1px #ffffff;
+  --site-border-width: 2px;
+  --background: #000000;
+  --foreground: #ffffff;
+}
+
+/* Respect the OS "reduce motion" preference site-wide: neutralize enter
+   animations, transitions and smooth scrolling that can trigger vestibular
+   discomfort, while preserving essential loading feedback (spinners, skeleton
+   pulse). Games render motion via canvas/WebGL, so gameplay is unaffected. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-spin {
+    animation-duration: 0.8s !important;
+    animation-iteration-count: infinite !important;
+  }
+  .animate-pulse {
+    animation-duration: 2s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
 /* Gamer — neon green on pitch black, sharp edges, monospace */
 .style-gamer {
   --site-bg: #0a0a0a;

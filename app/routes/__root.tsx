@@ -13,6 +13,11 @@ import { getRequest } from "@tanstack/react-start/server";
 import { isDiscordActivity } from "@/lib/discord-sdk";
 import { Providers } from "@/components/Providers";
 import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
+import { RouteErrorFallback } from "@/components/errors/RouteErrorFallback";
+import { NotFound } from "@/components/errors/NotFound";
+import { installGlobalErrorHandlers } from "@/lib/client-errors";
+import { initWebVitals } from "@/lib/rum";
+import { organizationSchema, websiteSchema, jsonLdScript } from "@/lib/schema";
 import { auth } from "@/lib/auth";
 import appCss from "@/app/globals.css?url";
 import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
@@ -49,7 +54,7 @@ const getInitialUser = createServerFn({ method: "GET" }).handler(async () => {
  * Inline script that applies the persisted theme class to <html> before
  * React hydrates, preventing a flash-of-unstyled-content (FOUC).
  */
-const themeScript = `(function(){try{var m={default:"#000",light:"#f5f5f7",gamer:"#0a0a0a",anime:"#fff5f9",musical:"#0c0e1a",hyperpop:"#120018","comic-book":"#fffde0",cinema:"#0a0a08","gen-z":"#1a1820",boomer:"#f5f0e8",aries:"#1a0a0a",taurus:"#141a10",gemini:"#0e0e22",cancer:"#0c1018",leo:"#140e1e",virgo:"#f4f6f2",libra:"#f8f0f6",scorpio:"#0e0608",sagittarius:"#100c1e",capricorn:"#141416",aquarius:"#060e18",pisces:"#0c1018",spring:"#f2f8f0",summer:"#fff8f0",autumn:"#1a1410",winter:"#0a0e14",elementary:"#fffef4","middle-school":"#181e24","high-school":"#121418",university:"#f5f0e8"};var s=localStorage.getItem("rmh-style");if(s&&s!=="default"){document.documentElement.classList.add("style-"+s)}var bg=m[s||"default"]||m.default;window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}}catch(e){}})()`;
+const themeScript = `(function(){try{var m={default:"#000",light:"#f5f5f7","high-contrast":"#000",gamer:"#0a0a0a",anime:"#fff5f9",musical:"#0c0e1a",hyperpop:"#120018","comic-book":"#fffde0",cinema:"#0a0a08","gen-z":"#1a1820",boomer:"#f5f0e8",aries:"#1a0a0a",taurus:"#141a10",gemini:"#0e0e22",cancer:"#0c1018",leo:"#140e1e",virgo:"#f4f6f2",libra:"#f8f0f6",scorpio:"#0e0608",sagittarius:"#100c1e",capricorn:"#141416",aquarius:"#060e18",pisces:"#0c1018",spring:"#f2f8f0",summer:"#fff8f0",autumn:"#1a1410",winter:"#0a0e14",elementary:"#fffef4","middle-school":"#181e24","high-school":"#121418",university:"#f5f0e8"};var s=localStorage.getItem("rmh-style");if(s&&s!=="default"){document.documentElement.classList.add("style-"+s)}var bg=m[s||"default"]||m.default;window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}}catch(e){}})()`;
 
 /**
  * Inline guard that reads the locale cookie and sets lang/dir on <html> before
@@ -137,10 +142,14 @@ export const Route = createRootRoute({
         { children: themeScript },
         { children: localeScript },
         { children: deferredFontsScript },
+        // Site-wide structured data (Organization + WebSite w/ SearchAction).
+        jsonLdScript([organizationSchema(), websiteSchema()]),
       ],
     };
   },
   component: RootComponent,
+  errorComponent: RouteErrorFallback,
+  notFoundComponent: NotFound,
   shellComponent: RootDocument,
 });
 
@@ -179,6 +188,14 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { user: initialUser, locale, i18nResources } = Route.useLoaderData();
+
+  // Install global error/unhandled-rejection reporting + Core Web Vitals
+  // collection once on the client so runtime errors and perf regressions
+  // surface in the server logs instead of failing silently.
+  useEffect(() => {
+    installGlobalErrorHandlers();
+    initWebVitals();
+  }, []);
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.
   // Redirect any non-discord path back to /discord/rmhbox, preserving the SDK

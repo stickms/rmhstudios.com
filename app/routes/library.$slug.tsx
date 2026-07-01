@@ -9,6 +9,8 @@
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getBook } from '@/lib/library/library.server';
+import { buildCanonical } from '@/lib/seo';
+import { bookSchema, jsonLdScript } from '@/lib/schema';
 import { BookReader } from '@/components/library/BookReader';
 import { EpubReader } from '@/components/library/EpubReader';
 import '@/components/library/library.css';
@@ -26,9 +28,10 @@ export const Route = createFileRoute('/library/$slug')({
     if (!book) throw notFound();
     return { book };
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     const title = loaderData?.book.title ?? 'Book';
     const description = loaderData?.book.description ?? 'Read this book in the RMH Studios library.';
+    const author = (loaderData?.book as { author?: string | null } | undefined)?.author ?? undefined;
     return {
       meta: [
         { title: `${title} | RMH Studios Library` },
@@ -37,6 +40,19 @@ export const Route = createFileRoute('/library/$slug')({
         { property: 'og:description', content: description },
         { property: 'og:site_name', content: 'RMH Studios' },
       ],
+      links: [buildCanonical(`/library/${params.slug}`)],
+      scripts: loaderData
+        ? [
+            jsonLdScript(
+              bookSchema({
+                name: title,
+                description,
+                path: `/library/${params.slug}`,
+                author: author ?? undefined,
+              }),
+            ),
+          ]
+        : [],
     };
   },
   component: Reader,

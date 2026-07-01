@@ -113,6 +113,7 @@ import { Route as ApiWrappedRouteImport } from './routes/api/wrapped'
 import { Route as ApiUserBuildsRouteImport } from './routes/api/user-builds'
 import { Route as ApiStreakRouteImport } from './routes/api/streak'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
+import { Route as ApiRumRouteImport } from './routes/api/rum'
 import { Route as ApiRmharksRouteImport } from './routes/api/rmharks'
 import { Route as ApiRecapRouteImport } from './routes/api/recap'
 import { Route as ApiProgressRouteImport } from './routes/api/progress'
@@ -123,6 +124,7 @@ import { Route as ApiImageProxyRouteImport } from './routes/api/image-proxy'
 import { Route as ApiGiftSubRouteImport } from './routes/api/gift-sub'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as ApiExploreRouteImport } from './routes/api/explore'
+import { Route as ApiClientErrorRouteImport } from './routes/api/client-error'
 import { Route as ApiBookmarksRouteImport } from './routes/api/bookmarks'
 import { Route as ApiAnnouncementsRouteImport } from './routes/api/announcements'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
@@ -1030,6 +1032,11 @@ const ApiSearchRoute = ApiSearchRouteImport.update({
   path: '/api/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRumRoute = ApiRumRouteImport.update({
+  id: '/api/rum',
+  path: '/api/rum',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiRmharksRoute = ApiRmharksRouteImport.update({
   id: '/api/rmharks',
   path: '/api/rmharks',
@@ -1078,6 +1085,11 @@ const ApiFeedbackRoute = ApiFeedbackRouteImport.update({
 const ApiExploreRoute = ApiExploreRouteImport.update({
   id: '/api/explore',
   path: '/api/explore',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiClientErrorRoute = ApiClientErrorRouteImport.update({
+  id: '/api/client-error',
+  path: '/api/client-error',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBookmarksRoute = ApiBookmarksRouteImport.update({
@@ -3153,6 +3165,7 @@ export interface FileRoutesByFullPath {
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/bookmarks': typeof ApiBookmarksRoute
+  '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
@@ -3163,6 +3176,7 @@ export interface FileRoutesByFullPath {
   '/api/progress': typeof ApiProgressRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
+  '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
@@ -3632,6 +3646,7 @@ export interface FileRoutesByTo {
   '/wrapped': typeof SiteWrappedRoute
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/bookmarks': typeof ApiBookmarksRoute
+  '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
@@ -3642,6 +3657,7 @@ export interface FileRoutesByTo {
   '/api/progress': typeof ApiProgressRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
+  '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
@@ -4134,6 +4150,7 @@ export interface FileRoutesById {
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/bookmarks': typeof ApiBookmarksRoute
+  '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
@@ -4144,6 +4161,7 @@ export interface FileRoutesById {
   '/api/progress': typeof ApiProgressRoute
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
+  '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRoute
   '/api/streak': typeof ApiStreakRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
@@ -4639,6 +4657,7 @@ export interface FileRouteTypes {
     | '/altair/multiplayer'
     | '/api/announcements'
     | '/api/bookmarks'
+    | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
     | '/api/gift-sub'
@@ -4649,6 +4668,7 @@ export interface FileRouteTypes {
     | '/api/progress'
     | '/api/recap'
     | '/api/rmharks'
+    | '/api/rum'
     | '/api/search'
     | '/api/streak'
     | '/api/user-builds'
@@ -5118,6 +5138,7 @@ export interface FileRouteTypes {
     | '/wrapped'
     | '/api/announcements'
     | '/api/bookmarks'
+    | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
     | '/api/gift-sub'
@@ -5128,6 +5149,7 @@ export interface FileRouteTypes {
     | '/api/progress'
     | '/api/recap'
     | '/api/rmharks'
+    | '/api/rum'
     | '/api/search'
     | '/api/streak'
     | '/api/user-builds'
@@ -5619,6 +5641,7 @@ export interface FileRouteTypes {
     | '/altair/multiplayer'
     | '/api/announcements'
     | '/api/bookmarks'
+    | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
     | '/api/gift-sub'
@@ -5629,6 +5652,7 @@ export interface FileRouteTypes {
     | '/api/progress'
     | '/api/recap'
     | '/api/rmharks'
+    | '/api/rum'
     | '/api/search'
     | '/api/streak'
     | '/api/user-builds'
@@ -6102,6 +6126,7 @@ export interface RootRouteChildren {
   VoidBreakerRoute: typeof VoidBreakerRoute
   ApiAnnouncementsRoute: typeof ApiAnnouncementsRouteWithChildren
   ApiBookmarksRoute: typeof ApiBookmarksRoute
+  ApiClientErrorRoute: typeof ApiClientErrorRoute
   ApiExploreRoute: typeof ApiExploreRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
   ApiGiftSubRoute: typeof ApiGiftSubRoute
@@ -6112,6 +6137,7 @@ export interface RootRouteChildren {
   ApiProgressRoute: typeof ApiProgressRoute
   ApiRecapRoute: typeof ApiRecapRoute
   ApiRmharksRoute: typeof ApiRmharksRouteWithChildren
+  ApiRumRoute: typeof ApiRumRoute
   ApiSearchRoute: typeof ApiSearchRoute
   ApiStreakRoute: typeof ApiStreakRoute
   ApiUserBuildsRoute: typeof ApiUserBuildsRouteWithChildren
@@ -7067,6 +7093,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rum': {
+      id: '/api/rum'
+      path: '/api/rum'
+      fullPath: '/api/rum'
+      preLoaderRoute: typeof ApiRumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/rmharks': {
       id: '/api/rmharks'
       path: '/api/rmharks'
@@ -7135,6 +7168,13 @@ declare module '@tanstack/react-router' {
       path: '/api/explore'
       fullPath: '/api/explore'
       preLoaderRoute: typeof ApiExploreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/client-error': {
+      id: '/api/client-error'
+      path: '/api/client-error'
+      fullPath: '/api/client-error'
+      preLoaderRoute: typeof ApiClientErrorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/bookmarks': {
@@ -10975,6 +11015,7 @@ const rootRouteChildren: RootRouteChildren = {
   VoidBreakerRoute: VoidBreakerRoute,
   ApiAnnouncementsRoute: ApiAnnouncementsRouteWithChildren,
   ApiBookmarksRoute: ApiBookmarksRoute,
+  ApiClientErrorRoute: ApiClientErrorRoute,
   ApiExploreRoute: ApiExploreRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
   ApiGiftSubRoute: ApiGiftSubRoute,
@@ -10985,6 +11026,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiProgressRoute: ApiProgressRoute,
   ApiRecapRoute: ApiRecapRoute,
   ApiRmharksRoute: ApiRmharksRouteWithChildren,
+  ApiRumRoute: ApiRumRoute,
   ApiSearchRoute: ApiSearchRoute,
   ApiStreakRoute: ApiStreakRoute,
   ApiUserBuildsRoute: ApiUserBuildsRouteWithChildren,

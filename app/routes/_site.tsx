@@ -8,6 +8,8 @@
 
 import { createFileRoute, Outlet } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
+import { NotFound } from '@/components/errors/NotFound';
 import { LeftSidebar } from '@/components/feed/LeftSidebar';
 import { MobileNav } from '@/components/feed/MobileNav';
 import { MobileSidebarShell } from '@/components/feed/MobileSidebarShell';
@@ -18,6 +20,9 @@ import '@/components/feed/feed.css';
 
 export const Route = createFileRoute('/_site')({
   component: SiteLayout,
+  // Keep the sidebar shell around errors/404s that occur on site routes.
+  errorComponent: RouteErrorFallback,
+  notFoundComponent: NotFound,
 });
 
 function SiteLayout() {
@@ -41,12 +46,18 @@ function SiteLayout() {
             <LeftSidebar />
           </aside>
         </div>
-        <Outlet />
+        {/* `display:contents` keeps the flex layout identical while exposing a
+            real <main> landmark and giving the skip link a focus target. */}
+        <main id="main-content" tabIndex={-1} className="contents">
+          <Outlet />
+        </main>
       </div>
 
       {/* Mobile: page content slides right to reveal the left sidebar */}
       <MobileSidebarShell>
-        <Outlet />
+        <main className="contents">
+          <Outlet />
+        </main>
       </MobileSidebarShell>
 
       {/* Mobile bottom nav */}

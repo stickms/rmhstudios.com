@@ -5,6 +5,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getPostBySlug } from '@/lib/blog';
+import { buildCanonical } from '@/lib/seo';
+import { articleSchema, jsonLdScript } from '@/lib/schema';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
@@ -46,11 +48,25 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/blog/$slug')({
   loader: ({ params }) => fetchPost({ data: params.slug }),
-  head: ({ loaderData }) => ({
+  head: ({ loaderData, params }) => ({
     meta: [
       { title: `${loaderData?.title ?? 'Post'} | RMH Studios Devlog` },
-      { name: 'description', content: loaderData?.description as string ?? '' },
+      { name: 'description', content: (loaderData?.description as string) ?? '' },
     ],
+    links: [buildCanonical(`/blog/${params.slug}`)],
+    scripts: loaderData
+      ? [
+          jsonLdScript(
+            articleSchema({
+              title: loaderData.title as string,
+              description: loaderData.description as string | undefined,
+              datePublished: loaderData.date as string | undefined,
+              path: `/blog/${params.slug}`,
+              type: 'BlogPosting',
+            }),
+          ),
+        ]
+      : [],
   }),
   component: BlogPost,
 });

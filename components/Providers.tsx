@@ -144,6 +144,7 @@ const THEME_BG: Record<SiteStyle, string> = {
   // while the app chrome stayed black.
   default: "#000",
   light: "#f5f5f7",
+  "high-contrast": "#000",
   gamer: "#0a0a0a",
   anime: "#fff5f9",
   musical: "#0c0e1a",

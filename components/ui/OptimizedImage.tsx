@@ -1,4 +1,4 @@
-import { ImgHTMLAttributes } from 'react';
+import { ImgHTMLAttributes, memo } from 'react';
 
 interface OptimizedImageProps extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'srcSet'> {
   /** Image source URL */
@@ -76,7 +76,7 @@ export function generateSrcSet(src: string, quality?: number, format?: string): 
  * Optimized image component that serves resized/converted images
  * via Sharp on the server. Generates responsive srcSet for all images.
  */
-export function OptimizedImage({
+function OptimizedImageImpl({
   src,
   alt,
   width,
@@ -119,3 +119,9 @@ export function OptimizedImage({
     />
   );
 }
+
+/**
+ * Memoized: images recur throughout feed/library/build grids, so skipping
+ * re-renders when props are unchanged avoids redundant srcSet recomputation.
+ */
+export const OptimizedImage = memo(OptimizedImageImpl);

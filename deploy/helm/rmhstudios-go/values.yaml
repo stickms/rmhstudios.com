@@ -117,6 +117,12 @@ ingress:
   className: traefik
   host: REPLACE_ME.example.com
   annotations: {}
+  # Emit security headers (HSTS, nosniff, Referrer-Policy, frame-ancestors CSP,
+  # and a Report-Only CSP for tuning) via a Traefik Middleware so header policy
+  # survives the cutover from the Apache vhost to the Go gateway path. See
+  # templates/security-headers-middleware.yaml.
+  securityHeaders:
+    enabled: true
 
 resources:
   requests: { cpu: 25m, memory: 32Mi }
