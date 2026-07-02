@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { Album, AlbumSlide } from '@/lib/albums';
+import { albumCoverVTName } from '@/lib/view-transition';
 import './album-viewer.css';
 
 const MAX_SCALE = 6;
@@ -442,6 +443,7 @@ export function AlbumViewer({ album }: { album: Album }) {
       <div
         ref={stageRef}
         className="av__stage"
+        style={{ viewTransitionName: albumCoverVTName(album.id) }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

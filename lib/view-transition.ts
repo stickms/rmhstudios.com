@@ -50,3 +50,8 @@ export function runViewTransition(update: () => void | Promise<void>): void {
 export function postMediaVTName(postId: string): string {
   return `vt-post-media-${postId}`;
 }
+
+/** Stable shared-element name for an album's cover across grid ↔ viewer. */
+export function albumCoverVTName(albumId: string): string {
+  return `vt-album-cover-${albumId}`;
+}

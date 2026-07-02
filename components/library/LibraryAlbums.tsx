@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { albumCount, type Album } from '@/lib/albums';
 import { useReveal } from '@/components/library/LibraryReveal';
 import { BlurImage } from '@/components/ui/BlurImage';
+import { ViewTransitionLink } from '@/components/ui/ViewTransitionLink';
+import { albumCoverVTName } from '@/lib/view-transition';
 
 export function LibraryAlbums({
   albums: allAlbums,
@@ -71,13 +73,13 @@ function AlbumCard({ album }: { album: Album }) {
 
   return (
     <div ref={revealRef} className="lib-reveal" role="listitem">
-      <Link
+      <ViewTransitionLink
         to="/library/albums/$albumId"
         params={{ albumId: album.id }}
         className="lib-album"
         aria-label={t('open-album', { title: album.title, defaultValue: 'Open {{title}}' })}
       >
-        <div className="lib-album__cover">
+        <div className="lib-album__cover" style={{ viewTransitionName: albumCoverVTName(album.id) }}>
           <BlurImage
             src={album.cover}
             alt={album.title}
@@ -107,7 +109,7 @@ function AlbumCard({ album }: { album: Album }) {
             })}
           </p>
         </div>
-      </Link>
+      </ViewTransitionLink>
     </div>
   );
 }
