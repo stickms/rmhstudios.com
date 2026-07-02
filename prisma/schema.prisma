@@ -1486,6 +1486,10 @@ model UserProfile {
   tipGoal               Int?
   tipGoalLabel          String?   @db.VarChar(80)
 
+  // First-run onboarding checklist: when the completion reward was claimed
+  // (null = not claimed; also acts as the atomic double-claim guard)
+  onboardingRewardedAt  DateTime?
+
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 

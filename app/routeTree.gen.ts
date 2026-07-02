@@ -162,6 +162,7 @@ import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/in
 import { Route as ApiRankedIndexRouteImport } from './routes/api/ranked/index'
 import { Route as ApiPredictionsIndexRouteImport } from './routes/api/predictions/index'
 import { Route as ApiPersonasIndexRouteImport } from './routes/api/personas/index'
+import { Route as ApiOnboardingIndexRouteImport } from './routes/api/onboarding/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiGroupChatsIndexRouteImport } from './routes/api/group-chats/index'
 import { Route as ApiCommunitiesIndexRouteImport } from './routes/api/communities/index'
@@ -1284,6 +1285,11 @@ const ApiPredictionsIndexRoute = ApiPredictionsIndexRouteImport.update({
 const ApiPersonasIndexRoute = ApiPersonasIndexRouteImport.update({
   id: '/api/personas/',
   path: '/api/personas/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOnboardingIndexRoute = ApiOnboardingIndexRouteImport.update({
+  id: '/api/onboarding/',
+  path: '/api/onboarding/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
@@ -3482,6 +3488,7 @@ export interface FileRoutesByFullPath {
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/onboarding/': typeof ApiOnboardingIndexRoute
   '/api/personas/': typeof ApiPersonasIndexRoute
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
@@ -3970,6 +3977,7 @@ export interface FileRoutesByTo {
   '/api/communities': typeof ApiCommunitiesIndexRoute
   '/api/group-chats': typeof ApiGroupChatsIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
+  '/api/onboarding': typeof ApiOnboardingIndexRoute
   '/api/personas': typeof ApiPersonasIndexRoute
   '/api/predictions': typeof ApiPredictionsIndexRoute
   '/api/ranked': typeof ApiRankedIndexRoute
@@ -4484,6 +4492,7 @@ export interface FileRoutesById {
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/onboarding/': typeof ApiOnboardingIndexRoute
   '/api/personas/': typeof ApiPersonasIndexRoute
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
@@ -4998,6 +5007,7 @@ export interface FileRouteTypes {
     | '/api/communities/'
     | '/api/group-chats/'
     | '/api/notifications/'
+    | '/api/onboarding/'
     | '/api/personas/'
     | '/api/predictions/'
     | '/api/ranked/'
@@ -5486,6 +5496,7 @@ export interface FileRouteTypes {
     | '/api/communities'
     | '/api/group-chats'
     | '/api/notifications'
+    | '/api/onboarding'
     | '/api/personas'
     | '/api/predictions'
     | '/api/ranked'
@@ -5999,6 +6010,7 @@ export interface FileRouteTypes {
     | '/api/communities/'
     | '/api/group-chats/'
     | '/api/notifications/'
+    | '/api/onboarding/'
     | '/api/personas/'
     | '/api/predictions/'
     | '/api/ranked/'
@@ -6375,6 +6387,7 @@ export interface RootRouteChildren {
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
   ApiGroupChatsIndexRoute: typeof ApiGroupChatsIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
+  ApiOnboardingIndexRoute: typeof ApiOnboardingIndexRoute
   ApiPersonasIndexRoute: typeof ApiPersonasIndexRoute
   ApiPredictionsIndexRoute: typeof ApiPredictionsIndexRoute
   ApiRankedIndexRoute: typeof ApiRankedIndexRoute
@@ -7537,6 +7550,13 @@ declare module '@tanstack/react-router' {
       path: '/api/personas'
       fullPath: '/api/personas/'
       preLoaderRoute: typeof ApiPersonasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/onboarding/': {
+      id: '/api/onboarding/'
+      path: '/api/onboarding'
+      fullPath: '/api/onboarding/'
+      preLoaderRoute: typeof ApiOnboardingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/notifications/': {
@@ -11329,6 +11349,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
   ApiGroupChatsIndexRoute: ApiGroupChatsIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
+  ApiOnboardingIndexRoute: ApiOnboardingIndexRoute,
   ApiPersonasIndexRoute: ApiPersonasIndexRoute,
   ApiPredictionsIndexRoute: ApiPredictionsIndexRoute,
   ApiRankedIndexRoute: ApiRankedIndexRoute,
