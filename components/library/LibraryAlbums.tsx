@@ -13,6 +13,12 @@ import { useReveal } from '@/components/library/LibraryReveal';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { ViewTransitionLink } from '@/components/ui/ViewTransitionLink';
 import { albumCoverVTName } from '@/lib/view-transition';
+import { useIntentPreload } from '@/hooks/useIntentPreload';
+
+// How many of an album's photos to warm on hover. The viewer preloads a window
+// around whatever slide it lands on, so a small head start covers the opening
+// frames without pulling the whole album over the wire.
+const ALBUM_PREWARM = 3;
 
 export function LibraryAlbums({
   albums: allAlbums,
@@ -71,6 +77,14 @@ function AlbumCard({ album }: { album: Album }) {
   const revealRef = useReveal();
   const { images, videos, total } = albumCount(album);
 
+  // On hover/focus, warm the first handful of optimized photos (and video posters)
+  // so the fullscreen viewer paints instantly instead of fetching on open.
+  const preload = useIntentPreload(
+    album.slides
+      .slice(0, ALBUM_PREWARM)
+      .map((s) => (s.type === 'image' ? s.src : s.thumb)),
+  );
+
   return (
     <div ref={revealRef} className="lib-reveal" role="listitem">
       <ViewTransitionLink
@@ -78,6 +92,7 @@ function AlbumCard({ album }: { album: Album }) {
         params={{ albumId: album.id }}
         className="lib-album"
         aria-label={t('open-album', { title: album.title, defaultValue: 'Open {{title}}' })}
+        {...preload}
       >
         <div className="lib-album__cover" style={{ viewTransitionName: albumCoverVTName(album.id) }}>
           <BlurImage
