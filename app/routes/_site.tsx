@@ -47,15 +47,18 @@ function SiteLayout() {
           </aside>
         </div>
         {/* `display:contents` keeps the flex layout identical while exposing a
-            real <main> landmark and giving the skip link a focus target. */}
-        <main id="main-content" tabIndex={-1} className="contents">
+            real <main> landmark and giving the skip link a focus target.
+            `page-root` drives the per-page enter animation on the content
+            column(s) only — the left sidebar sits outside <main>, so it never
+            animates (see the `.page-root > *` rule in globals.css). */}
+        <main id="main-content" tabIndex={-1} className="contents page-root">
           <Outlet />
         </main>
       </div>
 
       {/* Mobile: page content slides right to reveal the left sidebar */}
       <MobileSidebarShell>
-        <main className="contents">
+        <main className="contents page-root">
           <Outlet />
         </main>
       </MobileSidebarShell>

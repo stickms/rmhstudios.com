@@ -2702,3 +2702,23 @@ input[type='number'] {
 .dr-serif { font-family: var(--dr-serif); }
 .dr-serif-body { font-family: var(--dr-serif-body); }
 
+
+/* ─── Per-page content transition ────────────────────────────────────────
+ * Only the content column(s) animate on navigation — the left nav rail lives
+ * outside the content <main> (see app/routes/_site.tsx), so it never moves.
+ * Route-to-route navigation remounts the content, replaying this enter
+ * animation. `backwards` fill applies the start frame immediately (no flash)
+ * and leaves NO lingering transform afterward (so `position: fixed`
+ * descendants are unaffected once the animation settles). */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-root > * {
+  animation: page-enter 0.22s ease-out backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-root > * {
+    animation: none;
+  }
+}
