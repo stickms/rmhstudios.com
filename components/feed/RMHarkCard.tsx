@@ -12,6 +12,7 @@ import { EditPostModal } from './EditPostModal';
 import { PostLockedCard } from './PostLockedCard';
 import { Link } from '@tanstack/react-router';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
+import { ProfileHoverCard } from './ProfileHoverCard';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
 import { LinkPreview } from './LinkPreview';
@@ -403,12 +404,19 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       )}
 
       <div className="flex gap-3">
-        <UserAvatar user={displayUser} />
+        {item.user ? (
+          <ProfileHoverCard userId={item.user.handle || item.user.id}>
+            <span className="shrink-0 self-start"><UserAvatar user={displayUser} /></span>
+          </ProfileHoverCard>
+        ) : (
+          <UserAvatar user={displayUser} />
+        )}
 
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center gap-1.5 text-sm pr-6">
             {item.user ? (
+              <ProfileHoverCard userId={item.user.handle || item.user.id}>
               <Link to={userProfileHref(item.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
               <span
                 className="font-bold text-site-text truncate"
@@ -439,6 +447,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 </span>
               )}
             </Link>
+              </ProfileHoverCard>
             ) : (
               <span className="font-bold text-site-text truncate">
                 {t('unknown-user', { defaultValue: 'Unknown' })}

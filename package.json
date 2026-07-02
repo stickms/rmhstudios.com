@@ -49,6 +49,7 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@radix-ui/react-dialog": "^1.1.16",
+    "@radix-ui/react-hover-card": "^1.1.18",
     "@radix-ui/react-label": "^2.1.9",
     "@radix-ui/react-progress": "^1.1.9",
     "@radix-ui/react-slider": "^1.4.0",

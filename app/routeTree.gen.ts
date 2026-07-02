@@ -256,6 +256,7 @@ import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-m
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
 import { Route as ApiProfileAvatarRouteImport } from './routes/api/profile/avatar'
 import { Route as ApiProfileIdRouteImport } from './routes/api/profile/$id'
+import { Route as ApiPresenceOnlineCountRouteImport } from './routes/api/presence/online-count'
 import { Route as ApiPresenceHeartbeatRouteImport } from './routes/api/presence/heartbeat'
 import { Route as ApiPredictionsIdRouteImport } from './routes/api/predictions/$id'
 import { Route as ApiNotificationsUnreadCountRouteImport } from './routes/api/notifications/unread-count'
@@ -1759,6 +1760,11 @@ const ApiProfileIdRoute = ApiProfileIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiProfileRoute,
+} as any)
+const ApiPresenceOnlineCountRoute = ApiPresenceOnlineCountRouteImport.update({
+  id: '/api/presence/online-count',
+  path: '/api/presence/online-count',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPresenceHeartbeatRoute = ApiPresenceHeartbeatRouteImport.update({
   id: '/api/presence/heartbeat',
@@ -3359,6 +3365,7 @@ export interface FileRoutesByFullPath {
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
+  '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
@@ -3843,6 +3850,7 @@ export interface FileRoutesByTo {
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
+  '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
@@ -4353,6 +4361,7 @@ export interface FileRoutesById {
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
+  '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
@@ -4863,6 +4872,7 @@ export interface FileRouteTypes {
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
     | '/api/presence/heartbeat'
+    | '/api/presence/online-count'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
@@ -5347,6 +5357,7 @@ export interface FileRouteTypes {
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
     | '/api/presence/heartbeat'
+    | '/api/presence/online-count'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
@@ -5856,6 +5867,7 @@ export interface FileRouteTypes {
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
     | '/api/presence/heartbeat'
+    | '/api/presence/online-count'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
@@ -6261,6 +6273,7 @@ export interface RootRouteChildren {
   ApiNotificationsUnreadCountRoute: typeof ApiNotificationsUnreadCountRoute
   ApiPredictionsIdRoute: typeof ApiPredictionsIdRouteWithChildren
   ApiPresenceHeartbeatRoute: typeof ApiPresenceHeartbeatRoute
+  ApiPresenceOnlineCountRoute: typeof ApiPresenceOnlineCountRoute
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
   ApiPushPublicKeyRoute: typeof ApiPushPublicKeyRoute
   ApiPushSubscribeRoute: typeof ApiPushSubscribeRoute
@@ -8144,6 +8157,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/profile/$id'
       preLoaderRoute: typeof ApiProfileIdRouteImport
       parentRoute: typeof ApiProfileRoute
+    }
+    '/api/presence/online-count': {
+      id: '/api/presence/online-count'
+      path: '/api/presence/online-count'
+      fullPath: '/api/presence/online-count'
+      preLoaderRoute: typeof ApiPresenceOnlineCountRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/presence/heartbeat': {
       id: '/api/presence/heartbeat'
@@ -11183,6 +11203,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsUnreadCountRoute: ApiNotificationsUnreadCountRoute,
   ApiPredictionsIdRoute: ApiPredictionsIdRouteWithChildren,
   ApiPresenceHeartbeatRoute: ApiPresenceHeartbeatRoute,
+  ApiPresenceOnlineCountRoute: ApiPresenceOnlineCountRoute,
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,
   ApiPushPublicKeyRoute: ApiPushPublicKeyRoute,
   ApiPushSubscribeRoute: ApiPushSubscribeRoute,
