@@ -27,6 +27,8 @@ model User {
   banReason       String?   @db.VarChar(500)
   // Presence: last heartbeat from an active client (for "online now")
   lastSeenAt      DateTime?
+  // Referral program: this user's shareable invite code (lazily generated)
+  referralCode    String?   @unique
   // ─── RMHark AI bot users (generated + driven by the bot-worker) ──
   isBot           Boolean   @default(false) // synthetic account created by the bot-worker
   botPersona      String?   @db.Text         // private prompt seed describing the bot's posting "theme"
@@ -249,8 +251,30 @@ model User {
   // Web Push subscriptions
   pushSubscriptions PushSubscription[]
 
+  // Referral program
+  referralsMade     Referral[] @relation("Referrer")
+  referralReceived  Referral?  @relation("Referee")
+
   @@index([isBot])
   @@map("user")
+}
+
+// One row per successfully attributed invite. `rewardedAt` is set when the
+// mutual coin reward fires (on the referee's first achievement unlock, so
+// throwaway signups earn nothing).
+model Referral {
+  id         String    @id @default(cuid())
+  referrerId String
+  refereeId  String    @unique
+  code       String    @db.VarChar(32)
+  createdAt  DateTime  @default(now())
+  rewardedAt DateTime?
+
+  referrer User @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee  User @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId])
+  @@map("referral")
 }
 
 model Session {

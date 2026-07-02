@@ -95,6 +95,7 @@ import { Route as RmhCapitalFirmRouteImport } from './routes/rmh-capital/firm'
 import { Route as RmhCapitalContactRouteImport } from './routes/rmh-capital/contact'
 import { Route as RmhCapitalCareersRouteImport } from './routes/rmh-capital/careers'
 import { Route as RmhCapitalBusinessesRouteImport } from './routes/rmh-capital/businesses'
+import { Route as RefCodeRouteImport } from './routes/ref.$code'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
@@ -250,6 +251,8 @@ import { Route as ApiRideshareGeocodeRouteImport } from './routes/api/rideshare/
 import { Route as ApiRideshareEarningsRouteImport } from './routes/api/rideshare/earnings'
 import { Route as ApiRideshareDriverRouteImport } from './routes/api/rideshare/driver'
 import { Route as ApiRideshareDirectionsRouteImport } from './routes/api/rideshare/directions'
+import { Route as ApiReferralsMeRouteImport } from './routes/api/referrals/me'
+import { Route as ApiReferralsClaimRouteImport } from './routes/api/referrals/claim'
 import { Route as ApiPushSubscribeRouteImport } from './routes/api/push/subscribe'
 import { Route as ApiPushPublicKeyRouteImport } from './routes/api/push/public-key'
 import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-month'
@@ -946,6 +949,11 @@ const RmhCapitalBusinessesRoute = RmhCapitalBusinessesRouteImport.update({
   id: '/businesses',
   path: '/businesses',
   getParentRoute: () => RmhCapitalRoute,
+} as any)
+const RefCodeRoute = RefCodeRouteImport.update({
+  id: '/ref/$code',
+  path: '/ref/$code',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const NewsSlugRoute = NewsSlugRouteImport.update({
   id: '/news/$slug',
@@ -1729,6 +1737,16 @@ const ApiRideshareDriverRoute = ApiRideshareDriverRouteImport.update({
 const ApiRideshareDirectionsRoute = ApiRideshareDirectionsRouteImport.update({
   id: '/api/rideshare/directions',
   path: '/api/rideshare/directions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReferralsMeRoute = ApiReferralsMeRouteImport.update({
+  id: '/api/referrals/me',
+  path: '/api/referrals/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReferralsClaimRoute = ApiReferralsClaimRouteImport.update({
+  id: '/api/referrals/claim',
+  path: '/api/referrals/claim',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPushSubscribeRoute = ApiPushSubscribeRouteImport.update({
@@ -3227,6 +3245,7 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
@@ -3372,6 +3391,8 @@ export interface FileRoutesByFullPath {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/referrals/claim': typeof ApiReferralsClaimRoute
+  '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
@@ -3713,6 +3734,7 @@ export interface FileRoutesByTo {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
@@ -3857,6 +3879,8 @@ export interface FileRoutesByTo {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/referrals/claim': typeof ApiReferralsClaimRoute
+  '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
@@ -4222,6 +4246,7 @@ export interface FileRoutesById {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
@@ -4368,6 +4393,8 @@ export interface FileRoutesById {
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/referrals/claim': typeof ApiReferralsClaimRoute
+  '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
@@ -4734,6 +4761,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
@@ -4879,6 +4907,8 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/referrals/claim'
+    | '/api/referrals/me'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/earnings'
@@ -5220,6 +5250,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
@@ -5364,6 +5395,8 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/referrals/claim'
+    | '/api/referrals/me'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/earnings'
@@ -5728,6 +5761,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
@@ -5874,6 +5908,8 @@ export interface FileRouteTypes {
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
+    | '/api/referrals/claim'
+    | '/api/referrals/me'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/earnings'
@@ -6209,6 +6245,7 @@ export interface RootRouteChildren {
   DiscordRmhboxRoute: typeof DiscordRmhboxRoute
   LibrarySlugRoute: typeof LibrarySlugRoute
   NewsSlugRoute: typeof NewsSlugRoute
+  RefCodeRoute: typeof RefCodeRoute
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
@@ -6277,6 +6314,8 @@ export interface RootRouteChildren {
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
   ApiPushPublicKeyRoute: typeof ApiPushPublicKeyRoute
   ApiPushSubscribeRoute: typeof ApiPushSubscribeRoute
+  ApiReferralsClaimRoute: typeof ApiReferralsClaimRoute
+  ApiReferralsMeRoute: typeof ApiReferralsMeRoute
   ApiRideshareDirectionsRoute: typeof ApiRideshareDirectionsRoute
   ApiRideshareDriverRoute: typeof ApiRideshareDriverRoute
   ApiRideshareEarningsRoute: typeof ApiRideshareEarningsRoute
@@ -7030,6 +7069,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmh-capital/businesses'
       preLoaderRoute: typeof RmhCapitalBusinessesRouteImport
       parentRoute: typeof RmhCapitalRoute
+    }
+    '/ref/$code': {
+      id: '/ref/$code'
+      path: '/ref/$code'
+      fullPath: '/ref/$code'
+      preLoaderRoute: typeof RefCodeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/news/$slug': {
       id: '/news/$slug'
@@ -8114,6 +8160,20 @@ declare module '@tanstack/react-router' {
       path: '/api/rideshare/directions'
       fullPath: '/api/rideshare/directions'
       preLoaderRoute: typeof ApiRideshareDirectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/referrals/me': {
+      id: '/api/referrals/me'
+      path: '/api/referrals/me'
+      fullPath: '/api/referrals/me'
+      preLoaderRoute: typeof ApiReferralsMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/referrals/claim': {
+      id: '/api/referrals/claim'
+      path: '/api/referrals/claim'
+      fullPath: '/api/referrals/claim'
+      preLoaderRoute: typeof ApiReferralsClaimRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/push/subscribe': {
@@ -11139,6 +11199,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiscordRmhboxRoute: DiscordRmhboxRoute,
   LibrarySlugRoute: LibrarySlugRoute,
   NewsSlugRoute: NewsSlugRoute,
+  RefCodeRoute: RefCodeRoute,
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
@@ -11207,6 +11268,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,
   ApiPushPublicKeyRoute: ApiPushPublicKeyRoute,
   ApiPushSubscribeRoute: ApiPushSubscribeRoute,
+  ApiReferralsClaimRoute: ApiReferralsClaimRoute,
+  ApiReferralsMeRoute: ApiReferralsMeRoute,
   ApiRideshareDirectionsRoute: ApiRideshareDirectionsRoute,
   ApiRideshareDriverRoute: ApiRideshareDriverRoute,
   ApiRideshareEarningsRoute: ApiRideshareEarningsRoute,

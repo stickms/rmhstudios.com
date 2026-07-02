@@ -13,7 +13,10 @@ import {
   Eye,
   Heart,
   MessageCircle,
+  Gift,
+  Check,
 } from 'lucide-react';
+import { useSession } from '@/components/Providers';
 
 interface SidebarOfficialBuild {
   id: string;
@@ -99,6 +102,58 @@ function OnlineNowPill() {
   );
 }
 
+/** "Invite friends" card — copies the caller's referral link. */
+function InviteFriendsCard() {
+  const { t } = useTranslation('feed');
+  const { data: session } = useSession();
+  const [copied, setCopied] = useState(false);
+  const [reward, setReward] = useState(50);
+
+  if (!session?.user) return null;
+
+  const copyLink = async () => {
+    try {
+      const res = await fetch('/api/referrals/me', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = (await res.json()) as { url: string; reward: number };
+      setReward(data.reward);
+      await navigator.clipboard.writeText(data.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // clipboard unavailable — nothing to do
+    }
+  };
+
+  return (
+    <section className="bg-site-surface rounded-site p-4 border border-site-border">
+      <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-1.5">
+        <Gift className="w-5 h-5 text-site-accent" />
+        {t('invite-friends', { defaultValue: 'Invite friends' })}
+      </h2>
+      <p className="mb-3 text-sm text-site-text-muted">
+        {t('invite-friends-blurb', {
+          reward,
+          defaultValue: 'Share your link — you both earn {{reward}} coins when they get going.',
+        })}
+      </p>
+      <button
+        onClick={copyLink}
+        className="flex w-full items-center justify-center gap-2 rounded-site-sm border border-site-border bg-site-bg py-2 text-sm font-medium text-site-text transition-colors hover:bg-site-surface-hover"
+      >
+        {copied ? (
+          <>
+            <Check className="h-4 w-4 text-site-success" aria-hidden />
+            {t('invite-link-copied', { defaultValue: 'Link copied!' })}
+          </>
+        ) : (
+          t('copy-invite-link', { defaultValue: 'Copy invite link' })
+        )}
+      </button>
+    </section>
+  );
+}
+
 export function RightSidebar({
   officialBuilds,
   userBuilds,
@@ -109,6 +164,8 @@ export function RightSidebar({
   return (
     <div className="p-4 space-y-6">
       <OnlineNowPill />
+
+      <InviteFriendsCard />
 
       {/* Official Builds */}
       <section className="bg-site-surface rounded-site p-4 border border-site-border">
