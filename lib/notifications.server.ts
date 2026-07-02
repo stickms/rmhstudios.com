@@ -29,11 +29,35 @@ export interface CreateNotificationInput {
   dedupeUnread?: boolean;
 }
 
+/** Which preference column governs each notification type. */
+const PREF_FIELD: Record<NotificationType, 'likes' | 'comments' | 'follows' | 'mentions' | 'reposts' | 'system'> = {
+  LIKE: 'likes',
+  COMMENT: 'comments',
+  REPLY: 'comments',
+  FOLLOW: 'follows',
+  MENTION: 'mentions',
+  REPOST: 'reposts',
+  SYSTEM: 'system',
+};
+
+/** True when the recipient has this notification type turned off. */
+async function isMuted(input: CreateNotificationInput): Promise<boolean> {
+  // Moderation notices always deliver — a user can't opt out of strikes.
+  if (input.type === 'SYSTEM' && input.entityType === 'strike') return false;
+  const prefs = await prisma.notificationPreference.findUnique({
+    where: { userId: input.userId },
+  });
+  if (!prefs) return false; // no row = defaults = everything on
+  return !prefs[PREF_FIELD[input.type]];
+}
+
 export async function createNotification(input: CreateNotificationInput): Promise<void> {
   // Never notify someone about their own action.
   if (input.actorId && input.actorId === input.userId) return;
 
   try {
+    if (await isMuted(input)) return;
+
     if (input.dedupeUnread) {
       const existing = await prisma.notification.findFirst({
         where: {

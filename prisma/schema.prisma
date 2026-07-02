@@ -255,8 +255,28 @@ model User {
   referralsMade     Referral[] @relation("Referrer")
   referralReceived  Referral?  @relation("Referee")
 
+  // Notification preferences (per-type opt-outs)
+  notificationPreference NotificationPreference?
+
   @@index([isBot])
   @@map("user")
+}
+
+// Per-type notification opt-outs. A missing row means "everything on"
+// (the default) — rows are created on first save from the preferences panel.
+// Moderation notices (SYSTEM/strike) are always delivered regardless.
+model NotificationPreference {
+  userId   String  @id
+  likes    Boolean @default(true)
+  comments Boolean @default(true) // includes replies
+  follows  Boolean @default(true)
+  mentions Boolean @default(true)
+  reposts  Boolean @default(true)
+  system   Boolean @default(true) // achievements, levels, coins, …
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preference")
 }
 
 // One row per successfully attributed invite. `rewardedAt` is set when the
