@@ -35,11 +35,13 @@ interface ComposeModalProps {
   onClose: () => void;
   /** When quoting, the post being quoted (renders a preview + sends originalId). */
   quoteItem?: { id: string; content?: string; user?: { name?: string | null; handle?: string | null } } | null;
+  /** Seed the composer with text (e.g. content shared into the PWA via share_target). */
+  initialContent?: string;
 }
 
-export function ComposeModal({ open, onClose, quoteItem }: ComposeModalProps) {
+export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: ComposeModalProps) {
   const { t } = useTranslation('feed');
-  const [content, setContent] = useState('');
+  const [content, setContent] = useState(initialContent);
   const [submitting, setSubmitting] = useState(false);
   const [attachment, setAttachment] = useState<Attachment>(null);
   const [menuOpen, setMenuOpen] = useState(false);

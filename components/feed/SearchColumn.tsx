@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Search, Package, BookOpen } from 'lucide-react';
+import { Search, Package, BookOpen, Sparkles } from 'lucide-react';
+import { useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -38,6 +39,95 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 const EMPTY: SearchResults = { people: [], posts: [], builds: [], blog: [] };
+
+/**
+ * Opt-in "Ask AI" answer above the raw results. Kept behind a button (not fired
+ * on every keystroke) so it only spends a model call when the user actually
+ * wants a summarised answer. Grounded server-side in the same corpus the tabs
+ * search. Hidden for logged-out visitors (the endpoint requires auth).
+ */
+function AISearchPanel({ query }: { query: string }) {
+  const { t } = useTranslation('feed');
+  const { data: session } = useSession();
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [sourceCount, setSourceCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
+
+  // A new query invalidates any previous answer so the button reappears.
+  useEffect(() => {
+    setAnswer(null);
+    setError(false);
+    setLoading(false);
+  }, [query]);
+
+  const ask = useCallback(async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      const res = await fetch('/api/ai/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ q: query }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      const data = await res.json();
+      setAnswer(typeof data.answer === 'string' ? data.answer : '');
+      setSourceCount(typeof data.sourceCount === 'number' ? data.sourceCount : 0);
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [query]);
+
+  if (!session) return null;
+
+  return (
+    <div className="border-b border-site-border px-4 py-3">
+      {answer === null && !loading ? (
+        <button
+          onClick={ask}
+          className="flex w-full items-center gap-2 rounded-site border border-site-border bg-site-surface px-3 py-2 text-left text-sm font-medium text-site-text transition-colors hover:bg-site-surface-hover"
+        >
+          <Sparkles className="h-4 w-4 shrink-0 text-site-accent" />
+          <span className="truncate">
+            {t('ask-ai-about', { query, defaultValue: 'Ask AI about “{{query}}”' })}
+          </span>
+        </button>
+      ) : (
+        <div className="rounded-site border border-site-border bg-site-surface px-3.5 py-3">
+          <div className="mb-1.5 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+            <Sparkles className="h-3.5 w-3.5 text-site-accent" />
+            {t('ai-answer', { defaultValue: 'AI answer' })}
+          </div>
+          {loading ? (
+            <div className="flex items-center gap-2 py-1 text-sm text-site-text-muted">
+              <Spinner size={14} /> {t('ai-thinking', { defaultValue: 'Reading the results…' })}
+            </div>
+          ) : error ? (
+            <p className="text-sm text-site-text-muted">
+              {t('ai-error', { defaultValue: 'Could not generate an answer. Try again.' })}{' '}
+              <button onClick={ask} className="text-site-accent hover:underline">
+                {t('retry', { defaultValue: 'Retry' })}
+              </button>
+            </p>
+          ) : (
+            <>
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-site-text">{answer}</p>
+              {sourceCount > 0 && (
+                <p className="mt-2 text-xs text-site-text-dim">
+                  {t('ai-based-on', { count: sourceCount, defaultValue: 'Based on {{count}} results below' })}
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function SearchColumn({
   initialQuery = '',
@@ -134,6 +224,8 @@ export function SearchColumn({
           ))}
         </div>
       </header>
+
+      {query.trim().length >= 2 && <AISearchPanel query={query.trim()} />}
 
       {query.trim().length < 2 ? (
         <ExploreRecommendations

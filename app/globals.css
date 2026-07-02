@@ -2722,3 +2722,32 @@ input[type='number'] {
     animation: none;
   }
 }
+
+/* ─── Scoped shared-element View Transitions ─────────────────────────────
+ * Progressive enhancement (see lib/view-transition.ts). We deliberately keep
+ * the full-page cross-fade OFF — it was removed for feeling heavy — and only
+ * animate elements that carry a matching `view-transition-name` (e.g. a post's
+ * media morphing from the feed card into the detail hero). Named groups get a
+ * quick, springy morph; the document root swaps instantly. */
+::view-transition-group(*) {
+  animation-duration: 0.28s;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+/* While a transition is running, stand the per-page enter animation down so it
+ * doesn't fight the morph (lib/view-transition.ts toggles this class). */
+html.vt-active .page-root > * {
+  animation: none !important;
+}
+/* View-transition pseudo-elements live outside the document tree, so the global
+ * `*` reduced-motion rule can't reach them — neutralise them explicitly. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

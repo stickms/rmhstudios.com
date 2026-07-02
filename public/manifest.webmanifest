@@ -18,5 +18,31 @@
     { "name": "Daily Puzzle", "short_name": "Daily", "url": "/daily" },
     { "name": "Feed", "short_name": "Feed", "url": "/" },
     { "name": "Search", "short_name": "Search", "url": "/search" }
-  ]
+  ],
+  "screenshots": [
+    {
+      "src": "/images/screenshots/feed-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "The RMH Studios social feed, games, and apps in one place"
+    },
+    {
+      "src": "/images/screenshots/games-narrow.png",
+      "sizes": "720x1280",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Play original games and party minigames directly in the browser"
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "enctype": "application/x-www-form-urlencoded",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
 }

@@ -9,9 +9,12 @@ import { BlurImage } from '@/components/ui/BlurImage';
 interface PostImageGridProps {
   urls: string[];
   className?: string;
+  /** When set, tags the first image with this `view-transition-name` so it can
+   *  morph between the feed card and the post detail (see lib/view-transition). */
+  heroName?: string;
 }
 
-export function PostImageGrid({ urls, className = '' }: PostImageGridProps) {
+export function PostImageGrid({ urls, className = '', heroName }: PostImageGridProps) {
   const { t } = useTranslation('feed');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
@@ -30,6 +33,7 @@ export function PostImageGrid({ urls, className = '' }: PostImageGridProps) {
               e.stopPropagation();
               setLightboxIndex(i);
             }}
+            style={i === 0 && heroName ? { viewTransitionName: heroName } : undefined}
             className={`group relative block overflow-hidden rounded-site-sm ${single ? '' : 'aspect-square'}`}
             aria-label={t('open-image', { defaultValue: 'Open image' })}
           >

@@ -21,6 +21,7 @@ import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
 import { PostImageGrid } from './PostImageGrid';
+import { postMediaVTName } from '@/lib/view-transition';
 import { LinkPreview } from './LinkPreview';
 import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
@@ -314,7 +315,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
         {/* Uploaded images grid */}
         {post.imageUrls && post.imageUrls.length > 0 && (
-          <PostImageGrid urls={post.imageUrls} className="mb-3" />
+          <PostImageGrid urls={post.imageUrls} className="mb-3" heroName={postMediaVTName(postId)} />
         )}
 
         {/* Link preview — only when no poll, gif, or image */}
