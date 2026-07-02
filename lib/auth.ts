@@ -1,3 +1,7 @@
+// NOTE: the reflect-metadata polyfill that the passkey plugin (via tsyringe)
+// needs is installed at server startup by the Nitro plugin in
+// server/nitro/reflect-metadata.ts — a source-level import here is tree-shaken
+// and reordered after the passkey chunk, so it must live in the startup plugin.
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "@/lib/prisma.server";

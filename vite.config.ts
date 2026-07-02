@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createLogger, defineConfig, type Plugin } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
@@ -220,7 +221,13 @@ export default defineConfig({
       // traces them into .output/node_modules for runtime resolution.
       // NOTE: Vite's ssr.external is ignored by Nitro — this is the only way
       // to externalize from the production server bundle.
-      traceDeps: ["@prisma/client", ".prisma", "@resvg/resvg-js", "satori", "esbuild"],
+      // `reflect-metadata` is externalized (not bundled) so its global-polyfill
+      // side effect isn't tree-shaken away — the startup plugin below relies on
+      // it. traceDeps also copies it into .output/node_modules for runtime.
+      traceDeps: ["@prisma/client", ".prisma", "@resvg/resvg-js", "satori", "esbuild", "reflect-metadata"],
+      // Startup plugin that installs the reflect-metadata polyfill before any
+      // request loads the auth/passkey chunk (which needs it via tsyringe).
+      plugins: [fileURLToPath(new URL("./server/nitro/reflect-metadata.ts", import.meta.url))],
       rollupConfig: {
         external: heavyExternals.map((pkg) => new RegExp(`^${pkg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(/.+)?$`)),
       },
