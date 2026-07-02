@@ -14,7 +14,13 @@ import { generateImagePrompt } from './generate.server';
 import { tryConsumeImageBudget } from './image-budget.server';
 import { validateImageBuffer, detectImageExt } from '@/lib/slice-it/upload-validation';
 import { putObject } from '@/lib/storage/s3.server';
-import { feedImageKey, feedImageUrl, contentTypeForFilename } from '@/lib/storage/keys';
+import {
+  feedImageKey,
+  feedImageUrl,
+  contentTypeForFilename,
+  withImageDimensions,
+} from '@/lib/storage/keys';
+import { imageDimensions } from '@/lib/image-optimize';
 
 // xAI is OpenAI-SDK compatible; just point the base URL at their endpoint.
 const xai = new OpenAI({
@@ -65,7 +71,14 @@ export async function generatePostImage(opts: {
     const ext = detectImageExt(buffer);
     if (!ext) return null;
 
-    const filename = `${opts.userId}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    // Tag the stored filename with the image's pixel dimensions so the feed can
+    // reserve exact layout space before it loads (avoids layout shift).
+    const dims = await imageDimensions(buffer);
+    const filename = withImageDimensions(
+      `${opts.userId}-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`,
+      dims?.width,
+      dims?.height,
+    );
     await putObject(feedImageKey(filename), buffer, contentTypeForFilename(filename));
     return feedImageUrl(filename);
   } catch (err) {

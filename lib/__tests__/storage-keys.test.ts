@@ -7,6 +7,8 @@ import {
   feedImageKey,
   feedImageUrl,
   ownsFeedImageUrl,
+  withImageDimensions,
+  parseImageDimensions,
 } from "@/lib/storage/keys";
 
 describe("storage keys", () => {
@@ -50,5 +52,41 @@ describe("ownsFeedImageUrl", () => {
 
   it("returns false for prefix-collision: user1 must not match user12's image", () => {
     expect(ownsFeedImageUrl("/api/feed/image/user12-9-9.png", "user1")).toBe(false);
+  });
+});
+
+describe("image dimension tagging", () => {
+  it("inserts a -WxH tag before the extension", () => {
+    expect(withImageDimensions("u1-123-456.webp", 1200, 800)).toBe("u1-123-456-1200x800.webp");
+  });
+
+  it("leaves the filename unchanged when dimensions are missing or invalid", () => {
+    expect(withImageDimensions("u1-123.webp")).toBe("u1-123.webp");
+    expect(withImageDimensions("u1-123.webp", 0, 800)).toBe("u1-123.webp");
+    expect(withImageDimensions("u1-123.webp", 1200, 999999)).toBe("u1-123.webp");
+    expect(withImageDimensions("noext", 10, 10)).toBe("noext");
+  });
+
+  it("keeps tagged filenames safe and round-trips the dimensions", () => {
+    const tagged = withImageDimensions("u1-123-456.webp", 1200, 800);
+    expect(isSafeFilename(tagged)).toBe(true);
+    expect(parseImageDimensions(tagged)).toEqual({ width: 1200, height: 800 });
+  });
+
+  it("parses dimensions from a full URL, ignoring the query string", () => {
+    expect(parseImageDimensions("/api/feed/image/u1-1-2-640x360.webp?w=320")).toEqual({
+      width: 640,
+      height: 360,
+    });
+    expect(parseImageDimensions("https://cdn.example/rmharks/u1-1-2-1920x1080.webp")).toEqual({
+      width: 1920,
+      height: 1080,
+    });
+  });
+
+  it("returns null for legacy/untagged names", () => {
+    expect(parseImageDimensions("u1-123-456.webp")).toBeNull();
+    // A trailing numeric id that isn't a WxH pair must not be mistaken for one.
+    expect(parseImageDimensions("u1-123-456789.webp")).toBeNull();
   });
 });

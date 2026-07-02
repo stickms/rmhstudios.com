@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BlurImage } from '@/components/ui/BlurImage';
+import { knownSize, rememberSize } from '@/lib/image-aspect';
 
 interface PostImageGridProps {
   urls: string[];
@@ -14,8 +15,12 @@ interface PostImageGridProps {
   heroName?: string;
 }
 
+// A lone image is capped at this share of the viewport height, matching the
+// pre-reservation layout. Baked into the reserved box so tall images don't
+// dominate the column.
+const SINGLE_MAX_VH = 80;
+
 export function PostImageGrid({ urls, className = '', heroName }: PostImageGridProps) {
-  const { t } = useTranslation('feed');
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (!urls || urls.length === 0) return null;
@@ -26,39 +31,13 @@ export function PostImageGrid({ urls, className = '', heroName }: PostImageGridP
     <>
       <div className={`grid gap-1 ${single ? 'grid-cols-1' : 'grid-cols-2'} ${className}`}>
         {urls.map((url, i) => (
-          <button
+          <GridImage
             key={url}
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setLightboxIndex(i);
-            }}
-            style={i === 0 && heroName ? { viewTransitionName: heroName } : undefined}
-            className={`group relative block overflow-hidden rounded-site-sm ${single ? '' : 'aspect-square'}`}
-            aria-label={t('open-image', { defaultValue: 'Open image' })}
-          >
-            {single ? (
-              <BlurImage
-                src={url}
-                alt=""
-                fit="contain"
-                width={1024}
-                sizes="(max-width: 640px) 100vw, 600px"
-                className="mx-auto block w-fit max-w-full rounded-site-sm"
-                imgClassName="max-h-[80vh] max-w-full"
-              />
-            ) : (
-              <BlurImage
-                src={url}
-                alt=""
-                fit="cover"
-                width={640}
-                sizes="(max-width: 640px) 50vw, 300px"
-                className="h-full w-full"
-                imgClassName="h-full w-full transition-transform duration-200 group-hover:scale-[1.02]"
-              />
-            )}
-          </button>
+            url={url}
+            single={single}
+            heroName={i === 0 ? heroName : undefined}
+            onOpen={() => setLightboxIndex(i)}
+          />
         ))}
       </div>
 
@@ -71,6 +50,113 @@ export function PostImageGrid({ urls, className = '', heroName }: PostImageGridP
         />
       )}
     </>
+  );
+}
+
+function GridImage({
+  url,
+  single,
+  heroName,
+  onOpen,
+}: {
+  url: string;
+  single: boolean;
+  heroName?: string;
+  onOpen: () => void;
+}) {
+  const { t } = useTranslation('feed');
+  // Start from any size we already know (URL-tagged or measured earlier), and
+  // learn it on load for legacy images so later renders reserve space too.
+  const [size, setSize] = useState(() => knownSize(url));
+  const onNaturalSize = useCallback(
+    (w: number, h: number) => {
+      rememberSize(url, w, h);
+      setSize((prev) => prev ?? { width: w, height: h });
+    },
+    [url],
+  );
+
+  const vt = heroName ? { viewTransitionName: heroName } : undefined;
+
+  // Multi-image cells are always square, so they already reserve their space.
+  if (!single) {
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpen();
+        }}
+        style={vt}
+        className="group relative block aspect-square overflow-hidden rounded-site-sm"
+        aria-label={t('open-image', { defaultValue: 'Open image' })}
+      >
+        <BlurImage
+          src={url}
+          alt=""
+          fit="cover"
+          width={640}
+          aspectRatio={1}
+          sizes="(max-width: 640px) 50vw, 300px"
+          className="h-full w-full"
+          imgClassName="transition-transform duration-200 group-hover:scale-[1.02]"
+        />
+      </button>
+    );
+  }
+
+  // Single image, size known: reserve an exact box (capped at 80vh and the
+  // image's own width so small images aren't upscaled) → zero layout shift.
+  if (size) {
+    const ratio = size.width / size.height;
+    return (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onOpen();
+        }}
+        style={{ ...vt, maxWidth: `min(100%, ${size.width}px, calc(${SINGLE_MAX_VH}vh * ${ratio}))` }}
+        className="group relative mx-auto block w-full overflow-hidden rounded-site-sm"
+        aria-label={t('open-image', { defaultValue: 'Open image' })}
+      >
+        <BlurImage
+          src={url}
+          alt=""
+          fit="cover"
+          width={1024}
+          aspectRatio={ratio}
+          sizes="(max-width: 640px) 100vw, 600px"
+          className="w-full"
+        />
+      </button>
+    );
+  }
+
+  // Single image, size unknown (legacy): render at natural size as before, but
+  // learn the size on load so subsequent renders take the reserved path above.
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onOpen();
+      }}
+      style={vt}
+      className="group relative block overflow-hidden rounded-site-sm"
+      aria-label={t('open-image', { defaultValue: 'Open image' })}
+    >
+      <BlurImage
+        src={url}
+        alt=""
+        fit="contain"
+        width={1024}
+        sizes="(max-width: 640px) 100vw, 600px"
+        className="mx-auto block w-fit max-w-full rounded-site-sm"
+        imgClassName="max-h-[80vh] max-w-full"
+        onNaturalSize={onNaturalSize}
+      />
+    </button>
   );
 }
 

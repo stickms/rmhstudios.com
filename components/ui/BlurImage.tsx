@@ -22,6 +22,19 @@ interface BlurImageProps
   className?: string;
   /** Classes for the <img> element itself. */
   imgClassName?: string;
+  /**
+   * Intrinsic aspect ratio (`width / height`). When set, the wrapper reserves a
+   * box of this shape and the image fills it, so nothing shifts when the image
+   * finishes loading. Leave unset when the ratio isn't known — the image then
+   * sizes to its natural dimensions as before.
+   */
+  aspectRatio?: number;
+  /**
+   * Fires once with the image's decoded pixel size (from a `load` event or a
+   * cache hit). Lets callers learn the ratio of legacy images so later renders
+   * can reserve space for them.
+   */
+  onNaturalSize?: (width: number, height: number) => void;
 }
 
 // A tiny, heavily-compressed variant used as the blurred placeholder.
@@ -46,15 +59,28 @@ export function BlurImage({
   className = '',
   imgClassName = '',
   loading = 'lazy',
+  aspectRatio,
+  onLoad,
+  onNaturalSize,
+  style,
   ...rest
 }: BlurImageProps) {
   const imgRef = useRef<HTMLImageElement>(null);
   const [loaded, setLoaded] = useState(false);
 
+  const reportSize = (img: HTMLImageElement | null) => {
+    if (img && img.naturalWidth > 0) onNaturalSize?.(img.naturalWidth, img.naturalHeight);
+  };
+
   // If the image is already cached the browser fires `load` before React
   // attaches the handler, so reconcile from `.complete` after mount.
   useEffect(() => {
-    if (imgRef.current?.complete) setLoaded(true);
+    if (imgRef.current?.complete) {
+      setLoaded(true);
+      reportSize(imgRef.current);
+    }
+    // reportSize/onNaturalSize are stable enough for this reconcile-on-src effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [src]);
 
   const fitClass = fit === 'contain' ? 'object-contain' : 'object-cover';
@@ -68,8 +94,23 @@ export function BlurImage({
     ? buildOptimizedUrl(src, PLACEHOLDER_WIDTH, PLACEHOLDER_QUALITY)
     : undefined;
 
+  // With a known ratio the wrapper reserves the box and the image fills it, so
+  // the layout is stable before/after load. Without one, the image sizes itself.
+  const reserve = typeof aspectRatio === 'number' && aspectRatio > 0;
+
   return (
-    <span className={cn('relative block overflow-hidden', className)}>
+    <span
+      className={cn('relative block overflow-hidden', className)}
+      style={reserve ? { aspectRatio: String(aspectRatio), ...style } : style}
+    >
+      {/* Skeleton behind everything so there's always a placeholder holding the
+          space — even for non-optimizable images with no blur preview. */}
+      {!loaded && (
+        <span
+          aria-hidden="true"
+          className="absolute inset-0 animate-pulse bg-site-surface"
+        />
+      )}
       {placeholderSrc && !loaded && (
         <img
           src={placeholderSrc}
@@ -90,11 +131,16 @@ export function BlurImage({
         alt={alt}
         loading={loading}
         decoding="async"
-        onLoad={() => setLoaded(true)}
+        onLoad={(e) => {
+          setLoaded(true);
+          reportSize(e.currentTarget);
+          onLoad?.(e);
+        }}
         className={cn(
           fitClass,
           'transition-opacity duration-500',
           loaded ? 'opacity-100' : 'opacity-0',
+          reserve && 'absolute inset-0 h-full w-full',
           imgClassName
         )}
         {...rest}
