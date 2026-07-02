@@ -17,6 +17,7 @@ import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
 import { LinkPreview } from './LinkPreview';
 import { PostImageGrid } from './PostImageGrid';
+import { runViewTransition, postMediaVTName } from '@/lib/view-transition';
 import { UserAvatar } from './UserAvatar';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
@@ -252,7 +253,12 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     if (selection && selection.toString().length > 0) {
       return;
     }
-    navigate({ to: postHref(item.user, actualId) });
+    const go = () => navigate({ to: postHref(item.user, actualId) });
+    // Only run a View Transition when there's a hero image to morph into the
+    // detail page; text-only posts keep the normal per-page enter animation.
+    // Degrades to a plain navigation when unsupported or reduced-motion is on.
+    if (item.imageUrls && item.imageUrls.length > 0) runViewTransition(go);
+    else go();
   };
 
   return (
@@ -495,7 +501,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
           {/* Uploaded images grid */}
           {item.imageUrls && item.imageUrls.length > 0 && (
-            <PostImageGrid urls={item.imageUrls} className="mt-2" />
+            <PostImageGrid urls={item.imageUrls} className="mt-2" heroName={postMediaVTName(actualId)} />
           )}
 
           {/* Link preview — only when no poll, gif, or image */}

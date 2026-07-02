@@ -216,6 +216,9 @@ function LoginPage() {
 
   const socialBtn =
     'w-full flex items-center justify-center gap-3 h-12 rounded-full bg-white/[0.05] border border-white/12 text-[#f5f5f7] font-medium transition-all hover:bg-white/[0.09] hover:border-white/25 disabled:opacity-50';
+  // Promoted primary CTA — filled, brighter than the social buttons.
+  const passkeyBtn =
+    'w-full flex items-center justify-center gap-3 h-12 rounded-full bg-[#f5f5f7] text-[#0a0a0a] font-semibold transition-all hover:bg-white disabled:opacity-50';
   const field =
     'w-full h-12 rounded-2xl bg-white/[0.05] border border-white/12 pl-11 pr-4 text-[#f5f5f7] placeholder-[#6e6e73] outline-none focus:border-white/30 transition-colors';
   const fieldIcon = 'absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6e6e73]';
@@ -234,6 +237,21 @@ function LoginPage() {
         </div>
 
         <div className="space-y-3">
+          {/* Passkey is the promoted primary path: fastest + phishing-resistant.
+              (Conditional-UI autofill also offers it directly in the email field.) */}
+          {!isSignUp && (
+            <button onClick={handlePasskeySignIn} disabled={loading} className={passkeyBtn}>
+              {loading ? (
+                <span className="animate-pulse text-[#0a0a0a]/70">{t("connecting", { defaultValue: "Connecting…" })}</span>
+              ) : (
+                <>
+                  <MdFingerprint className="text-xl" />
+                  <span>{t("continue-with-passkey", { defaultValue: "Sign in with a passkey" })}</span>
+                </>
+              )}
+            </button>
+          )}
+
           <button onClick={handleDiscordSignIn} disabled={loading} className={socialBtn}>
             {loading ? (
               <span className="animate-pulse text-[#a1a1a6]">{t("connecting", { defaultValue: "Connecting…" })}</span>
@@ -266,19 +284,6 @@ function LoginPage() {
               </>
             )}
           </button>
-
-          {!isSignUp && (
-            <button onClick={handlePasskeySignIn} disabled={loading} className={socialBtn}>
-              {loading ? (
-                <span className="animate-pulse text-[#a1a1a6]">{t("connecting", { defaultValue: "Connecting…" })}</span>
-              ) : (
-                <>
-                  <MdFingerprint className="text-xl text-emerald-400" />
-                  <span>{t("continue-with-passkey", { defaultValue: "Sign in with a passkey" })}</span>
-                </>
-              )}
-            </button>
-          )}
 
           <div className="relative py-1">
             <div className="absolute inset-0 flex items-center">

@@ -16,6 +16,7 @@ import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
+import { useAppBadge } from '@/lib/useAppBadge';
 import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -128,6 +129,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   };
 
   const inboxCount = unreadCount + notificationCount;
+  // Mirror the unread total onto the installed-app icon (Badging API). This
+  // sidebar is always mounted (display:none on mobile, not unmounted), so it's a
+  // single stable place to drive the badge without a second SSE/poll subscriber.
+  useAppBadge(session ? inboxCount : 0);
 
   const renderLeaf = (link: NavLeaf, nested = false) => {
     const Icon = link.icon;
