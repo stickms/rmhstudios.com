@@ -5,6 +5,7 @@ import { generateHandle } from "@/lib/handle";
 import Stripe from "stripe";
 import { stripe } from "@better-auth/stripe";
 import { customSession } from "better-auth/plugins";
+import { passkey } from "@better-auth/passkey";
 import { getUserTier } from "@/lib/entitlements";
 
 const stripeClient = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -100,6 +101,13 @@ export const auth = betterAuth({
         },
     },
     plugins: [
+        // WebAuthn/passkey sign-in. rpID/origin default from baseURL; override
+        // via env when serving from multiple hostnames (e.g. www + apex).
+        passkey({
+            rpName: "RMH Studios",
+            ...(process.env.PASSKEY_RP_ID ? { rpID: process.env.PASSKEY_RP_ID } : {}),
+            ...(process.env.PASSKEY_ORIGIN ? { origin: process.env.PASSKEY_ORIGIN.split(",") } : {}),
+        }),
         stripe({
             stripeClient,
             stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,

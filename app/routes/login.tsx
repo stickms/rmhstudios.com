@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useState, useRef, useEffect } from 'react';
 import { FaDiscord, FaGoogle, FaGithub } from 'react-icons/fa';
-import { MdEmail, MdLock, MdPerson, MdCameraAlt } from 'react-icons/md';
+import { MdEmail, MdLock, MdPerson, MdCameraAlt, MdFingerprint } from 'react-icons/md';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
 import '@/components/rmhvibe/vibe.css';
 
@@ -90,6 +90,49 @@ function LoginPage() {
   const handleCropCancel = () => {
     if (cropSrc) URL.revokeObjectURL(cropSrc);
     setCropSrc(null);
+  };
+
+  // Conditional-UI passkey sign-in: when the browser supports it, a saved
+  // passkey is offered directly in the email field's autofill dropdown.
+  useEffect(() => {
+    if (isSignUp) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (
+          typeof window.PublicKeyCredential === 'undefined' ||
+          !(await window.PublicKeyCredential.isConditionalMediationAvailable?.())
+        ) {
+          return;
+        }
+        const res = await authClient.signIn.passkey({ autoFill: true });
+        if (!cancelled && res && 'data' in res && res.data?.session) {
+          window.location.href = callbackURL;
+        }
+      } catch {
+        // Conditional mediation aborted (navigation, second call) — ignore.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignUp, callbackURL]);
+
+  const handlePasskeySignIn = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await authClient.signIn.passkey();
+      if (res && 'data' in res && res.data?.session) {
+        window.location.href = callbackURL;
+        return;
+      }
+      if (res?.error?.message) setError(res.error.message);
+    } catch {
+      setError(t('passkey-error', { defaultValue: 'Passkey sign-in was cancelled or failed.' }));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDiscordSignIn = async () => {
@@ -224,6 +267,19 @@ function LoginPage() {
             )}
           </button>
 
+          {!isSignUp && (
+            <button onClick={handlePasskeySignIn} disabled={loading} className={socialBtn}>
+              {loading ? (
+                <span className="animate-pulse text-[#a1a1a6]">{t("connecting", { defaultValue: "Connecting…" })}</span>
+              ) : (
+                <>
+                  <MdFingerprint className="text-xl text-emerald-400" />
+                  <span>{t("continue-with-passkey", { defaultValue: "Sign in with a passkey" })}</span>
+                </>
+              )}
+            </button>
+          )}
+
           <div className="relative py-1">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-white/10" />
@@ -286,6 +342,9 @@ function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                // "webauthn" lets the browser offer saved passkeys in the
+                // autofill dropdown (conditional UI, wired above).
+                autoComplete={isSignUp ? 'email' : 'username webauthn'}
                 className={field}
               />
             </div>

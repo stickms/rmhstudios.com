@@ -17,6 +17,7 @@ import { RouteErrorFallback } from "@/components/errors/RouteErrorFallback";
 import { NotFound } from "@/components/errors/NotFound";
 import { installGlobalErrorHandlers } from "@/lib/client-errors";
 import { initWebVitals } from "@/lib/rum";
+import { registerServiceWorker } from "@/lib/sw-register";
 import { organizationSchema, websiteSchema, jsonLdScript } from "@/lib/schema";
 import { auth } from "@/lib/auth";
 import appCss from "@/app/globals.css?url";
@@ -195,6 +196,7 @@ function RootComponent() {
   useEffect(() => {
     installGlobalErrorHandlers();
     initWebVitals();
+    registerServiceWorker();
   }, []);
 
   // Inside a Discord Activity iframe, all routes must stay within /discord/*.

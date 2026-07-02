@@ -141,6 +141,9 @@ function deletedMessageFor(record: { deletedByAdmin?: boolean }): string {
 function mapOriginal(o: any): FeedItem | undefined {
   if (!o) return undefined;
   const isDeleted = !!o.deletedAt;
+  // Only free, public originals expose their media in the quote card —
+  // paid/followers-only content must not leak through a quote.
+  const showMedia = !isDeleted && (o.unlockPrice ?? 0) === 0 && o.audience === "PUBLIC";
   return {
     id: o.id,
     type: "rmhark",
@@ -151,6 +154,8 @@ function mapOriginal(o: any): FeedItem | undefined {
     commentCount: o.commentCount,
     repostCount: o.repostCount,
     viewCount: o.viewCount,
+    gifUrl: showMedia ? (o.gifUrl ?? undefined) : undefined,
+    imageUrls: showMedia ? o.imageUrls : undefined,
     deletedAt: o.deletedAt?.toISOString() || null,
     deletedByAdmin: o.deletedByAdmin,
   };

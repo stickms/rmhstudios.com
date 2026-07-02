@@ -7,6 +7,7 @@ import { FeedTabs } from './FeedTabs';
 import { ComposeBox } from './ComposeBox';
 import { FeedList } from './FeedList';
 import { FeedAnnouncements } from './FeedAnnouncements';
+import { OnboardingChecklist } from './OnboardingChecklist';
 import { useMobileSidebar } from './MobileSidebarShell';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
@@ -229,6 +230,9 @@ export function FeedColumn() {
 
       {/* Admin announcements, pinned above the composer */}
       {!search && <FeedAnnouncements />}
+
+      {/* First-run onboarding checklist (new accounts only) */}
+      {!search && <OnboardingChecklist />}
 
       {/* Compose */}
       {!search && <ComposeBox />}

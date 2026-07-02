@@ -12,6 +12,8 @@ import { MobileMenuButton } from './MobileMenuButton';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { RMHarkCard } from './RMHarkCard';
+import { AchievementsColumn } from './AchievementsColumn';
+import { AchievementBadgeStrip } from './AchievementBadgeStrip';
 import { ProfileEditModal } from './ProfileEditModal';
 import { SocialListModal } from './SocialListModal';
 import { VinylRecord } from './VinylRecord';
@@ -61,7 +63,7 @@ interface ProfileData {
   };
 }
 
-type ProfileTab = 'rmharks' | 'likes';
+type ProfileTab = 'rmharks' | 'likes' | 'achievements';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
 
@@ -660,6 +662,9 @@ export function ProfileColumn({ userId }: { userId: string }) {
           </span>
         </div>
 
+        {/* Best unlocked badges — links to the Achievements tab */}
+        <AchievementBadgeStrip userId={profile.id} onShowAll={() => handleTabChange('achievements')} />
+
         <div className="flex items-center gap-4 text-sm">
           <button
             onClick={() => setSocialModal('following')}
@@ -726,6 +731,23 @@ export function ProfileColumn({ userId }: { userId: string }) {
               />
             </button>
           )}
+          <button
+            onClick={() => handleTabChange('achievements')}
+            aria-pressed={tab === 'achievements'}
+            className={`relative flex-1 py-3 text-center text-sm font-bold transition-colors duration-150 ${
+              tab === 'achievements'
+                ? 'text-site-accent'
+                : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
+            }`}
+          >
+            {t('achievements', { defaultValue: 'Achievements' })}
+            <span
+              aria-hidden
+              className={`pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-center bg-site-accent transition-transform duration-150 ${
+                tab === 'achievements' ? 'scale-x-100' : 'scale-x-0'
+              }`}
+            />
+          </button>
         </div>
       </div>
 
@@ -794,6 +816,13 @@ export function ProfileColumn({ userId }: { userId: string }) {
           )}
 
           <div ref={likedSentinelRef} className="h-1" />
+        </div>
+      )}
+
+      {/* Achievements tab content — AchievementsColumn self-fetches (public API) */}
+      {tab === 'achievements' && (
+        <div className="p-4">
+          <AchievementsColumn userId={profile.id} hideHeader />
         </div>
       )}
 

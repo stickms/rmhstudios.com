@@ -27,6 +27,8 @@ model User {
   banReason       String?   @db.VarChar(500)
   // Presence: last heartbeat from an active client (for "online now")
   lastSeenAt      DateTime?
+  // Referral program: this user's shareable invite code (lazily generated)
+  referralCode    String?   @unique
   // ─── RMHark AI bot users (generated + driven by the bot-worker) ──
   isBot           Boolean   @default(false) // synthetic account created by the bot-worker
   botPersona      String?   @db.Text         // private prompt seed describing the bot's posting "theme"
@@ -243,8 +245,56 @@ model User {
 
   media         Media[]
 
+  // WebAuthn passkeys (@better-auth/passkey)
+  passkeys Passkey[]
+
+  // Web Push subscriptions
+  pushSubscriptions PushSubscription[]
+
+  // Referral program
+  referralsMade     Referral[] @relation("Referrer")
+  referralReceived  Referral?  @relation("Referee")
+
+  // Notification preferences (per-type opt-outs)
+  notificationPreference NotificationPreference?
+
   @@index([isBot])
   @@map("user")
+}
+
+// Per-type notification opt-outs. A missing row means "everything on"
+// (the default) — rows are created on first save from the preferences panel.
+// Moderation notices (SYSTEM/strike) are always delivered regardless.
+model NotificationPreference {
+  userId   String  @id
+  likes    Boolean @default(true)
+  comments Boolean @default(true) // includes replies
+  follows  Boolean @default(true)
+  mentions Boolean @default(true)
+  reposts  Boolean @default(true)
+  system   Boolean @default(true) // achievements, levels, coins, …
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preference")
+}
+
+// One row per successfully attributed invite. `rewardedAt` is set when the
+// mutual coin reward fires (on the referee's first achievement unlock, so
+// throwaway signups earn nothing).
+model Referral {
+  id         String    @id @default(cuid())
+  referrerId String
+  refereeId  String    @unique
+  code       String    @db.VarChar(32)
+  createdAt  DateTime  @default(now())
+  rewardedAt DateTime?
+
+  referrer User @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee  User @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId])
+  @@map("referral")
 }
 
 model Session {
@@ -295,6 +345,46 @@ model Verification {
   updatedAt  DateTime? @updatedAt
 
   @@map("verification")
+}
+
+// Web Push subscriptions — one row per browser/device a user enabled push on.
+// Endpoint is globally unique; rows are removed when the push service reports
+// the subscription gone (404/410) or the user disables push on that device.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscription")
+}
+
+// WebAuthn credentials for password-less sign-in (@better-auth/passkey).
+// Field names/types follow the plugin's expected schema exactly.
+model Passkey {
+  id           String    @id @default(cuid())
+  name         String?
+  publicKey    String
+  userId       String
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime? @default(now())
+  aaguid       String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialID])
+  @@map("passkey")
 }
 
 // --- Blog Models ---
@@ -1415,6 +1505,10 @@ model UserProfile {
   // Creator tip goal (monthly coins target shown on the profile)
   tipGoal               Int?
   tipGoalLabel          String?   @db.VarChar(80)
+
+  // First-run onboarding checklist: when the completion reward was claimed
+  // (null = not claimed; also acts as the atomic double-claim guard)
+  onboardingRewardedAt  DateTime?
 
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt

@@ -7,6 +7,7 @@ import type { FeedItem, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
 import { notifyMentions } from "@/lib/feed/notify-mentions.server";
+import { createNotification } from "@/lib/notifications.server";
 import { grantAchievement, progressAchievement } from "@/lib/achievements/engine.server";
 import { getActiveBan } from "@/lib/admin-audit.server";
 import { awardXp } from "@/lib/xp/engine.server";
@@ -227,10 +228,13 @@ export const Route = createFileRoute('/api/rmharks')({
         select: {
           id: true, content: true, createdAt: true, likeCount: true,
           commentCount: true, repostCount: true, viewCount: true,
+          gifUrl: true, imageUrls: true, unlockPrice: true, audience: true,
           user: { select: userDisplaySelect },
         },
       });
       if (orig) {
+        // Match timeline mapOriginal: only free public originals show media.
+        const showMedia = (orig.unlockPrice ?? 0) === 0 && orig.audience === "PUBLIC";
         item.original = {
           id: orig.id,
           type: "rmhark",
@@ -241,7 +245,20 @@ export const Route = createFileRoute('/api/rmharks')({
           commentCount: orig.commentCount,
           repostCount: orig.repostCount,
           viewCount: orig.viewCount,
+          gifUrl: showMedia ? (orig.gifUrl ?? undefined) : undefined,
+          imageUrls: showMedia ? orig.imageUrls : undefined,
         };
+
+        // Tell the quoted author. Links to the QUOTE so they see the commentary.
+        void createNotification({
+          userId: orig.user.id,
+          actorId: session.user.id,
+          type: "REPOST",
+          entityType: "rmhark",
+          entityId: item.id,
+          preview: content.trim().slice(0, 140) || null,
+          link: `/u/${item.user?.handle ?? "_"}/post/${item.id}`,
+        });
       }
     }
 

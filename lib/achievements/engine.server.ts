@@ -13,6 +13,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { getAchievement } from '@/lib/achievements/catalog';
 import { createNotification } from '@/lib/notifications.server';
+import { maybeRewardReferral } from '@/lib/referrals.server';
 
 async function rewardUnlock(userId: string, achievementId: string, name: string, coinReward: number) {
   if (coinReward > 0) {
@@ -33,6 +34,9 @@ async function rewardUnlock(userId: string, achievementId: string, name: string,
     preview: `Achievement unlocked: ${name}${coinReward > 0 ? ` (+${coinReward} coins)` : ''}`,
     link: '/achievements',
   });
+  // A first unlock marks a referred account as genuinely active — pay out the
+  // mutual referral reward (no-op if the user wasn't referred / already paid).
+  void maybeRewardReferral(userId);
 }
 
 /** Unlock a one-shot achievement if not already unlocked. Returns true if newly unlocked. */

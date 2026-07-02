@@ -10,6 +10,7 @@ import { applyHtmlLangDir } from "@/lib/i18n/dom";
 import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
 import { AppI18nProvider } from "@/components/i18n/AppI18nProvider";
+import { CommandPalette } from "@/components/site/CommandPalette";
 import type { Locale } from "@/lib/i18n/config";
 import type { LocaleBundle } from "@/lib/i18n/resources";
 
@@ -268,6 +269,31 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     }
   }, [userId, fetchResolvedUser]);
 
+  // Referral attribution: /ref/$code stashes an invite code before sign-up;
+  // claim it once a session exists (works for email and OAuth flows alike).
+  // The key is cleared on any server verdict and kept only on network failure
+  // so a flaky connection can retry on the next load.
+  useEffect(() => {
+    if (!userId) return;
+    let code: string | null = null;
+    try {
+      code = localStorage.getItem("rmh-ref");
+    } catch {
+      return;
+    }
+    if (!code) return;
+    fetch("/api/referrals/claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ code }),
+    })
+      .then((res) => {
+        if (res.status !== 429) localStorage.removeItem("rmh-ref");
+      })
+      .catch(() => {});
+  }, [userId]);
+
   const isAppRoute = THEME_EXCLUDED_ROUTES.some((route) =>
     pathname?.startsWith(route)
   );
@@ -331,6 +357,7 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
       <SessionCtx.Provider value={effectiveSession}>
         <ResolvedUserCtx.Provider value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}>
         {children}
+        <CommandPalette />
         </ResolvedUserCtx.Provider>
         <Toaster
           theme="dark"

@@ -12,6 +12,7 @@ import { EditPostModal } from './EditPostModal';
 import { PostLockedCard } from './PostLockedCard';
 import { Link } from '@tanstack/react-router';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
+import { ProfileHoverCard } from './ProfileHoverCard';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
 import { LinkPreview } from './LinkPreview';
@@ -403,12 +404,19 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       )}
 
       <div className="flex gap-3">
-        <UserAvatar user={displayUser} />
+        {item.user ? (
+          <ProfileHoverCard userId={item.user.handle || item.user.id}>
+            <span className="shrink-0 self-start"><UserAvatar user={displayUser} /></span>
+          </ProfileHoverCard>
+        ) : (
+          <UserAvatar user={displayUser} />
+        )}
 
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center gap-1.5 text-sm pr-6">
             {item.user ? (
+              <ProfileHoverCard userId={item.user.handle || item.user.id}>
               <Link to={userProfileHref(item.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
               <span
                 className="font-bold text-site-text truncate"
@@ -439,6 +447,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 </span>
               )}
             </Link>
+              </ProfileHoverCard>
             ) : (
               <span className="font-bold text-site-text truncate">
                 {t('unknown-user', { defaultValue: 'Unknown' })}
@@ -494,9 +503,28 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           </>
           )}
 
-          {/* Quoted original (if repost) */}
+          {/* Quoted original (if repost) — clicks through to the original post */}
           {item.original && (
-            <div className="mt-3 border border-site-border rounded-site p-3 bg-site-surface/30">
+            <div
+              role="link"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.getSelection()?.toString()) return;
+                if ((e.target as HTMLElement).closest('a, button')) return;
+                if (freshOriginalUser && item.original) {
+                  navigate({ to: postHref(freshOriginalUser, item.original.id) });
+                }
+              }}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && freshOriginalUser && item.original) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  navigate({ to: postHref(freshOriginalUser, item.original.id) });
+                }
+              }}
+              className="mt-3 border border-site-border rounded-site p-3 bg-site-surface/30 cursor-pointer transition-colors hover:bg-site-surface/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/40"
+            >
               <div className="flex items-center gap-1.5 text-sm mb-1">
                 {freshOriginalUser ? (
                   <Link to={userProfileHref(freshOriginalUser)} className="flex items-center gap-1.5 min-w-0 hover:underline">
@@ -524,6 +552,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 )}
               </div>
               <RMHarkContent text={item.original.content ?? ''} className="text-site-text text-sm whitespace-pre-wrap break-words" />
+              {/* Original's media (server omits these for paid/non-public posts) */}
+              {item.original.gifUrl && <GifEmbed url={item.original.gifUrl} className="mt-2" />}
+              {!item.original.gifUrl && item.original.imageUrls && item.original.imageUrls.length > 0 && (
+                <PostImageGrid urls={item.original.imageUrls} className="mt-2" />
+              )}
             </div>
           )}
 

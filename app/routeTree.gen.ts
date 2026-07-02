@@ -31,6 +31,7 @@ import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
 import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LightsOutRouteImport } from './routes/lights-out'
@@ -94,6 +95,7 @@ import { Route as RmhCapitalFirmRouteImport } from './routes/rmh-capital/firm'
 import { Route as RmhCapitalContactRouteImport } from './routes/rmh-capital/contact'
 import { Route as RmhCapitalCareersRouteImport } from './routes/rmh-capital/careers'
 import { Route as RmhCapitalBusinessesRouteImport } from './routes/rmh-capital/businesses'
+import { Route as RefCodeRouteImport } from './routes/ref.$code'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
@@ -160,6 +162,7 @@ import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/in
 import { Route as ApiRankedIndexRouteImport } from './routes/api/ranked/index'
 import { Route as ApiPredictionsIndexRouteImport } from './routes/api/predictions/index'
 import { Route as ApiPersonasIndexRouteImport } from './routes/api/personas/index'
+import { Route as ApiOnboardingIndexRouteImport } from './routes/api/onboarding/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiGroupChatsIndexRouteImport } from './routes/api/group-chats/index'
 import { Route as ApiCommunitiesIndexRouteImport } from './routes/api/communities/index'
@@ -249,14 +252,20 @@ import { Route as ApiRideshareGeocodeRouteImport } from './routes/api/rideshare/
 import { Route as ApiRideshareEarningsRouteImport } from './routes/api/rideshare/earnings'
 import { Route as ApiRideshareDriverRouteImport } from './routes/api/rideshare/driver'
 import { Route as ApiRideshareDirectionsRouteImport } from './routes/api/rideshare/directions'
+import { Route as ApiReferralsMeRouteImport } from './routes/api/referrals/me'
+import { Route as ApiReferralsClaimRouteImport } from './routes/api/referrals/claim'
+import { Route as ApiPushSubscribeRouteImport } from './routes/api/push/subscribe'
+import { Route as ApiPushPublicKeyRouteImport } from './routes/api/push/public-key'
 import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-month'
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
 import { Route as ApiProfileAvatarRouteImport } from './routes/api/profile/avatar'
 import { Route as ApiProfileIdRouteImport } from './routes/api/profile/$id'
+import { Route as ApiPresenceOnlineCountRouteImport } from './routes/api/presence/online-count'
 import { Route as ApiPresenceHeartbeatRouteImport } from './routes/api/presence/heartbeat'
 import { Route as ApiPredictionsIdRouteImport } from './routes/api/predictions/$id'
 import { Route as ApiNotificationsUnreadCountRouteImport } from './routes/api/notifications/unread-count'
 import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
+import { Route as ApiNotificationsPreferencesRouteImport } from './routes/api/notifications/preferences'
 import { Route as ApiNewsRejectRouteImport } from './routes/api/news/reject'
 import { Route as ApiNewsApproveRouteImport } from './routes/api/news/approve'
 import { Route as ApiNeonDriftwayScoreRouteImport } from './routes/api/neon-driftway/score'
@@ -326,6 +335,7 @@ import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-bu
 import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
 import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
+import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
 import { Route as SiteRideshareRideRouteImport } from './routes/_site/rideshare/ride'
 import { Route as SiteRideshareDriveRouteImport } from './routes/_site/rideshare/drive'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
@@ -621,6 +631,11 @@ const RmhCapitalRoute = RmhCapitalRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfflineRoute = OfflineRouteImport.update({
+  id: '/offline',
+  path: '/offline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NeonDriftwayRoute = NeonDriftwayRouteImport.update({
@@ -936,6 +951,11 @@ const RmhCapitalBusinessesRoute = RmhCapitalBusinessesRouteImport.update({
   id: '/businesses',
   path: '/businesses',
   getParentRoute: () => RmhCapitalRoute,
+} as any)
+const RefCodeRoute = RefCodeRouteImport.update({
+  id: '/ref/$code',
+  path: '/ref/$code',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const NewsSlugRoute = NewsSlugRouteImport.update({
   id: '/news/$slug',
@@ -1266,6 +1286,11 @@ const ApiPredictionsIndexRoute = ApiPredictionsIndexRouteImport.update({
 const ApiPersonasIndexRoute = ApiPersonasIndexRouteImport.update({
   id: '/api/personas/',
   path: '/api/personas/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOnboardingIndexRoute = ApiOnboardingIndexRouteImport.update({
+  id: '/api/onboarding/',
+  path: '/api/onboarding/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
@@ -1721,6 +1746,26 @@ const ApiRideshareDirectionsRoute = ApiRideshareDirectionsRouteImport.update({
   path: '/api/rideshare/directions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiReferralsMeRoute = ApiReferralsMeRouteImport.update({
+  id: '/api/referrals/me',
+  path: '/api/referrals/me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiReferralsClaimRoute = ApiReferralsClaimRouteImport.update({
+  id: '/api/referrals/claim',
+  path: '/api/referrals/claim',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPushSubscribeRoute = ApiPushSubscribeRouteImport.update({
+  id: '/api/push/subscribe',
+  path: '/api/push/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPushPublicKeyRoute = ApiPushPublicKeyRouteImport.update({
+  id: '/api/push/public-key',
+  path: '/api/push/public-key',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPromoFreeMonthRoute = ApiPromoFreeMonthRouteImport.update({
   id: '/api/promo/free-month',
   path: '/api/promo/free-month',
@@ -1740,6 +1785,11 @@ const ApiProfileIdRoute = ApiProfileIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiProfileRoute,
+} as any)
+const ApiPresenceOnlineCountRoute = ApiPresenceOnlineCountRouteImport.update({
+  id: '/api/presence/online-count',
+  path: '/api/presence/online-count',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPresenceHeartbeatRoute = ApiPresenceHeartbeatRouteImport.update({
   id: '/api/presence/heartbeat',
@@ -1762,6 +1812,12 @@ const ApiNotificationsReadRoute = ApiNotificationsReadRouteImport.update({
   path: '/api/notifications/read',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiNotificationsPreferencesRoute =
+  ApiNotificationsPreferencesRouteImport.update({
+    id: '/api/notifications/preferences',
+    path: '/api/notifications/preferences',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiNewsRejectRoute = ApiNewsRejectRouteImport.update({
   id: '/api/news/reject',
   path: '/api/news/reject',
@@ -2111,6 +2167,11 @@ const SiteStudyDeckIdRoute = SiteStudyDeckIdRouteImport.update({
 const SiteStoreUseridRoute = SiteStoreUseridRouteImport.update({
   id: '/store/$userid',
   path: '/store/$userid',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSettingsSecurityRoute = SiteSettingsSecurityRouteImport.update({
+  id: '/settings/security',
+  path: '/settings/security',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteRideshareRideRoute = SiteRideshareRideRouteImport.update({
@@ -3120,6 +3181,7 @@ export interface FileRoutesByFullPath {
   '/lights-out': typeof LightsOutRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
+  '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -3196,6 +3258,7 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
@@ -3260,6 +3323,7 @@ export interface FileRoutesByFullPath {
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
+  '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/tag/$tag': typeof SiteTagTagRoute
@@ -3329,14 +3393,20 @@ export interface FileRoutesByFullPath {
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
+  '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
+  '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/public-key': typeof ApiPushPublicKeyRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/referrals/claim': typeof ApiReferralsClaimRoute
+  '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
@@ -3426,6 +3496,7 @@ export interface FileRoutesByFullPath {
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/onboarding/': typeof ApiOnboardingIndexRoute
   '/api/personas/': typeof ApiPersonasIndexRoute
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
@@ -3619,6 +3690,7 @@ export interface FileRoutesByTo {
   '/lights-out': typeof LightsOutRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
+  '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -3677,6 +3749,7 @@ export interface FileRoutesByTo {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
@@ -3740,6 +3813,7 @@ export interface FileRoutesByTo {
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
+  '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/tag/$tag': typeof SiteTagTagRoute
@@ -3809,14 +3883,20 @@ export interface FileRoutesByTo {
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
+  '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
+  '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/public-key': typeof ApiPushPublicKeyRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/referrals/claim': typeof ApiReferralsClaimRoute
+  '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
@@ -3906,6 +3986,7 @@ export interface FileRoutesByTo {
   '/api/communities': typeof ApiCommunitiesIndexRoute
   '/api/group-chats': typeof ApiGroupChatsIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
+  '/api/onboarding': typeof ApiOnboardingIndexRoute
   '/api/personas': typeof ApiPersonasIndexRoute
   '/api/predictions': typeof ApiPredictionsIndexRoute
   '/api/ranked': typeof ApiRankedIndexRoute
@@ -4105,6 +4186,7 @@ export interface FileRoutesById {
   '/lights-out': typeof LightsOutRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
+  '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -4181,6 +4263,7 @@ export interface FileRoutesById {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
@@ -4246,6 +4329,7 @@ export interface FileRoutesById {
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/rideshare/drive': typeof SiteRideshareDriveRoute
   '/_site/rideshare/ride': typeof SiteRideshareRideRoute
+  '/_site/settings/security': typeof SiteSettingsSecurityRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
   '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
@@ -4315,14 +4399,20 @@ export interface FileRoutesById {
   '/api/neon-driftway/score': typeof ApiNeonDriftwayScoreRoute
   '/api/news/approve': typeof ApiNewsApproveRoute
   '/api/news/reject': typeof ApiNewsRejectRoute
+  '/api/notifications/preferences': typeof ApiNotificationsPreferencesRoute
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
+  '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/public-key': typeof ApiPushPublicKeyRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
+  '/api/referrals/claim': typeof ApiReferralsClaimRoute
+  '/api/referrals/me': typeof ApiReferralsMeRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
@@ -4412,6 +4502,7 @@ export interface FileRoutesById {
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
+  '/api/onboarding/': typeof ApiOnboardingIndexRoute
   '/api/personas/': typeof ApiPersonasIndexRoute
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
@@ -4612,6 +4703,7 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/login'
     | '/neon-driftway'
+    | '/offline'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -4688,6 +4780,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
@@ -4752,6 +4845,7 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/rideshare/drive'
     | '/rideshare/ride'
+    | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
     | '/tag/$tag'
@@ -4821,14 +4915,20 @@ export interface FileRouteTypes {
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
+    | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
     | '/api/presence/heartbeat'
+    | '/api/presence/online-count'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
     | '/api/promo/free-month'
+    | '/api/push/public-key'
+    | '/api/push/subscribe'
+    | '/api/referrals/claim'
+    | '/api/referrals/me'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/earnings'
@@ -4918,6 +5018,7 @@ export interface FileRouteTypes {
     | '/api/communities/'
     | '/api/group-chats/'
     | '/api/notifications/'
+    | '/api/onboarding/'
     | '/api/personas/'
     | '/api/predictions/'
     | '/api/ranked/'
@@ -5111,6 +5212,7 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/login'
     | '/neon-driftway'
+    | '/offline'
     | '/privacy'
     | '/rochester-offensive'
     | '/sitemap.xml'
@@ -5169,6 +5271,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
@@ -5232,6 +5335,7 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/rideshare/drive'
     | '/rideshare/ride'
+    | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
     | '/tag/$tag'
@@ -5301,14 +5405,20 @@ export interface FileRouteTypes {
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
+    | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
     | '/api/presence/heartbeat'
+    | '/api/presence/online-count'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
     | '/api/promo/free-month'
+    | '/api/push/public-key'
+    | '/api/push/subscribe'
+    | '/api/referrals/claim'
+    | '/api/referrals/me'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/earnings'
@@ -5398,6 +5508,7 @@ export interface FileRouteTypes {
     | '/api/communities'
     | '/api/group-chats'
     | '/api/notifications'
+    | '/api/onboarding'
     | '/api/personas'
     | '/api/predictions'
     | '/api/ranked'
@@ -5596,6 +5707,7 @@ export interface FileRouteTypes {
     | '/lights-out'
     | '/login'
     | '/neon-driftway'
+    | '/offline'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -5672,6 +5784,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
     | '/rmh-capital/contact'
@@ -5737,6 +5850,7 @@ export interface FileRouteTypes {
     | '/_site/profile/$id'
     | '/_site/rideshare/drive'
     | '/_site/rideshare/ride'
+    | '/_site/settings/security'
     | '/_site/store/$userid'
     | '/_site/study/$deckId'
     | '/_site/tag/$tag'
@@ -5806,14 +5920,20 @@ export interface FileRouteTypes {
     | '/api/neon-driftway/score'
     | '/api/news/approve'
     | '/api/news/reject'
+    | '/api/notifications/preferences'
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
     | '/api/presence/heartbeat'
+    | '/api/presence/online-count'
     | '/api/profile/$id'
     | '/api/profile/avatar'
     | '/api/profile/me'
     | '/api/promo/free-month'
+    | '/api/push/public-key'
+    | '/api/push/subscribe'
+    | '/api/referrals/claim'
+    | '/api/referrals/me'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/earnings'
@@ -5903,6 +6023,7 @@ export interface FileRouteTypes {
     | '/api/communities/'
     | '/api/group-chats/'
     | '/api/notifications/'
+    | '/api/onboarding/'
     | '/api/personas/'
     | '/api/predictions/'
     | '/api/ranked/'
@@ -6102,6 +6223,7 @@ export interface RootRouteChildren {
   LightsOutRoute: typeof LightsOutRoute
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
+  OfflineRoute: typeof OfflineRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
@@ -6148,6 +6270,7 @@ export interface RootRouteChildren {
   DiscordRmhboxRoute: typeof DiscordRmhboxRoute
   LibrarySlugRoute: typeof LibrarySlugRoute
   NewsSlugRoute: typeof NewsSlugRoute
+  RefCodeRoute: typeof RefCodeRoute
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
@@ -6208,11 +6331,17 @@ export interface RootRouteChildren {
   ApiNeonDriftwayScoreRoute: typeof ApiNeonDriftwayScoreRoute
   ApiNewsApproveRoute: typeof ApiNewsApproveRoute
   ApiNewsRejectRoute: typeof ApiNewsRejectRoute
+  ApiNotificationsPreferencesRoute: typeof ApiNotificationsPreferencesRoute
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
   ApiNotificationsUnreadCountRoute: typeof ApiNotificationsUnreadCountRoute
   ApiPredictionsIdRoute: typeof ApiPredictionsIdRouteWithChildren
   ApiPresenceHeartbeatRoute: typeof ApiPresenceHeartbeatRoute
+  ApiPresenceOnlineCountRoute: typeof ApiPresenceOnlineCountRoute
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
+  ApiPushPublicKeyRoute: typeof ApiPushPublicKeyRoute
+  ApiPushSubscribeRoute: typeof ApiPushSubscribeRoute
+  ApiReferralsClaimRoute: typeof ApiReferralsClaimRoute
+  ApiReferralsMeRoute: typeof ApiReferralsMeRoute
   ApiRideshareDirectionsRoute: typeof ApiRideshareDirectionsRoute
   ApiRideshareDriverRoute: typeof ApiRideshareDriverRoute
   ApiRideshareEarningsRoute: typeof ApiRideshareEarningsRoute
@@ -6272,6 +6401,7 @@ export interface RootRouteChildren {
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
   ApiGroupChatsIndexRoute: typeof ApiGroupChatsIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
+  ApiOnboardingIndexRoute: typeof ApiOnboardingIndexRoute
   ApiPersonasIndexRoute: typeof ApiPersonasIndexRoute
   ApiPredictionsIndexRoute: typeof ApiPredictionsIndexRoute
   ApiRankedIndexRoute: typeof ApiRankedIndexRoute
@@ -6517,6 +6647,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offline': {
+      id: '/offline'
+      path: '/offline'
+      fullPath: '/offline'
+      preLoaderRoute: typeof OfflineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/neon-driftway': {
@@ -6959,6 +7096,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmh-capital/businesses'
       preLoaderRoute: typeof RmhCapitalBusinessesRouteImport
       parentRoute: typeof RmhCapitalRoute
+    }
+    '/ref/$code': {
+      id: '/ref/$code'
+      path: '/ref/$code'
+      fullPath: '/ref/$code'
+      preLoaderRoute: typeof RefCodeRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/news/$slug': {
       id: '/news/$slug'
@@ -7420,6 +7564,13 @@ declare module '@tanstack/react-router' {
       path: '/api/personas'
       fullPath: '/api/personas/'
       preLoaderRoute: typeof ApiPersonasIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/onboarding/': {
+      id: '/api/onboarding/'
+      path: '/api/onboarding'
+      fullPath: '/api/onboarding/'
+      preLoaderRoute: typeof ApiOnboardingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/notifications/': {
@@ -8045,6 +8196,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRideshareDirectionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/referrals/me': {
+      id: '/api/referrals/me'
+      path: '/api/referrals/me'
+      fullPath: '/api/referrals/me'
+      preLoaderRoute: typeof ApiReferralsMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/referrals/claim': {
+      id: '/api/referrals/claim'
+      path: '/api/referrals/claim'
+      fullPath: '/api/referrals/claim'
+      preLoaderRoute: typeof ApiReferralsClaimRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push/subscribe': {
+      id: '/api/push/subscribe'
+      path: '/api/push/subscribe'
+      fullPath: '/api/push/subscribe'
+      preLoaderRoute: typeof ApiPushSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push/public-key': {
+      id: '/api/push/public-key'
+      path: '/api/push/public-key'
+      fullPath: '/api/push/public-key'
+      preLoaderRoute: typeof ApiPushPublicKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/promo/free-month': {
       id: '/api/promo/free-month'
       path: '/api/promo/free-month'
@@ -8073,6 +8252,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProfileIdRouteImport
       parentRoute: typeof ApiProfileRoute
     }
+    '/api/presence/online-count': {
+      id: '/api/presence/online-count'
+      path: '/api/presence/online-count'
+      fullPath: '/api/presence/online-count'
+      preLoaderRoute: typeof ApiPresenceOnlineCountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/presence/heartbeat': {
       id: '/api/presence/heartbeat'
       path: '/api/presence/heartbeat'
@@ -8099,6 +8285,13 @@ declare module '@tanstack/react-router' {
       path: '/api/notifications/read'
       fullPath: '/api/notifications/read'
       preLoaderRoute: typeof ApiNotificationsReadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/notifications/preferences': {
+      id: '/api/notifications/preferences'
+      path: '/api/notifications/preferences'
+      fullPath: '/api/notifications/preferences'
+      preLoaderRoute: typeof ApiNotificationsPreferencesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/news/reject': {
@@ -8582,6 +8775,13 @@ declare module '@tanstack/react-router' {
       path: '/store/$userid'
       fullPath: '/store/$userid'
       preLoaderRoute: typeof SiteStoreUseridRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/settings/security': {
+      id: '/_site/settings/security'
+      path: '/settings/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof SiteSettingsSecurityRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/rideshare/ride': {
@@ -9989,6 +10189,7 @@ interface SiteRouteChildren {
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteRideshareDriveRoute: typeof SiteRideshareDriveRoute
   SiteRideshareRideRoute: typeof SiteRideshareRideRoute
+  SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
   SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
@@ -10040,6 +10241,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteRideshareDriveRoute: SiteRideshareDriveRoute,
   SiteRideshareRideRoute: SiteRideshareRideRoute,
+  SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
   SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,
   SiteTagTagRoute: SiteTagTagRoute,
@@ -10991,6 +11193,7 @@ const rootRouteChildren: RootRouteChildren = {
   LightsOutRoute: LightsOutRoute,
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
+  OfflineRoute: OfflineRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,
@@ -11037,6 +11240,7 @@ const rootRouteChildren: RootRouteChildren = {
   DiscordRmhboxRoute: DiscordRmhboxRoute,
   LibrarySlugRoute: LibrarySlugRoute,
   NewsSlugRoute: NewsSlugRoute,
+  RefCodeRoute: RefCodeRoute,
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
@@ -11097,11 +11301,17 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNeonDriftwayScoreRoute: ApiNeonDriftwayScoreRoute,
   ApiNewsApproveRoute: ApiNewsApproveRoute,
   ApiNewsRejectRoute: ApiNewsRejectRoute,
+  ApiNotificationsPreferencesRoute: ApiNotificationsPreferencesRoute,
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
   ApiNotificationsUnreadCountRoute: ApiNotificationsUnreadCountRoute,
   ApiPredictionsIdRoute: ApiPredictionsIdRouteWithChildren,
   ApiPresenceHeartbeatRoute: ApiPresenceHeartbeatRoute,
+  ApiPresenceOnlineCountRoute: ApiPresenceOnlineCountRoute,
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,
+  ApiPushPublicKeyRoute: ApiPushPublicKeyRoute,
+  ApiPushSubscribeRoute: ApiPushSubscribeRoute,
+  ApiReferralsClaimRoute: ApiReferralsClaimRoute,
+  ApiReferralsMeRoute: ApiReferralsMeRoute,
   ApiRideshareDirectionsRoute: ApiRideshareDirectionsRoute,
   ApiRideshareDriverRoute: ApiRideshareDriverRoute,
   ApiRideshareEarningsRoute: ApiRideshareEarningsRoute,
@@ -11161,6 +11371,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
   ApiGroupChatsIndexRoute: ApiGroupChatsIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
+  ApiOnboardingIndexRoute: ApiOnboardingIndexRoute,
   ApiPersonasIndexRoute: ApiPersonasIndexRoute,
   ApiPredictionsIndexRoute: ApiPredictionsIndexRoute,
   ApiRankedIndexRoute: ApiRankedIndexRoute,

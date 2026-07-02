@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -12,7 +13,10 @@ import {
   Eye,
   Heart,
   MessageCircle,
+  Gift,
+  Check,
 } from 'lucide-react';
+import { useSession } from '@/components/Providers';
 
 interface SidebarOfficialBuild {
   id: string;
@@ -61,6 +65,95 @@ interface RightSidebarProps {
   blogPosts: SidebarPost[];
 }
 
+/** Live "N people online" pill. Polls the cached count once a minute. */
+function OnlineNowPill() {
+  const { t } = useTranslation('feed');
+  const [count, setCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const res = await fetch('/api/presence/online-count');
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setCount(data.count ?? null);
+      } catch {
+        // decorative — ignore
+      }
+    };
+    load();
+    const interval = setInterval(load, 60_000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  if (!count) return null;
+  return (
+    <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-3 py-1.5 text-sm text-site-text-muted">
+      <span className="relative flex h-2 w-2" aria-hidden>
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-site-success opacity-60 motion-reduce:animate-none" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-site-success" />
+      </span>
+      {t('online-now-count', { count, defaultValue: '{{count}} people online now' })}
+    </div>
+  );
+}
+
+/** "Invite friends" card — copies the caller's referral link. */
+function InviteFriendsCard() {
+  const { t } = useTranslation('feed');
+  const { data: session } = useSession();
+  const [copied, setCopied] = useState(false);
+  const [reward, setReward] = useState(50);
+
+  if (!session?.user) return null;
+
+  const copyLink = async () => {
+    try {
+      const res = await fetch('/api/referrals/me', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = (await res.json()) as { url: string; reward: number };
+      setReward(data.reward);
+      await navigator.clipboard.writeText(data.url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      // clipboard unavailable — nothing to do
+    }
+  };
+
+  return (
+    <section className="bg-site-surface rounded-site p-4 border border-site-border">
+      <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-1.5">
+        <Gift className="w-5 h-5 text-site-accent" />
+        {t('invite-friends', { defaultValue: 'Invite friends' })}
+      </h2>
+      <p className="mb-3 text-sm text-site-text-muted">
+        {t('invite-friends-blurb', {
+          reward,
+          defaultValue: 'Share your link — you both earn {{reward}} coins when they get going.',
+        })}
+      </p>
+      <button
+        onClick={copyLink}
+        className="flex w-full items-center justify-center gap-2 rounded-site-sm border border-site-border bg-site-bg py-2 text-sm font-medium text-site-text transition-colors hover:bg-site-surface-hover"
+      >
+        {copied ? (
+          <>
+            <Check className="h-4 w-4 text-site-success" aria-hidden />
+            {t('invite-link-copied', { defaultValue: 'Link copied!' })}
+          </>
+        ) : (
+          t('copy-invite-link', { defaultValue: 'Copy invite link' })
+        )}
+      </button>
+    </section>
+  );
+}
+
 export function RightSidebar({
   officialBuilds,
   userBuilds,
@@ -70,6 +163,10 @@ export function RightSidebar({
   const { t } = useTranslation('feed');
   return (
     <div className="p-4 space-y-6">
+      <OnlineNowPill />
+
+      <InviteFriendsCard />
+
       {/* Official Builds */}
       <section className="bg-site-surface rounded-site p-4 border border-site-border">
         <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 mb-3">
