@@ -326,6 +326,7 @@ import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-bu
 import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
 import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
+import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
 import { Route as SiteRideshareRideRouteImport } from './routes/_site/rideshare/ride'
 import { Route as SiteRideshareDriveRouteImport } from './routes/_site/rideshare/drive'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
@@ -2113,6 +2114,11 @@ const SiteStoreUseridRoute = SiteStoreUseridRouteImport.update({
   path: '/store/$userid',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteSettingsSecurityRoute = SiteSettingsSecurityRouteImport.update({
+  id: '/settings/security',
+  path: '/settings/security',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteRideshareRideRoute = SiteRideshareRideRouteImport.update({
   id: '/rideshare/ride',
   path: '/rideshare/ride',
@@ -3260,6 +3266,7 @@ export interface FileRoutesByFullPath {
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
+  '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/tag/$tag': typeof SiteTagTagRoute
@@ -3740,6 +3747,7 @@ export interface FileRoutesByTo {
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
+  '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/tag/$tag': typeof SiteTagTagRoute
@@ -4246,6 +4254,7 @@ export interface FileRoutesById {
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/rideshare/drive': typeof SiteRideshareDriveRoute
   '/_site/rideshare/ride': typeof SiteRideshareRideRoute
+  '/_site/settings/security': typeof SiteSettingsSecurityRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
   '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
@@ -4752,6 +4761,7 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/rideshare/drive'
     | '/rideshare/ride'
+    | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
     | '/tag/$tag'
@@ -5232,6 +5242,7 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/rideshare/drive'
     | '/rideshare/ride'
+    | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
     | '/tag/$tag'
@@ -5737,6 +5748,7 @@ export interface FileRouteTypes {
     | '/_site/profile/$id'
     | '/_site/rideshare/drive'
     | '/_site/rideshare/ride'
+    | '/_site/settings/security'
     | '/_site/store/$userid'
     | '/_site/study/$deckId'
     | '/_site/tag/$tag'
@@ -8584,6 +8596,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteStoreUseridRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/settings/security': {
+      id: '/_site/settings/security'
+      path: '/settings/security'
+      fullPath: '/settings/security'
+      preLoaderRoute: typeof SiteSettingsSecurityRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/rideshare/ride': {
       id: '/_site/rideshare/ride'
       path: '/rideshare/ride'
@@ -9989,6 +10008,7 @@ interface SiteRouteChildren {
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteRideshareDriveRoute: typeof SiteRideshareDriveRoute
   SiteRideshareRideRoute: typeof SiteRideshareRideRoute
+  SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
   SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
@@ -10040,6 +10060,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteRideshareDriveRoute: SiteRideshareDriveRoute,
   SiteRideshareRideRoute: SiteRideshareRideRoute,
+  SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
   SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,
   SiteTagTagRoute: SiteTagTagRoute,

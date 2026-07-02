@@ -243,6 +243,9 @@ model User {
 
   media         Media[]
 
+  // WebAuthn passkeys (@better-auth/passkey)
+  passkeys Passkey[]
+
   @@index([isBot])
   @@map("user")
 }
@@ -295,6 +298,28 @@ model Verification {
   updatedAt  DateTime? @updatedAt
 
   @@map("verification")
+}
+
+// WebAuthn credentials for password-less sign-in (@better-auth/passkey).
+// Field names/types follow the plugin's expected schema exactly.
+model Passkey {
+  id           String    @id @default(cuid())
+  name         String?
+  publicKey    String
+  userId       String
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime? @default(now())
+  aaguid       String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialID])
+  @@map("passkey")
 }
 
 // --- Blog Models ---
