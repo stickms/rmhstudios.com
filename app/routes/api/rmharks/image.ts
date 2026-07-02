@@ -6,8 +6,13 @@ import {
   detectImageExt,
 } from "@/lib/slice-it/upload-validation";
 import { putObject } from "@/lib/storage/s3.server";
-import { feedImageKey, feedImageUrl, contentTypeForFilename } from "@/lib/storage/keys";
-import { optimizeImage } from "@/lib/image-optimize";
+import {
+  feedImageKey,
+  feedImageUrl,
+  contentTypeForFilename,
+  withImageDimensions,
+} from "@/lib/storage/keys";
+import { optimizeImage, imageDimensions } from "@/lib/image-optimize";
 
 // Cap stored dimensions; feed images never need to be larger than this.
 const MAX_DIMENSION = 2048;
@@ -76,6 +81,9 @@ export const Route = createFileRoute('/api/rmharks/image')({
             let outBuffer: Buffer = buffer;
             let outExt: string = ext;
             let outContentType = contentTypeForFilename(`x${ext}`);
+            // Encoded pixel dimensions so the feed can reserve exact layout space
+            // (prevents the images-load-then-jump layout shift).
+            let dims: { width: number; height: number } | null = null;
             try {
               const optimized = await optimizeImage(buffer, {
                 width: MAX_DIMENSION,
@@ -88,12 +96,19 @@ export const Route = createFileRoute('/api/rmharks/image')({
               outBuffer = optimized.buffer;
               outExt = ".webp";
               outContentType = optimized.contentType;
+              dims = { width: optimized.width, height: optimized.height };
             } catch (err) {
               console.warn("[rmhark-image] webp conversion failed, storing original:", err);
+              // Still tag dimensions off the original so the reserve-space path works.
+              dims = await imageDimensions(buffer);
             }
 
             const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-            const filename = `${session.user.id}-${uniqueSuffix}${outExt}`;
+            const filename = withImageDimensions(
+              `${session.user.id}-${uniqueSuffix}${outExt}`,
+              dims?.width,
+              dims?.height,
+            );
             await putObject(feedImageKey(filename), outBuffer, outContentType);
             urls.push(feedImageUrl(filename));
           }

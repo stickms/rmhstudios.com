@@ -9,6 +9,36 @@ export function isSafeFilename(name: string): boolean {
   return SAFE_FILENAME_RE.test(name);
 }
 
+// A `-<width>x<height>` tag inserted right before the file extension so the
+// client can reserve exact layout space before an image loads (no layout shift).
+const DIMENSION_RE = /-(\d{1,5})x(\d{1,5})(?=\.[A-Za-z0-9]+$)/;
+
+/**
+ * Insert a `-WxH` dimension tag before a filename's extension, e.g.
+ * `user-123.webp` → `user-123-1200x800.webp`. Returns the name unchanged if it
+ * has no extension or the dimensions are missing/invalid. The tag uses only
+ * `[0-9x-]`, so tagged names still pass {@link isSafeFilename}.
+ */
+export function withImageDimensions(filename: string, width?: number, height?: number): string {
+  const dot = filename.lastIndexOf(".");
+  if (dot <= 0 || !width || !height || width > 99999 || height > 99999) return filename;
+  return `${filename.slice(0, dot)}-${width}x${height}${filename.slice(dot)}`;
+}
+
+/**
+ * Extract intrinsic pixel dimensions from an image URL or filename tagged by
+ * {@link withImageDimensions}. Ignores any query string. Returns `null` for
+ * legacy/untagged names.
+ */
+export function parseImageDimensions(urlOrName: string): { width: number; height: number } | null {
+  const path = urlOrName.split("?")[0];
+  const m = DIMENSION_RE.exec(path);
+  if (!m) return null;
+  const width = Number(m[1]);
+  const height = Number(m[2]);
+  return width > 0 && height > 0 ? { width, height } : null;
+}
+
 const CONTENT_TYPES: Record<string, string> = {
   ".png": "image/png",
   ".jpg": "image/jpeg",
