@@ -12,10 +12,6 @@ export function getRouter() {
     // Treat preloaded route data as fresh for 30s so an intent-preload followed
     // by the actual navigation doesn't fetch the same data twice.
     defaultPreloadStaleTime: 30_000,
-    // Wrap client navigations in document.startViewTransition() where the
-    // browser supports it (no-op elsewhere). The animation itself lives in
-    // globals.css behind a prefers-reduced-motion guard.
-    defaultViewTransition: true,
   });
 
   return router;

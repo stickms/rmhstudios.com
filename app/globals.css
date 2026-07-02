@@ -2702,26 +2702,3 @@ input[type='number'] {
 .dr-serif { font-family: var(--dr-serif); }
 .dr-serif-body { font-family: var(--dr-serif-body); }
 
-/* ─── View Transitions (route navigation) ────────────────────────────────
- * The router wraps client navigations in document.startViewTransition()
- * (see app/router.tsx). Keep the cross-fade short so navigation never feels
- * slower than an instant swap; browsers without the API skip it entirely. */
-::view-transition-old(root) {
-  animation: vt-fade-out 0.14s ease-in both;
-}
-::view-transition-new(root) {
-  animation: vt-fade-in 0.18s ease-out both;
-}
-@keyframes vt-fade-out {
-  to { opacity: 0; }
-}
-@keyframes vt-fade-in {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation: none;
-  }
-}
