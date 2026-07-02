@@ -4,11 +4,13 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
-import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, CheckCheck, Loader2, Trophy, Sparkles, Zap, Gift, Car, MapPin } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, BellRing, BellOff, CheckCheck, Loader2, Trophy, Sparkles, Zap, Gift, Car, MapPin } from 'lucide-react';
+import { toast } from 'sonner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
+import { usePushSubscription } from '@/lib/usePushSubscription';
 
 type NotificationType = 'LIKE' | 'COMMENT' | 'REPLY' | 'FOLLOW' | 'MENTION' | 'REPOST' | 'SYSTEM';
 
@@ -65,6 +67,7 @@ function systemIdentity(entityType: string | null): { label: string; Icon: typeo
 export function NotificationsColumn({ embedded = false }: { embedded?: boolean } = {}) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
+  const push = usePushSubscription(true);
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -170,10 +173,39 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
     <div className="min-h-screen">
       <header className={`flex items-center gap-3 border-b border-site-border px-4 py-3 ${embedded ? 'justify-end' : 'sticky top-0 z-10 justify-between bg-site-bg/80 backdrop-blur'}`}>
         {!embedded && <h1 className="text-lg font-bold text-site-text">{t('notifications-heading', { defaultValue: 'Notifications' })}</h1>}
-        <Button variant="accent-ghost" size="sm" onClick={markAllRead}>
-          <CheckCheck className="h-4 w-4" />
-          {t('mark-all-read', { defaultValue: 'Mark all read' })}
-        </Button>
+        <div className="flex items-center gap-1.5">
+          {push.supported && (
+            <Button
+              variant="accent-ghost"
+              size="sm"
+              disabled={push.busy}
+              onClick={async () => {
+                if (push.subscribed) {
+                  await push.unsubscribe();
+                  toast.success(t('push-disabled', { defaultValue: 'Push notifications turned off on this device.' }));
+                } else {
+                  const ok = await push.subscribe();
+                  if (ok) toast.success(t('push-enabled', { defaultValue: "You'll now get push notifications on this device." }));
+                  else toast.error(t('push-enable-failed', { defaultValue: 'Could not enable push — check browser permissions.' }));
+                }
+              }}
+              title={push.subscribed
+                ? t('push-toggle-off', { defaultValue: 'Turn off push notifications' })
+                : t('push-toggle-on', { defaultValue: 'Turn on push notifications' })}
+            >
+              {push.subscribed ? <BellOff className="h-4 w-4" /> : <BellRing className="h-4 w-4" />}
+              <span className="hidden sm:inline">
+                {push.subscribed
+                  ? t('push-off', { defaultValue: 'Disable push' })
+                  : t('push-on', { defaultValue: 'Enable push' })}
+              </span>
+            </Button>
+          )}
+          <Button variant="accent-ghost" size="sm" onClick={markAllRead}>
+            <CheckCheck className="h-4 w-4" />
+            {t('mark-all-read', { defaultValue: 'Mark all read' })}
+          </Button>
+        </div>
       </header>
 
       {loading ? (

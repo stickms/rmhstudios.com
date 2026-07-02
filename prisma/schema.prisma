@@ -246,6 +246,9 @@ model User {
   // WebAuthn passkeys (@better-auth/passkey)
   passkeys Passkey[]
 
+  // Web Push subscriptions
+  pushSubscriptions PushSubscription[]
+
   @@index([isBot])
   @@map("user")
 }
@@ -298,6 +301,24 @@ model Verification {
   updatedAt  DateTime? @updatedAt
 
   @@map("verification")
+}
+
+// Web Push subscriptions — one row per browser/device a user enabled push on.
+// Endpoint is globally unique; rows are removed when the push service reports
+// the subscription gone (404/410) or the user disables push on that device.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscription")
 }
 
 // WebAuthn credentials for password-less sign-in (@better-auth/passkey).

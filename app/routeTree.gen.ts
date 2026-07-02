@@ -250,6 +250,8 @@ import { Route as ApiRideshareGeocodeRouteImport } from './routes/api/rideshare/
 import { Route as ApiRideshareEarningsRouteImport } from './routes/api/rideshare/earnings'
 import { Route as ApiRideshareDriverRouteImport } from './routes/api/rideshare/driver'
 import { Route as ApiRideshareDirectionsRouteImport } from './routes/api/rideshare/directions'
+import { Route as ApiPushSubscribeRouteImport } from './routes/api/push/subscribe'
+import { Route as ApiPushPublicKeyRouteImport } from './routes/api/push/public-key'
 import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-month'
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
 import { Route as ApiProfileAvatarRouteImport } from './routes/api/profile/avatar'
@@ -1726,6 +1728,16 @@ const ApiRideshareDriverRoute = ApiRideshareDriverRouteImport.update({
 const ApiRideshareDirectionsRoute = ApiRideshareDirectionsRouteImport.update({
   id: '/api/rideshare/directions',
   path: '/api/rideshare/directions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPushSubscribeRoute = ApiPushSubscribeRouteImport.update({
+  id: '/api/push/subscribe',
+  path: '/api/push/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPushPublicKeyRoute = ApiPushPublicKeyRouteImport.update({
+  id: '/api/push/public-key',
+  path: '/api/push/public-key',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPromoFreeMonthRoute = ApiPromoFreeMonthRouteImport.update({
@@ -3351,6 +3363,8 @@ export interface FileRoutesByFullPath {
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/public-key': typeof ApiPushPublicKeyRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
@@ -3833,6 +3847,8 @@ export interface FileRoutesByTo {
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/public-key': typeof ApiPushPublicKeyRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
@@ -4341,6 +4357,8 @@ export interface FileRoutesById {
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
+  '/api/push/public-key': typeof ApiPushPublicKeyRoute
+  '/api/push/subscribe': typeof ApiPushSubscribeRoute
   '/api/rideshare/directions': typeof ApiRideshareDirectionsRoute
   '/api/rideshare/driver': typeof ApiRideshareDriverRoute
   '/api/rideshare/earnings': typeof ApiRideshareEarningsRoute
@@ -4849,6 +4867,8 @@ export interface FileRouteTypes {
     | '/api/profile/avatar'
     | '/api/profile/me'
     | '/api/promo/free-month'
+    | '/api/push/public-key'
+    | '/api/push/subscribe'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/earnings'
@@ -5331,6 +5351,8 @@ export interface FileRouteTypes {
     | '/api/profile/avatar'
     | '/api/profile/me'
     | '/api/promo/free-month'
+    | '/api/push/public-key'
+    | '/api/push/subscribe'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/earnings'
@@ -5838,6 +5860,8 @@ export interface FileRouteTypes {
     | '/api/profile/avatar'
     | '/api/profile/me'
     | '/api/promo/free-month'
+    | '/api/push/public-key'
+    | '/api/push/subscribe'
     | '/api/rideshare/directions'
     | '/api/rideshare/driver'
     | '/api/rideshare/earnings'
@@ -6238,6 +6262,8 @@ export interface RootRouteChildren {
   ApiPredictionsIdRoute: typeof ApiPredictionsIdRouteWithChildren
   ApiPresenceHeartbeatRoute: typeof ApiPresenceHeartbeatRoute
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
+  ApiPushPublicKeyRoute: typeof ApiPushPublicKeyRoute
+  ApiPushSubscribeRoute: typeof ApiPushSubscribeRoute
   ApiRideshareDirectionsRoute: typeof ApiRideshareDirectionsRoute
   ApiRideshareDriverRoute: typeof ApiRideshareDriverRoute
   ApiRideshareEarningsRoute: typeof ApiRideshareEarningsRoute
@@ -8075,6 +8101,20 @@ declare module '@tanstack/react-router' {
       path: '/api/rideshare/directions'
       fullPath: '/api/rideshare/directions'
       preLoaderRoute: typeof ApiRideshareDirectionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push/subscribe': {
+      id: '/api/push/subscribe'
+      path: '/api/push/subscribe'
+      fullPath: '/api/push/subscribe'
+      preLoaderRoute: typeof ApiPushSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/push/public-key': {
+      id: '/api/push/public-key'
+      path: '/api/push/public-key'
+      fullPath: '/api/push/public-key'
+      preLoaderRoute: typeof ApiPushPublicKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/promo/free-month': {
@@ -11144,6 +11184,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPredictionsIdRoute: ApiPredictionsIdRouteWithChildren,
   ApiPresenceHeartbeatRoute: ApiPresenceHeartbeatRoute,
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,
+  ApiPushPublicKeyRoute: ApiPushPublicKeyRoute,
+  ApiPushSubscribeRoute: ApiPushSubscribeRoute,
   ApiRideshareDirectionsRoute: ApiRideshareDirectionsRoute,
   ApiRideshareDriverRoute: ApiRideshareDriverRoute,
   ApiRideshareEarningsRoute: ApiRideshareEarningsRoute,

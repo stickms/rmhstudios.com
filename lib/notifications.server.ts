@@ -8,6 +8,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { sendPushToUser, pushTitleFor } from '@/lib/push/send.server';
 import type { NotificationType } from '@prisma/client';
 
 export interface CreateNotificationInput {
@@ -46,7 +47,8 @@ export async function createNotification(input: CreateNotificationInput): Promis
         select: { id: true },
       });
       if (existing) {
-        // Refresh its timestamp so it surfaces to the top again.
+        // Refresh its timestamp so it surfaces to the top again. Deduped
+        // refreshes deliberately do NOT re-push — the device was already told.
         await prisma.notification.update({
           where: { id: existing.id },
           data: { createdAt: new Date(), preview: input.preview ?? undefined },
@@ -65,6 +67,15 @@ export async function createNotification(input: CreateNotificationInput): Promis
         preview: input.preview?.slice(0, 280) ?? null,
         link: input.link ?? null,
       },
+    });
+
+    // Mirror to Web Push (no-op unless the user enabled push on a device and
+    // VAPID keys are configured). Fire-and-forget: never delays the caller.
+    void sendPushToUser(input.userId, {
+      title: pushTitleFor(input.type),
+      body: input.preview ?? undefined,
+      url: input.link ?? '/notifications',
+      tag: input.entityType && input.entityId ? `${input.entityType}:${input.entityId}` : undefined,
     });
   } catch (err) {
     console.error('[notifications] failed to create notification:', err);
