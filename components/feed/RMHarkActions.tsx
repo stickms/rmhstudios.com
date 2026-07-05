@@ -9,6 +9,7 @@ import { ComposeModal } from './ComposeModal';
 import type { FeedItem } from '@/lib/feed-types';
 import { useTranslation } from 'react-i18next';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 
 interface RMHarkActionsProps {
   item: FeedItem;
@@ -90,7 +91,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
         className="flex items-center gap-1.5 px-2 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-colors group active:scale-95"
       >
         <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
-        <span className="text-xs">{formatCount(item.commentCount)}</span>
+        <AnimatedCount value={item.commentCount} format={formatCount} hideZero className="text-xs" />
       </button>
 
       {/* reRMHark */}
@@ -105,7 +106,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
           title="reRMHark"
         >
           <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-          <span className="text-xs">{formatCount(item.repostCount)}</span>
+          <AnimatedCount value={item.repostCount} format={formatCount} hideZero className="text-xs" />
         </button>
         {repostMenu && (
           <div className="absolute left-0 top-full mt-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30" onClick={(e) => e.stopPropagation()}>
@@ -144,13 +145,13 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
         title={t('like', { defaultValue: 'Like' })}
       >
         <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`} />
-        <span className="text-xs">{formatCount(item.likeCount)}</span>
+        <AnimatedCount value={item.likeCount} format={formatCount} hideZero className="text-xs" />
       </button>
 
       {/* Views */}
       <div className="flex items-center gap-1.5 px-2 py-1 text-site-text-dim">
         <Eye className="w-4 h-4" />
-        <span className="text-xs">{formatCount(item.viewCount)}</span>
+        <AnimatedCount value={item.viewCount} format={formatCount} hideZero className="text-xs" />
       </div>
     </div>
   );

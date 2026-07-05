@@ -59,6 +59,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const { resolved: resolvedUser } = useResolvedUser();
   const { removeItem, updateItem } = useFeedStore();
   const { run: runBookmark } = useOptimisticAction();
+  const { run: runPin } = useOptimisticAction();
   const isAuthor = session?.user?.id === item.user?.id;
 
   // Use freshest user data from cache (covers all users, not just current)
@@ -117,20 +118,37 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     }
   };
 
-  const handlePin = async () => {
+  const handlePin = () => {
     setMenuOpen(false);
-    try {
-      const res = await fetch(`/api/rmharks/${actualId}/pin`, { method: 'POST', credentials: 'include' });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
+    const next = !pinned;
+    runPin({
+      apply: () => setPinned(next),
+      rollback: () => setPinned(!next),
+      commit: () =>
+        fetch(`/api/rmharks/${actualId}/pin`, { method: 'POST', credentials: 'include' }),
+      reconcile: async (res) => {
+        const data = await res.json().catch(() => ({}));
         setPinned(!!data.pinned);
-        toast.success(data.pinned ? t('pinned-success', { defaultValue: 'Pinned to your profile' }) : t('unpinned-success', { defaultValue: 'Unpinned' }));
-      } else {
-        toast.error(data.error || t('pin-error', { defaultValue: 'Could not pin post' }));
-      }
-    } catch {
-      toast.error(t('pin-error', { defaultValue: 'Could not pin post' }));
-    }
+        toast.success(
+          data.pinned
+            ? t('pinned-success', { defaultValue: 'Pinned to your profile' })
+            : t('unpinned-success', { defaultValue: 'Unpinned' })
+        );
+      },
+      onError: (_err, res) => {
+        // A bad status may carry a specific message; a thrown error won't.
+        if (res) {
+          res
+            .json()
+            .catch(() => ({}))
+            .then((data: { error?: string }) =>
+              toast.error(data.error || t('pin-error', { defaultValue: 'Could not pin post' }))
+            );
+        } else {
+          toast.error(t('pin-error', { defaultValue: 'Could not pin post' }));
+        }
+      },
+    });
   };
 
   const handleBookmark = () => {

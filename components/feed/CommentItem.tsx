@@ -17,6 +17,8 @@ import { timeAgoShort } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useLocaleStore } from '@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 
 export interface Comment {
   id: string;
@@ -83,6 +85,8 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   const [reposted, setReposted] = useState(comment.reposted ?? false);
   const [repostCount, setRepostCount] = useState(comment.repostCount ?? 0);
   const [viewCount, setViewCount] = useState(comment.viewCount ?? 0);
+  const { run: runLike } = useOptimisticAction();
+  const { run: runRepost } = useOptimisticAction();
   const viewTracked = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
@@ -149,40 +153,38 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
       .catch(() => {});
   }, [postId, comment.id]);
 
-  const toggleLike = async () => {
+  const toggleLike = () => {
     if (!sessionUser) return;
     const wasLiked = liked;
-    setLiked(!wasLiked);
-    setLikeCount((c) => c + (wasLiked ? -1 : 1));
-
-    try {
-      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}/like`, { method: 'POST' });
-      if (!res.ok) {
+    const prevCount = likeCount;
+    runLike({
+      apply: () => {
+        setLiked(!wasLiked);
+        setLikeCount((c) => c + (wasLiked ? -1 : 1));
+      },
+      rollback: () => {
         setLiked(wasLiked);
-        setLikeCount(comment.likeCount ?? 0);
-      }
-    } catch {
-      setLiked(wasLiked);
-      setLikeCount(comment.likeCount ?? 0);
-    }
+        setLikeCount(prevCount);
+      },
+      commit: () => fetch(`/api/rmharks/${postId}/comment/${comment.id}/like`, { method: 'POST' }),
+    });
   };
 
-  const toggleRepost = async () => {
+  const toggleRepost = () => {
     if (!sessionUser) return;
     const wasReposted = reposted;
-    setReposted(!wasReposted);
-    setRepostCount((c) => c + (wasReposted ? -1 : 1));
-
-    try {
-      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}/repost`, { method: 'POST' });
-      if (!res.ok) {
+    const prevCount = repostCount;
+    runRepost({
+      apply: () => {
+        setReposted(!wasReposted);
+        setRepostCount((c) => c + (wasReposted ? -1 : 1));
+      },
+      rollback: () => {
         setReposted(wasReposted);
-        setRepostCount(comment.repostCount ?? 0);
-      }
-    } catch {
-      setReposted(wasReposted);
-      setRepostCount(comment.repostCount ?? 0);
-    }
+        setRepostCount(prevCount);
+      },
+      commit: () => fetch(`/api/rmharks/${postId}/comment/${comment.id}/repost`, { method: 'POST' }),
+    });
   };
 
   const handleDelete = async () => {
@@ -338,9 +340,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                 >
                   <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 </button>
-                {formatCount(repostCount) && (
-                  <span className="text-xs pr-0.5">{formatCount(repostCount)}</span>
-                )}
+                <AnimatedCount value={repostCount} format={formatCount} hideZero className="text-xs pr-0.5" />
               </div>
 
               {/* Like */}
@@ -354,17 +354,13 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                 >
                   <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`} />
                 </button>
-                {formatCount(likeCount) && (
-                  <span className="text-xs pr-0.5">{formatCount(likeCount)}</span>
-                )}
+                <AnimatedCount value={likeCount} format={formatCount} hideZero className="text-xs pr-0.5" />
               </div>
 
               {/* Views */}
               <div className="flex items-center gap-1 px-1.5 py-1 text-site-text-dim">
                 <Eye className="w-4 h-4" />
-                {formatCount(viewCount) && (
-                  <span className="text-xs">{formatCount(viewCount)}</span>
-                )}
+                <AnimatedCount value={viewCount} format={formatCount} hideZero className="text-xs" />
               </div>
             </div>
           )}

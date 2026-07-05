@@ -10,6 +10,8 @@ import { useGameStore, Difficulty } from '@/lib/store/useGameStore';
 import { Slider } from '@/components/ui/slider';
 import { authClient } from '@/lib/auth-client';
 import { toast } from 'sonner';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { calculateScoreMultiplier } from '@/lib/game/score';
 import { useTranslation } from 'react-i18next';
 
@@ -68,24 +70,21 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
     const [editCoverFile, setEditCoverFile] = React.useState<File | null>(null);
     const [editCoverPreview, setEditCoverPreview] = React.useState<string | null>(null);
     const [isSaving, setIsSaving] = React.useState(false);
-    const [isLiking, setIsLiking] = React.useState(false);
+    const { run: runLike, pending: isLiking } = useOptimisticAction();
 
-    const handleLike = async () => {
-        if (!song || isLiking) return;
-        setIsLiking(true);
-        try {
-            const res = await fetch(`/api/slice-it/songs/${song.id}/like`, { method: 'POST' });
-            if (!res.ok) throw new Error();
-            const data = await res.json();
-            onSongUpdated?.({
-                isLiked: data.liked,
-                likeCount: (song.likeCount || 0) + (data.liked ? 1 : -1)
-            });
-        } catch (e) {
-            // silent
-        } finally {
-            setIsLiking(false);
-        }
+    const handleLike = () => {
+        if (!song) return;
+        const wasLiked = !!song.isLiked;
+        const baseCount = song.likeCount || 0;
+        runLike({
+            apply: () => onSongUpdated?.({ isLiked: !wasLiked, likeCount: baseCount + (wasLiked ? -1 : 1) }),
+            rollback: () => onSongUpdated?.({ isLiked: wasLiked, likeCount: baseCount }),
+            commit: () => fetch(`/api/slice-it/songs/${song.id}/like`, { method: 'POST' }),
+            reconcile: async (res) => {
+                const data = await res.json().catch(() => ({}));
+                onSongUpdated?.({ isLiked: data.liked, likeCount: baseCount + (data.liked ? 1 : -1) });
+            },
+        });
     };
 
     const openEdit = () => {
@@ -280,7 +279,7 @@ export function SongDetailsPanel({ song, onPlay, onSongUpdated, readOnly = false
                             </div>
                             <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border transition-colors ${song.isLiked ? 'bg-red-500/10 border-red-500/30' : 'bg-slice-shadow-dark/20 border-slice-shadow-dark/30'}`} title={t("likes", { defaultValue: "Likes" })}>
                                 <Heart className={`w-3 h-3 ${song.isLiked ? 'text-red-500 fill-current' : 'text-slice-text-light'}`} />
-                                <span className={`text-xs font-bold ${song.isLiked ? 'text-red-500' : 'text-slice-text'}`}>{song.likeCount || 0}</span>
+                                <AnimatedCount value={song.likeCount || 0} className={`text-xs font-bold ${song.isLiked ? 'text-red-500' : 'text-slice-text'}`} />
                             </div>
                             {song.userPlays !== undefined && (
                                 <div className="flex items-center gap-1.5 bg-blue-500/10 px-2 py-1 rounded-md border border-blue-500/30" title={t("your-plays", { defaultValue: "Your plays" })}>

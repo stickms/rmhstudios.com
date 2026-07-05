@@ -14,6 +14,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import type { FeedItem } from '@/lib/feed-types';
 
 interface Announcement {
@@ -56,7 +57,7 @@ export function CommunityColumn({ slug }: { slug: string }) {
   const [community, setCommunity] = useState<CommunityData | null>(null);
   const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [joining, setJoining] = useState(false);
+  const { run: runJoin, pending: joining } = useOptimisticAction();
   const [announceOpen, setAnnounceOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
 
@@ -74,20 +75,28 @@ export function CommunityColumn({ slug }: { slug: string }) {
     Promise.all([loadCommunity(), loadFeed()]).finally(() => setLoading(false));
   }, [loadCommunity, loadFeed]);
 
-  const toggleJoin = async () => {
+  const toggleJoin = () => {
     if (!community) return;
-    setJoining(true);
-    try {
-      const res = await fetch(`/api/communities/${slug}/join`, { method: 'POST', credentials: 'include' });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        setCommunity((c) => c && { ...c, joined: data.joined, memberCount: c.memberCount + (data.joined ? 1 : -1) });
-      } else {
-        toast.error(data.error || t('could-not-update-membership', { defaultValue: 'Could not update membership' }));
-      }
-    } finally {
-      setJoining(false);
-    }
+    const willJoin = !community.joined;
+    runJoin({
+      apply: () =>
+        setCommunity((c) => c && { ...c, joined: willJoin, memberCount: c.memberCount + (willJoin ? 1 : -1) }),
+      rollback: () =>
+        setCommunity((c) => c && { ...c, joined: !willJoin, memberCount: c.memberCount + (willJoin ? -1 : 1) }),
+      commit: () => fetch(`/api/communities/${slug}/join`, { method: 'POST', credentials: 'include' }),
+      reconcile: async (res) => {
+        const data = await res.json().catch(() => ({}));
+        // Trust the server's authoritative membership flag.
+        if (typeof data.joined === 'boolean')
+          setCommunity((c) => c && { ...c, joined: data.joined });
+      },
+      onError: (_err, res) => {
+        const fail = () =>
+          toast.error(t('could-not-update-membership', { defaultValue: 'Could not update membership' }));
+        if (res) res.json().catch(() => ({})).then((d: { error?: string }) => (d.error ? toast.error(d.error) : fail()));
+        else fail();
+      },
+    });
   };
 
   const removeAnnouncement = async (id: string) => {

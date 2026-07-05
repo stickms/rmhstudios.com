@@ -2751,3 +2751,31 @@ html.vt-active .page-root > * {
     animation: none !important;
   }
 }
+
+/* ─── Off-screen feed card virtualization ────────────────────────────────
+ * Long timelines render a lot of cards (avatars, media, embeds). Skipping the
+ * layout + paint work for cards that aren't near the viewport keeps scrolling
+ * smooth without a JS virtualizer. `contain-intrinsic-size: auto <h>` reserves
+ * an estimated height so the scrollbar stays stable and, once a card has been
+ * rendered, its real measured height is remembered — so scroll position and
+ * find-in-page both behave. */
+.feed-card-cv {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}
+
+/* Posts flushed in from the "N new posts" pill ease down into place instead of
+ * popping. `backwards` applies the start frame immediately so there's no flash
+ * before the animation runs. */
+@keyframes feed-item-enter {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.feed-item-enter {
+  animation: feed-item-enter 0.35s ease-out backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .feed-item-enter {
+    animation: none;
+  }
+}

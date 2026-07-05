@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { useFreshUser, useUserDisplayStore } from '@/stores/userDisplayStore';
@@ -346,15 +347,15 @@ export function PostDetail({ postId }: PostDetailProps) {
         {/* Engagement stats bar */}
         {!post.deletedAt && <div className="flex items-center gap-4 py-3 border-t border-site-border text-sm">
           <span>
-            <span className="font-bold text-site-text">{post.repostCount ?? 0}</span>{' '}
+            <AnimatedCount value={post.repostCount ?? 0} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
             <span className="text-site-text-dim">{t("rermharks", { defaultValue: "reRMHarks" })}</span>
           </span>
           <span>
-            <span className="font-bold text-site-text">{post.likeCount ?? 0}</span>{' '}
+            <AnimatedCount value={post.likeCount ?? 0} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
             <span className="text-site-text-dim">{t("likes", { defaultValue: "Likes" })}</span>
           </span>
           <span>
-            <span className="font-bold text-site-text">{post.viewCount ?? 0}</span>{' '}
+            <AnimatedCount value={post.viewCount ?? 0} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
             <span className="text-site-text-dim">{t("views", { defaultValue: "Views" })}</span>
           </span>
         </div>}
