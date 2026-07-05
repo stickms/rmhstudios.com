@@ -10,7 +10,7 @@ export function extendKowloonThree(): void {
     if (extended) return;
     // R3F's catalogue is a runtime registry; the webgpu namespace is a superset
     // of core, so extending with it is safe for all existing intrinsics.
-    extend(THREE as unknown as Record<string, unknown>);
+    extend(THREE as unknown as Parameters<typeof extend>[0]);
     extended = true;
 }
 
@@ -27,7 +27,9 @@ export async function createKowloonRenderer(
     });
     await renderer.init();
     // Surface which backend actually won, for the [SMOKE] console check.
-    const backend = renderer.backend?.isWebGPUBackend ? 'WebGPU' : 'WebGL2';
+    // `isWebGPUBackend` lives on the WebGPUBackend subclass, not the base
+    // `Backend` type the renderer exposes — narrow it for the runtime check.
+    const backend = (renderer.backend as { isWebGPUBackend?: boolean } | undefined)?.isWebGPUBackend ? 'WebGPU' : 'WebGL2';
     // eslint-disable-next-line no-console
     console.info(`[kowloon] renderer backend: ${backend}`);
     return renderer;

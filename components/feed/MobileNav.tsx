@@ -70,7 +70,7 @@ export function MobileNav() {
             <Home className="w-6 h-6" />
           </Link>
 
-          <Link to="/search" search={{ q: '' }} className={tabClass(isExplore)} aria-label={t("explore", { defaultValue: "Explore" })} aria-current={isExplore ? 'page' : undefined}>
+          <Link to="/search" search={{ q: '', tab: 'top' }} className={tabClass(isExplore)} aria-label={t("explore", { defaultValue: "Explore" })} aria-current={isExplore ? 'page' : undefined}>
             {activeBar(isExplore)}
             <Compass className="w-6 h-6" />
           </Link>
