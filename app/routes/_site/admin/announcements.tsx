@@ -209,7 +209,7 @@ function AdminAnnouncementsPage() {
     'w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
 
   return (
-    <PageLayout title="Announcements" wide>
+    <PageLayout title="Announcements" wide backTo="/admin">
       <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
         <div className="flex items-center gap-3">
           <Megaphone className="h-6 w-6 text-site-accent" />

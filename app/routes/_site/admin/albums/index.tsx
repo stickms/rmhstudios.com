@@ -84,7 +84,7 @@ function AdminAlbumsPage() {
   }
 
   return (
-    <PageLayout title="Library Albums" wide>
+    <PageLayout title="Library Albums" wide backTo="/admin">
       <div className="aa">
         <div>
           <h1 className="aa__intro-title">Library Albums</h1>

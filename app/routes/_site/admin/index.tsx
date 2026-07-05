@@ -29,7 +29,7 @@ export const Route = createFileRoute('/_site/admin/')({
 function AdminDashboardPage() {
   const { t } = useTranslation("admin");
   return (
-    <PageLayout title={t("admin-dashboard", { defaultValue: "Admin Dashboard" })} wide>
+    <PageLayout title={t("admin-dashboard", { defaultValue: "Admin Dashboard" })} wide backTo="/">
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-bold font-display text-site-text">{t("admin-dashboard", { defaultValue: "Admin Dashboard" })}</h1>

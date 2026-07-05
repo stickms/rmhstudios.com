@@ -47,7 +47,7 @@ function AuditLogPage() {
   }, []);
 
   return (
-    <PageLayout title={t("audit-log", { defaultValue: "Audit Log" })} wide>
+    <PageLayout title={t("audit-log", { defaultValue: "Audit Log" })} wide backTo="/admin">
       <div className="mx-auto max-w-3xl space-y-4 p-4 md:p-8">
         <div className="flex items-center gap-3">
           <ScrollText className="h-6 w-6 text-site-accent" />

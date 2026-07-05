@@ -93,7 +93,7 @@ function AdminPredictionsPage() {
   }
 
   return (
-    <PageLayout title={t('predictions-title', { defaultValue: 'Prediction Markets' })} wide>
+    <PageLayout title={t('predictions-title', { defaultValue: 'Prediction Markets' })} wide backTo="/admin">
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-8">
         {loading ? (
           <div className="flex justify-center py-16">

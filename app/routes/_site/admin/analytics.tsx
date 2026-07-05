@@ -57,7 +57,7 @@ function AnalyticsPage() {
   const maxCount = data ? Math.max(1, ...data.postsPerDay.map((d) => d.count)) : 1;
 
   return (
-    <PageLayout title={t('analytics', { defaultValue: 'Analytics' })} wide>
+    <PageLayout title={t('analytics', { defaultValue: 'Analytics' })} wide backTo="/admin">
       <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
         <div className="flex items-center gap-3">
           <BarChart3 className="h-6 w-6 text-site-accent" />
