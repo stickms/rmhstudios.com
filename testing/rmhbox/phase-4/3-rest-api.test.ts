@@ -65,8 +65,19 @@ vi.mock('../../../lib/prisma', () => ({
 }));
 
 // Import rate-limit mock for manipulation
-import { rateLimit } from '../../../lib/rate-limit';
+import { rateLimit, type RateLimitResult } from '../../../lib/rate-limit';
 const mockRateLimit = vi.mocked(rateLimit);
+
+// Build a full RateLimitResult. The handlers under test only read
+// `allowed`/`retryAfter`, but the mocked signature requires the additive
+// header fields (limit/remaining/reset), so fill them with representative values.
+const rl = (allowed: boolean, retryAfter: number): RateLimitResult => ({
+  allowed,
+  retryAfter,
+  limit: 100,
+  remaining: allowed ? 99 : 0,
+  reset: 0,
+});
 
 // ─── Helper to extract GET handler from TanStack route ──────────
 
@@ -81,11 +92,11 @@ async function getHandler(modulePath: string) {
 describe('REST API — Leaderboard (§3.1)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRateLimit.mockReturnValue({ allowed: true, retryAfter: 0 });
+    mockRateLimit.mockReturnValue(rl(true, 0));
   });
 
   it('should return 429 when rate limited', async () => {
-    mockRateLimit.mockReturnValue({ allowed: false, retryAfter: 30 });
+    mockRateLimit.mockReturnValue(rl(false, 30));
     const GET = await getHandler('../../../app/routes/api/rmhbox/leaderboard');
     const req = new Request('http://localhost/api/rmhbox/leaderboard?period=all-time&metric=score');
     const res = await GET({ request: req });
@@ -147,7 +158,7 @@ describe('REST API — Leaderboard (§3.1)', () => {
 describe('REST API — Stats (§3.2)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRateLimit.mockReturnValue({ allowed: true, retryAfter: 0 });
+    mockRateLimit.mockReturnValue(rl(true, 0));
   });
 
   it('should return 400 when userId is missing', async () => {
@@ -196,7 +207,7 @@ describe('REST API — Stats (§3.2)', () => {
   });
 
   it('should return 429 when rate limited', async () => {
-    mockRateLimit.mockReturnValue({ allowed: false, retryAfter: 15 });
+    mockRateLimit.mockReturnValue(rl(false, 15));
     const GET = await getHandler('../../../app/routes/api/rmhbox/stats');
     const req = new Request('http://localhost/api/rmhbox/stats?userId=test');
     const res = await GET({ request: req });
@@ -207,7 +218,7 @@ describe('REST API — Stats (§3.2)', () => {
 describe('REST API — History (§3.3)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRateLimit.mockReturnValue({ allowed: true, retryAfter: 0 });
+    mockRateLimit.mockReturnValue(rl(true, 0));
   });
 
   it('should return 404 for unknown matchId', async () => {
@@ -279,7 +290,7 @@ describe('REST API — History (§3.3)', () => {
   });
 
   it('should return 429 when rate limited', async () => {
-    mockRateLimit.mockReturnValue({ allowed: false, retryAfter: 10 });
+    mockRateLimit.mockReturnValue(rl(false, 10));
     const GET = await getHandler('../../../app/routes/api/rmhbox/history');
     const req = new Request('http://localhost/api/rmhbox/history');
     const res = await GET({ request: req });

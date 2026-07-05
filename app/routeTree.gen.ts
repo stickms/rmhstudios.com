@@ -133,6 +133,7 @@ import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplay
 import { Route as SiteWrappedRouteImport } from './routes/_site/wrapped'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteShopRouteImport } from './routes/_site/shop'
+import { Route as SiteShareRouteImport } from './routes/_site/share'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteRecapRouteImport } from './routes/_site/recap'
@@ -320,6 +321,7 @@ import { Route as ApiAltairMetaRouteImport } from './routes/api/altair/meta'
 import { Route as ApiAltairMatchRouteImport } from './routes/api/altair/match'
 import { Route as ApiAltairLeaderboardRouteImport } from './routes/api/altair/leaderboard'
 import { Route as ApiAiTransformRouteImport } from './routes/api/ai/transform'
+import { Route as ApiAiSearchRouteImport } from './routes/api/ai/search'
 import { Route as ApiAiMessageSuggestRouteImport } from './routes/api/ai/message-suggest'
 import { Route as ApiAiAskFeedRouteImport } from './routes/api/ai/ask-feed'
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
@@ -1140,6 +1142,11 @@ const SiteWalletRoute = SiteWalletRouteImport.update({
 const SiteShopRoute = SiteShopRouteImport.update({
   id: '/shop',
   path: '/shop',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteShareRoute = SiteShareRouteImport.update({
+  id: '/share',
+  path: '/share',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSearchRoute = SiteSearchRouteImport.update({
@@ -2091,6 +2098,11 @@ const ApiAltairLeaderboardRoute = ApiAltairLeaderboardRouteImport.update({
 const ApiAiTransformRoute = ApiAiTransformRouteImport.update({
   id: '/api/ai/transform',
   path: '/api/ai/transform',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAiSearchRoute = ApiAiSearchRouteImport.update({
+  id: '/api/ai/search',
+  path: '/api/ai/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAiMessageSuggestRoute = ApiAiMessageSuggestRouteImport.update({
@@ -3221,6 +3233,7 @@ export interface FileRoutesByFullPath {
   '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
+  '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
   '/wallet': typeof SiteWalletRoute
   '/wrapped': typeof SiteWrappedRoute
@@ -3339,6 +3352,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
+  '/api/ai/search': typeof ApiAiSearchRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
@@ -3713,6 +3727,7 @@ export interface FileRoutesByTo {
   '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
+  '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
   '/wallet': typeof SiteWalletRoute
   '/wrapped': typeof SiteWrappedRoute
@@ -3829,6 +3844,7 @@ export interface FileRoutesByTo {
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
+  '/api/ai/search': typeof ApiAiSearchRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
@@ -4226,6 +4242,7 @@ export interface FileRoutesById {
   '/_site/recap': typeof SiteRecapRoute
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/search': typeof SiteSearchRoute
+  '/_site/share': typeof SiteShareRoute
   '/_site/shop': typeof SiteShopRoute
   '/_site/wallet': typeof SiteWalletRoute
   '/_site/wrapped': typeof SiteWrappedRoute
@@ -4345,6 +4362,7 @@ export interface FileRoutesById {
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
+  '/api/ai/search': typeof ApiAiSearchRoute
   '/api/ai/transform': typeof ApiAiTransformRoute
   '/api/altair/leaderboard': typeof ApiAltairLeaderboardRoute
   '/api/altair/match': typeof ApiAltairMatchRoute
@@ -4743,6 +4761,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/roadmap'
     | '/search'
+    | '/share'
     | '/shop'
     | '/wallet'
     | '/wrapped'
@@ -4861,6 +4880,7 @@ export interface FileRouteTypes {
     | '/api/admin/users'
     | '/api/ai/ask-feed'
     | '/api/ai/message-suggest'
+    | '/api/ai/search'
     | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
@@ -5235,6 +5255,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/roadmap'
     | '/search'
+    | '/share'
     | '/shop'
     | '/wallet'
     | '/wrapped'
@@ -5351,6 +5372,7 @@ export interface FileRouteTypes {
     | '/api/admin/users'
     | '/api/ai/ask-feed'
     | '/api/ai/message-suggest'
+    | '/api/ai/search'
     | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
@@ -5747,6 +5769,7 @@ export interface FileRouteTypes {
     | '/_site/recap'
     | '/_site/roadmap'
     | '/_site/search'
+    | '/_site/share'
     | '/_site/shop'
     | '/_site/wallet'
     | '/_site/wrapped'
@@ -5866,6 +5889,7 @@ export interface FileRouteTypes {
     | '/api/admin/users'
     | '/api/ai/ask-feed'
     | '/api/ai/message-suggest'
+    | '/api/ai/search'
     | '/api/ai/transform'
     | '/api/altair/leaderboard'
     | '/api/altair/match'
@@ -6283,6 +6307,7 @@ export interface RootRouteChildren {
   ApiAdminUsersRoute: typeof ApiAdminUsersRouteWithChildren
   ApiAiAskFeedRoute: typeof ApiAiAskFeedRoute
   ApiAiMessageSuggestRoute: typeof ApiAiMessageSuggestRoute
+  ApiAiSearchRoute: typeof ApiAiSearchRoute
   ApiAiTransformRoute: typeof ApiAiTransformRoute
   ApiAltairLeaderboardRoute: typeof ApiAltairLeaderboardRoute
   ApiAltairMatchRoute: typeof ApiAltairMatchRoute
@@ -7361,6 +7386,13 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof SiteShopRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/share': {
+      id: '/_site/share'
+      path: '/share'
+      fullPath: '/share'
+      preLoaderRoute: typeof SiteShareRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/search': {
@@ -8670,6 +8702,13 @@ declare module '@tanstack/react-router' {
       path: '/api/ai/transform'
       fullPath: '/api/ai/transform'
       preLoaderRoute: typeof ApiAiTransformRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ai/search': {
+      id: '/api/ai/search'
+      path: '/api/ai/search'
+      fullPath: '/api/ai/search'
+      preLoaderRoute: typeof ApiAiSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/ai/message-suggest': {
@@ -10178,6 +10217,7 @@ interface SiteRouteChildren {
   SiteRecapRoute: typeof SiteRecapRoute
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteSearchRoute: typeof SiteSearchRoute
+  SiteShareRoute: typeof SiteShareRoute
   SiteShopRoute: typeof SiteShopRoute
   SiteWalletRoute: typeof SiteWalletRoute
   SiteWrappedRoute: typeof SiteWrappedRoute
@@ -10230,6 +10270,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRecapRoute: SiteRecapRoute,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteSearchRoute: SiteSearchRoute,
+  SiteShareRoute: SiteShareRoute,
   SiteShopRoute: SiteShopRoute,
   SiteWalletRoute: SiteWalletRoute,
   SiteWrappedRoute: SiteWrappedRoute,
@@ -11253,6 +11294,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminUsersRoute: ApiAdminUsersRouteWithChildren,
   ApiAiAskFeedRoute: ApiAiAskFeedRoute,
   ApiAiMessageSuggestRoute: ApiAiMessageSuggestRoute,
+  ApiAiSearchRoute: ApiAiSearchRoute,
   ApiAiTransformRoute: ApiAiTransformRoute,
   ApiAltairLeaderboardRoute: ApiAltairLeaderboardRoute,
   ApiAltairMatchRoute: ApiAltairMatchRoute,

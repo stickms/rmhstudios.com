@@ -1,10 +1,9 @@
 'use client';
 
 import { Link, useNavigate } from '@tanstack/react-router';
+import type { LinkComponent } from '@tanstack/react-router';
 import type { ComponentProps } from 'react';
 import { runViewTransition } from '@/lib/view-transition';
-
-type LinkComponentProps = ComponentProps<typeof Link>;
 
 /**
  * Drop-in replacement for TanStack `<Link>` that runs the navigation inside a
@@ -12,19 +11,28 @@ type LinkComponentProps = ComponentProps<typeof Link>;
  * `view-transition-name` on both pages morphs across the navigation (e.g. an
  * album cover growing into the fullscreen viewer).
  *
+ * Typed as `LinkComponent<'a'>` so it keeps `<Link>`'s route-aware generics —
+ * `to`/`params`/`search` are type-checked against the real route table at each
+ * call site, instead of collapsing to the non-generic
+ * `ComponentProps<typeof Link>` (whose `params` only accepts the reducer-fn
+ * form, rejecting object literals like `params={{ albumId }}`).
+ *
  * It only intercepts plain left-clicks — modified clicks (⌘/ctrl/shift/middle,
  * `target="_blank"`) fall through to normal anchor behaviour so "open in new
  * tab" still works, and the underlying `<Link>` keeps its hover-prefetch and
  * accessibility. Degrades to a normal navigation when the browser lacks the API
  * or the user prefers reduced motion (handled inside `runViewTransition`).
  */
-export function ViewTransitionLink(props: LinkComponentProps) {
+export const ViewTransitionLink: LinkComponent<'a'> = (props) => {
   const navigate = useNavigate();
   const { onClick, target } = props;
 
   return (
+    // The outer signature keeps route-aware generics for callers; inside, the
+    // generic props are forwarded to the concrete `<Link>` via its collapsed
+    // (non-generic) prop type.
     <Link
-      {...props}
+      {...(props as ComponentProps<typeof Link>)}
       onClick={(e) => {
         onClick?.(e);
         if (e.defaultPrevented) return;
@@ -39,4 +47,4 @@ export function ViewTransitionLink(props: LinkComponentProps) {
       }}
     />
   );
-}
+};

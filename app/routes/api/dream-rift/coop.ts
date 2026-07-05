@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
@@ -132,7 +133,9 @@ export const Route = createFileRoute('/api/dream-rift/coop')({
               stageReached: safeStage,
               cleared: !!cleared,
               playerCount: cleanPlayers.length,
-              players: cleanPlayers,
+              // CoopPlayer[] is JSON-serializable, but its named-interface shape
+              // lacks the index signature Prisma's InputJsonValue requires.
+              players: cleanPlayers as unknown as Prisma.InputJsonValue,
               hostUserId: userId,
             },
           });

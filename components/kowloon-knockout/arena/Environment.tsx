@@ -32,7 +32,10 @@ export default function Environment() {
         // Blend the live reflection over the dark base albedo for a damp (not
         // mirror) look. roughness/metalness are set via JSX props off the same
         // flag so a re-render can't revert them out from under this node.
-        mat.colorNode = mix(color(FLOOR_BASE), reflection, float(REFLECTION_STRENGTH));
+        // `color()` yields a `"color"`-typed node, which `mix()` doesn't accept
+        // in its typings even though it's a vec3 at runtime — cast to vec3.
+        const base = color(FLOOR_BASE) as unknown as THREE.Node<'vec3'>;
+        mat.colorNode = mix(base, reflection, float(REFLECTION_STRENGTH));
         mat.needsUpdate = true;
         // The reflector's target orients the reflection plane; parenting it to
         // the (horizontal) floor mesh makes the plane track the floor.

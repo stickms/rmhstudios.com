@@ -155,7 +155,7 @@ export function SearchColumn({
   const setTab = useCallback(
     (next: Tab) => {
       setTabState(next);
-      void navigate({ to: '/search', search: (prev) => ({ ...prev, tab: next }), replace: true });
+      void navigate({ to: '/search', search: (prev) => ({ ...prev, q: prev.q ?? '', tab: next }), replace: true });
     },
     [navigate],
   );

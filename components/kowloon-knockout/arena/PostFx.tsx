@@ -66,7 +66,9 @@ export default function PostFx() {
         if (!enabled) return null;
         const pp = new THREE.PostProcessing(gl);
         const scenePass = pass(scene, camera);
-        let color = scenePass.getTextureNode('output');
+        // Widen from the concrete `TextureNode` so the `.mul()`/`.add()`
+        // reassignments below (which yield generic `Node<'vec4'>`) still fit.
+        let color: THREE.Node<'vec4'> = scenePass.getTextureNode('output');
 
         // ── GTAO ─────────────────────────────────────────────────────────────
         // normalNode = null: the default `pass()` writes no normal MRT buffer, so
@@ -78,7 +80,9 @@ export default function PostFx() {
         // green/blue channels — tinting everything red. `.r` darkens uniformly.
         if (flags.gtao) {
             try {
-                const aoPass = ao(scenePass.getTextureNode('depth'), null, camera);
+                // normalNode = null is a supported runtime value (no-MRT path,
+                // see comment above) but the typings mark it as a required Node.
+                const aoPass = ao(scenePass.getTextureNode('depth'), null as unknown as Parameters<typeof ao>[1], camera);
                 // Blend the AO term toward 1 instead of multiplying by it raw.
                 // The no-MRT GTAO path reconstructs normals from depth and on some
                 // GPUs collapses to ~0 (fully occluded) — a raw multiply then

@@ -14,7 +14,7 @@ function makeIdle(className: FighterClass): RenderFighter {
         seat: 0, team: 0, className, displayName: d.name,
         color: d.color, accent: d.accent, isLocal: true,
         x: 0, z: 0, yaw: 0, state: 'idle', punch: null,
-        punchFrame: 0, stateFrame: 0, hitFlash: 0,
+        punchFrame: 0, stateFrame: 0, actionProgress: 0, hitFlash: 0,
         health: s.maxHealth, maxHealth: s.maxHealth,
         stamina: s.stamina, maxStamina: s.stamina, alive: true,
     };
