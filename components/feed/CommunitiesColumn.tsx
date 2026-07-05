@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Users, Plus, MessageSquare, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
+import { CommunityListSkeleton } from '@/components/feed/CommunitiesSkeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
@@ -30,12 +30,14 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-export function CommunitiesColumn() {
+export function CommunitiesColumn({ initialCommunities = [] }: { initialCommunities?: Community[] }) {
   const navigate = useNavigate();
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
-  const [items, setItems] = useState<Community[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [items, setItems] = useState<Community[]>(initialCommunities);
+  // The route loader already provided the first page, so we start resolved —
+  // no spinner, no client-side fetch waterfall on mount.
+  const [loading, setLoading] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [query, setQuery] = useState('');
 
@@ -45,6 +47,7 @@ export function CommunitiesColumn() {
   const [submitting, setSubmitting] = useState(false);
 
   const load = useCallback(async (q?: string) => {
+    setLoading(true);
     try {
       const url = q && q.trim() ? `/api/communities?q=${encodeURIComponent(q.trim())}` : '/api/communities';
       const res = await fetch(url, { credentials: 'include' });
@@ -54,9 +57,17 @@ export function CommunitiesColumn() {
     }
   }, []);
 
-  // Debounced search.
+  // Debounced search. The initial list comes from the route loader, so we skip
+  // the first run and only re-fetch when the query actually changes — otherwise
+  // the search debounce would pointlessly delay (and re-request) the already-
+  // seeded list on mount.
   const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const firstRun = useRef(true);
   useEffect(() => {
+    if (firstRun.current) {
+      firstRun.current = false;
+      return;
+    }
     if (debounce.current) clearTimeout(debounce.current);
     debounce.current = setTimeout(() => void load(query), 250);
     return () => {
@@ -118,10 +129,8 @@ export function CommunitiesColumn() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <Spinner />
-        </div>
+      {loading && items.length === 0 ? (
+        <CommunityListSkeleton />
       ) : items.length === 0 ? (
         <EmptyState
           description={

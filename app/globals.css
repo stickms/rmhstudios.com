@@ -2722,6 +2722,12 @@ input[type='number'] {
     animation: none;
   }
 }
+/* Back/forward (history POP) navigations shouldn't replay the enter animation —
+ * returning should feel like landing back where you were, not the page
+ * re-animating. Toggled by components/ui/BackNavAnimation.tsx. */
+html.nav-pop .page-root > * {
+  animation: none !important;
+}
 
 /* ─── Scoped shared-element View Transitions ─────────────────────────────
  * Progressive enhancement (see lib/view-transition.ts). We deliberately keep

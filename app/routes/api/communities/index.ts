@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { listCommunities } from '@/lib/communities.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 
@@ -29,39 +30,9 @@ export const Route = createFileRoute('/api/communities/')({
     handlers: {
       GET: async ({ request }) => {
         const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-        const q = new URL(request.url).searchParams.get('q')?.trim();
-        const communities = await prisma.community.findMany({
-          where: q ? { name: { contains: q, mode: 'insensitive' } } : {},
-          orderBy: { memberCount: 'desc' },
-          take: 50,
-          select: { id: true, slug: true, name: true, description: true, icon: true, color: true, memberCount: true },
-        });
-
-        // Post counts per community (one grouped query, not N).
-        const counts = await prisma.rMHark.groupBy({
-          by: ['communityId'],
-          where: { communityId: { in: communities.map((c) => c.id) }, deletedAt: null },
-          _count: { _all: true },
-        });
-        const postCounts = new Map(counts.map((c) => [c.communityId, c._count._all]));
-
-        // Mark which the viewer belongs to (and their role).
-        const roleBySlug = new Map<string, string>();
-        if (session) {
-          const mems = await prisma.communityMember.findMany({
-            where: { userId: session.user.id, community: { slug: { in: communities.map((c) => c.slug) } } },
-            select: { role: true, community: { select: { slug: true } } },
-          });
-          for (const m of mems) roleBySlug.set(m.community.slug, m.role);
-        }
-        return Response.json({
-          communities: communities.map((c) => ({
-            ...c,
-            postCount: postCounts.get(c.id) ?? 0,
-            joined: roleBySlug.has(c.slug),
-            role: roleBySlug.get(c.slug) ?? null,
-          })),
-        });
+        const q = new URL(request.url).searchParams.get('q');
+        const communities = await listCommunities({ userId: session?.user.id ?? null, q });
+        return Response.json({ communities });
       },
       POST: async ({ request }) => {
         try {
