@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { listGroupChats } from '@/lib/group-chats.server';
 import { z } from 'zod';
 
 const createSchema = z.object({
@@ -21,40 +22,7 @@ export const Route = createFileRoute('/api/group-chats/')({
       GET: async ({ request }) => {
         const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
         if (!session) return Response.json({ groups: [], signedIn: false });
-        const userId = session.user.id;
-
-        const memberships = await prisma.groupChatMember.findMany({
-          where: { userId },
-          select: {
-            lastReadAt: true,
-            group: {
-              select: {
-                id: true,
-                name: true,
-                lastMessageAt: true,
-                _count: { select: { members: true } },
-                messages: { orderBy: { createdAt: 'desc' }, take: 1, select: { content: true, createdAt: true, senderId: true } },
-              },
-            },
-          },
-        });
-
-        const groups = memberships
-          .map((m) => {
-            const last = m.group.messages[0];
-            const unread = last ? last.createdAt > m.lastReadAt && last.senderId !== userId : false;
-            return {
-              id: m.group.id,
-              name: m.group.name,
-              memberCount: m.group._count.members,
-              lastMessage: last?.content ?? null,
-              lastMessageAt: m.group.lastMessageAt,
-              unread,
-            };
-          })
-          .sort((a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime());
-
-        return Response.json({ groups, signedIn: true });
+        return Response.json(await listGroupChats(session.user.id));
       },
 
       POST: async ({ request }) => {
