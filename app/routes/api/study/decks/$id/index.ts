@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
+import { getDeck } from '@/lib/study.server';
 
 const addCardSchema = z.object({ front: z.string().min(1).max(500), back: z.string().min(1).max(500) });
 
@@ -16,39 +17,9 @@ export const Route = createFileRoute('/api/study/decks/$id/')({
       GET: async ({ request, params }) => {
         try {
           const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-          const deck = await prisma.flashcardDeck.findUnique({
-            where: { id: params.id },
-            select: {
-              id: true, title: true, description: true, isPublic: true, userId: true, cardCount: true,
-              cards: { orderBy: { position: 'asc' }, select: { id: true, front: true, back: true } },
-            },
-          });
-          if (!deck) return Response.json({ error: 'Not found' }, { status: 404 });
-          const isOwner = session?.user?.id === deck.userId;
-          if (!deck.isPublic && !isOwner) return Response.json({ error: 'Not found' }, { status: 404 });
-
-          // Count due cards for this viewer.
-          let dueCount = 0;
-          if (session) {
-            const cardIds = deck.cards.map((c) => c.id);
-            const reviewed = await prisma.flashcardReview.findMany({
-              where: { userId: session.user.id, cardId: { in: cardIds } },
-              select: { cardId: true, dueAt: true },
-            });
-            const reviewedMap = new Map(reviewed.map((r) => [r.cardId, r.dueAt]));
-            const now = Date.now();
-            for (const c of deck.cards) {
-              const due = reviewedMap.get(c.id);
-              if (!due || due.getTime() <= now) dueCount++;
-            }
-          }
-
-          return Response.json({
-            deck: { id: deck.id, title: deck.title, description: deck.description, isPublic: deck.isPublic, isOwner, cardCount: deck.cardCount },
-            cards: isOwner ? deck.cards : deck.cards.map((c) => ({ id: c.id, front: c.front, back: c.back })),
-            dueCount,
-            signedIn: !!session,
-          });
+          const detail = await getDeck(params.id, { id: session?.user?.id ?? null });
+          if (!detail) return Response.json({ error: 'Not found' }, { status: 404 });
+          return Response.json(detail);
         } catch (error) {
           console.error('Deck detail error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });

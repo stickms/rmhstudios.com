@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, ArrowLeft, Plus, Trash2, RotateCcw, GraduationCap, Check } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
@@ -28,15 +28,29 @@ const GRADES: { grade: number; label: string; cls: string }[] = [
   { grade: 3, label: 'Easy', cls: 'text-site-success' },
 ];
 
-export function DeckStudyColumn({ deckId }: { deckId: string }) {
+export function DeckStudyColumn({
+  deckId,
+  initialData,
+}: {
+  deckId: string;
+  /**
+   * Deck detail prefetched by the route loader. `null` means not-found /
+   * private for this viewer; `undefined` means no loader supplied one → the
+   * column fetches on mount.
+   */
+  initialData?: { deck: Deck; cards: Card[]; dueCount: number; signedIn: boolean } | null;
+}) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
-  const [deck, setDeck] = useState<Deck | null>(null);
-  const [cards, setCards] = useState<Card[]>([]);
-  const [dueCount, setDueCount] = useState(0);
-  const [signedIn, setSignedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  // Seed from the loader when it ran (even a `null` result is a resolved
+  // not-found, so skip the client fetch in that case too).
+  const seeded = useRef(initialData !== undefined);
+  const [deck, setDeck] = useState<Deck | null>(initialData?.deck ?? null);
+  const [cards, setCards] = useState<Card[]>(initialData?.cards ?? []);
+  const [dueCount, setDueCount] = useState(initialData?.dueCount ?? 0);
+  const [signedIn, setSignedIn] = useState(initialData?.signedIn ?? false);
+  const [loading, setLoading] = useState(initialData === undefined);
+  const [notFound, setNotFound] = useState(initialData === null);
 
   // Review session
   const [queue, setQueue] = useState<Card[] | null>(null);
@@ -65,6 +79,7 @@ export function DeckStudyColumn({ deckId }: { deckId: string }) {
   }, [deckId]);
 
   useEffect(() => {
+    if (seeded.current) return;
     let active = true;
     (async () => {
       try {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Users, MessageSquare, Megaphone, Shield, ShieldOff, UserX, X, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
@@ -51,12 +51,23 @@ function canModerate(role: string | null): boolean {
   return role === 'ADMIN' || role === 'MOD';
 }
 
-export function CommunityColumn({ slug }: { slug: string }) {
+export function CommunityColumn({
+  slug,
+  initialCommunity,
+  initialItems,
+}: {
+  slug: string;
+  /** Community details prefetched by the route loader; `null` if not found. */
+  initialCommunity?: CommunityData | null;
+  /** First page of posts prefetched by the route loader. */
+  initialItems?: FeedItem[] | null;
+}) {
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
-  const [community, setCommunity] = useState<CommunityData | null>(null);
-  const [items, setItems] = useState<FeedItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const seeded = useRef(initialCommunity !== undefined);
+  const [community, setCommunity] = useState<CommunityData | null>(initialCommunity ?? null);
+  const [items, setItems] = useState<FeedItem[]>(initialItems ?? []);
+  const [loading, setLoading] = useState(initialCommunity === undefined);
   const { run: runJoin, pending: joining } = useOptimisticAction();
   const [announceOpen, setAnnounceOpen] = useState(false);
   const [membersOpen, setMembersOpen] = useState(false);
@@ -72,6 +83,8 @@ export function CommunityColumn({ slug }: { slug: string }) {
   }, [slug]);
 
   useEffect(() => {
+    // Loader already seeded community + first page — skip the mount waterfall.
+    if (seeded.current) return;
     Promise.all([loadCommunity(), loadFeed()]).finally(() => setLoading(false));
   }, [loadCommunity, loadFeed]);
 

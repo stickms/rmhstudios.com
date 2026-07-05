@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, BookOpen, Plus, Sparkles, X, Globe, Lock, Layers } from 'lucide-react';
@@ -16,13 +16,20 @@ interface Deck {
   user?: { name: string | null; handle: string | null };
 }
 
-export function FlashcardsColumn() {
+export function FlashcardsColumn({
+  initialData,
+}: {
+  /** Deck list prefetched by the route loader; `null` when signed out. */
+  initialData?: { mine: Deck[]; popular: Deck[]; signedIn: boolean } | null;
+} = {}) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
-  const [mine, setMine] = useState<Deck[]>([]);
-  const [popular, setPopular] = useState<Deck[]>([]);
-  const [signedIn, setSignedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Seed from the loader when provided so the list paints immediately.
+  const seeded = useRef(initialData != null);
+  const [mine, setMine] = useState<Deck[]>(initialData?.mine ?? []);
+  const [popular, setPopular] = useState<Deck[]>(initialData?.popular ?? []);
+  const [signedIn, setSignedIn] = useState(initialData?.signedIn ?? false);
+  const [loading, setLoading] = useState(!initialData);
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,6 +46,7 @@ export function FlashcardsColumn() {
   }, []);
 
   useEffect(() => {
+    if (seeded.current) return;
     let active = true;
     (async () => {
       try {

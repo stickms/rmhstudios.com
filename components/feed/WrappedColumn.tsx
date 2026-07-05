@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import {
@@ -35,12 +35,20 @@ interface Wrapped {
 
 const fmt = (n: number) => n.toLocaleString();
 
-export function WrappedColumn() {
+export function WrappedColumn({
+  initialData,
+}: {
+  /** Current-year Wrapped prefetched by the route loader; `null` when signed out. */
+  initialData?: Wrapped | null;
+} = {}) {
   const { t } = useTranslation('feed');
-  const [data, setData] = useState<Wrapped | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Seed from the loader when provided so the summary paints immediately.
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [data, setData] = useState<Wrapped | null>(initialData ?? null);
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
+    if (seeded.current) return;
     fetch('/api/wrapped', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
       .then(setData)

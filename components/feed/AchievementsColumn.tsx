@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
@@ -38,12 +38,24 @@ interface Payload {
 
 const CATEGORY_ORDER: AchievementCategory[] = ['social', 'games', 'creator', 'economy', 'special'];
 
-export function AchievementsColumn({ userId, hideHeader = false }: { userId: string; hideHeader?: boolean }) {
+export function AchievementsColumn({
+  userId,
+  hideHeader = false,
+  initialData,
+}: {
+  userId: string;
+  hideHeader?: boolean;
+  /** Achievement payload prefetched by the route loader; `null` when signed out. */
+  initialData?: Payload | null;
+}) {
   const { t } = useTranslation("feed");
-  const [data, setData] = useState<Payload | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Seed from the loader when provided so the grid paints immediately.
+  const seeded = useRef(initialData != null);
+  const [data, setData] = useState<Payload | null>(initialData ?? null);
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
+    if (seeded.current) return;
     let active = true;
     (async () => {
       try {

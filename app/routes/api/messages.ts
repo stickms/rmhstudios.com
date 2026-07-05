@@ -2,10 +2,10 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
-import { resolveUserDisplay } from "@/lib/user-display";
 import { notifyUser } from "@/lib/message-events";
 import { ownsFeedImageUrl } from "@/lib/storage/keys";
 import { gifUrlSchema, feedImageUrlSchema } from "@/lib/rmhark-schema";
+import { listConversations } from "@/lib/messages.server";
 import { z } from "zod";
 
 const sendMessageSchema = z.object({
@@ -29,111 +29,10 @@ export const Route = createFileRoute('/api/messages')({
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const userId = session.user.id;
     const url = new URL(request.url);
     const cursor = url.searchParams.get("cursor");
-    const limit = 20;
-
-    const conversations = await prisma.conversation.findMany({
-      where: {
-        OR: [
-          { participantOneId: userId },
-          { participantTwoId: userId },
-        ],
-      },
-      orderBy: { lastMessageAt: "desc" },
-      take: limit + 1,
-      ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-      include: {
-        participantOne: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-            username: true,
-            profile: { select: { displayName: true, customImage: true } },
-          },
-        },
-        participantTwo: {
-          select: {
-            id: true,
-            name: true,
-            image: true,
-            username: true,
-            profile: { select: { displayName: true, customImage: true } },
-          },
-        },
-        messages: {
-          orderBy: { createdAt: "desc" },
-          take: 1,
-          select: {
-            id: true,
-            content: true,
-            senderId: true,
-            read: true,
-            createdAt: true,
-            gifUrl: true,
-            imageUrls: true,
-          },
-        },
-      },
-    });
-
-    const hasMore = conversations.length > limit;
-    const items = hasMore ? conversations.slice(0, limit) : conversations;
-
-    // Count unread per conversation
-    const unreadCounts = await prisma.directMessage.groupBy({
-      by: ["conversationId"],
-      where: {
-        conversationId: { in: items.map((c) => c.id) },
-        senderId: { not: userId },
-        read: false,
-      },
-      _count: { id: true },
-    });
-
-    const unreadMap = new Map(
-      unreadCounts.map((u) => [u.conversationId, u._count.id])
-    );
-
-    const result = items.map((conv) => {
-      const otherUser =
-        conv.participantOneId === userId
-          ? conv.participantTwo
-          : conv.participantOne;
-      const resolved = resolveUserDisplay(otherUser);
-      const lastMessage = conv.messages[0] ?? null;
-
-      return {
-        id: conv.id,
-        otherUser: {
-          id: otherUser.id,
-          name: resolved.name,
-          image: resolved.image,
-          username: otherUser.username,
-        },
-        lastMessage: lastMessage
-          ? {
-              id: lastMessage.id,
-              content: lastMessage.content,
-              senderId: lastMessage.senderId,
-              read: lastMessage.read,
-              createdAt: lastMessage.createdAt.toISOString(),
-              gifUrl: lastMessage.gifUrl,
-              imageUrls: lastMessage.imageUrls,
-            }
-          : null,
-        unreadCount: unreadMap.get(conv.id) ?? 0,
-        lastMessageAt: conv.lastMessageAt.toISOString(),
-      };
-    });
-
-    return Response.json({
-      conversations: result,
-      nextCursor: hasMore ? items[items.length - 1].id : null,
-      hasMore,
-    });
+    const result = await listConversations(session.user.id, { cursor });
+    return Response.json(result);
   } catch (error) {
     console.error("List conversations error:", error);
     return Response.json(

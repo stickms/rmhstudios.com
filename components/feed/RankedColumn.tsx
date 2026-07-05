@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Swords, Trophy, Check, X, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -36,24 +36,37 @@ interface LbRow {
 
 const fmt = (n: number) => n.toLocaleString();
 
-export function RankedColumn() {
-  const [games, setGames] = useState<GameDef[]>([]);
-  const [ratings, setRatings] = useState<Rating[]>([]);
-  const [incoming, setIncoming] = useState<ChallengeRow[]>([]);
-  const [outgoing, setOutgoing] = useState<ChallengeRow[]>([]);
-  const [signedIn, setSignedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
+export function RankedColumn({
+  initialData,
+}: {
+  /** Primary Ranked payload prefetched by the route loader. */
+  initialData?: {
+    games: GameDef[];
+    signedIn: boolean;
+    ratings: Rating[];
+    incoming: ChallengeRow[];
+    outgoing: ChallengeRow[];
+  } | null;
+} = {}) {
+  // Seed from the loader when provided so the page paints immediately.
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [games, setGames] = useState<GameDef[]>(initialData?.games ?? []);
+  const [ratings, setRatings] = useState<Rating[]>(initialData?.ratings ?? []);
+  const [incoming, setIncoming] = useState<ChallengeRow[]>(initialData?.incoming ?? []);
+  const [outgoing, setOutgoing] = useState<ChallengeRow[]>(initialData?.outgoing ?? []);
+  const [signedIn, setSignedIn] = useState(!!initialData?.signedIn);
+  const [loading, setLoading] = useState(!initialData);
   const [busy, setBusy] = useState<string | null>(null);
 
   const { t } = useTranslation('feed');
 
   // Challenge form
-  const [game, setGame] = useState('');
+  const [game, setGame] = useState(initialData?.games?.[0]?.id ?? '');
   const [opponent, setOpponent] = useState('');
   const [formMsg, setFormMsg] = useState<string | null>(null);
 
   // Leaderboard
-  const [lbGame, setLbGame] = useState('');
+  const [lbGame, setLbGame] = useState(initialData?.games?.[0]?.id ?? '');
   const [lb, setLb] = useState<LbRow[]>([]);
   const [lbLoading, setLbLoading] = useState(false);
 
@@ -72,6 +85,7 @@ export function RankedColumn() {
   }, [game, lbGame]);
 
   useEffect(() => {
+    if (seeded.current) return;
     let active = true;
     (async () => {
       try {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Compass, Hash, Loader2, Sparkles, TrendingUp, Coins } from 'lucide-react';
@@ -16,9 +16,17 @@ interface ExploreData {
   suggestedUsers: { id: string; name: string | null; image: string | null; handle: string | null; followerCount: number }[];
 }
 
-export function ExploreColumn() {
-  const [data, setData] = useState<ExploreData | null>(null);
-  const [loading, setLoading] = useState(true);
+export function ExploreColumn({
+  initialData,
+}: {
+  /** Explore payload prefetched by the route loader. */
+  initialData?: ExploreData | null;
+} = {}) {
+  // Seed from the loader when provided so the page paints immediately and the
+  // mount fetch is skipped.
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [data, setData] = useState<ExploreData | null>(initialData ?? null);
+  const [loading, setLoading] = useState(!seeded.current);
   const [tipLeaders, setTipLeaders] = useState<{ user: { id: string; name: string | null; image: string | null; handle: string | null }; total: number }[]>([]);
 
   // Ask-the-feed widget state
@@ -30,10 +38,14 @@ export function ExploreColumn() {
 
   useEffect(() => {
     let active = true;
-    fetch('/api/explore', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => active && setData(d))
-      .finally(() => active && setLoading(false));
+    // The primary payload is seeded by the loader; only fetch it here on the
+    // client fallback path.
+    if (!seeded.current) {
+      fetch('/api/explore', { credentials: 'include' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => active && setData(d))
+        .finally(() => active && setLoading(false));
+    }
     fetch('/api/tips/leaderboard?range=week')
       .then((r) => (r.ok ? r.json() : { leaders: [] }))
       .then((d) => active && setTipLeaders(d.leaders ?? []))

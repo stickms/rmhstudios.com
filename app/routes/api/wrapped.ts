@@ -1,11 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { generateYearlyWrapped } from '@/lib/wrapped/wrapped.server';
-
-// Cache per user+year so re-opening doesn't re-aggregate/re-bill the model.
-const cache = new Map<string, { wrapped: unknown; at: number }>();
-const TTL_MS = 6 * 60 * 60 * 1000;
+import { getYearlyWrapped } from '@/lib/wrapped.server';
 
 /** GET /api/wrapped?year= — the signed-in user's year-in-review. */
 export const Route = createFileRoute('/api/wrapped')({
@@ -29,13 +25,7 @@ export const Route = createFileRoute('/api/wrapped')({
               ? requested
               : now.getUTCFullYear();
 
-          const key = `${session.user.id}:${year}`;
-          const cached = cache.get(key);
-          if (cached && Date.now() - cached.at < TTL_MS) {
-            return Response.json(cached.wrapped as object);
-          }
-          const wrapped = await generateYearlyWrapped(session.user.id, year);
-          cache.set(key, { wrapped, at: Date.now() });
+          const wrapped = await getYearlyWrapped(session.user.id, year);
           return Response.json(wrapped);
         } catch (error) {
           console.error('Wrapped error:', error);

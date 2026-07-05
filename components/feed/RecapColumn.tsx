@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { Sparkles, Heart, MessageCircle, UserPlus, Trophy, Flame, PenSquare } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
@@ -27,12 +27,20 @@ const STAT_META = [
   { key: 'streak', labelKey: 'recap-stat-day-streak', labelDefault: 'Day streak', icon: Flame },
 ] as const;
 
-export function RecapColumn() {
+export function RecapColumn({
+  initialData,
+}: {
+  /** Recap prefetched by the route loader; `null` when signed out. */
+  initialData?: Recap | null;
+} = {}) {
   const { t } = useTranslation('feed');
-  const [recap, setRecap] = useState<Recap | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Seed from the loader when provided so the recap paints immediately.
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [recap, setRecap] = useState<Recap | null>(initialData ?? null);
+  const [loading, setLoading] = useState(!initialData);
 
   useEffect(() => {
+    if (seeded.current) return;
     let active = true;
     fetch('/api/recap', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))

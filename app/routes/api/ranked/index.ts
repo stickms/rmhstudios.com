@@ -3,8 +3,8 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
-import { isRankedGame, RANKED_GAMES } from '@/lib/ranked/elo';
-import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { isRankedGame } from '@/lib/ranked/elo';
+import { getRankedOverview } from '@/lib/ranked.server';
 import { createNotification } from '@/lib/notifications.server';
 
 const challengeSchema = z.object({
@@ -21,30 +21,7 @@ export const Route = createFileRoute('/api/ranked/')({
     handlers: {
       GET: async ({ request }) => {
         const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-        if (!session) return Response.json({ games: RANKED_GAMES, signedIn: false, ratings: [], incoming: [], outgoing: [] });
-        const userId = session.user.id;
-
-        const [ratings, incoming, outgoing] = await Promise.all([
-          prisma.eloRating.findMany({ where: { userId }, orderBy: { rating: 'desc' } }),
-          prisma.rankedChallenge.findMany({
-            where: { opponentId: userId, status: { in: ['pending', 'accepted'] } },
-            orderBy: { createdAt: 'desc' },
-            include: { challenger: { select: userDisplaySelect } },
-          }),
-          prisma.rankedChallenge.findMany({
-            where: { challengerId: userId, status: { in: ['pending', 'accepted'] } },
-            orderBy: { createdAt: 'desc' },
-            include: { opponent: { select: userDisplaySelect } },
-          }),
-        ]);
-
-        return Response.json({
-          games: RANKED_GAMES,
-          signedIn: true,
-          ratings,
-          incoming: incoming.map((c) => ({ id: c.id, game: c.game, status: c.status, user: resolveUser(c.challenger) })),
-          outgoing: outgoing.map((c) => ({ id: c.id, game: c.game, status: c.status, user: resolveUser(c.opponent) })),
-        });
+        return Response.json(await getRankedOverview(session?.user.id ?? null));
       },
 
       POST: async ({ request }) => {

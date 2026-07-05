@@ -17,16 +17,23 @@ import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { ShopColumn } from '@/components/feed/ShopColumn';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
+import { getShopData } from '@/lib/shop/list.server';
 
-const fetchCurrentTier = createServerFn({ method: 'GET' }).handler(async (): Promise<Tier> => {
+// Membership tier + shop catalog, both server-side so the page is present at
+// first paint / prefetched on intent instead of the shop fetching on mount.
+const fetchStore = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user?.id) return 'free';
-  return getUserTier(session.user.id);
+  const userId = session?.user?.id ?? null;
+  const [tier, shop] = await Promise.all([
+    userId ? getUserTier(userId) : Promise.resolve('free' as Tier),
+    getShopData(userId),
+  ]);
+  return { tier, shop };
 });
 
 export const Route = createFileRoute('/_site/store/')({
-  loader: () => fetchCurrentTier(),
+  loader: () => fetchStore(),
   head: () => ({
     meta: [
       { title: 'Store — RMH Studios' },
@@ -38,7 +45,7 @@ export const Route = createFileRoute('/_site/store/')({
 
 function Store() {
   const { t } = useTranslation('site');
-  const currentTier = Route.useLoaderData() as Tier;
+  const { tier: currentTier, shop } = Route.useLoaderData();
 
   return (
     <>
@@ -49,7 +56,7 @@ function Store() {
         <MobileTopBar title={t('store-title', { defaultValue: 'Store' })} />
         <MembershipPanel currentTier={currentTier} returnPath="/store" coinShopAnchorId="coins-shop" />
         <div id="coins-shop" className="scroll-mt-4 border-t border-site-border">
-          <ShopColumn />
+          <ShopColumn initialData={shop} />
         </div>
       </AnimatedMain>
       {/* Trailing gutter to match the blog/library layout */}

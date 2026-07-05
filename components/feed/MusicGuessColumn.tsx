@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Music, Plus, X, Check, Lightbulb, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,11 +18,18 @@ interface PuzzleRow {
   author: { id: string; name: string | null; handle: string | null; image: string | null };
 }
 
-export function MusicGuessColumn() {
+export function MusicGuessColumn({
+  initialData,
+}: {
+  /** Puzzle list prefetched by the route loader. */
+  initialData?: { puzzles: PuzzleRow[]; signedIn: boolean } | null;
+} = {}) {
   const { t } = useTranslation('feed');
-  const [puzzles, setPuzzles] = useState<PuzzleRow[]>([]);
-  const [signedIn, setSignedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Seed from the loader when provided so the list paints immediately.
+  const seeded = useRef(initialData != null);
+  const [puzzles, setPuzzles] = useState<PuzzleRow[]>(initialData?.puzzles ?? []);
+  const [signedIn, setSignedIn] = useState(!!initialData?.signedIn);
+  const [loading, setLoading] = useState(initialData == null);
   const [showForm, setShowForm] = useState(false);
   const [playId, setPlayId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -39,6 +46,8 @@ export function MusicGuessColumn() {
   }, []);
 
   useEffect(() => {
+    // When the loader already seeded the list, skip the mount fetch.
+    if (seeded.current) return;
     let active = true;
     (async () => {
       try {

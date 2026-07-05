@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
-import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { getMusicGuessList } from '@/lib/music-guess.server';
 
 const createSchema = z.object({
   title: z.string().min(1).max(160),
@@ -21,28 +21,7 @@ export const Route = createFileRoute('/api/rmhmusic/guess/')({
     handlers: {
       GET: async ({ request }) => {
         const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-        const puzzles = await prisma.musicGuessPuzzle.findMany({
-          orderBy: { createdAt: 'desc' },
-          take: 50,
-          select: { id: true, artist: true, plays: true, solves: true, createdAt: true, author: { select: userDisplaySelect } },
-        });
-
-        let solvedIds = new Set<string>();
-        if (session) {
-          const attempts = await prisma.musicGuessAttempt.findMany({
-            where: { userId: session.user.id, puzzleId: { in: puzzles.map((p) => p.id) }, solved: true },
-            select: { puzzleId: true },
-          });
-          solvedIds = new Set(attempts.map((a) => a.puzzleId));
-        }
-
-        return Response.json({
-          puzzles: puzzles.map((p) => ({
-            id: p.id, artist: p.artist, plays: p.plays, solves: p.solves, createdAt: p.createdAt,
-            author: resolveUser(p.author), solved: solvedIds.has(p.id),
-          })),
-          signedIn: !!session,
-        });
+        return Response.json(await getMusicGuessList(session?.user.id ?? null));
       },
 
       POST: async ({ request }) => {

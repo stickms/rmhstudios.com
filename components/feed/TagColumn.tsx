@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Hash, Loader2 } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
@@ -9,12 +9,22 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { FeedItem } from '@/lib/feed-types';
 
-export function TagColumn({ tag }: { tag: string }) {
+export function TagColumn({
+  tag,
+  initialData,
+}: {
+  tag: string;
+  /** First page prefetched by the route loader. */
+  initialData?: { items: FeedItem[]; nextCursor: string | null; hasMore: boolean } | null;
+}) {
   const { t } = useTranslation('feed');
-  const [items, setItems] = useState<FeedItem[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Seed from the loader when provided so the feed paints immediately and the
+  // mount fetch is skipped. Pagination still fetches.
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [items, setItems] = useState<FeedItem[]>(initialData?.items ?? []);
+  const [cursor, setCursor] = useState<string | null>(initialData?.nextCursor ?? null);
+  const [hasMore, setHasMore] = useState(!!initialData?.hasMore);
+  const [loading, setLoading] = useState(!seeded.current);
   const [loadingMore, setLoadingMore] = useState(false);
 
   const load = useCallback(
@@ -36,6 +46,13 @@ export function TagColumn({ tag }: { tag: string }) {
   );
 
   useEffect(() => {
+    // First mount already has the loader's first page; consume the seed and skip
+    // the fetch. Subsequent tag navigations fall through and fetch client-side.
+    if (seeded.current) {
+      seeded.current = false;
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     load();
   }, [load]);
