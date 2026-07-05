@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
@@ -197,14 +197,23 @@ function PreferencesPanel() {
   );
 }
 
-export function NotificationsColumn({ embedded = false }: { embedded?: boolean } = {}) {
+export function NotificationsColumn({
+  embedded = false,
+  initialData,
+}: {
+  embedded?: boolean;
+  /** First page prefetched by the route loader; `null` when signed out. */
+  initialData?: { items: NotificationItem[]; nextCursor: string | null } | null;
+} = {}) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const push = usePushSubscription(true);
   const [prefsOpen, setPrefsOpen] = useState(false);
-  const [items, setItems] = useState<NotificationItem[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Seed from the loader when provided so the list paints immediately.
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [items, setItems] = useState<NotificationItem[]>(initialData?.items ?? []);
+  const [nextCursor, setNextCursor] = useState<string | null>(initialData?.nextCursor ?? null);
+  const [loading, setLoading] = useState(!(initialData));
   const [loadingMore, setLoadingMore] = useState(false);
 
   const load = useCallback(async (cursor?: string) => {
@@ -221,13 +230,17 @@ export function NotificationsColumn({ embedded = false }: { embedded?: boolean }
     }
   }, []);
 
-  // Initial load, then mark everything read so the badge clears.
+  // Initial load, then mark everything read so the badge clears. When the route
+  // loader already seeded the list, skip the fetch and go straight to marking
+  // read.
   useEffect(() => {
     let active = true;
     (async () => {
-      await load();
-      if (!active) return;
-      setLoading(false);
+      if (!seeded.current) {
+        await load();
+        if (!active) return;
+        setLoading(false);
+      }
       // Mark everything read server-side, and reflect it locally so rows don't
       // stay visually unread (system notifications can't be "clicked" read).
       fetch('/api/notifications/read', {

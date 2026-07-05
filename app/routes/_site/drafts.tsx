@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
+import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { DraftsColumn } from '@/components/feed/DraftsColumn';
@@ -6,15 +8,28 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
+import { auth } from '@/lib/auth';
+import { listScheduled } from '@/lib/scheduled/list.server';
+
+// Prefetch drafts + scheduled server-side. `null` when signed out (the page
+// gates on the client session and shows a sign-in prompt).
+const fetchDrafts = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = getRequest();
+  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  if (!session) return { drafts: null };
+  return { drafts: await listScheduled(session.user.id) };
+});
 
 export const Route = createFileRoute('/_site/drafts')({
   head: () => ({ meta: [{ title: 'Drafts | RMH Studios' }] }),
+  loader: () => fetchDrafts(),
   component: DraftsPage,
 });
 
 function DraftsPage() {
   const { t } = useTranslation("site");
   const { data: session, isPending } = useSession();
+  const { drafts } = Route.useLoaderData();
 
   return (
     <>
@@ -34,7 +49,7 @@ function DraftsPage() {
             </Link>
           </div>
         ) : (
-          <DraftsColumn />
+          <DraftsColumn initialData={drafts} />
         )}
       </AnimatedMain>
       <div className="hidden lg:block w-4 shrink-0" />

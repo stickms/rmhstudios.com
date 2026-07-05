@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bookmark, Loader2 } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
@@ -8,11 +8,17 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { FeedItem } from '@/lib/feed-types';
 
-export function BookmarksColumn() {
-  const [items, setItems] = useState<FeedItem[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(false);
-  const [loading, setLoading] = useState(true);
+export function BookmarksColumn({
+  initialData,
+}: {
+  /** First page prefetched by the route loader; `null` when signed out. */
+  initialData?: { items: FeedItem[]; nextCursor: string | null; hasMore: boolean } | null;
+} = {}) {
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [items, setItems] = useState<FeedItem[]>(initialData?.items ?? []);
+  const [cursor, setCursor] = useState<string | null>(initialData?.nextCursor ?? null);
+  const [hasMore, setHasMore] = useState(!!initialData?.hasMore);
+  const [loading, setLoading] = useState(!initialData);
   const [loadingMore, setLoadingMore] = useState(false);
   const { t } = useTranslation('feed');
 
@@ -32,6 +38,8 @@ export function BookmarksColumn() {
   }, []);
 
   useEffect(() => {
+    // Loader already seeded the first page — don't refetch it on mount.
+    if (seeded.current) return;
     load();
   }, [load]);
 
