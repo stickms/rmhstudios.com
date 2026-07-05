@@ -16,6 +16,7 @@ import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
+import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
 import { useAppBadge } from '@/lib/useAppBadge';
 import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
@@ -38,7 +39,7 @@ const SUBMENU_ITEM = {
 };
 
 // `tKey` is the i18n key (namespace "feed"); `label` is the English fallback.
-type NavLeaf = { href: string; tKey: string; label: string; icon: LucideIcon; requiresAuth?: boolean; requiresAdmin?: boolean; badge?: 'inbox'; external?: boolean };
+type NavLeaf = { href: string; tKey: string; label: string; icon: LucideIcon; requiresAuth?: boolean; requiresAdmin?: boolean; badge?: 'inbox' | 'admin-review'; external?: boolean };
 type NavGroup = { group: string; tKey: string; label: string; icon: LucideIcon; children: NavLeaf[] };
 type NavItem = NavLeaf | NavGroup;
 const isGroup = (item: NavItem): item is NavGroup => 'group' in item;
@@ -69,7 +70,7 @@ const NAV: NavItem[] = [
     ],
   },
   // Admin lives at the bottom of the rail and is only rendered for admins.
-  { href: '/admin', tKey: 'nav-admin', label: 'Admin', icon: ShieldCheck, requiresAdmin: true },
+  { href: '/admin', tKey: 'nav-admin', label: 'Admin', icon: ShieldCheck, requiresAdmin: true, badge: 'admin-review' },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
@@ -105,6 +106,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const { resolved: resolvedUser } = useResolvedUser();
   const unreadCount = useUnreadCount(!!session);
   const { count: notificationCount } = useNotificationCount(!!session);
+  const { counts: reviewCounts } = useAdminReviewCount(isAdmin);
   const streak = useStreak(!!session);
   usePresenceHeartbeat(!!session);
 
@@ -154,6 +156,11 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           <div className="relative shrink-0">
             <Icon className="w-5 h-5" />
             <NotificationBadge count={inboxCount} className="absolute -top-1.5 -right-1.5" />
+          </div>
+        ) : link.badge === 'admin-review' ? (
+          <div className="relative shrink-0">
+            <Icon className="w-5 h-5" />
+            <NotificationBadge count={reviewCounts.total} className="absolute -top-1.5 -right-1.5" />
           </div>
         ) : (
           <Icon className="w-5 h-5 shrink-0" />
