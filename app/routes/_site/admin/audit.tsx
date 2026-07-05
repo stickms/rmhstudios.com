@@ -4,7 +4,6 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState } from 'react';
-import { ScrollText } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -49,10 +48,6 @@ function AuditLogPage() {
   return (
     <PageLayout title={t("audit-log", { defaultValue: "Audit Log" })} wide backTo="/admin">
       <div className="mx-auto max-w-3xl space-y-4 p-4 md:p-8">
-        <div className="flex items-center gap-3">
-          <ScrollText className="h-6 w-6 text-site-accent" />
-          <h1 className="font-display text-2xl font-bold text-site-text">{t("audit-log", { defaultValue: "Audit Log" })}</h1>
-        </div>
 
         {loading ? (
           <div className="flex justify-center py-20">

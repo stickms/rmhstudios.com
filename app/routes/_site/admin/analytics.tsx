@@ -4,7 +4,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState } from 'react';
-import { BarChart3, Users, FileText, Flag, Coins } from 'lucide-react';
+import { Users, FileText, Flag, Coins } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useTranslation } from 'react-i18next';
 
@@ -59,10 +59,6 @@ function AnalyticsPage() {
   return (
     <PageLayout title={t('analytics', { defaultValue: 'Analytics' })} wide backTo="/admin">
       <div className="mx-auto max-w-4xl space-y-6 p-4 md:p-8">
-        <div className="flex items-center gap-3">
-          <BarChart3 className="h-6 w-6 text-site-accent" />
-          <h1 className="font-display text-2xl font-bold text-site-text">{t('analytics', { defaultValue: 'Analytics' })}</h1>
-        </div>
 
         {loading ? (
           <div className="flex justify-center py-20">
