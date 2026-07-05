@@ -325,6 +325,7 @@ import { Route as ApiAiSearchRouteImport } from './routes/api/ai/search'
 import { Route as ApiAiMessageSuggestRouteImport } from './routes/api/ai/message-suggest'
 import { Route as ApiAiAskFeedRouteImport } from './routes/api/ai/ask-feed'
 import { Route as ApiAdminUsersRouteImport } from './routes/api/admin/users'
+import { Route as ApiAdminReviewCountsRouteImport } from './routes/api/admin/review-counts'
 import { Route as ApiAdminReportsRouteImport } from './routes/api/admin/reports'
 import { Route as ApiAdminBlogRouteImport } from './routes/api/admin/blog'
 import { Route as ApiAdminAuditLogRouteImport } from './routes/api/admin/audit-log'
@@ -2120,6 +2121,11 @@ const ApiAdminUsersRoute = ApiAdminUsersRouteImport.update({
   path: '/api/admin/users',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminReviewCountsRoute = ApiAdminReviewCountsRouteImport.update({
+  id: '/api/admin/review-counts',
+  path: '/api/admin/review-counts',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminReportsRoute = ApiAdminReportsRouteImport.update({
   id: '/api/admin/reports',
   path: '/api/admin/reports',
@@ -3349,6 +3355,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
+  '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
@@ -3841,6 +3848,7 @@ export interface FileRoutesByTo {
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
+  '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
@@ -4359,6 +4367,7 @@ export interface FileRoutesById {
   '/api/admin/audit-log': typeof ApiAdminAuditLogRoute
   '/api/admin/blog': typeof ApiAdminBlogRoute
   '/api/admin/reports': typeof ApiAdminReportsRouteWithChildren
+  '/api/admin/review-counts': typeof ApiAdminReviewCountsRoute
   '/api/admin/users': typeof ApiAdminUsersRouteWithChildren
   '/api/ai/ask-feed': typeof ApiAiAskFeedRoute
   '/api/ai/message-suggest': typeof ApiAiMessageSuggestRoute
@@ -4877,6 +4886,7 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/reports'
+    | '/api/admin/review-counts'
     | '/api/admin/users'
     | '/api/ai/ask-feed'
     | '/api/ai/message-suggest'
@@ -5369,6 +5379,7 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/reports'
+    | '/api/admin/review-counts'
     | '/api/admin/users'
     | '/api/ai/ask-feed'
     | '/api/ai/message-suggest'
@@ -5886,6 +5897,7 @@ export interface FileRouteTypes {
     | '/api/admin/audit-log'
     | '/api/admin/blog'
     | '/api/admin/reports'
+    | '/api/admin/review-counts'
     | '/api/admin/users'
     | '/api/ai/ask-feed'
     | '/api/ai/message-suggest'
@@ -6304,6 +6316,7 @@ export interface RootRouteChildren {
   ApiAdminAuditLogRoute: typeof ApiAdminAuditLogRoute
   ApiAdminBlogRoute: typeof ApiAdminBlogRoute
   ApiAdminReportsRoute: typeof ApiAdminReportsRouteWithChildren
+  ApiAdminReviewCountsRoute: typeof ApiAdminReviewCountsRoute
   ApiAdminUsersRoute: typeof ApiAdminUsersRouteWithChildren
   ApiAiAskFeedRoute: typeof ApiAiAskFeedRoute
   ApiAiMessageSuggestRoute: typeof ApiAiMessageSuggestRoute
@@ -8730,6 +8743,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/users'
       fullPath: '/api/admin/users'
       preLoaderRoute: typeof ApiAdminUsersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/review-counts': {
+      id: '/api/admin/review-counts'
+      path: '/api/admin/review-counts'
+      fullPath: '/api/admin/review-counts'
+      preLoaderRoute: typeof ApiAdminReviewCountsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/reports': {
@@ -11291,6 +11311,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAuditLogRoute: ApiAdminAuditLogRoute,
   ApiAdminBlogRoute: ApiAdminBlogRoute,
   ApiAdminReportsRoute: ApiAdminReportsRouteWithChildren,
+  ApiAdminReviewCountsRoute: ApiAdminReviewCountsRoute,
   ApiAdminUsersRoute: ApiAdminUsersRouteWithChildren,
   ApiAiAskFeedRoute: ApiAiAskFeedRoute,
   ApiAiMessageSuggestRoute: ApiAiMessageSuggestRoute,
