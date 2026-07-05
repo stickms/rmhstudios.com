@@ -71,6 +71,13 @@ export interface FeedItem {
   deletedAt?: string | null;
   deletedByAdmin?: boolean;
 
+  /**
+   * Client-only: an optimistic post inserted at the top of the feed that is
+   * still awaiting its server round-trip. Rendered dimmed + non-interactive
+   * until `reconcileItem` swaps in the authoritative record.
+   */
+  pending?: boolean;
+
   // Poll & GIF attachments
   poll?: FeedPoll;
   gifUrl?: string;

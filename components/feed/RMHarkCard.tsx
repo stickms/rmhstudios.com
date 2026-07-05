@@ -19,6 +19,8 @@ import { LinkPreview } from './LinkPreview';
 import { PostImageGrid } from './PostImageGrid';
 import { runViewTransition, postMediaVTName } from '@/lib/view-transition';
 import { UserAvatar } from './UserAvatar';
+import { Spinner } from '@/components/ui/spinner';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
@@ -56,6 +58,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const { data: session } = authClient.useSession();
   const { resolved: resolvedUser } = useResolvedUser();
   const { removeItem, updateItem } = useFeedStore();
+  const { run: runBookmark } = useOptimisticAction();
   const isAuthor = session?.user?.id === item.user?.id;
 
   // Use freshest user data from cache (covers all users, not just current)
@@ -130,26 +133,28 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     }
   };
 
-  const handleBookmark = async () => {
+  const handleBookmark = () => {
     setMenuOpen(false);
     const next = !bookmarked;
-    setBookmarked(next); // optimistic
-    try {
-      const res = await fetch(`/api/rmharks/${actualId}/bookmark`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
+    runBookmark({
+      apply: () => setBookmarked(next),
+      rollback: () => setBookmarked(!next),
+      commit: () =>
+        fetch(`/api/rmharks/${actualId}/bookmark`, { method: 'POST', credentials: 'include' }),
+      reconcile: async (res) => {
+        const data = await res.json().catch(() => ({}));
         setBookmarked(!!data.bookmarked);
-        toast.success(data.bookmarked ? t('bookmark-saved', { defaultValue: 'Saved to bookmarks' }) : t('bookmark-removed', { defaultValue: 'Removed from bookmarks' }));
-      } else {
-        setBookmarked(!next);
-        if (res.status === 401) toast.error(t('bookmark-sign-in', { defaultValue: 'Please sign in to bookmark posts.' }));
-      }
-    } catch {
-      setBookmarked(!next);
-    }
+        toast.success(
+          data.bookmarked
+            ? t('bookmark-saved', { defaultValue: 'Saved to bookmarks' })
+            : t('bookmark-removed', { defaultValue: 'Removed from bookmarks' })
+        );
+      },
+      onError: (_err, res) => {
+        if (res?.status === 401)
+          toast.error(t('bookmark-sign-in', { defaultValue: 'Please sign in to bookmark posts.' }));
+      },
+    });
   };
 
   const targetUserId = item.user?.id;
@@ -237,12 +242,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     }
   };
 
-  // Track view when card becomes visible
+  // Track view when card becomes visible. Skip optimistic (pending) posts —
+  // their temp id isn't a real post yet.
   useEffect(() => {
-    if (viewTracked.current) return;
+    if (item.pending || viewTracked.current) return;
     viewTracked.current = true;
     fetch(`/api/rmharks/${actualId}/view`, { method: 'POST' }).catch(() => {});
-  }, [actualId]);
+  }, [actualId, item.pending]);
 
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
@@ -263,11 +269,24 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
   return (
     <div
-      className="relative px-4 py-3 border-b border-site-border hover:bg-site-surface/30 transition-colors cursor-pointer"
-      onClick={handleCardClick}
+      className={`relative px-4 py-3 border-b border-site-border transition-colors ${
+        item.pending
+          ? 'opacity-60 pointer-events-none select-none'
+          : 'hover:bg-site-surface/30 cursor-pointer'
+      }`}
+      onClick={item.pending ? undefined : handleCardClick}
+      aria-busy={item.pending || undefined}
     >
+      {/* Optimistic post — awaiting the server round-trip. */}
+      {item.pending && (
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 text-xs text-site-text-dim">
+          <Spinner size={12} />
+          {t('posting', { defaultValue: 'Posting…' })}
+        </div>
+      )}
+
       {/* More menu — top right of card */}
-      {!item.deletedAt && (
+      {!item.deletedAt && !item.pending && (
         <div className={`absolute top-3 right-3 ${menuOpen ? 'z-40' : 'z-10'}`} ref={menuRef}>
           <button
             onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}

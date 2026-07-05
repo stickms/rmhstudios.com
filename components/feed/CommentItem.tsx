@@ -32,6 +32,8 @@ export interface Comment {
   replies?: Comment[];
   deletedAt?: string | null;
   deletedByAdmin?: boolean;
+  /** Client-only: optimistic comment awaiting its server round-trip. */
+  pending?: boolean;
 }
 
 interface SessionUser {

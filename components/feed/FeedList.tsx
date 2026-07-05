@@ -6,6 +6,7 @@ import { useFeedStore } from '@/stores/feedStore';
 import { FeedItem } from './FeedItem';
 import { ArrowUp } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
 
 interface FeedListProps {
   /** Whether this is the Following surface — drives empty-state copy. */
@@ -75,9 +76,13 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
         <FeedItem key={item.id} item={item} />
       ))}
 
-      {/* Loading indicator — also covers the initial load so the empty state
+      {/* Initial load → layout-matched skeletons so the feed reads as
+          "content arriving" rather than a bare spinner, and the empty state
           never flashes before the first page resolves. */}
-      {(loading || !initialized) && (
+      {!initialized && items.length === 0 && <PostListSkeleton count={6} />}
+
+      {/* Pagination load (subsequent pages) keeps the compact spinner. */}
+      {initialized && loading && (
         <div className="flex items-center justify-center py-8">
           <Spinner />
         </div>
