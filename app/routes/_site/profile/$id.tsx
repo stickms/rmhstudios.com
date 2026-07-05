@@ -4,63 +4,45 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
 import { RightSidebar } from '@/components/feed/RightSidebar';
 import { ProfileColumn } from '@/components/feed/ProfileColumn';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
-import { prisma } from '@/lib/prisma.server';
-import { resolveUserDisplay } from '@/lib/user-display';
+import { auth } from '@/lib/auth';
+import { getProfile } from '@/lib/profile.server';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
   .handler(async ({ data: id }) => {
-    const sidebar = await getSidebarData();
+    const request = getRequest();
+    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    const viewer = {
+      id: session?.user?.id ?? null,
+      isAdmin: Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin),
+    };
 
-    // Resolve by handle first, then by ID
-    let user = await prisma.user.findUnique({
-      where: { handle: id },
-      select: {
-        name: true,
-        username: true,
-        handle: true,
-        image: true,
-        profile: {
-          select: { displayName: true, customImage: true, bio: true },
-        },
-      },
-    });
-    if (!user) {
-      user = await prisma.user.findUnique({
-        where: { id },
-        select: {
-          name: true,
-          username: true,
-          handle: true,
-          image: true,
-          profile: {
-            select: { displayName: true, customImage: true, bio: true },
-          },
-        },
-      });
-    }
+    // Fetch the profile itself alongside the sidebar so the main column is
+    // present at first paint (and prefetched on hover) instead of fetched
+    // client-side after mount.
+    const [sidebar, profile] = await Promise.all([getSidebarData(), getProfile(id, viewer)]);
 
     let meta = { title: 'User Not Found | RMH', description: '', ogType: 'profile' as const, ogUrl: '', ogImage: '' };
-    if (user) {
-      const resolved = resolveUserDisplay(user);
-      const name = resolved.name || 'Unknown';
-      const handle = user.handle || user.username;
+    if (profile) {
+      const name = profile.name || 'Unknown';
+      const handle = profile.handle || profile.username;
       const title = handle ? `${name} (@${handle}) | RMH` : `${name} | RMH`;
-      const description = user.profile?.bio || `${name}'s profile on RMH`;
+      const description = profile.bio || `${name}'s profile on RMH`;
       meta = {
         title,
         description,
         ogType: 'profile',
         ogUrl: `https://rmhstudios.com/u/${handle || id}`,
-        ogImage: resolved.image || '',
+        ogImage: profile.image || '',
       };
     }
 
-    return { sidebar, meta };
+    return { sidebar, meta, profile };
   });
 
 export const Route = createFileRoute('/_site/profile/$id')({
@@ -85,13 +67,15 @@ export const Route = createFileRoute('/_site/profile/$id')({
 });
 
 function ProfilePage() {
-  const { sidebar } = Route.useLoaderData();
+  const { sidebar, profile } = Route.useLoaderData();
   const { id: userId } = Route.useParams();
 
   return (
     <>
       <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0">
-        <ProfileColumn userId={userId} />
+        {/* `key` remounts the column on profile→profile navigation so it re-seeds
+            cleanly from the new loader data (no stale-state carryover). */}
+        <ProfileColumn key={userId} userId={userId} initialProfile={profile} />
       </AnimatedMain>
 
       <aside className="hidden lg:block w-80 shrink-0 self-start">
