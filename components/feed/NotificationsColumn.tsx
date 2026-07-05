@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 import { usePushSubscription } from '@/lib/usePushSubscription';
 
@@ -121,6 +122,7 @@ interface NotificationPrefs {
 function PreferencesPanel() {
   const { t } = useTranslation('feed');
   const [prefs, setPrefs] = useState<NotificationPrefs | null>(null);
+  const { run: runToggle } = useOptimisticAction();
 
   useEffect(() => {
     let cancelled = false;
@@ -137,14 +139,20 @@ function PreferencesPanel() {
 
   const toggle = (field: keyof NotificationPrefs) => {
     if (!prefs) return;
-    const next = { ...prefs, [field]: !prefs[field] };
-    setPrefs(next);
-    fetch('/api/notifications/preferences', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ [field]: next[field] }),
-    }).catch(() => {});
+    const nextValue = !prefs[field];
+    runToggle({
+      apply: () => setPrefs((p) => (p ? { ...p, [field]: nextValue } : p)),
+      // Previously a failed PUT was swallowed, leaving the switch out of sync
+      // with the server — now it reverts.
+      rollback: () => setPrefs((p) => (p ? { ...p, [field]: !nextValue } : p)),
+      commit: () =>
+        fetch('/api/notifications/preferences', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ [field]: nextValue }),
+        }),
+    });
   };
 
   const ROWS: Array<{ field: keyof NotificationPrefs; label: string; fallback: string }> = [

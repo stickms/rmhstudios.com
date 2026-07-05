@@ -15,6 +15,8 @@ import { BadgeCheck, ShieldCheck } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 
 interface HoverProfile {
   id: string;
@@ -43,7 +45,7 @@ export function ProfileHoverCard({
   const navigate = useNavigate();
   const { data: session } = useSession();
   const [profile, setProfile] = useState<HoverProfile | null>(null);
-  const [followBusy, setFollowBusy] = useState(false);
+  const { run: runFollow, pending: followBusy } = useOptimisticAction();
 
   const load = useCallback(
     async (open: boolean) => {
@@ -60,34 +62,33 @@ export function ProfileHoverCard({
     [userId, profile]
   );
 
-  const toggleFollow = async () => {
-    if (!profile || followBusy) return;
+  const toggleFollow = () => {
+    if (!profile) return;
     if (!session?.user) {
       navigate({ to: '/login', search: { callbackURL: undefined } });
       return;
     }
-    setFollowBusy(true);
     const wasFollowing = profile.isFollowing;
-    setProfile({
-      ...profile,
-      isFollowing: !wasFollowing,
-      followerCount: profile.followerCount + (wasFollowing ? -1 : 1),
+    const followId = profile.id;
+    runFollow({
+      apply: () =>
+        setProfile((p) =>
+          p
+            ? { ...p, isFollowing: !wasFollowing, followerCount: p.followerCount + (wasFollowing ? -1 : 1) }
+            : p
+        ),
+      rollback: () =>
+        setProfile((p) =>
+          p
+            ? { ...p, isFollowing: wasFollowing, followerCount: p.followerCount + (wasFollowing ? 1 : -1) }
+            : p
+        ),
+      commit: () =>
+        fetch(`/api/profile/${encodeURIComponent(followId)}/follow`, {
+          method: 'POST',
+          credentials: 'include',
+        }),
     });
-    try {
-      const res = await fetch(`/api/profile/${encodeURIComponent(profile.id)}/follow`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error();
-    } catch {
-      setProfile((p) =>
-        p
-          ? { ...p, isFollowing: wasFollowing, followerCount: p.followerCount + (wasFollowing ? 1 : -1) }
-          : p
-      );
-    } finally {
-      setFollowBusy(false);
-    }
   };
 
   const profileHref = `/u/${profile?.handle || userId}`;
@@ -151,11 +152,11 @@ export function ProfileHoverCard({
               )}
               <div className="mt-2 flex gap-4 text-sm">
                 <span>
-                  <span className="font-bold text-site-text">{profile.followingCount}</span>{' '}
+                  <AnimatedCount value={profile.followingCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
                   <span className="text-site-text-dim">{t('following-label', { defaultValue: 'Following' })}</span>
                 </span>
                 <span>
-                  <span className="font-bold text-site-text">{profile.followerCount}</span>{' '}
+                  <AnimatedCount value={profile.followerCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
                   <span className="text-site-text-dim">{t('followers-label', { defaultValue: 'Followers' })}</span>
                 </span>
               </div>

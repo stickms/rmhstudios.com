@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFeedStore } from '@/stores/feedStore';
 import { FeedItem } from './FeedItem';
 import { ArrowUp } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
+import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 
 interface FeedListProps {
   /** Whether this is the Following surface — drives empty-state copy. */
@@ -20,14 +22,21 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
     useFeedStore();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const initialFetched = useRef(false);
+  // Ids of posts just flushed from the "N new" pill, so they can ease in rather
+  // than pop. Cleared after the animation window.
+  const [enteringIds, setEnteringIds] = useState<Set<string>>(() => new Set());
 
-  // Initial fetch
+  // Initial fetch. The feed store is module-level, so items survive navigation —
+  // returning to the feed (back-nav) shows the cached timeline instantly and,
+  // paired with the router's scroll restoration, lands you where you were.
+  // Only fetch when there's nothing cached, so a remount never appends a
+  // redundant extra page on top of what's already loaded.
   useEffect(() => {
     if (!initialFetched.current) {
       initialFetched.current = true;
-      fetchNextPage();
+      if (items.length === 0) fetchNextPage();
     }
-  }, [fetchNextPage]);
+  }, [fetchNextPage, items.length]);
 
   // Infinite scroll via IntersectionObserver
   const observerCallback = useCallback(
@@ -51,6 +60,15 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
   }, [observerCallback]);
 
   const handleShowNew = () => {
+    // Tag the incoming posts so they ease in instead of popping. (A container
+    // View Transition would clash with the per-image `view-transition-name`s on
+    // feed cards, desyncing image vs. text — a scoped per-item enter is the
+    // non-jarring option here.)
+    if (!prefersReducedMotion()) {
+      const flushedIds = new Set(pendingItems.map((i) => i.id));
+      setEnteringIds(flushedIds);
+      window.setTimeout(() => setEnteringIds(new Set()), 500);
+    }
     flushPending();
     // Snap to the top so the freshly inserted posts are visible.
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -71,13 +89,27 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
         </div>
       )}
 
-      {items.map((item) => (
-        <FeedItem key={item.id} item={item} />
-      ))}
+      {items.map((item) => {
+        const entering = enteringIds.has(item.id);
+        // `feed-card-cv` skips layout/paint for cards far from the viewport so
+        // long timelines stay smooth. Pending (optimistic) and just-entered
+        // posts opt out — they sit at the top and must render (and animate)
+        // without being skipped.
+        const cv = item.pending || entering ? '' : 'feed-card-cv';
+        return (
+          <div key={item.id} className={`${cv} ${entering ? 'feed-item-enter' : ''}`.trim() || undefined}>
+            <FeedItem item={item} />
+          </div>
+        );
+      })}
 
-      {/* Loading indicator — also covers the initial load so the empty state
+      {/* Initial load → layout-matched skeletons so the feed reads as
+          "content arriving" rather than a bare spinner, and the empty state
           never flashes before the first page resolves. */}
-      {(loading || !initialized) && (
+      {!initialized && items.length === 0 && <PostListSkeleton count={6} />}
+
+      {/* Pagination load (subsequent pages) keeps the compact spinner. */}
+      {initialized && loading && (
         <div className="flex items-center justify-center py-8">
           <Spinner />
         </div>

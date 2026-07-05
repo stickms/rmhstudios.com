@@ -8,6 +8,8 @@ import { authClient } from '@/lib/auth-client';
 import { ComposeModal } from './ComposeModal';
 import type { FeedItem } from '@/lib/feed-types';
 import { useTranslation } from 'react-i18next';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 
 interface RMHarkActionsProps {
   item: FeedItem;
@@ -29,6 +31,8 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
   const [repostMenu, setRepostMenu] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
   const repostRef = useRef<HTMLDivElement>(null);
+  const { run: runLike } = useOptimisticAction();
+  const { run: runRepost } = useOptimisticAction();
 
   useEffect(() => {
     if (!repostMenu) return;
@@ -47,42 +51,36 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
     navigate({ to: `/u/${item.user?.handle || item.user?.id}/post/${actualId}` });
   };
 
-  const toggleLike = async (e: React.MouseEvent) => {
+  const toggleLike = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!session) return;
     const wasLiked = item.liked;
-    updateItem(item.id, {
-      liked: !wasLiked,
-      likeCount: (item.likeCount ?? 0) + (wasLiked ? -1 : 1),
+    const prevCount = item.likeCount;
+    runLike({
+      apply: () =>
+        updateItem(item.id, {
+          liked: !wasLiked,
+          likeCount: (item.likeCount ?? 0) + (wasLiked ? -1 : 1),
+        }),
+      rollback: () => updateItem(item.id, { liked: wasLiked, likeCount: prevCount }),
+      commit: () => fetch(`/api/rmharks/${actualId}/like`, { method: 'POST' }),
     });
-
-    try {
-      const res = await fetch(`/api/rmharks/${actualId}/like`, { method: 'POST' });
-      if (!res.ok) {
-        updateItem(item.id, { liked: wasLiked, likeCount: item.likeCount });
-      }
-    } catch {
-      updateItem(item.id, { liked: wasLiked, likeCount: item.likeCount });
-    }
   };
 
-  const toggleRepost = async (e?: React.MouseEvent) => {
+  const toggleRepost = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     if (!session) return;
     const wasReposted = item.reposted;
-    updateItem(item.id, {
-      reposted: !wasReposted,
-      repostCount: (item.repostCount ?? 0) + (wasReposted ? -1 : 1),
+    const prevCount = item.repostCount;
+    runRepost({
+      apply: () =>
+        updateItem(item.id, {
+          reposted: !wasReposted,
+          repostCount: (item.repostCount ?? 0) + (wasReposted ? -1 : 1),
+        }),
+      rollback: () => updateItem(item.id, { reposted: wasReposted, repostCount: prevCount }),
+      commit: () => fetch(`/api/rmharks/${actualId}/repost`, { method: 'POST' }),
     });
-
-    try {
-      const res = await fetch(`/api/rmharks/${actualId}/repost`, { method: 'POST' });
-      if (!res.ok) {
-        updateItem(item.id, { reposted: wasReposted, repostCount: item.repostCount });
-      }
-    } catch {
-      updateItem(item.id, { reposted: wasReposted, repostCount: item.repostCount });
-    }
   };
 
   return (
@@ -93,7 +91,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
         className="flex items-center gap-1.5 px-2 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-colors group active:scale-95"
       >
         <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
-        <span className="text-xs">{formatCount(item.commentCount)}</span>
+        <AnimatedCount value={item.commentCount} format={formatCount} hideZero className="text-xs" />
       </button>
 
       {/* reRMHark */}
@@ -108,7 +106,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
           title="reRMHark"
         >
           <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-          <span className="text-xs">{formatCount(item.repostCount)}</span>
+          <AnimatedCount value={item.repostCount} format={formatCount} hideZero className="text-xs" />
         </button>
         {repostMenu && (
           <div className="absolute left-0 top-full mt-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30" onClick={(e) => e.stopPropagation()}>
@@ -147,13 +145,13 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
         title={t('like', { defaultValue: 'Like' })}
       >
         <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`} />
-        <span className="text-xs">{formatCount(item.likeCount)}</span>
+        <AnimatedCount value={item.likeCount} format={formatCount} hideZero className="text-xs" />
       </button>
 
       {/* Views */}
       <div className="flex items-center gap-1.5 px-2 py-1 text-site-text-dim">
         <Eye className="w-4 h-4" />
-        <span className="text-xs">{formatCount(item.viewCount)}</span>
+        <AnimatedCount value={item.viewCount} format={formatCount} hideZero className="text-xs" />
       </div>
     </div>
   );

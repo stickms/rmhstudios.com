@@ -20,6 +20,8 @@ import {
 } from '@/lib/rmhark-schema';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import type { FeedItem } from '@/lib/feed-types';
 
 const MAX_IMAGES = 4;
 
@@ -61,7 +63,7 @@ export function ComposeBox({
   const menuRef = useRef<HTMLDivElement>(null);
   const audienceRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const { prependItem } = useFeedStore();
+  const { prependItem, removeItem, reconcileItem } = useFeedStore();
 
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
@@ -158,33 +160,140 @@ export function ComposeBox({
     setShowCheatSheet(false);
   };
 
+  // A snapshot of the composer's contents, so an optimistic post that fails to
+  // save can be restored into the box for a one-tap retry.
+  const snapshotDraft = () => ({
+    content,
+    audience,
+    unlockPrice,
+    attachment,
+    poll,
+    gifUrl,
+    imageUrls,
+  });
+  const restoreDraft = (d: ReturnType<typeof snapshotDraft>) => {
+    setContent(d.content);
+    setAudience(d.audience);
+    setUnlockPrice(d.unlockPrice);
+    setAttachment(d.attachment);
+    setPoll(d.poll);
+    setGifUrl(d.gifUrl);
+    setImageUrls(d.imageUrls);
+  };
+
+  // Build the post the user *would* see, so it can appear at the top of the
+  // feed the instant they hit Post — before the server has replied. The real
+  // record (correct id, poll option ids, etc.) is swapped in on reconcile.
+  const buildOptimisticItem = (id: string): FeedItem => {
+    const price = parseInt(unlockPrice, 10);
+    const sessionUser = session!.user as {
+      id: string;
+      name?: string | null;
+      image?: string | null;
+      handle?: string | null;
+      username?: string | null;
+      isVerified?: boolean;
+      isAdmin?: boolean;
+    };
+    return {
+      id,
+      type: 'rmhark',
+      createdAt: new Date().toISOString(),
+      content: content.trim() || undefined,
+      user: {
+        id: sessionUser.id,
+        name: resolvedUser?.name ?? sessionUser.name ?? null,
+        image: resolvedUser?.image ?? sessionUser.image ?? null,
+        handle: resolvedUser?.handle ?? sessionUser.handle ?? null,
+        username: sessionUser.username ?? null,
+        isVerified: sessionUser.isVerified,
+        isAdmin: sessionUser.isAdmin,
+      },
+      imageUrls: hasImages ? imageUrls : undefined,
+      gifUrl: hasGif ? gifUrl.trim() : undefined,
+      poll: hasPoll
+        ? {
+            id: `${id}-poll`,
+            question: poll.question.trim(),
+            multiSelect: poll.multiSelect,
+            totalVotes: 0,
+            options: poll.options
+              .filter((o) => o.trim())
+              .map((o, i) => ({ id: `${id}-opt-${i}`, text: o.trim(), voteCount: 0 })),
+          }
+        : undefined,
+      likeCount: 0,
+      commentCount: 0,
+      repostCount: 0,
+      viewCount: 0,
+      liked: false,
+      reposted: false,
+      bookmarked: false,
+      // The author always sees their own content, even a paid post.
+      locked: false,
+      unlockPrice: price > 0 ? price : undefined,
+      pending: true,
+    };
+  };
+
   const handleSubmit = async () => {
     if (!canSubmit) return;
+    const body = buildBody();
 
-    setSubmitting(true);
+    // Scoped surfaces (e.g. a community) let the parent own the list, so keep
+    // the simple awaited insert there rather than reaching into the home feed.
+    if (onPosted) {
+      setSubmitting(true);
+      try {
+        const res = await fetch('/api/rmharks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          toast.error(data.error || t('post-error', { defaultValue: 'Could not post' }));
+          return;
+        }
+        onPosted(await res.json());
+        resetForm();
+      } catch (error) {
+        console.error('Post error:', error);
+        toast.error(t('post-error', { defaultValue: 'Could not post' }));
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // Home feed: optimistic insert. The post shows at the top immediately in a
+    // dimmed "posting" state, the form clears, and we reconcile (or roll back
+    // and restore the draft) once the server responds.
+    const tempId = `temp-${crypto.randomUUID()}`;
+    const optimistic = buildOptimisticItem(tempId);
+    const draft = snapshotDraft();
+    prependItem(optimistic);
+    resetForm();
+
     try {
       const res = await fetch('/api/rmharks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildBody()),
+        body: JSON.stringify(body),
       });
-
       if (!res.ok) {
-        const data = await res.json();
-        console.error('Post error:', data.error);
+        const data = await res.json().catch(() => ({}));
+        removeItem(tempId);
+        restoreDraft(draft);
+        toast.error(data.error || t('post-error', { defaultValue: 'Could not post' }));
         return;
       }
-
-      const item = await res.json();
-      // In a scoped surface (e.g. a community) the parent owns the list, so
-      // hand it the new post; otherwise prepend to the global home feed.
-      if (onPosted) onPosted(item);
-      else prependItem(item);
-      resetForm();
+      reconcileItem(tempId, await res.json());
     } catch (error) {
       console.error('Post error:', error);
-    } finally {
-      setSubmitting(false);
+      removeItem(tempId);
+      restoreDraft(draft);
+      toast.error(t('post-error', { defaultValue: 'Could not post' }));
     }
   };
 

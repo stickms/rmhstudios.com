@@ -13,6 +13,8 @@ import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
 import { BuildComments } from './BuildComments';
 import { formatCount } from '@/lib/utils';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 
 interface BuildDetailProps {
   build: Build;
@@ -32,7 +34,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
   const [build, setBuild] = useState(initialBuild);
-  const [liking, setLiking] = useState(false);
+  const { run: runLike, pending: liking } = useOptimisticAction();
   const [deleting, setDeleting] = useState(false);
   const [unlocking, setUnlocking] = useState(false);
 
@@ -107,33 +109,23 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
     fetch(`/api/user-builds/${build.id}/view`, { method: 'POST' }).catch(() => {});
   }, [build.id]);
 
-  const handleLike = async () => {
-    if (liking) return;
-    setLiking(true);
-
-    // Optimistic update
-    setBuild((prev) => ({
-      ...prev,
-      liked: !prev.liked,
-      likeCount: prev.liked ? prev.likeCount - 1 : prev.likeCount + 1,
-    }));
-
-    try {
-      const res = await fetch(`/api/user-builds/${build.id}/like`, { method: 'POST' });
-      if (res.ok) {
+  const handleLike = () => {
+    const wasLiked = build.liked;
+    const prevCount = build.likeCount;
+    runLike({
+      apply: () =>
+        setBuild((prev) => ({
+          ...prev,
+          liked: !prev.liked,
+          likeCount: prev.liked ? prev.likeCount - 1 : prev.likeCount + 1,
+        })),
+      rollback: () => setBuild((prev) => ({ ...prev, liked: wasLiked, likeCount: prevCount })),
+      commit: () => fetch(`/api/user-builds/${build.id}/like`, { method: 'POST' }),
+      reconcile: async (res) => {
         const data = await res.json();
         setBuild((prev) => ({ ...prev, liked: data.liked, likeCount: data.likeCount }));
-      }
-    } catch {
-      // Revert on error
-      setBuild((prev) => ({
-        ...prev,
-        liked: !prev.liked,
-        likeCount: prev.liked ? prev.likeCount + 1 : prev.likeCount - 1,
-      }));
-    } finally {
-      setLiking(false);
-    }
+      },
+    });
   };
 
   const chip = 'px-2.5 py-1 rounded-full text-xs border border-site-border bg-site-surface text-site-text-muted';
@@ -268,11 +260,11 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
               ) : (
                 <Heart className={`w-5 h-5 ${build.liked ? 'fill-current' : ''}`} />
               )}
-              {formatCount(build.likeCount)}
+              <AnimatedCount value={build.likeCount} format={formatCount} />
             </button>
             <span className="flex items-center gap-2">
               <Eye className="w-5 h-5" />
-              {formatCount(build.viewCount)}
+              <AnimatedCount value={build.viewCount} format={formatCount} />
             </span>
           </div>
         </div>

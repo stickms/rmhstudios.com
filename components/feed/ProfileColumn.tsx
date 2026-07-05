@@ -21,6 +21,8 @@ import { Link } from '@tanstack/react-router';
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { useUserDisplayStore } from '@/stores/userDisplayStore';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 
 interface ProfileData {
   id: string;
@@ -85,6 +87,7 @@ function ProfileAvatar({ image, name }: { image: string | null; name: string | n
 
 export function ProfileColumn({ userId }: { userId: string }) {
   const [profile, setProfile] = useState<ProfileData | null>(null);
+  const { run: runFollow } = useOptimisticAction();
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -327,34 +330,24 @@ export function ProfileColumn({ userId }: { userId: string }) {
   }, [likedObserverCallback, tab]);
 
   // Follow toggle
-  const handleFollowToggle = async () => {
+  const handleFollowToggle = () => {
     if (!profile || !session) return;
     const wasFollowing = profile.isFollowing;
-
-    setProfile((prev) =>
-      prev
-        ? {
-            ...prev,
-            isFollowing: !wasFollowing,
-            followerCount: prev.followerCount + (wasFollowing ? -1 : 1),
-          }
-        : prev
-    );
-
-    try {
-      const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/follow`, {
-        method: 'POST',
-      });
-      if (!res.ok) {
+    runFollow({
+      apply: () =>
         setProfile((prev) =>
-          prev ? { ...prev, isFollowing: wasFollowing, followerCount: prev.followerCount + (wasFollowing ? 1 : -1) } : prev
-        );
-      }
-    } catch {
-      setProfile((prev) =>
-        prev ? { ...prev, isFollowing: wasFollowing, followerCount: prev.followerCount + (wasFollowing ? 1 : -1) } : prev
-      );
-    }
+          prev
+            ? { ...prev, isFollowing: !wasFollowing, followerCount: prev.followerCount + (wasFollowing ? -1 : 1) }
+            : prev
+        ),
+      rollback: () =>
+        setProfile((prev) =>
+          prev
+            ? { ...prev, isFollowing: wasFollowing, followerCount: prev.followerCount + (wasFollowing ? 1 : -1) }
+            : prev
+        ),
+      commit: () => fetch(`/api/profile/${encodeURIComponent(userId)}/follow`, { method: 'POST' }),
+    });
   };
 
   const handleMessage = async () => {
@@ -539,7 +532,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 title={t('rmh-coins-count', { count: profile.coins, defaultValue: '{{count}} RMH Coins' })}
               >
                 <CoinIcon className="w-4 h-4" />
-                <span className="text-sm font-bold text-site-warning">{profile.coins}</span>
+                <AnimatedCount value={profile.coins} format={(n) => n.toLocaleString()} className="text-sm font-bold text-site-warning" />
               </Link>
             </div>
             {profile.handle && (
@@ -670,14 +663,14 @@ export function ProfileColumn({ userId }: { userId: string }) {
             onClick={() => setSocialModal('following')}
             className="hover:underline text-left transition-transform active:scale-95"
           >
-            <span className="font-bold text-site-text">{profile.followingCount}</span>{' '}
+            <AnimatedCount value={profile.followingCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
             <span className="text-site-text-dim">{t('following-label', { defaultValue: 'Following' })}</span>
           </button>
           <button
             onClick={() => setSocialModal('followers')}
             className="hover:underline text-left transition-transform active:scale-95"
           >
-            <span className="font-bold text-site-text">{profile.followerCount}</span>{' '}
+            <AnimatedCount value={profile.followerCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
             <span className="text-site-text-dim">{t('followers-label', { defaultValue: 'Followers' })}</span>
           </button>
         </div>

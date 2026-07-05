@@ -27,6 +27,8 @@ interface FeedState {
   prependItem: (item: FeedItem) => void;
   updateItem: (id: string, updates: Partial<FeedItem>) => void;
   removeItem: (id: string) => void;
+  /** Replace an optimistic (temp-id) post with the authoritative server record. */
+  reconcileItem: (tempId: string, real: FeedItem) => void;
   /** Route a streamed `rmhark.created` event into the feed or the pending pill. */
   receiveCreated: (item: FeedItem, delivery: CreatedDelivery) => void;
   /** Flush buffered pending posts to the top of the feed (pill click). */
@@ -121,6 +123,24 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     set((state) => ({
       items: state.items.filter((item) => item.id !== id),
     }));
+  },
+
+  reconcileItem: (tempId, real) => {
+    cacheItemUsers([real]);
+    set((state) => {
+      // The authoritative post may already be on screen if its SSE
+      // `rmhark.created` event beat this response — in that case just drop the
+      // optimistic copy instead of creating a duplicate.
+      const realAlreadyPresent = state.items.some(
+        (i) => i.id === real.id && i.id !== tempId
+      );
+      if (realAlreadyPresent) {
+        return { items: state.items.filter((i) => i.id !== tempId) };
+      }
+      return {
+        items: state.items.map((i) => (i.id === tempId ? real : i)),
+      };
+    });
   },
 
   receiveCreated: (item, delivery) => {

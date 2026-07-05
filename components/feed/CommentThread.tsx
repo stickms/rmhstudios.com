@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { X, Image as ImageIcon } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
@@ -42,21 +43,66 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
 
   const handleSubmit = async () => {
     if (!content.trim() || submitting) return;
+    const text = content.trim();
+    const sessionUser = session!.user as {
+      id: string;
+      name?: string | null;
+      image?: string | null;
+      username?: string | null;
+      handle?: string | null;
+      isVerified?: boolean;
+      isAdmin?: boolean;
+    };
+
+    // Optimistic comment: show it at the top instantly (dimmed) and clear the
+    // box, then reconcile with the saved record or roll back on failure.
+    const tempId = `temp-${crypto.randomUUID()}`;
+    const optimistic: Comment = {
+      id: tempId,
+      content: text,
+      createdAt: new Date().toISOString(),
+      userId: sessionUser.id,
+      user: {
+        id: sessionUser.id,
+        name: sessionUser.name ?? '',
+        image: sessionUser.image ?? null,
+        username: sessionUser.username ?? null,
+        handle: sessionUser.handle ?? null,
+        isVerified: sessionUser.isVerified,
+        isAdmin: sessionUser.isAdmin,
+      },
+      likeCount: 0,
+      repostCount: 0,
+      viewCount: 0,
+      liked: false,
+      reposted: false,
+      replies: [],
+      pending: true,
+    };
+    setComments((prev) => [optimistic, ...prev]);
+    setContent('');
+    onCommentAdded();
     setSubmitting(true);
+
     try {
       const res = await fetch(`/api/rmharks/${rmharkId}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: content.trim() }),
+        body: JSON.stringify({ content: text }),
       });
       if (res.ok) {
         const comment = await res.json();
-        setComments((prev) => [comment, ...prev]);
-        setContent('');
-        onCommentAdded();
+        setComments((prev) => prev.map((c) => (c.id === tempId ? comment : c)));
+      } else {
+        setComments((prev) => prev.filter((c) => c.id !== tempId));
+        setContent(text);
+        toast.error(t('comment-error', { defaultValue: 'Could not post comment' }));
       }
     } catch (error) {
       console.error('Comment error:', error);
+      setComments((prev) => prev.filter((c) => c.id !== tempId));
+      setContent(text);
+      toast.error(t('comment-error', { defaultValue: 'Could not post comment' }));
     } finally {
       setSubmitting(false);
     }
@@ -104,7 +150,13 @@ export function CommentThread({ rmharkId, open, onClose, onCommentAdded }: Comme
             </p>
           ) : (
             comments.map((comment) => (
-              <CommentItem key={comment.id} comment={comment} postId={rmharkId} />
+              <div
+                key={comment.id}
+                className={comment.pending ? 'opacity-60 pointer-events-none' : undefined}
+                aria-busy={comment.pending || undefined}
+              >
+                <CommentItem comment={comment} postId={rmharkId} />
+              </div>
             ))
           )}
         </div>
