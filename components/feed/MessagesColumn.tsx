@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
-interface ConversationItem {
+export interface ConversationItem {
   id: string;
   otherUser: {
     id: string;
@@ -35,11 +35,18 @@ interface ConversationItem {
   matchSnippet?: string | null;
 }
 
-export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}) {
-  const [conversations, setConversations] = useState<ConversationItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [hasMore, setHasMore] = useState(true);
+export function MessagesColumn({
+  embedded = false,
+  initialData,
+}: {
+  embedded?: boolean;
+  /** First page of conversations prefetched by the route loader; `null` when signed out. */
+  initialData?: { conversations: ConversationItem[]; nextCursor: string | null; hasMore: boolean } | null;
+} = {}) {
+  const [conversations, setConversations] = useState<ConversationItem[]>(initialData?.conversations ?? []);
+  const [loading, setLoading] = useState(!initialData);
+  const [cursor, setCursor] = useState<string | null>(initialData?.nextCursor ?? null);
+  const [hasMore, setHasMore] = useState(initialData?.hasMore ?? true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [markingAll, setMarkingAll] = useState(false);
   const [newChatOpen, setNewChatOpen] = useState(false);
@@ -47,7 +54,8 @@ export function MessagesColumn({ embedded = false }: { embedded?: boolean } = {}
   const [searchResults, setSearchResults] = useState<ConversationItem[]>([]);
   const [searching, setSearching] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
-  const initialFetched = useRef(false);
+  // Seeded from the route loader → treat the first page as already fetched.
+  const initialFetched = useRef(initialData != null);
   const searchDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const { t } = useTranslation("feed");

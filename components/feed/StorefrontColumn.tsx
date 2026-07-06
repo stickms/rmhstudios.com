@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Store, Plus, Trash2, Check, ShoppingBag, X, EyeOff, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,13 +29,23 @@ interface Creator {
 
 const fmt = (n: number) => n.toLocaleString();
 
-export function StorefrontColumn({ userid }: { userid: string }) {
+export function StorefrontColumn({
+  userid,
+  initialData,
+}: {
+  userid: string;
+  /** Storefront prefetched by the route loader; `null` when not prefetched/found. */
+  initialData?: { creator: Creator; products: Product[]; isOwner: boolean; signedIn: boolean } | null;
+}) {
   const { t } = useTranslation('feed');
-  const [creator, setCreator] = useState<Creator | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
-  const [isOwner, setIsOwner] = useState(false);
-  const [signedIn, setSignedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Seed from the loader when provided so the storefront paints immediately and
+  // the mount fetch is skipped. Mutations still fetch to refresh.
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [creator, setCreator] = useState<Creator | null>(initialData?.creator ?? null);
+  const [products, setProducts] = useState<Product[]>(initialData?.products ?? []);
+  const [isOwner, setIsOwner] = useState(!!initialData?.isOwner);
+  const [signedIn, setSignedIn] = useState(!!initialData?.signedIn);
+  const [loading, setLoading] = useState(!seeded.current);
   const [notFound, setNotFound] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -58,6 +68,9 @@ export function StorefrontColumn({ userid }: { userid: string }) {
   }, [userid]);
 
   useEffect(() => {
+    // The route loader already seeded the storefront (the column remounts per
+    // userid via its `key`), so skip the mount fetch.
+    if (seeded.current) return;
     let active = true;
     (async () => {
       try {

@@ -9,7 +9,52 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { sendPushToUser, pushTitleFor } from '@/lib/push/send.server';
+import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import type { NotificationType } from '@prisma/client';
+
+export interface NotificationListItem {
+  id: string;
+  type: NotificationType;
+  entityType: string | null;
+  entityId: string | null;
+  preview: string | null;
+  link: string | null;
+  read: boolean;
+  createdAt: string;
+  actor: ReturnType<typeof resolveUser> | null;
+}
+
+/**
+ * List a user's notifications, newest first (cursor-paginated). Shared by the
+ * `/api/notifications` GET handler and the `/notifications` route loader so the
+ * page is server-rendered / prefetched instead of fetched on mount.
+ */
+export async function listNotifications(
+  userId: string,
+  opts: { cursor?: string | null; limit?: number } = {}
+): Promise<{ items: NotificationListItem[]; nextCursor: string | null }> {
+  const limit = Math.min(Math.max(opts.limit ?? 20, 1), 50);
+  const rows = await prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' },
+    take: limit + 1,
+    ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),
+    include: { actor: { select: userDisplaySelect } },
+  });
+  const hasMore = rows.length > limit;
+  const items: NotificationListItem[] = (hasMore ? rows.slice(0, limit) : rows).map((n) => ({
+    id: n.id,
+    type: n.type,
+    entityType: n.entityType,
+    entityId: n.entityId,
+    preview: n.preview,
+    link: n.link,
+    read: n.read,
+    createdAt: n.createdAt.toISOString(),
+    actor: n.actor ? resolveUser(n.actor) : null,
+  }));
+  return { items, nextCursor: hasMore ? items[items.length - 1]?.id ?? null : null };
+}
 
 export interface CreateNotificationInput {
   /** Recipient user id. */

@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ProgressColumn } from './ProgressColumn';
 import { AchievementsColumn } from './AchievementsColumn';
 import { StreakColumn } from './StreakColumn';
+import type { AchievementsPayload } from '@/lib/achievements.server';
 
 export type JourneyTab = 'streaks' | 'progress' | 'achievements';
 
@@ -24,7 +25,16 @@ function isJourneyTab(value: string): value is JourneyTab {
   return value === 'streaks' || value === 'progress' || value === 'achievements';
 }
 
-export function JourneyColumn({ userId, initialTab = 'progress' }: { userId: string; initialTab?: JourneyTab }) {
+export function JourneyColumn({
+  userId,
+  initialTab = 'progress',
+  achievementsInitialData,
+}: {
+  userId: string;
+  initialTab?: JourneyTab;
+  /** Achievements payload prefetched by the `/achievements` route loader, forwarded to the embedded column. */
+  achievementsInitialData?: AchievementsPayload | null;
+}) {
   const { t } = useTranslation("feed");
   const [tab, setTab] = useState<JourneyTab>(() => {
     if (typeof window !== 'undefined') {
@@ -70,7 +80,7 @@ export function JourneyColumn({ userId, initialTab = 'progress' }: { userId: str
 
       {tab === 'streaks' && <StreakColumn hideHeader />}
       {tab === 'progress' && <ProgressColumn hideHeader />}
-      {tab === 'achievements' && <AchievementsColumn userId={userId} hideHeader />}
+      {tab === 'achievements' && <AchievementsColumn userId={userId} hideHeader initialData={achievementsInitialData} />}
     </div>
   );
 }

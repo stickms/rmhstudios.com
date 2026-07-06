@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShoppingBag, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -49,12 +49,18 @@ function Preview({ item }: { item: ShopItemView }) {
   return <div className="h-12 w-20 rounded-site-sm" style={{ background: data.gradient ?? data.color ?? 'var(--site-surface)' }} />;
 }
 
-export function ShopColumn() {
+export function ShopColumn({
+  initialData,
+}: {
+  /** Shop payload prefetched by the route loader. */
+  initialData?: { coins: number; items: ShopItemView[]; signedIn: boolean } | null;
+} = {}) {
   const { t } = useTranslation("feed");
-  const [items, setItems] = useState<ShopItemView[]>([]);
-  const [coins, setCoins] = useState(0);
-  const [signedIn, setSignedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [items, setItems] = useState<ShopItemView[]>(initialData?.items ?? []);
+  const [coins, setCoins] = useState(initialData?.coins ?? 0);
+  const [signedIn, setSignedIn] = useState(initialData?.signedIn ?? false);
+  const [loading, setLoading] = useState(!initialData);
   const [tab, setTab] = useState<ShopItemKind>('NAME_COLOR');
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -73,6 +79,7 @@ export function ShopColumn() {
   }, []);
 
   useEffect(() => {
+    if (seeded.current) return;
     load();
   }, [load]);
 

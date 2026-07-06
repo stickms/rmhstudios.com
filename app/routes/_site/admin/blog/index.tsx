@@ -8,7 +8,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { getAllPosts } from '@/lib/blog';
-import { ArrowLeft, Plus, Edit } from 'lucide-react';
+import { Plus, Edit } from 'lucide-react';
 import { DeleteBlogButton } from '@/components/admin/DeleteBlogButton';
 import { useTranslation } from 'react-i18next';
 
@@ -35,18 +35,10 @@ function AdminBlogDashboard() {
   const { t } = useTranslation("admin");
 
   return (
-    <PageLayout title={t("manage-blog-posts", { defaultValue: "Manage Blog Posts" })} wide>
+    <PageLayout title={t("manage-blog-posts", { defaultValue: "Manage Blog Posts" })} wide backTo="/admin">
       <div className="p-4 md:p-6 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-4">
-            <Link to="/admin" className="text-site-text-dim hover:text-site-text transition-colors shrink-0">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <div>
-              <h1 className="text-2xl font-bold font-display text-site-text">{t("manage-blog-posts", { defaultValue: "Manage Blog Posts" })}</h1>
-              <p className="text-site-text-muted mt-1 text-sm">{t("manage-blog-posts-description", { defaultValue: "Create, edit, and delete blog posts." })}</p>
-            </div>
-          </div>
+          <p className="text-site-text-muted text-sm">{t("manage-blog-posts-description", { defaultValue: "Create, edit, and delete blog posts." })}</p>
 
           <Link to="/admin/blog/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-site-sm text-sm font-medium transition-colors h-10 px-4 py-2 gap-2 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg self-end sm:self-auto shrink-0">
             <Plus className="w-4 h-4" /> {t("new-post", { defaultValue: "New Post" })}

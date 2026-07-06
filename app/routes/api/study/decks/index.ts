@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { generateCards } from '@/lib/rmhstudy/tutor.server';
+import { listDecks } from '@/lib/study.server';
 
 const createSchema = z.object({
   title: z.string().min(1).max(100),
@@ -24,22 +25,7 @@ export const Route = createFileRoute('/api/study/decks/')({
     handlers: {
       GET: async ({ request }) => {
         const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-        const [mine, popular] = await Promise.all([
-          session
-            ? prisma.flashcardDeck.findMany({
-                where: { userId: session.user.id },
-                orderBy: { updatedAt: 'desc' },
-                select: { id: true, title: true, description: true, isPublic: true, cardCount: true },
-              })
-            : Promise.resolve([]),
-          prisma.flashcardDeck.findMany({
-            where: { isPublic: true, ...(session ? { userId: { not: session.user.id } } : {}) },
-            orderBy: { updatedAt: 'desc' },
-            take: 30,
-            select: { id: true, title: true, description: true, cardCount: true, user: { select: { name: true, handle: true } } },
-          }),
-        ]);
-        return Response.json({ mine, popular, signedIn: !!session });
+        return Response.json(await listDecks(session?.user.id ?? null));
       },
 
       POST: async ({ request }) => {

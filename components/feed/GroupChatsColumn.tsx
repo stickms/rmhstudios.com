@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, Users, Plus, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -18,12 +18,20 @@ interface GroupRow {
   unread: boolean;
 }
 
-export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = {}) {
+export function GroupChatsColumn({
+  embedded = false,
+  initialData,
+}: {
+  embedded?: boolean;
+  /** Group list prefetched by the route loader; `null` when signed out. */
+  initialData?: { groups: GroupRow[]; signedIn: boolean } | null;
+} = {}) {
   const { t } = useTranslation("feed");
   const navigate = useNavigate();
-  const [groups, setGroups] = useState<GroupRow[]>([]);
-  const [signedIn, setSignedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [groups, setGroups] = useState<GroupRow[]>(initialData?.groups ?? []);
+  const [signedIn, setSignedIn] = useState(initialData?.signedIn ?? false);
+  const [loading, setLoading] = useState(!initialData);
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +49,7 @@ export function GroupChatsColumn({ embedded = false }: { embedded?: boolean } = 
   }, []);
 
   useEffect(() => {
+    if (seeded.current) return;
     let active = true;
     (async () => {
       try {

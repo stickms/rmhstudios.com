@@ -209,14 +209,11 @@ function AdminAnnouncementsPage() {
     'w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
 
   return (
-    <PageLayout title="Announcements" wide>
+    <PageLayout title="Announcements" wide backTo="/admin">
       <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
-        <div className="flex items-center gap-3">
-          <Megaphone className="h-6 w-6 text-site-accent" />
-          <div>
-            <h1 className="font-display text-2xl font-bold text-site-text">{t('feed-announcements', { defaultValue: 'Feed Announcements' })}</h1>
-            <p className="mt-1 text-sm text-site-text-muted">{t('feed-announcements-description', { defaultValue: "Pinned banners shown at the top of everyone's feed." })}</p>
-          </div>
+        <div className="flex items-center gap-2 text-sm text-site-text-muted">
+          <Megaphone className="h-5 w-5 shrink-0 text-site-accent" />
+          {t('feed-announcements-description', { defaultValue: "Pinned banners shown at the top of everyone's feed." })}
         </div>
 
         {/* Create form */}

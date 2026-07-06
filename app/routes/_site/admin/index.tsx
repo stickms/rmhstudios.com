@@ -8,6 +8,7 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -28,13 +29,12 @@ export const Route = createFileRoute('/_site/admin/')({
 
 function AdminDashboardPage() {
   const { t } = useTranslation("admin");
+  // The dashboard is admin-gated (beforeLoad), so the viewer is always an admin.
+  const { counts } = useAdminReviewCount(true);
   return (
-    <PageLayout title={t("admin-dashboard", { defaultValue: "Admin Dashboard" })} wide>
+    <PageLayout title={t("admin-dashboard", { defaultValue: "Admin Dashboard" })} wide backTo="/">
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold font-display text-site-text">{t("admin-dashboard", { defaultValue: "Admin Dashboard" })}</h1>
-          <p className="text-site-text-muted mt-1">{t("admin-dashboard-subtitle", { defaultValue: "Manage users, builds, and site content." })}</p>
-        </div>
+        <p className="text-site-text-muted">{t("admin-dashboard-subtitle", { defaultValue: "Manage users, builds, and site content." })}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
@@ -71,7 +71,14 @@ function AdminDashboardPage() {
             to="/admin/reports"
             className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
-            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("moderation-queue-title", { defaultValue: "Moderation Queue" })}</h2>
+            <h2 className="flex items-center gap-2 text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">
+              {t("moderation-queue-title", { defaultValue: "Moderation Queue" })}
+              {counts.reports > 0 && (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-site-danger px-1.5 py-0.5 text-xs font-bold text-white">
+                  {counts.reports}
+                </span>
+              )}
+            </h2>
             <p className="text-site-text-muted text-sm mt-2">
               {t("moderation-queue-description", { defaultValue: "Review user reports of posts, comments, profiles, and builds. Resolve, dismiss, or take content down." })}
             </p>

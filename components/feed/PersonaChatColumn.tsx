@@ -23,13 +23,27 @@ interface Persona {
   owner: { name: string | null; handle: string | null };
 }
 
-export function PersonaChatColumn({ id }: { id: string }) {
+export function PersonaChatColumn({
+  id,
+  initialData,
+}: {
+  id: string;
+  /**
+   * Persona (and conversation) prefetched by the route loader. `null` means the
+   * loader determined not-found / private; `undefined` means unseeded (the
+   * column falls back to its client fetch).
+   */
+  initialData?: { persona: Persona; messages: Msg[]; signedIn: boolean } | null;
+}) {
   const { t } = useTranslation('feed');
-  const [persona, setPersona] = useState<Persona | null>(null);
-  const [messages, setMessages] = useState<Msg[]>([]);
-  const [signedIn, setSignedIn] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  // Seed from the loader when it ran (even a `null` result is a definitive
+  // not-found seed) so the column paints immediately without a mount fetch.
+  const seeded = useRef(initialData !== undefined);
+  const [persona, setPersona] = useState<Persona | null>(initialData?.persona ?? null);
+  const [messages, setMessages] = useState<Msg[]>(initialData?.messages ?? []);
+  const [signedIn, setSignedIn] = useState(!!initialData?.signedIn);
+  const [loading, setLoading] = useState(initialData === undefined);
+  const [notFound, setNotFound] = useState(initialData === null);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -49,6 +63,8 @@ export function PersonaChatColumn({ id }: { id: string }) {
   }, [id]);
 
   useEffect(() => {
+    // When the loader already seeded the persona, skip the mount fetch.
+    if (seeded.current) return;
     let active = true;
     (async () => {
       try {

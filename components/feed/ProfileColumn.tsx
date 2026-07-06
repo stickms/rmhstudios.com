@@ -85,11 +85,24 @@ function ProfileAvatar({ image, name }: { image: string | null; name: string | n
   );
 }
 
-export function ProfileColumn({ userId }: { userId: string }) {
-  const [profile, setProfile] = useState<ProfileData | null>(null);
+export function ProfileColumn({
+  userId,
+  initialProfile,
+}: {
+  userId: string;
+  /**
+   * Profile prefetched by the route loader. `undefined` = no loader (fall back
+   * to the client fetch); `null` = loader ran and the user wasn't found.
+   */
+  initialProfile?: ProfileData | null;
+}) {
+  // Seed from the route loader when present so the profile paints immediately.
+  // `undefined` initialProfile means no loader supplied one → client fetch.
+  const seeded = useRef(initialProfile !== undefined);
+  const [profile, setProfile] = useState<ProfileData | null>(initialProfile ?? null);
   const { run: runFollow } = useOptimisticAction();
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+  const [loading, setLoading] = useState(initialProfile === undefined);
+  const [notFound, setNotFound] = useState(initialProfile === null);
   const [showEdit, setShowEdit] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
@@ -133,6 +146,19 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
   // Fetch profile
   useEffect(() => {
+    // Loader already provided this profile — prime the display cache from it and
+    // skip the redundant client fetch. (The component is remounted via `key` on
+    // profile→profile navigation, so `seeded`/`initialProfile` are always fresh.)
+    if (seeded.current) {
+      if (initialProfile) {
+        useUserDisplayStore.getState().setUsers([{
+          id: initialProfile.id, name: initialProfile.name, image: initialProfile.image,
+          username: initialProfile.username, handle: initialProfile.handle,
+          isVerified: initialProfile.isVerified, isAdmin: initialProfile.isAdmin,
+        }]);
+      }
+      return;
+    }
     setLoading(true);
     setNotFound(false);
     fetch(`/api/profile/${encodeURIComponent(userId)}`)

@@ -14,6 +14,7 @@ import { isDiscordActivity } from "@/lib/discord-sdk";
 import { Providers } from "@/components/Providers";
 import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
 import { NavigationProgress } from "@/components/ui/NavigationProgress";
+import { BackNavAnimation } from "@/components/ui/BackNavAnimation";
 import { RouteErrorFallback } from "@/components/errors/RouteErrorFallback";
 import { NotFound } from "@/components/errors/NotFound";
 import { installGlobalErrorHandlers } from "@/lib/client-errors";
@@ -216,6 +217,7 @@ function RootComponent() {
   return (
     <Providers initialUser={initialUser} locale={(locale ?? "en") as Locale} i18nResources={i18nResources}>
       <NavigationProgress />
+      <BackNavAnimation />
       <TwemojiProvider>
         <Outlet />
       </TwemojiProvider>

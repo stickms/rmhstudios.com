@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { notifyAdminsOfReview } from '@/lib/admin-review.server';
 import { z } from 'zod';
 
 /**
@@ -103,6 +104,13 @@ export const Route = createFileRoute('/api/moderation/report')({
               details: details?.trim() || null,
               targetUserId,
             },
+          });
+
+          // Ping admins (grouped, non-blocking) that the moderation queue has
+          // something new.
+          void notifyAdminsOfReview({
+            preview: `New ${entityType} report needs review`,
+            kind: 'reports',
           });
 
           return Response.json({ success: true });

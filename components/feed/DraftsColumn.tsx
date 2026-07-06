@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, FileText, CalendarClock, Send, Trash2, Globe, Users, Lock, BarChart3, Image as ImageIcon } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
@@ -32,11 +32,17 @@ function formatWhen(iso: string): string {
   });
 }
 
-export function DraftsColumn() {
+export function DraftsColumn({
+  initialData,
+}: {
+  /** Drafts + scheduled prefetched by the route loader; `null` when signed out. */
+  initialData?: { drafts: ScheduledRow[]; scheduled: ScheduledRow[] } | null;
+} = {}) {
   const { t } = useTranslation('feed');
-  const [drafts, setDrafts] = useState<ScheduledRow[]>([]);
-  const [scheduled, setScheduled] = useState<ScheduledRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const seeded = useRef(initialData !== undefined && initialData !== null);
+  const [drafts, setDrafts] = useState<ScheduledRow[]>(initialData?.drafts ?? []);
+  const [scheduled, setScheduled] = useState<ScheduledRow[]>(initialData?.scheduled ?? []);
+  const [loading, setLoading] = useState(!initialData);
   const [busy, setBusy] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -49,6 +55,9 @@ export function DraftsColumn() {
   }, []);
 
   useEffect(() => {
+    // Loader already seeded — skip the mount fetch (mutations like publish/
+    // discard still call `load()` to refresh afterward).
+    if (seeded.current) return;
     let active = true;
     (async () => {
       try {

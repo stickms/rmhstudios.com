@@ -21,7 +21,18 @@ type InboxTab = 'messages' | 'groups' | 'notifications';
  * Each tab renders its existing column in `embedded` mode (its own header is
  * suppressed in favour of this shared one).
  */
-export function InboxColumn({ initialTab = 'messages' }: { initialTab?: InboxTab }) {
+export function InboxColumn({
+  initialTab = 'messages',
+  initialMessages,
+}: {
+  initialTab?: InboxTab;
+  /** Conversations prefetched by the /messages route loader for the Messages tab. */
+  initialMessages?: {
+    conversations: import('./MessagesColumn').ConversationItem[];
+    nextCursor: string | null;
+    hasMore: boolean;
+  } | null;
+}) {
   const [tab, setTab] = useState<InboxTab>(initialTab);
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
@@ -73,7 +84,7 @@ export function InboxColumn({ initialTab = 'messages' }: { initialTab?: InboxTab
 
       {/* Active section */}
       <div className="flex-1 min-h-0">
-        {tab === 'messages' && <MessagesColumn embedded />}
+        {tab === 'messages' && <MessagesColumn embedded initialData={initialMessages} />}
         {tab === 'groups' && <GroupChatsColumn embedded />}
         {tab === 'notifications' && <NotificationsColumn embedded />}
       </div>

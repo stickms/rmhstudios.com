@@ -5,7 +5,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { MAX_RMHARK_LENGTH, MAX_POLL_QUESTION_LENGTH, MAX_POLL_OPTION_LENGTH, MIN_POLL_OPTIONS, MAX_POLL_OPTIONS } from '@/lib/rmhark-schema';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
-import { publishDueForUser } from '@/lib/scheduled/publish.server';
+import { listScheduled } from '@/lib/scheduled/list.server';
 
 const pollSchema = z.object({
   question: z.string().min(1).max(MAX_POLL_QUESTION_LENGTH),
@@ -36,18 +36,7 @@ export const Route = createFileRoute('/api/scheduled/')({
         try {
           const session = await auth.api.getSession({ headers: request.headers });
           if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-          const userId = session.user.id;
-
-          await publishDueForUser(userId);
-
-          const rows = await prisma.scheduledPost.findMany({
-            where: { userId, publishedId: null },
-            orderBy: [{ scheduledAt: 'asc' }, { updatedAt: 'desc' }],
-          });
-
-          const drafts = rows.filter((r) => !r.scheduledAt);
-          const scheduled = rows.filter((r) => r.scheduledAt);
-          return Response.json({ drafts, scheduled });
+          return Response.json(await listScheduled(session.user.id));
         } catch (error) {
           console.error('Scheduled list error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });

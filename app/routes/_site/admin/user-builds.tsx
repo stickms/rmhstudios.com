@@ -6,7 +6,7 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { ArrowLeft, Loader2, Search, AlertCircle, Edit, ExternalLink, Lock, Award } from 'lucide-react';
+import { Loader2, Search, AlertCircle, Edit, ExternalLink, Lock, Award } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 
@@ -91,17 +91,9 @@ function AdminUserBuildsPage() {
   };
 
   return (
-    <PageLayout title={t("manage-user-builds", { defaultValue: "Manage User Builds" })} wide>
+    <PageLayout title={t("manage-user-builds", { defaultValue: "Manage User Builds" })} wide backTo="/admin">
       <div className="p-4 md:p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <Link to="/admin" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5 text-site-text-dim" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold font-display text-site-text">{t("user-builds-title", { defaultValue: "User Builds" })}</h1>
-            <p className="text-site-text-muted mt-1">{t("user-builds-description", { defaultValue: "Search, moderate, and manage all user-submitted builds." })}</p>
-          </div>
-        </div>
+        <p className="text-site-text-muted">{t("user-builds-description", { defaultValue: "Search, moderate, and manage all user-submitted builds." })}</p>
 
         <div className="bg-site-surface border border-site-border rounded-site overflow-hidden p-4">
           <div className="relative">

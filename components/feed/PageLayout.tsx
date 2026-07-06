@@ -1,5 +1,7 @@
 'use client';
 
+import { Link } from '@tanstack/react-router';
+import { ArrowLeft } from 'lucide-react';
 import { AnimatedMain } from './AnimatedMain';
 import { MobileMenuButton } from './MobileMenuButton';
 import { MobileBrandPrefix } from './MobileHeader';
@@ -14,6 +16,14 @@ interface PageLayoutProps {
   headerRight?: React.ReactNode;
   /** Use a wider center column (800 px) – useful for grid-heavy pages like Builds. */
   wide?: boolean;
+  /**
+   * When set, a back arrow appears at the start of the header linking here.
+   * Especially useful on nested pages (e.g. admin sub-pages) and on mobile,
+   * where there's otherwise no obvious way back to the parent.
+   */
+  backTo?: string;
+  /** Accessible label for the back arrow (defaults to "Back"). */
+  backLabel?: string;
 }
 
 export function PageLayout({
@@ -23,6 +33,8 @@ export function PageLayout({
   headerExtra,
   headerRight,
   wide,
+  backTo,
+  backLabel,
 }: PageLayoutProps) {
   const hasRightSidebar = Boolean(rightSidebar);
   const targetWidth = wide
@@ -40,10 +52,19 @@ export function PageLayout({
           {/* Sticky Header */}
           <div className="sticky top-0 z-10 h-15 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
             <div className="h-full flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0">
                 {/* Mobile: always show the sidebar button in the top-left */}
                 <MobileMenuButton />
-                <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2">
+                {backTo && (
+                  <Link
+                    to={backTo}
+                    aria-label={backLabel ?? 'Back'}
+                    className="shrink-0 -ml-1 rounded-full p-1.5 text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text active:scale-95"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </Link>
+                )}
+                <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0 truncate">
                   {/* Mobile: "RMH |" brand prefix before the page title */}
                   <MobileBrandPrefix />
                   {title}

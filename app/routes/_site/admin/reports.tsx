@@ -1,11 +1,11 @@
-import { createFileRoute, redirect, Link } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useEffect, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Flag, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Flag, ExternalLink } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
@@ -120,17 +120,11 @@ function AdminReportsPage() {
   };
 
   return (
-    <PageLayout title={t('moderation-queue', { defaultValue: 'Moderation Queue' })} wide>
+    <PageLayout title={t('moderation-queue', { defaultValue: 'Moderation Queue' })} wide backTo="/admin">
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-        <div className="flex items-center gap-3">
-          <Link to="/admin" className="text-site-text-dim hover:text-site-text transition-colors shrink-0" aria-label={t('back-to-admin', { defaultValue: 'Back to admin' })}>
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <Flag className="h-6 w-6 text-site-accent" />
-          <div>
-            <h1 className="text-2xl font-bold font-display text-site-text">{t('moderation-queue', { defaultValue: 'Moderation Queue' })}</h1>
-            <p className="text-site-text-muted mt-1 text-sm">{t('moderation-queue-description', { defaultValue: 'Review and resolve user reports.' })}</p>
-          </div>
+        <div className="flex items-center gap-2 text-site-text-muted text-sm">
+          <Flag className="h-5 w-5 text-site-accent shrink-0" />
+          {t('moderation-queue-description', { defaultValue: 'Review and resolve user reports.' })}
         </div>
 
         {/* Status tabs */}

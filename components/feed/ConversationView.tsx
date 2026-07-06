@@ -33,13 +33,21 @@ interface OtherUser {
   username: string | null;
 }
 
-export function ConversationView({ conversationId }: { conversationId: string }) {
+export function ConversationView({
+  conversationId,
+  initialOtherUser,
+}: {
+  conversationId: string;
+  /** The other participant, prefetched by the route loader (avoids fetching the
+   *  entire inbox client-side just to find them). */
+  initialOtherUser?: OtherUser | null;
+}) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
   const [olderCursor, setOlderCursor] = useState<string | null>(null);
   const [hasOlder, setHasOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
+  const [otherUser, setOtherUser] = useState<OtherUser | null>(initialOtherUser ?? null);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -204,9 +212,11 @@ export function ConversationView({ conversationId }: { conversationId: string })
     if (!initialFetched.current && session) {
       initialFetched.current = true;
       fetchMessages(true);
-      fetchConversationInfo();
+      // Loader already provided the other participant — only fall back to the
+      // (previously whole-inbox) lookup when it didn't.
+      if (!otherUser) fetchConversationInfo();
     }
-  }, [session, fetchMessages, fetchConversationInfo]);
+  }, [session, fetchMessages, fetchConversationInfo, otherUser]);
 
   // Mark as read on mount and when tab regains focus
   useEffect(() => {

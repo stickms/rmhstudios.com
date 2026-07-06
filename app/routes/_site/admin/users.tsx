@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { ArrowLeft, Loader2, Search, CheckCircle, Shield, AlertCircle, Pencil, Check, X, Crown, Coins } from 'lucide-react';
+import { Loader2, Search, CheckCircle, Shield, AlertCircle, Pencil, Check, X, Crown, Coins } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
 
@@ -159,17 +159,9 @@ function AdminUsersPage() {
   };
 
   return (
-    <PageLayout title={t("page-title", { defaultValue: "Manage Users" })} wide>
+    <PageLayout title={t("page-title", { defaultValue: "Manage Users" })} wide backTo="/admin">
       <div className="p-4 md:p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <Link to="/admin" className="p-2 hover:bg-site-surface-hover rounded-full transition-colors">
-            <ArrowLeft className="w-5 h-5 text-site-text-dim" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold font-display text-site-text">{t("page-title", { defaultValue: "Manage Users" })}</h1>
-            <p className="text-site-text-muted mt-1">{t("page-subtitle", { defaultValue: "Search users, verify accounts, and manage admin privileges." })}</p>
-          </div>
-        </div>
+        <p className="text-site-text-muted">{t("page-subtitle", { defaultValue: "Search users, verify accounts, and manage admin privileges." })}</p>
 
         <div className="bg-site-surface border border-site-border rounded-site overflow-hidden p-4">
           <div className="relative">
