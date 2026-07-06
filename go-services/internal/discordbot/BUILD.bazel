@@ -7,7 +7,11 @@ go_library(
         "chat.go",
         "deepseek.go",
         "interactions.go",
-        "rmhbot.go",
+        "pet.go",
+        "pet_care.go",
+        "pet_image.go",
+        "pet_repo.go",
+        "pet_service.go",
         "run.go",
     ],
     importpath = "github.com/rmhstudios/rmh-go/internal/discordbot",
@@ -18,6 +22,7 @@ go_library(
         "//go-services/pkg/log",
         "//go-services/pkg/worker",
         "@com_github_bwmarrin_discordgo//:discordgo",
+        "@com_github_jackc_pgx_v5//:pgx",
     ],
 )
 

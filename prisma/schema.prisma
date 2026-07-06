@@ -2691,6 +2691,64 @@ model DiscordChatSession {
   @@map("discord_chat_session")
 }
 
+// One "Alex" tamagotchi per Discord guild — a communal virtual pet the server
+// raises together. Stats decay over real time (lazily recomputed from
+// statsUpdatedAt on every read), Alex grows from infant to adult with age, and
+// the discord-bot worker sends proactive care/ambient/life-event messages into
+// lastChannelId. See go-services/internal/discordbot/pet*.go.
+model DiscordAlexPet {
+  guildId           String    @id
+  name              String    @default("Alex")
+  generation        Int       @default(1)
+  bornAt            DateTime  @default(now())
+
+  hunger            Float     @default(80)
+  happiness         Float     @default(80)
+  energy            Float     @default(90)
+  hygiene           Float     @default(90)
+  health            Float     @default(100)
+
+  alive             Boolean   @default(true)
+  lifeStage         String    @default("infant")
+
+  statsUpdatedAt    DateTime  @default(now())
+  lastInteractionAt DateTime  @default(now())
+  lastChannelId     String?
+
+  lastFedAt         DateTime?
+  lastPlayedAt      DateTime?
+  lastCleanedAt     DateTime?
+  lastSleptAt       DateTime?
+  lastChatAt        DateTime?
+
+  lastCareAlertAt   DateTime?
+  lastAmbientAt     DateTime?
+  diedAt            DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("discord_alex_pet")
+}
+
+// Per-guild, per-user caretaking tally that powers the /caretakers leaderboard.
+model DiscordAlexCaretaker {
+  guildId   String
+  userId    String
+  username  String
+  feeds     Int      @default(0)
+  plays     Int      @default(0)
+  cleans    Int      @default(0)
+  naps      Int      @default(0)
+  talks     Int      @default(0)
+  points    Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@id([guildId, userId])
+  @@index([guildId, points])
+  @@map("discord_alex_caretaker")
+}
+
 model VibePage {
   id                  String   @id @default(cuid())
   slug                String   @unique // short URL-safe identifier, e.g. "neon-city-3k"

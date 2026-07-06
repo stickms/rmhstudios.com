@@ -1,16 +1,14 @@
-// chat.go is the FAITHFUL port of server/discord-bot/chat-handler.ts +
-// conversation persistence against the "discord_chat_session" table.
+// chat.go is the /chat AI persona: talking to Alex, backed by the
+// "discord_chat_session" table.
 //
-// What's faithful here:
-//   - The "Alex Wu" system persona (verbatim).
-//   - buildChatEmbed's 6000-char-budget field-packing logic (ported 1:1).
+//   - The "Alex" system persona, augmented at request time with Alex's live
+//     tamagotchi state (injectStatus) so his replies reflect how he's doing.
+//   - buildChatEmbed packs the reply across embed fields within Discord's
+//     6000-char total budget.
 //   - Session persistence to discord_chat_session via raw pgx (upsert by
 //     discordUserId) + an in-memory cache keyed by discord userId.
 //
-// Intentional simplification vs TS: the TS handler streamed tokens and threw
-// throttled live embed edits at Discord. We make a single blocking DeepSeek
-// call and render the final embed once. The packing logic — the part the task
-// asked to preserve — is identical.
+// A single blocking DeepSeek call renders the final embed once (no streaming).
 package discordbot
 
 import (
@@ -26,7 +24,7 @@ import (
 	"github.com/rmhstudios/rmh-go/pkg/log"
 )
 
-// Discord embed limits — see chat-handler.ts.
+// Discord embed limits.
 const (
 	fieldValueMax = 1024
 	titleMax      = 256
@@ -44,7 +42,8 @@ const (
 	chatErrEmbedColor     = 0xef4444
 )
 
-// alexSystemPrompt is copied verbatim from chat-handler.ts.
+// alexSystemPrompt is Alex's core personality (augmented per-request with his
+// live tamagotchi state via injectStatus).
 const alexSystemPrompt = `You are Alex Wu, a 21-year-old CS student at the University of Minnesota Twin Cities (UMN-TC), spending your summer as a software engineer intern at Wells Fargo.
 
 Personality:
@@ -57,7 +56,7 @@ Personality:
 
 Keep replies conversational, punchy, and real. Don't over-explain. Sound like you'd text this, not write it.`
 
-// chatSession mirrors the TS ChatSession.
+// chatSession is one user's in-memory /chat conversation.
 type chatSession struct {
 	userID        string
 	username      string
@@ -71,6 +70,11 @@ type ChatService struct {
 	deepseek *DeepSeekClient
 	db       *db.DB
 	logger   *log.Logger
+
+	// pet, when set, lets /chat reflect Alex's live tamagotchi state in his
+	// replies and record chat activity (last channel + caretaker credit). Optional
+	// so ChatService stays usable without the pet system.
+	pet *PetService
 
 	mu    sync.Mutex
 	cache map[string]*chatSession // keyed by discord userId
@@ -237,7 +241,16 @@ func (s *ChatService) HandleChat(ctx context.Context, sess *discordgo.Session, i
 		return fmt.Errorf("defer reply: %w", err)
 	}
 
-	reply, err := s.deepseek.Chat(ctx, session.history)
+	// Inject Alex's live tamagotchi state (ephemerally — not persisted into the
+	// stored history) so his reply reflects how he's actually doing right now.
+	sendMessages := session.history
+	if s.pet != nil && i.GuildID != "" {
+		if statusLine := s.pet.StatusLineForChat(ctx, i.GuildID); statusLine != "" {
+			sendMessages = injectStatus(session.history, statusLine)
+		}
+	}
+
+	reply, err := s.deepseek.Chat(ctx, sendMessages)
 	if err != nil {
 		s.logger.Error("chat deepseek", "userId", userID, "error", err)
 		embed := &discordgo.MessageEmbed{
@@ -285,7 +298,27 @@ func (s *ChatService) HandleChat(ctx context.Context, sess *discordgo.Session, i
 		// Persistence is best-effort (matches the TS .catch(() => {})).
 		s.logger.Warn("chat save session", "userId", userID, "error", err)
 	}
+
+	// Record the chat as caretaking: stamps the last channel used (so Alex's care
+	// loop knows where to talk), credits the caretaker, and cheers Alex up a touch.
+	if s.pet != nil {
+		s.pet.RecordChat(ctx, i.GuildID, i.ChannelID, userID, username)
+	}
 	return nil
+}
+
+// injectStatus returns a copy of history with an ephemeral system message
+// carrying Alex's live state inserted right after the base persona prompt. The
+// original slice (the persisted history) is left untouched.
+func injectStatus(history []ChatMessage, statusLine string) []ChatMessage {
+	if len(history) == 0 {
+		return history
+	}
+	out := make([]ChatMessage, 0, len(history)+1)
+	out = append(out, history[0]) // base persona system prompt
+	out = append(out, ChatMessage{Role: roleSystem, Content: statusLine})
+	out = append(out, history[1:]...)
+	return out
 }
 
 // ─── Session store (in-memory cache + discord_chat_session table) ──────────

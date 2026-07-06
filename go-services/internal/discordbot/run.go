@@ -12,13 +12,11 @@ import (
 // missing secret never takes down the supervisor.
 func Run(ctx context.Context, d worker.Deps) error {
 	cfg := Config{
-		Token:        firstNonEmpty(config.GetString("DISCORD_BOT_TOKEN", ""), config.GetString("DISCORD_ACTIVITY_BOT_TOKEN", "")),
-		DevGuildID:   config.GetString("DISCORD_DEV_GUILD_ID", ""),
-		OwnerID:      config.GetString("OWNER_ID", ""),
-		DeepSeekKey:  config.GetString("DEEPSEEK_API_KEY", ""),
-		DeepSeekMod:  config.GetString("DEEPSEEK_MODEL", "deepseek-chat"),
-		WorktreesDir: config.GetString("RMHBOT_WORKTREES_DIR", ""),
-		GithubToken:  config.GetString("GITHUB_TOKEN", ""),
+		Token:       firstNonEmpty(config.GetString("DISCORD_BOT_TOKEN", ""), config.GetString("DISCORD_ACTIVITY_BOT_TOKEN", "")),
+		DevGuildID:  config.GetString("DISCORD_DEV_GUILD_ID", ""),
+		OwnerID:     config.GetString("OWNER_ID", ""),
+		DeepSeekKey: config.GetString("DEEPSEEK_API_KEY", ""),
+		DeepSeekMod: config.GetString("DEEPSEEK_MODEL", "deepseek-chat"),
 	}
 	if cfg.Token == "" {
 		d.Logger.Warn("no DISCORD_BOT_TOKEN/DISCORD_ACTIVITY_BOT_TOKEN set — discord bot disabled")
@@ -26,11 +24,16 @@ func Run(ctx context.Context, d worker.Deps) error {
 		return nil
 	}
 
-	deepseek := NewDeepSeekClient(cfg.DeepSeekKey, cfg.DeepSeekMod)
-	chat := NewChatService(deepseek, d.DB, d.Logger)
-	rmhbot := NewRmhbotService(deepseek, d.Logger, cfg.WorktreesDir, cfg.GithubToken)
+	configurePetRates() // apply any env overrides to the tamagotchi pacing
 
-	bot, err := New(cfg, chat, rmhbot, d.Logger)
+	deepseek := NewDeepSeekClient(cfg.DeepSeekKey, cfg.DeepSeekMod)
+	repo := newPetRepo(d.DB)
+	imager := newAlexImager(repo, d.Logger)
+	pet := NewPetService(repo, imager, d.Logger)
+	chat := NewChatService(deepseek, d.DB, d.Logger)
+	chat.pet = pet // let /chat reflect and record Alex's live state
+
+	bot, err := New(cfg, chat, pet, d.Logger)
 	if err != nil {
 		return err
 	}

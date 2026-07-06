@@ -1,5 +1,5 @@
 // interactions.go holds the small discordgo glue helpers shared by bot.go,
-// chat.go and rmhbot.go: extracting the invoking user, reading command options,
+// chat.go and pet_service.go: extracting the invoking user, reading command options,
 // splitting "action:ownerId" custom IDs, building/reading modals, and the
 // plain-text reply helper.
 package discordbot

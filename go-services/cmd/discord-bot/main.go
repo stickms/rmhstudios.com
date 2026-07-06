@@ -1,8 +1,9 @@
-// Command discord-bot is the Go port of server/discord-bot/index.ts: a
-// long-running Discord gateway bot. It exposes only /health and /metrics on
-// cfg.MetricsAddr (no client-facing HTTP) and is driven by the discordgo
-// session lifecycle — open session, register slash commands on ready, block on
-// signal, close — following the FOUNDATION worker skeleton.
+// Command discord-bot is a long-running Discord gateway bot: the /chat Alex
+// persona plus the Alex tamagotchi (a communal per-guild virtual pet). It exposes
+// only /health and /metrics on cfg.MetricsAddr (no client-facing HTTP) and is
+// driven by the discordgo session lifecycle — open session, register slash
+// commands on ready, block on signal, close — following the FOUNDATION worker
+// skeleton.
 package main
 
 import (
