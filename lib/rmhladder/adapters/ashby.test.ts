@@ -70,6 +70,11 @@ describe('ashbyAdapter.detectExpired', () => {
   it('missing id → expired', async () => {
     expect(await ashbyAdapter.detectExpired(ctx, 'missing')).toBe(true);
   });
+
+  it('fetch failure → not expired (false)', async () => {
+    const failCtx = { ...ctx, fetchImpl: stub(500, 'error') };
+    expect(await ashbyAdapter.detectExpired(failCtx, 'uuid-1')).toBe(false);
+  });
 });
 
 describe('ashbyBoardUrl', () => {

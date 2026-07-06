@@ -43,8 +43,7 @@ async function fetchBoard(ctx: AdapterContext): Promise<AshbyJob[] | null> {
 
 function normalize(raw: AshbyJob): NormalizedJob {
   const addressRegion = raw.address?.postalAddress?.addressRegion;
-  const locality = raw.address?.postalAddress?.addressLocality ?? raw.location;
-  const locationRaw = addressRegion && addressRegion !== locality ? `${locality}, ${addressRegion}` : locality;
+  const locationRaw = addressRegion && addressRegion !== raw.location ? `${raw.location}, ${addressRegion}` : raw.location;
 
   return {
     externalId: raw.id,
@@ -71,7 +70,8 @@ export const ashbyAdapter: SourceAdapter = {
   async verifyJob(ctx, job): Promise<VerificationEvidence> {
     const board = await fetchBoard(ctx);
     const hit = board?.find((j) => j.id === job.externalId) ?? null;
-    const loc = hit ? classifyUSLocation({ locationRaw: hit.location, country: hit.address?.postalAddress?.addressCountry ?? null }) : null;
+    const normalized = hit ? normalize(hit) : null;
+    const loc = normalized ? classifyUSLocation({ locationRaw: normalized.locationRaw, country: normalized.country }) : null;
     return {
       fetched: board !== null,
       httpStatus: board !== null ? 200 : 404,
