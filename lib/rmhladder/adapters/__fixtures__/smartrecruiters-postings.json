@@ -1,0 +1,38 @@
+{
+  "totalFound": 2,
+  "content": [
+    {
+      "id": "744000012345",
+      "uuid": "uuid-sr-1",
+      "name": "Finance Analyst Program 2027",
+      "refNumber": "REQ-778",
+      "releasedDate": "2026-06-10T08:00:00.000Z",
+      "location": {
+        "city": "Charlotte",
+        "region": "NC",
+        "country": "us",
+        "remote": false
+      },
+      "company": {
+        "identifier": "honeywell",
+        "name": "Honeywell"
+      }
+    },
+    {
+      "id": "744000067890",
+      "uuid": "uuid-sr-2",
+      "name": "Director of Operations",
+      "refNumber": "REQ-990",
+      "releasedDate": "2026-05-10T08:00:00.000Z",
+      "location": {
+        "city": "London",
+        "country": "gb",
+        "remote": false
+      },
+      "company": {
+        "identifier": "honeywell",
+        "name": "Honeywell"
+      }
+    }
+  ]
+}
