@@ -266,6 +266,10 @@ func (ps *PetService) simpleAction(
 
 	embed := ps.statusEmbed(&snap, mood, now, res)
 	embed.Description = result.Message + "\n\n" + embed.Description
+	if result.OK {
+		// Attribute the action so the whole server sees who's caring for Alex.
+		embed.Footer = actorFooter(username)
+	}
 
 	var files []*discordgo.File
 	if img, ok := ps.imager.cached(&snap, mood, now); ok {
@@ -672,6 +676,13 @@ func statBar(v float64) string {
 		filled = 10
 	}
 	return strings.Repeat("█", filled) + strings.Repeat("░", 10-filled) + " " + itoa(int(v)) + "/100"
+}
+
+// actorFooter attributes an action to the user who did it, so the public embed
+// makes clear who's interacting with Alex (visible in scrollback, beyond
+// Discord's transient "used /command" header).
+func actorFooter(username string) *discordgo.MessageEmbedFooter {
+	return &discordgo.MessageEmbedFooter{Text: "🫶 " + username + " looked after Alex"}
 }
 
 func errEmbed(msg string) *discordgo.MessageEmbed {
