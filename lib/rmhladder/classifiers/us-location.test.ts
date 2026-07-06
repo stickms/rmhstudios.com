@@ -29,4 +29,8 @@ describe('classifyUSLocation', () => {
     expect(r.isUS).toBeNull();
     expect(r.confidence).toBeLessThan(50);
   });
+  it('New Mexico is US despite the mexico country hint', () => {
+    expect(classifyUSLocation({ locationRaw: 'Albuquerque, New Mexico' })).toMatchObject({ isUS: true, state: 'NM' });
+    expect(classifyUSLocation({ locationRaw: 'Mexico City' }).isUS).toBe(false);
+  });
 });

@@ -26,9 +26,9 @@ const STATE_NAMES: Record<string, string> = {
 };
 const STATE_ABBREVS = new Set(Object.values(STATE_NAMES));
 const US_COUNTRY = /^(us|usa|u\.s\.?a?\.?|united states( of america)?)$/i;
-// word-bounded so "Indianapolis" doesn't match "india"
-const NON_US_COUNTRY_HINT = /\b(kingdom|canada|india|singapore|australia|germany|france|japan|china|ireland|switzerland|mexico|brazil|poland|hong ?kong)\b/i;
-// spec's 28 preferred locations get a confidence boost when matched
+// word-bounded so "Indianapolis" doesn't match "india"; lookbehind so "New Mexico" (US state) doesn't match "mexico"
+const NON_US_COUNTRY_HINT = /\b(kingdom|canada|india|singapore|australia|germany|france|japan|china|ireland|switzerland|(?<!new )mexico|brazil|poland|hong ?kong)\b/i;
+// spec's 26 preferred locations get a confidence boost when matched
 export const PREFERRED_CITIES = new Set([
   'new york', 'charlotte', 'chicago', 'san francisco', 'los angeles', 'boston', 'washington',
   'minneapolis', 'dallas', 'houston', 'atlanta', 'miami', 'seattle', 'austin', 'denver',
