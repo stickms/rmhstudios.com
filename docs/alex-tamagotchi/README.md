@@ -79,6 +79,19 @@ by priority:
 If a saved channel becomes unreachable (deleted / bot lost access), it's cleared
 so the bot stops posting there.
 
+## Visibility & persistence
+
+- **Public & attributed**: every command posts publicly in-channel (never
+  ephemeral, except the "this belongs to another user" nudge on someone else's
+  `/chat` button), and each response embed footers who ran it — so the whole
+  server sees who's raising Alex. `/chat` shows the speaker in its footer.
+- **Survives restarts**: all state lives in Postgres and is reloaded on every
+  interaction (there's no in-memory pet cache) — stats, age, stage, career,
+  intelligence, the care-loop throttle timestamps, the caretaker leaderboard, the
+  one-time intro flag, and `/chat` history. A redeploy loses nothing. The only
+  in-memory data is the image cache and per-guild cooldowns, which are
+  intentionally ephemeral (a restart just means at most one image regeneration).
+
 ## Cost & safety
 
 - **xAI images** are gated by the shared global `image_gen_budget` daily cap
