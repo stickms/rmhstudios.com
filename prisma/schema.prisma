@@ -121,6 +121,14 @@ model User {
   doctrineRecruitmentCodes    DoctrineRecruitmentCode[]
   doctrineSahurParticipations DoctrineSahurParticipation[]
 
+  // RMH Ladder Relations
+  ladderPrefs        LadderUserPrefs?
+  ladderKeywords     LadderKeyword[]
+  ladderWatchlist    LadderWatchlistEntry[]
+  ladderJobActions   LadderJobAction[]
+  ladderApplications LadderApplication[]
+  ladderAlerts       LadderAlert[]
+
   @@index([isBot])
   @@map("user")
 }
@@ -2115,8 +2123,9 @@ model LadderCompany {
   enabled          Boolean  @default(true)
   createdAt        DateTime @default(now())
 
-  sources LadderSource[]
-  jobs    LadderJob[]
+  sources           LadderSource[]
+  jobs              LadderJob[]
+  watchlistEntries  LadderWatchlistEntry[]
 
   @@map("ladder_company")
 }
@@ -2182,6 +2191,9 @@ model LadderJob {
 
   verifications LadderVerification[]
   reviewTasks   LadderReviewTask[]
+  actions       LadderJobAction[]
+  applications  LadderApplication[]
+  alerts        LadderAlert[]
 
   @@index([status, earlyCareerClassification])
   @@index([companyId, status])
@@ -2256,4 +2268,141 @@ model LadderRelevanceRule {
   enabled   Boolean @default(true)
 
   @@map("ladder_relevance_rule")
+}
+
+// ─── RMH Ladder Per-User Models ──────────────────────────────────────
+
+enum LadderKeywordType {
+  boost
+  block
+}
+
+enum LadderJobActionType {
+  saved
+  applied
+  ignored
+}
+
+enum LadderApplicationStatus {
+  not_applied
+  planning
+  applied
+  networking
+  interviewing
+  final_round
+  rejected
+  offer
+  withdrawn
+}
+
+enum LadderAlertChannel {
+  in_app
+  email
+  discord
+}
+
+enum LadderAlertType {
+  immediate
+  daily_digest
+  weekly_digest
+  deadline
+  changed
+  expired
+  review_needed
+}
+
+enum LadderDigestFrequency {
+  immediate
+  daily
+  weekly
+}
+
+model LadderUserPrefs {
+  id                    String                  @id @default(cuid())
+  userId                String                  @unique
+  user                  User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relevanceThreshold    Int                     @default(60)
+  preferredCities       String[]                @default([])
+  preferredProgramTypes LadderProgramType[]     @default([])
+  digestFrequency       LadderDigestFrequency   @default(daily)
+  channelInApp          Boolean                 @default(true)
+  channelEmail          Boolean                 @default(false)
+  channelDiscord        Boolean                 @default(false)
+  discordUserId         String?
+
+  @@map("ladder_user_prefs")
+}
+
+model LadderKeyword {
+  id      String            @id @default(cuid())
+  userId  String
+  user    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  keyword String
+  weight  Int               @default(10)
+  type    LadderKeywordType @default(boost)
+
+  @@unique([userId, keyword, type])
+  @@map("ladder_keyword")
+}
+
+model LadderWatchlistEntry {
+  id        String        @id @default(cuid())
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   LadderCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  priority  Int           @default(3)
+
+  @@unique([userId, companyId])
+  @@map("ladder_watchlist_entry")
+}
+
+model LadderJobAction {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId     String
+  job       LadderJob           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  action    LadderJobActionType
+  createdAt DateTime            @default(now())
+
+  @@unique([userId, jobId])
+  @@map("ladder_job_action")
+}
+
+model LadderApplication {
+  id            String                  @id @default(cuid())
+  userId        String
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId         String
+  job           LadderJob               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status        LadderApplicationStatus @default(not_applied)
+  appliedDate   DateTime?
+  resumeVersion String?
+  coverLetter   String?
+  referralName  String?
+  contactEmail  String?
+  notes         String?
+  followUpDate  DateTime?
+  interviewDates DateTime[]             @default([])
+  outcome       String?
+  updatedAt     DateTime                @updatedAt
+
+  @@unique([userId, jobId])
+  @@map("ladder_application")
+}
+
+model LadderAlert {
+  id      String             @id @default(cuid())
+  userId  String
+  user    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId   String
+  job     LadderJob          @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  channel LadderAlertChannel
+  type    LadderAlertType
+  sentAt  DateTime           @default(now())
+  readAt  DateTime?
+
+  @@unique([userId, jobId, type])
+  @@map("ladder_alert")
 }
