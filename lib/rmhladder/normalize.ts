@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 
+// /g regex: only safe with .replace() — .test()/.exec() would be stateful via lastIndex.
 const COMPANY_SUFFIXES =
   /\b(incorporated|inc|llc|llp|lp|ltd|plc|corp|corporation|company|co|group|holdings|partners|management|capital markets)\b\.?/g;
 

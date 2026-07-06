@@ -54,10 +54,20 @@ export const DEFAULT_RELEVANCE_RULES = [
   { key: 'user:city', label: 'Preferred city', weight: 10 },
 ];
 
+/** The one place the 0-100 clamp happens: persist/compare only this value. */
+export const finalRelevance = (base: number, boost: number): number =>
+  Math.max(0, Math.min(100, base + boost));
+
+/**
+ * Returns an UNCLAMPED base score (can exceed 100 when weights stack).
+ * Callers must combine with the user boost via finalRelevance(base, boost);
+ * never store or threshold-compare the raw base.
+ */
 export function computeBaseScore(job: ScorableJob, now = new Date()): { score: number; urgencyFlag: boolean } {
   let score = 0;
   if (job.isUS) score += job.remoteStatus === 'remote_us' ? 15 : 20;
   score += PROGRAM_WEIGHTS[job.programType] ?? 0;
+  // title included deliberately: fallback industry classification when adapters leave industry null
   const haystack = `${job.industry ?? ''} ${job.roleCategory ?? ''} ${job.title}`;
   const industryHit = INDUSTRY_WEIGHTS.find(([re]) => re.test(haystack));
   if (industryHit) score += industryHit[1];
@@ -81,6 +91,7 @@ export function computeUserBoost(
   let boost = 0;
   for (const k of ctx.keywords) {
     if (!haystack.includes(k.keyword.toLowerCase())) continue;
+    // matched may be non-empty here; consumers must ignore it when blocked is true
     if (k.type === 'block') return { boost: 0, matched, blocked: true };
     matched.push(k.keyword);
     boost += k.weight;

@@ -42,6 +42,8 @@ export function classifyUSLocation(input: LocationInput): LocationResult {
   const lower = raw.toLowerCase();
   let remoteStatus: LocationResult['remoteStatus'] = 'onsite';
   if (/\bhybrid\b/i.test(raw)) remoteStatus = 'hybrid';
+  // Invariant: remoteStatus is only meaningful when isUS === true — "Remote - London"
+  // yields { isUS: false, remoteStatus: 'remote_us' }. Consumers must gate on isUS.
   else if (/\bremote\b/i.test(raw)) remoteStatus = 'remote_us'; // US-ness still checked below
 
   // 1. Explicit country field

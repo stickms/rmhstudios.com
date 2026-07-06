@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeBaseScore, computeUserBoost } from './scoring';
+import { computeBaseScore, computeUserBoost, finalRelevance } from './scoring';
 
 const base = {
   programType: 'summer_analyst' as const,
@@ -56,5 +56,13 @@ describe('computeUserBoost', () => {
   it('block keyword disqualifies', () => {
     const r = computeUserBoost({ ...base, title: 'Crypto Analyst Intern' }, ctx);
     expect(r.blocked).toBe(true);
+  });
+});
+
+describe('finalRelevance', () => {
+  it('clamps base + boost into 0-100', () => {
+    expect(finalRelevance(125, 45)).toBe(100);
+    expect(finalRelevance(30, 20)).toBe(50);
+    expect(finalRelevance(0, -10)).toBe(0);
   });
 });

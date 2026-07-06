@@ -2115,7 +2115,7 @@ model LadderCompany {
   normalizedName   String   @unique
   industry         String
   firmType         String
-  priorityLevel    Int      @default(3)
+  priorityLevel    Int      @default(3) // 1 high .. 5 low
   careerUrl        String?
   usEarlyCareerUrl String?
   campusUrl        String?
@@ -2205,7 +2205,7 @@ model LadderVerification {
   jobId      String
   job        LadderJob                @relation(fields: [jobId], references: [id], onDelete: Cascade)
   status     LadderVerificationStatus
-  confidence Int
+  confidence Int // 0-100
   evidence   String
   checkedAt  DateTime                 @default(now())
 

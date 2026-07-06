@@ -12,6 +12,7 @@ async function main() {
     const normalizedName = normalizeCompanyName(c.name);
     const company = await prisma.ladderCompany.upsert({
       where: { normalizedName },
+      // note: update intentionally omits name/URLs — re-seeding won't overwrite dashboard edits; refresh URLs via Plan 2 prober
       update: { industry: c.industry, firmType: c.firmType, priorityLevel: c.priorityLevel },
       create: {
         name: c.name, normalizedName, industry: c.industry,
@@ -45,4 +46,9 @@ async function main() {
   console.log(`Seeded ${companies} companies, ${sources} sources, ${DEFAULT_RELEVANCE_RULES.length} relevance rules.`);
 }
 
-main().finally(() => prisma.$disconnect());
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exitCode = 1;
+  })
+  .finally(() => prisma.$disconnect());
