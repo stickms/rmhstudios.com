@@ -28,20 +28,21 @@ func newPetRepo(database *db.DB) *petRepo { return &petRepo{db: database} }
 
 // petColumns is the canonical column list, shared by SELECT/INSERT so the scan
 // order can never drift from the query.
-const petColumns = `"guildId","name","generation","bornAt","hunger","happiness","energy","hygiene","health","alive","lifeStage","statsUpdatedAt","lastInteractionAt","lastChannelId","lastFedAt","lastPlayedAt","lastCleanedAt","lastSleptAt","lastChatAt","lastCareAlertAt","lastAmbientAt","diedAt","createdAt","updatedAt"`
+const petColumns = `"guildId","name","generation","bornAt","hunger","happiness","energy","hygiene","health","intelligence","alive","lifeStage","career","statsUpdatedAt","lastInteractionAt","lastChannelId","lastFedAt","lastPlayedAt","lastCleanedAt","lastSleptAt","lastStudiedAt","lastChatAt","lastCareAlertAt","lastAmbientAt","diedAt","introSentAt","createdAt","updatedAt"`
 
 // scanPet reads a full pet row (from QueryRow or Rows) into a PetState.
 func scanPet(row pgx.Row) (*PetState, error) {
 	p := &PetState{}
 	var lastChannel *string
+	var career *string
 	var lifeStage string // scan TEXT into a plain string, not the named type
 	if err := row.Scan(
 		&p.GuildID, &p.Name, &p.Generation, &p.BornAt,
-		&p.Hunger, &p.Happiness, &p.Energy, &p.Hygiene, &p.Health,
-		&p.Alive, &lifeStage,
+		&p.Hunger, &p.Happiness, &p.Energy, &p.Hygiene, &p.Health, &p.Intelligence,
+		&p.Alive, &lifeStage, &career,
 		&p.StatsUpdatedAt, &p.LastInteractionAt, &lastChannel,
-		&p.LastFedAt, &p.LastPlayedAt, &p.LastCleanedAt, &p.LastSleptAt, &p.LastChatAt,
-		&p.LastCareAlertAt, &p.LastAmbientAt, &p.DiedAt,
+		&p.LastFedAt, &p.LastPlayedAt, &p.LastCleanedAt, &p.LastSleptAt, &p.LastStudiedAt, &p.LastChatAt,
+		&p.LastCareAlertAt, &p.LastAmbientAt, &p.DiedAt, &p.IntroSentAt,
 		&p.CreatedAt, &p.UpdatedAt,
 	); err != nil {
 		return nil, err
@@ -49,6 +50,9 @@ func scanPet(row pgx.Row) (*PetState, error) {
 	p.LifeStage = LifeStage(lifeStage)
 	if lastChannel != nil {
 		p.LastChannelID = *lastChannel
+	}
+	if career != nil {
+		p.Career = *career
 	}
 	return p, nil
 }
@@ -80,9 +84,13 @@ func (r *petRepo) save(ctx context.Context, p *PetState) error {
 	if p.LastChannelID != "" {
 		lastChannel = &p.LastChannelID
 	}
+	var career *string
+	if p.Career != "" {
+		career = &p.Career
+	}
 	_, err := r.db.Pool.Exec(ctx,
 		`INSERT INTO "discord_alex_pet" (`+petColumns+`)
-		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
+		 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
 		 ON CONFLICT ("guildId") DO UPDATE SET
 		   "name"=EXCLUDED."name",
 		   "generation"=EXCLUDED."generation",
@@ -92,8 +100,10 @@ func (r *petRepo) save(ctx context.Context, p *PetState) error {
 		   "energy"=EXCLUDED."energy",
 		   "hygiene"=EXCLUDED."hygiene",
 		   "health"=EXCLUDED."health",
+		   "intelligence"=EXCLUDED."intelligence",
 		   "alive"=EXCLUDED."alive",
 		   "lifeStage"=EXCLUDED."lifeStage",
+		   "career"=EXCLUDED."career",
 		   "statsUpdatedAt"=EXCLUDED."statsUpdatedAt",
 		   "lastInteractionAt"=EXCLUDED."lastInteractionAt",
 		   "lastChannelId"=EXCLUDED."lastChannelId",
@@ -101,17 +111,19 @@ func (r *petRepo) save(ctx context.Context, p *PetState) error {
 		   "lastPlayedAt"=EXCLUDED."lastPlayedAt",
 		   "lastCleanedAt"=EXCLUDED."lastCleanedAt",
 		   "lastSleptAt"=EXCLUDED."lastSleptAt",
+		   "lastStudiedAt"=EXCLUDED."lastStudiedAt",
 		   "lastChatAt"=EXCLUDED."lastChatAt",
 		   "lastCareAlertAt"=EXCLUDED."lastCareAlertAt",
 		   "lastAmbientAt"=EXCLUDED."lastAmbientAt",
 		   "diedAt"=EXCLUDED."diedAt",
+		   "introSentAt"=EXCLUDED."introSentAt",
 		   "updatedAt"=EXCLUDED."updatedAt"`,
 		p.GuildID, p.Name, p.Generation, p.BornAt,
-		p.Hunger, p.Happiness, p.Energy, p.Hygiene, p.Health,
-		p.Alive, string(p.LifeStage),
+		p.Hunger, p.Happiness, p.Energy, p.Hygiene, p.Health, p.Intelligence,
+		p.Alive, string(p.LifeStage), career,
 		p.StatsUpdatedAt, p.LastInteractionAt, lastChannel,
-		p.LastFedAt, p.LastPlayedAt, p.LastCleanedAt, p.LastSleptAt, p.LastChatAt,
-		p.LastCareAlertAt, p.LastAmbientAt, p.DiedAt,
+		p.LastFedAt, p.LastPlayedAt, p.LastCleanedAt, p.LastSleptAt, p.LastStudiedAt, p.LastChatAt,
+		p.LastCareAlertAt, p.LastAmbientAt, p.DiedAt, p.IntroSentAt,
 		p.CreatedAt, p.UpdatedAt,
 	)
 	return err
@@ -151,17 +163,19 @@ type CaretakerRow struct {
 	Cleans   int
 	Naps     int
 	Talks    int
+	Studies  int
 	Points   int
 }
 
 // careColumn maps an action's care key to its counter column. Whitelisted so the
 // column name can never come from untrusted input.
 var careColumn = map[string]string{
-	"feeds":  `"feeds"`,
-	"plays":  `"plays"`,
-	"cleans": `"cleans"`,
-	"naps":   `"naps"`,
-	"talks":  `"talks"`,
+	"feeds":   `"feeds"`,
+	"plays":   `"plays"`,
+	"cleans":  `"cleans"`,
+	"naps":    `"naps"`,
+	"talks":   `"talks"`,
+	"studies": `"studies"`,
 }
 
 // bumpCaretaker increments a caretaker's action counter and points. `care` MUST
@@ -194,7 +208,7 @@ func (r *petRepo) topCaretakers(ctx context.Context, guildID string, limit int) 
 		return nil, nil
 	}
 	rows, err := r.db.Pool.Query(ctx,
-		`SELECT "userId","username","feeds","plays","cleans","naps","talks","points"
+		`SELECT "userId","username","feeds","plays","cleans","naps","talks","studies","points"
 		   FROM "discord_alex_caretaker" WHERE "guildId"=$1
 		   ORDER BY "points" DESC, "updatedAt" ASC LIMIT $2`, guildID, limit)
 	if err != nil {
@@ -204,7 +218,7 @@ func (r *petRepo) topCaretakers(ctx context.Context, guildID string, limit int) 
 	var out []CaretakerRow
 	for rows.Next() {
 		var c CaretakerRow
-		if err := rows.Scan(&c.UserID, &c.Username, &c.Feeds, &c.Plays, &c.Cleans, &c.Naps, &c.Talks, &c.Points); err != nil {
+		if err := rows.Scan(&c.UserID, &c.Username, &c.Feeds, &c.Plays, &c.Cleans, &c.Naps, &c.Talks, &c.Studies, &c.Points); err != nil {
 			return nil, err
 		}
 		out = append(out, c)

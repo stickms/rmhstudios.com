@@ -113,14 +113,16 @@ type PetState struct {
 	Generation int
 	BornAt     time.Time
 
-	Hunger    float64
-	Happiness float64
-	Energy    float64
-	Hygiene   float64
-	Health    float64
+	Hunger       float64
+	Happiness    float64
+	Energy       float64
+	Hygiene      float64
+	Health       float64
+	Intelligence float64 // cumulative knowledge from /study; does not decay
 
 	Alive     bool
 	LifeStage LifeStage // last persisted stage; used to detect stage-ups
+	Career    string    // chosen career aspiration key (see careerLabel), or ""
 
 	StatsUpdatedAt    time.Time
 	LastInteractionAt time.Time
@@ -130,11 +132,13 @@ type PetState struct {
 	LastPlayedAt  *time.Time
 	LastCleanedAt *time.Time
 	LastSleptAt   *time.Time
+	LastStudiedAt *time.Time
 	LastChatAt    *time.Time
 
 	LastCareAlertAt *time.Time
 	LastAmbientAt   *time.Time
 	DiedAt          *time.Time
+	IntroSentAt     *time.Time // one-time "hi, here's how I work" guild announcement
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
@@ -161,16 +165,39 @@ func newPet(guildID string, now time.Time) *PetState {
 	}
 }
 
-// revive resets a (usually dead) Alex back to a newborn, bumping the generation
-// so the guild's caretaking history reads like a new life.
-func (p *PetState) revive(now time.Time) {
+// legacyIntelligenceBonus is the head-start a new generation inherits from the
+// previous life's accumulated knowledge (New Game+). Capped so it's a boost, not
+// a shortcut to a maxed-out Alex.
+func legacyIntelligenceBonus(prevIntelligence float64) float64 {
+	bonus := prevIntelligence * 0.3
+	if bonus > 30 {
+		bonus = 30
+	}
+	return bonus
+}
+
+// startNewLife reincarnates Alex as a fresh gen-N+1 newborn — the New Game+
+// reset. It carries forward his name, his channel, the guild's caretaker
+// leaderboard (a separate table, untouched), and a legacy intelligence head-start
+// from the life that just ended. Career is intentionally cleared so each life can
+// choose a new path. Used by both /revive (on death) and /newlife (voluntary,
+// once he's a grown adult).
+func (p *PetState) startNewLife(now time.Time) {
 	gen := p.Generation + 1
 	name := p.Name
 	channel := p.LastChannelID
+	legacy := legacyIntelligenceBonus(p.Intelligence)
 	*p = *newPet(p.GuildID, now)
 	p.Generation = gen
 	p.Name = name
 	p.LastChannelID = channel
+	p.Intelligence = legacy
+}
+
+// canGraduate reports whether Alex has finished his current life (a living adult)
+// and can voluntarily start a New Game+ via /newlife.
+func (p *PetState) canGraduate() bool {
+	return p.Alive && p.LifeStage == StageAdult
 }
 
 // clampStat bounds a stat to [0, 100].
@@ -435,6 +462,86 @@ func (p *PetState) Rest(now time.Time) actionResult {
 	return actionResult{Message: pick(restLines), OK: true, Care: "naps"}
 }
 
+// Study builds Alex's intelligence at the cost of energy (and a little joy — the
+// grind is real). Refused if he's too tired to focus. Intelligence is cumulative
+// and never decays, so studying is how you push Alex toward a successful career.
+func (p *PetState) Study(now time.Time) actionResult {
+	if !p.Alive {
+		return p.dead()
+	}
+	if p.Energy < 20 {
+		return actionResult{Message: "Alex too fried to focus rn 🥴 — `/rest` him then hit the books", OK: false}
+	}
+	// Diminishing returns: the smarter he already is, the less each session adds.
+	gain := 10.0 * (1.0 - p.Intelligence/150.0)
+	if gain < 3 {
+		gain = 3
+	}
+	p.Intelligence = clampStat(p.Intelligence + gain)
+	p.Energy = clampStat(p.Energy - 14)
+	p.Happiness = clampStat(p.Happiness - 4)
+	p.Hunger = clampStat(p.Hunger - 4)
+	t := now
+	p.LastStudiedAt = &t
+	return actionResult{Message: pick(studyLines), OK: true, Care: "studies"}
+}
+
+// intelligenceLabel is a friendly descriptor of Alex's smarts.
+func intelligenceLabel(v float64) string {
+	switch {
+	case v >= 85:
+		return "genius 🧠✨"
+	case v >= 60:
+		return "sharp 📚"
+	case v >= 35:
+		return "learning 📖"
+	case v >= 15:
+		return "curious 🤔"
+	default:
+		return "still figuring it out 😅"
+	}
+}
+
+// ─── Careers ────────────────────────────────────────────────────────────
+
+// careerLabel maps a career key to its display label. The keys are the only
+// accepted /career values (validated via validCareer).
+var careerLabel = map[string]string{
+	"swe":     "Software Engineer 👨‍💻",
+	"data":    "Data Scientist 📊",
+	"founder": "Startup Founder 🚀",
+	"quant":   "Quant 📈",
+	"pm":      "Product Manager 📋",
+	"design":  "UX Designer 🎨",
+}
+
+// careerOrder is the stable display order for the career list (maps don't order).
+var careerOrder = []string{"swe", "data", "founder", "quant", "pm", "design"}
+
+// careerBlurb is Alex's in-character hype when a path is picked.
+var careerBlurb = map[string]string{
+	"swe":     "\"we buildin fr, leetcode grind starts NOW 💻🔥\"",
+	"data":    "\"pandas, numpy, and vibes — the data don't lie 📊\"",
+	"founder": "\"droppin outta the internship to raise a seed round, wish me luck 🚀\"",
+	"quant":   "\"finna print money with math, it's giving hedge fund 📈\"",
+	"pm":      "\"I don't code, I 'align stakeholders' now 📋 lmaooo\"",
+	"design":  "\"figma is my canvas, pixels are my paint 🎨\"",
+}
+
+// validCareer reports whether key is a known career.
+func validCareer(key string) bool {
+	_, ok := careerLabel[key]
+	return ok
+}
+
+// careerDisplay returns the label for a career key, or "undecided" when unset.
+func careerDisplay(key string) string {
+	if l, ok := careerLabel[key]; ok {
+		return l
+	}
+	return "undecided 🤷"
+}
+
 // ─── Flavor text ────────────────────────────────────────────────────────
 
 var feedBobaLines = []string{
@@ -472,6 +579,14 @@ var restLines = []string{
 	"tucked Alex in 😴 — \"aight power nap then back to the grind, bet\"",
 	"Alex caught some Z's 💤 — \"dreamt I got the return offer, manifesting fr\"",
 	"recharged 🔋 — \"ok I'm locked back in, let's cook\"",
+}
+
+var studyLines = []string{
+	"Alex locked in on some LeetCode 💻 — \"two-pointer technique? say less, I'm HIM 🧠\"",
+	"cracked open the textbook 📚 — \"big O notation finally clickin, we up\"",
+	"Alex grinded a course on system design 🖥️ — \"deadass gettin smarter by the second fr\"",
+	"study session complete 📖 — \"brain gains > gym gains... ok maybe equal\"",
+	"Alex watched a 3-hour lecture at 2x speed 🎧 — \"absorbed like 40% of that, W\"",
 }
 
 // ─── Small helpers ──────────────────────────────────────────────────────

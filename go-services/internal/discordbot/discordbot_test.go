@@ -215,22 +215,22 @@ func TestActionsBlockedWhenDead(t *testing.T) {
 	}
 }
 
-func TestReviveResetsAndBumpsGeneration(t *testing.T) {
+func TestStartNewLifeResetsAndBumpsGeneration(t *testing.T) {
 	now := time.Unix(1_700_000_000, 0).UTC()
 	p := newPet("g1", now)
 	p.Name = "Bob"
 	p.LastChannelID = "chan123"
 	p.Alive = false
 	p.Generation = 2
-	p.revive(now.Add(time.Hour))
+	p.startNewLife(now.Add(time.Hour))
 	if !p.Alive || p.Generation != 3 {
-		t.Fatalf("revive should produce a living gen-3 pet, got alive=%v gen=%d", p.Alive, p.Generation)
+		t.Fatalf("startNewLife should produce a living gen-3 pet, got alive=%v gen=%d", p.Alive, p.Generation)
 	}
 	if p.Name != "Bob" || p.LastChannelID != "chan123" {
-		t.Errorf("revive should preserve name (%q) and channel (%q)", p.Name, p.LastChannelID)
+		t.Errorf("startNewLife should preserve name (%q) and channel (%q)", p.Name, p.LastChannelID)
 	}
 	if p.LifeStage != StageInfant {
-		t.Errorf("revived pet should be an infant again, got %s", p.LifeStage)
+		t.Errorf("reincarnated pet should be an infant again, got %s", p.LifeStage)
 	}
 }
 
@@ -282,6 +282,90 @@ func TestStatBarBounds(t *testing.T) {
 	}
 	if bar := statBar(150); !strings.Contains(bar, "100/100") {
 		t.Errorf("statBar should clamp >100 to 100, got %q", bar)
+	}
+}
+
+func TestStudyBuildsIntelligence(t *testing.T) {
+	now := time.Unix(1_700_000_000, 0).UTC()
+	p := newPet("g1", now)
+	before := p.Intelligence
+	r := p.Study(now)
+	if !r.OK || r.Care != "studies" {
+		t.Fatalf("study should succeed and credit studies, got ok=%v care=%s", r.OK, r.Care)
+	}
+	if p.Intelligence <= before {
+		t.Errorf("study should raise intelligence: %v -> %v", before, p.Intelligence)
+	}
+	if p.Energy >= startEnergy {
+		t.Errorf("study should cost energy, got %v", p.Energy)
+	}
+	if p.LastStudiedAt == nil {
+		t.Errorf("LastStudiedAt should be stamped")
+	}
+}
+
+func TestStudyRefusedWhenExhausted(t *testing.T) {
+	now := time.Unix(1_700_000_000, 0).UTC()
+	p := newPet("g1", now)
+	p.Energy = 10
+	if r := p.Study(now); r.OK {
+		t.Errorf("study should be refused when too tired")
+	}
+}
+
+func TestStartNewLifeCarriesLegacyIntelligence(t *testing.T) {
+	now := time.Unix(1_700_000_000, 0).UTC()
+	p := newPet("g1", now)
+	p.Name = "Bob"
+	p.LastChannelID = "chan1"
+	p.Intelligence = 80
+	p.Career = "swe"
+	p.Generation = 2
+	p.startNewLife(now.Add(time.Hour))
+
+	if p.Generation != 3 || !p.Alive || p.LifeStage != StageInfant {
+		t.Fatalf("new life should be a living gen-3 infant, got gen=%d alive=%v stage=%s", p.Generation, p.Alive, p.LifeStage)
+	}
+	if p.Name != "Bob" || p.LastChannelID != "chan1" {
+		t.Errorf("new life should preserve name (%q) and channel (%q)", p.Name, p.LastChannelID)
+	}
+	if p.Career != "" {
+		t.Errorf("new life should clear career, got %q", p.Career)
+	}
+	want := legacyIntelligenceBonus(80)
+	if p.Intelligence != want {
+		t.Errorf("legacy intelligence = %v, want %v", p.Intelligence, want)
+	}
+	if p.Intelligence > 30 {
+		t.Errorf("legacy bonus should be capped at 30, got %v", p.Intelligence)
+	}
+}
+
+func TestCanGraduateOnlyAsLivingAdult(t *testing.T) {
+	now := time.Unix(1_700_000_000, 0).UTC()
+	p := newPet("g1", now)
+	if p.canGraduate() {
+		t.Errorf("an infant should not be able to graduate")
+	}
+	p.LifeStage = StageAdult
+	if !p.canGraduate() {
+		t.Errorf("a living adult should be able to graduate")
+	}
+	p.Alive = false
+	if p.canGraduate() {
+		t.Errorf("a dead adult should not be able to graduate (revive instead)")
+	}
+}
+
+func TestValidCareer(t *testing.T) {
+	if !validCareer("swe") || !validCareer("quant") {
+		t.Errorf("swe/quant should be valid careers")
+	}
+	if validCareer("astronaut") || validCareer("") {
+		t.Errorf("unknown/empty careers should be invalid")
+	}
+	if careerDisplay("") == "" {
+		t.Errorf("careerDisplay of empty should return an 'undecided' label, not empty")
 	}
 }
 

@@ -2707,9 +2707,11 @@ model DiscordAlexPet {
   energy            Float     @default(90)
   hygiene           Float     @default(90)
   health            Float     @default(100)
+  intelligence      Float     @default(0)
 
   alive             Boolean   @default(true)
   lifeStage         String    @default("infant")
+  career            String?
 
   statsUpdatedAt    DateTime  @default(now())
   lastInteractionAt DateTime  @default(now())
@@ -2719,11 +2721,13 @@ model DiscordAlexPet {
   lastPlayedAt      DateTime?
   lastCleanedAt     DateTime?
   lastSleptAt       DateTime?
+  lastStudiedAt     DateTime?
   lastChatAt        DateTime?
 
   lastCareAlertAt   DateTime?
   lastAmbientAt     DateTime?
   diedAt            DateTime?
+  introSentAt       DateTime?
 
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -2741,6 +2745,7 @@ model DiscordAlexCaretaker {
   cleans    Int      @default(0)
   naps      Int      @default(0)
   talks     Int      @default(0)
+  studies   Int      @default(0)
   points    Int      @default(0)
   updatedAt DateTime @updatedAt
 

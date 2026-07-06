@@ -199,7 +199,7 @@ func (ps *PetService) sendProactive(ctx context.Context, s *discordgo.Session, p
 	case kindCareAlert:
 		msg = &discordgo.MessageSend{Content: "🧋 **Alex:** " + careAlertLine(pl.need)}
 	case kindAmbient:
-		msg = &discordgo.MessageSend{Content: "🧋 **Alex:** " + ambientLine(pl.pet.LifeStage)}
+		msg = &discordgo.MessageSend{Content: "🧋 **Alex:** " + ambientLine(pl.pet.LifeStage, pl.pet.Career)}
 	default:
 		return
 	}
@@ -313,10 +313,26 @@ var ambientGeneral = []string{
 	"reminder: you're crushin it today, no cap 💪 (now `/feed` me lol)",
 }
 
-func ambientLine(stage LifeStage) string {
+// careerAmbient adds career-flavoured slice-of-life lines once Alex has a dream.
+var careerAmbient = map[string][]string{
+	"swe":     {"grindin LeetCode hards today, one day I'll be a real SWE fr 💻", "refactored my side project for the 5th time instead of shipping, SWE life 😩"},
+	"data":    {"training a model to predict which boba shop has the shortest line 📊🧋", "p-value came back significant, we STAY winning 📈"},
+	"founder": {"cold-emailing VCs at 3am, the founder grind never sleeps 🚀", "pivoted my startup again, we're a boba-delivery-AI-blockchain now 😤"},
+	"quant":   {"backtesting a strategy that's definitely not gonna blow up my account 📈🙏", "reading a stochastic calculus book at the gym, quant arc fr"},
+	"pm":      {"scheduled a meeting that coulda been an email, feelin very PM today 📋", "wrote a 12-page PRD nobody's gonna read, this is the job lol"},
+	"design":  {"nudged this button 2px left for 3 hours, worth it 🎨", "made a design system with 40 shades of purple, chef's kiss ✨"},
+}
+
+func ambientLine(stage LifeStage, career string) string {
 	pool := append([]string{}, ambientGeneral...)
 	if lines, ok := ambientLinesByStage[stage]; ok {
 		pool = append(pool, lines...)
+	}
+	// Career flavour only really fits once he's a teen/adult chasing it.
+	if (stage == StageTeen || stage == StageAdult) && career != "" {
+		if lines, ok := careerAmbient[career]; ok {
+			pool = append(pool, lines...)
+		}
 	}
 	return pick(pool)
 }

@@ -17,14 +17,17 @@ generation to show what he looks like right now.
 
 | Command | What it does |
 | --- | --- |
-| `/alex` | Show Alex's status card — stats, age, life stage, mood (+ a cached selfie if one exists) |
+| `/alex` | Show Alex's status card — stats, age, life stage, mood, career, intelligence (+ a cached selfie if one exists) |
 | `/feed [food]` | Feed Alex. `food` = 🧋 boba (his favourite), 🍜 meal, or 🍪 snack. Restores hunger |
 | `/play` | Play with Alex. Boosts happiness, costs energy (refused if he's too tired) |
 | `/clean` | Clean Alex up. Restores hygiene |
 | `/rest` | Put Alex down for a nap. Restores energy |
-| `/show` | Generate an xAI picture of Alex in his current life stage + mood |
-| `/chat <message>` | Talk to Alex (DeepSeek persona, flavoured by his live state) |
-| `/revive` | Bring Alex back as a newborn if he's passed out (bumps his "generation") |
+| `/study` | Alex studies — builds his (non-decaying) intelligence, costs energy |
+| `/career [path]` | Pick Alex's dream career (SWE / data / founder / quant / PM / design), or view the current one |
+| `/show` | Generate an xAI picture of Alex in his current life stage + mood (career-styled once grown) |
+| `/chat <message>` | Talk to Alex (DeepSeek persona, flavoured by his live state + career) |
+| `/revive` | Bring Alex back as a newborn if he's passed out (New Game+) |
+| `/newlife` | Voluntary New Game+ once Alex is a grown adult — he "graduates" and a new generation begins |
 | `/rename <name>` | Give Alex a new name |
 | `/caretakers` | Leaderboard of who's taken the best care of Alex |
 
@@ -32,15 +35,33 @@ Alex is a **server pet** — the commands don't work in DMs.
 
 ## Mechanics
 
-- **Stats** (0–100): hunger, happiness, energy, hygiene, health. They decay over
-  real time. Decay is computed lazily from `statsUpdatedAt` on every read, so the
-  state is always correct-as-of-now without a fixed DB tick.
+- **Stats** (0–100): hunger, happiness, energy, hygiene, health, intelligence.
+  The first five decay over real time (lazily recomputed from `statsUpdatedAt` on
+  every read, so state is always correct-as-of-now). **Intelligence does not
+  decay** — it's cumulative knowledge built by `/study`.
 - **Health** drains while any stat is critically low (< 15) and slowly regenerates
   while Alex is thriving. If health hits 0, Alex passes out (`alive = false`).
-- **Life stages** by age: infant → toddler → kid → teen → adult (defaults: 12h /
-  2d / 5d / 10d). Only a living Alex grows.
+- **Life stages** by age: infant → toddler (12h) → kid (2d) → teen (5d) →
+  adult (10d), all at the default `ALEX_GROWTH_SCALE=1.0`. Set the scale higher to
+  speed it up (e.g. `2.0` reaches adult in ~5 days). Only a living Alex grows.
+- **Career**: an aspiration set via `/career`. It flavours his chat replies,
+  ambient posts, and — once he's a teen/adult — his `/show` picture. `/study`
+  builds the intelligence that makes the dream believable.
+- **New Game+**: `/revive` (on death) and `/newlife` (voluntary, once adult) both
+  reincarnate Alex as a fresh gen-N+1 infant, carrying over his name, channel, the
+  caretaker leaderboard, and a **legacy intelligence head-start** (up to 30,
+  scaled from the previous life's intelligence). Career resets so each life can
+  choose a new path.
 - **Caretaker leaderboard**: each care action credits the user who did it
-  (feed 10 / play 8 / clean 6 / nap 5 / chat 3 points).
+  (feed 10 / study 9 / play 8 / clean 6 / nap 5 / chat 3 points).
+
+## First-hello announcement
+
+When the bot joins a server (and on startup for servers it's already in), Alex
+posts a **one-time** intro explaining the system into the first channel he can
+talk in. It fires exactly once per guild (persisted via `introSentAt`, so
+restarts and redeploys never repeat it), and servers where he can't send anywhere
+are skipped — if he's granted access later, he'll introduce himself then.
 
 ## Proactive messages
 

@@ -229,6 +229,17 @@ var moodPromptDescriptor = map[string]string{
 	"gone":     "drawn as a cute little friendly ghost with swirly X eyes, floating",
 }
 
+// careerVisual adds career-appropriate props/wardrobe to the image once Alex is a
+// teen or adult chasing a path.
+var careerVisual = map[string]string{
+	"swe":     "styled as a software engineer with a laptop covered in stickers and a mechanical keyboard",
+	"data":    "styled as a data scientist surrounded by little floating charts and graphs",
+	"founder": "styled as a startup founder in a branded hoodie giving a tiny pitch-deck presentation",
+	"quant":   "styled as a quant with floating stock charts and math equations around him",
+	"pm":      "styled as a product manager holding sticky notes and a roadmap",
+	"design":  "styled as a UX designer sketching wireframes on a tablet with a stylus",
+}
+
 // buildAlexImagePrompt assembles the full text-to-image prompt from the pet's
 // stage and mood. Kept fully descriptive (no user text) so it's safe and stable.
 func buildAlexImagePrompt(p *PetState, mood Mood) string {
@@ -247,6 +258,13 @@ func buildAlexImagePrompt(p *PetState, mood Mood) string {
 	b.WriteString(stage)
 	b.WriteString(", ")
 	b.WriteString(expr)
+	// Once Alex is old enough to have a career dream, dress the scene for it.
+	if p.Alive && (p.LifeStage == StageTeen || p.LifeStage == StageAdult) {
+		if cv := careerVisual[p.Career]; cv != "" {
+			b.WriteString(", ")
+			b.WriteString(cv)
+		}
+	}
 	b.WriteString(". Single centered character, full body, expressive, vibrant saturated colors, ")
 	b.WriteString("soft studio lighting, clean simple pastel gradient background, thick clean outlines. ")
 	b.WriteString("No text, no words, no letters, no logos in the image.")

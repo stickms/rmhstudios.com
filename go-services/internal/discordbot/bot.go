@@ -79,8 +79,28 @@ func slashCommands() []*discordgo.ApplicationCommand {
 		{Name: "play", Description: "Play with Alex to boost his happiness 🎮"},
 		{Name: "clean", Description: "Clean Alex up so he doesn't get funky 🧼"},
 		{Name: "rest", Description: "Put Alex down for a nap to restore energy 😴"},
+		{Name: "study", Description: "Help Alex study to build his intelligence 🧠"},
+		{
+			Name:        "career",
+			Description: "Pick Alex's dream career (or view it) 🎯",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type: discordgo.ApplicationCommandOptionString, Name: "path",
+					Description: "The career to chase", Required: false,
+					Choices: []*discordgo.ApplicationCommandOptionChoice{
+						{Name: "👨‍💻 Software Engineer", Value: "swe"},
+						{Name: "📊 Data Scientist", Value: "data"},
+						{Name: "🚀 Startup Founder", Value: "founder"},
+						{Name: "📈 Quant", Value: "quant"},
+						{Name: "📋 Product Manager", Value: "pm"},
+						{Name: "🎨 UX Designer", Value: "design"},
+					},
+				},
+			},
+		},
 		{Name: "show", Description: "See a pic of what Alex looks like right now 📸"},
 		{Name: "revive", Description: "Bring Alex back if he's passed out ✨"},
+		{Name: "newlife", Description: "Start a New Game+ once Alex is a grown adult 🎓"},
 		{Name: "caretakers", Description: "See who's taken the best care of Alex 🏆"},
 		{
 			Name:        "rename",
@@ -107,7 +127,30 @@ func New(cfg Config, chat *ChatService, pet *PetService, logger *log.Logger) (*B
 	b := &Bot{cfg: cfg, logger: logger, session: session, chat: chat, pet: pet}
 	session.AddHandler(b.onReady)
 	session.AddHandler(b.onInteraction)
+	session.AddHandler(b.onGuildCreate)
 	return b, nil
+}
+
+// onGuildCreate fires for every guild on startup (as state syncs) and whenever the
+// bot is added to a new server. It triggers Alex's one-time intro announcement,
+// which is idempotent (persisted via introSentAt), so startup never re-posts.
+func (b *Bot) onGuildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
+	if b.pet == nil || e == nil || e.Guild == nil || e.Guild.Unavailable {
+		return
+	}
+	b.ctxMu.RLock()
+	parent := b.lifecycleCtx
+	b.ctxMu.RUnlock()
+	if parent == nil {
+		parent = context.Background()
+	}
+	guildID := e.Guild.ID
+	// Run off the gateway event goroutine — the intro may make several REST calls.
+	go func() {
+		ctx, cancel := context.WithTimeout(parent, 30*time.Second)
+		defer cancel()
+		b.pet.AnnounceIntro(ctx, s, guildID)
+	}()
 }
 
 // Run opens the gateway session and blocks until ctx is cancelled, then closes
@@ -218,10 +261,16 @@ func (b *Bot) routeCommand(ctx context.Context, s *discordgo.Session, i *discord
 		err = b.pet.HandleClean(ctx, s, i)
 	case "rest":
 		err = b.pet.HandleRest(ctx, s, i)
+	case "study":
+		err = b.pet.HandleStudy(ctx, s, i)
+	case "career":
+		err = b.pet.HandleCareer(ctx, s, i, opts.str("path"))
 	case "show":
 		err = b.pet.HandleShow(ctx, s, i)
 	case "revive":
 		err = b.pet.HandleRevive(ctx, s, i)
+	case "newlife":
+		err = b.pet.HandleNewLife(ctx, s, i)
 	case "rename":
 		err = b.pet.HandleRename(ctx, s, i, opts.str("name"))
 	case "caretakers":

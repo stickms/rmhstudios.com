@@ -48,7 +48,7 @@ func NewPetService(repo *petRepo, imager *alexImager, logger *log.Logger) *PetSe
 }
 
 // carePoints weights each care action for the leaderboard.
-var carePoints = map[string]int{"feeds": 10, "plays": 8, "cleans": 6, "naps": 5, "talks": 3}
+var carePoints = map[string]int{"feeds": 10, "plays": 8, "cleans": 6, "naps": 5, "talks": 3, "studies": 9}
 
 // showCooldown bounds how often a guild can spend an xAI image on /show.
 const showCooldown = 45 * time.Second
@@ -221,6 +221,13 @@ func (ps *PetService) HandleRest(ctx context.Context, s *discordgo.Session, i *d
 	})
 }
 
+// HandleStudy implements /study — build Alex's intelligence toward a career.
+func (ps *PetService) HandleStudy(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+	return ps.simpleAction(ctx, s, i, "study", func(p *PetState, now time.Time) actionResult {
+		return p.Study(now)
+	})
+}
+
 // simpleAction is the shared flow for feed/play/clean/rest: lock, load, decay,
 // apply the mutation, persist, credit the caretaker, and render the status card
 // with the action's flavor line on top.
@@ -340,10 +347,14 @@ func (ps *PetService) HandleRevive(ctx context.Context, s *discordgo.Session, i 
 		mood := pet.mood()
 		mu.Unlock()
 		embed := ps.statusEmbed(&snap, mood, now, decayResult{})
-		embed.Description = "Alex is alive and well — no need to revive 😎\n\n" + embed.Description
+		hint := "Alex is alive and well — no need to revive 😎"
+		if snap.canGraduate() {
+			hint += "\nHe's a grown adult now though — use `/newlife` to start a New Game+ 🎓"
+		}
+		embed.Description = hint + "\n\n" + embed.Description
 		return ps.editEmbed(s, i, embed, nil)
 	}
-	pet.revive(now)
+	pet.startNewLife(now)
 	if err := ps.repo.save(ctx, pet); err != nil {
 		ps.logger.Warn("revive save failed", "guild", guildID, "error", err)
 	}
@@ -352,8 +363,124 @@ func (ps *PetService) HandleRevive(ctx context.Context, s *discordgo.Session, i 
 	mu.Unlock()
 
 	embed := ps.statusEmbed(&snap, mood, now, decayResult{})
-	embed.Description = fmt.Sprintf("✨ **Alex is reborn!** Welcome back to the world, lil guy (generation %d) 🍼\nTake better care this time fr 🙏\n\n", snap.Generation) + embed.Description
+	embed.Description = fmt.Sprintf("✨ **Alex is reborn!** Welcome back to the world, lil guy (generation %d) 🍼\n%s\nTake better care this time fr 🙏\n\n", snap.Generation, legacyNote(snap.Intelligence)) + embed.Description
 	return ps.editEmbed(s, i, embed, nil)
+}
+
+// HandleNewLife implements /newlife — voluntary New Game+ once Alex is a grown
+// adult: he "graduates" and a fresh gen-N+1 infant begins, inheriting a legacy
+// intelligence head-start from the life that just ended.
+func (ps *PetService) HandleNewLife(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
+	guildID, ok := requireGuild(s, i)
+	if !ok {
+		return nil
+	}
+	if err := deferReply(s, i); err != nil {
+		return err
+	}
+	now := time.Now().UTC()
+
+	mu := ps.lockGuild(guildID)
+	mu.Lock()
+	pet, _, err := ps.loadDecay(ctx, guildID, i.ChannelID, now)
+	if err != nil {
+		mu.Unlock()
+		return ps.editEmbed(s, i, errEmbed("couldn't start a new life rn, try again"), nil)
+	}
+	if !pet.canGraduate() {
+		snap := *pet
+		mood := pet.mood()
+		mu.Unlock()
+		embed := ps.statusEmbed(&snap, mood, now, decayResult{})
+		reason := "Alex has to grow all the way up to an **Adult** before he can start a New Game+ 🎓"
+		if !snap.Alive {
+			reason = "Alex has passed out 💀 — use `/revive` to bring him back instead."
+		}
+		embed.Description = reason + "\n\n" + embed.Description
+		return ps.editEmbed(s, i, embed, nil)
+	}
+	prevGen := pet.Generation
+	prevCareer := careerDisplay(pet.Career)
+	pet.startNewLife(now)
+	if err := ps.repo.save(ctx, pet); err != nil {
+		ps.logger.Warn("newlife save failed", "guild", guildID, "error", err)
+	}
+	snap := *pet
+	mood := pet.mood()
+	mu.Unlock()
+
+	embed := ps.statusEmbed(&snap, mood, now, decayResult{})
+	embed.Description = fmt.Sprintf(
+		"🎓 **Alex graduated and started a whole new life!**\nGen %d (%s) lived a full life — say hi to **generation %d** 🍼\n%s\n\n",
+		prevGen, prevCareer, snap.Generation, legacyNote(snap.Intelligence),
+	) + embed.Description
+	return ps.editEmbed(s, i, embed, nil)
+}
+
+// HandleCareer implements /career — set (or view) Alex's career aspiration.
+func (ps *PetService) HandleCareer(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate, path string) error {
+	guildID, ok := requireGuild(s, i)
+	if !ok {
+		return nil
+	}
+	if err := deferReply(s, i); err != nil {
+		return err
+	}
+	now := time.Now().UTC()
+
+	mu := ps.lockGuild(guildID)
+	mu.Lock()
+	pet, res, err := ps.loadDecay(ctx, guildID, i.ChannelID, now)
+	if err != nil {
+		mu.Unlock()
+		return ps.editEmbed(s, i, errEmbed("couldn't set Alex's career rn"), nil)
+	}
+
+	var note string
+	switch {
+	case path == "":
+		// No path given → just report the current aspiration + options.
+		note = "Alex is currently going for: **" + careerDisplay(pet.Career) + "**\n" + careerOptionsLine()
+	case !validCareer(path):
+		mu.Unlock()
+		return ps.editEmbed(s, i, errEmbed("that's not a career Alex knows about 😅\n"+careerOptionsLine()), nil)
+	case !pet.Alive:
+		note = "Alex can't chase a career while he's passed out 💀 — `/revive` him first."
+	default:
+		pet.Career = path
+		if pet.Happiness < 100 {
+			pet.Happiness = clampStat(pet.Happiness + 6) // having a dream cheers him up
+		}
+		note = "Alex is now chasing **" + careerDisplay(path) + "** — " + careerBlurb[path] + "\nKeep him `/study`-ing to make it happen 📚"
+	}
+
+	if err := ps.repo.save(ctx, pet); err != nil {
+		ps.logger.Warn("career save failed", "guild", guildID, "error", err)
+	}
+	snap := *pet
+	mood := pet.mood()
+	mu.Unlock()
+
+	embed := ps.statusEmbed(&snap, mood, now, res)
+	embed.Description = note + "\n\n" + embed.Description
+	return ps.editEmbed(s, i, embed, nil)
+}
+
+// legacyNote describes the New Game+ intelligence head-start (or lack of one).
+func legacyNote(intelligence float64) string {
+	if intelligence <= 0 {
+		return "🧠 Fresh start — no legacy knowledge to inherit yet."
+	}
+	return fmt.Sprintf("🧠 Legacy bonus: born with **%d** intelligence from his past life's studies.", int(intelligence))
+}
+
+// careerOptionsLine lists the pickable careers for /career.
+func careerOptionsLine() string {
+	var parts []string
+	for _, key := range careerOrder {
+		parts = append(parts, "`"+key+"` "+careerLabel[key])
+	}
+	return "Options: " + strings.Join(parts, "  ·  ")
 }
 
 // HandleRename implements /rename.
@@ -420,8 +547,8 @@ func (ps *PetService) HandleCaretakers(ctx context.Context, s *discordgo.Session
 		if idx < len(medals) {
 			rank = medals[idx]
 		}
-		fmt.Fprintf(&b, "%s **%s** — %d pts  ·  🍽️%d 🎮%d 🧼%d 😴%d 💬%d\n",
-			rank, c.Username, c.Points, c.Feeds, c.Plays, c.Cleans, c.Naps, c.Talks)
+		fmt.Fprintf(&b, "%s **%s** — %d pts  ·  🍽️%d 🎮%d 🧼%d 😴%d 💬%d 📚%d\n",
+			rank, c.Username, c.Points, c.Feeds, c.Plays, c.Cleans, c.Naps, c.Talks, c.Studies)
 	}
 	embed.Description = b.String()
 	embed.Footer = &discordgo.MessageEmbedFooter{Text: "Keep Alex thriving to climb the ranks 🧋"}
@@ -450,11 +577,17 @@ func (ps *PetService) StatusLineForChat(ctx context.Context, guildID string) str
 	if !pet.Alive {
 		return "\n\nCURRENT STATE: You (Alex) are currently passed out / not well and waiting to be revived. Reply weakly, like you're barely hanging on but still you."
 	}
+	career := "still figuring out what you wanna be"
+	if l, ok := careerLabel[pet.Career]; ok {
+		career = "chasing a career as a " + l
+	}
 	return fmt.Sprintf(
 		"\n\nCURRENT STATE (let this subtly color your reply, don't recite the numbers): "+
-			"you're a %s right now, vibe: %s. Hunger %d/100, Energy %d/100, Hygiene %d/100, Happiness %d/100, Health %d/100. "+
-			"If a stat is low, naturally hint at needing it (e.g. hungry → crave boba/food; sleepy → tired; sad → want company).",
-		stageWord(pet.LifeStage), mood.Label,
+			"you're a %s right now, vibe: %s, and you're %s (intelligence %d/100). "+
+			"Hunger %d/100, Energy %d/100, Hygiene %d/100, Happiness %d/100, Health %d/100. "+
+			"If a stat is low, naturally hint at needing it (e.g. hungry → crave boba/food; sleepy → tired; sad → want company). "+
+			"Let your career dream come through in how you talk.",
+		stageWord(pet.LifeStage), mood.Label, career, int(pet.Intelligence),
 		int(pet.Hunger), int(pet.Energy), int(pet.Hygiene), int(pet.Happiness), int(pet.Health),
 	)
 }
@@ -504,8 +637,9 @@ func (ps *PetService) statusEmbed(p *PetState, mood Mood, now time.Time, res dec
 	} else if res.GrewUp {
 		fmt.Fprintf(&desc, "🎉 **Alex grew up into a %s!** they grow up so fast 🥹\n\n", stageWord(res.StageAfter))
 	}
-	fmt.Fprintf(&desc, "**%s** · %s · gen %d\n_%s %s_",
-		p.Name, stageLabel[p.LifeStage], p.Generation, mood.Emoji, mood.Label)
+	fmt.Fprintf(&desc, "**%s** · %s · gen %d\n_%s %s_\n🎯 Dream: %s · 🧠 %s",
+		p.Name, stageLabel[p.LifeStage], p.Generation, mood.Emoji, mood.Label,
+		careerDisplay(p.Career), intelligenceLabel(p.Intelligence))
 
 	embed := &discordgo.MessageEmbed{
 		Title:       "🧋 " + p.Name + " the Alex",
@@ -517,9 +651,10 @@ func (ps *PetService) statusEmbed(p *PetState, mood Mood, now time.Time, res dec
 			{Name: "⚡ Energy", Value: statBar(p.Energy), Inline: true},
 			{Name: "🧼 Hygiene", Value: statBar(p.Hygiene), Inline: true},
 			{Name: "❤️ Health", Value: statBar(p.Health), Inline: true},
+			{Name: "🧠 Intelligence", Value: statBar(p.Intelligence), Inline: true},
 			{Name: "🎂 Age", Value: p.ageString(now), Inline: true},
 		},
-		Footer: &discordgo.MessageEmbedFooter{Text: "/feed · /play · /clean · /rest · /show · /chat"},
+		Footer: &discordgo.MessageEmbedFooter{Text: "/feed · /play · /clean · /rest · /study · /show · /chat"},
 	}
 	return embed
 }
