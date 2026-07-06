@@ -163,6 +163,7 @@ func (ps *PetService) HandleStatus(ctx context.Context, s *discordgo.Session, i 
 		return err
 	}
 	now := time.Now().UTC()
+	_, username := interactionUser(i)
 
 	mu := ps.lockGuild(guildID)
 	mu.Lock()
@@ -179,6 +180,7 @@ func (ps *PetService) HandleStatus(ctx context.Context, s *discordgo.Session, i 
 	mu.Unlock()
 
 	embed := ps.statusEmbed(&snap, mood, now, res)
+	embed.Footer = attributeFooter(username, "👀", "checked on Alex")
 
 	// Attach a cached selfie if one is already on hand (never generate here —
 	// /show is the paid path).
@@ -268,7 +270,7 @@ func (ps *PetService) simpleAction(
 	embed.Description = result.Message + "\n\n" + embed.Description
 	if result.OK {
 		// Attribute the action so the whole server sees who's caring for Alex.
-		embed.Footer = actorFooter(username)
+		embed.Footer = attributeFooter(username, "🫶", "looked after Alex")
 	}
 
 	var files []*discordgo.File
@@ -290,6 +292,7 @@ func (ps *PetService) HandleShow(ctx context.Context, s *discordgo.Session, i *d
 		return err
 	}
 	now := time.Now().UTC()
+	_, username := interactionUser(i)
 
 	mu := ps.lockGuild(guildID)
 	mu.Lock()
@@ -306,6 +309,7 @@ func (ps *PetService) HandleShow(ctx context.Context, s *discordgo.Session, i *d
 	mu.Unlock()
 
 	embed := ps.statusEmbed(&snap, mood, now, res)
+	embed.Footer = attributeFooter(username, "📸", "snapped a pic of Alex")
 
 	// Serve from cache instantly; otherwise respect the per-guild cooldown before
 	// spending an xAI image.
@@ -338,6 +342,7 @@ func (ps *PetService) HandleRevive(ctx context.Context, s *discordgo.Session, i 
 		return err
 	}
 	now := time.Now().UTC()
+	_, username := interactionUser(i)
 
 	mu := ps.lockGuild(guildID)
 	mu.Lock()
@@ -356,6 +361,7 @@ func (ps *PetService) HandleRevive(ctx context.Context, s *discordgo.Session, i 
 			hint += "\nHe's a grown adult now though — use `/newlife` to start a New Game+ 🎓"
 		}
 		embed.Description = hint + "\n\n" + embed.Description
+		embed.Footer = attributeFooter(username, "👀", "checked on Alex")
 		return ps.editEmbed(s, i, embed, nil)
 	}
 	pet.startNewLife(now)
@@ -368,6 +374,7 @@ func (ps *PetService) HandleRevive(ctx context.Context, s *discordgo.Session, i 
 
 	embed := ps.statusEmbed(&snap, mood, now, decayResult{})
 	embed.Description = fmt.Sprintf("✨ **Alex is reborn!** Welcome back to the world, lil guy (generation %d) 🍼\n%s\nTake better care this time fr 🙏\n\n", snap.Generation, legacyNote(snap.Intelligence)) + embed.Description
+	embed.Footer = attributeFooter(username, "✨", "revived Alex")
 	return ps.editEmbed(s, i, embed, nil)
 }
 
@@ -383,6 +390,7 @@ func (ps *PetService) HandleNewLife(ctx context.Context, s *discordgo.Session, i
 		return err
 	}
 	now := time.Now().UTC()
+	_, username := interactionUser(i)
 
 	mu := ps.lockGuild(guildID)
 	mu.Lock()
@@ -401,6 +409,7 @@ func (ps *PetService) HandleNewLife(ctx context.Context, s *discordgo.Session, i
 			reason = "Alex has passed out 💀 — use `/revive` to bring him back instead."
 		}
 		embed.Description = reason + "\n\n" + embed.Description
+		embed.Footer = attributeFooter(username, "👀", "checked on Alex")
 		return ps.editEmbed(s, i, embed, nil)
 	}
 	prevGen := pet.Generation
@@ -418,6 +427,7 @@ func (ps *PetService) HandleNewLife(ctx context.Context, s *discordgo.Session, i
 		"🎓 **Alex graduated and started a whole new life!**\nGen %d (%s) lived a full life — say hi to **generation %d** 🍼\n%s\n\n",
 		prevGen, prevCareer, snap.Generation, legacyNote(snap.Intelligence),
 	) + embed.Description
+	embed.Footer = attributeFooter(username, "🎓", "started Alex's new life")
 	return ps.editEmbed(s, i, embed, nil)
 }
 
@@ -431,6 +441,7 @@ func (ps *PetService) HandleCareer(ctx context.Context, s *discordgo.Session, i 
 		return err
 	}
 	now := time.Now().UTC()
+	_, username := interactionUser(i)
 
 	mu := ps.lockGuild(guildID)
 	mu.Lock()
@@ -441,6 +452,8 @@ func (ps *PetService) HandleCareer(ctx context.Context, s *discordgo.Session, i 
 	}
 
 	var note string
+	footerVerb := "checked Alex's career"
+	footerEmoji := "👀"
 	switch {
 	case path == "":
 		// No path given → just report the current aspiration + options.
@@ -456,6 +469,8 @@ func (ps *PetService) HandleCareer(ctx context.Context, s *discordgo.Session, i 
 			pet.Happiness = clampStat(pet.Happiness + 6) // having a dream cheers him up
 		}
 		note = "Alex is now chasing **" + careerDisplay(path) + "** — " + careerBlurb[path] + "\nKeep him `/study`-ing to make it happen 📚"
+		footerVerb = "set Alex's dream job"
+		footerEmoji = "🎯"
 	}
 
 	if err := ps.repo.save(ctx, pet); err != nil {
@@ -467,6 +482,7 @@ func (ps *PetService) HandleCareer(ctx context.Context, s *discordgo.Session, i 
 
 	embed := ps.statusEmbed(&snap, mood, now, res)
 	embed.Description = note + "\n\n" + embed.Description
+	embed.Footer = attributeFooter(username, footerEmoji, footerVerb)
 	return ps.editEmbed(s, i, embed, nil)
 }
 
@@ -501,6 +517,7 @@ func (ps *PetService) HandleRename(ctx context.Context, s *discordgo.Session, i 
 		return err
 	}
 	now := time.Now().UTC()
+	_, username := interactionUser(i)
 
 	mu := ps.lockGuild(guildID)
 	mu.Lock()
@@ -520,6 +537,7 @@ func (ps *PetService) HandleRename(ctx context.Context, s *discordgo.Session, i 
 
 	embed := ps.statusEmbed(&snap, mood, now, res)
 	embed.Description = fmt.Sprintf("📝 %s goes by **%s** now — \"new name who dis 😎\"\n\n", old, clean) + embed.Description
+	embed.Footer = attributeFooter(username, "📝", "renamed Alex")
 	return ps.editEmbed(s, i, embed, nil)
 }
 
@@ -532,13 +550,15 @@ func (ps *PetService) HandleCaretakers(ctx context.Context, s *discordgo.Session
 	if err := deferReply(s, i); err != nil {
 		return err
 	}
+	_, username := interactionUser(i)
 	rows, err := ps.repo.topCaretakers(ctx, guildID, 10)
 	if err != nil {
 		return ps.editEmbed(s, i, errEmbed("couldn't load the leaderboard rn"), nil)
 	}
 	embed := &discordgo.MessageEmbed{
-		Title: "🏆 Alex's Top Caretakers",
-		Color: 0xf59e0b,
+		Title:  "🏆 Alex's Top Caretakers",
+		Color:  0xf59e0b,
+		Footer: attributeFooter(username, "🏆", "pulled up the leaderboard"),
 	}
 	if len(rows) == 0 {
 		embed.Description = "nobody's taken care of Alex yet 👀 — be the first with `/feed`!"
@@ -555,7 +575,6 @@ func (ps *PetService) HandleCaretakers(ctx context.Context, s *discordgo.Session
 			rank, c.Username, c.Points, c.Feeds, c.Plays, c.Cleans, c.Naps, c.Talks, c.Studies)
 	}
 	embed.Description = b.String()
-	embed.Footer = &discordgo.MessageEmbedFooter{Text: "Keep Alex thriving to climb the ranks 🧋"}
 	return ps.editEmbed(s, i, embed, nil)
 }
 
@@ -678,11 +697,11 @@ func statBar(v float64) string {
 	return strings.Repeat("█", filled) + strings.Repeat("░", 10-filled) + " " + itoa(int(v)) + "/100"
 }
 
-// actorFooter attributes an action to the user who did it, so the public embed
-// makes clear who's interacting with Alex (visible in scrollback, beyond
-// Discord's transient "used /command" header).
-func actorFooter(username string) *discordgo.MessageEmbedFooter {
-	return &discordgo.MessageEmbedFooter{Text: "🫶 " + username + " looked after Alex"}
+// attributeFooter names the user who ran a command and what they did, so every
+// public embed makes clear who's interacting with Alex (visible in scrollback,
+// beyond Discord's transient "used /command" header).
+func attributeFooter(username, emoji, verb string) *discordgo.MessageEmbedFooter {
+	return &discordgo.MessageEmbedFooter{Text: emoji + " " + username + " " + verb}
 }
 
 func errEmbed(msg string) *discordgo.MessageEmbed {
