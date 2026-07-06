@@ -22,7 +22,8 @@ async function fetchBoard(ctx: AdapterContext): Promise<LeverJob[] | null> {
   const res = await politeFetch(leverPostingsUrl(ctx.slug), { fetchImpl: ctx.fetchImpl });
   if (!res.ok) return null;
   try {
-    return (JSON.parse(res.body) as LeverJob[]) ?? [];
+    const parsed: unknown = JSON.parse(res.body);
+    return Array.isArray(parsed) ? (parsed as LeverJob[]) : null;
   } catch {
     return null;
   }

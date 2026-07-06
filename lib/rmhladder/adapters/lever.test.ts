@@ -30,6 +30,10 @@ describe('leverAdapter.discoverJobs', () => {
     const jobs = await leverAdapter.discoverJobs({ ...ctx, fetchImpl: stub(404, 'not found') });
     expect(jobs).toEqual([]);
   });
+  it('returns [] when the response is JSON but not an array', async () => {
+    const jobs = await leverAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{"jobs":[]}') });
+    expect(jobs).toEqual([]);
+  });
 });
 
 describe('leverAdapter.verifyJob', () => {
