@@ -26,7 +26,10 @@ describe('computeVerification', () => {
     expect(computeVerification({ ...good, closedLanguage: true }).status).toBe('expired');
   });
   it('blocked page → blocked_or_inaccessible', () => {
-    expect(computeVerification({ ...good, blocked: true, fetched: false }).status).toBe('blocked_or_inaccessible');
+    const r = computeVerification({ ...good, blocked: true, fetched: false });
+    expect(r.status).toBe('blocked_or_inaccessible');
+    expect(r.evidence).toContain('Stripe');
+    expect(r.evidence).toContain('Product Management Intern');
   });
   it('fetch failure → broken_link', () => {
     expect(computeVerification({ ...good, fetched: false, httpStatus: 404, apiSource: false }).status).toBe('broken_link');

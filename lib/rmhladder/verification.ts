@@ -18,7 +18,7 @@ export interface VerificationEvidence {
 export interface VerificationOutcome { status: string; confidence: number; evidence: string }
 
 export function computeVerification(e: VerificationEvidence): VerificationOutcome {
-  if (e.blocked) return out('blocked_or_inaccessible', 0, `Page on ${e.platform} is blocked by robots.txt/anti-bot; not scraped. URL preserved for manual review.`);
+  if (e.blocked) return out('blocked_or_inaccessible', 0, `Posting for "${e.jobTitle}" at ${e.companyName} on ${e.platform} is blocked by robots.txt/anti-bot; not scraped. URL preserved for manual review.`);
   if (e.closedLanguage) return out('expired', 95, `Posting for "${e.jobTitle}" at ${e.companyName} contains closed/no-longer-accepting language.`);
   if (!e.fetched) return out('broken_link', 0, `Fetch failed (HTTP ${e.httpStatus ?? 'n/a'}) for "${e.jobTitle}" at ${e.companyName}.`);
   if (e.isSearchResultsPage) return out('needs_manual_review', 30, `URL for "${e.jobTitle}" at ${e.companyName} resolves to a generic search/results page, not a posting.`);
