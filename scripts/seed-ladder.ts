@@ -41,6 +41,7 @@ async function main() {
     await prisma.ladderRelevanceRule.upsert({ where: { key: rule.key }, update: {}, create: rule });
   }
   const sources = await prisma.ladderSource.count();
+  // eslint-disable-next-line no-console -- CLI seed script summary
   console.log(`Seeded ${companies} companies, ${sources} sources, ${DEFAULT_RELEVANCE_RULES.length} relevance rules.`);
 }
 
