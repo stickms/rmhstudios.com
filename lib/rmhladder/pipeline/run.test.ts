@@ -139,8 +139,6 @@ function makeFakeRunPrisma(initialSources: SourceRow[]): RunPrisma & {
           id,
           ...(create as AnyRow),
           alternateUrls: ((create as AnyRow).alternateUrls as string[] | undefined) ?? [],
-          // externalId is not persisted by processSource (no schema column), so null here.
-          externalId: null,
           failedCheckCount: ((create as AnyRow).failedCheckCount as number) ?? 0,
         };
         jobsByHash.set(where.dedupeHash, row);
@@ -419,6 +417,51 @@ describe('scenario C — platforms filter and limitSources honored', () => {
     expect(result.discovered).toBe(0);
     expect(result.created).toBe(0);
     expect(prisma._state.scrapeRuns.size).toBe(1);
+  });
+});
+
+// ── Scenario E: end-to-end externalId — recheck strikes a job dropped from the board ──
+
+describe('scenario E — externalId persistence: recheck strikes job absent from second run board', () => {
+  // One source, two runs. First run: full board (2 jobs). Second run: board drops one job.
+  // The recheck feed must read the real externalId column and issue struck=1.
+  const prisma = makeFakeRunPrisma([SRC_GH_GOOD]);
+
+  // Partial board response: only job 4285367007 is present (4285367008 dropped).
+  const PARTIAL_GH_FIXTURE = JSON.stringify({
+    jobs: [
+      {
+        id: 4285367007,
+        title: 'Product Management Intern',
+        updated_at: '2026-06-20T12:00:00-04:00',
+        first_published: '2026-06-01T09:00:00-04:00',
+        requisition_id: 'R-1234',
+        location: { name: 'New York, NY' },
+        absolute_url: 'https://boards.greenhouse.io/stripe/jobs/4285367007',
+        content: '&lt;p&gt;Join our payments team as a PM intern.&lt;/p&gt;',
+      },
+    ],
+  });
+
+  it('first run: creates 2 active jobs with externalIds persisted', async () => {
+    const result = await runPipeline(
+      { prisma, fetchImpl: makeStubFetch({ greenhouse: { goodco: 'fixture' } }), now: NOW, sleepMs: 0 },
+      { trigger: 'cron' },
+    );
+    expect(result.created).toBe(2);
+    expect(result.struck).toBe(0);
+  });
+
+  it('second run with one job dropped: struck = 1', async () => {
+    // Board now only has job 4285367007; 4285367008 is gone → recheck strikes it.
+    const partialFetch = makeStubFetch({
+      pages: { [ghUrl('goodco')]: { status: 200, body: PARTIAL_GH_FIXTURE } },
+    });
+    const result = await runPipeline(
+      { prisma, fetchImpl: partialFetch, now: new Date(NOW.getTime() + 60_000), sleepMs: 0 },
+      { trigger: 'cron' },
+    );
+    expect(result.struck).toBe(1);
   });
 });
 

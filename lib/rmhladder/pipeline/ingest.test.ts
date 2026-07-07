@@ -274,6 +274,12 @@ describe('assessJob — fields completeness', () => {
     expect(result.fields.programType).toBe('entry_level');
     expect(result.fields.employmentType).toBe('full_time');
   });
+
+  it('carries externalId from the normalized job', () => {
+    const result = assessJob(baseArgs());
+    // makeNormalized defaults externalId to 'ext-1'
+    expect(result.fields.externalId).toBe('ext-1');
+  });
 });
 
 // ── assessJob: unclear early-career → ambiguous_early_career ────────────────

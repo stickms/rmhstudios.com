@@ -2174,6 +2174,7 @@ model LadderJob {
   originalPostingUrl       String
   canonicalApplyUrl        String?
   externalRequisitionId    String?
+  externalId               String?
   descriptionSummary       String?
   fullDescription          String?
   dedupeHash               String                @unique

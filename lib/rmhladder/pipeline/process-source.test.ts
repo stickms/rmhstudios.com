@@ -177,6 +177,13 @@ describe('processSource', () => {
     it('sets source lastSuccessAt', () => {
       expect(sharedPrisma._state.lastSourceUpdate?.lastSuccessAt).toEqual(NOW);
     });
+
+    it('stored job row carries externalId "4285367007" from the adapter', () => {
+      const job = [...sharedPrisma._state.jobs.values()].find(
+        (r) => (r as { externalId?: string }).externalId === '4285367007',
+      );
+      expect(job).toBeDefined();
+    });
   });
 
   describe('scenario 2 — re-run same board (state retained)', () => {

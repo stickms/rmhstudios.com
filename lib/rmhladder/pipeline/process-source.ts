@@ -176,6 +176,7 @@ export async function processSource(
           originalPostingUrl: f.originalPostingUrl,
           canonicalApplyUrl: f.canonicalApplyUrl,
           externalRequisitionId: f.externalRequisitionId,
+          externalId: f.externalId,
           descriptionSummary: f.descriptionSummary,
           fullDescription: f.fullDescription,
           earlyCareerScore: f.earlyCareerScore,

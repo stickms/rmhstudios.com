@@ -44,6 +44,7 @@ export interface JobAssessmentFields {
   originalPostingUrl: string;
   canonicalApplyUrl: string | null;
   externalRequisitionId: string | null;
+  externalId: string | null;
   descriptionSummary: string | null;
   fullDescription: string | null;
   earlyCareerScore: number;
@@ -173,6 +174,7 @@ export function assessJob(args: {
     originalPostingUrl: normalized.absoluteUrl,
     canonicalApplyUrl: normalized.applyUrl,
     externalRequisitionId: normalized.requisitionId,
+    externalId: normalized.externalId,
     descriptionSummary,
     fullDescription: normalized.descriptionHtml,
     earlyCareerScore: ecResult.score,
