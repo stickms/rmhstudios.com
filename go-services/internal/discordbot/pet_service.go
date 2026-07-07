@@ -275,6 +275,7 @@ func (ps *PetService) simpleAction(
 
 	if result.OK {
 		ps.creditCaretaker(ctx, userID, username, result.Care)
+		ps.refreshPresence(&snap) // reflect the new state in the bot's status
 	}
 
 	embed := ps.statusEmbed(&snap, mood, now, res)
@@ -383,6 +384,8 @@ func (ps *PetService) HandleRevive(ctx context.Context, s *discordgo.Session, i 
 	mood := pet.mood()
 	mu.Unlock()
 
+	ps.refreshPresence(&snap) // he's alive again — update the status
+
 	embed := ps.statusEmbed(&snap, mood, now, decayResult{})
 	embed.Description = fmt.Sprintf("✨ **Alex is reborn!** Welcome back to the world, lil guy (generation %d) 🍼\n%s\nTake better care this time fr 🙏\n\n", snap.Generation, legacyNote(snap.Intelligence)) + embed.Description
 	embed.Footer = attributeFooter(username, "✨", "revived Alex")
@@ -432,6 +435,8 @@ func (ps *PetService) HandleNewLife(ctx context.Context, s *discordgo.Session, i
 	snap := *pet
 	mood := pet.mood()
 	mu.Unlock()
+
+	ps.refreshPresence(&snap) // fresh newborn — update the status
 
 	embed := ps.statusEmbed(&snap, mood, now, decayResult{})
 	embed.Description = fmt.Sprintf(
@@ -588,11 +593,24 @@ func (ps *PetService) HandleCaretakers(ctx context.Context, s *discordgo.Session
 	return ps.editEmbed(s, i, embed, nil)
 }
 
-// HandleToggleBroadcasts implements /alexmessages — enable/disable Alex's random
-// ambient posts for this server. mode is "on", "off", or "" (flip). Permission is
-// enforced by the caller (bot owner or Manage Messages). Care alerts and life
-// events are unaffected.
-func (ps *PetService) HandleToggleBroadcasts(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate, mode string) error {
+// messageLevelBlurb describes what each /alexmessages level does.
+var messageLevelBlurb = map[string]struct {
+	color int
+	title string
+	desc  string
+}{
+	msgLevelAll: {0x34d399, "🔔 Alex's messages: ALL",
+		"Alex will send **everything** here — his random slice-of-life posts, care alerts when he needs something, and big life events."},
+	msgLevelCare: {0xf59e0b, "🩹 Alex's messages: CARE ONLY",
+		"Alex will only ping here when he **genuinely needs care** or hits a **life event** (growing up, passing out). No random chatter."},
+	msgLevelOff: {0x6b7280, "🔕 Alex's messages: SILENT",
+		"Alex will be **completely silent** in this server — no proactive messages at all. Commands still work; he just won't message on his own."},
+}
+
+// HandleSetMessages implements /alexmessages — set this server's proactive-message
+// level. level is "all", "care", "off", or "" (report the current setting).
+// Permission is enforced by the caller (bot owner or Manage Messages).
+func (ps *PetService) HandleSetMessages(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate, level string) error {
 	guildID, ok := requireGuild(s, i)
 	if !ok {
 		return nil
@@ -602,34 +620,39 @@ func (ps *PetService) HandleToggleBroadcasts(ctx context.Context, s *discordgo.S
 	}
 	_, username := interactionUser(i)
 
-	current, err := ps.repo.guildAmbientEnabled(ctx, guildID)
-	if err != nil {
-		return ps.editEmbed(s, i, errEmbed("couldn't read Alex's settings rn"), nil)
+	// No level given → report the current setting + the options.
+	if level == "" {
+		current, err := ps.repo.guildMessageLevel(ctx, guildID)
+		if err != nil {
+			return ps.editEmbed(s, i, errEmbed("couldn't read Alex's settings rn"), nil)
+		}
+		info := messageLevelBlurb[current]
+		if info.title == "" {
+			info = messageLevelBlurb[msgLevelAll]
+		}
+		embed := &discordgo.MessageEmbed{
+			Color:       info.color,
+			Title:       "⚙️ Alex's messages here: currently **" + strings.ToUpper(current) + "**",
+			Description: info.desc + "\n\nChange it with `/alexmessages` → `all` · `care` · `off`.",
+			Footer:      attributeFooter(username, "👀", "checked Alex's message settings"),
+		}
+		return ps.editEmbed(s, i, embed, nil)
 	}
-	var newState bool
-	switch mode {
-	case "on":
-		newState = true
-	case "off":
-		newState = false
-	default:
-		newState = !current // toggle
+
+	if _, valid := messageLevelBlurb[level]; !valid {
+		return ps.editEmbed(s, i, errEmbed("unknown setting — pick `all`, `care`, or `off`."), nil)
 	}
-	if err := ps.repo.setGuildAmbient(ctx, guildID, i.ChannelID, newState); err != nil {
+	if err := ps.repo.setGuildMessageLevel(ctx, guildID, i.ChannelID, level); err != nil {
 		return ps.editEmbed(s, i, errEmbed("couldn't update Alex's settings rn"), nil)
 	}
 
-	embed := &discordgo.MessageEmbed{}
-	if newState {
-		embed.Color = 0x34d399
-		embed.Title = "🔔 Alex's random messages: ON"
-		embed.Description = "Alex will drop the occasional slice-of-life post here again (probably about boba 🧋).\n_Care alerts and big life events always come through regardless._"
-	} else {
-		embed.Color = 0x6b7280
-		embed.Title = "🔕 Alex's random messages: OFF"
-		embed.Description = "Alex will stop posting his random ambient messages in this server.\n_He'll still ping when he genuinely needs care, or hits a milestone like growing up._"
+	info := messageLevelBlurb[level]
+	embed := &discordgo.MessageEmbed{
+		Color:       info.color,
+		Title:       info.title,
+		Description: info.desc,
+		Footer:      attributeFooter(username, "⚙️", "changed Alex's messages here"),
 	}
-	embed.Footer = attributeFooter(username, "⚙️", "changed Alex's messages here")
 	return ps.editEmbed(s, i, embed, nil)
 }
 

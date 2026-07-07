@@ -371,6 +371,51 @@ func TestValidCareer(t *testing.T) {
 	}
 }
 
+func TestWantsMessage(t *testing.T) {
+	cases := []struct {
+		level string
+		kind  proactiveKind
+		want  bool
+	}{
+		{msgLevelAll, kindAmbient, true},
+		{msgLevelAll, kindCareAlert, true},
+		{msgLevelAll, kindGrewUp, true},
+		{msgLevelAll, kindDied, true},
+		{msgLevelCare, kindAmbient, false}, // care-only drops random ambient
+		{msgLevelCare, kindCareAlert, true},
+		{msgLevelCare, kindGrewUp, true}, // life events still count as care
+		{msgLevelCare, kindDied, true},
+		{msgLevelOff, kindAmbient, false},
+		{msgLevelOff, kindCareAlert, false},
+		{msgLevelOff, kindGrewUp, false},
+		{msgLevelOff, kindDied, false},
+		{"", kindAmbient, true}, // unknown/empty defaults to "all"
+	}
+	for _, c := range cases {
+		if got := wantsMessage(c.level, c.kind); got != c.want {
+			t.Errorf("wantsMessage(%q, %v) = %v, want %v", c.level, c.kind, got, c.want)
+		}
+	}
+}
+
+func TestPresenceReflectsState(t *testing.T) {
+	now := time.Unix(1_700_000_000, 0).UTC()
+	p := newPet("g1", now)
+	if txt := presenceText(p); !strings.Contains(txt, "Baby Alex") {
+		t.Errorf("infant presence should mention Baby Alex, got %q", txt)
+	}
+	if s := presenceStatus(p); s != "online" {
+		t.Errorf("healthy pet should be online, got %q", s)
+	}
+	p.Alive = false
+	if txt := presenceText(p); !strings.Contains(txt, "passed out") {
+		t.Errorf("dead pet presence should say passed out, got %q", txt)
+	}
+	if s := presenceStatus(p); s != "dnd" {
+		t.Errorf("dead pet should be dnd, got %q", s)
+	}
+}
+
 func TestCanToggleAlex(t *testing.T) {
 	b := &Bot{cfg: Config{OwnerID: "owner1"}}
 

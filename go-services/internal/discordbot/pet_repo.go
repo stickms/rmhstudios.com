@@ -135,12 +135,19 @@ func (r *petRepo) save(ctx context.Context, p *PetState) error {
 // for each server he's in, and whether he's already introduced himself there.
 // That per-guild state lives here, decoupled from the singleton pet.
 
+// Proactive-message levels for a server (discord_alex_guild.messageLevel).
+const (
+	msgLevelAll  = "all"  // ambient + care alerts + life events (default)
+	msgLevelCare = "care" // care alerts + life events only (no random ambient)
+	msgLevelOff  = "off"  // completely silent
+)
+
 // GuildChannel is a server + the channel Alex last spoke / was used in there,
-// plus whether that server wants his random ambient posts.
+// plus that server's proactive-message level.
 type GuildChannel struct {
-	GuildID        string
-	ChannelID      string
-	AmbientEnabled bool
+	GuildID      string
+	ChannelID    string
+	MessageLevel string
 }
 
 // recordGuildChannel remembers the channel a command was last used in for a
@@ -213,7 +220,7 @@ func (r *petRepo) allGuildChannels(ctx context.Context) ([]GuildChannel, error) 
 		return nil, nil
 	}
 	rows, err := r.db.Pool.Query(ctx,
-		`SELECT "guildId","lastChannelId","ambientEnabled" FROM "discord_alex_guild" WHERE "lastChannelId" IS NOT NULL`)
+		`SELECT "guildId","lastChannelId","messageLevel" FROM "discord_alex_guild" WHERE "lastChannelId" IS NOT NULL`)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +228,7 @@ func (r *petRepo) allGuildChannels(ctx context.Context) ([]GuildChannel, error) 
 	var out []GuildChannel
 	for rows.Next() {
 		var g GuildChannel
-		if err := rows.Scan(&g.GuildID, &g.ChannelID, &g.AmbientEnabled); err != nil {
+		if err := rows.Scan(&g.GuildID, &g.ChannelID, &g.MessageLevel); err != nil {
 			return nil, err
 		}
 		out = append(out, g)
@@ -229,28 +236,28 @@ func (r *petRepo) allGuildChannels(ctx context.Context) ([]GuildChannel, error) 
 	return out, rows.Err()
 }
 
-// guildAmbientEnabled reports whether a guild currently receives Alex's random
-// ambient posts. Defaults to true (enabled) when the guild has no row yet.
-func (r *petRepo) guildAmbientEnabled(ctx context.Context, guildID string) (bool, error) {
+// guildMessageLevel returns a guild's proactive-message level, defaulting to
+// "all" when the guild has no row yet.
+func (r *petRepo) guildMessageLevel(ctx context.Context, guildID string) (string, error) {
 	if r.db == nil {
-		return true, nil
+		return msgLevelAll, nil
 	}
-	var enabled bool
+	var level string
 	err := r.db.Pool.QueryRow(ctx,
-		`SELECT "ambientEnabled" FROM "discord_alex_guild" WHERE "guildId"=$1`, guildID).Scan(&enabled)
+		`SELECT "messageLevel" FROM "discord_alex_guild" WHERE "guildId"=$1`, guildID).Scan(&level)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return true, nil
+		return msgLevelAll, nil
 	}
 	if err != nil {
-		return true, err
+		return msgLevelAll, err
 	}
-	return enabled, nil
+	return level, nil
 }
 
-// setGuildAmbient sets a guild's ambient-posts preference, upserting the row.
-// A non-empty channelID is also recorded (so a freshly-toggled server is in the
+// setGuildMessageLevel sets a guild's proactive-message level, upserting the row.
+// A non-empty channelID is also recorded (so a freshly-configured server is in the
 // broadcast set); an empty one leaves any existing channel untouched.
-func (r *petRepo) setGuildAmbient(ctx context.Context, guildID, channelID string, enabled bool) error {
+func (r *petRepo) setGuildMessageLevel(ctx context.Context, guildID, channelID, level string) error {
 	if r.db == nil {
 		return nil
 	}
@@ -259,13 +266,13 @@ func (r *petRepo) setGuildAmbient(ctx context.Context, guildID, channelID string
 		channel = &channelID
 	}
 	_, err := r.db.Pool.Exec(ctx,
-		`INSERT INTO "discord_alex_guild" ("guildId","lastChannelId","ambientEnabled","updatedAt")
+		`INSERT INTO "discord_alex_guild" ("guildId","lastChannelId","messageLevel","updatedAt")
 		 VALUES ($1,$2,$3,$4)
 		 ON CONFLICT ("guildId") DO UPDATE SET
-		   "ambientEnabled"=EXCLUDED."ambientEnabled",
+		   "messageLevel"=EXCLUDED."messageLevel",
 		   "lastChannelId"=COALESCE(EXCLUDED."lastChannelId", "discord_alex_guild"."lastChannelId"),
 		   "updatedAt"=EXCLUDED."updatedAt"`,
-		guildID, channel, enabled, time.Now().UTC())
+		guildID, channel, level, time.Now().UTC())
 	return err
 }
 

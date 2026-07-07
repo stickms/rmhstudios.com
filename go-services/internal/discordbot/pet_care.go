@@ -82,14 +82,30 @@ const (
 // plan carries the decision made under the global lock out to the (unlocked)
 // broadcast.
 type plan struct {
-	kind proactiveKind
-	pet  PetState
-	mood Mood
-	need string // for kindCareAlert
+	kind   proactiveKind
+	pet    PetState
+	mood   Mood
+	need   string // for kindCareAlert
+	loaded bool   // pet was successfully loaded (pet/mood are valid)
 }
 
-// careTick advances the global Alex once and broadcasts any proactive message to
-// every server's last-used channel.
+// wantsMessage reports whether a server at the given /alexmessages level should
+// receive a proactive message of the given kind. "care" drops only random ambient
+// posts; "off" drops everything; anything else ("all") gets it.
+func wantsMessage(level string, kind proactiveKind) bool {
+	switch level {
+	case msgLevelOff:
+		return false
+	case msgLevelCare:
+		return kind != kindAmbient
+	default:
+		return true
+	}
+}
+
+// careTick advances the global Alex once, refreshes the bot's Discord presence to
+// reflect his state, and broadcasts any proactive message to every server's
+// last-used channel.
 func (ps *PetService) careTick(ctx context.Context) {
 	s := ps.getSession()
 	if s == nil {
@@ -98,6 +114,9 @@ func (ps *PetService) careTick(ctx context.Context) {
 	now := time.Now().UTC()
 
 	pl := ps.decideGlobal(ctx, now)
+	if pl.loaded {
+		ps.updatePresence(s, &pl.pet)
+	}
 	if pl.kind == kindNone {
 		return
 	}
@@ -161,10 +180,9 @@ func (ps *PetService) decideGlobal(ctx context.Context, now time.Time) plan {
 		ps.logger.Warn("care tick save failed", "error", err)
 	}
 
-	if kind == kindNone {
-		return plan{kind: kindNone}
-	}
-	return plan{kind: kind, pet: *pet, mood: pet.mood(), need: need}
+	// Always return the loaded pet so the caller can refresh presence even when
+	// there's nothing to broadcast this tick.
+	return plan{kind: kind, pet: *pet, mood: pet.mood(), need: need, loaded: true}
 }
 
 // dueSince reports whether `interval` has elapsed since `last` (nil last = due).
@@ -220,9 +238,9 @@ func (ps *PetService) broadcast(ctx context.Context, s *discordgo.Session, pl pl
 	}
 
 	for _, gc := range channels {
-		// Servers that turned off Alex's random messages (/alexmessages) opt out of
-		// the ambient slice-of-life posts, but still get care alerts + life events.
-		if pl.kind == kindAmbient && !gc.AmbientEnabled {
+		// Respect each server's /alexmessages level: "all" gets everything, "care"
+		// skips random ambient posts, "off" gets nothing.
+		if !wantsMessage(gc.MessageLevel, pl.kind) {
 			continue
 		}
 		msg := &discordgo.MessageSend{Content: content, Embeds: embeds}
