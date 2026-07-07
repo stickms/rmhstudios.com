@@ -176,11 +176,12 @@ describe('recheckSource', () => {
       jobId: 'j2',
       status: 'expired',
       confidence: 90,
+      evidence: '3 consecutive checks found the posting absent from the greenhouse board.',
     });
 
-    // j4 struck: failedCheckCount=1
+    // j4 struck: failedCheckCount=1, lastCheckedAt set
     const j4Update = prisma._state.jobUpdates.find((u) => u['id'] === 'j4');
-    expect(j4Update).toMatchObject({ failedCheckCount: 1 });
+    expect(j4Update).toMatchObject({ failedCheckCount: 1, lastCheckedAt: new Date('2026-07-01') });
 
     // j5 skipped: no update
     expect(prisma._state.jobUpdates.find((u) => u['id'] === 'j5')).toBeUndefined();
@@ -205,6 +206,7 @@ describe('recheckSource', () => {
 
     expect(result).toEqual({ reset: 0, struck: 0, expired: 0, skipped: 5, tripped: true });
     expect(prisma._state.jobUpdates).toHaveLength(0);
+    expect(prisma._state.verifications).toHaveLength(0);
     expect(prisma._state.sourceUpdate).toMatchObject({ id: 's1', status: 'error' });
     expect(prisma._state.reviewTasks).toHaveLength(1);
     expect(prisma._state.reviewTasks[0]).toMatchObject({
