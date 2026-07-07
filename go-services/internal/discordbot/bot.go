@@ -104,14 +104,15 @@ func slashCommands() []*discordgo.ApplicationCommand {
 		{Name: "caretakers", Description: "See who's taken the best care of Alex 🏆"},
 		{
 			Name:        "alexmessages",
-			Description: "Toggle Alex's random messages in this server (Manage Messages / owner only) 🔔",
+			Description: "Set Alex's messages in this server (Manage Messages / owner only) 🔔",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
-					Type: discordgo.ApplicationCommandOptionString, Name: "state",
-					Description: "on, off, or leave blank to toggle", Required: false,
+					Type: discordgo.ApplicationCommandOptionString, Name: "level",
+					Description: "How much Alex talks here (blank = show current)", Required: false,
 					Choices: []*discordgo.ApplicationCommandOptionChoice{
-						{Name: "🔔 On", Value: "on"},
-						{Name: "🔕 Off", Value: "off"},
+						{Name: "🔔 All messages", Value: "all"},
+						{Name: "🩹 Care messages only", Value: "care"},
+						{Name: "🔕 Completely silent", Value: "off"},
 					},
 				},
 			},
@@ -300,7 +301,7 @@ func (b *Bot) routeCommand(ctx context.Context, s *discordgo.Session, i *discord
 			})
 			return
 		}
-		err = b.pet.HandleToggleBroadcasts(ctx, s, i, opts.str("state"))
+		err = b.pet.HandleSetMessages(ctx, s, i, opts.str("level"))
 	default:
 		b.logger.Warn("unknown_command", "name", data.Name)
 		return

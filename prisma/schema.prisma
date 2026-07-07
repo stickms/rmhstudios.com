@@ -2744,14 +2744,16 @@ model DiscordAlexPet {
 // Decoupled from the (global) pet so his care/ambient posts can broadcast to
 // every server's last-used channel.
 model DiscordAlexGuild {
-  guildId        String    @id
-  lastChannelId  String?
-  introSentAt    DateTime?
-  // Per-server toggle for Alex's random "ambient" broadcasts (the slice-of-life
-  // posts). Care alerts and life events are unaffected. Default on. Only the bot
-  // owner or members with Manage Messages can change it via /alexmessages.
-  ambientEnabled Boolean   @default(true)
-  updatedAt      DateTime  @updatedAt
+  guildId       String    @id
+  lastChannelId String?
+  introSentAt   DateTime?
+  // Per-server proactive-message level, set via /alexmessages by the bot owner or
+  // a member with Manage Messages:
+  //   "all"  — random ambient posts + care alerts + life events (default)
+  //   "care" — care alerts + life events only (no random chatter)
+  //   "off"  — completely silent (no proactive messages at all)
+  messageLevel  String    @default("all")
+  updatedAt     DateTime  @updatedAt
 
   @@map("discord_alex_guild")
 }

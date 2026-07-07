@@ -33,7 +33,7 @@ generation to show what he looks like right now.
 | `/newlife` | Voluntary New Game+ once Alex is a grown adult — he "graduates" and a new generation begins |
 | `/rename <name>` | Give Alex a new name |
 | `/caretakers` | Leaderboard of who's taken the best care of Alex |
-| `/alexmessages [on\|off]` | **(Manage Messages / bot owner only)** Toggle Alex's random ambient posts in this server. Blank = flip. Care alerts and life events are unaffected. |
+| `/alexmessages [all\|care\|off]` | **(Manage Messages / bot owner only)** Set how much Alex talks in this server: `all` (everything), `care` (only care alerts + life events), `off` (completely silent). Blank shows the current setting. |
 
 Alex is a **global pet** — commands work in any server (but not DMs, so the bot
 knows which channel to talk back in).
@@ -85,10 +85,21 @@ last-used channel** (at most one per tick), by priority:
 If a server's channel becomes unreachable (deleted / bot lost access), it's
 cleared so the bot stops broadcasting there.
 
-Any server can opt out of the **random ambient posts** with `/alexmessages off`
-(the bot owner or a member with **Manage Messages** can toggle it; stored per
-server in `discord_alex_guild.ambientEnabled`). Care alerts and life events still
-come through — only the random slice-of-life chatter is muted.
+Each server picks how much Alex talks with `/alexmessages` (bot owner or a member
+with **Manage Messages**; stored per server in `discord_alex_guild.messageLevel`):
+
+- `all` (default) — random ambient posts + care alerts + life events.
+- `care` — care alerts + life events only (no random chatter).
+- `off` — completely silent; no proactive messages at all.
+
+## Discord presence
+
+The bot's own Discord status reflects the global Alex's current state — a custom
+status like `🧋 Adult Alex · just vibin`, `🍽️ Kid Alex · starving no cap`, or
+`💀 passed out — someone /revive me`, with the online dot turning **idle** when
+he's sleepy and **do-not-disturb** when he's sick or gone. It's refreshed on
+every care-loop tick and (throttled) right after care commands, so anyone can
+glance at the bot in the member list and see how Alex is doing.
 
 ## Visibility & persistence
 
@@ -133,10 +144,13 @@ Optional pacing overrides (see `.env.example`): `ALEX_GROWTH_SCALE`,
   holding the shared Alex: stats, age, stage, career, intelligence, and the global
   care-loop throttle timestamps.
 - `discord_alex_guild` — one row per server: which channel Alex last spoke / was
-  used in, and whether he's introduced himself there. Drives the broadcast + the
-  one-time intro.
+  used in, whether he's introduced himself there, and the server's `messageLevel`
+  (all / care / off). Drives the broadcast, the one-time intro, and `/alexmessages`.
 - `discord_alex_caretaker` — one row per user (keyed by the `"global"` sentinel) —
   the global leaderboard.
 
-Migrations: `prisma/migrations/20260706000000_add_discord_alex_tamagotchi/`
-(initial) and `20260707000000_add_discord_alex_global_guild/` (global refactor).
+Migrations: `20260706000000_add_discord_alex_tamagotchi/` (initial),
+`20260707000000_add_discord_alex_global_guild/` (global refactor),
+`20260707120000_add_alex_ambient_toggle/` (initial per-server ambient boolean),
+and `20260707140000_add_alex_message_level/` (replaces it with the three-way
+`messageLevel`, backfilling existing rows).

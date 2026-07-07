@@ -11,6 +11,7 @@ go_library(
         "pet_care.go",
         "pet_image.go",
         "pet_intro.go",
+        "pet_presence.go",
         "pet_repo.go",
         "pet_service.go",
         "run.go",
