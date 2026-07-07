@@ -21,7 +21,9 @@ async function fetchBoard(ctx: AdapterContext): Promise<GhJob[] | null> {
   const res = await politeFetch(greenhouseBoardUrl(ctx.slug), { fetchImpl: ctx.fetchImpl });
   if (!res.ok) return null;
   try {
-    return (JSON.parse(res.body) as { jobs?: GhJob[] }).jobs ?? [];
+    const parsed = JSON.parse(res.body) as { jobs?: unknown };
+    const jobs = parsed.jobs;
+    return Array.isArray(jobs) ? (jobs as GhJob[]) : null;
   } catch {
     return null;
   }

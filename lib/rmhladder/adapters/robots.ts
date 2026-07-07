@@ -42,9 +42,13 @@ export function isPathAllowed(robotsTxt: string, userAgent: string, path: string
 }
 
 export async function checkRobots(url: string, fetchImpl?: typeof fetch): Promise<boolean> {
-  const u = new URL(url);
-  const res = await politeFetch(`${u.origin}/robots.txt`, { fetchImpl });
-  if (!res.ok) return true; // no robots.txt → allowed
-  const { LADDER_USER_AGENT } = await import('./http');
-  return isPathAllowed(res.body, LADDER_USER_AGENT, u.pathname);
+  try {
+    const u = new URL(url);
+    const res = await politeFetch(`${u.origin}/robots.txt`, { fetchImpl });
+    if (!res.ok) return true; // no robots.txt → allowed
+    const { LADDER_USER_AGENT } = await import('./http');
+    return isPathAllowed(res.body, LADDER_USER_AGENT, u.pathname);
+  } catch {
+    return true; // malformed URL or fetch failure → allowed
+  }
 }

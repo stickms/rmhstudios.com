@@ -2,10 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { verifyGenericUrl } from './generic';
 
 const page = (body: string, status = 200) =>
-  (async (url: any) =>
-    String(url).endsWith('/robots.txt')
+  (async (url: string | URL) => {
+    new URL(url); // validate URL; throws on malformed
+    return String(url).endsWith('/robots.txt')
       ? new Response('User-agent: *\nDisallow:', { status: 200 })
-      : new Response(body, { status })) as typeof fetch;
+      : new Response(body, { status });
+  }) as typeof fetch;
 
 const GOOD_HTML = `<html><body>
   <h1>Investment Banking Summer Analyst 2027</h1>
@@ -35,7 +37,7 @@ describe('verifyGenericUrl', () => {
   });
   it('robots disallow → blocked, page never fetched', async () => {
     let pageFetched = false;
-    const f = (async (url: any) => {
+    const f = (async (url: string | URL) => {
       if (String(url).endsWith('/robots.txt')) return new Response('User-agent: *\nDisallow: /careers/', { status: 200 });
       pageFetched = true;
       return new Response(GOOD_HTML, { status: 200 });
@@ -52,5 +54,10 @@ describe('verifyGenericUrl', () => {
   it('partial title match still counts (60% token overlap)', async () => {
     const e = await verifyGenericUrl({ ...args, fetchImpl: page('<h1>Investment Banking Summer Analyst</h1><p>Goldman Sachs</p><a>apply</a>') });
     expect(e.titleMatch).toBe(true);
+  });
+  it('malformed URL does not throw; returns unfetched evidence', async () => {
+    const e = await verifyGenericUrl({ ...args, url: 'not a url', fetchImpl: page(GOOD_HTML) });
+    expect(e.fetched).toBe(false);
+    expect(e.blocked).toBe(false);
   });
 });

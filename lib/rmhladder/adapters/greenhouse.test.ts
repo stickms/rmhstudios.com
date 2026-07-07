@@ -30,6 +30,10 @@ describe('greenhouseAdapter.discoverJobs', () => {
     const jobs = await greenhouseAdapter.discoverJobs({ ...ctx, fetchImpl: stub(404, 'not found') });
     expect(jobs).toEqual([]);
   });
+  it('returns [] when jobs is not an array', async () => {
+    expect(await greenhouseAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{"jobs":"maintenance"}') })).toEqual([]);
+    expect(await greenhouseAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{"error":"x"}') })).toEqual([]);
+  });
 });
 
 describe('greenhouseAdapter.verifyJob', () => {
@@ -53,6 +57,9 @@ describe('greenhouseAdapter.detectExpired', () => {
   it('absent id → expired', async () => {
     expect(await greenhouseAdapter.detectExpired(ctx, '999')).toBe(true);
     expect(await greenhouseAdapter.detectExpired(ctx, '4285367007')).toBe(false);
+  });
+  it('wrong-shape 200 is NOT expiry evidence', async () => {
+    expect(await greenhouseAdapter.detectExpired({ ...ctx, fetchImpl: stub(200, '{"error":"x"}') }, '4285367007')).toBe(false);
   });
 });
 

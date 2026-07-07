@@ -60,6 +60,9 @@ describe('leverAdapter.detectExpired', () => {
     expect(await leverAdapter.detectExpired(ctx, 'missing-id')).toBe(true);
     expect(await leverAdapter.detectExpired(ctx, 'a1b2c3d4-uuid')).toBe(false);
   });
+  it('fetch failure → not expired (false)', async () => {
+    expect(await leverAdapter.detectExpired({ ...ctx, fetchImpl: stub(500, '') }, 'a1b2c3d4-uuid')).toBe(false);
+  });
 });
 
 describe('leverPostingsUrl', () => {
