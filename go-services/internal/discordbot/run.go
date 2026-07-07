@@ -29,7 +29,9 @@ func Run(ctx context.Context, d worker.Deps) error {
 	deepseek := NewDeepSeekClient(cfg.DeepSeekKey, cfg.DeepSeekMod)
 	repo := newPetRepo(d.DB)
 	imager := newAlexImager(repo, d.Logger)
-	pet := NewPetService(repo, imager, d.Logger)
+	// Base URL of the web app that renders the /caretakers leaderboard image.
+	imageBaseURL := config.GetString("ALEX_PUBLIC_BASE_URL", "https://rmhstudios.com")
+	pet := NewPetService(repo, imager, d.Logger, imageBaseURL)
 	chat := NewChatService(deepseek, d.DB, d.Logger)
 	chat.pet = pet // let /chat reflect and record Alex's live state
 

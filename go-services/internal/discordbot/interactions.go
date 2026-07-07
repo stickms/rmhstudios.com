@@ -22,6 +22,18 @@ func interactionUser(i *discordgo.InteractionCreate) (id, username string) {
 	return "", ""
 }
 
+// interactionAvatar returns the invoking user's Discord avatar hash (empty when
+// they have no custom avatar), used to render their face on the leaderboard.
+func interactionAvatar(i *discordgo.InteractionCreate) string {
+	if i.Member != nil && i.Member.User != nil {
+		return i.Member.User.Avatar
+	}
+	if i.User != nil {
+		return i.User.Avatar
+	}
+	return ""
+}
+
 // optionMap is a name->option lookup for slash command options.
 type optionMap map[string]*discordgo.ApplicationCommandInteractionDataOption
 

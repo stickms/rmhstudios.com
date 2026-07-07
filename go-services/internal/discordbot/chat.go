@@ -302,7 +302,7 @@ func (s *ChatService) HandleChat(ctx context.Context, sess *discordgo.Session, i
 	// Record the chat as caretaking: stamps the last channel used (so Alex's care
 	// loop knows where to talk), credits the caretaker, and cheers Alex up a touch.
 	if s.pet != nil {
-		s.pet.RecordChat(ctx, i.GuildID, i.ChannelID, userID, username)
+		s.pet.RecordChat(ctx, i.GuildID, i.ChannelID, userID, username, interactionAvatar(i))
 	}
 	return nil
 }
