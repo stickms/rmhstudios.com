@@ -21,6 +21,10 @@ export interface SourceRunStats {
  */
 export interface PrismaLike {
   ladderJob: {
+    findUnique(args: {
+      where: { dedupeHash: string };
+      select?: Record<string, unknown>;
+    }): Promise<{ id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string } | null>;
     upsert(args: {
       where: { dedupeHash: string };
       create: Record<string, unknown>;
@@ -108,6 +112,11 @@ export async function processSource(
     const normalizedJobs = await adapter.discoverJobs(ctx);
     stats.discovered = normalizedJobs.length;
 
+    // Zero discoveries carry no success evidence (empty board or fetch failure); skip lastSuccessAt.
+    if (stats.discovered === 0) {
+      return { ...stats, errorMessage: 'no jobs discovered (empty board or fetch failure)' };
+    }
+
     // 4. Per-job pipeline.
     for (const normalized of normalizedJobs) {
       // 4a. Verify — re-uses the memoized fetch, no extra network round-trip.
@@ -131,9 +140,22 @@ export async function processSource(
       const isVerified =
         f.verificationStatus === 'verified_active' || f.verificationStatus === 'verified_probable';
 
-      // 4c. Upsert the job row.
-      //     Created-vs-updated is derived from the returned discoveredAt:
-      //     create sets discoveredAt = now; update leaves it untouched.
+      // 4c. Pre-read existing row to detect create-vs-update and compute alternateUrls merge.
+      //     This makes the merge logic explicit here rather than hiding it in the DB layer,
+      //     and is safe for real Prisma (plain array set in the update payload).
+      const existing = await deps.prisma.ladderJob.findUnique({
+        where: { dedupeHash: assessment.dedupeHash },
+      });
+      const isNew = existing === null;
+
+      // When the canonical URL has changed, push the OLD url into alternateUrls (deduped, cap 10).
+      let mergedAlternates: string[] | undefined;
+      if (existing && existing.originalPostingUrl !== f.originalPostingUrl) {
+        const combined = [...existing.alternateUrls, existing.originalPostingUrl];
+        mergedAlternates = [...new Set(combined)].slice(0, 10);
+      }
+
+      // 4d. Upsert the job row.
       const upserted = await deps.prisma.ladderJob.upsert({
         where: { dedupeHash: assessment.dedupeHash },
         create: {
@@ -179,21 +201,20 @@ export async function processSource(
           urgencyFlag: f.urgencyFlag,
           status: jobStatus,
           ...(isVerified ? { lastVerifiedAt: now } : {}),
-          // Pass new URL so the fake (and real) store can push it to alternateUrls
-          // when it differs from the stored value.
           originalPostingUrl: f.originalPostingUrl,
+          ...(mergedAlternates !== undefined ? { alternateUrls: mergedAlternates } : {}),
         },
       });
 
-      // Detect created vs updated: on create, discoveredAt === now.
-      if (upserted.discoveredAt.getTime() === now.getTime()) {
+      // Detect created vs updated from the pre-read result (real-Prisma-safe; avoids discoveredAt===now heuristic).
+      if (isNew) {
         stats.created++;
       } else {
         stats.updated++;
       }
       if (isVerified) stats.verified++;
 
-      // 4d. Record verification row.
+      // 4e. Record verification row.
       await deps.prisma.ladderVerification.create({
         data: {
           jobId: upserted.id,
@@ -203,12 +224,12 @@ export async function processSource(
         },
       });
 
-      // 4e. Create review tasks — one open task per reason, no duplicates.
+      // 4f. Create review tasks — one open task per reason, no duplicates.
       for (const reason of assessment.reviewReasons) {
-        const existing = await deps.prisma.ladderReviewTask.findFirst({
+        const existingTask = await deps.prisma.ladderReviewTask.findFirst({
           where: { jobId: upserted.id, reason, status: 'open' },
         });
-        if (!existing) {
+        if (!existingTask) {
           await deps.prisma.ladderReviewTask.create({
             data: {
               jobId: upserted.id,
@@ -231,6 +252,6 @@ export async function processSource(
     return stats;
   } catch (err) {
     // Per-source try/catch: any throw returns partial stats + errored flag. Never rethrows.
-    return { ...stats, errored: true, errorMessage: String(err) };
+    return { ...stats, errored: true, errorMessage: err instanceof Error ? err.message : String(err) };
   }
 }

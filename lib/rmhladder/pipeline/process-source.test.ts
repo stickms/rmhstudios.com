@@ -39,7 +39,7 @@ function makeCountingFetch(inner: typeof fetch) {
   return { impl, getCount: () => calls };
 }
 
-// ── In-memory fake Prisma (~40 lines) ────────────────────────────────────────
+// ── In-memory fake Prisma (~45 lines) ────────────────────────────────────────
 
 type AnyRow = Record<string, unknown>;
 
@@ -61,14 +61,17 @@ function makeFakePrisma(): PrismaLike & {
 
   return {
     ladderJob: {
+      async findUnique({ where }) {
+        const row = jobs.get(where.dedupeHash);
+        return row
+          ? (row as { id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string })
+          : null;
+      },
       async upsert({ where, create, update }) {
         const existing = jobs.get(where.dedupeHash);
         if (existing) {
-          const newUrl = (update as AnyRow).originalPostingUrl as string | undefined;
-          const storedUrl = existing.originalPostingUrl as string | undefined;
-          const altUrls: string[] = [...((existing.alternateUrls as string[]) ?? [])];
-          if (newUrl && newUrl !== storedUrl) altUrls.push(newUrl);
-          const updated: AnyRow = { ...existing, ...(update as AnyRow), alternateUrls: altUrls };
+          // Dumb spread — processSource itself computes alternateUrls merge before calling upsert.
+          const updated: AnyRow = { ...existing, ...(update as AnyRow) };
           jobs.set(where.dedupeHash, updated);
           return updated as ReturnType<PrismaLike['ladderJob']['upsert']> extends Promise<infer R>
             ? R
@@ -292,6 +295,100 @@ describe('processSource', () => {
       // discoverJobs + verifyJob for each of 2 jobs — all hit the same URL,
       // memoFetch serves from cache after the first network call.
       expect(getCount()).toBe(1);
+    });
+  });
+
+  describe('scenario 6 — alternateUrls merge when URL changes on re-run', () => {
+    const prisma6 = makeFakePrisma();
+    const ORIGINAL_URL_JOB1 = 'https://boards.greenhouse.io/stripe/jobs/4285367007';
+    const NEW_URL_JOB1 = 'https://boards.greenhouse.io/stripe/jobs/4285367007?v=2';
+
+    // Same jobs, different absolute_url — dedupeHash (company+title+location bucket) is unchanged.
+    const modifiedFixture = JSON.stringify({
+      jobs: [
+        {
+          id: 4285367007,
+          title: 'Product Management Intern',
+          updated_at: '2026-06-20T12:00:00-04:00',
+          first_published: '2026-06-01T09:00:00-04:00',
+          requisition_id: 'R-1234',
+          location: { name: 'New York, NY' },
+          absolute_url: NEW_URL_JOB1,
+          content: '&lt;p&gt;Join our payments team as a PM intern.&lt;/p&gt;',
+        },
+        {
+          id: 4285367008,
+          title: 'Senior Staff Engineer',
+          updated_at: '2026-06-21T12:00:00-04:00',
+          first_published: '2026-05-01T09:00:00-04:00',
+          requisition_id: null,
+          location: { name: 'Remote - US' },
+          absolute_url: 'https://boards.greenhouse.io/stripe/jobs/4285367008?v=2',
+          content: '&lt;p&gt;10+ years required.&lt;/p&gt;',
+        },
+      ],
+    });
+
+    function makeModifiedGreenhouseFetch(): typeof fetch {
+      return async (input, _init?) => {
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+            ? input.toString()
+            : (input as Request).url;
+        return url === GREENHOUSE_URL
+          ? new Response(modifiedFixture, { status: 200 })
+          : new Response('Not found', { status: 404 });
+      };
+    }
+
+    it('first run: creates 2 jobs with original URLs', async () => {
+      const stats = await processSource(
+        { prisma: prisma6, fetchImpl: makeGreenhouseFetch(), now: NOW },
+        SOURCE,
+      );
+      expect(stats.created).toBe(2);
+      expect(stats.updated).toBe(0);
+    });
+
+    it('second run with changed URLs: originalPostingUrl = new URL, alternateUrls has old URL not new', async () => {
+      const stats = await processSource(
+        { prisma: prisma6, fetchImpl: makeModifiedGreenhouseFetch(), now: new Date(NOW.getTime() + 60_000) },
+        SOURCE,
+      );
+
+      expect(stats.created).toBe(0);
+      expect(stats.updated).toBe(2);
+
+      // Find job1 row by its updated originalPostingUrl
+      const job1 = [...prisma6._state.jobs.values()].find(
+        (r) => (r as { originalPostingUrl: string }).originalPostingUrl === NEW_URL_JOB1,
+      ) as { originalPostingUrl: string; alternateUrls: string[] } | undefined;
+
+      expect(job1).toBeDefined();
+      // Old URL preserved in history
+      expect(job1!.alternateUrls).toContain(ORIGINAL_URL_JOB1);
+      // New URL is the canonical one, NOT duplicated in alternates
+      expect(job1!.alternateUrls).not.toContain(NEW_URL_JOB1);
+    });
+  });
+
+  describe('scenario 7 — throwing fetchImpl yields zero discoveries, no success stamp', () => {
+    it('errored=false, discovered=0, errorMessage set, no lastSourceUpdate', async () => {
+      const prisma = makeFakePrisma();
+      // politeFetch swallows the throw → discoverJobs returns [] → discovered=0.
+      // Zero discoveries carry no success evidence, so lastSuccessAt must NOT be set.
+      const throwingFetch: typeof fetch = async () => {
+        throw new Error('network down');
+      };
+
+      const stats = await processSource({ prisma, fetchImpl: throwingFetch, now: NOW }, SOURCE);
+
+      expect(stats.discovered).toBe(0);
+      expect(stats.errored).toBe(false);
+      expect(stats.errorMessage).toBe('no jobs discovered (empty board or fetch failure)');
+      expect(prisma._state.lastSourceUpdate).toBeNull();
     });
   });
 });
