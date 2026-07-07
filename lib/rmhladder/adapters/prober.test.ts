@@ -20,8 +20,14 @@ describe('probeSlug', () => {
   it('lever bare-array shape', async () => {
     expect(await probeSlug('lever', 'plaid', stub(200, '[{},{},{}]'))).toEqual({ live: true, jobCount: 3 });
   });
-  it('smartrecruiters content shape', async () => {
-    expect(await probeSlug('smartrecruiters', 'honeywell', stub(200, '{"content":[{}]}'))).toEqual({ live: true, jobCount: 1 });
+  it('smartrecruiters probes the company endpoint, not postings', async () => {
+    const company = stub(200, '{"identifier":"honeywell","name":"Honeywell"}');
+    expect(await probeSlug('smartrecruiters', 'honeywell', company)).toEqual({ live: true, jobCount: 0 });
+    // empty-postings body shape (what the postings endpoint returns for ANY slug) must NOT count as live
+    const catchAll = stub(200, '{"offset":0,"limit":100,"totalFound":0,"content":[]}');
+    expect(await probeSlug('smartrecruiters', 'zzznotreal', catchAll)).toEqual({ live: false, jobCount: 0 });
+    const notFound = stub(404, '');
+    expect(await probeSlug('smartrecruiters', 'zzznotreal', notFound)).toEqual({ live: false, jobCount: 0 });
   });
   it('404 and wrong-shape are dead', async () => {
     expect(await probeSlug('greenhouse', 'nope', stub(404, ''))).toEqual({ live: false, jobCount: 0 });

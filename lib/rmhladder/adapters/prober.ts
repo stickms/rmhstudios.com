@@ -2,7 +2,6 @@ import { ashbyBoardUrl } from './ashby';
 import { greenhouseBoardUrl } from './greenhouse';
 import { politeFetch } from './http';
 import { leverPostingsUrl } from './lever';
-import { smartRecruitersPostingsUrl } from './smartrecruiters';
 
 type Platform = 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters';
 
@@ -68,7 +67,9 @@ export async function probeSlug(
       case 'greenhouse':    return greenhouseBoardUrl(slug);
       case 'lever':        return leverPostingsUrl(slug);
       case 'ashby':        return ashbyBoardUrl(slug);
-      case 'smartrecruiters': return smartRecruitersPostingsUrl(slug);
+      // SR postings endpoint returns 200 {"content":[]} for ANY slug (even nonexistent companies),
+      // so probe the company-details endpoint instead — it 404s for unknown companies.
+      case 'smartrecruiters': return `https://api.smartrecruiters.com/v1/companies/${slug}`;
     }
   })();
 
@@ -79,6 +80,15 @@ export async function probeSlug(
   try {
     body = JSON.parse(res.body);
   } catch {
+    return DEAD;
+  }
+
+  // SmartRecruiters: live = 200 + truthy `identifier` in the company-details response.
+  if (platform === 'smartrecruiters') {
+    if (typeof body === 'object' && body !== null) {
+      const identifier = (body as Record<string, unknown>)['identifier'];
+      if (identifier) return { live: true, jobCount: 0 };
+    }
     return DEAD;
   }
 
@@ -95,13 +105,6 @@ export async function probeSlug(
     }
     case 'lever': {
       if (Array.isArray(body)) arr = body;
-      break;
-    }
-    case 'smartrecruiters': {
-      if (typeof body === 'object' && body !== null && 'content' in body) {
-        const content = (body as Record<string, unknown>)['content'];
-        if (Array.isArray(content)) arr = content;
-      }
       break;
     }
   }
