@@ -302,9 +302,10 @@ var careColumn = map[string]string{
 	"studies": `"studies"`,
 }
 
-// bumpCaretaker increments a caretaker's action counter and points. `care` MUST
-// be a key in careColumn (validated here); anything else is a no-op.
-func (r *petRepo) bumpCaretaker(ctx context.Context, guildID, userID, username, care string, points int) error {
+// bumpCaretaker increments a caretaker's action counter and points, and records
+// their avatar hash (for the rendered leaderboard). `care` MUST be a key in
+// careColumn (validated here); anything else is a no-op.
+func (r *petRepo) bumpCaretaker(ctx context.Context, guildID, userID, username, avatarHash, care string, points int) error {
 	if r.db == nil {
 		return nil
 	}
@@ -312,17 +313,22 @@ func (r *petRepo) bumpCaretaker(ctx context.Context, guildID, userID, username, 
 	if !ok {
 		return nil
 	}
+	var avatar *string
+	if avatarHash != "" {
+		avatar = &avatarHash
+	}
 	// The column is chosen from a fixed whitelist above, never interpolated from
 	// user input — safe against injection.
 	_, err := r.db.Pool.Exec(ctx,
-		`INSERT INTO "discord_alex_caretaker" ("guildId","userId","username",`+col+`,"points","updatedAt")
-		 VALUES ($1,$2,$3,1,$4,$5)
+		`INSERT INTO "discord_alex_caretaker" ("guildId","userId","username","avatarHash",`+col+`,"points","updatedAt")
+		 VALUES ($1,$2,$3,$4,1,$5,$6)
 		 ON CONFLICT ("guildId","userId") DO UPDATE SET
 		   "username"=EXCLUDED."username",
+		   "avatarHash"=COALESCE(EXCLUDED."avatarHash", "discord_alex_caretaker"."avatarHash"),
 		   `+col+`="discord_alex_caretaker".`+col+`+1,
-		   "points"="discord_alex_caretaker"."points"+$4,
+		   "points"="discord_alex_caretaker"."points"+$5,
 		   "updatedAt"=EXCLUDED."updatedAt"`,
-		guildID, userID, username, points, time.Now().UTC())
+		guildID, userID, username, avatar, points, time.Now().UTC())
 	return err
 }
 

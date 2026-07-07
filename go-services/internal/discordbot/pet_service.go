@@ -15,6 +15,8 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -29,6 +31,11 @@ type PetService struct {
 	imager *alexImager
 	logger *log.Logger
 
+	// imageBaseURL is the base URL of the web app that renders the /caretakers
+	// leaderboard PNG (ALEX_PUBLIC_BASE_URL). Empty disables the image (text only).
+	imageBaseURL string
+	http         *http.Client
+
 	mu         sync.Mutex
 	guildLocks map[string]*sync.Mutex
 	cooldowns  map[string]time.Time // key "guildId:action" -> last run
@@ -37,14 +44,17 @@ type PetService struct {
 	session *discordgo.Session // set once the gateway is open (for the care loop)
 }
 
-// NewPetService wires the tamagotchi.
-func NewPetService(repo *petRepo, imager *alexImager, logger *log.Logger) *PetService {
+// NewPetService wires the tamagotchi. imageBaseURL is the web app base URL used to
+// render the /caretakers leaderboard image (empty => text-only leaderboard).
+func NewPetService(repo *petRepo, imager *alexImager, logger *log.Logger, imageBaseURL string) *PetService {
 	return &PetService{
-		repo:       repo,
-		imager:     imager,
-		logger:     logger,
-		guildLocks: make(map[string]*sync.Mutex),
-		cooldowns:  make(map[string]time.Time),
+		repo:         repo,
+		imager:       imager,
+		logger:       logger,
+		imageBaseURL: strings.TrimRight(imageBaseURL, "/"),
+		http:         &http.Client{Timeout: 10 * time.Second},
+		guildLocks:   make(map[string]*sync.Mutex),
+		cooldowns:    make(map[string]time.Time),
 	}
 }
 
@@ -124,13 +134,14 @@ func (ps *PetService) loadDecay(ctx context.Context, guildID, channelID string, 
 
 // creditCaretaker records a caretaker's action for the global leaderboard
 // (best-effort). A user's caretaking counts once, globally, no matter which
-// server they did it in.
-func (ps *PetService) creditCaretaker(ctx context.Context, userID, username, care string) {
+// server they did it in. avatarHash is stored so the leaderboard image can show
+// their face.
+func (ps *PetService) creditCaretaker(ctx context.Context, userID, username, avatarHash, care string) {
 	if care == "" {
 		return
 	}
 	pts := carePoints[care]
-	if err := ps.repo.bumpCaretaker(ctx, globalPetKey, userID, username, care, pts); err != nil {
+	if err := ps.repo.bumpCaretaker(ctx, globalPetKey, userID, username, avatarHash, care, pts); err != nil {
 		ps.logger.Warn("caretaker credit failed", "user", userID, "error", err)
 	}
 }
@@ -274,7 +285,7 @@ func (ps *PetService) simpleAction(
 	mu.Unlock()
 
 	if result.OK {
-		ps.creditCaretaker(ctx, userID, username, result.Care)
+		ps.creditCaretaker(ctx, userID, username, interactionAvatar(i), result.Care)
 		ps.refreshPresence(&snap) // reflect the new state in the bot's status
 	}
 
@@ -557,7 +568,9 @@ func (ps *PetService) HandleRename(ctx context.Context, s *discordgo.Session, i 
 	return ps.editEmbed(s, i, embed, nil)
 }
 
-// HandleCaretakers implements /caretakers — the global leaderboard.
+// HandleCaretakers implements /caretakers — the global leaderboard. It tries a
+// rendered image (avatars + ranked table) first and falls back to a text table
+// on any failure.
 func (ps *PetService) HandleCaretakers(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
 	if _, ok := requireGuild(s, i); !ok {
 		return nil
@@ -570,15 +583,40 @@ func (ps *PetService) HandleCaretakers(ctx context.Context, s *discordgo.Session
 	if err != nil {
 		return ps.editEmbed(s, i, errEmbed("couldn't load the leaderboard rn"), nil)
 	}
-	embed := &discordgo.MessageEmbed{
-		Title:  "🏆 Alex's Top Caretakers",
-		Color:  0xf59e0b,
-		Footer: attributeFooter(username, "🏆", "pulled up the leaderboard"),
-	}
 	if len(rows) == 0 {
-		embed.Description = "nobody's taken care of Alex yet 👀 — be the first with `/feed`!"
+		embed := &discordgo.MessageEmbed{
+			Title:       "🏆 Alex's Top Caretakers",
+			Color:       0xf59e0b,
+			Description: "nobody's taken care of Alex yet 👀 — be the first with `/feed`!",
+			Footer:      attributeFooter(username, "🏆", "pulled up the leaderboard"),
+		}
 		return ps.editEmbed(s, i, embed, nil)
 	}
+
+	// Preferred: the rendered leaderboard image (avatars + ranked table).
+	if png, err := ps.fetchCaretakersImage(ctx); err == nil && len(png) > 0 {
+		embed := &discordgo.MessageEmbed{
+			Title:  "🏆 Alex's Top Caretakers",
+			Color:  0xf59e0b,
+			Image:  &discordgo.MessageEmbedImage{URL: "attachment://caretakers.png"},
+			Footer: attributeFooter(username, "🏆", "pulled up the leaderboard"),
+		}
+		return ps.editEmbed(s, i, embed, []*discordgo.File{{
+			Name:        "caretakers.png",
+			ContentType: "image/png",
+			Reader:      bytes.NewReader(png),
+		}})
+	} else if err != nil {
+		ps.logger.Warn("caretakers image unavailable, using text", "error", err)
+	}
+
+	// Fallback: a text table.
+	return ps.editEmbed(s, i, caretakersTextEmbed(rows, username), nil)
+}
+
+// caretakersTextEmbed renders the leaderboard as a text embed (the fallback when
+// the rendered image is unavailable).
+func caretakersTextEmbed(rows []CaretakerRow, username string) *discordgo.MessageEmbed {
 	medals := []string{"🥇", "🥈", "🥉"}
 	var b strings.Builder
 	for idx, c := range rows {
@@ -589,8 +627,43 @@ func (ps *PetService) HandleCaretakers(ctx context.Context, s *discordgo.Session
 		fmt.Fprintf(&b, "%s **%s** — %d pts  ·  🍽️%d 🎮%d 🧼%d 😴%d 💬%d 📚%d\n",
 			rank, c.Username, c.Points, c.Feeds, c.Plays, c.Cleans, c.Naps, c.Talks, c.Studies)
 	}
-	embed.Description = b.String()
-	return ps.editEmbed(s, i, embed, nil)
+	return &discordgo.MessageEmbed{
+		Title:       "🏆 Alex's Top Caretakers",
+		Color:       0xf59e0b,
+		Description: b.String(),
+		Footer:      attributeFooter(username, "🏆", "pulled up the leaderboard"),
+	}
+}
+
+// fetchCaretakersImage fetches the rendered leaderboard PNG from the web app.
+// Returns (nil, nil) when no base URL is configured (image disabled); an error
+// otherwise so the caller falls back to text.
+func (ps *PetService) fetchCaretakersImage(ctx context.Context) ([]byte, error) {
+	if ps.imageBaseURL == "" {
+		return nil, nil
+	}
+	reqCtx, cancel := context.WithTimeout(ctx, 8*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, ps.imageBaseURL+"/api/discord/activity-image?type=caretakers", nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := ps.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return nil, fmt.Errorf("caretakers image HTTP %d", resp.StatusCode)
+	}
+	png, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
+	if err != nil {
+		return nil, err
+	}
+	if detectAlexImageExt(png) != ".png" {
+		return nil, fmt.Errorf("caretakers image: not a PNG")
+	}
+	return png, nil
 }
 
 // messageLevelBlurb describes what each /alexmessages level does.
@@ -695,7 +768,7 @@ func (ps *PetService) StatusLineForChat(ctx context.Context, guildID string) str
 
 // RecordChat stamps the channel/talk activity from a /chat interaction so the
 // care loop knows where to talk and the caretaker leaderboard counts chats.
-func (ps *PetService) RecordChat(ctx context.Context, guildID, channelID, userID, username string) {
+func (ps *PetService) RecordChat(ctx context.Context, guildID, channelID, userID, username, avatarHash string) {
 	if guildID == "" || ps == nil {
 		return
 	}
@@ -714,7 +787,7 @@ func (ps *PetService) RecordChat(ctx context.Context, guildID, channelID, userID
 	}
 	_ = ps.repo.save(ctx, pet)
 	mu.Unlock()
-	ps.creditCaretaker(ctx, userID, username, "talks")
+	ps.creditCaretaker(ctx, userID, username, avatarHash, "talks")
 }
 
 // ─── Rendering ──────────────────────────────────────────────────────────

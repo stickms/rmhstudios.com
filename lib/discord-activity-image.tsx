@@ -517,3 +517,118 @@ export async function generateLeaderboardImage(
     setCachedPng(cacheKey, png);
     return png;
 }
+
+// ─── Alex Caretakers Leaderboard Image ───────────────────────────────
+
+export interface CaretakerEntry {
+    userId: string;
+    username: string;
+    avatarHash: string | null;
+    points: number;
+    feeds: number;
+    plays: number;
+    cleans: number;
+    naps: number;
+    talks: number;
+    studies: number;
+}
+
+const PURPLE = '#a855f7';
+
+// A compact "12 fed · 9 studied · 8 played" tally of a caretaker's top actions.
+function caretakerTally(c: CaretakerEntry): string {
+    const parts: Array<{ n: number; label: string }> = [
+        { n: c.feeds, label: 'fed' },
+        { n: c.studies, label: 'studied' },
+        { n: c.plays, label: 'played' },
+        { n: c.cleans, label: 'cleaned' },
+        { n: c.naps, label: 'napped' },
+        { n: c.talks, label: 'chatted' },
+    ];
+    const top = parts.filter(p => p.n > 0).sort((a, b) => b.n - a.n).slice(0, 3);
+    if (top.length === 0) return 'just getting started';
+    return top.map(p => `${p.n} ${p.label}`).join(' · ');
+}
+
+export async function generateCaretakersImage(entries: CaretakerEntry[]): Promise<Buffer> {
+    const display = entries.slice(0, 10);
+    const cacheKey = `care:${display.map(c => `${c.userId}:${c.points}`).join(',')}`;
+    const cached = getCachedPng(cacheKey);
+    if (cached) return cached;
+
+    // Pre-fetch avatars in parallel as data URIs (mirrors the daily leaderboard).
+    const avDataUris = await Promise.all(
+        display.map(c => fetchAvatarDataUri(avatarUrl(c.userId, c.avatarHash))),
+    );
+
+    const topPoints = Math.max(1, ...display.map(c => c.points));
+    const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
+
+    const rowHeight = 56;
+    const headerHeight = 78;
+    const footerHeight = 34;
+    const imgPadding = 44;
+    const imgHeight = Math.max(220, headerHeight + display.length * rowHeight + footerHeight + imgPadding);
+
+    const element = (
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+            backgroundColor: BG,
+            padding: '24px 30px',
+            fontFamily: 'Inter',
+            color: TEXT,
+        }}>
+            {/* Header */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 16 }}>
+                <span style={{ fontSize: 20, fontWeight: 700 }}>🏆 Alex&apos;s Top Caretakers</span>
+                <span style={{ fontSize: 13, color: MUTED }}>
+                    raising Alex together 🧋 · {entries.length} caretaker{entries.length !== 1 ? 's' : ''}
+                </span>
+            </div>
+
+            {/* Ranked rows */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                {display.map((c, i) => {
+                    const medal = i < 3 ? medals[i] : `#${i + 1}`;
+                    const barPct = Math.max(6, Math.round((c.points / topPoints) * 100));
+                    const accent = i === 0 ? AMBER : i < 3 ? PURPLE : MUTED;
+                    return (
+                        <div key={c.userId} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 12,
+                            padding: '8px 12px',
+                            borderRadius: 10,
+                            backgroundColor: SURFACE,
+                            border: i === 0 ? `1px solid ${AMBER}` : '1px solid transparent',
+                        }}>
+                            <span style={{ fontSize: 18, width: 30, textAlign: 'center', fontWeight: 700 }}>{medal}</span>
+                            <Avatar src={avDataUris[i]} size={38} />
+                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 3 }}>
+                                <span style={{ fontSize: 15, fontWeight: 700 }}>{c.username}</span>
+                                {/* points bar */}
+                                <div style={{ display: 'flex', width: '100%', height: 5, borderRadius: 3, backgroundColor: '#3a3d44' }}>
+                                    <div style={{ display: 'flex', width: `${barPct}%`, height: 5, borderRadius: 3, backgroundColor: accent }} />
+                                </div>
+                                <span style={{ fontSize: 11, color: MUTED }}>{caretakerTally(c)}</span>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                                <span style={{ fontSize: 20, fontWeight: 700, color: accent }}>{c.points}</span>
+                                <span style={{ fontSize: 10, color: MUTED }}>points</span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <Footer label="Alex 🧋 · rmhstudios.com" />
+        </div>
+    );
+
+    const png = await renderToPng(element, 560, imgHeight);
+    setCachedPng(cacheKey, png);
+    return png;
+}

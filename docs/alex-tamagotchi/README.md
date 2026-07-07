@@ -32,7 +32,7 @@ generation to show what he looks like right now.
 | `/revive` | Bring Alex back as a newborn if he's passed out (New Game+) |
 | `/newlife` | Voluntary New Game+ once Alex is a grown adult — he "graduates" and a new generation begins |
 | `/rename <name>` | Give Alex a new name |
-| `/caretakers` | Leaderboard of who's taken the best care of Alex |
+| `/caretakers` | Leaderboard of who's taken the best care of Alex — a rendered image with everyone's avatar, rank, points bar, and action tally (text fallback if the image can't be produced) |
 | `/alexmessages [all\|care\|off]` | **(Manage Messages / bot owner only)** Set how much Alex talks in this server: `all` (everything), `care` (only care alerts + life events), `off` (completely silent). Blank shows the current setting. |
 
 Alex is a **global pet** — commands work in any server (but not DMs, so the bot
@@ -147,10 +147,17 @@ Optional pacing overrides (see `.env.example`): `ALEX_GROWTH_SCALE`,
   used in, whether he's introduced himself there, and the server's `messageLevel`
   (all / care / off). Drives the broadcast, the one-time intro, and `/alexmessages`.
 - `discord_alex_caretaker` — one row per user (keyed by the `"global"` sentinel) —
-  the global leaderboard.
+  the global leaderboard, including each caretaker's `avatarHash` for the rendered
+  leaderboard image.
+
+The `/caretakers` image is rendered by the web app (Satori) at
+`/api/discord/activity-image?type=caretakers` — reusing the existing Discord image
+pipeline (fonts, avatar pre-fetch, PNG cache). The Go bot fetches it from
+`ALEX_PUBLIC_BASE_URL` and attaches it, falling back to a text table on any error.
 
 Migrations: `20260706000000_add_discord_alex_tamagotchi/` (initial),
 `20260707000000_add_discord_alex_global_guild/` (global refactor),
 `20260707120000_add_alex_ambient_toggle/` (initial per-server ambient boolean),
-and `20260707140000_add_alex_message_level/` (replaces it with the three-way
-`messageLevel`, backfilling existing rows).
+`20260707140000_add_alex_message_level/` (replaces it with the three-way
+`messageLevel`, backfilling existing rows), and
+`20260707160000_add_caretaker_avatar/` (adds `avatarHash` for the leaderboard image).
