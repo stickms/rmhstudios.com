@@ -23,6 +23,7 @@
     "db:reset": "prisma db push --force-reset",
     "db:seed-jobs": "pnpm exec tsx scripts/seed-jobs.ts",
     "ladder:seed": "pnpm exec tsx scripts/seed-ladder.ts",
+    "ladder:probe": "pnpm exec tsx scripts/probe-ladder-sources.ts",
     "backfill-vibe-thumbs": "pnpm exec tsx scripts/backfill-vibe-thumbs.ts",
     "library:metadata": "pnpm exec tsx scripts/generate-library-metadata.ts",
     "audit": "pnpm audit --audit-level=moderate",
