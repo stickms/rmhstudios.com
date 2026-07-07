@@ -9,30 +9,30 @@ package discordbot
 import (
 	"context"
 	"sort"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
 
 // AnnounceIntro posts the one-time intro for a guild if it hasn't been sent yet.
-// Safe to call repeatedly (idempotent) and on every startup.
+// The pet is global, but the intro is per-guild (each server gets one hello),
+// tracked in discord_alex_guild. Safe to call repeatedly (idempotent) and on
+// every startup. The guild lock here is independent of the global pet lock.
 func (ps *PetService) AnnounceIntro(ctx context.Context, s *discordgo.Session, guildID string) {
 	if guildID == "" {
 		return
 	}
-	now := time.Now().UTC()
 
 	mu := ps.lockGuild(guildID)
 	mu.Lock()
 	defer mu.Unlock()
 
-	pet, ok, err := ps.repo.load(ctx, guildID)
+	sent, err := ps.repo.guildIntroSent(ctx, guildID)
 	if err != nil {
-		ps.logger.Warn("intro load failed", "guild", guildID, "error", err)
+		ps.logger.Warn("intro check failed", "guild", guildID, "error", err)
 		return
 	}
-	if ok && pet.IntroSentAt != nil {
-		return // already introduced — never repeat, even across redeploys
+	if sent {
+		return // already introduced in this server — never repeat, even across redeploys
 	}
 
 	channelID := ps.sendIntroToFirstChannel(s, guildID)
@@ -43,15 +43,9 @@ func (ps *PetService) AnnounceIntro(ctx context.Context, s *discordgo.Session, g
 		return
 	}
 
-	if !ok {
-		pet = newPet(guildID, now)
-	}
-	pet.IntroSentAt = &now
-	if pet.LastChannelID == "" {
-		pet.LastChannelID = channelID
-	}
-	if err := ps.repo.save(ctx, pet); err != nil {
-		ps.logger.Warn("intro save failed", "guild", guildID, "error", err)
+	// Mark intro sent + remember the channel so the care loop broadcasts here too.
+	if err := ps.repo.markGuildIntro(ctx, guildID, channelID); err != nil {
+		ps.logger.Warn("intro mark failed", "guild", guildID, "error", err)
 	}
 	ps.logger.Info("alex intro sent", "guild", guildID, "channel", channelID)
 }

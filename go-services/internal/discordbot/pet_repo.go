@@ -129,25 +129,99 @@ func (r *petRepo) save(ctx context.Context, p *PetState) error {
 	return err
 }
 
-// allPets returns every guild's pet (for the background caretaking loop). Only
-// pets that have a known channel to talk in are worth loading, but we filter in
-// the loop so a pet whose channel is set later still gets picked up.
-func (r *petRepo) allPets(ctx context.Context) ([]*PetState, error) {
+// ─── Per-guild bookkeeping for the global Alex (discord_alex_guild) ──────
+//
+// The pet itself is global, but Alex still needs to know which channel to talk in
+// for each server he's in, and whether he's already introduced himself there.
+// That per-guild state lives here, decoupled from the singleton pet.
+
+// GuildChannel is a server + the channel Alex last spoke / was used in there.
+type GuildChannel struct {
+	GuildID   string
+	ChannelID string
+}
+
+// recordGuildChannel remembers the channel a command was last used in for a
+// guild (best-effort; leaves introSentAt untouched).
+func (r *petRepo) recordGuildChannel(ctx context.Context, guildID, channelID string) error {
+	if r.db == nil || guildID == "" || channelID == "" {
+		return nil
+	}
+	_, err := r.db.Pool.Exec(ctx,
+		`INSERT INTO "discord_alex_guild" ("guildId","lastChannelId","updatedAt")
+		 VALUES ($1,$2,$3)
+		 ON CONFLICT ("guildId") DO UPDATE SET
+		   "lastChannelId"=EXCLUDED."lastChannelId",
+		   "updatedAt"=EXCLUDED."updatedAt"`,
+		guildID, channelID, time.Now().UTC())
+	return err
+}
+
+// clearGuildChannel forgets a guild's channel (used when Alex can no longer post
+// there), leaving the intro flag intact.
+func (r *petRepo) clearGuildChannel(ctx context.Context, guildID string) error {
+	if r.db == nil {
+		return nil
+	}
+	_, err := r.db.Pool.Exec(ctx,
+		`UPDATE "discord_alex_guild" SET "lastChannelId"=NULL, "updatedAt"=$2 WHERE "guildId"=$1`,
+		guildID, time.Now().UTC())
+	return err
+}
+
+// guildIntroSent reports whether Alex has already introduced himself in a guild.
+func (r *petRepo) guildIntroSent(ctx context.Context, guildID string) (bool, error) {
+	if r.db == nil {
+		return false, nil
+	}
+	var sentAt *time.Time
+	err := r.db.Pool.QueryRow(ctx,
+		`SELECT "introSentAt" FROM "discord_alex_guild" WHERE "guildId"=$1`, guildID).Scan(&sentAt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return sentAt != nil, nil
+}
+
+// markGuildIntro records that the intro has been sent in a guild and stores the
+// channel it went to.
+func (r *petRepo) markGuildIntro(ctx context.Context, guildID, channelID string) error {
+	if r.db == nil {
+		return nil
+	}
+	now := time.Now().UTC()
+	_, err := r.db.Pool.Exec(ctx,
+		`INSERT INTO "discord_alex_guild" ("guildId","lastChannelId","introSentAt","updatedAt")
+		 VALUES ($1,$2,$3,$4)
+		 ON CONFLICT ("guildId") DO UPDATE SET
+		   "lastChannelId"=EXCLUDED."lastChannelId",
+		   "introSentAt"=EXCLUDED."introSentAt",
+		   "updatedAt"=EXCLUDED."updatedAt"`,
+		guildID, channelID, now, now)
+	return err
+}
+
+// allGuildChannels returns every guild that has a channel Alex can broadcast to.
+func (r *petRepo) allGuildChannels(ctx context.Context) ([]GuildChannel, error) {
 	if r.db == nil {
 		return nil, nil
 	}
-	rows, err := r.db.Pool.Query(ctx, `SELECT `+petColumns+` FROM "discord_alex_pet"`)
+	rows, err := r.db.Pool.Query(ctx,
+		`SELECT "guildId","lastChannelId" FROM "discord_alex_guild" WHERE "lastChannelId" IS NOT NULL`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var out []*PetState
+	var out []GuildChannel
 	for rows.Next() {
-		p, err := scanPet(rows)
-		if err != nil {
+		var g GuildChannel
+		if err := rows.Scan(&g.GuildID, &g.ChannelID); err != nil {
 			return nil, err
 		}
-		out = append(out, p)
+		out = append(out, g)
 	}
 	return out, rows.Err()
 }

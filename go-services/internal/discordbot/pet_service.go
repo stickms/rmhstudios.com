@@ -3,11 +3,12 @@
 // /show, and maintains the caretaker leaderboard. It also holds the discordgo
 // session used by the background caretaking loop (pet_care.go).
 //
-// Concurrency: every mutation of a guild's pet goes through lockGuild → load →
-// applyDecay → mutate → save, so simultaneous commands in the same guild can't
-// race the read-modify-write cycle. The one exception (xAI image generation for
-// /show) deliberately runs OUTSIDE the lock on a snapshot, so a 60s image call
-// never blocks other caretakers.
+// There is ONE global Alex shared across every server. Every mutation goes
+// through lockGuild(globalPetKey) → load → applyDecay → mutate → save, so
+// simultaneous commands from any server can't race the read-modify-write cycle.
+// The one exception (xAI image generation for /show) deliberately runs OUTSIDE
+// the lock on a snapshot, so a 60s image call never blocks other caretakers.
+// Per-guild data (last channel, intro flag) lives in discord_alex_guild.
 package discordbot
 
 import (
@@ -55,23 +56,25 @@ const showCooldown = 45 * time.Second
 
 // ─── Locking & cooldowns ────────────────────────────────────────────────
 
-func (ps *PetService) lockGuild(guildID string) *sync.Mutex {
+// lockGuild returns the mutex for a key. The key is globalPetKey for all pet
+// mutations (one global Alex) and a real guild id for per-guild intro handling.
+func (ps *PetService) lockGuild(key string) *sync.Mutex {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
-	m, ok := ps.guildLocks[guildID]
+	m, ok := ps.guildLocks[key]
 	if !ok {
 		m = &sync.Mutex{}
-		ps.guildLocks[guildID] = m
+		ps.guildLocks[key] = m
 	}
 	return m
 }
 
-// onCooldown reports whether action is still cooling down for a guild, and if not,
+// onCooldown reports whether action is still cooling down for a key, and if not,
 // stamps it as used now.
-func (ps *PetService) onCooldown(guildID, action string, d time.Duration, now time.Time) bool {
+func (ps *PetService) onCooldown(key, action string, d time.Duration, now time.Time) bool {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
-	key := guildID + ":" + action
+	key = key + ":" + action
 	if last, ok := ps.cooldowns[key]; ok && now.Sub(last) < d {
 		return true
 	}
@@ -95,42 +98,50 @@ func (ps *PetService) getSession() *discordgo.Session {
 
 // ─── Load helper ────────────────────────────────────────────────────────
 
-// loadDecay loads (or creates) a guild's pet, applies time decay, and stamps the
-// interaction channel/time. The caller MUST hold the guild lock. Returns the pet
-// and the decay transitions (grew up / died) so the handler can note them.
+// loadDecay loads (or creates) the single global Alex, applies time decay, and
+// records which channel this guild last used a command in (so Alex can broadcast
+// back there). The caller MUST hold the global pet lock. Returns the pet and the
+// decay transitions (grew up / died) so the handler can note them.
 func (ps *PetService) loadDecay(ctx context.Context, guildID, channelID string, now time.Time) (*PetState, decayResult, error) {
-	pet, ok, err := ps.repo.load(ctx, guildID)
+	pet, ok, err := ps.repo.load(ctx, globalPetKey)
 	if err != nil {
 		return nil, decayResult{}, err
 	}
 	if !ok {
-		pet = newPet(guildID, now)
+		pet = newPet(globalPetKey, now)
 	}
 	res := pet.applyDecay(now)
-	if channelID != "" {
-		pet.LastChannelID = channelID
-	}
 	pet.LastInteractionAt = now
+	// Remember where this guild last interacted so the care loop can talk back
+	// there (best-effort; a separate per-guild table, decoupled from the pet).
+	if guildID != "" && channelID != "" {
+		if e := ps.repo.recordGuildChannel(ctx, guildID, channelID); e != nil {
+			ps.logger.Warn("record guild channel failed", "guild", guildID, "error", e)
+		}
+	}
 	return pet, res, nil
 }
 
-// creditCaretaker records a caretaker's action for the leaderboard (best-effort).
-func (ps *PetService) creditCaretaker(ctx context.Context, guildID, userID, username, care string) {
+// creditCaretaker records a caretaker's action for the global leaderboard
+// (best-effort). A user's caretaking counts once, globally, no matter which
+// server they did it in.
+func (ps *PetService) creditCaretaker(ctx context.Context, userID, username, care string) {
 	if care == "" {
 		return
 	}
 	pts := carePoints[care]
-	if err := ps.repo.bumpCaretaker(ctx, guildID, userID, username, care, pts); err != nil {
-		ps.logger.Warn("caretaker credit failed", "guild", guildID, "user", userID, "error", err)
+	if err := ps.repo.bumpCaretaker(ctx, globalPetKey, userID, username, care, pts); err != nil {
+		ps.logger.Warn("caretaker credit failed", "user", userID, "error", err)
 	}
 }
 
 // ─── Guard + response helpers ───────────────────────────────────────────
 
-// requireGuild rejects DM usage (Alex is a per-server communal pet).
+// requireGuild rejects DM usage: Alex is one global pet, but commands must run in
+// a server so we know which channel to remember for his broadcasts.
 func requireGuild(s *discordgo.Session, i *discordgo.InteractionCreate) (string, bool) {
 	if i.GuildID == "" {
-		_ = respondText(s, i, "Alex lives in servers, not DMs 🏠 — use these commands in a server channel.")
+		_ = respondText(s, i, "Alex hangs out in servers, not DMs 🏠 — use these commands in a server channel.")
 		return "", false
 	}
 	return i.GuildID, true
@@ -165,7 +176,7 @@ func (ps *PetService) HandleStatus(ctx context.Context, s *discordgo.Session, i 
 	now := time.Now().UTC()
 	_, username := interactionUser(i)
 
-	mu := ps.lockGuild(guildID)
+	mu := ps.lockGuild(globalPetKey)
 	mu.Lock()
 	pet, res, err := ps.loadDecay(ctx, guildID, i.ChannelID, now)
 	if err != nil {
@@ -247,7 +258,7 @@ func (ps *PetService) simpleAction(
 	now := time.Now().UTC()
 	userID, username := interactionUser(i)
 
-	mu := ps.lockGuild(guildID)
+	mu := ps.lockGuild(globalPetKey)
 	mu.Lock()
 	pet, res, err := ps.loadDecay(ctx, guildID, i.ChannelID, now)
 	if err != nil {
@@ -263,7 +274,7 @@ func (ps *PetService) simpleAction(
 	mu.Unlock()
 
 	if result.OK {
-		ps.creditCaretaker(ctx, guildID, userID, username, result.Care)
+		ps.creditCaretaker(ctx, userID, username, result.Care)
 	}
 
 	embed := ps.statusEmbed(&snap, mood, now, res)
@@ -294,7 +305,7 @@ func (ps *PetService) HandleShow(ctx context.Context, s *discordgo.Session, i *d
 	now := time.Now().UTC()
 	_, username := interactionUser(i)
 
-	mu := ps.lockGuild(guildID)
+	mu := ps.lockGuild(globalPetKey)
 	mu.Lock()
 	pet, res, err := ps.loadDecay(ctx, guildID, i.ChannelID, now)
 	if err != nil {
@@ -317,7 +328,7 @@ func (ps *PetService) HandleShow(ctx context.Context, s *discordgo.Session, i *d
 		embed.Image = &discordgo.MessageEmbedImage{URL: "attachment://" + img.Filename}
 		return ps.editEmbed(s, i, embed, []*discordgo.File{imageFile(img)})
 	}
-	if ps.onCooldown(guildID, "show", showCooldown, now) {
+	if ps.onCooldown(globalPetKey, "show", showCooldown, now) {
 		embed.Description = "📸 Alex just took a pic — give him a sec before the next one!\n\n" + embed.Description
 		return ps.editEmbed(s, i, embed, nil)
 	}
@@ -344,7 +355,7 @@ func (ps *PetService) HandleRevive(ctx context.Context, s *discordgo.Session, i 
 	now := time.Now().UTC()
 	_, username := interactionUser(i)
 
-	mu := ps.lockGuild(guildID)
+	mu := ps.lockGuild(globalPetKey)
 	mu.Lock()
 	pet, _, err := ps.loadDecay(ctx, guildID, i.ChannelID, now)
 	if err != nil {
@@ -392,7 +403,7 @@ func (ps *PetService) HandleNewLife(ctx context.Context, s *discordgo.Session, i
 	now := time.Now().UTC()
 	_, username := interactionUser(i)
 
-	mu := ps.lockGuild(guildID)
+	mu := ps.lockGuild(globalPetKey)
 	mu.Lock()
 	pet, _, err := ps.loadDecay(ctx, guildID, i.ChannelID, now)
 	if err != nil {
@@ -443,7 +454,7 @@ func (ps *PetService) HandleCareer(ctx context.Context, s *discordgo.Session, i 
 	now := time.Now().UTC()
 	_, username := interactionUser(i)
 
-	mu := ps.lockGuild(guildID)
+	mu := ps.lockGuild(globalPetKey)
 	mu.Lock()
 	pet, res, err := ps.loadDecay(ctx, guildID, i.ChannelID, now)
 	if err != nil {
@@ -519,7 +530,7 @@ func (ps *PetService) HandleRename(ctx context.Context, s *discordgo.Session, i 
 	now := time.Now().UTC()
 	_, username := interactionUser(i)
 
-	mu := ps.lockGuild(guildID)
+	mu := ps.lockGuild(globalPetKey)
 	mu.Lock()
 	pet, res, err := ps.loadDecay(ctx, guildID, i.ChannelID, now)
 	if err != nil {
@@ -541,17 +552,16 @@ func (ps *PetService) HandleRename(ctx context.Context, s *discordgo.Session, i 
 	return ps.editEmbed(s, i, embed, nil)
 }
 
-// HandleCaretakers implements /caretakers — the leaderboard.
+// HandleCaretakers implements /caretakers — the global leaderboard.
 func (ps *PetService) HandleCaretakers(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) error {
-	guildID, ok := requireGuild(s, i)
-	if !ok {
+	if _, ok := requireGuild(s, i); !ok {
 		return nil
 	}
 	if err := deferReply(s, i); err != nil {
 		return err
 	}
 	_, username := interactionUser(i)
-	rows, err := ps.repo.topCaretakers(ctx, guildID, 10)
+	rows, err := ps.repo.topCaretakers(ctx, globalPetKey, 10)
 	if err != nil {
 		return ps.editEmbed(s, i, errEmbed("couldn't load the leaderboard rn"), nil)
 	}
@@ -588,10 +598,10 @@ func (ps *PetService) StatusLineForChat(ctx context.Context, guildID string) str
 		return ""
 	}
 	now := time.Now().UTC()
-	mu := ps.lockGuild(guildID)
+	mu := ps.lockGuild(globalPetKey)
 	mu.Lock()
 	defer mu.Unlock()
-	pet, ok, err := ps.repo.load(ctx, guildID)
+	pet, ok, err := ps.repo.load(ctx, globalPetKey)
 	if err != nil || !ok {
 		return ""
 	}
@@ -622,7 +632,7 @@ func (ps *PetService) RecordChat(ctx context.Context, guildID, channelID, userID
 		return
 	}
 	now := time.Now().UTC()
-	mu := ps.lockGuild(guildID)
+	mu := ps.lockGuild(globalPetKey)
 	mu.Lock()
 	pet, _, err := ps.loadDecay(ctx, guildID, channelID, now)
 	if err != nil {
@@ -636,7 +646,7 @@ func (ps *PetService) RecordChat(ctx context.Context, guildID, channelID, userID
 	}
 	_ = ps.repo.save(ctx, pet)
 	mu.Unlock()
-	ps.creditCaretaker(ctx, guildID, userID, username, "talks")
+	ps.creditCaretaker(ctx, userID, username, "talks")
 }
 
 // ─── Rendering ──────────────────────────────────────────────────────────

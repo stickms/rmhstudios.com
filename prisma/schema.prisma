@@ -2739,7 +2739,22 @@ model DiscordAlexPet {
   @@map("discord_alex_pet")
 }
 
-// Per-guild, per-user caretaking tally that powers the /caretakers leaderboard.
+// Per-guild bookkeeping for the single global Alex: which channel he last spoke
+// / was used in for a server, and whether he's already introduced himself there.
+// Decoupled from the (global) pet so his care/ambient posts can broadcast to
+// every server's last-used channel.
+model DiscordAlexGuild {
+  guildId       String    @id
+  lastChannelId String?
+  introSentAt   DateTime?
+  updatedAt     DateTime  @updatedAt
+
+  @@map("discord_alex_guild")
+}
+
+// Global, per-user caretaking tally that powers the /caretakers leaderboard. A
+// user's caretaking counts once across all servers (rows are keyed by a fixed
+// global sentinel in the guildId column).
 model DiscordAlexCaretaker {
   guildId   String
   userId    String

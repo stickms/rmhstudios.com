@@ -1,10 +1,13 @@
 # Alex — the Discord Tamagotchi
 
-Alex is a communal virtual pet that lives in the Discord bot. Every server (guild)
-raises **one shared Alex** together: feeding him, playing with him, keeping him
-clean and rested, and talking to him. Alex is born an infant and grows up to an
-adult over real time — and if the server neglects him, he gets sick and can pass
-out (recoverable with `/revive`).
+Alex is a communal virtual pet that lives in the Discord bot. There is **one
+single global Alex** shared across every server the bot is in — everyone,
+everywhere, raises the same pet together: feeding him, playing with him, keeping
+him clean and rested, studying, and talking to him. Alex is born an infant and
+grows up to an adult over real time — and if he's collectively neglected, he gets
+sick and can pass out (recoverable with `/revive`). His care and ambient messages
+**broadcast to every server's last-used channel**, so wherever you are you'll see
+when Alex is hungry or out getting boba.
 
 He uses the existing **DeepSeek** persona for conversation and **xAI (Grok)** image
 generation to show what he looks like right now.
@@ -31,7 +34,8 @@ generation to show what he looks like right now.
 | `/rename <name>` | Give Alex a new name |
 | `/caretakers` | Leaderboard of who's taken the best care of Alex |
 
-Alex is a **server pet** — the commands don't work in DMs.
+Alex is a **global pet** — commands work in any server (but not DMs, so the bot
+knows which channel to talk back in).
 
 ## Mechanics
 
@@ -48,36 +52,37 @@ Alex is a **server pet** — the commands don't work in DMs.
   ambient posts, and — once he's a teen/adult — his `/show` picture. `/study`
   builds the intelligence that makes the dream believable.
 - **New Game+**: `/revive` (on death) and `/newlife` (voluntary, once adult) both
-  reincarnate Alex as a fresh gen-N+1 infant, carrying over his name, channel, the
+  reincarnate Alex as a fresh gen-N+1 infant, carrying over his name, the (global)
   caretaker leaderboard, and a **legacy intelligence head-start** (up to 30,
   scaled from the previous life's intelligence). Career resets so each life can
   choose a new path.
-- **Caretaker leaderboard**: each care action credits the user who did it
-  (feed 10 / study 9 / play 8 / clean 6 / nap 5 / chat 3 points).
+- **Global caretaker leaderboard**: each care action credits the user who did it,
+  counted once across all servers (feed 10 / study 9 / play 8 / clean 6 / nap 5 /
+  chat 3 points).
 
 ## First-hello announcement
 
 When the bot joins a server (and on startup for servers it's already in), Alex
 posts a **one-time** intro explaining the system into the first channel he can
-talk in. It fires exactly once per guild (persisted via `introSentAt`, so
+talk in. It fires exactly once per server (tracked in `discord_alex_guild`, so
 restarts and redeploys never repeat it), and servers where he can't send anywhere
 are skipped — if he's granted access later, he'll introduce himself then.
 
 ## Proactive messages
 
-A background loop (`pet_care.go`) checks on every pet on a ticker and posts **into
-the last channel a command was used in**, at most one message per pet per tick,
-by priority:
+A background loop (`pet_care.go`) advances the single global Alex on a ticker and,
+when something's worth saying, **broadcasts one message to every server's
+last-used channel** (at most one per tick), by priority:
 
-1. **Life events** — "Alex grew into a Teen!" (with a fresh selfie), or "Alex
-   passed out from neglect… `/revive` him".
-2. **Care alerts** — "yo I'm STARVING, `/feed` me a boba" (throttled).
+1. **Life events** — "Alex grew into a Teen!" (with a fresh selfie, generated once
+   and reused across all servers), or "Alex passed out from neglect… `/revive` him".
+2. **Care alerts** — "yo I'm STARVING, `/feed` me a boba" (globally throttled).
 3. **Ambient life** — "Alex: currently out getting boba 🧋", "in a Wells Fargo
    standup pretending I understand the sprint board" — stage-appropriate
    slice-of-life flavour.
 
-If a saved channel becomes unreachable (deleted / bot lost access), it's cleared
-so the bot stops posting there.
+If a server's channel becomes unreachable (deleted / bot lost access), it's
+cleared so the bot stops broadcasting there.
 
 ## Visibility & persistence
 
@@ -95,11 +100,11 @@ so the bot stops posting there.
 ## Cost & safety
 
 - **xAI images** are gated by the shared global `image_gen_budget` daily cap
-  (`XAI_IMAGE_DAILY_CAP`, default 50), an in-memory per-guild cache keyed by
-  stage+mood, and a per-guild `/show` cooldown. Any failure degrades to a
-  stats-only response — a picture can never break a command.
-- **Concurrency**: per-guild mutex serialises the load→decay→mutate→save cycle;
-  the paid image call runs outside the lock on a snapshot.
+  (`XAI_IMAGE_DAILY_CAP`, default 50), an in-memory cache keyed by stage+mood, and
+  a global `/show` cooldown. Any failure degrades to a stats-only response — a
+  picture can never break a command.
+- **Concurrency**: a single global mutex serialises the load→decay→mutate→save
+  cycle; the paid image call runs outside the lock on a snapshot.
 - **Input**: `/rename` is sanitised (printable, 1–32 chars, no mention/backtick
   injection); leaderboard counter columns come from a fixed whitelist; all SQL is
   parameterised.
@@ -118,8 +123,14 @@ Optional pacing overrides (see `.env.example`): `ALEX_GROWTH_SCALE`,
 
 ## Data model
 
-- `discord_alex_pet` — one row per guild (stats, age, stage, last channel, throttle
-  timestamps).
-- `discord_alex_caretaker` — one row per (guild, user) for the leaderboard.
+- `discord_alex_pet` — a **single global row** (keyed by the sentinel `"global"`)
+  holding the shared Alex: stats, age, stage, career, intelligence, and the global
+  care-loop throttle timestamps.
+- `discord_alex_guild` — one row per server: which channel Alex last spoke / was
+  used in, and whether he's introduced himself there. Drives the broadcast + the
+  one-time intro.
+- `discord_alex_caretaker` — one row per user (keyed by the `"global"` sentinel) —
+  the global leaderboard.
 
-Migration: `prisma/migrations/20260706000000_add_discord_alex_tamagotchi/`.
+Migrations: `prisma/migrations/20260706000000_add_discord_alex_tamagotchi/`
+(initial) and `20260707000000_add_discord_alex_global_guild/` (global refactor).
