@@ -123,13 +123,98 @@ describe('smartRecruitersAdapter.detectExpired', () => {
 });
 
 describe('smartRecruitersPostingsUrl', () => {
-  it('builds the correct API URL', () => {
-    expect(smartRecruitersPostingsUrl('honeywell')).toBe('https://api.smartrecruiters.com/v1/companies/honeywell/postings?limit=100');
+  it('builds the correct API URL with default offset', () => {
+    expect(smartRecruitersPostingsUrl('honeywell')).toBe('https://api.smartrecruiters.com/v1/companies/honeywell/postings?limit=100&offset=0');
+  });
+
+  it('builds the correct API URL with custom offset', () => {
+    expect(smartRecruitersPostingsUrl('honeywell', 100)).toBe('https://api.smartrecruiters.com/v1/companies/honeywell/postings?limit=100&offset=100');
   });
 });
 
 describe('smartRecruitersJobUrl', () => {
   it('builds the correct job URL', () => {
     expect(smartRecruitersJobUrl('honeywell', '744000012345')).toBe('https://jobs.smartrecruiters.com/honeywell/744000012345');
+  });
+});
+
+describe('smartRecruitersAdapter pagination', () => {
+  it('fetches multiple pages and aggregates postings', async () => {
+    let callCount = 0;
+    const paginatedStub = (url: string): Promise<Response> => {
+      callCount++;
+      const offset = new URL(url).searchParams.get('offset');
+      if (offset === '0' || offset === null) {
+        // Page 1: 100 postings, totalFound 150
+        const page1Content = Array.from({ length: 100 }, (_, i) => ({
+          id: `id-page1-${i}`,
+          name: `Job Page1-${i}`,
+          releasedDate: '2026-06-10T08:00:00.000Z',
+          location: { city: 'Charlotte', region: 'NC', country: 'us', remote: false },
+        }));
+        return Promise.resolve(
+          new Response(JSON.stringify({ totalFound: 150, content: page1Content }), { status: 200 }),
+        );
+      } else if (offset === '100') {
+        // Page 2: 50 postings
+        const page2Content = Array.from({ length: 50 }, (_, i) => ({
+          id: `id-page2-${i}`,
+          name: `Job Page2-${i}`,
+          releasedDate: '2026-06-10T08:00:00.000Z',
+          location: { city: 'Charlotte', region: 'NC', country: 'us', remote: false },
+        }));
+        return Promise.resolve(
+          new Response(JSON.stringify({ totalFound: 150, content: page2Content }), { status: 200 }),
+        );
+      }
+      return Promise.resolve(new Response(JSON.stringify({ totalFound: 150, content: [] }), { status: 200 }));
+    };
+
+    const jobs = await smartRecruitersAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: paginatedStub as typeof fetch,
+    });
+
+    expect(jobs).toHaveLength(150);
+    expect(callCount).toBe(2);
+  });
+
+  it('respects hard cap of 500 postings even if totalFound is higher', async () => {
+    const largeTotalStub = (url: string): Promise<Response> => {
+      const offset = new URL(url).searchParams.get('offset');
+      const offsetNum = offset ? parseInt(offset, 10) : 0;
+      // Return 100 postings per page, but totalFound is 1000 (cap at 500)
+      const pageContent = Array.from({ length: 100 }, (_, i) => ({
+        id: `id-${offsetNum}-${i}`,
+        name: `Job ${offsetNum}-${i}`,
+        releasedDate: '2026-06-10T08:00:00.000Z',
+        location: { city: 'Charlotte', region: 'NC', country: 'us', remote: false },
+      }));
+      return Promise.resolve(
+        new Response(JSON.stringify({ totalFound: 1000, content: pageContent }), { status: 200 }),
+      );
+    };
+
+    const jobs = await smartRecruitersAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: largeTotalStub as typeof fetch,
+    });
+
+    expect(jobs.length).toBeLessThanOrEqual(500);
+  });
+});
+
+describe('smartRecruitersAdapter detectExpired with empty board', () => {
+  it('returns false when totalFound === 0 (empty board is not expiry evidence)', async () => {
+    const emptyBoardStub = (url: string): Promise<Response> => {
+      return Promise.resolve(new Response(JSON.stringify({ totalFound: 0, content: [] }), { status: 200 }));
+    };
+
+    const result = await smartRecruitersAdapter.detectExpired(
+      { ...ctx, fetchImpl: emptyBoardStub as typeof fetch },
+      'any-id',
+    );
+
+    expect(result).toBe(false);
   });
 });

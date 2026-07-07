@@ -86,6 +86,20 @@ describe('greenhouseAdapter.detectExpired', () => {
   });
 });
 
+describe('greenhouse entity decoding', () => {
+  it('decodes HTML entities including numeric entities', async () => {
+    const numericFixture = JSON.stringify({
+      jobs: [{ id: 1, title: 'Test', absolute_url: 'http://test', content: '&#8217;s team' }],
+    });
+    const jobs = await greenhouseAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(200, numericFixture),
+    });
+    // &#8217; is the Unicode character U+2019 (RIGHT SINGLE QUOTATION MARK)
+    expect(jobs[0].descriptionHtml).toBe('’s team');
+  });
+});
+
 describe('greenhouseBoardUrl', () => {
   it('builds the boards-api URL', () => {
     expect(greenhouseBoardUrl('stripe')).toBe('https://boards-api.greenhouse.io/v1/boards/stripe/jobs?content=true');

@@ -8,7 +8,7 @@
       "requisition_id": "R-1234",
       "location": { "name": "New York, NY" },
       "absolute_url": "https://boards.greenhouse.io/stripe/jobs/4285367007",
-      "content": "<p>Join our payments team as a PM intern.</p>"
+      "content": "&lt;p&gt;Join our payments team as a PM intern.&lt;/p&gt;"
     },
     {
       "id": 4285367008,
@@ -18,7 +18,7 @@
       "requisition_id": null,
       "location": { "name": "Remote - US" },
       "absolute_url": "https://boards.greenhouse.io/stripe/jobs/4285367008",
-      "content": "<p>10+ years required.</p>"
+      "content": "&lt;p&gt;10+ years required.&lt;/p&gt;"
     }
   ]
 }

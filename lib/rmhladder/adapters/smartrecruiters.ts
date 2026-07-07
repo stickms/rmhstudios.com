@@ -3,8 +3,8 @@ import type { VerificationEvidence } from '../verification';
 import { politeFetch } from './http';
 import type { AdapterContext, NormalizedJob, SourceAdapter } from './types';
 
-export const smartRecruitersPostingsUrl = (slug: string) =>
-  `https://api.smartrecruiters.com/v1/companies/${slug}/postings?limit=100`;
+export const smartRecruitersPostingsUrl = (slug: string, offset = 0) =>
+  `https://api.smartrecruiters.com/v1/companies/${slug}/postings?limit=100&offset=${offset}`;
 
 export const smartRecruitersJobUrl = (slug: string, id: string) =>
   `https://jobs.smartrecruiters.com/${slug}/${id}`;
@@ -32,20 +32,65 @@ interface SrPostingsResponse {
   content?: unknown;
 }
 
-async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; status: number }> {
-  const res = await politeFetch(smartRecruitersPostingsUrl(ctx.slug), { fetchImpl: ctx.fetchImpl });
-  if (!res.ok) return { jobs: null, status: res.status };
-  try {
-    const parsed: unknown = JSON.parse(res.body);
-    if (typeof parsed === 'object' && parsed !== null) {
-      const data = parsed as SrPostingsResponse;
-      const content = data.content;
-      return { jobs: Array.isArray(content) ? (content as SrJob[]) : null, status: res.status };
+async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; status: number; totalFound: number }> {
+  const aggregated: SrJob[] = [];
+  let totalFound = 0;
+  let status = 200;
+  let offset = 0;
+  const hardCap = 500;
+
+  while (aggregated.length < hardCap) {
+    const res = await politeFetch(smartRecruitersPostingsUrl(ctx.slug, offset), { fetchImpl: ctx.fetchImpl });
+
+    if (!res.ok) {
+      // If the first page fails, return null; otherwise return what we have so far
+      if (offset === 0) {
+        return { jobs: null, status: res.status, totalFound: 0 };
+      }
+      break;
     }
-    return { jobs: null, status: res.status };
-  } catch {
-    return { jobs: null, status: res.status };
+
+    try {
+      const parsed: unknown = JSON.parse(res.body);
+      if (typeof parsed === 'object' && parsed !== null) {
+        const data = parsed as SrPostingsResponse;
+        // Capture totalFound from the first page
+        if (offset === 0) {
+          totalFound = data.totalFound ?? 0;
+          status = res.status;
+        }
+        const content = data.content;
+        if (Array.isArray(content)) {
+          aggregated.push(...(content as SrJob[]));
+        } else {
+          // If content is not an array on first page, return null
+          if (offset === 0) {
+            return { jobs: null, status: res.status, totalFound: 0 };
+          }
+          break;
+        }
+      } else {
+        if (offset === 0) {
+          return { jobs: null, status: res.status, totalFound: 0 };
+        }
+        break;
+      }
+    } catch {
+      if (offset === 0) {
+        return { jobs: null, status: res.status, totalFound: 0 };
+      }
+      break;
+    }
+
+    // Stop if we've reached totalFound or aggregated >= hardCap
+    if (aggregated.length >= totalFound || aggregated.length >= hardCap) {
+      break;
+    }
+
+    offset += 100;
   }
+
+  return { jobs: aggregated.length > 0 ? aggregated : null, status, totalFound };
 }
 
 function normalize(raw: SrJob, ctx: AdapterContext): NormalizedJob {
@@ -102,7 +147,8 @@ export const smartRecruitersAdapter: SourceAdapter = {
   },
 
   async detectExpired(ctx, externalId) {
-    const { jobs } = await fetchBoard(ctx);
+    const { jobs, totalFound } = await fetchBoard(ctx);
+    if (totalFound === 0) return false; // empty board is not expiry evidence
     if (jobs === null) return false; // fetch failure is NOT expiry evidence (3-strike rule is Plan 3)
     return !jobs.some((j) => j.id === externalId);
   },

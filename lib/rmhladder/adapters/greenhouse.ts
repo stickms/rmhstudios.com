@@ -6,6 +6,21 @@ import type { AdapterContext, NormalizedJob, SourceAdapter } from './types';
 export const greenhouseBoardUrl = (slug: string) =>
   `https://boards-api.greenhouse.io/v1/boards/${slug}/jobs?content=true`;
 
+function decodeEntities(s: string): string {
+  if (!s) return s;
+  // Decode numeric entities first (both decimal &#123; and hex &#x123;)
+  let result = s.replace(/&#(\d+);/g, (match, code) => String.fromCharCode(parseInt(code, 10)));
+  result = result.replace(/&#x([0-9a-fA-F]+);/g, (match, code) => String.fromCharCode(parseInt(code, 16)));
+  // Decode standard HTML entities
+  result = result.replace(/&lt;/g, '<');
+  result = result.replace(/&gt;/g, '>');
+  result = result.replace(/&quot;/g, '"');
+  result = result.replace(/&#39;/g, "'");
+  // Decode &amp; last to avoid double-decoding
+  result = result.replace(/&amp;/g, '&');
+  return result;
+}
+
 interface GhJob {
   id: number;
   title: string;
@@ -40,7 +55,7 @@ function normalize(raw: GhJob): NormalizedJob {
     postedAt: raw.first_published ? new Date(raw.first_published) : raw.updated_at ? new Date(raw.updated_at) : null,
     absoluteUrl: raw.absolute_url,
     applyUrl: null, // greenhouse absolute_url IS the apply page
-    descriptionHtml: raw.content ?? null,
+    descriptionHtml: raw.content ? decodeEntities(raw.content) : null,
     requisitionId: raw.requisition_id ?? null,
   };
 }
