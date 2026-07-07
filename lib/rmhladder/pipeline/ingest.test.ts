@@ -269,13 +269,10 @@ describe('assessJob — fields completeness', () => {
   });
 
   it('sets employmentType full_time for non-intern program types', () => {
-    const result = assessJob(baseArgs({ title: 'Entry Level Analyst' }, {}));
+    const result = assessJob(baseArgs({ title: 'Entry Level Business Analyst', descriptionHtml: '<p>Join our team.</p>' }, {}));
     // entry_level is not in the internship-type list → full_time
-    const employmentTypes = ['internship', 'full_time'];
-    expect(employmentTypes).toContain(result.fields.employmentType);
-    if (result.fields.programType === 'entry_level') {
-      expect(result.fields.employmentType).toBe('full_time');
-    }
+    expect(result.fields.programType).toBe('entry_level');
+    expect(result.fields.employmentType).toBe('full_time');
   });
 });
 
@@ -283,12 +280,9 @@ describe('assessJob — fields completeness', () => {
 
 describe('assessJob — unclear early career', () => {
   it('adds ambiguous_early_career for unclear classification', () => {
-    // A title with no strong signals in either direction
-    const result = assessJob(baseArgs({ title: 'Financial Analyst' }, {}));
-    // financial analyst often yields 'unclear' or 'probable'
-    // We just test that if classification is unclear, the reason is added
-    if (result.fields.earlyCareerClassification === 'unclear') {
-      expect(result.reviewReasons).toContain('ambiguous_early_career');
-    }
+    // Operations Specialist deterministically classifies as unclear
+    const result = assessJob(baseArgs({ title: 'Operations Specialist' }, {}));
+    expect(result.fields.earlyCareerClassification).toBe('unclear');
+    expect(result.reviewReasons).toContain('ambiguous_early_career');
   });
 });
