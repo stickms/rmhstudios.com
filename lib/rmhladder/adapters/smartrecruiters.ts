@@ -32,19 +32,19 @@ interface SrPostingsResponse {
   content?: unknown;
 }
 
-async function fetchBoard(ctx: AdapterContext): Promise<SrJob[] | null> {
+async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; status: number }> {
   const res = await politeFetch(smartRecruitersPostingsUrl(ctx.slug), { fetchImpl: ctx.fetchImpl });
-  if (!res.ok) return null;
+  if (!res.ok) return { jobs: null, status: res.status };
   try {
     const parsed: unknown = JSON.parse(res.body);
     if (typeof parsed === 'object' && parsed !== null) {
       const data = parsed as SrPostingsResponse;
       const content = data.content;
-      return Array.isArray(content) ? (content as SrJob[]) : null;
+      return { jobs: Array.isArray(content) ? (content as SrJob[]) : null, status: res.status };
     }
-    return null;
+    return { jobs: null, status: res.status };
   } catch {
-    return null;
+    return { jobs: null, status: res.status };
   }
 }
 
@@ -73,26 +73,26 @@ export const smartRecruitersAdapter: SourceAdapter = {
   platform: 'smartrecruiters',
 
   async discoverJobs(ctx) {
-    const jobs = await fetchBoard(ctx);
+    const { jobs } = await fetchBoard(ctx);
     return (jobs ?? []).map((job) => normalize(job, ctx));
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {
-    const board = await fetchBoard(ctx);
-    const hit = board?.find((j) => j.id === job.externalId) ?? null;
+    const { jobs, status } = await fetchBoard(ctx);
+    const hit = jobs?.find((j) => j.id === job.externalId) ?? null;
     const normalized = hit ? normalize(hit, ctx) : null;
     const loc = normalized ? classifyUSLocation({ locationRaw: normalized.locationRaw, country: normalized.country }) : null;
     return {
-      fetched: board !== null,
-      httpStatus: board !== null ? 200 : 404,
+      fetched: jobs !== null,
+      httpStatus: status,
       apiSource: true,
-      companyMatch: board !== null,
+      companyMatch: jobs !== null,
       titleMatch: hit !== null && hit.name === job.title,
       usConfirmed: loc?.isUS === true,
       applyPresent: hit !== null, // the hosted jobs.smartrecruiters.com page always carries the apply flow
       reqIdPresent: Boolean(hit?.refNumber),
       closedLanguage: false,
-      blocked: false,
+      blocked: status === 403 || status === 429,
       isSearchResultsPage: false,
       companyName: ctx.companyName,
       jobTitle: job.title,
@@ -102,8 +102,8 @@ export const smartRecruitersAdapter: SourceAdapter = {
   },
 
   async detectExpired(ctx, externalId) {
-    const board = await fetchBoard(ctx);
-    if (board === null) return false; // fetch failure is NOT expiry evidence (3-strike rule is Plan 3)
-    return !board.some((j) => j.id === externalId);
+    const { jobs } = await fetchBoard(ctx);
+    if (jobs === null) return false; // fetch failure is NOT expiry evidence (3-strike rule is Plan 3)
+    return !jobs.some((j) => j.id === externalId);
   },
 };

@@ -52,12 +52,14 @@ describe('smartRecruitersAdapter.verifyJob', () => {
   it('produces API-source evidence when the job is on the board', async () => {
     const e = await smartRecruitersAdapter.verifyJob(ctx, { externalId: '744000012345', title: 'Finance Analyst Program 2027' });
     expect(e).toMatchObject({
+      fetched: true, httpStatus: 200,
       apiSource: true,
       titleMatch: true,
       companyMatch: true,
       usConfirmed: true,
       applyPresent: true,
       reqIdPresent: true,
+      blocked: false,
       platform: 'smartrecruiters',
     });
   });
@@ -71,6 +73,32 @@ describe('smartRecruitersAdapter.verifyJob', () => {
     const e = await smartRecruitersAdapter.verifyJob(ctx, { externalId: '999', title: 'Ghost Role' });
     expect(e.titleMatch).toBe(false);
     expect(e.applyPresent).toBe(false);
+  });
+
+  it('stub(500) → fetched:false, httpStatus:500, blocked:false', async () => {
+    const e = await smartRecruitersAdapter.verifyJob(
+      { ...ctx, fetchImpl: stub(500, 'server error') },
+      { externalId: '744000012345', title: 'Finance Analyst Program 2027' },
+    );
+    expect(e).toMatchObject({ fetched: false, httpStatus: 500, blocked: false });
+  });
+
+  it('stub(403) → blocked:true', async () => {
+    const e = await smartRecruitersAdapter.verifyJob(
+      { ...ctx, fetchImpl: stub(403, 'forbidden') },
+      { externalId: '744000012345', title: 'Finance Analyst Program 2027' },
+    );
+    expect(e.blocked).toBe(true);
+    expect(e.httpStatus).toBe(403);
+  });
+
+  it('stub(429) → blocked:true', async () => {
+    const e = await smartRecruitersAdapter.verifyJob(
+      { ...ctx, fetchImpl: stub(429, 'rate limited') },
+      { externalId: '744000012345', title: 'Finance Analyst Program 2027' },
+    );
+    expect(e.blocked).toBe(true);
+    expect(e.httpStatus).toBe(429);
   });
 });
 

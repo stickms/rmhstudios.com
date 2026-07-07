@@ -17,15 +17,15 @@ interface GhJob {
   content?: string;
 }
 
-async function fetchBoard(ctx: AdapterContext): Promise<GhJob[] | null> {
+async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: GhJob[] | null; status: number }> {
   const res = await politeFetch(greenhouseBoardUrl(ctx.slug), { fetchImpl: ctx.fetchImpl });
-  if (!res.ok) return null;
+  if (!res.ok) return { jobs: null, status: res.status };
   try {
     const parsed = JSON.parse(res.body) as { jobs?: unknown };
     const jobs = parsed.jobs;
-    return Array.isArray(jobs) ? (jobs as GhJob[]) : null;
+    return { jobs: Array.isArray(jobs) ? (jobs as GhJob[]) : null, status: res.status };
   } catch {
-    return null;
+    return { jobs: null, status: res.status };
   }
 }
 
@@ -49,25 +49,25 @@ export const greenhouseAdapter: SourceAdapter = {
   platform: 'greenhouse',
 
   async discoverJobs(ctx) {
-    const jobs = await fetchBoard(ctx);
+    const { jobs } = await fetchBoard(ctx);
     return (jobs ?? []).map(normalize);
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {
-    const board = await fetchBoard(ctx);
-    const hit = board?.find((j) => String(j.id) === job.externalId) ?? null;
+    const { jobs, status } = await fetchBoard(ctx);
+    const hit = jobs?.find((j) => String(j.id) === job.externalId) ?? null;
     const loc = hit ? classifyUSLocation({ locationRaw: hit.location?.name ?? '' }) : null;
     return {
-      fetched: board !== null,
-      httpStatus: board !== null ? 200 : 404,
+      fetched: jobs !== null,
+      httpStatus: status,
       apiSource: true,
-      companyMatch: board !== null, // the board itself is company-scoped
+      companyMatch: jobs !== null, // the board itself is company-scoped
       titleMatch: hit !== null && hit.title === job.title,
       usConfirmed: loc?.isUS === true,
       applyPresent: hit !== null, // every greenhouse posting page carries the apply form
       reqIdPresent: Boolean(hit?.requisition_id),
       closedLanguage: false,
-      blocked: false,
+      blocked: status === 403 || status === 429,
       isSearchResultsPage: false,
       companyName: ctx.companyName,
       jobTitle: job.title,
@@ -77,8 +77,8 @@ export const greenhouseAdapter: SourceAdapter = {
   },
 
   async detectExpired(ctx, externalId) {
-    const board = await fetchBoard(ctx);
-    if (board === null) return false; // fetch failure is NOT expiry evidence (3-strike rule is Plan 3)
-    return !board.some((j) => String(j.id) === externalId);
+    const { jobs } = await fetchBoard(ctx);
+    if (jobs === null) return false; // fetch failure is NOT expiry evidence (3-strike rule is Plan 3)
+    return !jobs.some((j) => String(j.id) === externalId);
   },
 };

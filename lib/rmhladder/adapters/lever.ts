@@ -18,14 +18,14 @@ interface LeverJob {
   description?: string;
 }
 
-async function fetchBoard(ctx: AdapterContext): Promise<LeverJob[] | null> {
+async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: LeverJob[] | null; status: number }> {
   const res = await politeFetch(leverPostingsUrl(ctx.slug), { fetchImpl: ctx.fetchImpl });
-  if (!res.ok) return null;
+  if (!res.ok) return { jobs: null, status: res.status };
   try {
     const parsed: unknown = JSON.parse(res.body);
-    return Array.isArray(parsed) ? (parsed as LeverJob[]) : null;
+    return { jobs: Array.isArray(parsed) ? (parsed as LeverJob[]) : null, status: res.status };
   } catch {
-    return null;
+    return { jobs: null, status: res.status };
   }
 }
 
@@ -49,25 +49,25 @@ export const leverAdapter: SourceAdapter = {
   platform: 'lever',
 
   async discoverJobs(ctx) {
-    const jobs = await fetchBoard(ctx);
+    const { jobs } = await fetchBoard(ctx);
     return (jobs ?? []).map(normalize);
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {
-    const board = await fetchBoard(ctx);
-    const hit = board?.find((j) => j.id === job.externalId) ?? null;
+    const { jobs, status } = await fetchBoard(ctx);
+    const hit = jobs?.find((j) => j.id === job.externalId) ?? null;
     const loc = hit ? classifyUSLocation({ locationRaw: hit.categories?.location ?? '', country: hit.country ?? null }) : null;
     return {
-      fetched: board !== null,
-      httpStatus: board !== null ? 200 : 404,
+      fetched: jobs !== null,
+      httpStatus: status,
       apiSource: true,
-      companyMatch: board !== null,
+      companyMatch: jobs !== null,
       titleMatch: hit !== null && hit.text === job.title,
       usConfirmed: loc?.isUS === true,
       applyPresent: Boolean(hit?.applyUrl),
       reqIdPresent: false,
       closedLanguage: false,
-      blocked: false,
+      blocked: status === 403 || status === 429,
       isSearchResultsPage: false,
       companyName: ctx.companyName,
       jobTitle: job.title,
@@ -77,8 +77,8 @@ export const leverAdapter: SourceAdapter = {
   },
 
   async detectExpired(ctx, externalId) {
-    const board = await fetchBoard(ctx);
-    if (board === null) return false;
-    return !board.some((j) => j.id === externalId);
+    const { jobs } = await fetchBoard(ctx);
+    if (jobs === null) return false;
+    return !jobs.some((j) => j.id === externalId);
   },
 };

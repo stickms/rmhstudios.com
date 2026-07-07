@@ -46,8 +46,9 @@ describe('ashbyAdapter.verifyJob', () => {
   it('produces API-source evidence when the job is on the board', async () => {
     const e = await ashbyAdapter.verifyJob(ctx, { externalId: 'uuid-1', title: 'Software Engineering Intern' });
     expect(e).toMatchObject({
+      fetched: true, httpStatus: 200,
       apiSource: true, titleMatch: true, usConfirmed: true, applyPresent: true,
-      reqIdPresent: false, platform: 'ashby',
+      reqIdPresent: false, blocked: false, platform: 'ashby',
     });
   });
 
@@ -55,6 +56,32 @@ describe('ashbyAdapter.verifyJob', () => {
     const e = await ashbyAdapter.verifyJob(ctx, { externalId: 'uuid-2', title: 'Staff Engineer' });
     expect(e.titleMatch).toBe(true);
     expect(e.platform).toBe('ashby');
+  });
+
+  it('stub(500) → fetched:false, httpStatus:500, blocked:false', async () => {
+    const e = await ashbyAdapter.verifyJob(
+      { ...ctx, fetchImpl: stub(500, 'server error') },
+      { externalId: 'uuid-1', title: 'Software Engineering Intern' },
+    );
+    expect(e).toMatchObject({ fetched: false, httpStatus: 500, blocked: false });
+  });
+
+  it('stub(403) → blocked:true', async () => {
+    const e = await ashbyAdapter.verifyJob(
+      { ...ctx, fetchImpl: stub(403, 'forbidden') },
+      { externalId: 'uuid-1', title: 'Software Engineering Intern' },
+    );
+    expect(e.blocked).toBe(true);
+    expect(e.httpStatus).toBe(403);
+  });
+
+  it('stub(429) → blocked:true', async () => {
+    const e = await ashbyAdapter.verifyJob(
+      { ...ctx, fetchImpl: stub(429, 'rate limited') },
+      { externalId: 'uuid-1', title: 'Software Engineering Intern' },
+    );
+    expect(e.blocked).toBe(true);
+    expect(e.httpStatus).toBe(429);
   });
 });
 

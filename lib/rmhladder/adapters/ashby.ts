@@ -26,18 +26,18 @@ interface AshbyJob {
   };
 }
 
-async function fetchBoard(ctx: AdapterContext): Promise<AshbyJob[] | null> {
+async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: AshbyJob[] | null; status: number }> {
   const res = await politeFetch(ashbyBoardUrl(ctx.slug), { fetchImpl: ctx.fetchImpl });
-  if (!res.ok) return null;
+  if (!res.ok) return { jobs: null, status: res.status };
   try {
     const parsed: unknown = JSON.parse(res.body);
     if (typeof parsed === 'object' && parsed !== null && 'jobs' in parsed) {
       const jobs = (parsed as { jobs?: unknown }).jobs;
-      return Array.isArray(jobs) ? (jobs as AshbyJob[]) : null;
+      return { jobs: Array.isArray(jobs) ? (jobs as AshbyJob[]) : null, status: res.status };
     }
-    return null;
+    return { jobs: null, status: res.status };
   } catch {
-    return null;
+    return { jobs: null, status: res.status };
   }
 }
 
@@ -63,26 +63,26 @@ export const ashbyAdapter: SourceAdapter = {
   platform: 'ashby',
 
   async discoverJobs(ctx) {
-    const jobs = await fetchBoard(ctx);
+    const { jobs } = await fetchBoard(ctx);
     return (jobs ?? []).filter((j) => j.isListed).map(normalize);
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {
-    const board = await fetchBoard(ctx);
-    const hit = board?.find((j) => j.id === job.externalId) ?? null;
+    const { jobs, status } = await fetchBoard(ctx);
+    const hit = jobs?.find((j) => j.id === job.externalId) ?? null;
     const normalized = hit ? normalize(hit) : null;
     const loc = normalized ? classifyUSLocation({ locationRaw: normalized.locationRaw, country: normalized.country }) : null;
     return {
-      fetched: board !== null,
-      httpStatus: board !== null ? 200 : 404,
+      fetched: jobs !== null,
+      httpStatus: status,
       apiSource: true,
-      companyMatch: board !== null,
+      companyMatch: jobs !== null,
       titleMatch: hit !== null && hit.title === job.title,
       usConfirmed: loc?.isUS === true,
       applyPresent: Boolean(hit?.applyUrl),
       reqIdPresent: false,
       closedLanguage: false,
-      blocked: false,
+      blocked: status === 403 || status === 429,
       isSearchResultsPage: false,
       companyName: ctx.companyName,
       jobTitle: job.title,
@@ -92,9 +92,9 @@ export const ashbyAdapter: SourceAdapter = {
   },
 
   async detectExpired(ctx, externalId) {
-    const board = await fetchBoard(ctx);
-    if (board === null) return false; // fetch failure is NOT expiry evidence (3-strike rule is Plan 3)
-    const job = board.find((j) => j.id === externalId);
+    const { jobs } = await fetchBoard(ctx);
+    if (jobs === null) return false; // fetch failure is NOT expiry evidence (3-strike rule is Plan 3)
+    const job = jobs.find((j) => j.id === externalId);
     return job === undefined || job.isListed === false;
   },
 };

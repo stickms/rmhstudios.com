@@ -40,11 +40,13 @@ describe('leverAdapter.verifyJob', () => {
   it('produces API-source evidence when the job is on the board', async () => {
     const e = await leverAdapter.verifyJob(ctx, { externalId: 'a1b2c3d4-uuid', title: 'Data Science Intern' });
     expect(e).toMatchObject({
+      fetched: true, httpStatus: 200,
       apiSource: true,
       titleMatch: true,
       usConfirmed: true,
       applyPresent: true,
       reqIdPresent: false,
+      blocked: false,
       platform: 'lever',
     });
   });
@@ -52,6 +54,29 @@ describe('leverAdapter.verifyJob', () => {
     const e = await leverAdapter.verifyJob(ctx, { externalId: '999', title: 'Ghost Role' });
     expect(e.titleMatch).toBe(false);
     expect(e.applyPresent).toBe(false);
+  });
+  it('stub(500) → fetched:false, httpStatus:500, blocked:false', async () => {
+    const e = await leverAdapter.verifyJob(
+      { ...ctx, fetchImpl: stub(500, 'server error') },
+      { externalId: 'a1b2c3d4-uuid', title: 'Data Science Intern' },
+    );
+    expect(e).toMatchObject({ fetched: false, httpStatus: 500, blocked: false });
+  });
+  it('stub(403) → blocked:true', async () => {
+    const e = await leverAdapter.verifyJob(
+      { ...ctx, fetchImpl: stub(403, 'forbidden') },
+      { externalId: 'a1b2c3d4-uuid', title: 'Data Science Intern' },
+    );
+    expect(e.blocked).toBe(true);
+    expect(e.httpStatus).toBe(403);
+  });
+  it('stub(429) → blocked:true', async () => {
+    const e = await leverAdapter.verifyJob(
+      { ...ctx, fetchImpl: stub(429, 'rate limited') },
+      { externalId: 'a1b2c3d4-uuid', title: 'Data Science Intern' },
+    );
+    expect(e.blocked).toBe(true);
+    expect(e.httpStatus).toBe(429);
   });
 });
 
