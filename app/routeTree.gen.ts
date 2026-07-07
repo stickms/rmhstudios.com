@@ -179,6 +179,7 @@ import { Route as SitePersonasIndexRouteImport } from './routes/_site/personas/i
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
 import { Route as SiteLibraryIndexRouteImport } from './routes/_site/library/index'
+import { Route as SiteHomesIndexRouteImport } from './routes/_site/homes/index'
 import { Route as SiteGroupsIndexRouteImport } from './routes/_site/groups/index'
 import { Route as SiteDeveloperIndexRouteImport } from './routes/_site/developer/index'
 import { Route as SiteCreateIndexRouteImport } from './routes/_site/create/index'
@@ -289,6 +290,10 @@ import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-so
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
 import { Route as ApiInternalNotifyTypingRouteImport } from './routes/api/internal/notify-typing'
 import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/internal/notify-message'
+import { Route as ApiHomesSearchRouteImport } from './routes/api/homes/search'
+import { Route as ApiHomesSavedSearchesRouteImport } from './routes/api/homes/saved-searches'
+import { Route as ApiHomesSavedListingsRouteImport } from './routes/api/homes/saved-listings'
+import { Route as ApiHomesGeocodeRouteImport } from './routes/api/homes/geocode'
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
@@ -344,6 +349,7 @@ import { Route as SiteRideshareDriveRouteImport } from './routes/_site/rideshare
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
 import { Route as SitePersonasIdRouteImport } from './routes/_site/personas/$id'
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
+import { Route as SiteHomesSavedRouteImport } from './routes/_site/homes/saved'
 import { Route as SiteGroupsIdRouteImport } from './routes/_site/groups/$id'
 import { Route as SiteCSlugRouteImport } from './routes/_site/c.$slug'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
@@ -434,6 +440,7 @@ import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/
 import { Route as ApiLibraryFileIdRouteImport } from './routes/api/library/file/$id'
 import { Route as ApiLibraryCoverIdRouteImport } from './routes/api/library/cover/$id'
 import { Route as ApiLibraryCollectionIdRouteImport } from './routes/api/library/collection/$id'
+import { Route as ApiHomesListingIdRouteImport } from './routes/api/homes/listing.$id'
 import { Route as ApiGroupChatsIdStreamRouteImport } from './routes/api/group-chats/$id/stream'
 import { Route as ApiGroupChatsIdMessagesRouteImport } from './routes/api/group-chats/$id/messages'
 import { Route as ApiGroupChatsIdLeaveRouteImport } from './routes/api/group-chats/$id/leave'
@@ -477,6 +484,7 @@ import { Route as ApiAdminCuratedBuildsImageRouteImport } from './routes/api/adm
 import { Route as ApiAdminAnnouncementsIdRouteImport } from './routes/api/admin/announcements/$id'
 import { Route as ApiAdminAlbumsReorderRouteImport } from './routes/api/admin/albums/reorder'
 import { Route as ApiAdminAlbumsIdRouteImport } from './routes/api/admin/albums/$id'
+import { Route as SiteHomesListingIdRouteImport } from './routes/_site/homes/listing.$id'
 import { Route as SiteDeveloperDocsPageRouteImport } from './routes/_site/developer/docs/$page'
 import { Route as SiteAdminBlogNewRouteImport } from './routes/_site/admin/blog/new'
 import { Route as SiteAdminAlbumsIdRouteImport } from './routes/_site/admin/albums/$id'
@@ -1376,6 +1384,11 @@ const SiteLibraryIndexRoute = SiteLibraryIndexRouteImport.update({
   path: '/library/',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteHomesIndexRoute = SiteHomesIndexRouteImport.update({
+  id: '/homes/',
+  path: '/homes/',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteGroupsIndexRoute = SiteGroupsIndexRouteImport.update({
   id: '/groups/',
   path: '/groups/',
@@ -1940,6 +1953,26 @@ const ApiInternalNotifyMessageRoute =
     path: '/api/internal/notify-message',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiHomesSearchRoute = ApiHomesSearchRouteImport.update({
+  id: '/api/homes/search',
+  path: '/api/homes/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHomesSavedSearchesRoute = ApiHomesSavedSearchesRouteImport.update({
+  id: '/api/homes/saved-searches',
+  path: '/api/homes/saved-searches',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHomesSavedListingsRoute = ApiHomesSavedListingsRouteImport.update({
+  id: '/api/homes/saved-listings',
+  path: '/api/homes/saved-listings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHomesGeocodeRoute = ApiHomesGeocodeRouteImport.update({
+  id: '/api/homes/geocode',
+  path: '/api/homes/geocode',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHandleCheckRoute = ApiHandleCheckRouteImport.update({
   id: '/api/handle/check',
   path: '/api/handle/check',
@@ -2218,6 +2251,11 @@ const SiteMessagesConversationIdRoute =
     path: '/messages/$conversationId',
     getParentRoute: () => SiteRoute,
   } as any)
+const SiteHomesSavedRoute = SiteHomesSavedRouteImport.update({
+  id: '/homes/saved',
+  path: '/homes/saved',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteGroupsIdRoute = SiteGroupsIdRouteImport.update({
   id: '/groups/$id',
   path: '/groups/$id',
@@ -2681,6 +2719,11 @@ const ApiLibraryCollectionIdRoute = ApiLibraryCollectionIdRouteImport.update({
   path: '/api/library/collection/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHomesListingIdRoute = ApiHomesListingIdRouteImport.update({
+  id: '/api/homes/listing/$id',
+  path: '/api/homes/listing/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiGroupChatsIdStreamRoute = ApiGroupChatsIdStreamRouteImport.update({
   id: '/api/group-chats/$id/stream',
   path: '/api/group-chats/$id/stream',
@@ -2916,6 +2959,11 @@ const ApiAdminAlbumsIdRoute = ApiAdminAlbumsIdRouteImport.update({
   id: '/api/admin/albums/$id',
   path: '/api/admin/albums/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SiteHomesListingIdRoute = SiteHomesListingIdRouteImport.update({
+  id: '/homes/listing/$id',
+  path: '/homes/listing/$id',
+  getParentRoute: () => SiteRoute,
 } as any)
 const SiteDeveloperDocsPageRoute = SiteDeveloperDocsPageRouteImport.update({
   id: '/$page',
@@ -3337,6 +3385,7 @@ export interface FileRoutesByFullPath {
   '/admin/users': typeof SiteAdminUsersRoute
   '/c/$slug': typeof SiteCSlugRoute
   '/groups/$id': typeof SiteGroupsIdRoute
+  '/homes/saved': typeof SiteHomesSavedRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
@@ -3392,6 +3441,10 @@ export interface FileRoutesByFullPath {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/homes/geocode': typeof ApiHomesGeocodeRoute
+  '/api/homes/saved-listings': typeof ApiHomesSavedListingsRoute
+  '/api/homes/saved-searches': typeof ApiHomesSavedSearchesRoute
+  '/api/homes/search': typeof ApiHomesSearchRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
@@ -3502,6 +3555,7 @@ export interface FileRoutesByFullPath {
   '/create/': typeof SiteCreateIndexRoute
   '/developer/': typeof SiteDeveloperIndexRoute
   '/groups/': typeof SiteGroupsIndexRoute
+  '/homes/': typeof SiteHomesIndexRoute
   '/library/': typeof SiteLibraryIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
@@ -3533,6 +3587,7 @@ export interface FileRoutesByFullPath {
   '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/developer/docs/$page': typeof SiteDeveloperDocsPageRoute
+  '/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
   '/api/admin/albums/reorder': typeof ApiAdminAlbumsReorderRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
@@ -3576,6 +3631,7 @@ export interface FileRoutesByFullPath {
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
+  '/api/homes/listing/$id': typeof ApiHomesListingIdRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
@@ -3830,6 +3886,7 @@ export interface FileRoutesByTo {
   '/admin/users': typeof SiteAdminUsersRoute
   '/c/$slug': typeof SiteCSlugRoute
   '/groups/$id': typeof SiteGroupsIdRoute
+  '/homes/saved': typeof SiteHomesSavedRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
@@ -3885,6 +3942,10 @@ export interface FileRoutesByTo {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/homes/geocode': typeof ApiHomesGeocodeRoute
+  '/api/homes/saved-listings': typeof ApiHomesSavedListingsRoute
+  '/api/homes/saved-searches': typeof ApiHomesSavedSearchesRoute
+  '/api/homes/search': typeof ApiHomesSearchRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
@@ -3995,6 +4056,7 @@ export interface FileRoutesByTo {
   '/create': typeof SiteCreateIndexRoute
   '/developer': typeof SiteDeveloperIndexRoute
   '/groups': typeof SiteGroupsIndexRoute
+  '/homes': typeof SiteHomesIndexRoute
   '/library': typeof SiteLibraryIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
@@ -4026,6 +4088,7 @@ export interface FileRoutesByTo {
   '/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/developer/docs/$page': typeof SiteDeveloperDocsPageRoute
+  '/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
   '/api/admin/albums/reorder': typeof ApiAdminAlbumsReorderRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
@@ -4069,6 +4132,7 @@ export interface FileRoutesByTo {
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
+  '/api/homes/listing/$id': typeof ApiHomesListingIdRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
@@ -4349,6 +4413,7 @@ export interface FileRoutesById {
   '/_site/admin/users': typeof SiteAdminUsersRoute
   '/_site/c/$slug': typeof SiteCSlugRoute
   '/_site/groups/$id': typeof SiteGroupsIdRoute
+  '/_site/homes/saved': typeof SiteHomesSavedRoute
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/personas/$id': typeof SitePersonasIdRoute
   '/_site/profile/$id': typeof SiteProfileIdRoute
@@ -4404,6 +4469,10 @@ export interface FileRoutesById {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/homes/geocode': typeof ApiHomesGeocodeRoute
+  '/api/homes/saved-listings': typeof ApiHomesSavedListingsRoute
+  '/api/homes/saved-searches': typeof ApiHomesSavedSearchesRoute
+  '/api/homes/search': typeof ApiHomesSearchRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
@@ -4514,6 +4583,7 @@ export interface FileRoutesById {
   '/_site/create/': typeof SiteCreateIndexRoute
   '/_site/developer/': typeof SiteDeveloperIndexRoute
   '/_site/groups/': typeof SiteGroupsIndexRoute
+  '/_site/homes/': typeof SiteHomesIndexRoute
   '/_site/library/': typeof SiteLibraryIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
@@ -4545,6 +4615,7 @@ export interface FileRoutesById {
   '/_site/admin/albums/$id': typeof SiteAdminAlbumsIdRoute
   '/_site/admin/blog/new': typeof SiteAdminBlogNewRoute
   '/_site/developer/docs/$page': typeof SiteDeveloperDocsPageRoute
+  '/_site/homes/listing/$id': typeof SiteHomesListingIdRoute
   '/api/admin/albums/$id': typeof ApiAdminAlbumsIdRouteWithChildren
   '/api/admin/albums/reorder': typeof ApiAdminAlbumsReorderRoute
   '/api/admin/announcements/$id': typeof ApiAdminAnnouncementsIdRoute
@@ -4588,6 +4659,7 @@ export interface FileRoutesById {
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
+  '/api/homes/listing/$id': typeof ApiHomesListingIdRoute
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
@@ -4868,6 +4940,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/c/$slug'
     | '/groups/$id'
+    | '/homes/saved'
     | '/messages/$conversationId'
     | '/personas/$id'
     | '/profile/$id'
@@ -4923,6 +4996,10 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/gif/search'
     | '/api/handle/check'
+    | '/api/homes/geocode'
+    | '/api/homes/saved-listings'
+    | '/api/homes/saved-searches'
+    | '/api/homes/search'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
@@ -5033,6 +5110,7 @@ export interface FileRouteTypes {
     | '/create/'
     | '/developer/'
     | '/groups/'
+    | '/homes/'
     | '/library/'
     | '/messages/'
     | '/news/'
@@ -5064,6 +5142,7 @@ export interface FileRouteTypes {
     | '/admin/albums/$id'
     | '/admin/blog/new'
     | '/developer/docs/$page'
+    | '/homes/listing/$id'
     | '/api/admin/albums/$id'
     | '/api/admin/albums/reorder'
     | '/api/admin/announcements/$id'
@@ -5107,6 +5186,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
     | '/api/group-chats/$id/stream'
+    | '/api/homes/listing/$id'
     | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
@@ -5361,6 +5441,7 @@ export interface FileRouteTypes {
     | '/admin/users'
     | '/c/$slug'
     | '/groups/$id'
+    | '/homes/saved'
     | '/messages/$conversationId'
     | '/personas/$id'
     | '/profile/$id'
@@ -5416,6 +5497,10 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/gif/search'
     | '/api/handle/check'
+    | '/api/homes/geocode'
+    | '/api/homes/saved-listings'
+    | '/api/homes/saved-searches'
+    | '/api/homes/search'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
@@ -5526,6 +5611,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/developer'
     | '/groups'
+    | '/homes'
     | '/library'
     | '/messages'
     | '/news'
@@ -5557,6 +5643,7 @@ export interface FileRouteTypes {
     | '/admin/albums/$id'
     | '/admin/blog/new'
     | '/developer/docs/$page'
+    | '/homes/listing/$id'
     | '/api/admin/albums/$id'
     | '/api/admin/albums/reorder'
     | '/api/admin/announcements/$id'
@@ -5600,6 +5687,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
     | '/api/group-chats/$id/stream'
+    | '/api/homes/listing/$id'
     | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
@@ -5879,6 +5967,7 @@ export interface FileRouteTypes {
     | '/_site/admin/users'
     | '/_site/c/$slug'
     | '/_site/groups/$id'
+    | '/_site/homes/saved'
     | '/_site/messages/$conversationId'
     | '/_site/personas/$id'
     | '/_site/profile/$id'
@@ -5934,6 +6023,10 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/gif/search'
     | '/api/handle/check'
+    | '/api/homes/geocode'
+    | '/api/homes/saved-listings'
+    | '/api/homes/saved-searches'
+    | '/api/homes/search'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
@@ -6044,6 +6137,7 @@ export interface FileRouteTypes {
     | '/_site/create/'
     | '/_site/developer/'
     | '/_site/groups/'
+    | '/_site/homes/'
     | '/_site/library/'
     | '/_site/messages/'
     | '/_site/news/'
@@ -6075,6 +6169,7 @@ export interface FileRouteTypes {
     | '/_site/admin/albums/$id'
     | '/_site/admin/blog/new'
     | '/_site/developer/docs/$page'
+    | '/_site/homes/listing/$id'
     | '/api/admin/albums/$id'
     | '/api/admin/albums/reorder'
     | '/api/admin/announcements/$id'
@@ -6118,6 +6213,7 @@ export interface FileRouteTypes {
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
     | '/api/group-chats/$id/stream'
+    | '/api/homes/listing/$id'
     | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
@@ -6353,6 +6449,10 @@ export interface RootRouteChildren {
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
+  ApiHomesGeocodeRoute: typeof ApiHomesGeocodeRoute
+  ApiHomesSavedListingsRoute: typeof ApiHomesSavedListingsRoute
+  ApiHomesSavedSearchesRoute: typeof ApiHomesSavedSearchesRoute
+  ApiHomesSearchRoute: typeof ApiHomesSearchRoute
   ApiInternalNotifyMessageRoute: typeof ApiInternalNotifyMessageRoute
   ApiInternalNotifyTypingRoute: typeof ApiInternalNotifyTypingRoute
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
@@ -6487,6 +6587,7 @@ export interface RootRouteChildren {
   ApiGroupChatsIdLeaveRoute: typeof ApiGroupChatsIdLeaveRoute
   ApiGroupChatsIdMessagesRoute: typeof ApiGroupChatsIdMessagesRouteWithChildren
   ApiGroupChatsIdStreamRoute: typeof ApiGroupChatsIdStreamRoute
+  ApiHomesListingIdRoute: typeof ApiHomesListingIdRoute
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
@@ -7723,6 +7824,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteLibraryIndexRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/homes/': {
+      id: '/_site/homes/'
+      path: '/homes'
+      fullPath: '/homes/'
+      preLoaderRoute: typeof SiteHomesIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/groups/': {
       id: '/_site/groups/'
       path: '/groups'
@@ -8493,6 +8601,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalNotifyMessageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/homes/search': {
+      id: '/api/homes/search'
+      path: '/api/homes/search'
+      fullPath: '/api/homes/search'
+      preLoaderRoute: typeof ApiHomesSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/homes/saved-searches': {
+      id: '/api/homes/saved-searches'
+      path: '/api/homes/saved-searches'
+      fullPath: '/api/homes/saved-searches'
+      preLoaderRoute: typeof ApiHomesSavedSearchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/homes/saved-listings': {
+      id: '/api/homes/saved-listings'
+      path: '/api/homes/saved-listings'
+      fullPath: '/api/homes/saved-listings'
+      preLoaderRoute: typeof ApiHomesSavedListingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/homes/geocode': {
+      id: '/api/homes/geocode'
+      path: '/api/homes/geocode'
+      fullPath: '/api/homes/geocode'
+      preLoaderRoute: typeof ApiHomesGeocodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/handle/check': {
       id: '/api/handle/check'
       path: '/api/handle/check'
@@ -8876,6 +9012,13 @@ declare module '@tanstack/react-router' {
       path: '/messages/$conversationId'
       fullPath: '/messages/$conversationId'
       preLoaderRoute: typeof SiteMessagesConversationIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/homes/saved': {
+      id: '/_site/homes/saved'
+      path: '/homes/saved'
+      fullPath: '/homes/saved'
+      preLoaderRoute: typeof SiteHomesSavedRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/groups/$id': {
@@ -9508,6 +9651,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiLibraryCollectionIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/homes/listing/$id': {
+      id: '/api/homes/listing/$id'
+      path: '/api/homes/listing/$id'
+      fullPath: '/api/homes/listing/$id'
+      preLoaderRoute: typeof ApiHomesListingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/group-chats/$id/stream': {
       id: '/api/group-chats/$id/stream'
       path: '/api/group-chats/$id/stream'
@@ -9808,6 +9958,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/admin/albums/$id'
       preLoaderRoute: typeof ApiAdminAlbumsIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_site/homes/listing/$id': {
+      id: '/_site/homes/listing/$id'
+      path: '/homes/listing/$id'
+      fullPath: '/homes/listing/$id'
+      preLoaderRoute: typeof SiteHomesListingIdRouteImport
+      parentRoute: typeof SiteRoute
     }
     '/_site/developer/docs/$page': {
       id: '/_site/developer/docs/$page'
@@ -10244,6 +10401,7 @@ interface SiteRouteChildren {
   SiteIndexRoute: typeof SiteIndexRoute
   SiteCSlugRoute: typeof SiteCSlugRoute
   SiteGroupsIdRoute: typeof SiteGroupsIdRoute
+  SiteHomesSavedRoute: typeof SiteHomesSavedRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SitePersonasIdRoute: typeof SitePersonasIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
@@ -10259,6 +10417,7 @@ interface SiteRouteChildren {
   SiteBuildsIndexRoute: typeof SiteBuildsIndexRoute
   SiteCreateIndexRoute: typeof SiteCreateIndexRoute
   SiteGroupsIndexRoute: typeof SiteGroupsIndexRoute
+  SiteHomesIndexRoute: typeof SiteHomesIndexRoute
   SiteLibraryIndexRoute: typeof SiteLibraryIndexRoute
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
@@ -10268,6 +10427,7 @@ interface SiteRouteChildren {
   SiteStudyIndexRoute: typeof SiteStudyIndexRoute
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
   SiteVIndexRoute: typeof SiteVIndexRoute
+  SiteHomesListingIdRoute: typeof SiteHomesListingIdRoute
   SiteUUseridIndexRoute: typeof SiteUUseridIndexRoute
   SiteUUseridPostPostidRoute: typeof SiteUUseridPostPostidRoute
 }
@@ -10297,6 +10457,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteIndexRoute: SiteIndexRoute,
   SiteCSlugRoute: SiteCSlugRoute,
   SiteGroupsIdRoute: SiteGroupsIdRoute,
+  SiteHomesSavedRoute: SiteHomesSavedRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SitePersonasIdRoute: SitePersonasIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
@@ -10312,6 +10473,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteBuildsIndexRoute: SiteBuildsIndexRoute,
   SiteCreateIndexRoute: SiteCreateIndexRoute,
   SiteGroupsIndexRoute: SiteGroupsIndexRoute,
+  SiteHomesIndexRoute: SiteHomesIndexRoute,
   SiteLibraryIndexRoute: SiteLibraryIndexRoute,
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
@@ -10321,6 +10483,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteStudyIndexRoute: SiteStudyIndexRoute,
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
   SiteVIndexRoute: SiteVIndexRoute,
+  SiteHomesListingIdRoute: SiteHomesListingIdRoute,
   SiteUUseridIndexRoute: SiteUUseridIndexRoute,
   SiteUUseridPostPostidRoute: SiteUUseridPostPostidRoute,
 }
@@ -11348,6 +11511,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
+  ApiHomesGeocodeRoute: ApiHomesGeocodeRoute,
+  ApiHomesSavedListingsRoute: ApiHomesSavedListingsRoute,
+  ApiHomesSavedSearchesRoute: ApiHomesSavedSearchesRoute,
+  ApiHomesSearchRoute: ApiHomesSearchRoute,
   ApiInternalNotifyMessageRoute: ApiInternalNotifyMessageRoute,
   ApiInternalNotifyTypingRoute: ApiInternalNotifyTypingRoute,
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,
@@ -11483,6 +11650,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGroupChatsIdLeaveRoute: ApiGroupChatsIdLeaveRoute,
   ApiGroupChatsIdMessagesRoute: ApiGroupChatsIdMessagesRouteWithChildren,
   ApiGroupChatsIdStreamRoute: ApiGroupChatsIdStreamRoute,
+  ApiHomesListingIdRoute: ApiHomesListingIdRoute,
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
