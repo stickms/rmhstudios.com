@@ -33,7 +33,7 @@ generation to show what he looks like right now.
 | `/newlife` | Voluntary New Game+ once Alex is a grown adult — he "graduates" and a new generation begins |
 | `/rename <name>` | Give Alex a new name |
 | `/caretakers` | Leaderboard of who's taken the best care of Alex — a rendered image with everyone's avatar, rank, points bar, and action tally (text fallback if the image can't be produced) |
-| `/alexmessages [all\|care\|off]` | **(Manage Messages / bot owner only)** Set how much Alex talks in this server: `all` (everything), `care` (only care alerts + life events), `off` (completely silent). Blank shows the current setting. |
+| `/alexmessages [all\|care\|off]` | **(server owner / Manage Messages / bot owner only)** Set how much Alex talks in this server: `all` (everything), `care` (only care alerts + life events), `off` (completely silent). Blank shows the current setting. |
 
 Alex is a **global pet** — commands work in any server (but not DMs, so the bot
 knows which channel to talk back in).
@@ -85,8 +85,9 @@ last-used channel** (at most one per tick), by priority:
 If a server's channel becomes unreachable (deleted / bot lost access), it's
 cleared so the bot stops broadcasting there.
 
-Each server picks how much Alex talks with `/alexmessages` (bot owner or a member
-with **Manage Messages**; stored per server in `discord_alex_guild.messageLevel`):
+Each server picks how much Alex talks with `/alexmessages` (the **server owner**, a
+member with **Manage Messages**, or the configured bot owner via `OWNER_ID`; stored
+per server in `discord_alex_guild.messageLevel`):
 
 - `all` (default) — random ambient posts + care alerts + life events.
 - `care` — care alerts + life events only (no random chatter).

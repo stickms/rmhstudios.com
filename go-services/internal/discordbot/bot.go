@@ -8,6 +8,7 @@ package discordbot
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -291,11 +292,11 @@ func (b *Bot) routeCommand(ctx context.Context, s *discordgo.Session, i *discord
 	case "caretakers":
 		err = b.pet.HandleCaretakers(ctx, s, i)
 	case "alexmessages":
-		if !b.canToggleAlex(i) {
+		if !b.canToggleAlex(s, i) {
 			_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 				Type: discordgo.InteractionResponseChannelMessageWithSource,
 				Data: &discordgo.InteractionResponseData{
-					Content: "🔒 You need the **Manage Messages** permission (or to be the bot owner) to change Alex's messages here.",
+					Content: "🔒 You need to be the **server owner**, have the **Manage Messages** permission, or be the bot owner to change Alex's messages here.",
 					Flags:   discordgo.MessageFlagsEphemeral,
 				},
 			})
@@ -345,14 +346,28 @@ func (b *Bot) routeModal(ctx context.Context, s *discordgo.Session, i *discordgo
 }
 
 // canToggleAlex reports whether the interacting user may change Alex's per-server
-// message settings: the configured bot owner (OWNER_ID), or any member with the
-// Manage Messages permission (Administrators have it implicitly). For application
-// commands Discord resolves the member's channel permissions into i.Member.Permissions.
-func (b *Bot) canToggleAlex(i *discordgo.InteractionCreate) bool {
+// message settings. Any of these qualifies:
+//   - the configured bot owner (OWNER_ID; trimmed to tolerate stray whitespace),
+//   - the server's own owner (guild.OwnerID) — always allowed in their server,
+//   - a member with Manage Messages or Administrator (Discord resolves the
+//     member's channel permissions into i.Member.Permissions for slash commands).
+//
+// The guild-owner path is independent of both OWNER_ID config and the permissions
+// bitfield, so it works even when OWNER_ID is unset or the permission field is
+// empty for some reason.
+func (b *Bot) canToggleAlex(s *discordgo.Session, i *discordgo.InteractionCreate) bool {
 	userID, _ := interactionUser(i)
-	if b.cfg.OwnerID != "" && userID == b.cfg.OwnerID {
+
+	if owner := strings.TrimSpace(b.cfg.OwnerID); owner != "" && userID == owner {
 		return true
 	}
+
+	if s != nil && i.GuildID != "" {
+		if g, err := s.State.Guild(i.GuildID); err == nil && g != nil && g.OwnerID == userID {
+			return true
+		}
+	}
+
 	if i.Member != nil {
 		p := i.Member.Permissions
 		if p&discordgo.PermissionManageMessages != 0 || p&discordgo.PermissionAdministrator != 0 {

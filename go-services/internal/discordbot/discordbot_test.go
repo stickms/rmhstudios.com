@@ -417,7 +417,8 @@ func TestPresenceReflectsState(t *testing.T) {
 }
 
 func TestCanToggleAlex(t *testing.T) {
-	b := &Bot{cfg: Config{OwnerID: "owner1"}}
+	// OwnerID has stray whitespace to prove the comparison trims it.
+	b := &Bot{cfg: Config{OwnerID: " owner1 "}}
 
 	mk := func(userID string, perms int64) *discordgo.InteractionCreate {
 		return &discordgo.InteractionCreate{Interaction: &discordgo.Interaction{
@@ -430,7 +431,7 @@ func TestCanToggleAlex(t *testing.T) {
 		i     *discordgo.InteractionCreate
 		allow bool
 	}{
-		{"bot owner (no perms)", mk("owner1", 0), true},
+		{"bot owner (no perms, env has whitespace)", mk("owner1", 0), true},
 		{"manage messages", mk("u2", discordgo.PermissionManageMessages), true},
 		{"administrator", mk("u3", discordgo.PermissionAdministrator), true},
 		{"manage + other perms", mk("u4", discordgo.PermissionManageMessages|discordgo.PermissionViewChannel), true},
@@ -438,13 +439,14 @@ func TestCanToggleAlex(t *testing.T) {
 		{"no perms", mk("u6", 0), false},
 	}
 	for _, c := range cases {
-		if got := b.canToggleAlex(c.i); got != c.allow {
+		// Session is nil here; the owner + permission paths don't need it.
+		if got := b.canToggleAlex(nil, c.i); got != c.allow {
 			t.Errorf("%s: canToggleAlex = %v, want %v", c.name, got, c.allow)
 		}
 	}
 
 	// A nil member (e.g. a DM) is never allowed unless it's the owner.
-	if b.canToggleAlex(&discordgo.InteractionCreate{Interaction: &discordgo.Interaction{}}) {
+	if b.canToggleAlex(nil, &discordgo.InteractionCreate{Interaction: &discordgo.Interaction{}}) {
 		t.Error("nil member should not be allowed")
 	}
 }
