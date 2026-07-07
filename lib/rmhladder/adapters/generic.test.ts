@@ -60,4 +60,37 @@ describe('verifyGenericUrl', () => {
     expect(e.fetched).toBe(false);
     expect(e.blocked).toBe(false);
   });
+  it('data: URL rejected before fetch; fetchImpl never called', async () => {
+    let fetchCalled = false;
+    const trackingFetch = async () => {
+      fetchCalled = true;
+      throw new Error('should not be called');
+    };
+    const e = await verifyGenericUrl({ ...args, url: 'data:text/html,<h1>hi</h1>', fetchImpl: trackingFetch as typeof fetch });
+    expect(fetchCalled).toBe(false);
+    expect(e.fetched).toBe(false);
+    expect(e.blocked).toBe(false);
+  });
+  it('file: URL rejected before fetch', async () => {
+    let fetchCalled = false;
+    const trackingFetch = async () => {
+      fetchCalled = true;
+      throw new Error('should not be called');
+    };
+    const e = await verifyGenericUrl({ ...args, url: 'file:///etc/passwd', fetchImpl: trackingFetch as typeof fetch });
+    expect(fetchCalled).toBe(false);
+    expect(e.fetched).toBe(false);
+    expect(e.blocked).toBe(false);
+  });
+  it('javascript: URL rejected before fetch', async () => {
+    let fetchCalled = false;
+    const trackingFetch = async () => {
+      fetchCalled = true;
+      throw new Error('should not be called');
+    };
+    const e = await verifyGenericUrl({ ...args, url: 'javascript:alert(1)', fetchImpl: trackingFetch as typeof fetch });
+    expect(fetchCalled).toBe(false);
+    expect(e.fetched).toBe(false);
+    expect(e.blocked).toBe(false);
+  });
 });

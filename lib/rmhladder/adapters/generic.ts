@@ -23,6 +23,16 @@ export async function verifyGenericUrl(args: {
     companyName: args.companyName, jobTitle: args.jobTitle, platform: 'generic',
   };
 
+  // Reject non-http(s) URLs before any fetch
+  try {
+    const u = new URL(args.url);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+      return base;
+    }
+  } catch {
+    return base;
+  }
+
   const allowed = await checkRobots(args.url, args.fetchImpl);
   if (!allowed) return { ...base, blocked: true };
 

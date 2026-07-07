@@ -34,8 +34,10 @@ export function isPathAllowed(robotsTxt: string, userAgent: string, path: string
   let matchLen = -1;
   for (const g of applicable) {
     for (const r of g.rules) {
-      if (r.prefix === '' || !path.startsWith(r.prefix)) continue;
-      if (r.prefix.length > matchLen) { matchLen = r.prefix.length; verdict = r.allow; }
+      // Extract effective prefix (up to first * or $)
+      const effectivePrefix = r.prefix.split(/[\*$]/)[0];
+      if (effectivePrefix === '' || !path.startsWith(effectivePrefix)) continue;
+      if (effectivePrefix.length > matchLen) { matchLen = effectivePrefix.length; verdict = r.allow; }
     }
   }
   return verdict;

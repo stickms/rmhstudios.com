@@ -30,6 +30,11 @@ function parseArgs() {
     }
   }
 
+  if (limit !== undefined && (isNaN(limit) || limit < 1)) {
+    console.error('--limit must be a positive integer');
+    process.exit(1);
+  }
+
   return { limit, platform };
 }
 

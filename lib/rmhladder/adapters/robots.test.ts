@@ -25,4 +25,21 @@ describe('isPathAllowed', () => {
   it('empty robots allows everything', () => {
     expect(isPathAllowed('', 'anybot', '/x')).toBe(true);
   });
+  it('wildcard in Disallow matches prefix up to *', () => {
+    const r = `User-agent: *\nDisallow: /careers/*`;
+    expect(isPathAllowed(r, 'bot', '/careers/x')).toBe(false);
+    expect(isPathAllowed(r, 'bot', '/careers/jobs/123')).toBe(false);
+    expect(isPathAllowed(r, 'bot', '/other')).toBe(true);
+  });
+  it('wildcard: Allow wins by effective prefix length', () => {
+    const r = `User-agent: *\nAllow: /careers/jobs*\nDisallow: /careers/`;
+    expect(isPathAllowed(r, 'bot', '/careers/jobs123')).toBe(true);
+    expect(isPathAllowed(r, 'bot', '/careers/other')).toBe(false);
+  });
+  it('$ in Disallow matches prefix up to $', () => {
+    const r = `User-agent: *\nDisallow: /jobs/*/apply$`;
+    expect(isPathAllowed(r, 'bot', '/jobs/123/apply')).toBe(false);
+    expect(isPathAllowed(r, 'bot', '/jobs/123/applyextra')).toBe(false);
+    expect(isPathAllowed(r, 'bot', '/other/jobs/apply')).toBe(true);
+  });
 });
