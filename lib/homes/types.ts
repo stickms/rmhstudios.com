@@ -1,92 +1,90 @@
 /**
- * RMHHomes — shared types.
+ * RMHHomes — shared types (community housing marketplace).
  *
- * Client-safe (no server-only imports). Describes the normalized listing shape
- * that every provider adapts its raw data into, plus the search filter/response
- * contracts shared between the API layer and the React UI.
+ * Client-safe (no server-only imports). RMHHomes is a marketplace where RMH
+ * users post their own rentals/houses; every listing is real and owned by an
+ * author. These types describe the listing DTO the API returns and the
+ * search/filter contract shared between the API and the UI.
  */
 
-/** Where a listing came from. Kept small and stable — used in listing IDs. */
-export type ListingSource = 'sample' | 'craigslist' | 'rentcast';
+export type ListingType = 'RENT' | 'SALE';
+export const LISTING_TYPES: ListingType[] = ['RENT', 'SALE'];
 
-export const LISTING_SOURCES: ListingSource[] = ['sample', 'craigslist', 'rentcast'];
-
-/** Rent vs. buy. */
-export type ListingType = 'rent' | 'sale';
-
-/** Coarse property categories, normalized across every provider. */
-export type PropertyType = 'apartment' | 'house' | 'condo' | 'townhouse' | 'room' | 'other';
-
+export type PropertyType = 'APARTMENT' | 'HOUSE' | 'CONDO' | 'TOWNHOUSE' | 'ROOM' | 'OTHER';
 export const PROPERTY_TYPES: PropertyType[] = [
-  'apartment',
-  'house',
-  'condo',
-  'townhouse',
-  'room',
-  'other',
+  'APARTMENT',
+  'HOUSE',
+  'CONDO',
+  'TOWNHOUSE',
+  'ROOM',
+  'OTHER',
 ];
 
+export type ListingStatus = 'ACTIVE' | 'RENTED' | 'SOLD' | 'REMOVED';
+
+/** Minimal author info shown on a listing. */
+export interface ListingAuthor {
+  id: string;
+  name: string | null;
+  handle: string | null;
+  image: string | null;
+}
+
 /**
- * A single normalized listing. Providers map their raw payloads into this
- * shape; everything downstream (filtering, ranking, UI, saved snapshots) only
- * ever sees this. `id` is globally unique and stable: `"<source>:<externalId>"`.
+ * A listing as returned to the client. `price` is in whole USD dollars (the DB
+ * stores cents). Timestamps are ISO strings.
  */
 export interface Listing {
   id: string;
-  source: ListingSource;
-  /** Provider-native id (the part after the colon in `id`). */
-  externalId: string;
-
-  title: string;
-  description?: string;
-
+  status: ListingStatus;
   listingType: ListingType;
   propertyType: PropertyType;
 
-  /** USD. Monthly rent for rentals, sale price for `sale`. */
-  price: number | null;
+  title: string;
+  description: string;
+  price: number;
 
-  beds: number | null;
-  baths: number | null;
+  beds: number;
+  baths: number;
   sqft: number | null;
 
-  address?: string;
-  city?: string;
-  state?: string;
-  postalCode?: string;
+  address: string | null;
+  city: string;
+  state: string;
+  postalCode: string | null;
+  lat: number;
+  lng: number;
 
-  lat: number | null;
-  lng: number | null;
+  amenities: string[];
+  petsAllowed: boolean;
+  availableFrom: string | null;
 
-  /** Primary image; `images` holds the full gallery when available. */
-  imageUrl?: string;
-  images?: string[];
+  images: string[];
+  viewsCount: number;
 
-  /** Canonical link back to the source listing. */
-  url?: string;
+  createdAt: string;
+  updatedAt: string;
 
-  amenities?: string[];
-  petsAllowed?: boolean | null;
-
-  /** ISO-8601 timestamps. */
-  availableFrom?: string;
-  postedAt?: string;
+  author: ListingAuthor;
+  /** Whether the requesting user has favorited this listing. */
+  favorited: boolean;
+  /** Whether the requesting user is the author (can edit/delete). */
+  isOwner: boolean;
 }
 
-export type SortOrder = 'relevance' | 'price_asc' | 'price_desc' | 'newest';
-
-export const SORT_ORDERS: SortOrder[] = ['relevance', 'price_asc', 'price_desc', 'newest'];
+export type SortOrder = 'newest' | 'price_asc' | 'price_desc';
+export const SORT_ORDERS: SortOrder[] = ['newest', 'price_asc', 'price_desc'];
 
 /**
- * A search request. `location` is free text ("Rochester, NY"); the server
- * geocodes it into `center`. `lat`/`lng`/`radiusKm` may be supplied directly
- * (e.g. "search this map area") to skip geocoding.
+ * Browse/search filters. `location` is free text geocoded server-side into a
+ * center; results are then limited to `radiusKm` around it. With no location,
+ * the newest active listings everywhere are returned.
  */
 export interface SearchFilters {
   location: string;
   lat?: number;
   lng?: number;
-  radiusKm?: number;
+  radiusKm: number;
 
   listingType: ListingType | 'any';
   propertyTypes: PropertyType[];
@@ -100,52 +98,50 @@ export interface SearchFilters {
   sort: SortOrder;
   page: number;
   pageSize: number;
-
-  /** Restrict to a subset of providers. Empty/undefined = all enabled. */
-  sources?: ListingSource[];
 }
 
 export const DEFAULT_FILTERS: SearchFilters = {
   location: '',
-  listingType: 'rent',
+  radiusKm: 40,
+  listingType: 'any',
   propertyTypes: [],
-  sort: 'relevance',
+  sort: 'newest',
   page: 1,
   pageSize: 24,
-  radiusKm: 25,
 };
 
-/** Resolved search center after geocoding. */
 export interface SearchCenter {
   lat: number;
   lng: number;
   label: string;
 }
 
-/** Per-provider status for observability — surfaced in the UI. */
-export interface ProviderStatus {
-  source: ListingSource;
-  ok: boolean;
-  count: number;
-  /** Present when `ok` is false or the provider is disabled. */
-  note?: string;
-}
-
 export interface SearchResponse {
   listings: Listing[];
-  /** Total matches across all providers (pre-pagination). */
   total: number;
   page: number;
   pageSize: number;
   center: SearchCenter | null;
-  providers: ProviderStatus[];
-  /** True when results were served from cache. */
-  cached: boolean;
-  /**
-   * True when the results are demo/sample data — i.e. no real provider
-   * (RentCast, Craigslist) returned anything, so the built-in sample source
-   * filled in. The UI surfaces this so demo listings are never mistaken for
-   * real inventory.
-   */
-  demo: boolean;
+}
+
+/** The payload used to create or update a listing (post form → API). */
+export interface ListingInput {
+  listingType: ListingType;
+  propertyType: PropertyType;
+  title: string;
+  description: string;
+  price: number;
+  beds: number;
+  baths: number;
+  sqft?: number | null;
+  address?: string | null;
+  city: string;
+  state: string;
+  postalCode?: string | null;
+  lat: number;
+  lng: number;
+  amenities: string[];
+  petsAllowed: boolean;
+  availableFrom?: string | null;
+  images: string[];
 }

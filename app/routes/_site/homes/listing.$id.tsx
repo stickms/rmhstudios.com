@@ -1,41 +1,47 @@
 /**
  * RMHHomes — listing detail (/homes/listing/$id)
  *
- * Resolves a single listing from the search cache / saved snapshot and shows
- * the full record: gallery, specs, description, amenities, a map, a link to the
- * original source, and a save toggle.
+ * Full view of a community listing: gallery, specs, description, amenities, map,
+ * the poster (with a "Message" button that opens a DM), a favorite toggle, and
+ * owner controls (edit, mark rented/sold, delete).
  */
-import { useEffect, useState } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { useCallback, useEffect, useState } from 'react';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import {
   ArrowLeft,
-  BedDouble,
   Bath,
-  Ruler,
-  MapPin,
-  ExternalLink,
-  PawPrint,
+  BedDouble,
   CalendarClock,
-  Loader2,
+  Eye,
   Home,
+  Loader2,
+  MapPin,
+  MessageCircle,
+  PawPrint,
+  Pencil,
+  Ruler,
+  Trash2,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select } from '@/components/ui/select';
 import { ListingsMap } from '@/components/homes/ListingsMap';
-import { SaveButton } from '@/components/homes/SaveButton';
-import { SourceBadge } from '@/components/homes/SourceBadge';
-import type { Listing } from '@/lib/homes/types';
+import { FavoriteButton } from '@/components/homes/FavoriteButton';
+import type { Listing, ListingStatus } from '@/lib/homes/types';
 import {
+  formatAvailable,
   formatBaths,
   formatBeds,
   formatLocation,
   formatPostedAt,
   formatPrice,
   formatSqft,
+  listingTypeLabel,
   propertyTypeLabel,
-  sourceLabel,
+  statusLabel,
 } from '@/lib/homes/format';
 
 export const Route = createFileRoute('/_site/homes/listing/$id')({
@@ -44,31 +50,29 @@ export const Route = createFileRoute('/_site/homes/listing/$id')({
 
 function ListingDetailPage() {
   const { id } = Route.useParams();
-  const { data: session, isPending } = useSession();
+  const { data: session } = useSession();
+  const navigate = useNavigate();
 
   const [listing, setListing] = useState<Listing | null>(null);
-  const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [messaging, setMessaging] = useState(false);
+  const [savingStatus, setSavingStatus] = useState(false);
 
   useEffect(() => {
-    if (!session) return;
     let cancelled = false;
     setLoading(true);
     setNotFound(false);
     (async () => {
       try {
-        const res = await fetch(`/api/homes/listing/${encodeURIComponent(id)}`);
+        const res = await fetch(`/api/homes/listings/${encodeURIComponent(id)}`);
         if (cancelled) return;
-        if (res.status === 404) {
-          setNotFound(true);
-          return;
-        }
+        if (res.status === 404) return setNotFound(true);
         if (!res.ok) throw new Error('Failed to load listing');
         const data = await res.json();
         setListing(data.listing);
-        setSaved(Boolean(data.saved));
+        setActiveImage(0);
       } catch {
         if (!cancelled) setNotFound(true);
       } finally {
@@ -78,26 +82,74 @@ function ListingDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [id, session]);
+  }, [id]);
 
-  if (isPending || (loading && session)) {
+  const messagePoster = useCallback(async () => {
+    if (!listing) return;
+    if (!session) {
+      navigate({ to: '/login', search: { callbackURL: `/homes/listing/${listing.id}` } });
+      return;
+    }
+    setMessaging(true);
+    try {
+      const res = await fetch('/api/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recipientId: listing.author.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not open conversation');
+      navigate({
+        to: '/messages/$conversationId',
+        params: { conversationId: data.conversationId },
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not message the poster');
+    } finally {
+      setMessaging(false);
+    }
+  }, [listing, session, navigate]);
+
+  const changeStatus = useCallback(
+    async (status: ListingStatus) => {
+      if (!listing) return;
+      setSavingStatus(true);
+      try {
+        const res = await fetch(`/api/homes/listings/${listing.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+        if (!res.ok) throw new Error('Could not update status');
+        setListing({ ...listing, status });
+        toast.success(`Marked ${statusLabel(status).toLowerCase()}`);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Could not update status');
+      } finally {
+        setSavingStatus(false);
+      }
+    },
+    [listing],
+  );
+
+  const remove = useCallback(async () => {
+    if (!listing) return;
+    if (!confirm('Delete this listing? This cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/homes/listings/${listing.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Could not delete');
+      toast.success('Listing deleted');
+      navigate({ to: '/homes/manage' });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not delete listing');
+    }
+  }, [listing, navigate]);
+
+  if (loading) {
     return (
       <PageLayout title="Listing" backTo="/homes" wide>
         <div className="grid place-items-center py-24 text-site-text-muted">
           <Loader2 className="h-8 w-8 animate-spin" />
-        </div>
-      </PageLayout>
-    );
-  }
-
-  if (!session) {
-    return (
-      <PageLayout title="Listing" backTo="/homes" wide>
-        <div className="mx-auto max-w-md px-4 py-20 text-center text-site-text-dim">
-          <p className="mb-4">Sign in to view this listing.</p>
-          <Link to="/login" search={{ callbackURL: '/homes' }}>
-            <Button>Sign in</Button>
-          </Link>
         </div>
       </PageLayout>
     );
@@ -108,12 +160,10 @@ function ListingDetailPage() {
       <PageLayout title="Listing" backTo="/homes" wide>
         <div className="mx-auto max-w-md px-4 py-20 text-center text-site-text-dim">
           <Home className="mx-auto mb-3 h-10 w-10 text-site-text-muted" />
-          <p className="mb-4">
-            This listing is no longer available. It may have expired or been removed by the source.
-          </p>
+          <p className="mb-4">This listing is no longer available.</p>
           <Link to="/homes">
             <Button variant="outline">
-              <ArrowLeft className="h-4 w-4" /> Back to search
+              <ArrowLeft className="h-4 w-4" /> Back to browse
             </Button>
           </Link>
         </div>
@@ -121,18 +171,45 @@ function ListingDetailPage() {
     );
   }
 
-  const images = listing.images?.length
-    ? listing.images
-    : listing.imageUrl
-      ? [listing.imageUrl]
-      : [];
+  const images = listing.images;
   const location = formatLocation(listing);
   const sqft = formatSqft(listing.sqft);
-  const posted = formatPostedAt(listing.postedAt, Date.now());
+  const posted = formatPostedAt(listing.createdAt, Date.now());
+  const available = formatAvailable(listing.availableFrom);
+  const authorName = listing.author.name || listing.author.handle || 'RMH member';
 
   return (
-    <PageLayout title={listing.title} backTo="/homes" backLabel="Back to search" wide>
-      <div className="mx-auto w-full max-w-4xl px-4 py-5 md:px-6">
+    <PageLayout title={listing.title} backTo="/homes" backLabel="Back to browse" wide>
+      <div className="mx-auto w-full max-w-4xl px-4 pb-16 pt-4 md:px-6">
+        {/* Owner controls */}
+        {listing.isOwner && (
+          <div className="mb-4 flex flex-wrap items-center gap-2 rounded-site border border-site-border bg-site-surface/80 p-3">
+            <span className="text-sm text-site-text-dim">You posted this ·</span>
+            <Select
+              value={listing.status}
+              disabled={savingStatus}
+              onChange={(e) => changeStatus(e.target.value as ListingStatus)}
+              className="h-8 w-auto"
+              aria-label="Listing status"
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="RENTED">Rented</option>
+              <option value="SOLD">Sold</option>
+              <option value="REMOVED">Hidden</option>
+            </Select>
+            <div className="ml-auto flex items-center gap-2">
+              <Link to="/homes/submit" search={{ edit: listing.id }}>
+                <Button variant="outline" size="sm">
+                  <Pencil className="h-4 w-4" /> Edit
+                </Button>
+              </Link>
+              <Button variant="outline" size="sm" onClick={remove} className="text-site-danger">
+                <Trash2 className="h-4 w-4" /> Delete
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Gallery */}
         {images.length > 0 && (
           <div className="mb-5">
@@ -142,8 +219,13 @@ function ListingDetailPage() {
                 alt={listing.title}
                 className="h-full w-full object-cover"
               />
-              <div className="absolute left-3 top-3">
-                <SourceBadge source={listing.source} />
+              <div className="absolute left-3 top-3 flex gap-1">
+                <Badge variant={listing.listingType === 'RENT' ? 'accent' : 'solid'}>
+                  {listingTypeLabel(listing.listingType)}
+                </Badge>
+                {listing.status !== 'ACTIVE' && (
+                  <Badge variant="warning">{statusLabel(listing.status)}</Badge>
+                )}
               </div>
             </div>
             {images.length > 1 && (
@@ -176,12 +258,19 @@ function ListingDetailPage() {
             >
               {formatPrice(listing.price, listing.listingType)}
             </div>
+            <h1 className="mt-1 text-lg font-semibold text-site-text">{listing.title}</h1>
             <div className="mt-1 flex items-center gap-1.5 text-site-text-dim">
               <MapPin className="h-4 w-4" />
-              <span>{listing.address || location || 'Location approximate'}</span>
+              <span>{listing.address || location}</span>
             </div>
           </div>
-          <SaveButton listing={listing} saved={saved} onChange={setSaved} />
+          {!listing.isOwner && (
+            <FavoriteButton
+              listingId={listing.id}
+              favorited={listing.favorited}
+              onChange={(f) => setListing({ ...listing, favorited: f })}
+            />
+          )}
         </div>
 
         {/* Specs */}
@@ -194,34 +283,60 @@ function ListingDetailPage() {
 
         {/* Meta row */}
         <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-site-text-muted">
-          <span>Listed on {sourceLabel(listing.source)}</span>
           {posted && (
             <span className="inline-flex items-center gap-1">
               <CalendarClock className="h-4 w-4" /> Posted {posted}
             </span>
           )}
-          {listing.petsAllowed === true && (
+          {available && <span>{available}</span>}
+          <span className="inline-flex items-center gap-1">
+            <Eye className="h-4 w-4" /> {listing.viewsCount} views
+          </span>
+          {listing.petsAllowed && (
             <span className="inline-flex items-center gap-1 text-site-success">
               <PawPrint className="h-4 w-4" /> Pet-friendly
             </span>
           )}
         </div>
 
-        {/* Description */}
-        {listing.description && (
-          <div className="mt-5">
-            <h2
-              className="mb-2 text-lg font-semibold text-site-text"
-              style={{ fontFamily: 'var(--site-font-display)' }}
-            >
-              About this place
-            </h2>
-            <p className="whitespace-pre-wrap text-site-text-dim">{listing.description}</p>
+        {/* Poster card */}
+        <div className="mt-5 flex flex-wrap items-center gap-3 rounded-site border border-site-border bg-site-surface/80 p-4">
+          <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
+            {listing.author.image ? (
+              <img src={listing.author.image} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-sm font-semibold">{authorName.slice(0, 1).toUpperCase()}</span>
+            )}
+          </span>
+          <div className="min-w-0">
+            <div className="text-xs text-site-text-muted">Posted by</div>
+            <div className="truncate font-medium text-site-text">{authorName}</div>
           </div>
-        )}
+          {!listing.isOwner && (
+            <Button onClick={messagePoster} disabled={messaging} className="ml-auto">
+              {messaging ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <MessageCircle className="h-4 w-4" />
+              )}
+              Message
+            </Button>
+          )}
+        </div>
+
+        {/* Description */}
+        <div className="mt-5">
+          <h2
+            className="mb-2 text-lg font-semibold text-site-text"
+            style={{ fontFamily: 'var(--site-font-display)' }}
+          >
+            About this place
+          </h2>
+          <p className="whitespace-pre-wrap text-site-text-dim">{listing.description}</p>
+        </div>
 
         {/* Amenities */}
-        {listing.amenities && listing.amenities.length > 0 && (
+        {listing.amenities.length > 0 && (
           <div className="mt-5">
             <h2
               className="mb-2 text-lg font-semibold text-site-text"
@@ -240,38 +355,21 @@ function ListingDetailPage() {
         )}
 
         {/* Map */}
-        {listing.lat != null && listing.lng != null && (
-          <div className="mt-5">
-            <h2
-              className="mb-2 text-lg font-semibold text-site-text"
-              style={{ fontFamily: 'var(--site-font-display)' }}
-            >
-              Location
-            </h2>
-            <ListingsMap
-              listings={[listing]}
-              center={{ lat: listing.lat, lng: listing.lng, label: location }}
-              activeId={listing.id}
-              onActive={() => {}}
-              className="h-72"
-            />
-          </div>
-        )}
-
-        {/* Source link */}
-        {listing.url && (
-          <div className="mt-6">
-            <Button asChild size="lg">
-              <a href={listing.url} target="_blank" rel="noopener noreferrer nofollow">
-                View original listing <ExternalLink className="h-4 w-4" />
-              </a>
-            </Button>
-            <p className="mt-2 text-xs text-site-text-muted">
-              Opens the original post on {sourceLabel(listing.source)}. RMHHomes aggregates public
-              listings and is not the lister — always verify details with the source.
-            </p>
-          </div>
-        )}
+        <div className="mt-5">
+          <h2
+            className="mb-2 text-lg font-semibold text-site-text"
+            style={{ fontFamily: 'var(--site-font-display)' }}
+          >
+            Location
+          </h2>
+          <ListingsMap
+            listings={[listing]}
+            center={{ lat: listing.lat, lng: listing.lng, label: location }}
+            activeId={listing.id}
+            onActive={() => {}}
+            className="h-72"
+          />
+        </div>
       </div>
     </PageLayout>
   );

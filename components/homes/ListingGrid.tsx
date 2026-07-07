@@ -9,12 +9,14 @@ import { ListingCard } from './ListingCard';
 
 interface ListingGridProps {
   listings: Listing[];
-  savedIds: Set<string>;
   loading: boolean;
   searched: boolean;
-  activeId: string | null;
-  onHover: (id: string | null) => void;
-  onSavedChange: (id: string, saved: boolean) => void;
+  activeId?: string | null;
+  onHover?: (id: string | null) => void;
+  onFavoriteChange?: (id: string, favorited: boolean) => void;
+  showStatus?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
 }
 
 function CardSkeleton() {
@@ -32,12 +34,14 @@ function CardSkeleton() {
 
 export function ListingGrid({
   listings,
-  savedIds,
   loading,
   searched,
   activeId,
   onHover,
-  onSavedChange,
+  onFavoriteChange,
+  showStatus,
+  emptyTitle,
+  emptyDescription,
 }: ListingGridProps) {
   if (loading) {
     return (
@@ -54,7 +58,7 @@ export function ListingGrid({
       <EmptyState
         icon={Home}
         title="Start your search"
-        description="Enter a location above to find apartments and houses near you."
+        description="Enter a location above to find homes near you, or browse everything."
       />
     );
   }
@@ -63,8 +67,11 @@ export function ListingGrid({
     return (
       <EmptyState
         icon={SearchX}
-        title="No matches"
-        description="No listings matched your filters. Try widening your radius or clearing some filters."
+        title={emptyTitle ?? 'No listings yet'}
+        description={
+          emptyDescription ??
+          'No homes matched your filters. Try widening your radius or clearing some filters.'
+        }
       />
     );
   }
@@ -80,10 +87,10 @@ export function ListingGrid({
         >
           <ListingCard
             listing={l}
-            saved={savedIds.has(l.id)}
             active={l.id === activeId}
             onHover={onHover}
-            onSavedChange={onSavedChange}
+            onFavoriteChange={onFavoriteChange}
+            showStatus={showStatus}
           />
         </motion.div>
       ))}

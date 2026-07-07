@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { BedDouble, Bath, Ruler, MapPin, PawPrint } from 'lucide-react';
+import { BedDouble, Bath, Ruler, MapPin, PawPrint, ImageOff } from 'lucide-react';
 import type { Listing } from '@/lib/homes/types';
 import {
   formatBaths,
@@ -11,24 +11,31 @@ import {
   formatPrice,
   formatSqft,
   propertyTypeLabel,
+  statusLabel,
 } from '@/lib/homes/format';
 import { Badge } from '@/components/ui/badge';
-import { SaveButton } from './SaveButton';
-import { SourceBadge } from './SourceBadge';
+import { FavoriteButton } from './FavoriteButton';
 
 interface ListingCardProps {
   listing: Listing;
-  saved: boolean;
-  onSavedChange?: (id: string, saved: boolean) => void;
-  /** Highlight when hovered/selected on the map. */
+  onFavoriteChange?: (id: string, favorited: boolean) => void;
   active?: boolean;
   onHover?: (id: string | null) => void;
+  /** Show status pill for non-active listings (used on the manage page). */
+  showStatus?: boolean;
 }
 
-export function ListingCard({ listing, saved, onSavedChange, active, onHover }: ListingCardProps) {
+export function ListingCard({
+  listing,
+  onFavoriteChange,
+  active,
+  onHover,
+  showStatus,
+}: ListingCardProps) {
   const location = formatLocation(listing);
   const sqft = formatSqft(listing.sqft);
-  const posted = formatPostedAt(listing.postedAt, Date.now());
+  const posted = formatPostedAt(listing.createdAt, Date.now());
+  const cover = listing.images[0];
 
   return (
     <Link
@@ -41,30 +48,36 @@ export function ListingCard({ listing, saved, onSavedChange, active, onHover }: 
       }`}
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-site-bg">
-        {listing.imageUrl ? (
+        {cover ? (
           <img
-            src={listing.imageUrl}
+            src={cover}
             alt={listing.title}
             loading="lazy"
             className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="grid h-full w-full place-items-center text-site-text-dim">
-            <MapPin className="h-8 w-8" />
+            <ImageOff className="h-8 w-8" />
           </div>
         )}
-        {/* subtle gradient so overlaid chips stay legible on bright photos */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/40 to-transparent" />
         <div className="absolute right-2 top-2">
-          <SaveButton
-            listing={listing}
-            saved={saved}
+          <FavoriteButton
+            listingId={listing.id}
+            favorited={listing.favorited}
             compact
-            onChange={(s) => onSavedChange?.(listing.id, s)}
+            onChange={(f) => onFavoriteChange?.(listing.id, f)}
           />
         </div>
-        <div className="absolute left-2 top-2">
-          <SourceBadge source={listing.source} />
+        <div className="absolute left-2 top-2 flex gap-1">
+          <Badge variant={listing.listingType === 'RENT' ? 'accent' : 'solid'} size="sm">
+            {listing.listingType === 'RENT' ? 'Rent' : 'Sale'}
+          </Badge>
+          {showStatus && listing.status !== 'ACTIVE' && (
+            <Badge variant="warning" size="sm">
+              {statusLabel(listing.status)}
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -93,7 +106,7 @@ export function ListingCard({ listing, saved, onSavedChange, active, onHover }: 
               <Ruler className="h-4 w-4" /> {sqft}
             </span>
           )}
-          {listing.petsAllowed === true && (
+          {listing.petsAllowed && (
             <span className="inline-flex items-center gap-1 text-site-success">
               <PawPrint className="h-4 w-4" /> Pets
             </span>

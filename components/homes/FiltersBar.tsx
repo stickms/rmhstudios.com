@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import {
   PROPERTY_TYPES,
+  type ListingType,
   type PropertyType,
   type SearchFilters,
   type SortOrder,
@@ -20,25 +21,18 @@ interface FiltersBarProps {
 }
 
 const SORT_LABELS: Record<SortOrder, string> = {
-  relevance: 'Best match',
+  newest: 'Newest',
   price_asc: 'Price: low to high',
   price_desc: 'Price: high to low',
-  newest: 'Newest',
 };
 
 const BED_OPTIONS = [0, 1, 2, 3, 4];
-const LISTING_TABS: { id: SearchFilters['listingType']; label: string }[] = [
-  { id: 'rent', label: 'Rent' },
-  { id: 'sale', label: 'Buy' },
-  { id: 'any', label: 'Any' },
+const LISTING_TABS: { id: ListingType | 'any'; label: string }[] = [
+  { id: 'any', label: 'All' },
+  { id: 'RENT', label: 'Rent' },
+  { id: 'SALE', label: 'Buy' },
 ];
 
-/**
- * Quick-filter row (listing type, beds, sort) plus an expandable advanced panel
- * (price, baths, radius, property types, pets). Built entirely on the shared UI
- * primitives so it matches the rest of the site. Emits partial patches; the
- * page owns the canonical filter state and re-runs the search.
- */
 export function FiltersBar({ filters, onChange }: FiltersBarProps) {
   const [advanced, setAdvanced] = useState(false);
 
@@ -61,7 +55,6 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
   return (
     <div className="rounded-site border border-site-border bg-site-surface/80 p-3">
       <div className="flex flex-wrap items-center gap-2">
-        {/* Rent / Buy / Any segmented control */}
         <div className="inline-flex rounded-site-sm border border-site-border p-0.5">
           {LISTING_TABS.map((t) => (
             <button
@@ -127,10 +120,9 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
 
       {advanced && (
         <div className="mt-3 grid gap-4 border-t border-site-border pt-3 sm:grid-cols-2">
-          {/* Price range */}
           <div>
             <span className="mb-1.5 block text-xs font-medium text-site-text-muted">
-              Price ({filters.listingType === 'sale' ? 'total' : 'per month'})
+              Price ({filters.listingType === 'SALE' ? 'total' : 'per month'})
             </span>
             <div className="flex items-center gap-2">
               <Input
@@ -157,7 +149,6 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
             </div>
           </div>
 
-          {/* Baths + radius */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <span className="mb-1.5 block text-xs font-medium text-site-text-muted">
@@ -181,14 +172,14 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
             </div>
             <div>
               <span className="mb-1.5 block text-xs font-medium text-site-text-muted">
-                Radius: {filters.radiusKm ?? 25} km
+                Radius: {filters.radiusKm} km
               </span>
               <div className="flex h-9 items-center">
                 <Slider
                   min={2}
-                  max={100}
+                  max={200}
                   step={1}
-                  value={[filters.radiusKm ?? 25]}
+                  value={[filters.radiusKm]}
                   onValueChange={([v]) => onChange({ radiusKm: v })}
                   aria-label="Search radius"
                 />
@@ -196,7 +187,6 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
             </div>
           </div>
 
-          {/* Property types */}
           <div className="sm:col-span-2">
             <span className="mb-1.5 block text-xs font-medium text-site-text-muted">
               Property type
@@ -223,7 +213,6 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
             </div>
           </div>
 
-          {/* Pets */}
           <label className="flex cursor-pointer items-center gap-2 text-sm text-site-text sm:col-span-2">
             <input
               type="checkbox"

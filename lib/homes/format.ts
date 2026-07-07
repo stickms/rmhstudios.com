@@ -1,69 +1,63 @@
 /**
- * RMHHomes — presentation helpers.
- *
- * Client-safe formatting used by both the UI and (occasionally) provider
- * adapters when building human-readable titles.
+ * RMHHomes — presentation helpers (client-safe).
  */
 
-import type { Listing, ListingSource, ListingType, PropertyType } from './types';
+import type { Listing, ListingStatus, ListingType, PropertyType } from './types';
 
 const PROPERTY_LABELS: Record<PropertyType, string> = {
-  apartment: 'Apartment',
-  house: 'House',
-  condo: 'Condo',
-  townhouse: 'Townhouse',
-  room: 'Room',
-  other: 'Property',
+  APARTMENT: 'Apartment',
+  HOUSE: 'House',
+  CONDO: 'Condo',
+  TOWNHOUSE: 'Townhouse',
+  ROOM: 'Room',
+  OTHER: 'Property',
 };
 
 export function propertyTypeLabel(type: PropertyType): string {
   return PROPERTY_LABELS[type] ?? 'Property';
 }
 
-const SOURCE_LABELS: Record<ListingSource, string> = {
-  sample: 'Demo',
-  craigslist: 'Craigslist',
-  rentcast: 'RentCast',
+export function listingTypeLabel(type: ListingType): string {
+  return type === 'RENT' ? 'For rent' : 'For sale';
+}
+
+const STATUS_LABELS: Record<ListingStatus, string> = {
+  ACTIVE: 'Active',
+  RENTED: 'Rented',
+  SOLD: 'Sold',
+  REMOVED: 'Removed',
 };
 
-export function sourceLabel(source: ListingSource): string {
-  return SOURCE_LABELS[source] ?? source;
+export function statusLabel(status: ListingStatus): string {
+  return STATUS_LABELS[status] ?? status;
 }
 
-/**
- * Format a price. Rentals render as "$1,850/mo"; sales as "$389,000". `null`
- * prices (common on Craigslist "contact for price" posts) become "Ask".
- */
-export function formatPrice(price: number | null, listingType: ListingType): string {
-  if (price == null || !Number.isFinite(price) || price <= 0) return 'Ask';
+/** "$1,850/mo" for rentals, "$389,000" for sales. */
+export function formatPrice(price: number, listingType: ListingType): string {
+  if (!Number.isFinite(price) || price <= 0) return 'Contact for price';
   const formatted = `$${Math.round(price).toLocaleString('en-US')}`;
-  return listingType === 'rent' ? `${formatted}/mo` : formatted;
+  return listingType === 'RENT' ? `${formatted}/mo` : formatted;
 }
 
-/** "Studio", "1 bed", "3 beds". */
 export function formatBeds(beds: number | null): string {
   if (beds == null) return '—';
   if (beds === 0) return 'Studio';
   return `${beds} bed${beds === 1 ? '' : 's'}`;
 }
 
-/** "1 bath", "2.5 baths". */
 export function formatBaths(baths: number | null): string {
   if (baths == null) return '—';
-  return `${baths} bath${baths === 1 ? '' : 's'}`;
+  const n = Number.isInteger(baths) ? String(baths) : baths.toFixed(1);
+  return `${n} bath${baths === 1 ? '' : 's'}`;
 }
 
-/** "1,200 sqft" or empty string when unknown. */
 export function formatSqft(sqft: number | null): string {
   if (sqft == null || sqft <= 0) return '';
   return `${Math.round(sqft).toLocaleString('en-US')} sqft`;
 }
 
-/** Compact one-line location, e.g. "Rochester, NY". */
-export function formatLocation(listing: Pick<Listing, 'city' | 'state' | 'address'>): string {
-  const parts = [listing.city, listing.state].filter(Boolean);
-  if (parts.length) return parts.join(', ');
-  return listing.address ?? '';
+export function formatLocation(listing: Pick<Listing, 'city' | 'state'>): string {
+  return [listing.city, listing.state].filter(Boolean).join(', ');
 }
 
 /** "3 days ago" style relative time from an ISO string. */
@@ -82,3 +76,36 @@ export function formatPostedAt(iso: string | undefined, now: number): string {
   const months = Math.floor(days / 30);
   return `${months} mo${months === 1 ? '' : 's'} ago`;
 }
+
+/** A short "available from" label, e.g. "Available Aug 1". */
+export function formatAvailable(iso: string | null): string {
+  if (!iso) return '';
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return '';
+  const d = new Date(t);
+  const now = Date.now();
+  if (t <= now) return 'Available now';
+  return `Available ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+}
+
+/** Curated amenity suggestions shown as toggles on the post form. */
+export const AMENITY_OPTIONS = [
+  'In-unit laundry',
+  'Dishwasher',
+  'Central A/C',
+  'Heating',
+  'Parking',
+  'Garage',
+  'Balcony',
+  'Hardwood floors',
+  'Gym',
+  'Pool',
+  'Furnished',
+  'Utilities included',
+  'Elevator',
+  'Wheelchair accessible',
+  'Rooftop',
+  'Storage',
+  'EV charging',
+  'Backyard',
+];
