@@ -36,8 +36,14 @@ export function isPathAllowed(robotsTxt: string, userAgent: string, path: string
     for (const r of g.rules) {
       // Extract effective prefix (up to first * or $)
       const effectivePrefix = r.prefix.split(/[\*$]/)[0];
-      if (effectivePrefix === '' || !path.startsWith(effectivePrefix)) continue;
-      if (effectivePrefix.length > matchLen) { matchLen = effectivePrefix.length; verdict = r.allow; }
+      // Detect bare wildcard: non-empty raw prefix that becomes empty after stripping * or $
+      const isMatchAll = effectivePrefix === '' && r.prefix !== '';
+      // Skip rules that don't match (unless it's a bare wildcard match-all)
+      if (!isMatchAll && (effectivePrefix === '' || !path.startsWith(effectivePrefix))) continue;
+      // Bare wildcard has effective length 0; literal rules have their prefix length
+      const effLen = effectivePrefix.length;
+      // Update verdict if this rule is longer, or if it's a match-all and we had no rule before
+      if (effLen > matchLen || (matchLen === -1 && isMatchAll)) { matchLen = Math.max(effLen, 0); verdict = r.allow; }
     }
   }
   return verdict;
