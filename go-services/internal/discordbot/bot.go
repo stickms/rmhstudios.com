@@ -103,6 +103,20 @@ func slashCommands() []*discordgo.ApplicationCommand {
 		{Name: "newlife", Description: "Start a New Game+ once Alex is a grown adult 🎓"},
 		{Name: "caretakers", Description: "See who's taken the best care of Alex 🏆"},
 		{
+			Name:        "alexmessages",
+			Description: "Toggle Alex's random messages in this server (Manage Messages / owner only) 🔔",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type: discordgo.ApplicationCommandOptionString, Name: "state",
+					Description: "on, off, or leave blank to toggle", Required: false,
+					Choices: []*discordgo.ApplicationCommandOptionChoice{
+						{Name: "🔔 On", Value: "on"},
+						{Name: "🔕 Off", Value: "off"},
+					},
+				},
+			},
+		},
+		{
 			Name:        "rename",
 			Description: "Give Alex a new name 📝",
 			Options: []*discordgo.ApplicationCommandOption{
@@ -275,6 +289,18 @@ func (b *Bot) routeCommand(ctx context.Context, s *discordgo.Session, i *discord
 		err = b.pet.HandleRename(ctx, s, i, opts.str("name"))
 	case "caretakers":
 		err = b.pet.HandleCaretakers(ctx, s, i)
+	case "alexmessages":
+		if !b.canToggleAlex(i) {
+			_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "🔒 You need the **Manage Messages** permission (or to be the bot owner) to change Alex's messages here.",
+					Flags:   discordgo.MessageFlagsEphemeral,
+				},
+			})
+			return
+		}
+		err = b.pet.HandleToggleBroadcasts(ctx, s, i, opts.str("state"))
 	default:
 		b.logger.Warn("unknown_command", "name", data.Name)
 		return
@@ -315,6 +341,24 @@ func (b *Bot) routeModal(ctx context.Context, s *discordgo.Session, i *discordgo
 			b.logger.Error("modal_error", "customId", action, "error", err)
 		}
 	}
+}
+
+// canToggleAlex reports whether the interacting user may change Alex's per-server
+// message settings: the configured bot owner (OWNER_ID), or any member with the
+// Manage Messages permission (Administrators have it implicitly). For application
+// commands Discord resolves the member's channel permissions into i.Member.Permissions.
+func (b *Bot) canToggleAlex(i *discordgo.InteractionCreate) bool {
+	userID, _ := interactionUser(i)
+	if b.cfg.OwnerID != "" && userID == b.cfg.OwnerID {
+		return true
+	}
+	if i.Member != nil {
+		p := i.Member.Permissions
+		if p&discordgo.PermissionManageMessages != 0 || p&discordgo.PermissionAdministrator != 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // ownerOK enforces owner-gating. The customID carries the owner's id; the

@@ -588,6 +588,51 @@ func (ps *PetService) HandleCaretakers(ctx context.Context, s *discordgo.Session
 	return ps.editEmbed(s, i, embed, nil)
 }
 
+// HandleToggleBroadcasts implements /alexmessages — enable/disable Alex's random
+// ambient posts for this server. mode is "on", "off", or "" (flip). Permission is
+// enforced by the caller (bot owner or Manage Messages). Care alerts and life
+// events are unaffected.
+func (ps *PetService) HandleToggleBroadcasts(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate, mode string) error {
+	guildID, ok := requireGuild(s, i)
+	if !ok {
+		return nil
+	}
+	if err := deferReply(s, i); err != nil {
+		return err
+	}
+	_, username := interactionUser(i)
+
+	current, err := ps.repo.guildAmbientEnabled(ctx, guildID)
+	if err != nil {
+		return ps.editEmbed(s, i, errEmbed("couldn't read Alex's settings rn"), nil)
+	}
+	var newState bool
+	switch mode {
+	case "on":
+		newState = true
+	case "off":
+		newState = false
+	default:
+		newState = !current // toggle
+	}
+	if err := ps.repo.setGuildAmbient(ctx, guildID, i.ChannelID, newState); err != nil {
+		return ps.editEmbed(s, i, errEmbed("couldn't update Alex's settings rn"), nil)
+	}
+
+	embed := &discordgo.MessageEmbed{}
+	if newState {
+		embed.Color = 0x34d399
+		embed.Title = "🔔 Alex's random messages: ON"
+		embed.Description = "Alex will drop the occasional slice-of-life post here again (probably about boba 🧋).\n_Care alerts and big life events always come through regardless._"
+	} else {
+		embed.Color = 0x6b7280
+		embed.Title = "🔕 Alex's random messages: OFF"
+		embed.Description = "Alex will stop posting his random ambient messages in this server.\n_He'll still ping when he genuinely needs care, or hits a milestone like growing up._"
+	}
+	embed.Footer = attributeFooter(username, "⚙️", "changed Alex's messages here")
+	return ps.editEmbed(s, i, embed, nil)
+}
+
 // ─── Chat integration hooks (used by chat.go) ───────────────────────────
 
 // StatusLineForChat returns a short, live status line to inject (ephemerally)
