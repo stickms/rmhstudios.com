@@ -135,10 +135,12 @@ func (r *petRepo) save(ctx context.Context, p *PetState) error {
 // for each server he's in, and whether he's already introduced himself there.
 // That per-guild state lives here, decoupled from the singleton pet.
 
-// GuildChannel is a server + the channel Alex last spoke / was used in there.
+// GuildChannel is a server + the channel Alex last spoke / was used in there,
+// plus whether that server wants his random ambient posts.
 type GuildChannel struct {
-	GuildID   string
-	ChannelID string
+	GuildID        string
+	ChannelID      string
+	AmbientEnabled bool
 }
 
 // recordGuildChannel remembers the channel a command was last used in for a
@@ -204,13 +206,14 @@ func (r *petRepo) markGuildIntro(ctx context.Context, guildID, channelID string)
 	return err
 }
 
-// allGuildChannels returns every guild that has a channel Alex can broadcast to.
+// allGuildChannels returns every guild that has a channel Alex can broadcast to,
+// with its ambient-posts preference.
 func (r *petRepo) allGuildChannels(ctx context.Context) ([]GuildChannel, error) {
 	if r.db == nil {
 		return nil, nil
 	}
 	rows, err := r.db.Pool.Query(ctx,
-		`SELECT "guildId","lastChannelId" FROM "discord_alex_guild" WHERE "lastChannelId" IS NOT NULL`)
+		`SELECT "guildId","lastChannelId","ambientEnabled" FROM "discord_alex_guild" WHERE "lastChannelId" IS NOT NULL`)
 	if err != nil {
 		return nil, err
 	}
@@ -218,12 +221,52 @@ func (r *petRepo) allGuildChannels(ctx context.Context) ([]GuildChannel, error) 
 	var out []GuildChannel
 	for rows.Next() {
 		var g GuildChannel
-		if err := rows.Scan(&g.GuildID, &g.ChannelID); err != nil {
+		if err := rows.Scan(&g.GuildID, &g.ChannelID, &g.AmbientEnabled); err != nil {
 			return nil, err
 		}
 		out = append(out, g)
 	}
 	return out, rows.Err()
+}
+
+// guildAmbientEnabled reports whether a guild currently receives Alex's random
+// ambient posts. Defaults to true (enabled) when the guild has no row yet.
+func (r *petRepo) guildAmbientEnabled(ctx context.Context, guildID string) (bool, error) {
+	if r.db == nil {
+		return true, nil
+	}
+	var enabled bool
+	err := r.db.Pool.QueryRow(ctx,
+		`SELECT "ambientEnabled" FROM "discord_alex_guild" WHERE "guildId"=$1`, guildID).Scan(&enabled)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return true, nil
+	}
+	if err != nil {
+		return true, err
+	}
+	return enabled, nil
+}
+
+// setGuildAmbient sets a guild's ambient-posts preference, upserting the row.
+// A non-empty channelID is also recorded (so a freshly-toggled server is in the
+// broadcast set); an empty one leaves any existing channel untouched.
+func (r *petRepo) setGuildAmbient(ctx context.Context, guildID, channelID string, enabled bool) error {
+	if r.db == nil {
+		return nil
+	}
+	var channel *string
+	if channelID != "" {
+		channel = &channelID
+	}
+	_, err := r.db.Pool.Exec(ctx,
+		`INSERT INTO "discord_alex_guild" ("guildId","lastChannelId","ambientEnabled","updatedAt")
+		 VALUES ($1,$2,$3,$4)
+		 ON CONFLICT ("guildId") DO UPDATE SET
+		   "ambientEnabled"=EXCLUDED."ambientEnabled",
+		   "lastChannelId"=COALESCE(EXCLUDED."lastChannelId", "discord_alex_guild"."lastChannelId"),
+		   "updatedAt"=EXCLUDED."updatedAt"`,
+		guildID, channel, enabled, time.Now().UTC())
+	return err
 }
 
 // ─── Caretaker leaderboard ──────────────────────────────────────────────

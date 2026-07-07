@@ -220,6 +220,11 @@ func (ps *PetService) broadcast(ctx context.Context, s *discordgo.Session, pl pl
 	}
 
 	for _, gc := range channels {
+		// Servers that turned off Alex's random messages (/alexmessages) opt out of
+		// the ambient slice-of-life posts, but still get care alerts + life events.
+		if pl.kind == kindAmbient && !gc.AmbientEnabled {
+			continue
+		}
 		msg := &discordgo.MessageSend{Content: content, Embeds: embeds}
 		if img != nil {
 			// A new imageFile per send: each wraps its own reader over the bytes.

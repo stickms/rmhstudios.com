@@ -33,6 +33,7 @@ generation to show what he looks like right now.
 | `/newlife` | Voluntary New Game+ once Alex is a grown adult — he "graduates" and a new generation begins |
 | `/rename <name>` | Give Alex a new name |
 | `/caretakers` | Leaderboard of who's taken the best care of Alex |
+| `/alexmessages [on\|off]` | **(Manage Messages / bot owner only)** Toggle Alex's random ambient posts in this server. Blank = flip. Care alerts and life events are unaffected. |
 
 Alex is a **global pet** — commands work in any server (but not DMs, so the bot
 knows which channel to talk back in).
@@ -83,6 +84,11 @@ last-used channel** (at most one per tick), by priority:
 
 If a server's channel becomes unreachable (deleted / bot lost access), it's
 cleared so the bot stops broadcasting there.
+
+Any server can opt out of the **random ambient posts** with `/alexmessages off`
+(the bot owner or a member with **Manage Messages** can toggle it; stored per
+server in `discord_alex_guild.ambientEnabled`). Care alerts and life events still
+come through — only the random slice-of-life chatter is muted.
 
 ## Visibility & persistence
 

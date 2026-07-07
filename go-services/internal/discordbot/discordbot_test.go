@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/bwmarrin/discordgo"
 )
 
 // ─── chat-embed char-budget packing ─────────────────────────────────────────
@@ -366,6 +368,39 @@ func TestValidCareer(t *testing.T) {
 	}
 	if careerDisplay("") == "" {
 		t.Errorf("careerDisplay of empty should return an 'undecided' label, not empty")
+	}
+}
+
+func TestCanToggleAlex(t *testing.T) {
+	b := &Bot{cfg: Config{OwnerID: "owner1"}}
+
+	mk := func(userID string, perms int64) *discordgo.InteractionCreate {
+		return &discordgo.InteractionCreate{Interaction: &discordgo.Interaction{
+			Member: &discordgo.Member{User: &discordgo.User{ID: userID}, Permissions: perms},
+		}}
+	}
+
+	cases := []struct {
+		name  string
+		i     *discordgo.InteractionCreate
+		allow bool
+	}{
+		{"bot owner (no perms)", mk("owner1", 0), true},
+		{"manage messages", mk("u2", discordgo.PermissionManageMessages), true},
+		{"administrator", mk("u3", discordgo.PermissionAdministrator), true},
+		{"manage + other perms", mk("u4", discordgo.PermissionManageMessages|discordgo.PermissionViewChannel), true},
+		{"regular member", mk("u5", discordgo.PermissionViewChannel|discordgo.PermissionSendMessages), false},
+		{"no perms", mk("u6", 0), false},
+	}
+	for _, c := range cases {
+		if got := b.canToggleAlex(c.i); got != c.allow {
+			t.Errorf("%s: canToggleAlex = %v, want %v", c.name, got, c.allow)
+		}
+	}
+
+	// A nil member (e.g. a DM) is never allowed unless it's the owner.
+	if b.canToggleAlex(&discordgo.InteractionCreate{Interaction: &discordgo.Interaction{}}) {
+		t.Error("nil member should not be allowed")
 	}
 }
 
