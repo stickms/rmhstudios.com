@@ -35,7 +35,7 @@ export function isPathAllowed(robotsTxt: string, userAgent: string, path: string
   for (const g of applicable) {
     for (const r of g.rules) {
       // Extract effective prefix (up to first * or $)
-      const effectivePrefix = r.prefix.split(/[\*$]/)[0];
+      const effectivePrefix = r.prefix.split(/[*$]/)[0];
       // Detect bare wildcard: non-empty raw prefix that becomes empty after stripping * or $
       const isMatchAll = effectivePrefix === '' && r.prefix !== '';
       // Skip rules that don't match (unless it's a bare wildcard match-all)

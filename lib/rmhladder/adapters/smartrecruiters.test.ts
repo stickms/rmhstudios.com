@@ -205,7 +205,7 @@ describe('smartRecruitersAdapter pagination', () => {
 
   it('under-filled pages advance offset by item count, not page size', async () => {
     const calls: string[] = [];
-    const f = (async (url: any) => {
+    const f = (async (url: unknown) => {
       const u = String(url); calls.push(u);
       const offset = Number(new URL(u).searchParams.get('offset') ?? '0');
       const make = (n: number, start: number) => JSON.stringify({
@@ -235,7 +235,7 @@ describe('smartRecruitersAdapter pagination', () => {
 
 describe('smartRecruitersAdapter detectExpired with empty board', () => {
   it('returns false when totalFound === 0 (empty board is not expiry evidence)', async () => {
-    const emptyBoardStub = (url: string): Promise<Response> => {
+    const emptyBoardStub = (_url: string): Promise<Response> => {
       return Promise.resolve(new Response(JSON.stringify({ totalFound: 0, content: [] }), { status: 200 }));
     };
 

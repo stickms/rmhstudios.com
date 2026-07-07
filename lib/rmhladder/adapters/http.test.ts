@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { politeFetch } from './http';
 
 const stub = (status: number, body: string, capture?: { headers?: Record<string, string> }): typeof fetch =>
-  (async (_url: any, init?: any) => {
+  (async (_url: unknown, init?: RequestInit) => {
     if (capture) capture.headers = Object.fromEntries(new Headers(init?.headers).entries());
     return new Response(body, { status });
   }) as typeof fetch;
