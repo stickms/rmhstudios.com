@@ -176,4 +176,20 @@ export const apps: AppInfo[] = [
         tags: ['Puzzles', 'Community', 'Reputation', 'Beta'],
         authGate: true,
     },
+    {
+        id: 'rmhhomes',
+        title: 'RMHHomes',
+        description: 'Find apartments and houses from free public listing sources — mapped, filtered, and saved.',
+        longDescription:
+            'RMHHomes is a house and apartment finder built on free, public listing data. Search any location, filter by price, beds, baths, property type and more, and see every result on an interactive map. It aggregates multiple sources — live Craigslist RSS feeds, the RentCast API (when configured), and a built-in sample source so the platform always works — behind one clean interface. Save your favorite listings (stored as self-contained snapshots so they never break), and keep re-runnable saved searches with optional alerts.',
+        href: '/homes',
+        status: 'Beta',
+        cta: 'Find a Home',
+        isSteam: false,
+        gradient: 'from-teal-500 via-emerald-500 to-green-600',
+        iconName: 'Home',
+        color: 'from-teal-500/20 to-green-600/20 hover:border-teal-500/50',
+        tags: ['Housing', 'Search', 'Maps', 'Beta'],
+        authGate: true,
+    },
 ];

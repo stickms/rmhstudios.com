@@ -243,6 +243,10 @@ model User {
   rideMessages          RideMessage[]
   rideSavedPlaces       RideSavedPlace[]
 
+  // ─── RMHHomes ─────────────────────────────────────────────────
+  homeSavedListings HomeSavedListing[]
+  homeSavedSearches HomeSavedSearch[]
+
   media         Media[]
 
   // WebAuthn passkeys (@better-auth/passkey)
@@ -3573,6 +3577,49 @@ model RideSavedPlace {
 
   @@index([userId])
   @@map("ride_saved_place")
+}
+
+// ─── RMHHomes: House / Apartment finder ───────────────────────────────────────
+
+/// A listing a user has favorited. We store a full JSON `snapshot` of the
+/// normalized listing so the card still renders after the upstream post expires
+/// or the external API is unreachable. `listingId` is the global `source:id`.
+model HomeSavedListing {
+  id        String @id @default(cuid())
+  userId    String
+  listingId String @db.VarChar(255)
+  source    String @db.VarChar(20)
+  snapshot  Json
+  notes     String? @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId, createdAt])
+  @@map("home_saved_listing")
+}
+
+/// A saved search: the serialized filter query the user can re-run, plus an
+/// optional alerts toggle for future new-match notifications.
+model HomeSavedSearch {
+  id       String  @id @default(cuid())
+  userId   String
+  name     String  @db.VarChar(80)
+  query    String  @db.VarChar(500)
+  location String  @db.VarChar(200)
+
+  alertsEnabled  Boolean   @default(false)
+  lastNotifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@map("home_saved_search")
 }
 
 // ─── Developer API: Media Upload ──────────────────────────────────────────────
