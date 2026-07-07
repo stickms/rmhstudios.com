@@ -356,6 +356,22 @@ func (r *petRepo) topCaretakers(ctx context.Context, guildID string, limit int) 
 	return out, rows.Err()
 }
 
+// setCaretakerAvatar refreshes a caretaker's stored avatar hash (best-effort;
+// a no-op for a user with no row). An empty hash clears it (→ default avatar).
+func (r *petRepo) setCaretakerAvatar(ctx context.Context, guildID, userID, avatarHash string) error {
+	if r.db == nil {
+		return nil
+	}
+	var avatar *string
+	if avatarHash != "" {
+		avatar = &avatarHash
+	}
+	_, err := r.db.Pool.Exec(ctx,
+		`UPDATE "discord_alex_caretaker" SET "avatarHash"=$3 WHERE "guildId"=$1 AND "userId"=$2`,
+		guildID, userID, avatar)
+	return err
+}
+
 // ─── Shared image-spend budget (mirrors botworker/image-budget) ─────────
 
 // reserveImageBudgetQuery atomically reserves one unit of today's global image

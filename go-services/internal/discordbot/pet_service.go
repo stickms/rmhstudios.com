@@ -593,6 +593,13 @@ func (ps *PetService) HandleCaretakers(ctx context.Context, s *discordgo.Session
 		return ps.editEmbed(s, i, embed, nil)
 	}
 
+	// Refresh the displayed caretakers' avatars so the image shows current faces
+	// (rows created before avatarHash was captured, or since changed). Throttled —
+	// s.User hits the API, and stored hashes are also kept fresh on every action.
+	if !ps.onCooldown(globalPetKey, "avatar_refresh", 5*time.Minute, time.Now().UTC()) {
+		ps.refreshCaretakerAvatars(ctx, s, rows)
+	}
+
 	// Preferred: the rendered leaderboard image (avatars + ranked table).
 	if png, err := ps.fetchCaretakersImage(ctx); err == nil && len(png) > 0 {
 		embed := &discordgo.MessageEmbed{
@@ -632,6 +639,38 @@ func caretakersTextEmbed(rows []CaretakerRow, username string) *discordgo.Messag
 		Color:       0xf59e0b,
 		Description: b.String(),
 		Footer:      attributeFooter(username, "🏆", "pulled up the leaderboard"),
+	}
+}
+
+// refreshCaretakerAvatars resolves each displayed caretaker's current Discord
+// avatar and updates the DB, so the leaderboard image shows up-to-date faces even
+// for rows created before their avatar was captured. Best-effort and time-bounded;
+// avatars discordgo already has cached don't hit the API.
+func (ps *PetService) refreshCaretakerAvatars(ctx context.Context, s *discordgo.Session, rows []CaretakerRow) {
+	if s == nil || len(rows) == 0 {
+		return
+	}
+	var wg sync.WaitGroup
+	for _, r := range rows {
+		userID := r.UserID
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			u, err := s.User(userID)
+			if err != nil || u == nil {
+				return
+			}
+			if e := ps.repo.setCaretakerAvatar(ctx, globalPetKey, userID, u.Avatar); e != nil {
+				ps.logger.Warn("caretaker avatar refresh failed", "user", userID, "error", e)
+			}
+		}()
+	}
+	// Bound the total wait so /caretakers stays responsive even if Discord is slow.
+	done := make(chan struct{})
+	go func() { wg.Wait(); close(done) }()
+	select {
+	case <-done:
+	case <-time.After(5 * time.Second):
 	}
 }
 
