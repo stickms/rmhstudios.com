@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import 'dotenv/config';
 import { prisma } from '@/lib/prisma.server';
 import { candidateSlugs, probeSlug } from '@/lib/rmhladder/adapters/prober';
@@ -66,7 +67,7 @@ async function main() {
   let totalLiveJobs = 0;
   let firstRequest = true;
 
-  for (const [companyId, { name, byPlatform }] of companies) {
+  for (const [_companyId, { name, byPlatform }] of companies) {
     companiesProbed++;
     console.log(`[${companiesProbed}] ${name}`);
 
@@ -78,7 +79,7 @@ async function main() {
       let activated = false;
 
       for (const slug of slugs) {
-        // 300ms sleep between every live request
+        // 300ms between every request (politeness)
         if (!firstRequest) {
           await sleep(300);
         }
@@ -106,7 +107,6 @@ async function main() {
     }
   }
 
-  // eslint-disable-next-line no-console -- CLI script summary
   console.log(
     `\nDone. Companies probed: ${companiesProbed}, sources activated: ${sourcesActivated}, total live jobs seen: ${totalLiveJobs}.`,
   );
