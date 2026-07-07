@@ -6,12 +6,6 @@ import { runPipeline } from '@/lib/rmhladder/pipeline/run';
 const PLATFORMS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'manual'] as const;
 type Platform = (typeof PLATFORMS)[number];
 
-function sleep(ms: number) {
-  return new Promise<void>((resolve) => setTimeout(resolve, ms));
-}
-// Keep sleep available in case it's needed in future expansions.
-void sleep;
-
 function parseArgs() {
   const args = process.argv.slice(2);
   let trigger: 'cron' | 'manual' = 'manual';
