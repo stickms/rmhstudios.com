@@ -50,6 +50,7 @@ async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; 
       break;
     }
 
+    let content: unknown;
     try {
       const parsed: unknown = JSON.parse(res.body);
       if (typeof parsed === 'object' && parsed !== null) {
@@ -59,9 +60,13 @@ async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; 
           totalFound = data.totalFound ?? 0;
           status = res.status;
         }
-        const content = data.content;
+        content = data.content;
         if (Array.isArray(content)) {
           aggregated.push(...(content as SrJob[]));
+          // Empty page terminates loop even if totalFound lies
+          if (content.length === 0) {
+            break;
+          }
         } else {
           // If content is not an array on first page, return null
           if (offset === 0) {
@@ -87,7 +92,8 @@ async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; 
       break;
     }
 
-    offset += 100;
+    // Advance offset by actual item count, not fixed page size
+    offset += Array.isArray(content) ? content.length : 0;
   }
 
   return { jobs: aggregated.length > 0 ? aggregated : null, status, totalFound };

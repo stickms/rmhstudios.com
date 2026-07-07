@@ -202,6 +202,35 @@ describe('smartRecruitersAdapter pagination', () => {
 
     expect(jobs.length).toBeLessThanOrEqual(500);
   });
+
+  it('under-filled pages advance offset by item count, not page size', async () => {
+    const calls: string[] = [];
+    const f = (async (url: any) => {
+      const u = String(url); calls.push(u);
+      const offset = Number(new URL(u).searchParams.get('offset') ?? '0');
+      const make = (n: number, start: number) => JSON.stringify({
+        totalFound: 150,
+        content: Array.from({ length: n }, (_, i) => ({ id: String(start + i), name: `Job ${start + i}`, location: { city: 'Austin', region: 'TX', country: 'us' } })),
+      });
+      if (offset === 0) return new Response(make(75, 0), { status: 200 });
+      if (offset === 75) return new Response(make(75, 75), { status: 200 });
+      return new Response(JSON.stringify({ totalFound: 150, content: [] }), { status: 200 });
+    }) as typeof fetch;
+    const jobs = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: f });
+    expect(jobs).toHaveLength(150);
+    expect(calls).toHaveLength(2); // offset 0 then offset 75 — never offset 100
+  });
+
+  it('empty page terminates the loop even when totalFound lies', async () => {
+    let calls = 0;
+    const f = (async () => {
+      calls++;
+      return new Response(JSON.stringify({ totalFound: 5000, content: [] }), { status: 200 });
+    }) as typeof fetch;
+    const jobs = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: f });
+    expect(jobs).toEqual([]);
+    expect(calls).toBe(1);
+  });
 });
 
 describe('smartRecruitersAdapter detectExpired with empty board', () => {
