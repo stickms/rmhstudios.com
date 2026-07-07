@@ -10,6 +10,8 @@ import { Bell, BellOff, Bookmark, Heart, Loader2, Search, Trash2 } from 'lucide-
 import { toast } from 'sonner';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { ListingCard } from '@/components/homes/ListingCard';
 import type { Listing } from '@/lib/homes/types';
 
@@ -111,12 +113,8 @@ function HomesSavedPage() {
       <PageLayout title="Saved" backTo="/homes" wide>
         <div className="mx-auto max-w-md px-4 py-20 text-center text-site-text-dim">
           <p className="mb-4">Sign in to see your saved homes and searches.</p>
-          <Link
-            to="/login"
-            search={{ callbackURL: '/homes/saved' }}
-            className="rounded-lg bg-site-accent px-5 py-2.5 font-medium text-white"
-          >
-            Sign in
+          <Link to="/login" search={{ callbackURL: '/homes/saved' }}>
+            <Button>Sign in</Button>
           </Link>
         </div>
       </PageLayout>
@@ -125,14 +123,16 @@ function HomesSavedPage() {
 
   return (
     <PageLayout title="Saved" backTo="/homes" backLabel="Back to search" wide>
-      <div className="mx-auto w-full max-w-5xl px-4 py-5 md:px-6">
+      <div className="mx-auto w-full max-w-5xl px-4 pb-16 pt-5 md:px-6 md:pb-8">
         {/* Tabs */}
-        <div className="mb-5 inline-flex rounded-lg border border-site-border p-0.5">
+        <div className="mb-5 inline-flex rounded-site-sm border border-site-border p-0.5">
           <button
             type="button"
             onClick={() => setTab('listings')}
-            className={`inline-flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition ${
-              tab === 'listings' ? 'bg-site-surface-hover text-site-text' : 'text-site-text-dim'
+            className={`inline-flex items-center gap-1.5 rounded-[6px] px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === 'listings'
+                ? 'bg-site-surface-hover text-site-text'
+                : 'text-site-text-muted hover:text-site-text'
             }`}
           >
             <Heart className="h-4 w-4" /> Listings ({savedListings.length})
@@ -140,8 +140,10 @@ function HomesSavedPage() {
           <button
             type="button"
             onClick={() => setTab('searches')}
-            className={`inline-flex items-center gap-1.5 rounded-md px-4 py-1.5 text-sm font-medium transition ${
-              tab === 'searches' ? 'bg-site-surface-hover text-site-text' : 'text-site-text-dim'
+            className={`inline-flex items-center gap-1.5 rounded-[6px] px-4 py-1.5 text-sm font-medium transition-colors ${
+              tab === 'searches'
+                ? 'bg-site-surface-hover text-site-text'
+                : 'text-site-text-muted hover:text-site-text'
             }`}
           >
             <Bookmark className="h-4 w-4" /> Searches ({savedSearches.length})
@@ -156,7 +158,8 @@ function HomesSavedPage() {
           savedListings.length === 0 ? (
             <EmptyState
               icon={Heart}
-              text="No saved listings yet. Tap the heart on any listing to save it here."
+              title="No saved listings yet"
+              description="Tap the heart on any listing to save it here."
             />
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -168,17 +171,18 @@ function HomesSavedPage() {
         ) : savedSearches.length === 0 ? (
           <EmptyState
             icon={Bookmark}
-            text='No saved searches. Run a search and hit "Save search" to keep it here.'
+            title="No saved searches"
+            description='Run a search and hit "Save search" to keep it here.'
           />
         ) : (
           <div className="flex flex-col gap-2">
             {savedSearches.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-site-border bg-site-surface p-3"
+                className="flex items-center justify-between gap-3 rounded-site border border-site-border bg-site-surface/80 p-3 transition-colors hover:border-site-border-bright"
               >
                 <a href={`/homes?${s.query}`} className="flex min-w-0 flex-1 items-center gap-3">
-                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-site-accent/10 text-site-accent">
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-site-sm bg-site-accent/15 text-site-accent">
                     <Search className="h-5 w-5" />
                   </span>
                   <span className="min-w-0">
@@ -193,7 +197,7 @@ function HomesSavedPage() {
                     type="button"
                     onClick={() => toggleAlerts(s)}
                     aria-label={s.alertsEnabled ? 'Turn off alerts' : 'Turn on alerts'}
-                    className={`grid h-9 w-9 place-items-center rounded-lg transition ${
+                    className={`grid h-9 w-9 place-items-center rounded-site-sm transition-colors ${
                       s.alertsEnabled
                         ? 'text-site-accent'
                         : 'text-site-text-muted hover:text-site-text'
@@ -209,7 +213,7 @@ function HomesSavedPage() {
                     type="button"
                     onClick={() => deleteSearch(s.id)}
                     aria-label="Delete saved search"
-                    className="grid h-9 w-9 place-items-center rounded-lg text-site-text-muted transition hover:text-site-danger"
+                    className="grid h-9 w-9 place-items-center rounded-site-sm text-site-text-muted transition-colors hover:text-site-danger"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -220,14 +224,5 @@ function HomesSavedPage() {
         )}
       </div>
     </PageLayout>
-  );
-}
-
-function EmptyState({ icon: Icon, text }: { icon: typeof Heart; text: string }) {
-  return (
-    <div className="grid place-items-center py-20 text-center text-site-text-muted">
-      <Icon className="mb-3 h-10 w-10" />
-      <p className="max-w-xs">{text}</p>
-    </div>
   );
 }

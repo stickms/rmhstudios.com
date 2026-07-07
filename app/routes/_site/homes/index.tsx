@@ -10,16 +10,21 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
   Bookmark,
-  Home,
-  LayoutGrid,
-  Map as MapIcon,
-  Loader2,
+  Building2,
   ChevronLeft,
   ChevronRight,
+  Info,
+  LayoutGrid,
+  List,
+  Loader2,
+  Map as MapIcon,
+  Search,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
+import { Button } from '@/components/ui/button';
 import { LocationSearch, type HomesPlace } from '@/components/homes/LocationSearch';
 import { FiltersBar } from '@/components/homes/FiltersBar';
 import { ListingGrid } from '@/components/homes/ListingGrid';
@@ -48,7 +53,7 @@ export const Route = createFileRoute('/_site/homes/')({
   component: HomesSearchPage,
 });
 
-type View = 'grid' | 'split';
+const POPULAR = ['Rochester, NY', 'New York, NY', 'Austin, TX', 'Chicago, IL', 'Seattle, WA'];
 
 function HomesSearchPage() {
   const { data: session, isPending } = useSession();
@@ -61,12 +66,14 @@ function HomesSearchPage() {
   const [providers, setProviders] = useState<ProviderStatus[]>([]);
   const [center, setCenter] = useState<SearchCenter | null>(null);
   const [total, setTotal] = useState(0);
+  const [demo, setDemo] = useState(false);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [view, setView] = useState<View>('split');
+  const [desktopSplit, setDesktopSplit] = useState(true);
+  const [mobileMap, setMobileMap] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const reqIdRef = useRef(0);
@@ -85,7 +92,6 @@ function HomesSearchPage() {
 
     try {
       const qs = serializeFilters(effective);
-      // Keep the URL shareable without triggering a TanStack navigation.
       if (typeof window !== 'undefined') {
         window.history.replaceState(null, '', `/homes?${qs.toString()}`);
       }
@@ -101,6 +107,7 @@ function HomesSearchPage() {
       setProviders(data.providers ?? []);
       setCenter(data.center ?? null);
       setTotal(data.total ?? 0);
+      setDemo(Boolean(data.demo));
       setSavedIds(new Set<string>(data.savedIds ?? []));
     } catch (err) {
       if (myReq === reqIdRef.current) {
@@ -129,7 +136,6 @@ function HomesSearchPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Change filters and immediately re-run (resetting to page 1). */
   const applyFilters = useCallback(
     (patch: Partial<SearchFilters>) => {
       setFilters((prev) => {
@@ -153,6 +159,17 @@ function HomesSearchPage() {
       const next = { ...filters, location: place.label, page: 1 };
       setFilters(next);
       runSearch(next, place);
+    },
+    [filters, runSearch],
+  );
+
+  const quickSearch = useCallback(
+    (label: string) => {
+      setLocationQuery(label);
+      setPendingPlace(null);
+      const next = { ...filters, location: label, page: 1 };
+      setFilters(next);
+      runSearch(next, null);
     },
     [filters, runSearch],
   );
@@ -223,42 +240,66 @@ function HomesSearchPage() {
   if (!session) {
     return (
       <PageLayout title="RMHHomes" wide>
-        <div className="mx-auto max-w-md px-4 py-20 text-center">
-          <Home className="mx-auto mb-4 h-12 w-12 text-site-accent" />
-          <h2 className="mb-2 text-xl font-semibold text-site-text">
-            Sign in to find your next home
-          </h2>
-          <p className="mb-6 text-site-text-dim">
-            RMHHomes searches apartments and houses across free public listing sources, maps every
-            result, and keeps your favorites and saved searches in one place.
-          </p>
-          <Link
-            to="/login"
-            search={{ callbackURL: '/homes' }}
-            className="inline-flex items-center gap-2 rounded-lg bg-site-accent px-5 py-2.5 font-medium text-white transition hover:opacity-90"
+        <div className="mx-auto max-w-2xl px-4 py-10 md:py-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="relative overflow-hidden rounded-3xl border border-site-border bg-gradient-to-b from-site-surface to-site-bg p-8 text-center md:p-12"
           >
-            Sign in
-          </Link>
+            <div
+              className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full opacity-30 blur-3xl"
+              style={{ background: 'var(--site-accent)' }}
+            />
+            <div className="relative">
+              <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-site bg-site-accent/15 text-site-accent">
+                <Building2 className="h-7 w-7" />
+              </div>
+              <h2
+                className="text-3xl font-bold tracking-tight text-site-text"
+                style={{ fontFamily: 'var(--site-font-display)' }}
+              >
+                Find your next home
+              </h2>
+              <p className="mx-auto mt-3 max-w-md text-site-text-muted">
+                RMHHomes searches apartments and houses across free public listing sources, maps
+                every result, and keeps your favorites and saved searches in one place.
+              </p>
+              <Link to="/login" search={{ callbackURL: '/homes' }} className="mt-6 inline-block">
+                <Button size="lg">Sign in to search</Button>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </PageLayout>
     );
   }
+
+  const renderGrid = () => (
+    <ListingGrid
+      listings={listings}
+      savedIds={savedIds}
+      loading={loading}
+      searched={searched}
+      activeId={activeId}
+      onHover={setActiveId}
+      onSavedChange={onSavedChange}
+    />
+  );
 
   return (
     <PageLayout
       title="RMHHomes"
       wide
       headerRight={
-        <Link
-          to="/homes/saved"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-site-border px-3 py-1.5 text-sm text-site-text-dim transition hover:text-site-text"
-        >
-          <Bookmark className="h-4 w-4" />
-          <span className="hidden sm:inline">Saved</span>
+        <Link to="/homes/saved">
+          <Button variant="ghost" size="sm">
+            <Bookmark className="h-4 w-4" />
+            <span className="hidden sm:inline">Saved</span>
+          </Button>
         </Link>
       }
     >
-      <div className="mx-auto w-full max-w-6xl px-4 py-5 md:px-6">
+      <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-4 md:px-6 md:pb-10">
         {/* Search controls */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -275,20 +316,53 @@ function HomesSearchPage() {
                 }}
                 onSelect={onSelectPlace}
                 onSubmit={submitLocation}
-                autoFocus
+                autoFocus={!searched}
               />
             </div>
-            <button
-              type="button"
-              onClick={submitLocation}
-              className="rounded-lg bg-site-accent px-5 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
-            >
+            <Button size="lg" onClick={submitLocation} className="h-11 sm:w-auto">
+              <Search className="h-4 w-4" />
               Search
-            </button>
+            </Button>
           </div>
 
           <FiltersBar filters={filters} onChange={applyFilters} />
         </motion.div>
+
+        {/* Landing state (before first search) */}
+        {!searched && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="mt-6 overflow-hidden rounded-3xl border border-site-border bg-gradient-to-b from-site-surface to-site-bg p-8 text-center md:p-12"
+          >
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-site-accent/40 bg-site-accent/10 px-3 py-1 text-xs font-medium text-site-accent">
+              <Sparkles className="h-3.5 w-3.5" /> Apartments &amp; houses, all in one place
+            </span>
+            <h1
+              className="mx-auto mt-4 max-w-xl text-3xl font-bold tracking-tight text-site-text md:text-4xl"
+              style={{ fontFamily: 'var(--site-font-display)' }}
+            >
+              Where do you want to live?
+            </h1>
+            <p className="mx-auto mt-3 max-w-md text-site-text-muted">
+              Search a city, neighborhood, or ZIP. RMHHomes maps every result and lets you save the
+              ones you love.
+            </p>
+            <div className="mt-5 flex flex-wrap justify-center gap-2">
+              {POPULAR.map((city) => (
+                <button
+                  key={city}
+                  type="button"
+                  onClick={() => quickSearch(city)}
+                  className="rounded-full border border-site-border bg-site-surface px-3.5 py-1.5 text-sm text-site-text-muted transition-colors hover:border-site-accent/50 hover:text-site-text"
+                >
+                  {city}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
 
         {/* Results header */}
         {searched && (
@@ -300,7 +374,7 @@ function HomesSearchPage() {
                 ) : (
                   <>
                     <span className="font-semibold text-site-text">{total.toLocaleString()}</span>{' '}
-                    {total === 1 ? 'result' : 'results'}
+                    {total === 1 ? 'home' : 'homes'}
                     {center && (
                       <span className="text-site-text-muted">
                         {' '}
@@ -311,60 +385,88 @@ function HomesSearchPage() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={saveCurrentSearch}
-                  disabled={saving}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-site-border px-3 py-1.5 text-sm text-site-text-dim transition hover:text-site-text disabled:opacity-50"
-                >
+                <Button variant="outline" size="sm" onClick={saveCurrentSearch} disabled={saving}>
                   {saving ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Bookmark className="h-4 w-4" />
                   )}
-                  Save search
-                </button>
-                <div className="hidden rounded-lg border border-site-border p-0.5 lg:inline-flex">
+                  <span className="hidden sm:inline">Save search</span>
+                </Button>
+
+                {/* Mobile map/list toggle */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="lg:hidden"
+                  onClick={() => setMobileMap((v) => !v)}
+                >
+                  {mobileMap ? <List className="h-4 w-4" /> : <MapIcon className="h-4 w-4" />}
+                  {mobileMap ? 'List' : 'Map'}
+                </Button>
+
+                {/* Desktop split/list toggle */}
+                <div className="hidden rounded-site-sm border border-site-border p-0.5 lg:inline-flex">
                   <button
                     type="button"
-                    onClick={() => setView('split')}
+                    onClick={() => setDesktopSplit(true)}
                     aria-label="Map + list view"
-                    className={`rounded-md p-1.5 ${view === 'split' ? 'bg-site-surface-hover text-site-text' : 'text-site-text-muted'}`}
+                    className={`rounded-[6px] p-1.5 ${desktopSplit ? 'bg-site-surface-hover text-site-text' : 'text-site-text-muted'}`}
                   >
                     <MapIcon className="h-4 w-4" />
                   </button>
                   <button
                     type="button"
-                    onClick={() => setView('grid')}
+                    onClick={() => setDesktopSplit(false)}
                     aria-label="Grid view"
-                    className={`rounded-md p-1.5 ${view === 'grid' ? 'bg-site-surface-hover text-site-text' : 'text-site-text-muted'}`}
+                    className={`rounded-[6px] p-1.5 ${!desktopSplit ? 'bg-site-surface-hover text-site-text' : 'text-site-text-muted'}`}
                   >
                     <LayoutGrid className="h-4 w-4" />
                   </button>
                 </div>
               </div>
             </div>
+
+            {/* Demo-data banner (no real provider returned results) */}
+            {demo && !loading && (
+              <div className="flex items-start gap-2 rounded-site border border-site-warning/30 bg-site-warning/10 px-3 py-2 text-xs text-site-warning">
+                <Info className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  Showing <strong>demo listings</strong> — no live listing source returned results
+                  for this area. Configure a provider (e.g. a free RentCast API key) to see real
+                  homes. These placeholders aren&apos;t real properties.
+                </span>
+              </div>
+            )}
+
             {providers.length > 0 && <ProviderStatusBar providers={providers} />}
           </div>
         )}
 
         {/* Results body */}
-        <div className="mt-4">
-          {view === 'split' ? (
-            <div className="grid gap-4 lg:grid-cols-[1fr_minmax(320px,42%)]">
-              <div>
-                <ListingGrid
+        {searched && (
+          <div className="mt-4">
+            {/* Mobile: list or full-height map */}
+            <div className="lg:hidden">
+              {mobileMap ? (
+                <ListingsMap
                   listings={listings}
-                  savedIds={savedIds}
-                  loading={loading}
-                  searched={searched}
+                  center={center}
                   activeId={activeId}
-                  onHover={setActiveId}
-                  onSavedChange={onSavedChange}
+                  onActive={setActiveId}
+                  onSelect={(id) => setActiveId(id)}
+                  className="h-[70vh]"
                 />
-              </div>
-              {searched && (
-                <div className="hidden lg:block">
+              ) : (
+                renderGrid()
+              )}
+            </div>
+
+            {/* Desktop: split or grid */}
+            <div className="hidden lg:block">
+              {desktopSplit ? (
+                <div className="grid gap-4 lg:grid-cols-[1fr_minmax(320px,42%)]">
+                  <div>{renderGrid()}</div>
                   <div className="sticky top-20 h-[calc(100vh-6rem)]">
                     <ListingsMap
                       listings={listings}
@@ -375,43 +477,35 @@ function HomesSearchPage() {
                     />
                   </div>
                 </div>
+              ) : (
+                renderGrid()
               )}
             </div>
-          ) : (
-            <ListingGrid
-              listings={listings}
-              savedIds={savedIds}
-              loading={loading}
-              searched={searched}
-              activeId={activeId}
-              onHover={setActiveId}
-              onSavedChange={onSavedChange}
-            />
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Pagination */}
-        {searched && !loading && total > filters.pageSize && (
+        {searched && !loading && !mobileMap && total > filters.pageSize && (
           <div className="mt-6 flex items-center justify-center gap-3">
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               disabled={filters.page <= 1}
               onClick={() => goToPage(filters.page - 1)}
-              className="inline-flex items-center gap-1 rounded-lg border border-site-border px-3 py-1.5 text-sm text-site-text disabled:opacity-40"
             >
               <ChevronLeft className="h-4 w-4" /> Prev
-            </button>
+            </Button>
             <span className="text-sm text-site-text-dim">
               Page {filters.page} of {totalPages}
             </span>
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
               disabled={filters.page >= totalPages}
               onClick={() => goToPage(filters.page + 1)}
-              className="inline-flex items-center gap-1 rounded-lg border border-site-border px-3 py-1.5 text-sm text-site-text disabled:opacity-40"
             >
               Next <ChevronRight className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         )}
       </div>

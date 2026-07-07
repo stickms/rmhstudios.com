@@ -44,6 +44,8 @@ const LISTING_TTL_MS = 30 * 60 * 1000;
 interface RawSearch {
   listings: Listing[];
   providers: ProviderStatus[];
+  /** True when the only listings available are from the demo (sample) source. */
+  demo: boolean;
 }
 
 function rawCacheKey(center: SearchCenter, filters: SearchFilters): string {
@@ -103,8 +105,29 @@ async function runProviders(center: SearchCenter, filters: SearchFilters): Promi
     }),
   );
 
-  const listings = dedupe(settled.flatMap((s) => s.listings));
-  return { listings, providers: settled.map((s) => s.status) };
+  // Real listings take priority. The sample source is a demo safety net, so
+  // whenever a real provider (RentCast/Craigslist) returns anything for this
+  // query we drop the sample listings entirely rather than diluting real
+  // inventory with generated ones.
+  const realCount = settled
+    .filter((s) => s.status.source !== 'sample' && s.status.ok)
+    .reduce((n, s) => n + s.listings.length, 0);
+
+  const sampleSuperseded = realCount > 0;
+  const merged = settled.flatMap((s) =>
+    s.status.source === 'sample' && sampleSuperseded ? [] : s.listings,
+  );
+  const listings = dedupe(merged);
+  const demo = realCount === 0 && listings.some((l) => l.source === 'sample');
+
+  // Reflect reality in the status strip: when real listings win, the sample
+  // source contributed nothing to the shown results.
+  const providers = settled.map((s) =>
+    s.status.source === 'sample' && sampleSuperseded
+      ? { ...s.status, count: 0, note: 'Hidden — showing real listings' }
+      : s.status,
+  );
+  return { listings, providers, demo };
 }
 
 /** Drop exact-id duplicates, keeping the first (registry-order) occurrence. */
@@ -224,6 +247,7 @@ export async function searchListings(filters: SearchFilters): Promise<SearchResp
         note: 'Enter a location to search',
       })),
       cached: false,
+      demo: false,
     };
   }
 
@@ -248,7 +272,16 @@ export async function searchListings(filters: SearchFilters): Promise<SearchResp
   const start = (page - 1) * pageSize;
   const listings = ranked.slice(start, start + pageSize);
 
-  return { listings, total, page, pageSize, center, providers: raw.providers, cached };
+  return {
+    listings,
+    total,
+    page,
+    pageSize,
+    center,
+    providers: raw.providers,
+    cached,
+    demo: raw.demo,
+  };
 }
 
 function clamp(n: number, lo: number, hi: number): number {

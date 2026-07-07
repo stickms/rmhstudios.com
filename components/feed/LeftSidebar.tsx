@@ -6,8 +6,30 @@ import { authClient } from '@/lib/auth-client';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
-  Home, Library, Atom, Brain, Wand2,
-  LogOut, PenSquare, User, ShieldCheck, MoreHorizontal, TrendingUp, Inbox, Landmark, Bookmark, ShoppingBag, Compass, Users, Zap, Shield, Terminal, ChevronDown, Car, type LucideIcon
+  Home,
+  Library,
+  Atom,
+  Brain,
+  Wand2,
+  LogOut,
+  PenSquare,
+  User,
+  ShieldCheck,
+  MoreHorizontal,
+  TrendingUp,
+  Inbox,
+  Landmark,
+  Bookmark,
+  ShoppingBag,
+  Compass,
+  Users,
+  Zap,
+  Shield,
+  Terminal,
+  ChevronDown,
+  Car,
+  Building2,
+  type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { ComposeModal } from './ComposeModal';
@@ -39,8 +61,23 @@ const SUBMENU_ITEM = {
 };
 
 // `tKey` is the i18n key (namespace "feed"); `label` is the English fallback.
-type NavLeaf = { href: string; tKey: string; label: string; icon: LucideIcon; requiresAuth?: boolean; requiresAdmin?: boolean; badge?: 'inbox' | 'admin-review'; external?: boolean };
-type NavGroup = { group: string; tKey: string; label: string; icon: LucideIcon; children: NavLeaf[] };
+type NavLeaf = {
+  href: string;
+  tKey: string;
+  label: string;
+  icon: LucideIcon;
+  requiresAuth?: boolean;
+  requiresAdmin?: boolean;
+  badge?: 'inbox' | 'admin-review';
+  external?: boolean;
+};
+type NavGroup = {
+  group: string;
+  tKey: string;
+  label: string;
+  icon: LucideIcon;
+  children: NavLeaf[];
+};
 type NavItem = NavLeaf | NavGroup;
 const isGroup = (item: NavItem): item is NavGroup => 'group' in item;
 
@@ -49,7 +86,14 @@ const isGroup = (item: NavItem): item is NavGroup => 'group' in item;
 const NAV: NavItem[] = [
   { href: '/', tKey: 'nav-home', label: 'Home', icon: Home },
   { href: '/search', tKey: 'nav-explore', label: 'Explore', icon: Compass },
-  { href: '/messages', tKey: 'nav-inbox', label: 'Inbox', icon: Inbox, requiresAuth: true, badge: 'inbox' },
+  {
+    href: '/messages',
+    tKey: 'nav-inbox',
+    label: 'Inbox',
+    icon: Inbox,
+    requiresAuth: true,
+    badge: 'inbox',
+  },
   { href: '/create', tKey: 'nav-creator-studio', label: 'Creator Studio', icon: Wand2 },
   { href: '/library', tKey: 'nav-library', label: 'Library', icon: Library },
   { href: '/communities', tKey: 'nav-communities', label: 'Communities', icon: Users },
@@ -61,16 +105,35 @@ const NAV: NavItem[] = [
     label: 'More',
     icon: MoreHorizontal,
     children: [
+      { href: '/homes', tKey: 'nav-homes', label: 'RMHHomes', icon: Building2 },
       { href: '/rideshare', tKey: 'nav-rideshare', label: 'Rideshare', icon: Car },
       { href: '/developer', tKey: 'nav-developer', label: 'Developer', icon: Terminal },
       { href: '/rmh-capital', tKey: 'nav-rmh-capital', label: 'RMH Capital', icon: Landmark },
       { href: '/rmh-pmc', tKey: 'nav-rmh-pmc', label: 'RMH PMC', icon: Shield },
-      { href: '/adaptive-intelligence', tKey: 'nav-adaptive-intelligence', label: 'Adaptive Intelligence', icon: Atom },
-      { href: '/deeplink', tKey: 'nav-rmh-deeplink', label: 'RMH Deeplink', icon: Brain, external: true },
+      {
+        href: '/adaptive-intelligence',
+        tKey: 'nav-adaptive-intelligence',
+        label: 'Adaptive Intelligence',
+        icon: Atom,
+      },
+      {
+        href: '/deeplink',
+        tKey: 'nav-rmh-deeplink',
+        label: 'RMH Deeplink',
+        icon: Brain,
+        external: true,
+      },
     ],
   },
   // Admin lives at the bottom of the rail and is only rendered for admins.
-  { href: '/admin', tKey: 'nav-admin', label: 'Admin', icon: ShieldCheck, requiresAdmin: true, badge: 'admin-review' },
+  {
+    href: '/admin',
+    tKey: 'nav-admin',
+    label: 'Admin',
+    icon: ShieldCheck,
+    requiresAdmin: true,
+    badge: 'admin-review',
+  },
 ];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
@@ -139,16 +202,23 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const renderLeaf = (link: NavLeaf, nested = false) => {
     const Icon = link.icon;
     const label = t(link.tKey, { defaultValue: link.label });
-    const isActive = link.badge === 'inbox'
-      ? !!(pathname?.startsWith('/messages') || pathname?.startsWith('/notifications') || pathname?.startsWith('/groups'))
-      : pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));
+    const isActive =
+      link.badge === 'inbox'
+        ? !!(
+            pathname?.startsWith('/messages') ||
+            pathname?.startsWith('/notifications') ||
+            pathname?.startsWith('/groups')
+          )
+        : pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));
     const indent = nested
       ? expanded
         ? 'pl-10'
         : 'md:justify-center xl:justify-start xl:pl-10'
       : itemJustifyClass;
     const leafClass = `flex items-center gap-3 px-3 ${nested ? 'py-2' : 'py-2.5'} rounded-site text-sm font-medium transition-colors ${indent} ${
-      isActive ? 'text-site-accent bg-site-accent-dim' : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+      isActive
+        ? 'text-site-accent bg-site-accent-dim'
+        : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
     }`;
     const leafInner = (
       <>
@@ -160,7 +230,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ) : link.badge === 'admin-review' ? (
           <div className="relative shrink-0">
             <Icon className="w-5 h-5" />
-            <NotificationBadge count={reviewCounts.total} className="absolute -top-1.5 -right-1.5" />
+            <NotificationBadge
+              count={reviewCounts.total}
+              className="absolute -top-1.5 -right-1.5"
+            />
           </div>
         ) : (
           <Icon className="w-5 h-5 shrink-0" />
@@ -172,13 +245,25 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     // full page load, so they render a plain anchor rather than a router Link.
     if (link.external) {
       return (
-        <a key={link.href} href={link.href} className={leafClass} title={label} aria-current={isActive ? 'page' : undefined}>
+        <a
+          key={link.href}
+          href={link.href}
+          className={leafClass}
+          title={label}
+          aria-current={isActive ? 'page' : undefined}
+        >
           {leafInner}
         </a>
       );
     }
     return (
-      <Link key={link.href} to={link.href} className={leafClass} title={label} aria-current={isActive ? 'page' : undefined}>
+      <Link
+        key={link.href}
+        to={link.href}
+        className={leafClass}
+        title={label}
+        aria-current={isActive ? 'page' : undefined}
+      >
         {leafInner}
       </Link>
     );
@@ -188,10 +273,14 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     <div className={`flex flex-col gap-1 h-full min-h-0 ${paddingClass}`}>
       {/* Logo */}
       <Link to="/" className={`mb-6 flex items-center shrink-0 ${logoAlignClass}`}>
-        <span className={`site-logo font-playfair font-bold text-xl text-site-text ${logoFullClass}`}>
+        <span
+          className={`site-logo font-playfair font-bold text-xl text-site-text ${logoFullClass}`}
+        >
           RMH<span className="text-site-text-muted font-semibold">Studios</span>
         </span>
-        <span className={`site-logo font-playfair font-bold text-xl text-site-text ${logoShortClass}`}>
+        <span
+          className={`site-logo font-playfair font-bold text-xl text-site-text ${logoShortClass}`}
+        >
           RMH
         </span>
       </Link>
@@ -277,7 +366,17 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               to={`/u/${(session.user as any).handle || session.user.id}` as string}
               className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-site transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
             >
-              <UserAvatar src={resolvedUser?.image || session.user.image} alt={resolvedUser?.name || session.user.name || t('user-avatar-alt', { defaultValue: 'User' })} size={32} fallbackName={resolvedUser?.name || session.user.name} className="ring-2 ring-site-bg" />
+              <UserAvatar
+                src={resolvedUser?.image || session.user.image}
+                alt={
+                  resolvedUser?.name ||
+                  session.user.name ||
+                  t('user-avatar-alt', { defaultValue: 'User' })
+                }
+                size={32}
+                fallbackName={resolvedUser?.name || session.user.name}
+                className="ring-2 ring-site-bg"
+              />
               <span className={`${labelClass} text-sm text-site-text truncate max-w-30`}>
                 {resolvedUser?.name || session.user.name}
               </span>
@@ -297,11 +396,11 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   const vh = window.visualViewport?.height ?? window.innerHeight;
                   const right = Math.min(
                     Math.max(vw - rect.right, margin),
-                    vw - menuWidth - margin
+                    vw - menuWidth - margin,
                   );
                   const bottom = Math.min(
                     Math.max(vh - rect.top + 8, margin),
-                    vh - menuHeight - margin
+                    vh - menuHeight - margin,
                   );
                   setUserMenuPos({ bottom, right });
                 }
@@ -315,7 +414,11 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             {showUserMenu && (
               <div
                 className="vibe-glass fixed w-48 border border-site-border rounded-site shadow-lg py-1 z-50"
-                style={{ bottom: `${userMenuPos.bottom}px`, right: `${userMenuPos.right}px`, background: 'rgba(12, 12, 13, 0.96)' }}
+                style={{
+                  bottom: `${userMenuPos.bottom}px`,
+                  right: `${userMenuPos.right}px`,
+                  background: 'rgba(12, 12, 13, 0.96)',
+                }}
               >
                 <Link
                   to={`/u/${(session.user as any).handle || session.user.id}` as string}
@@ -331,7 +434,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
                 >
                   <Zap className="w-4 h-4" />
-                  <span>{t('progress', { defaultValue: 'Progress' })}{streak && streak.current > 0 ? ` · ${streak.current}🔥` : ''}</span>
+                  <span>
+                    {t('progress', { defaultValue: 'Progress' })}
+                    {streak && streak.current > 0 ? ` · ${streak.current}🔥` : ''}
+                  </span>
                 </Link>
                 <Link
                   to="/bookmarks"

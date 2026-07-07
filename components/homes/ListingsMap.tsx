@@ -87,7 +87,7 @@ export function ListingsMap({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border border-site-border bg-site-surface ${className ?? ''}`}
+      className={`relative overflow-hidden rounded-site border border-site-border bg-site-surface ${className ?? ''}`}
     >
       {mounted ? (
         <Map

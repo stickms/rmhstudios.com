@@ -141,4 +141,11 @@ export interface SearchResponse {
   providers: ProviderStatus[];
   /** True when results were served from cache. */
   cached: boolean;
+  /**
+   * True when the results are demo/sample data — i.e. no real provider
+   * (RentCast, Craigslist) returned anything, so the built-in sample source
+   * filled in. The UI surfaces this so demo listings are never mistaken for
+   * real inventory.
+   */
+  demo: boolean;
 }

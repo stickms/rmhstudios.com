@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Heart, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import type { Listing } from '@/lib/homes/types';
 
 interface SaveButtonProps {
@@ -61,7 +62,7 @@ export function SaveButton({ listing, saved, onChange, compact }: SaveButtonProp
         onClick={toggle}
         aria-pressed={isSaved}
         aria-label={isSaved ? 'Remove from saved' : 'Save listing'}
-        className="grid h-9 w-9 place-items-center rounded-full bg-black/40 text-white backdrop-blur transition hover:bg-black/60"
+        className="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/65 active:scale-90"
       >
         {busy ? (
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -73,15 +74,11 @@ export function SaveButton({ listing, saved, onChange, compact }: SaveButtonProp
   }
 
   return (
-    <button
+    <Button
       type="button"
+      variant={isSaved ? 'accent-outline' : 'secondary'}
       onClick={toggle}
-      aria-pressed={isSaved}
-      className={`inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-        isSaved
-          ? 'border-rose-500/40 bg-rose-500/10 text-rose-300'
-          : 'border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover'
-      }`}
+      className={isSaved ? 'border-rose-500/40 text-rose-400 hover:bg-rose-500/10' : ''}
     >
       {busy ? (
         <Loader2 className="h-4 w-4 animate-spin" />
@@ -89,6 +86,6 @@ export function SaveButton({ listing, saved, onChange, compact }: SaveButtonProp
         <Heart className={`h-4 w-4 ${isSaved ? 'fill-rose-500 text-rose-500' : ''}`} />
       )}
       {isSaved ? 'Saved' : 'Save'}
-    </button>
+    </Button>
   );
 }

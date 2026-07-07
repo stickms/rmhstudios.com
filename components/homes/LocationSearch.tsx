@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Loader2, MapPin, Search, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 
 export interface HomesPlace {
   label: string;
@@ -79,9 +80,9 @@ export function LocationSearch({
 
   return (
     <div ref={boxRef} className="relative w-full">
-      <div className="flex items-center gap-2 rounded-lg border border-site-border bg-site-surface px-3 focus-within:border-site-accent">
-        <Search className="h-4 w-4 shrink-0 text-site-text-muted" />
-        <input
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim" />
+        <Input
           type="text"
           value={value}
           autoFocus={autoFocus}
@@ -95,35 +96,38 @@ export function LocationSearch({
             }
           }}
           placeholder={placeholder}
-          className="w-full bg-transparent py-2.5 text-sm text-site-text outline-none placeholder:text-site-text-muted"
+          className="h-11 pl-9 pr-9"
         />
-        {loading && <Loader2 className="h-4 w-4 animate-spin text-site-text-muted" />}
-        {value && !loading && (
-          <button
-            type="button"
-            aria-label="Clear location"
-            onClick={() => {
-              onQueryChange('');
-              setResults([]);
-              setOpen(false);
-            }}
-            className="text-site-text-muted hover:text-site-text"
-          >
-            <X className="h-4 w-4" />
-          </button>
+        {loading ? (
+          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-site-text-dim" />
+        ) : (
+          value && (
+            <button
+              type="button"
+              aria-label="Clear location"
+              onClick={() => {
+                onQueryChange('');
+                setResults([]);
+                setOpen(false);
+              }}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-site-text-dim hover:text-site-text"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )
         )}
       </div>
 
       {open && results.length > 0 && (
-        <ul className="absolute z-30 mt-1 max-h-72 w-full overflow-auto rounded-lg border border-site-border bg-site-surface py-1 shadow-xl">
+        <ul className="absolute z-30 mt-1.5 max-h-72 w-full overflow-auto rounded-site border border-site-border bg-site-surface py-1 shadow-site">
           {results.map((r, i) => (
             <li key={`${r.lat},${r.lng},${i}`}>
               <button
                 type="button"
                 onClick={() => choose(r)}
-                className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm text-site-text hover:bg-site-surface-hover"
+                className="flex w-full items-start gap-2 px-3 py-2 text-left text-sm text-site-text transition-colors hover:bg-site-surface-hover"
               >
-                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-muted" />
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-site-text-dim" />
                 <span className="line-clamp-2">{r.label}</span>
               </button>
             </li>

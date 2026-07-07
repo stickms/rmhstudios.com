@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { ListingsMap } from '@/components/homes/ListingsMap';
 import { SaveButton } from '@/components/homes/SaveButton';
 import { SourceBadge } from '@/components/homes/SourceBadge';
@@ -93,12 +95,8 @@ function ListingDetailPage() {
       <PageLayout title="Listing" backTo="/homes" wide>
         <div className="mx-auto max-w-md px-4 py-20 text-center text-site-text-dim">
           <p className="mb-4">Sign in to view this listing.</p>
-          <Link
-            to="/login"
-            search={{ callbackURL: '/homes' }}
-            className="rounded-lg bg-site-accent px-5 py-2.5 font-medium text-white"
-          >
-            Sign in
+          <Link to="/login" search={{ callbackURL: '/homes' }}>
+            <Button>Sign in</Button>
           </Link>
         </div>
       </PageLayout>
@@ -113,11 +111,10 @@ function ListingDetailPage() {
           <p className="mb-4">
             This listing is no longer available. It may have expired or been removed by the source.
           </p>
-          <Link
-            to="/homes"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-site-border px-4 py-2 text-site-text"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to search
+          <Link to="/homes">
+            <Button variant="outline">
+              <ArrowLeft className="h-4 w-4" /> Back to search
+            </Button>
           </Link>
         </div>
       </PageLayout>
@@ -139,7 +136,7 @@ function ListingDetailPage() {
         {/* Gallery */}
         {images.length > 0 && (
           <div className="mb-5">
-            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-xl border border-site-border bg-site-bg">
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-site border border-site-border bg-site-bg">
               <img
                 src={images[activeImage]}
                 alt={listing.title}
@@ -156,8 +153,10 @@ function ListingDetailPage() {
                     key={img}
                     type="button"
                     onClick={() => setActiveImage(i)}
-                    className={`h-16 w-24 shrink-0 overflow-hidden rounded-lg border ${
-                      i === activeImage ? 'border-site-accent' : 'border-site-border'
+                    className={`h-16 w-24 shrink-0 overflow-hidden rounded-site-sm border transition-colors ${
+                      i === activeImage
+                        ? 'border-site-accent'
+                        : 'border-site-border hover:border-site-border-bright'
                     }`}
                   >
                     <img src={img} alt="" className="h-full w-full object-cover" />
@@ -171,7 +170,10 @@ function ListingDetailPage() {
         {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="text-3xl font-bold text-site-text">
+            <div
+              className="text-3xl font-bold text-site-text"
+              style={{ fontFamily: 'var(--site-font-display)' }}
+            >
               {formatPrice(listing.price, listing.listingType)}
             </div>
             <div className="mt-1 flex items-center gap-1.5 text-site-text-dim">
@@ -199,7 +201,7 @@ function ListingDetailPage() {
             </span>
           )}
           {listing.petsAllowed === true && (
-            <span className="inline-flex items-center gap-1 text-emerald-400">
+            <span className="inline-flex items-center gap-1 text-site-success">
               <PawPrint className="h-4 w-4" /> Pet-friendly
             </span>
           )}
@@ -208,7 +210,12 @@ function ListingDetailPage() {
         {/* Description */}
         {listing.description && (
           <div className="mt-5">
-            <h2 className="mb-2 text-lg font-semibold text-site-text">About this place</h2>
+            <h2
+              className="mb-2 text-lg font-semibold text-site-text"
+              style={{ fontFamily: 'var(--site-font-display)' }}
+            >
+              About this place
+            </h2>
             <p className="whitespace-pre-wrap text-site-text-dim">{listing.description}</p>
           </div>
         )}
@@ -216,15 +223,17 @@ function ListingDetailPage() {
         {/* Amenities */}
         {listing.amenities && listing.amenities.length > 0 && (
           <div className="mt-5">
-            <h2 className="mb-2 text-lg font-semibold text-site-text">Amenities</h2>
+            <h2
+              className="mb-2 text-lg font-semibold text-site-text"
+              style={{ fontFamily: 'var(--site-font-display)' }}
+            >
+              Amenities
+            </h2>
             <div className="flex flex-wrap gap-2">
               {listing.amenities.map((a) => (
-                <span
-                  key={a}
-                  className="rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm text-site-text-dim"
-                >
+                <Badge key={a} variant="outline" size="lg">
                   {a}
-                </span>
+                </Badge>
               ))}
             </div>
           </div>
@@ -233,7 +242,12 @@ function ListingDetailPage() {
         {/* Map */}
         {listing.lat != null && listing.lng != null && (
           <div className="mt-5">
-            <h2 className="mb-2 text-lg font-semibold text-site-text">Location</h2>
+            <h2
+              className="mb-2 text-lg font-semibold text-site-text"
+              style={{ fontFamily: 'var(--site-font-display)' }}
+            >
+              Location
+            </h2>
             <ListingsMap
               listings={[listing]}
               center={{ lat: listing.lat, lng: listing.lng, label: location }}
@@ -247,14 +261,11 @@ function ListingDetailPage() {
         {/* Source link */}
         {listing.url && (
           <div className="mt-6">
-            <a
-              href={listing.url}
-              target="_blank"
-              rel="noopener noreferrer nofollow"
-              className="inline-flex items-center gap-2 rounded-lg bg-site-accent px-5 py-2.5 font-medium text-white transition hover:opacity-90"
-            >
-              View original listing <ExternalLink className="h-4 w-4" />
-            </a>
+            <Button asChild size="lg">
+              <a href={listing.url} target="_blank" rel="noopener noreferrer nofollow">
+                View original listing <ExternalLink className="h-4 w-4" />
+              </a>
+            </Button>
             <p className="mt-2 text-xs text-site-text-muted">
               Opens the original post on {sourceLabel(listing.source)}. RMHHomes aggregates public
               listings and is not the lister — always verify details with the source.
@@ -268,7 +279,7 @@ function ListingDetailPage() {
 
 function Spec({ icon: Icon, label, sub }: { icon: typeof Home; label: string; sub: string }) {
   return (
-    <div className="rounded-xl border border-site-border bg-site-surface p-3">
+    <div className="rounded-site border border-site-border bg-site-surface/80 p-3">
       <Icon className="mb-1 h-5 w-5 text-site-accent" />
       <div className="font-semibold text-site-text">{label}</div>
       <div className="text-xs text-site-text-muted">{sub}</div>

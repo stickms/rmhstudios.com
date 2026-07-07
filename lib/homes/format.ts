@@ -21,7 +21,7 @@ export function propertyTypeLabel(type: PropertyType): string {
 }
 
 const SOURCE_LABELS: Record<ListingSource, string> = {
-  sample: 'RMH Sample',
+  sample: 'Demo',
   craigslist: 'Craigslist',
   rentcast: 'RentCast',
 };

@@ -9,6 +9,10 @@ import {
   type SortOrder,
 } from '@/lib/homes/types';
 import { propertyTypeLabel } from '@/lib/homes/format';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 
 interface FiltersBarProps {
   filters: SearchFilters;
@@ -23,11 +27,17 @@ const SORT_LABELS: Record<SortOrder, string> = {
 };
 
 const BED_OPTIONS = [0, 1, 2, 3, 4];
+const LISTING_TABS: { id: SearchFilters['listingType']; label: string }[] = [
+  { id: 'rent', label: 'Rent' },
+  { id: 'sale', label: 'Buy' },
+  { id: 'any', label: 'Any' },
+];
 
 /**
- * The quick-filter row (listing type, beds, sort) plus an expandable advanced
- * panel (price, baths, property types, pets, radius). Emits partial patches;
- * the page owns the canonical filter state and re-runs the search.
+ * Quick-filter row (listing type, beds, sort) plus an expandable advanced panel
+ * (price, baths, radius, property types, pets). Built entirely on the shared UI
+ * primitives so it matches the rest of the site. Emits partial patches; the
+ * page owns the canonical filter state and re-runs the search.
  */
 export function FiltersBar({ filters, onChange }: FiltersBarProps) {
   const [advanced, setAdvanced] = useState(false);
@@ -41,35 +51,41 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
     });
   }
 
+  const activeAdvanced =
+    (filters.minPrice != null ? 1 : 0) +
+    (filters.maxPrice != null ? 1 : 0) +
+    (filters.minBaths != null ? 1 : 0) +
+    filters.propertyTypes.length +
+    (filters.petsAllowed ? 1 : 0);
+
   return (
-    <div className="rounded-xl border border-site-border bg-site-surface p-3">
+    <div className="rounded-site border border-site-border bg-site-surface/80 p-3">
       <div className="flex flex-wrap items-center gap-2">
-        {/* Rent / Buy */}
-        <div className="inline-flex rounded-lg border border-site-border p-0.5">
-          {(['rent', 'sale', 'any'] as const).map((t) => (
+        {/* Rent / Buy / Any segmented control */}
+        <div className="inline-flex rounded-site-sm border border-site-border p-0.5">
+          {LISTING_TABS.map((t) => (
             <button
-              key={t}
+              key={t.id}
               type="button"
-              onClick={() => onChange({ listingType: t })}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium capitalize transition ${
-                filters.listingType === t
-                  ? 'bg-site-accent text-white'
-                  : 'text-site-text-dim hover:text-site-text'
+              onClick={() => onChange({ listingType: t.id })}
+              className={`rounded-[6px] px-3 py-1.5 text-sm font-medium transition-colors ${
+                filters.listingType === t.id
+                  ? 'bg-site-accent text-site-accent-fg'
+                  : 'text-site-text-muted hover:text-site-text'
               }`}
             >
-              {t === 'sale' ? 'Buy' : t}
+              {t.label}
             </button>
           ))}
         </div>
 
-        {/* Beds */}
-        <select
+        <Select
           value={filters.minBeds ?? ''}
           onChange={(e) =>
             onChange({ minBeds: e.target.value === '' ? undefined : Number(e.target.value) })
           }
-          className="rounded-lg border border-site-border bg-site-surface px-3 py-1.5 text-sm text-site-text"
           aria-label="Minimum bedrooms"
+          className="h-9 w-auto min-w-[8rem]"
         >
           <option value="">Any beds</option>
           {BED_OPTIONS.map((b) => (
@@ -77,45 +93,47 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
               {b === 0 ? 'Studio+' : `${b}+ beds`}
             </option>
           ))}
-        </select>
+        </Select>
 
-        {/* Sort */}
-        <select
+        <Select
           value={filters.sort}
           onChange={(e) => onChange({ sort: e.target.value as SortOrder })}
-          className="rounded-lg border border-site-border bg-site-surface px-3 py-1.5 text-sm text-site-text"
           aria-label="Sort order"
+          className="h-9 w-auto min-w-[11rem]"
         >
           {(Object.keys(SORT_LABELS) as SortOrder[]).map((s) => (
             <option key={s} value={s}>
               {SORT_LABELS[s]}
             </option>
           ))}
-        </select>
+        </Select>
 
-        <button
+        <Button
           type="button"
+          variant={advanced ? 'accent-outline' : 'outline'}
+          size="sm"
           onClick={() => setAdvanced((v) => !v)}
-          className={`ml-auto inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm transition ${
-            advanced
-              ? 'border-site-accent text-site-accent'
-              : 'border-site-border text-site-text-dim hover:text-site-text'
-          }`}
+          className="ml-auto"
         >
           <SlidersHorizontal className="h-4 w-4" />
           Filters
-        </button>
+          {activeAdvanced > 0 && (
+            <span className="ml-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-site-accent px-1 text-[11px] font-semibold text-site-accent-fg">
+              {activeAdvanced}
+            </span>
+          )}
+        </Button>
       </div>
 
       {advanced && (
         <div className="mt-3 grid gap-4 border-t border-site-border pt-3 sm:grid-cols-2">
           {/* Price range */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-site-text-muted">
+            <span className="mb-1.5 block text-xs font-medium text-site-text-muted">
               Price ({filters.listingType === 'sale' ? 'total' : 'per month'})
-            </label>
+            </span>
             <div className="flex items-center gap-2">
-              <input
+              <Input
                 type="number"
                 min={0}
                 placeholder="Min"
@@ -123,10 +141,10 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                 onChange={(e) =>
                   onChange({ minPrice: e.target.value === '' ? undefined : Number(e.target.value) })
                 }
-                className="w-full rounded-lg border border-site-border bg-site-surface px-2.5 py-1.5 text-sm text-site-text"
+                className="h-9"
               />
-              <span className="text-site-text-muted">–</span>
-              <input
+              <span className="text-site-text-dim">–</span>
+              <Input
                 type="number"
                 min={0}
                 placeholder="Max"
@@ -134,23 +152,24 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                 onChange={(e) =>
                   onChange({ maxPrice: e.target.value === '' ? undefined : Number(e.target.value) })
                 }
-                className="w-full rounded-lg border border-site-border bg-site-surface px-2.5 py-1.5 text-sm text-site-text"
+                className="h-9"
               />
             </div>
           </div>
 
           {/* Baths + radius */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <span className="mb-1 block text-xs font-medium text-site-text-muted">
+              <span className="mb-1.5 block text-xs font-medium text-site-text-muted">
                 Min baths
               </span>
-              <select
+              <Select
                 value={filters.minBaths ?? ''}
                 onChange={(e) =>
                   onChange({ minBaths: e.target.value === '' ? undefined : Number(e.target.value) })
                 }
-                className="w-full rounded-lg border border-site-border bg-site-surface px-2.5 py-1.5 text-sm text-site-text"
+                className="h-9"
+                aria-label="Minimum bathrooms"
               >
                 <option value="">Any</option>
                 {[1, 2, 3].map((b) => (
@@ -158,21 +177,22 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                     {b}+
                   </option>
                 ))}
-              </select>
+              </Select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-site-text-muted">
+              <span className="mb-1.5 block text-xs font-medium text-site-text-muted">
                 Radius: {filters.radiusKm ?? 25} km
-              </label>
-              <input
-                type="range"
-                min={2}
-                max={100}
-                step={1}
-                value={filters.radiusKm ?? 25}
-                onChange={(e) => onChange({ radiusKm: Number(e.target.value) })}
-                className="mt-2 w-full accent-site-accent"
-              />
+              </span>
+              <div className="flex h-9 items-center">
+                <Slider
+                  min={2}
+                  max={100}
+                  step={1}
+                  value={[filters.radiusKm ?? 25]}
+                  onValueChange={([v]) => onChange({ radiusKm: v })}
+                  aria-label="Search radius"
+                />
+              </div>
             </div>
           </div>
 
@@ -189,10 +209,10 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
                     key={t}
                     type="button"
                     onClick={() => togglePropertyType(t)}
-                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                    className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                       active
-                        ? 'border-site-accent bg-site-accent/10 text-site-accent'
-                        : 'border-site-border text-site-text-dim hover:text-site-text'
+                        ? 'border-site-accent bg-site-accent-dim text-site-accent'
+                        : 'border-site-border text-site-text-muted hover:text-site-text'
                     }`}
                   >
                     {propertyTypeLabel(t)}
@@ -204,7 +224,7 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
           </div>
 
           {/* Pets */}
-          <label className="flex items-center gap-2 text-sm text-site-text sm:col-span-2">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-site-text sm:col-span-2">
             <input
               type="checkbox"
               checked={Boolean(filters.petsAllowed)}
