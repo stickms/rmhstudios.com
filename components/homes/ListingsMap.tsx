@@ -32,9 +32,9 @@ interface ListingsMapProps {
 /** Compact currency for map price pins ("$1.9k", "$389k"). */
 function pinLabel(listing: Listing): string {
   const p = listing.price;
-  if (p == null) return 'Ask';
+  if (!p || p <= 0) return 'Ask';
   if (p >= 1000) return `$${(p / 1000).toFixed(p >= 100_000 ? 0 : 1)}k`;
-  return `$${p}`;
+  return `$${Math.round(p)}`;
 }
 
 /**
@@ -54,7 +54,10 @@ export function ListingsMap({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const pins = useMemo(() => listings.filter((l) => l.lat != null && l.lng != null), [listings]);
+  const pins = useMemo(
+    () => listings.filter((l) => Number.isFinite(l.lat) && Number.isFinite(l.lng)),
+    [listings],
+  );
 
   // Fit to the visible pins whenever the result set changes.
   useEffect(() => {
@@ -65,10 +68,10 @@ export function ListingsMap({
       maxLng = -Infinity,
       maxLat = -Infinity;
     for (const l of pins) {
-      minLng = Math.min(minLng, l.lng!);
-      maxLng = Math.max(maxLng, l.lng!);
-      minLat = Math.min(minLat, l.lat!);
-      maxLat = Math.max(maxLat, l.lat!);
+      minLng = Math.min(minLng, l.lng);
+      maxLng = Math.max(maxLng, l.lng);
+      minLat = Math.min(minLat, l.lat);
+      maxLat = Math.max(maxLat, l.lat);
     }
     if (minLng === maxLng && minLat === maxLat) {
       map.easeTo({ center: [minLng, minLat], zoom: 13, duration: 500 });
@@ -87,7 +90,7 @@ export function ListingsMap({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-xl border border-site-border bg-site-surface ${className ?? ''}`}
+      className={`relative overflow-hidden rounded-site border border-site-border bg-site-surface ${className ?? ''}`}
     >
       {mounted ? (
         <Map
@@ -106,7 +109,7 @@ export function ListingsMap({
           {pins.map((l) => {
             const active = l.id === activeId;
             return (
-              <Marker key={l.id} longitude={l.lng!} latitude={l.lat!} anchor="bottom">
+              <Marker key={l.id} longitude={l.lng} latitude={l.lat} anchor="bottom">
                 <button
                   type="button"
                   onMouseEnter={() => onActive(l.id)}

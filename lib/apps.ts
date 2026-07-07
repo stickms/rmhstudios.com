@@ -179,9 +179,9 @@ export const apps: AppInfo[] = [
     {
         id: 'rmhhomes',
         title: 'RMHHomes',
-        description: 'Find apartments and houses from free public listing sources — mapped, filtered, and saved.',
+        description: 'A community housing marketplace — post your rental or house, browse listings on a map, and message the poster.',
         longDescription:
-            'RMHHomes is a house and apartment finder built on free, public listing data. Search any location, filter by price, beds, baths, property type and more, and see every result on an interactive map. It aggregates multiple sources — live Craigslist RSS feeds, the RentCast API (when configured), and a built-in sample source so the platform always works — behind one clean interface. Save your favorite listings (stored as self-contained snapshots so they never break), and keep re-runnable saved searches with optional alerts.',
+            'RMHHomes is a community housing marketplace. RMH members post their own rentals and houses with photos, and everyone can browse real listings on an interactive map, filter by price, beds, baths, property type and more, save favorites, and message the poster directly. Every listing is real and owned by its author — no scraping, no external data.',
         href: '/homes',
         status: 'Beta',
         cta: 'Find a Home',

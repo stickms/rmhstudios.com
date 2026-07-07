@@ -243,9 +243,9 @@ model User {
   rideMessages          RideMessage[]
   rideSavedPlaces       RideSavedPlace[]
 
-  // ─── RMHHomes ─────────────────────────────────────────────────
-  homeSavedListings HomeSavedListing[]
-  homeSavedSearches HomeSavedSearch[]
+  // ─── RMHHomes (community housing marketplace) ─────────────────
+  homeListings  HomeListing[]
+  homeFavorites HomeFavorite[]
 
   media         Media[]
 
@@ -3601,44 +3601,89 @@ model RideSavedPlace {
 // ─── RMHHomes: House / Apartment finder ───────────────────────────────────────
 
 /// A listing a user has favorited. We store a full JSON `snapshot` of the
-/// normalized listing so the card still renders after the upstream post expires
-/// or the external API is unreachable. `listingId` is the global `source:id`.
-model HomeSavedListing {
-  id        String @id @default(cuid())
-  userId    String
-  listingId String @db.VarChar(255)
-  source    String @db.VarChar(20)
-  snapshot  Json
-  notes     String? @db.VarChar(500)
-
-  createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, listingId])
-  @@index([userId, createdAt])
-  @@map("home_saved_listing")
+enum HomeListingType {
+  RENT
+  SALE
 }
 
-/// A saved search: the serialized filter query the user can re-run, plus an
-/// optional alerts toggle for future new-match notifications.
-model HomeSavedSearch {
-  id       String  @id @default(cuid())
-  userId   String
-  name     String  @db.VarChar(80)
-  query    String  @db.VarChar(500)
-  location String  @db.VarChar(200)
+enum HomePropertyType {
+  APARTMENT
+  HOUSE
+  CONDO
+  TOWNHOUSE
+  ROOM
+  OTHER
+}
 
-  alertsEnabled  Boolean   @default(false)
-  lastNotifiedAt DateTime?
+enum HomeListingStatus {
+  ACTIVE
+  RENTED
+  SOLD
+  REMOVED
+}
+
+/// A housing listing posted by an RMH user. This is the whole data model now —
+/// RMHHomes is a community marketplace, so every listing is real and owned by
+/// the `author`. No external aggregation, scraping, or generated data.
+model HomeListing {
+  id           String            @id @default(cuid())
+  authorId     String
+  status       HomeListingStatus @default(ACTIVE)
+  listingType  HomeListingType
+  propertyType HomePropertyType
+
+  title       String @db.VarChar(120)
+  description String @db.VarChar(4000)
+
+  /// Monthly rent (RENT) or total sale price (SALE), in whole USD cents.
+  priceCents Int
+
+  beds  Int
+  baths Float
+  sqft  Int?
+
+  // Location. `lat`/`lng` come from geocoding the address at post time and
+  // drive the map + radius search.
+  address    String? @db.VarChar(300)
+  city       String  @db.VarChar(120)
+  state      String  @db.VarChar(64)
+  postalCode String? @db.VarChar(16)
+  lat        Float
+  lng        Float
+
+  amenities     String[]  @default([])
+  petsAllowed   Boolean   @default(false)
+  availableFrom DateTime?
+
+  /// Uploaded photo URLs (S3/R2), first is the cover image.
+  images     String[] @default([])
+  viewsCount Int      @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  author    User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  favorites HomeFavorite[]
 
+  @@index([status, listingType, createdAt])
+  @@index([city, state])
+  @@index([authorId, status])
+  @@map("home_listing")
+}
+
+/// A user's favorited listing.
+model HomeFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing HomeListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
   @@index([userId, createdAt])
-  @@map("home_saved_search")
+  @@map("home_favorite")
 }
 
 // ─── Developer API: Media Upload ──────────────────────────────────────────────

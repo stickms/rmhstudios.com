@@ -1,66 +1,98 @@
 'use client';
 
-import { Home, Loader2, SearchX } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Home, SearchX } from 'lucide-react';
 import type { Listing } from '@/lib/homes/types';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ListingCard } from './ListingCard';
 
 interface ListingGridProps {
   listings: Listing[];
-  savedIds: Set<string>;
   loading: boolean;
   searched: boolean;
-  activeId: string | null;
-  onHover: (id: string | null) => void;
-  onSavedChange: (id: string, saved: boolean) => void;
+  activeId?: string | null;
+  onHover?: (id: string | null) => void;
+  onFavoriteChange?: (id: string, favorited: boolean) => void;
+  showStatus?: boolean;
+  emptyTitle?: string;
+  emptyDescription?: string;
+}
+
+function CardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-site border border-site-border bg-site-surface/80">
+      <Skeleton className="aspect-[4/3] w-full rounded-none" />
+      <div className="space-y-2 p-3.5">
+        <Skeleton className="h-5 w-24" />
+        <Skeleton className="h-4 w-40" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+    </div>
+  );
 }
 
 export function ListingGrid({
   listings,
-  savedIds,
   loading,
   searched,
   activeId,
   onHover,
-  onSavedChange,
+  onFavoriteChange,
+  showStatus,
+  emptyTitle,
+  emptyDescription,
 }: ListingGridProps) {
   if (loading) {
     return (
-      <div className="grid place-items-center py-20 text-site-text-muted">
-        <Loader2 className="mb-3 h-8 w-8 animate-spin" />
-        <p>Searching listings…</p>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <CardSkeleton key={i} />
+        ))}
       </div>
     );
   }
 
   if (!searched) {
     return (
-      <div className="grid place-items-center py-20 text-center text-site-text-muted">
-        <Home className="mb-3 h-10 w-10" />
-        <p className="max-w-xs">Enter a location above to find apartments and houses near you.</p>
-      </div>
+      <EmptyState
+        icon={Home}
+        title="Start your search"
+        description="Enter a location above to find homes near you, or browse everything."
+      />
     );
   }
 
   if (listings.length === 0) {
     return (
-      <div className="grid place-items-center py-20 text-center text-site-text-muted">
-        <SearchX className="mb-3 h-10 w-10" />
-        <p className="max-w-xs">No listings matched your filters. Try widening your search.</p>
-      </div>
+      <EmptyState
+        icon={SearchX}
+        title={emptyTitle ?? 'No listings yet'}
+        description={
+          emptyDescription ??
+          'No homes matched your filters. Try widening your radius or clearing some filters.'
+        }
+      />
     );
   }
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {listings.map((l) => (
-        <ListingCard
+      {listings.map((l, i) => (
+        <motion.div
           key={l.id}
-          listing={l}
-          saved={savedIds.has(l.id)}
-          active={l.id === activeId}
-          onHover={onHover}
-          onSavedChange={onSavedChange}
-        />
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25, delay: Math.min(i * 0.03, 0.3) }}
+        >
+          <ListingCard
+            listing={l}
+            active={l.id === activeId}
+            onHover={onHover}
+            onFavoriteChange={onFavoriteChange}
+            showStatus={showStatus}
+          />
+        </motion.div>
       ))}
     </div>
   );

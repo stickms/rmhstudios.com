@@ -1,18 +1,15 @@
 /**
- * RMHHomes — filter <-> query-string codec.
+ * RMHHomes — filter <-> query-string codec (client-safe).
  *
- * Client-safe. The UI serializes {@link SearchFilters} into the URL so searches
- * are shareable/bookmarkable and back/forward works; the API route parses the
- * same params back into a validated filter object. Keeping both directions in
- * one file guarantees they never drift.
+ * The browse UI serializes filters into the URL (shareable/bookmarkable) and
+ * the API parses them back. Keeping both directions here prevents drift.
  */
 
 import {
   DEFAULT_FILTERS,
-  LISTING_SOURCES,
+  LISTING_TYPES,
   PROPERTY_TYPES,
   SORT_ORDERS,
-  type ListingSource,
   type ListingType,
   type PropertyType,
   type SearchFilters,
@@ -32,12 +29,11 @@ function optionalPositive(v: string | null): number | undefined {
   return n;
 }
 
-/** Parse (and defensively clamp) query params into validated filters. */
 export function parseFilters(params: URLSearchParams): SearchFilters {
-  const listingTypeRaw = params.get('type');
+  const typeRaw = params.get('type');
   const listingType: ListingType | 'any' =
-    listingTypeRaw === 'sale' || listingTypeRaw === 'rent' || listingTypeRaw === 'any'
-      ? listingTypeRaw
+    typeRaw === 'any' || (typeRaw && (LISTING_TYPES as string[]).includes(typeRaw))
+      ? (typeRaw as ListingType | 'any')
       : DEFAULT_FILTERS.listingType;
 
   const propertyTypes = (params.get('propertyTypes') ?? '')
@@ -50,11 +46,6 @@ export function parseFilters(params: URLSearchParams): SearchFilters {
     ? (sortRaw as SortOrder)
     : DEFAULT_FILTERS.sort;
 
-  const sources = (params.get('sources') ?? '')
-    .split(',')
-    .map((s) => s.trim())
-    .filter((s): s is ListingSource => (LISTING_SOURCES as string[]).includes(s));
-
   const latRaw = params.get('lat');
   const lngRaw = params.get('lng');
   const lat = latRaw != null && latRaw !== '' ? Number(latRaw) : undefined;
@@ -64,7 +55,7 @@ export function parseFilters(params: URLSearchParams): SearchFilters {
     location: (params.get('location') ?? '').trim().slice(0, 160),
     lat: Number.isFinite(lat) ? lat : undefined,
     lng: Number.isFinite(lng) ? lng : undefined,
-    radiusKm: clampInt(params.get('radiusKm'), 1, 200, DEFAULT_FILTERS.radiusKm ?? 25),
+    radiusKm: clampInt(params.get('radiusKm'), 1, 400, DEFAULT_FILTERS.radiusKm),
     listingType,
     propertyTypes,
     minPrice: optionalPositive(params.get('minPrice')),
@@ -75,19 +66,15 @@ export function parseFilters(params: URLSearchParams): SearchFilters {
     sort,
     page: clampInt(params.get('page'), 1, 500, 1),
     pageSize: clampInt(params.get('pageSize'), 1, 60, DEFAULT_FILTERS.pageSize),
-    sources: sources.length ? sources : undefined,
   };
 }
 
-/** Serialize filters back into a compact URLSearchParams (omitting defaults). */
 export function serializeFilters(filters: SearchFilters): URLSearchParams {
   const p = new URLSearchParams();
   if (filters.location) p.set('location', filters.location);
   if (filters.lat != null) p.set('lat', String(filters.lat));
   if (filters.lng != null) p.set('lng', String(filters.lng));
-  if (filters.radiusKm != null && filters.radiusKm !== DEFAULT_FILTERS.radiusKm) {
-    p.set('radiusKm', String(filters.radiusKm));
-  }
+  if (filters.radiusKm !== DEFAULT_FILTERS.radiusKm) p.set('radiusKm', String(filters.radiusKm));
   if (filters.listingType !== DEFAULT_FILTERS.listingType) p.set('type', filters.listingType);
   if (filters.propertyTypes.length) p.set('propertyTypes', filters.propertyTypes.join(','));
   if (filters.minPrice != null) p.set('minPrice', String(filters.minPrice));
@@ -97,6 +84,5 @@ export function serializeFilters(filters: SearchFilters): URLSearchParams {
   if (filters.petsAllowed) p.set('pets', '1');
   if (filters.sort !== DEFAULT_FILTERS.sort) p.set('sort', filters.sort);
   if (filters.page > 1) p.set('page', String(filters.page));
-  if (filters.sources?.length) p.set('sources', filters.sources.join(','));
   return p;
 }
