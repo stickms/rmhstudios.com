@@ -79,47 +79,57 @@ const (
 	kindAmbient
 )
 
-// plan carries the decision made under the guild lock out to the (unlocked) send.
+// plan carries the decision made under the global lock out to the (unlocked)
+// broadcast.
 type plan struct {
-	kind    proactiveKind
-	channel string
-	pet     PetState
-	mood    Mood
-	need    string // for kindCareAlert
+	kind proactiveKind
+	pet  PetState
+	mood Mood
+	need string // for kindCareAlert
 }
 
-// careTick advances every pet and posts proactive messages.
+// careTick advances the global Alex once and broadcasts any proactive message to
+// every server's last-used channel.
 func (ps *PetService) careTick(ctx context.Context) {
 	s := ps.getSession()
 	if s == nil {
 		return
 	}
-	pets, err := ps.repo.allPets(ctx)
-	if err != nil {
-		ps.logger.Warn("care tick: load pets failed", "error", err)
+	now := time.Now().UTC()
+
+	pl := ps.decideGlobal(ctx, now)
+	if pl.kind == kindNone {
 		return
 	}
-	now := time.Now().UTC()
-	for _, p := range pets {
-		pl := ps.decideForPet(ctx, p.GuildID, now)
-		if pl.kind == kindNone || pl.channel == "" {
-			continue
-		}
-		ps.sendProactive(ctx, s, pl, now)
+
+	channels, err := ps.repo.allGuildChannels(ctx)
+	if err != nil {
+		ps.logger.Warn("care tick: load guild channels failed", "error", err)
+		return
 	}
+	if len(channels) == 0 {
+		return
+	}
+	ps.broadcast(ctx, s, pl, channels, now)
 }
 
-// decideForPet locks the guild, advances the pet, decides the single proactive
-// message to send (updating throttle timestamps + persisting), and returns the
-// plan. All state writes happen here under the lock; the send happens after.
-func (ps *PetService) decideForPet(ctx context.Context, guildID string, now time.Time) plan {
-	mu := ps.lockGuild(guildID)
+// decideGlobal locks the global pet, advances it, decides the single proactive
+// message to broadcast this tick (updating throttle timestamps + persisting), and
+// returns the plan. All state writes happen here under the lock; the broadcast
+// happens after. Creates Alex on first tick if he doesn't exist yet, so he starts
+// living as soon as the bot does.
+func (ps *PetService) decideGlobal(ctx context.Context, now time.Time) plan {
+	mu := ps.lockGuild(globalPetKey)
 	mu.Lock()
 	defer mu.Unlock()
 
-	pet, ok, err := ps.repo.load(ctx, guildID)
-	if err != nil || !ok {
+	pet, ok, err := ps.repo.load(ctx, globalPetKey)
+	if err != nil {
+		ps.logger.Warn("care tick: load pet failed", "error", err)
 		return plan{}
+	}
+	if !ok {
+		pet = newPet(globalPetKey, now)
 	}
 	res := pet.applyDecay(now)
 
@@ -138,23 +148,23 @@ func (ps *PetService) decideForPet(ctx context.Context, guildID string, now time
 				t := now
 				pet.LastCareAlertAt = &t
 			}
-		} else if pet.Alive && ambientDue(pet.LastAmbientAt, now, guildID) {
+		} else if pet.Alive && ambientDue(pet.LastAmbientAt, now) {
 			kind = kindAmbient
 			t := now
 			pet.LastAmbientAt = &t
 		}
 	}
 
-	// Persist the decay + any throttle-timestamp updates regardless of send outcome
-	// (so a failed send can't cause a re-spam next tick).
+	// Persist decay + any throttle-timestamp updates regardless of send outcome
+	// (so a failed broadcast can't cause a re-spam next tick).
 	if err := ps.repo.save(ctx, pet); err != nil {
-		ps.logger.Warn("care tick save failed", "guild", guildID, "error", err)
+		ps.logger.Warn("care tick save failed", "error", err)
 	}
 
-	if kind == kindNone || pet.LastChannelID == "" {
+	if kind == kindNone {
 		return plan{kind: kindNone}
 	}
-	return plan{kind: kind, channel: pet.LastChannelID, pet: *pet, mood: pet.mood(), need: need}
+	return plan{kind: kind, pet: *pet, mood: pet.mood(), need: need}
 }
 
 // dueSince reports whether `interval` has elapsed since `last` (nil last = due).
@@ -162,8 +172,8 @@ func dueSince(last *time.Time, interval time.Duration, now time.Time) bool {
 	return last == nil || now.Sub(*last) >= interval
 }
 
-// ambientDue adds per-pet random jitter so ambient posts don't all fire in lockstep.
-func ambientDue(last *time.Time, now time.Time, guildID string) bool {
+// ambientDue adds random jitter so ambient posts don't fire like clockwork.
+func ambientDue(last *time.Time, now time.Time) bool {
 	base := ambientMinInterval()
 	if last == nil {
 		// First ever: stagger the very first ambient post a bit.
@@ -173,57 +183,65 @@ func ambientDue(last *time.Time, now time.Time, guildID string) bool {
 	return now.Sub(*last) >= threshold
 }
 
-// sendProactive delivers the planned message (outside the guild lock). For a
-// grow-up milestone it tries to attach a fresh selfie.
-func (ps *PetService) sendProactive(ctx context.Context, s *discordgo.Session, pl plan, now time.Time) {
-	var msg *discordgo.MessageSend
+// broadcast delivers the planned message to every server's last-used channel
+// (outside the global lock). The message is built once — for a grow-up milestone
+// the selfie is generated a single time and reused across all sends — and a send
+// that fails because the channel is gone/forbidden clears that guild's channel.
+func (ps *PetService) broadcast(ctx context.Context, s *discordgo.Session, pl plan, channels []GuildChannel, now time.Time) {
+	var content string
+	var embeds []*discordgo.MessageEmbed
+	var img *alexImage // set for the grow-up milestone; a fresh attachment is made per send
+
 	switch pl.kind {
 	case kindDied:
-		msg = &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{{
+		embeds = []*discordgo.MessageEmbed{{
 			Color:       0x6b7280,
 			Title:       "💀 RIP Alex (for now)",
 			Description: fmt.Sprintf("**%s** passed out from neglect... y'all gotta take better care 🥀\nSomeone run `/revive` to bring him back for a fresh start 🙏", pl.pet.Name),
-		}}}
+		}}
 	case kindGrewUp:
 		embed := &discordgo.MessageEmbed{
 			Color:       0x34d399,
 			Title:       "🎉 Alex leveled up in life!",
 			Description: fmt.Sprintf("**%s** just grew into a **%s**! 🥹 they really do grow up fast...\nsay hi with `/chat` or check on him with `/alex`", pl.pet.Name, stageLabel[pl.pet.LifeStage]),
 		}
-		msg = &discordgo.MessageSend{Embeds: []*discordgo.MessageEmbed{embed}}
-		// Milestone selfie (bounded by budget + cache; best-effort).
-		if img, err := ps.imager.generate(ctx, &pl.pet, pl.mood, now); err == nil {
+		embeds = []*discordgo.MessageEmbed{embed}
+		// Milestone selfie — generated ONCE (cached), reused across every server.
+		if generated, err := ps.imager.generate(ctx, &pl.pet, pl.mood, now); err == nil {
+			img = generated
 			embed.Image = &discordgo.MessageEmbedImage{URL: "attachment://" + img.Filename}
-			msg.Files = []*discordgo.File{imageFile(img)}
 		}
 	case kindCareAlert:
-		msg = &discordgo.MessageSend{Content: "🧋 **Alex:** " + careAlertLine(pl.need)}
+		content = "🧋 **Alex:** " + careAlertLine(pl.need)
 	case kindAmbient:
-		msg = &discordgo.MessageSend{Content: "🧋 **Alex:** " + ambientLine(pl.pet.LifeStage, pl.pet.Career)}
+		content = "🧋 **Alex:** " + ambientLine(pl.pet.LifeStage, pl.pet.Career)
 	default:
 		return
 	}
 
-	if _, err := s.ChannelMessageSendComplex(pl.channel, msg); err != nil {
-		ps.handleSendError(ctx, pl.pet.GuildID, pl.channel, err)
+	for _, gc := range channels {
+		msg := &discordgo.MessageSend{Content: content, Embeds: embeds}
+		if img != nil {
+			// A new imageFile per send: each wraps its own reader over the bytes.
+			msg.Files = []*discordgo.File{imageFile(img)}
+		}
+		if _, err := s.ChannelMessageSendComplex(gc.ChannelID, msg); err != nil {
+			ps.handleSendError(ctx, gc.GuildID, gc.ChannelID, err)
+		}
 	}
 }
 
-// handleSendError clears a dead/forbidden channel so we stop posting into a
-// place we can't reach; other errors are just logged.
+// handleSendError clears a dead/forbidden guild channel so we stop broadcasting
+// into a place we can't reach; other errors are just logged.
 func (ps *PetService) handleSendError(ctx context.Context, guildID, channelID string, err error) {
 	var rerr *discordgo.RESTError
 	if errors.As(err, &rerr) && rerr.Message != nil {
 		switch rerr.Message.Code {
 		case discordgo.ErrCodeUnknownChannel, discordgo.ErrCodeMissingAccess, discordgo.ErrCodeMissingPermissions:
 			ps.logger.Info("clearing unreachable alex channel", "guild", guildID, "channel", channelID, "code", rerr.Message.Code)
-			mu := ps.lockGuild(guildID)
-			mu.Lock()
-			if pet, ok, e := ps.repo.load(ctx, guildID); e == nil && ok && pet.LastChannelID == channelID {
-				pet.LastChannelID = ""
-				_ = ps.repo.save(ctx, pet)
+			if e := ps.repo.clearGuildChannel(ctx, guildID); e != nil {
+				ps.logger.Warn("clear guild channel failed", "guild", guildID, "error", e)
 			}
-			mu.Unlock()
 			return
 		}
 	}

@@ -13,6 +13,14 @@ import (
 	"time"
 )
 
+// globalPetKey is the primary-key value of the single, global Alex. There is one
+// Alex shared across every server; his row in discord_alex_pet always uses this
+// key (the historical per-guild `guildId` column is repurposed as this constant),
+// and the caretaker leaderboard is likewise global (keyed by this constant).
+// Per-guild data (which channel to talk in, whether the intro was sent) lives in
+// discord_alex_guild instead.
+const globalPetKey = "global"
+
 // ─── Life stages ────────────────────────────────────────────────────────
 
 // LifeStage is Alex's developmental stage, driven by age (and gated on being
