@@ -2096,6 +2096,7 @@ enum LadderReviewReason {
   ambiguous_us_location
   low_confidence
   aggregator_unconfirmed
+  mass_expiry_suspected
 }
 
 enum LadderReviewStatus {
