@@ -15,7 +15,19 @@ export interface VerificationEvidence {
   locationLabel?: string;
   platform: string;
 }
-export interface VerificationOutcome { status: string; confidence: number; evidence: string }
+
+export type VerificationStatus =
+  | 'verified_active'
+  | 'verified_probable'
+  | 'unverified'
+  | 'expired'
+  | 'broken_link'
+  | 'duplicate'
+  | 'non_us_role'
+  | 'blocked_or_inaccessible'
+  | 'needs_manual_review';
+
+export interface VerificationOutcome { status: VerificationStatus; confidence: number; evidence: string }
 
 export function computeVerification(e: VerificationEvidence): VerificationOutcome {
   if (e.blocked) return out('blocked_or_inaccessible', 0, `Posting for "${e.jobTitle}" at ${e.companyName} on ${e.platform} is blocked by robots.txt/anti-bot; not scraped. URL preserved for manual review.`);
@@ -41,10 +53,10 @@ export function computeVerification(e: VerificationEvidence): VerificationOutcom
   return { status: 'needs_manual_review', confidence, evidence: `Low-confidence evidence: ${parts.join(', ')}.` };
 }
 
-const out = (status: string, confidence: number, evidence: string): VerificationOutcome => ({ status, confidence, evidence });
+const out = (status: VerificationStatus, confidence: number, evidence: string): VerificationOutcome => ({ status, confidence, evidence });
 
 export function passesAlertGate(args: {
-  status: string; confidence: number; isUS: boolean;
+  status: VerificationStatus; confidence: number; isUS: boolean;
   earlyCareer: 'yes' | 'probable' | 'no' | 'unclear';
   finalRelevance: number; userThreshold: number;
   alreadyAlerted: boolean; blockedKeyword: boolean;
