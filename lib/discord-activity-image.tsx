@@ -533,20 +533,24 @@ export interface CaretakerEntry {
     studies: number;
 }
 
-// ─── rmhstudios.com design tokens (dark theme, from app/globals.css) ──
+// ─── rmhstudios.com design tokens ────────────────────────────────────
+// Monochrome black/white palette to match the base site: deep blacks with
+// near-white text and grayscale accents (no purple).
 const RMH = {
-    bg: '#0b0b0c',
-    surface: '#27282c',
-    surfaceTop: '#2b2733', // faint purple-tinted surface for the #1 row
-    border: '#3a3b42',
-    text: '#e8e8ec',
+    bg: '#000000',
+    surface: '#101012', // near-black card
+    surfaceTop: '#17171a', // slightly lifted card for the #1 row
+    border: '#2a2a2e',
+    borderTop: '#4a4a52',
+    text: '#f4f4f6',
     muted: '#9a9ba4',
     dim: '#6a6b74',
-    accent: '#9b7ad8', // site purple accent
-    track: '#3a3b42',
-    gold: '#e0c56b',
-    silver: '#c2c6cf',
-    bronze: '#cc9a63',
+    accent: '#f4f4f6', // white accent (replaces the old purple)
+    track: '#26262b',
+    fill: '#e8e8ec', // progress-bar / highlight fill
+    gold: '#f4f4f6', // #1 — pure white pill
+    silver: '#c4c4cc', // #2 — light gray pill
+    bronze: '#8f8f98', // #3 — mid gray pill
 };
 
 // A compact "12 fed · 9 studied · 8 played" tally of a caretaker's top actions.
@@ -564,8 +568,8 @@ function caretakerTally(c: CaretakerEntry): string {
     return top.map(p => `${p.n} ${p.label}`).join('  ·  ');
 }
 
-// A numbered rank badge — gold/silver/bronze for the podium (no emoji, so it
-// renders reliably), a muted "#N" pill otherwise.
+// A numbered rank badge — white/gray filled pills for the podium (no emoji, so
+// it renders reliably), a muted outlined "#N" pill otherwise.
 function RankBadge({ rank }: { rank: number }) {
     const medal = rank <= 3 ? [RMH.gold, RMH.silver, RMH.bronze][rank - 1] : null;
     return (
@@ -573,13 +577,13 @@ function RankBadge({ rank }: { rank: number }) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: 30,
-            height: 30,
-            borderRadius: 15,
+            width: 32,
+            height: 32,
+            borderRadius: 16,
             backgroundColor: medal ?? 'transparent',
             border: medal ? 'none' : `1.5px solid ${RMH.border}`,
         }}>
-            <span style={{ fontSize: medal ? 15 : 12, fontWeight: 800, color: medal ? '#1a1620' : RMH.muted }}>
+            <span style={{ fontSize: medal ? 15 : 13, fontWeight: 800, color: medal ? '#000000' : RMH.muted }}>
                 {rank}
             </span>
         </div>
@@ -588,7 +592,7 @@ function RankBadge({ rank }: { rank: number }) {
 
 export async function generateCaretakersImage(entries: CaretakerEntry[]): Promise<Buffer> {
     const display = entries.slice(0, 10);
-    const cacheKey = `care:v2:${display.map(c => `${c.userId}:${c.points}:${c.avatarHash ?? ''}`).join(',')}`;
+    const cacheKey = `care:v3:${display.map(c => `${c.userId}:${c.points}:${c.avatarHash ?? ''}`).join(',')}`;
     const cached = getCachedPng(cacheKey);
     if (cached) return cached;
 
@@ -599,11 +603,17 @@ export async function generateCaretakersImage(entries: CaretakerEntry[]): Promis
 
     const topPoints = Math.max(1, ...display.map(c => c.points));
 
-    const rowHeight = 62;
-    const headerHeight = 84;
-    const footerHeight = 36;
-    const imgPadding = 48;
-    const imgHeight = Math.max(220, headerHeight + display.length * rowHeight + footerHeight + imgPadding);
+    // Generous vertical budget per row so nothing clips or overlaps.
+    const width = 640;
+    const rowHeight = 72;
+    const rowGap = 8;
+    const headerHeight = 96;
+    const footerHeight = 40;
+    const imgPadding = 56;
+    const imgHeight = Math.max(
+        240,
+        headerHeight + display.length * rowHeight + Math.max(0, display.length - 1) * rowGap + footerHeight + imgPadding,
+    );
 
     const element = (
         <div style={{
@@ -612,16 +622,16 @@ export async function generateCaretakersImage(entries: CaretakerEntry[]): Promis
             width: '100%',
             height: '100%',
             backgroundColor: RMH.bg,
-            padding: '26px 30px',
+            padding: '28px 32px',
             fontFamily: 'Inter',
             color: RMH.text,
             letterSpacing: '-0.02em',
         }}>
             {/* Header */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 18 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ display: 'flex', width: 5, height: 22, borderRadius: 3, backgroundColor: RMH.accent }} />
-                    <span style={{ fontSize: 22, fontWeight: 800 }}>Alex&apos;s Top Caretakers</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                    <div style={{ display: 'flex', width: 4, height: 24, borderRadius: 2, backgroundColor: RMH.accent }} />
+                    <span style={{ fontSize: 23, fontWeight: 800 }}>Alex&apos;s Top Caretakers</span>
                 </div>
                 <span style={{ fontSize: 13, color: RMH.muted, paddingLeft: 15 }}>
                     raising Alex together · {entries.length} caretaker{entries.length !== 1 ? 's' : ''}
@@ -629,7 +639,7 @@ export async function generateCaretakersImage(entries: CaretakerEntry[]): Promis
             </div>
 
             {/* Ranked rows */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, flex: 1 }}>
                 {display.map((c, i) => {
                     const rank = i + 1;
                     const isTop = rank === 1;
@@ -638,28 +648,50 @@ export async function generateCaretakersImage(entries: CaretakerEntry[]): Promis
                         <div key={c.userId} style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 13,
-                            padding: '9px 14px',
+                            gap: 15,
+                            padding: '11px 16px',
                             borderRadius: 12,
                             backgroundColor: isTop ? RMH.surfaceTop : RMH.surface,
-                            border: `1px solid ${isTop ? RMH.accent : RMH.border}`,
+                            border: `1px solid ${isTop ? RMH.borderTop : RMH.border}`,
                         }}>
                             <RankBadge rank={rank} />
                             <img
                                 src={avDataUris[i]}
-                                width={44}
-                                height={44}
-                                style={{ borderRadius: '50%', border: `2px solid ${isTop ? RMH.accent : RMH.border}` }}
+                                width={46}
+                                height={46}
+                                style={{ borderRadius: '50%', border: `2px solid ${isTop ? RMH.borderTop : RMH.border}` }}
                             />
-                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 5 }}>
-                                <span style={{ fontSize: 16, fontWeight: 700 }}>{c.username}</span>
+                            {/* Name + progress + tally. minWidth:0 lets the name
+                                truncate instead of pushing into the points column. */}
+                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, gap: 6 }}>
+                                <span style={{
+                                    fontSize: 16,
+                                    fontWeight: 700,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                }}>{c.username}</span>
                                 <div style={{ display: 'flex', width: '100%', height: 6, borderRadius: 3, backgroundColor: RMH.track }}>
-                                    <div style={{ display: 'flex', width: `${barPct}%`, height: 6, borderRadius: 3, backgroundColor: RMH.accent }} />
+                                    <div style={{ display: 'flex', width: `${barPct}%`, height: 6, borderRadius: 3, backgroundColor: RMH.fill }} />
                                 </div>
-                                <span style={{ fontSize: 11, color: RMH.dim }}>{caretakerTally(c)}</span>
+                                <span style={{
+                                    fontSize: 11,
+                                    color: RMH.dim,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                }}>{caretakerTally(c)}</span>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 56 }}>
-                                <span style={{ fontSize: 22, fontWeight: 800, color: isTop ? RMH.accent : RMH.text }}>{c.points}</span>
+                            {/* Fixed-width points column so it never collides with the name. */}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-end',
+                                justifyContent: 'center',
+                                width: 68,
+                                flexShrink: 0,
+                            }}>
+                                <span style={{ fontSize: 23, fontWeight: 800, color: RMH.text }}>{c.points}</span>
                                 <span style={{ fontSize: 10, color: RMH.dim, textTransform: 'uppercase', letterSpacing: '0.06em' }}>points</span>
                             </div>
                         </div>
@@ -668,14 +700,14 @@ export async function generateCaretakersImage(entries: CaretakerEntry[]): Promis
             </div>
 
             {/* Footer */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 14 }}>
-                <div style={{ display: 'flex', width: 13, height: 13, borderRadius: 4, backgroundColor: RMH.accent }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16 }}>
+                <div style={{ display: 'flex', width: 12, height: 12, borderRadius: 3, backgroundColor: RMH.accent }} />
                 <span style={{ fontSize: 11, color: RMH.muted }}>Alex the Tamagotchi · rmhstudios.com</span>
             </div>
         </div>
     );
 
-    const png = await renderToPng(element, 600, imgHeight);
+    const png = await renderToPng(element, width, imgHeight);
     setCachedPng(cacheKey, png);
     return png;
 }
