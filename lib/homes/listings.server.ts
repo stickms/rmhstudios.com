@@ -9,6 +9,7 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { resolveCenter, haversineKm } from './geo.server';
+import { notifyWatchersOfNewListing } from './watches.server';
 import type {
   Listing,
   ListingInput,
@@ -56,6 +57,7 @@ function toDTO(row: ListingRow, viewerId: string | null): Listing {
     petsAllowed: row.petsAllowed,
     availableFrom: row.availableFrom ? row.availableFrom.toISOString() : null,
     images: row.images,
+    aiImages: row.aiImages,
     viewsCount: row.viewsCount,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -195,6 +197,8 @@ function toCreateData(input: ListingInput): Prisma.HomeListingUncheckedCreateInp
     petsAllowed: Boolean(input.petsAllowed),
     availableFrom: input.availableFrom ? new Date(input.availableFrom) : null,
     images: input.images.slice(0, 12),
+    // Only flag AI images that are actually among the stored photos.
+    aiImages: input.aiImages.filter((u) => input.images.includes(u)).slice(0, 12),
   };
 }
 
@@ -205,6 +209,8 @@ export async function createListing(
   const data = toCreateData(input);
   data.authorId = authorId;
   const row = await prisma.homeListing.create({ data, select: { id: true } });
+  // Notify anyone whose watch matches this new listing (fire-and-forget).
+  void notifyWatchersOfNewListing(row.id);
   return row;
 }
 

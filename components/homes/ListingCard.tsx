@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { BedDouble, Bath, Ruler, MapPin, PawPrint, ImageOff } from 'lucide-react';
+import { BedDouble, Bath, Ruler, MapPin, PawPrint, ImageOff, Sparkles } from 'lucide-react';
 import type { Listing } from '@/lib/homes/types';
 import {
   formatBaths,
@@ -61,6 +61,11 @@ export function ListingCard({
           </div>
         )}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-black/40 to-transparent" />
+        {cover && listing.aiImages.includes(cover) && (
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur">
+            <Sparkles className="h-3 w-3" /> AI
+          </span>
+        )}
         <div className="absolute right-2 top-2">
           <FavoriteButton
             listingId={listing.id}
