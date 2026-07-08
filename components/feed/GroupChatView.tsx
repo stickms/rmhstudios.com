@@ -10,6 +10,8 @@ import { UserAvatar } from './UserAvatar';
 import { MentionTextarea } from './MentionTextarea';
 import { GifPicker } from './GifPicker';
 import { PostImageGrid } from './PostImageGrid';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 
 interface Sender {
   id: string;
@@ -61,6 +63,8 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   const imageInputRef = useRef<HTMLInputElement>(null);
   const attachRef = useRef<HTMLDivElement>(null);
   const lastAtRef = useRef<string | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const insertEmoji = useEmojiInsert(inputRef, input, setInput);
 
   // Close the attach (+) menu on outside click.
   useEffect(() => {
@@ -467,8 +471,10 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               </div>
             )}
           </div>
+          <EmojiPickerButton direction="up" onSelect={insertEmoji} />
           <div className="flex-1 min-w-0">
             <MentionTextarea
+              ref={inputRef}
               value={input}
               onChange={setInput}
               priorityUsers={memberSuggestions}
