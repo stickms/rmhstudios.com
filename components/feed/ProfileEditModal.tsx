@@ -6,6 +6,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { ImageCropModal } from './ImageCropModal';
 import { SpotifySongSearch, type SpotifyTrack } from './SpotifySongSearch';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useResolvedUser } from '@/components/Providers';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
@@ -84,6 +86,8 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const handleCheckTimeout = useRef<NodeJS.Timeout | null>(null);
+  const bioRef = useRef<HTMLTextAreaElement>(null);
+  const insertBioEmoji = useEmojiInsert(bioRef, bio, setBio);
 
   const [selectedSong, setSelectedSong] = useState<SpotifyTrack | null>(
     initial.profileSongSpotifyId
@@ -446,6 +450,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
             <div>
               <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("bio-label", { defaultValue: "Bio" })}</label>
               <textarea
+                ref={bioRef}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder={t("bio-placeholder", { defaultValue: "Tell people about yourself" })}
@@ -453,9 +458,12 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 maxLength={MAX_BIO}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
               />
-              <span className={`text-xs font-mono ${bioRemaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
-                {bioRemaining}
-              </span>
+              <div className="flex items-center justify-between">
+                <EmojiPickerButton direction="down" onSelect={insertBioEmoji} />
+                <span className={`text-xs font-mono ${bioRemaining <= 20 ? 'text-site-warning' : 'text-site-text-dim'}`}>
+                  {bioRemaining}
+                </span>
+              </div>
             </div>
 
             {/* Location */}

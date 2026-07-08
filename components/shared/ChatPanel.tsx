@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { Send, SmilePlus } from 'lucide-react';
 import { CHAT_REACTION_EMOJIS, CHAT_MAX_LENGTH } from '@/lib/shared/chat-constants';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import ChatMediaEmbed, { stripEmbedUrls } from './ChatMediaEmbed';
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -60,6 +62,8 @@ export default function ChatPanel({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const messageRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
+  const inputRef = useRef<HTMLInputElement>(null);
+  const insertEmoji = useEmojiInsert(inputRef, message, setMessage);
 
   // ─── Auto-scroll on new messages ─────────────────────────────
 
@@ -332,6 +336,7 @@ export default function ChatPanel({
         style={{ borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: `var(--${themePrefix}-border)` }}
       >
         <input
+          ref={inputRef}
           type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -346,6 +351,7 @@ export default function ChatPanel({
             color: `var(--${themePrefix}-text)`,
           }}
         />
+        <EmojiPickerButton direction="up" onSelect={insertEmoji} className="shrink-0" />
         <button
           type="submit"
           disabled={!message.trim()}
