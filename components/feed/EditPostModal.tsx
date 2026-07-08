@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -9,6 +9,8 @@ import { toast } from 'sonner';
 import { MAX_RMHARK_LENGTH } from '@/lib/rmhark-schema';
 import { GifPicker } from './GifPicker';
 import { GifEmbed } from './GifEmbed';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 
 interface EditPostModalProps {
   open: boolean;
@@ -26,6 +28,8 @@ export function EditPostModal({ open, onOpenChange, postId, initialContent, init
   const [gifUrl, setGifUrl] = useState<string>(initialGifUrl ?? '');
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [saving, setSaving] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
   const remaining = MAX_RMHARK_LENGTH - content.length;
 
   const save = async () => {
@@ -59,6 +63,7 @@ export function EditPostModal({ open, onOpenChange, postId, initialContent, init
           <DialogTitle>{t("edit-post-title", { defaultValue: "Edit post" })}</DialogTitle>
         </DialogHeader>
         <textarea
+          ref={textareaRef}
           autoFocus
           aria-label={t("edit-post-content-label", { defaultValue: "Edit post content" })}
           value={content}
@@ -111,6 +116,7 @@ export function EditPostModal({ open, onOpenChange, postId, initialContent, init
           <span className={`text-xs ${remaining < 0 ? 'text-site-danger' : 'text-site-text-dim'}`}>{remaining}</span>
         </div>
         <DialogFooter>
+          <EmojiPickerButton direction="up" onSelect={insertEmoji} className="mr-auto" />
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={saving}>{t("cancel", { defaultValue: "Cancel" })}</Button>
           <Button variant="accent" onClick={save} disabled={saving || (!content.trim() && !gifUrl.trim()) || remaining < 0}>
             {saving ? t("saving", { defaultValue: "Saving…" }) : t("save", { defaultValue: "Save" })}
