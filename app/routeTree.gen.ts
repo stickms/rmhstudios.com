@@ -473,8 +473,8 @@ import { Route as ApiCommunitiesSlugMembersRouteImport } from './routes/api/comm
 import { Route as ApiCommunitiesSlugJoinRouteImport } from './routes/api/communities/$slug/join'
 import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communities/$slug/feed'
 import { Route as ApiCommunitiesSlugAnnouncementsRouteImport } from './routes/api/communities/$slug/announcements'
-import { Route as ApiCommentsIdReactRouteImport } from './routes/api/comments/$id/react'
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
+import { Route as ApiCommentsCommentIdReactRouteImport } from './routes/api/comments/$commentId/react'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
 import { Route as ApiAlbumsAssetSplatRouteImport } from './routes/api/albums/asset/$'
@@ -2908,15 +2908,16 @@ const ApiCommunitiesSlugAnnouncementsRoute =
     path: '/api/communities/$slug/announcements',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiCommentsIdReactRoute = ApiCommentsIdReactRouteImport.update({
-  id: '/api/comments/$id/react',
-  path: '/api/comments/$id/react',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ApiCommentsCommentIdTranslateRoute =
   ApiCommentsCommentIdTranslateRouteImport.update({
     id: '/api/comments/$commentId/translate',
     path: '/api/comments/$commentId/translate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiCommentsCommentIdReactRoute =
+  ApiCommentsCommentIdReactRouteImport.update({
+    id: '/api/comments/$commentId/react',
+    path: '/api/comments/$commentId/react',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiBuildsCoverFileRoute = ApiBuildsCoverFileRouteImport.update({
@@ -3657,8 +3658,8 @@ export interface FileRoutesByFullPath {
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
+  '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
-  '/api/comments/$id/react': typeof ApiCommentsIdReactRoute
   '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -4166,8 +4167,8 @@ export interface FileRoutesByTo {
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
+  '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
-  '/api/comments/$id/react': typeof ApiCommentsIdReactRoute
   '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -4701,8 +4702,8 @@ export interface FileRoutesById {
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
+  '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
-  '/api/comments/$id/react': typeof ApiCommentsIdReactRoute
   '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -5236,8 +5237,8 @@ export interface FileRouteTypes {
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
+    | '/api/comments/$commentId/react'
     | '/api/comments/$commentId/translate'
-    | '/api/comments/$id/react'
     | '/api/communities/$slug/announcements'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -5745,8 +5746,8 @@ export interface FileRouteTypes {
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
+    | '/api/comments/$commentId/react'
     | '/api/comments/$commentId/translate'
-    | '/api/comments/$id/react'
     | '/api/communities/$slug/announcements'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -6279,8 +6280,8 @@ export interface FileRouteTypes {
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
+    | '/api/comments/$commentId/react'
     | '/api/comments/$commentId/translate'
-    | '/api/comments/$id/react'
     | '/api/communities/$slug/announcements'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -6658,8 +6659,8 @@ export interface RootRouteChildren {
   ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiAlbumsAssetSplatRoute: typeof ApiAlbumsAssetSplatRoute
   ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
+  ApiCommentsCommentIdReactRoute: typeof ApiCommentsCommentIdReactRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
-  ApiCommentsIdReactRoute: typeof ApiCommentsIdReactRoute
   ApiCommunitiesSlugAnnouncementsRoute: typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
   ApiCommunitiesSlugJoinRoute: typeof ApiCommunitiesSlugJoinRoute
@@ -9981,18 +9982,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCommunitiesSlugAnnouncementsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/comments/$id/react': {
-      id: '/api/comments/$id/react'
-      path: '/api/comments/$id/react'
-      fullPath: '/api/comments/$id/react'
-      preLoaderRoute: typeof ApiCommentsIdReactRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/comments/$commentId/translate': {
       id: '/api/comments/$commentId/translate'
       path: '/api/comments/$commentId/translate'
       fullPath: '/api/comments/$commentId/translate'
       preLoaderRoute: typeof ApiCommentsCommentIdTranslateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/comments/$commentId/react': {
+      id: '/api/comments/$commentId/react'
+      path: '/api/comments/$commentId/react'
+      fullPath: '/api/comments/$commentId/react'
+      preLoaderRoute: typeof ApiCommentsCommentIdReactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/builds/cover/$file': {
@@ -11809,8 +11810,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiAlbumsAssetSplatRoute: ApiAlbumsAssetSplatRoute,
   ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,
+  ApiCommentsCommentIdReactRoute: ApiCommentsCommentIdReactRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
-  ApiCommentsIdReactRoute: ApiCommentsIdReactRoute,
   ApiCommunitiesSlugAnnouncementsRoute:
     ApiCommunitiesSlugAnnouncementsRouteWithChildren,
   ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,
