@@ -12,6 +12,7 @@ export default defineConfig({
       'lib/rmhark-ai/__tests__/**/*.test.ts',
       'lib/rmhladder/**/*.test.ts',
       'lib/__tests__/**/*.test.ts',
+      'components/rmhladder/**/*.test.tsx',
     ],
     environment: 'node',
     globals: true,

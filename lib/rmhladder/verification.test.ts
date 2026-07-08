@@ -45,11 +45,12 @@ describe('computeVerification', () => {
 });
 
 describe('passesAlertGate', () => {
-  const ok = { status: 'verified_active', confidence: 90, isUS: true, earlyCareer: 'yes' as const,
-               finalRelevance: 75, userThreshold: 60, alreadyAlerted: false, blockedKeyword: false };
+  const ok: Parameters<typeof passesAlertGate>[0] = {
+    status: 'verified_active', confidence: 90, isUS: true, earlyCareer: 'yes',
+    finalRelevance: 75, userThreshold: 60, alreadyAlerted: false, blockedKeyword: false };
   it('passes the happy path', () => expect(passesAlertGate(ok)).toBe(true));
   it.each([
-    ['unverified status', { ...ok, status: 'unverified' }],
+    ['unverified status', { ...ok, status: 'unverified' as const }],
     ['low confidence', { ...ok, confidence: 74 }],
     ['non-US', { ...ok, isUS: false }],
     ['not early-career', { ...ok, earlyCareer: 'no' as const }],
