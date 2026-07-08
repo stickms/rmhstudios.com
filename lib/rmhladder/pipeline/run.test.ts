@@ -465,6 +465,133 @@ describe('scenario E — externalId persistence: recheck strikes job absent from
   });
 });
 
+// ── Scenario F: multi-board recheck scope guard (item 4) ─────────────────────
+
+describe('scenario F — two greenhouse sources for one company: recheck skipped for scope conflict', () => {
+  // Two sources for the same company on the same platform = ambiguous recheck scope.
+  // runPipeline must skip recheck for both and append a stats note.
+  const SRC_GH_CO1_A: SourceRow = {
+    id: 'src-gh-co1-a',
+    platform: 'greenhouse',
+    slug: 'co1slug-a',
+    url: null,
+    status: 'active',
+    company: { id: 'co-1', name: 'SharedCo', priorityLevel: 2 },
+  };
+  const SRC_GH_CO1_B: SourceRow = {
+    id: 'src-gh-co1-b',
+    platform: 'greenhouse',
+    slug: 'co1slug-b',
+    url: null,
+    status: 'active',
+    company: { id: 'co-1', name: 'SharedCo', priorityLevel: 2 },
+  };
+
+  it('struck = 0, expired = 0 when two greenhouse sources share a companyId (recheck ambiguity)', async () => {
+    const prisma = makeFakeRunPrisma([SRC_GH_CO1_A, SRC_GH_CO1_B]);
+    const fetchImpl = makeStubFetch({
+      greenhouse: { 'co1slug-a': 'fixture', 'co1slug-b': 'fixture' },
+    });
+
+    // First run: create some active jobs
+    await runPipeline({ prisma, fetchImpl, now: NOW, sleepMs: 0 }, { trigger: 'cron' });
+
+    // Second run: active jobs exist but recheck should be skipped for both sources
+    const result = await runPipeline({ prisma, fetchImpl, now: new Date(NOW.getTime() + 60_000), sleepMs: 0 }, { trigger: 'cron' });
+
+    expect(result.struck).toBe(0);
+    expect(result.expired).toBe(0);
+  });
+
+  it('stats for the run include a recheckSkipped note for the conflicting sources', async () => {
+    const prisma = makeFakeRunPrisma([SRC_GH_CO1_A, SRC_GH_CO1_B]);
+    const fetchImpl = makeStubFetch({
+      greenhouse: { 'co1slug-a': 'fixture', 'co1slug-b': 'fixture' },
+    });
+
+    await runPipeline({ prisma, fetchImpl, now: NOW, sleepMs: 0 }, { trigger: 'cron' });
+    await runPipeline({ prisma, fetchImpl, now: new Date(NOW.getTime() + 60_000), sleepMs: 0 }, { trigger: 'cron' });
+
+    // The second run's scrapeRun stats should contain recheck-skipped entries
+    const runs = [...prisma._state.scrapeRuns.values()];
+    const secondRun = runs[runs.length - 1];
+    const stats = secondRun.stats as Array<Record<string, unknown>>;
+    const skippedEntry = stats.find((s) => s.recheckSkipped === true);
+    expect(skippedEntry).toBeDefined();
+  });
+});
+
+// ── Scenario G: tripped recheck writes sourceError row (item 7) ──────────────
+
+describe('scenario G — tripped recheck creates sourceError row', () => {
+  it('circuit breaker trip → sourceError row with errorClass recheck_tripped', async () => {
+    const prisma = makeFakeRunPrisma([SRC_GH_GOOD]);
+    const fetchImpl = makeStubFetch({ greenhouse: { goodco: 'fixture' } });
+
+    // First run: create 2 active jobs
+    await runPipeline({ prisma, fetchImpl, now: NOW, sleepMs: 0 }, { trigger: 'cron' });
+
+    // Inject a fetch that returns only 1 of the 2 jobs — trip the circuit breaker
+    // (activeCount ≥ 4 needed to trip; with only 2 jobs the breaker won't trip)
+    // So let's set up a source with enough active jobs + an empty fetch to force the trip.
+    // The circuit breaker trips when activeCount >= 4 AND wouldStrikeOrExpire / activeCount > 0.5.
+    // With 2 jobs (< 4), the breaker will NOT trip. So test the trip via recheck.test.ts paths.
+    // Instead, verify the sourceError creation contract by directly injecting the tripped path:
+    // We do this via a mock that returns exactly 1 job of 5 from the board.
+
+    // Set up 5 active jobs manually by seeding them into prisma state
+    // (jobs need companyId=co-1, sourcePlatform=greenhouse, status=active)
+    const co1Id = SRC_GH_GOOD.company.id;
+    const jobIds = ['j-trip-1', 'j-trip-2', 'j-trip-3', 'j-trip-4', 'j-trip-5'];
+    for (const jid of jobIds) {
+      // Insert directly into the in-memory store via upsert
+      await prisma.ladderJob.upsert({
+        where: { dedupeHash: `hash-${jid}` },
+        create: {
+          id: jid,
+          companyId: co1Id,
+          dedupeHash: `hash-${jid}`,
+          sourcePlatform: 'greenhouse',
+          status: 'active',
+          externalId: jid,
+          failedCheckCount: 0,
+          alternateUrls: [],
+          discoveredAt: NOW,
+          title: `Job ${jid}`,
+          normalizedTitle: `job ${jid}`,
+          originalPostingUrl: `https://example.com/${jid}`,
+        },
+        update: {},
+      });
+    }
+
+    // Board only returns 1 of the 5 → 4/5 > 50% → trip
+    const tripFetch = makeStubFetch({
+      pages: {
+        [ghUrl('goodco')]: {
+          status: 200,
+          body: JSON.stringify({
+            jobs: [{
+              id: 'j-trip-1',
+              title: 'Job j-trip-1',
+              location: { name: 'New York, NY' },
+              absolute_url: 'https://boards.greenhouse.io/goodco/jobs/j-trip-1',
+            }],
+          }),
+        },
+      },
+    });
+
+    const sourceErrorsBefore = prisma._state.sourceErrors.length;
+    await runPipeline({ prisma, fetchImpl: tripFetch, now: new Date(NOW.getTime() + 120_000), sleepMs: 0 }, { trigger: 'cron' });
+
+    const newErrors = prisma._state.sourceErrors.slice(sourceErrorsBefore);
+    const tripError = newErrors.find((e) => e.errorClass === 'recheck_tripped');
+    expect(tripError).toBeDefined();
+    expect(tripError!.message).toContain('mass-expiry circuit breaker tripped');
+  });
+});
+
 // ── Scenario D: processSource throwing → sourceError row + run finishes ───────
 
 describe('scenario D — processSource inner throw → sourceError row, run completes', () => {

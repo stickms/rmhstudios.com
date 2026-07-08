@@ -2161,7 +2161,7 @@ model LadderJob {
   locationRaw              String?
   city                     String?
   state                    String?
-  country                  String                @default("US")
+  country                  String?
   remoteStatus             LadderRemoteStatus    @default(onsite)
   employmentType           LadderEmploymentType  @default(internship)
   postingDate              DateTime?

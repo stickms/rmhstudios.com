@@ -379,6 +379,80 @@ describe('processSource', () => {
       // New URL is the canonical one, NOT duplicated in alternates
       expect(job1!.alternateUrls).not.toContain(NEW_URL_JOB1);
     });
+
+    it('third run back to original URL (A→B→A flip-flop): original URL not in alternates', async () => {
+      // Third run: board flips back to original URLs
+      await processSource(
+        { prisma: prisma6, fetchImpl: makeGreenhouseFetch(), now: new Date(NOW.getTime() + 120_000) },
+        SOURCE,
+      );
+
+      // After A→B→A: originalPostingUrl should be ORIGINAL_URL_JOB1 again
+      const job1 = [...prisma6._state.jobs.values()].find(
+        (r) => (r as { originalPostingUrl: string }).originalPostingUrl === ORIGINAL_URL_JOB1,
+      ) as { originalPostingUrl: string; alternateUrls: string[] } | undefined;
+
+      expect(job1).toBeDefined();
+      // The current canonical URL must NOT appear in its own alternates
+      expect(job1!.alternateUrls).not.toContain(ORIGINAL_URL_JOB1);
+    });
+  });
+
+  describe('scenario 8 — re-run with changed externalId: update payload refreshes identity fields', () => {
+    // Same company + title + location → same dedupeHash; only the numeric job id changes.
+    // After the second run, the stored row must carry the NEW externalId (and sourceUrl, etc.).
+    const prisma8 = makeFakePrisma();
+
+    const FIXTURE_V1 = JSON.stringify({
+      jobs: [{
+        id: 4285367007,
+        title: 'Product Management Intern',
+        updated_at: '2026-06-20T12:00:00-04:00',
+        first_published: '2026-06-01T09:00:00-04:00',
+        requisition_id: 'R-1234',
+        location: { name: 'New York, NY' },
+        absolute_url: 'https://boards.greenhouse.io/stripe/jobs/4285367007',
+        content: '&lt;p&gt;Summer PM internship.&lt;/p&gt;',
+      }],
+    });
+
+    const FIXTURE_V2 = JSON.stringify({
+      jobs: [{
+        id: 9999999999,   // NEW external id — same title / location → same dedupeHash
+        title: 'Product Management Intern',
+        updated_at: '2026-07-01T12:00:00-04:00',
+        first_published: '2026-07-01T09:00:00-04:00',
+        requisition_id: 'R-5678',
+        location: { name: 'New York, NY' },
+        absolute_url: 'https://boards.greenhouse.io/stripe/jobs/9999999999',
+        content: '&lt;p&gt;Summer PM internship (re-posted).&lt;/p&gt;',
+      }],
+    });
+
+    function makeFetchFor(fixture: string): typeof fetch {
+      return async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
+        return url === GREENHOUSE_URL ? new Response(fixture, { status: 200 }) : new Response('Not found', { status: 404 });
+      };
+    }
+
+    it('first run: creates 1 job with externalId "4285367007"', async () => {
+      const stats = await processSource({ prisma: prisma8, fetchImpl: makeFetchFor(FIXTURE_V1), now: NOW }, SOURCE);
+      expect(stats.created).toBe(1);
+      expect(stats.updated).toBe(0);
+      const job = [...prisma8._state.jobs.values()][0] as { externalId: string };
+      expect(job.externalId).toBe('4285367007');
+    });
+
+    it('second run with new externalId: stored row refreshed to "9999999999"', async () => {
+      const stats = await processSource({ prisma: prisma8, fetchImpl: makeFetchFor(FIXTURE_V2), now: new Date(NOW.getTime() + 60_000) }, SOURCE);
+      expect(stats.created).toBe(0);
+      expect(stats.updated).toBe(1);
+      const job = [...prisma8._state.jobs.values()][0] as { externalId: string; sourceUrl: string; canonicalApplyUrl: string | null; externalRequisitionId: string | null };
+      expect(job.externalId).toBe('9999999999');
+      expect(job.sourceUrl).toBe('https://boards.greenhouse.io/stripe/jobs/9999999999');
+      expect(job.externalRequisitionId).toBe('R-5678');
+    });
   });
 
   describe('scenario 7 — throwing fetchImpl yields zero discoveries, no success stamp', () => {

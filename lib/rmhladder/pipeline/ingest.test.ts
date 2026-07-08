@@ -282,6 +282,66 @@ describe('assessJob — fields completeness', () => {
   });
 });
 
+// ── assessJob: non_us_role evidence string (item 5) ─────────────────────────
+
+describe('assessJob — non_us_role evidence string', () => {
+  it('London job with locationRaw: evidence contains non-US classification message', () => {
+    const result = assessJob(
+      baseArgs(
+        { locationRaw: 'London, UK', country: null, title: 'Investment Banking Analyst' },
+        { usConfirmed: false },
+      ),
+    );
+    expect(result.fields.verificationStatus).toBe('non_us_role');
+    expect(result.fields.verificationEvidence).toMatch(
+      /Location classified non-US \(London, UK\) — excluded from US pipeline\./,
+    );
+  });
+
+  it('non-US job with country code: evidence includes location identifier', () => {
+    const result = assessJob(
+      baseArgs(
+        { locationRaw: 'London', country: 'GB', title: 'Director of Operations' },
+        { usConfirmed: false },
+      ),
+    );
+    expect(result.fields.verificationStatus).toBe('non_us_role');
+    expect(result.fields.verificationEvidence).toMatch(/Location classified non-US/);
+    expect(result.fields.verificationEvidence).toMatch(/excluded from US pipeline/);
+  });
+});
+
+// ── assessJob: country field semantics (item 2b) ─────────────────────────────
+
+describe('assessJob — country field semantics', () => {
+  it('US intern: country is "US"', () => {
+    const result = assessJob(baseArgs({ locationRaw: 'New York, NY', country: 'US' }));
+    expect(result.fields.country).toBe('US');
+  });
+
+  it('London job with country "GB": country is "GB"', () => {
+    const result = assessJob(
+      baseArgs({ locationRaw: 'London', country: 'GB', title: 'Director of Operations' }, { usConfirmed: false }),
+    );
+    expect(result.fields.country).toBe('GB');
+  });
+
+  it('London via locationRaw only (no country): country is null', () => {
+    const result = assessJob(
+      baseArgs({ locationRaw: 'London, UK', country: null, title: 'Investment Banking Analyst' }, { usConfirmed: false }),
+    );
+    expect(result.fields.country).toBeNull();
+  });
+
+  it('Main Campus ambiguous location (no country): country is null', () => {
+    const result = assessJob(
+      baseArgs({ locationRaw: 'Main Campus', country: null }),
+    );
+    // isUS is null (ambiguous) → country is null
+    expect(result.fields.country).toBeNull();
+  });
+});
+
 // ── assessJob: unclear early-career → ambiguous_early_career ────────────────
 
 describe('assessJob — unclear early career', () => {

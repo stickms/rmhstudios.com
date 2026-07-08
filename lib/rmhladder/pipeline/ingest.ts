@@ -158,6 +158,15 @@ export function assessJob(args: {
   const employmentType: 'internship' | 'full_time' =
     INTERN_PROGRAM_TYPES.has(ecResult.programType) ? 'internship' : 'full_time';
 
+  // Item 2b: country semantics — 'US' only when confirmed US; non-US keeps real code; ambiguous → null.
+  const country = locationResult.isUS === true ? 'US' : (normalized.country?.toUpperCase() ?? null);
+
+  // Item 5: when overriding to non_us_role, replace evidence with a descriptive message.
+  const locationLabel = normalized.locationRaw || normalized.country;
+  const verificationEvidence = isNonUS
+    ? `Location classified non-US (${locationLabel}) — excluded from US pipeline.`
+    : outcome.evidence;
+
   const fields: JobAssessmentFields = {
     title: normalized.title,
     normalizedTitle: normalizeTitle(normalized.title),
@@ -165,7 +174,7 @@ export function assessJob(args: {
     locationRaw: normalized.locationRaw,
     city: locationResult.city,
     state: locationResult.state,
-    country: normalized.country,
+    country,
     remoteStatus: effectiveRemoteStatus,
     employmentType,
     postingDate: normalized.postedAt,
@@ -186,7 +195,7 @@ export function assessJob(args: {
     schoolYearTarget,
     verificationStatus: finalStatus,
     verificationConfidence: finalConfidence,
-    verificationEvidence: outcome.evidence,
+    verificationEvidence,
   };
 
   return {

@@ -209,7 +209,31 @@ export async function runPipeline(
   }
 
   // Step 4: Recheck — for each API source load its active jobs and run expiry logic.
+
+  // Item 4: Multi-board scope guard — skip recheck when multiple sources share (companyId, platform).
+  // Recheck presence logic is ambiguous across boards: job A may live on board B but not board A.
+  const scopeCount = new Map<string, number>();
   for (const source of apiSources) {
+    const key = `${source.company.id}::${source.platform}`;
+    scopeCount.set(key, (scopeCount.get(key) ?? 0) + 1);
+  }
+  const multiScopeKeys = new Set(
+    [...scopeCount.entries()].filter(([, n]) => n > 1).map(([k]) => k),
+  );
+
+  for (const source of apiSources) {
+    const scopeKey = `${source.company.id}::${source.platform}`;
+    if (multiScopeKeys.has(scopeKey)) {
+      // Ambiguous scope: skip recheck, append note to stats.
+      statsSummary.push({
+        sourceId: source.id,
+        platform: source.platform,
+        recheckSkipped: true,
+        reason: 'multi_source_scope_ambiguity',
+      });
+      continue;
+    }
+
     try {
       const activeJobs = await deps.prisma.ladderJob.findMany({
         where: {
@@ -228,6 +252,15 @@ export async function runPipeline(
 
       if (recheckStats.tripped) {
         totals.errors++;
+        // Item 7: write a sourceError row when the circuit breaker trips.
+        await deps.prisma.ladderSourceError.create({
+          data: {
+            runId,
+            sourceId: source.id,
+            errorClass: 'recheck_tripped',
+            message: 'mass-expiry circuit breaker tripped',
+          },
+        });
       }
       totals.struck += recheckStats.struck;
       totals.expired += recheckStats.expired;

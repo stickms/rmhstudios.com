@@ -247,3 +247,73 @@ describe('smartRecruitersAdapter detectExpired with empty board', () => {
     expect(result).toBe(false);
   });
 });
+
+describe('smartRecruitersAdapter — truncated board is not absence evidence (item 3)', () => {
+  it('discoverJobs returns [] when totalFound > hardCap (500) — cap hit', async () => {
+    // 600 total found, pages of 100 → we'd cap at 500 but still < 600 → jobs null → []
+    const capHitStub = (url: string): Promise<Response> => {
+      const offsetNum = parseInt(new URL(url).searchParams.get('offset') ?? '0', 10);
+      const pageContent = Array.from({ length: 100 }, (_, i) => ({
+        id: `id-${offsetNum}-${i}`,
+        name: `Job ${offsetNum}-${i}`,
+        location: { city: 'Charlotte', region: 'NC', country: 'us' },
+      }));
+      return Promise.resolve(
+        new Response(JSON.stringify({ totalFound: 600, content: pageContent }), { status: 200 }),
+      );
+    };
+
+    const jobs = await smartRecruitersAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: capHitStub as typeof fetch,
+    });
+    expect(jobs).toEqual([]);
+  });
+
+  it('detectExpired returns false when board is truncated (totalFound > fetched count)', async () => {
+    const capHitStub = (url: string): Promise<Response> => {
+      const offsetNum = parseInt(new URL(url).searchParams.get('offset') ?? '0', 10);
+      const pageContent = Array.from({ length: 100 }, (_, i) => ({
+        id: `id-${offsetNum}-${i}`,
+        name: `Job ${offsetNum}-${i}`,
+        location: { city: 'Charlotte', region: 'NC', country: 'us' },
+      }));
+      return Promise.resolve(
+        new Response(JSON.stringify({ totalFound: 600, content: pageContent }), { status: 200 }),
+      );
+    };
+
+    const result = await smartRecruitersAdapter.detectExpired(
+      { ...ctx, fetchImpl: capHitStub as typeof fetch },
+      'some-id-not-in-board',
+    );
+    expect(result).toBe(false);
+  });
+
+  it('later-page 500 → discoverJobs returns [] (truncated, not absence evidence)', async () => {
+    let callCount = 0;
+    const laterPageFailStub = (url: string): Promise<Response> => {
+      callCount++;
+      const offsetNum = parseInt(new URL(url).searchParams.get('offset') ?? '0', 10);
+      if (offsetNum === 0) {
+        const pageContent = Array.from({ length: 100 }, (_, i) => ({
+          id: `id-${i}`,
+          name: `Job ${i}`,
+          location: { city: 'Charlotte', region: 'NC', country: 'us' },
+        }));
+        return Promise.resolve(
+          new Response(JSON.stringify({ totalFound: 200, content: pageContent }), { status: 200 }),
+        );
+      }
+      // Page 2 returns 500 error
+      return Promise.resolve(new Response('Internal Server Error', { status: 500 }));
+    };
+
+    const jobs = await smartRecruitersAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: laterPageFailStub as typeof fetch,
+    });
+    expect(jobs).toEqual([]);
+    expect(callCount).toBe(2);
+  });
+});

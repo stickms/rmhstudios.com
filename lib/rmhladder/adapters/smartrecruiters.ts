@@ -96,6 +96,13 @@ async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; 
     offset += Array.isArray(content) ? content.length : 0;
   }
 
+  // Truncated: cap hit or later-page failure — incomplete evidence beats wrong evidence.
+  // A board with more jobs than fetched cannot be used to assert absence.
+  // discoverJobs consequently returns [] for >cap boards; detectExpired returns false.
+  if (aggregated.length > 0 && aggregated.length < totalFound) {
+    return { jobs: null, status, totalFound };
+  }
+
   return { jobs: aggregated.length > 0 ? aggregated : null, status, totalFound };
 }
 

@@ -152,7 +152,7 @@ export async function processSource(
       let mergedAlternates: string[] | undefined;
       if (existing && existing.originalPostingUrl !== f.originalPostingUrl) {
         const combined = [...existing.alternateUrls, existing.originalPostingUrl];
-        mergedAlternates = [...new Set(combined)].slice(0, 10);
+        mergedAlternates = [...new Set(combined)].filter(u => u !== f.originalPostingUrl).slice(0, 10);
       }
 
       // 4d. Upsert the job row.
@@ -167,7 +167,7 @@ export async function processSource(
           locationRaw: f.locationRaw,
           city: f.city,
           state: f.state,
-          country: f.country ?? 'US',
+          country: f.country,
           remoteStatus: f.remoteStatus,
           employmentType: f.employmentType,
           postingDate: f.postingDate,
@@ -201,6 +201,11 @@ export async function processSource(
           earlyCareerClassification: f.earlyCareerClassification,
           urgencyFlag: f.urgencyFlag,
           status: jobStatus,
+          country: f.country,
+          externalId: f.externalId,
+          sourceUrl: f.sourceUrl,
+          canonicalApplyUrl: f.canonicalApplyUrl,
+          externalRequisitionId: f.externalRequisitionId,
           ...(isVerified ? { lastVerifiedAt: now } : {}),
           originalPostingUrl: f.originalPostingUrl,
           ...(mergedAlternates !== undefined ? { alternateUrls: mergedAlternates } : {}),
