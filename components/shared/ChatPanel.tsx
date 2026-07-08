@@ -13,6 +13,7 @@ import { Send, SmilePlus } from 'lucide-react';
 import { CHAT_REACTION_EMOJIS, CHAT_MAX_LENGTH } from '@/lib/shared/chat-constants';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
+import { useEmojiShortcodes } from '@/lib/emoji/use-emoji-shortcodes';
 import ChatMediaEmbed, { stripEmbedUrls } from './ChatMediaEmbed';
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -64,6 +65,7 @@ export default function ChatPanel({
   const messageRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
   const inputRef = useRef<HTMLInputElement>(null);
   const insertEmoji = useEmojiInsert(inputRef, message, setMessage);
+  const shortcodes = useEmojiShortcodes({ ref: inputRef, value: message, onChange: setMessage });
 
   // ─── Auto-scroll on new messages ─────────────────────────────
 
@@ -335,22 +337,26 @@ export default function ChatPanel({
         className="flex gap-2 p-3"
         style={{ borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: `var(--${themePrefix}-border)` }}
       >
-        <input
-          ref={inputRef}
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          maxLength={CHAT_MAX_LENGTH}
-          placeholder={placeholder ?? t('chat-placeholder', { defaultValue: 'Chat...' })}
-          className="flex-1 min-w-0 px-3 py-2 rounded-site-sm text-sm outline-none"
-          style={{
-            borderWidth: 1,
-            borderStyle: 'solid',
-            borderColor: `var(--${themePrefix}-border)`,
-            backgroundColor: `var(--${themePrefix}-bg)`,
-            color: `var(--${themePrefix}-text)`,
-          }}
-        />
+        <div className="relative flex-1 min-w-0">
+          <input
+            ref={inputRef}
+            type="text"
+            value={message}
+            onChange={(e) => shortcodes.onValueChange(e.target.value)}
+            onKeyDown={(e) => shortcodes.onKeyDown(e)}
+            maxLength={CHAT_MAX_LENGTH}
+            placeholder={placeholder ?? t('chat-placeholder', { defaultValue: 'Chat...' })}
+            className="w-full px-3 py-2 rounded-site-sm text-sm outline-none"
+            style={{
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: `var(--${themePrefix}-border)`,
+              backgroundColor: `var(--${themePrefix}-bg)`,
+              color: `var(--${themePrefix}-text)`,
+            }}
+          />
+          {shortcodes.menu}
+        </div>
         <EmojiPickerButton
           direction="up"
           onSelect={insertEmoji}
