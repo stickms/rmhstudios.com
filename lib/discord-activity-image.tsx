@@ -533,7 +533,21 @@ export interface CaretakerEntry {
     studies: number;
 }
 
-const PURPLE = '#a855f7';
+// ─── rmhstudios.com design tokens (dark theme, from app/globals.css) ──
+const RMH = {
+    bg: '#0b0b0c',
+    surface: '#27282c',
+    surfaceTop: '#2b2733', // faint purple-tinted surface for the #1 row
+    border: '#3a3b42',
+    text: '#e8e8ec',
+    muted: '#9a9ba4',
+    dim: '#6a6b74',
+    accent: '#9b7ad8', // site purple accent
+    track: '#3a3b42',
+    gold: '#e0c56b',
+    silver: '#c2c6cf',
+    bronze: '#cc9a63',
+};
 
 // A compact "12 fed · 9 studied · 8 played" tally of a caretaker's top actions.
 function caretakerTally(c: CaretakerEntry): string {
@@ -547,12 +561,34 @@ function caretakerTally(c: CaretakerEntry): string {
     ];
     const top = parts.filter(p => p.n > 0).sort((a, b) => b.n - a.n).slice(0, 3);
     if (top.length === 0) return 'just getting started';
-    return top.map(p => `${p.n} ${p.label}`).join(' · ');
+    return top.map(p => `${p.n} ${p.label}`).join('  ·  ');
+}
+
+// A numbered rank badge — gold/silver/bronze for the podium (no emoji, so it
+// renders reliably), a muted "#N" pill otherwise.
+function RankBadge({ rank }: { rank: number }) {
+    const medal = rank <= 3 ? [RMH.gold, RMH.silver, RMH.bronze][rank - 1] : null;
+    return (
+        <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 30,
+            height: 30,
+            borderRadius: 15,
+            backgroundColor: medal ?? 'transparent',
+            border: medal ? 'none' : `1.5px solid ${RMH.border}`,
+        }}>
+            <span style={{ fontSize: medal ? 15 : 12, fontWeight: 800, color: medal ? '#1a1620' : RMH.muted }}>
+                {rank}
+            </span>
+        </div>
+    );
 }
 
 export async function generateCaretakersImage(entries: CaretakerEntry[]): Promise<Buffer> {
     const display = entries.slice(0, 10);
-    const cacheKey = `care:${display.map(c => `${c.userId}:${c.points}`).join(',')}`;
+    const cacheKey = `care:v2:${display.map(c => `${c.userId}:${c.points}:${c.avatarHash ?? ''}`).join(',')}`;
     const cached = getCachedPng(cacheKey);
     if (cached) return cached;
 
@@ -562,12 +598,11 @@ export async function generateCaretakersImage(entries: CaretakerEntry[]): Promis
     );
 
     const topPoints = Math.max(1, ...display.map(c => c.points));
-    const medals = ['\u{1F947}', '\u{1F948}', '\u{1F949}'];
 
-    const rowHeight = 56;
-    const headerHeight = 78;
-    const footerHeight = 34;
-    const imgPadding = 44;
+    const rowHeight = 62;
+    const headerHeight = 84;
+    const footerHeight = 36;
+    const imgPadding = 48;
     const imgHeight = Math.max(220, headerHeight + display.length * rowHeight + footerHeight + imgPadding);
 
     const element = (
@@ -576,59 +611,71 @@ export async function generateCaretakersImage(entries: CaretakerEntry[]): Promis
             flexDirection: 'column',
             width: '100%',
             height: '100%',
-            backgroundColor: BG,
-            padding: '24px 30px',
+            backgroundColor: RMH.bg,
+            padding: '26px 30px',
             fontFamily: 'Inter',
-            color: TEXT,
+            color: RMH.text,
+            letterSpacing: '-0.02em',
         }}>
             {/* Header */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginBottom: 16 }}>
-                <span style={{ fontSize: 20, fontWeight: 700 }}>🏆 Alex&apos;s Top Caretakers</span>
-                <span style={{ fontSize: 13, color: MUTED }}>
-                    raising Alex together 🧋 · {entries.length} caretaker{entries.length !== 1 ? 's' : ''}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3, marginBottom: 18 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ display: 'flex', width: 5, height: 22, borderRadius: 3, backgroundColor: RMH.accent }} />
+                    <span style={{ fontSize: 22, fontWeight: 800 }}>Alex&apos;s Top Caretakers</span>
+                </div>
+                <span style={{ fontSize: 13, color: RMH.muted, paddingLeft: 15 }}>
+                    raising Alex together · {entries.length} caretaker{entries.length !== 1 ? 's' : ''}
                 </span>
             </div>
 
             {/* Ranked rows */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 7, flex: 1 }}>
                 {display.map((c, i) => {
-                    const medal = i < 3 ? medals[i] : `#${i + 1}`;
-                    const barPct = Math.max(6, Math.round((c.points / topPoints) * 100));
-                    const accent = i === 0 ? AMBER : i < 3 ? PURPLE : MUTED;
+                    const rank = i + 1;
+                    const isTop = rank === 1;
+                    const barPct = Math.max(5, Math.round((c.points / topPoints) * 100));
                     return (
                         <div key={c.userId} style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: 12,
-                            padding: '8px 12px',
-                            borderRadius: 10,
-                            backgroundColor: SURFACE,
-                            border: i === 0 ? `1px solid ${AMBER}` : '1px solid transparent',
+                            gap: 13,
+                            padding: '9px 14px',
+                            borderRadius: 12,
+                            backgroundColor: isTop ? RMH.surfaceTop : RMH.surface,
+                            border: `1px solid ${isTop ? RMH.accent : RMH.border}`,
                         }}>
-                            <span style={{ fontSize: 18, width: 30, textAlign: 'center', fontWeight: 700 }}>{medal}</span>
-                            <Avatar src={avDataUris[i]} size={38} />
-                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 3 }}>
-                                <span style={{ fontSize: 15, fontWeight: 700 }}>{c.username}</span>
-                                {/* points bar */}
-                                <div style={{ display: 'flex', width: '100%', height: 5, borderRadius: 3, backgroundColor: '#3a3d44' }}>
-                                    <div style={{ display: 'flex', width: `${barPct}%`, height: 5, borderRadius: 3, backgroundColor: accent }} />
+                            <RankBadge rank={rank} />
+                            <img
+                                src={avDataUris[i]}
+                                width={44}
+                                height={44}
+                                style={{ borderRadius: '50%', border: `2px solid ${isTop ? RMH.accent : RMH.border}` }}
+                            />
+                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, gap: 5 }}>
+                                <span style={{ fontSize: 16, fontWeight: 700 }}>{c.username}</span>
+                                <div style={{ display: 'flex', width: '100%', height: 6, borderRadius: 3, backgroundColor: RMH.track }}>
+                                    <div style={{ display: 'flex', width: `${barPct}%`, height: 6, borderRadius: 3, backgroundColor: RMH.accent }} />
                                 </div>
-                                <span style={{ fontSize: 11, color: MUTED }}>{caretakerTally(c)}</span>
+                                <span style={{ fontSize: 11, color: RMH.dim }}>{caretakerTally(c)}</span>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                                <span style={{ fontSize: 20, fontWeight: 700, color: accent }}>{c.points}</span>
-                                <span style={{ fontSize: 10, color: MUTED }}>points</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: 56 }}>
+                                <span style={{ fontSize: 22, fontWeight: 800, color: isTop ? RMH.accent : RMH.text }}>{c.points}</span>
+                                <span style={{ fontSize: 10, color: RMH.dim, textTransform: 'uppercase', letterSpacing: '0.06em' }}>points</span>
                             </div>
                         </div>
                     );
                 })}
             </div>
 
-            <Footer label="Alex 🧋 · rmhstudios.com" />
+            {/* Footer */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginTop: 14 }}>
+                <div style={{ display: 'flex', width: 13, height: 13, borderRadius: 4, backgroundColor: RMH.accent }} />
+                <span style={{ fontSize: 11, color: RMH.muted }}>Alex the Tamagotchi · rmhstudios.com</span>
+            </div>
         </div>
     );
 
-    const png = await renderToPng(element, 560, imgHeight);
+    const png = await renderToPng(element, 600, imgHeight);
     setCachedPng(cacheKey, png);
     return png;
 }
