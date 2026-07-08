@@ -177,6 +177,7 @@ export const Route = createFileRoute('/api/messages')({
         createdAt: message.createdAt.toISOString(),
         gifUrl: message.gifUrl,
         imageUrls: message.imageUrls,
+        reactions: [],
       };
 
       // Notify recipient via SSE with message payload

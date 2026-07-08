@@ -7,6 +7,7 @@
  */
 
 import { createBus, type RealtimeBus } from '@/lib/realtime-bus.server';
+import type { ReactionRow } from '@/lib/social/reactions';
 
 export interface GroupPollPayload {
   question: string;
@@ -25,6 +26,8 @@ export interface GroupMessagePayload {
   gifUrl?: string | null;
   imageUrls?: string[];
   poll?: GroupPollPayload | null;
+  /** Raw reaction rows, grouped client-side so SSE updates stay cheap. */
+  reactions?: ReactionRow[];
 }
 
 /** A non-message event on the group channel (e.g. a reaction toggle). Kept

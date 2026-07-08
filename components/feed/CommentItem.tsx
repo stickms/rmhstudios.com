@@ -21,6 +21,7 @@ import { useLocaleStore } from '@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
+import type { ReactionSummary } from '@/lib/social/reactions';
 
 export interface Comment {
   id: string;
@@ -36,6 +37,8 @@ export interface Comment {
   replies?: Comment[];
   deletedAt?: string | null;
   deletedByAdmin?: boolean;
+  /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
+  reactions?: ReactionSummary[];
   /** Client-only: optimistic comment awaiting its server round-trip. */
   pending?: boolean;
 }

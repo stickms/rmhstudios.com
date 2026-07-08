@@ -18,6 +18,8 @@ export type MessagePayload = {
   /** Optional rich media (mirrors RMHark posts). */
   gifUrl?: string | null;
   imageUrls?: string[];
+  /** Raw reaction rows, grouped client-side so SSE updates stay cheap. */
+  reactions?: ReactionRow[];
 };
 
 export type TypingPayload = {

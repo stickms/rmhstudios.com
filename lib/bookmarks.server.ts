@@ -86,6 +86,7 @@ export async function listBookmarks(
         poll: mapPoll(r.poll),
         gifUrl: r.gifUrl ?? undefined,
         imageUrls: r.imageUrls ?? undefined,
+        reactions: [],
       },
       r,
       viewerId

@@ -72,6 +72,7 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
         createdAt: true,
         gifUrl: true,
         imageUrls: true,
+        reactions: { select: { emoji: true, userId: true } },
       },
     });
 
@@ -98,6 +99,7 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
         createdAt: m.createdAt.toISOString(),
         gifUrl: m.gifUrl,
         imageUrls: m.imageUrls,
+        reactions: m.reactions,
       })),
       nextCursor: hasMore ? items[items.length - 1].id : null,
       hasMore,
@@ -232,6 +234,7 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
       createdAt: message.createdAt.toISOString(),
       gifUrl: message.gifUrl,
       imageUrls: message.imageUrls,
+      reactions: [],
     };
 
     // Notify recipient via SSE with message payload
