@@ -22,6 +22,10 @@ import { UserAvatar } from './UserAvatar';
 import { Spinner } from '@/components/ui/spinner';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { useFeedStore } from '@/stores/feedStore';
+import { ReactionMenu } from '@/components/shared/ReactionMenu';
+import { ReactionChips } from '@/components/shared/ReactionChips';
+import { useReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
+import { applyReactionToggle } from '@/lib/social/reactions';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { useFreshUser } from '@/stores/userDisplayStore';
@@ -87,6 +91,23 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const [showTranslated, setShowTranslated] = useState(false);
   const [translating, setTranslating] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number } | null>(null);
+  const reactionTrigger = useReactionTrigger((x, y) => setReactionMenu({ x, y }));
+
+  const toggleReaction = async (emoji: string) => {
+    const prev = item.reactions;
+    updateItem(item.id, { reactions: applyReactionToggle(item.reactions ?? [], emoji) });
+    try {
+      const res = await fetch(`/api/rmharks/${item.id}/react`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji }),
+      });
+      if (!res.ok) throw new Error('react failed');
+    } catch {
+      updateItem(item.id, { reactions: prev });
+    }
+  };
 
   // When the site language changes, drop any cached translation so the next
   // "Translate" click re-translates into the newly selected language.
@@ -287,6 +308,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
   return (
     <div
+      {...(item.pending || item.deletedAt ? {} : reactionTrigger)}
       className={`relative px-4 py-3 border-b border-site-border transition-colors ${
         item.pending
           ? 'opacity-60 pointer-events-none select-none'
@@ -603,6 +625,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             </div>
           )}
 
+          {!item.deletedAt && !item.pending && (
+            <ReactionChips reactions={item.reactions ?? []} onToggle={toggleReaction} className="mt-2" />
+          )}
+
           {/* Actions */}
           {!item.deletedAt && <RMHarkActions item={item} />}
         </div>
@@ -656,6 +682,15 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
       {isAuthor && insightsOpen && (
         <InsightsModal open={insightsOpen} onClose={() => setInsightsOpen(false)} postId={actualId} />
+      )}
+
+      {reactionMenu && (
+        <ReactionMenu
+          x={reactionMenu.x}
+          y={reactionMenu.y}
+          onSelect={toggleReaction}
+          onClose={() => setReactionMenu(null)}
+        />
       )}
     </div>
   );
