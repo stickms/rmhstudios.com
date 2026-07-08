@@ -104,6 +104,8 @@ model User {
   rmharkCommentViews   RMHarkCommentView[]
   rmharkPollVotes      RMHarkPollVote[]
   announcementPollVotes FeedAnnouncementPollVote[]
+  rmharkReactions        RMHarkReaction[]
+  rmharkCommentReactions RMHarkCommentReaction[]
 
   // Profile & Social
   profile   UserProfile?
@@ -164,6 +166,7 @@ model User {
   groupMemberships  GroupChatMember[]
   groupMessages     GroupMessage[]
   groupPollVotes    GroupPollVote[]
+  groupMessageReactions GroupMessageReaction[]
 
   // RMHStudy flashcards
   flashcardDecks   FlashcardDeck[]
@@ -211,6 +214,7 @@ model User {
   conversationsAsOne Conversation[]  @relation("ConversationParticipantOne")
   conversationsAsTwo Conversation[]  @relation("ConversationParticipantTwo")
   directMessages     DirectMessage[]
+  directMessageReactions DirectMessageReaction[]
 
   // rmhcode & User Builds
   rmhCodeTokens RmhCodeToken[]
@@ -1313,12 +1317,29 @@ model RMHark {
   editedAt DateTime?
   edits    RMHarkEdit[]
 
+  reactions RMHarkReaction[]
+
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   // Composite index backing keyset pagination on (createdAt desc, id desc)
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@index([userId, pinnedAt])
   @@map("rmheet")
+}
+
+model RMHarkReaction {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId, emoji])
+  @@index([rmheetId])
+  @@map("rmheet_reaction")
 }
 
 model RMHarkLike {
@@ -1358,10 +1379,27 @@ model RMHarkComment {
   deletedAt      DateTime?
   deletedByAdmin Boolean   @default(false)
 
+  reactions RMHarkCommentReaction[]
+
   @@index([rmheetId, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
   @@index([parentId])
   @@map("rmheet_comment")
+}
+
+model RMHarkCommentReaction {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  comment RMHarkComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId, emoji])
+  @@index([commentId])
+  @@map("rmheet_comment_reaction")
 }
 
 model RMHarkCommentLike {
@@ -1905,9 +1943,26 @@ model DirectMessage {
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
+  reactions DirectMessageReaction[]
+
   @@index([conversationId, createdAt])
   @@index([senderId])
   @@map("direct_message")
+}
+
+model DirectMessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  message DirectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("direct_message_reaction")
 }
 
 // ─── rmhcode CLI Authentication ─────────────────────────────────────
@@ -2095,8 +2150,25 @@ model GroupMessage {
   sender    User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
   pollVotes GroupPollVote[]
 
+  reactions GroupMessageReaction[]
+
   @@index([groupId, createdAt])
   @@map("group_message")
+}
+
+model GroupMessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  message GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("group_message_reaction")
 }
 
 model GroupPollVote {
