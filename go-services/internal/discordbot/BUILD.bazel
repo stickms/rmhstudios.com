@@ -8,6 +8,7 @@ go_library(
         "deepseek.go",
         "interactions.go",
         "pet.go",
+        "pet_ai.go",
         "pet_care.go",
         "pet_image.go",
         "pet_intro.go",

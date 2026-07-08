@@ -78,9 +78,25 @@ last-used channel** (at most one per tick), by priority:
 1. **Life events** — "Alex grew into a Teen!" (with a fresh selfie, generated once
    and reused across all servers), or "Alex passed out from neglect… `/revive` him".
 2. **Care alerts** — "yo I'm STARVING, `/feed` me a boba" (globally throttled).
-3. **Ambient life** — "Alex: currently out getting boba 🧋", "in a Wells Fargo
-   standup pretending I understand the sprint board" — stage-appropriate
-   slice-of-life flavour.
+3. **Ambient life** — slice-of-life posts, questions to the server, or a riff on a
+   current tech headline.
+
+**AI-generated messages.** When `DEEPSEEK_API_KEY` is set, the care-alert and
+ambient messages are generated on the fly by DeepSeek (one cheap call per
+broadcast) in Alex's voice + current state, instead of cycling fixed templates.
+Ambient posts sometimes reference a real headline pulled from the free Hacker News
+API (no key). If DeepSeek or the news fetch is unavailable, it falls back to the
+static templates — the bot never depends on the AI being up.
+
+## Mentions & replies
+
+Alex listens for `@mentions` and replies to his messages (via the non-privileged
+`GuildMessages` intent — message content for mentions/replies is delivered without
+the privileged intent). When pinged, he pulls recent channel context and replies
+in-character via DeepSeek, throttled per channel. Set `ALEX_MESSAGE_CONTENT=true`
+(and enable the Message Content intent in the Developer Portal) to give him full
+channel context for richer replies; without it he still replies, just with less
+surrounding context.
 
 If a server's channel becomes unreachable (deleted / bot lost access), it's
 cleared so the bot stops broadcasting there.

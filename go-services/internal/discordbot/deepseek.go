@@ -65,6 +65,11 @@ type DeepSeekClient struct {
 	http    *http.Client
 }
 
+// configured reports whether the client can make calls (a key is set).
+func (c *DeepSeekClient) configured() bool {
+	return c != nil && c.apiKey != ""
+}
+
 // NewDeepSeekClient builds a client from the DEEPSEEK_API_KEY / DEEPSEEK_MODEL
 // env values (resolved by the caller). model defaults to "deepseek-chat".
 func NewDeepSeekClient(apiKey, model string) *DeepSeekClient {

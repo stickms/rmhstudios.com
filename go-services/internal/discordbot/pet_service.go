@@ -27,9 +27,10 @@ import (
 
 // PetService is the tamagotchi command surface.
 type PetService struct {
-	repo   *petRepo
-	imager *alexImager
-	logger *log.Logger
+	repo     *petRepo
+	imager   *alexImager
+	deepseek *DeepSeekClient // for AI-generated proactive messages (optional)
+	logger   *log.Logger
 
 	// imageBaseURL is the base URL of the web app that renders the /caretakers
 	// leaderboard PNG (ALEX_PUBLIC_BASE_URL). Empty disables the image (text only).
@@ -46,10 +47,12 @@ type PetService struct {
 
 // NewPetService wires the tamagotchi. imageBaseURL is the web app base URL used to
 // render the /caretakers leaderboard image (empty => text-only leaderboard).
-func NewPetService(repo *petRepo, imager *alexImager, logger *log.Logger, imageBaseURL string) *PetService {
+// deepseek is optional; when set, Alex's proactive messages are AI-generated.
+func NewPetService(repo *petRepo, imager *alexImager, deepseek *DeepSeekClient, logger *log.Logger, imageBaseURL string) *PetService {
 	return &PetService{
 		repo:         repo,
 		imager:       imager,
+		deepseek:     deepseek,
 		logger:       logger,
 		imageBaseURL: strings.TrimRight(imageBaseURL, "/"),
 		http:         &http.Client{Timeout: 10 * time.Second},
@@ -803,6 +806,27 @@ func (ps *PetService) StatusLineForChat(ctx context.Context, guildID string) str
 		stageWord(pet.LifeStage), mood.Label, career, int(pet.Intelligence),
 		int(pet.Hunger), int(pet.Energy), int(pet.Hygiene), int(pet.Happiness), int(pet.Health),
 	)
+}
+
+// NoteMentioned records that Alex was @mentioned/replied-to in a channel: it
+// remembers the channel (so the care loop talks there) and cheers Alex up a
+// little. No leaderboard credit — mentions must not be farmable for points.
+func (ps *PetService) NoteMentioned(ctx context.Context, guildID, channelID string) {
+	if guildID == "" || ps == nil {
+		return
+	}
+	now := time.Now().UTC()
+	mu := ps.lockGuild(globalPetKey)
+	mu.Lock()
+	defer mu.Unlock()
+	pet, _, err := ps.loadDecay(ctx, guildID, channelID, now)
+	if err != nil {
+		return
+	}
+	if pet.Alive {
+		pet.Happiness = clampStat(pet.Happiness + 2)
+	}
+	_ = ps.repo.save(ctx, pet)
 }
 
 // RecordChat stamps the channel/talk activity from a /chat interaction so the
