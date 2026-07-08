@@ -98,7 +98,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     const prev = item.reactions;
     updateItem(item.id, { reactions: applyReactionToggle(item.reactions ?? [], emoji) });
     try {
-      const res = await fetch(`/api/rmharks/${item.id}/react`, {
+      const res = await fetch(`/api/rmharks/${actualId}/react`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emoji }),
