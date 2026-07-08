@@ -28,6 +28,13 @@ type Config struct {
 	OwnerID     string // OWNER_ID — gates button/modal interactions
 	DeepSeekKey string // DEEPSEEK_API_KEY
 	DeepSeekMod string // DEEPSEEK_MODEL (default "deepseek-chat")
+
+	// MessageContent requests the privileged Message Content intent (must also be
+	// enabled in the Discord Developer Portal) so Alex can read full channel
+	// context for his mention replies. Off by default; mention/reply content is
+	// still delivered without it, so Alex replies either way — just with less
+	// surrounding context.
+	MessageContent bool // ALEX_MESSAGE_CONTENT
 }
 
 // Bot is the long-running gateway bot.
@@ -138,13 +145,63 @@ func New(cfg Config, chat *ChatService, pet *PetService, logger *log.Logger) (*B
 	if err != nil {
 		return nil, fmt.Errorf("create discord session: %w", err)
 	}
-	session.Identify.Intents = discordgo.IntentsGuilds
+	// Guilds for slash commands + guild bookkeeping; GuildMessages so Alex can hear
+	// when he's @mentioned or replied to. Message content for mentions/replies is
+	// delivered without the privileged MessageContent intent, so it's opt-in.
+	session.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMessages
+	if cfg.MessageContent {
+		session.Identify.Intents |= discordgo.IntentsMessageContent
+	}
 
 	b := &Bot{cfg: cfg, logger: logger, session: session, chat: chat, pet: pet}
 	session.AddHandler(b.onReady)
 	session.AddHandler(b.onInteraction)
 	session.AddHandler(b.onGuildCreate)
+	session.AddHandler(b.onMessageCreate)
 	return b, nil
+}
+
+// onMessageCreate lets Alex reply when he's @mentioned or someone replies to one
+// of his messages. Runs the AI reply off the gateway goroutine under a bounded
+// context. Ignores bots (including himself) to avoid loops.
+func (b *Bot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if b.chat == nil || m.Author == nil || m.Author.Bot || m.GuildID == "" {
+		return
+	}
+	botID := ""
+	if s.State != nil && s.State.User != nil {
+		botID = s.State.User.ID
+	}
+	if botID == "" {
+		return
+	}
+
+	mentioned := false
+	for _, u := range m.Mentions {
+		if u.ID == botID {
+			mentioned = true
+			break
+		}
+	}
+	isReplyToAlex := m.ReferencedMessage != nil && m.ReferencedMessage.Author != nil &&
+		m.ReferencedMessage.Author.ID == botID
+	if !mentioned && !isReplyToAlex {
+		return
+	}
+
+	b.ctxMu.RLock()
+	parent := b.lifecycleCtx
+	b.ctxMu.RUnlock()
+	if parent == nil {
+		parent = context.Background()
+	}
+	go func() {
+		ctx, cancel := context.WithTimeout(parent, 30*time.Second)
+		defer cancel()
+		if err := b.chat.HandleMention(ctx, s, m, botID); err != nil {
+			b.logger.Warn("mention reply failed", "channel", m.ChannelID, "error", err)
+		}
+	}()
 }
 
 // onGuildCreate fires for every guild on startup (as state syncs) and whenever the

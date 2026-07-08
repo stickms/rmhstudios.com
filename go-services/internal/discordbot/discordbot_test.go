@@ -451,6 +451,48 @@ func TestCanToggleAlex(t *testing.T) {
 	}
 }
 
+func TestBoundMessage(t *testing.T) {
+	if got := boundMessage(`  "hey there"  `); got != "hey there" {
+		t.Errorf("boundMessage should trim spaces + surrounding quotes, got %q", got)
+	}
+	long := strings.Repeat("a", 800)
+	got := boundMessage(long)
+	if len([]rune(got)) > 601 { // 600 + ellipsis
+		t.Errorf("boundMessage should cap length, got %d runes", len([]rune(got)))
+	}
+	if !strings.HasSuffix(got, "…") {
+		t.Errorf("over-long message should end with an ellipsis")
+	}
+}
+
+func TestCleanDiscordContent(t *testing.T) {
+	cases := []struct{ in, want string }{
+		{"<@123> hey", "Alex hey"},
+		{"<@!123> yo", "Alex yo"},
+		{"  hello  ", "hello"},
+		{"no mention", "no mention"},
+	}
+	for _, c := range cases {
+		if got := cleanDiscordContent(c.in, "123"); got != c.want {
+			t.Errorf("cleanDiscordContent(%q) = %q, want %q", c.in, got, c.want)
+		}
+	}
+}
+
+func TestTranscriptTurnRoles(t *testing.T) {
+	bot := transcriptTurn(&discordgo.Message{Author: &discordgo.User{ID: "bot"}, Content: "hi im alex"}, "bot")
+	if len(bot) != 1 || bot[0].Role != roleAssistant {
+		t.Errorf("bot's own message should be an assistant turn, got %+v", bot)
+	}
+	user := transcriptTurn(&discordgo.Message{Author: &discordgo.User{ID: "u1", Username: "bob"}, Content: "sup"}, "bot")
+	if len(user) != 1 || user[0].Role != roleUser || !strings.HasPrefix(user[0].Content, "bob: ") {
+		t.Errorf("other user's message should be a name-prefixed user turn, got %+v", user)
+	}
+	if empty := transcriptTurn(&discordgo.Message{Author: &discordgo.User{ID: "u1"}, Content: "   "}, "bot"); empty != nil {
+		t.Errorf("empty-content message should produce no turn, got %+v", empty)
+	}
+}
+
 func TestBuildAlexImagePromptSafe(t *testing.T) {
 	now := time.Unix(1_700_000_000, 0).UTC()
 	p := newPet("g1", now)

@@ -307,6 +307,109 @@ func (s *ChatService) HandleChat(ctx context.Context, sess *discordgo.Session, i
 	return nil
 }
 
+// ─── Mention / reply handling ──────────────────────────────────────────────
+
+// mentionContextSize is how many recent channel messages to pull in for context.
+const mentionContextSize = 8
+
+// HandleMention replies when Alex is @mentioned or replied to, using recent
+// channel context so the reply is coherent. Best-effort and throttled per channel;
+// stays silent if DeepSeek isn't configured.
+func (s *ChatService) HandleMention(ctx context.Context, sess *discordgo.Session, m *discordgo.MessageCreate, botID string) error {
+	if s.deepseek == nil || !s.deepseek.configured() {
+		return nil
+	}
+	// Throttle per channel to avoid spam and any back-and-forth loops.
+	if s.pet != nil && s.pet.onCooldown(m.ChannelID, "mention", 4*time.Second, time.Now().UTC()) {
+		return nil
+	}
+
+	_ = sess.ChannelTyping(m.ChannelID) // "Alex is typing…"
+
+	// Build the model conversation: persona + live state, then the recent channel
+	// transcript (older → newer), ending with the message that pinged him.
+	system := alexSystemPrompt
+	if s.pet != nil {
+		system += s.pet.StatusLineForChat(ctx, m.GuildID)
+	}
+	system += "\n\nYou're in a Discord channel and someone just mentioned or replied to you. " +
+		"Reply naturally and briefly (usually 1–2 sentences) to the most recent message, using the conversation " +
+		"context above. Don't prefix your reply with your name and don't use markdown headers."
+
+	msgs := []ChatMessage{{Role: roleSystem, Content: system}}
+	msgs = append(msgs, mentionTranscript(sess, m, botID)...)
+
+	reqCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	reply, err := s.deepseek.Chat(reqCtx, msgs)
+	if err != nil {
+		return err
+	}
+	if reply = boundMessage(reply); reply == "" {
+		return nil
+	}
+
+	if _, err := sess.ChannelMessageSendReply(m.ChannelID, reply, m.Reference()); err != nil {
+		return err
+	}
+	// Remember the channel (so the care loop talks here too) and cheer Alex up a
+	// touch — but no leaderboard credit, so mentions can't be farmed for points.
+	if s.pet != nil {
+		s.pet.NoteMentioned(reqCtx, m.GuildID, m.ChannelID)
+	}
+	return nil
+}
+
+// mentionTranscript builds the chat-message context for a mention: the recent
+// channel history (best-effort) followed by the triggering message. Alex's own
+// messages become assistant turns; everyone else's become user turns prefixed
+// with their name.
+func mentionTranscript(sess *discordgo.Session, m *discordgo.MessageCreate, botID string) []ChatMessage {
+	var out []ChatMessage
+
+	// Recent messages before this one, oldest → newest.
+	if history, err := sess.ChannelMessages(m.ChannelID, mentionContextSize, m.ID, "", ""); err == nil {
+		for i := len(history) - 1; i >= 0; i-- {
+			out = append(out, transcriptTurn(history[i], botID)...)
+		}
+	}
+	// The message that mentioned Alex.
+	out = append(out, transcriptTurn(m.Message, botID)...)
+
+	if len(out) == 0 {
+		// Nothing readable (e.g. no message content) — still prompt for a reply.
+		out = append(out, ChatMessage{Role: roleUser, Content: "(someone pinged you) say hi!"})
+	}
+	return out
+}
+
+// transcriptTurn converts one Discord message into a chat turn, or nothing when
+// it has no readable content.
+func transcriptTurn(msg *discordgo.Message, botID string) []ChatMessage {
+	if msg == nil {
+		return nil
+	}
+	content := cleanDiscordContent(msg.Content, botID)
+	if content == "" {
+		return nil
+	}
+	if msg.Author != nil && msg.Author.ID == botID {
+		return []ChatMessage{{Role: roleAssistant, Content: content}}
+	}
+	name := "someone"
+	if msg.Author != nil && msg.Author.Username != "" {
+		name = msg.Author.Username
+	}
+	return []ChatMessage{{Role: roleUser, Content: name + ": " + content}}
+}
+
+// cleanDiscordContent turns the bot's mention token into "Alex" and trims.
+func cleanDiscordContent(content, botID string) string {
+	content = strings.ReplaceAll(content, "<@"+botID+">", "Alex")
+	content = strings.ReplaceAll(content, "<@!"+botID+">", "Alex")
+	return strings.TrimSpace(content)
+}
+
 // injectStatus returns a copy of history with an ephemeral system message
 // carrying Alex's live state inserted right after the base persona prompt. The
 // original slice (the persisted history) is left untouched.

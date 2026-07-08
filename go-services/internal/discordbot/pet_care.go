@@ -230,9 +230,10 @@ func (ps *PetService) broadcast(ctx context.Context, s *discordgo.Session, pl pl
 			embed.Image = &discordgo.MessageEmbedImage{URL: "attachment://" + img.Filename}
 		}
 	case kindCareAlert:
-		content = "🧋 **Alex:** " + careAlertLine(pl.need)
+		// AI-generated when available, static template otherwise.
+		content = "🧋 **Alex:** " + firstNonEmpty(ps.proactiveContent(ctx, pl), careAlertLine(pl.need))
 	case kindAmbient:
-		content = "🧋 **Alex:** " + ambientLine(pl.pet.LifeStage, pl.pet.Career)
+		content = "🧋 **Alex:** " + firstNonEmpty(ps.proactiveContent(ctx, pl), ambientLine(pl.pet.LifeStage, pl.pet.Career))
 	default:
 		return
 	}
