@@ -11,12 +11,26 @@ interface EmojiPickerButtonProps {
   /** Which way the popover opens relative to the button. Default 'up' (compose bars sit at the bottom). */
   direction?: 'up' | 'down';
   className?: string;
+  /**
+   * Replaces the default `text-site-text-dim hover:text-site-accent` color classes on the
+   * trigger button. Use this for panels themed with static Tailwind arbitrary-value classes
+   * (e.g. `text-(--rmhtube-text-dim) hover:text-(--rmhtube-accent)`).
+   */
+  buttonClassName?: string;
+  /**
+   * Inline style applied to the trigger button. Use this for panels whose theme is a dynamic
+   * prefix (e.g. `themePrefix` in shared/ChatPanel.tsx), since Tailwind can't compile class
+   * names built from interpolated strings.
+   */
+  buttonStyle?: React.CSSProperties;
 }
 
 export function EmojiPickerButton({
   onSelect,
   direction = 'up',
   className = '',
+  buttonClassName,
+  buttonStyle,
 }: EmojiPickerButtonProps) {
   const { t } = useTranslation('feed');
   const [open, setOpen] = useState(false);
@@ -45,7 +59,8 @@ export function EmojiPickerButton({
         onClick={() => setOpen((v) => !v)}
         aria-label={t('emoji-picker-open', { defaultValue: 'Add emoji' })}
         aria-expanded={open}
-        className="p-1.5 text-site-text-dim hover:text-site-accent transition-colors"
+        className={`p-1.5 transition-colors ${buttonClassName ?? 'text-site-text-dim hover:text-site-accent'}`}
+        style={buttonStyle}
       >
         <Smile className="w-5 h-5" />
       </button>

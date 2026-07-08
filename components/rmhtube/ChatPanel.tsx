@@ -584,7 +584,12 @@ export default function ChatPanel() {
         >
           <ImageIcon className="h-4 w-4" />
         </button>
-        <EmojiPickerButton direction="up" onSelect={insertEmoji} className="shrink-0" />
+        <EmojiPickerButton
+          direction="up"
+          onSelect={insertEmoji}
+          className="shrink-0"
+          buttonClassName="text-(--rmhtube-text-dim) hover:text-(--rmhtube-accent)"
+        />
         <button
           type="submit"
           disabled={!message.trim()}

@@ -351,7 +351,12 @@ export default function ChatPanel({
             color: `var(--${themePrefix}-text)`,
           }}
         />
-        <EmojiPickerButton direction="up" onSelect={insertEmoji} className="shrink-0" />
+        <EmojiPickerButton
+          direction="up"
+          onSelect={insertEmoji}
+          className="shrink-0"
+          buttonStyle={{ color: `var(--${themePrefix}-text-dim)` }}
+        />
         <button
           type="submit"
           disabled={!message.trim()}

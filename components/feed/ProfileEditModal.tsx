@@ -574,7 +574,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
             <Button variant="ghost" size="sm" onClick={onClose}>
               {t("cancel", { defaultValue: "Cancel" })}
             </Button>
-            <Button variant="accent" size="sm" disabled={submitting} onClick={handleSave}>
+            <Button variant="accent" size="sm" disabled={submitting || bioRemaining < 0} onClick={handleSave}>
               {submitting ? t("saving", { defaultValue: "Saving..." }) : t("save", { defaultValue: "Save" })}
             </Button>
           </div>
