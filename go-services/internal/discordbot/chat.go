@@ -15,6 +15,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"strings"
 	"sync"
 	"time"
@@ -324,7 +325,11 @@ func (s *ChatService) HandleMention(ctx context.Context, sess *discordgo.Session
 		return nil
 	}
 
-	_ = sess.ChannelTyping(m.ChannelID) // "Alex is typing…"
+	// Keep the "Alex is typing…" indicator alive until we've sent the reply.
+	// Discord's indicator expires after ~10s, but a DeepSeek reply can take longer,
+	// so a single ChannelTyping would visibly stop before Alex answers.
+	stopTyping := keepTyping(ctx, sess, m.ChannelID)
+	defer stopTyping()
 
 	// Build the model conversation: persona + live state, then the recent channel
 	// transcript (older → newer), ending with the message that pinged him.
@@ -339,25 +344,74 @@ func (s *ChatService) HandleMention(ctx context.Context, sess *discordgo.Session
 	msgs := []ChatMessage{{Role: roleSystem, Content: system}}
 	msgs = append(msgs, mentionTranscript(sess, m, botID)...)
 
-	reqCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	reqCtx, cancel := context.WithTimeout(ctx, 25*time.Second)
 	defer cancel()
-	reply, err := s.deepseek.Chat(reqCtx, msgs)
-	if err != nil {
-		return err
+
+	// Generate Alex's reply. If DeepSeek errors or returns nothing usable, fall
+	// back to a short in-character line so Alex NEVER goes silent after starting
+	// to "type" — a silent no-reply reads as the bot being broken.
+	reply := ""
+	if raw, err := s.deepseek.Chat(reqCtx, msgs); err != nil {
+		s.logger.Warn("mention deepseek failed, using fallback", "channel", m.ChannelID, "error", err)
+	} else {
+		reply = boundMessage(raw)
 	}
-	if reply = boundMessage(reply); reply == "" {
-		return nil
+	if reply == "" {
+		reply = mentionFallbackLine()
 	}
 
+	// Send as a reply to the triggering message. If that fails (e.g. the referenced
+	// message is gone, or the bot lacks Read Message History for the reference),
+	// retry as a plain channel message so Alex still answers.
 	if _, err := sess.ChannelMessageSendReply(m.ChannelID, reply, m.Reference()); err != nil {
-		return err
+		s.logger.Warn("mention reply send failed, retrying as plain message", "channel", m.ChannelID, "error", err)
+		if _, err2 := sess.ChannelMessageSend(m.ChannelID, reply); err2 != nil {
+			return fmt.Errorf("send mention reply: %w", err2)
+		}
 	}
 	// Remember the channel (so the care loop talks here too) and cheer Alex up a
 	// touch — but no leaderboard credit, so mentions can't be farmed for points.
 	if s.pet != nil {
-		s.pet.NoteMentioned(reqCtx, m.GuildID, m.ChannelID)
+		s.pet.NoteMentioned(ctx, m.GuildID, m.ChannelID)
 	}
 	return nil
+}
+
+// keepTyping holds the channel's "typing…" indicator open by re-triggering it
+// every ~8s (Discord's indicator lasts ~10s) until the returned stop func is
+// called or ctx is cancelled. Returns a stop func that's safe to call once.
+func keepTyping(ctx context.Context, sess *discordgo.Session, channelID string) func() {
+	_ = sess.ChannelTyping(channelID)
+	done := make(chan struct{})
+	go func() {
+		ticker := time.NewTicker(8 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				_ = sess.ChannelTyping(channelID)
+			}
+		}
+	}()
+	var once sync.Once
+	return func() { once.Do(func() { close(done) }) }
+}
+
+// mentionFallbackLine is a short, in-character reply used when AI generation is
+// unavailable, so a ping always gets an answer.
+func mentionFallbackLine() string {
+	lines := []string{
+		"yooo what's good 🧋",
+		"sup! lowkey caught me mid-boba run fr",
+		"heyy I'm here, what's up 👀",
+		"bro what's poppin 😤",
+		"ayo you rang? 🤙",
+	}
+	return lines[rand.Intn(len(lines))]
 }
 
 // mentionTranscript builds the chat-message context for a mention: the recent
