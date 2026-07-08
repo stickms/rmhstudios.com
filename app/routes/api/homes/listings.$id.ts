@@ -38,6 +38,7 @@ const listingInputSchema = z.object({
   petsAllowed: z.boolean().default(false),
   availableFrom: z.string().max(40).nullish(),
   images: z.array(z.string().max(1000)).max(12).default([]),
+  aiImages: z.array(z.string().max(1000)).max(12).default([]),
 });
 
 const statusSchema = z.object({

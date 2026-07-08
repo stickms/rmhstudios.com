@@ -6,7 +6,12 @@ import type { StyleSpecification } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { Listing, SearchCenter } from '@/lib/homes/types';
 
-/** Free, key-less OSM raster style (same approach as RMH Rideshare's map). */
+/**
+ * Free, key-less OSM raster style, desaturated to the same minimalistic
+ * black/white look RMH Rideshare's map uses. The desaturation is applied at the
+ * GL layer (`raster-saturation`), NOT as a CSS filter on the container, so the
+ * coloured price markers layered on top stay vivid and pop off the muted map.
+ */
 const OSM_STYLE: StyleSpecification = {
   version: 8,
   sources: {
@@ -17,7 +22,19 @@ const OSM_STYLE: StyleSpecification = {
       attribution: '© OpenStreetMap contributors',
     },
   },
-  layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+  layers: [
+    {
+      id: 'osm',
+      type: 'raster',
+      source: 'osm',
+      paint: {
+        'raster-saturation': -0.9,
+        'raster-contrast': -0.05,
+        'raster-brightness-min': 0.05,
+        'raster-brightness-max': 0.95,
+      },
+    },
+  ],
 };
 
 interface ListingsMapProps {
@@ -118,10 +135,10 @@ export function ListingsMap({
                     e.stopPropagation();
                     onSelect?.(l.id);
                   }}
-                  className={`rounded-full border px-2 py-0.5 text-xs font-semibold shadow transition ${
+                  className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-lg ring-1 transition ${
                     active
-                      ? 'z-10 scale-110 border-site-accent bg-site-accent text-white'
-                      : 'border-site-border bg-site-surface text-site-text hover:border-site-accent'
+                      ? 'z-10 scale-110 bg-site-text text-site-bg ring-2 ring-site-accent'
+                      : 'bg-site-accent text-site-accent-fg ring-black/25 hover:scale-105 hover:ring-2 hover:ring-white/70'
                   }`}
                 >
                   {pinLabel(l)}

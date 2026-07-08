@@ -66,6 +66,7 @@ export function ListingForm({ listing }: ListingFormProps) {
     listing?.availableFrom ? listing.availableFrom.slice(0, 10) : '',
   );
   const [images, setImages] = useState<string[]>(listing?.images ?? []);
+  const [aiImages, setAiImages] = useState<string[]>(listing?.aiImages ?? []);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,6 +113,7 @@ export function ListingForm({ listing }: ListingFormProps) {
       petsAllowed,
       availableFrom: availableFrom ? new Date(availableFrom).toISOString() : null,
       images,
+      aiImages,
     };
 
     setSubmitting(true);
@@ -280,7 +282,15 @@ export function ListingForm({ listing }: ListingFormProps) {
       {/* Photos */}
       <div>
         <span className="mb-1.5 block text-sm font-medium text-site-text">Photos</span>
-        <ImageUploader value={images} onChange={setImages} max={8} />
+        <ImageUploader
+          value={images}
+          aiImages={aiImages}
+          onChange={(imgs, ai) => {
+            setImages(imgs);
+            setAiImages(ai);
+          }}
+          max={8}
+        />
       </div>
 
       {/* Amenities */}

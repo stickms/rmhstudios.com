@@ -290,8 +290,10 @@ import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-so
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
 import { Route as ApiInternalNotifyTypingRouteImport } from './routes/api/internal/notify-typing'
 import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/internal/notify-message'
+import { Route as ApiHomesWatchesRouteImport } from './routes/api/homes/watches'
 import { Route as ApiHomesListingsRouteImport } from './routes/api/homes/listings'
 import { Route as ApiHomesGeocodeRouteImport } from './routes/api/homes/geocode'
+import { Route as ApiHomesAiImageRouteImport } from './routes/api/homes/ai-image'
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
@@ -347,6 +349,7 @@ import { Route as SiteRideshareDriveRouteImport } from './routes/_site/rideshare
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
 import { Route as SitePersonasIdRouteImport } from './routes/_site/personas/$id'
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
+import { Route as SiteHomesWatchesRouteImport } from './routes/_site/homes/watches'
 import { Route as SiteHomesSubmitRouteImport } from './routes/_site/homes/submit'
 import { Route as SiteHomesSavedRouteImport } from './routes/_site/homes/saved'
 import { Route as SiteHomesManageRouteImport } from './routes/_site/homes/manage'
@@ -1954,6 +1957,11 @@ const ApiInternalNotifyMessageRoute =
     path: '/api/internal/notify-message',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiHomesWatchesRoute = ApiHomesWatchesRouteImport.update({
+  id: '/api/homes/watches',
+  path: '/api/homes/watches',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHomesListingsRoute = ApiHomesListingsRouteImport.update({
   id: '/api/homes/listings',
   path: '/api/homes/listings',
@@ -1962,6 +1970,11 @@ const ApiHomesListingsRoute = ApiHomesListingsRouteImport.update({
 const ApiHomesGeocodeRoute = ApiHomesGeocodeRouteImport.update({
   id: '/api/homes/geocode',
   path: '/api/homes/geocode',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHomesAiImageRoute = ApiHomesAiImageRouteImport.update({
+  id: '/api/homes/ai-image',
+  path: '/api/homes/ai-image',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHandleCheckRoute = ApiHandleCheckRouteImport.update({
@@ -2242,6 +2255,11 @@ const SiteMessagesConversationIdRoute =
     path: '/messages/$conversationId',
     getParentRoute: () => SiteRoute,
   } as any)
+const SiteHomesWatchesRoute = SiteHomesWatchesRouteImport.update({
+  id: '/homes/watches',
+  path: '/homes/watches',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteHomesSubmitRoute = SiteHomesSubmitRouteImport.update({
   id: '/homes/submit',
   path: '/homes/submit',
@@ -3395,6 +3413,7 @@ export interface FileRoutesByFullPath {
   '/homes/manage': typeof SiteHomesManageRoute
   '/homes/saved': typeof SiteHomesSavedRoute
   '/homes/submit': typeof SiteHomesSubmitRoute
+  '/homes/watches': typeof SiteHomesWatchesRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
@@ -3450,8 +3469,10 @@ export interface FileRoutesByFullPath {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/homes/ai-image': typeof ApiHomesAiImageRoute
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
+  '/api/homes/watches': typeof ApiHomesWatchesRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
@@ -3897,6 +3918,7 @@ export interface FileRoutesByTo {
   '/homes/manage': typeof SiteHomesManageRoute
   '/homes/saved': typeof SiteHomesSavedRoute
   '/homes/submit': typeof SiteHomesSubmitRoute
+  '/homes/watches': typeof SiteHomesWatchesRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
   '/profile/$id': typeof SiteProfileIdRoute
@@ -3952,8 +3974,10 @@ export interface FileRoutesByTo {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/homes/ai-image': typeof ApiHomesAiImageRoute
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
+  '/api/homes/watches': typeof ApiHomesWatchesRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
@@ -4425,6 +4449,7 @@ export interface FileRoutesById {
   '/_site/homes/manage': typeof SiteHomesManageRoute
   '/_site/homes/saved': typeof SiteHomesSavedRoute
   '/_site/homes/submit': typeof SiteHomesSubmitRoute
+  '/_site/homes/watches': typeof SiteHomesWatchesRoute
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/personas/$id': typeof SitePersonasIdRoute
   '/_site/profile/$id': typeof SiteProfileIdRoute
@@ -4480,8 +4505,10 @@ export interface FileRoutesById {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/homes/ai-image': typeof ApiHomesAiImageRoute
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
+  '/api/homes/watches': typeof ApiHomesWatchesRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
@@ -4953,6 +4980,7 @@ export interface FileRouteTypes {
     | '/homes/manage'
     | '/homes/saved'
     | '/homes/submit'
+    | '/homes/watches'
     | '/messages/$conversationId'
     | '/personas/$id'
     | '/profile/$id'
@@ -5008,8 +5036,10 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/gif/search'
     | '/api/handle/check'
+    | '/api/homes/ai-image'
     | '/api/homes/geocode'
     | '/api/homes/listings'
+    | '/api/homes/watches'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
@@ -5455,6 +5485,7 @@ export interface FileRouteTypes {
     | '/homes/manage'
     | '/homes/saved'
     | '/homes/submit'
+    | '/homes/watches'
     | '/messages/$conversationId'
     | '/personas/$id'
     | '/profile/$id'
@@ -5510,8 +5541,10 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/gif/search'
     | '/api/handle/check'
+    | '/api/homes/ai-image'
     | '/api/homes/geocode'
     | '/api/homes/listings'
+    | '/api/homes/watches'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
@@ -5982,6 +6015,7 @@ export interface FileRouteTypes {
     | '/_site/homes/manage'
     | '/_site/homes/saved'
     | '/_site/homes/submit'
+    | '/_site/homes/watches'
     | '/_site/messages/$conversationId'
     | '/_site/personas/$id'
     | '/_site/profile/$id'
@@ -6037,8 +6071,10 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/gif/search'
     | '/api/handle/check'
+    | '/api/homes/ai-image'
     | '/api/homes/geocode'
     | '/api/homes/listings'
+    | '/api/homes/watches'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
@@ -6462,8 +6498,10 @@ export interface RootRouteChildren {
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
+  ApiHomesAiImageRoute: typeof ApiHomesAiImageRoute
   ApiHomesGeocodeRoute: typeof ApiHomesGeocodeRoute
   ApiHomesListingsRoute: typeof ApiHomesListingsRouteWithChildren
+  ApiHomesWatchesRoute: typeof ApiHomesWatchesRoute
   ApiInternalNotifyMessageRoute: typeof ApiInternalNotifyMessageRoute
   ApiInternalNotifyTypingRoute: typeof ApiInternalNotifyTypingRoute
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
@@ -8611,6 +8649,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalNotifyMessageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/homes/watches': {
+      id: '/api/homes/watches'
+      path: '/api/homes/watches'
+      fullPath: '/api/homes/watches'
+      preLoaderRoute: typeof ApiHomesWatchesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/homes/listings': {
       id: '/api/homes/listings'
       path: '/api/homes/listings'
@@ -8623,6 +8668,13 @@ declare module '@tanstack/react-router' {
       path: '/api/homes/geocode'
       fullPath: '/api/homes/geocode'
       preLoaderRoute: typeof ApiHomesGeocodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/homes/ai-image': {
+      id: '/api/homes/ai-image'
+      path: '/api/homes/ai-image'
+      fullPath: '/api/homes/ai-image'
+      preLoaderRoute: typeof ApiHomesAiImageRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/handle/check': {
@@ -9008,6 +9060,13 @@ declare module '@tanstack/react-router' {
       path: '/messages/$conversationId'
       fullPath: '/messages/$conversationId'
       preLoaderRoute: typeof SiteMessagesConversationIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/homes/watches': {
+      id: '/_site/homes/watches'
+      path: '/homes/watches'
+      fullPath: '/homes/watches'
+      preLoaderRoute: typeof SiteHomesWatchesRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/homes/submit': {
@@ -10421,6 +10480,7 @@ interface SiteRouteChildren {
   SiteHomesManageRoute: typeof SiteHomesManageRoute
   SiteHomesSavedRoute: typeof SiteHomesSavedRoute
   SiteHomesSubmitRoute: typeof SiteHomesSubmitRoute
+  SiteHomesWatchesRoute: typeof SiteHomesWatchesRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SitePersonasIdRoute: typeof SitePersonasIdRoute
   SiteProfileIdRoute: typeof SiteProfileIdRoute
@@ -10479,6 +10539,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteHomesManageRoute: SiteHomesManageRoute,
   SiteHomesSavedRoute: SiteHomesSavedRoute,
   SiteHomesSubmitRoute: SiteHomesSubmitRoute,
+  SiteHomesWatchesRoute: SiteHomesWatchesRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SitePersonasIdRoute: SitePersonasIdRoute,
   SiteProfileIdRoute: SiteProfileIdRoute,
@@ -11554,8 +11615,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
+  ApiHomesAiImageRoute: ApiHomesAiImageRoute,
   ApiHomesGeocodeRoute: ApiHomesGeocodeRoute,
   ApiHomesListingsRoute: ApiHomesListingsRouteWithChildren,
+  ApiHomesWatchesRoute: ApiHomesWatchesRoute,
   ApiInternalNotifyMessageRoute: ApiInternalNotifyMessageRoute,
   ApiInternalNotifyTypingRoute: ApiInternalNotifyTypingRoute,
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,

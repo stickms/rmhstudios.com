@@ -60,6 +60,8 @@ export interface Listing {
   availableFrom: string | null;
 
   images: string[];
+  /** Subset of `images` that were AI-generated (show the disclaimer on these). */
+  aiImages: string[];
   viewsCount: number;
 
   createdAt: string;
@@ -144,4 +146,42 @@ export interface ListingInput {
   petsAllowed: boolean;
   availableFrom?: string | null;
   images: string[];
+  /** URLs in `images` that were AI-generated. */
+  aiImages: string[];
+}
+
+/** A saved-search watch as returned to the client. */
+export interface Watch {
+  id: string;
+  label: string;
+  listingType: ListingType | null;
+  propertyTypes: PropertyType[];
+  locationLabel: string | null;
+  lat: number | null;
+  lng: number | null;
+  radiusKm: number | null;
+  /** Whole USD dollars (DB stores cents). */
+  minPrice: number | null;
+  maxPrice: number | null;
+  minBeds: number | null;
+  minBaths: number | null;
+  petsRequired: boolean;
+  active: boolean;
+  createdAt: string;
+}
+
+/** Payload to create a watch (usually derived from the current browse filters). */
+export interface WatchInput {
+  label: string;
+  listingType?: ListingType | null;
+  propertyTypes: PropertyType[];
+  locationLabel?: string | null;
+  lat?: number | null;
+  lng?: number | null;
+  radiusKm?: number | null;
+  minPrice?: number | null;
+  maxPrice?: number | null;
+  minBeds?: number | null;
+  minBaths?: number | null;
+  petsRequired: boolean;
 }

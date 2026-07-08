@@ -3,7 +3,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Loader2, Plus } from 'lucide-react';
+import { Bell, Loader2, Plus } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -66,12 +66,20 @@ function HomesManagePage() {
       backLabel="Back to browse"
       wide
       headerRight={
-        <Link to="/homes/submit">
-          <Button size="sm">
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">New listing</span>
-          </Button>
-        </Link>
+        <div className="flex items-center gap-1.5">
+          <Link to="/homes/watches">
+            <Button variant="ghost" size="sm">
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">Alerts</span>
+            </Button>
+          </Link>
+          <Link to="/homes/submit">
+            <Button size="sm">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">New listing</span>
+            </Button>
+          </Link>
+        </div>
       }
     >
       <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-4 md:px-6">

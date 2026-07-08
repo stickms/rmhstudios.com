@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import {
+  Bell,
   Bookmark,
   ChevronLeft,
   ChevronRight,
@@ -26,6 +27,7 @@ import { LocationSearch, type HomesPlace } from '@/components/homes/LocationSear
 import { FiltersBar } from '@/components/homes/FiltersBar';
 import { ListingGrid } from '@/components/homes/ListingGrid';
 import { ListingsMap } from '@/components/homes/ListingsMap';
+import { WatchButton } from '@/components/homes/WatchButton';
 import {
   DEFAULT_FILTERS,
   type Listing,
@@ -179,6 +181,12 @@ function HomesBrowsePage() {
       wide
       headerRight={
         <div className="flex items-center gap-1.5">
+          <Link to="/homes/watches">
+            <Button variant="ghost" size="sm">
+              <Bell className="h-4 w-4" />
+              <span className="hidden sm:inline">Alerts</span>
+            </Button>
+          </Link>
           <Link to="/homes/saved">
             <Button variant="ghost" size="sm">
               <Bookmark className="h-4 w-4" />
@@ -245,6 +253,7 @@ function HomesBrowsePage() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <WatchButton filters={filters} center={center} />
             <Button
               variant="outline"
               size="sm"
