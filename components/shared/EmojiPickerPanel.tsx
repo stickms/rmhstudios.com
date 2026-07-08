@@ -6,6 +6,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import EmojiPicker, { EmojiClickData, Theme, EmojiStyle } from 'emoji-picker-react';
 
 interface EmojiPickerPanelProps {
@@ -19,6 +20,7 @@ export default function EmojiPickerPanel({
   width = 300,
   height = 360,
 }: EmojiPickerPanelProps) {
+  const { t } = useTranslation('feed');
   const handleEmojiClick = useCallback(
     (emojiData: EmojiClickData) => onSelect(emojiData.emoji),
     [onSelect],
@@ -31,7 +33,7 @@ export default function EmojiPickerPanel({
       emojiStyle={EmojiStyle.TWITTER}
       width={width}
       height={height}
-      searchPlaceholder="Search emojis…"
+      searchPlaceholder={t('emoji-picker-search-placeholder', { defaultValue: 'Search emojis…' })}
       previewConfig={{ showPreview: false }}
       skinTonesDisabled={false}
       lazyLoadEmojis={true}
