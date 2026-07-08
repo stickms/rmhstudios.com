@@ -379,6 +379,7 @@ export function ConversationView({
     };
     setMessages((prev) => [...prev, optimisticMsg]);
     setInput('');
+    shortcodes.dismiss();
     setGifUrl(null);
     setImageUrls([]);
     clearSuggestion();

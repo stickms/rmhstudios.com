@@ -230,10 +230,11 @@ export default function ChatPanel() {
 
       emit(C2S.ROOM_CHAT, payload);
       setMessage('');
+      shortcodes.dismiss();
       setReplyTo(null);
       setShowMentionDropdown(false);
     },
-    [message, room, replyTo],
+    [message, room, replyTo, shortcodes],
   );
 
   // ─── Reaction handler ──────────────────────────────────────────

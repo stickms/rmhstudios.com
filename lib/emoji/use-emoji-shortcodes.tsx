@@ -57,6 +57,12 @@ export function useEmojiShortcodes({ ref, value, onChange }: UseEmojiShortcodesO
     [ref, onChange, dismiss],
   );
 
+  // Warm the shortcode dataset on mount so instant `:name:` conversion works
+  // from the first keystroke, even for fast typists or pastes.
+  useEffect(() => {
+    void loadShortcodes();
+  }, []);
+
   useEffect(() => {
     if (!trigger) return;
     let cancelled = false;

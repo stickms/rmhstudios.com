@@ -119,8 +119,9 @@ export default function ChatPanel({
       if (!content) return;
       onSendMessage(content);
       setMessage('');
+      shortcodes.dismiss();
     },
-    [message, onSendMessage],
+    [message, onSendMessage, shortcodes],
   );
 
   // ─── Reaction handler ────────────────────────────────────────
