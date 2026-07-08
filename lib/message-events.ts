@@ -6,6 +6,7 @@
  */
 
 import { createBus, type RealtimeBus } from '@/lib/realtime-bus.server';
+import type { ReactionRow } from '@/lib/social/reactions';
 
 export type MessagePayload = {
   id: string;
@@ -29,7 +30,13 @@ export type TypingPayload = {
 export type MessageNotification =
   | { type: "unread" }
   | { type: "new-message"; message: MessagePayload }
-  | { type: "typing"; typing: TypingPayload };
+  | { type: "typing"; typing: TypingPayload }
+  | {
+      type: "message-reaction";
+      conversationId: string;
+      messageId: string;
+      reactions: ReactionRow[];
+    };
 
 type Listener = (event: MessageNotification) => void;
 

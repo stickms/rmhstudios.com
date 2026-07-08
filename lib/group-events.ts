@@ -27,13 +27,24 @@ export interface GroupMessagePayload {
   poll?: GroupPollPayload | null;
 }
 
-type Listener = (message: GroupMessagePayload) => void;
+/** A non-message event on the group channel (e.g. a reaction toggle). Kept
+ *  distinct from `GroupMessagePayload` (which has no `type` field) via the
+ *  `type` discriminant so subscribers can tell the two apart. */
+export interface GroupReactionEventPayload {
+  type: 'reaction';
+  messageId: string;
+  reactions: { emoji: string; userId: string }[];
+}
+
+export type GroupEventPayload = GroupMessagePayload | GroupReactionEventPayload;
+
+type Listener = (event: GroupEventPayload) => void;
 
 const globalKey = '__group_chat_bus__' as const;
-function bus(): RealtimeBus<GroupMessagePayload> {
+function bus(): RealtimeBus<GroupEventPayload> {
   const g = globalThis as Record<string, unknown>;
-  if (!g[globalKey]) g[globalKey] = createBus<GroupMessagePayload>('group');
-  return g[globalKey] as RealtimeBus<GroupMessagePayload>;
+  if (!g[globalKey]) g[globalKey] = createBus<GroupEventPayload>('group');
+  return g[globalKey] as RealtimeBus<GroupEventPayload>;
 }
 
 export function subscribeGroup(groupId: string, listener: Listener): () => void {
@@ -42,4 +53,10 @@ export function subscribeGroup(groupId: string, listener: Listener): () => void 
 
 export function publishGroupMessage(groupId: string, message: GroupMessagePayload): void {
   bus().publish(groupId, message);
+}
+
+/** Publish a non-message event (e.g. a reaction toggle) on the group channel,
+ *  reusing the same bus/channel plumbing as `publishGroupMessage`. */
+export function publishGroupEvent(groupId: string, payload: GroupReactionEventPayload): void {
+  bus().publish(groupId, payload);
 }

@@ -418,6 +418,7 @@ import { Route as ApiRmharksIdTranslateRouteImport } from './routes/api/rmharks/
 import { Route as ApiRmharksIdSummaryRouteImport } from './routes/api/rmharks/$id/summary'
 import { Route as ApiRmharksIdSimilarRouteImport } from './routes/api/rmharks/$id/similar'
 import { Route as ApiRmharksIdRepostRouteImport } from './routes/api/rmharks/$id/repost'
+import { Route as ApiRmharksIdReactRouteImport } from './routes/api/rmharks/$id/react'
 import { Route as ApiRmharksIdPinRouteImport } from './routes/api/rmharks/$id/pin'
 import { Route as ApiRmharksIdLikeRouteImport } from './routes/api/rmharks/$id/like'
 import { Route as ApiRmharksIdInsightsRouteImport } from './routes/api/rmharks/$id/insights'
@@ -440,11 +441,13 @@ import { Route as ApiPersonasIdChatRouteImport } from './routes/api/personas/$id
 import { Route as ApiOgPostIdRouteImport } from './routes/api/og/post/$id'
 import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/api/messages/$conversationId/typing'
 import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/messages/$conversationId/read'
+import { Route as ApiMessagesConversationIdReactRouteImport } from './routes/api/messages/$conversationId/react'
 import { Route as ApiLibraryFileIdRouteImport } from './routes/api/library/file/$id'
 import { Route as ApiLibraryCoverIdRouteImport } from './routes/api/library/cover/$id'
 import { Route as ApiLibraryCollectionIdRouteImport } from './routes/api/library/collection/$id'
 import { Route as ApiHomesListingsIdRouteImport } from './routes/api/homes/listings.$id'
 import { Route as ApiGroupChatsIdStreamRouteImport } from './routes/api/group-chats/$id/stream'
+import { Route as ApiGroupChatsIdReactRouteImport } from './routes/api/group-chats/$id/react'
 import { Route as ApiGroupChatsIdMessagesRouteImport } from './routes/api/group-chats/$id/messages'
 import { Route as ApiGroupChatsIdLeaveRouteImport } from './routes/api/group-chats/$id/leave'
 import { Route as ApiGamesSynapseStormScoreRouteImport } from './routes/api/games/synapse-storm/score'
@@ -470,6 +473,7 @@ import { Route as ApiCommunitiesSlugMembersRouteImport } from './routes/api/comm
 import { Route as ApiCommunitiesSlugJoinRouteImport } from './routes/api/communities/$slug/join'
 import { Route as ApiCommunitiesSlugFeedRouteImport } from './routes/api/communities/$slug/feed'
 import { Route as ApiCommunitiesSlugAnnouncementsRouteImport } from './routes/api/communities/$slug/announcements'
+import { Route as ApiCommentsIdReactRouteImport } from './routes/api/comments/$id/react'
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
@@ -2608,6 +2612,11 @@ const ApiRmharksIdRepostRoute = ApiRmharksIdRepostRouteImport.update({
   path: '/repost',
   getParentRoute: () => ApiRmharksIdRoute,
 } as any)
+const ApiRmharksIdReactRoute = ApiRmharksIdReactRouteImport.update({
+  id: '/react',
+  path: '/react',
+  getParentRoute: () => ApiRmharksIdRoute,
+} as any)
 const ApiRmharksIdPinRoute = ApiRmharksIdPinRouteImport.update({
   id: '/pin',
   path: '/pin',
@@ -2723,6 +2732,12 @@ const ApiMessagesConversationIdReadRoute =
     path: '/read',
     getParentRoute: () => ApiMessagesConversationIdRoute,
   } as any)
+const ApiMessagesConversationIdReactRoute =
+  ApiMessagesConversationIdReactRouteImport.update({
+    id: '/react',
+    path: '/react',
+    getParentRoute: () => ApiMessagesConversationIdRoute,
+  } as any)
 const ApiLibraryFileIdRoute = ApiLibraryFileIdRouteImport.update({
   id: '/api/library/file/$id',
   path: '/api/library/file/$id',
@@ -2746,6 +2761,11 @@ const ApiHomesListingsIdRoute = ApiHomesListingsIdRouteImport.update({
 const ApiGroupChatsIdStreamRoute = ApiGroupChatsIdStreamRouteImport.update({
   id: '/api/group-chats/$id/stream',
   path: '/api/group-chats/$id/stream',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupChatsIdReactRoute = ApiGroupChatsIdReactRouteImport.update({
+  id: '/api/group-chats/$id/react',
+  path: '/api/group-chats/$id/react',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGroupChatsIdMessagesRoute = ApiGroupChatsIdMessagesRouteImport.update({
@@ -2888,6 +2908,11 @@ const ApiCommunitiesSlugAnnouncementsRoute =
     path: '/api/communities/$slug/announcements',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiCommentsIdReactRoute = ApiCommentsIdReactRouteImport.update({
+  id: '/api/comments/$id/react',
+  path: '/api/comments/$id/react',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCommentsCommentIdTranslateRoute =
   ApiCommentsCommentIdTranslateRouteImport.update({
     id: '/api/comments/$commentId/translate',
@@ -3633,6 +3658,7 @@ export interface FileRoutesByFullPath {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
+  '/api/comments/$id/react': typeof ApiCommentsIdReactRoute
   '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -3658,11 +3684,13 @@ export interface FileRoutesByFullPath {
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
+  '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
+  '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
@@ -3685,6 +3713,7 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
+  '/api/rmharks/$id/react': typeof ApiRmharksIdReactRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/similar': typeof ApiRmharksIdSimilarRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
@@ -4138,6 +4167,7 @@ export interface FileRoutesByTo {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
+  '/api/comments/$id/react': typeof ApiCommentsIdReactRoute
   '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -4163,11 +4193,13 @@ export interface FileRoutesByTo {
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
+  '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
+  '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
@@ -4190,6 +4222,7 @@ export interface FileRoutesByTo {
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
+  '/api/rmharks/$id/react': typeof ApiRmharksIdReactRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/similar': typeof ApiRmharksIdSimilarRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
@@ -4669,6 +4702,7 @@ export interface FileRoutesById {
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
+  '/api/comments/$id/react': typeof ApiCommentsIdReactRoute
   '/api/communities/$slug/announcements': typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   '/api/communities/$slug/feed': typeof ApiCommunitiesSlugFeedRoute
   '/api/communities/$slug/join': typeof ApiCommunitiesSlugJoinRoute
@@ -4694,11 +4728,13 @@ export interface FileRoutesById {
   '/api/games/synapse-storm/score': typeof ApiGamesSynapseStormScoreRoute
   '/api/group-chats/$id/leave': typeof ApiGroupChatsIdLeaveRoute
   '/api/group-chats/$id/messages': typeof ApiGroupChatsIdMessagesRouteWithChildren
+  '/api/group-chats/$id/react': typeof ApiGroupChatsIdReactRoute
   '/api/group-chats/$id/stream': typeof ApiGroupChatsIdStreamRoute
   '/api/homes/listings/$id': typeof ApiHomesListingsIdRouteWithChildren
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
+  '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
@@ -4721,6 +4757,7 @@ export interface FileRoutesById {
   '/api/rmharks/$id/insights': typeof ApiRmharksIdInsightsRoute
   '/api/rmharks/$id/like': typeof ApiRmharksIdLikeRoute
   '/api/rmharks/$id/pin': typeof ApiRmharksIdPinRoute
+  '/api/rmharks/$id/react': typeof ApiRmharksIdReactRoute
   '/api/rmharks/$id/repost': typeof ApiRmharksIdRepostRoute
   '/api/rmharks/$id/similar': typeof ApiRmharksIdSimilarRoute
   '/api/rmharks/$id/summary': typeof ApiRmharksIdSummaryRoute
@@ -5200,6 +5237,7 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
+    | '/api/comments/$id/react'
     | '/api/communities/$slug/announcements'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -5225,11 +5263,13 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/score'
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
+    | '/api/group-chats/$id/react'
     | '/api/group-chats/$id/stream'
     | '/api/homes/listings/$id'
     | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
+    | '/api/messages/$conversationId/react'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
@@ -5252,6 +5292,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/insights'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/pin'
+    | '/api/rmharks/$id/react'
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/similar'
     | '/api/rmharks/$id/summary'
@@ -5705,6 +5746,7 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
+    | '/api/comments/$id/react'
     | '/api/communities/$slug/announcements'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -5730,11 +5772,13 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/score'
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
+    | '/api/group-chats/$id/react'
     | '/api/group-chats/$id/stream'
     | '/api/homes/listings/$id'
     | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
+    | '/api/messages/$conversationId/react'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
@@ -5757,6 +5801,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/insights'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/pin'
+    | '/api/rmharks/$id/react'
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/similar'
     | '/api/rmharks/$id/summary'
@@ -6235,6 +6280,7 @@ export interface FileRouteTypes {
     | '/api/announcements/$id/vote'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/translate'
+    | '/api/comments/$id/react'
     | '/api/communities/$slug/announcements'
     | '/api/communities/$slug/feed'
     | '/api/communities/$slug/join'
@@ -6260,11 +6306,13 @@ export interface FileRouteTypes {
     | '/api/games/synapse-storm/score'
     | '/api/group-chats/$id/leave'
     | '/api/group-chats/$id/messages'
+    | '/api/group-chats/$id/react'
     | '/api/group-chats/$id/stream'
     | '/api/homes/listings/$id'
     | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
+    | '/api/messages/$conversationId/react'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
@@ -6287,6 +6335,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/insights'
     | '/api/rmharks/$id/like'
     | '/api/rmharks/$id/pin'
+    | '/api/rmharks/$id/react'
     | '/api/rmharks/$id/repost'
     | '/api/rmharks/$id/similar'
     | '/api/rmharks/$id/summary'
@@ -6610,6 +6659,7 @@ export interface RootRouteChildren {
   ApiAlbumsAssetSplatRoute: typeof ApiAlbumsAssetSplatRoute
   ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
+  ApiCommentsIdReactRoute: typeof ApiCommentsIdReactRoute
   ApiCommunitiesSlugAnnouncementsRoute: typeof ApiCommunitiesSlugAnnouncementsRouteWithChildren
   ApiCommunitiesSlugFeedRoute: typeof ApiCommunitiesSlugFeedRoute
   ApiCommunitiesSlugJoinRoute: typeof ApiCommunitiesSlugJoinRoute
@@ -6635,6 +6685,7 @@ export interface RootRouteChildren {
   ApiGamesSynapseStormScoreRoute: typeof ApiGamesSynapseStormScoreRoute
   ApiGroupChatsIdLeaveRoute: typeof ApiGroupChatsIdLeaveRoute
   ApiGroupChatsIdMessagesRoute: typeof ApiGroupChatsIdMessagesRouteWithChildren
+  ApiGroupChatsIdReactRoute: typeof ApiGroupChatsIdReactRoute
   ApiGroupChatsIdStreamRoute: typeof ApiGroupChatsIdStreamRoute
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
@@ -9545,6 +9596,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmharksIdRepostRouteImport
       parentRoute: typeof ApiRmharksIdRoute
     }
+    '/api/rmharks/$id/react': {
+      id: '/api/rmharks/$id/react'
+      path: '/react'
+      fullPath: '/api/rmharks/$id/react'
+      preLoaderRoute: typeof ApiRmharksIdReactRouteImport
+      parentRoute: typeof ApiRmharksIdRoute
+    }
     '/api/rmharks/$id/pin': {
       id: '/api/rmharks/$id/pin'
       path: '/pin'
@@ -9699,6 +9757,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMessagesConversationIdReadRouteImport
       parentRoute: typeof ApiMessagesConversationIdRoute
     }
+    '/api/messages/$conversationId/react': {
+      id: '/api/messages/$conversationId/react'
+      path: '/react'
+      fullPath: '/api/messages/$conversationId/react'
+      preLoaderRoute: typeof ApiMessagesConversationIdReactRouteImport
+      parentRoute: typeof ApiMessagesConversationIdRoute
+    }
     '/api/library/file/$id': {
       id: '/api/library/file/$id'
       path: '/api/library/file/$id'
@@ -9732,6 +9797,13 @@ declare module '@tanstack/react-router' {
       path: '/api/group-chats/$id/stream'
       fullPath: '/api/group-chats/$id/stream'
       preLoaderRoute: typeof ApiGroupChatsIdStreamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/group-chats/$id/react': {
+      id: '/api/group-chats/$id/react'
+      path: '/api/group-chats/$id/react'
+      fullPath: '/api/group-chats/$id/react'
+      preLoaderRoute: typeof ApiGroupChatsIdReactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/group-chats/$id/messages': {
@@ -9907,6 +9979,13 @@ declare module '@tanstack/react-router' {
       path: '/api/communities/$slug/announcements'
       fullPath: '/api/communities/$slug/announcements'
       preLoaderRoute: typeof ApiCommunitiesSlugAnnouncementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/comments/$id/react': {
+      id: '/api/comments/$id/react'
+      path: '/api/comments/$id/react'
+      fullPath: '/api/comments/$id/react'
+      preLoaderRoute: typeof ApiCommentsIdReactRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/comments/$commentId/translate': {
@@ -10927,12 +11006,14 @@ const ApiAnnouncementsRouteWithChildren =
   ApiAnnouncementsRoute._addFileChildren(ApiAnnouncementsRouteChildren)
 
 interface ApiMessagesConversationIdRouteChildren {
+  ApiMessagesConversationIdReactRoute: typeof ApiMessagesConversationIdReactRoute
   ApiMessagesConversationIdReadRoute: typeof ApiMessagesConversationIdReadRoute
   ApiMessagesConversationIdTypingRoute: typeof ApiMessagesConversationIdTypingRoute
 }
 
 const ApiMessagesConversationIdRouteChildren: ApiMessagesConversationIdRouteChildren =
   {
+    ApiMessagesConversationIdReactRoute: ApiMessagesConversationIdReactRoute,
     ApiMessagesConversationIdReadRoute: ApiMessagesConversationIdReadRoute,
     ApiMessagesConversationIdTypingRoute: ApiMessagesConversationIdTypingRoute,
   }
@@ -11050,6 +11131,7 @@ interface ApiRmharksIdRouteChildren {
   ApiRmharksIdInsightsRoute: typeof ApiRmharksIdInsightsRoute
   ApiRmharksIdLikeRoute: typeof ApiRmharksIdLikeRoute
   ApiRmharksIdPinRoute: typeof ApiRmharksIdPinRoute
+  ApiRmharksIdReactRoute: typeof ApiRmharksIdReactRoute
   ApiRmharksIdRepostRoute: typeof ApiRmharksIdRepostRoute
   ApiRmharksIdSimilarRoute: typeof ApiRmharksIdSimilarRoute
   ApiRmharksIdSummaryRoute: typeof ApiRmharksIdSummaryRoute
@@ -11065,6 +11147,7 @@ const ApiRmharksIdRouteChildren: ApiRmharksIdRouteChildren = {
   ApiRmharksIdInsightsRoute: ApiRmharksIdInsightsRoute,
   ApiRmharksIdLikeRoute: ApiRmharksIdLikeRoute,
   ApiRmharksIdPinRoute: ApiRmharksIdPinRoute,
+  ApiRmharksIdReactRoute: ApiRmharksIdReactRoute,
   ApiRmharksIdRepostRoute: ApiRmharksIdRepostRoute,
   ApiRmharksIdSimilarRoute: ApiRmharksIdSimilarRoute,
   ApiRmharksIdSummaryRoute: ApiRmharksIdSummaryRoute,
@@ -11727,6 +11810,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAlbumsAssetSplatRoute: ApiAlbumsAssetSplatRoute,
   ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
+  ApiCommentsIdReactRoute: ApiCommentsIdReactRoute,
   ApiCommunitiesSlugAnnouncementsRoute:
     ApiCommunitiesSlugAnnouncementsRouteWithChildren,
   ApiCommunitiesSlugFeedRoute: ApiCommunitiesSlugFeedRoute,
@@ -11753,6 +11837,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGamesSynapseStormScoreRoute: ApiGamesSynapseStormScoreRoute,
   ApiGroupChatsIdLeaveRoute: ApiGroupChatsIdLeaveRoute,
   ApiGroupChatsIdMessagesRoute: ApiGroupChatsIdMessagesRouteWithChildren,
+  ApiGroupChatsIdReactRoute: ApiGroupChatsIdReactRoute,
   ApiGroupChatsIdStreamRoute: ApiGroupChatsIdStreamRoute,
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
