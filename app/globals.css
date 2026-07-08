@@ -2103,6 +2103,32 @@ body {
   color: #ffffff;
 }
 
+/* ==================== BROWSER AUTOFILL ====================
+ * Chrome/Safari render autofilled inputs with their own near-white background
+ * and dark text, which is unreadable on the dark themes and shows through as a
+ * washed-out / "transparent" box. Force an OPAQUE, theme-coloured background
+ * (via the inset box-shadow trick — the only reliable way to override the UA
+ * autofill background) and theme-coloured text/caret across every themed input,
+ * textarea and select. The long transition keeps the autofill background from
+ * flashing back to the UA colour. Applies site-wide (RMHHomes, Rideshare, every
+ * form). */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--site-text);
+  caret-color: var(--site-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--site-surface) inset;
+  box-shadow: 0 0 0 1000px var(--site-surface) inset;
+  transition: background-color 100000s ease-in-out 0s;
+}
+
 /* ==================== INTERACTION & ACCESSIBILITY ====================
  * Site-wide, additive interaction polish: a visible, theme-aware keyboard
  * focus ring; removal of the mobile tap-flash in favour of our own press
