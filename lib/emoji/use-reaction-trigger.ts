@@ -4,10 +4,36 @@ import type React from 'react';
 const LONG_PRESS_MS = 500;
 const DEBOUNCE_MS = 300;
 
+// Elements where the user is composing/selecting text; the trigger must not
+// hijack right-click or long-press inside these (native menu / text
+// selection should win instead).
+const EDITABLE_SELECTOR = 'textarea, input, [contenteditable="true"], [contenteditable=""]';
+
+function isEditableTarget(target: EventTarget | null): boolean {
+  return !!(target as HTMLElement | null)?.closest?.(EDITABLE_SELECTOR);
+}
+
 /**
  * Shared timer/debounce core behind both hooks below. Android fires
  * contextmenu on long-press natively; the touch timer covers iOS Safari.
  * A short debounce prevents double-opens when both fire.
+ *
+ * Every handler here stops propagation once it decides to act. Nested
+ * CommentItems each mount their own instance of this hook on their own
+ * trigger element, and threaded replies render *inside* their ancestor's
+ * trigger div — so without stopPropagation, a single contextmenu/touch
+ * sequence on a reply bubbles up and fires every ancestor's handler too,
+ * opening several ReactionMenus at once (the last-painted ancestor menu
+ * wins and the reaction gets attached to the wrong comment). Stopping
+ * propagation in onContextMenu and onTouchStart contains each gesture to
+ * the innermost trigger that owns it. onTouchMove/onTouchEnd only ever
+ * clear() (never open), but they're stopped too for the same reason: a
+ * long-press that starts on a nested reply still delivers its touchmove/
+ * touchend to that reply's own element first, and without stopPropagation
+ * those events continue bubbling and could clear an unrelated pending
+ * timer on an ancestor trigger — cheap to prevent, so we do it for
+ * defense-in-depth even though a single-touch gesture rarely overlaps two
+ * independent timers in practice.
  */
 function useSharedReactionTrigger(onOpen: (x: number, y: number) => void) {
   const timer = useRef<number | null>(null);
@@ -28,20 +54,39 @@ function useSharedReactionTrigger(onOpen: (x: number, y: number) => void) {
   };
 
   const onContextMenu = (e: React.MouseEvent) => {
+    // Bail before touching preventDefault/stopPropagation/state so the
+    // browser's native context menu (paste, spellcheck, etc.) still works
+    // while composing in a textarea/input/contenteditable nested here.
+    if (isEditableTarget(e.target)) return;
     e.preventDefault();
+    e.stopPropagation();
     clear();
     open(e.clientX, e.clientY);
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
+    // Same bail: let a long-press on an editable element fall through to
+    // native text selection instead of opening the reaction menu.
+    if (isEditableTarget(e.target)) return;
     const touch = e.touches[0];
     if (!touch) return;
+    e.stopPropagation();
     clear();
     const { clientX, clientY } = touch;
     timer.current = window.setTimeout(() => open(clientX, clientY), LONG_PRESS_MS);
   };
 
-  return { onContextMenu, onTouchStart, onTouchMove: clear, onTouchEnd: clear };
+  const onTouchMove = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    clear();
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    e.stopPropagation();
+    clear();
+  };
+
+  return { onContextMenu, onTouchStart, onTouchMove, onTouchEnd };
 }
 
 /**
