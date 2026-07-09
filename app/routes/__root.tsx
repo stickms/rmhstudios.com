@@ -15,6 +15,7 @@ import { Providers } from "@/components/Providers";
 import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
 import { NavigationProgress } from "@/components/ui/NavigationProgress";
 import { BackNavAnimation } from "@/components/ui/BackNavAnimation";
+import { useScrollRestoration } from "@/hooks/useScrollRestoration";
 import { RouteErrorFallback } from "@/components/errors/RouteErrorFallback";
 import { NotFound } from "@/components/errors/NotFound";
 import { installGlobalErrorHandlers } from "@/lib/client-errors";
@@ -191,6 +192,10 @@ function RootComponent() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const { user: initialUser, locale, i18nResources } = Route.useLoaderData();
+
+  // Restore the exact feed position on back/forward (and cover the mobile scroll
+  // container, which the router's window-only restoration doesn't track).
+  useScrollRestoration();
 
   // Install global error/unhandled-rejection reporting + Core Web Vitals
   // collection once on the client so runtime errors and perf regressions
