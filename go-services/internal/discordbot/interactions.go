@@ -52,6 +52,13 @@ func (m optionMap) str(name string) string {
 	return ""
 }
 
+func (m optionMap) boolean(name string) bool {
+	if o, ok := m[name]; ok {
+		return o.BoolValue()
+	}
+	return false
+}
+
 // splitCustomID splits a "action:ownerId" custom ID. Mirrors the TS
 // `interaction.customId.split(':')`.
 func splitCustomID(customID string) (action, ownerID string) {
@@ -106,5 +113,18 @@ func respondText(s *discordgo.Session, i *discordgo.InteractionCreate, content s
 	return s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{Content: content},
+	})
+}
+
+// respondEphemeralEmbed sends an immediate ephemeral embed reply (only the
+// invoking user sees it) — used by /prompt so a long persona prompt never
+// clutters the channel.
+func respondEphemeralEmbed(s *discordgo.Session, i *discordgo.InteractionCreate, embed *discordgo.MessageEmbed) error {
+	return s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds: []*discordgo.MessageEmbed{embed},
+			Flags:  discordgo.MessageFlagsEphemeral,
+		},
 	})
 }

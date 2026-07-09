@@ -802,6 +802,30 @@ func (ps *PetService) HandleSetMessages(ctx context.Context, s *discordgo.Sessio
 
 // ─── Chat integration hooks (used by chat.go) ───────────────────────────
 
+// CustomPrompt returns the guild's custom Alex persona prompt (set via /prompt),
+// or "" when none is set. Best-effort: a DB error logs and yields "" so Alex
+// falls back to his built-in persona rather than failing to reply.
+func (ps *PetService) CustomPrompt(ctx context.Context, guildID string) string {
+	if ps == nil || guildID == "" {
+		return ""
+	}
+	prompt, err := ps.repo.guildCustomPrompt(ctx, guildID)
+	if err != nil {
+		ps.logger.Warn("read custom prompt", "guildId", guildID, "error", err)
+		return ""
+	}
+	return prompt
+}
+
+// SetCustomPrompt sets (or, with an empty string, clears) the guild's custom Alex
+// persona prompt.
+func (ps *PetService) SetCustomPrompt(ctx context.Context, guildID, prompt string) error {
+	if ps == nil || guildID == "" {
+		return nil
+	}
+	return ps.repo.setGuildCustomPrompt(ctx, guildID, prompt)
+}
+
 // StatusLineForChat returns a short, live status line to inject (ephemerally)
 // into the /chat system prompt so Alex's replies reflect how he's actually doing.
 // Empty string means "no pet context" (DM, no DB, etc.).

@@ -2795,6 +2795,14 @@ html.vt-active .page-root > * {
   content-visibility: auto;
   contain-intrinsic-size: auto 320px;
 }
+/* During a back/forward restore, lay every feed card out at its REAL height so the
+ * saved pixel offset lands on exactly the content you left — the size estimate
+ * above would otherwise shift the restored position (a visible re-scroll). Only
+ * on for the brief restore window; content-visibility resumes for scroll perf
+ * right after. Toggled by hooks/useScrollRestoration.ts. */
+html.nav-restoring .feed-card-cv {
+  content-visibility: visible;
+}
 
 /* Posts flushed in from the "N new posts" pill ease down into place instead of
  * popping. `backwards` applies the start frame immediately so there's no flash

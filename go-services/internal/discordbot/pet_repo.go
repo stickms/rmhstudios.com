@@ -276,6 +276,48 @@ func (r *petRepo) setGuildMessageLevel(ctx context.Context, guildID, channelID, 
 	return err
 }
 
+// guildCustomPrompt returns a guild's custom Alex persona prompt, or "" when the
+// guild has none set (→ Alex uses his built-in default persona).
+func (r *petRepo) guildCustomPrompt(ctx context.Context, guildID string) (string, error) {
+	if r.db == nil || guildID == "" {
+		return "", nil
+	}
+	var prompt *string
+	err := r.db.Pool.QueryRow(ctx,
+		`SELECT "customPrompt" FROM "discord_alex_guild" WHERE "guildId"=$1`, guildID).Scan(&prompt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return "", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	if prompt == nil {
+		return "", nil
+	}
+	return *prompt, nil
+}
+
+// setGuildCustomPrompt sets (or, with an empty prompt, clears → NULL) a guild's
+// custom Alex persona prompt, upserting the row. Leaves the guild's channel and
+// message-level settings untouched.
+func (r *petRepo) setGuildCustomPrompt(ctx context.Context, guildID, prompt string) error {
+	if r.db == nil || guildID == "" {
+		return nil
+	}
+	var value *string
+	if prompt != "" {
+		value = &prompt
+	}
+	_, err := r.db.Pool.Exec(ctx,
+		`INSERT INTO "discord_alex_guild" ("guildId","customPrompt","updatedAt")
+		 VALUES ($1,$2,$3)
+		 ON CONFLICT ("guildId") DO UPDATE SET
+		   "customPrompt"=EXCLUDED."customPrompt",
+		   "updatedAt"=EXCLUDED."updatedAt"`,
+		guildID, value, time.Now().UTC())
+	return err
+}
+
 // ─── Caretaker leaderboard ──────────────────────────────────────────────
 
 // CaretakerRow is one entry in a guild's caretaker leaderboard.

@@ -298,7 +298,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     if (selection && selection.toString().length > 0) {
       return;
     }
-    const go = () => navigate({ to: postHref(item.user, actualId) });
+    // `resetScroll: false` defers the scroll reset to the destination's commit
+    // (useScrollRestoration handles it) so the feed doesn't visibly scroll up
+    // during the transition; going back then restores the exact feed position.
+    const go = () => navigate({ to: postHref(item.user, actualId), resetScroll: false });
     // Only run a View Transition when there's a hero image to morph into the
     // detail page; text-only posts keep the normal per-page enter animation.
     // Degrades to a plain navigation when unsupported or reduced-motion is on.
@@ -578,14 +581,14 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 if (window.getSelection()?.toString()) return;
                 if ((e.target as HTMLElement).closest('a, button')) return;
                 if (freshOriginalUser && item.original) {
-                  navigate({ to: postHref(freshOriginalUser, item.original.id) });
+                  navigate({ to: postHref(freshOriginalUser, item.original.id), resetScroll: false });
                 }
               }}
               onKeyDown={(e) => {
                 if ((e.key === 'Enter' || e.key === ' ') && freshOriginalUser && item.original) {
                   e.preventDefault();
                   e.stopPropagation();
-                  navigate({ to: postHref(freshOriginalUser, item.original.id) });
+                  navigate({ to: postHref(freshOriginalUser, item.original.id), resetScroll: false });
                 }
               }}
               className="mt-3 border border-site-border rounded-site p-3 bg-site-surface/30 cursor-pointer transition-colors hover:bg-site-surface/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/40"

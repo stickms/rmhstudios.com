@@ -2860,6 +2860,9 @@ model DiscordAlexGuild {
   //   "care" — care alerts + life events only (no random chatter)
   //   "off"  — completely silent (no proactive messages at all)
   messageLevel  String    @default("all")
+  // Per-server override for Alex's personality/system prompt, set via /prompt.
+  // NULL means Alex uses his built-in default persona (for /chat and mentions).
+  customPrompt  String?
   updatedAt     DateTime  @updatedAt
 
   @@map("discord_alex_guild")

@@ -16,6 +16,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -218,12 +220,16 @@ func min(a, b int) int {
 func (s *ChatService) HandleChat(ctx context.Context, sess *discordgo.Session, i *discordgo.InteractionCreate, message string, isNew bool) error {
 	userID, username := interactionUser(i)
 
+	// The persona to drive this reply: the server's custom /prompt override when
+	// set, else Alex's built-in default (see effectivePrompt).
+	persona := s.effectivePrompt(ctx, i.GuildID)
+
 	var session *chatSession
 	if isNew {
 		session = &chatSession{
 			userID:   userID,
 			username: username,
-			history:  []ChatMessage{{Role: roleSystem, Content: alexSystemPrompt}},
+			history:  []ChatMessage{{Role: roleSystem, Content: persona}},
 		}
 		s.setCached(session)
 	} else {
@@ -243,12 +249,15 @@ func (s *ChatService) HandleChat(ctx context.Context, sess *discordgo.Session, i
 		return fmt.Errorf("defer reply: %w", err)
 	}
 
-	// Inject Alex's live tamagotchi state (ephemerally — not persisted into the
-	// stored history) so his reply reflects how he's actually doing right now.
-	sendMessages := session.history
+	// Drive the reply with the guild's CURRENT persona, overriding whatever system
+	// prompt this session was originally seeded with — so a /prompt change takes
+	// effect on the next turn even for an existing conversation. Then inject Alex's
+	// live tamagotchi state (ephemerally — neither is persisted into stored history)
+	// so his reply reflects how he's actually doing right now.
+	sendMessages := withPersona(session.history, persona)
 	if s.pet != nil && i.GuildID != "" {
 		if statusLine := s.pet.StatusLineForChat(ctx, i.GuildID); statusLine != "" {
-			sendMessages = injectStatus(session.history, statusLine)
+			sendMessages = injectStatus(sendMessages, statusLine)
 		}
 	}
 
@@ -309,14 +318,90 @@ func (s *ChatService) HandleChat(ctx context.Context, sess *discordgo.Session, i
 	return nil
 }
 
+// ─── /prompt: per-server persona override ──────────────────────────────────
+
+// promptMaxLen bounds a custom persona prompt (also enforced by the slash
+// option's MaxLength) to keep token cost and abuse in check.
+const promptMaxLen = 2000
+
+// embedDescMax is Discord's per-embed description cap.
+const embedDescMax = 4096
+
+// HandlePrompt implements /prompt — view, set, or reset Alex's per-server
+// personality prompt. It applies to BOTH /chat and @mention replies in that
+// server; an empty value (or reset) restores Alex's built-in default persona.
+// Permission is enforced by the caller (server owner / Manage Messages / bot
+// owner). Replies are ephemeral so a long prompt never clutters the channel.
+func (s *ChatService) HandlePrompt(ctx context.Context, sess *discordgo.Session, i *discordgo.InteractionCreate, text string, reset bool) error {
+	if i.GuildID == "" {
+		return respondEphemeralEmbed(sess, i, &discordgo.MessageEmbed{
+			Color:       chatErrEmbedColor,
+			Title:       "🔒 Servers only",
+			Description: "`/prompt` sets Alex's personality for a **server** — run it in a server channel, not a DM.",
+		})
+	}
+	text = strings.TrimSpace(text)
+	if r := []rune(text); len(r) > promptMaxLen {
+		text = string(r[:promptMaxLen])
+	}
+	_, username := interactionUser(i)
+
+	// Reset → clear the custom prompt, back to Alex's default persona.
+	if reset {
+		if err := s.pet.SetCustomPrompt(ctx, i.GuildID, ""); err != nil {
+			s.logger.Warn("prompt reset", "guildId", i.GuildID, "error", err)
+			return respondEphemeralEmbed(sess, i, errEmbed("couldn't reset Alex's prompt rn, try again"))
+		}
+		return respondEphemeralEmbed(sess, i, &discordgo.MessageEmbed{
+			Color:       chatEmbedColor,
+			Title:       "🔄 Alex reset to his default personality",
+			Description: "New `/chat` sessions and @mentions here use his built-in persona again.",
+			Footer:      attributeFooter(username, "🔄", "reset Alex's personality"),
+		})
+	}
+
+	// No text → show the current effective prompt (default or custom).
+	if text == "" {
+		current := s.effectivePrompt(ctx, i.GuildID)
+		label := "default"
+		if strings.TrimSpace(s.pet.CustomPrompt(ctx, i.GuildID)) != "" {
+			label = "custom"
+		}
+		return respondEphemeralEmbed(sess, i, &discordgo.MessageEmbed{
+			Color:       chatEmbedColor,
+			Title:       "🧠 Alex's personality here — " + label,
+			Description: truncateHard(current, embedDescMax),
+			Footer:      &discordgo.MessageEmbedFooter{Text: "Change: /prompt text:… · Reset: /prompt reset:true"},
+		})
+	}
+
+	// Set the custom prompt for this server.
+	if err := s.pet.SetCustomPrompt(ctx, i.GuildID, text); err != nil {
+		s.logger.Warn("prompt set", "guildId", i.GuildID, "error", err)
+		return respondEphemeralEmbed(sess, i, errEmbed("couldn't save that prompt rn, try again"))
+	}
+	return respondEphemeralEmbed(sess, i, &discordgo.MessageEmbed{
+		Color:       chatEmbedColor,
+		Title:       "✅ Alex's personality updated for this server",
+		Description: truncateHard(text, embedDescMax),
+		Footer:      attributeFooter(username, "🧠", "set Alex's personality · revert with /prompt reset:true"),
+	})
+}
+
 // ─── Mention / reply handling ──────────────────────────────────────────────
 
 // Context sizing for mention replies. The bot owner can tune how many recent
 // channel messages Alex reads via ALEX_MENTION_CONTEXT (more = richer context,
 // higher token cost); it's clamped to Discord's per-request maximum.
 const (
-	mentionContextDefault = 30  // generous default so Alex uses lots of recent chat
+	mentionContextDefault = 50  // generous default so Alex uses lots of recent chat
 	mentionContextMax     = 100 // Discord's hard cap for one ChannelMessages fetch
+
+	// Reply-chain walk: how many parent messages up a reply thread Alex will
+	// follow (fetching ones outside the recent window) so he sees the whole
+	// conversation he's being pulled into, not just the last message.
+	mentionReplyDepthDefault = 12
+	mentionReplyDepthMax     = 30
 )
 
 // mentionContextSize returns how many recent messages to feed the model, from
@@ -328,6 +413,20 @@ func mentionContextSize() int {
 	}
 	if n > mentionContextMax {
 		n = mentionContextMax
+	}
+	return n
+}
+
+// mentionReplyChainDepth returns how many parents up a reply chain Alex follows
+// for context, from ALEX_MENTION_REPLY_DEPTH (default mentionReplyDepthDefault),
+// clamped to [0, mentionReplyDepthMax]. 0 disables the reply-chain walk.
+func mentionReplyChainDepth() int {
+	n := config.GetInt("ALEX_MENTION_REPLY_DEPTH", mentionReplyDepthDefault)
+	if n < 0 {
+		n = 0
+	}
+	if n > mentionReplyDepthMax {
+		n = mentionReplyDepthMax
 	}
 	return n
 }
@@ -368,14 +467,17 @@ func (s *ChatService) HandleMention(ctx context.Context, sess *discordgo.Session
 	defer stopTyping()
 
 	// Build the model conversation: persona + live state, then the recent channel
-	// transcript (older → newer), ending with the message that pinged him.
-	system := alexSystemPrompt
+	// transcript plus the reply chain (older → newer), ending with the message that
+	// pinged him. The persona is the server's custom /prompt override when set.
+	system := s.effectivePrompt(ctx, m.GuildID)
 	if s.pet != nil {
 		system += s.pet.StatusLineForChat(ctx, m.GuildID)
 	}
 	system += "\n\nYou're in a Discord channel and someone just mentioned or replied to you. " +
-		"Reply naturally and briefly (usually 1–2 sentences) to the most recent message, using the conversation " +
-		"context above. Don't prefix your reply with your name and don't use markdown headers."
+		"The conversation above is the recent channel history plus the reply chain leading up to the message " +
+		"that pinged you — use it so your reply fits what's actually being discussed. " +
+		"Reply naturally and briefly (usually 1–2 sentences) to the most recent message. " +
+		"Don't prefix your reply with your name and don't use markdown headers."
 
 	msgs := []ChatMessage{{Role: roleSystem, Content: system}}
 	msgs = append(msgs, mentionTranscript(sess, m, botID)...)
@@ -495,27 +597,116 @@ func mentionFallbackLine() string {
 	return lines[rand.Intn(len(lines))]
 }
 
-// mentionTranscript builds the chat-message context for a mention: the recent
-// channel history (best-effort) followed by the triggering message. Alex's own
-// messages become assistant turns; everyone else's become user turns prefixed
-// with their name.
+// mentionTranscript builds the chat-message context for a mention by combining
+// TWO sources so Alex has rich context:
+//
+//  1. the recent channel window (the ambient conversation), and
+//  2. the reply-chain ancestry of the triggering message — the specific thread
+//     Alex is being pulled into, which may be far older than the recent window.
+//
+// Both are best-effort. Messages are deduped by id and ordered oldest → newest
+// (Discord ids are time-ordered snowflakes), with the triggering message last.
+// Alex's own messages become assistant turns; everyone else's become user turns
+// prefixed with their name.
 func mentionTranscript(sess *discordgo.Session, m *discordgo.MessageCreate, botID string) []ChatMessage {
-	var out []ChatMessage
+	byID := make(map[string]*discordgo.Message)
 
-	// Recent messages before this one, oldest → newest.
+	// 1. Recent messages before the trigger.
 	if history, err := sess.ChannelMessages(m.ChannelID, mentionContextSize(), m.ID, "", ""); err == nil {
-		for i := len(history) - 1; i >= 0; i-- {
-			out = append(out, transcriptTurn(history[i], botID)...)
+		for _, h := range history {
+			if h != nil {
+				byID[h.ID] = h
+			}
 		}
 	}
-	// The message that mentioned Alex.
-	out = append(out, transcriptTurn(m.Message, botID)...)
+	// 2. The reply-chain ancestry of the trigger (may include messages older than
+	//    the recent window, so Alex follows the actual thread he's replying in).
+	for _, anc := range replyChainMessages(sess, m, mentionReplyChainDepth()) {
+		if anc != nil {
+			byID[anc.ID] = anc
+		}
+	}
+	// The message that mentioned Alex — always included; being newest it sorts last.
+	byID[m.ID] = m.Message
 
+	ids := make([]string, 0, len(byID))
+	for id := range byID {
+		ids = append(ids, id)
+	}
+	sort.Slice(ids, func(a, b int) bool { return snowflakeLess(ids[a], ids[b]) })
+
+	var out []ChatMessage
+	for _, id := range ids {
+		out = append(out, transcriptTurn(byID[id], botID)...)
+	}
 	if len(out) == 0 {
 		// Nothing readable (e.g. no message content) — still prompt for a reply.
 		out = append(out, ChatMessage{Role: roleUser, Content: "(someone pinged you) say hi!"})
 	}
 	return out
+}
+
+// replyChainMessages walks up the reply/reference ancestry of the triggering
+// message, returning the ancestor messages (nearest-parent first; the caller
+// re-sorts chronologically). The first parent is taken from the gateway-hydrated
+// ReferencedMessage when present; deeper ancestors are fetched via REST. The walk
+// is bounded by maxDepth and stops at the first unreadable/missing parent (e.g.
+// a deleted message or one Alex lacks history permission for), so it never stalls
+// the reply. Only same-channel references are followed.
+func replyChainMessages(sess *discordgo.Session, trigger *discordgo.MessageCreate, maxDepth int) []*discordgo.Message {
+	if maxDepth <= 0 {
+		return nil
+	}
+	channelID := trigger.ChannelID
+
+	parentID := ""
+	if ref := trigger.MessageReference; ref != nil && ref.MessageID != "" {
+		parentID = ref.MessageID
+	}
+	hydrated := trigger.ReferencedMessage // gateway may pre-hydrate the first parent
+
+	var out []*discordgo.Message
+	for depth := 0; depth < maxDepth && parentID != ""; depth++ {
+		var parent *discordgo.Message
+		switch {
+		case hydrated != nil && hydrated.ID == parentID:
+			parent = hydrated
+		default:
+			msg, err := sess.ChannelMessage(channelID, parentID)
+			if err != nil {
+				return out // parent deleted / unreadable — stop the walk here
+			}
+			parent = msg
+		}
+		if parent == nil {
+			break
+		}
+		out = append(out, parent)
+
+		// Advance to this parent's own parent (same-channel replies only).
+		hydrated = parent.ReferencedMessage
+		parentID = ""
+		if ref := parent.MessageReference; ref != nil && ref.MessageID != "" &&
+			(ref.ChannelID == "" || ref.ChannelID == channelID) {
+			parentID = ref.MessageID
+		}
+	}
+	return out
+}
+
+// snowflakeLess orders two Discord message ids chronologically — ids are
+// snowflakes, so numerically ascending is time ascending. Falls back to a
+// length-then-lexical compare for any non-numeric id.
+func snowflakeLess(a, b string) bool {
+	ai, aerr := strconv.ParseUint(a, 10, 64)
+	bi, berr := strconv.ParseUint(b, 10, 64)
+	if aerr == nil && berr == nil {
+		return ai < bi
+	}
+	if len(a) != len(b) {
+		return len(a) < len(b)
+	}
+	return a < b
 }
 
 // transcriptTurn converts one Discord message into a chat turn, or nothing when
@@ -543,6 +734,32 @@ func cleanDiscordContent(content, botID string) string {
 	content = strings.ReplaceAll(content, "<@"+botID+">", "Alex")
 	content = strings.ReplaceAll(content, "<@!"+botID+">", "Alex")
 	return strings.TrimSpace(content)
+}
+
+// effectivePrompt returns the persona that should drive Alex in this guild: the
+// server's custom /prompt override when one is set, otherwise the built-in
+// default. guildID may be empty (DMs) → always the default.
+func (s *ChatService) effectivePrompt(ctx context.Context, guildID string) string {
+	if guildID != "" {
+		if custom := strings.TrimSpace(s.pet.CustomPrompt(ctx, guildID)); custom != "" {
+			return custom
+		}
+	}
+	return alexSystemPrompt
+}
+
+// withPersona returns a copy of history whose leading system message is replaced
+// by persona, so a /chat session seeded under a previous /prompt still speaks
+// with the current one. If history has no leading system message, persona is
+// prepended. The original slice is left untouched.
+func withPersona(history []ChatMessage, persona string) []ChatMessage {
+	out := make([]ChatMessage, len(history))
+	copy(out, history)
+	if len(out) > 0 && out[0].Role == roleSystem {
+		out[0].Content = persona
+		return out
+	}
+	return append([]ChatMessage{{Role: roleSystem, Content: persona}}, out...)
 }
 
 // injectStatus returns a copy of history with an ephemeral system message

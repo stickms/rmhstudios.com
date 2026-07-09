@@ -240,6 +240,10 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     <MobileSidebarContext.Provider value={{ isOpen, open, close, toggle }}>
       <div
         ref={scrollRef}
+        // Marks this element as the live scroll container on mobile so
+        // useScrollRestoration can save/restore it (the router only tracks the
+        // window, which doesn't scroll on mobile).
+        data-scroll-root
         // `touch-pan-y` reserves horizontal gestures for our own drawer drag so the
         // browser never treats a sideways swipe as a back/forward navigation, while
         // still allowing native vertical scrolling. `overscroll-contain` keeps any
