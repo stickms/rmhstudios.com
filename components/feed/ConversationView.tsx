@@ -16,6 +16,9 @@ import { GifPicker } from '@/components/feed/GifPicker';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useEmojiShortcodes } from '@/lib/emoji/use-emoji-shortcodes';
+import { ReactionMenu } from '@/components/shared/ReactionMenu';
+import { ReactionChips } from '@/components/shared/ReactionChips';
+import { groupReactions, type ReactionRow } from '@/lib/social/reactions';
 
 interface Message {
   id: string;
@@ -25,6 +28,7 @@ interface Message {
   createdAt: string;
   gifUrl?: string | null;
   imageUrls?: string[];
+  reactions?: ReactionRow[];
 }
 
 const MAX_DM_IMAGES = 4;
@@ -62,6 +66,7 @@ export function ConversationView({
   const [gifUrl, setGifUrl] = useState<string | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number; messageId: string } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -73,6 +78,8 @@ export function ConversationView({
   const typingActiveRef = useRef(false);
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const otherTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Shared long-press timer for opening the reaction menu on touch devices.
+  const touchTimer = useRef<number | null>(null);
 
   const { t } = useTranslation("feed");
   const { data: session } = useSession();
@@ -213,6 +220,41 @@ export function ConversationView({
     }
   }, [sendTyping]);
 
+  // Toggle the viewer's reaction row on a message (optimistic on raw rows).
+  const applyRowToggle = useCallback((messageId: string, emoji: string) => {
+    const myId = session?.user.id;
+    if (!myId) return;
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== messageId) return m;
+        const rows = m.reactions ?? [];
+        const mine = rows.some((r) => r.emoji === emoji && r.userId === myId);
+        return {
+          ...m,
+          reactions: mine
+            ? rows.filter((r) => !(r.emoji === emoji && r.userId === myId))
+            : [...rows, { emoji, userId: myId }],
+        };
+      }),
+    );
+  }, [session?.user.id]);
+
+  const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
+    if (!session) return;
+    applyRowToggle(messageId, emoji);
+    try {
+      const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}/react`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId, emoji }),
+      });
+      if (!res.ok) throw new Error('react failed');
+    } catch {
+      // Roll back the optimistic toggle (toggling again is its own inverse).
+      applyRowToggle(messageId, emoji);
+    }
+  }, [session, conversationId, applyRowToggle]);
+
   useEffect(() => {
     if (!initialFetched.current && session) {
       initialFetched.current = true;
@@ -270,6 +312,20 @@ export function ConversationView({
               gifUrl: msg.gifUrl,
               imageUrls: msg.imageUrls,
             });
+          }
+          retryCount = 0;
+        } catch {
+          // Ignore parse errors
+        }
+      });
+
+      eventSource.addEventListener('message-reaction', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.type === 'message-reaction' && data.conversationId === conversationId) {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === data.messageId ? { ...m, reactions: data.reactions } : m)),
+            );
           }
           retryCount = 0;
         } catch {
@@ -587,6 +643,29 @@ export function ConversationView({
                           ? 'bg-site-accent text-site-bg'
                           : 'bg-site-text text-site-bg'
                       }`}
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setReactionMenu({ x: e.clientX, y: e.clientY, messageId: msg.id });
+                      }}
+                      onTouchStart={(e) => {
+                        const t = e.touches[0];
+                        touchTimer.current = window.setTimeout(
+                          () => setReactionMenu({ x: t.clientX, y: t.clientY, messageId: msg.id }),
+                          500,
+                        );
+                      }}
+                      onTouchMove={() => {
+                        if (touchTimer.current) {
+                          clearTimeout(touchTimer.current);
+                          touchTimer.current = null;
+                        }
+                      }}
+                      onTouchEnd={() => {
+                        if (touchTimer.current) {
+                          clearTimeout(touchTimer.current);
+                          touchTimer.current = null;
+                        }
+                      }}
                     >
                       {stripEmbedUrls(msg.content).trim() && (
                         <p className="whitespace-pre-wrap">{stripEmbedUrls(msg.content)}</p>
@@ -612,6 +691,13 @@ export function ConversationView({
                       </p>
                     </div>
                   </div>
+                  {(msg.reactions?.length ?? 0) > 0 && (
+                    <ReactionChips
+                      reactions={groupReactions(msg.reactions ?? [], session.user.id)}
+                      onToggle={(emoji) => toggleReaction(msg.id, emoji)}
+                      className={`mt-1 ${isSelf ? 'justify-end' : ''}`}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -772,6 +858,15 @@ export function ConversationView({
           </Button>
         </div>
       </div>
+
+      {reactionMenu && (
+        <ReactionMenu
+          x={reactionMenu.x}
+          y={reactionMenu.y}
+          onSelect={(emoji) => toggleReaction(reactionMenu.messageId, emoji)}
+          onClose={() => setReactionMenu(null)}
+        />
+      )}
     </div>
   );
 }
