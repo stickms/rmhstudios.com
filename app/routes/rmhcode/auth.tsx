@@ -7,6 +7,15 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
 
+/** True only for a valid URL whose host is localhost (the CLI callback allowlist). */
+function isLocalhostCallback(cb: string): boolean {
+  try {
+    return /^(localhost|127\.0\.0\.1)$/.test(new URL(cb).hostname);
+  } catch {
+    return false;
+  }
+}
+
 function AuthContent() {
   const { t } = useTranslation("r-rmhcode");
   const navigate = useNavigate();
@@ -47,7 +56,10 @@ function AuthContent() {
   }
 
   function handleDeny() {
-    if (callback && sessionId) {
+    // Only redirect back to a validated localhost callback (same allowlist as
+    // authorize). Otherwise an attacker-supplied callback host would turn Deny
+    // into an open redirect, so fall back to the in-app page.
+    if (callback && sessionId && isLocalhostCallback(callback)) {
       const callbackUrl = new URL(callback);
       callbackUrl.searchParams.set('error', 'access_denied');
       callbackUrl.searchParams.set('session', sessionId);

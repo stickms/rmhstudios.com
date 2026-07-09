@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { deliverDuePending } from '@/lib/webhooks/emit.server';
+import { timingSafeStringEqual } from '@/lib/internal-auth';
 
 /**
  * POST /api/cron/webhooks — drain due (pending/retry) webhook deliveries.
@@ -14,7 +15,7 @@ export const Route = createFileRoute('/api/cron/webhooks')({
       POST: async ({ request }) => {
         const secret = process.env.INTERNAL_API_SECRET;
         const auth = request.headers.get('authorization');
-        if (!secret || auth !== `Bearer ${secret}`) {
+        if (!secret || !auth || !timingSafeStringEqual(auth, `Bearer ${secret}`)) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
         const url = new URL(request.url);

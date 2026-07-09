@@ -1,19 +1,19 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
 /**
- * Constant-time secret comparison.
+ * Constant-time string comparison for secrets / bearer tokens.
  *
- * A plain `provided !== configured` short-circuits on the first differing byte,
- * leaking — through response timing — how much of a guessed secret is correct
- * and enabling a byte-by-byte recovery attack. Hashing both inputs to a fixed
+ * A plain `a !== b` short-circuits on the first differing byte, leaking —
+ * through response timing — how much of a guessed secret is correct and
+ * enabling a byte-by-byte recovery attack. Hashing both inputs to a fixed
  * 32-byte digest and comparing with `timingSafeEqual` removes that side channel
  * (and the equal-length requirement / length leak of comparing the raw
- * strings).
+ * strings). Server-only (uses node:crypto).
  */
-function secretsMatch(provided: string, configured: string): boolean {
-  const a = createHash("sha256").update(provided).digest();
-  const b = createHash("sha256").update(configured).digest();
-  return timingSafeEqual(a, b);
+export function timingSafeStringEqual(a: string, b: string): boolean {
+  const ha = createHash("sha256").update(a).digest();
+  const hb = createHash("sha256").update(b).digest();
+  return timingSafeEqual(ha, hb);
 }
 
 /**
@@ -27,6 +27,6 @@ export function authorizeInternalRequest(
   configured: string | undefined,
 ): { ok: true } | { ok: false; status: 401 | 503 } {
   if (!configured) return { ok: false, status: 503 };
-  if (!provided || !secretsMatch(provided, configured)) return { ok: false, status: 401 };
+  if (!provided || !timingSafeStringEqual(provided, configured)) return { ok: false, status: 401 };
   return { ok: true };
 }

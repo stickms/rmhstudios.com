@@ -10,6 +10,7 @@ import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
 import { recordGamePlay } from '@/lib/quests/engine.server';
+import { timingSafeStringEqual } from '@/lib/internal-auth';
 
 // Server-to-server auth via shared secret
 const ALTAIR_SERVER_SECRET = process.env.ALTAIR_SERVER_SECRET;
@@ -53,7 +54,7 @@ export const Route = createFileRoute('/api/altair/match')({
   try {
     // Validate server secret
     const authHeader = request.headers.get('authorization');
-    if (!ALTAIR_SERVER_SECRET || authHeader !== `Bearer ${ALTAIR_SERVER_SECRET}`) {
+    if (!ALTAIR_SERVER_SECRET || !authHeader || !timingSafeStringEqual(authHeader, `Bearer ${ALTAIR_SERVER_SECRET}`)) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
