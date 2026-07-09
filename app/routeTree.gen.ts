@@ -360,6 +360,7 @@ import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
 import { Route as SiteAdminRideshareRouteImport } from './routes/_site/admin/rideshare'
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
+import { Route as SiteAdminSecurityReportsRouteImport } from './routes/_site/admin/security-reports'
 import { Route as SiteAdminPredictionsRouteImport } from './routes/_site/admin/predictions'
 import { Route as SiteAdminLibraryStorageRouteImport } from './routes/_site/admin/library-storage'
 import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/library-quota'
@@ -2315,6 +2316,11 @@ const SiteAdminReportsRoute = SiteAdminReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminSecurityReportsRoute = SiteAdminSecurityReportsRouteImport.update({
+  id: '/security-reports',
+  path: '/security-reports',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminPredictionsRoute = SiteAdminPredictionsRouteImport.update({
   id: '/predictions',
   path: '/predictions',
@@ -3438,6 +3444,7 @@ export interface FileRoutesByFullPath {
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
+  '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
@@ -3948,6 +3955,7 @@ export interface FileRoutesByTo {
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
+  '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
@@ -4484,6 +4492,7 @@ export interface FileRoutesById {
   '/_site/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/_site/admin/predictions': typeof SiteAdminPredictionsRoute
   '/_site/admin/reports': typeof SiteAdminReportsRoute
+  '/_site/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/_site/admin/rideshare': typeof SiteAdminRideshareRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
@@ -5020,6 +5029,7 @@ export interface FileRouteTypes {
     | '/admin/library-storage'
     | '/admin/predictions'
     | '/admin/reports'
+    | '/admin/security-reports'
     | '/admin/rideshare'
     | '/admin/user-builds'
     | '/admin/users'
@@ -5530,6 +5540,7 @@ export interface FileRouteTypes {
     | '/admin/library-storage'
     | '/admin/predictions'
     | '/admin/reports'
+    | '/admin/security-reports'
     | '/admin/rideshare'
     | '/admin/user-builds'
     | '/admin/users'
@@ -6065,6 +6076,7 @@ export interface FileRouteTypes {
     | '/_site/admin/library-storage'
     | '/_site/admin/predictions'
     | '/_site/admin/reports'
+    | '/_site/admin/security-reports'
     | '/_site/admin/rideshare'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
@@ -9204,6 +9216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminReportsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/security-reports': {
+      id: '/_site/admin/security-reports'
+      path: '/security-reports'
+      fullPath: '/admin/security-reports'
+      preLoaderRoute: typeof SiteAdminSecurityReportsRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/predictions': {
       id: '/_site/admin/predictions'
       path: '/predictions'
@@ -10489,6 +10508,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminLibraryStorageRoute: typeof SiteAdminLibraryStorageRoute
   SiteAdminPredictionsRoute: typeof SiteAdminPredictionsRoute
   SiteAdminReportsRoute: typeof SiteAdminReportsRoute
+  SiteAdminSecurityReportsRoute: typeof SiteAdminSecurityReportsRoute
   SiteAdminRideshareRoute: typeof SiteAdminRideshareRoute
   SiteAdminUserBuildsRoute: typeof SiteAdminUserBuildsRoute
   SiteAdminUsersRoute: typeof SiteAdminUsersRoute
@@ -10508,6 +10528,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminLibraryStorageRoute: SiteAdminLibraryStorageRoute,
   SiteAdminPredictionsRoute: SiteAdminPredictionsRoute,
   SiteAdminReportsRoute: SiteAdminReportsRoute,
+  SiteAdminSecurityReportsRoute: SiteAdminSecurityReportsRoute,
   SiteAdminRideshareRoute: SiteAdminRideshareRoute,
   SiteAdminUserBuildsRoute: SiteAdminUserBuildsRoute,
   SiteAdminUsersRoute: SiteAdminUsersRoute,

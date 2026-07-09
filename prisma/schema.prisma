@@ -1174,6 +1174,40 @@ model Feedback {
   @@map("feedback")
 }
 
+// ─── Security / Bug Bounty reports ────────────────────────────────────
+
+enum SecurityReportStatus {
+  NEW
+  TRIAGING
+  ACCEPTED
+  RESOLVED
+  DUPLICATE
+  NOT_APPLICABLE
+}
+
+model SecurityReport {
+  id            String               @id @default(cuid())
+  title         String
+  category      String
+  severity      String
+  affectedArea  String?
+  description   String
+  reporterName  String?
+  reporterEmail String?
+  status        SecurityReportStatus @default(NEW)
+  adminNotes    String?
+  // Set when the reporter was signed in; nullable for external researchers.
+  userId        String?
+  // SHA-256 of the client IP — abuse correlation without storing raw IPs.
+  ipHash        String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("security_report")
+}
+
 // ─── Altair Meta Progression (persisted to DB) ────────────────────────
 
 model AltairMetaProgress {

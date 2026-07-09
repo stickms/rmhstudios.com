@@ -13,11 +13,15 @@ import {
   ChevronLeft,
   ChevronDown,
   ArrowRight,
-  Mail,
   Bug,
+  CheckCircle2,
+  XCircle,
+  Scale,
   type LucideIcon,
 } from 'lucide-react';
 import './security.css';
+import { BugBountyForm } from './BugBountyForm';
+import { REWARD_TIERS, CATEGORY_BOUNTIES } from '@/lib/security-report-schema';
 
 /**
  * /security — a standalone, black & white, Apple-styled page describing how
@@ -214,10 +218,6 @@ export function SecurityPage() {
           <div className="sec-hero__ring sec-hero__ring--3" aria-hidden="true" />
 
           <div className="sec-shell sec-hero__content">
-            <p className="sec-hero__badge">
-              <ShieldCheck aria-hidden="true" />
-              Security at RMH Studios
-            </p>
             <h1 id="sec-hero-title" className="sec-hero__title">
               Security you can <em>feel.</em>
             </h1>
@@ -354,7 +354,114 @@ export function SecurityPage() {
           </div>
         </section>
 
-        {/* ─── Responsible disclosure ───────────────────────────────────── */}
+        {/* ─── Bug bounty program ───────────────────────────────────────── */}
+        <section
+          id="sec-bounty"
+          className="sec-section sec-section--hair"
+          aria-labelledby="sec-bounty-title"
+        >
+          <div className="sec-shell">
+            <div className="sec-section__head">
+              <p className="sec-eyebrow sec-reveal">Bug bounty program</p>
+              <h2 id="sec-bounty-title" className="sec-section__title sec-reveal">
+                Break it. Get paid.
+              </h2>
+              <p className="sec-section__sub sec-reveal">
+                Security is a team sport, and researchers are on our team. Report
+                a real, original vulnerability and we&apos;ll reward it — up to{' '}
+                <strong>$2,500,000</strong> for the most serious findings.
+              </p>
+            </div>
+
+            {/* Reward tiers */}
+            <div className="sec-tiers">
+              {REWARD_TIERS.map((tier, i) => (
+                <article
+                  key={tier.severity}
+                  className="sec-tier sec-reveal"
+                  data-sev={tier.severity}
+                  style={{ '--sec-delay': `${(i % 2) * 90}ms` } as CSSProperties}
+                >
+                  <div className="sec-tier__head">
+                    <span className="sec-tier__sev">{tier.label}</span>
+                    <span className="sec-tier__reward">{tier.reward}</span>
+                  </div>
+                  <p className="sec-tier__blurb">{tier.blurb}</p>
+                  <p className="sec-tier__examples">{tier.examples}</p>
+                </article>
+              ))}
+            </div>
+
+            {/* Category requirements */}
+            <div className="sec-bounty-table-wrap sec-reveal" role="region" aria-labelledby="sec-bounty-cats" tabIndex={0}>
+              <h3 id="sec-bounty-cats" className="sec-bounty-table-title">
+                What each vulnerability is worth
+              </h3>
+              <table className="sec-bounty-table">
+                <caption className="sr-only">
+                  Bug bounty categories, their maximum reward, and what qualifies.
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Category</th>
+                    <th scope="col">Up to</th>
+                    <th scope="col">What qualifies</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {CATEGORY_BOUNTIES.map((b) => (
+                    <tr key={b.category}>
+                      <th scope="row">{b.category}</th>
+                      <td className="sec-bounty-table__reward">{b.max}</td>
+                      <td>{b.requirement}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Program rules */}
+            <div className="sec-rules">
+              <div className="sec-rule sec-reveal">
+                <h3 className="sec-rule__title">
+                  <span className="sec-rule__icon"><CheckCircle2 aria-hidden="true" /></span>
+                  In scope
+                </h3>
+                <ul className="sec-rule__list">
+                  <li>rmhstudios.com and its subdomains</li>
+                  <li>Our public API, developer platform, and web apps</li>
+                  <li>Authentication, payments, and how we handle your data</li>
+                </ul>
+              </div>
+              <div className="sec-rule sec-reveal" style={{ '--sec-delay': '80ms' } as CSSProperties}>
+                <h3 className="sec-rule__title">
+                  <span className="sec-rule__icon"><XCircle aria-hidden="true" /></span>
+                  Out of scope
+                </h3>
+                <ul className="sec-rule__list">
+                  <li>Denial-of-service and volumetric attacks</li>
+                  <li>Social engineering, phishing our staff, or physical access</li>
+                  <li>Scanner output or missing headers with no proof-of-concept</li>
+                  <li>Issues in third parties (Stripe, Discord, cloud providers)</li>
+                </ul>
+              </div>
+              <div className="sec-rule sec-reveal" style={{ '--sec-delay': '160ms' } as CSSProperties}>
+                <h3 className="sec-rule__title">
+                  <span className="sec-rule__icon"><Scale aria-hidden="true" /></span>
+                  Rules of engagement
+                </h3>
+                <ul className="sec-rule__list">
+                  <li>Only ever test against your own account and data</li>
+                  <li>Never access, change, or destroy data that isn&apos;t yours</li>
+                  <li>Give us a reasonable window to fix before going public</li>
+                  <li>One clear, reproducible vulnerability per report</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Submit a report ──────────────────────────────────────────── */}
         <section
           id="sec-disclosure"
           className="sec-section sec-section--hair"
@@ -364,30 +471,24 @@ export function SecurityPage() {
             <div className="sec-disclosure sec-reveal">
               <div className="sec-disclosure__glow" aria-hidden="true" />
               <div className="sec-disclosure__inner">
-                <p className="sec-eyebrow">Responsible disclosure</p>
-                <h2
-                  id="sec-disclosure-title"
-                  className="sec-disclosure__title"
-                >
+                <p className="sec-eyebrow">Submit a report</p>
+                <h2 id="sec-disclosure-title" className="sec-disclosure__title">
                   Found a weakness? Tell us.
                 </h2>
                 <p className="sec-disclosure__body">
-                  We are grateful to the researchers who help keep RMH Studios
-                  safe. If you have found a vulnerability, email us — we will
-                  acknowledge it, keep you posted, and fix it fast.
+                  Send it straight to our security team below. We acknowledge every
+                  report within two business days, keep you posted through triage,
+                  and pay out once it&apos;s confirmed.
                 </p>
-                <a
-                  className="sec-btn sec-btn--primary"
-                  href={`mailto:${SECURITY_EMAIL}`}
-                >
-                  <Mail aria-hidden="true" />
-                  {SECURITY_EMAIL}
-                </a>
+
+                <BugBountyForm />
+
                 <p className="sec-disclosure__meta">
-                  Reporting in good faith? Please don&apos;t access or modify
-                  data that isn&apos;t yours, and give us a reasonable window to
-                  ship a fix before disclosing publicly. Do that, and we
-                  won&apos;t pursue legal action — we&apos;ll say thank you.
+                  <strong>Safe harbor.</strong> Report in good faith — don&apos;t
+                  access data that isn&apos;t yours, and give us a reasonable window
+                  to ship a fix before disclosing publicly. Do that, and we
+                  won&apos;t pursue legal action. Prefer email? Reach us at{' '}
+                  <a href={`mailto:${SECURITY_EMAIL}`}>{SECURITY_EMAIL}</a>.
                 </p>
               </div>
             </div>
