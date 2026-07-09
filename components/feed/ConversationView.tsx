@@ -15,6 +15,7 @@ import ChatMediaEmbed, { stripEmbedUrls, extractMediaEmbeds } from '@/components
 import { GifPicker } from '@/components/feed/GifPicker';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
+import { useEmojiShortcodes } from '@/lib/emoji/use-emoji-shortcodes';
 
 interface Message {
   id: string;
@@ -77,6 +78,7 @@ export function ConversationView({
   const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
   const insertEmoji = useEmojiInsert(inputRef, input, setInput);
+  const shortcodes = useEmojiShortcodes({ ref: inputRef, value: input, onChange: setInput });
 
   // Close the attach (+) menu on outside click.
   useEffect(() => {
@@ -377,6 +379,7 @@ export function ConversationView({
     };
     setMessages((prev) => [...prev, optimisticMsg]);
     setInput('');
+    shortcodes.dismiss();
     setGifUrl(null);
     setImageUrls([]);
     clearSuggestion();
@@ -698,27 +701,33 @@ export function ConversationView({
           onChange={(e) => handleImageFiles(e.currentTarget.files)}
         />
         <div className="flex items-end gap-2">
-          <GhostTextArea
-            ref={inputRef}
-            value={input}
-            suggestion={suggestion}
-            onAcceptSuggestion={() => {
-              setInput((v) => v + suggestion);
-              clearSuggestion();
-            }}
-            onChange={(e) => {
-              setInput(e.target.value);
-              if (e.target.value.trim()) handleTyping();
-              else stopTyping();
-            }}
-            onBlur={stopTyping}
-            onKeyDown={handleKeyDown}
-            placeholder={t("type-a-message", { defaultValue: "Type a message..." })}
-            rows={1}
-            maxLength={2000}
-            className="bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
-            style={{ minHeight: '42px' }}
-          />
+          <div className="relative flex-1">
+            <GhostTextArea
+              ref={inputRef}
+              value={input}
+              suggestion={suggestion}
+              onAcceptSuggestion={() => {
+                setInput((v) => v + suggestion);
+                clearSuggestion();
+              }}
+              onChange={(e) => {
+                shortcodes.onValueChange(e.target.value);
+                if (e.target.value.trim()) handleTyping();
+                else stopTyping();
+              }}
+              onBlur={stopTyping}
+              onKeyDown={(e) => {
+                if (shortcodes.onKeyDown(e)) return;
+                handleKeyDown(e);
+              }}
+              placeholder={t("type-a-message", { defaultValue: "Type a message..." })}
+              rows={1}
+              maxLength={2000}
+              className="bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
+              style={{ minHeight: '42px' }}
+            />
+            {shortcodes.menu}
+          </div>
           <EmojiPickerButton direction="up" onSelect={insertEmoji} />
           {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer. */}
           <div className="relative shrink-0" ref={attachRef}>

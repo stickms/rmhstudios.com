@@ -13,6 +13,12 @@ import {
 import { BadgeCheck } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getCaretCoordinates } from '@/lib/feed/caret-coordinates';
+import { loadShortcodes, getShortcodesSync } from '@/lib/emoji/shortcodes';
+import {
+  findShortcodeTrigger,
+  searchShortcodes,
+  replaceCompletedShortcode,
+} from '@/lib/emoji/shortcode-matcher';
 
 interface UserSuggestion {
   id: string;
@@ -29,15 +35,16 @@ interface TagSuggestion {
 }
 
 type Trigger = {
-  type: '@' | '#';
+  type: '@' | '#' | ':';
   query: string;
-  /** Index of the trigger char ('@' or '#') in the value. */
+  /** Index of the trigger char ('@', '#', or ':') in the value. */
   start: number;
 };
 
 type Suggestion =
   | { kind: 'user'; user: UserSuggestion }
-  | { kind: 'tag'; tag: TagSuggestion };
+  | { kind: 'tag'; tag: TagSuggestion }
+  | { kind: 'emoji'; name: string; emoji: string };
 
 // Match a trigger token immediately before the caret: an `@` or `#` that starts
 // the string or follows whitespace, followed by word characters being typed.
@@ -100,6 +107,13 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
       const before = el.value.slice(0, caret);
       const match = before.match(TRIGGER_REGEX);
       if (!match) {
+        const emojiTrigger = findShortcodeTrigger(el.value, caret);
+        if (emojiTrigger) {
+          setTrigger({ type: ':', query: emojiTrigger.query, start: emojiTrigger.start });
+          const caretCoords = getCaretCoordinates(el, emojiTrigger.start);
+          setPosition({ top: caretCoords.top + caretCoords.height + 2, left: caretCoords.left });
+          return;
+        }
         close();
         return;
       }
@@ -118,6 +132,22 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
     useEffect(() => {
       if (!trigger) return;
       const seq = ++requestSeq.current;
+      if (trigger.type === ':') {
+        setLoading(true);
+        loadShortcodes().then((map) => {
+          if (seq !== requestSeq.current) return;
+          setSuggestions(
+            searchShortcodes(trigger.query, map).map(({ name, emoji }) => ({
+              kind: 'emoji' as const,
+              name,
+              emoji,
+            })),
+          );
+          setActiveIndex(0);
+          setLoading(false);
+        });
+        return;
+      }
       setLoading(true);
       const timer = setTimeout(async () => {
         try {
@@ -166,7 +196,9 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
         const insertion =
           suggestion.kind === 'user'
             ? `@${suggestion.user.handle ?? suggestion.user.username ?? ''}`
-            : `#${suggestion.tag.tag}`;
+            : suggestion.kind === 'tag'
+              ? `#${suggestion.tag.tag}`
+              : suggestion.emoji;
         const next = `${value.slice(0, trigger.start)}${insertion} ${value.slice(caret)}`;
         onChange(next);
         close();
@@ -221,8 +253,21 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
           ref={innerRef}
           value={value}
           onChange={(e) => {
-            onChange(e.target.value);
-            syncTrigger(e.target);
+            const el = e.target;
+            const caret = el.selectionStart ?? el.value.length;
+            const map = getShortcodesSync();
+            const converted = map ? replaceCompletedShortcode(el.value, caret, map) : null;
+            if (converted) {
+              onChange(converted.next);
+              close();
+              requestAnimationFrame(() => {
+                el.focus();
+                el.setSelectionRange(converted.caret, converted.caret);
+              });
+              return;
+            }
+            onChange(el.value);
+            syncTrigger(el);
           }}
           onKeyDown={handleKeyDown}
           onClick={(e) => syncTrigger(e.currentTarget)}
@@ -230,6 +275,12 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
             props.onBlur?.(e);
             // Delay so a click on a suggestion lands before we tear down.
             setTimeout(close, 120);
+          }}
+          onFocus={(e) => {
+            // Warm the shortcode dataset so getShortcodesSync() is ready by the
+            // time anyone finishes typing a code.
+            void loadShortcodes();
+            props.onFocus?.(e);
           }}
         />
 
@@ -279,6 +330,26 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
                         </span>
                         <span className="block text-xs text-site-text-dim truncate">
                           @{highlightMatch(u.handle ?? u.username, query)}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                }
+                if (suggestion.kind === 'emoji') {
+                  return (
+                    <button
+                      key={suggestion.name}
+                      type="button"
+                      className={rowClass}
+                      onMouseEnter={() => setActiveIndex(i)}
+                      onClick={() => applySuggestion(suggestion)}
+                    >
+                      <span className="w-7 h-7 shrink-0 flex items-center justify-center text-lg">
+                        {suggestion.emoji}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm text-site-text truncate">
+                          :{highlightMatch(suggestion.name, query)}:
                         </span>
                       </span>
                     </button>

@@ -10,6 +10,7 @@ import { Send, Reply, Pin, X, SmilePlus, AtSign, Image as ImageIcon } from 'luci
 import { GifPicker } from '@/components/feed/GifPicker';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
+import { useEmojiShortcodes } from '@/lib/emoji/use-emoji-shortcodes';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore, getChatEntries } from '@/lib/rmhtube/store';
@@ -98,6 +99,7 @@ export default function ChatPanel() {
   const lastTypingEmitRef = useRef(0);
   const mentionDropdownRef = useRef<HTMLDivElement>(null);
   const insertEmoji = useEmojiInsert(inputRef, message, setMessage);
+  const shortcodes = useEmojiShortcodes({ ref: inputRef, value: message, onChange: setMessage });
 
   // ─── Combined entries (chat + system messages) ─────────────────
 
@@ -159,7 +161,7 @@ export default function ChatPanel() {
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const val = e.target.value;
-      setMessage(val);
+      shortcodes.onValueChange(val);
       handleTyping();
 
       // Check for @mention trigger
@@ -175,7 +177,7 @@ export default function ChatPanel() {
         setMentionFilter('');
       }
     },
-    [handleTyping],
+    [handleTyping, shortcodes],
   );
 
   const filteredMembers = useMemo(() => {
@@ -228,10 +230,11 @@ export default function ChatPanel() {
 
       emit(C2S.ROOM_CHAT, payload);
       setMessage('');
+      shortcodes.dismiss();
       setReplyTo(null);
       setShowMentionDropdown(false);
     },
-    [message, room, replyTo],
+    [message, room, replyTo, shortcodes],
   );
 
   // ─── Reaction handler ──────────────────────────────────────────
@@ -567,15 +570,19 @@ export default function ChatPanel() {
         onSubmit={handleSend}
         className="flex gap-2 px-1.5 py-3 border-t border-(--rmhtube-border)"
       >
-        <input
-          ref={inputRef}
-          type="text"
-          value={message}
-          onChange={handleInputChange}
-          maxLength={CHAT_MAX_LENGTH}
-          placeholder={replyTo ? t("reply-to-placeholder", { defaultValue: "Reply to {{userName}}...", userName: replyTo.userName }) : t("type-a-message", { defaultValue: "Type a message..." })}
-          className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm border border-(--rmhtube-border) bg-(--rmhtube-bg) text-(--rmhtube-text) placeholder:text-(--rmhtube-text-dim) outline-none focus:ring-1 focus:ring-(--rmhtube-accent)"
-        />
+        <div className="relative flex-1 min-w-0">
+          <input
+            ref={inputRef}
+            type="text"
+            value={message}
+            onChange={handleInputChange}
+            onKeyDown={(e) => shortcodes.onKeyDown(e)}
+            maxLength={CHAT_MAX_LENGTH}
+            placeholder={replyTo ? t("reply-to-placeholder", { defaultValue: "Reply to {{userName}}...", userName: replyTo.userName }) : t("type-a-message", { defaultValue: "Type a message..." })}
+            className="w-full px-3 py-2 rounded-lg text-sm border border-(--rmhtube-border) bg-(--rmhtube-bg) text-(--rmhtube-text) placeholder:text-(--rmhtube-text-dim) outline-none focus:ring-1 focus:ring-(--rmhtube-accent)"
+          />
+          {shortcodes.menu}
+        </div>
         <button
           type="button"
           onClick={() => setShowGifPicker((v) => !v)}
