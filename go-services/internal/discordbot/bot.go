@@ -125,6 +125,21 @@ func slashCommands() []*discordgo.ApplicationCommand {
 					Description: "Alex's new name (1–32 characters)", Required: true},
 			},
 		},
+		{
+			Name:        "prompt",
+			Description: "Set Alex's personality for this server — for /chat + @mentions (Manage Messages / owner) 🧠",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type: discordgo.ApplicationCommandOptionString, Name: "text",
+					Description: "New personality prompt (blank = view current)", Required: false,
+					MaxLength: promptMaxLen,
+				},
+				{
+					Type: discordgo.ApplicationCommandOptionBoolean, Name: "reset",
+					Description: "Reset Alex back to his default personality", Required: false,
+				},
+			},
+		},
 	}
 }
 
@@ -354,6 +369,18 @@ func (b *Bot) routeCommand(ctx context.Context, s *discordgo.Session, i *discord
 			return
 		}
 		err = b.pet.HandleSetMessages(ctx, s, i, opts.str("level"))
+	case "prompt":
+		if !b.canToggleAlex(s, i) {
+			_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "🔒 You need to be the **server owner**, have the **Manage Messages** permission, or be the bot owner to change Alex's personality here.",
+					Flags:   discordgo.MessageFlagsEphemeral,
+				},
+			})
+			return
+		}
+		err = b.chat.HandlePrompt(ctx, s, i, opts.str("text"), opts.boolean("reset"))
 	default:
 		b.logger.Warn("unknown_command", "name", data.Name)
 		return

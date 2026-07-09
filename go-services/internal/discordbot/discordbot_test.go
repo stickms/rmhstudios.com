@@ -1,6 +1,7 @@
 package discordbot
 
 import (
+	"context"
 	"strings"
 	"testing"
 	"time"
@@ -476,6 +477,69 @@ func TestCleanDiscordContent(t *testing.T) {
 		if got := cleanDiscordContent(c.in, "123"); got != c.want {
 			t.Errorf("cleanDiscordContent(%q) = %q, want %q", c.in, got, c.want)
 		}
+	}
+}
+
+// ─── /prompt persona override + mention context ─────────────────────────────
+
+func TestWithPersonaReplacesLeadingSystem(t *testing.T) {
+	history := []ChatMessage{
+		{Role: roleSystem, Content: "OLD PERSONA"},
+		{Role: roleUser, Content: "hi"},
+		{Role: roleAssistant, Content: "yo"},
+	}
+	out := withPersona(history, "NEW PERSONA")
+	if out[0].Role != roleSystem || out[0].Content != "NEW PERSONA" {
+		t.Errorf("leading system message should be replaced, got %+v", out[0])
+	}
+	if len(out) != 3 || out[1].Content != "hi" || out[2].Content != "yo" {
+		t.Errorf("rest of the history should be preserved, got %+v", out)
+	}
+	// The original slice must be left untouched (we send an ephemeral copy).
+	if history[0].Content != "OLD PERSONA" {
+		t.Errorf("withPersona must not mutate the input history, got %q", history[0].Content)
+	}
+}
+
+func TestWithPersonaPrependsWhenNoSystem(t *testing.T) {
+	history := []ChatMessage{{Role: roleUser, Content: "hi"}}
+	out := withPersona(history, "PERSONA")
+	if len(out) != 2 || out[0].Role != roleSystem || out[0].Content != "PERSONA" {
+		t.Errorf("persona should be prepended when history has no leading system msg, got %+v", out)
+	}
+	if out[1].Content != "hi" {
+		t.Errorf("user turn should follow the prepended persona, got %+v", out[1])
+	}
+}
+
+func TestEffectivePromptFallsBackToDefault(t *testing.T) {
+	// With no guild (DM), and with a guild but no pet/DB configured, Alex uses his
+	// built-in persona. A nil pet pointer is safe (CustomPrompt guards nil).
+	s := &ChatService{}
+	if got := s.effectivePrompt(context.Background(), ""); got != alexSystemPrompt {
+		t.Errorf("empty guild should yield the default persona")
+	}
+	if got := s.effectivePrompt(context.Background(), "guild1"); got != alexSystemPrompt {
+		t.Errorf("unconfigured guild should yield the default persona")
+	}
+}
+
+func TestSnowflakeLessOrdersChronologically(t *testing.T) {
+	// Larger snowflake == later message.
+	if !snowflakeLess("100", "200") {
+		t.Errorf("100 should sort before 200")
+	}
+	if snowflakeLess("200", "100") {
+		t.Errorf("200 should not sort before 100")
+	}
+	// Real-length snowflakes (19 digits) compare numerically, not lexically.
+	older, newer := "1200000000000000000", "1200000000000000009"
+	if !snowflakeLess(older, newer) {
+		t.Errorf("numeric snowflake ordering broken for %s vs %s", older, newer)
+	}
+	// Different-length ids: the longer (newer) one sorts later even via fallback.
+	if !snowflakeLess("999", "1000000000000000000") {
+		t.Errorf("shorter/older id should sort first")
 	}
 }
 
