@@ -8,6 +8,8 @@ import { AIGenerateButton } from './AIGenerateButton';
 import { AIImageButton } from './AIImageButton';
 import { ComposeAssist } from './ComposeAssist';
 import { MentionTextarea } from './MentionTextarea';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { useFeedStore } from '@/stores/feedStore';
@@ -63,6 +65,7 @@ export function ComposeBox({
   const menuRef = useRef<HTMLDivElement>(null);
   const audienceRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
   const { prependItem, removeItem, reconcileItem } = useFeedStore();
 
   const { t } = useTranslation('feed');
@@ -679,6 +682,9 @@ export function ComposeBox({
                   setImageUrls((prev) => [...prev, url].slice(0, MAX_IMAGES))
                 }
               />
+
+              {/* Emoji picker — sits next to the GIF/poll (+) menu */}
+              <EmojiPickerButton direction="down" onSelect={insertEmoji} />
 
               {/* Plus button — image upload, GIF, poll, draft, schedule */}
               <div className="relative" ref={menuRef}>

@@ -7,6 +7,8 @@ import { GifEmbed } from './GifEmbed';
 import { GifPicker } from './GifPicker';
 import { AIGenerateButton } from './AIGenerateButton';
 import { MentionTextarea } from './MentionTextarea';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -55,6 +57,8 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
   const [imageError, setImageError] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
   const { prependItem } = useFeedStore();
   const { data: session } = authClient.useSession();
   const { resolved: resolvedUser } = useResolvedUser();
@@ -203,6 +207,9 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
               {t("gif-heading", { defaultValue: "GIF" })}
             </button>
 
+            {/* Emoji picker */}
+            <EmojiPickerButton direction="down" onSelect={insertEmoji} />
+
             {/* Plus button */}
             <div className="relative" ref={menuRef}>
               <button
@@ -259,6 +266,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
 
             <div className="flex-1 min-w-0">
               <MentionTextarea
+                ref={textareaRef}
                 autoFocus
                 value={content}
                 onChange={setContent}

@@ -8,6 +8,8 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Send, Reply, Pin, X, SmilePlus, AtSign, Image as ImageIcon } from 'lucide-react';
 import { GifPicker } from '@/components/feed/GifPicker';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore, getChatEntries } from '@/lib/rmhtube/store';
@@ -95,6 +97,7 @@ export default function ChatPanel() {
   const inputRef = useRef<HTMLInputElement>(null);
   const lastTypingEmitRef = useRef(0);
   const mentionDropdownRef = useRef<HTMLDivElement>(null);
+  const insertEmoji = useEmojiInsert(inputRef, message, setMessage);
 
   // ─── Combined entries (chat + system messages) ─────────────────
 
@@ -581,6 +584,12 @@ export default function ChatPanel() {
         >
           <ImageIcon className="h-4 w-4" />
         </button>
+        <EmojiPickerButton
+          direction="up"
+          onSelect={insertEmoji}
+          className="shrink-0"
+          buttonClassName="text-(--rmhtube-text-dim) hover:text-(--rmhtube-accent)"
+        />
         <button
           type="submit"
           disabled={!message.trim()}

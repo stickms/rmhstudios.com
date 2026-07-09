@@ -13,6 +13,8 @@ import { useMessageSuggestion } from '@/lib/useMessageSuggestion';
 import { useTranslation } from "react-i18next";
 import ChatMediaEmbed, { stripEmbedUrls, extractMediaEmbeds } from '@/components/shared/ChatMediaEmbed';
 import { GifPicker } from '@/components/feed/GifPicker';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 
 interface Message {
   id: string;
@@ -74,6 +76,7 @@ export function ConversationView({
   const { t } = useTranslation("feed");
   const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
+  const insertEmoji = useEmojiInsert(inputRef, input, setInput);
 
   // Close the attach (+) menu on outside click.
   useEffect(() => {
@@ -716,6 +719,7 @@ export function ConversationView({
             className="bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
             style={{ minHeight: '42px' }}
           />
+          <EmojiPickerButton direction="up" onSelect={insertEmoji} />
           {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer. */}
           <div className="relative shrink-0" ref={attachRef}>
             <button

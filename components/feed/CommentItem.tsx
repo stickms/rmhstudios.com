@@ -12,6 +12,8 @@ import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
 import { AIGenerateButton } from './AIGenerateButton';
 import { MentionTextarea } from './MentionTextarea';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useFreshUser } from '@/stores/userDisplayStore';
 import { timeAgoShort } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -78,6 +80,8 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   const [replyContent, setReplyContent] = useState('');
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const replyRef = useRef<HTMLTextAreaElement>(null);
+  const insertEmoji = useEmojiInsert(replyRef, replyContent, setReplyContent);
   const remaining = MAX_COMMENT_LENGTH - replyContent.length;
 
   const [liked, setLiked] = useState(comment.liked ?? false);
@@ -375,6 +379,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
               />
               <div className="flex-1 min-w-0">
                 <MentionTextarea
+                  ref={replyRef}
                   autoFocus
                   value={replyContent}
                   onChange={setReplyContent}
@@ -420,6 +425,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                     >
                       <ImageIcon className="w-4 h-4" />
                     </button>
+                    <EmojiPickerButton direction="up" onSelect={insertEmoji} />
                     <Button
                       variant="accent"
                       size="sm"
