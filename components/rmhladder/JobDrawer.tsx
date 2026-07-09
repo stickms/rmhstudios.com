@@ -16,17 +16,7 @@ import { Bookmark, CheckCircle, EyeOff } from 'lucide-react';
 import type { JobRow } from '@/lib/rmhladder/server/queries';
 import type { JobActionValue } from '@/lib/rmhladder/server/actions';
 import { RungMeter } from './RungMeter';
-
-function timeAgo(raw: Date | string | null | undefined): string {
-  if (!raw) return 'unknown';
-  const ms = Date.now() - new Date(raw as string).getTime();
-  const minutes = Math.floor(ms / 60_000);
-  const hours   = Math.floor(ms / 3_600_000);
-  const days    = Math.floor(ms / 86_400_000);
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours   < 24) return `${hours}h ago`;
-  return `${days}d ago`;
-}
+import { timeAgo } from './time';
 
 const FOCUSABLE_SEL = [
   'a[href]',

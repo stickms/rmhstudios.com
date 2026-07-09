@@ -169,7 +169,7 @@ function makeFakePrisma() {
       },
     },
     ladderSource: {
-      async findMany({ where }: FakeArgs) {
+      async findMany({ where, include }: FakeArgs) {
         let rows = sources;
         if (where?.status) rows = rows.filter((s) => s.status === where.status);
         if (where?.OR) {
@@ -183,7 +183,10 @@ function makeFakePrisma() {
             }),
           );
         }
-        return rows;
+        return rows.map((s) => ({
+          ...s,
+          company: include?.company ? companies.get(s.companyId as string) : undefined,
+        }));
       },
       async create({ data }: FakeArgs) {
         const id = `s-${++sourceSeq}`;
@@ -562,6 +565,16 @@ describe('queries.ts', () => {
 
       const result = await listStaleSources(prisma, now);
       expect(result.length).toBe(2); // null + 49h, not 47h
+    });
+
+    it('attaches company context for the health panel', async () => {
+      const prisma = makeFakePrisma();
+      prisma._state.companies.set('c1', { id: 'c1', name: 'Goldman Sachs' });
+      await prisma.ladderSource.create({
+        data: { companyId: 'c1', platform: 'greenhouse', status: 'active', lastSuccessAt: null },
+      });
+      const result = await listStaleSources(prisma, new Date());
+      expect((result[0] as AnyRow).company?.name).toBe('Goldman Sachs');
     });
   });
 

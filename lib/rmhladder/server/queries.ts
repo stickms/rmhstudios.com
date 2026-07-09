@@ -285,6 +285,7 @@ export async function listStaleSources(prisma: QueriesPrisma, now = new Date()) 
       status: 'active',
       OR: [{ lastSuccessAt: null }, { lastSuccessAt: { lt: threshold } }],
     },
+    include: { company: true },
   });
 }
 
