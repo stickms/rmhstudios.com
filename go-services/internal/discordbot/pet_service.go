@@ -41,6 +41,9 @@ type PetService struct {
 	guildLocks map[string]*sync.Mutex
 	cooldowns  map[string]time.Time // key "guildId:action" -> last run
 
+	promptMu sync.Mutex
+	prompt   *activePrompt // the currently-live community prompt (see pet_events.go)
+
 	sessMu  sync.RWMutex
 	session *discordgo.Session // set once the gateway is open (for the care loop)
 }
@@ -62,7 +65,7 @@ func NewPetService(repo *petRepo, imager *alexImager, deepseek *DeepSeekClient, 
 }
 
 // carePoints weights each care action for the leaderboard.
-var carePoints = map[string]int{"feeds": 10, "plays": 8, "cleans": 6, "naps": 5, "talks": 3, "studies": 9}
+var carePoints = map[string]int{"feeds": 10, "plays": 8, "cleans": 6, "naps": 5, "talks": 3, "studies": 9, "interactions": interactionPoints}
 
 // showCooldown bounds how often a guild can spend an xAI image on /show.
 const showCooldown = 45 * time.Second
@@ -292,8 +295,15 @@ func (ps *PetService) simpleAction(
 		ps.refreshPresence(&snap) // reflect the new state in the bot's status
 	}
 
+	// Vary the flavor line with a fresh AI reaction when possible; fall back to the
+	// static line. Only for successful actions (refusals keep their specific line).
+	flavor := result.Message
+	if result.OK {
+		flavor = firstNonEmpty(ps.actionReaction(ctx, &snap, name), result.Message)
+	}
+
 	embed := ps.statusEmbed(&snap, mood, now, res)
-	embed.Description = result.Message + "\n\n" + embed.Description
+	embed.Description = flavor + "\n\n" + embed.Description
 	if result.OK {
 		// Attribute the action so the whole server sees who's caring for Alex.
 		embed.Footer = attributeFooter(username, "🫶", "looked after Alex")
@@ -484,23 +494,32 @@ func (ps *PetService) HandleCareer(ctx context.Context, s *discordgo.Session, i 
 	var note string
 	footerVerb := "checked Alex's career"
 	footerEmoji := "👀"
+	// setKnown / setCustom are resolved into `note` AFTER the lock is released — a
+	// custom career's hype line is AI-generated, so it must not run under the lock.
+	setKnown, setCustom := "", ""
 	switch {
 	case path == "":
 		// No path given → just report the current aspiration + options.
 		note = "Alex is currently going for: **" + careerDisplay(pet.Career) + "**\n" + careerOptionsLine()
-	case !validCareer(path):
-		mu.Unlock()
-		return ps.editEmbed(s, i, errEmbed("that's not a career Alex knows about 😅\n"+careerOptionsLine()), nil)
 	case !pet.Alive:
 		note = "Alex can't chase a career while he's passed out 💀 — `/revive` him first."
 	default:
-		pet.Career = path
-		if pet.Happiness < 100 {
-			pet.Happiness = clampStat(pet.Happiness + 6) // having a dream cheers him up
+		if key := normalizeCareer(path); key != "" {
+			pet.Career = key
+			setKnown = key
+		} else if custom := sanitizeCareer(path); custom != "" {
+			pet.Career = custom
+			setCustom = custom
+		} else {
+			note = "that career name ain't gonna work 😅 — try something like `swe`, `quant`, or anything you dream up."
 		}
-		note = "Alex is now chasing **" + careerDisplay(path) + "** — " + careerBlurb[path] + "\nKeep him `/study`-ing to make it happen 📚"
-		footerVerb = "set Alex's dream job"
-		footerEmoji = "🎯"
+		if setKnown != "" || setCustom != "" {
+			if pet.Happiness < 100 {
+				pet.Happiness = clampStat(pet.Happiness + 6) // having a dream cheers him up
+			}
+			footerVerb = "set Alex's dream job"
+			footerEmoji = "🎯"
+		}
 	}
 
 	if err := ps.repo.save(ctx, pet); err != nil {
@@ -509,6 +528,16 @@ func (ps *PetService) HandleCareer(ctx context.Context, s *discordgo.Session, i 
 	snap := *pet
 	mood := pet.mood()
 	mu.Unlock()
+
+	// Build the "now chasing" note outside the lock. A custom career gets an
+	// AI-generated hype line (DeepSeek), falling back to a generic blurb.
+	switch {
+	case setKnown != "":
+		note = "Alex is now chasing **" + careerDisplay(snap.Career) + "** — " + careerBlurb[setKnown] + "\nKeep him `/study`-ing to make it happen 📚"
+	case setCustom != "":
+		hype := firstNonEmpty(ps.careerReaction(ctx, &snap, setCustom), genericCareerBlurb(setCustom))
+		note = "Alex is now chasing **" + careerDisplay(snap.Career) + "** — " + hype + "\nKeep him `/study`-ing to make it happen 📚"
+	}
 
 	embed := ps.statusEmbed(&snap, mood, now, res)
 	embed.Description = note + "\n\n" + embed.Description
@@ -530,7 +559,7 @@ func careerOptionsLine() string {
 	for _, key := range careerOrder {
 		parts = append(parts, "`"+key+"` "+careerLabel[key])
 	}
-	return "Options: " + strings.Join(parts, "  ·  ")
+	return "Options: " + strings.Join(parts, "  ·  ") + "\n…or just type **any** dream career you want — Alex will run with it 🎯"
 }
 
 // HandleRename implements /rename.
@@ -634,8 +663,8 @@ func caretakersTextEmbed(rows []CaretakerRow, username string) *discordgo.Messag
 		if idx < len(medals) {
 			rank = medals[idx]
 		}
-		fmt.Fprintf(&b, "%s **%s** — %d pts  ·  🍽️%d 🎮%d 🧼%d 😴%d 💬%d 📚%d\n",
-			rank, c.Username, c.Points, c.Feeds, c.Plays, c.Cleans, c.Naps, c.Talks, c.Studies)
+		fmt.Fprintf(&b, "%s **%s** — %d pts  ·  🍽️%d 🎮%d 🧼%d 😴%d 💬%d 📚%d 🤝%d\n",
+			rank, c.Username, c.Points, c.Feeds, c.Plays, c.Cleans, c.Naps, c.Talks, c.Studies, c.Interactions)
 	}
 	return &discordgo.MessageEmbed{
 		Title:       "🏆 Alex's Top Caretakers",
@@ -794,8 +823,8 @@ func (ps *PetService) StatusLineForChat(ctx context.Context, guildID string) str
 		return "\n\nCURRENT STATE: You (Alex) are currently passed out / not well and waiting to be revived. Reply weakly, like you're barely hanging on but still you."
 	}
 	career := "still figuring out what you wanna be"
-	if l, ok := careerLabel[pet.Career]; ok {
-		career = "chasing a career as a " + l
+	if pet.Career != "" {
+		career = "chasing your goal: " + careerDisplay(pet.Career)
 	}
 	return fmt.Sprintf(
 		"\n\nCURRENT STATE (let this subtly color your reply, don't recite the numbers): "+
@@ -806,6 +835,25 @@ func (ps *PetService) StatusLineForChat(ctx context.Context, guildID string) str
 		stageWord(pet.LifeStage), mood.Label, career, int(pet.Intelligence),
 		int(pet.Hunger), int(pet.Energy), int(pet.Hygiene), int(pet.Happiness), int(pet.Health),
 	)
+}
+
+// snapshot loads the global Alex and applies decay, returning a copy (or nil if
+// he doesn't exist / the DB is unavailable). Used by AI reply paths that just need
+// to read his current state without mutating it.
+func (ps *PetService) snapshot(ctx context.Context) *PetState {
+	if ps == nil {
+		return nil
+	}
+	mu := ps.lockGuild(globalPetKey)
+	mu.Lock()
+	defer mu.Unlock()
+	pet, ok, err := ps.repo.load(ctx, globalPetKey)
+	if err != nil || !ok {
+		return nil
+	}
+	pet.applyDecay(time.Now().UTC())
+	cp := *pet
+	return &cp
 }
 
 // NoteMentioned records that Alex was @mentioned/replied-to in a channel: it
@@ -982,4 +1030,54 @@ func sanitizePetName(name string) string {
 		r = r[:32]
 	}
 	return strings.TrimSpace(string(r))
+}
+
+// normalizeCareer maps free-text input to a known career key when it clearly
+// matches one of the premade paths (by key or a common alias); returns "" for
+// anything else, which HandleCareer then treats as a custom career.
+func normalizeCareer(input string) string {
+	s := strings.ToLower(strings.TrimSpace(input))
+	if s == "" {
+		return ""
+	}
+	if _, ok := careerLabel[s]; ok {
+		return s
+	}
+	switch s {
+	case "software engineer", "software", "engineer", "swe", "dev", "developer", "programmer", "coder":
+		return "swe"
+	case "data scientist", "data science", "data", "ds", "ml", "machine learning", "ai":
+		return "data"
+	case "founder", "startup", "startup founder", "entrepreneur", "ceo":
+		return "founder"
+	case "quant", "quantitative", "quantitative analyst", "trader":
+		return "quant"
+	case "pm", "product manager", "product":
+		return "pm"
+	case "designer", "ux", "ux designer", "ui", "ui/ux", "design":
+		return "design"
+	}
+	return ""
+}
+
+// sanitizeCareer trims and bounds a free-text custom career: printable text,
+// 1–40 runes, no mention/backtick/markdown injection.
+func sanitizeCareer(input string) string {
+	s := strings.TrimSpace(input)
+	s = strings.NewReplacer("@", "", "#", "", "`", "", "*", "", "_", "", "\n", " ", "\r", " ").Replace(s)
+	s = strings.TrimSpace(s)
+	r := []rune(s)
+	if len(r) == 0 {
+		return ""
+	}
+	if len(r) > 40 {
+		r = r[:40]
+	}
+	return strings.TrimSpace(string(r))
+}
+
+// genericCareerBlurb is the fallback hype for a custom career when AI is
+// unavailable.
+func genericCareerBlurb(career string) string {
+	return "\"aight bet, " + career + " it is — we lockin in and grindin fr 🔒🔥\""
 }

@@ -26,7 +26,7 @@ generation to show what he looks like right now.
 | `/clean` | Clean Alex up. Restores hygiene |
 | `/rest` | Put Alex down for a nap. Restores energy |
 | `/study` | Alex studies — builds his (non-decaying) intelligence, costs energy |
-| `/career [path]` | Pick Alex's dream career (SWE / data / founder / quant / PM / design), or view the current one |
+| `/career [path]` | Set Alex's dream career — a preset (SWE / data / founder / quant / PM / design) **or any custom career you type** (DeepSeek reacts in-character and adopts it as his goal); blank views the current one |
 | `/show` | Generate an xAI picture of Alex in his current life stage + mood (career-styled once grown) |
 | `/chat <message>` | Talk to Alex (DeepSeek persona, flavoured by his live state + career) |
 | `/revive` | Bring Alex back as a newborn if he's passed out (New Game+) |
@@ -49,17 +49,20 @@ knows which channel to talk back in).
 - **Life stages** by age: infant → toddler (12h) → kid (2d) → teen (5d) →
   adult (10d), all at the default `ALEX_GROWTH_SCALE=1.0`. Set the scale higher to
   speed it up (e.g. `2.0` reaches adult in ~5 days). Only a living Alex grows.
-- **Career**: an aspiration set via `/career`. It flavours his chat replies,
-  ambient posts, and — once he's a teen/adult — his `/show` picture. `/study`
-  builds the intelligence that makes the dream believable.
+- **Career**: an aspiration set via `/career` — a preset **or any custom career you
+  type** (Alex reacts in-character via DeepSeek and adopts it as his goal / what he's
+  studying toward). It flavours his chat replies, ambient posts, and — once he's a
+  teen/adult — his `/show` picture. `/study` builds the intelligence that makes the
+  dream believable.
 - **New Game+**: `/revive` (on death) and `/newlife` (voluntary, once adult) both
   reincarnate Alex as a fresh gen-N+1 infant, carrying over his name, the (global)
   caretaker leaderboard, and a **legacy intelligence head-start** (up to 30,
   scaled from the previous life's intelligence). Career resets so each life can
   choose a new path.
 - **Global caretaker leaderboard**: each care action credits the user who did it,
-  counted once across all servers (feed 10 / study 9 / play 8 / clean 6 / nap 5 /
-  chat 3 points).
+  counted once across all servers (feed 10 / study 9 / play 8 / clean 6 / interaction
+  6 / nap 5 / chat 3 points). **Interactions** are earned by replying to Alex's
+  community prompts/events.
 
 ## First-hello announcement
 
@@ -80,23 +83,37 @@ last-used channel** (at most one per tick), by priority:
 2. **Care alerts** — "yo I'm STARVING, `/feed` me a boba" (globally throttled).
 3. **Ambient life** — slice-of-life posts, questions to the server, or a riff on a
    current tech headline.
+4. **Community prompts** (a flavour of ambient) — a limited-time event ("reply with
+   your favorite boba flavor!") or a casual question. The first few people to reply
+   in each channel get a personal reply from Alex, and their reply quietly counts as
+   an **interaction** on the caretaker leaderboard. Alex never announces points — the
+   reward just shows up on `/caretakers`. The active prompt is tracked in memory
+   (short-lived), claimable once per user, capped at a "first few" winners, and
+   expires after `ALEX_PROMPT_DURATION` (default 30m).
 
-**AI-generated messages.** When `DEEPSEEK_API_KEY` is set, the care-alert and
-ambient messages are generated on the fly by DeepSeek (one cheap call per
-broadcast) in Alex's voice + current state, instead of cycling fixed templates.
-Ambient posts sometimes reference a real headline pulled from the free Hacker News
-API (no key). If DeepSeek or the news fetch is unavailable, it falls back to the
-static templates — the bot never depends on the AI being up.
+**AI-generated messages.** When `DEEPSEEK_API_KEY` is set, the care-alert, ambient,
+and prompt messages — plus Alex's reactions to care commands (`/feed`, `/play`,
+`/clean`, `/rest`, `/study`) — are generated on the fly by DeepSeek in Alex's voice +
+current state, instead of cycling fixed templates. Ambient posts sometimes reference
+a real headline pulled from the free Hacker News API (no key). If DeepSeek or the news
+fetch is unavailable, everything falls back to static templates — the bot never
+depends on the AI being up.
 
 ## Mentions & replies
 
 Alex listens for `@mentions` and replies to his messages (via the non-privileged
 `GuildMessages` intent — message content for mentions/replies is delivered without
-the privileged intent). When pinged, he pulls recent channel context and replies
-in-character via DeepSeek, throttled per channel. Set `ALEX_MESSAGE_CONTENT=true`
-(and enable the Message Content intent in the Developer Portal) to give him full
-channel context for richer replies; without it he still replies, just with less
-surrounding context.
+the privileged intent). When pinged, he pulls a lot of recent channel context
+(`ALEX_MENTION_CONTEXT`, default 30 messages, clamped to Discord's max of 100) and
+replies **directly to the pinging message**, in-character via DeepSeek. He handles
+**many pings at once** — each runs concurrently; the only throttle is per-user
+(`ALEX_MENTION_COOLDOWN`, default 3s) so one person can't spam him, but different
+people are all answered. Set `ALEX_MESSAGE_CONTENT=true` (and enable the Message
+Content intent in the Developer Portal) to give him full channel context for richer
+replies; without it he still replies, just with less surrounding context.
+
+The model is `DEEPSEEK_MODEL` (default `deepseek-chat`, DeepSeek's latest flagship
+chat model with large context) — pin a specific/newer model id there if you want.
 
 If a server's channel becomes unreachable (deleted / bot lost access), it's
 cleared so the bot stops broadcasting there.
@@ -150,10 +167,11 @@ Requires `DISCORD_BOT_TOKEN` (or `DISCORD_ACTIVITY_BOT_TOKEN`). Uses
 degrades gracefully if either AI key is missing (chat/images just become
 unavailable; the care game still works).
 
-Optional pacing overrides (see `.env.example`): `ALEX_GROWTH_SCALE`,
+Optional pacing / behaviour overrides (see `.env.example`): `ALEX_GROWTH_SCALE`,
 `ALEX_HUNGER_DECAY`, `ALEX_HAPPY_DECAY`, `ALEX_ENERGY_DECAY`,
 `ALEX_HYGIENE_DECAY`, `ALEX_TICK_INTERVAL`, `ALEX_CARE_ALERT_INTERVAL`,
-`ALEX_AMBIENT_INTERVAL`.
+`ALEX_AMBIENT_INTERVAL`, `ALEX_PROMPT_DURATION`, `ALEX_MENTION_CONTEXT`,
+`ALEX_MENTION_COOLDOWN`, `DEEPSEEK_MODEL`.
 
 ## Data model
 
@@ -176,5 +194,7 @@ Migrations: `20260706000000_add_discord_alex_tamagotchi/` (initial),
 `20260707000000_add_discord_alex_global_guild/` (global refactor),
 `20260707120000_add_alex_ambient_toggle/` (initial per-server ambient boolean),
 `20260707140000_add_alex_message_level/` (replaces it with the three-way
-`messageLevel`, backfilling existing rows), and
-`20260707160000_add_caretaker_avatar/` (adds `avatarHash` for the leaderboard image).
+`messageLevel`, backfilling existing rows),
+`20260707160000_add_caretaker_avatar/` (adds `avatarHash` for the leaderboard image),
+and `20260709000000_add_caretaker_interactions/` (adds the `interactions` counter for
+prompt/event replies).

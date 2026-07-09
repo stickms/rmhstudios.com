@@ -90,19 +90,11 @@ func slashCommands() []*discordgo.ApplicationCommand {
 		{Name: "study", Description: "Help Alex study to build his intelligence 🧠"},
 		{
 			Name:        "career",
-			Description: "Pick Alex's dream career (or view it) 🎯",
+			Description: "Set Alex's dream career — a preset or ANY career you type (or view it) 🎯",
 			Options: []*discordgo.ApplicationCommandOption{
 				{
 					Type: discordgo.ApplicationCommandOptionString, Name: "path",
-					Description: "The career to chase", Required: false,
-					Choices: []*discordgo.ApplicationCommandOptionChoice{
-						{Name: "👨‍💻 Software Engineer", Value: "swe"},
-						{Name: "📊 Data Scientist", Value: "data"},
-						{Name: "🚀 Startup Founder", Value: "founder"},
-						{Name: "📈 Quant", Value: "quant"},
-						{Name: "📋 Product Manager", Value: "pm"},
-						{Name: "🎨 UX Designer", Value: "design"},
-					},
+					Description: "swe/data/founder/quant/pm/design — or type any dream career (blank = view)", Required: false,
 				},
 			},
 		},
@@ -195,8 +187,10 @@ func (b *Bot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) 
 	if parent == nil {
 		parent = context.Background()
 	}
+	// One goroutine per triggering message, so Alex answers many pings concurrently
+	// (he's no longer limited to one reply at a time).
 	go func() {
-		ctx, cancel := context.WithTimeout(parent, 30*time.Second)
+		ctx, cancel := context.WithTimeout(parent, 50*time.Second)
 		defer cancel()
 		if err := b.chat.HandleMention(ctx, s, m, botID); err != nil {
 			b.logger.Warn("mention reply failed", "channel", m.ChannelID, "error", err)

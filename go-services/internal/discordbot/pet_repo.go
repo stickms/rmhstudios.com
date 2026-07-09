@@ -280,26 +280,28 @@ func (r *petRepo) setGuildMessageLevel(ctx context.Context, guildID, channelID, 
 
 // CaretakerRow is one entry in a guild's caretaker leaderboard.
 type CaretakerRow struct {
-	UserID   string
-	Username string
-	Feeds    int
-	Plays    int
-	Cleans   int
-	Naps     int
-	Talks    int
-	Studies  int
-	Points   int
+	UserID       string
+	Username     string
+	Feeds        int
+	Plays        int
+	Cleans       int
+	Naps         int
+	Talks        int
+	Studies      int
+	Interactions int
+	Points       int
 }
 
 // careColumn maps an action's care key to its counter column. Whitelisted so the
 // column name can never come from untrusted input.
 var careColumn = map[string]string{
-	"feeds":   `"feeds"`,
-	"plays":   `"plays"`,
-	"cleans":  `"cleans"`,
-	"naps":    `"naps"`,
-	"talks":   `"talks"`,
-	"studies": `"studies"`,
+	"feeds":        `"feeds"`,
+	"plays":        `"plays"`,
+	"cleans":       `"cleans"`,
+	"naps":         `"naps"`,
+	"talks":        `"talks"`,
+	"studies":      `"studies"`,
+	"interactions": `"interactions"`,
 }
 
 // bumpCaretaker increments a caretaker's action counter and points, and records
@@ -338,7 +340,7 @@ func (r *petRepo) topCaretakers(ctx context.Context, guildID string, limit int) 
 		return nil, nil
 	}
 	rows, err := r.db.Pool.Query(ctx,
-		`SELECT "userId","username","feeds","plays","cleans","naps","talks","studies","points"
+		`SELECT "userId","username","feeds","plays","cleans","naps","talks","studies","interactions","points"
 		   FROM "discord_alex_caretaker" WHERE "guildId"=$1
 		   ORDER BY "points" DESC, "updatedAt" ASC LIMIT $2`, guildID, limit)
 	if err != nil {
@@ -348,7 +350,7 @@ func (r *petRepo) topCaretakers(ctx context.Context, guildID string, limit int) 
 	var out []CaretakerRow
 	for rows.Next() {
 		var c CaretakerRow
-		if err := rows.Scan(&c.UserID, &c.Username, &c.Feeds, &c.Plays, &c.Cleans, &c.Naps, &c.Talks, &c.Studies, &c.Points); err != nil {
+		if err := rows.Scan(&c.UserID, &c.Username, &c.Feeds, &c.Plays, &c.Cleans, &c.Naps, &c.Talks, &c.Studies, &c.Interactions, &c.Points); err != nil {
 			return nil, err
 		}
 		out = append(out, c)

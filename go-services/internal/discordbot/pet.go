@@ -512,8 +512,9 @@ func intelligenceLabel(v float64) string {
 
 // ─── Careers ────────────────────────────────────────────────────────────
 
-// careerLabel maps a career key to its display label. The keys are the only
-// accepted /career values (validated via validCareer).
+// careerLabel maps a preset career key to its display label. These are the
+// built-in shortcuts for /career; users may also type any custom career, which is
+// stored verbatim (see HandleCareer / normalizeCareer / sanitizeCareer).
 var careerLabel = map[string]string{
 	"swe":     "Software Engineer 👨‍💻",
 	"data":    "Data Scientist 📊",
@@ -542,10 +543,14 @@ func validCareer(key string) bool {
 	return ok
 }
 
-// careerDisplay returns the label for a career key, or "undecided" when unset.
+// careerDisplay returns the label for a known career key, the raw text for a
+// custom career, or "undecided" when unset.
 func careerDisplay(key string) string {
 	if l, ok := careerLabel[key]; ok {
 		return l
+	}
+	if key != "" {
+		return key // a custom, free-text career — shown as the user typed it
 	}
 	return "undecided 🤷"
 }

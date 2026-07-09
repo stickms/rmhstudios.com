@@ -77,16 +77,18 @@ const (
 	kindDied
 	kindCareAlert
 	kindAmbient
+	kindPrompt // an interactive, reward-bearing community prompt (see pet_events.go)
 )
 
 // plan carries the decision made under the global lock out to the (unlocked)
 // broadcast.
 type plan struct {
-	kind   proactiveKind
-	pet    PetState
-	mood   Mood
-	need   string // for kindCareAlert
-	loaded bool   // pet was successfully loaded (pet/mood are valid)
+	kind        proactiveKind
+	pet         PetState
+	mood        Mood
+	need        string // for kindCareAlert
+	promptStyle string // for kindPrompt: promptStyleEvent / promptStyleQuestion
+	loaded      bool   // pet was successfully loaded (pet/mood are valid)
 }
 
 // wantsMessage reports whether a server at the given /alexmessages level should
@@ -97,7 +99,9 @@ func wantsMessage(level string, kind proactiveKind) bool {
 	case msgLevelOff:
 		return false
 	case msgLevelCare:
-		return kind != kindAmbient
+		// "care only" drops random chatter — both slice-of-life posts and the
+		// interactive community prompts.
+		return kind != kindAmbient && kind != kindPrompt
 	default:
 		return true
 	}
@@ -154,6 +158,7 @@ func (ps *PetService) decideGlobal(ctx context.Context, now time.Time) plan {
 
 	kind := kindNone
 	need := ""
+	promptStyle := ""
 	switch {
 	case res.Died:
 		kind = kindDied
@@ -168,9 +173,21 @@ func (ps *PetService) decideGlobal(ctx context.Context, now time.Time) plan {
 				pet.LastCareAlertAt = &t
 			}
 		} else if pet.Alive && ambientDue(pet.LastAmbientAt, now) {
-			kind = kindAmbient
 			t := now
 			pet.LastAmbientAt = &t
+			// Roughly half the time, make it an interactive, reward-bearing prompt
+			// (a limited-time event or a question) instead of a plain slice-of-life
+			// post — that's how caretakers earn points just by chatting back.
+			if rand.Intn(100) < 50 {
+				kind = kindPrompt
+				if rand.Intn(100) < 55 {
+					promptStyle = promptStyleEvent
+				} else {
+					promptStyle = promptStyleQuestion
+				}
+			} else {
+				kind = kindAmbient
+			}
 		}
 	}
 
@@ -182,7 +199,7 @@ func (ps *PetService) decideGlobal(ctx context.Context, now time.Time) plan {
 
 	// Always return the loaded pet so the caller can refresh presence even when
 	// there's nothing to broadcast this tick.
-	return plan{kind: kind, pet: *pet, mood: pet.mood(), need: need, loaded: true}
+	return plan{kind: kind, pet: *pet, mood: pet.mood(), need: need, promptStyle: promptStyle, loaded: true}
 }
 
 // dueSince reports whether `interval` has elapsed since `last` (nil last = due).
@@ -234,9 +251,19 @@ func (ps *PetService) broadcast(ctx context.Context, s *discordgo.Session, pl pl
 		content = "🧋 **Alex:** " + firstNonEmpty(ps.proactiveContent(ctx, pl), careAlertLine(pl.need))
 	case kindAmbient:
 		content = "🧋 **Alex:** " + firstNonEmpty(ps.proactiveContent(ctx, pl), ambientLine(pl.pet.LifeStage, pl.pet.Career))
+	case kindPrompt:
+		if pl.promptStyle == promptStyleEvent {
+			content = "🎉 **Alex — flash event!** " + firstNonEmpty(ps.proactiveContent(ctx, pl), eventPromptLine())
+		} else {
+			content = "🧋 **Alex:** " + firstNonEmpty(ps.proactiveContent(ctx, pl), questionPromptLine())
+		}
 	default:
 		return
 	}
+
+	// For a community prompt, track the channels it actually landed in so replies
+	// there can be rewarded (see pet_events.go).
+	promptChannels := map[string]bool{}
 
 	for _, gc := range channels {
 		// Respect each server's /alexmessages level: "all" gets everything, "care"
@@ -249,9 +276,18 @@ func (ps *PetService) broadcast(ctx context.Context, s *discordgo.Session, pl pl
 			// A new imageFile per send: each wraps its own reader over the bytes.
 			msg.Files = []*discordgo.File{imageFile(img)}
 		}
-		if _, err := s.ChannelMessageSendComplex(gc.ChannelID, msg); err != nil {
+		sent, err := s.ChannelMessageSendComplex(gc.ChannelID, msg)
+		if err != nil {
 			ps.handleSendError(ctx, gc.GuildID, gc.ChannelID, err)
+			continue
 		}
+		if pl.kind == kindPrompt && sent != nil {
+			promptChannels[gc.ChannelID] = true
+		}
+	}
+
+	if pl.kind == kindPrompt {
+		ps.registerPrompt(pl.promptStyle, promptChannels, now)
 	}
 }
 
