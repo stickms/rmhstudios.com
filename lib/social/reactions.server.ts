@@ -64,11 +64,12 @@ export async function toggleCommentReaction(
 
 export async function toggleDmReaction(
   userId: string,
+  conversationId: string,
   messageId: string,
   emoji: string,
 ): Promise<ToggleResult & { conversationId?: string; senderId?: string }> {
-  const message = await prisma.directMessage.findUnique({
-    where: { id: messageId },
+  const message = await prisma.directMessage.findFirst({
+    where: { id: messageId, conversationId },
     select: { id: true, conversationId: true, senderId: true },
   });
   if (!message) return { found: false, reacted: false, rows: [] };
@@ -96,11 +97,12 @@ export async function toggleDmReaction(
 
 export async function toggleGroupMessageReaction(
   userId: string,
+  groupId: string,
   messageId: string,
   emoji: string,
 ): Promise<ToggleResult & { groupId?: string }> {
-  const message = await prisma.groupMessage.findUnique({
-    where: { id: messageId },
+  const message = await prisma.groupMessage.findFirst({
+    where: { id: messageId, groupId },
     select: { id: true, groupId: true },
   });
   if (!message) return { found: false, reacted: false, rows: [] };

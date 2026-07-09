@@ -65,11 +65,8 @@ export const Route = createFileRoute('/api/messages/$conversationId/react')({
       return Response.json({ error: "Invalid emoji" }, { status: 400 });
     }
 
-    const result = await toggleDmReaction(userId, parsed.data.messageId, parsed.data.emoji);
+    const result = await toggleDmReaction(userId, conversationId, parsed.data.messageId, parsed.data.emoji);
     if (!result.found) return Response.json({ error: "Message not found" }, { status: 404 });
-    if (result.conversationId !== conversationId) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
 
     const otherParticipantId =
       conversation.participantOneId === userId

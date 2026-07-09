@@ -19,6 +19,7 @@ import { useEmojiShortcodes } from '@/lib/emoji/use-emoji-shortcodes';
 import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { ReactionChips } from '@/components/shared/ReactionChips';
 import { groupReactions, type ReactionRow } from '@/lib/social/reactions';
+import { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 
 interface Message {
   id: string;
@@ -78,14 +79,13 @@ export function ConversationView({
   const typingActiveRef = useRef(false);
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const otherTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Shared long-press timer for opening the reaction menu on touch devices.
-  const touchTimer = useRef<number | null>(null);
 
   const { t } = useTranslation("feed");
   const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
   const insertEmoji = useEmojiInsert(inputRef, input, setInput);
   const shortcodes = useEmojiShortcodes({ ref: inputRef, value: input, onChange: setInput });
+  const reactionTriggerFor = useItemReactionTrigger((x, y, messageId) => setReactionMenu({ x, y, messageId }));
 
   // Close the attach (+) menu on outside click.
   useEffect(() => {
@@ -647,29 +647,7 @@ export function ConversationView({
                           ? 'bg-site-accent text-site-bg'
                           : 'bg-site-text text-site-bg'
                       }`}
-                      onContextMenu={(e) => {
-                        e.preventDefault();
-                        setReactionMenu({ x: e.clientX, y: e.clientY, messageId: msg.id });
-                      }}
-                      onTouchStart={(e) => {
-                        const t = e.touches[0];
-                        touchTimer.current = window.setTimeout(
-                          () => setReactionMenu({ x: t.clientX, y: t.clientY, messageId: msg.id }),
-                          500,
-                        );
-                      }}
-                      onTouchMove={() => {
-                        if (touchTimer.current) {
-                          clearTimeout(touchTimer.current);
-                          touchTimer.current = null;
-                        }
-                      }}
-                      onTouchEnd={() => {
-                        if (touchTimer.current) {
-                          clearTimeout(touchTimer.current);
-                          touchTimer.current = null;
-                        }
-                      }}
+                      {...reactionTriggerFor(msg.id)}
                     >
                       {stripEmbedUrls(msg.content).trim() && (
                         <p className="whitespace-pre-wrap">{stripEmbedUrls(msg.content)}</p>

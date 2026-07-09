@@ -15,6 +15,7 @@ import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { ReactionChips } from '@/components/shared/ReactionChips';
 import { groupReactions, type ReactionRow } from '@/lib/social/reactions';
+import { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 
 interface Sender {
   id: string;
@@ -65,13 +66,12 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   const [attachOpen, setAttachOpen] = useState(false);
   const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number; messageId: string } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  // Shared long-press timer for opening the reaction menu on touch devices.
-  const touchTimer = useRef<number | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const attachRef = useRef<HTMLDivElement>(null);
   const lastAtRef = useRef<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(inputRef, input, setInput);
+  const reactionTriggerFor = useItemReactionTrigger((x, y, messageId) => setReactionMenu({ x, y, messageId }));
 
   // Close the attach (+) menu on outside click.
   useEffect(() => {
@@ -404,29 +404,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               <UserAvatar user={m.sender} />
               <div
                 className="max-w-[78%]"
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setReactionMenu({ x: e.clientX, y: e.clientY, messageId: m.id });
-                }}
-                onTouchStart={(e) => {
-                  const t2 = e.touches[0];
-                  touchTimer.current = window.setTimeout(
-                    () => setReactionMenu({ x: t2.clientX, y: t2.clientY, messageId: m.id }),
-                    500,
-                  );
-                }}
-                onTouchMove={() => {
-                  if (touchTimer.current) {
-                    clearTimeout(touchTimer.current);
-                    touchTimer.current = null;
-                  }
-                }}
-                onTouchEnd={() => {
-                  if (touchTimer.current) {
-                    clearTimeout(touchTimer.current);
-                    touchTimer.current = null;
-                  }
-                }}
+                {...reactionTriggerFor(m.id)}
               >
                 {!mine && <p className="mb-0.5 px-1 text-[11px] text-site-text-dim">{m.sender.name || m.sender.handle || t("member-fallback", { defaultValue: "Member" })}</p>}
                 {m.content && (
