@@ -6,7 +6,7 @@
  * "Load more" appends rows client-side with an incrementing cursor.
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
@@ -119,6 +119,10 @@ function JobsPage() {
   const [drawerJob, setDrawerJob] = useState<JobRow | null>(null);
 
   // ── Handlers ─────────────────────────────────────────────────────
+  const handleCloseDrawer = useCallback(() => {
+    setDrawerJob(null);
+  }, []);
+
   function updateFilter(patch: Partial<ListJobsFilters>) {
     void navigate({
       search: (prev) => ({ ...prev, ...patch }),
@@ -197,7 +201,7 @@ function JobsPage() {
       {/* Detail drawer */}
       <JobDrawer
         job={drawerJob}
-        onClose={() => setDrawerJob(null)}
+        onClose={handleCloseDrawer}
         onAction={handleAction}
       />
     </div>

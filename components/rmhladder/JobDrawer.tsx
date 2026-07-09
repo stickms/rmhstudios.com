@@ -51,8 +51,9 @@ export function JobDrawer({ job, onClose, onAction }: JobDrawerProps) {
   const open = job !== null;
   const drawerRef = useRef<HTMLDivElement | null>(null);
   const returnFocusRef = useRef<HTMLElement | null>(null);
+  const wasOpenRef = useRef(false);
 
-  // Capture focus to return to, focus-trap, Esc close
+  // Capture focus to return to on open/close transition
   useEffect(() => {
     if (open) {
       returnFocusRef.current = document.activeElement as HTMLElement;
@@ -64,14 +65,20 @@ export function JobDrawer({ job, onClose, onAction }: JobDrawerProps) {
     }
   }, [open]);
 
-  // Focus trap
+  // Initial focus: only on false→true transition
+  useEffect(() => {
+    if (!open || !drawerRef.current) return;
+    if (wasOpenRef.current) return; // Not a false→true transition
+
+    const container = drawerRef.current;
+    const focusables = getFocusables(container);
+    if (focusables.length) focusables[0].focus();
+  }, [open]);
+
+  // Tab cycling and Esc close
   useEffect(() => {
     if (!open || !drawerRef.current) return;
     const container = drawerRef.current;
-
-    // Move initial focus into the drawer
-    const focusables = getFocusables(container);
-    if (focusables.length) focusables[0].focus();
 
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') { onClose(); return; }
@@ -92,6 +99,11 @@ export function JobDrawer({ job, onClose, onAction }: JobDrawerProps) {
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [open, onClose]);
+
+  // Track open state for transition detection
+  useEffect(() => {
+    wasOpenRef.current = open;
+  }, [open]);
 
   // Outside-click close (delayed to avoid closing from the same click that opened)
   useEffect(() => {
