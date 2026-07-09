@@ -85,6 +85,16 @@ function AdminDashboardPage() {
           </Link>
 
           <Link
+            to="/admin/security-reports"
+            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+          >
+            <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("security-reports-title", { defaultValue: "Security Reports" })}</h2>
+            <p className="text-site-text-muted text-sm mt-2">
+              {t("security-reports-description", { defaultValue: "Triage and resolve bug-bounty submissions from the /security page." })}
+            </p>
+          </Link>
+
+          <Link
             to="/admin/library-quota"
             className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
           >
