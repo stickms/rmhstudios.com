@@ -248,7 +248,11 @@ export async function getOverview(prisma: QueriesPrisma, userId: string) {
 export async function listReviewTasks(prisma: QueriesPrisma, filters: { status?: string } = {}) {
   return prisma.ladderReviewTask.findMany({
     where: { status: filters.status ?? 'open' },
-    include: { job: { include: { company: true } }, source: true },
+    orderBy: [{ createdAt: 'desc' }],
+    include: {
+      job: { include: { company: true, verifications: { orderBy: { checkedAt: 'desc' }, take: 1 } } },
+      source: true,
+    },
   });
 }
 
