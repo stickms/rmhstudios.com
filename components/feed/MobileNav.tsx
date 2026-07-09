@@ -7,7 +7,6 @@ import { useSession } from '@/components/Providers';
 import { ComposeModal } from './ComposeModal';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
-import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useTranslation } from "react-i18next";
 
@@ -61,9 +60,6 @@ export function MobileNav() {
       {/* Bottom navigation bar — pb-safe keeps the tab row clear of the iOS
           home-indicator (fixed elements don't inherit the body's safe-area pad). */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 vibe-glass vibe-mobile-nav border-t border-site-border pb-safe">
-        <div className="flex items-center justify-end px-4 py-1 border-b border-site-border">
-          <LanguageSwitcher />
-        </div>
         <div className="flex items-center justify-around min-h-12">
           <Link to="/" className={tabClass(isHome)} aria-label={t("home", { defaultValue: "Home" })} aria-current={isHome ? 'page' : undefined}>
             {activeBar(isHome)}
