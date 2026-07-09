@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/bwmarrin/discordgo"
+	"github.com/rmhstudios/rmh-go/pkg/config"
 	"github.com/rmhstudios/rmh-go/pkg/db"
 	"github.com/rmhstudios/rmh-go/pkg/log"
 )
@@ -310,18 +311,53 @@ func (s *ChatService) HandleChat(ctx context.Context, sess *discordgo.Session, i
 
 // ─── Mention / reply handling ──────────────────────────────────────────────
 
-// mentionContextSize is how many recent channel messages to pull in for context.
-const mentionContextSize = 8
+// Context sizing for mention replies. The bot owner can tune how many recent
+// channel messages Alex reads via ALEX_MENTION_CONTEXT (more = richer context,
+// higher token cost); it's clamped to Discord's per-request maximum.
+const (
+	mentionContextDefault = 30  // generous default so Alex uses lots of recent chat
+	mentionContextMax     = 100 // Discord's hard cap for one ChannelMessages fetch
+)
+
+// mentionContextSize returns how many recent messages to feed the model, from
+// ALEX_MENTION_CONTEXT (default mentionContextDefault), clamped to [1, 100].
+func mentionContextSize() int {
+	n := config.GetInt("ALEX_MENTION_CONTEXT", mentionContextDefault)
+	if n < 1 {
+		n = 1
+	}
+	if n > mentionContextMax {
+		n = mentionContextMax
+	}
+	return n
+}
+
+// mentionUserCooldown throttles repeat pings from a SINGLE user (keyed per user,
+// not per channel) so Alex can answer many people at once but won't spam-reply to
+// one person hammering him. Tunable via ALEX_MENTION_COOLDOWN.
+func mentionUserCooldown() time.Duration {
+	return config.GetDuration("ALEX_MENTION_COOLDOWN", 3*time.Second)
+}
 
 // HandleMention replies when Alex is @mentioned or replied to, using recent
 // channel context so the reply is coherent. Best-effort and throttled per channel;
 // stays silent if DeepSeek isn't configured.
 func (s *ChatService) HandleMention(ctx context.Context, sess *discordgo.Session, m *discordgo.MessageCreate, botID string) error {
+	now := time.Now().UTC()
+
+	// A live community-prompt reply is rewarded (as an "interaction") and answered
+	// even without AI. It bypasses the per-user throttle — each user can only claim
+	// a prompt once, so a burst of repliers should all be able to win.
+	if s.pet != nil && m.Author != nil && s.pet.claimPrompt(m.ChannelID, m.Author.ID, now) {
+		return s.handlePromptClaim(ctx, sess, m, botID)
+	}
+
 	if s.deepseek == nil || !s.deepseek.configured() {
 		return nil
 	}
-	// Throttle per channel to avoid spam and any back-and-forth loops.
-	if s.pet != nil && s.pet.onCooldown(m.ChannelID, "mention", 4*time.Second, time.Now().UTC()) {
+	// Throttle per USER (not per channel) so Alex handles multiple people pinging
+	// him at once — he just won't spam-reply to a single person hammering him.
+	if s.pet != nil && m.Author != nil && s.pet.onCooldown(m.Author.ID, "mention", mentionUserCooldown(), now) {
 		return nil
 	}
 
@@ -344,7 +380,7 @@ func (s *ChatService) HandleMention(ctx context.Context, sess *discordgo.Session
 	msgs := []ChatMessage{{Role: roleSystem, Content: system}}
 	msgs = append(msgs, mentionTranscript(sess, m, botID)...)
 
-	reqCtx, cancel := context.WithTimeout(ctx, 25*time.Second)
+	reqCtx, cancel := context.WithTimeout(ctx, 40*time.Second)
 	defer cancel()
 
 	// Generate Alex's reply. If DeepSeek errors or returns nothing usable, fall
@@ -372,6 +408,51 @@ func (s *ChatService) HandleMention(ctx context.Context, sess *discordgo.Session
 	// Remember the channel (so the care loop talks here too) and cheer Alex up a
 	// touch — but no leaderboard credit, so mentions can't be farmed for points.
 	if s.pet != nil {
+		s.pet.NoteMentioned(ctx, m.GuildID, m.ChannelID)
+	}
+	return nil
+}
+
+// handlePromptClaim answers someone who replied to one of Alex's community
+// prompts: Alex reacts to their answer (AI, or a template fallback) and their
+// reply is credited as an "interaction" on the leaderboard. Alex never mentions
+// points. Replies directly to the triggering message.
+func (s *ChatService) handlePromptClaim(ctx context.Context, sess *discordgo.Session, m *discordgo.MessageCreate, botID string) error {
+	stopTyping := keepTyping(ctx, sess, m.ChannelID)
+	defer stopTyping()
+
+	username := "someone"
+	avatar := ""
+	if m.Author != nil {
+		if m.Author.Username != "" {
+			username = m.Author.Username
+		}
+		avatar = m.Author.Avatar
+	}
+	answer := cleanDiscordContent(m.Content, botID)
+
+	var pet *PetState
+	if s.pet != nil {
+		pet = s.pet.snapshot(ctx)
+	}
+	reply := ""
+	if s.pet != nil {
+		reply = s.pet.promptAckContent(ctx, pet, username, answer)
+	}
+	if reply == "" {
+		reply = promptAckLine()
+	}
+
+	if _, err := sess.ChannelMessageSendReply(m.ChannelID, reply, m.Reference()); err != nil {
+		s.logger.Warn("prompt ack reply failed, retrying as plain message", "channel", m.ChannelID, "error", err)
+		if _, err2 := sess.ChannelMessageSend(m.ChannelID, reply); err2 != nil {
+			s.logger.Warn("prompt ack send failed", "channel", m.ChannelID, "error", err2)
+		}
+	}
+
+	// Credit the interaction + remember the channel + cheer Alex up a touch.
+	if s.pet != nil && m.Author != nil {
+		s.pet.creditInteraction(ctx, m.Author.ID, username, avatar)
 		s.pet.NoteMentioned(ctx, m.GuildID, m.ChannelID)
 	}
 	return nil
@@ -422,7 +503,7 @@ func mentionTranscript(sess *discordgo.Session, m *discordgo.MessageCreate, botI
 	var out []ChatMessage
 
 	// Recent messages before this one, oldest → newest.
-	if history, err := sess.ChannelMessages(m.ChannelID, mentionContextSize, m.ID, "", ""); err == nil {
+	if history, err := sess.ChannelMessages(m.ChannelID, mentionContextSize(), m.ID, "", ""); err == nil {
 		for i := len(history) - 1; i >= 0; i-- {
 			out = append(out, transcriptTurn(history[i], botID)...)
 		}

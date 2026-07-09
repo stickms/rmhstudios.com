@@ -94,8 +94,8 @@ func petStateLine(p *PetState) string {
 	}
 	mood := p.mood()
 	career := "still figuring out your career"
-	if l, ok := careerLabel[p.Career]; ok {
-		career = "working toward becoming a " + l
+	if p.Career != "" {
+		career = "working toward: " + careerDisplay(p.Career)
 	}
 	return fmt.Sprintf("You (Alex) are a %s right now, feeling: %s. You're %s.",
 		stageWord(p.LifeStage), mood.Label, career)
@@ -116,6 +116,12 @@ func (ps *PetService) proactiveContent(ctx context.Context, pl plan) string {
 		instruction = careInstruction(pl.need)
 	case kindAmbient:
 		instruction = ambientInstruction(ctx)
+	case kindPrompt:
+		if pl.promptStyle == promptStyleEvent {
+			instruction = eventPromptInstruction()
+		} else {
+			instruction = questionPromptInstruction()
+		}
 	default:
 		return ""
 	}
@@ -128,6 +134,158 @@ func (ps *PetService) proactiveContent(ctx context.Context, pl plan) string {
 	})
 	if err != nil {
 		ps.logger.Warn("proactive AI generation failed, using template", "error", err)
+		return ""
+	}
+	return boundMessage(reply)
+}
+
+// actionReaction generates Alex's in-character reaction to a care action just
+// performed (feed/play/clean/rest/study), so his responses vary instead of
+// cycling the fixed flavor lines. Returns "" on any failure so the caller falls
+// back to the static line.
+func (ps *PetService) actionReaction(ctx context.Context, pet *PetState, action string) string {
+	if ps.deepseek == nil || !ps.deepseek.configured() {
+		return ""
+	}
+	what := map[string]string{
+		"feed":  "Someone just fed you (boba or a meal) and your hunger went up.",
+		"play":  "Someone just played with you and you had a blast.",
+		"clean": "Someone just cleaned you up and now you're fresh.",
+		"rest":  "Someone just put you down for a nap and you woke up recharged.",
+		"study": "Someone just helped you study and you got a little smarter.",
+	}[action]
+	if what == "" {
+		return ""
+	}
+
+	system := alexSystemPrompt
+	if pet != nil {
+		system += "\n\n" + petStateLine(pet)
+	}
+	user := what + " React in ONE short, in-character sentence — a little hype and funny, " +
+		"and gas up whoever did it. No hashtags, no markdown headers, don't mention any slash commands."
+
+	reqCtx, cancel := context.WithTimeout(ctx, aiTimeout)
+	defer cancel()
+	reply, err := ps.deepseek.Chat(reqCtx, []ChatMessage{
+		{Role: roleSystem, Content: system},
+		{Role: roleUser, Content: user},
+	})
+	if err != nil {
+		ps.logger.Warn("action reaction AI failed, using template", "action", action, "error", err)
+		return ""
+	}
+	return boundMessage(reply)
+}
+
+// ─── Community prompt generation (see pet_events.go) ─────────────────────
+
+// eventPromptInstruction asks Alex to post a limited-time "reply to this" event.
+// He never talks about points/rewards — replying just quietly counts as an
+// interaction on the leaderboard.
+func eventPromptInstruction() string {
+	return "Post a short, fun LIMITED-TIME community moment to your Discord server. " +
+		"Invite people to REPLY to your message with something themed to you — their favorite boba flavor, " +
+		"their go-to coding snack, the last thing they shipped, their comfort food, a hot take, etc. " +
+		"Make it playful and time-limited (encourage quick replies). 1–2 sentences, in character, hype. " +
+		"Do NOT mention points, rewards, or a leaderboard. No hashtags, no markdown headers."
+}
+
+// questionPromptInstruction asks Alex to pose a casual, reply-worthy question.
+func questionPromptInstruction() string {
+	return "Ask your Discord server a short, casual, fun question to spark conversation (boba, tech, college life, " +
+		"hobbies, hot takes — whatever fits you) and encourage people to reply. 1 sentence, in character. " +
+		"Do NOT mention points, rewards, or a leaderboard. No hashtags, no markdown headers."
+}
+
+// eventPromptLines / questionPromptLines are the static fallbacks used when
+// DeepSeek is unavailable. None mention points — replying just counts quietly.
+var eventPromptLines = []string{
+	"⏳ flash moment! reply to this with your favorite boba flavor, first few gimme the vibes 🧋",
+	"quick one — reply with the last thing you shipped (or wanted to) 🚀 limited time, go go go!",
+	"drop your comfort food in the replies 🍜 clock's tickin, lemme see em!",
+	"reply with your go-to coding snack rn 💻🍪 limited-time, don't sleep on it!",
+	"name a boba topping that goes CRAZY — reply and put me on 🧋 first few repliers!",
+	"reply with your biggest W of the week 🏆 limited time, lessgo hype me up!",
+}
+
+var questionPromptLines = []string{
+	"real talk — what's the best boba order of all time? reply and lemme judge 🧋",
+	"hot take: tabs or spaces? reply your answer, wrong answers welcome 💻",
+	"what should I vibe-code next? drop ideas in the replies 🚀",
+	"what's everybody grinding on today? reply and put me on 👀",
+	"if you could intern anywhere this summer, where? reply, I'm nosy 💼",
+}
+
+func eventPromptLine() string    { return pick(eventPromptLines) }
+func questionPromptLine() string { return pick(questionPromptLines) }
+
+// promptAckContent generates Alex's reply to someone who answered a prompt —
+// reacting to their answer and hyping them up. He does NOT mention points (the
+// interaction is credited silently). "" on failure.
+func (ps *PetService) promptAckContent(ctx context.Context, pet *PetState, userName, userAnswer string) string {
+	if ps.deepseek == nil || !ps.deepseek.configured() {
+		return ""
+	}
+	system := alexSystemPrompt
+	if pet != nil {
+		system += "\n\n" + petStateLine(pet)
+	}
+	system += fmt.Sprintf("\n\nSomeone named %q just replied to your community prompt. React to their answer in ONE "+
+		"short, hype sentence and gas them up. Do NOT mention points, rewards, or a leaderboard. "+
+		"No hashtags, no markdown headers.", userName)
+
+	user := "Their reply: " + userAnswer
+	if strings.TrimSpace(userAnswer) == "" {
+		user = "They replied (you can't see the exact text) — just hype them up for joining in."
+	}
+
+	reqCtx, cancel := context.WithTimeout(ctx, aiTimeout)
+	defer cancel()
+	reply, err := ps.deepseek.Chat(reqCtx, []ChatMessage{
+		{Role: roleSystem, Content: system},
+		{Role: roleUser, Content: user},
+	})
+	if err != nil {
+		return ""
+	}
+	return boundMessage(reply)
+}
+
+// promptAckLines are static fallbacks for the prompt reply — no points mentioned.
+var promptAckLines = []string{
+	"ayy that's a W answer 🔥 appreciate you fr 🧋",
+	"sheeesh I fw that 😤 thank you for pullin up!",
+	"that's bussin ngl 🙏 you carried today no cap",
+	"W reply fr 💯 you the GOAT 🐐",
+	"okok I see you 👀 love that answer, respect 🤝",
+}
+
+func promptAckLine() string {
+	return pick(promptAckLines)
+}
+
+// careerReaction generates Alex's in-character hype when he adopts a new (custom)
+// career/goal. "" on failure so the caller falls back to a generic blurb.
+func (ps *PetService) careerReaction(ctx context.Context, pet *PetState, career string) string {
+	if ps.deepseek == nil || !ps.deepseek.configured() {
+		return ""
+	}
+	system := alexSystemPrompt
+	if pet != nil {
+		system += "\n\n" + petStateLine(pet)
+	}
+	user := fmt.Sprintf("You just decided your new dream career / goal is: %q. React in ONE short, hype in-character "+
+		"sentence about chasing it and grinding toward it. No hashtags, no markdown headers, don't mention slash commands.", career)
+
+	reqCtx, cancel := context.WithTimeout(ctx, aiTimeout)
+	defer cancel()
+	reply, err := ps.deepseek.Chat(reqCtx, []ChatMessage{
+		{Role: roleSystem, Content: system},
+		{Role: roleUser, Content: user},
+	})
+	if err != nil {
+		ps.logger.Warn("career reaction AI failed, using template", "error", err)
 		return ""
 	}
 	return boundMessage(reply)

@@ -2763,18 +2763,19 @@ model DiscordAlexGuild {
 // user's caretaking counts once across all servers (rows are keyed by a fixed
 // global sentinel in the guildId column).
 model DiscordAlexCaretaker {
-  guildId    String
-  userId     String
-  username   String
-  avatarHash String? // Discord avatar hash, for the rendered /caretakers leaderboard image
-  feeds      Int      @default(0)
-  plays      Int      @default(0)
-  cleans     Int      @default(0)
-  naps       Int      @default(0)
-  talks      Int      @default(0)
-  studies    Int      @default(0)
-  points     Int      @default(0)
-  updatedAt  DateTime @updatedAt
+  guildId      String
+  userId       String
+  username     String
+  avatarHash   String? // Discord avatar hash, for the rendered /caretakers leaderboard image
+  feeds        Int      @default(0)
+  plays        Int      @default(0)
+  cleans       Int      @default(0)
+  naps         Int      @default(0)
+  talks        Int      @default(0)
+  studies      Int      @default(0)
+  interactions Int      @default(0) // replies to Alex's community prompts/events
+  points       Int      @default(0)
+  updatedAt    DateTime @updatedAt
 
   @@id([guildId, userId])
   @@index([guildId, points])

@@ -10,6 +10,7 @@ go_library(
         "pet.go",
         "pet_ai.go",
         "pet_care.go",
+        "pet_events.go",
         "pet_image.go",
         "pet_intro.go",
         "pet_presence.go",

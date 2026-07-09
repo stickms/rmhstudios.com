@@ -504,3 +504,97 @@ func TestBuildAlexImagePromptSafe(t *testing.T) {
 		t.Errorf("infant prompt should describe a baby, got %q", prompt)
 	}
 }
+
+func TestWantsMessagePrompt(t *testing.T) {
+	// Interactive community prompts follow the same rules as ambient chatter.
+	if !wantsMessage(msgLevelAll, kindPrompt) {
+		t.Errorf("'all' should allow prompts")
+	}
+	if wantsMessage(msgLevelCare, kindPrompt) {
+		t.Errorf("'care' should drop prompts (they're random chatter)")
+	}
+	if wantsMessage(msgLevelOff, kindPrompt) {
+		t.Errorf("'off' should drop prompts")
+	}
+}
+
+func TestNormalizeCareer(t *testing.T) {
+	cases := map[string]string{
+		"swe":               "swe",
+		"Software Engineer": "swe",
+		"developer":         "swe",
+		"quant":             "quant",
+		"UX":                "design",
+		"product manager":   "pm",
+		"astronaut":         "", // custom → no known key
+		"":                  "",
+		"   ":               "",
+	}
+	for in, want := range cases {
+		if got := normalizeCareer(in); got != want {
+			t.Errorf("normalizeCareer(%q) = %q, want %q", in, got, want)
+		}
+	}
+}
+
+func TestSanitizeCareer(t *testing.T) {
+	if got := sanitizeCareer("  astronaut  "); got != "astronaut" {
+		t.Errorf("expected trimmed 'astronaut', got %q", got)
+	}
+	if got := sanitizeCareer("@everyone `rm -rf` *boss*"); strings.ContainsAny(got, "@`*") {
+		t.Errorf("should strip injection/markdown chars, got %q", got)
+	}
+	if sanitizeCareer("   ") != "" {
+		t.Errorf("blank input should sanitize to empty")
+	}
+	if len([]rune(sanitizeCareer(strings.Repeat("x", 100)))) > 40 {
+		t.Errorf("should cap at 40 runes")
+	}
+}
+
+func TestCareerDisplayCustom(t *testing.T) {
+	if careerDisplay("swe") != careerLabel["swe"] {
+		t.Errorf("known key should map to its label")
+	}
+	if got := careerDisplay("pro boba taster"); got != "pro boba taster" {
+		t.Errorf("custom career should show as typed, got %q", got)
+	}
+}
+
+func TestClaimPromptOncePerUser(t *testing.T) {
+	ps := &PetService{}
+	now := time.Unix(1_700_000_000, 0).UTC()
+	ps.registerPrompt(promptStyleEvent, map[string]bool{"chanA": true}, now)
+
+	if !ps.claimPrompt("chanA", "user1", now) {
+		t.Fatalf("first claim should succeed")
+	}
+	if ps.claimPrompt("chanA", "user1", now) {
+		t.Errorf("second claim by the same user should fail")
+	}
+	if !ps.claimPrompt("chanA", "user2", now) {
+		t.Errorf("a different user should still be able to claim")
+	}
+	if ps.claimPrompt("chanB", "user3", now) {
+		t.Errorf("a claim in a non-prompt channel should fail")
+	}
+	if ps.claimPrompt("chanA", "user4", now.Add(promptDuration()+time.Second)) {
+		t.Errorf("an expired prompt should not be claimable")
+	}
+}
+
+func TestClaimPromptRespectsCap(t *testing.T) {
+	ps := &PetService{}
+	now := time.Unix(1_700_000_000, 0).UTC()
+	ps.registerPrompt(promptStyleQuestion, map[string]bool{"c": true}, now)
+
+	claimed := 0
+	for i := 0; i < promptMaxClaims+5; i++ {
+		if ps.claimPrompt("c", "user"+itoa(i), now) {
+			claimed++
+		}
+	}
+	if claimed != promptMaxClaims {
+		t.Errorf("expected exactly %d winners (cap), got %d", promptMaxClaims, claimed)
+	}
+}

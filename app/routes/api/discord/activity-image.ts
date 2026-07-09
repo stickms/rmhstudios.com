@@ -92,6 +92,7 @@ export const Route = createFileRoute('/api/discord/activity-image')({
                             naps: r.naps,
                             talks: r.talks,
                             studies: r.studies,
+                            interactions: r.interactions,
                         }));
                         png = await generateCaretakersImage(entries);
                         maxAge = 20;

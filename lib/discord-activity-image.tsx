@@ -531,6 +531,7 @@ export interface CaretakerEntry {
     naps: number;
     talks: number;
     studies: number;
+    interactions: number;
 }
 
 // ─── rmhstudios.com design tokens ────────────────────────────────────
@@ -562,6 +563,7 @@ function caretakerTally(c: CaretakerEntry): string {
         { n: c.cleans, label: 'cleaned' },
         { n: c.naps, label: 'napped' },
         { n: c.talks, label: 'chatted' },
+        { n: c.interactions, label: 'joined in' },
     ];
     const top = parts.filter(p => p.n > 0).sort((a, b) => b.n - a.n).slice(0, 3);
     if (top.length === 0) return 'just getting started';
@@ -592,7 +594,7 @@ function RankBadge({ rank }: { rank: number }) {
 
 export async function generateCaretakersImage(entries: CaretakerEntry[]): Promise<Buffer> {
     const display = entries.slice(0, 10);
-    const cacheKey = `care:v3:${display.map(c => `${c.userId}:${c.points}:${c.avatarHash ?? ''}`).join(',')}`;
+    const cacheKey = `care:v4:${display.map(c => `${c.userId}:${c.points}:${c.avatarHash ?? ''}`).join(',')}`;
     const cached = getCachedPng(cacheKey);
     if (cached) return cached;
 
