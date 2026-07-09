@@ -245,6 +245,7 @@ export function ConversationView({
     try {
       const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}/react`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messageId, emoji }),
       });
@@ -321,8 +322,11 @@ export function ConversationView({
 
       eventSource.addEventListener('message-reaction', (e) => {
         try {
+          // Payload is { conversationId, messageId, reactions } with no `type`
+          // field — the named SSE event already scopes it, matching how this
+          // stream's new-message/typing payloads are shaped.
           const data = JSON.parse(e.data);
-          if (data.type === 'message-reaction' && data.conversationId === conversationId) {
+          if (data.conversationId === conversationId) {
             setMessages((prev) =>
               prev.map((m) => (m.id === data.messageId ? { ...m, reactions: data.reactions } : m)),
             );
