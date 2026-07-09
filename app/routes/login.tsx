@@ -21,13 +21,28 @@ export const Route = createFileRoute('/login')({
   component: LoginPage,
 });
 
+/**
+ * Only allow a same-site absolute path as a post-login redirect target.
+ * Browsers strip control characters and normalize "\" to "/", so a naive
+ * `startsWith('/') && !startsWith('//')` guard is bypassed by "/\evil.com" or
+ * "/\t//evil.com" — both resolve to an off-site protocol-relative URL when
+ * assigned to `window.location.href`. Require a leading "/" NOT followed by "/"
+ * or "\", and reject control characters. (SSR-safe: no `window` access.)
+ */
+function safeInternalPath(raw?: string): string {
+  if (!raw) return '/';
+  // Detecting control characters is the point here (browsers strip them before
+  // navigating), so the control-regex lint rule is intentionally disabled.
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/.test(raw)) return '/';
+  return /^\/(?![/\\])/.test(raw) ? raw : '/';
+}
+
 function LoginPage() {
   const { t } = useTranslation("pages");
   const { callbackURL: rawCallback } = Route.useSearch();
 
-  const [callbackURL, setCallbackURL] = useState(() =>
-    rawCallback?.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/'
-  );
+  const [callbackURL, setCallbackURL] = useState(() => safeInternalPath(rawCallback));
 
   useEffect(() => {
     if (!rawCallback?.startsWith('/')) {

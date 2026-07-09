@@ -8,6 +8,7 @@ const LEGAL_LINKS = [
   { href: '/privacy',   key: 'privacy-policy',  defaultLabel: 'Privacy Policy' },
   { href: '/cookies',   key: 'cookie-policy',   defaultLabel: 'Cookie Policy' },
   { href: '/copyright', key: 'copyright',       defaultLabel: 'Copyright' },
+  { href: '/security',  key: 'security',        defaultLabel: 'Security' },
 ];
 
 export function LegalLayout({

@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma.server";
 
 function verifyToken(slug: string, token: string): boolean {
   const secret = process.env.NEWS_APPROVAL_SECRET ?? "";
+  // Fail closed: an unset secret would make the HMAC key the empty string, so
+  // anyone who knows a slug could forge a valid token. Never validate then.
+  if (!secret) return false;
   const expected = crypto.createHmac("sha256", secret).update(slug).digest("hex");
   try {
     return crypto.timingSafeEqual(Buffer.from(token, "hex"), Buffer.from(expected, "hex"));

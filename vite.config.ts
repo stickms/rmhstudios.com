@@ -225,9 +225,15 @@ export default defineConfig({
       // side effect isn't tree-shaken away — the startup plugin below relies on
       // it. traceDeps also copies it into .output/node_modules for runtime.
       traceDeps: ["@prisma/client", ".prisma", "@resvg/resvg-js", "satori", "esbuild", "reflect-metadata"],
-      // Startup plugin that installs the reflect-metadata polyfill before any
-      // request loads the auth/passkey chunk (which needs it via tsyringe).
-      plugins: [fileURLToPath(new URL("./server/nitro/reflect-metadata.ts", import.meta.url))],
+      // Startup plugins:
+      //  - reflect-metadata: installs the polyfill before any request loads the
+      //    auth/passkey chunk (which needs it via tsyringe).
+      //  - security-headers: adds baseline security headers to every response as
+      //    defense-in-depth (mirrors the edge/Traefik policy for non-proxied paths).
+      plugins: [
+        fileURLToPath(new URL("./server/nitro/reflect-metadata.ts", import.meta.url)),
+        fileURLToPath(new URL("./server/nitro/security-headers.ts", import.meta.url)),
+      ],
       rollupConfig: {
         external: heavyExternals.map((pkg) => new RegExp(`^${pkg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(/.+)?$`)),
       },

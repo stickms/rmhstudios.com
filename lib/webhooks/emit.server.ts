@@ -15,6 +15,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { matchesEvent } from '@/lib/webhooks/events';
 import { signWebhookPayload } from '@/lib/webhooks/signature';
+import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 
 // Pure crypto + URL validation live in ./signature; re-exported for route use.
 export { generateWebhookSecret, signWebhookPayload, verifyWebhookSignature, validateWebhookUrl, WEBHOOK_SECRET_PREFIX } from '@/lib/webhooks/signature';
@@ -42,12 +43,17 @@ async function attemptDelivery(deliveryId: string, event: string, payload: unkno
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = `t=${timestamp},v1=${signWebhookPayload(endpoint.secret, timestamp, body)}`;
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), DELIVERY_TIMEOUT_MS);
   let status = 0;
   let errMsg: string | null = null;
   try {
-    const resp = await fetch(endpoint.url, {
+    // Deliver through the SSRF guard, NOT native fetch. Endpoint URLs are
+    // user-supplied and only lexically validated at registration
+    // (validateWebhookUrl never resolves DNS), so a hostname that resolves to a
+    // private/link-local address — or an endpoint that 302-redirects inward —
+    // would otherwise let a subscriber reach internal services (e.g. cloud
+    // metadata). safeFetch resolves DNS, rejects private/reserved IPs, enforces
+    // https, and re-validates every redirect hop.
+    const resp = await safeFetch(endpoint.url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -58,13 +64,16 @@ async function attemptDelivery(deliveryId: string, event: string, payload: unkno
         'X-RMH-Signature': signature,
       },
       body,
-      signal: controller.signal,
+      timeoutMs: DELIVERY_TIMEOUT_MS,
     });
     status = resp.status;
   } catch (e) {
-    errMsg = e instanceof Error ? e.message.slice(0, 500) : 'delivery failed';
-  } finally {
-    clearTimeout(timer);
+    errMsg =
+      e instanceof SsrfError
+        ? `blocked destination: ${e.message}`.slice(0, 500)
+        : e instanceof Error
+          ? e.message.slice(0, 500)
+          : 'delivery failed';
   }
 
   const ok = status >= 200 && status < 300;

@@ -30,6 +30,7 @@ import { Route as RmhboxRouteImport } from './routes/rmhbox'
 import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
 import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
+import { Route as SecurityRouteImport } from './routes/security'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
@@ -641,6 +642,11 @@ const RmhFarmingSimRoute = RmhFarmingSimRouteImport.update({
 const RmhCapitalRoute = RmhCapitalRouteImport.update({
   id: '/rmh-capital',
   path: '/rmh-capital',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SecurityRoute = SecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -3274,6 +3280,7 @@ export interface FileRoutesByFullPath {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
+  '/security': typeof SecurityRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
@@ -3798,6 +3805,7 @@ export interface FileRoutesByTo {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
+  '/security': typeof SecurityRoute
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/synapse-storm': typeof SynapseStormRoute
@@ -4309,6 +4317,7 @@ export interface FileRoutesById {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
+  '/security': typeof SecurityRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
@@ -4841,6 +4850,7 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/offline'
     | '/privacy'
+    | '/security'
     | '/rmh-capital'
     | '/rmh-farming-sim'
     | '/rmh-pmc'
@@ -5365,6 +5375,7 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/offline'
     | '/privacy'
+    | '/security'
     | '/rochester-offensive'
     | '/sitemap.xml'
     | '/synapse-storm'
@@ -5875,6 +5886,7 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/offline'
     | '/privacy'
+    | '/security'
     | '/rmh-capital'
     | '/rmh-farming-sim'
     | '/rmh-pmc'
@@ -6405,6 +6417,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   OfflineRoute: typeof OfflineRoute
+  SecurityRoute: typeof SecurityRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
@@ -6827,6 +6840,13 @@ declare module '@tanstack/react-router' {
       path: '/rmh-capital'
       fullPath: '/rmh-capital'
       preLoaderRoute: typeof RmhCapitalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/security': {
+      id: '/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof SecurityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -11522,6 +11542,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   OfflineRoute: OfflineRoute,
+  SecurityRoute: SecurityRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,
