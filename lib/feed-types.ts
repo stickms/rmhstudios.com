@@ -1,3 +1,5 @@
+import type { ReactionSummary } from '@/lib/social/reactions';
+
 export type FeedItemType =
   | "rmhark"
   | "game_announcement"
@@ -82,6 +84,9 @@ export interface FeedItem {
   poll?: FeedPoll;
   gifUrl?: string;
   imageUrls?: string[];
+
+  /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
+  reactions?: ReactionSummary[];
 
   // Announcement fields (games/apps/news/blog/research)
   title?: string;

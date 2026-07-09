@@ -5,6 +5,7 @@ import type { FeedItem, FeedPoll } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { audienceWhere } from "@/lib/feed/audience.server";
 import { applyLock } from "@/lib/feed/map-feed-item.server";
+import { groupReactions } from "@/lib/social/reactions";
 
 function pollInclude(userId: string | null) {
   return {
@@ -49,6 +50,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
 // consistent with the main feed read path.
 const rmharkInclude = (viewerId: string | null) => ({
   user: { select: userDisplaySelect },
+  reactions: { select: { emoji: true, userId: true } },
   ...(viewerId
     ? {
         likes: { where: { userId: viewerId }, select: { id: true } },
@@ -160,6 +162,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
       poll: mapPoll(r.poll),
       gifUrl: r.gifUrl ?? undefined,
       imageUrls: r.imageUrls ?? undefined,
+      reactions: groupReactions(r.reactions ?? [], viewerId),
     }, r, viewerId));
 
     // Map reposts to FeedItems with repostedBy
@@ -183,6 +186,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
         poll: mapPoll(r.poll),
         gifUrl: r.gifUrl ?? undefined,
         imageUrls: r.imageUrls ?? undefined,
+        reactions: groupReactions(r.reactions ?? [], viewerId),
       }, r, viewerId);
     });
 
@@ -224,6 +228,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
           poll: mapPoll(p.poll),
           gifUrl: p.gifUrl ?? undefined,
           imageUrls: p.imageUrls ?? undefined,
+          reactions: groupReactions(p.reactions ?? [], viewerId),
         }, p, viewerId);
         items = [pinnedItem, ...merged.filter((it) => (it.actualId ?? it.id) !== p.id)];
       }

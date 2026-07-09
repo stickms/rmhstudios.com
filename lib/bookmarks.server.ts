@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma.server';
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { applyLock } from '@/lib/feed/map-feed-item.server';
+import { groupReactions } from '@/lib/social/reactions';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -35,6 +36,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
 
 const rmharkInclude = (viewerId: string | null) => ({
   user: { select: userDisplaySelect },
+  reactions: { select: { emoji: true, userId: true } },
   ...(viewerId
     ? {
         likes: { where: { userId: viewerId }, select: { id: true } },
@@ -86,6 +88,7 @@ export async function listBookmarks(
         poll: mapPoll(r.poll),
         gifUrl: r.gifUrl ?? undefined,
         imageUrls: r.imageUrls ?? undefined,
+        reactions: groupReactions(r.reactions ?? [], viewerId),
       },
       r,
       viewerId

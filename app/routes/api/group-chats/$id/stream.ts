@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
-import { subscribeGroup, type GroupMessagePayload } from '@/lib/group-events';
+import { subscribeGroup, type GroupEventPayload } from '@/lib/group-events';
 
 /**
  * GET /api/group-chats/$id/stream — SSE stream of new messages for a member.
@@ -39,8 +39,12 @@ export const Route = createFileRoute('/api/group-chats/$id/stream')({
             // Initial comment so the connection opens promptly.
             send('open', JSON.stringify({ ok: true }));
 
-            const unsubscribe = subscribeGroup(params.id, (message: GroupMessagePayload) => {
-              send('message', JSON.stringify(message));
+            const unsubscribe = subscribeGroup(params.id, (event: GroupEventPayload) => {
+              if ('type' in event && event.type === 'reaction') {
+                send('reaction', JSON.stringify(event));
+                return;
+              }
+              send('message', JSON.stringify(event));
             });
 
             const heartbeat = setInterval(() => {

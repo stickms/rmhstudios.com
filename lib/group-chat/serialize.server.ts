@@ -6,6 +6,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 import type { GroupMessagePayload } from '@/lib/group-events';
+import type { ReactionRow } from '@/lib/social/reactions';
 
 export const groupMessageSelect = {
   id: true,
@@ -16,6 +17,7 @@ export const groupMessageSelect = {
   pollQuestion: true,
   pollOptions: true,
   sender: { select: userDisplaySelect },
+  reactions: { select: { emoji: true, userId: true } },
 } as const;
 
 type GroupMessageRow = {
@@ -27,6 +29,7 @@ type GroupMessageRow = {
   pollQuestion: string | null;
   pollOptions: string[];
   sender: Parameters<typeof resolveUser>[0];
+  reactions: ReactionRow[];
 };
 
 /** Map message rows to API payloads, attaching poll tallies + the viewer's vote. */
@@ -79,6 +82,7 @@ export async function serializeGroupMessages(
       gifUrl: m.gifUrl,
       imageUrls: m.imageUrls,
       poll,
+      reactions: m.reactions,
     };
   });
 }

@@ -219,6 +219,7 @@ export const Route = createFileRoute('/api/rmharks')({
       poll: pollData,
       gifUrl: rmhark.gifUrl ?? undefined,
       imageUrls: rmhark.imageUrls,
+      reactions: [],
     };
 
     // Attach the quoted original so the card renders it inline immediately.

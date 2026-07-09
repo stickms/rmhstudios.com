@@ -12,6 +12,10 @@ import { GifPicker } from './GifPicker';
 import { PostImageGrid } from './PostImageGrid';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
+import { ReactionMenu } from '@/components/shared/ReactionMenu';
+import { ReactionChips } from '@/components/shared/ReactionChips';
+import { groupReactions, type ReactionRow } from '@/lib/social/reactions';
+import { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 
 interface Sender {
   id: string;
@@ -33,6 +37,7 @@ interface Msg {
   gifUrl?: string | null;
   imageUrls?: string[];
   poll?: Poll | null;
+  reactions?: ReactionRow[];
 }
 interface Group {
   id: string;
@@ -59,12 +64,14 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [pollDraft, setPollDraft] = useState<{ question: string; options: string[] } | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
+  const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number; messageId: string } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const attachRef = useRef<HTMLDivElement>(null);
   const lastAtRef = useRef<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(inputRef, input, setInput);
+  const reactionTriggerFor = useItemReactionTrigger((x, y, messageId) => setReactionMenu({ x, y, messageId }));
 
   // Close the attach (+) menu on outside click.
   useEffect(() => {
@@ -97,6 +104,39 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   const patchMessage = useCallback((messageId: string, patch: Partial<Msg>) => {
     setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...m, ...patch } : m)));
   }, []);
+
+  // Toggle the viewer's reaction row on a message (optimistic on raw rows).
+  const applyRowToggle = useCallback((messageId: string, emoji: string) => {
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.id !== messageId) return m;
+        const rows = m.reactions ?? [];
+        const mine = rows.some((r) => r.emoji === emoji && r.userId === currentUserId);
+        return {
+          ...m,
+          reactions: mine
+            ? rows.filter((r) => !(r.emoji === emoji && r.userId === currentUserId))
+            : [...rows, { emoji, userId: currentUserId }],
+        };
+      }),
+    );
+  }, [currentUserId]);
+
+  const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
+    applyRowToggle(messageId, emoji);
+    try {
+      const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/react`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId, emoji }),
+      });
+      if (!res.ok) throw new Error('react failed');
+    } catch {
+      // Roll back the optimistic toggle (toggling again is its own inverse).
+      applyRowToggle(messageId, emoji);
+    }
+  }, [id, applyRowToggle]);
 
   useEffect(() => {
     let active = true;
@@ -168,6 +208,18 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
           /* ignore malformed event */
         }
       });
+      es.addEventListener('reaction', (e) => {
+        try {
+          const payload = JSON.parse((e as MessageEvent).data) as {
+            type: 'reaction';
+            messageId: string;
+            reactions: ReactionRow[];
+          };
+          patchMessage(payload.messageId, { reactions: payload.reactions });
+        } catch {
+          /* ignore malformed event */
+        }
+      });
       es.onerror = () => {
         connected = false;
         startPolling();
@@ -185,7 +237,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
       stopPolling();
       if (connectTimer) clearTimeout(connectTimer);
     };
-  }, [id, notFound, loading, appendMessages]);
+  }, [id, notFound, loading, appendMessages, patchMessage]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
@@ -350,7 +402,10 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               {/* Show the sender's avatar on every message — including your own
                   (right-aligned), matching the 1:1 chat layout. */}
               <UserAvatar user={m.sender} />
-              <div className="max-w-[78%]">
+              <div
+                className="max-w-[78%]"
+                {...reactionTriggerFor(m.id)}
+              >
                 {!mine && <p className="mb-0.5 px-1 text-[11px] text-site-text-dim">{m.sender.name || m.sender.handle || t("member-fallback", { defaultValue: "Member" })}</p>}
                 {m.content && (
                   // Received bubbles use a high-contrast light fill so they read
@@ -367,6 +422,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
                   <img src={m.gifUrl} alt="" className="mt-1.5 max-h-60 w-auto rounded-site-sm" loading="lazy" />
                 )}
                 {m.poll && <PollView poll={m.poll} onVote={(idx) => vote(m.id, idx)} t={t} />}
+                {(m.reactions?.length ?? 0) > 0 && (
+                  <ReactionChips
+                    reactions={groupReactions(m.reactions ?? [], currentUserId)}
+                    onToggle={(emoji) => toggleReaction(m.id, emoji)}
+                    className={`mt-1 ${mine ? 'justify-end' : ''}`}
+                  />
+                )}
               </div>
             </div>
           );
@@ -495,6 +557,15 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
           </Button>
         </div>
       </div>
+
+      {reactionMenu && (
+        <ReactionMenu
+          x={reactionMenu.x}
+          y={reactionMenu.y}
+          onSelect={(emoji) => toggleReaction(reactionMenu.messageId, emoji)}
+          onClose={() => setReactionMenu(null)}
+        />
+      )}
     </div>
   );
 }

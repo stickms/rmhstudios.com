@@ -6,6 +6,7 @@ import { createCommentSchema } from "@/lib/rmhark-schema";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { getActiveBan } from "@/lib/admin-audit.server";
 import { createComment } from "@/lib/social/engagement.server";
+import { groupReactions } from "@/lib/social/reactions";
 
 export const Route = createFileRoute('/api/rmharks/$id/comment')({
   server: {
@@ -26,6 +27,7 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
     const commentInclude = {
       user: { select: userDisplaySelect },
       _count: { select: { likes: true, reposts: true, views: true } },
+      reactions: { select: { emoji: true, userId: true } },
       ...(userId
         ? {
             likes: { where: { userId }, select: { id: true } },
@@ -66,6 +68,7 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
         reposted: userId ? ("reposts" in c ? (c.reposts as { id: string }[]).length > 0 : false) : false,
         deletedAt: c.deletedAt?.toISOString() || null,
         deletedByAdmin: c.deletedByAdmin,
+        reactions: groupReactions(c.reactions, userId),
       };
     };
 
@@ -158,6 +161,7 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       replies: [],
       deletedAt: null,
       deletedByAdmin: false,
+      reactions: [],
     }, { status: 201 });
   } catch (error) {
     console.error("Post comment error:", error);

@@ -5,6 +5,7 @@
 
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { groupReactions } from '@/lib/social/reactions';
 
 /**
  * Whether a post is locked for a viewer: it has a price, the viewer isn't the
@@ -41,6 +42,7 @@ export function applyLock(item: FeedItem, raw: any, viewerId: string | null): Fe
 export function rmharkInclude(viewerId: string | null) {
   return {
     user: { select: userDisplaySelect },
+    reactions: { select: { emoji: true, userId: true } },
     ...(viewerId
       ? {
           likes: { where: { userId: viewerId }, select: { id: true } },
@@ -109,6 +111,7 @@ export function mapRmharkToFeedItem(r: any, viewerId: string | null): FeedItem {
     poll: mapPoll(r.poll),
     gifUrl: r.gifUrl ?? undefined,
     imageUrls: r.imageUrls ?? undefined,
+    reactions: groupReactions(r.reactions ?? [], viewerId),
   };
   return applyLock(item, r, viewerId);
 }

@@ -24,6 +24,7 @@ import { buildInterestProfile } from "./personalize.server";
 import { getHiddenAuthorIds } from "../moderation.server";
 import { audienceWhere } from "./audience.server";
 import { applyLock } from "./map-feed-item.server";
+import { groupReactions } from "../social/reactions";
 
 export type FeedSurface = "following" | "foryou";
 
@@ -117,6 +118,7 @@ export function deduplicateReposts(items: FeedItem[], windowSize = 2): FeedItem[
 function rmharkInclude(userId: string | null) {
   return {
     user: { select: userDisplaySelect },
+    reactions: { select: { emoji: true, userId: true } },
     ...(userId
       ? {
           likes: { where: { userId }, select: { id: true } },
@@ -181,6 +183,7 @@ function mapOwn(r: any, userId: string | null): FeedItem {
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
+    reactions: groupReactions(r.reactions ?? [], userId),
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
   };
@@ -209,6 +212,7 @@ function mapRepost(rp: any, userId: string | null): FeedItem {
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
+    reactions: groupReactions(r.reactions ?? [], userId),
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
   };

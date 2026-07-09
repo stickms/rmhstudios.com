@@ -21,6 +21,11 @@ import { useLocaleStore } from '@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
+import type { ReactionSummary } from '@/lib/social/reactions';
+import { applyReactionToggle } from '@/lib/social/reactions';
+import { ReactionMenu } from '@/components/shared/ReactionMenu';
+import { ReactionChips } from '@/components/shared/ReactionChips';
+import { useReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 
 export interface Comment {
   id: string;
@@ -36,6 +41,8 @@ export interface Comment {
   replies?: Comment[];
   deletedAt?: string | null;
   deletedByAdmin?: boolean;
+  /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
+  reactions?: ReactionSummary[];
   /** Client-only: optimistic comment awaiting its server round-trip. */
   pending?: boolean;
 }
@@ -91,6 +98,9 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   const [viewCount, setViewCount] = useState(comment.viewCount ?? 0);
   const { run: runLike } = useOptimisticAction();
   const { run: runRepost } = useOptimisticAction();
+  const [reactions, setReactions] = useState<ReactionSummary[]>(comment.reactions ?? []);
+  const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number } | null>(null);
+  const reactionTrigger = useReactionTrigger((x, y) => setReactionMenu({ x, y }));
   const viewTracked = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
@@ -191,6 +201,21 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
     });
   };
 
+  const toggleReaction = async (emoji: string) => {
+    const prev = reactions;
+    setReactions(applyReactionToggle(prev, emoji));
+    try {
+      const res = await fetch(`/api/comments/${comment.id}/react`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji }),
+      });
+      if (!res.ok) throw new Error('react failed');
+    } catch {
+      setReactions(prev);
+    }
+  };
+
   const handleDelete = async () => {
     if (!confirm(t('delete-reply-confirm', { defaultValue: 'Delete this reply?' }))) return;
     try {
@@ -229,7 +254,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   };
 
   return (
-    <div className="py-3">
+    <div className="py-3" {...(comment.deletedAt || comment.pending ? {} : reactionTrigger)}>
       <div className="flex gap-2.5">
         {/* Avatar */}
         <UserAvatar user={freshCommentUser} size="sm" />
@@ -318,6 +343,10 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
             <p className="mt-1 whitespace-pre-wrap break-words rounded-site-sm bg-site-surface/50 p-2 text-sm text-site-text">
               {translatedText}
             </p>
+          )}
+
+          {!comment.deletedAt && !comment.pending && (
+            <ReactionChips reactions={reactions} onToggle={toggleReaction} className="mt-1.5" />
           )}
 
           {/* Actions row */}
@@ -489,6 +518,15 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
           postId={postId}
           commentId={comment.id}
           type={engagementModal}
+        />
+      )}
+
+      {reactionMenu && (
+        <ReactionMenu
+          x={reactionMenu.x}
+          y={reactionMenu.y}
+          onSelect={toggleReaction}
+          onClose={() => setReactionMenu(null)}
         />
       )}
     </div>
