@@ -34,7 +34,7 @@ function OfflinePage() {
       </p>
       <button
         onClick={() => window.location.reload()}
-        className="mt-2 inline-flex items-center gap-2 rounded-full bg-site-accent px-5 py-2.5 text-sm font-semibold text-site-accent-fg transition-opacity hover:opacity-90"
+        className="mt-2 inline-flex items-center gap-2 rounded-full bg-site-text px-5 py-2.5 text-sm font-semibold text-site-bg transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-site-text/25"
       >
         <RotateCw className="h-4 w-4" aria-hidden />
         {t('offline-retry', { defaultValue: 'Try again' })}
