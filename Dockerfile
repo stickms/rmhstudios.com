@@ -139,7 +139,20 @@ COPY public ./public/
 # excludes it globally (the go-builder stage needs it), but the Vite build does
 # NOT use it — pulling it in here would bust the expensive vite/public layer
 # cache on every Go-only change. Requires the dockerfile:1.7-labs syntax.
-COPY --exclude=go-services . .
+#
+# Same reasoning for the standalone realtime-service subtrees under server/:
+# they are esbuild-bundled by the separate server-builder stage and are NOT in
+# the Vite/Nitro module graph (nothing under app/components/lib imports them;
+# vite.config.ts references only server/nitro). Excluding them here keeps a
+# server-service-only change from busting this stage's ~40s vite build.
+# server/nitro (referenced by vite.config.ts) and server/rmhbox (reachable via
+# lib/rmhbox) are intentionally kept.
+COPY --exclude=go-services \
+     --exclude=server/socket-server --exclude=server/rmhtube \
+     --exclude=server/rmhmusic --exclude=server/recap \
+     --exclude=server/bot-worker --exclude=server/doctrine-worker \
+     --exclude=server/status --exclude=server/vibe-worker \
+     --exclude=server/shared . .
 
 ARG COMPOSE_PROJECT_NAME=rmhstudios
 ARG DATABASE_URL

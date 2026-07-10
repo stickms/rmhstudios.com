@@ -351,7 +351,7 @@ cache_keep_gb() {
 # (a go-only change rebuilds web too, but BuildKit caches that): never a wrong skip.
 build_inputs_hash() {
     local p
-    local paths=(app components lib public prisma server go-services scripts \
+    local paths=(app components lib public content data prisma server go-services scripts \
         package.json pnpm-lock.yaml vite.config.ts tsconfig.json \
         tsconfig.server.json Dockerfile .dockerignore docker-compose.yml)
     {
@@ -775,6 +775,7 @@ step_done
 # downstream depends on it — we join the job at the very end (Step 6) before
 # reporting success. BG_R2_PID stays empty when the sync is skipped.
 BG_R2_PID=""
+BG_AVATAR_PID=""
 if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
     log "Syncing static assets to R2 (incremental, in background)..."
     (
@@ -811,16 +812,23 @@ if grep -qE '^VITE_CDN_BASE_URL=.+' "$ENV_FILE" 2>/dev/null; then
         *) STORAGE_PATH_HOST="${REPO_DIR}/${STORAGE_PATH_HOST#./}" ;;
     esac
     if [ -d "$STORAGE_PATH_HOST/avatars" ]; then
-        step_start "Backfilling existing avatars to R2 (idempotent)..."
-        "$DOCKER_BIN" run --rm \
-            --env-file "$ENV_FILE" \
-            -e STORAGE_PATH=/app/db \
-            -v "${STORAGE_PATH_HOST}:/app/db:ro" \
-            --entrypoint node \
-            "${IMAGE_NAME}:latest" \
-            scripts/migrate-avatars-to-r2.ts \
-            || log "WARNING: avatar R2 backfill failed — existing avatars stay on the proxy path until the next run."
-        step_done
+        # Best-effort + idempotent (a no-op once migrated), and nothing between
+        # here and Step 6 depends on it — so run it in the background exactly
+        # like the R2 asset sync above instead of blocking the deploy on a
+        # node+Prisma container boot. Joined at Step 6 before we report success.
+        log "Backfilling existing avatars to R2 (idempotent, in background)..."
+        (
+            "$DOCKER_BIN" run --rm \
+                --env-file "$ENV_FILE" \
+                -e STORAGE_PATH=/app/db \
+                -v "${STORAGE_PATH_HOST}:/app/db:ro" \
+                --entrypoint node \
+                "${IMAGE_NAME}:latest" \
+                scripts/migrate-avatars-to-r2.ts \
+                && log "Avatar R2 backfill complete." \
+                || log "WARNING: avatar R2 backfill failed — existing avatars stay on the proxy path until the next run."
+        ) &
+        BG_AVATAR_PID=$!
     else
         log "No ${STORAGE_PATH_HOST}/avatars dir — skipping avatar backfill (nothing local to migrate)."
     fi
@@ -1102,6 +1110,10 @@ fi
 if [ -n "${BG_R2_PID:-}" ]; then
     log "Waiting for background R2 asset sync to finish (if still running)..."
     wait "$BG_R2_PID" 2>/dev/null || true
+fi
+if [ -n "${BG_AVATAR_PID:-}" ]; then
+    log "Waiting for background avatar R2 backfill to finish (if still running)..."
+    wait "$BG_AVATAR_PID" 2>/dev/null || true
 fi
 
 # ── Done ─────────────────────────────────────────────────────────────────────
