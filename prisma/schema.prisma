@@ -2810,6 +2810,24 @@ model DiscordChatSession {
   @@map("discord_chat_session")
 }
 
+// Rolling per-channel memory of Alex's @mention conversations. Unlike a /chat
+// session (which is per-user and only reachable through the slash command),
+// @mention replies were previously stateless — rebuilt each time from Discord's
+// recent-message window and forgotten the moment they scrolled out. This table
+// persists a trimmed transcript of recent channel activity (both messages
+// directed at Alex and surrounding chatter he can catch up on) so his memory
+// survives beyond that window and across bot restarts. `messages` is a JSON array
+// of turns, pruned by count and age on every write. See
+// go-services/internal/discordbot/chat_memory.go.
+model DiscordAlexChannelMemory {
+  channelId String   @id
+  guildId   String
+  messages  Json
+  updatedAt DateTime @updatedAt
+
+  @@map("discord_alex_channel_memory")
+}
+
 // One "Alex" tamagotchi per Discord guild — a communal virtual pet the server
 // raises together. Stats decay over real time (lazily recomputed from
 // statsUpdatedAt on every read), Alex grows from infant to adult with age, and

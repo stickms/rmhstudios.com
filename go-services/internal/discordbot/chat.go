@@ -479,8 +479,25 @@ func (s *ChatService) HandleMention(ctx context.Context, sess *discordgo.Session
 		"Reply naturally and briefly (usually 1–2 sentences) to the most recent message. " +
 		"Don't prefix your reply with your name and don't use markdown headers."
 
+	// Gather the live context (recent channel window + reply chain + the trigger),
+	// then fold in this channel's persisted memory so Alex remembers conversation
+	// that has since scrolled out of the window or happened before a restart — and
+	// so he can catch up on surrounding chatter that wasn't aimed at him.
+	gathered := gatherMentionMessages(sess, m, botID)
+	liveTurns, liveIDs := turnsFromMessages(gathered, botID)
+	remembered := s.loadChannelMemory(ctx, m.ChannelID)
+
 	msgs := []ChatMessage{{Role: roleSystem, Content: system}}
-	msgs = append(msgs, mentionTranscript(sess, m, botID)...)
+	for _, t := range rememberedBeyond(remembered, liveIDs, channelMemoryInjectMax) {
+		msgs = append(msgs, t.chatMessage())
+	}
+	for _, t := range liveTurns {
+		msgs = append(msgs, t.chatMessage())
+	}
+	if len(msgs) == 1 {
+		// Nothing readable (e.g. no message content) — still prompt for a reply.
+		msgs = append(msgs, ChatMessage{Role: roleUser, Content: "(someone pinged you) say hi!"})
+	}
 
 	reqCtx, cancel := context.WithTimeout(ctx, 40*time.Second)
 	defer cancel()
@@ -501,12 +518,25 @@ func (s *ChatService) HandleMention(ctx context.Context, sess *discordgo.Session
 	// Send as a reply to the triggering message. If that fails (e.g. the referenced
 	// message is gone, or the bot lacks Read Message History for the reference),
 	// retry as a plain channel message so Alex still answers.
-	if _, err := sess.ChannelMessageSendReply(m.ChannelID, reply, m.Reference()); err != nil {
+	sent, err := sess.ChannelMessageSendReply(m.ChannelID, reply, m.Reference())
+	if err != nil {
 		s.logger.Warn("mention reply send failed, retrying as plain message", "channel", m.ChannelID, "error", err)
-		if _, err2 := sess.ChannelMessageSend(m.ChannelID, reply); err2 != nil {
-			return fmt.Errorf("send mention reply: %w", err2)
+		sent, err = sess.ChannelMessageSend(m.ChannelID, reply)
+		if err != nil {
+			return fmt.Errorf("send mention reply: %w", err)
 		}
 	}
+
+	// Persist the exchange so Alex remembers it next time — the live window plus
+	// his own reply — even after it scrolls out of view or the bot restarts.
+	newTurns := liveTurns
+	if t, ok := messageToTurn(sent, botID); ok {
+		newTurns = append(newTurns, t)
+	}
+	if err := s.saveChannelMemory(ctx, m.ChannelID, m.GuildID, mergeTurns(remembered, newTurns)); err != nil {
+		s.logger.Warn("mention memory save failed", "channel", m.ChannelID, "error", err)
+	}
+
 	// Remember the channel (so the care loop talks here too) and cheer Alex up a
 	// touch — but no leaderboard credit, so mentions can't be farmed for points.
 	if s.pet != nil {
@@ -597,8 +627,8 @@ func mentionFallbackLine() string {
 	return lines[rand.Intn(len(lines))]
 }
 
-// mentionTranscript builds the chat-message context for a mention by combining
-// TWO sources so Alex has rich context:
+// gatherMentionMessages collects the messages that make up a mention's context by
+// combining TWO sources so Alex has rich context:
 //
 //  1. the recent channel window (the ambient conversation), and
 //  2. the reply-chain ancestry of the triggering message — the specific thread
@@ -606,9 +636,9 @@ func mentionFallbackLine() string {
 //
 // Both are best-effort. Messages are deduped by id and ordered oldest → newest
 // (Discord ids are time-ordered snowflakes), with the triggering message last.
-// Alex's own messages become assistant turns; everyone else's become user turns
-// prefixed with their name.
-func mentionTranscript(sess *discordgo.Session, m *discordgo.MessageCreate, botID string) []ChatMessage {
+// The caller turns these into model turns (turnsFromMessages) and folds in the
+// channel's persisted memory (see chat_memory.go).
+func gatherMentionMessages(sess *discordgo.Session, m *discordgo.MessageCreate, botID string) []*discordgo.Message {
 	byID := make(map[string]*discordgo.Message)
 
 	// 1. Recent messages before the trigger.
@@ -635,13 +665,9 @@ func mentionTranscript(sess *discordgo.Session, m *discordgo.MessageCreate, botI
 	}
 	sort.Slice(ids, func(a, b int) bool { return snowflakeLess(ids[a], ids[b]) })
 
-	var out []ChatMessage
+	out := make([]*discordgo.Message, 0, len(ids))
 	for _, id := range ids {
-		out = append(out, transcriptTurn(byID[id], botID)...)
-	}
-	if len(out) == 0 {
-		// Nothing readable (e.g. no message content) — still prompt for a reply.
-		out = append(out, ChatMessage{Role: roleUser, Content: "(someone pinged you) say hi!"})
+		out = append(out, byID[id])
 	}
 	return out
 }
