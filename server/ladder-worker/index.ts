@@ -13,7 +13,7 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { schedule } from 'node-cron';
 import type { ScheduledTask } from 'node-cron';
-import { runPipeline } from '../../lib/rmhladder/pipeline/run';
+import { runPipeline, type RunPrisma } from '../../lib/rmhladder/pipeline/run';
 
 // ─── Prisma Client (standalone for worker process) ──────────────
 
@@ -25,6 +25,9 @@ function createPrisma() {
 }
 
 const prisma = createPrisma();
+// Structural cast, same idiom as the route layer's QueriesPrisma/ActionsPrisma casts:
+// RunPrisma narrows generated Prisma signatures to the shapes the pipeline uses.
+const runPrisma = prisma as unknown as RunPrisma;
 
 // ─── Overlap guard ───────────────────────────────────────────────
 
@@ -38,7 +41,7 @@ async function tick() {
 
   running = true;
   try {
-    const result = await runPipeline({ prisma }, { trigger: 'cron' });
+    const result = await runPipeline({ prisma: runPrisma }, { trigger: 'cron' });
     console.log(
       `[ladder-worker] Run complete [${result.runId}] — discovered=${result.discovered} created=${result.created} updated=${result.updated} verified=${result.verified} struck=${result.struck} expired=${result.expired} errors=${result.errors} reviewTasks=${result.reviewTasks} durationMs=${result.durationMs}`,
     );

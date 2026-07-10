@@ -17,7 +17,7 @@ export const Route = createFileRoute('/_site/user-builds/submit')({
 function SubmitBuildContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
+  const searchParams = new URLSearchParams(location.searchStr);
   const editId = searchParams.get('edit');
   const { data: session, isPending } = useSession();
 
