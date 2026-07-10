@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useTranslation } from "react-i18next";
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
 interface Star {
@@ -69,8 +70,11 @@ export { PATTERNS as CONSTELLATION_PATTERNS };
 // ─── Component ─────────────────────────────────────────────────────────────
 
 export function ConstellationPuzzle({ config, onSolve, onAttempt }: PuzzleComponentProps) {
+    const { t } = useTranslation("c-forest-explorer");
     const patternName = (config.pattern as string) ?? 'tree_of_life';
     const pattern = PATTERNS[patternName] ?? PATTERNS.tree_of_life;
+    const timedFade = (config.timedFade as boolean) ?? false;
+    const fadeSeconds = (config.fadeSeconds as number) ?? 75;
 
     const stars = useMemo<Star[]>(() => {
         const result: Star[] = [];
@@ -102,9 +106,42 @@ export function ConstellationPuzzle({ config, onSolve, onAttempt }: PuzzleCompon
 
     const [selectedStar, setSelectedStar] = useState<number | null>(null);
     const [edges, setEdges] = useState<[number, number][]>([]);
+    const [wrongEdge, setWrongEdge] = useState<[number, number] | null>(null);
+    const [solved, setSolved] = useState(false);
+    // Dawn timer (act 3): counts down; when it empties, the sky resets
+    const [dawnLeft, setDawnLeft] = useState(fadeSeconds);
     const svgRef = useRef<SVGSVGElement>(null);
+    const wrongTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const isCorrectEdge = useCallback((edge: [number, number]) =>
+        correctEdges.some(ce => ce[0] === edge[0] && ce[1] === edge[1]),
+        [correctEdges]);
+
+    // Dawn countdown — soft fail that clears progress and refills the timer
+    useEffect(() => {
+        if (!timedFade || solved) return;
+        const interval = setInterval(() => {
+            setDawnLeft(prev => {
+                if (prev <= 1) {
+                    setEdges([]);
+                    setSelectedStar(null);
+                    onAttempt();
+                    return fadeSeconds;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [timedFade, solved, fadeSeconds, onAttempt]);
+
+    // Clear pending wrong-edge timer on unmount
+    useEffect(() => () => {
+        if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
+    }, []);
 
     const handleStarClick = useCallback((starId: number) => {
+        if (solved) return;
+
         if (selectedStar === null) {
             setSelectedStar(starId);
             return;
@@ -120,30 +157,40 @@ export function ConstellationPuzzle({ config, onSolve, onAttempt }: PuzzleCompon
 
         if (exists) {
             setEdges(edges.filter(e => !(e[0] === newEdge[0] && e[1] === newEdge[1])));
+        } else if (!isCorrectEdge(newEdge)) {
+            // Wrong line: flash red, then dissolve — wrong edges never accumulate
+            setWrongEdge(newEdge);
+            onAttempt();
+            if (wrongTimerRef.current) clearTimeout(wrongTimerRef.current);
+            wrongTimerRef.current = setTimeout(() => setWrongEdge(null), 600);
         } else {
             const newEdges = [...edges, newEdge];
             setEdges(newEdges);
 
             if (newEdges.length === correctEdges.length) {
-                const allCorrect = correctEdges.every(ce =>
-                    newEdges.some(ne => ne[0] === ce[0] && ne[1] === ce[1])
-                );
-                if (allCorrect) {
-                    setTimeout(onSolve, 500);
-                } else {
-                    onAttempt();
-                }
+                setSolved(true);
+                setTimeout(onSolve, 700);
             }
         }
 
         setSelectedStar(null);
-    }, [selectedStar, edges, correctEdges, onSolve, onAttempt]);
+    }, [selectedStar, edges, correctEdges, isCorrectEdge, solved, onSolve, onAttempt]);
+
+    // Stars dim as dawn approaches (act 3 pressure without hard fail)
+    const dawnDim = timedFade ? Math.max(0.35, dawnLeft / fadeSeconds) : 1;
 
     return (
         <div className="w-full max-w-lg mx-auto space-y-4">
-            <p className="text-center text-white/50 text-sm">
-                Connect the bright stars ({edges.length}/{correctEdges.length} edges)
-            </p>
+            <div className="flex items-center justify-center gap-4">
+                <p className="text-center text-white/50 text-sm">
+                    {t("connect-bright-stars", { defaultValue: "Connect the bright stars ({{current}}/{{total}} edges)", current: edges.length, total: correctEdges.length })}
+                </p>
+                {timedFade && (
+                    <span className={`text-xs font-mono px-2 py-0.5 rounded ${dawnLeft < 15 ? 'text-amber-300 bg-amber-900/40' : 'text-white/40 bg-white/5'}`}>
+                        {t("dawn-in", { defaultValue: "dawn in {{s}}s", s: dawnLeft })}
+                    </span>
+                )}
+            </div>
 
             <div className="relative bg-gradient-to-b from-[#0a0a2a] to-[#0a0520] rounded-xl border border-white/10 overflow-hidden">
                 <svg ref={svgRef} viewBox="0 0 400 400" className="w-full h-auto">
@@ -157,16 +204,33 @@ export function ConstellationPuzzle({ config, onSolve, onAttempt }: PuzzleCompon
                                 key={`edge-${i}`}
                                 x1={sa.x} y1={sa.y}
                                 x2={sb.x} y2={sb.y}
-                                stroke="#6688ff"
+                                stroke={solved ? '#88ffbb' : '#6688ff'}
                                 strokeWidth="2"
-                                opacity="0.7"
+                                opacity="0.8"
                             />
                         );
                     })}
 
+                    {/* Wrong edge flash */}
+                    {wrongEdge && (() => {
+                        const sa = stars.find(s => s.id === wrongEdge[0]);
+                        const sb = stars.find(s => s.id === wrongEdge[1]);
+                        if (!sa || !sb) return null;
+                        return (
+                            <line
+                                x1={sa.x} y1={sa.y}
+                                x2={sb.x} y2={sb.y}
+                                stroke="#ff5566"
+                                strokeWidth="2.5"
+                                opacity="0.9"
+                                strokeDasharray="6 4"
+                            />
+                        );
+                    })()}
+
                     {/* Stars */}
                     {stars.map((star) => (
-                        <g key={star.id}>
+                        <g key={star.id} opacity={star.isCorrect ? dawnDim : Math.min(0.6, dawnDim)}>
                             {/* Pulsing glow for correct stars */}
                             {star.isCorrect && (
                                 <circle
@@ -223,7 +287,7 @@ export function ConstellationPuzzle({ config, onSolve, onAttempt }: PuzzleCompon
                     className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white/60 rounded-lg text-xs cursor-pointer"
                     onClick={() => { setEdges([]); setSelectedStar(null); }}
                 >
-                    Reset
+                    {t("reset", { defaultValue: "Reset" })}
                 </button>
             </div>
         </div>

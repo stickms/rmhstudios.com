@@ -1,12 +1,18 @@
 'use client';
 
 import { useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useGameStore } from '@/lib/versecraft/store';
 import { loadGame } from '@/lib/versecraft/persistence';
 import { MainMenu } from './MainMenu';
-import { SettingsMenu } from './SettingsMenu';
+import { GameSettings } from './GameSettings';
+import { WorldSetup } from './WorldSetup';
 import { DialogueScreen } from './DialogueScreen';
+import { GeneratedDialogueScreen } from './GeneratedDialogueScreen';
+import { GeneratedPoemMoment } from './GeneratedPoemMoment';
+import { CastScreen } from './CastScreen';
+import { CompletionScreen } from './CompletionScreen';
 import { WordSelectPuzzle } from './WordSelectPuzzle';
 import { LineArrangePuzzle } from './LineArrangePuzzle';
 import { PoemPresentation } from './PoemPresentation';
@@ -22,7 +28,9 @@ const RESTORABLE_SCREENS = new Set<GameScreen>([
 ]);
 
 export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
+  const { t } = useTranslation("c-versecraft");
   const screen = useGameStore(s => s.screen);
+  const mode = useGameStore(s => s.mode);
   const gameStarted = useGameStore(s => s.gameStarted);
   const incrementPlaytime = useGameStore(s => s.incrementPlaytime);
   const setLoggedIn = useGameStore(s => s.setLoggedIn);
@@ -104,9 +112,17 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
       case 'menu':
         return <MainMenu />;
       case 'settings':
-        return <SettingsMenu />;
+        return <GameSettings />;
+      case 'world_setup':
+        return <WorldSetup />;
       case 'dialogue':
-        return <DialogueScreen />;
+        return mode === 'generated' ? <GeneratedDialogueScreen /> : <DialogueScreen />;
+      case 'gen_poem':
+        return <GeneratedPoemMoment />;
+      case 'cast':
+        return <CastScreen />;
+      case 'complete':
+        return <CompletionScreen />;
       case 'puzzle_word_select':
         return <WordSelectPuzzle />;
       case 'puzzle_line_arrange':
@@ -125,31 +141,34 @@ export function VersecraftGame({ isLoggedIn }: { isLoggedIn: boolean }) {
       default:
         return <MainMenu />;
     }
-  }, [screen]);
+  }, [screen, mode]);
 
   return (
     <div
-      className="relative w-full min-h-screen overflow-hidden select-none"
+      className="relative w-full min-h-[100dvh] overflow-hidden select-none"
       style={{
         backgroundColor: '#1a1520',
         color: '#e8e0d0',
         fontFamily: 'var(--font-nunito, var(--font-inter, sans-serif))',
       }}
     >
-      {/* Back to builds button */}
-      <Link
-        to="/builds"
-        className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-all hover:brightness-125"
-        style={{
-          backgroundColor: 'rgba(26, 21, 32, 0.8)',
-          border: '1px solid rgba(196, 163, 90, 0.15)',
-          color: '#a89888',
-          backdropFilter: 'blur(4px)',
-        }}
-      >
-        <span style={{ color: '#c4a35a' }}>&larr;</span>
-        Back to Builds
-      </Link>
+      {/* Back to builds — only on the menu, so it never collides with in-screen
+          back buttons or the dialogue HUD on mobile. */}
+      {screen === 'menu' && (
+        <Link
+          to="/builds"
+          className="absolute top-4 left-4 z-50 flex items-center gap-1.5 px-3 py-2 rounded text-xs transition-all hover:brightness-125"
+          style={{
+            backgroundColor: 'rgba(26, 21, 32, 0.8)',
+            border: '1px solid rgba(196, 163, 90, 0.15)',
+            color: '#a89888',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
+          <span style={{ color: '#c4a35a' }}>&larr;</span>
+          {t("back-to-builds", { defaultValue: "Back to Builds" })}
+        </Link>
+      )}
       {renderScreen()}
     </div>
   );

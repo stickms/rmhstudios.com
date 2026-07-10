@@ -23,6 +23,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Flag } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
@@ -86,6 +87,8 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
   const [isLoading, setIsLoading] = useState(false);
 
   // Track spectator status from the store (not from snapshot data)
+  const { t } = useTranslation("c-rmhbox");
+
   const isSpectator = useRMHboxStore((s) => s.lobby?.myRole === 'spectator');
 
   // Other players
@@ -335,7 +338,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
             <div className="flex items-center justify-between rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) px-4 py-2">
               <div className="flex flex-col gap-0.5 text-sm">
                 <div className="flex items-center gap-2">
-                  <span className="text-(--rmhbox-text-muted)">Target:</span>
+                  <span className="text-(--rmhbox-text-muted)">{t("target-label", { defaultValue: "Target:" })}</span>
                   <span className="font-bold text-(--rmhbox-accent)">
                     {targetArticle?.title}
                   </span>
@@ -361,10 +364,10 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
             {hasFinished && (
               <div className="rounded-lg bg-(--rmhbox-success-dim) border border-(--rmhbox-success)/40 px-4 py-3 text-center">
                 <span className="text-lg font-bold text-(--rmhbox-success)">
-                  <Flag className="h-5 w-5 inline" /> Finished! Rank #{finishRank}
+                  <Flag className="h-5 w-5 inline" /> {t("finished-rank", { defaultValue: "Finished! Rank #{{rank}}", rank: finishRank })}
                 </span>
                 <p className="text-sm text-(--rmhbox-success)/70">
-                  {clickCount} clicks • Viewing target article
+                  {t("finished-clicks", { defaultValue: "{{clicks}} clicks • Viewing target article", clicks: clickCount })}
                 </p>
               </div>
             )}
@@ -391,7 +394,7 @@ export default function WikiRaceGame({ playerId, playerName: _playerName }: Wiki
             {Object.keys(otherPlayers).length > 0 && (
               <div className="flex flex-col gap-1.5 rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-surface) p-3">
                 <span className="text-xs font-medium uppercase tracking-wider text-(--rmhbox-text-muted)">
-                  Other Players
+                  {t("other-players", { defaultValue: "Other Players" })}
                 </span>
                 {Object.values(otherPlayers).map((p) => (
                   <PlayerProgressBar

@@ -10,6 +10,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, CheckCircle2, Circle } from 'lucide-react';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
@@ -26,6 +27,8 @@ interface PreloadScreenProps {
 }
 
 export default function PreloadScreen({ players, lobbyId }: PreloadScreenProps) {
+  const { t } = useTranslation("c-rmhbox");
+
   // Auto-emit ready on mount
   useEffect(() => {
     emit(C2S.GAME_READY_TO_RENDER, { lobbyId });
@@ -37,7 +40,7 @@ export default function PreloadScreen({ players, lobbyId }: PreloadScreenProps) 
   return (
     <div className="mx-auto flex w-full max-w-md flex-col items-center gap-6 p-6 text-(--rmhbox-text)">
       <Loader2 className="h-10 w-10 animate-spin text-(--rmhbox-accent)" />
-      <h2 className="text-xl font-bold">Loading Game…</h2>
+      <h2 className="text-xl font-bold">{t("loading-game", { defaultValue: "Loading Game…" })}</h2>
 
       {/* Progress bar */}
       <div className="h-2 w-full overflow-hidden rounded-full bg-(--rmhbox-border)">
@@ -47,7 +50,7 @@ export default function PreloadScreen({ players, lobbyId }: PreloadScreenProps) 
         />
       </div>
       <span className="text-sm text-(--rmhbox-text-muted)">
-        {readyCount} / {players.length} players ready
+        {t("players-ready", { readyCount, total: players.length, defaultValue: "{{readyCount}} / {{total}} players ready" })}
       </span>
 
       {/* Player readiness list */}

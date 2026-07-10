@@ -36,9 +36,11 @@ const BOOT_SEQUENCE = [
 ];
 
 const MENU_ITEMS = [
-    { key: '1', label: '[ 1 ] 启动模拟', action: 'start' },
-    { key: '2', label: '[ 2 ] 数据导出', action: 'export' },
-    { key: '3', label: '[ 3 ] 系统设置', action: 'settings' },
+    { key: '1', label: '[ 1 ] 单人模拟  ·  SOLO DRIVE', action: 'start' },
+    { key: '2', label: '[ 2 ] 剧情模式  ·  STORY MODE — GHOST ROUTE', action: 'story' },
+    { key: '3', label: '[ 3 ] 多人巡航  ·  MULTIPLAYER', action: 'multiplayer' },
+    { key: '4', label: '[ 4 ] 数据导出  ·  EXPORT', action: 'export' },
+    { key: '5', label: '[ 5 ] 系统设置  ·  SETTINGS', action: 'settings' },
 ];
 
 const PALETTE_NAMES = [
@@ -118,6 +120,9 @@ export class Terminal {
 
     _showMainMenu() {
         this._addLine('');
+        this._addLine('══════════════════════════════════════════', 'magenta');
+        this._addLine('   快递任务 · 限时送达 · 甩开警方追捕', 'cyan');
+        this._addLine('   COURIER RUNS · TIMED DROPS · POLICE CHASES', 'dim');
         this._addLine('══════════════════════════════════════════', 'magenta');
         this._addLine('   请选择操作：', '');
         this._addLine('══════════════════════════════════════════', 'magenta');
@@ -315,11 +320,13 @@ export class Terminal {
         } else if (e.key === 'Enter') {
             e.preventDefault();
             this._activateItem();
-        } else if (e.key === '1' || e.key === '2' || e.key === '3') {
-            e.preventDefault();
-            const idx = parseInt(e.key) - 1;
-            this._selectItem(idx);
-            this._activateItem();
+        } else if (/^[0-9]$/.test(e.key)) {
+            const idx = parseInt(e.key, 10) - 1;
+            if (idx >= 0 && idx < MENU_ITEMS.length) {
+                e.preventDefault();
+                this._selectItem(idx);
+                this._activateItem();
+            }
         }
     }
 

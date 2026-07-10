@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,6 +34,7 @@ interface LobbyData {
 }
 
 export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings }: { onBack: () => void, onStart: (lobbyId: string, song: any, isHost?: boolean) => void, onSelectSong: (song: any) => void, onOpenSettings?: () => void }) {
+        const { t } = useTranslation("c-game");
         const isDarkMode = useGameStore(state => state.isDarkMode);
         const setIsDarkMode = useGameStore(state => state.setIsDarkMode);
     // const { userName, setUserName } = useGameStore(); // No longer used locally here
@@ -191,7 +193,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
         const url = `${window.location.origin}${window.location.pathname}?lobby=${lobbyData?.lobbyId}`;
         navigator.clipboard.writeText(url).then(() => {
             setIsCopied(true);
-            toast.success("Invite link copied to clipboard!");
+            toast.success(t("invite-link-copied", { defaultValue: "Invite link copied to clipboard!" }));
             setTimeout(() => setIsCopied(false), 2000);
         });
     };
@@ -236,21 +238,21 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
             return (
                 <div className="absolute inset-0 z-60 bg-slice-bg p-4 flex flex-col">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-slice-text-darker">SELECT A SONG</h2>
-                        <Button variant="ghost" onClick={() => setShowSongSelect(false)}>CANCEL</Button>
+                        <h2 className="text-xl font-bold text-slice-text-darker">{t("select-a-song", { defaultValue: "SELECT A SONG" })}</h2>
+                        <Button variant="ghost" onClick={() => setShowSongSelect(false)}>{t("cancel", { defaultValue: "CANCEL" })}</Button>
                     </div>
                     <div className="flex-1 overflow-hidden rounded-2xl shadow-[inset_10px_10px_20px_var(--slice-shadow-dark),inset_-10px_-10px_20px_var(--slice-shadow-light)] p-4">
                          <SongLibrary
                              onSelect={(song) => {
                                  // Only allow selection of valid backend songs
                                  if (!song.id || typeof song.id !== 'string') {
-                                     alert('Please select a valid song from the library.');
+                                     alert(t("invalid-song", { defaultValue: "Please select a valid song from the library." }));
                                      return;
                                  }
                                  // Only use backend-fetched song objects (except demo)
                                  const allSongs = (window as any).allSongs;
                                  if (song.id !== 'demo' && (!Array.isArray(allSongs) ? false : !allSongs.find((s: any) => s.id === song.id))) {
-                                     alert('Please select a valid song from the library.');
+                                     alert(t("invalid-song", { defaultValue: "Please select a valid song from the library." }));
                                      return;
                                  }
                                  mp.selectSong(lobbyData.lobbyId, song);
@@ -271,8 +273,8 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
             return (
                 <div className="absolute inset-0 z-60 bg-slice-bg flex flex-col">
                     <div className="flex items-center justify-between px-4 py-3 border-b border-slice-shadow-dark/30 bg-slice-bg shrink-0">
-                        <h2 className="text-xl font-bold text-slice-text-darker uppercase tracking-wide">Browse Songs</h2>
-                        <Button variant="ghost" onClick={() => { setShowBrowseSongs(false); setBrowsedSong(null); }}>← Back to Lobby</Button>
+                        <h2 className="text-xl font-bold text-slice-text-darker uppercase tracking-wide">{t("browse-songs", { defaultValue: "Browse Songs" })}</h2>
+                        <Button variant="ghost" onClick={() => { setShowBrowseSongs(false); setBrowsedSong(null); }}>{t("back-to-lobby", { defaultValue: "← Back to Lobby" })}</Button>
                     </div>
                     <div className="flex-1 min-h-0 flex relative">
                         <div className="w-full flex flex-col overflow-hidden">
@@ -292,7 +294,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                 />
                                 <div className="absolute top-0 right-0 bottom-0 w-full sm:max-w-2xl bg-slice-bg shadow-2xl z-70 animate-in slide-in-from-right duration-300 flex flex-col overflow-hidden">
                                     <div className="flex items-center justify-between p-4 border-b border-slice-shadow-dark/50 bg-slice-shadow-dark/20">
-                                        <h2 className="text-lg font-black text-slice-text">Song Details</h2>
+                                        <h2 className="text-lg font-black text-slice-text">{t("song-details", { defaultValue: "Song Details" })}</h2>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark rounded-lg"
                                             onClick={() => setBrowsedSong(null)}>
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -325,7 +327,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                 size="icon"
                                 className="h-10 w-10 text-slice-text-muted hover:text-slice-text hover:bg-slice-shadow-dark dark:text-slice-text-muted dark:hover:text-slice-text dark:hover:bg-slice-shadow-light rounded-lg transition-all"
                                 onClick={() => setIsDarkMode(!isDarkMode)}
-                                title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+                                title={isDarkMode ? t("switch-to-light-mode", { defaultValue: "Switch to Light Mode" }) : t("switch-to-dark-mode", { defaultValue: "Switch to Dark Mode" })}
                             >
                                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                             </Button>
@@ -335,14 +337,14 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                     variant="ghost"
                                     className="h-10 w-10 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)] transition-all text-slice-text-muted hover:text-slice-text"
                                     onClick={onOpenSettings}
-                                    title="Settings"
+                                    title={t("settings", { defaultValue: "Settings" })}
                                 >
                                     <Settings className="w-5 h-5" />
                                 </Button>
                             )}
                         </div>
                         <CardTitle className="text-2xl font-black text-center text-slice-text-darker flex flex-col items-center gap-2 relative">
-                            <span>LOBBY CODE</span>
+                            <span>{t("lobby-code", { defaultValue: "LOBBY CODE" })}</span>
                             <div className="flex items-center gap-3">
                                 <span className="text-4xl tracking-widest text-blue-500 bg-slice-bg px-4 py-2 rounded-2xl shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)]">
                                     {lobbyData.lobbyId}
@@ -352,7 +354,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                     variant="ghost" 
                                     className="h-12 w-12 rounded-2xl shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)] transition-all"
                                     onClick={handleCopyLink}
-                                    title="Copy Invite Link"
+                                    title={t("copy-invite-link", { defaultValue: "Copy Invite Link" })}
                                 >
                                     {isCopied ? <Check className="w-6 h-6 text-green-500" /> : <Share2 className="w-6 h-6 text-slice-text-darker" />}
                                 </Button>
@@ -361,7 +363,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                     </CardHeader>
                     <CardContent className="space-y-6">
                          <div className="space-y-2">
-                            <h3 className="font-bold text-sm text-slice-text-light uppercase tracking-widest">Players</h3>
+                            <h3 className="font-bold text-sm text-slice-text-light uppercase tracking-widest">{t("players", { defaultValue: "Players" })}</h3>
                             <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
                             {lobbyData.players.map(p => {
                                 const mult = calcMultiplierForPlayer(p);
@@ -370,9 +372,9 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                     <div key={p.id} className="flex justify-between items-center bg-slice-bg p-3 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] group relative">
                                         <div className="flex items-center gap-2">
                                             {/* Ready indicator */}
-                                            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${p.isReady ? 'bg-green-500' : 'bg-slice-shadow-dark'}`} title={p.isReady ? 'Ready' : 'Not ready'} />
+                                            <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${p.isReady ? 'bg-green-500' : 'bg-slice-shadow-dark'}`} title={p.isReady ? t("ready", { defaultValue: "Ready" }) : t("not-ready", { defaultValue: "Not ready" })} />
                                             <span className="font-bold text-slice-text-darker">{p.name}</span>
-                                            {isMe && <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded-full">YOU</span>}
+                                            {isMe && <span className="text-[9px] font-black bg-blue-500 text-white px-1.5 py-0.5 rounded-full">{t("you-label", { defaultValue: "YOU" })}</span>}
                                         </div>
                                         <div className="flex items-center gap-2">
                                             {/* Difficulty indicators */}
@@ -384,30 +386,30 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                                             style={{
                                                                 backgroundColor: p.difficulty.level === 'easy' ? '#22c55e' : p.difficulty.level === 'hard' ? '#f97316' : p.difficulty.level === 'expert' ? '#ef4444' : '#3b82f6'
                                                             }}
-                                                            title={`${p.difficulty.level.charAt(0).toUpperCase() + p.difficulty.level.slice(1)} difficulty`}
+                                                            title={t("player-difficulty", { defaultValue: "{{level}} difficulty", level: p.difficulty.level.charAt(0).toUpperCase() + p.difficulty.level.slice(1) })}
                                                         >
                                                             {p.difficulty.level.toUpperCase()}
                                                         </span>
                                                     )}
                                                     {p.difficulty.speed !== 1.0 && (
-                                                        <span className="text-[9px] font-bold bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full" title={`Speed: ${p.difficulty.speed.toFixed(1)}x`}>
+                                                        <span className="text-[9px] font-bold bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded-full" title={t("player-speed", { defaultValue: "Speed: {{speed}}x", speed: p.difficulty.speed.toFixed(1) })}>
                                                             <Zap className="w-3 h-3 inline" />{p.difficulty.speed.toFixed(1)}x
                                                         </span>
                                                     )}
-                                                    {p.difficulty.bombs && <span title="Bombs enabled" className="text-[9px] bg-red-500/20 text-red-400 px-1 py-0.5 rounded-full"><Bomb className="w-3 h-3" /></span>}
-                                                    {p.difficulty.switching && <span title="Switching enabled" className="text-[9px] bg-blue-500/20 text-blue-400 px-1 py-0.5 rounded-full"><Shuffle className="w-3 h-3" /></span>}
-                                                    {p.difficulty.invisible && <span title="Invisible" className="text-[9px] bg-slice-shadow-dark text-slice-text-darker px-1 py-0.5 rounded-full"><EyeOff className="w-3 h-3" /></span>}
-                                                    {p.difficulty.spin && <span title="Spin enabled" className="text-[9px] bg-cyan-500/20 text-cyan-400 px-1 py-0.5 rounded-full"><RotateCw className="w-3 h-3" /></span>}
-                                                    {p.difficulty.strictTiming && <span title="Strict Timing" className="text-[9px] bg-red-500/20 text-red-400 px-1 py-0.5 rounded-full"><Target className="w-3 h-3" /></span>}
-                                                    {p.difficulty.oneTrack && <span title="One Track" className="text-[9px] bg-violet-500/20 text-violet-400 px-1 py-0.5 rounded-full"><Minus className="w-3 h-3" /></span>}
+                                                    {p.difficulty.bombs && <span title={t("bombs-enabled", { defaultValue: "Bombs enabled" })} className="text-[9px] bg-red-500/20 text-red-400 px-1 py-0.5 rounded-full"><Bomb className="w-3 h-3" /></span>}
+                                                    {p.difficulty.switching && <span title={t("switching-enabled", { defaultValue: "Switching enabled" })} className="text-[9px] bg-blue-500/20 text-blue-400 px-1 py-0.5 rounded-full"><Shuffle className="w-3 h-3" /></span>}
+                                                    {p.difficulty.invisible && <span title={t("invisible", { defaultValue: "Invisible" })} className="text-[9px] bg-slice-shadow-dark text-slice-text-darker px-1 py-0.5 rounded-full"><EyeOff className="w-3 h-3" /></span>}
+                                                    {p.difficulty.spin && <span title={t("spin-enabled", { defaultValue: "Spin enabled" })} className="text-[9px] bg-cyan-500/20 text-cyan-400 px-1 py-0.5 rounded-full"><RotateCw className="w-3 h-3" /></span>}
+                                                    {p.difficulty.strictTiming && <span title={t("strict-timing", { defaultValue: "Strict Timing" })} className="text-[9px] bg-red-500/20 text-red-400 px-1 py-0.5 rounded-full"><Target className="w-3 h-3" /></span>}
+                                                    {p.difficulty.oneTrack && <span title={t("one-track", { defaultValue: "One Track" })} className="text-[9px] bg-violet-500/20 text-violet-400 px-1 py-0.5 rounded-full"><Minus className="w-3 h-3" /></span>}
                                                 </div>
                                             )}
                                             {mult > 1.0 && (
-                                                <span className="text-[10px] font-black text-green-500 bg-green-500/20 px-2 py-0.5 rounded-full" title={`Score multiplier: ${mult.toFixed(2)}x`}>
+                                                <span className="text-[10px] font-black text-green-500 bg-green-500/20 px-2 py-0.5 rounded-full" title={t("score-multiplier", { defaultValue: "Score multiplier: {{mult}}x", mult: mult.toFixed(2) })}>
                                                     {mult.toFixed(2)}x
                                                 </span>
                                             )}
-                                            {p.id === lobbyData.hostId && <span className="text-xs bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full font-bold">HOST</span>}
+                                            {p.id === lobbyData.hostId && <span className="text-xs bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full font-bold">{t("host-label", { defaultValue: "HOST" })}</span>}
                                         </div>
                                     </div>
                                 );
@@ -416,7 +418,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                          </div>
                          
                          <div className="space-y-2">
-                            <h3 className="font-bold text-sm text-slice-text-light uppercase tracking-widest">Selected Song</h3>
+                            <h3 className="font-bold text-sm text-slice-text-light uppercase tracking-widest">{t("selected-song", { defaultValue: "Selected Song" })}</h3>
                             <div className="bg-slice-bg p-4 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] flex justify-between items-center">
                                 {lobbyData.song ? (
                                     <div>
@@ -424,16 +426,16 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                         <div className="text-xs text-slice-text-muted">{lobbyData.song.artist}</div>
                                     </div>
                                 ) : (
-                                    <span className="text-slice-text-light italic">No song selected</span>
+                                    <span className="text-slice-text-light italic">{t("no-song-selected", { defaultValue: "No song selected" })}</span>
                                 )}
                                 
                                 {isHost ? (
                                     <Button size="sm" onClick={() => setShowSongSelect(true)} className="ml-4">
-                                        CHANGE
+                                        {t("change", { defaultValue: "CHANGE" })}
                                     </Button>
                                 ) : (
                                     <Button size="sm" variant="outline" onClick={() => setShowBrowseSongs(true)} className="ml-4 shadow-[3px_3px_6px_var(--slice-shadow-dark),-3px_-3px_6px_var(--slice-shadow-light)]">
-                                        BROWSE SONGS
+                                        {t("browse-songs", { defaultValue: "BROWSE SONGS" })}
                                     </Button>
                                 )}
                             </div>
@@ -446,7 +448,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                 onClick={() => setShowDifficulty(!showDifficulty)}
                             >
                                 <Zap className="w-4 h-4" />
-                                My Difficulty & Modifiers
+                                {t("my-difficulty-modifiers", { defaultValue: "My Difficulty & Modifiers" })}
                                 {showDifficulty ? <ChevronUp className="w-4 h-4 ml-auto" /> : <ChevronDown className="w-4 h-4 ml-auto" />}
                                 {calcMultiplier(myDifficulty) !== 1.0 && (
                                     <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${calcMultiplier(myDifficulty) > 1.0 ? 'text-green-600 bg-green-100' : 'text-orange-600 bg-orange-100'}`}>
@@ -458,13 +460,13 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                 <div className="bg-slice-bg p-4 rounded-xl shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] space-y-3">
                                     {/* Difficulty Level */}
                                     <div className="space-y-1.5">
-                                        <span className="text-xs font-bold text-slice-text-darker">Note Density</span>
+                                        <span className="text-xs font-bold text-slice-text-darker">{t("note-density", { defaultValue: "Note Density" })}</span>
                                         <div className="grid grid-cols-4 gap-1">
                                             {([
-                                                { key: 'easy', label: 'Easy', notes: '70%', color: '#22c55e' },
-                                                { key: 'normal', label: 'Normal', notes: '100%', color: '#3b82f6' },
-                                                { key: 'hard', label: 'Hard', notes: '150%', color: '#f97316' },
-                                                { key: 'expert', label: 'Expert', notes: '200%', color: '#ef4444' },
+                                                { key: 'easy', label: t("easy", { defaultValue: "Easy" }), notes: '70%', color: '#22c55e' },
+                                                { key: 'normal', label: t("normal", { defaultValue: "Normal" }), notes: '100%', color: '#3b82f6' },
+                                                { key: 'hard', label: t("hard", { defaultValue: "Hard" }), notes: '150%', color: '#f97316' },
+                                                { key: 'expert', label: t("expert", { defaultValue: "Expert" }), notes: '200%', color: '#ef4444' },
                                             ] as const).map(opt => {
                                                 const isActive = myDifficulty.level === opt.key;
                                                 return (
@@ -490,7 +492,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-2">
                                                 <Zap className="w-4 h-4 text-purple-500" />
-                                                <span className="text-xs font-bold text-slice-text-darker">Speed</span>
+                                                <span className="text-xs font-bold text-slice-text-darker">{t("speed", { defaultValue: "Speed" })}</span>
                                             </div>
                                             <span className="text-sm font-bold text-purple-500 w-12 text-right">{myDifficulty.speed.toFixed(1)}x</span>
                                         </div>
@@ -516,12 +518,12 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                     </div>
                                     {/* Toggles */}
                                     {[  
-                                        { key: 'bombs' as const, label: 'Bombs', icon: <Bomb className="w-4 h-4 text-red-500" />, desc: 'Adds bomb notes to avoid' },
-                                        { key: 'switching' as const, label: 'Switching', icon: <Shuffle className="w-4 h-4 text-blue-500" />, desc: 'Adds lane-switch notes' },
-                                        { key: 'invisible' as const, label: 'Invisible', icon: <EyeOff className="w-4 h-4 text-slice-text-muted" />, desc: 'Notes fade before hit line' },
-                                        { key: 'spin' as const, label: 'Spin', icon: <RotateCw className="w-4 h-4 text-cyan-500" />, desc: 'Playfield rotates during gameplay' },
-                                        { key: 'strictTiming' as const, label: 'Strict Timing', icon: <Target className="w-4 h-4 text-red-600" />, desc: 'Tighter hit windows' },
-                                        { key: 'oneTrack' as const, label: 'One Track', icon: <Minus className="w-4 h-4 text-violet-500" />, desc: 'All notes on a single lane' },
+                                        { key: 'bombs' as const, label: t("bombs", { defaultValue: "Bombs" }), icon: <Bomb className="w-4 h-4 text-red-500" />, desc: t("desc-bombs", { defaultValue: "Adds bomb notes to avoid" }) },
+                                        { key: 'switching' as const, label: t("switching", { defaultValue: "Switching" }), icon: <Shuffle className="w-4 h-4 text-blue-500" />, desc: t("desc-switching", { defaultValue: "Adds lane-switch notes" }) },
+                                        { key: 'invisible' as const, label: t("invisible", { defaultValue: "Invisible" }), icon: <EyeOff className="w-4 h-4 text-slice-text-muted" />, desc: t("desc-invisible", { defaultValue: "Notes fade before hit line" }) },
+                                        { key: 'spin' as const, label: t("spin", { defaultValue: "Spin" }), icon: <RotateCw className="w-4 h-4 text-cyan-500" />, desc: t("desc-spin", { defaultValue: "Playfield rotates during gameplay" }) },
+                                        { key: 'strictTiming' as const, label: t("strict-timing", { defaultValue: "Strict Timing" }), icon: <Target className="w-4 h-4 text-red-600" />, desc: t("desc-strict-timing", { defaultValue: "Tighter hit windows" }) },
+                                        { key: 'oneTrack' as const, label: t("one-track", { defaultValue: "One Track" }), icon: <Minus className="w-4 h-4 text-violet-500" />, desc: t("desc-one-track", { defaultValue: "All notes on a single lane" }) },
                                     ].map(opt => (
                                         <button
                                             key={opt.key}
@@ -579,7 +581,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                 className="flex-1 text-slice-text-muted hover:text-red-500"
                                 onClick={handleLeave}
                             >
-                                LEAVE
+                                {t("leave", { defaultValue: "LEAVE" })}
                             </Button>
                             {isHost ? (
                                 <Button 
@@ -588,10 +590,10 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                     disabled={!lobbyData.song || !lobbyData.players.every(p => p.id === lobbyData.hostId || p.isReady)}
                                 >
                                     {!lobbyData.song
-                                        ? 'SELECT A SONG'
+                                        ? t("select-a-song", { defaultValue: "SELECT A SONG" })
                                         : !lobbyData.players.every(p => p.id === lobbyData.hostId || p.isReady)
-                                            ? `WAITING (${lobbyData.players.filter(p => p.id !== lobbyData.hostId && p.isReady).length}/${lobbyData.players.filter(p => p.id !== lobbyData.hostId).length} READY)`
-                                            : 'START GAME'
+                                            ? t("waiting-ready", { defaultValue: "WAITING ({{ready}}/{{total}} READY)", ready: lobbyData.players.filter(p => p.id !== lobbyData.hostId && p.isReady).length, total: lobbyData.players.filter(p => p.id !== lobbyData.hostId).length })
+                                            : t("start-game", { defaultValue: "START GAME" })
                                     }
                                 </Button>
                             ) : (
@@ -607,7 +609,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                                             }`}
                                             onClick={() => lobbyData && mp.toggleReady(lobbyData.lobbyId)}
                                         >
-                                            {amReady ? '\u2714 READY' : 'READY UP'}
+                                            {amReady ? t("ready-check", { defaultValue: "\u2714 READY" }) : t("ready-up", { defaultValue: "READY UP" })}
                                         </Button>
                                     );
                                 })()
@@ -632,16 +634,16 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
         return (
             <div className="absolute inset-0 z-60 flex items-center justify-center bg-slice-bg p-4 text-slice-text">
                  <Card className="w-full max-w-md bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none p-8 text-center">
-                    <h2 className="text-2xl font-black text-slice-text-darker mb-4">MULTIPLAYER</h2>
-                    <p className="text-slice-text-muted mb-6 font-medium">To play online and track your stats, you need to sign in with your account.</p>
-                    <Button 
+                    <h2 className="text-2xl font-black text-slice-text-darker mb-4">{t("multiplayer", { defaultValue: "MULTIPLAYER" })}</h2>
+                    <p className="text-slice-text-muted mb-6 font-medium">{t("sign-in-prompt", { defaultValue: "To play online and track your stats, you need to sign in with your account." })}</p>
+                    <Button
                         className="w-full py-6 bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg rounded-xl text-lg mb-4"
                         onClick={() => window.location.href = `/login?callbackURL=${encodeURIComponent(window.location.pathname)}`}
                     >
-                        SIGN IN / SIGN UP
+                        {t("sign-in-sign-up", { defaultValue: "SIGN IN / SIGN UP" })}
                     </Button>
                     <Button variant="ghost" onClick={handleLeave} className="text-slice-text-light hover:text-slice-text-darker">
-                        CANCEL
+                        {t("cancel", { defaultValue: "CANCEL" })}
                     </Button>
                  </Card>
             </div>
@@ -652,11 +654,11 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
         <div className="absolute inset-0 z-60 flex items-center justify-center bg-slice-bg p-4 text-slice-text">
              <Card className="w-full max-w-md bg-slice-bg shadow-[20px_20px_60px_var(--slice-shadow-dark),-20px_-20px_60px_var(--slice-shadow-light)] rounded-[2rem] border-none">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-black text-center text-slice-text-darker">MULTIPLAYER</CardTitle>
+                    <CardTitle className="text-2xl font-black text-center text-slice-text-darker">{t("multiplayer", { defaultValue: "MULTIPLAYER" })}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="text-center">
-                        <div className="text-xs font-bold text-slice-text-light uppercase mb-1">Signed in as</div>
+                        <div className="text-xs font-bold text-slice-text-light uppercase mb-1">{t("signed-in-as", { defaultValue: "Signed in as" })}</div>
                         <div className="font-bold text-lg text-slice-text">{session.user.name}</div>
                     </div>
 
@@ -665,27 +667,27 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                             <Input 
                                 value={lobbyIdInput} 
                                 onChange={(e) => setLobbyIdInput(e.target.value)} 
-                                placeholder="Lobby Code"
+                                placeholder={t("lobby-code-placeholder", { defaultValue: "Lobby Code" })}
                                 className="bg-(--slice-input-bg) border-(--slice-input-border) text-slice-text placeholder:text-slice-text-muted shadow-[inset_3px_3px_6px_var(--slice-shadow-dark),inset_-3px_-3px_6px_var(--slice-shadow-light)] rounded-xl uppercase text-center font-mono tracking-widest h-12"
                             />
                             <Button 
                                 className="bg-slice-bg text-blue-500 font-bold shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_5px_5px_10px_var(--slice-shadow-dark),inset_-5px_-5px_10px_var(--slice-shadow-light)] rounded-xl"
                                 onClick={handleJoinLobby}
                             >
-                                JOIN
+                                {t("join", { defaultValue: "JOIN" })}
                             </Button>
                          </div>
                          
                          <div className="relative">
                             <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-slice-shadow-dark/50"></span></div>
-                            <div className="relative flex justify-center text-xs uppercase"><span className="bg-slice-bg px-2 text-slice-text-light font-bold">Or</span></div>
+                            <div className="relative flex justify-center text-xs uppercase"><span className="bg-slice-bg px-2 text-slice-text-light font-bold">{t("or", { defaultValue: "Or" })}</span></div>
                         </div>
 
                          <Button 
                             className="w-full py-6 bg-blue-500 hover:bg-blue-600 text-white font-bold shadow-lg rounded-xl text-lg"
                             onClick={handleCreateLobby}
                         >
-                            CREATE LOBBY
+                            {t("create-lobby", { defaultValue: "CREATE LOBBY" })}
                         </Button>
                     </div>
 
@@ -694,7 +696,7 @@ export function MultiplayerLobby({ onBack, onStart, onSelectSong, onOpenSettings
                         className="w-full text-slice-text-light hover:text-slice-text-darker"
                         onClick={handleLeave}
                     >
-                        BACK TO MENU
+                        {t("back-to-menu", { defaultValue: "BACK TO MENU" })}
                     </Button>
                 </CardContent>
              </Card>

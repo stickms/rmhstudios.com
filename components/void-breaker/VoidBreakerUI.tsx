@@ -1,9 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings } from 'lucide-react';
+import { Play, RotateCcw, Trophy, Volume2, VolumeX, BookOpen, ArrowLeft, Settings, Gamepad2, Hexagon } from 'lucide-react';
+import {
+  META_NODES, nodeCost, nodeLevel, canBuy, isCharUnlocked, isWeaponUnlocked,
+  type MetaState, type MetaNodeId,
+} from '@/lib/void-breaker/metaProgression';
+import { CHARACTERS, getCharacter, type CharacterId } from '@/lib/void-breaker/characters';
+import { WEAPONS, getWeapon, type WeaponId } from '@/lib/void-breaker/weapons';
+import { MODIFIERS, combineModifiers, type ModifierId } from '@/lib/void-breaker/modifiers';
 import { authClient } from '@/lib/auth-client';
 import { useNavigate } from '@tanstack/react-router';
 import type { RunStats } from '@/lib/void-breaker/types';
@@ -12,7 +20,14 @@ type LBEntry = { username: string; highScore: number };
 
 export function VoidBreakerUI({
   uiState, runStats, onStartGame, onGoToMenu, muted, onToggleMute,
-  musicVolume, onMusicVolumeChange, saveInfo, onClearSave, onContinueGame,
+  musicVolume, onMusicVolumeChange, sfxVolume, onSfxVolumeChange,
+  use3D, onSetRenderer,
+  reducedFx, onSetReducedFx,
+  characterId, onSelectCharacter,
+  weaponId, onSelectWeapon,
+  activeMods, onToggleModifier,
+  meta, onBuyNode, earnedCores,
+  saveInfo, onClearSave, onContinueGame,
 }: {
   uiState: 'menu' | 'playing' | 'gameOver';
   runStats: RunStats | null;
@@ -22,14 +37,32 @@ export function VoidBreakerUI({
   onToggleMute: () => void;
   musicVolume: number;
   onMusicVolumeChange: (v: number) => void;
+  sfxVolume: number;
+  onSfxVolumeChange: (v: number) => void;
+  use3D: boolean;
+  onSetRenderer: (to3D: boolean) => void;
+  reducedFx: boolean;
+  onSetReducedFx: (on: boolean) => void;
+  characterId: CharacterId;
+  onSelectCharacter: (id: CharacterId) => void;
+  weaponId: WeaponId;
+  onSelectWeapon: (id: WeaponId) => void;
+  activeMods: ModifierId[];
+  onToggleModifier: (id: ModifierId) => void;
+  meta: MetaState;
+  onBuyNode: (id: MetaNodeId) => void;
+  earnedCores: number;
   saveInfo: { wave: number; savedAt: Date; score?: number } | null;
   onClearSave: () => void;
   onContinueGame?: () => void;
 }) {
+  const { t } = useTranslation("c-void-breaker");
   const [lb, setLb] = useState<LBEntry[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [showLore, setShowLore] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+  const [showForge, setShowForge] = useState(false);
   const session = authClient.useSession();
   const navigate = useNavigate();
 
@@ -46,6 +79,8 @@ export function VoidBreakerUI({
     if (uiState === 'menu' || uiState === 'gameOver') fetchLb();
     if (uiState === 'menu') setShowLore(false);
     if (uiState === 'menu') setShowSettings(false);
+    if (uiState === 'menu') setShowHelp(false);
+    if (uiState === 'menu') setShowForge(false);
   }, [uiState, fetchLb]);
 
   useEffect(() => {
@@ -78,20 +113,20 @@ export function VoidBreakerUI({
   if (showSettings) {
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-sm mx-auto px-6 py-10 space-y-6">
+        <div className="vb-anim max-w-sm mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
           <button onClick={() => setShowSettings(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-4">
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
           </button>
 
           <h2 className="text-xl font-bold text-[#d4af37] flex items-center gap-2">
-            <Settings className="w-5 h-5" /> Settings
+            <Settings className="w-5 h-5" /> {t("settings", { defaultValue: "Settings" })}
           </h2>
 
           <div className="space-y-4">
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="text-sm text-zinc-400">Music Volume</label>
+                <label className="text-sm text-zinc-400">{t("music-volume", { defaultValue: "Music Volume" })}</label>
                 <span className="text-xs text-[#d4af37] font-mono tabular-nums">{musicVolume}%</span>
               </div>
               <Slider
@@ -103,11 +138,182 @@ export function VoidBreakerUI({
                 className="w-full"
               />
             </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-sm text-zinc-400">{t("sfx-volume", { defaultValue: "Sound Effects" })}</label>
+                <span className="text-xs text-[#d4af37] font-mono tabular-nums">{sfxVolume}%</span>
+              </div>
+              <Slider
+                value={[sfxVolume]}
+                onValueChange={([v]) => onSfxVolumeChange(v)}
+                min={0}
+                max={100}
+                step={5}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm text-zinc-400">{t("renderer", { defaultValue: "Renderer" })}</label>
+              <div className="flex gap-2 mt-2">
+                <Button onClick={() => onSetRenderer(true)}
+                  className={`flex-1 ${use3D ? 'bg-[#00f5ff]/15 text-[#00f5ff] border border-[#00f5ff]/50' : 'bg-[#1a1a24] text-zinc-400 border border-[#2a2a3a]'}`}>
+                  {t("renderer-3d", { defaultValue: "3D" })}
+                </Button>
+                <Button onClick={() => onSetRenderer(false)}
+                  className={`flex-1 ${!use3D ? 'bg-[#d4af37]/15 text-[#d4af37] border border-[#c9a227]/50' : 'bg-[#1a1a24] text-zinc-400 border border-[#2a2a3a]'}`}>
+                  {t("renderer-2d", { defaultValue: "2D" })}
+                </Button>
+              </div>
+              <p className="text-[10px] text-zinc-600 font-mono mt-1.5">
+                {t("renderer-note", { defaultValue: "Switching reloads the page." })}
+              </p>
+            </div>
+
+            <div>
+              <label className="text-sm text-zinc-400">{t("reduced-effects", { defaultValue: "Reduced Effects" })}</label>
+              <div className="flex gap-2 mt-2">
+                <Button onClick={() => onSetReducedFx(false)}
+                  className={`flex-1 ${!reducedFx ? 'bg-[#00f5ff]/15 text-[#00f5ff] border border-[#00f5ff]/50' : 'bg-[#1a1a24] text-zinc-400 border border-[#2a2a3a]'}`}>
+                  {t("fx-full", { defaultValue: "Full" })}
+                </Button>
+                <Button onClick={() => onSetReducedFx(true)}
+                  className={`flex-1 ${reducedFx ? 'bg-[#00ff88]/15 text-[#00ff88] border border-[#00ff88]/50' : 'bg-[#1a1a24] text-zinc-400 border border-[#2a2a3a]'}`}>
+                  {t("fx-reduced", { defaultValue: "Reduced" })}
+                </Button>
+              </div>
+              <p className="text-[10px] text-zinc-600 font-mono mt-1.5">
+                {t("reduced-effects-note", { defaultValue: "Less shake, flashing, and chromatic aberration." })}
+              </p>
+            </div>
           </div>
 
           <Button onClick={() => setShowSettings(false)}
             className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] border border-[#c9a227]/40">
-            Done
+            {t("done", { defaultValue: "Done" })}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Void Forge (meta-progression) ──
+  if (showForge) {
+    return (
+      <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
+        <div className="vb-anim max-w-md mx-auto px-6 py-10 space-y-5" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
+          <button onClick={() => setShowForge(false)}
+            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors">
+            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
+          </button>
+
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-[#d4af37] flex items-center gap-2">
+              <Hexagon className="w-5 h-5" /> {t("void-forge", { defaultValue: "Void Forge" })}
+            </h2>
+            <div className="text-[#d4af37] font-mono font-bold text-sm">
+              ◈ {meta.cores.toLocaleString()}
+            </div>
+          </div>
+          <p className="text-[11px] text-zinc-500 -mt-2">
+            {t("forge-blurb", { defaultValue: "Spend Void Cores on permanent upgrades. Cores are earned every run." })}
+          </p>
+
+          <div className="space-y-2">
+            {META_NODES.map((n) => {
+              const lvl = nodeLevel(meta, n.id);
+              const maxed = lvl >= n.maxLevel;
+              const cost = nodeCost(n, lvl);
+              const affordable = canBuy(meta, n.id);
+              return (
+                <div key={n.id} className="bg-[#1a1a24] border border-[#2a2a3a] rounded-lg p-3 flex items-center gap-3">
+                  <div className="text-2xl w-7 text-center shrink-0" style={{ color: n.color }}>{n.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold font-mono text-sm" style={{ color: n.color }}>{n.name}</span>
+                      <span className="text-[9px] font-mono text-zinc-500">{t("forge-lvl", { defaultValue: "LV {{lvl}}/{{max}}", lvl, max: n.maxLevel })}</span>
+                    </div>
+                    <div className="text-[11px] text-zinc-400 leading-snug">{n.description}</div>
+                    <div className="flex gap-1 mt-1">
+                      {Array.from({ length: n.maxLevel }, (_, i) => (
+                        <div key={i} className="h-1 flex-1 rounded-full" style={{ background: i < lvl ? n.color : '#2a2a3a' }} />
+                      ))}
+                    </div>
+                  </div>
+                  <Button
+                    onClick={() => onBuyNode(n.id)}
+                    disabled={maxed || !affordable}
+                    className={`shrink-0 text-xs font-mono px-3 ${maxed
+                      ? 'bg-[#1a1a24] text-zinc-600 border border-[#2a2a3a]'
+                      : affordable
+                        ? 'bg-[#d4af37]/15 text-[#d4af37] border border-[#c9a227]/50 hover:bg-[#d4af37]/25'
+                        : 'bg-[#1a1a24] text-zinc-600 border border-[#2a2a3a]'}`}>
+                    {maxed ? t("forge-max", { defaultValue: "MAX" }) : `◈ ${cost}`}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── How to Play ──
+  if (showHelp) {
+    const controls: [string, string][] = [
+      ['WASD / Arrows', t('hp-move', { defaultValue: 'Move' })],
+      ['Mouse', t('hp-aim', { defaultValue: 'Aim (you auto-fire)' })],
+      ['Shift', t('hp-dash', { defaultValue: 'Dash — brief invincibility' })],
+      ['F', t('hp-focus', { defaultValue: 'Focus — slow time, bonus shards' })],
+      ['Space', t('hp-detonate', { defaultValue: 'Void Burst (needs 5+ shards)' })],
+      ['Q / E / R / T', t('hp-abilities', { defaultValue: 'Abilities — unlock as you progress' })],
+      ['Esc', t('hp-pause', { defaultValue: 'Pause' })],
+    ];
+    const tips: [string, string][] = [
+      [t('hp-shards-title', { defaultValue: 'Shards' }), t('hp-shards', { defaultValue: 'Collected shards orbit you as a shield AND raise your score multiplier. Hoard them — but spend them.' })],
+      [t('hp-burst-title', { defaultValue: 'Void Burst + Surge' }), t('hp-burst', { defaultValue: 'Detonating deals more damage the more shards you hold, and banks your multiplier as a decaying Surge — so blowing your ring is a power spike, not a reset.' })],
+      [t('hp-upgrades-title', { defaultValue: 'Upgrades' }), t('hp-upgrades', { defaultValue: 'Clear a wave, pick 1 of 3 upgrade cards. They stack — build your run.' })],
+      [t('hp-enemies-title', { defaultValue: 'Read the enemies' }), t('hp-enemies', { defaultValue: 'Dodge a sniper’s aim-line by moving. Flank a shielded foe (its arc blocks frontal shots) or hit it with a burst. Kill healers first.' })],
+      [t('hp-bosses-title', { defaultValue: 'Bosses' }), t('hp-bosses', { defaultValue: 'Every 5th wave. Each has its own tricks — rotating beams, collapsing walls, inverted controls, and worse.' })],
+    ];
+    return (
+      <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
+        <div className="vb-anim max-w-lg mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
+          <button onClick={() => setShowHelp(false)}
+            className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-2">
+            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
+          </button>
+
+          <h2 className="text-xl font-bold text-[#d4af37] flex items-center gap-2">
+            <Gamepad2 className="w-5 h-5" /> {t("how-to-play", { defaultValue: "How to Play" })}
+          </h2>
+
+          <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-4">
+            <div className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em] mb-3">{t("controls", { defaultValue: "Controls" })}</div>
+            <div className="space-y-1.5">
+              {controls.map(([key, desc]) => (
+                <div key={key} className="flex justify-between items-baseline gap-3 text-sm">
+                  <span className="font-mono text-[#00f5ff] text-xs shrink-0">{key}</span>
+                  <span className="text-zinc-400 text-right">{desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {tips.map(([title, body]) => (
+              <div key={title} className="bg-[#0a0a18] border border-[#c9a227]/15 rounded-lg p-3">
+                <div className="text-[#d4af37]/90 font-bold text-xs uppercase tracking-widest mb-1">{title}</div>
+                <p className="text-zinc-400 text-sm leading-relaxed font-light">{body}</p>
+              </div>
+            ))}
+          </div>
+
+          <Button onClick={() => setShowHelp(false)}
+            className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] border border-[#c9a227]/40">
+            {t("done", { defaultValue: "Done" })}
           </Button>
         </div>
       </div>
@@ -118,10 +324,10 @@ export function VoidBreakerUI({
   if (showLore) {
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
+        <div className="vb-anim max-w-2xl mx-auto px-6 py-10 space-y-6" style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
           <button onClick={() => setShowLore(false)}
             className="flex items-center gap-1.5 text-zinc-500 hover:text-[#d4af37] text-sm transition-colors mb-4">
-            <ArrowLeft className="w-4 h-4" /> Back
+            <ArrowLeft className="w-4 h-4" /> {t("back", { defaultValue: "Back" })}
           </button>
 
           <div className="text-center space-y-2">
@@ -184,8 +390,8 @@ export function VoidBreakerUI({
               </p>
               <p>
                 When the shards reach critical mass, you can detonate them &mdash; a Void Burst that shatters
-                reality in a sphere around you. It kills everything nearby. It also resets your power to zero.
-                The question is always the same: hold for the multiplier, or burn it all to survive.
+                reality in a sphere around you. The more shards you spend, the deadlier the blast &mdash; and the
+                power you release lingers as a Surge before it fades. Hold for the shield, or burn it all to survive.
               </p>
             </div>
 
@@ -214,7 +420,7 @@ export function VoidBreakerUI({
           <div className="text-center pt-4">
             <Button onClick={() => { setShowLore(false); }}
               className="px-8 py-2 font-bold bg-[#1a1a24] hover:bg-[#252530] border border-[#c9a227]/40 text-[#d4af37]">
-              Return
+              {t("return", { defaultValue: "Return" })}
             </Button>
           </div>
         </div>
@@ -227,7 +433,8 @@ export function VoidBreakerUI({
     return (
       <div className="absolute inset-0 z-40 pointer-events-auto overflow-hidden bg-[#0d0d14]">
         <div className="relative h-full flex items-center justify-center overflow-y-auto py-8">
-          <div className="text-center space-y-4 sm:space-y-5 w-full max-w-md px-4 py-6">
+          <div className="vb-anim text-center space-y-4 sm:space-y-5 w-full max-w-md px-4 py-6"
+            style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>
             <div className="absolute top-4 right-4 flex items-center gap-2">
               <button onClick={() => setShowSettings(true)}
                 className="w-9 h-9 rounded-full bg-[#1a1a24] border border-[#c9a227]/30 flex items-center justify-center hover:bg-[#252530] transition-colors">
@@ -244,20 +451,104 @@ export function VoidBreakerUI({
                 VOID BREAKER
               </h1>
               <div className="text-[10px] tracking-[0.2em] text-zinc-500 font-mono">
-                Obsidian Arena Shooter
+                {t("tagline", { defaultValue: "Obsidian Arena Shooter" })}
               </div>
             </div>
 
             <p className="text-zinc-500 text-xs leading-relaxed max-w-xs mx-auto">
-              Collect shards. Dash. Focus to slow time. Detonate when overwhelmed. Survive the waves.
+              {t("instructions", { defaultValue: "Collect shards. Dash. Focus to slow time. Detonate when overwhelmed. Survive the waves." })}
             </p>
+
+            {/* Voidrunner (character) picker */}
+            <div className="bg-[#0a0a18] border border-[#00f5ff]/15 rounded-lg p-2.5 text-left">
+              <div className="text-[9px] text-[#00f5ff]/60 font-mono mb-2 tracking-[0.2em] uppercase">
+                {t("voidrunner", { defaultValue: "Voidrunner" })}
+              </div>
+              <div className="flex gap-1.5">
+                {CHARACTERS.map((c) => {
+                  const sel = c.id === characterId;
+                  const unlocked = isCharUnlocked(meta, c.id);
+                  const affordable = meta.cores >= c.unlockCost;
+                  return (
+                    <button key={c.id} onClick={() => onSelectCharacter(c.id)}
+                      title={unlocked ? c.name : `${c.name} — ◈${c.unlockCost}`}
+                      className={`relative flex-1 rounded-lg py-2 border flex flex-col items-center gap-0.5 transition-all ${sel ? '' : 'opacity-60 hover:opacity-100'}`}
+                      style={{ borderColor: sel ? c.color : '#2a2a3a', background: sel ? c.color + '18' : 'transparent' }}>
+                      <span className="text-lg leading-none" style={{ color: unlocked ? c.color : '#555' }}>{c.icon}</span>
+                      {unlocked ? (
+                        <span className="text-[9px] font-mono" style={{ color: sel ? c.color : '#888' }}>{c.name}</span>
+                      ) : (
+                        <span className={`text-[9px] font-mono ${affordable ? 'text-[#d4af37]' : 'text-zinc-600'}`}>🔒 ◈{c.unlockCost}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="text-[10px] text-zinc-400 mt-2 leading-snug min-h-[28px]">
+                {getCharacter(characterId).description}
+              </div>
+            </div>
+
+            {/* Weapon picker */}
+            <div className="bg-[#0a0a18] border border-[#ffaa00]/15 rounded-lg p-2.5 text-left">
+              <div className="text-[9px] text-[#ffaa00]/60 font-mono mb-2 tracking-[0.2em] uppercase">
+                {t("weapon", { defaultValue: "Weapon" })}
+              </div>
+              <div className="flex gap-1.5">
+                {WEAPONS.map((w) => {
+                  const sel = w.id === weaponId;
+                  const unlocked = isWeaponUnlocked(meta, w.id);
+                  const affordable = meta.cores >= w.unlockCost;
+                  return (
+                    <button key={w.id} onClick={() => onSelectWeapon(w.id)}
+                      title={unlocked ? `${w.name} — ${w.title}` : `${w.name} — ◈${w.unlockCost}`}
+                      className={`relative flex-1 rounded-lg py-2 border flex flex-col items-center gap-0.5 transition-all ${sel ? '' : 'opacity-60 hover:opacity-100'}`}
+                      style={{ borderColor: sel ? w.color : '#2a2a3a', background: sel ? w.color + '18' : 'transparent' }}>
+                      <span className="text-lg leading-none" style={{ color: unlocked ? w.color : '#555' }}>{w.icon}</span>
+                      {unlocked ? (
+                        <span className="text-[9px] font-mono truncate max-w-full px-0.5" style={{ color: sel ? w.color : '#888' }}>{w.name}</span>
+                      ) : (
+                        <span className={`text-[9px] font-mono ${affordable ? 'text-[#d4af37]' : 'text-zinc-600'}`}>🔒 ◈{w.unlockCost}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="text-[10px] text-zinc-400 mt-2 leading-snug min-h-[28px]">
+                {getWeapon(weaponId).description}
+              </div>
+            </div>
+
+            {/* Run modifiers — harder rules for more Void Cores */}
+            <div className="bg-[#0a0a18] border border-[#ff5577]/15 rounded-lg p-2.5 text-left">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[9px] text-[#ff5577]/70 font-mono tracking-[0.2em] uppercase">
+                  {t("modifiers", { defaultValue: "Modifiers" })}
+                </span>
+                {activeMods.length > 0 && (
+                  <span className="text-[9px] text-[#d4af37] font-mono">◈ ×{combineModifiers(activeMods).coreMult.toFixed(2)}</span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {MODIFIERS.map((m) => {
+                  const on = activeMods.includes(m.id);
+                  return (
+                    <button key={m.id} onClick={() => onToggleModifier(m.id)} title={m.description}
+                      className={`text-[10px] font-mono px-2 py-1 rounded border transition-all ${on ? '' : 'opacity-50 hover:opacity-90'}`}
+                      style={{ borderColor: on ? m.color : '#2a2a3a', background: on ? m.color + '18' : 'transparent', color: on ? m.color : '#888' }}>
+                      {m.icon} {m.name} <span className="opacity-70">+{Math.round(m.coreBonus * 100)}%</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             {saveInfo && (
               <div className="bg-[#0a0a18] border border-[#00f5ff]/20 rounded-lg p-3 text-left">
-                <div className="text-[10px] text-[#00f5ff]/60 font-mono mb-1">SAVED PROGRESS</div>
+                <div className="text-[10px] text-[#00f5ff]/60 font-mono mb-1">{t("saved-progress", { defaultValue: "SAVED PROGRESS" })}</div>
                 <div className="flex justify-between items-center">
                   <div>
-                    <span className="text-zinc-300 text-sm">Wave {saveInfo.wave}</span>
+                    <span className="text-zinc-300 text-sm">{t("wave-number", { defaultValue: "Wave {{wave}}", wave: saveInfo.wave })}</span>
                     {saveInfo.score !== undefined && (
                       <span className="text-[#d4af37] text-[10px] ml-2 font-mono">
                         {saveInfo.score.toLocaleString()} pts
@@ -271,7 +562,7 @@ export function VoidBreakerUI({
                     onClick={onClearSave}
                     className="text-[10px] text-zinc-600 hover:text-red-400 font-mono transition-colors"
                   >
-                    ✕ Clear
+                    ✕ {t("clear", { defaultValue: "Clear" })}
                   </button>
                 </div>
                 {onContinueGame && (
@@ -280,7 +571,7 @@ export function VoidBreakerUI({
                     className="w-full mt-2 py-2 bg-[#00f5ff]/10 hover:bg-[#00f5ff]/20 text-[#00f5ff] font-bold border border-[#00f5ff]/40 font-mono tracking-wider text-sm"
                     style={{ boxShadow: '0 0 15px rgba(0,245,255,0.1)' }}
                   >
-                    ▶ CONTINUE FROM WAVE {saveInfo.wave}
+                    ▶ {t("continue-from-wave", { defaultValue: "CONTINUE FROM WAVE {{wave}}", wave: saveInfo.wave })}
                   </Button>
                 )}
               </div>
@@ -289,30 +580,36 @@ export function VoidBreakerUI({
             {!session.data ? (
               <Button onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                 className="w-full bg-[#0a0a18] hover:bg-[#14141f] text-[#00f5ff] font-bold py-3 border border-[#00f5ff]/30">
-                Sign In to Play
+                {t("sign-in-to-play", { defaultValue: "Sign In to Play" })}
               </Button>
             ) : (
               <Button onClick={onStartGame}
                 className="w-full py-3 text-lg font-bold bg-[#0a0a18] hover:bg-[#14141f] text-[#00f5ff] border border-[#00f5ff]/40"
                 style={{ boxShadow: '0 0 20px rgba(0,245,255,0.15)' }}>
-                <Play className="w-5 h-5 mr-2" /> {saveInfo ? 'New Game' : 'Play'}
+                <Play className="w-5 h-5 mr-2" /> {saveInfo ? t("new-game", { defaultValue: "New Game" }) : t("play", { defaultValue: "Play" })}
               </Button>
             )}
+            <Button onClick={() => setShowForge(true)} variant="outline"
+              className="w-full py-2 border-[#c9a227]/30 text-[#d4af37] hover:bg-[#d4af37]/10 hover:border-[#c9a227]/60 flex items-center justify-center gap-2">
+              <Hexagon className="w-4 h-4" /> {t("void-forge", { defaultValue: "Void Forge" })}
+              <span className="font-mono text-xs opacity-80">◈ {meta.cores.toLocaleString()}</span>
+            </Button>
+
             <div className="flex gap-2">
-              <Button onClick={() => setShowSettings(true)} variant="outline"
+              <Button onClick={() => setShowHelp(true)} variant="outline"
                 className="flex-1 py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
-                <Settings className="w-4 h-4 mr-2" /> Settings
+                <Gamepad2 className="w-4 h-4 mr-2" /> {t("how-to-play", { defaultValue: "How to Play" })}
               </Button>
               <Button onClick={() => setShowLore(true)} variant="outline"
                 className="flex-1 py-2 border-[#2a2a3a] text-zinc-500 hover:text-[#d4af37] hover:border-[#c9a227]/40">
-                <BookOpen className="w-4 h-4 mr-2" /> Story
+                <BookOpen className="w-4 h-4 mr-2" /> {t("story", { defaultValue: "Story" })}
               </Button>
             </div>
             {lb.length > 0 && (
               <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3">
                 <div className="flex items-center gap-2 mb-2">
                   <Trophy className="w-3.5 h-3.5 text-[#d4af37]" />
-                  <span className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em]">Leaderboard</span>
+                  <span className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em]">{t("leaderboard", { defaultValue: "Leaderboard" })}</span>
                 </div>
                 <div className="space-y-1">
                   {lb.slice(0, 5).map((e, i) => (
@@ -326,8 +623,8 @@ export function VoidBreakerUI({
             )}
 
             <div className="text-[9px] text-zinc-600 font-mono space-y-0.5">
-              <p className="hidden sm:block">WASD move {'\u00b7'} Mouse aim {'\u00b7'} Shift dash {'\u00b7'} F focus {'\u00b7'} Space detonate {'\u00b7'} Esc pause</p>
-              <p className="sm:hidden">Touch controls during gameplay</p>
+              <p className="hidden sm:block">{t("controls-desktop", { defaultValue: "WASD move \u00b7 Mouse aim \u00b7 Shift dash \u00b7 F focus \u00b7 Space detonate \u00b7 Esc pause" })}</p>
+              <p className="sm:hidden">{t("controls-touch", { defaultValue: "Touch controls during gameplay" })}</p>
             </div>
           </div>
         </div>
@@ -341,26 +638,27 @@ export function VoidBreakerUI({
     const timeStr = `${Math.floor(secs / 60)}:${(secs % 60).toString().padStart(2, '0')}`;
     return (
       <div className="absolute inset-0 flex items-center justify-center z-40 pointer-events-auto overflow-y-auto bg-[#0d0d14]">
-        <div className="max-w-md w-full px-4 space-y-3 py-6">
+        <div className="vb-anim max-w-md w-full px-4 space-y-3 py-6"
+          style={{ animation: 'vb-scale-in 0.4s cubic-bezier(0.22,1.2,0.36,1) both' }}>
           <div className="text-center space-y-1">
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#d4af37]">
-              GAME OVER
+              {t("game-over", { defaultValue: "GAME OVER" })}
             </h2>
           </div>
 
           <div className="bg-[#1a1a24] border border-[#c9a227]/30 rounded-lg p-5 space-y-3">
             <div className="text-center">
-              <div className="text-[10px] text-zinc-500 uppercase tracking-[0.2em]">Score</div>
+              <div className="text-[10px] text-zinc-500 uppercase tracking-[0.2em]">{t("score", { defaultValue: "Score" })}</div>
               <div className="text-3xl font-black text-[#d4af37] tabular-nums">{runStats.score.toLocaleString()}</div>
             </div>
             <div className="grid grid-cols-2 gap-3 text-center">
               {[
-                ['Wave', runStats.wave, 'text-zinc-300'],
-                ['Time', timeStr, 'text-zinc-300'],
-                ['Kills', runStats.enemiesKilled, 'text-zinc-300'],
-                ['Peak Multi', `${runStats.maxMultiplier}x`, 'text-[#d4af37]'],
-                ...(runStats.bossesKilled > 0 ? [['Bosses', runStats.bossesKilled, 'text-red-400']] : []),
-                ...(runStats.maxCombo > 1 ? [['Best Combo', `${runStats.maxCombo}x`, 'text-[#c9a227]']] : []),
+                [t("stat-wave", { defaultValue: "Wave" }), runStats.wave, 'text-zinc-300'],
+                [t("stat-time", { defaultValue: "Time" }), timeStr, 'text-zinc-300'],
+                [t("stat-kills", { defaultValue: "Kills" }), runStats.enemiesKilled, 'text-zinc-300'],
+                [t("stat-peak-multi", { defaultValue: "Peak Multi" }), `${runStats.maxMultiplier}x`, 'text-[#d4af37]'],
+                ...(runStats.bossesKilled > 0 ? [[t("stat-bosses", { defaultValue: "Bosses" }), runStats.bossesKilled, 'text-red-400']] : []),
+                ...(runStats.maxCombo > 1 ? [[t("stat-best-combo", { defaultValue: "Best Combo" }), `${runStats.maxCombo}x`, 'text-[#c9a227]']] : []),
               ].map(([label, val, cls], i) => (
                 <div key={i}>
                   <div className="text-[10px] text-zinc-600">{label}</div>
@@ -370,21 +668,50 @@ export function VoidBreakerUI({
             </div>
           </div>
 
+          {earnedCores > 0 && (
+            <button onClick={() => setShowForge(true)}
+              className="w-full bg-[#d4af37]/10 border border-[#c9a227]/40 rounded-lg p-2.5 text-center hover:bg-[#d4af37]/20 transition-colors">
+              <span className="text-[#d4af37] font-mono font-bold text-sm">
+                {t("cores-earned", { defaultValue: "+{{n}} ◈ Void Cores", n: earnedCores.toLocaleString() })}
+              </span>
+              <span className="block text-[9px] text-zinc-500 font-mono mt-0.5">
+                {t("spend-in-forge", { defaultValue: "Spend in the Void Forge →" })}
+              </span>
+            </button>
+          )}
+
+          {runStats.upgrades.length > 0 && (
+            <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3">
+              <div className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em] mb-2">
+                {t("your-build", { defaultValue: "Your Build" })}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {runStats.upgrades.map((u) => (
+                  <span key={u.name}
+                    className="inline-flex items-center gap-1 text-[11px] font-mono px-1.5 py-0.5 rounded border"
+                    style={{ color: u.color, borderColor: u.color + '40', background: u.color + '10' }}>
+                    <span>{u.icon}</span>{u.name}{u.count > 1 && <span className="opacity-70">×{u.count}</span>}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {!session.data ? (
             <Button onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
               className="w-full bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] font-bold border border-[#c9a227]/40">
-              Sign In to Submit
+              {t("sign-in-to-submit", { defaultValue: "Sign In to Submit" })}
             </Button>
           ) : (
             <p className="text-[10px] text-[#c9a227]/80 text-center font-mono">
-              {submitted ? '\u2713 Score submitted' : 'Submitting\u2026'}
+              {submitted ? t("score-submitted", { defaultValue: "\u2713 Score submitted" }) : t("score-submitting", { defaultValue: "Submitting\u2026" })}
             </p>
           )}
 
           <div className="flex gap-2 flex-wrap">
             <Button onClick={onStartGame}
               className="flex-1 min-w-[100px] font-bold bg-[#1a1a24] hover:bg-[#252530] text-[#d4af37] border border-[#c9a227]/40">
-              <RotateCcw className="w-4 h-4 mr-1" /> Again
+              <RotateCcw className="w-4 h-4 mr-1" /> {t("again", { defaultValue: "Again" })}
             </Button>
             <Button onClick={() => setShowSettings(true)} variant="outline"
               className="border-[#2a2a3a] text-zinc-500 hover:bg-[#1a1a24] hover:text-[#d4af37]">
@@ -392,7 +719,7 @@ export function VoidBreakerUI({
             </Button>
             <Button onClick={onGoToMenu} variant="outline"
               className="flex-1 min-w-[100px] border-[#2a2a3a] text-zinc-500 hover:bg-[#1a1a24] hover:text-[#d4af37]">
-              Menu
+              {t("menu", { defaultValue: "Menu" })}
             </Button>
           </div>
 
@@ -400,7 +727,7 @@ export function VoidBreakerUI({
             <div className="bg-[#1a1a24] border border-[#c9a227]/20 rounded-lg p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Trophy className="w-3 h-3 text-[#d4af37]" />
-                <span className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em]">Leaderboard</span>
+                <span className="text-[10px] text-[#c9a227]/80 font-bold uppercase tracking-[0.15em]">{t("leaderboard", { defaultValue: "Leaderboard" })}</span>
               </div>
               <div className="space-y-1 max-h-32 overflow-y-auto">
                 {lb.slice(0, 10).map((e, i) => (

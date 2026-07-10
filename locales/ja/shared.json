@@ -1,0 +1,15 @@
+{
+  "chat-placeholder": "チャット…",
+  "error-boundary-message": "予期しないエラーが発生しました。",
+  "error-boundary-retry": "再試行",
+  "error-boundary-title": "問題が発生しました",
+  "failed-to-load-media": "メディアの読み込みに失敗しました",
+  "game-crashed": "ゲームがクラッシュしました",
+  "game-crashed-named": "{{gameName}} がクラッシュしました",
+  "loading": "読み込み中…",
+  "no-messages-yet": "まだメッセージがありません",
+  "react": "リアクション",
+  "return-home": "ホームに戻る",
+  "try-again": "再試行",
+  "unexpected-error": "予期しないエラーが発生しました。"
+}

@@ -1,0 +1,18 @@
+{
+  "clear-filters": "Effacer les filtres",
+  "clear-search": "Effacer la recherche",
+  "like-this-build": "Aimer cette création",
+  "no-builds-found": "Aucune création trouvée",
+  "read-more": "Lire la suite",
+  "screenshot-of": "Capture d'écran de {{title}}",
+  "search-aria-label": "Rechercher des créations",
+  "search-placeholder": "Rechercher des créations...",
+  "sort-builds": "Trier les créations",
+  "sort-default": "Par défaut",
+  "sort-most-discussed": "Les plus discutées",
+  "sort-most-liked": "Les plus aimées",
+  "sort-most-viewed": "Les plus vues",
+  "sort-options": "Options de tri",
+  "unlike-this-build": "Ne plus aimer cette création",
+  "view-comments": "Voir les commentaires"
+}

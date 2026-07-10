@@ -14,10 +14,12 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
+import { isDiscordActivity } from '@/lib/discord-sdk';
 import { SlidersHorizontal } from 'lucide-react';
 import RoomCodeDisplay from './RoomCodeDisplay';
 import PlayerList from './PlayerList';
@@ -27,6 +29,7 @@ import ChatOverlay from './ChatOverlay';
 import GameSettingsModal from './GameSettingsModal';
 
 export default function LobbyView() {
+  const { t } = useTranslation('c-rmhbox');
   const lobby = useRMHboxStore((s) => s.lobby);
   const gameSettingsState = useRMHboxStore((s) => s.gameSettingsState);
   const navigate = useNavigate();
@@ -41,7 +44,13 @@ export default function LobbyView() {
     if (!lobby) return;
     emit(C2S.LOBBY_LEAVE, { lobbyId: lobby.lobbyId });
     useRMHboxStore.getState().leaveLobby();
-    navigate({ to: '/rmhbox' });
+    // Inside a Discord Activity there is no standalone /rmhbox route — the
+    // activity renders this view inline and returns to its lobby browser once
+    // the store's lobby clears. Navigating to /rmhbox would leave the activity
+    // iframe and bounce the user to the web login page (no Discord session).
+    if (!isDiscordActivity()) {
+      navigate({ to: '/rmhbox' });
+    }
   }, [lobby, navigate]);
 
   const handleSendChat = useCallback((content: string) => {
@@ -76,7 +85,7 @@ export default function LobbyView() {
   if (!lobby) {
     return (
       <div className="flex items-center justify-center p-8 text-(--rmhbox-text-muted)">
-        Connecting to lobby…
+        {t('connecting-to-lobby', { defaultValue: 'Connecting to lobby…' })}
       </div>
     );
   }
@@ -143,7 +152,7 @@ export default function LobbyView() {
                   onClick={() => setShowViewSettings(true)}
                   className="flex items-center gap-2 rounded-lg bg-(--rmhbox-surface-hover) px-4 py-2 text-sm font-semibold text-(--rmhbox-text) transition-colors hover:brightness-110"
                 >
-                  <SlidersHorizontal className="h-4 w-4" /> View Game Settings
+                  <SlidersHorizontal className="h-4 w-4" /> {t('view-game-settings', { defaultValue: 'View Game Settings' })}
                 </button>
               </div>
             )}

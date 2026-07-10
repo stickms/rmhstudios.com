@@ -1,3 +1,6 @@
+import type { GeneratedWorld as GenWorld, GenChapter as GenChapterData } from './gen/world-types';
+import type { LedgerEntry, ArcOutline, ChoiceTone } from './gen/world-types';
+
 // ─── Word System ────────────────────────────────────────────────────────────
 
 export type PartOfSpeech = 'noun' | 'verb' | 'adjective' | 'adverb' | 'preposition' | 'conjunction' | 'pronoun' | 'interjection';
@@ -221,7 +224,11 @@ export interface CharacterAffinity {
 export type GameScreen =
   | 'menu'
   | 'settings'
+  | 'world_setup'
   | 'dialogue'
+  | 'gen_poem'
+  | 'cast'
+  | 'complete'
   | 'puzzle_word_select'
   | 'puzzle_line_arrange'
   | 'presentation'
@@ -233,14 +240,25 @@ export type GameScreen =
 
 export type SpritePack = 'default' | 'hoshiko';
 
+/** Who the player can be romanced by — shapes flirt options and romance focus. */
+export type Attraction = 'men' | 'women' | 'everyone' | 'none';
+
 export interface PlayerSettings {
   playerName: string;
   playerPronouns: 'he/him' | 'she/her' | 'they/them';
+  /** Optional neopronoun override, e.g. "ze/zir/zirs". Wins over playerPronouns. */
+  customPronouns?: string;
+  /** Who the player is drawn to; gates romance/flirt framing. Default everyone. */
+  attraction: Attraction;
   characterPresentations: Record<string, GenderPresentation>;
   spritePack: SpritePack;
   textSpeed: 'slow' | 'normal' | 'fast' | 'instant';
   musicVolume: number;
   sfxVolume: number;
+  /** Allow mature/dark themes by default in new stories. */
+  matureDefault: boolean;
+  /** Reduce/disable non-essential motion (accessibility + low-power devices). */
+  reducedMotion: boolean;
 }
 
 export interface GameState {
@@ -274,6 +292,28 @@ export interface GameState {
   playtime: number;
   gameStarted: boolean;
   totalPoemsWritten: number;
+
+  // ─── Generated (seed-driven personalized) mode ─────────────────────────────
+  /** 'generated' = procedural seed-driven story; 'legacy' = the authored VN. */
+  mode: 'legacy' | 'generated';
+  /** Shareable seed code for the current generated world. */
+  seed: string;
+  /** The player's setup prompt (or '' for random). */
+  mcPrompt: string;
+  /** The generated world (cast, setting, route plan). Null in legacy mode. */
+  world: GenWorld | null;
+  /** Cache of generated chapters by index for the current world. */
+  generatedChapters: Record<number, GenChapterData>;
+  /** Current chapter index within the generated route. */
+  currentChapterIndex: number;
+  /** Log of player choices for story continuity (fed back into generation) and
+   *  hashed into the per-player chapter cache key. `direction` is the narrative
+   *  direction the chosen option steers toward. */
+  genChoiceLog: { chapter: number; tone: ChoiceTone; text: string; direction?: string }[];
+  /** Accumulated per-chapter ledger entries (continuity memory). */
+  ledger: LedgerEntry[];
+  /** Detailed arc outline (skeleton synchronously, Tier-2 enriched in background). */
+  outline: ArcOutline | null;
 }
 
 // ─── Save File ──────────────────────────────────────────────────────────────

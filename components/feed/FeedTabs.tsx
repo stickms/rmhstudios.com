@@ -21,30 +21,34 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
 
   return (
     <div className="border-b border-site-border">
-      {/* Feed / Friends mode selector */}
-      <div className="flex border-b border-site-border">
+      {/* Feed / Friends mode selector — hidden on md+ where FeedColumn already
+          renders the For You / Following tabs inline in the header (avoids
+          showing the same toggle twice when filters are open). */}
+      <div className="md:hidden flex border-b border-site-border">
         <button
           onClick={() => onModeChange('feed')}
+          aria-pressed={mode === 'feed'}
           className={`flex-1 px-4 py-2.5 text-sm font-bold transition-colors relative ${
             mode === 'feed'
               ? 'text-site-text'
               : 'text-site-text-muted hover:text-site-text hover:bg-site-surface/50'
           }`}
         >
-          Feed
+          For You
           {mode === 'feed' && (
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-site-accent rounded-full" />
           )}
         </button>
         <button
           onClick={() => onModeChange('friends')}
+          aria-pressed={mode === 'friends'}
           className={`flex-1 px-4 py-2.5 text-sm font-bold transition-colors relative ${
             mode === 'friends'
               ? 'text-site-text'
               : 'text-site-text-muted hover:text-site-text hover:bg-site-surface/50'
           }`}
         >
-          Friends
+          Following
           {mode === 'friends' && (
             <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 bg-site-accent rounded-full" />
           )}
@@ -58,6 +62,7 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value)}
+              aria-pressed={filter === tab.value}
               className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors relative ${
                 filter === tab.value
                   ? 'text-site-accent'

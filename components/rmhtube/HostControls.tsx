@@ -9,9 +9,11 @@
 'use client';
 
 import { useCallback, useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Play, Pause, SkipForward, Volume2, VolumeX, Volume1, Subtitles, Gauge, PictureInPicture2, Maximize, Minimize } from 'lucide-react';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
+import { getServerNow } from '@/lib/rmhtube/clock';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { formatDuration } from '@/lib/rmhtube/utils';
 import { PLAYBACK_SPEEDS } from '@/lib/rmhtube/constants';
@@ -39,6 +41,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
   const captionsEnabled = useRmhTubeStore((s) => s.settings.captionsEnabled);
   const updateSettings = useRmhTubeStore((s) => s.updateSettings);
 
+  const { t } = useTranslation("c-rmhtube");
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const speedMenuRef = useRef<HTMLDivElement>(null);
@@ -70,12 +73,12 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
         useRmhTubeStore.getState().updateVideoState({
           ...room.videoState,
           playing: !playing,
-          updatedAt: Date.now(),
+          updatedAt: getServerNow(),
         });
       }
       emit(playing ? C2S.SYNC_PAUSE : C2S.SYNC_PLAY, {});
     } else {
-      toast.info('Only the leader can control playback');
+      toast.info(t("only-leader-playback", { defaultValue: "Only the leader can control playback" }));
     }
   }, [isLeader, playing]);
 
@@ -84,7 +87,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
       emit(C2S.QUEUE_SKIP, {});
       onSkip?.();
     } else {
-      toast.info('Only the leader can skip');
+      toast.info(t("only-leader-skip", { defaultValue: "Only the leader can skip" }));
     }
   }, [isLeader, onSkip]);
 
@@ -103,7 +106,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
 
   const handleSpeedSelect = useCallback((speed: number) => {
     if (!isLeader) {
-      toast.info('Only the leader can change speed');
+      toast.info(t("only-leader-speed", { defaultValue: "Only the leader can change speed" }));
       return;
     }
     emit(C2S.SYNC_SET_SPEED, { speed });
@@ -166,7 +169,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
         <button
           onClick={handleMuteToggle}
           className="rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
-          title={muted ? 'Unmute' : 'Mute'}
+          title={muted ? t("unmute", { defaultValue: "Unmute" }) : t("mute", { defaultValue: "Mute" })}
         >
           <VolumeIcon className="h-4 w-4" />
         </button>
@@ -178,7 +181,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
           value={muted ? 0 : masterVolume}
           onChange={handleVolumeChange}
           className="w-20 h-1 accent-(--rmhtube-accent) cursor-pointer"
-          title={`Volume: ${Math.round((muted ? 0 : masterVolume) * 100)}%`}
+          title={t("volume-pct", { defaultValue: "Volume: {{pct}}%", pct: Math.round((muted ? 0 : masterVolume) * 100) })}
         />
       </div>
 
@@ -190,7 +193,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
             ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim)'
             : 'text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)'
         }`}
-        title={captionsEnabled ? 'Disable captions' : 'Enable captions'}
+        title={captionsEnabled ? t("disable-captions", { defaultValue: "Disable captions" }) : t("enable-captions", { defaultValue: "Enable captions" })}
       >
         <Subtitles className="h-4 w-4" />
       </button>
@@ -205,7 +208,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
               ? 'text-(--rmhtube-accent) bg-(--rmhtube-accent-dim)'
               : 'text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)'
           }`}
-          title={isLeader ? `Playback speed: ${currentSpeed}x (click to change)` : `Playback speed: ${currentSpeed}x`}
+          title={isLeader ? t("speed-title-leader", { defaultValue: "Playback speed: {{speed}}x (click to change)", speed: currentSpeed }) : t("speed-title", { defaultValue: "Playback speed: {{speed}}x", speed: currentSpeed })}
         >
           <Gauge className="h-4 w-4" />
           <span className="text-xs font-medium">{currentSpeed}x</span>
@@ -236,7 +239,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
         <button
           onClick={handlePiP}
           className="shrink-0 rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
-          title="Picture-in-Picture"
+          title={t("picture-in-picture", { defaultValue: "Picture-in-Picture" })}
         >
           <PictureInPicture2 className="h-4 w-4" />
         </button>
@@ -246,7 +249,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
       <button
         onClick={handleFullscreenToggle}
         className="shrink-0 rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
-        title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        title={isFullscreen ? t("exit-fullscreen", { defaultValue: "Exit fullscreen" }) : t("fullscreen", { defaultValue: "Fullscreen" })}
       >
         {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
       </button>
@@ -255,7 +258,7 @@ export default function HostControls({ isHost, isLeader = isHost, videoState, cu
       <button
         onClick={handleSkip}
         className="shrink-0 rounded-md p-2 transition-colors text-(--rmhtube-text-muted) hover:text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
-        title="Skip to next"
+        title={t("skip-to-next", { defaultValue: "Skip to next" })}
       >
         <SkipForward className="h-4 w-4" />
       </button>

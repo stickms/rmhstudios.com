@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Sparkles, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Request shapes accepted by POST /api/rmharks/ai-generate.
@@ -9,7 +10,9 @@ import { Sparkles, Loader2 } from 'lucide-react';
  */
 export type AIGenerateRequest =
   | { mode: 'post'; draft?: string }
-  | { mode: 'reply'; rmharkId: string; parentId?: string; draft?: string };
+  | { mode: 'reply'; rmharkId: string; parentId?: string; draft?: string }
+  | { mode: 'announcement-title'; title?: string; body?: string }
+  | { mode: 'announcement-body'; title?: string; body?: string };
 
 interface AIGenerateButtonProps {
   request: AIGenerateRequest;
@@ -29,11 +32,13 @@ export function AIGenerateButton({
   request,
   onGenerated,
   size = 'md',
-  title = 'Generate with AI',
+  title,
   className = '',
 }: AIGenerateButtonProps) {
+  const { t } = useTranslation('feed');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const resolvedTitle = title ?? t('ai-generate-button-title', { defaultValue: 'Generate with AI' });
 
   const handleClick = async () => {
     if (loading) return;
@@ -47,14 +52,14 @@ export function AIGenerateButton({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data?.error || 'Failed to generate');
+        setError(data?.error || t('ai-generate-failed', { defaultValue: 'Failed to generate' }));
         return;
       }
       if (typeof data?.content === 'string' && data.content.trim()) {
         onGenerated(data.content);
       }
     } catch {
-      setError('Failed to generate');
+      setError(t('ai-generate-failed', { defaultValue: 'Failed to generate' }));
     } finally {
       setLoading(false);
     }
@@ -68,8 +73,8 @@ export function AIGenerateButton({
       type="button"
       onClick={handleClick}
       disabled={loading}
-      title={error || title}
-      aria-label={title}
+      title={error || resolvedTitle}
+      aria-label={resolvedTitle}
       className={`${pad} rounded-full transition-colors disabled:opacity-60 ${
         error
           ? 'text-site-danger hover:bg-site-danger/10'

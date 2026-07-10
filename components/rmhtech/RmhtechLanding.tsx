@@ -8,11 +8,13 @@
  */
 
 import { useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 
 const ACCESS_MAILTO =
   'mailto:info@rmhstudios.com?subject=Request%20access%20%E2%80%94%20Adaptive%20Intelligence&body=Hi%20Adaptive%20Intelligence%20team%2C%0D%0A%0D%0AI%27d%20like%20early%20access%20to%20the%20Co-Scientist.%0D%0A%0D%0AName%3A%0D%0AInstitution%20%2F%20company%3A%0D%0ARole%3A%0D%0AWhat%20I%27d%20use%20it%20for%3A%0D%0A'
 
 export default function RmhtechLanding() {
+  const { t } = useTranslation('c-rmhtech')
   const rootRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -174,12 +176,18 @@ export default function RmhtechLanding() {
       <div className="layer">
         <header>
           <div className="wrap bar">
-            <a className="mark" href="#top" aria-label="Adaptive Intelligence home">
-              <img className="glyph" src="/brand/adaptive-intelligence-mark.svg" alt="" aria-hidden="true" />
-              Adaptive Intelligence
-            </a>
+            <div className="bar-left">
+              <a className="backlink" href="/" aria-label={t('back-to-rmh', { defaultValue: 'Back to RMH Studios' })}>
+                <span aria-hidden="true">←</span>
+                <span className="backlink-label">RMH Studios</span>
+              </a>
+              <a className="mark" href="#top" aria-label={t('ai-home', { defaultValue: 'Adaptive Intelligence home' })}>
+                <img className="glyph" src="/brand/adaptive-intelligence-mark.svg" alt="" aria-hidden="true" />
+                Adaptive Intelligence
+              </a>
+            </div>
             <a className="req" href={ACCESS_MAILTO}>
-              Request access
+              {t('request-access', { defaultValue: 'Request access' })}
             </a>
           </div>
         </header>
@@ -191,68 +199,61 @@ export default function RmhtechLanding() {
                 <img
                   className="ai-logo"
                   src="/brand/adaptive-intelligence-mark.svg"
-                  alt="Adaptive Intelligence"
+                  alt={t('ai-logo-alt', { defaultValue: 'Adaptive Intelligence' })}
                   width={120}
                   height={120}
                 />
               </span>
-              <p className="eyebrow">Reproducible by construction</p>
+              <p className="eyebrow">{t('eyebrow', { defaultValue: 'Reproducible by construction' })}</p>
               <h1>
-                An AI co-scientist you can <em>trust</em>.
+                {t('hero-heading', { defaultValue: 'An AI co-scientist you can' })} <em>{t('hero-trust', { defaultValue: 'trust' })}</em>.
               </h1>
               <p className="sub">
-                Point it at your data — or just an accession ID — and get back a publication-ready
-                analysis where every step is versioned, traceable, and re-runnable forever.
+                {t('hero-sub', { defaultValue: 'Point it at your data — or just an accession ID — and get back a publication-ready analysis where every step is versioned, traceable, and re-runnable forever.' })}
               </p>
-              <a className="metal" id="access" href={ACCESS_MAILTO} aria-label="Request access by email">
-                <span>Request access</span>
+              <a className="metal" id="access" href={ACCESS_MAILTO} aria-label={t('request-access-email', { defaultValue: 'Request access by email' })}>
+                <span>{t('request-access', { defaultValue: 'Request access' })}</span>
               </a>
             </div>
             <div className="scrollcue" aria-hidden="true">
-              <span>Scroll</span>
+              <span>{t('scroll', { defaultValue: 'Scroll' })}</span>
               <span className="ln" />
             </div>
           </section>
 
-          <section className="essence wrap" aria-label="The platform">
+          <section className="essence wrap" aria-label={t('platform-section', { defaultValue: 'The platform' })}>
             <div className="pillar">
               <div>
                 <div className="name">Co-Scientist</div>
-                <div className="meta">01 — The agent</div>
+                <div className="meta">{t('pillar1-meta', { defaultValue: '01 — The agent' })}</div>
               </div>
               <p className="desc">
-                Reads your intent, plans the analysis, runs the tools, interprets the results, and
-                drafts the methods. It shows its work. Correctness over autonomy — a
-                plausible-but-wrong figure is worse than no figure at all.
+                {t('pillar1-desc', { defaultValue: 'Reads your intent, plans the analysis, runs the tools, interprets the results, and drafts the methods. It shows its work. Correctness over autonomy — a plausible-but-wrong figure is worse than no figure at all.' })}
               </p>
             </div>
             <div className="pillar">
               <div>
                 <div className="name">Ledger</div>
-                <div className="meta">02 — The substrate</div>
+                <div className="meta">{t('pillar2-meta', { defaultValue: '02 — The substrate' })}</div>
               </div>
               <p className="desc">
-                Every artifact is content-addressed, versioned, and re-runnable by identifier. Each
-                figure carries its own address — click it to see the exact parameters, or re-run it
-                on different infrastructure, years later.
+                {t('pillar2-desc', { defaultValue: 'Every artifact is content-addressed, versioned, and re-runnable by identifier. Each figure carries its own address — click it to see the exact parameters, or re-run it on different infrastructure, years later.' })}
               </p>
             </div>
             <div className="pillar">
               <div>
                 <div className="name">Fleet</div>
-                <div className="meta">03 — The compute</div>
+                <div className="meta">{t('pillar3-meta', { defaultValue: '03 — The compute' })}</div>
               </div>
               <p className="desc">
-                Kubernetes, Helm, and Terraform driving a Go worker fleet that executes pipelines at
-                institutional scale, with hard multi-tenant isolation. The substrate that turns a
-                three-month core-queue into an afternoon.
+                {t('pillar3-desc', { defaultValue: 'Kubernetes, Helm, and Terraform driving a Go worker fleet that executes pipelines at institutional scale, with hard multi-tenant isolation. The substrate that turns a three-month core-queue into an afternoon.' })}
               </p>
             </div>
           </section>
 
           <section className="close wrap">
             <p>
-              The agent lands the customer. The <span className="k">substrate</span> keeps them.
+              {t('close-p1', { defaultValue: 'The agent lands the customer. The' })} <span className="k">{t('close-substrate', { defaultValue: 'substrate' })}</span> {t('close-p2', { defaultValue: 'keeps them.' })}
             </p>
           </section>
         </main>
@@ -260,32 +261,32 @@ export default function RmhtechLanding() {
         <footer>
           <div className="wrap foot-grid">
             <div className="foot-brand">
-              <a className="mark" href="#top" aria-label="Adaptive Intelligence home">
+              <a className="mark" href="#top" aria-label={t('ai-home', { defaultValue: 'Adaptive Intelligence home' })}>
                 <img className="glyph" src="/brand/adaptive-intelligence-mark.svg" alt="" aria-hidden="true" />
                 Adaptive Intelligence
               </a>
-              <p className="tag">Building the trustworthy substrate for AI-driven biology.</p>
+              <p className="tag">{t('footer-tag', { defaultValue: 'Building the trustworthy substrate for AI-driven biology.' })}</p>
             </div>
-            <nav className="col" aria-label="Contact">
-              <h4>Contact</h4>
+            <nav className="col" aria-label={t('nav-contact', { defaultValue: 'Contact' })}>
+              <h4>{t('nav-contact', { defaultValue: 'Contact' })}</h4>
               <a href="mailto:info@rmhstudios.com">info@rmhstudios.com</a>
             </nav>
-            <nav className="col" aria-label="Careers">
-              <h4>Careers</h4>
+            <nav className="col" aria-label={t('nav-careers', { defaultValue: 'Careers' })}>
+              <h4>{t('nav-careers', { defaultValue: 'Careers' })}</h4>
               <a href="mailto:careers@rmhstudios.com?subject=Careers%20%E2%80%94%20Adaptive%20Intelligence">
                 careers@rmhstudios.com
               </a>
-              <span className="hiring">We&rsquo;re hiring</span>
-              <p className="note">Hiring founding engineers.</p>
+              <span className="hiring">{t('were-hiring', { defaultValue: "We're hiring" })}</span>
+              <p className="note">{t('hiring-note', { defaultValue: 'Hiring founding engineers.' })}</p>
             </nav>
-            <nav className="col" aria-label="Access">
-              <h4>Access</h4>
-              <a href={ACCESS_MAILTO}>Request access</a>
+            <nav className="col" aria-label={t('nav-access', { defaultValue: 'Access' })}>
+              <h4>{t('nav-access', { defaultValue: 'Access' })}</h4>
+              <a href={ACCESS_MAILTO}>{t('request-access', { defaultValue: 'Request access' })}</a>
             </nav>
           </div>
           <div className="wrap foot-base">
-            <span>© 2026 Adaptive Intelligence</span>
-            <span>A deeptech venture from RMH Studios</span>
+            <span>{t('copyright', { defaultValue: '© 2026 Adaptive Intelligence' })}</span>
+            <span>{t('venture-credit', { defaultValue: 'A deeptech venture from RMH Studios' })}</span>
           </div>
         </footer>
       </div>

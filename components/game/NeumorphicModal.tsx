@@ -5,6 +5,7 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 export interface NeumorphicModalProps {
     isOpen: boolean;
@@ -23,10 +24,13 @@ export function NeumorphicModal({
     onConfirm,
     title,
     description,
-    confirmText = 'Confirm',
-    cancelText = 'Cancel',
+    confirmText,
+    cancelText,
     variant = 'info'
 }: NeumorphicModalProps) {
+    const { t } = useTranslation("c-game");
+    const resolvedConfirmText = confirmText ?? t("confirm", { defaultValue: "Confirm" });
+    const resolvedCancelText = cancelText ?? t("cancel", { defaultValue: "Cancel" });
     return (
         <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogPrimitive.Portal>
@@ -64,7 +68,7 @@ export function NeumorphicModal({
                                 onClick={onClose}
                                 className="flex-1 py-6 rounded-2xl text-slice-text-light font-bold hover:text-slice-text hover:bg-slice-shadow-dark/20 transition-all shadow-[5px_5px_10px_var(--slice-shadow-dark),-5px_-5px_10px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_5px_var(--slice-shadow-dark),inset_-2px_-2px_5px_var(--slice-shadow-light)]"
                             >
-                                {cancelText}
+                                {resolvedCancelText}
                             </Button>
                             <Button
                                 onClick={() => {
@@ -78,7 +82,7 @@ export function NeumorphicModal({
                                         : "bg-blue-500 hover:bg-blue-600 text-white shadow-[0_10px_20px_rgba(59,130,246,0.4)]"
                                 )}
                             >
-                                {confirmText}
+                                {resolvedConfirmText}
                             </Button>
                         </div>
                     </div>
@@ -86,7 +90,7 @@ export function NeumorphicModal({
                     <DialogPrimitive.Close asChild>
                         <button
                             className="absolute top-6 right-6 p-2 rounded-xl text-slice-text-light hover:text-slice-text transition-colors shadow-[4px_4px_8px_var(--slice-shadow-dark),-4px_-4px_8px_var(--slice-shadow-light)] active:shadow-[inset_2px_2px_4px_var(--slice-shadow-dark),inset_-2px_-2px_4px_var(--slice-shadow-light)]"
-                            aria-label="Close"
+                            aria-label={t("close", { defaultValue: "Close" })}
                         >
                             <X className="w-4 h-4" />
                         </button>

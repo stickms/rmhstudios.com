@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { recordGamePlay } from '@/lib/quests/engine.server';
 
 export const Route = createFileRoute('/api/signal-forge/score')({
   server: {
@@ -55,6 +56,7 @@ export const Route = createFileRoute('/api/signal-forge/score')({
                     username,
                 }
             });
+            await recordGamePlay(session.user.id);
             return Response.json({ success: true, profile: updated, isRecord: isBetter });
         } else {
             const newProfile = await prisma.signalForgePlayer.create({
@@ -66,6 +68,7 @@ export const Route = createFileRoute('/api/signal-forge/score')({
                     gamesPlayed: 1,
                 }
             });
+            await recordGamePlay(session.user.id);
             return Response.json({ success: true, profile: newProfile, isRecord: true });
         }
 

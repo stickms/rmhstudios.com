@@ -3,6 +3,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import type { FeedItem, FeedPoll } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
+import { audienceWhere } from "@/lib/feed/audience.server";
+import { applyLock } from "@/lib/feed/map-feed-item.server";
+import { groupReactions } from "@/lib/social/reactions";
 
 function pollInclude(userId: string | null) {
   return {
@@ -30,6 +33,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
     id: poll.id,
     question: poll.question,
     multiSelect: poll.multiSelect,
+    closesAt: poll.closesAt ? poll.closesAt.toISOString() : null,
     totalVotes,
     options: poll.options.map((o: any) => ({
       id: o.id,
@@ -42,25 +46,27 @@ function mapPoll(poll: any): FeedPoll | undefined {
   };
 }
 
+// Counts come from the denormalized columns on RMHark (Phase 1) so they're
+// consistent with the main feed read path.
 const rmharkInclude = (viewerId: string | null) => ({
   user: { select: userDisplaySelect },
-  _count: { select: { likes: true, comments: true, reposts: true, views: true } },
+  reactions: { select: { emoji: true, userId: true } },
   ...(viewerId
     ? {
         likes: { where: { userId: viewerId }, select: { id: true } },
         reposts: { where: { userId: viewerId }, select: { id: true } },
+        unlocks: { where: { userId: viewerId }, select: { id: true } },
       }
     : {}),
   poll: pollInclude(viewerId),
   original: {
     include: {
       user: { select: userDisplaySelect },
-      _count: { select: { likes: true, comments: true, reposts: true, views: true } },
     },
   },
 });
 
-function mapOriginal(original: { id: string; createdAt: Date; content: string; user: Parameters<typeof resolveUser>[0]; _count: { likes: number; comments: number; reposts: number; views: number } } | null): FeedItem | undefined {
+function mapOriginal(original: { id: string; createdAt: Date; content: string; user: Parameters<typeof resolveUser>[0]; likeCount: number; commentCount: number; repostCount: number; viewCount: number } | null): FeedItem | undefined {
   if (!original) return undefined;
   return {
     id: original.id,
@@ -68,10 +74,10 @@ function mapOriginal(original: { id: string; createdAt: Date; content: string; u
     createdAt: original.createdAt.toISOString(),
     content: original.content,
     user: resolveUser(original.user),
-    likeCount: original._count.likes,
-    commentCount: original._count.comments,
-    repostCount: original._count.reposts,
-    viewCount: original._count.views,
+    likeCount: original.likeCount,
+    commentCount: original.commentCount,
+    repostCount: original.repostCount,
+    viewCount: original.viewCount,
   };
 }
 
@@ -98,12 +104,23 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
 
     const cursorDate = cursor ? new Date(cursor) : undefined;
 
+    // Audience: owner sees all; a follower also sees FOLLOWERS posts; others PUBLIC.
+    let viewerFollowsOwner = false;
+    if (viewerId && viewerId !== userId) {
+      viewerFollowsOwner = !!(await prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: viewerId, followingId: userId } },
+        select: { id: true },
+      }));
+    }
+    const aud = audienceWhere(viewerId, viewerFollowsOwner ? [userId] : []);
+
     // Fetch user's own RMHarks and their reposts in parallel (exclude deleted)
     const [rmharks, reposts] = await Promise.all([
       prisma.rMHark.findMany({
         where: {
           userId,
           deletedAt: null,
+          ...aud,
           ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
         },
         orderBy: { createdAt: "desc" },
@@ -128,44 +145,49 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
     ]);
 
     // Map own RMHarks to FeedItems
-    const ownItems: FeedItem[] = rmharks.map((r: any) => ({
+    const ownItems: FeedItem[] = rmharks.map((r: any) => applyLock({
       id: r.id,
       type: "rmhark" as const,
       createdAt: r.createdAt.toISOString(),
       content: r.content,
       user: resolveUser(r.user),
-      likeCount: r._count.likes,
-      commentCount: r._count.comments,
-      repostCount: r._count.reposts,
-      viewCount: r._count.views,
+      likeCount: r.likeCount,
+      commentCount: r.commentCount,
+      repostCount: r.repostCount,
+      viewCount: r.viewCount,
       liked: viewerId ? r.likes.length > 0 : false,
       reposted: viewerId ? r.reposts.length > 0 : false,
+      edited: !!r.editedAt,
       original: mapOriginal(r.original),
       poll: mapPoll(r.poll),
       gifUrl: r.gifUrl ?? undefined,
-    }));
+      imageUrls: r.imageUrls ?? undefined,
+      reactions: groupReactions(r.reactions ?? [], viewerId),
+    }, r, viewerId));
 
     // Map reposts to FeedItems with repostedBy
     const repostItems: FeedItem[] = reposts.map((rp: any) => {
       const r = rp.rmhark;
-      return {
+      return applyLock({
         id: `repost:${rp.id}`,
         type: "rmhark" as const,
         createdAt: rp.createdAt.toISOString(),
         actualId: r.id,
         content: r.content,
         user: resolveUser(r.user),
-        likeCount: r._count.likes,
-        commentCount: r._count.comments,
-        repostCount: r._count.reposts,
-        viewCount: r._count.views,
+        likeCount: r.likeCount,
+        commentCount: r.commentCount,
+        repostCount: r.repostCount,
+        viewCount: r.viewCount,
         liked: viewerId ? r.likes.length > 0 : false,
         reposted: viewerId ? r.reposts.length > 0 : false,
         repostedBy: resolveUser(rp.user),
         original: mapOriginal(r.original),
         poll: mapPoll(r.poll),
         gifUrl: r.gifUrl ?? undefined,
-      };
+        imageUrls: r.imageUrls ?? undefined,
+        reactions: groupReactions(r.reactions ?? [], viewerId),
+      }, r, viewerId);
     });
 
     // Merge and sort by createdAt descending, take limit
@@ -178,8 +200,42 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
         ? merged[merged.length - 1].createdAt
         : null;
 
+    // On the first page, surface the user's pinned post at the very top
+    // (deduped from the regular list below it).
+    let items = merged;
+    if (!cursorDate) {
+      const pinned = await prisma.rMHark.findFirst({
+        where: { userId, deletedAt: null, pinnedAt: { not: null }, ...aud },
+        include: rmharkInclude(viewerId),
+      });
+      if (pinned) {
+        const p: any = pinned;
+        const pinnedItem: FeedItem = applyLock({
+          id: p.id,
+          type: "rmhark",
+          createdAt: p.createdAt.toISOString(),
+          content: p.content,
+          user: resolveUser(p.user),
+          likeCount: p.likeCount,
+          commentCount: p.commentCount,
+          repostCount: p.repostCount,
+          viewCount: p.viewCount,
+          liked: viewerId ? p.likes.length > 0 : false,
+          reposted: viewerId ? p.reposts.length > 0 : false,
+          edited: !!p.editedAt,
+          pinned: true,
+          original: mapOriginal(p.original),
+          poll: mapPoll(p.poll),
+          gifUrl: p.gifUrl ?? undefined,
+          imageUrls: p.imageUrls ?? undefined,
+          reactions: groupReactions(p.reactions ?? [], viewerId),
+        }, p, viewerId);
+        items = [pinnedItem, ...merged.filter((it) => (it.actualId ?? it.id) !== p.id)];
+      }
+    }
+
     return Response.json({
-      items: merged,
+      items,
       nextCursor,
       hasMore: merged.length === limit,
     });

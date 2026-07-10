@@ -23,7 +23,6 @@ func (c *capture) send(e realtime.Envelope) {
 	c.mu.Unlock()
 }
 
-// last returns the most recent envelope with the given event name, if any.
 func (c *capture) last(event string) (realtime.Envelope, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -47,12 +46,10 @@ func (c *capture) count(event string) int {
 	return n
 }
 
-// newKKHarness wires a KKManager around a registry with two fake connections.
 func newKKHarness(t *testing.T) (*KKManager, string, *capture, string, *capture) {
 	t.Helper()
 	reg := newConnRegistry()
 	m := NewKKManager(reg, log.New("test", "error"))
-
 	hostID, guestID := "host-conn", "guest-conn"
 	hostCap, guestCap := &capture{}, &capture{}
 	reg.add(hostID, hostCap.send)
@@ -69,11 +66,15 @@ func payloadField(t *testing.T, e realtime.Envelope, key string) any {
 	return m[key]
 }
 
-func TestKKCreateAndJoin(t *testing.T) {
-	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
+func seatsOf(t *testing.T, e realtime.Envelope) []any {
+	t.Helper()
+	s, _ := payloadField(t, e, "seats").([]any)
+	return s
+}
 
-	m.CreateRoom(hostID, "iron_crane")
-	created, ok := hostCap.last(kkRoomCreated)
+func codeFromCreate(t *testing.T, cap *capture) string {
+	t.Helper()
+	created, ok := cap.last(kkRoomCreated)
 	if !ok {
 		t.Fatal("host did not receive kk:room_created")
 	}
@@ -81,152 +82,301 @@ func TestKKCreateAndJoin(t *testing.T) {
 	if code == "" {
 		t.Fatal("empty room code")
 	}
+	return code
+}
 
-	m.JoinRoom(guestID, code, "jade_fox")
+func TestKKCreateAndLobby(t *testing.T) {
+	m, hostID, hostCap, _, _ := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "iron_bull", true)
 
-	hostJoined, ok := hostCap.last(kkRoomJoined)
+	created, _ := hostCap.last(kkRoomCreated)
+	if payloadField(t, created, "seat") != float64(0) {
+		t.Errorf("host seat = %v, want 0", payloadField(t, created, "seat"))
+	}
+
+	lobby, ok := hostCap.last(kkLobbyUpdate)
 	if !ok {
-		t.Fatal("host did not receive kk:room_joined")
+		t.Fatal("host did not receive kk:lobby_update")
 	}
-	if payloadField(t, hostJoined, "isHost") != true {
-		t.Error("host should be marked isHost=true")
+	if payloadField(t, lobby, "you") != float64(0) {
+		t.Error("host should be seat 0 in lobby")
 	}
-	if payloadField(t, hostJoined, "hostClass") != "iron_crane" {
-		t.Errorf("hostClass = %v, want iron_crane", payloadField(t, hostJoined, "hostClass"))
+	seats := seatsOf(t, lobby)
+	if len(seats) != 2 {
+		t.Fatalf("default arena size should be 2, got %d seats", len(seats))
 	}
-	if payloadField(t, hostJoined, "guestClass") != "jade_fox" {
-		t.Errorf("guestClass = %v, want jade_fox", payloadField(t, hostJoined, "guestClass"))
+	s0 := seats[0].(map[string]any)
+	if s0["human"] != true || s0["className"] != "iron_bull" {
+		t.Errorf("seat 0 should be the human host with iron_bull, got %v", s0)
 	}
+	if seats[1].(map[string]any)["human"] != false {
+		t.Error("seat 1 should default to CPU")
+	}
+}
 
-	guestJoined, ok := guestCap.last(kkRoomJoined)
+func TestKKJoinAssignsSeat(t *testing.T) {
+	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "stone_tiger", true)
+	code := codeFromCreate(t, hostCap)
+	m.JoinRoom(guestID, code, "silver_viper")
+
+	gl, ok := guestCap.last(kkLobbyUpdate)
 	if !ok {
-		t.Fatal("guest did not receive kk:room_joined")
+		t.Fatal("guest did not receive kk:lobby_update")
 	}
-	if payloadField(t, guestJoined, "isHost") != false {
-		t.Error("guest should be marked isHost=false")
+	if payloadField(t, gl, "you") != float64(1) {
+		t.Errorf("guest should be seat 1, got %v", payloadField(t, gl, "you"))
+	}
+	seats := seatsOf(t, gl)
+	if seats[1].(map[string]any)["human"] != true || seats[1].(map[string]any)["className"] != "silver_viper" {
+		t.Errorf("seat 1 should be the joined human, got %v", seats[1])
 	}
 }
 
 func TestKKJoinErrors(t *testing.T) {
 	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
 
-	// Unknown room.
 	m.JoinRoom(guestID, "ZZZZZZ", "")
 	if e, ok := guestCap.last(kkError); !ok || payloadField(t, e, "message") != "Room not found" {
-		t.Fatalf("expected 'Room not found' error, got %+v ok=%v", e, ok)
+		t.Fatalf("expected 'Room not found', got %+v ok=%v", e, ok)
 	}
 
-	// Full room: third connection cannot join.
-	m.CreateRoom(hostID, "")
-	created, _ := hostCap.last(kkRoomCreated)
-	code := payloadField(t, created, "code").(string)
-	m.JoinRoom(guestID, code, "")
-
-	thirdCap := &capture{}
-	m.reg.add("third-conn", thirdCap.send)
-	m.JoinRoom("third-conn", code, "")
-	if e, ok := thirdCap.last(kkError); !ok || payloadField(t, e, "message") != "Room is full" {
-		t.Fatalf("expected 'Room is full' error, got %+v ok=%v", e, ok)
+	m.CreateRoom(hostID, "ffa", "", true)
+	code := codeFromCreate(t, hostCap)
+	// Fill seats 1..3, then a 5th connection must be rejected.
+	for i, id := range []string{guestID, "g2", "g3"} {
+		c := &capture{}
+		if id != guestID {
+			m.reg.add(id, c.send)
+		}
+		m.JoinRoom(id, code, "")
+		_ = i
+	}
+	fifthCap := &capture{}
+	m.reg.add("g4", fifthCap.send)
+	m.JoinRoom("g4", code, "")
+	if e, ok := fifthCap.last(kkError); !ok || payloadField(t, e, "message") != "Room is full" {
+		t.Fatalf("expected 'Room is full', got %+v ok=%v", e, ok)
 	}
 }
 
-func TestKKRelay(t *testing.T) {
-	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
-	m.CreateRoom(hostID, "")
-	created, _ := hostCap.last(kkRoomCreated)
-	code := payloadField(t, created, "code").(string)
+func TestKKSetConfig(t *testing.T) {
+	m, hostID, hostCap, guestID, _ := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "", true)
+	code := codeFromCreate(t, hostCap)
 	m.JoinRoom(guestID, code, "")
 
-	// Guest input -> host.
-	m.Input(guestID, json.RawMessage(`{"btn":"punch"}`))
-	if hostCap.count(kkInput) != 1 {
-		t.Errorf("host should have received 1 input, got %d", hostCap.count(kkInput))
+	size := 4
+	m.SetConfig(hostID, nil, &size, nil, nil)
+	lobby, _ := hostCap.last(kkLobbyUpdate)
+	if len(seatsOf(t, lobby)) != 4 {
+		t.Fatalf("arena size should be 4 after SetConfig, got %d", len(seatsOf(t, lobby)))
 	}
-	// Host input must NOT relay (only guest->host).
-	hostBefore := guestCap.count(kkInput)
-	m.Input(hostID, json.RawMessage(`{"btn":"x"}`))
-	if guestCap.count(kkInput) != hostBefore {
+
+	// Guest cannot change config.
+	before := hostCap.count(kkLobbyUpdate)
+	two := 2
+	m.SetConfig(guestID, nil, &two, nil, nil)
+	if hostCap.count(kkLobbyUpdate) != before {
+		t.Error("non-host SetConfig should be a no-op")
+	}
+
+	// Teams with an odd arena size is coerced back to FFA.
+	teams := "teams"
+	three := 3
+	m.SetConfig(hostID, &teams, &three, nil, nil)
+	lobby2, _ := hostCap.last(kkLobbyUpdate)
+	if payloadField(t, lobby2, "mode") != "ffa" {
+		t.Errorf("teams with odd size should fall back to ffa, got %v", payloadField(t, lobby2, "mode"))
+	}
+}
+
+func TestKKStart(t *testing.T) {
+	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "iron_bull", true)
+	code := codeFromCreate(t, hostCap)
+	m.JoinRoom(guestID, code, "silver_viper")
+
+	m.Start(hostID)
+	hs, ok := hostCap.last(kkMatchStart)
+	if !ok {
+		t.Fatal("host did not receive kk:match_start")
+	}
+	if payloadField(t, hs, "you") != float64(0) {
+		t.Error("host match_start you should be 0")
+	}
+	seats := seatsOf(t, hs)
+	if len(seats) != 2 || seats[0].(map[string]any)["kind"] != "human" {
+		t.Errorf("expected 2 human seats, got %v", seats)
+	}
+	if _, ok := guestCap.last(kkMatchStart); !ok {
+		t.Fatal("guest did not receive kk:match_start")
+	}
+
+	// Joining a playing room is rejected.
+	lateCap := &capture{}
+	m.reg.add("late", lateCap.send)
+	m.JoinRoom("late", code, "")
+	if e, ok := lateCap.last(kkError); !ok || payloadField(t, e, "message") != "Match already in progress" {
+		t.Fatalf("expected 'Match already in progress', got %+v ok=%v", e, ok)
+	}
+}
+
+func TestKKInputRelay(t *testing.T) {
+	m, hostID, hostCap, guestID, _ := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "", true)
+	code := codeFromCreate(t, hostCap)
+	m.JoinRoom(guestID, code, "")
+
+	m.Input(guestID, json.RawMessage(`[1,0,0,2]`))
+	in, ok := hostCap.last(kkInput)
+	if !ok || payloadField(t, in, "seat") != float64(1) {
+		t.Fatalf("host should receive guest input stamped seat 1, got %+v", in)
+	}
+
+	// Host input must not relay anywhere.
+	before := hostCap.count(kkInput)
+	m.Input(hostID, json.RawMessage(`[0,0,0,0]`))
+	if hostCap.count(kkInput) != before {
 		t.Error("host input should not relay")
 	}
-
-	// Host game_state -> guest.
-	m.GameState(hostID, json.RawMessage(`{"hp":100}`))
-	if guestCap.count(kkGameState) != 1 {
-		t.Errorf("guest should have received 1 game_state, got %d", guestCap.count(kkGameState))
-	}
-	// Guest game_state must NOT relay.
-	guestBefore := hostCap.count(kkGameState)
-	m.GameState(guestID, json.RawMessage(`{"hp":1}`))
-	if hostCap.count(kkGameState) != guestBefore {
-		t.Error("guest game_state should not relay")
-	}
 }
 
-func TestKKRematchHandshake(t *testing.T) {
+func TestKKSnapshotRelay(t *testing.T) {
 	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
-	m.CreateRoom(hostID, "a")
-	created, _ := hostCap.last(kkRoomCreated)
-	code := payloadField(t, created, "code").(string)
-	m.JoinRoom(guestID, code, "b")
-
-	joinedBefore := hostCap.count(kkRoomJoined)
-
-	// Host ready first: guest is notified, no rematch yet.
-	m.FighterReady(hostID, "new_host")
-	if guestCap.count(kkOpponentReady) != 1 {
-		t.Fatalf("guest should be notified host ready, got %d", guestCap.count(kkOpponentReady))
-	}
-	if hostCap.count(kkRoomJoined) != joinedBefore {
-		t.Fatal("rematch should not start with only one side ready")
-	}
-
-	// Guest ready: rematch starts, both get a fresh kk:room_joined with the
-	// pending classes committed.
-	m.FighterReady(guestID, "new_guest")
-	if hostCap.count(kkOpponentReady) != 1 {
-		t.Fatalf("host should be notified guest ready, got %d", hostCap.count(kkOpponentReady))
-	}
-	hostJoined, _ := hostCap.last(kkRoomJoined)
-	if payloadField(t, hostJoined, "hostClass") != "new_host" || payloadField(t, hostJoined, "guestClass") != "new_guest" {
-		t.Errorf("rematch classes not committed: %s", hostJoined.Payload)
-	}
-	if guestCap.count(kkRoomJoined) < 2 {
-		t.Error("guest should receive rematch kk:room_joined")
-	}
-
-	// Handshake flags reset: a fresh single-side ready must not re-trigger.
-	joinedAfter := hostCap.count(kkRoomJoined)
-	m.FighterReady(hostID, "x")
-	if hostCap.count(kkRoomJoined) != joinedAfter {
-		t.Error("handshake flags not reset after rematch")
-	}
-}
-
-func TestKKDisconnectNotifiesOpponentAndCleansUp(t *testing.T) {
-	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
-	m.CreateRoom(hostID, "")
-	created, _ := hostCap.last(kkRoomCreated)
-	code := payloadField(t, created, "code").(string)
+	m.CreateRoom(hostID, "ffa", "", true)
+	code := codeFromCreate(t, hostCap)
 	m.JoinRoom(guestID, code, "")
 
-	// Host disconnects -> guest notified.
-	m.Cleanup(hostID)
-	if guestCap.count(kkOpponentDisconnected) != 1 {
-		t.Fatalf("guest should receive opponent_disconnected, got %d", guestCap.count(kkOpponentDisconnected))
+	m.Snapshot(hostID, []byte(`{"f":5}`))
+	if guestCap.count(kkSnapshot) != 1 {
+		t.Fatalf("guest should receive 1 snapshot, got %d", guestCap.count(kkSnapshot))
 	}
 
-	// Room is gone: state maps emptied.
+	// Guest snapshot must not relay.
+	before := guestCap.count(kkSnapshot)
+	m.Snapshot(guestID, []byte(`{"f":6}`))
+	if guestCap.count(kkSnapshot) != before {
+		t.Error("guest snapshot should not relay")
+	}
+}
+
+func TestKKHostLeaveDisbands(t *testing.T) {
+	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "", true)
+	code := codeFromCreate(t, hostCap)
+	m.JoinRoom(guestID, code, "")
+
+	m.Cleanup(hostID)
+	if guestCap.count(kkError) != 1 {
+		t.Fatalf("guest should be told the host left, got %d errors", guestCap.count(kkError))
+	}
 	m.mu.Lock()
-	nRooms := len(m.rooms)
-	nConns := len(m.connToRoom)
+	nRooms, nConns := len(m.rooms), len(m.connToRoom)
 	m.mu.Unlock()
 	if nRooms != 0 || nConns != 0 {
-		t.Errorf("state not cleaned: rooms=%d connToRoom=%d", nRooms, nConns)
+		t.Errorf("state not cleaned: rooms=%d conns=%d", nRooms, nConns)
+	}
+}
+
+func TestKKGuestLeaveFreesSeat(t *testing.T) {
+	m, hostID, hostCap, guestID, _ := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "", true)
+	code := codeFromCreate(t, hostCap)
+	m.JoinRoom(guestID, code, "")
+
+	m.Cleanup(guestID)
+	pl, ok := hostCap.last(kkPlayerLeft)
+	if !ok || payloadField(t, pl, "seat") != float64(1) {
+		t.Fatalf("host should be told seat 1 left, got %+v ok=%v", pl, ok)
+	}
+	// Room survives; stale guest input is a no-op.
+	m.mu.Lock()
+	_, exists := m.rooms[code]
+	m.mu.Unlock()
+	if !exists {
+		t.Error("room should survive a guest leaving")
+	}
+	before := hostCap.count(kkInput)
+	m.Input(guestID, json.RawMessage(`[0,0,0,0]`))
+	if hostCap.count(kkInput) != before {
+		t.Error("stale guest input should not relay")
+	}
+}
+
+func TestKKLobbyUpdateHasCodeAndVisibility(t *testing.T) {
+	m, hostID, hostCap, _, _ := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "", false) // private
+	lobby, ok := hostCap.last(kkLobbyUpdate)
+	if !ok {
+		t.Fatal("host did not receive kk:lobby_update")
+	}
+	if payloadField(t, lobby, "code") == "" {
+		t.Error("lobby_update should carry the room code")
+	}
+	if payloadField(t, lobby, "isPublic") != false {
+		t.Errorf("room should be private, got isPublic=%v", payloadField(t, lobby, "isPublic"))
+	}
+}
+
+func TestKKListLobbies(t *testing.T) {
+	m, hostID, hostCap, _, guestID2Cap := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "iron_bull", true)
+	code := codeFromCreate(t, hostCap)
+
+	// A private room must not appear in the public list.
+	priv := &capture{}
+	m.reg.add("priv-host", priv.send)
+	m.CreateRoom("priv-host", "ffa", "", false)
+
+	lister := "lister"
+	m.reg.add(lister, guestID2Cap.send)
+	m.ListLobbies(lister)
+	list, ok := guestID2Cap.last(kkLobbyList)
+	if !ok {
+		t.Fatal("lister did not receive kk:lobby_list")
+	}
+	lobbies, _ := payloadField(t, list, "lobbies").([]any)
+	if len(lobbies) != 1 {
+		t.Fatalf("expected exactly 1 public lobby, got %d", len(lobbies))
+	}
+	l0 := lobbies[0].(map[string]any)
+	if l0["code"] != code || l0["host"] != "iron_bull" {
+		t.Errorf("unexpected lobby entry: %v", l0)
 	}
 
-	// A subsequent input from the now-stale guest is a no-op.
-	m.Input(guestID, json.RawMessage(`{}`))
-	if hostCap.count(kkInput) != 0 {
-		t.Error("stale input should not relay after cleanup")
+	// Once the public room starts, it drops off the list.
+	m.Start(hostID)
+	m.ListLobbies(lister)
+	list2, _ := guestID2Cap.last(kkLobbyList)
+	lobbies2, _ := payloadField(t, list2, "lobbies").([]any)
+	if len(lobbies2) != 0 {
+		t.Fatalf("expected 0 listed lobbies after start, got %d", len(lobbies2))
+	}
+}
+
+func TestKKReturnLobby(t *testing.T) {
+	m, hostID, hostCap, guestID, guestCap := newKKHarness(t)
+	m.CreateRoom(hostID, "ffa", "", true)
+	code := codeFromCreate(t, hostCap)
+	m.JoinRoom(guestID, code, "")
+	m.Start(hostID)
+
+	// A guest returns the whole room to the lobby.
+	before := hostCap.count(kkLobbyUpdate)
+	m.ReturnLobby(guestID)
+	if hostCap.count(kkLobbyUpdate) <= before {
+		t.Error("host should receive a fresh lobby_update on return")
+	}
+	if _, ok := guestCap.last(kkLobbyUpdate); !ok {
+		t.Error("guest should receive a lobby_update on return")
+	}
+
+	// Room is joinable again.
+	lateCap := &capture{}
+	m.reg.add("late", lateCap.send)
+	m.JoinRoom("late", code, "")
+	if _, ok := lateCap.last(kkLobbyUpdate); !ok {
+		t.Error("room should be joinable again after returning to the lobby")
 	}
 }

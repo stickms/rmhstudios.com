@@ -1,21 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { RMHCoinsPage } from '@/components/rmhcoins/RMHCoinsPage';
-import { PageLayout } from '@/components/feed/PageLayout';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
+// "Wallet" was renamed to "Predictions". Keep this route as a permanent redirect
+// so old links/bookmarks don't 404.
 export const Route = createFileRoute('/_site/wallet')({
-  head: () => ({
-    meta: [
-      { title: 'Wallet | RMH Studios' },
-      { name: 'description', content: 'Your RMH Coins wallet — play Plinko, Blackjack, and shop for profile items.' },
-    ],
-  }),
-  component: WalletRoute,
+  beforeLoad: () => {
+    throw redirect({ to: '/predictions' });
+  },
 });
-
-function WalletRoute() {
-  return (
-    <PageLayout title="Wallet" wide>
-      <RMHCoinsPage defaultTab="shop" />
-    </PageLayout>
-  );
-}

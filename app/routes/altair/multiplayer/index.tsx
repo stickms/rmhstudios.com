@@ -7,6 +7,7 @@
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Users, Zap, UserPlus, RefreshCw, Globe, Lock, Eye } from 'lucide-react'
 import { connectToAltair, getSocket, disconnectFromAltair, emit } from '@/lib/altair/multiplayer/socket'
 import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store'
@@ -34,6 +35,7 @@ const DROP_IN_LABELS: Record<AltairLobbySettings['dropInWindow'], string> = {
 }
 
 function AltairMultiplayerLanding() {
+  const { t } = useTranslation("r-altair")
   const navigate = useNavigate()
   const connectionStatus = useAltairMultiplayerStore((s) => s.connectionStatus)
   const addToast = useAltairToastStore((s) => s.addToast)
@@ -96,7 +98,7 @@ function AltairMultiplayerLanding() {
           }
         }, 10_000)
       } catch (err) {
-        if (mounted) addToast(err instanceof Error ? err.message : 'Connection failed', 'error')
+        if (mounted) addToast(err instanceof Error ? err.message : t("connection-failed", { defaultValue: "Connection failed" }), 'error')
       }
     }
 
@@ -126,7 +128,7 @@ function AltairMultiplayerLanding() {
   const handleJoinLobby = useCallback(() => {
     const code = joinCode.trim().toUpperCase()
     if (code.length !== 6) {
-      addToast('Room code must be 6 characters', 'warning')
+      addToast(t("room-code-length", { defaultValue: "Room code must be 6 characters" }), 'warning')
       return
     }
     emit(C2S.LOBBY_JOIN, { lobbyId: code })
@@ -141,7 +143,7 @@ function AltairMultiplayerLanding() {
 
   return (
     <div className="flex h-screen flex-col">
-      <AltairHeader context="menu" title="Multiplayer" onBack={() => navigate({ to: '/altair' })} connectionStatus={connectionStatus} />
+      <AltairHeader context="menu" title={t("multiplayer-title", { defaultValue: "Multiplayer" })} onBack={() => navigate({ to: '/altair' })} connectionStatus={connectionStatus} />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
         <div className="max-w-4xl mx-auto space-y-6">
@@ -152,14 +154,14 @@ function AltairMultiplayerLanding() {
             <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) p-6">
               <h2 className="text-xl font-bold text-(--altair-text) mb-4 flex items-center gap-2">
                 <Users size={20} className="text-(--altair-accent)" />
-                Create Lobby
+                {t("create-lobby", { defaultValue: "Create Lobby" })}
               </h2>
 
               {/* Settings */}
               <div className="space-y-3 mb-5">
                 {/* Max Players */}
                 <div>
-                  <label className="text-xs font-semibold text-(--altair-text-muted) uppercase tracking-wider">Players</label>
+                  <label className="text-xs font-semibold text-(--altair-text-muted) uppercase tracking-wider">{t("players-label", { defaultValue: "Players" })}</label>
                   <div className="flex gap-2 mt-1">
                     {([2, 3, 4] as const).map((n) => (
                       <button
@@ -179,7 +181,7 @@ function AltairMultiplayerLanding() {
 
                 {/* Visibility */}
                 <div>
-                  <label className="text-xs font-semibold text-(--altair-text-muted) uppercase tracking-wider">Visibility</label>
+                  <label className="text-xs font-semibold text-(--altair-text-muted) uppercase tracking-wider">{t("visibility-label", { defaultValue: "Visibility" })}</label>
                   <div className="flex gap-2 mt-1">
                     {(['private', 'public'] as const).map((v) => {
                       const Icon = VISIBILITY_ICONS[v]
@@ -194,7 +196,7 @@ function AltairMultiplayerLanding() {
                           }`}
                         >
                           <Icon size={14} />
-                          {VISIBILITY_LABELS[v]}
+                          {v === 'public' ? t("visibility-public", { defaultValue: "Public" }) : t("visibility-private", { defaultValue: "Private" })}
                         </button>
                       )
                     })}
@@ -211,7 +213,7 @@ function AltairMultiplayerLanding() {
                   />
                   <span className="text-sm text-(--altair-text) flex items-center gap-1.5">
                     <Zap size={14} className="text-(--altair-warning)" />
-                    Double Time (2x speed)
+                    {t("double-time", { defaultValue: "Double Time (2x speed)" })}
                   </span>
                 </label>
 
@@ -223,7 +225,7 @@ function AltairMultiplayerLanding() {
                     onChange={(e) => setDropInAllowed(e.target.checked)}
                     className="w-4 h-4 rounded accent-(--altair-accent)"
                   />
-                  <span className="text-sm text-(--altair-text)">Allow drop-in</span>
+                  <span className="text-sm text-(--altair-text)">{t("allow-drop-in", { defaultValue: "Allow drop-in" })}</span>
                 </label>
                 {dropInAllowed && (
                   <div className="pl-7">
@@ -238,7 +240,7 @@ function AltairMultiplayerLanding() {
                               : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
                           }`}
                         >
-                          {DROP_IN_LABELS[w]}
+                          {w === 'first_5min' ? t("drop-in-first-5min", { defaultValue: "First 5 min" }) : w === 'first_10min' ? t("drop-in-first-10min", { defaultValue: "First 10 min" }) : t("drop-in-anytime", { defaultValue: "Anytime" })}
                         </button>
                       ))}
                     </div>
@@ -251,7 +253,7 @@ function AltairMultiplayerLanding() {
                 disabled={connectionStatus !== 'connected'}
                 className="w-full py-3 rounded-lg font-bold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover)"
               >
-                Create Lobby
+                {t("create-lobby", { defaultValue: "Create Lobby" })}
               </button>
             </div>
 
@@ -259,10 +261,10 @@ function AltairMultiplayerLanding() {
             <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) p-6">
               <h2 className="text-xl font-bold text-(--altair-text) mb-4 flex items-center gap-2">
                 <UserPlus size={20} className="text-(--altair-accent)" />
-                Join by Code
+                {t("join-by-code", { defaultValue: "Join by Code" })}
               </h2>
               <p className="text-sm mb-4 text-(--altair-text-muted)">
-                Enter a 6-character room code to join a friend&apos;s lobby.
+                {t("join-by-code-hint", { defaultValue: "Enter a 6-character room code to join a friend's lobby." })}
               </p>
               <form onSubmit={(e) => { e.preventDefault(); handleJoinLobby() }} className="flex gap-2">
                 <input
@@ -278,7 +280,7 @@ function AltairMultiplayerLanding() {
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
                   className="px-6 py-3 rounded-lg font-bold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover)"
                 >
-                  Join
+                  {t("join-button", { defaultValue: "Join" })}
                 </button>
               </form>
             </div>
@@ -289,7 +291,7 @@ function AltairMultiplayerLanding() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-(--altair-text) flex items-center gap-2">
                 <Globe size={20} className="text-(--altair-accent)" />
-                Public Lobbies
+                {t("public-lobbies", { defaultValue: "Public Lobbies" })}
               </h2>
               <button
                 onClick={handleBrowse}
@@ -297,13 +299,13 @@ function AltairMultiplayerLanding() {
                 className="text-sm px-3 py-1.5 rounded-md transition-colors bg-(--altair-surface-hover) text-(--altair-text-muted) hover:text-(--altair-text) disabled:opacity-50 flex items-center gap-1.5"
               >
                 <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
-                Refresh
+                {t("refresh", { defaultValue: "Refresh" })}
               </button>
             </div>
 
             {publicLobbies.length === 0 ? (
               <p className="text-sm text-center py-6 text-(--altair-text-muted)">
-                No public lobbies available. Create one!
+                {t("no-public-lobbies", { defaultValue: "No public lobbies available. Create one!" })}
               </p>
             ) : (
               <div className="space-y-2">
@@ -319,7 +321,7 @@ function AltairMultiplayerLanding() {
                     <div className="flex items-center gap-3">
                       <span className="font-mono font-bold text-(--altair-text)">{lobby.lobbyId}</span>
                       <span className="text-sm text-(--altair-text-muted)">
-                        Host: {lobby.hostName}
+                        {t("lobby-host", { defaultValue: "Host: {{hostName}}", hostName: lobby.hostName })}
                       </span>
                       {lobby.doubleTime && (
                         <span className="text-xs text-(--altair-warning) flex items-center gap-0.5">
@@ -327,7 +329,7 @@ function AltairMultiplayerLanding() {
                         </span>
                       )}
                       {lobby.state === 'PLAYING' && lobby.dropInAllowed && (
-                        <span className="text-xs text-(--altair-success) font-semibold">Drop-in</span>
+                        <span className="text-xs text-(--altair-success) font-semibold">{t("drop-in-label", { defaultValue: "Drop-in" })}</span>
                       )}
                     </div>
                     <div className="text-sm text-(--altair-text-muted) flex items-center gap-1">

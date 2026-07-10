@@ -2,12 +2,6 @@
 
 /* Theme stylesheets moved to their respective route files for code splitting */
 
-/* Profile Pet sprite animations */
-@keyframes dog-walk-frames {
-  from { background-position: 0 0; }
-  to { background-position: -128px 0; }
-}
-
 /* ── Font family variables (loaded via Google Fonts CSS link) ── */
 :root {
   --font-nunito: "Nunito", sans-serif;
@@ -57,6 +51,7 @@
   --site-text-muted: #9a9ba4;
   --site-text-dim: #6a6b74;
   --site-accent: #9b7ad8;
+  --site-accent-fg: #000;
   --site-accent-hover: #8a68c9;
   --site-accent-dim: rgba(155, 122, 216, 0.12);
   --site-success: #7bc88a;
@@ -180,6 +175,7 @@
   --site-text-muted: #6a6b74;
   --site-text-dim: #9a9ba4;
   --site-accent: #7c5cb8;
+  --site-accent-fg: #fff;
   --site-accent-hover: #6b4ba8;
   --site-accent-dim: rgba(124, 92, 184, 0.08);
   --site-success: #5aad6a;
@@ -188,6 +184,55 @@
   --site-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
   --background: #f5f5f7;
   --foreground: #2a2b30;
+}
+
+/* High Contrast — maximal legibility (WCAG AAA): pure black, pure white text,
+   yellow accent, bright white borders. For low-vision / high-glare users. */
+.style-high-contrast {
+  --site-bg: #000000;
+  --site-bg-subtle: #000000;
+  --site-surface: #000000;
+  --site-surface-hover: #1a1a1a;
+  --site-surface-active: #2a2a2a;
+  --site-border: #ffffff;
+  --site-border-bright: #ffffff;
+  --site-text: #ffffff;
+  --site-text-muted: #ededed;
+  --site-text-dim: #cfcfcf;
+  --site-accent: #ffff00;
+  --site-accent-fg: #000000;
+  --site-accent-hover: #e6e600;
+  --site-accent-dim: rgba(255, 255, 0, 0.18);
+  --site-success: #00e676;
+  --site-danger: #ff8080;
+  --site-warning: #ffd54a;
+  --site-shadow: 0 0 0 1px #ffffff;
+  --site-border-width: 2px;
+  --background: #000000;
+  --foreground: #ffffff;
+}
+
+/* Respect the OS "reduce motion" preference site-wide: neutralize enter
+   animations, transitions and smooth scrolling that can trigger vestibular
+   discomfort, while preserving essential loading feedback (spinners, skeleton
+   pulse). Games render motion via canvas/WebGL, so gameplay is unaffected. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .animate-spin {
+    animation-duration: 0.8s !important;
+    animation-iteration-count: infinite !important;
+  }
+  .animate-pulse {
+    animation-duration: 2s !important;
+    animation-iteration-count: infinite !important;
+  }
 }
 
 /* Gamer — neon green on pitch black, sharp edges, monospace */
@@ -203,6 +248,7 @@
   --site-text-muted: #70b070;
   --site-text-dim: #406040;
   --site-accent: #00ff66;
+  --site-accent-fg: #000;
   --site-accent-hover: #00cc52;
   --site-accent-dim: rgba(0, 255, 102, 0.1);
   --site-shadow: 0 4px 24px rgba(0, 255, 102, 0.08);
@@ -232,6 +278,7 @@
   --site-text-muted: #8a5080;
   --site-text-dim: #b080a0;
   --site-accent: #ff6b9d;
+  --site-accent-fg: #000;
   --site-accent-hover: #ff4488;
   --site-accent-dim: rgba(255, 107, 157, 0.08);
   --site-success: #7bc88a;
@@ -263,6 +310,7 @@
   --site-text-muted: #a09880;
   --site-text-dim: #706850;
   --site-accent: #d4a847;
+  --site-accent-fg: #000;
   --site-accent-hover: #c49838;
   --site-accent-dim: rgba(212, 168, 71, 0.1);
   --site-shadow: 0 4px 24px rgba(212, 168, 71, 0.06);
@@ -290,6 +338,7 @@
   --site-text-muted: #dd88ff;
   --site-text-dim: #aa44dd;
   --site-accent: #ff00ff;
+  --site-accent-fg: #000;
   --site-accent-hover: #ff44ff;
   --site-accent-dim: rgba(255, 0, 255, 0.15);
   --site-shadow: 0 4px 24px rgba(255, 0, 255, 0.12);
@@ -318,6 +367,7 @@
   --site-text-muted: #404060;
   --site-text-dim: #6060a0;
   --site-accent: #dd2200;
+  --site-accent-fg: #fff;
   --site-accent-hover: #bb1a00;
   --site-accent-dim: rgba(221, 34, 0, 0.06);
   --site-success: #228b22;
@@ -351,6 +401,7 @@
   --site-text-muted: #a09880;
   --site-text-dim: #686050;
   --site-accent: #c8a84a;
+  --site-accent-fg: #000;
   --site-accent-hover: #b89838;
   --site-accent-dim: rgba(200, 168, 74, 0.1);
   --site-shadow: 0 4px 24px rgba(200, 168, 74, 0.06);
@@ -378,6 +429,7 @@
   --site-text-muted: #a098b0;
   --site-text-dim: #706888;
   --site-accent: #a0d8b0;
+  --site-accent-fg: #000;
   --site-accent-hover: #88c898;
   --site-accent-dim: rgba(160, 216, 176, 0.1);
   --site-shadow: 0 4px 24px rgba(160, 216, 176, 0.06);
@@ -405,6 +457,7 @@
   --site-text-muted: #6a5a48;
   --site-text-dim: #9a8a78;
   --site-accent: #8b4513;
+  --site-accent-fg: #fff;
   --site-accent-hover: #723a10;
   --site-accent-dim: rgba(139, 69, 19, 0.06);
   --site-success: #5a8a3a;
@@ -440,6 +493,7 @@
   --site-text-muted: #c08070;
   --site-text-dim: #805040;
   --site-accent: #ff3030;
+  --site-accent-fg: #000;
   --site-accent-hover: #e02020;
   --site-accent-dim: rgba(255, 48, 48, 0.12);
   --site-shadow: 0 4px 24px rgba(255, 48, 48, 0.1);
@@ -468,6 +522,7 @@
   --site-text-muted: #90a880;
   --site-text-dim: #607850;
   --site-accent: #5a9e3a;
+  --site-accent-fg: #000;
   --site-accent-hover: #4a8e2a;
   --site-accent-dim: rgba(90, 158, 58, 0.1);
   --site-shadow: 0 4px 24px rgba(90, 158, 58, 0.06);
@@ -494,6 +549,7 @@
   --site-text-muted: #a0a0d0;
   --site-text-dim: #6868a0;
   --site-accent: #f0d020;
+  --site-accent-fg: #000;
   --site-accent-hover: #e0c010;
   --site-accent-dim: rgba(240, 208, 32, 0.1);
   --site-shadow: 0 4px 24px rgba(240, 208, 32, 0.08);
@@ -522,6 +578,7 @@
   --site-text-muted: #8898b0;
   --site-text-dim: #586880;
   --site-accent: #b0c8e8;
+  --site-accent-fg: #000;
   --site-accent-hover: #98b8e0;
   --site-accent-dim: rgba(176, 200, 232, 0.1);
   --site-shadow: 0 4px 24px rgba(176, 200, 232, 0.06);
@@ -549,6 +606,7 @@
   --site-text-muted: #c0a070;
   --site-text-dim: #887050;
   --site-accent: #ffc830;
+  --site-accent-fg: #000;
   --site-accent-hover: #f0b820;
   --site-accent-dim: rgba(255, 200, 48, 0.12);
   --site-shadow: 0 4px 24px rgba(255, 200, 48, 0.1);
@@ -577,6 +635,7 @@
   --site-text-muted: #5a6458;
   --site-text-dim: #8a9488;
   --site-accent: #5a8a50;
+  --site-accent-fg: #000;
   --site-accent-hover: #4a7a40;
   --site-accent-dim: rgba(90, 138, 80, 0.06);
   --site-success: #4a8a3a;
@@ -610,6 +669,7 @@
   --site-text-muted: #7a5878;
   --site-text-dim: #a080a0;
   --site-accent: #c47ab0;
+  --site-accent-fg: #000;
   --site-accent-hover: #b468a0;
   --site-accent-dim: rgba(196, 122, 176, 0.08);
   --site-success: #6aaa7a;
@@ -642,6 +702,7 @@
   --site-text-muted: #a07080;
   --site-text-dim: #704858;
   --site-accent: #c01040;
+  --site-accent-fg: #fff;
   --site-accent-hover: #a00830;
   --site-accent-dim: rgba(192, 16, 64, 0.12);
   --site-shadow: 0 4px 24px rgba(192, 16, 64, 0.1);
@@ -670,6 +731,7 @@
   --site-text-muted: #a898cc;
   --site-text-dim: #706898;
   --site-accent: #9050e0;
+  --site-accent-fg: #fff;
   --site-accent-hover: #7e40d0;
   --site-accent-dim: rgba(144, 80, 224, 0.1);
   --site-shadow: 0 4px 24px rgba(144, 80, 224, 0.08);
@@ -697,6 +759,7 @@
   --site-text-muted: #8a8a94;
   --site-text-dim: #5a5a64;
   --site-accent: #8090a0;
+  --site-accent-fg: #000;
   --site-accent-hover: #708090;
   --site-accent-dim: rgba(128, 144, 160, 0.1);
   --site-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
@@ -725,6 +788,7 @@
   --site-text-muted: #70a0d0;
   --site-text-dim: #4070a0;
   --site-accent: #00c8ff;
+  --site-accent-fg: #000;
   --site-accent-hover: #00b0e8;
   --site-accent-dim: rgba(0, 200, 255, 0.1);
   --site-shadow: 0 4px 24px rgba(0, 200, 255, 0.08);
@@ -753,6 +817,7 @@
   --site-text-muted: #88a0c0;
   --site-text-dim: #587090;
   --site-accent: #60b8b8;
+  --site-accent-fg: #000;
   --site-accent-hover: #50a8a8;
   --site-accent-dim: rgba(96, 184, 184, 0.1);
   --site-shadow: 0 4px 24px rgba(96, 184, 184, 0.06);
@@ -782,6 +847,7 @@
   --site-text-muted: #4a6848;
   --site-text-dim: #7a9878;
   --site-accent: #e06888;
+  --site-accent-fg: #000;
   --site-accent-hover: #d05878;
   --site-accent-dim: rgba(224, 104, 136, 0.08);
   --site-success: #5aaa5a;
@@ -814,6 +880,7 @@
   --site-text-muted: #7a6040;
   --site-text-dim: #a89070;
   --site-accent: #f08020;
+  --site-accent-fg: #000;
   --site-accent-hover: #e07010;
   --site-accent-dim: rgba(240, 128, 32, 0.08);
   --site-success: #5aaa4a;
@@ -846,6 +913,7 @@
   --site-text-muted: #b89870;
   --site-text-dim: #887050;
   --site-accent: #d07030;
+  --site-accent-fg: #000;
   --site-accent-hover: #c06020;
   --site-accent-dim: rgba(208, 112, 48, 0.1);
   --site-shadow: 0 4px 24px rgba(208, 112, 48, 0.06);
@@ -873,6 +941,7 @@
   --site-text-muted: #88a0c0;
   --site-text-dim: #506888;
   --site-accent: #70b8f0;
+  --site-accent-fg: #000;
   --site-accent-hover: #58a8e8;
   --site-accent-dim: rgba(112, 184, 240, 0.1);
   --site-shadow: 0 4px 24px rgba(112, 184, 240, 0.06);
@@ -901,6 +970,7 @@
   --site-text-muted: #6a5a44;
   --site-text-dim: #9a8a70;
   --site-accent: #2288dd;
+  --site-accent-fg: #000;
   --site-accent-hover: #1878cc;
   --site-accent-dim: rgba(34, 136, 221, 0.06);
   --site-success: #22aa44;
@@ -933,6 +1003,7 @@
   --site-text-muted: #8aa0b0;
   --site-text-dim: #5a7080;
   --site-accent: #20b0a0;
+  --site-accent-fg: #000;
   --site-accent-hover: #18a090;
   --site-accent-dim: rgba(32, 176, 160, 0.1);
   --site-shadow: 0 4px 24px rgba(32, 176, 160, 0.06);
@@ -960,6 +1031,7 @@
   --site-text-muted: #a0a0a8;
   --site-text-dim: #686870;
   --site-accent: #cc2244;
+  --site-accent-fg: #fff;
   --site-accent-hover: #b01838;
   --site-accent-dim: rgba(204, 34, 68, 0.1);
   --site-shadow: 0 4px 24px rgba(204, 34, 68, 0.06);
@@ -988,6 +1060,7 @@
   --site-text-muted: #4a5468;
   --site-text-dim: #7a8498;
   --site-accent: #1a3a6a;
+  --site-accent-fg: #fff;
   --site-accent-hover: #102a58;
   --site-accent-dim: rgba(26, 58, 106, 0.06);
   --site-success: #3a7a4a;
@@ -1014,17 +1087,25 @@
   --color-site-bg-subtle: var(--site-bg-subtle);
   --color-site-surface: var(--site-surface);
   --color-site-surface-hover: var(--site-surface-hover);
+  --color-site-surface-active: var(--site-surface-active);
   --color-site-border: var(--site-border);
   --color-site-border-bright: var(--site-border-bright);
   --color-site-text: var(--site-text);
   --color-site-text-muted: var(--site-text-muted);
   --color-site-text-dim: var(--site-text-dim);
   --color-site-accent: var(--site-accent);
+  --color-site-accent-fg: var(--site-accent-fg, #fff);
   --color-site-accent-hover: var(--site-accent-hover);
   --color-site-accent-dim: var(--site-accent-dim);
   --color-site-success: var(--site-success);
   --color-site-danger: var(--site-danger);
   --color-site-warning: var(--site-warning);
+
+  /* Site radius scale → rounded-site / rounded-site-sm (theme-aware) */
+  --radius-site: var(--site-radius);
+  --radius-site-sm: var(--site-radius-sm);
+  /* Site elevation → shadow-site (theme-aware) */
+  --shadow-site: var(--site-shadow);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -1928,6 +2009,11 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
   }
 
   .rainbow-text {
@@ -1977,6 +2063,9 @@ html {
   overflow-y: auto;
   min-height: 100%;
   background-color: var(--site-bg);
+  /* Suppress horizontal overscroll → reduces the browser's edge "go back"
+     gesture (Chrome Android) so a left-edge swipe can open the sidebar. */
+  overscroll-behavior-x: none;
 }
 
 /* Reserve scrollbar space on main UI pages to prevent layout shift */
@@ -1995,10 +2084,156 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Prevent iOS Safari from auto-zooming the page when a form control is focused.
+   Mobile Safari zooms whenever the focused field's computed font-size is < 16px,
+   which reads as a jarring jump on tap. Floor every text-entry control at 16px on
+   phones (<=640px) only, so desktop information density is untouched. This is the
+   site-wide safety net for the many fields that use Tailwind's text-sm/text-xs. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* Selection styling */
 ::selection {
   background: var(--site-accent);
   color: #ffffff;
+}
+
+/* ==================== BROWSER AUTOFILL ====================
+ * Chrome/Safari render autofilled inputs with their own near-white background
+ * and dark text, which is unreadable on the dark themes and shows through as a
+ * washed-out / "transparent" box. Force an OPAQUE, theme-coloured background
+ * (via the inset box-shadow trick — the only reliable way to override the UA
+ * autofill background) and theme-coloured text/caret across every themed input,
+ * textarea and select. The long transition keeps the autofill background from
+ * flashing back to the UA colour. Applies site-wide (RMHHomes, Rideshare, every
+ * form). */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--site-text);
+  caret-color: var(--site-text);
+  -webkit-box-shadow: 0 0 0 1000px var(--site-surface) inset;
+  box-shadow: 0 0 0 1000px var(--site-surface) inset;
+  transition: background-color 100000s ease-in-out 0s;
+}
+
+/* ==================== INTERACTION & ACCESSIBILITY ====================
+ * Site-wide, additive interaction polish: a visible, theme-aware keyboard
+ * focus ring; removal of the mobile tap-flash in favour of our own press
+ * feedback; themed native form controls; and snappier tap/click response.
+ * Everything here is keyboard- or pointer-gated and respects the existing
+ * prefers-reduced-motion guard further down this file. */
+
+/* Keyboard focus — a clear ring that adopts the active theme accent.
+   :focus-visible keeps it to keyboard / assistive-tech users (never on
+   mouse/tap). The design-system Button already draws its own ring, so it's
+   excluded to avoid doubling up. */
+a:focus-visible,
+button:not([data-slot="button"]):focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+input:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="link"]:focus-visible,
+[role="menuitem"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--site-accent);
+  outline-offset: 2px;
+}
+
+/* Text-entry fields already signal focus with the caret + their own border, so
+   the accent ring was redundant and read as a harsh white box (most obvious on
+   Firefox). Drop it for text inputs / textareas / editable regions only — the
+   ring still applies to buttons, checkboxes, radios, links, etc. */
+textarea:focus-visible,
+input:not([type]):focus-visible,
+input[type="text"]:focus-visible,
+input[type="search"]:focus-visible,
+input[type="email"]:focus-visible,
+input[type="password"]:focus-visible,
+input[type="url"]:focus-visible,
+input[type="tel"]:focus-visible,
+input[type="number"]:focus-visible,
+[contenteditable="true"]:focus-visible,
+[contenteditable=""]:focus-visible {
+  outline: none;
+}
+
+/* Drop the grey/blue mobile tap flash; we supply our own press cue below. */
+a,
+button,
+label,
+summary,
+input,
+select,
+textarea,
+[role="button"],
+[role="tab"],
+[role="menuitem"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Press feedback on tap/click — opacity only, so there's never a layout
+   shift, and it reads on both touch and mouse. Disabled controls stay inert. */
+a:active,
+button:not(:disabled):not([aria-disabled="true"]):active,
+[role="button"]:not([aria-disabled="true"]):active,
+[role="tab"]:active,
+[role="menuitem"]:active,
+summary:active {
+  opacity: 0.6;
+  transition: opacity 60ms ease;
+}
+
+/* Native form controls (checkbox, radio, range, progress) adopt the accent. */
+:root {
+  accent-color: var(--site-accent);
+}
+
+/* A consistent pointer cursor for things that behave like buttons but aren't
+   <button>/<a> (e.g. role="button" divs). */
+[role="button"]:not(:disabled),
+[role="tab"]:not([aria-disabled="true"]),
+summary {
+  cursor: pointer;
+}
+
+/* A gentle, consistent default transition for interactive elements so hover /
+   focus / active state changes are never janky. Lives in @layer base so any
+   component's own transition utility (e.g. transition-transform, duration-*)
+   still wins — this only fills the gap where none was set. Colour/box-shadow/
+   opacity only: never transform or layout, so nothing shifts unexpectedly.
+   The prefers-reduced-motion guard further down neutralises it. */
+@layer base {
+  a,
+  button,
+  select,
+  input,
+  textarea,
+  label,
+  summary,
+  [role="button"],
+  [role="tab"],
+  [role="menuitem"],
+  [role="switch"],
+  [role="checkbox"] {
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease,
+      box-shadow 0.15s ease, opacity 0.15s ease;
+  }
 }
 
 /* Minimalistic scrollbar (overridden by specific games/apps) */
@@ -2304,7 +2539,9 @@ img.emoji {
   border: none;
   outline: none;
   color: #fff;
-  font-size: 0.875rem;
+  /* 16px (1rem) avoids iOS focus-zoom; this rule out-specifies the global
+     phone floor above, so it must carry the >=16px value itself. */
+  font-size: 1rem;
   width: 16rem;
 }
 
@@ -2331,4 +2568,254 @@ img.emoji {
   font-size: 0.75rem;
   color: rgba(255,255,255,0.4);
   min-height: 1.2em;
+}
+
+/* ─── Number inputs ──────────────────────────────────────────────────────
+ * The native up/down spinners render with the OS theme and clash with the
+ * site's dark UI. Hide them globally so number fields match every other
+ * themed input; users still type values (and themed stepper controls can be
+ * added per-field where needed). */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ----- RTL support (Arabic) ----- */
+[dir="rtl"] body { text-align: right; }
+/* Flip directional chevron/arrow icons that imply forward/back. */
+[dir="rtl"] .rtl-flip { transform: scaleX(-1); }
+
+/* ─── Dream Rift menu animations ─────────────────────────────────────────
+ * Staggered entrance for menu items and a gentle title float. Respects the
+ * user's reduced-motion preference. */
+@keyframes dr-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes dr-float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes dr-title-glow {
+  0%, 100% { filter: drop-shadow(0 0 18px rgba(212,64,90,0.5)) drop-shadow(0 0 6px rgba(231,205,140,0.55)); }
+  50%      { filter: drop-shadow(0 0 30px rgba(231,205,140,0.6)) drop-shadow(0 0 10px rgba(212,64,90,0.5)); }
+}
+.dr-rise { opacity: 0; animation: dr-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
+.dr-float { animation: dr-float 4.5s ease-in-out infinite; }
+.dr-title-glow { animation: dr-title-glow 5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .dr-rise { opacity: 1; animation: none; }
+  .dr-float, .dr-title-glow { animation: none; }
+}
+
+/* ─── Dream Rift — authentic Touhou STG skin ─────────────────────────────
+ * Windows-era Touhou UI language: deep midnight-indigo grounds, ornate brass
+ * frames, shrine-crimson accents and cream serif lettering. These tokens and
+ * helpers are shared by every Dream Rift menu/overlay so the chrome stays
+ * cohesive; the in-canvas HUD mirrors the same palette in renderer.ts. */
+:root {
+  --dr-ink: #0b0712;
+  --dr-ink-panel: #150d22;
+  --dr-ink-panel-2: #1d1430;
+  --dr-gold: #e7cd8c;
+  --dr-gold-soft: #d8b768;
+  --dr-gold-deep: #a3823f;
+  --dr-cream: #f3ead2;
+  --dr-cream-dim: rgba(243, 234, 210, 0.58);
+  --dr-cream-faint: rgba(243, 234, 210, 0.34);
+  --dr-crimson: #d4405a;
+  --dr-crimson-deep: #8c2438;
+  --dr-serif: var(--font-cinzel), Georgia, 'Times New Roman', serif;
+  --dr-serif-body: var(--font-playfair), Georgia, serif;
+}
+
+/* Ornate brass double-frame on a smoked-indigo ground — the base panel. */
+.dr-frame {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(29, 20, 48, 0.94), rgba(11, 7, 18, 0.96));
+  border: 1px solid rgba(231, 205, 140, 0.42);
+  box-shadow:
+    inset 0 0 0 1px rgba(11, 7, 18, 0.9),
+    inset 0 0 0 4px rgba(231, 205, 140, 0.1),
+    inset 0 1px 0 rgba(231, 205, 140, 0.18),
+    0 14px 48px rgba(0, 0, 0, 0.55);
+}
+/* Faint gold corner ticks reinforce the "framed scroll" read. */
+.dr-frame::before,
+.dr-frame::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(231, 205, 140, 0.55);
+  pointer-events: none;
+}
+.dr-frame::before { top: 5px; left: 5px; border-right: 0; border-bottom: 0; }
+.dr-frame::after { bottom: 5px; right: 5px; border-left: 0; border-top: 0; }
+
+/* A thinner inset panel for stat blocks / list rows inside a frame. */
+.dr-inset {
+  background: linear-gradient(180deg, rgba(11, 7, 18, 0.66), rgba(11, 7, 18, 0.4));
+  border: 1px solid rgba(231, 205, 140, 0.16);
+  box-shadow: inset 0 1px 0 rgba(231, 205, 140, 0.08);
+}
+
+/* Menu plaque — a framed command with a shrine-red selection sigil. */
+.dr-plaque {
+  position: relative;
+  font-family: var(--dr-serif);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dr-cream);
+  background: linear-gradient(180deg, rgba(29, 20, 48, 0.85), rgba(13, 8, 22, 0.9));
+  border: 1px solid rgba(231, 205, 140, 0.3);
+  box-shadow: inset 0 1px 0 rgba(231, 205, 140, 0.12);
+  transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+}
+.dr-plaque:hover:not(:disabled),
+.dr-plaque:focus-visible {
+  color: #fff7e6;
+  border-color: rgba(231, 205, 140, 0.85);
+  background: linear-gradient(180deg, rgba(140, 36, 56, 0.5), rgba(13, 8, 22, 0.92));
+  transform: translateY(-1px);
+}
+.dr-plaque:disabled { opacity: 0.4; }
+/* Crimson cursor sigil slides in on focus, the Touhou menu pointer. */
+.dr-plaque::before {
+  content: '❖';
+  position: absolute;
+  left: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%) scale(0.5);
+  color: var(--dr-crimson);
+  font-size: 0.7em;
+  opacity: 0;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+.dr-plaque:hover:not(:disabled)::before,
+.dr-plaque:focus-visible::before {
+  opacity: 1;
+  transform: translateY(-50%) scale(1);
+}
+
+/* Primary plaque — the lit shrine-crimson call to action. */
+.dr-plaque-primary {
+  color: #fff4e0;
+  background: linear-gradient(180deg, #c5364e, #8c2438);
+  border-color: rgba(231, 205, 140, 0.65);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 rgba(255, 222, 196, 0.28), 0 6px 18px rgba(140, 36, 56, 0.35);
+}
+.dr-plaque-primary:hover:not(:disabled),
+.dr-plaque-primary:focus-visible {
+  background: linear-gradient(180deg, #df4660, #a02b42);
+  border-color: var(--dr-gold);
+}
+
+/* Hairline gold rule used under section headings. */
+.dr-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(231, 205, 140, 0.55), transparent);
+}
+
+/* Serif lettering helpers (Cinzel display caps + Playfair body). */
+.dr-serif { font-family: var(--dr-serif); }
+.dr-serif-body { font-family: var(--dr-serif-body); }
+
+
+/* ─── Per-page content transition ────────────────────────────────────────
+ * Only the content column(s) animate on navigation — the left nav rail lives
+ * outside the content <main> (see app/routes/_site.tsx), so it never moves.
+ * Route-to-route navigation remounts the content, replaying this enter
+ * animation. `backwards` fill applies the start frame immediately (no flash)
+ * and leaves NO lingering transform afterward (so `position: fixed`
+ * descendants are unaffected once the animation settles). */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-root > * {
+  animation: page-enter 0.22s ease-out backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .page-root > * {
+    animation: none;
+  }
+}
+/* Back/forward (history POP) navigations shouldn't replay the enter animation —
+ * returning should feel like landing back where you were, not the page
+ * re-animating. Toggled by components/ui/BackNavAnimation.tsx. */
+html.nav-pop .page-root > * {
+  animation: none !important;
+}
+
+/* ─── Scoped shared-element View Transitions ─────────────────────────────
+ * Progressive enhancement (see lib/view-transition.ts). We deliberately keep
+ * the full-page cross-fade OFF — it was removed for feeling heavy — and only
+ * animate elements that carry a matching `view-transition-name` (e.g. a post's
+ * media morphing from the feed card into the detail hero). Named groups get a
+ * quick, springy morph; the document root swaps instantly. */
+::view-transition-group(*) {
+  animation-duration: 0.28s;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+}
+/* While a transition is running, stand the per-page enter animation down so it
+ * doesn't fight the morph (lib/view-transition.ts toggles this class). */
+html.vt-active .page-root > * {
+  animation: none !important;
+}
+/* View-transition pseudo-elements live outside the document tree, so the global
+ * `*` reduced-motion rule can't reach them — neutralise them explicitly. */
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* ─── Off-screen feed card virtualization ────────────────────────────────
+ * Long timelines render a lot of cards (avatars, media, embeds). Skipping the
+ * layout + paint work for cards that aren't near the viewport keeps scrolling
+ * smooth without a JS virtualizer. `contain-intrinsic-size: auto <h>` reserves
+ * an estimated height so the scrollbar stays stable and, once a card has been
+ * rendered, its real measured height is remembered — so scroll position and
+ * find-in-page both behave. */
+.feed-card-cv {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+}
+/* During a back/forward restore, lay every feed card out at its REAL height so the
+ * saved pixel offset lands on exactly the content you left — the size estimate
+ * above would otherwise shift the restored position (a visible re-scroll). Only
+ * on for the brief restore window; content-visibility resumes for scroll perf
+ * right after. Toggled by hooks/useScrollRestoration.ts. */
+html.nav-restoring .feed-card-cv {
+  content-visibility: visible;
+}
+
+/* Posts flushed in from the "N new posts" pill ease down into place instead of
+ * popping. `backwards` applies the start frame immediately so there's no flash
+ * before the animation runs. */
+@keyframes feed-item-enter {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.feed-item-enter {
+  animation: feed-item-enter 0.35s ease-out backwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .feed-item-enter {
+    animation: none;
+  }
 }

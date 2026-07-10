@@ -3,124 +3,18 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createRMHarkSchema } from "@/lib/rmhark-schema";
-import { getAllPosts } from "@/lib/blog";
-import type { FeedItem, FeedPoll, FeedFilter } from "@/lib/feed-types";
+import type { FeedItem, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
-
-/** Prisma include fragment for poll data on an RMHark */
-function pollInclude(userId: string | null) {
-  return {
-    include: {
-      options: {
-        orderBy: { position: "asc" as const },
-        include: {
-          _count: { select: { votes: true } },
-          ...(userId
-            ? { votes: { where: { userId }, select: { id: true, optionId: true } } }
-            : {}),
-        },
-      },
-    },
-  };
-}
-
-/** Map a Prisma poll result to a FeedPoll */
-function mapPoll(poll: any): FeedPoll | undefined {
-  if (!poll) return undefined;
-  const totalVotes = poll.options.reduce(
-    (sum: number, o: any) => sum + (o._count?.votes ?? 0),
-    0
-  );
-  return {
-    id: poll.id,
-    question: poll.question,
-    multiSelect: poll.multiSelect,
-    totalVotes,
-    options: poll.options.map((o: any) => ({
-      id: o.id,
-      text: o.text,
-      voteCount: o._count?.votes ?? 0,
-    })),
-    myVotes: poll.options
-      .filter((o: any) => o.votes?.length > 0)
-      .map((o: any) => o.id),
-  };
-}
-
-function deduplicateReposts(items: FeedItem[], windowSize = 2): FeedItem[] {
-  const result: FeedItem[] = [];
-  for (const item of items) {
-    if (item.repostedBy) {
-      const underlyingId = item.actualId ?? item.id;
-      const recentIds = result.slice(-windowSize).map((i) => i.actualId ?? i.id);
-      if (recentIds.includes(underlyingId)) continue;
-    }
-    result.push(item);
-  }
-  return result;
-}
-
-/** Build "virtual" announcement feed items from static data sources. */
-async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
-  const { games } = await import("@/lib/games");
-  const { apps } = await import("@/lib/apps");
-  const items: FeedItem[] = [];
-
-  if (filter === "all" || filter === "app" || filter === "game") {
-    if (filter === "all" || filter === "game") {
-      for (const g of games) {
-        items.push({
-          id: `build:${g.id}`,
-          type: "game_announcement",
-          createdAt: "2025-01-01T00:00:00.000Z",
-          title: g.title,
-          description: g.description,
-          href: g.href,
-          imagePath: g.imagePath,
-          tags: g.tags,
-          gradient: g.gradient,
-          iconName: g.iconName,
-        });
-      }
-    }
-    if (filter === "all" || filter === "app") {
-      for (const a of apps) {
-        if (a.hidden) continue;
-        items.push({
-          id: `build:${a.id}`,
-          type: "app_announcement",
-          createdAt: "2025-01-01T00:00:00.000Z",
-          title: a.title,
-          description: a.description,
-          href: a.href,
-          imagePath: a.imagePath,
-          tags: a.tags,
-          gradient: a.gradient,
-          iconName: a.iconName,
-        });
-      }
-    }
-  }
-
-  if (filter === "all" || filter === "blog") {
-    const posts = await getAllPosts(["title", "date", "slug", "description", "image", "tags"]);
-    for (const p of posts) {
-      items.push({
-        id: `blog:${p.slug}`,
-        type: "blog",
-        createdAt: p.date ? new Date(p.date).toISOString() : "2025-01-01T00:00:00.000Z",
-        title: p.title,
-        description: p.description,
-        href: `/blog/${p.slug}`,
-        imagePath: p.image,
-        tags: p.tags as unknown as string[] | undefined,
-      });
-    }
-  }
-
-  return items;
-}
+import { notifyMentions } from "@/lib/feed/notify-mentions.server";
+import { createNotification } from "@/lib/notifications.server";
+import { grantAchievement, progressAchievement } from "@/lib/achievements/engine.server";
+import { getActiveBan } from "@/lib/admin-audit.server";
+import { awardXp } from "@/lib/xp/engine.server";
+import { progressQuests } from "@/lib/quests/engine.server";
+import { getTimeline, type FeedSurface } from "@/lib/feed/timeline";
+import { ownsFeedImageUrl } from "@/lib/storage/keys";
+import { publishDueForUser } from "@/lib/scheduled/publish.server";
 
 export const Route = createFileRoute('/api/rmharks')({
   server: {
@@ -132,6 +26,7 @@ export const Route = createFileRoute('/api/rmharks')({
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
     const filter = (searchParams.get("filter") || "all") as FeedFilter;
     const search = searchParams.get("search");
+    const feedParam = searchParams.get("feed");
 
     // Get current user session (optional, for liked/reposted status)
     let userId: string | null = null;
@@ -142,351 +37,29 @@ export const Route = createFileRoute('/api/rmharks')({
       // Not logged in, that's fine
     }
 
-    // Build content search filter
-    const contentWhere = search
-      ? { content: { contains: search, mode: "insensitive" as const } }
-      : {};
-
-    // Handle "friends" filter: only posts from followed users
-    if (filter === "friends") {
-      if (!userId) {
-        return Response.json({ items: [], nextCursor: null, hasMore: false });
-      }
-
-      const followRecords = await prisma.follow.findMany({
-        where: { followerId: userId },
-        select: { followingId: true },
-      });
-      const followingIds = followRecords.map((f) => f.followingId);
-
-      if (followingIds.length === 0) {
-        return Response.json({ items: [], nextCursor: null, hasMore: false });
-      }
-
-      const cursorDate = cursor ? new Date(cursor) : undefined;
-      const rmharkInclude = {
-        user: { select: userDisplaySelect },
-        _count: { select: { likes: true, comments: true, reposts: true, views: true } },
-        likes: { where: { userId }, select: { id: true } },
-        reposts: { where: { userId }, select: { id: true } },
-        poll: pollInclude(userId),
-        original: {
-          include: {
-            user: { select: userDisplaySelect },
-            _count: { select: { likes: true, comments: true, reposts: true, views: true } },
-          },
-        },
-      } as const;
-
-      const [rmharks, repostRecords] = await Promise.all([
-        prisma.rMHark.findMany({
-          where: {
-            userId: { in: followingIds },
-            deletedAt: null,
-            ...contentWhere,
-            ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
-          },
-          orderBy: { createdAt: "desc" },
-          take: limit,
-          include: rmharkInclude,
-        }),
-        prisma.rMHarkRepost.findMany({
-          where: {
-            userId: { in: followingIds },
-            rmhark: { deletedAt: null, ...contentWhere },
-            ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
-          },
-          orderBy: { createdAt: "desc" },
-          take: limit,
-          include: {
-            user: { select: userDisplaySelect },
-            rmhark: { include: rmharkInclude },
-          },
-        }),
-      ]);
-
-      const mapOriginal = (o: any) => {
-        if (!o) return undefined;
-        const isDeleted = !!o.deletedAt;
-        const deletedMessage = o.deletedByAdmin 
-          ? "[This RMHark was deleted by an admin]" 
-          : "[This RMHark was deleted by the user]";
-        return {
-          id: o.id,
-          type: "rmhark" as const,
-          createdAt: o.createdAt.toISOString(),
-          content: isDeleted ? deletedMessage : o.content,
-          user: resolveUser(o.user),
-          likeCount: o._count.likes,
-          commentCount: o._count.comments,
-          repostCount: o._count.reposts,
-          viewCount: o._count.views,
-          deletedAt: o.deletedAt?.toISOString() || null,
-          deletedByAdmin: o.deletedByAdmin,
-        };
-      };
-
-      const ownItems: FeedItem[] = rmharks.map((r: any) => {
-        const isDeleted = !!r.deletedAt;
-        const deletedMessage = r.deletedByAdmin 
-          ? "[This RMHark was deleted by an admin]" 
-          : "[This RMHark was deleted by the user]";
-        return {
-          id: r.id,
-          type: "rmhark" as const,
-          createdAt: r.createdAt.toISOString(),
-          content: isDeleted ? deletedMessage : r.content,
-          user: resolveUser(r.user),
-          likeCount: r._count.likes,
-          commentCount: r._count.comments,
-          repostCount: r._count.reposts,
-          viewCount: r._count.views,
-          liked: r.likes.length > 0,
-          reposted: r.reposts.length > 0,
-          original: mapOriginal(r.original),
-          poll: isDeleted ? undefined : mapPoll(r.poll),
-          gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
-          deletedAt: r.deletedAt?.toISOString() || null,
-          deletedByAdmin: r.deletedByAdmin,
-        };
-      });
-
-      const repostItems: FeedItem[] = repostRecords.map((rp: any) => {
-        const r = rp.rmhark;
-        const isDeleted = !!r.deletedAt;
-        const deletedMessage = r.deletedByAdmin 
-          ? "[This RMHark was deleted by an admin]" 
-          : "[This RMHark was deleted by the user]";
-        return {
-          id: `repost:${rp.id}`,
-          type: "rmhark" as const,
-          createdAt: rp.createdAt.toISOString(),
-          actualId: r.id,
-          content: isDeleted ? deletedMessage : r.content,
-          user: resolveUser(r.user),
-          likeCount: r._count.likes,
-          commentCount: r._count.comments,
-          repostCount: r._count.reposts,
-          viewCount: r._count.views,
-          liked: r.likes.length > 0,
-          reposted: r.reposts.length > 0,
-          repostedBy: resolveUser(rp.user),
-          original: mapOriginal(r.original),
-          poll: isDeleted ? undefined : mapPoll(r.poll),
-          gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
-          deletedAt: r.deletedAt?.toISOString() || null,
-          deletedByAdmin: r.deletedByAdmin,
-        };
-      });
-
-      const friendsItems = deduplicateReposts(
-        [...ownItems, ...repostItems].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-      ).slice(0, limit);
-
-      const nextCursor =
-        friendsItems.length === limit
-          ? friendsItems[friendsItems.length - 1].createdAt
-          : null;
-
-      return Response.json({
-        items: friendsItems,
-        nextCursor,
-        hasMore: friendsItems.length === limit,
-      });
+    // Lazily publish any of the viewer's scheduled posts whose time has come,
+    // so they appear in the feed without the author visiting the drafts page.
+    // Best-effort and only on the first page (no cursor) to bound overhead.
+    if (userId && !cursor) {
+      await publishDueForUser(userId).catch(() => {});
     }
 
-    // Fetch RMHarks from DB
-    const shouldFetchRmheets = filter === "all" || filter === "rmhark" || !!search;
-    let dbItems: FeedItem[] = [];
-    const cursorDate = cursor ? new Date(cursor) : undefined;
+    // Surface resolution. The Twitter-shaped name is `feed=following|foryou`;
+    // we keep back-compat with the legacy `filter=friends` value so older
+    // clients (or in-flight requests during a deploy) keep working.
+    const surface: FeedSurface =
+      feedParam === "following" || filter === "friends" ? "following" : "foryou";
 
-    const rmharkInclude = {
-      user: { select: userDisplaySelect },
-      _count: { select: { likes: true, comments: true, reposts: true, views: true } },
-      ...(userId
-        ? {
-            likes: { where: { userId }, select: { id: true } },
-            reposts: { where: { userId }, select: { id: true } },
-          }
-        : {}),
-      poll: pollInclude(userId),
-      original: {
-        include: {
-          user: { select: userDisplaySelect },
-          _count: { select: { likes: true, comments: true, reposts: true, views: true } },
-        },
-      },
-    } as const;
-
-    if (shouldFetchRmheets) {
-      const rmharkWhere = {
-        deletedAt: null,
-        ...contentWhere,
-        ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
-      };
-
-      const [rmharks, repostRecords] = await Promise.all([
-        prisma.rMHark.findMany({
-          where: rmharkWhere,
-          orderBy: { createdAt: "desc" },
-          take: limit,
-          include: rmharkInclude,
-        }),
-        prisma.rMHarkRepost.findMany({
-          where: {
-            ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
-            rmhark: { deletedAt: null, ...contentWhere },
-          } as Record<string, unknown>,
-          orderBy: { createdAt: "desc" },
-          take: limit,
-          include: {
-            user: { select: userDisplaySelect },
-            rmhark: { include: rmharkInclude },
-          },
-        }),
-      ]);
-
-      const mapOriginal = (o: any) => {
-        if (!o) return undefined;
-        const isDeleted = !!o.deletedAt;
-        const deletedMessage = o.deletedByAdmin 
-          ? "[This RMHark was deleted by an admin]" 
-          : "[This RMHark was deleted by the user]";
-        return {
-          id: o.id,
-          type: "rmhark" as const,
-          createdAt: o.createdAt.toISOString(),
-          content: isDeleted ? deletedMessage : o.content,
-          user: resolveUser(o.user),
-          likeCount: o._count.likes,
-          commentCount: o._count.comments,
-          repostCount: o._count.reposts,
-          viewCount: o._count.views,
-          deletedAt: o.deletedAt?.toISOString() || null,
-          deletedByAdmin: o.deletedByAdmin,
-        };
-      };
-
-      const ownItems: FeedItem[] = rmharks.map((r: any) => {
-        const isDeleted = !!r.deletedAt;
-        const deletedMessage = r.deletedByAdmin 
-          ? "[This RMHark was deleted by an admin]" 
-          : "[This RMHark was deleted by the user]";
-        return {
-          id: r.id,
-          type: "rmhark" as const,
-          createdAt: r.createdAt.toISOString(),
-          content: isDeleted ? deletedMessage : r.content,
-          user: resolveUser(r.user),
-          likeCount: r._count.likes,
-          commentCount: r._count.comments,
-          repostCount: r._count.reposts,
-          viewCount: r._count.views,
-          liked: userId ? r.likes.length > 0 : false,
-          reposted: userId ? r.reposts.length > 0 : false,
-          original: mapOriginal(r.original),
-          poll: isDeleted ? undefined : mapPoll(r.poll),
-          gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
-          deletedAt: r.deletedAt?.toISOString() || null,
-          deletedByAdmin: r.deletedByAdmin,
-        };
-      });
-
-      const repostItems: FeedItem[] = repostRecords.map((rp: any) => {
-        const r = rp.rmhark;
-        const isDeleted = !!r.deletedAt;
-        const deletedMessage = r.deletedByAdmin 
-          ? "[This RMHark was deleted by an admin]" 
-          : "[This RMHark was deleted by the user]";
-        return {
-          id: `repost:${rp.id}`,
-          type: "rmhark" as const,
-          createdAt: rp.createdAt.toISOString(),
-          actualId: r.id,
-          content: isDeleted ? deletedMessage : r.content,
-          user: resolveUser(r.user),
-          likeCount: r._count.likes,
-          commentCount: r._count.comments,
-          repostCount: r._count.reposts,
-          viewCount: r._count.views,
-          liked: userId ? r.likes.length > 0 : false,
-          reposted: userId ? r.reposts.length > 0 : false,
-          repostedBy: resolveUser(rp.user),
-          original: mapOriginal(r.original),
-          poll: isDeleted ? undefined : mapPoll(r.poll),
-          gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
-          deletedAt: r.deletedAt?.toISOString() || null,
-          deletedByAdmin: r.deletedByAdmin,
-        };
-      });
-
-      dbItems = deduplicateReposts(
-        [...ownItems, ...repostItems].sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-      ).slice(0, limit);
-    }
-
-    // Get announcement items (skip when searching — only RMHarks have content)
-    const announcements = search ? [] : await getAnnouncementItems(filter);
-
-    // Filter announcements by cursor
-    let filteredAnnouncements = announcements;
-    if (cursor) {
-      filteredAnnouncements = announcements.filter(
-        (a) => new Date(a.createdAt) < new Date(cursor)
-      );
-    }
-
-    let paginatedItems: FeedItem[];
-
-    if (filter === "all") {
-      // Interleave: 3 RMHarks per 1 announcement to prioritize user content
-      const sortedAnnouncements = filteredAnnouncements.sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-
-      const result: FeedItem[] = [];
-      let ri = 0;
-      let ai = 0;
-
-      while (result.length < limit && (ri < dbItems.length || ai < sortedAnnouncements.length)) {
-        // Add up to 3 RMHarks
-        for (let i = 0; i < 3 && ri < dbItems.length && result.length < limit; i++) {
-          result.push(dbItems[ri++]);
-        }
-        // Add 1 announcement
-        if (ai < sortedAnnouncements.length && result.length < limit) {
-          result.push(sortedAnnouncements[ai++]);
-        }
-      }
-
-      paginatedItems = result;
-    } else {
-      // Specific filter: merge and sort by date (no interleaving needed)
-      const allItems = [...dbItems, ...filteredAnnouncements].sort(
-        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      );
-      paginatedItems = allItems.slice(0, limit);
-    }
-
-    // Compute cursor from the last real DB item (RMHark), not announcements.
-    // Announcements have static dates that can break cursor-based pagination.
-    const lastDbItem = [...paginatedItems]
-      .reverse()
-      .find((i) => i.type === "rmhark");
-    const nextCursor =
-      paginatedItems.length === limit && lastDbItem
-        ? lastDbItem.createdAt
-        : null;
-
-    return Response.json({
-      items: paginatedItems,
-      nextCursor,
-      hasMore: paginatedItems.length === limit,
+    const result = await getTimeline({
+      userId,
+      surface,
+      filter,
+      cursor,
+      limit,
+      search,
     });
+
+    return Response.json(result);
   } catch (error) {
     console.error("Feed fetch error:", error);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
@@ -497,6 +70,14 @@ export const Route = createFileRoute('/api/rmharks')({
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const ban = await getActiveBan(session.user.id);
+    if (ban) {
+      return Response.json(
+        { error: `Your account is suspended${ban.reason ? `: ${ban.reason}` : ''}` },
+        { status: 403 }
+      );
     }
 
     const ip = getClientIp(request);
@@ -521,19 +102,59 @@ export const Route = createFileRoute('/api/rmharks')({
       );
     }
 
-    const { content, poll, gifUrl } = parsed.data;
+    const { content, poll, gifUrl, imageUrls, originalId, audience, unlockPrice, communityId } = parsed.data;
+
+    if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
+      return Response.json({ error: "Invalid image reference" }, { status: 400 });
+    }
+
+    // Posting into a community requires membership.
+    if (communityId) {
+      const member = await prisma.communityMember.findUnique({
+        where: { communityId_userId: { communityId, userId: session.user.id } },
+        select: { id: true },
+      });
+      if (!member) {
+        return Response.json({ error: "Join the community to post in it" }, { status: 403 });
+      }
+    }
+
+    // Validate the quoted post exists (and isn't itself a quote, to avoid chains).
+    let quotedOriginalId: string | null = null;
+    if (originalId) {
+      const orig = await prisma.rMHark.findUnique({
+        where: { id: originalId },
+        select: { id: true, deletedAt: true, originalId: true },
+      });
+      if (!orig || orig.deletedAt) {
+        return Response.json({ error: "Quoted post not found" }, { status: 400 });
+      }
+      quotedOriginalId = orig.originalId ?? orig.id; // quote the root, not a quote
+    }
 
     const rmhark = await prisma.$transaction(async (tx) => {
       const created = await tx.rMHark.create({
         data: {
           content: content.trim(),
           gifUrl: gifUrl ?? null,
+          imageUrls: imageUrls ?? [],
           userId: session.user.id,
+          originalId: quotedOriginalId,
+          audience: audience ?? "PUBLIC",
+          unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
+          communityId: communityId ?? null,
         },
         include: {
           user: { select: userDisplaySelect },
         },
       });
+
+      if (quotedOriginalId) {
+        await tx.rMHark.update({
+          where: { id: quotedOriginalId },
+          data: { repostCount: { increment: 1 } },
+        });
+      }
 
       if (poll) {
         await tx.rMHarkPoll.create({
@@ -541,6 +162,9 @@ export const Route = createFileRoute('/api/rmharks')({
             rmheetId: created.id,
             question: poll.question.trim(),
             multiSelect: poll.multiSelect,
+            closesAt: poll.durationHours
+              ? new Date(Date.now() + poll.durationHours * 60 * 60 * 1000)
+              : null,
             options: {
               create: poll.options.map((text, i) => ({
                 text: text.trim(),
@@ -594,15 +218,111 @@ export const Route = createFileRoute('/api/rmharks')({
       reposted: false,
       poll: pollData,
       gifUrl: rmhark.gifUrl ?? undefined,
+      imageUrls: rmhark.imageUrls,
+      reactions: [],
     };
 
-    // Broadcast to all SSE clients
+    // Attach the quoted original so the card renders it inline immediately.
+    if (quotedOriginalId) {
+      const orig = await prisma.rMHark.findUnique({
+        where: { id: quotedOriginalId },
+        select: {
+          id: true, content: true, createdAt: true, likeCount: true,
+          commentCount: true, repostCount: true, viewCount: true,
+          gifUrl: true, imageUrls: true, unlockPrice: true, audience: true,
+          user: { select: userDisplaySelect },
+        },
+      });
+      if (orig) {
+        // Match timeline mapOriginal: only free public originals show media.
+        const showMedia = (orig.unlockPrice ?? 0) === 0 && orig.audience === "PUBLIC";
+        item.original = {
+          id: orig.id,
+          type: "rmhark",
+          createdAt: orig.createdAt.toISOString(),
+          content: orig.content,
+          user: resolveUser(orig.user),
+          likeCount: orig.likeCount,
+          commentCount: orig.commentCount,
+          repostCount: orig.repostCount,
+          viewCount: orig.viewCount,
+          gifUrl: showMedia ? (orig.gifUrl ?? undefined) : undefined,
+          imageUrls: showMedia ? orig.imageUrls : undefined,
+        };
+
+        // Tell the quoted author. Links to the QUOTE so they see the commentary.
+        void createNotification({
+          userId: orig.user.id,
+          actorId: session.user.id,
+          type: "REPOST",
+          entityType: "rmhark",
+          entityId: item.id,
+          preview: content.trim().slice(0, 140) || null,
+          link: `/u/${item.user?.handle ?? "_"}/post/${item.id}`,
+        });
+      }
+    }
+
+    // Publish to the SSE bus. The stream endpoint targets this to each
+    // viewer's follow graph using `authorId` (Phase 3) instead of blindly
+    // prepending onto every open client.
+    // Paid posts must broadcast a locked teaser — never the unlocked content,
+    // since the SSE payload reaches the author's followers.
+    const broadcastItem =
+      unlockPrice && unlockPrice > 0
+        ? { ...item, content: "", imageUrls: undefined, gifUrl: undefined, poll: undefined, locked: true, unlockPrice }
+        : item;
     feedEventBus.publish({
       type: "rmhark.created",
       rmharkId: item.id,
-      payload: item,
+      payload: broadcastItem,
       timestamp: item.createdAt,
+      authorId: session.user.id,
     });
+
+    // Notify mentioned users (persisted MENTION notification + live SSE toast).
+    // Best-effort: never let notification fan-out fail the post creation.
+    try {
+      const author = item.user;
+      if (author) {
+        await notifyMentions({
+          content: rmhark.content,
+          author: {
+            id: author.id,
+            name: author.name ?? null,
+            image: author.image ?? null,
+            handle: author.handle ?? null,
+          },
+          postId: item.id,
+          entityType: "rmhark",
+          entityId: item.id,
+          link: `/u/${author.handle ?? author.id}/post/${item.id}`,
+          timestamp: item.createdAt,
+        });
+      }
+    } catch (err) {
+      console.error("Mention notification error:", err);
+    }
+
+    // Achievements: posting milestones + night-owl easter egg (best-effort).
+    try {
+      const count = await prisma.rMHark.count({
+        where: { userId: session.user.id, deletedAt: null },
+      });
+      await progressAchievement(session.user.id, "social.first_post", { setProgress: count });
+      await progressAchievement(session.user.id, "social.posts_10", { setProgress: count });
+      await progressAchievement(session.user.id, "social.posts_100", { setProgress: count });
+      const hour = new Date().getHours();
+      if (hour >= 2 && hour < 5) await grantAchievement(session.user.id, "special.night_owl");
+      if (poll) await grantAchievement(session.user.id, "social.first_poll");
+      if (originalId) await grantAchievement(session.user.id, "social.first_quote");
+      if (unlockPrice && unlockPrice > 0) await grantAchievement(session.user.id, "creator.first_paid_post");
+      // Progression: XP + quests for posting.
+      await awardXp(session.user.id, 25);
+      await progressQuests(session.user.id, "post");
+    } catch (e) {
+      console.error("post achievement error:", e);
+    }
 
     return Response.json(item, { status: 201 });
   } catch (error) {

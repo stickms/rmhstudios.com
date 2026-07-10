@@ -5,17 +5,20 @@
  * "turning leaf" that rotates around the spine while a vertex bend curls the paper,
  * Apple-Books style. The turn follows the pointer/finger as you drag (release past
  * the halfway point completes the turn, otherwise it snaps back), and arrow
- * keys / on-screen arrows trigger an animated turn. Two-page spread on desktop,
- * single page on mobile.
+ * keys / on-screen arrows / a hold-to-flip repeat trigger an animated turn. Two-page
+ * spread on desktop, single page on mobile.
  *
- * Page bitmaps are supplied by the parent (rendered lazily from the PDF); this
- * component only turns them into textures and animates them. Client-only — it's
+ * Page textures are supplied ready-to-draw by the parent's PageStore via `getTex`:
+ * they are already-decoded GPU textures, so this component never waits on an async
+ * image decode at draw time — which is what lets a turn settle without the
+ * end-of-flip flash the old (data-URL → TextureLoader) path suffered. Client-only —
  * mounted by BookReader after the PDF has loaded in the browser.
  */
 
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import * as THREE from 'three';
 
 const PI = Math.PI;
@@ -39,14 +42,16 @@ export type BookCanvasProps = {
   aspect: number; // page width / height
   single: boolean;
   numPages: number;
-  getImg: (n: number) => string | undefined;
+  /** Best-available, already-decoded texture for a 1-based page (or undefined). */
+  getTex: (n: number) => THREE.Texture | undefined;
   ensurePage: (n: number) => void;
   onPageChange?: (info: { label: string; page: number; k: number }) => void;
   /** Parent stashes a `goToPage(n)` fn here so the toolbar can jump to any page. */
   seek?: React.MutableRefObject<((page: number) => void) | null>;
 };
 
-export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPageChange, seek }: BookCanvasProps) {
+export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPageChange, seek }: BookCanvasProps) {
+  const { t } = useTranslation("c-library");
   const wrapRef = useRef<HTMLDivElement>(null);
   const [k, setK] = useState(0);
   const [turn, setTurn] = useState<Turn | null>(null);
@@ -79,12 +84,12 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
   );
 
   // Prefetch a window of spreads around the current one so spam-clicking through the
-  // book stays ahead of the (∼100–200ms/page) rasteriser and never flashes a blank
-  // page. Forward-biased — reading advances forward — and ordered nearest-first so the
-  // pages you're about to see render before the ones further out. ensurePage skips
-  // anything already rendered/in-flight, so each step only rasterises the new frontier.
+  // book stays ahead of the rasteriser and never flashes a blank page. Forward-biased
+  // — reading advances forward — and ordered nearest-first so the pages you're about to
+  // see render before the ones further out. ensurePage skips anything already
+  // rendered/in-flight, so each step only rasterises the new frontier.
   useEffect(() => {
-    const AHEAD = 4;
+    const AHEAD = 5;
     const BEHIND = 2;
     const order = [k];
     for (let d = 1; d <= Math.max(AHEAD, BEHIND); d++) {
@@ -111,7 +116,7 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
 
   // Map a 1-based page number to its spread index and jump there instantly,
   // cancelling any in-flight turn. Exposed to the parent via the `seek` ref so the
-  // page-jump input and chapter dropdown can navigate.
+  // page-jump input, chapter menu, bookmarks and the scrubber can all navigate.
   useEffect(() => {
     if (!seek) return;
     seek.current = (page: number) => {
@@ -205,14 +210,19 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
 
   // Called by the scene when progress settles at 0 (cancelled) or 1 (completed).
   const onSettle = useCallback((reached: number) => {
+    const t = turnRef.current;
     turnRef.current = null;
-    setTurn((cur) => {
-      if (cur && reached >= 0.999) {
-        kRef.current = cur.target;
-        setK(cur.target);
-      }
-      return null;
-    });
+    // Commit the new spread and drop the leaf as sibling top-level setters so React
+    // batches them into ONE commit. Calling setK from *inside* a setTurn updater (it
+    // runs in the render phase) made it a separate render-phase update: React applied
+    // `turn → null` first — a frame where the leaf is gone but `k` still points at the
+    // OLD spread, so `base` painted the previous pages — then re-rendered with the new
+    // `k`. r3f drew that stale in-between frame, which was the end-of-turn flicker.
+    if (t && reached >= 0.999) {
+      kRef.current = t.target;
+      setK(t.target);
+    }
+    setTurn(null);
     // Pin progress at the value it settled on rather than snapping to 0. Clearing
     // `turn` only takes effect on React's next commit, so the leaf stays mounted for
     // a frame or two longer — and if we reset progress to 0 here, that lingering leaf
@@ -233,7 +243,7 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
     // Let the on-screen arrows (and any control) handle their own clicks — without
     // this, the wrapper would start a drag-turn on pointerdown and cancel it on
     // pointerup, swallowing the button click.
-    if ((e.target as HTMLElement).closest('button, a')) return;
+    if ((e.target as HTMLElement).closest('button, a, input')) return;
     if (turn || anim.current.active) return;
     const rect = wrapRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -274,7 +284,9 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
     anim.current = { active: true, target };
   };
 
-  // ─── Keyboard ──────────────────────────────────────────────────────────────--
+  // ─── Keyboard + hold-to-flip ─────────────────────────────────────────────────
+  // Arrow keys turn a page; the browser's own key-repeat (held arrow) chains turns,
+  // and because turns are interruptible the flips stay smooth at any repeat rate.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') beginTurn('next', false);
@@ -284,10 +296,57 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
     return () => window.removeEventListener('keydown', onKey);
   }, [beginTurn]);
 
+  // Press-and-hold an on-screen arrow to flip continuously. A click turns exactly
+  // one page; only after holding past a short cooldown does it auto-repeat so you
+  // can rip through pages without machine-gunning the button.
+  const HOLD_DELAY = 500; // ms held before auto-repeat begins
+  const HOLD_EVERY = 320; // ms between auto-repeated turns
+  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdDelay = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdFired = useRef(false);
+  const stopHold = useCallback(() => {
+    if (holdTimer.current) {
+      clearInterval(holdTimer.current);
+      holdTimer.current = null;
+    }
+    if (holdDelay.current) {
+      clearTimeout(holdDelay.current);
+      holdDelay.current = null;
+    }
+  }, []);
+  // pointerdown only *arms* the repeat — the first turn comes from onClick, so a
+  // tap never double-fires. The cooldown gives a deliberate pause before speed-up.
+  const startHold = useCallback(
+    (dir: Dir) => {
+      stopHold();
+      holdFired.current = false;
+      holdDelay.current = setTimeout(() => {
+        holdFired.current = true;
+        beginTurn(dir, false);
+        holdTimer.current = setInterval(() => {
+          if (!beginTurn(dir, false)) stopHold();
+        }, HOLD_EVERY);
+      }, HOLD_DELAY);
+    },
+    [beginTurn, stopHold],
+  );
+  // A click turns one page — unless a hold already auto-repeated, in which case the
+  // trailing click that fires on release is swallowed so the page count stays right.
+  const navClick = useCallback(
+    (dir: Dir) => {
+      if (holdFired.current) {
+        holdFired.current = false;
+        return;
+      }
+      beginTurn(dir, false);
+    },
+    [beginTurn],
+  );
+  useEffect(() => stopHold, [stopHold]);
+
   // Gate the arrows on the page we'll be on once the current turn lands (its target,
   // if one's in flight), not on whether an animation is running — turns are
   // interruptible, so the only reason to hide an arrow is hitting the book's edge.
-  // This also stops the buttons from vanishing mid-flip.
   const effK = turn ? turn.target : k;
   const canPrev = effK > 0;
   const canNext = effK < maxK;
@@ -296,11 +355,9 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
   const contentW = single ? aspect : 2 * aspect;
   // Fit box height = the page height exactly (1). The leaf can never exceed the page
   // rectangle vertically — it rotates around the vertical spine (no height change),
-  // its ≤0.2rad vertical tilt is an x-rotation that only *foreshortens* the page
-  // (top edge y = 0.5·cosθ ≤ 0.5), and the z-curl is invisible under the orthographic
-  // camera. So no vertical headroom is needed: we size to the page itself so the book
-  // stands as tall as the stage allows (width follows from the uniform fit zoom).
-  // The stage's own padding keeps it off the viewport edge.
+  // its ≤0.2rad vertical tilt is an x-rotation that only *foreshortens* the page, and
+  // the z-curl is invisible under the orthographic camera. So no vertical headroom is
+  // needed: we size to the page itself so the book stands as tall as the stage allows.
   const contentH = 1.0;
 
   return (
@@ -316,7 +373,7 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
         flat
         orthographic
         dpr={[1, 2]}
-        gl={{ alpha: true, antialias: true }}
+        gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
         camera={{ position: [0, 0, 6], zoom: 120, near: 0.1, far: 100 }}
       >
         <Scene
@@ -326,7 +383,7 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
           contentH={contentH}
           base={base}
           turn={turn}
-          getImg={getImg}
+          getTex={getTex}
           progress={progress}
           tilt={tilt}
           anim={anim}
@@ -337,18 +394,32 @@ export function BookCanvas({ aspect, single, numPages, getImg, ensurePage, onPag
       <button
         type="button"
         className="lib-reader__nav lib-reader__nav--prev"
-        onClick={() => beginTurn('prev', false)}
+        onClick={() => navClick('prev')}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          startHold('prev');
+        }}
+        onPointerUp={stopHold}
+        onPointerLeave={stopHold}
+        onPointerCancel={stopHold}
         disabled={!canPrev}
-        aria-label="Previous page"
+        aria-label={t("previous-page", { defaultValue: "Previous page" })}
       >
         <ChevronLeft size={26} />
       </button>
       <button
         type="button"
         className="lib-reader__nav lib-reader__nav--next"
-        onClick={() => beginTurn('next', false)}
+        onClick={() => navClick('next')}
+        onPointerDown={(e) => {
+          e.preventDefault();
+          startHold('next');
+        }}
+        onPointerUp={stopHold}
+        onPointerLeave={stopHold}
+        onPointerCancel={stopHold}
         disabled={!canNext}
-        aria-label="Next page"
+        aria-label={t("next-page", { defaultValue: "Next page" })}
       >
         <ChevronRight size={26} />
       </button>
@@ -365,14 +436,14 @@ type SceneProps = {
   contentH: number;
   base: Spread;
   turn: Turn | null;
-  getImg: (n: number) => string | undefined;
+  getTex: (n: number) => THREE.Texture | undefined;
   progress: React.RefObject<number>;
   tilt: React.RefObject<number>;
   anim: React.RefObject<{ active: boolean; target: number }>;
   onSettle: (reached: number) => void;
 };
 
-function Scene({ aspect, single, contentW, contentH, base, turn, getImg, progress, tilt, anim, onSettle }: SceneProps) {
+function Scene({ aspect, single, contentW, contentH, base, turn, getTex, progress, tilt, anim, onSettle }: SceneProps) {
   // Centre the content: a single page hinges at its left edge, so shift it so the
   // page (not the spine) is centred; a two-page spread is already centred at x=0.
   const groupX = single ? -aspect / 2 : 0;
@@ -382,8 +453,8 @@ function Scene({ aspect, single, contentW, contentH, base, turn, getImg, progres
       <Fit width={contentW} height={contentH} />
       <group position={[groupX, 0, 0]}>
         {/* Static pages painted under the turning leaf. */}
-        {base.left > 0 && <PageMesh src={getImg(base.left)} cx={-aspect / 2} w={aspect} />}
-        {base.right > 0 && <PageMesh src={getImg(base.right)} cx={aspect / 2} w={aspect} />}
+        {base.left > 0 && <PageMesh tex={getTex(base.left)} cx={-aspect / 2} w={aspect} />}
+        {base.right > 0 && <PageMesh tex={getTex(base.right)} cx={aspect / 2} w={aspect} />}
 
         {turn && (
           <Leaf
@@ -391,8 +462,8 @@ function Scene({ aspect, single, contentW, contentH, base, turn, getImg, progres
             turn={turn}
             w={aspect}
             single={single}
-            frontSrc={getImg(turn.front)}
-            backSrc={turn.back ? getImg(turn.back) : undefined}
+            frontTex={getTex(turn.front)}
+            backTex={turn.back ? getTex(turn.back) : undefined}
             progress={progress}
             tilt={tilt}
             anim={anim}
@@ -409,10 +480,8 @@ function Fit({ width, height }: { width: number; height: number }) {
   const size = useThree((s) => s.size);
   const camera = useThree((s) => s.camera);
   useEffect(() => {
-    // Fit to whichever axis binds (min), filling nearly all of it — the book never
-    // overflows because the chosen zoom guarantees both axes fit, and the leaf can't
-    // exceed the page rectangle (see contentH). The 0.5% trim leaves a sliver for
-    // antialiased edges; the stage's padding provides the actual visual margin.
+    // Fit to whichever axis binds (min), filling nearly all of it. The 0.5% trim
+    // leaves a sliver for antialiased edges; the stage's padding provides the margin.
     const zoom = Math.min(size.width / width, size.height / height) * 0.995;
     camera.zoom = zoom;
     camera.updateProjectionMatrix();
@@ -421,14 +490,11 @@ function Fit({ width, height }: { width: number; height: number }) {
 }
 
 /** A flat, unlit page plane. */
-function PageMesh({ src, cx, w }: { src?: string; cx: number; w: number }) {
-  const tex = usePageTexture(src);
+function PageMesh({ tex, cx, w }: { tex?: THREE.Texture; cx: number; w: number }) {
   const matRef = useRef<THREE.MeshBasicMaterial>(null);
-  // The texture loads after the material first compiles (without a map). Adding a
-  // `map` to an already-compiled material doesn't enable the USE_MAP shader path on
-  // its own, so the page would stay blank — force a recompile when the texture
-  // arrives. (The turning Leaf doesn't need this: its material is rebuilt from
-  // scratch via useMemo whenever its texture changes.)
+  // A material first compiled without a `map` won't enable the USE_MAP shader path
+  // just because a map is later assigned — force a recompile when the texture arrives
+  // so the page stops showing the blank fallback colour.
   useEffect(() => {
     if (matRef.current) matRef.current.needsUpdate = true;
   }, [tex]);
@@ -445,8 +511,8 @@ function Leaf({
   turn,
   w,
   single,
-  frontSrc,
-  backSrc,
+  frontTex,
+  backTex,
   progress,
   tilt,
   anim,
@@ -455,43 +521,58 @@ function Leaf({
   turn: Turn;
   w: number;
   single: boolean;
-  frontSrc?: string;
-  backSrc?: string;
+  frontTex?: THREE.Texture;
+  backTex?: THREE.Texture;
   progress: React.RefObject<number>;
   tilt: React.RefObject<number>;
   anim: React.RefObject<{ active: boolean; target: number }>;
   onSettle: (reached: number) => void;
 }) {
   const groupRef = useRef<THREE.Group>(null);
-  const frontTex = usePageTexture(frontSrc);
-  const backTex = usePageTexture(backSrc, true); // mirror back-face UVs
 
   // Shared bend uniforms, driven each frame.
   const uProgress = useMemo(() => ({ value: 0 }), []);
   const uTilt = useMemo(() => ({ value: 0 }), []);
   const planeOffset = turn.side === 'right' ? w / 2 : -w / 2;
 
+  // Front face draws the store's texture directly. The back face needs the page
+  // mirrored (it's seen from behind), so we clone the shared texture — a clone shares
+  // the same GPU image but carries its own UV transform — and flip it horizontally.
+  // The clone is ours to dispose; the store-owned front texture is never disposed here.
   const frontMat = useMemo(
-    () => makeLeafMaterial(frontTex, THREE.FrontSide, w, uProgress, uTilt, '#fbfbf9'),
+    () => makeLeafMaterial(frontTex ?? null, THREE.FrontSide, w, uProgress, uTilt, '#fbfbf9'),
     [frontTex, w, uProgress, uTilt],
   );
-  const backMat = useMemo(
-    () => makeLeafMaterial(backTex, THREE.BackSide, w, uProgress, uTilt, '#f1efe9'),
-    [backTex, w, uProgress, uTilt],
-  );
+  const backMat = useMemo(() => {
+    let map: THREE.Texture | null = null;
+    if (backTex) {
+      map = backTex.clone();
+      map.wrapS = THREE.RepeatWrapping;
+      map.repeat.x = -1;
+      map.offset.x = 1;
+      map.needsUpdate = true;
+    }
+    return makeLeafMaterial(map, THREE.BackSide, w, uProgress, uTilt, '#f1efe9');
+  }, [backTex, w, uProgress, uTilt]);
   // Only the single-page leaf's back face fades out (see useFrame); enabling
   // transparency lets its opacity take effect without changing how the opaque
   // two-page leaf — or the real page content on the front face — renders/sorts.
   backMat.transparent = single;
-  useEffect(() => () => {
-    frontMat.dispose();
-    backMat.dispose();
-  }, [frontMat, backMat]);
+  useEffect(
+    () => () => {
+      frontMat.dispose(); // material only — its map belongs to the PageStore
+      backMat.map?.dispose(); // our mirrored clone — safe to dispose
+      backMat.dispose();
+    },
+    [frontMat, backMat],
+  );
 
   useFrame((_, delta) => {
     const a = anim.current!;
     if (a.active) {
-      const next = THREE.MathUtils.damp(progress.current!, a.target, 15, delta);
+      // λ≈11 makes the turn settle a touch slower than before, so a tapped/keyed
+      // flip reads as a smooth sweep rather than a snap.
+      const next = THREE.MathUtils.damp(progress.current!, a.target, 11, delta);
       progress.current = next;
       // Ease the vertical lean back to neutral as the turn settles.
       tilt.current = THREE.MathUtils.damp(tilt.current!, 0, 9, delta);
@@ -508,16 +589,13 @@ function Leaf({
     uTilt.value = ty;
     if (groupRef.current) {
       groupRef.current.rotation.y = turn.rotSign * p * PI;
-      // Lean the whole leaf toward the cursor vertically; fade the lean out as the
-      // page reaches the closed/open extremes so it never looks broken. This is an
-      // x-rotation, so it only foreshortens the page (never lifts a corner past the
-      // page's top/bottom edge) — safe even with the book sized flush to the stage.
+      // Lean the whole leaf toward the cursor vertically; fade the lean out at the
+      // closed/open extremes so it never looks broken. An x-rotation only foreshortens.
       groupRef.current.rotation.x = ty * 0.2 * Math.sin(p * PI);
     }
     // In single-page mode the leaf's back is blank paper (there's no facing page), so
-    // it would sit as a blank sheet beside the page and then pop out of existence when
-    // the turn commits. The back face only becomes visible past the halfway point, so
-    // fade it from there to fully gone — it dissolves away instead of snapping.
+    // it would pop out of existence when the turn commits. The back only becomes
+    // visible past halfway, so fade it from there to gone — it dissolves, never snaps.
     backMat.opacity = single ? THREE.MathUtils.clamp((1 - p) / 0.5, 0, 1) : 1;
   });
 
@@ -581,89 +659,4 @@ function makeLeafMaterial(
       );
   };
   return m;
-}
-
-// ─── Page-texture cache ──────────────────────────────────────────────────────--
-// Decoded GPU textures are cached and shared across meshes, keyed by image src (+
-// a flag for the mirrored back-face variant). This is what keeps a page turn from
-// "snapping": when the leaf settles and the spread swaps, the new static pages find
-// their textures already uploaded in the cache and render on the same frame, rather
-// than each mesh re-decoding its image asynchronously (which shows the old spread
-// for a beat, then pops). Bounded so a long read can't grow GPU memory without limit.
-const TEX_CACHE_CAP = 16;
-const texCache = new Map<string, THREE.Texture>();
-const texLoading = new Map<string, Promise<THREE.Texture>>();
-
-function texKey(src: string, mirror: boolean): string {
-  return mirror ? `${src}|m` : src;
-}
-
-function loadPageTexture(src: string, mirror: boolean): Promise<THREE.Texture> {
-  const key = texKey(src, mirror);
-  const hit = texCache.get(key);
-  if (hit) return Promise.resolve(hit);
-  let pending = texLoading.get(key);
-  if (!pending) {
-    pending = new Promise<THREE.Texture>((resolve, reject) => {
-      new THREE.TextureLoader().load(
-        src,
-        (t) => {
-          t.colorSpace = THREE.SRGBColorSpace;
-          t.anisotropy = 4;
-          // The rasterised pages are non-power-of-two; mipmap min-filters force a
-          // (costly, and on some drivers broken → blank) mipmap chain. Plain linear
-          // filtering needs no mipmaps and renders the page reliably.
-          t.minFilter = THREE.LinearFilter;
-          t.magFilter = THREE.LinearFilter;
-          t.generateMipmaps = false;
-          if (mirror) {
-            t.wrapS = THREE.RepeatWrapping;
-            t.repeat.x = -1;
-            t.offset.x = 1;
-          }
-          t.needsUpdate = true;
-          texLoading.delete(key);
-          texCache.set(key, t);
-          // Evict the oldest entries past the cap. The current spread + leaf use only
-          // a handful of textures, so anything this old is safely off-screen.
-          while (texCache.size > TEX_CACHE_CAP) {
-            const oldest = texCache.keys().next().value as string | undefined;
-            if (oldest === undefined) break;
-            texCache.get(oldest)?.dispose();
-            texCache.delete(oldest);
-          }
-          resolve(t);
-        },
-        undefined,
-        (err) => {
-          texLoading.delete(key);
-          reject(err instanceof Error ? err : new Error(String(err)));
-        },
-      );
-    });
-    texLoading.set(key, pending);
-  }
-  return pending;
-}
-
-/** Decode `src` into the shared cache ahead of time (best-effort, fire-and-forget). */
-export function warmPageTexture(src?: string, mirror = false): void {
-  if (src) void loadPageTexture(src, mirror).catch(() => {});
-}
-
-/** Resolve a page texture, returning a cached one synchronously when available. */
-function usePageTexture(src?: string, mirror = false): THREE.Texture | null {
-  const [, bump] = useReducer((n: number) => n + 1, 0);
-  const key = src ? texKey(src, mirror) : '';
-  useEffect(() => {
-    if (!src || texCache.has(key)) return;
-    let dead = false;
-    void loadPageTexture(src, mirror).then(() => {
-      if (!dead) bump();
-    });
-    return () => {
-      dead = true;
-    };
-  }, [src, key, mirror]);
-  return src && texCache.has(key) ? texCache.get(key)! : null;
 }

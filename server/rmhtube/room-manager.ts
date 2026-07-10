@@ -30,6 +30,7 @@ import {
   CheckHistorySchema,
 } from '../../lib/rmhtube/schemas';
 import { generateRoomCode, sanitizeString } from '../../lib/rmhtube/utils';
+import { reanchor } from '../../lib/rmhtube/sync-math';
 import type { RmhTubeRoom, RmhTubeMember, VideoState, RoomSettings, ChatMessage, QueueItem, BannedUser, InviteLink } from './types';
 import type { ClientRoomState, ClientMemberInfo, ClientQueueItem, PublicRoomInfo } from '../../lib/rmhtube/types';
 
@@ -825,7 +826,9 @@ export class RoomManager {
       queue,
       currentItem,
       currentIndex: room.currentIndex,
-      videoState: { ...room.videoState },
+      // Send the effective (extrapolated) position so joining/reconnecting
+      // users land where the room actually is, not where the last report was.
+      videoState: reanchor(room.videoState, Date.now()),
       chat: room.chat.slice(-200).map((msg) => {
         const reactions: Record<string, string[]> = {};
         const msgReactions = room.chatReactions.get(msg.id);

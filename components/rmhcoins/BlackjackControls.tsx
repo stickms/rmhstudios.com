@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
 import { useBlackjackStore } from '@/lib/blackjack/store';
@@ -27,18 +28,36 @@ export function BlackjackControls({ coins }: Props) {
   const [countdown, setCountdown] = useState<number | null>(null);
   const [insCountdown, setInsCountdown] = useState<number | null>(null);
 
+  const { t } = useTranslation("c-rmhcoins");
+
+  const MAX_HANDS = 4;
+
   const myPlayer = players.find((p) => p.userId === myUserId);
   const isMyTurn = currentTurnUserId === myUserId;
   const hasBet = myPlayer?.status === 'betting';
-  const canDoubleDown = isMyTurn && myPlayer?.hand.length === 2 && coins >= (myPlayer?.bet ?? 0);
 
-  // Can split: 2 cards of same rank (10/J/Q/K all count as same), haven't split yet, can afford it
+  // The hand the player is currently acting on: a split hand once
+  // activeSplitIndex is 0+, otherwise the main hand. Double/Split must be
+  // evaluated against this hand, not always the main one — otherwise the
+  // buttons reflect the wrong cards while playing split hands.
+  const activeSplit = myPlayer && myPlayer.hasSplit && myPlayer.activeSplitIndex >= 0
+    ? myPlayer.splitHands[myPlayer.activeSplitIndex]
+    : null;
+  const activeCards = activeSplit ? activeSplit.hand : myPlayer?.hand;
+  const activeBet = activeSplit ? activeSplit.bet : (myPlayer?.bet ?? 0);
+  const totalHands = 1 + (myPlayer?.splitHands?.length ?? 0);
+
+  const canDoubleDown = isMyTurn && activeCards?.length === 2 && coins >= activeBet;
+
+  // Can split: an active two-card hand of matching rank (10/J/Q/K all count as
+  // the same), below the max-hands cap, that the player can afford. Re-splitting
+  // a split hand is allowed.
   const rankVal = (r: string) => (['10', 'J', 'Q', 'K'].includes(r) ? '10' : r);
-  const canSplit = isMyTurn && myPlayer?.hand.length === 2
-    && !myPlayer?.hasSplit
-    && myPlayer?.hand[0] && myPlayer?.hand[1]
-    && rankVal(myPlayer.hand[0].rank) === rankVal(myPlayer.hand[1].rank)
-    && coins >= (myPlayer?.bet ?? 0);
+  const canSplit = !!(isMyTurn && activeCards?.length === 2
+    && totalHands < MAX_HANDS
+    && activeCards[0] && activeCards[1]
+    && rankVal(activeCards[0].rank) === rankVal(activeCards[1].rank)
+    && coins >= activeBet);
 
   // Betting countdown timer
   useEffect(() => {
@@ -97,7 +116,7 @@ export function BlackjackControls({ coins }: Props) {
   if (tablePhase === 'idle') {
     return (
       <div className="text-center text-site-text-dim py-4">
-        <p className="text-sm">Waiting for the next round to start...</p>
+        <p className="text-sm">{t("waiting-next-round", { defaultValue: "Waiting for the next round to start..." })}</p>
       </div>
     );
   }
@@ -110,8 +129,8 @@ export function BlackjackControls({ coins }: Props) {
       <div className="flex flex-col gap-3">
         {countdown !== null && (
           <div className="text-center">
-            <span className="text-sm text-site-text-dim">Betting closes in </span>
-            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-yellow-500 animate-pulse' : 'text-yellow-400'}`}>
+            <span className="text-sm text-site-text-dim">{t("betting-closes-in", { defaultValue: "Betting closes in " })}</span>
+            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-site-danger animate-pulse' : 'text-site-accent'}`}>
               {countdown}s
             </span>
           </div>
@@ -119,10 +138,10 @@ export function BlackjackControls({ coins }: Props) {
 
         {hasBet ? (
           <div className="text-center py-2">
-            <p className="text-sm text-emerald-400 font-bold">
-              Bet placed: {myPlayer?.bet} coins
+            <p className="text-sm text-site-success font-bold">
+              {t("bet-placed", { defaultValue: "Bet placed: {{coins}} coins", coins: myPlayer?.bet })}
             </p>
-            <p className="text-xs text-site-text-dim mt-1">Waiting for other players...</p>
+            <p className="text-xs text-site-text-dim mt-1">{t("waiting-other-players", { defaultValue: "Waiting for other players..." })}</p>
           </div>
         ) : (
           <>
@@ -135,7 +154,7 @@ export function BlackjackControls({ coins }: Props) {
                   max={coins}
                   value={betInput}
                   onChange={(e) => setBetInput(e.target.value)}
-                  className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
+                  className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
                 />
                 <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
               </div>
@@ -154,9 +173,10 @@ export function BlackjackControls({ coins }: Props) {
             <Button
               onClick={handlePlaceBet}
               disabled={coins < 1}
-              className="w-full min-h-11 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl"
+              variant="accent"
+              className="w-full min-h-11 font-bold rounded-xl text-base"
             >
-              Place Bet
+              {t("place-bet", { defaultValue: "Place Bet" })}
             </Button>
           </>
         )}
@@ -179,9 +199,9 @@ export function BlackjackControls({ coins }: Props) {
     if (!isInRound || hasBJ) {
       return (
         <div className="text-center text-site-text-dim py-4">
-          <p className="text-sm">Dealer showing Ace — Insurance offered to other players...</p>
+          <p className="text-sm">{t("dealer-ace-insurance-others", { defaultValue: "Dealer showing Ace — Insurance offered to other players..." })}</p>
           {insCountdown !== null && (
-            <span className="text-xs text-yellow-500">{insCountdown}s</span>
+            <span className="text-xs text-site-accent">{insCountdown}s</span>
           )}
         </div>
       );
@@ -190,31 +210,32 @@ export function BlackjackControls({ coins }: Props) {
     return (
       <div className="flex flex-col gap-3">
         <div className="text-center">
-          <p className="text-sm font-bold text-yellow-500">Insurance?</p>
+          <p className="text-sm font-bold text-site-accent">{t("insurance-question", { defaultValue: "Insurance?" })}</p>
           <p className="text-xs text-site-text-dim mt-1">
-            Dealer showing Ace. Insurance costs {insuranceCost} coins (half your bet). Pays 2:1 if dealer has blackjack.
+            {t("insurance-description", { defaultValue: "Dealer showing Ace. Insurance costs {{cost}} coins (half your bet). Pays 2:1 if dealer has blackjack.", cost: insuranceCost })}
           </p>
           {insCountdown !== null && (
-            <span className="text-xs text-site-text-dim mt-1 block">{insCountdown}s remaining</span>
+            <span className="text-xs text-site-text-dim mt-1 block">{t("seconds-remaining", { defaultValue: "{{count}}s remaining", count: insCountdown })}</span>
           )}
         </div>
 
         {alreadyDecided ? (
-          <p className="text-sm text-emerald-400 text-center font-bold">Insurance taken!</p>
+          <p className="text-sm text-site-success text-center font-bold">{t("insurance-taken", { defaultValue: "Insurance taken!" })}</p>
         ) : (
           <div className="grid grid-cols-2 gap-2">
             <Button
               onClick={() => emit(C2S.TAKE_INSURANCE)}
               disabled={!canAffordInsurance}
-              className="min-h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
+              variant="accent"
+              className="min-h-11 font-bold rounded-xl"
             >
-              Take ({insuranceCost})
+              {t("take-insurance", { defaultValue: "Take ({{cost}})", cost: insuranceCost })}
             </Button>
             <Button
               onClick={() => emit(C2S.DECLINE_INSURANCE)}
-              className="min-h-11 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-xl"
+              className="min-h-11 bg-site-surface-active hover:bg-site-surface-hover text-site-text border border-site-border font-bold rounded-xl"
             >
-              No Thanks
+              {t("no-thanks", { defaultValue: "No Thanks" })}
             </Button>
           </div>
         )}
@@ -231,26 +252,26 @@ export function BlackjackControls({ coins }: Props) {
 
     return (
       <div className="flex flex-col gap-3">
-        <p className="text-sm text-center text-yellow-500 font-bold animate-pulse">Your turn!</p>
+        <p className="text-sm text-center text-site-accent font-bold animate-pulse">{t("your-turn", { defaultValue: "Your turn!" })}</p>
         <div className={`grid ${gridCols} gap-2`}>
           <Button
             onClick={() => emit(C2S.HIT)}
             className="min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm"
           >
-            Hit
+            {t("hit", { defaultValue: "Hit" })}
           </Button>
           <Button
             onClick={() => emit(C2S.STAND)}
             className="min-h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm"
           >
-            Stand
+            {t("stand", { defaultValue: "Stand" })}
           </Button>
           {canDoubleDown && (
             <Button
               onClick={() => emit(C2S.DOUBLE_DOWN)}
-              className="min-h-12 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-sm"
+              className="min-h-12 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-xl text-sm"
             >
-              Double
+              {t("double", { defaultValue: "Double" })}
             </Button>
           )}
           {canSplit && (
@@ -258,7 +279,7 @@ export function BlackjackControls({ coins }: Props) {
               onClick={() => emit(C2S.SPLIT)}
               className="min-h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm"
             >
-              Split
+              {t("split", { defaultValue: "Split" })}
             </Button>
           )}
         </div>
@@ -273,7 +294,7 @@ export function BlackjackControls({ coins }: Props) {
     return (
       <div className="text-center text-site-text-dim py-4">
         <p className="text-sm">
-          Waiting for <span className="text-site-text font-bold">{currentPlayer?.userName ?? 'player'}</span>...
+          {t("waiting-for-player", { defaultValue: "Waiting for {{name}}...", name: currentPlayer?.userName ?? 'player' })}
         </p>
       </div>
     );
@@ -283,7 +304,7 @@ export function BlackjackControls({ coins }: Props) {
   if (tablePhase === 'dealer_turn') {
     return (
       <div className="text-center text-site-text-dim py-4">
-        <p className="text-sm animate-pulse">Dealer is drawing...</p>
+        <p className="text-sm animate-pulse">{t("dealer-drawing", { defaultValue: "Dealer is drawing..." })}</p>
       </div>
     );
   }
@@ -294,16 +315,16 @@ export function BlackjackControls({ coins }: Props) {
     if (!myResult || myResult.result === null) {
       return (
         <div className="text-center text-site-text-dim py-4">
-          <p className="text-sm">Round complete. Next round starting soon...</p>
+          <p className="text-sm">{t("round-complete", { defaultValue: "Round complete. Next round starting soon..." })}</p>
         </div>
       );
     }
 
     const resultText: Record<string, { label: string; color: string }> = {
-      blackjack: { label: 'Blackjack! (3:2)', color: 'text-yellow-400' },
-      win: { label: 'You win!', color: 'text-emerald-400' },
-      push: { label: 'Push', color: 'text-blue-400' },
-      lose: { label: 'You lose', color: 'text-red-400' },
+      blackjack: { label: t("result-blackjack", { defaultValue: "Blackjack! (3:2)" }), color: 'text-site-accent' },
+      win: { label: t("result-win", { defaultValue: "You win!" }), color: 'text-site-success' },
+      push: { label: t("result-push", { defaultValue: "Push" }), color: 'text-blue-400' },
+      lose: { label: t("result-lose", { defaultValue: "You lose" }), color: 'text-site-danger' },
     };
 
     const r = resultText[myResult.result] ?? { label: '', color: '' };
@@ -313,15 +334,15 @@ export function BlackjackControls({ coins }: Props) {
         <p className={`text-lg font-bold ${r.color}`}>{r.label}</p>
         {myResult.payout > 0 && (
           <p className="text-sm text-site-text-dim mt-1">
-            +{myResult.payout} coins
+            {t("payout-coins", { defaultValue: "+{{payout}} coins", payout: myResult.payout })}
           </p>
         )}
         {myResult.insuranceBet > 0 && myResult.insuranceResult && (
           <p className={`text-xs mt-1 ${myResult.insuranceResult === 'won' ? 'text-blue-400' : 'text-site-text-dim'}`}>
-            Insurance {myResult.insuranceResult === 'won' ? 'paid out!' : 'lost'}
+            {myResult.insuranceResult === 'won' ? t("insurance-paid-out", { defaultValue: "Insurance paid out!" }) : t("insurance-lost", { defaultValue: "Insurance lost" })}
           </p>
         )}
-        <p className="text-xs text-site-text-dim mt-2">Next round starting soon...</p>
+        <p className="text-xs text-site-text-dim mt-2">{t("next-round-soon", { defaultValue: "Next round starting soon..." })}</p>
       </div>
     );
   }
@@ -329,7 +350,7 @@ export function BlackjackControls({ coins }: Props) {
   // Dealing / payout / other
   return (
     <div className="text-center text-site-text-dim py-4">
-      <p className="text-sm animate-pulse">Dealing...</p>
+      <p className="text-sm animate-pulse">{t("dealing", { defaultValue: "Dealing..." })}</p>
     </div>
   );
 }

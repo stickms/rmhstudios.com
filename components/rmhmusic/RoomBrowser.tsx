@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Users, Music, Lock } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { emit, connectToRmhMusic } from '@/lib/rmhmusic/socket';
@@ -8,6 +9,7 @@ import { C2S, S2C } from '@/lib/rmhmusic/events';
 import type { PublicRoomInfo } from '@/lib/rmhmusic/types';
 
 export default function RoomBrowser() {
+  const { t } = useTranslation("c-rmhmusic");
   const [rooms, setRooms] = useState<PublicRoomInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const { connectionStatus } = useRmhMusicStore();
@@ -35,9 +37,9 @@ export default function RoomBrowser() {
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold uppercase tracking-wider" style={{ color: 'var(--site-text-muted)' }}>
-        Public Rooms
+        {t("public-rooms", { defaultValue: "Public Rooms" })}
       </h3>
-      {loading && <p className="text-sm" style={{ color: 'var(--site-text-dim)' }}>Loading rooms...</p>}
+      {loading && <p className="text-sm" style={{ color: 'var(--site-text-dim)' }}>{t("loading-rooms", { defaultValue: "Loading rooms..." })}</p>}
       <div className="grid gap-2">
         {rooms.map((room) => (
           <button

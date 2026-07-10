@@ -13,6 +13,7 @@ import { toast } from '@/lib/rmhtype/toast-store';
 import RmhTypeHeader from '@/components/rmhtype/RmhTypeHeader';
 import type { Difficulty, PassageLength } from '@/lib/rmhtype/types';
 import { useRouter } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 
 export default function RmhTypeSolo() {
   const router = useRouter();
@@ -28,6 +29,8 @@ export default function RmhTypeSolo() {
   const [soloLength, setSoloLength] = useState<PassageLength>(settings.soloPassageLength);
   const [started, setStarted] = useState(false);
 
+  const { t } = useTranslation("c-rmhtype");
+
   const [typedText, setTypedText] = useState('');
   const [startTime, setStartTime] = useState<number | null>(null);
   const [finished, setFinished] = useState(false);
@@ -41,7 +44,7 @@ export default function RmhTypeSolo() {
       try {
         await connectToRmhType();
       } catch (err) {
-        if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
+        if (mounted) toast.error(err instanceof Error ? err.message : t("connection-failed", { defaultValue: "Connection failed" }));
       }
     }
     init();
@@ -155,12 +158,12 @@ export default function RmhTypeSolo() {
             <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-6">
               <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                 <User className="h-5 w-5 text-(--rmhtype-accent)" />
-                Solo Practice
+                {t("solo-practice", { defaultValue: "Solo Practice" })}
               </h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-(--rmhtype-text-muted)">Difficulty</label>
+                  <label className="block text-sm font-medium mb-2 text-(--rmhtype-text-muted)">{t("difficulty", { defaultValue: "Difficulty" })}</label>
                   <div className="flex gap-2">
                     {(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
                       <button
@@ -179,7 +182,7 @@ export default function RmhTypeSolo() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-(--rmhtype-text-muted)">Passage Length</label>
+                  <label className="block text-sm font-medium mb-2 text-(--rmhtype-text-muted)">{t("passage-length", { defaultValue: "Passage Length" })}</label>
                   <div className="flex gap-2">
                     {(['short', 'medium', 'long'] as PassageLength[]).map((l) => (
                       <button
@@ -202,7 +205,7 @@ export default function RmhTypeSolo() {
                   disabled={connectionStatus !== 'connected'}
                   className="w-full py-3 mt-4 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtype-accent) hover:bg-(--rmhtype-accent-hover)"
                 >
-                  Start Typing
+                  {t("start-typing", { defaultValue: "Start Typing" })}
                 </button>
               </div>
             </div>
@@ -235,30 +238,30 @@ export default function RmhTypeSolo() {
           <div className="max-w-lg mx-auto">
             <div className="rounded-xl border border-(--rmhtype-border) bg-(--rmhtype-surface) p-8 text-center">
               <Trophy className="h-12 w-12 mx-auto mb-4 text-(--rmhtype-accent)" />
-              <h2 className="text-2xl font-bold mb-6">Results</h2>
+              <h2 className="text-2xl font-bold mb-6">{t("results", { defaultValue: "Results" })}</h2>
 
               {soloResult.timedOut && (
-                <p className="text-sm text-(--rmhtype-text-muted) mb-4">Time ran out!</p>
+                <p className="text-sm text-(--rmhtype-text-muted) mb-4">{t("time-ran-out", { defaultValue: "Time ran out!" })}</p>
               )}
 
               {soloResult.scorePosted === false && (
                 <p className="text-sm text-red-400 mb-4">
-                  Score not posted — 90% accuracy required for leaderboard
+                  {t("score-not-posted", { defaultValue: "Score not posted — 90% accuracy required for leaderboard" })}
                 </p>
               )}
 
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="p-4 rounded-lg bg-(--rmhtype-bg)">
                   <div className="text-3xl font-bold text-(--rmhtype-accent)">{soloResult.wpm}</div>
-                  <div className="text-xs text-(--rmhtype-text-muted)">WPM</div>
+                  <div className="text-xs text-(--rmhtype-text-muted)">{t("wpm", { defaultValue: "WPM" })}</div>
                 </div>
                 <div className="p-4 rounded-lg bg-(--rmhtype-bg)">
                   <div className="text-3xl font-bold text-(--rmhtype-accent)">{soloResult.accuracy}%</div>
-                  <div className="text-xs text-(--rmhtype-text-muted)">Accuracy</div>
+                  <div className="text-xs text-(--rmhtype-text-muted)">{t("accuracy", { defaultValue: "Accuracy" })}</div>
                 </div>
                 <div className="p-4 rounded-lg bg-(--rmhtype-bg)">
                   <div className="text-3xl font-bold">{(soloResult.timeMs / 1000).toFixed(1)}s</div>
-                  <div className="text-xs text-(--rmhtype-text-muted)">Time</div>
+                  <div className="text-xs text-(--rmhtype-text-muted)">{t("time", { defaultValue: "Time" })}</div>
                 </div>
               </div>
 
@@ -268,13 +271,13 @@ export default function RmhTypeSolo() {
                   className="flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-semibold text-white transition-colors bg-(--rmhtype-accent) hover:bg-(--rmhtype-accent-hover)"
                 >
                   <RotateCcw className="h-4 w-4" />
-                  Try Again
+                  {t("try-again", { defaultValue: "Try Again" })}
                 </button>
                 <button
                   onClick={handleBackToSettings}
                   className="flex-1 py-3 rounded-lg font-semibold transition-colors bg-(--rmhtype-surface-hover) text-(--rmhtype-text) hover:bg-(--rmhtype-surface-active)"
                 >
-                  Change Settings
+                  {t("change-settings", { defaultValue: "Change Settings" })}
                 </button>
               </div>
             </div>
@@ -294,7 +297,7 @@ export default function RmhTypeSolo() {
           {!soloPassage ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="animate-pulse text-(--rmhtype-text-muted)">
-                {connectionStatus === 'connecting' ? 'Connecting...' : 'Loading passage...'}
+                {connectionStatus === 'connecting' ? t("connecting", { defaultValue: "Connecting..." }) : t("loading-passage", { defaultValue: "Loading passage..." })}
               </div>
             </div>
           ) : (
@@ -305,7 +308,7 @@ export default function RmhTypeSolo() {
                   <span className="text-2xl font-bold font-mono text-(--rmhtype-accent)">
                     {startTime
                       ? `${Math.round(((typedText.length / 5) / ((Date.now() - startTime) / 60000)) || 0)} WPM`
-                      : 'Start typing!'}
+                      : t("start-typing-prompt", { defaultValue: "Start typing!" })}
                   </span>
                 </div>
               )}
@@ -340,7 +343,7 @@ export default function RmhTypeSolo() {
                 disabled={finished}
                 className="shrink-0 w-full px-4 py-3 rounded-lg font-mono border border-(--rmhtype-border) bg-(--rmhtype-bg) text-(--rmhtype-text) outline-none focus:ring-1 focus:ring-(--rmhtype-accent) rmhtype-typing-input"
                 autoFocus
-                placeholder="Start typing..."
+                placeholder={t("start-typing-placeholder", { defaultValue: "Start typing..." })}
               />
 
               {/* Progress — hidden on short viewports via CSS */}

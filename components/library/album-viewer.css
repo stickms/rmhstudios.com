@@ -1,0 +1,310 @@
+/* ── Album carousel viewer (fullscreen) ─────────────────────────────────────
+ * A dark, lightbox-style fullscreen viewer used by /library/albums/$albumId.
+ * Intentionally theme-independent (always dark) so photos/videos read well.
+ */
+
+.av {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  background: #050505;
+  color: #f5f5f7;
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Top toolbar */
+.av__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  z-index: 2;
+}
+.av__bar--top {
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0));
+}
+.av__title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.av__titles {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  min-width: 0;
+}
+.av__title {
+  font-weight: 600;
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.av__counter {
+  font-size: 12px;
+  color: rgba(245, 245, 247, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+.av__tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Round translucent buttons (toolbar + close) */
+.av__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+  backdrop-filter: blur(8px);
+}
+.av__btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.av__btn:active {
+  transform: scale(0.94);
+}
+.av__btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+/* "Full vs optimized" chooser popover (Share / Download) */
+.av__menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.av__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 5;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(20, 20, 22, 0.92);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(12px);
+}
+.av__menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #f5f5f7;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease;
+}
+.av__menu-item:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Stage: holds the current image/video */
+.av__stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+}
+
+.av__img {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transform-origin: center center;
+  opacity: 0;
+  transition: transform 0.16s ease-out, opacity 0.25s ease;
+  will-change: transform;
+  -webkit-user-drag: none;
+}
+.av__img.is-loaded {
+  opacity: 1;
+}
+.av__img.is-active {
+  transition: none; /* follow the pointer 1:1 while dragging/zooming */
+}
+
+/* Blurred thumbnail shown instantly under the full image while it loads. */
+.av__placeholder {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: blur(18px);
+  transform: scale(1.03);
+  opacity: 1;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+.av__placeholder.is-hidden {
+  opacity: 0;
+}
+.av__img.is-zoomed {
+  cursor: grab;
+}
+.av__img.is-grabbing {
+  cursor: grabbing;
+}
+
+.av__video {
+  max-width: 100%;
+  max-height: 100%;
+  outline: none;
+}
+
+/* Prev / next arrows */
+.av__nav {
+  position: absolute;
+  top: 50%;
+  z-index: 3;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.4);
+  color: #f5f5f7;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+  backdrop-filter: blur(6px);
+}
+.av__nav:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+.av__nav--prev {
+  left: 14px;
+}
+.av__nav--next {
+  right: 14px;
+}
+
+/* Copy-link / share toast */
+.av__toast {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  z-index: 3;
+  transform: translateX(-50%);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-size: 13px;
+  font-weight: 500;
+  backdrop-filter: blur(8px);
+}
+
+/* Bottom thumbnail strip */
+.av__strip {
+  display: flex;
+  gap: 8px;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+  overflow-x: auto;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0));
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+.av__strip::-webkit-scrollbar {
+  height: 6px;
+}
+.av__strip::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+}
+
+.av__thumb {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  padding: 0;
+  opacity: 0.6;
+  transition: opacity 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.av__thumb:hover {
+  opacity: 1;
+}
+.av__thumb.is-active {
+  opacity: 1;
+  border-color: var(--site-accent, #6ea8fe);
+  transform: translateY(-2px);
+}
+.av__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.av__thumb-video {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: #f5f5f7;
+}
+.av__thumb-play {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 3px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .av__thumb {
+    width: 52px;
+    height: 52px;
+  }
+  .av__nav {
+    width: 40px;
+    height: 40px;
+  }
+  .av__nav--prev {
+    left: 8px;
+  }
+  .av__nav--next {
+    right: 8px;
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "cancel": "منسوخ کریں",
+  "custom-amount": "اپنی مرضی کی رقم",
+  "duration": "مدت",
+  "gift-a-membership": "رکنیت تحفہ دیں",
+  "gift-desc": "اس صارف کو سکوں کے ساتھ رکنیت دیں۔",
+  "gift-desc-named": "{{name}} کو سکوں کے ساتھ رکنیت دیں۔",
+  "gift-error": "رکنیت تحفہ نہیں دی جا سکی",
+  "gift-for": "تحفہ برائے",
+  "gift-sign-in": "براہ کرم رکنیت تحفہ دینے کے لیے سائن ان کریں۔",
+  "gift-success": "{{tier}} کے {{months}} مہینے تحفہ دیے گئے!",
+  "gift-success-named": "{{name}} کو {{tier}} کے {{months}} مہینے تحفہ دیے گئے!",
+  "note-placeholder": "ایک نوٹ شامل کریں (اختیاری)",
+  "sending": "بھیجا جا رہا ہے…",
+  "tier": "درجہ",
+  "tip-amount-group-label": "ٹپ کی رقم",
+  "tip-btn": "ٹپ",
+  "tip-dialog-description": "تعریف ظاہر کرنے کے لیے {{recipient}} کو سکے بھیجیں۔",
+  "tip-dialog-title": "ٹپ بھیجیں",
+  "tip-error": "ٹپ نہیں بھیجی جا سکی",
+  "tip-sign-in": "براہ کرم ٹپ دینے کے لیے سائن ان کریں۔",
+  "tip-success": "{{recipient}} کو {{amount}} سکے ٹپ کیے گئے!"
+}

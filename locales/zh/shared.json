@@ -1,0 +1,15 @@
+{
+  "chat-placeholder": "聊天……",
+  "error-boundary-message": "发生了一个意外错误。",
+  "error-boundary-retry": "再试一次",
+  "error-boundary-title": "出了点问题",
+  "failed-to-load-media": "加载媒体失败",
+  "game-crashed": "游戏崩溃了",
+  "game-crashed-named": "{{gameName}} 崩溃了",
+  "loading": "加载中…",
+  "no-messages-yet": "暂无消息",
+  "react": "React",
+  "return-home": "回家",
+  "try-again": "再试一次",
+  "unexpected-error": "发生了一个意外错误。"
+}

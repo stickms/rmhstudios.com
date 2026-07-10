@@ -65,7 +65,16 @@
   text-decoration: none;
   color: inherit;
   height: var(--row-h);
+}
+
+/* Coordinated entrance: an item is hidden until the shared reveal observer
+   (LibraryReveal.tsx) sets `data-revealed`, so blog → collections → books always
+   cascade in document order regardless of which data loaded first. The stagger
+   delay within a revealed batch is set inline by the observer. */
+.lib-reveal {
   opacity: 0;
+}
+.lib-reveal[data-revealed='true'] {
   animation: lib-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -234,6 +243,13 @@
     0 4px 10px rgba(0, 0, 0, 0.5);
 }
 
+/* Tactile press feedback: a clicked book/collection tile settles back slightly. */
+.lib-book:active .lib-book__cover,
+.lib-coll-tile__btn:active .lib-book__cover {
+  transform: translateY(-4px) rotateY(-22deg) scale(0.985);
+  transition-duration: 120ms;
+}
+
 /* Cover image (rendered first page). Fills the cover, clipped to its rounded
    shape; the spine band + page badge sit on top. */
 .lib-book__cover.has-cover {
@@ -383,12 +399,13 @@
   padding: 4px 8px;
   border-radius: 7px;
   cursor: pointer;
-  transition: background 140ms ease, color 140ms ease;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
 }
 .lib-reader__count--btn:hover {
   color: #f5f5f7;
   background: rgba(255, 255, 255, 0.08);
 }
+.lib-reader__count--btn:active { transform: scale(0.95); }
 
 /* Inline page-number editor (replaces the counter while jumping). */
 .lib-reader__jump {
@@ -429,8 +446,9 @@
   z-index: 20;
   margin: 0;
   padding: 6px;
-  list-style: none;
-  width: min(78vw, 320px);
+  width: max-content;
+  min-width: 180px;
+  max-width: min(78vw, 340px);
   max-height: min(60vh, 460px);
   overflow-y: auto;
   border-radius: 12px;
@@ -439,6 +457,13 @@
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.6);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
+}
+/* Lists inside the popover shell reset their native styling. */
+.lib-reader__chapters-list,
+.lib-reader__quality-menu {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 .lib-reader__chapter {
   display: flex;
@@ -474,6 +499,565 @@
   font-size: 0.72rem;
   color: #8a8a8f;
   font-variant-numeric: tabular-nums;
+}
+
+.lib-reader__quality-menu .lib-reader__chapter-page {
+  color: #6cc070;
+}
+
+/* ─── Bookmarks & notes panel ────────────────────────────────────────────────── */
+.lib-reader__marks-menu {
+  width: min(86vw, 360px);
+  max-width: min(86vw, 360px);
+}
+.lib-marks {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.lib-marks__section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.lib-marks__head {
+  margin: 0;
+  padding: 2px 6px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 247, 0.5);
+}
+.lib-marks__empty {
+  margin: 0;
+  padding: 0 6px 4px;
+  font-size: 0.78rem;
+  color: rgba(245, 245, 247, 0.4);
+}
+.lib-marks__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lib-marks__item {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  border-radius: 8px;
+}
+.lib-marks__item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.lib-marks__jump {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: #d4d4d8;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.lib-marks__jump:hover {
+  color: #f5f5f7;
+}
+.lib-marks__item-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lib-marks__item-page {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  color: #8a8a8f;
+  font-variant-numeric: tabular-nums;
+}
+.lib-marks__item--note .lib-marks__jump {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+}
+.lib-marks__note-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+}
+.lib-marks__del {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: rgba(245, 245, 247, 0.4);
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease, transform 130ms ease;
+}
+.lib-marks__del:hover {
+  background: rgba(255, 90, 90, 0.2);
+  color: #ff8585;
+}
+.lib-marks__del:active { transform: scale(0.9); }
+.lib-marks__compose {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 4px;
+}
+.lib-marks__textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.16);
+  color: #f5f5f7;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  font-family: inherit;
+  outline: none;
+}
+.lib-marks__textarea:focus {
+  border-color: rgba(255, 255, 255, 0.42);
+}
+.lib-marks__add {
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 130ms ease, transform 130ms ease;
+}
+.lib-marks__add:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.16);
+}
+.lib-marks__add:active:not(:disabled) { transform: scale(0.95); }
+.lib-marks__add:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ─── Scrubber (fast page travel) ────────────────────────────────────────────── */
+.lib-reader__scrub {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(10px, 2.4vw, 22px);
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(620px, 84vw);
+  padding: 9px 16px;
+  border-radius: 9999px;
+  background: rgba(20, 20, 22, 0.66);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: saturate(180%) blur(18px);
+  -webkit-backdrop-filter: saturate(180%) blur(18px);
+  opacity: 0.4;
+  transition: opacity 180ms ease;
+}
+.lib-reader__stage:hover .lib-reader__scrub,
+.lib-reader__scrub:hover,
+.lib-reader__scrub:focus-within {
+  opacity: 1;
+}
+.lib-reader__scrub-num {
+  font-size: 0.7rem;
+  color: rgba(245, 245, 247, 0.7);
+  font-variant-numeric: tabular-nums;
+  min-width: 1.5em;
+  text-align: center;
+}
+.lib-reader__scrub-track {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+.lib-reader__scrub-tick {
+  position: absolute;
+  top: 50%;
+  width: 3px;
+  height: 9px;
+  margin-top: -4.5px;
+  margin-left: -1.5px;
+  border-radius: 1px;
+  background: #ffcc4d;
+  pointer-events: none;
+  z-index: 1;
+}
+.lib-reader__scrub-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.18);
+  outline: none;
+  cursor: pointer;
+}
+.lib-reader__scrub-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #f5f5f7;
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+}
+.lib-reader__scrub-input::-webkit-slider-thumb:active {
+  cursor: grabbing;
+}
+.lib-reader__scrub-input::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #f5f5f7;
+  border: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+  cursor: grab;
+}
+
+/* The bookmark toggle / marks button lit state in the toolbar. */
+.lib-reader__bar .vibe-toolbar__icon.is-on {
+  color: #ffcc4d;
+}
+
+/* ─── EPUB reader ────────────────────────────────────────────────────────────── */
+/* The EPUB reader fills the stage with a reflow iframe — no 3D book padding. */
+.lib-epub__stage {
+  padding: 0;
+  perspective: none;
+}
+.lib-epub__frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: transparent;
+}
+
+/* Font-size + theme controls. */
+.lib-epub__settings {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 200px;
+  padding: 2px;
+}
+.lib-epub__set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.lib-epub__steppers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lib-epub__step {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #f5f5f7;
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+.lib-epub__step:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.lib-epub__set-val {
+  min-width: 3em;
+  text-align: center;
+  font-size: 0.8rem;
+  color: #f5f5f7;
+  font-variant-numeric: tabular-nums;
+}
+.lib-epub__themes {
+  display: flex;
+  gap: 8px;
+}
+.lib-epub__theme {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1.5px solid rgba(255, 255, 255, 0.25);
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+.lib-epub__theme:hover {
+  transform: scale(1.08);
+}
+.lib-epub__theme:active {
+  transform: scale(0.92);
+}
+.lib-epub__theme.is-active {
+  border-color: #ffcc4d;
+}
+.lib-epub__theme--light { background: #f7f6f3; }
+.lib-epub__theme--sepia { background: #f4ecd8; }
+.lib-epub__theme--dark { background: #16161a; }
+
+/* ─── Collections / series ───────────────────────────────────────────────────── */
+.lib-collections {
+  margin-top: 8px;
+}
+.lib-collections__head {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 44px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lib-collections__head .lib__section-title {
+  padding: 0;
+  margin: 0;
+}
+.lib-collections__head-actions {
+  display: flex;
+  gap: 8px;
+}
+.lib-collections__empty {
+  max-width: 1320px;
+  margin: 8px auto 0;
+  padding: 0 clamp(16px, 4vw, 44px);
+}
+.lib-collections__group {
+  margin-top: 18px;
+}
+.lib-collections__group-head {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 44px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.lib-collections__group-titles {
+  min-width: 0;
+}
+.lib-collections__group-title {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #f5f5f7;
+}
+.lib-collections__group-desc {
+  margin: 3px 0 0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: rgba(245, 245, 247, 0.6);
+  max-width: 64ch;
+}
+.lib-collections__group-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.lib-collections__shelf {
+  margin-top: 12px;
+}
+
+/* Sub-groups within Collections: curated series vs reader collections. */
+.lib-collections__group-wrap + .lib-collections__group-wrap {
+  margin-top: 18px;
+}
+.lib-collections__subhead {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0 0 10px;
+}
+
+/* ── Collection tiles (a collection shown as a single book-like cover) ──────── */
+.lib-coll-tile__btn {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  width: 100%;
+  cursor: pointer;
+  text-align: inherit;
+}
+/* Stacked-pages hint behind the cover so a collection reads as a set of books. */
+.lib-coll-tile__stack {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 78%;
+  height: 92%;
+  transform: translateX(-50%) rotate(-4deg);
+  transform-origin: bottom center;
+  border-radius: 3px 6px 6px 3px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.28));
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  z-index: 0;
+}
+.lib-coll-tile .lib-book__cover {
+  position: relative;
+  z-index: 1;
+}
+/* Member-count badge. */
+.lib-coll-tile__badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(10, 10, 10, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+/* Cover-generation spinner overlay. */
+.lib-coll-tile__gen {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 8, 8, 0.55);
+  color: #fff;
+  border-radius: inherit;
+}
+/* Manage action row, centered under the tile. */
+.lib-coll-tile__actions {
+  justify-content: center;
+  margin-top: 8px;
+}
+
+/* Collection view modal — wider so the book shelf breathes. */
+.lib-coll-modal {
+  max-width: min(920px, 94vw);
+}
+.lib-coll-modal .lib-collections__shelf {
+  max-height: 64vh;
+  overflow-y: auto;
+}
+/* Remove-from-collection badge on a book while managing. */
+.lib-collections__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(10, 10, 10, 0.82);
+  color: #ff8585;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+.lib-collections__remove:hover {
+  background: rgba(255, 90, 90, 0.3);
+}
+
+/* Add-books picker list (inside the modal). */
+.lib-collections__picker {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  max-height: 50vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.lib-collections__picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border-radius: 8px;
+}
+.lib-collections__picker-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.lib-collections__picker-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.88rem;
+  color: #e7e7ea;
+}
+.lib-collections__picker-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+.lib-collections__picker-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+.lib-collections__picker-btn:active { transform: scale(0.95); }
+.lib-collections__picker-btn.is-added {
+  background: rgba(108, 192, 112, 0.18);
+  border-color: rgba(108, 192, 112, 0.5);
+  color: #9be39f;
+}
+.lib-collections__picker-empty {
+  padding: 18px 6px;
+  font-size: 0.85rem;
+  color: rgba(245, 245, 247, 0.5);
+  text-align: center;
 }
 
 .lib-reader__stage {
@@ -545,6 +1129,9 @@
 .lib-reader__nav:hover:not(:disabled) {
   background: rgba(44, 44, 48, 0.92);
 }
+.lib-reader__nav:active:not(:disabled) {
+  transform: translateY(-50%) scale(0.9);
+}
 .lib-reader__nav:disabled {
   opacity: 0;
   pointer-events: none;
@@ -563,8 +1150,802 @@
     transition: none;
     animation: none;
   }
+  /* Show items immediately instead of animating them in. */
+  .lib-reveal {
+    opacity: 1;
+  }
+  .lib-reveal[data-revealed='true'] {
+    animation: none;
+  }
   .lib-book:hover .lib-book__cover,
   .lib-book:focus-visible .lib-book__cover {
     transform: translateY(-6px);
   }
+  /* Drop the tactile press-scale feedback when reduced motion is requested. */
+  .lib-book:active .lib-book__cover,
+  .lib-coll-tile__btn:active .lib-book__cover,
+  .lib-edit__btn:active:not(:disabled),
+  .lib-upload__btn:active:not(:disabled),
+  .lib-upload__open:active,
+  .lib-upload__close:active,
+  .lib-upload__row-remove:active:not(:disabled),
+  .lib-upload__addmore:active:not(:disabled),
+  .lib-collections__picker-btn:active,
+  .lib-marks__del:active,
+  .lib-marks__add:active:not(:disabled),
+  .lib-epub__theme:active {
+    transform: none;
+  }
+  .lib-reader__nav:active:not(:disabled) {
+    transform: translateY(-50%);
+  }
+}
+
+/* ── Upload: header button + modal ─────────────────────────────────────── */
+.lib-upload__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 13px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.15s ease;
+  white-space: nowrap;
+}
+.lib-upload__open:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+}
+.lib-upload__open:active { transform: scale(0.95); }
+@media (max-width: 520px) {
+  .lib-upload__open-label { display: none; }
+}
+
+.lib-upload__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+}
+.lib-upload {
+  width: 100%;
+  max-width: 560px;
+  background: #0b0b0c;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  color: #fff;
+  padding: 20px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+}
+.lib-upload__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.lib-upload__title { font-size: 17px; font-weight: 600; margin: 0; }
+.lib-upload__close {
+  background: none;
+  border: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 140ms ease, transform 140ms ease;
+}
+.lib-upload__close:hover { color: #fff; }
+.lib-upload__close:active { transform: scale(0.9); }
+.lib-upload__drop {
+  width: 100%;
+  padding: 40px 20px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 14px;
+  cursor: pointer;
+  transition: border-color 0.18s, background 0.18s;
+}
+.lib-upload__drop:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.06);
+}
+.lib-upload__body { display: flex; gap: 16px; }
+.lib-upload__cover {
+  flex: 0 0 132px;
+  position: relative;
+  aspect-ratio: 3 / 4;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #161617;
+}
+.lib-upload__cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lib-upload__cover--blank { width: 100%; height: 100%; }
+.lib-upload__pages {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 4px 8px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.85);
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
+}
+.lib-upload__fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+
+/* ── Multi-file upload queue (admins) ─────────────────────────────────────── */
+.lib-upload--multi { max-width: 720px; }
+.lib-upload__queue {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.lib-upload__row {
+  display: flex;
+  gap: 12px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.lib-upload__row.is-done { opacity: 0.7; }
+.lib-upload__row.is-error { border-color: rgba(255, 110, 110, 0.4); }
+.lib-upload__row-cover {
+  flex: 0 0 70px;
+  aspect-ratio: 3 / 4;
+}
+.lib-upload__row-fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+.lib-upload__row-fields .lib-upload__textarea { min-height: 48px; }
+.lib-upload__row-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #67d18b;
+}
+.lib-upload__row-err { font-size: 12px; color: #ff8585; }
+.lib-upload__row-remove {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+.lib-upload__row-remove:hover:not(:disabled) { background: rgba(255, 90, 90, 0.18); color: #ff8585; }
+.lib-upload__row-remove:active:not(:disabled) { transform: scale(0.9); }
+.lib-upload__row-remove:disabled { opacity: 0.4; cursor: default; }
+.lib-upload__addmore {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  justify-content: center;
+  padding: 9px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 140ms ease, transform 140ms ease;
+}
+.lib-upload__addmore:hover:not(:disabled) { background: rgba(255, 255, 255, 0.04); }
+.lib-upload__addmore:active:not(:disabled) { transform: scale(0.98); }
+.lib-upload__addmore:disabled { opacity: 0.4; cursor: default; }
+
+/* Storage-misconfigured warning (uploads won't persist). */
+.lib-upload__warn {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #ffb4b4;
+  padding: 9px 11px;
+  margin-bottom: 12px;
+  border: 1px solid rgba(255, 110, 110, 0.4);
+  border-radius: 7px;
+  background: rgba(255, 90, 90, 0.1);
+}
+
+/* ── Quota gate (regular user at their upload cap) ────────────────────────── */
+.lib-upload__gate { display: flex; flex-direction: column; gap: 8px; }
+.lib-upload__gate-head { font-size: 15px; font-weight: 600; color: #fff; }
+.lib-upload__gate-sub { font-size: 13px; color: rgba(255, 255, 255, 0.6); margin-bottom: 4px; }
+.lib-upload__gate-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 38vh;
+  overflow-y: auto;
+}
+.lib-upload__gate-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+}
+.lib-upload__gate-row .lib-upload__row-cover { flex: 0 0 36px; }
+.lib-upload__gate-title { flex: 1; min-width: 0; font-size: 13px; color: rgba(255, 255, 255, 0.9); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lib-upload__gate-pending {
+  font-size: 13px;
+  color: #e3c06a;
+  padding: 8px 10px;
+  border: 1px solid rgba(227, 192, 106, 0.3);
+  border-radius: 7px;
+  background: rgba(227, 192, 106, 0.08);
+}
+.lib-upload__gate-appeal { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.lib-upload__gate-appeal-btn { align-self: flex-start; margin-top: 4px; }
+.lib-upload__label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+}
+.lib-upload__input {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  padding: 9px 11px;
+}
+.lib-upload__input:focus { outline: none; border-color: rgba(255, 255, 255, 0.45); }
+.lib-upload__textarea { resize: vertical; min-height: 72px; }
+.lib-upload__error { margin: 14px 0 0; font-size: 13px; color: #ff8585; }
+.lib-upload__status { margin: 14px 0 0; font-size: 13px; color: rgba(255, 255, 255, 0.65); }
+.lib-upload__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.lib-upload__btn {
+  padding: 9px 18px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+.lib-upload__btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.08); }
+.lib-upload__btn:active:not(:disabled) { transform: scale(0.96); }
+.lib-upload__btn--primary { background: #fff; color: #000; border-color: #fff; }
+.lib-upload__btn--primary:hover:not(:disabled) { background: rgba(255, 255, 255, 0.85); }
+.lib-upload__btn:disabled { opacity: 0.5; cursor: default; }
+@media (max-width: 480px) {
+  .lib-upload__body { flex-direction: column; }
+  .lib-upload__cover { flex-basis: auto; max-width: 132px; }
+}
+
+/* ─── Sections (Curated / Community) ────────────────────────────────────────── */
+.lib__section { margin-top: 8px; }
+.lib__section + .lib__section { margin-top: 28px; }
+.lib__section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+/* ── Blog strip (top of the combined library page) ───────────────────────── */
+.lib-blog { margin-top: 4px; }
+.lib-blog__head {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 44px);
+}
+.lib-blog__head .lib__section-title { padding: 0; margin: 0; }
+.lib-blog__row {
+  display: flex;
+  gap: 16px;
+  max-width: 1320px;
+  margin: 14px auto 0;
+  padding: 4px clamp(16px, 4vw, 44px) 14px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+.lib-blog__card {
+  scroll-snap-align: start;
+  flex: 0 0 clamp(240px, 60vw, 300px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.045);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
+}
+.lib-blog__card:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+.lib-blog__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.lib-blog__tag {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(245, 245, 247, 0.6);
+}
+.lib-blog__title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #f5f5f7;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lib-blog__desc {
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: rgba(245, 245, 247, 0.6);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.lib-blog__date {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  color: rgba(245, 245, 247, 0.45);
+}
+.lib__section-title {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 0 clamp(16px, 4vw, 44px);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 247, 0.55);
+}
+
+/* Wrapper so the per-book admin toolbar can sit over the standing cover. */
+.lib-book__wrap { position: relative; }
+.lib-book__wrap.is-hidden-book { opacity: 0.45; }
+
+/* Community attribution under the caption. */
+.lib-book__by {
+  margin: 2px 0 0;
+  font-size: 0.68rem;
+  line-height: 1.3;
+  color: rgba(245, 245, 247, 0.45);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Reported flag (admin edit mode only). */
+.lib-book__reported {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  color: #000;
+  background: #ffcc4d;
+  z-index: 3;
+}
+
+/* ─── Admin edit controls ───────────────────────────────────────────────────── */
+.lib-edit__migrate {
+  max-width: 1320px;
+  margin: 12px auto 0;
+  padding: 12px clamp(16px, 4vw, 44px);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: rgba(245, 245, 247, 0.7);
+}
+.lib-edit__migrate .lib-upload__btn--primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lib-edit__bar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  z-index: 4;
+}
+.lib-edit__bar--static { padding: 4px 8px; }
+.lib-edit__hint { font-size: 11px; color: rgba(245, 245, 247, 0.6); }
+.lib-edit__btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #f5f5f7;
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease, transform 140ms ease;
+}
+.lib-edit__btn:hover:not(:disabled) { background: rgba(255, 255, 255, 0.14); }
+.lib-edit__btn:active:not(:disabled) { transform: scale(0.92); }
+.lib-edit__btn:disabled { opacity: 0.35; cursor: default; }
+.lib-edit__btn.is-on { color: #ffcc4d; }
+.lib-edit__btn--danger:hover:not(:disabled) { background: rgba(255, 90, 90, 0.25); color: #ff8585; }
+
+.lib-edit__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* ─── Right-click context menu (book / collection management) ────────────────── */
+.lib-ctx {
+  position: fixed;
+  z-index: 1000;
+  min-width: 196px;
+  max-width: 260px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(16, 16, 18, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: lib-ctx-in 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top left;
+}
+@keyframes lib-ctx-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+.lib-ctx__label {
+  padding: 6px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 247, 0.5);
+}
+.lib-ctx__sep {
+  height: 1px;
+  margin: 5px 6px;
+  background: rgba(255, 255, 255, 0.1);
+}
+.lib-ctx__item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #f5f5f7;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.lib-ctx__item:hover:not(:disabled),
+.lib-ctx__item:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+  outline: none;
+}
+.lib-ctx__item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.lib-ctx__item.is-active {
+  color: #ffcc4d;
+}
+.lib-ctx__item.is-danger {
+  color: #ff8585;
+}
+.lib-ctx__item.is-danger:hover:not(:disabled) {
+  background: rgba(255, 90, 90, 0.18);
+}
+.lib-ctx__icon {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.lib-ctx__text {
+  flex: 1;
+  min-width: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lib-ctx { animation: none; }
+}
+
+/* Toggleable Edit button in the header. */
+.lib-upload__open.is-active { background: #fff; color: #000; border-color: #fff; }
+
+/* Size limit hint in the upload drop zone. */
+.lib-upload__limit {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ─── Upload: AI metadata generation state ──────────────────────────────────── */
+.lib-upload__fields { position: relative; }
+.lib-upload__generating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+}
+.lib-upload__spin { animation: lib-spin 0.8s linear infinite; }
+@keyframes lib-spin { to { transform: rotate(360deg); } }
+.lib-upload__input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* ─── Drag-and-drop reordering (admin edit mode) ────────────────────────────── */
+.lib-book__wrap.is-draggable { cursor: grab; }
+.lib-book__wrap.is-draggable:active { cursor: grabbing; }
+.lib-book__wrap.is-dragging { opacity: 0.4; }
+/* Drop-target cue: a vertical insertion bar + subtle lift on the hovered book. */
+.lib-book__wrap.is-drag-over::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 24px;
+  left: -8px;
+  width: 3px;
+  border-radius: 2px;
+  background: #f5f5f7;
+  box-shadow: 0 0 8px rgba(245, 245, 247, 0.6);
+  z-index: 5;
+}
+.lib-book__wrap.is-drag-over .lib-book { transform: translateY(-4px); transition: transform 120ms ease; }
+
+/* ── Albums section ──────────────────────────────────────────────────────────
+ * A grid of album cards (links to the fullscreen carousel viewer). Sits between
+ * the collections and the book shelves on the library page.
+ */
+.lib-albums {
+  max-width: 1320px;
+  margin-left: auto;
+  margin-right: auto;
+}
+/* Keep the centered section title; tuck the admin action neatly to the right. */
+.lib-albums__head {
+  position: relative;
+  align-items: center;
+}
+.lib-albums__new {
+  position: absolute;
+  right: clamp(16px, 4vw, 44px);
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(245, 245, 247, 0.18);
+  background: rgba(245, 245, 247, 0.04);
+  color: rgba(245, 245, 247, 0.82);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.lib-albums__new:hover {
+  background: color-mix(in srgb, var(--site-accent, #9b7ad8) 16%, transparent);
+  border-color: var(--site-accent, #9b7ad8);
+  color: #fff;
+}
+@media (max-width: 640px) {
+  .lib-albums__new-label {
+    display: none;
+  }
+  .lib-albums__new {
+    padding: 6px;
+  }
+}
+.lib-albums__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 28px 16px 8px;
+  color: rgba(245, 245, 247, 0.5);
+  font-size: 14px;
+}
+.lib-albums__empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--site-border, rgba(245, 245, 247, 0.18));
+  background: var(--site-surface, rgba(245, 245, 247, 0.04));
+  color: var(--site-text, #e8e8ec);
+  text-decoration: none;
+  transition: background 0.15s, border-color 0.15s;
+}
+.lib-albums__empty-cta:hover {
+  background: color-mix(in srgb, var(--site-accent, #9b7ad8) 16%, transparent);
+  border-color: var(--site-accent, #9b7ad8);
+}
+.lib-albums__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 14px clamp(16px, 4vw, 44px) 4px;
+}
+@media (max-width: 640px) {
+  .lib-albums__grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 14px;
+  }
+}
+
+.lib-album {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+.lib-album__cover {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  border-radius: var(--site-radius, 14px);
+  overflow: hidden;
+  background: var(--site-surface, rgba(255, 255, 255, 0.04));
+  border: 1px solid var(--site-border, rgba(255, 255, 255, 0.1));
+  box-shadow: var(--site-shadow, 0 6px 20px rgba(0, 0, 0, 0.25));
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+/* A subtle "stacked photos" peek behind the cover. */
+.lib-album__cover::before,
+.lib-album__cover::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  z-index: -1;
+  background: var(--site-surface, rgba(255, 255, 255, 0.05));
+  border: 1px solid var(--site-border, rgba(255, 255, 255, 0.1));
+}
+.lib-album__cover::before {
+  transform: translate(6px, 6px) scale(0.97);
+  opacity: 0.7;
+}
+.lib-album__cover::after {
+  transform: translate(11px, 11px) scale(0.94);
+  opacity: 0.4;
+}
+.lib-album:hover .lib-album__cover {
+  transform: translateY(-3px);
+  border-color: var(--site-accent, #6ea8fe);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+.lib-album__count {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+}
+.lib-album__badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+}
+.lib-album__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 2px;
+}
+.lib-album__name {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--site-text, #f5f5f7);
+}
+.lib-album__sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--site-text-muted, rgba(245, 245, 247, 0.55));
 }

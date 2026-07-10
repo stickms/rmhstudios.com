@@ -1,7 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Spinner } from '@/components/ui/spinner';
 import { LayoutGroup, motion } from 'framer-motion';
 import { BuildCard } from './BuildCard';
 import type { Build, BuildSortOption } from '@/lib/user-builds-types';
@@ -25,6 +26,7 @@ export function BuildGrid({
   userId,
   curated,
 }: BuildGridProps) {
+  const { t } = useTranslation("c-user-builds");
   const [builds, setBuilds] = useState<Build[]>(initialBuilds);
   const [loading, setLoading] = useState(initialBuilds.length === 0);
   const [resorting, setResorting] = useState(false);
@@ -141,7 +143,7 @@ export function BuildGrid({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-violet-400 animate-spin" />
+        <Spinner size={32} />
       </div>
     );
   }
@@ -149,10 +151,10 @@ export function BuildGrid({
   if (builds.length === 0) {
     return (
       <div className="text-center py-20">
-        <p className="text-site-text-muted">No builds found</p>
+        <p className="text-site-text-muted">{t("no-builds-found", { defaultValue: "No builds found" })}</p>
         {search && (
           <p className="text-sm text-site-text-dim mt-2">
-            Try a different search term
+            {t("try-different-search", { defaultValue: "Try a different search term" })}
           </p>
         )}
       </div>
@@ -177,7 +179,7 @@ export function BuildGrid({
 
       {/* Load more trigger */}
       <div ref={loadMoreRef} className="py-8 flex justify-center">
-        {loadingMore && <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />}
+        {loadingMore && <Spinner />}
         {!hasMore && builds.length > 0 && (
           <div className="h-px" />
         )}

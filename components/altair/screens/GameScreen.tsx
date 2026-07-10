@@ -6,6 +6,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAltairGameStore } from '@/lib/altair/stores/game-store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
@@ -32,6 +33,7 @@ interface GameScreenProps {
 }
 
 export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
+  const { t } = useTranslation("c-altair");
   const rootRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const loopRef = useRef<ReturnType<typeof createGameLoop> | null>(null);
@@ -151,7 +153,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
           useAltairGameStore.getState().evolveWeapon(evolution.weaponId, evolution.evolvedId, evolution.consumedCatalystId);
           syncStoreToWorld(); // Re-sync after evolution
           spawnEvolution(world, world.player.x, world.player.y);
-          addToast('Weapon evolved!', 'success');
+          addToast(t("weapon-evolved", { defaultValue: "Weapon evolved!" }), 'success');
         }
       }
     }
@@ -206,7 +208,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
     const handleContextLost = (e: Event) => {
       e.preventDefault();
       useAltairGameStore.setState({ phase: 'paused' });
-      addToast('WebGL context lost! Please reload the page.', 'error');
+      addToast(t("webgl-context-lost", { defaultValue: "WebGL context lost! Please reload the page." }), 'error');
     };
     canvas.addEventListener('webglcontextlost', handleContextLost);
 
@@ -252,7 +254,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
                 world.projectiles.splice(i, 1);
               }
             }
-            addToast('Revived!', 'success');
+            addToast(t("revived", { defaultValue: "Revived!" }), 'success');
             altairSfx.play('revive');
           } else {
             // Record "killed by" in bestiary
@@ -313,7 +315,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
         altairSfx.play('boss_spawn');
         useAltairGameStore.getState().setBossActive(true);
         const bossDef = BOSSES.find((b) => b.id === bossId);
-        addToast(`${bossDef?.title ?? 'BOSS'} APPROACHES!`, 'warning');
+        addToast(t("boss-approaches", { defaultValue: "{{title}} APPROACHES!", title: bossDef?.title ?? 'BOSS' }), 'warning');
       },
       onBossKill: (bossId) => {
         altairSfx.play('boss_kill');
@@ -321,7 +323,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
         useAltairGameStore.getState().recordBossKill(bossId);
         setBossInfo(null);
         const bossDef = BOSSES.find((b) => b.id === bossId);
-        addToast(`${bossDef?.name ?? 'Boss'} defeated!`, 'success');
+        addToast(t("boss-defeated", { defaultValue: "{{name}} defeated!", name: bossDef?.name ?? 'Boss' }), 'success');
         useAltairGameStore.getState().addCoins(25, 'bossKills');
       },
       onVictory: () => {
@@ -329,7 +331,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
       },
       onWeaponDisable: (duration) => {
         altairSfx.play('weapon_disabled');
-        addToast(`Weapons disabled for ${duration.toFixed(1)}s!`, 'error');
+        addToast(t("weapons-disabled", { defaultValue: "Weapons disabled for {{duration}}s!", duration: duration.toFixed(1) }), 'error');
       },
     });
 
@@ -427,7 +429,7 @@ export default function GameScreen({ onQuit, onSettings }: GameScreenProps) {
           ALTAIR
         </h1>
         <p className="text-sm text-(--altair-text-muted)">
-          Loading assets... {loadProgress.loaded}/{loadProgress.total}
+          {t("loading-assets", { defaultValue: "Loading assets... {{loaded}}/{{total}}", loaded: loadProgress.loaded, total: loadProgress.total })}
         </p>
         <div className="w-48 h-2 bg-(--altair-surface) rounded-full overflow-hidden">
           <div

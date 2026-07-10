@@ -1,9 +1,14 @@
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.7-labs
 # ─────────────────────────────────────────────────────────────────────────────
 # rmhstudios.com — Multi-stage Docker build (cache-optimized)
 #
-# Produces a single image used by all services (web, socket, rmhbox, rmhtube).
-# Each service overrides the CMD via docker-compose.yml.
+# Produces TWO runner images from one shared build graph:
+#   - runner       (slim): web, socket, rmhbox, rmhtube  — Node only, no Chromium
+#   - runner-full         : supervisor, status           — + Go bins, Chromium, git
+# Each service overrides the CMD via docker-compose.yml. Splitting keeps Chromium
+# (~300-400 MB) and the Go binaries off the four user-facing services, and makes
+# the slim image invariant to go-services changes (so the web hotswap can be
+# skipped when nothing web-facing moved).
 #
 # Architecture: ARM64 (aarch64)
 #
@@ -12,7 +17,8 @@
 #   deps ──→ prisma-generate ──┬──→ server-builder (esbuild, env-agnostic)
 #                              └──→ vite-builder   (vite build, env-specific)
 #
-#   All stages feed into → runner
+#   server-builder + vite-builder + prod-deps → runner (slim)
+#   runner + go-builder + apk(chromium,git)    → runner-full
 #
 # Cache strategy:
 #   - pnpm store mount  → avoids re-downloading packages between builds
@@ -25,7 +31,20 @@
 #   - server-builder is env-agnostic → 100% cache hit between prod/staging
 #   - node_modules copied from prisma-generate (not builder) → stable layer
 #     that includes @prisma/client and only rebuilds on lockfile/schema changes
+#   - Optional shared/remote layer cache: set DEPLOY_BUILDKIT_CACHE so a fresh or
+#     cache-wiped host repopulates deps/prisma/vite from a registry instead of a
+#     cold rebuild (needs a buildx container builder — deploy/setup-buildx-cache.sh)
 # ─────────────────────────────────────────────────────────────────────────────
+
+# Base image for the runner-full stage (see Stage 4b). Declared here as a global
+# ARG so the FROM below can interpolate it. Default `runner` keeps a standalone
+# `docker build --target runner-full` self-contained (builds the whole graph). The
+# deploy overrides it with the ALREADY-BUILT slim web image tag so runner-full
+# starts FROM a concrete image and never re-derives the vite-builder stage — that
+# is what guarantees the expensive frontend build runs exactly once per deploy
+# (BuildKit won't share the `COPY --exclude … . .` layer across the two target
+# builds, so building runner-full FROM the stage rebuilt vite a second time).
+ARG WEB_IMAGE=runner
 
 # ── Stage 1: Install dependencies ──────────────────────────────────────────
 # Cached as long as package.json / lockfile don't change.
@@ -42,7 +61,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 # Skip postinstall (prisma generate) — prisma schema isn't here yet.
 # It runs in the prisma-generate stage below where the schema is available.
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
-    pnpm install --frozen-lockfile --ignore-scripts
+    pnpm install --frozen-lockfile --ignore-scripts --prefer-offline
 
 # ── Stage 1b: Generate Prisma client ──────────────────────────────────────
 # Separated from deps so that schema changes only re-run `prisma generate`
@@ -62,7 +81,7 @@ RUN pnpm exec prisma generate
 FROM prisma-generate AS prod-deps
 
 RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store,sharing=locked \
-    pnpm install --frozen-lockfile --prod --ignore-scripts
+    pnpm install --frozen-lockfile --prod --ignore-scripts --prefer-offline
 
 # ── Stage 2: Server bundles (env-agnostic, decoupled from app source) ─────
 # esbuild runs in <3s and produces CJS bundles for socket/rmhbox/rmhtube.
@@ -81,21 +100,22 @@ COPY lib/blackjack ./lib/blackjack/
 COPY lib/holdem ./lib/holdem/
 COPY lib/baccarat ./lib/baccarat/
 COPY lib/roulette ./lib/roulette/
-COPY lib/lights-out ./lib/lights-out/
-COPY lib/doctrine ./lib/doctrine/
-COPY lib/rmhvibe ./lib/rmhvibe/
-COPY lib/rmhark-ai ./lib/rmhark-ai/
+# Dream Rift's socket relay handler only needs the shared, import-free netcode
+# protocol — copy just that file (the rest of lib/dream-rift is browser code).
+COPY lib/dream-rift/net/events.ts ./lib/dream-rift/net/events.ts
+# lights-out, doctrine, rmhvibe, rmhark-ai, media and storage were only imported
+# by the Node workers now running in the Go supervisor — no longer copied here so
+# changes to them don't bust this stage's cache.
 COPY lib/prisma.server.ts ./lib/prisma.server.ts
 COPY lib/url.ts ./lib/url.ts
+# Only the three Node hubs still served by compose (socket/rmhbox/rmhtube) are
+# bundled here. recap, status, discord-bot, doctrine-worker, vibe-worker and
+# bot-worker were migrated to the Go supervisor/status binaries (built in the
+# go-builder stage), so their Node entrypoints are no longer compiled or shipped.
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
     server/rmhbox/index.ts \
     server/rmhtube/index.ts \
-    server/recap/index.ts \
-    server/discord-bot/index.ts \
-    server/doctrine-worker/index.ts \
-    server/vibe-worker/index.ts \
-    server/bot-worker/index.ts \
     --bundle --platform=node --target=node20 \
     --outdir=dist-server --outbase=. \
     --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true \
@@ -103,12 +123,7 @@ RUN pnpm exec esbuild \
 
 RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhbox/index.cjs && \
-    test -f dist-server/server/rmhtube/index.cjs && \
-    test -f dist-server/server/recap/index.cjs && \
-    test -f dist-server/server/discord-bot/index.cjs && \
-    test -f dist-server/server/doctrine-worker/index.cjs && \
-    test -f dist-server/server/vibe-worker/index.cjs && \
-    test -f dist-server/server/bot-worker/index.cjs
+    test -f dist-server/server/rmhtube/index.cjs
 
 # ── Stage 3: Vite/Nitro build (env-specific) ─────────────────────────────
 # BuildKit executes this IN PARALLEL with server-builder (stage 2).
@@ -120,7 +135,24 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
 FROM prisma-generate AS vite-builder
 
 COPY public ./public/
-COPY . .
+# Exclude go-services from this stage's context copy. .dockerignore no longer
+# excludes it globally (the go-builder stage needs it), but the Vite build does
+# NOT use it — pulling it in here would bust the expensive vite/public layer
+# cache on every Go-only change. Requires the dockerfile:1.7-labs syntax.
+#
+# Same reasoning for the standalone realtime-service subtrees under server/:
+# they are esbuild-bundled by the separate server-builder stage and are NOT in
+# the Vite/Nitro module graph (nothing under app/components/lib imports them;
+# vite.config.ts references only server/nitro). Excluding them here keeps a
+# server-service-only change from busting this stage's ~40s vite build.
+# server/nitro (referenced by vite.config.ts) and server/rmhbox (reachable via
+# lib/rmhbox) are intentionally kept.
+COPY --exclude=go-services \
+     --exclude=server/socket-server --exclude=server/rmhtube \
+     --exclude=server/rmhmusic --exclude=server/recap \
+     --exclude=server/bot-worker --exclude=server/doctrine-worker \
+     --exclude=server/status --exclude=server/vibe-worker \
+     --exclude=server/shared . .
 
 ARG COMPOSE_PROJECT_NAME=rmhstudios
 ARG DATABASE_URL
@@ -131,6 +163,10 @@ ARG VITE_SOCKET_URL
 ARG VITE_RMHBOX_SOCKET_URL
 ARG VITE_RMHTUBE_SOCKET_URL
 ARG VITE_DISCORD_ACTIVITY_CLIENT_ID
+ARG VITE_CDN_BASE_URL
+# Optional: only used to title/describe NEW library PDFs. Cover rendering itself
+# needs no key — titles fall back to the humanized filename when it's absent.
+ARG DEEPSEEK_API_KEY
 
 ENV DATABASE_URL=${DATABASE_URL} \
     BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET} \
@@ -139,7 +175,17 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_SOCKET_URL=${VITE_SOCKET_URL} \
     VITE_RMHBOX_SOCKET_URL=${VITE_RMHBOX_SOCKET_URL} \
     VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL} \
-    VITE_DISCORD_ACTIVITY_CLIENT_ID=${VITE_DISCORD_ACTIVITY_CLIENT_ID}
+    VITE_DISCORD_ACTIVITY_CLIENT_ID=${VITE_DISCORD_ACTIVITY_CLIENT_ID} \
+    VITE_CDN_BASE_URL=${VITE_CDN_BASE_URL} \
+    DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+
+# NOTE: library cover/metadata generation is NOT run here. The library PDFs are
+# excluded from the build context (.dockerignore), so this stage can't render new
+# covers anyway — it would only ever be a no-op. The deploy generates them on the
+# host before the build (deploy.sh Step 1e), bind-mounting public/ + data/ and
+# committing the fresh data/library-metadata.json into the context that this stage
+# copies. Dropping the duplicate in-image run saves a Node + pdfjs/canvas startup
+# every build.
 
 # Build with cache mounts for faster incremental builds.
 # .vinxi cache is preserved between builds for Vite's module graph cache.
@@ -147,35 +193,97 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # that may arise from the cache, so it's safe to keep .vinxi across builds.
 # NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
 RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi,sharing=locked \
+    --mount=type=cache,id=vibe-pkgs-${COMPOSE_PROJECT_NAME},target=/app/.cache/vibe-packages,sharing=locked \
     rm -rf .output \
+    && VIBE_PKG_CACHE_DIR=/app/.cache/vibe-packages pnpm run build-vibe-packages \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
-    && node scripts/fix-ssr-css-hash.mjs \
-    && cp -a .output /app/build-output
+    && node scripts/fix-ssr-css-hash.mjs
 
-RUN test -d /app/build-output && \
-    test -f /app/build-output/server/index.mjs && \
-    test -f /app/build-output/public/models/marlonjack.glb
+# Validate, prune, and COPY straight from /app/.output. `.output` is a plain
+# layer dir (only .vinxi / .cache are cache mounts), so the runner stage can
+# COPY --from it directly — no need to first `cp -a` the (~1.5 GB) tree to a
+# second path, which only cost disk + wall-clock every build.
+RUN test -d /app/.output && \
+    test -f /app/.output/server/index.mjs && \
+    test -f /app/.output/public/models/marlonjack.glb && \
+    test -f /app/.output/public/vibe-packages/react.js
 
-# ── Stage 4: Production runner ────────────────────────────────────────────
+# ── Slim runtime image: drop assets that Apache serves off the host disk ──────
+# In production, Apache serves /library, /music, /models and /sprites directly
+# from the host's public/ checkout (see deploy/apache/rmhstudios.com.conf), so
+# these requests never reach the Node app — the container's own copy is dead
+# weight (~500 MB, mostly public/library). Prune them from the Nitro output
+# AFTER the validation above (which needs models/) and AFTER library cover
+# generation (which already ran in `library:metadata`). Everything still served
+# by Node — public/images (default avatar, read server-side), public/vibe-packages,
+# favicon, brand, etc. — is intentionally kept. (music/ and sprites/ are already
+# excluded from the build context via .dockerignore; the rm is a harmless no-op
+# for them.)
+RUN rm -rf /app/.output/public/library \
+           /app/.output/public/models \
+           /app/.output/public/music \
+           /app/.output/public/sprites
+
+# ── Stage 3b: Go binaries ────────────────────────────────────────────────
+# Builds supervisor, status, and bot-worker (plus all other cmd/ packages)
+# from the go-services module using the official Go toolchain. The binaries
+# are statically linked (CGO_ENABLED=0) so they drop cleanly into the musl
+# Alpine runner without libc ceremony.
+FROM golang:1.23-alpine AS go-builder
+
+WORKDIR /build
+
+# TARGETARCH is set automatically by BuildKit from --platform (defaults to the
+# build host's arch). Threading it into GOARCH guarantees the binaries match the
+# image's target architecture — critical when building on x86 CI for the ARM64
+# host, where a host-arch build would exec-format-fail silently at runtime.
+ARG TARGETARCH
+
+# Copy only the module files first so the module download layer is cached
+# independently of source changes.
+COPY go-services/go.mod go-services/go.sum ./
+
+RUN go mod download
+
+# Copy the full source tree and compile every cmd/ package.
+# CGO_ENABLED=0 → fully static binaries (no glibc / musl mismatch in runner).
+# GOOS/GOARCH → cross-arch-correct binaries for the image's target platform.
+COPY go-services/ ./
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} \
+    go build -trimpath -ldflags="-s -w" -o /app/bin/ ./cmd/...
+
+# ── Stage 4: Slim production runner (web, socket, rmhbox, rmhtube) ────────────
+# The four user-facing Node services need only the Node runtime, node_modules,
+# the Nitro/.output bundle, and the esbuild server bundles. They do NOT need:
+#   - Chromium — the vibe-worker captures thumbnails via Go chromedp (in the
+#     supervisor), and the web /api/vibe/thumb route only readFile()s a
+#     pre-rendered PNG (lib/rmhvibe/vibe-thumbs.ts is deliberately Playwright-free).
+#   - git — only the discord-bot worker (in the supervisor) shells out to git.
+#   - the Go binaries — supervisor/status run them, the Node services don't.
+# Keeping those OUT of this image:
+#   - drops ~300-400 MB (Chromium + fonts) from the four services → faster pulls,
+#     less disk, smaller SHA-tagged rollback images;
+#   - makes this image INVARIANT to go-services changes, so a Go-only or
+#     supervisor-only deploy leaves it byte-for-byte identical — which lets
+#     deploy/hotswap-web.sh skip the web hotswap entirely (no second container,
+#     no health wait, no Apache reload) when nothing web-facing changed.
+# The heavier bits live in the runner-full stage below (supervisor + status).
 FROM node:24-alpine AS runner
 
-# chromium + fonts: used by the RMHVibe thumbnail capture (Playwright). Alpine
-# is musl, so Playwright's own download won't run — we use the OS Chromium and
-# point Playwright at it via PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH below.
-RUN apk add --no-cache curl git \
-    chromium nss freetype harfbuzz ca-certificates ttf-freefont font-noto-emoji
+# curl: container healthchecks (compose) + the deploy's port probes.
+# ca-certificates: outbound TLS (R2 sync, DeepSeek, Discord, etc.).
+# ffmpeg: slice-it transcodes uploaded audio to compressed AAC/.m4a
+# (app/routes/api/slice-it/songs/upload.ts → lib/audio/transcode.server.ts).
+RUN apk add --no-cache curl ca-certificates ffmpeg
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
-# Reuse the system Chromium for Playwright instead of a (musl-incompatible) download.
-ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 app && \
-    mkdir -p /app/.rmhbot-worktrees && chown app:nodejs /app/.rmhbot-worktrees
+    adduser --system --uid 1001 app
 
 # ─── Production-only node_modules ───────────────────────────────────────
 # Sourced from prod-deps (not prisma-generate) — excludes devDependencies
@@ -186,7 +294,7 @@ COPY --from=prod-deps --chown=app:nodejs /app/node_modules ./node_modules
 
 # ─── Nitro server output ────────────────────────────────────────────────
 # .output/ contains the Nitro server bundle, static assets, and public files.
-COPY --from=vite-builder --chown=app:nodejs /app/build-output ./.output
+COPY --from=vite-builder --chown=app:nodejs /app/.output ./.output
 
 # ─── Custom server bundles (from env-agnostic stage) ────────────────────
 COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server
@@ -204,3 +312,42 @@ USER app
 EXPOSE 7005 7001 7676 7003
 
 CMD ["node", ".output/server/index.mjs"]
+
+# ── Stage 4b: Full runtime (Go supervisor + status) ──────────────────────────
+# Adds, on top of the slim runner, everything ONLY the background fleet needs:
+#   - Go binaries: supervisor runs 5 workers as goroutines; status is the Go
+#     status page server (the remaining hubs/gateway are available for future
+#     compose wiring).
+#   - Chromium + fonts: the vibe-worker captures gallery thumbnails via Go
+#     chromedp, which drives the system Chromium (musl Alpine can't run
+#     Playwright's own download — point it at the OS Chromium below).
+#   - git: the discord-bot worker runs RMHBot git operations in worktrees.
+# Used ONLY by the `supervisor` and `status` compose services. Because Chromium
+# is the slow apk layer, isolating it here means a web/source change never
+# re-runs it, and a go-services change never touches the slim web image.
+#
+# FROM ${WEB_IMAGE} (default `runner`; the deploy passes the already-built slim
+# web image tag). Building FROM the concrete web image means this stage does NOT
+# depend on `runner`/`vite-builder` in the graph, so the deploy's supervisor build
+# skips the vite build entirely — the web build already produced it. WEB_IMAGE is
+# the global ARG declared before the first FROM (in scope for every FROM line).
+FROM ${WEB_IMAGE} AS runner-full
+
+USER root
+RUN apk add --no-cache git \
+    chromium nss freetype harfbuzz ttf-freefont font-noto-emoji
+
+# Reuse the system Chromium for chromedp/Playwright instead of a (musl-incompatible) download.
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+
+# discord-bot worker writes RMHBot git worktrees here.
+RUN mkdir -p /app/.rmhbot-worktrees && chown app:nodejs /app/.rmhbot-worktrees
+
+# ─── Go binaries (supervisor, status, bot-worker, hubs, gateway) ────────
+# Compiled in the go-builder stage (CGO_ENABLED=0, fully static).
+COPY --from=go-builder --chown=app:nodejs /app/bin/ /app/bin/
+
+USER app
+
+CMD ["/app/bin/supervisor"]

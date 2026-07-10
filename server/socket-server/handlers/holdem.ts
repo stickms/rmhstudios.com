@@ -110,6 +110,7 @@ interface HoldemRoom {
   handNumber: number;
   lastRaiseAmount: number;
   resultsEndTime: number | null;
+  turnDeadline: number | null;
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -119,6 +120,11 @@ const MAX_PLAYERS_CAP = 6;
 const MIN_PLAYERS_TO_START = 2;
 const TURN_TIMEOUT_MS = 30_000;
 const RESULTS_DISPLAY_MS = 10_000;
+// At showdown, reveal the players' hole cards and hold the result this long so
+// the flip animation finishes on every client before the winner is announced.
+// Server-held (not client-timed) so all clients reveal together and nobody can
+// peek at the outcome early.
+const SHOWDOWN_REVEAL_MS = 1_500;
 const DEFAULT_SMALL_BLIND = 5;
 const DEFAULT_BIG_BLIND = 10;
 const DEFAULT_BUY_IN = 200;
@@ -224,7 +230,9 @@ function serializeTableState(room: HoldemRoom, forUserId?: string) {
     currentTurnUserId: room.currentTurnUserId,
     currentBet: room.currentBet,
     minRaise: room.minRaise,
-    turnTimeout: room.currentTurnUserId ? Math.ceil(TURN_TIMEOUT_MS / 1000) : null,
+    turnTimeout: room.currentTurnUserId && room.turnDeadline
+      ? Math.max(0, Math.ceil((room.turnDeadline - Date.now()) / 1000))
+      : null,
     smallBlind: room.smallBlind,
     bigBlind: room.bigBlind,
     resultsCountdown: room.resultsEndTime ? Math.max(0, Math.ceil((room.resultsEndTime - Date.now()) / 1000)) : null,
@@ -398,6 +406,7 @@ function advanceToNextPlayer(room: HoldemRoom) {
 
     if (player && !player.folded && !player.allIn && !player.sittingOut) {
       room.currentTurnUserId = userId;
+      room.turnDeadline = Date.now() + TURN_TIMEOUT_MS;
 
       ioRef.to(roomKey(room.roomId)).emit(S2C.TURN, {
         userId,
@@ -408,9 +417,9 @@ function advanceToNextPlayer(room: HoldemRoom) {
 
       if (room.turnTimer) clearTimeout(room.turnTimer);
       room.turnTimer = setTimeout(() => {
+        // Max turn time reached — auto-fold (or check) so the table never stalls.
         if (room.currentTurnUserId === userId) {
-          // Auto-fold on timeout
-          onFold(room, userId);
+          onTurnTimeout(room, userId);
         }
       }, TURN_TIMEOUT_MS);
 
@@ -439,6 +448,7 @@ function allBetsEqual(room: HoldemRoom): boolean {
 
 function nextPhase(room: HoldemRoom) {
   room.currentTurnUserId = null;
+  room.turnDeadline = null;
   if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
 
   // Reset bets for new betting round
@@ -514,6 +524,7 @@ function dealRemaining(room: HoldemRoom) {
 function endHand(room: HoldemRoom) {
   room.phase = 'showdown';
   room.currentTurnUserId = null;
+  room.turnDeadline = null;
   if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
 
   const active = activePlayers(room);
@@ -539,10 +550,12 @@ function endHand(room: HoldemRoom) {
       holeCards: p.userId === winner.userId ? p.holeCards.map((card, i) => p.showCards.has(i) ? card : null) : [],
     }));
 
+    // Everyone else folded — no cards to flip, so reveal the result right away.
     ioRef.to(roomKey(room.roomId)).emit(S2C.HAND_RESULT, {
       results: allResults,
       pot: room.pot,
     });
+    finish();
   } else {
     // Showdown — evaluate hands
     const evaluations: { player: PlayerSeat; eval: EvaluatedHand }[] = [];
@@ -614,47 +627,60 @@ function endHand(room: HoldemRoom) {
         };
       });
 
-    ioRef.to(roomKey(room.roomId)).emit(S2C.HAND_RESULT, {
-      results,
-      pot: room.pot,
-    });
+    // Reveal the contested hole cards first (phase stays 'showdown' so clients
+    // flip them face-up), then announce the winner only once that flip has
+    // finished everywhere. The wait is held on the server, so every client
+    // reveals together and no client can compute the result early.
+    broadcastPersonalizedState(room);
+    setTimeout(() => {
+      ioRef.to(roomKey(room.roomId)).emit(S2C.HAND_RESULT, {
+        results,
+        pot: room.pot,
+      });
+      finish();
+    }, SHOWDOWN_REVEAL_MS);
   }
 
-  room.phase = 'results';
-  room.pot = 0;
-  room.sidePots = [];
-  room.resultsEndTime = Date.now() + RESULTS_DISPLAY_MS;
+  // Finalize the hand: move to the results phase, clear the pot, and schedule the
+  // next hand. Hoisted so both the fold-win (immediate) and showdown (delayed)
+  // paths above can call it. Runs exactly once per hand.
+  function finish() {
+    room.phase = 'results';
+    room.pot = 0;
+    room.sidePots = [];
+    room.resultsEndTime = Date.now() + RESULTS_DISPLAY_MS;
 
-  // Broadcast state (cards revealed based on showCards preferences)
-  broadcastPersonalizedState(room);
+    // Broadcast state (cards revealed based on showCards preferences)
+    broadcastPersonalizedState(room);
 
-  // Sit out busted players, then start next hand
-  room.resultsTimer = setTimeout(async () => {
-    room.resultsEndTime = null;
-    // Remove disconnected/busted players
-    for (const [userId, p] of room.players) {
-      const sock = ioRef.sockets.sockets.get(p.socketId);
-      if (!sock || !sock.connected) {
-        await cashOutPlayer(room, p);
-        room.players.delete(userId);
-        userToRoom.delete(userId);
-        continue;
+    // Sit out busted players, then start next hand
+    room.resultsTimer = setTimeout(async () => {
+      room.resultsEndTime = null;
+      // Remove disconnected/busted players
+      for (const [userId, p] of room.players) {
+        const sock = ioRef.sockets.sockets.get(p.socketId);
+        if (!sock || !sock.connected) {
+          await cashOutPlayer(room, p);
+          room.players.delete(userId);
+          userToRoom.delete(userId);
+          continue;
+        }
+        if (p.totalChips === 0) {
+          // Sit them out instead of kicking — they can rebuy
+          p.sittingOut = true;
+          p.folded = true;
+        }
       }
-      if (p.totalChips === 0) {
-        // Sit them out instead of kicking — they can rebuy
-        p.sittingOut = true;
-        p.folded = true;
+
+      if (room.players.size === 0) {
+        destroyRoom(room.roomId);
+        return;
       }
-    }
 
-    if (room.players.size === 0) {
-      destroyRoom(room.roomId);
-      return;
-    }
-
-    broadcastRoomList();
-    startNewHand(room);
-  }, RESULTS_DISPLAY_MS);
+      broadcastRoomList();
+      startNewHand(room);
+    }, RESULTS_DISPLAY_MS);
+  }
 }
 
 function calculateSidePots(room: HoldemRoom) {
@@ -834,6 +860,7 @@ async function onCreateRoom(socket: Socket, payload: unknown) {
     handNumber: 0,
     lastRaiseAmount: bigBlind,
     resultsEndTime: null,
+    turnDeadline: null,
   };
 
   rooms.set(roomId, room);
@@ -1136,6 +1163,35 @@ function onUpdateRoom(socket: Socket, payload: unknown) {
 }
 
 // ── Player Actions ────────────────────────────────────────────────
+
+/**
+ * Auto-action when a player runs out of turn time. Checks for free when there
+ * is nothing to call (so the player isn't folded out of a hand they could have
+ * stayed in), otherwise folds. Keeps the table moving without punishing a
+ * player who only owes a check.
+ */
+function onTurnTimeout(room: HoldemRoom, userId: string) {
+  if (room.currentTurnUserId !== userId) return;
+  const player = room.players.get(userId);
+  if (!player) {
+    // Player vanished mid-turn — force the table forward so it can't freeze.
+    room.turnIdx++;
+    advanceToNextPlayer(room);
+    return;
+  }
+  const sock = ioRef.sockets.sockets.get(player.socketId);
+  if (sock && player.currentBet >= room.currentBet) {
+    onCheck(room, sock, userId);
+  } else {
+    onFold(room, userId);
+  }
+  // Safety net: if the auto-action couldn't advance the turn (e.g. an early
+  // return on some unexpected state), force progress so the table never stalls.
+  if (room.currentTurnUserId === userId) {
+    room.turnIdx++;
+    advanceToNextPlayer(room);
+  }
+}
 
 function onFold(room: HoldemRoom, userId: string) {
   if (room.currentTurnUserId !== userId) return;

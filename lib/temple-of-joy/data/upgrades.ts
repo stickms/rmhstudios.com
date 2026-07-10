@@ -2973,6 +2973,27 @@ const OFFERINGS: UpgradeDef[] = [
   },
 ];
 
+// ─── Ascendant upgrades (unlocked by Ascension — deep late-game content) ──────
+
+const ASCENDANT: UpgradeDef[] = [
+  // First Ascension tier
+  { id: 'asc_dawnchaser',   name: 'Dawnchaser',        flavor: 'You run toward the light and it never tires of you.',   path: 'spirit',     cost: 1e16,  globalHPSMultiplier: 5,   requiresAscension: 1 },
+  { id: 'asc_sunhands',     name: 'Hands of Morning',  flavor: 'Every touch leaves a little daylight behind.',          path: 'carnal',     cost: 5e16,  hpcMultiplier: 5,         requiresAscension: 1 },
+  { id: 'asc_radiantmind',  name: 'Radiant Mind',      flavor: 'Thoughts arrive already smiling.',                      path: 'mind',       cost: 5e17,  globalHPSMultiplier: 8,   requiresAscension: 1, requiresUpgrade: 'asc_dawnchaser' },
+  { id: 'asc_kindfeast',    name: 'Endless Kindness',  flavor: 'The table refills itself out of sheer goodwill.',       path: 'social',     cost: 5e18,  globalHPSMultiplier: 8,   requiresAscension: 1 },
+  // Second Ascension tier
+  { id: 'asc_solarchoir',   name: 'Solar Choir',       flavor: 'A thousand voices, all of them yours, all of them glad.', path: 'philosophy', cost: 1e22,  globalHPSMultiplier: 15,  requiresAscension: 2 },
+  { id: 'asc_goldenpulse',  name: 'Golden Pulse',      flavor: 'Your heartbeat keeps the temple lit.',                  path: 'indulgence', cost: 1e23,  hpcMultiplier: 12,        requiresAscension: 2, requiresUpgrade: 'asc_sunhands' },
+  { id: 'asc_brightweave',  name: 'Brightweave',       flavor: 'Joy, braided into the structure of the day.',           path: 'synergy',    cost: 1e24,  globalHPSMultiplier: 20,  requiresAscension: 2, requiresUpgrade: 'asc_radiantmind' },
+  // Third Ascension tier
+  { id: 'asc_starforge',    name: 'Starforge Heart',   flavor: 'You stopped borrowing light. Now you make it.',         path: 'spirit',     cost: 1e30,  globalHPSMultiplier: 40,  requiresAscension: 3 },
+  { id: 'asc_handsofnoon',  name: 'Hands of High Noon',flavor: 'There are no shadows where you press your palm.',        path: 'carnal',     cost: 1e31,  hpcMultiplier: 30,        requiresAscension: 3, requiresUpgrade: 'asc_goldenpulse' },
+  { id: 'asc_thefiltering', name: 'The Clarified',     flavor: 'Everything dull has burned away. Only brilliance left.', path: 'mind',       cost: 1e33,  globalHPSMultiplier: 75,  requiresAscension: 3, requiresUpgrade: 'asc_solarchoir' },
+  // Fifth+ Ascension tier — extreme scaling
+  { id: 'asc_zenith',       name: 'Zenith',            flavor: 'The highest point. You arrive, and keep rising.',        path: 'philosophy', cost: 1e42,  globalHPSMultiplier: 250, requiresAscension: 5 },
+  { id: 'asc_thelivingsun', name: 'The Living Sun',    flavor: 'You are not in the temple. The temple is in you.',       path: 'spirit',     cost: 1e50,  globalHPSMultiplier: 1000, requiresAscension: 8, requiresUpgrade: 'asc_zenith' },
+];
+
 // ─── Master Array & Map ───────────────────────────────────────────────────────
 
 export const UPGRADES: UpgradeDef[] = [
@@ -2984,6 +3005,7 @@ export const UPGRADES: UpgradeDef[] = [
   ...PHILOSOPHY,
   ...SYNERGY,
   ...OFFERINGS,
+  ...ASCENDANT,
 ];
 
 export const UPGRADE_MAP: Record<string, UpgradeDef> = Object.fromEntries(

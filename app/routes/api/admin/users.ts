@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { handleSchema } from '@/lib/handle';
+import { logAdminAction } from '@/lib/admin-audit.server';
 
 export const Route = createFileRoute('/api/admin/users')({
   server: {
@@ -56,6 +57,7 @@ export const Route = createFileRoute('/api/admin/users')({
                 isAdmin: true,
                 isVerified: true,
                 createdAt: true,
+                profile: { select: { coins: true } },
                 _count: {
                     select: {
                         userBuilds: true,
@@ -148,6 +150,12 @@ export const Route = createFileRoute('/api/admin/users')({
                 isVerified: true,
                 isAdmin: true
             }
+        });
+
+        await logAdminAction(session.user.id, 'user.update', {
+            targetType: 'User',
+            targetId: userId,
+            detail: Object.keys(updateData).join(',') || 'none',
         });
 
         return Response.json(updatedUser);

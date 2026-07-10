@@ -16,6 +16,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RotateCcw, Minus, Plus } from 'lucide-react';
 import type { GameSettingDef, GameSettingsSchema, GameSettingValues } from '@/lib/rmhbox/types';
 
@@ -304,6 +305,7 @@ export default function GameSettingsForm({
   onSettingChange,
   onReset,
 }: GameSettingsFormProps) {
+  const { t } = useTranslation("c-rmhbox");
   return (
     <div className="space-y-1 divide-y divide-(--rmhbox-border)">
       {schema.map((def) => (
@@ -324,7 +326,7 @@ export default function GameSettingsForm({
             className="flex items-center gap-1.5 text-xs font-medium text-(--rmhbox-text-muted) hover:text-(--rmhbox-text) transition-colors"
           >
             <RotateCcw className="h-3 w-3" />
-            Reset to Defaults
+            {t("reset-to-defaults", { defaultValue: "Reset to Defaults" })}
           </button>
         </div>
       )}

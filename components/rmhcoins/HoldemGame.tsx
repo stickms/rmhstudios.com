@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Circle, Loader2 } from 'lucide-react';
 import { connectToHoldem, disconnectFromHoldem, getHoldemSocket, onHoldemBalanceUpdate } from '@/lib/holdem/socket';
 import { useHoldemStore } from '@/lib/holdem/store';
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function HoldemGame({ coins, setCoins }: Props) {
+  const { t } = useTranslation("c-rmhcoins");
   const connectionStatus = useHoldemStore((s) => s.connectionStatus);
   const viewMode = useHoldemStore((s) => s.viewMode);
   const roomInfo = useHoldemStore((s) => s.roomInfo);
@@ -52,7 +54,7 @@ export function HoldemGame({ coins, setCoins }: Props) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
-        <span className="ml-2 text-sm text-site-text-dim">Connecting...</span>
+        <span className="ml-2 text-sm text-site-text-dim">{t("connecting", { defaultValue: "Connecting..." })}</span>
       </div>
     );
   }
@@ -60,7 +62,7 @@ export function HoldemGame({ coins, setCoins }: Props) {
   if (connectionStatus === 'error') {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-red-400">Failed to connect. Please try again.</p>
+        <p className="text-sm text-red-400">{t("failed-to-connect", { defaultValue: "Failed to connect. Please try again." })}</p>
       </div>
     );
   }
@@ -72,7 +74,7 @@ export function HoldemGame({ coins, setCoins }: Props) {
     return (
       <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-site-text">Texas Hold'em Rooms</h3>
+          <h3 className="text-sm font-bold text-site-text">{t("texas-holdem-rooms", { defaultValue: "Texas Hold'em Rooms" })}</h3>
           <Circle className={`h-3 w-3 fill-current ${statusColor}`} />
         </div>
         <div className="max-w-125 mx-auto w-full">
@@ -93,7 +95,7 @@ export function HoldemGame({ coins, setCoins }: Props) {
       <div className="flex items-center justify-between gap-2 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           <button onClick={handleLeave} className="shrink-0 min-h-8 px-2 text-xs text-site-text-dim hover:text-site-text transition-colors">
-            &larr; Leave
+            &larr; {t("leave", { defaultValue: "Leave" })}
           </button>
           <h3 className="text-sm font-bold text-site-text truncate">{roomInfo.name}</h3>
         </div>
@@ -106,10 +108,16 @@ export function HoldemGame({ coins, setCoins }: Props) {
         </div>
       </div>
 
-      <div className="max-w-125 mx-auto w-full flex flex-col gap-4">
-        <HoldemTable />
-        <HoldemControls />
-        <HoldemSessionStats />
+      <div className="w-full flex flex-col lg:flex-row lg:items-start gap-4">
+        <div className="flex-1 min-w-0 rounded-xl border border-site-border bg-site-surface/30 p-3 sm:p-5">
+          <HoldemTable />
+        </div>
+        <div className="w-full lg:w-80 shrink-0 flex flex-col gap-3">
+          <div className="rounded-xl border border-site-border bg-site-surface/30 p-3 sm:p-4">
+            <HoldemControls />
+          </div>
+          <HoldemSessionStats />
+        </div>
       </div>
     </div>
   );

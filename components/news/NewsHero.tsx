@@ -5,6 +5,7 @@ import { Link } from '@tanstack/react-router';
 import useEmblaCarousel from 'embla-carousel-react';
 import { useInView } from 'framer-motion';
 import { ArrowRight, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getCategoryColor } from '@/lib/news-categories';
 import { NewsSourceBadge } from './NewsSourceBadge';
 import type { NewsArticle } from '@/lib/news';
@@ -22,6 +23,7 @@ interface NewsHeroProps {
 }
 
 export function NewsHero({ articles }: NewsHeroProps) {
+    const { t } = useTranslation("c-news");
     const [emblaRef, emblaApi] = useEmblaCarousel(EMBLA_OPTIONS);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
@@ -75,13 +77,13 @@ export function NewsHero({ articles }: NewsHeroProps) {
 
     return (
         <div ref={containerRef} className="relative mb-12" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)}>
-            <div className="overflow-hidden rounded-2xl -mx-3" ref={emblaRef}>
+            <div className="overflow-hidden rounded-site -mx-3" ref={emblaRef}>
                 <div className="flex">
                     {articles.map((article, index) => {
                         const categoryColor = getCategoryColor(article.category ?? '');
                         return (
                             <div key={article.slug} className="flex-[0_0_100%] min-w-0 px-3">
-                                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-(--site-surface) via-(--site-bg-subtle) to-(--site-surface) border border-(--site-border) p-8 md:p-12 min-h-[320px] flex flex-col justify-end">
+                                <div className="relative overflow-hidden rounded-site bg-gradient-to-br from-(--site-surface) via-(--site-bg-subtle) to-(--site-surface) border border-(--site-border) p-8 md:p-12 min-h-[320px] flex flex-col justify-end">
                                     {/* Decorative gradient overlay */}
                                     <div className="absolute inset-0 bg-gradient-to-t from-(--site-bg)/80 via-transparent to-transparent" />
                                     <div className="absolute top-0 right-0 w-1/2 h-full opacity-10">
@@ -112,9 +114,9 @@ export function NewsHero({ articles }: NewsHeroProps) {
 
                                         <Link
                                             to={`/news/${article.slug}` as string}
-                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-(--site-accent) text-white text-sm font-bold hover:opacity-90 transition-opacity"
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-site-sm bg-(--site-accent) text-site-accent-fg text-sm font-bold hover:opacity-90 active:scale-95 transition-[transform,opacity] duration-150"
                                         >
-                                            Read Our Take <ArrowRight className="w-4 h-4" />
+                                            {t("read-our-take", { defaultValue: "Read Our Take" })} <ArrowRight className="w-4 h-4" />
                                         </Link>
                                     </div>
                                 </div>
@@ -131,8 +133,8 @@ export function NewsHero({ articles }: NewsHeroProps) {
                     <div className="flex justify-center items-center gap-3 mt-4">
                         <button
                             onClick={scrollPrev}
-                            className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-white transition-all backdrop-blur-md"
-                            aria-label="Previous featured article"
+                            className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-site-accent-fg active:scale-95 transition-[transform,background-color,border-color,color] duration-150 backdrop-blur-md"
+                            aria-label={t("prev-featured-article", { defaultValue: "Previous featured article" })}
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
@@ -142,11 +144,12 @@ export function NewsHero({ articles }: NewsHeroProps) {
                                 <button
                                     key={index}
                                     onClick={() => scrollTo(index)}
+                                    aria-current={index === selectedIndex ? "true" : undefined}
                                     className={`relative h-1.5 rounded-full overflow-hidden transition-all duration-300 ${index === selectedIndex
                                             ? 'w-8 bg-(--site-accent)/30'
                                             : 'w-1.5 bg-(--site-border) hover:bg-(--site-text-dim)'
                                         }`}
-                                    aria-label={`Go to featured article ${index + 1}`}
+                                    aria-label={t("go-to-featured-article", { defaultValue: "Go to featured article {{n}}", n: index + 1 })}
                                 >
                                     {index === selectedIndex && (
                                         <span
@@ -163,8 +166,8 @@ export function NewsHero({ articles }: NewsHeroProps) {
 
                         <button
                             onClick={scrollNext}
-                            className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-white transition-all backdrop-blur-md"
-                            aria-label="Next featured article"
+                            className="p-1.5 rounded-full bg-(--site-surface)/80 border border-(--site-border) text-(--site-text) hover:bg-(--site-accent) hover:border-(--site-accent) hover:text-site-accent-fg active:scale-95 transition-[transform,background-color,border-color,color] duration-150 backdrop-blur-md"
+                            aria-label={t("next-featured-article", { defaultValue: "Next featured article" })}
                         >
                             <ChevronRight className="w-4 h-4" />
                         </button>

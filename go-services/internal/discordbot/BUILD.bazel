@@ -1,0 +1,45 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "discordbot",
+    srcs = [
+        "bot.go",
+        "chat.go",
+        "deepseek.go",
+        "interactions.go",
+        "pet.go",
+        "pet_ai.go",
+        "pet_care.go",
+        "pet_events.go",
+        "pet_image.go",
+        "pet_intro.go",
+        "pet_presence.go",
+        "pet_repo.go",
+        "pet_service.go",
+        "run.go",
+    ],
+    importpath = "github.com/rmhstudios/rmh-go/internal/discordbot",
+    visibility = ["//go-services:__subpackages__"],
+    deps = [
+        "//go-services/pkg/config",
+        "//go-services/pkg/db",
+        "//go-services/pkg/log",
+        "//go-services/pkg/worker",
+        "@com_github_bwmarrin_discordgo//:discordgo",
+        "@com_github_jackc_pgx_v5//:pgx",
+    ],
+)
+
+go_test(
+    name = "discordbot_test",
+    srcs = [
+        "discordbot_test.go",
+        "run_test.go",
+    ],
+    embed = [":discordbot"],
+    deps = [
+        "//go-services/pkg/log",
+        "//go-services/pkg/telemetry",
+        "//go-services/pkg/worker",
+    ],
+)

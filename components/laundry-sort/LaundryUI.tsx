@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, ChangeEvent, useEffect, useState, useCallback } from 'react';
+import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
 import { Play, RotateCcw } from 'lucide-react';
 import { authClient } from "@/lib/auth-client";
@@ -34,6 +35,7 @@ export function LaundryUI({
   const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
   const [scoreSubmitted, setScoreSubmitted] = useState(false);
 
+  const { t } = useTranslation("c-laundry-sort");
   const session = authClient.useSession();
   const navigate = useNavigate();
 
@@ -44,7 +46,7 @@ export function LaundryUI({
     try {
       const res = await fetch('/api/laundry-sort/leaderboard');
       if (!res.ok) {
-        setLeaderboardError('Failed to load leaderboard');
+        setLeaderboardError(t("failed-to-load-leaderboard", { defaultValue: "Failed to load leaderboard" }));
         return;
       }
       const data = (await res.json()) as LeaderboardEntry[];
@@ -99,13 +101,13 @@ export function LaundryUI({
       <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-40 pointer-events-none">
         {/* Score */}
         <div className="bg-black/60 backdrop-blur-sm border border-cyan-500/50 rounded px-4 py-2 pointer-events-auto">
-          <div className="text-cyan-400 text-sm font-mono">SCORE</div>
+          <div className="text-cyan-400 text-sm font-mono">{t("score", { defaultValue: "SCORE" })}</div>
           <div className="text-white text-2xl font-black tracking-wider">{score.toString().padStart(6, '0')}</div>
         </div>
 
         {/* Time */}
         <div className={`bg-black/60 backdrop-blur-sm border rounded px-4 py-2 pointer-events-auto transition-colors ${time > 30 ? 'border-green-500/50' : 'border-red-500/50'}`}>
-          <div className={`text-sm font-mono ${time > 30 ? 'text-green-400' : 'text-red-400'}`}>TIME</div>
+          <div className={`text-sm font-mono ${time > 30 ? 'text-green-400' : 'text-red-400'}`}>{t("time", { defaultValue: "TIME" })}</div>
           <div className="text-white text-2xl font-black tracking-wider">
             {Math.floor(time / 60)}:{(time % 60).toString().padStart(2, '0')}
           </div>
@@ -117,34 +119,34 @@ export function LaundryUI({
         {!gameActive && (
           <div className="w-full max-w-3xl grid gap-4 md:grid-cols-[1.1fr_0.9fr]">
             <div className="bg-black/70 backdrop-blur-sm border border-purple-500/50 rounded px-6 py-4 text-center">
-              <h2 className="text-purple-400 text-lg font-bold mb-2">SORT THE LAUNDRY!</h2>
+              <h2 className="text-purple-400 text-lg font-bold mb-2">{t("sort-the-laundry", { defaultValue: "SORT THE LAUNDRY!" })}</h2>
               <p className="text-gray-300 text-sm mb-4">
-                Watch as colorful clothes fall from above. Let them tumble into the matching color bins to earn points. Wrong bins lose points!
+                {t("game-description", { defaultValue: "Watch as colorful clothes fall from above. Let them tumble into the matching color bins to earn points. Wrong bins lose points!" })}
               </p>
               <ul className="text-left text-xs text-gray-400 space-y-1 mb-4">
-                <li>✓ Correct sort: <span className="text-green-400">+100 points</span></li>
-                <li>✗ Wrong bin: <span className="text-red-400">-50 points</span></li>
-                <li>⏱ Time limit: 1 minute</li>
+                <li>✓ {t("correct-sort", { defaultValue: "Correct sort:" })} <span className="text-green-400">+100 {t("points", { defaultValue: "points" })}</span></li>
+                <li>✗ {t("wrong-bin", { defaultValue: "Wrong bin:" })} <span className="text-red-400">-50 {t("points", { defaultValue: "points" })}</span></li>
+                <li>⏱ {t("time-limit", { defaultValue: "Time limit: 1 minute" })}</li>
               </ul>
 
               {gameOver && (
                 <div className="mt-4 rounded border border-red-500/40 bg-black/60 p-4">
-                  <h3 className="text-red-400 text-lg font-black mb-2">GAME OVER</h3>
+                  <h3 className="text-red-400 text-lg font-black mb-2">{t("game-over", { defaultValue: "GAME OVER" })}</h3>
                   <div className="text-white text-3xl font-black mb-4">{finalScore.toString().padStart(6, '0')}</div>
 
                   {!session.data ? (
                     <div className="mb-4">
-                      <p className="text-xs text-red-300 mb-2">Sign in to save your score!</p>
+                      <p className="text-xs text-red-300 mb-2">{t("sign-in-to-save", { defaultValue: "Sign in to save your score!" })}</p>
                       <Button
                         onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"
                       >
-                        Sign In to Submit
+                        {t("sign-in-to-submit", { defaultValue: "Sign In to Submit" })}
                       </Button>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      <p className="text-xs text-green-300">{scoreSubmitted ? '✓ Score submitted!' : 'Submitting score…'}</p>
+                      <p className="text-xs text-green-300">{scoreSubmitted ? t("score-submitted", { defaultValue: "✓ Score submitted!" }) : t("submitting-score", { defaultValue: "Submitting score…" })}</p>
                       <Button
                         onClick={() => {
                           setScoreSubmitted(false);
@@ -154,7 +156,7 @@ export function LaundryUI({
                         className="w-full border-cyan-500 text-cyan-400 hover:bg-cyan-500/10"
                       >
                         <RotateCcw className="w-4 h-4" />
-                        Play Again
+                        {t("play-again", { defaultValue: "Play Again" })}
                       </Button>
                     </div>
                   )}
@@ -167,7 +169,7 @@ export function LaundryUI({
                     onClick={() => navigate({ to: '/login', search: { callbackURL: undefined } })}
                     className="bg-zinc-800 hover:bg-zinc-700 text-white font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
                   >
-                    Sign In to Play
+                    {t("sign-in-to-play", { defaultValue: "Sign In to Play" })}
                   </Button>
                 ) : (
                   <Button
@@ -175,7 +177,7 @@ export function LaundryUI({
                     className="bg-linear-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600 text-black font-bold px-8 py-3 rounded-lg flex items-center gap-2 text-lg mx-auto"
                   >
                     <Play className="w-5 h-5" />
-                    Start Game
+                    {t("start-game", { defaultValue: "Start Game" })}
                   </Button>
                 )
               )}
@@ -183,8 +185,8 @@ export function LaundryUI({
 
             <div className="bg-black/70 backdrop-blur-sm border border-cyan-500/40 rounded px-5 py-4">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-cyan-300 text-sm font-bold tracking-wider">LEADERBOARD</h3>
-                {leaderboardLoading && <span className="text-xs text-zinc-400">Loading…</span>}
+                <h3 className="text-cyan-300 text-sm font-bold tracking-wider">{t("leaderboard", { defaultValue: "LEADERBOARD" })}</h3>
+                {leaderboardLoading && <span className="text-xs text-zinc-400">{t("loading", { defaultValue: "Loading…" })}</span>}
               </div>
 
               {leaderboardError && (
@@ -192,7 +194,7 @@ export function LaundryUI({
               )}
 
               {!leaderboardLoading && !leaderboardError && leaderboard.length === 0 && (
-                <div className="text-xs text-zinc-400">No scores yet. Be the first!</div>
+                <div className="text-xs text-zinc-400">{t("no-scores-yet", { defaultValue: "No scores yet. Be the first!" })}</div>
               )}
 
               <div className="space-y-2 max-h-48 overflow-y-auto pr-1">

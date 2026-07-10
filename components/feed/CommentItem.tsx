@@ -2,14 +2,30 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
-import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck, Languages, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { RMHarkContent } from './RMHarkContent';
+import ChatMediaEmbed, { stripEmbedUrls, extractMediaEmbeds } from '@/components/shared/ChatMediaEmbed';
+import { GifPicker } from '@/components/feed/GifPicker';
 import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
 import { AIGenerateButton } from './AIGenerateButton';
+import { MentionTextarea } from './MentionTextarea';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useFreshUser } from '@/stores/userDisplayStore';
+import { timeAgoShort } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
+import { useLocaleStore } from '@/stores/localeStore';
+import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
+import type { ReactionSummary } from '@/lib/social/reactions';
+import { applyReactionToggle } from '@/lib/social/reactions';
+import { ReactionMenu } from '@/components/shared/ReactionMenu';
+import { ReactionChips } from '@/components/shared/ReactionChips';
+import { useReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 
 export interface Comment {
   id: string;
@@ -25,29 +41,16 @@ export interface Comment {
   replies?: Comment[];
   deletedAt?: string | null;
   deletedByAdmin?: boolean;
+  /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
+  reactions?: ReactionSummary[];
+  /** Client-only: optimistic comment awaiting its server round-trip. */
+  pending?: boolean;
 }
 
 interface SessionUser {
   id?: string;
   name?: string | null;
   image?: string | null;
-}
-
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const seconds = Math.floor((now - then) / 1000);
-
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d`;
-  const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo`;
-  return `${Math.floor(months / 12)}y`;
 }
 
 function formatCount(n: number | undefined): string {
@@ -77,10 +80,15 @@ interface CommentItemProps {
 }
 
 export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onCommentRemoved, depth = 0 }: CommentItemProps) {
+  const { t } = useTranslation("feed");
+  const locale = useLocaleStore((s) => s.locale);
   const freshCommentUser = useFreshUser(comment.user) ?? comment.user;
   const [replyOpen, setReplyOpen] = useState(false);
   const [replyContent, setReplyContent] = useState('');
+  const [showGifPicker, setShowGifPicker] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const replyRef = useRef<HTMLTextAreaElement>(null);
+  const insertEmoji = useEmojiInsert(replyRef, replyContent, setReplyContent);
   const remaining = MAX_COMMENT_LENGTH - replyContent.length;
 
   const [liked, setLiked] = useState(comment.liked ?? false);
@@ -88,11 +96,48 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   const [reposted, setReposted] = useState(comment.reposted ?? false);
   const [repostCount, setRepostCount] = useState(comment.repostCount ?? 0);
   const [viewCount, setViewCount] = useState(comment.viewCount ?? 0);
+  const { run: runLike } = useOptimisticAction();
+  const { run: runRepost } = useOptimisticAction();
+  const [reactions, setReactions] = useState<ReactionSummary[]>(comment.reactions ?? []);
+  const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number } | null>(null);
+  const reactionTrigger = useReactionTrigger((x, y) => setReactionMenu({ x, y }));
   const viewTracked = useRef(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
   const [threadExpanded, setThreadExpanded] = useState(false);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [showTranslated, setShowTranslated] = useState(false);
+  const [translating, setTranslating] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // When the site language changes, drop any cached translation so the next
+  // "Translate" click re-translates into the newly selected language.
+  useEffect(() => {
+    setTranslatedText(null);
+    setShowTranslated(false);
+  }, [locale]);
+
+  const handleTranslate = async () => {
+    setMenuOpen(false);
+    if (translatedText) {
+      setShowTranslated((s) => !s);
+      return;
+    }
+    const to = LOCALE_TO_LANGUAGE_NAME[locale];
+    setTranslating(true);
+    try {
+      const res = await fetch(`/api/comments/${comment.id}/translate?to=${encodeURIComponent(to)}`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.text) {
+          setTranslatedText(data.text);
+          setShowTranslated(true);
+        }
+      }
+    } finally {
+      setTranslating(false);
+    }
+  };
 
   const hasReplies = !!comment.replies?.length;
   // At the depth cap, collapse the remaining chain behind a button instead of
@@ -122,44 +167,57 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
       .catch(() => {});
   }, [postId, comment.id]);
 
-  const toggleLike = async () => {
+  const toggleLike = () => {
     if (!sessionUser) return;
     const wasLiked = liked;
-    setLiked(!wasLiked);
-    setLikeCount((c) => c + (wasLiked ? -1 : 1));
-
-    try {
-      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}/like`, { method: 'POST' });
-      if (!res.ok) {
+    const prevCount = likeCount;
+    runLike({
+      apply: () => {
+        setLiked(!wasLiked);
+        setLikeCount((c) => c + (wasLiked ? -1 : 1));
+      },
+      rollback: () => {
         setLiked(wasLiked);
-        setLikeCount(comment.likeCount ?? 0);
-      }
-    } catch {
-      setLiked(wasLiked);
-      setLikeCount(comment.likeCount ?? 0);
-    }
+        setLikeCount(prevCount);
+      },
+      commit: () => fetch(`/api/rmharks/${postId}/comment/${comment.id}/like`, { method: 'POST' }),
+    });
   };
 
-  const toggleRepost = async () => {
+  const toggleRepost = () => {
     if (!sessionUser) return;
     const wasReposted = reposted;
-    setReposted(!wasReposted);
-    setRepostCount((c) => c + (wasReposted ? -1 : 1));
-
-    try {
-      const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}/repost`, { method: 'POST' });
-      if (!res.ok) {
+    const prevCount = repostCount;
+    runRepost({
+      apply: () => {
+        setReposted(!wasReposted);
+        setRepostCount((c) => c + (wasReposted ? -1 : 1));
+      },
+      rollback: () => {
         setReposted(wasReposted);
-        setRepostCount(comment.repostCount ?? 0);
-      }
+        setRepostCount(prevCount);
+      },
+      commit: () => fetch(`/api/rmharks/${postId}/comment/${comment.id}/repost`, { method: 'POST' }),
+    });
+  };
+
+  const toggleReaction = async (emoji: string) => {
+    const prev = reactions;
+    setReactions(applyReactionToggle(prev, emoji));
+    try {
+      const res = await fetch(`/api/comments/${comment.id}/react`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji }),
+      });
+      if (!res.ok) throw new Error('react failed');
     } catch {
-      setReposted(wasReposted);
-      setRepostCount(comment.repostCount ?? 0);
+      setReactions(prev);
     }
   };
 
   const handleDelete = async () => {
-    if (!confirm('Delete this reply?')) return;
+    if (!confirm(t('delete-reply-confirm', { defaultValue: 'Delete this reply?' }))) return;
     try {
       const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -196,7 +254,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   };
 
   return (
-    <div className="py-3">
+    <div className="py-3" {...(comment.deletedAt || comment.pending ? {} : reactionTrigger)}>
       <div className="flex gap-2.5">
         {/* Avatar */}
         <UserAvatar user={freshCommentUser} size="sm" />
@@ -209,10 +267,10 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                 {freshCommentUser.name || 'Unknown'}
               </span>
               {freshCommentUser.isVerified && (
-                <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />
+                <BadgeCheck className="w-4 h-4 text-site-success shrink-0" />
               )}
               {freshCommentUser.isAdmin && (
-                <span title="Admin" className="inline-flex items-center shrink-0">
+                <span title={t('admin-title', { defaultValue: 'Admin' })} className="inline-flex items-center shrink-0">
                   <ShieldCheck className="w-4 h-4 text-site-accent" />
                 </span>
               )}
@@ -223,7 +281,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
               )}
             </Link>
             <span className="text-site-text-dim shrink-0">
-              · {timeAgo(comment.createdAt)}
+              · {timeAgoShort(comment.createdAt)}
             </span>
 
             {/* More menu */}
@@ -236,28 +294,38 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                   <MoreHorizontal className="w-3.5 h-3.5" />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+                  <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
                     <button
                       onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                     >
                       <Heart className="w-4 h-4 text-site-text-dim" />
-                      Liked by
+                      {t('liked-by', { defaultValue: 'Liked by' })}
                     </button>
                     <button
                       onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
                     >
                       <Repeat className="w-4 h-4 text-site-text-dim" />
-                      reRMHark'd by
+                      {t('rermarkd-by', { defaultValue: "reRMHark'd by" })}
                     </button>
+                    {comment.content.length > 8 && (
+                      <button
+                        onClick={handleTranslate}
+                        disabled={translating}
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-60"
+                      >
+                        <Languages className="w-4 h-4 text-site-text-dim" />
+                        {translating ? t('translating', { defaultValue: 'Translating…' }) : translatedText ? (showTranslated ? t('show-original', { defaultValue: 'Show original' }) : t('show-translation', { defaultValue: 'Show translation' })) : t('translate', { defaultValue: 'Translate' })}
+                      </button>
+                    )}
                     {isAuthor && (
                       <button
                         onClick={() => { setMenuOpen(false); handleDelete(); }}
                         className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
-                        Delete
+                        {t('delete', { defaultValue: 'Delete' })}
                       </button>
                     )}
                   </div>
@@ -267,7 +335,19 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
           </div>
 
           {/* Content */}
-          <RMHarkContent text={comment.content} className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words" />
+          <RMHarkContent text={stripEmbedUrls(comment.content)} className="text-sm text-site-text mt-0.5 whitespace-pre-wrap break-words" />
+          {extractMediaEmbeds(comment.content).length > 0 && (
+            <ChatMediaEmbed content={comment.content} themePrefix="site" />
+          )}
+          {showTranslated && translatedText && (
+            <p className="mt-1 whitespace-pre-wrap break-words rounded-site-sm bg-site-surface/50 p-2 text-sm text-site-text">
+              {translatedText}
+            </p>
+          )}
+
+          {!comment.deletedAt && !comment.pending && (
+            <ReactionChips reactions={reactions} onToggle={toggleReaction} className="mt-1.5" />
+          )}
 
           {/* Actions row */}
           {!comment.deletedAt && (
@@ -284,42 +364,36 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
 
               {/* reRMHark */}
               <div className={`flex items-center rounded-full transition-colors ${
-                reposted ? 'text-emerald-400' : 'text-site-text-dim'
+                reposted ? 'text-site-success' : 'text-site-text-dim'
               }`}>
                 <button
                   onClick={toggleRepost}
-                  className="p-1 rounded-full hover:bg-emerald-400/10 transition-colors group"
+                  className="p-1 rounded-full hover:bg-site-success/10 transition-colors group"
                   title="reRMHark"
                 >
                   <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 </button>
-                {formatCount(repostCount) && (
-                  <span className="text-xs pr-0.5">{formatCount(repostCount)}</span>
-                )}
+                <AnimatedCount value={repostCount} format={formatCount} hideZero className="text-xs pr-0.5" />
               </div>
 
               {/* Like */}
               <div className={`flex items-center rounded-full transition-colors ${
-                liked ? 'text-rose-400' : 'text-site-text-dim'
+                liked ? 'text-site-danger' : 'text-site-text-dim'
               }`}>
                 <button
                   onClick={toggleLike}
-                  className="p-1 rounded-full hover:bg-rose-400/10 transition-colors group"
+                  className="p-1 rounded-full hover:bg-site-danger/10 transition-colors group"
                   title="Like"
                 >
                   <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`} />
                 </button>
-                {formatCount(likeCount) && (
-                  <span className="text-xs pr-0.5">{formatCount(likeCount)}</span>
-                )}
+                <AnimatedCount value={likeCount} format={formatCount} hideZero className="text-xs pr-0.5" />
               </div>
 
               {/* Views */}
               <div className="flex items-center gap-1 px-1.5 py-1 text-site-text-dim">
                 <Eye className="w-4 h-4" />
-                {formatCount(viewCount) && (
-                  <span className="text-xs">{formatCount(viewCount)}</span>
-                )}
+                <AnimatedCount value={viewCount} format={formatCount} hideZero className="text-xs" />
               </div>
             </div>
           )}
@@ -333,14 +407,15 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                 linkToProfile={false}
               />
               <div className="flex-1 min-w-0">
-                <textarea
+                <MentionTextarea
+                  ref={replyRef}
                   autoFocus
                   value={replyContent}
-                  onChange={(e) => setReplyContent(e.target.value)}
-                  placeholder={`Reply to @${freshCommentUser.handle || freshCommentUser.name || 'Unknown'}...`}
+                  onChange={setReplyContent}
+                  placeholder={t('reply-placeholder', { handle: freshCommentUser.handle || freshCommentUser.name || 'Unknown', defaultValue: 'Reply to @{{handle}}...' })}
                   rows={2}
                   maxLength={MAX_COMMENT_LENGTH}
-                  className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-xs rounded-lg p-2 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
+                  className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-xs rounded-site-sm p-2 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                       handleSubmitReply();
@@ -348,6 +423,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                     if (e.key === 'Escape') {
                       setReplyOpen(false);
                       setReplyContent('');
+                      setShowGifPicker(false);
                     }
                   }}
                 />
@@ -357,10 +433,10 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                       {remaining}
                     </span>
                     <button
-                      onClick={() => { setReplyOpen(false); setReplyContent(''); }}
+                      onClick={() => { setReplyOpen(false); setReplyContent(''); setShowGifPicker(false); }}
                       className="text-[10px] text-site-text-dim hover:text-site-text transition-colors"
                     >
-                      Cancel
+                      {t('cancel', { defaultValue: 'Cancel' })}
                     </button>
                   </div>
                   <div className="flex items-center gap-2">
@@ -370,6 +446,15 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                       size="sm"
                       title="Generate a reply with AI"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowGifPicker((v) => !v)}
+                      aria-label={t('add-gif-aria', { defaultValue: 'Add a GIF' })}
+                      className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
+                    >
+                      <ImageIcon className="w-4 h-4" />
+                    </button>
+                    <EmojiPickerButton direction="up" onSelect={insertEmoji} />
                     <Button
                       variant="accent"
                       size="sm"
@@ -377,10 +462,20 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                       onClick={handleSubmitReply}
                       className="h-6 text-xs px-2.5"
                     >
-                      {submitting ? 'Posting...' : 'Reply'}
+                      {submitting ? t('posting', { defaultValue: 'Posting...' }) : t('reply', { defaultValue: 'Reply' })}
                     </Button>
                   </div>
                 </div>
+                {showGifPicker && (
+                  <GifPicker
+                    className="mt-2"
+                    onClose={() => setShowGifPicker(false)}
+                    onSelect={(u) => {
+                      setReplyContent((c) => (c ? `${c} ${u}` : u));
+                      setShowGifPicker(false);
+                    }}
+                  />
+                )}
               </div>
             </div>
           )}
@@ -393,7 +488,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                 className="mt-2 ml-2 flex items-center gap-1.5 text-xs font-medium text-site-accent hover:underline"
               >
                 <MessageCircle className="w-3.5 h-3.5" />
-                Show {countDescendants(comment.replies)} more {countDescendants(comment.replies) === 1 ? 'reply' : 'replies'}
+                {t('show-more-replies', { count: countDescendants(comment.replies), defaultValue: 'Show {{count}} more reply', defaultValue_plural: 'Show {{count}} more replies' })}
               </button>
             ) : (
               <div className="mt-2 ml-2 border-l-2 border-site-border pl-3 space-y-1">
@@ -423,6 +518,15 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
           postId={postId}
           commentId={comment.id}
           type={engagementModal}
+        />
+      )}
+
+      {reactionMenu && (
+        <ReactionMenu
+          x={reactionMenu.x}
+          y={reactionMenu.y}
+          onSelect={toggleReaction}
+          onClose={() => setReactionMenu(null)}
         />
       )}
     </div>

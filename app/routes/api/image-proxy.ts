@@ -1,18 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { optimizeImage, parseFormat, negotiateFormat } from '@/lib/image-optimize';
+import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
+import { isDiscordAvatarUrl, refreshDiscordAvatarFromBrokenUrl } from '@/lib/discord-avatar-refresh.server';
 
-const ALLOWED_HOSTS = new Set<string>();
 const MAX_UPSTREAM_BYTES = 10 * 1024 * 1024; // 10 MB
-
-function isAllowedUrl(urlStr: string): boolean {
-  try {
-    const url = new URL(urlStr);
-    // Allow any https URL (images are user-provided). Block non-https.
-    return url.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
 
 export const Route = createFileRoute('/api/image-proxy')({
   server: {
@@ -22,7 +13,7 @@ export const Route = createFileRoute('/api/image-proxy')({
       const url = new URL(request.url);
       const src = url.searchParams.get('url');
 
-      if (!src || !isAllowedUrl(src)) {
+      if (!src) {
         return Response.json({ error: 'Invalid or missing url parameter' }, { status: 400 });
       }
 
@@ -31,13 +22,26 @@ export const Route = createFileRoute('/api/image-proxy')({
       const qParam = url.searchParams.get('q');
       const fParam = url.searchParams.get('f');
 
-      // Fetch the upstream image
-      const upstream = await fetch(src, {
-        headers: { 'User-Agent': 'RMHStudios-ImageProxy/1.0' },
-        signal: AbortSignal.timeout(10_000),
-      });
+      // Fetch the upstream image (SSRF-guarded: https only, blocks private IPs)
+      let upstream: Response;
+      try {
+        upstream = await safeFetch(src, {
+          headers: { 'User-Agent': 'RMHStudios-ImageProxy/1.0' },
+          timeoutMs: 10_000,
+        });
+      } catch (e) {
+        if (e instanceof SsrfError) {
+          return Response.json({ error: 'Disallowed image URL' }, { status: 400 });
+        }
+        throw e;
+      }
 
       if (!upstream.ok) {
+        // A stale Discord avatar (the hash changed after the user updated it).
+        // Lazily refresh it from Discord in the background — guarded + rate-limited.
+        if (isDiscordAvatarUrl(src)) {
+          void refreshDiscordAvatarFromBrokenUrl(src);
+        }
         return Response.json({ error: 'Failed to fetch upstream image' }, { status: 502 });
       }
 

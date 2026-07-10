@@ -10,10 +10,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Lock, Check, Swords, Shield, Zap, Crown, Users } from 'lucide-react';
 import { CLASSES } from '@/lib/altair/data/classes';
 import { WEAPONS } from '@/lib/altair/data/weapons';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
+import { asset } from '@/lib/storage/asset';
 import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store';
 import { emit } from '@/lib/altair/multiplayer/socket';
 import { C2S } from '@/lib/altair/multiplayer/events';
@@ -32,7 +34,7 @@ function ClassSprite({ classId, size = 48 }: { classId: string; size?: number })
   const filename = classId.replace('_', '-');
   return (
     <SpriteIcon
-      sheetSrc={`/sprites/altair/characters/${filename}.png`}
+      sheetSrc={asset(`/sprites/altair/characters/${filename}.png`)}
       frameIndex={0}
       frameWidth={16}
       frameHeight={16}
@@ -51,6 +53,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
   const readyStates = useAltairMultiplayerStore((s) => s.readyStates);
   const unlockedClasses = useAltairMetaStore((s) => s.unlockedClasses);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const { t } = useTranslation("c-altair");
 
   if (!lobby) return null;
 
@@ -111,7 +114,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
                 {classDef && (
                   <span className="font-bold" style={{ color: classDef.color }}>{classDef.name}</span>
                 )}
-                {!classDef && <span className="text-(--altair-text-dim) italic">picking...</span>}
+                {!classDef && <span className="text-(--altair-text-dim) italic">{t("picking", { defaultValue: "picking..." })}</span>}
                 {ready && <Check size={12} className="text-(--altair-success)" />}
               </div>
             );
@@ -196,7 +199,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
           {detailWeapon && (
             <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-(--altair-bg-subtle) mb-3">
               <Swords size={14} className="text-(--altair-text-muted)" />
-              <span className="text-xs text-(--altair-text-muted)">Starting weapon:</span>
+              <span className="text-xs text-(--altair-text-muted)">{t("starting-weapon", { defaultValue: "Starting weapon:" })}</span>
               <span className="text-xs font-bold text-(--altair-text)">{detailWeapon.name}</span>
             </div>
           )}
@@ -206,7 +209,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
               <div className="flex items-center gap-2 mb-1">
                 <Shield size={12} className="text-(--altair-info)" />
                 <span className="text-xs font-bold text-(--altair-text)">{detailClass.ability1.name}</span>
-                <span className="text-[10px] text-(--altair-text-dim)">Innate</span>
+                <span className="text-[10px] text-(--altair-text-dim)">{t("innate", { defaultValue: "Innate" })}</span>
               </div>
               <p className="text-[11px] text-(--altair-text-muted)">{detailClass.ability1.description}</p>
             </div>
@@ -214,7 +217,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
               <div className="flex items-center gap-2 mb-1">
                 <Zap size={12} className="text-(--altair-warning)" />
                 <span className="text-xs font-bold text-(--altair-text)">{detailClass.ability2.name}</span>
-                <span className="text-[10px] text-(--altair-text-dim)">Lv.10</span>
+                <span className="text-[10px] text-(--altair-text-dim)">{t("lv10", { defaultValue: "Lv.10" })}</span>
               </div>
               <p className="text-[11px] text-(--altair-text-muted)">{detailClass.ability2.description}</p>
             </div>
@@ -238,10 +241,10 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
           {myReady ? (
             <>
               <Check size={20} />
-              Ready!
+              {t("ready", { defaultValue: "Ready!" })}
             </>
           ) : (
-            'Ready Up'
+            t("ready-up", { defaultValue: "Ready Up" })
           )}
         </button>
 
@@ -251,7 +254,7 @@ export default function ClassSelectLobby({ lobbyId }: ClassSelectLobbyProps) {
             disabled={!allReady}
             className="flex-1 py-3 rounded-xl font-bold text-lg text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover) flex items-center justify-center gap-2"
           >
-            Start Game
+            {t("start-game", { defaultValue: "Start Game" })}
           </button>
         )}
       </div>

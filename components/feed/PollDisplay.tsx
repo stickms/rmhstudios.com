@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import type { FeedPoll } from '@/lib/feed-types';
@@ -9,18 +10,22 @@ interface PollDisplayProps {
   poll: FeedPoll;
   postId: string;
   onUpdate?: (poll: FeedPoll) => void;
+  /** Override the vote endpoint (defaults to the RMHark route). */
+  voteUrl?: string;
 }
 
-export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
+export function PollDisplay({ poll, postId, onUpdate, voteUrl }: PollDisplayProps) {
+  const { t } = useTranslation("feed");
   const { data: session } = authClient.useSession();
   const [localPoll, setLocalPoll] = useState(poll);
   const [voting, setVoting] = useState(false);
 
   const hasVoted = (localPoll.myVotes?.length ?? 0) > 0;
-  const showResults = hasVoted;
+  const isClosed = !!localPoll.closesAt && new Date(localPoll.closesAt).getTime() <= Date.now();
+  const showResults = hasVoted || isClosed;
 
   const handleVote = async (optionId: string) => {
-    if (!session || voting) return;
+    if (!session || voting || isClosed) return;
 
     setVoting(true);
 
@@ -61,7 +66,7 @@ export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
     onUpdate?.(optimistic);
 
     try {
-      const res = await fetch(`/api/rmharks/${postId}/vote`, {
+      const res = await fetch(voteUrl ?? `/api/rmharks/${postId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ optionId }),
@@ -96,11 +101,11 @@ export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
   const maxVotes = Math.max(...localPoll.options.map((o) => o.voteCount), 1);
 
   return (
-    <div className="mt-3 border border-site-border rounded-xl p-3 bg-site-surface/20">
+    <div className="mt-3 border border-site-border rounded-site p-3 bg-site-surface/20">
       <p className="text-sm font-semibold text-site-text mb-2">{localPoll.question}</p>
 
       {localPoll.multiSelect && !showResults && (
-        <p className="text-xs text-site-text-dim mb-2">Select all that apply</p>
+        <p className="text-xs text-site-text-dim mb-2">{t("select-all-that-apply", { defaultValue: "Select all that apply" })}</p>
       )}
 
       <div className="space-y-2">
@@ -115,8 +120,8 @@ export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
               <button
                 key={option.id}
                 onClick={() => handleVote(option.id)}
-                disabled={!session || voting}
-                className="w-full text-left relative overflow-hidden rounded-lg border border-site-border transition-colors hover:border-site-accent/50 disabled:opacity-70"
+                disabled={!session || voting || isClosed}
+                className="w-full text-left relative overflow-hidden rounded-site-sm border border-site-border transition-colors hover:border-site-accent/50 disabled:opacity-70"
               >
                 {/* Progress bar background */}
                 <div
@@ -144,8 +149,8 @@ export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
             <button
               key={option.id}
               onClick={() => handleVote(option.id)}
-              disabled={!session || voting}
-              className="w-full text-left px-3 py-2 rounded-lg border border-site-border text-sm text-site-text hover:border-site-accent hover:bg-site-accent/5 transition-colors disabled:opacity-50"
+              disabled={!session || voting || isClosed}
+              className="w-full text-left px-3 py-2 rounded-site-sm border border-site-border text-sm text-site-text hover:border-site-accent hover:bg-site-accent/5 transition-colors disabled:opacity-50"
             >
               {option.text}
             </button>
@@ -154,8 +159,11 @@ export function PollDisplay({ poll, postId, onUpdate }: PollDisplayProps) {
       </div>
 
       <p className="text-xs text-site-text-dim mt-2">
-        {localPoll.totalVotes} vote{localPoll.totalVotes !== 1 ? 's' : ''}
-        {localPoll.multiSelect && ' · Multiple choice'}
+        {t("vote-count", { count: localPoll.totalVotes, defaultValue: "{{count}} vote", defaultValue_one: "{{count}} vote", defaultValue_other: "{{count}} votes" })}
+        {localPoll.multiSelect && ` · ${t("multiple-choice", { defaultValue: "Multiple choice" })}`}
+        {localPoll.closesAt && (
+          <> · {isClosed ? t("final-results", { defaultValue: "Final results" }) : t("closes-at", { date: new Date(localPoll.closesAt).toLocaleString(), defaultValue: "Closes {{date}}" })}</>
+        )}
       </p>
     </div>
   );

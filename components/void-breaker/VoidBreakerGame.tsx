@@ -1,25 +1,39 @@
 'use client';
 
 import { useRef, useEffect, useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { asset } from '@/lib/storage/asset';
 import { VoidBreakerEngine } from '@/lib/void-breaker/game';
 import { VoidBreakerRenderer } from '@/lib/void-breaker/renderer';
+import { VoidBreakerRenderer3D, type VBRenderer } from '@/lib/void-breaker/renderer3d';
+import { VoidBreakerAudio } from '@/lib/void-breaker/audio';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, MAX_SHARDS, DET_MIN_SHARDS, DASH_COOLDOWN, FOCUS_COOLDOWN } from '@/lib/void-breaker/constants';
 import type { InputState, RunStats, GameState, HUDState } from '@/lib/void-breaker/types';
+import type { UpgradeId } from '@/lib/void-breaker/upgrades';
+import {
+  loadMeta, saveMeta, metaBonuses, buyNode, awardCores, emptyMeta,
+  isCharUnlocked, canUnlockChar, unlockChar,
+  isWeaponUnlocked, canUnlockWeapon, unlockWeapon,
+  type MetaState, type MetaNodeId,
+} from '@/lib/void-breaker/metaProgression';
+import { getCharacter, isCharacterId, type CharacterId } from '@/lib/void-breaker/characters';
+import { getWeapon, isWeaponId, type WeaponId } from '@/lib/void-breaker/weapons';
+import { combineModifiers, isModifierId, type ModifierId } from '@/lib/void-breaker/modifiers';
 import { VoidBreakerUI } from './VoidBreakerUI';
 import { VoidBreakerTouchControls } from './VoidBreakerTouchControls';
 import { saveGame, loadGame, deleteSave, getSaveInfo } from '@/lib/void-breaker/saveSystem';
 import { ABILITY_COOLDOWNS } from '@/lib/void-breaker/abilityProgression';
 
 /** Background music track path */
-const MUSIC_SRC = '/music/VoidBreaker/cold coffee - lofi rap beat (FREE FOR PROFIT USE).mp3';
+const MUSIC_SRC = asset('/music/VoidBreaker/cold coffee - lofi rap beat (FREE FOR PROFIT USE).mp3');
 
 /** Master volume (0–1). Adjust here globally. */
 const MASTER_VOLUME = 0.75;
 
 const EMPTY_HUD: HUDState = {
-  score: 0, multiplier: 1, wave: 0, hp: 3, maxHp: 3,
+  score: 0, multiplier: 1, surge: 1, wave: 0, hp: 3, maxHp: 3,
   shards: 0, combo: 0, bossHp: 0, bossMaxHp: 0,
-  bossActive: false, bossPhase: 1, dashReady: true, dashCooldownFraction: 0,
+  bossActive: false, bossPhase: 1, bossName: '', dashReady: true, dashCooldownFraction: 0,
   waveBreak: false, paused: false, countdown: 3, wingLevel: 0,
   focusReady: true, focusActive: false, focusCooldownFraction: 0,
   detonateReady: false, dialogue: null,
@@ -32,13 +46,20 @@ const EMPTY_HUD: HUDState = {
   voidPulseCooldownFraction: 0, phaseShiftCooldownFraction: 0,
   reflectShieldCooldownFraction: 0, allySynergyCooldownFraction: 0,
   pendingUnlock: null,
+  pendingUpgrades: [], upgradeIsBossReward: false,
 };
 
 export function VoidBreakerGame() {
+  const { t } = useTranslation('c-void-breaker');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameRef = useRef<VoidBreakerEngine | null>(null);
-  const rendererRef = useRef<VoidBreakerRenderer | null>(null);
+  const rendererRef = useRef<VBRenderer | null>(null);
+  /** Set once if renderer.draw throws, to avoid spamming the console each frame. */
+  const renderDrawFailedRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  /** Procedural SFX engine (separate from the music <audio> element). */
+  const sfxRef = useRef<VoidBreakerAudio | null>(null);
+  if (!sfxRef.current) sfxRef.current = new VoidBreakerAudio();
   const inputRef = useRef<InputState>({
     up: false, down: false, left: false, right: false,
     mouseX: 800, mouseY: 500,
@@ -52,9 +73,25 @@ export function VoidBreakerGame() {
   const [hud, setHud] = useState<HUDState>(EMPTY_HUD);
   const [muted, setMuted] = useState(false);
   const [musicVolume, setMusicVolume] = useState(70);
+  const [sfxVolume, setSfxVolume] = useState(85);
+  const [use3D, setUse3D] = useState(true);
+  const [meta, setMeta] = useState<MetaState>(emptyMeta);
+  const [earnedCores, setEarnedCores] = useState(0);
+  const [reducedFx, setReducedFx] = useState(false);
+  const reducedFxRef = useRef(false);
+  const [characterId, setCharacterId] = useState<CharacterId>('striker');
+  const [weaponId, setWeaponId] = useState<WeaponId>('pulse');
+  const [activeMods, setActiveMods] = useState<ModifierId[]>([]);
+  const runCoreMultRef = useRef(1);
   const [saveInfo, setSaveInfo] = useState<{ wave: number; savedAt: Date } | null>(null);
   // Pause menu: 'ingame' pause vs menu
   const [showPauseMenu, setShowPauseMenu] = useState(false);
+  // Boss intro nameplate — shown briefly when a boss first appears.
+  const [bossIntro, setBossIntro] = useState<{ name: string; phase: number } | null>(null);
+  // Animated wave number for the wave-clear celebration banner.
+  const [waveCount, setWaveCount] = useState(0);
+  // Latest HUD snapshot, so transition effects can read fresh values without re-firing.
+  const hudRef = useRef<HUDState>(EMPTY_HUD);
 
   // Load persisted settings + check for existing save
   useEffect(() => {
@@ -66,17 +103,38 @@ export function VoidBreakerGame() {
       const v = parseInt(storedVol, 10);
       if (!isNaN(v) && v >= 0 && v <= 100) setMusicVolume(v);
     }
+    const storedSfx = localStorage.getItem('vb-sfx-volume');
+    if (storedSfx !== null) {
+      const v = parseInt(storedSfx, 10);
+      if (!isNaN(v) && v >= 0 && v <= 100) setSfxVolume(v);
+    }
+    if (localStorage.getItem('vb-render-3d') === 'false') setUse3D(false);
+    const storedFx = localStorage.getItem('vb-reduced-fx');
+    const prefersReduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+    setReducedFx(storedFx !== null ? storedFx === 'true' : prefersReduced);
+    const storedChar = localStorage.getItem('vb-character');
+    if (isCharacterId(storedChar)) setCharacterId(storedChar);
+    const storedWeapon = localStorage.getItem('vb-weapon');
+    if (isWeaponId(storedWeapon)) setWeaponId(storedWeapon);
+    try {
+      const storedMods = JSON.parse(localStorage.getItem('vb-mods') ?? '[]');
+      if (Array.isArray(storedMods)) setActiveMods(storedMods.filter(isModifierId));
+    } catch { /* ignore */ }
+    setMeta(loadMeta());
     setSaveInfo(getSaveInfo());
   }, []);
 
-  // Music volume sync
+  // Music + SFX volume sync
   useEffect(() => {
     const audio = audioRef.current;
-    if (!audio) return;
-    const vol = muted ? 0 : (musicVolume / 100) * MASTER_VOLUME;
-    audio.volume = vol;
-    audio.muted = muted;
-  }, [muted, musicVolume]);
+    if (audio) {
+      const vol = muted ? 0 : (musicVolume / 100) * MASTER_VOLUME;
+      audio.volume = vol;
+      audio.muted = muted;
+    }
+    sfxRef.current?.setVolume((sfxVolume / 100) * MASTER_VOLUME);
+    sfxRef.current?.setMuted(muted);
+  }, [muted, musicVolume, sfxVolume]);
 
   // ── AudioManager: fade in/out helpers ─────────────────────────────────────
   const fadeMusic = useCallback((fadeIn: boolean) => {
@@ -223,7 +281,22 @@ export function VoidBreakerGame() {
     if (!canvas) return;
 
     if (!gameRef.current) gameRef.current = new VoidBreakerEngine();
-    if (!rendererRef.current) rendererRef.current = new VoidBreakerRenderer(canvas);
+    if (!rendererRef.current) {
+      // Renderer preference (persisted): 3D WebGL by default, or 2D if the
+      // player picked it / if WebGL init fails.
+      const want3D = localStorage.getItem('vb-render-3d') !== 'false';
+      if (want3D) {
+        try {
+          rendererRef.current = new VoidBreakerRenderer3D(canvas);
+        } catch (err) {
+          console.warn('[VoidBreaker] 3D renderer unavailable, using 2D fallback:', err);
+          rendererRef.current = new VoidBreakerRenderer(canvas);
+        }
+      } else {
+        rendererRef.current = new VoidBreakerRenderer(canvas);
+      }
+      rendererRef.current.setReducedFx?.(reducedFxRef.current);
+    }
 
     let lastT = 0;
     let raf: number;
@@ -236,9 +309,25 @@ export function VoidBreakerGame() {
       const renderer = rendererRef.current!;
       const s = game.state;
 
-      if (s === 'playing' || s === 'paused' || s === 'countdown' || s === 'waveBreak') {
+      if (s === 'playing' || s === 'paused' || s === 'countdown' || s === 'waveBreak' || s === 'upgrade') {
         game.update(dt, inputRef.current);
-        renderer.draw(game, dt);
+
+        // Drain queued sound events into the procedural SFX engine.
+        if (game.sfxEvents.length) {
+          const sfx = sfxRef.current;
+          if (sfx) for (const ev of game.sfxEvents) sfx.play(ev.name, { pitch: ev.pitch, gain: ev.gain });
+          game.sfxEvents.length = 0;
+        }
+
+        // Contain renderer exceptions so a draw error can't freeze the game loop.
+        try {
+          renderer.draw(game, dt);
+        } catch (err) {
+          if (!renderDrawFailedRef.current) {
+            renderDrawFailedRef.current = true;
+            console.error('[VoidBreaker] renderer.draw failed:', err);
+          }
+        }
 
         // Watch for pause state change via ESC key to open pause menu
         if (game.state === 'paused' && !showPauseMenuRef.current) {
@@ -265,6 +354,7 @@ export function VoidBreakerGame() {
           setHud({
             score: Math.round(game.score),
             multiplier: Math.round(game.totalMultiplier * 10) / 10,
+            surge: game.surgeMultiplier,
             wave: game.wave,
             hp: game.player.hp,
             maxHp: game.player.maxHp,
@@ -274,6 +364,7 @@ export function VoidBreakerGame() {
             bossMaxHp: boss ? boss.maxHp : 0,
             bossActive: !!boss,
             bossPhase: boss ? boss.bossPhase : 1,
+            bossName: game.currentBossName,
             dashReady: game.player.dashCooldown <= 0 && !game.player.dashActive,
             dashCooldownFraction: Math.max(0, game.player.dashCooldown / DASH_COOLDOWN),
             waveBreak: game.state === 'waveBreak',
@@ -309,6 +400,8 @@ export function VoidBreakerGame() {
             reflectShieldCooldownFraction: ab.unlockedIds.has('reflect_shield') ? Math.max(0, ab.reflectShieldCooldown / ABILITY_COOLDOWNS.reflect_shield) : 0,
             allySynergyCooldownFraction: ab.unlockedIds.has('ally_synergy') ? Math.max(0, ab.allySynergyCooldown / ABILITY_COOLDOWNS.ally_synergy) : 0,
             pendingUnlock,
+            pendingUpgrades: game.pendingUpgrades,
+            upgradeIsBossReward: game.upgradeIsBossReward,
           });
         }
       }
@@ -321,7 +414,6 @@ export function VoidBreakerGame() {
       rendererRef.current?.dispose();
       rendererRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fadeMusic, pauseMusic]);
 
   // We need a ref for showPauseMenu to avoid stale closure in loop
@@ -335,15 +427,55 @@ export function VoidBreakerGame() {
     }
   }, [showPauseMenu, playMusic]);
 
+  // Keep a fresh HUD snapshot for transition effects (boss intro reads name/phase
+  // at the moment the boss appears without re-firing when the phase later changes).
+  hudRef.current = hud;
+
+  // Boss intro nameplate — fire on the rising edge of bossActive, auto-dismiss.
+  useEffect(() => {
+    if (!hud.bossActive) return;
+    setBossIntro({ name: hudRef.current.bossName, phase: hudRef.current.bossPhase });
+    const id = setTimeout(() => setBossIntro(null), 3400);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hud.bossActive]);
+
+  // Wave-clear celebration: roll the wave number up (0 → current) over ~0.6s.
+  useEffect(() => {
+    if (!hud.waveBreak) return;
+    const target = hud.wave;
+    const start = performance.now();
+    const dur = 600;
+    let raf = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setWaveCount(Math.round(eased * target));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [hud.waveBreak, hud.wave]);
+
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleStart = useCallback(() => {
+    sfxRef.current?.unlock();
+    sfxRef.current?.play('uiClick');
+    if (gameRef.current) {
+      gameRef.current.metaBonuses = metaBonuses(meta);
+      gameRef.current.character = getCharacter(characterId);
+      gameRef.current.weapon = getWeapon(weaponId);
+      const mods = combineModifiers(activeMods);
+      gameRef.current.runModifiers = mods.effects;
+      runCoreMultRef.current = mods.coreMult;
+    }
     gameRef.current?.startGame();
     setRunStats(null);
     setUiState('playing');
     setShowPauseMenu(false);
     showPauseMenuRef.current = false;
     playMusic();
-  }, [playMusic]);
+  }, [playMusic, meta, characterId, activeMods]);
 
   /** Save current game state and go to menu. */
   const handleSaveAndQuit = useCallback(() => {
@@ -364,6 +496,54 @@ export function VoidBreakerGame() {
     showPauseMenuRef.current = false;
     // playMusic called via useEffect watching showPauseMenu
   }, []);
+
+  /** Award Void Cores once per game over. */
+  useEffect(() => {
+    if (uiState !== 'gameOver' || !runStats) { return; }
+    const earned = Math.floor(awardCores(runStats.score, runStats.bossesKilled, runStats.wave) * runCoreMultRef.current);
+    setEarnedCores(earned);
+    if (earned > 0) {
+      setMeta(prev => {
+        const next = { ...prev, cores: prev.cores + earned };
+        saveMeta(next);
+        return next;
+      });
+    }
+    // Award once per distinct game-over (runStats is a fresh object each run).
+  }, [uiState, runStats]);
+
+  /** Buy a permanent Void Forge upgrade. */
+  const handleBuyNode = useCallback((id: MetaNodeId) => {
+    sfxRef.current?.play('uiClick');
+    setMeta(prev => {
+      const next = buyNode(prev, id);
+      if (next !== prev) saveMeta(next);
+      return next;
+    });
+  }, []);
+
+  /** Apply a chosen roguelite upgrade and dismiss the card overlay instantly. */
+  const handlePickUpgrade = useCallback((id: UpgradeId) => {
+    const g = gameRef.current;
+    if (!g || g.state !== 'upgrade') return;
+    sfxRef.current?.play('uiClick');
+    g.applyUpgrade(id);
+    setHud(h => ({ ...h, pendingUpgrades: [] }));
+  }, []);
+
+  // Number-key selection (1/2/3) for upgrade cards.
+  useEffect(() => {
+    if (hud.pendingUpgrades.length === 0) return;
+    const onKey = (e: KeyboardEvent) => {
+      const idx = e.code === 'Digit1' ? 0 : e.code === 'Digit2' ? 1 : e.code === 'Digit3' ? 2 : -1;
+      if (idx >= 0 && idx < hud.pendingUpgrades.length) {
+        e.preventDefault();
+        handlePickUpgrade(hud.pendingUpgrades[idx].id);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [hud.pendingUpgrades, handlePickUpgrade]);
 
   const handleTouchPause = useCallback(() => {
     const game = gameRef.current;
@@ -395,12 +575,90 @@ export function VoidBreakerGame() {
     localStorage.setItem('vb-music-volume', String(v));
   }, []);
 
+  // Apply the reduced-effects setting to the live renderer whenever it changes.
+  useEffect(() => {
+    reducedFxRef.current = reducedFx;
+    rendererRef.current?.setReducedFx?.(reducedFx);
+  }, [reducedFx]);
+
+  const handleSetReducedFx = useCallback((on: boolean) => {
+    setReducedFx(on);
+    localStorage.setItem('vb-reduced-fx', on ? 'true' : 'false');
+  }, []);
+
+  const handleToggleModifier = useCallback((id: ModifierId) => {
+    sfxRef.current?.play('uiClick');
+    setActiveMods(prev => {
+      const next = prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id];
+      localStorage.setItem('vb-mods', JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const handleSelectCharacter = useCallback((id: CharacterId) => {
+    // Locked character: spend cores to unlock (then select), or no-op if too poor.
+    if (!isCharUnlocked(meta, id)) {
+      if (canUnlockChar(meta, id)) {
+        const next = unlockChar(meta, id);
+        saveMeta(next);
+        setMeta(next);
+        sfxRef.current?.play('unlock');
+        setCharacterId(id);
+        localStorage.setItem('vb-character', id);
+      }
+      return;
+    }
+    sfxRef.current?.play('uiClick');
+    setCharacterId(id);
+    localStorage.setItem('vb-character', id);
+  }, [meta]);
+
+  const handleSelectWeapon = useCallback((id: WeaponId) => {
+    // Locked weapon: spend cores to unlock (then select), or no-op if too poor.
+    if (!isWeaponUnlocked(meta, id)) {
+      if (canUnlockWeapon(meta, id)) {
+        const next = unlockWeapon(meta, id);
+        saveMeta(next);
+        setMeta(next);
+        sfxRef.current?.play('unlock');
+        setWeaponId(id);
+        localStorage.setItem('vb-weapon', id);
+      }
+      return;
+    }
+    sfxRef.current?.play('uiClick');
+    setWeaponId(id);
+    localStorage.setItem('vb-weapon', id);
+  }, [meta]);
+
+  /** Switch renderer (persisted) — reloads so the canvas gets a fresh context. */
+  const handleSetRenderer = useCallback((to3D: boolean) => {
+    localStorage.setItem('vb-render-3d', to3D ? 'true' : 'false');
+    window.location.reload();
+  }, []);
+
+  const setSfx = useCallback((v: number) => {
+    setSfxVolume(v);
+    localStorage.setItem('vb-sfx-volume', String(v));
+    // Play a sample blip so the player hears the new level as they drag.
+    sfxRef.current?.unlock();
+    sfxRef.current?.setVolume((v / 100) * MASTER_VOLUME);
+    sfxRef.current?.play('uiClick');
+  }, []);
+
   /** Load saved game and resume play. */
   const handleContinue = useCallback(() => {
+    sfxRef.current?.unlock();
     const save = loadGame();
     if (!save || !save.stateJson) return;
     const game = gameRef.current;
     if (!game) return;
+    game.metaBonuses = metaBonuses(meta);
+    game.character = getCharacter(characterId);
+    game.weapon = getWeapon(weaponId);
+    const mods = combineModifiers(activeMods);
+    game.runModifiers = mods.effects;
+    runCoreMultRef.current = mods.coreMult;
     const ok = game.hydrateGameState(save.stateJson as Record<string, unknown>);
     if (ok) {
       setRunStats(null);
@@ -409,15 +667,61 @@ export function VoidBreakerGame() {
       showPauseMenuRef.current = false;
       playMusic();
     }
-  }, [playMusic]);
+  }, [playMusic, meta, characterId, activeMods]);
 
   const showGame = uiState === 'playing';
 
   return (
     <div
-      className="w-full h-full relative bg-[#050508] flex flex-col items-center justify-center overflow-hidden"
+      // translate="no" + notranslate: the game UI has its own i18n (t()). Browser
+      // auto-translate / extensions rewrite React-managed text nodes (wrapping them
+      // in <font>), which makes React's later removeChild fail with
+      // "NotFoundError: ... not a child of this node" and crashes the whole game via
+      // the error boundary. Opting the subtree out of translation prevents that.
+      translate="no"
+      className="notranslate w-full h-full relative bg-[#050508] flex flex-col items-center justify-center overflow-hidden"
       style={{ touchAction: 'none', userSelect: 'none', WebkitUserSelect: 'none' }}
     >
+      {/* Void Breaker UI juice — shared keyframes (consumed by this file + VoidBreakerUI).
+          Disabled under prefers-reduced-motion so resting state stays fully visible. */}
+      <style>{`
+        @keyframes vb-fade-in { from { opacity: 0 } to { opacity: 1 } }
+        @keyframes vb-scale-in {
+          from { opacity: 0; transform: scale(0.94) }
+          to   { opacity: 1; transform: scale(1) }
+        }
+        @keyframes vb-card-in {
+          from { opacity: 0; transform: translateY(18px) scale(0.9) }
+          to   { opacity: 1; transform: translateY(0) scale(1) }
+        }
+        @keyframes vb-banner-pop {
+          0%   { opacity: 0; transform: scale(0.6) translateY(12px) }
+          55%  { opacity: 1; transform: scale(1.12) translateY(0) }
+          100% { opacity: 1; transform: scale(1) translateY(0) }
+        }
+        @keyframes vb-boss-in {
+          0%   { opacity: 0; transform: translateY(-26px) scale(0.92) }
+          60%  { opacity: 1; transform: translateY(0) scale(1.04) }
+          100% { opacity: 1; transform: translateY(0) scale(1) }
+        }
+        @keyframes vb-gold-pulse {
+          0%,100% { box-shadow: 0 0 22px rgba(255,215,0,0.35), inset 0 0 18px rgba(255,215,0,0.12) }
+          50%     { box-shadow: 0 0 40px rgba(255,215,0,0.65), inset 0 0 26px rgba(255,215,0,0.22) }
+        }
+        @keyframes vb-combo-bump {
+          0%   { transform: scale(1) }
+          40%  { transform: scale(1.3) }
+          100% { transform: scale(1) }
+        }
+        @keyframes vb-sheen {
+          0%   { transform: translateX(-130%) skewX(-12deg) }
+          100% { transform: translateX(160%) skewX(-12deg) }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .vb-anim { animation: none !important; }
+        }
+      `}</style>
+
       {/* Background music — loops during gameplay */}
       <audio ref={audioRef} src={MUSIC_SRC} loop preload="auto" />
 
@@ -450,20 +754,47 @@ export function VoidBreakerGame() {
                 hud.multiplier > 2 ? 'text-[#d4af37]' : 'text-zinc-400'
                 }`}>
                 {hud.multiplier.toFixed(1)}x
-                {hud.combo > 1 && <span className="text-[#ff00cc] ml-1">COMBO {hud.combo}</span>}
+                {hud.combo > 1 && (
+                  // No key={hud.combo}: re-keying remounted this text node every combo
+                  // tick (~10×/s), churning DOM that external tools may have mutated.
+                  // The element stays stable; only its text/size/color update.
+                  <span
+                    className="vb-anim inline-block ml-1 origin-left font-black"
+                    style={{
+                      color: hud.combo >= 15 ? '#ff2266' : hud.combo >= 8 ? '#ff00cc' : '#ff66cc',
+                      fontSize: `${1 + Math.min(hud.combo, 25) * 0.02}em`,
+                      textShadow: `0 0 ${4 + Math.min(hud.combo, 25) * 0.6}px rgba(255,0,204,0.85)`,
+                      animation: 'vb-combo-bump 0.3s ease-out',
+                    }}
+                  >
+                    {t('combo', { defaultValue: 'COMBO {{combo}}', combo: hud.combo })}
+                  </span>
+                )}
               </div>
+              {hud.surge > 1.05 && (
+                <div
+                  className="font-mono text-[10px] font-bold animate-pulse origin-left"
+                  style={{
+                    color: hud.surge >= 3 ? '#ff2a00' : '#ff6644',
+                    transform: `scale(${Math.min(1 + (hud.surge - 1) * 0.18, 1.6)})`,
+                    textShadow: `0 0 ${6 + Math.min(hud.surge, 5) * 2}px rgba(255,102,68,0.85)`,
+                  }}
+                >
+                  {t('surge', { defaultValue: '⚡ SURGE {{surge}}×', surge: hud.surge.toFixed(1) })}
+                </div>
+              )}
             </div>
 
             {/* Wave */}
             <div className="bg-black/70 rounded px-3 py-1 border border-[#00f5ff]/20 backdrop-blur-sm">
               <div className="text-[#00f5ff] font-mono text-xs sm:text-sm font-bold text-center tracking-widest">
-                WAVE {hud.wave}
+                {t('wave', { defaultValue: 'WAVE {{wave}}', wave: hud.wave })}
               </div>
             </div>
 
             {/* HP hearts */}
             <div className="bg-black/70 rounded px-2 py-1 text-right border border-[#00f5ff]/20 backdrop-blur-sm">
-              <div className="text-[9px] font-mono text-zinc-500 mb-0.5">HP</div>
+              <div className="text-[9px] font-mono text-zinc-500 mb-0.5">{t('hp', { defaultValue: 'HP' })}</div>
               <div className="text-sm sm:text-base flex items-center gap-0.5">
                 {Array.from({ length: hud.maxHp }, (_, i) => (
                   <span key={i} className={i < hud.hp
@@ -485,7 +816,7 @@ export function VoidBreakerGame() {
             <div className="mx-auto w-52 sm:w-72">
               <div className="flex justify-between items-center mb-0.5">
                 <div className="text-center text-[10px] text-[#ff2244] font-mono font-bold tracking-widest drop-shadow-[0_0_6px_rgba(255,34,68,0.8)]">
-                  堕落天使 {hud.bossPhase > 1 ? `— PHASE ${hud.bossPhase}` : ''}
+                  {hud.bossName || '堕落天使'} {hud.bossPhase > 1 ? `— PHASE ${hud.bossPhase}` : ''}
                 </div>
               </div>
               <div className="h-2.5 bg-zinc-900/80 rounded-full overflow-hidden border border-red-900/50">
@@ -506,9 +837,9 @@ export function VoidBreakerGame() {
             <div className="bg-black/70 rounded px-3 py-1.5 text-center border border-[#00f5ff]/20 backdrop-blur-sm">
               <div className="text-[9px] sm:text-[10px] text-zinc-500 font-mono mb-0.5">
                 {hud.detonateReady ? (
-                  <span className="text-[#00f5ff] animate-pulse">⚡ SPACE → VOID BURST</span>
+                  <span className="text-[#00f5ff] animate-pulse">{t('void-burst-ready', { defaultValue: '⚡ SPACE → VOID BURST' })}</span>
                 ) : (
-                  `SHARDS ${hud.shards}/${DET_MIN_SHARDS}`
+                  t('shards', { defaultValue: 'SHARDS {{shards}}/{{max}}', shards: hud.shards, max: DET_MIN_SHARDS })
                 )}
               </div>
               <div className="w-28 sm:w-36 h-1.5 bg-zinc-800/80 rounded-full overflow-hidden relative">
@@ -528,8 +859,8 @@ export function VoidBreakerGame() {
                 ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
                 : 'border-zinc-700/40 text-zinc-600 bg-black/40'
               }`}>
-              <span className="text-[7px]">SHIFT</span>
-              <span>DASH</span>
+              <span className="text-[7px]">{t('key-shift', { defaultValue: 'SHIFT' })}</span>
+              <span>{t('ability-dash', { defaultValue: 'DASH' })}</span>
               {!hud.dashReady && (
                 <div
                   className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -546,8 +877,8 @@ export function VoidBreakerGame() {
                   ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
                   : 'border-zinc-700/40 text-zinc-600 bg-black/40'
               }`}>
-              <span className="text-[7px]">F KEY</span>
-              <span>FOCUS</span>
+              <span className="text-[7px]">{t('key-f', { defaultValue: 'F KEY' })}</span>
+              <span>{t('ability-focus', { defaultValue: 'FOCUS' })}</span>
               {!hud.focusReady && !hud.focusActive && (
                 <div
                   className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -563,8 +894,8 @@ export function VoidBreakerGame() {
                   ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
                   : 'border-zinc-700/40 text-zinc-600 bg-black/40'
                 }`}>
-                <span className="text-[7px]">Q</span>
-                <span>PULSE</span>
+                <span className="text-[7px]">{t('key-q', { defaultValue: 'Q' })}</span>
+                <span>{t('ability-pulse', { defaultValue: 'PULSE' })}</span>
                 {!hud.voidPulseReady && hud.voidPulseCooldownFraction > 0 && (
                   <div
                     className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -583,8 +914,8 @@ export function VoidBreakerGame() {
                     ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
                     : 'border-zinc-700/40 text-zinc-600 bg-black/40'
                 }`}>
-                <span className="text-[7px]">E</span>
-                <span>PHASE</span>
+                <span className="text-[7px]">{t('key-e', { defaultValue: 'E' })}</span>
+                <span>{t('ability-phase', { defaultValue: 'PHASE' })}</span>
                 {!hud.phaseShiftReady && !hud.phaseShiftActive && hud.phaseShiftCooldownFraction > 0 && (
                   <div
                     className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -603,8 +934,8 @@ export function VoidBreakerGame() {
                     ? 'border-[#00f5ff]/60 text-[#00f5ff] bg-black/60'
                     : 'border-zinc-700/40 text-zinc-600 bg-black/40'
                 }`}>
-                <span className="text-[7px]">R</span>
-                <span>SHIELD</span>
+                <span className="text-[7px]">{t('key-r', { defaultValue: 'R' })}</span>
+                <span>{t('ability-shield', { defaultValue: 'SHIELD' })}</span>
                 {!hud.reflectShieldReady && !hud.reflectShieldActive && hud.reflectShieldCooldownFraction > 0 && (
                   <div
                     className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -623,8 +954,8 @@ export function VoidBreakerGame() {
                     ? 'border-[#00ff88]/60 text-[#00ff88] bg-black/60'
                     : 'border-zinc-700/40 text-zinc-600 bg-black/40'
                 }`}>
-                <span className="text-[7px]">T</span>
-                <span>ALLY</span>
+                <span className="text-[7px]">{t('key-t', { defaultValue: 'T' })}</span>
+                <span>{t('ability-ally', { defaultValue: 'ALLY' })}</span>
                 {!hud.allySynergyReady && !hud.allySynergyActive && hud.allySynergyCooldownFraction > 0 && (
                   <div
                     className="absolute inset-0 rounded-lg bg-zinc-800/40"
@@ -642,7 +973,7 @@ export function VoidBreakerGame() {
         <div className="absolute top-14 right-2 sm:right-3 pointer-events-none">
           <div className="bg-black/70 border border-[#00ff88]/30 rounded px-2 py-1 backdrop-blur-sm min-w-[80px]">
             <div className="text-[9px] font-mono text-[#00ff88]/70 mb-0.5">
-              LIN {hud.allyDowned ? '— DOWN' : ''}
+              LIN {hud.allyDowned ? t('ally-down', { defaultValue: '— DOWN' }) : ''}
             </div>
             <div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
               <div
@@ -659,10 +990,40 @@ export function VoidBreakerGame() {
         <div className="absolute top-20 left-1/2 -translate-x-1/2 pointer-events-none z-30">
           <div className="bg-black/90 border border-[#00f5ff]/50 rounded-lg px-4 py-2 text-center backdrop-blur-md"
             style={{ boxShadow: '0 0 30px rgba(0,245,255,0.3)' }}>
-            <div className="text-[9px] text-zinc-400 font-mono uppercase tracking-widest">ABILITY UNLOCKED</div>
+            <div className="text-[9px] text-zinc-400 font-mono uppercase tracking-widest">{t('ability-unlocked', { defaultValue: 'ABILITY UNLOCKED' })}</div>
             <div className="text-[#00f5ff] font-bold font-mono text-sm mt-0.5">{hud.pendingUnlock.name}</div>
             <div className="text-zinc-400 text-[10px] mt-0.5">{hud.pendingUnlock.description}</div>
             <div className="text-[#d4af37] text-[9px] font-mono mt-1">[{hud.pendingUnlock.keybind}]</div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Boss Intro Nameplate ─────────────────────────────────────────── */}
+      {showGame && bossIntro && (
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 pointer-events-none z-30">
+          <div className="vb-anim relative px-6 py-3 rounded-lg border border-[#ff2244]/50 bg-black/80 backdrop-blur-md text-center overflow-hidden"
+            style={{ animation: 'vb-boss-in 0.6s cubic-bezier(0.22,1.2,0.36,1) both', boxShadow: '0 0 40px rgba(255,34,68,0.35)' }}>
+            <div className="vb-anim absolute inset-0 bg-linear-to-r from-transparent via-[#ff2244]/15 to-transparent"
+              style={{ animation: 'vb-sheen 1.2s ease-in-out 0.25s both' }} />
+            <div className="relative">
+              <div className="text-[9px] font-mono tracking-[0.4em] text-[#ff2244]/70 uppercase">
+                {t('boss-warning', { defaultValue: '⚠ FALLEN ANGEL' })}
+              </div>
+              <div className="text-2xl font-black text-[#ff3355] tracking-widest drop-shadow-[0_0_18px_rgba(255,34,68,0.7)] mt-0.5">
+                {bossIntro.name || '堕落天使'}
+              </div>
+              <div className="flex items-center justify-center gap-1.5 mt-1.5">
+                {[1, 2, 3].map((p) => (
+                  <span key={p}
+                    className="h-1.5 rounded-full transition-all duration-300"
+                    style={{
+                      width: p === bossIntro.phase ? '18px' : '8px',
+                      background: p <= bossIntro.phase ? '#ff2244' : '#3a1a22',
+                      boxShadow: p === bossIntro.phase ? '0 0 8px rgba(255,34,68,0.8)' : 'none',
+                    }} />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -672,7 +1033,7 @@ export function VoidBreakerGame() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
           <div className="text-center">
             <div className="text-3xl font-black text-[#00f5ff] tracking-widest animate-pulse drop-shadow-[0_0_40px_rgba(0,245,255,0.8)]">
-              ZONE ADVANCE
+              {t('zone-advance', { defaultValue: 'ZONE ADVANCE' })}
             </div>
             <div className="text-sm text-zinc-400 font-mono mt-2">{hud.mapName}</div>
           </div>
@@ -683,7 +1044,7 @@ export function VoidBreakerGame() {
       {showGame && hud.controlsInverted && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none z-20">
           <div className="text-[#0066ff] font-black text-lg font-mono tracking-widest animate-pulse opacity-70">
-            ⚠ REALITY FRACTURED ⚠
+            {t('reality-fractured', { defaultValue: '⚠ REALITY FRACTURED ⚠' })}
           </div>
         </div>
       )}
@@ -716,47 +1077,142 @@ export function VoidBreakerGame() {
       {showGame && hud.countdown > 0 && gameRef.current?.state === 'countdown' && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-7xl sm:text-8xl font-black text-[#00f5ff] drop-shadow-[0_0_40px_rgba(0,245,255,0.6)] animate-pulse">
-            {Math.ceil(hud.countdown) > 0 ? Math.ceil(hud.countdown) : 'GO!'}
+            {Math.ceil(hud.countdown) > 0 ? Math.ceil(hud.countdown) : t('go', { defaultValue: 'GO!' })}
           </div>
         </div>
       )}
 
-      {/* Wave break */}
+      {/* Wave break — celebration banner */}
       {showGame && hud.waveBreak && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="text-xl font-black text-[#d4af37] opacity-60 drop-shadow-[0_0_20px_rgba(212,175,55,0.5)] tracking-widest">
-            WAVE CLEAR
+          <div className="vb-anim relative px-8 py-4 rounded-2xl border border-[#d4af37]/40 bg-black/40 backdrop-blur-sm text-center overflow-hidden"
+            style={{ animation: 'vb-banner-pop 0.5s cubic-bezier(0.22,1.2,0.36,1) both', boxShadow: '0 0 44px rgba(212,175,55,0.25)' }}>
+            <div className="vb-anim absolute inset-0 bg-linear-to-r from-transparent via-[#d4af37]/25 to-transparent"
+              style={{ animation: 'vb-sheen 1.1s ease-in-out 0.2s both' }} />
+            <div className="relative">
+              <div className="text-[10px] font-mono tracking-[0.4em] text-[#d4af37]/70 uppercase">
+                {t('wave-clear', { defaultValue: 'WAVE CLEAR' })}
+              </div>
+              <div className="text-4xl font-black text-[#d4af37] tracking-widest drop-shadow-[0_0_22px_rgba(212,175,55,0.6)]">
+                {t('wave', { defaultValue: 'WAVE {{wave}}', wave: waveCount })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Roguelite Upgrade Cards ─────────────────────────────────────── */}
+      {showGame && hud.pendingUpgrades.length > 0 && (
+        <div className="vb-anim absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-md z-50 pointer-events-auto px-3"
+          style={{ animation: 'vb-fade-in 0.25s ease-out both' }}>
+          <div className="vb-anim text-center mb-5" style={{ animation: 'vb-scale-in 0.35s cubic-bezier(0.22,1.2,0.36,1) both' }}>
+            <div className={`text-[10px] font-mono tracking-[0.3em] uppercase mb-1 ${hud.upgradeIsBossReward ? 'text-[#ffd700]' : 'text-zinc-500'}`}>
+              {hud.upgradeIsBossReward
+                ? t('boss-reward', { defaultValue: 'BOSS REWARD' })
+                : t('choose-upgrade', { defaultValue: 'CHOOSE AN UPGRADE' })}
+            </div>
+            <div className="text-3xl font-black tracking-widest text-[#00f5ff] drop-shadow-[0_0_25px_rgba(0,245,255,0.6)]">
+              {t('level-up', { defaultValue: 'LEVEL UP' })}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3 justify-center max-w-2xl">
+            {hud.pendingUpgrades.map((u, i) => {
+              const isRare = u.rarity === 'rare';
+              const boss = hud.upgradeIsBossReward;
+              const delay = i * 90;
+              // Stagger-in with `backwards` fill so the resting state reverts to base
+              // (keeps the hover lift working). Boss rewards add a looping gold pulse.
+              const entrance = boss
+                ? `vb-card-in 0.5s cubic-bezier(0.22,1.2,0.36,1) ${delay}ms backwards, vb-gold-pulse 2.4s ease-in-out ${delay + 500}ms infinite`
+                : `vb-card-in 0.42s cubic-bezier(0.22,1.2,0.36,1) ${delay}ms backwards`;
+              return (
+                <button
+                  key={u.id}
+                  onClick={() => handlePickUpgrade(u.id)}
+                  className="vb-anim group relative w-40 sm:w-44 rounded-xl border bg-black/70 px-4 pt-5 pb-4 text-center transition-all duration-150 hover:-translate-y-1 hover:bg-black/90 focus:outline-none"
+                  style={{
+                    borderColor: boss ? '#ffd700' + (isRare ? 'cc' : '88') : u.color + (isRare ? 'cc' : '66'),
+                    boxShadow: boss
+                      ? '0 0 26px rgba(255,215,0,0.4), inset 0 0 20px rgba(255,215,0,0.14)'
+                      : `0 0 ${isRare ? 26 : 14}px ${u.color}${isRare ? '55' : '33'}, inset 0 0 18px ${u.color}14`,
+                    animation: entrance,
+                  }}
+                >
+                  {/* Accent bar */}
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl" style={{ background: u.color }} />
+
+                  <div className="text-3xl mb-1.5 drop-shadow-[0_0_10px] leading-none" style={{ color: u.color }}>
+                    {u.icon}
+                  </div>
+                  <div className="font-bold font-mono text-sm tracking-wide mb-1" style={{ color: u.color }}>
+                    {u.name}
+                  </div>
+                  <div className="text-[11px] text-zinc-300 leading-snug min-h-[32px]">
+                    {u.description}
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2 mt-2">
+                    <span
+                      className="text-[8px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded"
+                      style={{
+                        color: isRare ? '#ffd700' : '#9ca3af',
+                        background: isRare ? 'rgba(255,215,0,0.12)' : 'rgba(255,255,255,0.05)',
+                      }}
+                    >
+                      {isRare ? t('rarity-rare', { defaultValue: 'RARE' }) : t('rarity-common', { defaultValue: 'COMMON' })}
+                    </span>
+                    {u.owned > 0 && (
+                      <span className="text-[8px] font-mono text-zinc-400 px-1.5 py-0.5 rounded bg-white/5">
+                        {t('upgrade-level', { defaultValue: 'LV {{lvl}}', lvl: u.owned + 1 })}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Key hint */}
+                  <div className="absolute -top-2 -left-2 w-6 h-6 rounded-md border bg-black flex items-center justify-center text-[11px] font-mono font-bold"
+                    style={{ borderColor: u.color + '88', color: u.color }}>
+                    {i + 1}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="text-[10px] text-zinc-600 font-mono mt-5 tracking-widest">
+            {t('pick-hint', { defaultValue: 'CLICK OR PRESS 1–3' })}
           </div>
         </div>
       )}
 
       {/* ── ESC Pause Menu ──────────────────────────────────────────────── */}
       {showGame && showPauseMenu && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/85 backdrop-blur-md z-50 pointer-events-auto">
-          <div className="text-center space-y-4 bg-black/40 border border-[#00f5ff]/20 rounded-xl p-8 max-w-xs w-full mx-4"
-            style={{ boxShadow: '0 0 40px rgba(0,245,255,0.1)' }}>
+        <div className="vb-anim absolute inset-0 flex items-center justify-center bg-black/85 backdrop-blur-md z-50 pointer-events-auto"
+          style={{ animation: 'vb-fade-in 0.22s ease-out both' }}>
+          <div className="vb-anim text-center space-y-4 bg-black/40 border border-[#00f5ff]/20 rounded-xl p-8 max-w-xs w-full mx-4"
+            style={{ boxShadow: '0 0 40px rgba(0,245,255,0.1)', animation: 'vb-scale-in 0.3s cubic-bezier(0.22,1.2,0.36,1) both' }}>
             <div className="text-3xl font-black text-[#00f5ff] tracking-widest drop-shadow-[0_0_20px_rgba(0,245,255,0.5)]">
-              PAUSED
+              {t('paused', { defaultValue: 'PAUSED' })}
             </div>
-            <div className="text-xs text-zinc-500 font-mono">WAVE {hud.wave}</div>
+            <div className="text-xs text-zinc-500 font-mono">{t('wave', { defaultValue: 'WAVE {{wave}}', wave: hud.wave })}</div>
 
             <div className="space-y-2 pt-2">
               <button
                 onClick={handleResume}
                 className="w-full py-3 px-6 rounded-lg bg-[#00f5ff]/10 hover:bg-[#00f5ff]/20 border border-[#00f5ff]/40 text-[#00f5ff] font-bold font-mono tracking-wider transition-all duration-200 hover:shadow-[0_0_20px_rgba(0,245,255,0.3)]"
               >
-                ▶ RESUME
+                {t('resume', { defaultValue: '▶ RESUME' })}
               </button>
               <button
                 onClick={handleSaveAndQuit}
                 className="w-full py-3 px-6 rounded-lg bg-[#ff00cc]/10 hover:bg-[#ff00cc]/20 border border-[#ff00cc]/40 text-[#ff00cc] font-bold font-mono tracking-wider transition-all duration-200 hover:shadow-[0_0_20px_rgba(255,0,204,0.3)]"
               >
-                💾 SAVE & QUIT
+                {t('save-and-quit', { defaultValue: '💾 SAVE & QUIT' })}
               </button>
             </div>
 
             <div className="text-[10px] text-zinc-600 font-mono pt-1">
-              ESC or tap to resume
+              {t('esc-to-resume', { defaultValue: 'ESC or tap to resume' })}
             </div>
           </div>
         </div>
@@ -783,6 +1239,21 @@ export function VoidBreakerGame() {
         onToggleMute={toggleMute}
         musicVolume={musicVolume}
         onMusicVolumeChange={setVolume}
+        sfxVolume={sfxVolume}
+        onSfxVolumeChange={setSfx}
+        use3D={use3D}
+        onSetRenderer={handleSetRenderer}
+        reducedFx={reducedFx}
+        onSetReducedFx={handleSetReducedFx}
+        characterId={characterId}
+        onSelectCharacter={handleSelectCharacter}
+        weaponId={weaponId}
+        onSelectWeapon={handleSelectWeapon}
+        activeMods={activeMods}
+        onToggleModifier={handleToggleModifier}
+        meta={meta}
+        onBuyNode={handleBuyNode}
+        earnedCores={earnedCores}
         saveInfo={saveInfo}
         onClearSave={() => { deleteSave(); setSaveInfo(null); }}
         onContinueGame={saveInfo ? handleContinue : undefined}

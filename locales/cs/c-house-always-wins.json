@@ -1,0 +1,18 @@
+{
+  "back-home": "Zpět domů",
+  "controls-hint": "WASD/← → Pohyb • Space Skok • Shift Dash • E Interakce • M Menu",
+  "controls-interact": "E — Interakce",
+  "controls-jump": "Space — Skok",
+  "controls-menu": "M — Menu",
+  "controls-move": "WASD / Šipky — Pohyb",
+  "debt": "DLUH",
+  "e-continue": "[E] Pokračovat",
+  "loading": "NAČÍTÁNÍ...",
+  "login-to-play": "Přihlásit se pro hru",
+  "menu-title": "Menu",
+  "music-volume": "Hlasitost hudby",
+  "resume": "Pokračovat [M]",
+  "sign-in-prompt": "Než vstoupíte do kasina, musíte se přihlásit. Vaše dluhy budou zaznamenány.",
+  "subtitle": "Stůl čeká",
+  "title": "Dům vždy vyhrává"
+}

@@ -1,0 +1,18 @@
+{
+  "back-home": "ホームに戻る",
+  "controls-hint": "WASD/← → 移動 • Space ジャンプ • Shift ダッシュ • E 操作 • M メニュー",
+  "controls-interact": "E — 操作",
+  "controls-jump": "Space — ジャンプ",
+  "controls-menu": "M — メニュー",
+  "controls-move": "WASD / 矢印キー — 移動",
+  "debt": "借金",
+  "e-continue": "[E] 続ける",
+  "loading": "読み込み中...",
+  "login-to-play": "ログインしてプレイ",
+  "menu-title": "メニュー",
+  "music-volume": "音楽の音量",
+  "resume": "再開 [M]",
+  "sign-in-prompt": "カジノに入るにはサインインが必要です。あなたの借金は記録されます。",
+  "subtitle": "テーブルが待っている",
+  "title": "ハウスは常に勝つ"
+}

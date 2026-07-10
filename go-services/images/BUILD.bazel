@@ -1,0 +1,86 @@
+load("//bazel:defs.bzl", "go_service_image")
+
+# Per-service OCI images. Kept in a dedicated package so the gazelle-managed
+# cmd/*/BUILD.bazel files stay untouched. Standard services use the distroless
+# static base; vibe-worker/discord-bot use special bases (see below).
+
+# ── Standard services (distroless static) ────────────────────────────────────
+go_service_image(
+    name = "gateway",
+    binary = "//go-services/cmd/gateway:gateway",
+)
+
+go_service_image(
+    name = "gamehub",
+    binary = "//go-services/cmd/gamehub:gamehub",
+)
+
+go_service_image(
+    name = "rmhmusic",
+    binary = "//go-services/cmd/rmhmusic:rmhmusic",
+)
+
+go_service_image(
+    name = "rmhtube",
+    binary = "//go-services/cmd/rmhtube:rmhtube",
+)
+
+go_service_image(
+    name = "rmhbox",
+    binary = "//go-services/cmd/rmhbox:rmhbox",
+)
+
+go_service_image(
+    name = "recap",
+    binary = "//go-services/cmd/recap:recap",
+)
+
+go_service_image(
+    name = "doctrine-worker",
+    binary = "//go-services/cmd/doctrine-worker:doctrine-worker",
+)
+
+# assets: streams /library /music /models /sprites from the S3-compatible
+# bucket. The AWS SDK is pure Go, so distroless static is sufficient.
+go_service_image(
+    name = "assets",
+    binary = "//go-services/cmd/assets:assets",
+)
+
+# ── Special bases ────────────────────────────────────────────────────────────
+# vibe-worker needs headless Chromium; discord-bot needs git/ssh.
+go_service_image(
+    name = "vibe-worker",
+    base = "@base_chromium",
+    binary = "//go-services/cmd/vibe-worker:vibe-worker",
+    env = {"PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH": "/usr/bin/chromium-browser"},
+)
+
+go_service_image(
+    name = "discord-bot",
+    base = "@base_git",
+    binary = "//go-services/cmd/discord-bot:discord-bot",
+)
+
+# ── Supervisor + status ───────────────────────────────────────────────────────
+# status: dependency-light HTTP service (probes + dashboard, raw pgx for the
+# optional DB probe). Pure Go — distroless static base is sufficient.
+go_service_image(
+    name = "status",
+    binary = "//go-services/cmd/status:status",
+)
+
+# supervisor: runs ALL FIVE background workers (vibe-worker, discord-bot,
+# bot-worker, doctrine-worker, recap) as goroutines in one process. Its base
+# must satisfy the union of their runtime needs:
+#   - vibe-worker → headless Chromium + PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+#   - discord-bot → git + openssh-client (rmhbot worktree/PR feature)
+#   - others      → pure Go (no special runtime)
+# @base_chromium_git = ghcr.io/rmhstudios/rmhstudios-go-base-chromium-git
+# (Alpine 3.20 + chromium + git/ssh). See deploy/docker/base-chromium-git.Dockerfile.
+go_service_image(
+    name = "supervisor",
+    base = "@base_chromium_git",
+    binary = "//go-services/cmd/supervisor:supervisor",
+    env = {"PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH": "/usr/bin/chromium-browser"},
+)

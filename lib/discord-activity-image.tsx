@@ -517,3 +517,199 @@ export async function generateLeaderboardImage(
     setCachedPng(cacheKey, png);
     return png;
 }
+
+// ─── Alex Caretakers Leaderboard Image ───────────────────────────────
+
+export interface CaretakerEntry {
+    userId: string;
+    username: string;
+    avatarHash: string | null;
+    points: number;
+    feeds: number;
+    plays: number;
+    cleans: number;
+    naps: number;
+    talks: number;
+    studies: number;
+    interactions: number;
+}
+
+// ─── rmhstudios.com design tokens ────────────────────────────────────
+// Monochrome black/white palette to match the base site: deep blacks with
+// near-white text and grayscale accents (no purple).
+const RMH = {
+    bg: '#000000',
+    surface: '#101012', // near-black card
+    surfaceTop: '#17171a', // slightly lifted card for the #1 row
+    border: '#2a2a2e',
+    borderTop: '#4a4a52',
+    text: '#f4f4f6',
+    muted: '#9a9ba4',
+    dim: '#6a6b74',
+    accent: '#f4f4f6', // white accent (replaces the old purple)
+    track: '#26262b',
+    fill: '#e8e8ec', // progress-bar / highlight fill
+    gold: '#f4f4f6', // #1 — pure white pill
+    silver: '#c4c4cc', // #2 — light gray pill
+    bronze: '#8f8f98', // #3 — mid gray pill
+};
+
+// A compact "12 fed · 9 studied · 8 played" tally of a caretaker's top actions.
+function caretakerTally(c: CaretakerEntry): string {
+    const parts: Array<{ n: number; label: string }> = [
+        { n: c.feeds, label: 'fed' },
+        { n: c.studies, label: 'studied' },
+        { n: c.plays, label: 'played' },
+        { n: c.cleans, label: 'cleaned' },
+        { n: c.naps, label: 'napped' },
+        { n: c.talks, label: 'chatted' },
+        { n: c.interactions, label: 'joined in' },
+    ];
+    const top = parts.filter(p => p.n > 0).sort((a, b) => b.n - a.n).slice(0, 3);
+    if (top.length === 0) return 'just getting started';
+    return top.map(p => `${p.n} ${p.label}`).join('  ·  ');
+}
+
+// A numbered rank badge — white/gray filled pills for the podium (no emoji, so
+// it renders reliably), a muted outlined "#N" pill otherwise.
+function RankBadge({ rank }: { rank: number }) {
+    const medal = rank <= 3 ? [RMH.gold, RMH.silver, RMH.bronze][rank - 1] : null;
+    return (
+        <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 32,
+            height: 32,
+            borderRadius: 16,
+            backgroundColor: medal ?? 'transparent',
+            border: medal ? 'none' : `1.5px solid ${RMH.border}`,
+        }}>
+            <span style={{ fontSize: medal ? 15 : 13, fontWeight: 800, color: medal ? '#000000' : RMH.muted }}>
+                {rank}
+            </span>
+        </div>
+    );
+}
+
+export async function generateCaretakersImage(entries: CaretakerEntry[]): Promise<Buffer> {
+    const display = entries.slice(0, 10);
+    const cacheKey = `care:v4:${display.map(c => `${c.userId}:${c.points}:${c.avatarHash ?? ''}`).join(',')}`;
+    const cached = getCachedPng(cacheKey);
+    if (cached) return cached;
+
+    // Pre-fetch avatars in parallel as data URIs (mirrors the daily leaderboard).
+    const avDataUris = await Promise.all(
+        display.map(c => fetchAvatarDataUri(avatarUrl(c.userId, c.avatarHash))),
+    );
+
+    const topPoints = Math.max(1, ...display.map(c => c.points));
+
+    // Generous vertical budget per row so nothing clips or overlaps.
+    const width = 640;
+    const rowHeight = 72;
+    const rowGap = 8;
+    const headerHeight = 96;
+    const footerHeight = 40;
+    const imgPadding = 56;
+    const imgHeight = Math.max(
+        240,
+        headerHeight + display.length * rowHeight + Math.max(0, display.length - 1) * rowGap + footerHeight + imgPadding,
+    );
+
+    const element = (
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            width: '100%',
+            height: '100%',
+            backgroundColor: RMH.bg,
+            padding: '28px 32px',
+            fontFamily: 'Inter',
+            color: RMH.text,
+            letterSpacing: '-0.02em',
+        }}>
+            {/* Header */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                    <div style={{ display: 'flex', width: 4, height: 24, borderRadius: 2, backgroundColor: RMH.accent }} />
+                    <span style={{ fontSize: 23, fontWeight: 800 }}>Alex&apos;s Top Caretakers</span>
+                </div>
+                <span style={{ fontSize: 13, color: RMH.muted, paddingLeft: 15 }}>
+                    raising Alex together · {entries.length} caretaker{entries.length !== 1 ? 's' : ''}
+                </span>
+            </div>
+
+            {/* Ranked rows */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: rowGap, flex: 1 }}>
+                {display.map((c, i) => {
+                    const rank = i + 1;
+                    const isTop = rank === 1;
+                    const barPct = Math.max(5, Math.round((c.points / topPoints) * 100));
+                    return (
+                        <div key={c.userId} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 15,
+                            padding: '11px 16px',
+                            borderRadius: 12,
+                            backgroundColor: isTop ? RMH.surfaceTop : RMH.surface,
+                            border: `1px solid ${isTop ? RMH.borderTop : RMH.border}`,
+                        }}>
+                            <RankBadge rank={rank} />
+                            <img
+                                src={avDataUris[i]}
+                                width={46}
+                                height={46}
+                                style={{ borderRadius: '50%', border: `2px solid ${isTop ? RMH.borderTop : RMH.border}` }}
+                            />
+                            {/* Name + progress + tally. minWidth:0 lets the name
+                                truncate instead of pushing into the points column. */}
+                            <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, gap: 6 }}>
+                                <span style={{
+                                    fontSize: 16,
+                                    fontWeight: 700,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                }}>{c.username}</span>
+                                <div style={{ display: 'flex', width: '100%', height: 6, borderRadius: 3, backgroundColor: RMH.track }}>
+                                    <div style={{ display: 'flex', width: `${barPct}%`, height: 6, borderRadius: 3, backgroundColor: RMH.fill }} />
+                                </div>
+                                <span style={{
+                                    fontSize: 11,
+                                    color: RMH.dim,
+                                    whiteSpace: 'nowrap',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                }}>{caretakerTally(c)}</span>
+                            </div>
+                            {/* Fixed-width points column so it never collides with the name. */}
+                            <div style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'flex-end',
+                                justifyContent: 'center',
+                                width: 68,
+                                flexShrink: 0,
+                            }}>
+                                <span style={{ fontSize: 23, fontWeight: 800, color: RMH.text }}>{c.points}</span>
+                                <span style={{ fontSize: 10, color: RMH.dim, textTransform: 'uppercase', letterSpacing: '0.06em' }}>points</span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Footer */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 16 }}>
+                <div style={{ display: 'flex', width: 12, height: 12, borderRadius: 3, backgroundColor: RMH.accent }} />
+                <span style={{ fontSize: 11, color: RMH.muted }}>Alex the Tamagotchi · rmhstudios.com</span>
+            </div>
+        </div>
+    );
+
+    const png = await renderToPng(element, width, imgHeight);
+    setCachedPng(cacheKey, png);
+    return png;
+}

@@ -7,9 +7,13 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { Send, SmilePlus } from 'lucide-react';
 import { CHAT_REACTION_EMOJIS, CHAT_MAX_LENGTH } from '@/lib/shared/chat-constants';
+import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
+import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
+import { useEmojiShortcodes } from '@/lib/emoji/use-emoji-shortcodes';
 import ChatMediaEmbed, { stripEmbedUrls } from './ChatMediaEmbed';
 
 // ─── Types ───────────────────────────────────────────────────────
@@ -48,8 +52,9 @@ export default function ChatPanel({
   showReactions = true,
   showMediaEmbeds = true,
   className = '',
-  placeholder = 'Chat...',
+  placeholder,
 }: ChatPanelProps) {
+  const { t } = useTranslation('shared');
   const [message, setMessage] = useState('');
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [reactionPickerMessageId, setReactionPickerMessageId] = useState<string | null>(null);
@@ -58,6 +63,9 @@ export default function ChatPanel({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const messageRefsMap = useRef<Map<string, HTMLDivElement>>(new Map());
+  const inputRef = useRef<HTMLInputElement>(null);
+  const insertEmoji = useEmojiInsert(inputRef, message, setMessage);
+  const shortcodes = useEmojiShortcodes({ ref: inputRef, value: message, onChange: setMessage });
 
   // ─── Auto-scroll on new messages ─────────────────────────────
 
@@ -111,8 +119,9 @@ export default function ChatPanel({
       if (!content) return;
       onSendMessage(content);
       setMessage('');
+      shortcodes.dismiss();
     },
-    [message, onSendMessage],
+    [message, onSendMessage, shortcodes],
   );
 
   // ─── Reaction handler ────────────────────────────────────────
@@ -164,7 +173,7 @@ export default function ChatPanel({
             className="text-xs text-center py-8"
             style={{ color: `var(--${themePrefix}-text-dim)` }}
           >
-            No messages yet
+            {t('no-messages-yet', { defaultValue: 'No messages yet' })}
           </p>
         ) : (
           messages.map((msg) => {
@@ -178,7 +187,7 @@ export default function ChatPanel({
                   if (el) messageRefsMap.current.set(msg.id, el);
                   else messageRefsMap.current.delete(msg.id);
                 }}
-                className="group rounded-md px-2 py-1 transition-colors"
+                className="group rounded-site-sm px-2 py-1 transition-colors"
                 onMouseEnter={() => setHoveredMessageId(msg.id)}
                 onMouseLeave={() => {
                   // Don't clear hover if picker is open for this message
@@ -260,7 +269,7 @@ export default function ChatPanel({
         if (!pos) return null;
         return createPortal(
           <div
-            className="flex items-center gap-0.5 rounded-md shadow-sm"
+            className="flex items-center gap-0.5 rounded-site-sm shadow-sm"
             style={{
               position: 'fixed',
               top: pos.top,
@@ -283,7 +292,7 @@ export default function ChatPanel({
                 }
               }}
               className="p-1 rounded transition-colors"
-              title="React"
+              title={t('react', { defaultValue: 'React' })}
               style={{ color: `var(--${themePrefix}-text-muted)` }}
             >
               <SmilePlus className="h-3.5 w-3.5" />
@@ -296,7 +305,7 @@ export default function ChatPanel({
       {/* Fixed-position emoji picker (rendered via portal to avoid overflow clip) */}
       {reactionPickerMessageId && pickerPos && createPortal(
         <div
-          className="flex items-center gap-0.5 rounded-lg shadow-lg px-1 py-0.5"
+          className="flex items-center gap-0.5 rounded-site-sm shadow-lg px-1 py-0.5"
           style={{
             position: 'fixed',
             top: pickerPos.top - 30,
@@ -329,25 +338,36 @@ export default function ChatPanel({
         className="flex gap-2 p-3"
         style={{ borderTopWidth: 1, borderTopStyle: 'solid', borderTopColor: `var(--${themePrefix}-border)` }}
       >
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          maxLength={CHAT_MAX_LENGTH}
-          placeholder={placeholder}
-          className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm outline-none"
-          style={{
-            borderWidth: 1,
-            borderStyle: 'solid',
-            borderColor: `var(--${themePrefix}-border)`,
-            backgroundColor: `var(--${themePrefix}-bg)`,
-            color: `var(--${themePrefix}-text)`,
-          }}
+        <div className="relative flex-1 min-w-0">
+          <input
+            ref={inputRef}
+            type="text"
+            value={message}
+            onChange={(e) => shortcodes.onValueChange(e.target.value)}
+            onKeyDown={(e) => shortcodes.onKeyDown(e)}
+            maxLength={CHAT_MAX_LENGTH}
+            placeholder={placeholder ?? t('chat-placeholder', { defaultValue: 'Chat...' })}
+            className="w-full px-3 py-2 rounded-site-sm text-sm outline-none"
+            style={{
+              borderWidth: 1,
+              borderStyle: 'solid',
+              borderColor: `var(--${themePrefix}-border)`,
+              backgroundColor: `var(--${themePrefix}-bg)`,
+              color: `var(--${themePrefix}-text)`,
+            }}
+          />
+          {shortcodes.menu}
+        </div>
+        <EmojiPickerButton
+          direction="up"
+          onSelect={insertEmoji}
+          className="shrink-0"
+          buttonStyle={{ color: `var(--${themePrefix}-text-dim)` }}
         />
         <button
           type="submit"
           disabled={!message.trim()}
-          className="shrink-0 rounded-lg px-3 py-2 transition-colors disabled:opacity-50 text-white"
+          className="shrink-0 rounded-site-sm px-3 py-2 transition-colors disabled:opacity-50 text-white"
           style={{ backgroundColor: `var(--${themePrefix}-accent)` }}
         >
           <Send className="h-4 w-4" />

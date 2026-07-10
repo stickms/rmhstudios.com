@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Share2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface ShareButtonProps {
   slug: string;
@@ -9,6 +10,7 @@ interface ShareButtonProps {
 }
 
 export function ShareButton({ slug, className }: ShareButtonProps) {
+  const { t } = useTranslation("c-blog");
   const [copied, setCopied] = useState(false);
 
   const handleShare = (e: React.MouseEvent) => {
@@ -26,12 +28,13 @@ export function ShareButton({ slug, className }: ShareButtonProps) {
   return (
     <button
       onClick={handleShare}
-      className={`p-2 rounded-full bg-black/60 text-white/70 hover:text-(--neon-cyan) hover:bg-black/80 transition-all backdrop-blur-md border border-white/10 flex items-center justify-center ${className || ""}`}
-      title="Copy Link"
+      className={`p-2 rounded-full bg-black/60 text-white/70 hover:text-(--neon-cyan) hover:bg-black/80 active:scale-95 transition-[transform,color,background-color] duration-150 backdrop-blur-md border border-white/10 flex items-center justify-center ${className || ""}`}
+      title={t("copy-link", { defaultValue: "Copy Link" })}
+      aria-label={t("copy-link", { defaultValue: "Copy Link" })}
     >
       {copied ? (
         <span className="text-xs font-bold text-(--neon-cyan) animate-in fade-in zoom-in duration-200">
-          Copied!
+          {t("copied", { defaultValue: "Copied!" })}
         </span>
       ) : (
         <Share2 className="w-4 h-4" />

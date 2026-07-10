@@ -1,0 +1,275 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Describe what rmhstudios.com <em>is</em> as a product — a portfolio, blog, and browser-games/apps platform — and name its major architectural tiers.</li>
+  <li>Explain the <strong>process-split</strong> philosophy: one server-rendered web tier plus a fleet of independent realtime and worker processes.</li>
+  <li>Read a system-context diagram and trace, at a high level, how a browser request reaches SSR, the database, and the realtime servers.</li>
+  <li>Identify the concrete moving parts from real artifacts: <code>package.json</code> scripts, <code>docker-compose.yml</code> services, and top-level directories.</li>
+  <li>Locate where each subsystem is covered in the rest of the book, using this chapter as a map.</li>
+  <li>Distinguish production code from in-progress migration (the parallel Go rewrite) and read a scope note honestly.</li>
+</ul></div>
+
+<p class="lead">rmhstudios.com is a single TypeScript codebase that behaves like several systems at once: a marketing portfolio, a blog and research site, and a platform for in-browser games and apps with real-time multiplayer. This chapter is the aerial photograph. It names the tiers, shows how they talk, and explains the one design decision that shapes everything else — that the platform is not a single server but a <em>web tier surrounded by a fleet of small, standalone processes</em>. Later chapters land on each tier in turn; for now we stay high enough to see the whole field.</p>
+
+<h2 id="what-rmhstudios-is">What rmhstudios.com is</h2>
+<p>From a user's seat, rmhstudios.com is three sites wearing one skin. There is a <strong>portfolio and blog</strong> — a home page, devlogs, and research/blog posts. There is a <strong>games library</strong> of original titles that run directly in the browser: rhythm games like <em>Slice It!</em>, the <em>RMHBox</em> multiplayer minigame lobby (Rhyme Time, Emoji Cinema, Undercover Editor, and more), 3D titles such as <em>VELUM 2099</em> and <em>Forest Explorer</em> built on React Three Fiber and Rapier physics, and strategy/trivia games like <em>Altair</em> and <em>Synapse Storm</em>. And there is a set of <strong>apps</strong>: RMHTube (video), RMHMusic (collaborative listening rooms), RMHType (typing races), RMHStudy, and RMHCode. Tying it together are social features — feeds, messaging, leaderboards, profiles — and a single sign-on system, <strong>RMH Auth</strong>, built on Better Auth with Discord, GitHub, and Google login.</p>
+
+<p>From an engineer's seat, all of that lives in one repository, written in <strong>TypeScript</strong>, rendered with <strong>TanStack Start</strong> on top of <strong>Vite</strong>, served at runtime by the <strong>Nitro</strong> server, and persisted in <strong>PostgreSQL</strong> through the <strong>Prisma</strong> ORM. The repository's schema currently declares <strong>142 Prisma models</strong> — a useful single number for the breadth of the domain. The interesting structure is not any one of these features but how they are split across processes, which is the subject of the rest of this chapter.</p>
+
+<div class="keyterm"><span class="term">Server-side rendering (SSR)</span> — generating a page's HTML on the server for each request (rather than shipping an empty shell and building the page in the browser) so the client receives meaningful markup immediately. In this platform SSR is produced by TanStack Start and served by Nitro.</div>
+
+<div class="keyterm"><span class="term">Process-split architecture</span> — a design in which one logical application is run as several operating-system processes that can be started, crashed, restarted, and scaled independently, instead of one monolithic server doing everything in a single process.</div>
+
+<div class="scope"><b>Scope: a stale map exists.</b> An older internal document, <code>docs/codebase-overview.md</code>, still describes the web tier as "Next.js 16" on port 7000. That is no longer accurate. The authoritative stack — per <code>README.md</code> and the current code — is <strong>TanStack Start + Vite + Nitro</strong>, with the web tier listening on port <code>7005</code> in production. Throughout this book we treat the README and the running code as ground truth and do not repeat the Next.js claim as present tense.</div>
+
+<h2 id="the-five-tiers">The five tiers at a glance</h2>
+<p>It helps to group the platform into five tiers. The boundaries are not arbitrary — each tier corresponds to a different runtime concern and, as we will see, to a different set of processes.</p>
+
+<table>
+  <thead><tr><th>Tier</th><th>What it does</th><th>Built with</th><th>Covered in</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Web / SSR</strong></td><td>Renders pages and serves API routes for the whole site</td><td>TanStack Start, Vite, Nitro</td><td>Ch. 2&ndash;4</td></tr>
+    <tr><td><strong>Realtime fleet</strong></td><td>WebSocket servers for multiplayer games and live apps</td><td>Socket.io on standalone Node processes</td><td>Ch. 5&ndash;7</td></tr>
+    <tr><td><strong>Data &amp; auth</strong></td><td>Persistent state, sessions, OAuth, object storage</td><td>PostgreSQL + Prisma, Better Auth, MinIO/S3</td><td>Ch. 8&ndash;9</td></tr>
+    <tr><td><strong>Games &amp; apps</strong></td><td>Client-side game engines, 3D, audio, editors</td><td>React Three Fiber, Rapier, Pixi.js, Howler, Monaco</td><td>Ch. 10&ndash;11</td></tr>
+    <tr><td><strong>Build &amp; deploy</strong></td><td>Compiling, bundling, blue/green release, Go migration</td><td>Vite/Nitro, esbuild, Docker Compose, PM2, k8s/Helm</td><td>Ch. 12&ndash;13</td></tr>
+  </tbody>
+</table>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  subgraph Client[Browser]
+    UI[React UI and game canvases]
+  end
+  subgraph Web[Web / SSR tier]
+    Nitro[Nitro SSR plus API routes]
+  end
+  subgraph Realtime[Realtime fleet]
+    Sock[socket-server]
+    Box[rmhbox]
+    Tube[rmhtube]
+  end
+  subgraph Data[Data and auth]
+    PG[(PostgreSQL via Prisma)]
+    Auth[Better Auth]
+    S3[(MinIO / S3 media)]
+  end
+  UI -->|HTTP page and API| Nitro
+  UI -->|WebSocket| Sock
+  UI -->|WebSocket| Box
+  UI -->|WebSocket| Tube
+  Nitro --> PG
+  Nitro --> Auth
+  Nitro --> S3
+  Sock --> PG
+  Box --> PG
+  Tube --> PG
+  </div>
+  <figcaption>Figure 1.1: System context. The browser holds two kinds of connections at once &mdash; ordinary HTTP to the SSR web tier for pages and API routes, and persistent WebSocket connections to the realtime servers for live gameplay. Every tier reads and writes the same PostgreSQL database.</figcaption>
+</figure>
+
+<p>The key thing to notice in Figure 1.1 is that the browser does not talk to a single backend. It maintains an HTTP relationship with the web tier and, simultaneously, one or more WebSocket relationships with realtime servers that are <em>separate processes on separate ports</em>. That split is deliberate, and it is what the next section is about.</p>
+
+<h2 id="process-split">The process-split philosophy</h2>
+<p>A na&iuml;ve full-stack app runs as one process: HTTP, WebSockets, background jobs, and rendering all share a single event loop. rmhstudios.com refuses that arrangement. Instead it runs <strong>one web tier plus many standalone processes</strong>, each with a single responsibility. The cleanest evidence is the <code>dev</code> script in <code>package.json</code>, which launches everything concurrently:</p>
+
+<pre><code>"dev": "concurrently \"vite dev\"
+  \"pnpm run socket-server\"
+  \"pnpm run rmhbox-server\"
+  \"pnpm run rmhtube-server\"
+  \"pnpm run discord-bot:dev\"
+  \"pnpm run doctrine-worker:dev\"
+  \"pnpm run vibe-worker:dev\"
+  \"pnpm run bot-worker:dev\"",</code></pre>
+
+<p>That single line tells the whole story. Beyond the Vite dev server (the web tier), there are <strong>realtime servers</strong> (<code>socket-server</code>, <code>rmhbox-server</code>, <code>rmhtube-server</code>) and <strong>background workers</strong> (<code>discord-bot</code>, <code>doctrine-worker</code>, <code>vibe-worker</code>, <code>bot-worker</code>). Each is its own Node process under <code>server/&lt;name&gt;/index.ts</code>. The production <code>build</code> script confirms this: after the Vite/Nitro build, <code>esbuild</code> bundles each server entry point separately into <code>dist-server/</code>, and <code>start</code> runs each compiled <code>.cjs</code> file as its own <code>node</code> process.</p>
+
+<div class="keyterm"><span class="term">Worker process</span> — a standalone background process that does not serve user requests directly. It runs scheduled or event-driven work (generating content, decaying reputation, rendering thumbnails) and communicates with the rest of the system through the shared database rather than through HTTP.</div>
+
+<p>Why bother? Three reasons, each a recurring theme in this book:</p>
+<ul>
+  <li><strong>Fault isolation.</strong> If the thumbnail worker crashes mid-render, the home page keeps serving. A monolith would take everything down with it.</li>
+  <li><strong>Independent scaling.</strong> A trivia night might need three copies of the realtime server but only one web tier. Splitting processes lets you scale exactly the part under load.</li>
+  <li><strong>Independent deployment and runtime.</strong> A WebSocket server holds long-lived connections; a request-rendering server is stateless per request. Separating them lets each be restarted, tuned, and (as we will see) <em>rewritten in another language</em> without disturbing the others.</li>
+</ul>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  subgraph WebTier[Web tier - one process]
+    W[Nitro SSR plus API]
+  end
+  subgraph RT[Realtime fleet]
+    S1[socket-server :7001]
+    S2[rmhbox :7676]
+    S3[rmhtube :7003]
+  end
+  subgraph WK[Workers - no inbound user traffic]
+    D[discord-bot]
+    DW[doctrine-worker]
+    VW[vibe-worker]
+    BW[bot-worker]
+    RC[recap]
+  end
+  subgraph OBS[Ops]
+    ST[status :7008]
+  end
+  DB[(PostgreSQL)]
+  W --> DB
+  S1 --> DB
+  S2 --> DB
+  S3 --> DB
+  D --> DB
+  DW --> DB
+  VW --> DB
+  BW --> DB
+  ST -.probes.-> W
+  ST -.probes.-> S1
+  ST -.probes.-> S2
+  ST -.probes.-> S3
+  </div>
+  <figcaption>Figure 1.2: The process fleet. One web tier, three realtime servers, a set of workers that take no inbound user traffic, and a standalone status process that probes the others. Ports are the production loopback ports from <code>docker-compose.yml</code>. The shared PostgreSQL database is the common backbone.</figcaption>
+</figure>
+
+<h2 id="the-fleet-in-detail">Reading the fleet from docker-compose</h2>
+<p>In production the fleet is described once, in <code>docker-compose.yml</code>. A single application image (<code>rmhstudios-app</code>) is built once and shared by every service; each service simply runs a different command against it. The compose file declares these application services, all from the one image:</p>
+
+<table>
+  <thead><tr><th>Service</th><th>Role</th><th>Prod port</th><th>Compiled entry</th></tr></thead>
+  <tbody>
+    <tr><td><code>web</code></td><td>SSR + API (TanStack Start / Nitro)</td><td>7005 / 7015</td><td>Nitro server, deployed blue/green</td></tr>
+    <tr><td><code>socket</code></td><td>Games &amp; realtime apps (Socket.io)</td><td>7001</td><td><code>server/socket-server/index.cjs</code></td></tr>
+    <tr><td><code>rmhbox</code></td><td>RMHBox minigame lobby</td><td>7676</td><td><code>server/rmhbox/index.cjs</code></td></tr>
+    <tr><td><code>rmhtube</code></td><td>RMHTube realtime</td><td>7003</td><td><code>server/rmhtube/index.cjs</code></td></tr>
+    <tr><td><code>recap</code></td><td>Lights Out recap runner</td><td>7004</td><td><code>server/recap/index.cjs</code></td></tr>
+    <tr><td><code>status</code></td><td>Health dashboard (status.rmhstudios.com)</td><td>7008</td><td><code>server/status/index.cjs</code></td></tr>
+    <tr><td><code>discord-bot</code></td><td>Slash commands + RMHBot AI editor</td><td>&mdash;</td><td><code>server/discord-bot/index.cjs</code></td></tr>
+    <tr><td><code>doctrine-worker</code></td><td>Puzzle gen, reputation decay, activation</td><td>&mdash;</td><td><code>server/doctrine-worker/index.cjs</code></td></tr>
+    <tr><td><code>vibe-worker</code></td><td>Gallery thumbnails via headless Chromium</td><td>&mdash;</td><td><code>server/vibe-worker/index.cjs</code></td></tr>
+    <tr><td><code>bot-worker</code></td><td>Synthetic users/posts (RMHark)</td><td>&mdash;</td><td><code>server/bot-worker/index.cjs</code></td></tr>
+    <tr><td><code>minio</code> / <code>minio-init</code></td><td>S3-compatible object storage + bootstrap</td><td>9000 / 9001</td><td>MinIO image</td></tr>
+  </tbody>
+</table>
+
+<div class="note">Workers such as <code>discord-bot</code>, <code>doctrine-worker</code>, <code>vibe-worker</code>, and <code>bot-worker</code> publish <em>no</em> host port. They take no inbound user traffic; they reach the world through the database and through outbound calls. That is exactly what makes them workers rather than servers.</div>
+
+<p>The realtime ports are bound to <code>127.0.0.1</code> (loopback) — they are reverse-proxied, not exposed directly. The <code>status</code> service is interesting in its own right: it probes the public website URL (so it sees the same path a real user does, through Apache and DNS) and probes the internal services by their compose DNS names, then serves an HTML + JSON dashboard. We will return to it in the deployment chapter.</p>
+
+<div class="stats">
+  <div class="stat"><div class="v">1</div><div class="l">Web / SSR tier</div></div>
+  <div class="stat"><div class="v">3</div><div class="l">Realtime servers</div></div>
+  <div class="stat"><div class="v">4+</div><div class="l">Background workers</div></div>
+  <div class="stat"><div class="v">142</div><div class="l">Prisma models</div></div>
+  <div class="stat"><div class="v">1</div><div class="l">Shared app image</div></div>
+</div>
+
+<h2 id="repo-layout">The repository, top-down</h2>
+<p>The directory layout mirrors the tiers, which makes the codebase navigable once you know the map. The most load-bearing top-level directories:</p>
+
+<pre><code>app/         TanStack Start routes (file-based): _site, api, rmhbox, altair, ...
+components/   React components by feature (594 files per README)
+lib/          Shared logic, schemas, utilities (361 files per README)
+server/       Standalone processes: socket-server, rmhbox, rmhtube,
+              recap, status, discord-bot, doctrine-worker,
+              vibe-worker, bot-worker, rmhmusic, shared
+prisma/       schema.prisma (142 models) and migrations
+stores/       Zustand client state
+go-services/  Parallel Go rewrite of the realtime/worker tier (in progress)
+deploy/       apache, docker, helm, k8s, terraform, hotswap-web.sh</code></pre>
+
+<p>Two things deserve a callout. First, <code>server/shared/</code> holds the code every standalone process imports — <code>prisma-client.ts</code>, <code>logger.ts</code>, <code>rate-limit.ts</code> — so the fleet shares one database client and one logging convention rather than reinventing them per process. Second, <code>go-services/</code> is not dead weight; it is a live migration.</p>
+
+<div class="keyterm"><span class="term">Strangler-fig migration</span> — a strategy for replacing a system gradually: new components grow up alongside the old ones and take over responsibilities one at a time, until the original can be removed. The name comes from the strangler fig, which grows around a host tree and eventually replaces it.</div>
+
+<div class="scope"><b>Scope: the Go rewrite is in progress.</b> Under <code>go-services/cmd/&lt;service&gt;/main.go</code> there are Go ports of the realtime and worker processes — <code>gateway</code>, <code>gamehub</code>, <code>rmhbox</code>, <code>rmhtube</code>, <code>rmhmusic</code>, <code>recap</code>, <code>discord-bot</code>, <code>doctrine-worker</code>, <code>vibe-worker</code> — sharing a common <code>pkg/</code> (config, logging, db) described in <code>go-services/FOUNDATION.md</code>. The platform's <em>process-split shape is precisely what makes this possible</em>: because each realtime server is already an independent process speaking to a shared database, a Go binary can replace a Node one service-by-service without touching the web tier. This rewrite is treated as in-progress throughout the book and is the subject of Chapter 13. The TypeScript fleet remains the production path.</div>
+
+<h2 id="a-request-end-to-end">A request, end to end</h2>
+<p>To see the tiers cooperate, follow a player opening a multiplayer game. The page itself comes from the web tier over HTTP; the live game comes from a realtime server over a WebSocket. Both consult the same database.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant B as Browser
+  participant N as Nitro SSR
+  participant DB as PostgreSQL
+  participant S as socket-server
+  B->>N: GET game page
+  N->>DB: load profile and leaderboard
+  DB-->>N: rows
+  N-->>B: rendered HTML plus JS
+  B->>S: WebSocket connect (join lobby)
+  S->>DB: read or write match state
+  S-->>B: live game events
+  </div>
+  <figcaption>Figure 1.3: One player, two connections. The first half of the story is an ordinary SSR round-trip through Nitro; the second half is a persistent WebSocket to a standalone realtime process. The shared database is the only thing both halves have in common.</figcaption>
+</figure>
+
+<p>Notice that the web tier and the realtime tier never call each other directly in this flow. They coordinate <em>through the database</em>. That loose coupling is what lets the two tiers scale, fail, and be rewritten independently — the recurring payoff of the process split.</p>
+
+<h2 id="map-of-the-book">A map of the book</h2>
+<p>This chapter is the table of contents in prose. Each later chapter zooms into one tier and goes deep where this chapter stayed shallow:</p>
+<table>
+  <thead><tr><th>Chapter(s)</th><th>Focus</th></tr></thead>
+  <tbody>
+    <tr><td>Ch. 2&ndash;4</td><td>The web tier: TanStack Start routing, Nitro SSR, file-based API routes.</td></tr>
+    <tr><td>Ch. 5&ndash;7</td><td>The realtime fleet: Socket.io, lobby/room models, the RMHBox and RMHTube servers.</td></tr>
+    <tr><td>Ch. 8&ndash;9</td><td>Data and auth: PostgreSQL + Prisma's 142 models, Better Auth sessions and OAuth, MinIO/S3 media.</td></tr>
+    <tr><td>Ch. 10&ndash;11</td><td>Games and apps: in-browser engines, React Three Fiber + Rapier, audio, the editor apps.</td></tr>
+    <tr><td>Ch. 12</td><td>Build and release: the Vite/Nitro + esbuild build, Docker Compose, blue/green deploy via <code>deploy/hotswap-web.sh</code>.</td></tr>
+    <tr><td>Ch. 13</td><td>The Go migration and the road to Kubernetes/Helm.</td></tr>
+  </tbody>
+</table>
+
+<div class="summary"><h4>Summary</h4>
+<ul>
+  <li>rmhstudios.com is one TypeScript codebase serving three faces — portfolio/blog, browser games, and apps — over a stack of <strong>TanStack Start + Vite + Nitro</strong>, <strong>PostgreSQL + Prisma</strong> (142 models), and <strong>Better Auth</strong>.</li>
+  <li>It is organized into five tiers: web/SSR, realtime fleet, data &amp; auth, games &amp; apps, and build &amp; deploy.</li>
+  <li>The defining decision is the <strong>process split</strong>: one web tier plus many standalone Node processes — three realtime Socket.io servers (<code>socket</code> :7001, <code>rmhbox</code> :7676, <code>rmhtube</code> :7003) and several workers (<code>discord-bot</code>, <code>doctrine-worker</code>, <code>vibe-worker</code>, <code>bot-worker</code>, plus <code>recap</code> and <code>status</code>).</li>
+  <li>The browser holds two connection types at once: HTTP to the web tier and WebSockets to the realtime servers. Tiers coordinate through the shared database rather than calling each other.</li>
+  <li>The split buys fault isolation, independent scaling, and independent deployment — and it is exactly what enables the in-progress <strong>strangler-fig migration to Go</strong> under <code>go-services/</code>, one service at a time.</li>
+  <li>Watch for stale docs: <code>codebase-overview.md</code> still says "Next.js 16"; the README and running code (TanStack Start, port 7005) are authoritative.</li>
+</ul>
+</div>
+
+<div class="exercises"><h2 id="ch1-exercises">Practice Exercises</h2>
+
+<div class="exercise"><span class="qid">1.1</span>
+<span class="tag concept">concept</span><span class="tag easy">easy</span>
+In your own words, define the <em>process-split architecture</em> used by rmhstudios.com and give two distinct benefits it provides over running everything in a single process.</div>
+
+<div class="exercise"><span class="qid">1.2</span>
+<span class="tag concept">concept</span><span class="tag easy">easy</span>
+The chapter warns that <code>docs/codebase-overview.md</code> is partly stale. Which present-tense claim in it is wrong, and which two sources does the chapter treat as authoritative instead?</div>
+
+<div class="exercise"><span class="qid">1.3</span>
+<span class="tag trace">trace</span><span class="tag medium">medium</span>
+Using the <code>dev</code> script in <code>package.json</code>, list every process it launches and classify each as either the web tier, a realtime server, or a background worker.</div>
+
+<div class="exercise"><span class="qid">1.4</span>
+<span class="tag trace">trace</span><span class="tag medium">medium</span>
+A player opens a multiplayer game and starts playing. Trace the two connections their browser ends up holding, naming the protocol and the destination process for each, and state what the two have in common.</div>
+
+<div class="exercise"><span class="qid">1.5</span>
+<span class="tag concept">concept</span><span class="tag medium">medium</span>
+In <code>docker-compose.yml</code>, the <code>discord-bot</code>, <code>doctrine-worker</code>, <code>vibe-worker</code>, and <code>bot-worker</code> services publish no host port, while <code>socket</code>, <code>rmhbox</code>, and <code>rmhtube</code> do. Explain what this difference tells you about each group's role.</div>
+
+<div class="exercise"><span class="qid">1.6</span>
+<span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+Redraw Figure 1.1 (system context) from memory, then add the <code>status</code> process and show, with dashed arrows, what it probes. You do not need exact port numbers.</div>
+
+<div class="exercise"><span class="qid">1.7</span>
+<span class="tag concept">concept</span><span class="tag hard">hard</span>
+Define <em>strangler-fig migration</em> and explain why the platform's process-split shape makes migrating the realtime tier to Go feasible one service at a time. What property of the inter-tier coupling is doing the work here?</div>
+
+<div class="exercise"><span class="qid">1.8</span>
+<span class="tag design">design</span><span class="tag hard">hard</span>
+Suppose RMHBox suddenly becomes ten times more popular than the rest of the site during weekly tournaments, while the home page traffic is unchanged. Given the process-split architecture, propose a scaling response and explain why a single-process monolith could not respond the same way. Name any new problem your approach introduces (hint: WebSocket connections are stateful).</div>
+
+<div class="exercise"><span class="qid">1.9</span>
+<span class="tag design">design</span><span class="tag medium">medium</span>
+The compose file builds one shared application image (<code>rmhstudios-app</code>) and runs every service from it with a different command. Give one advantage and one drawback of this "one image, many commands" approach versus building a separate, minimal image per service.</div>
+
+<div class="exercise"><span class="qid">1.10</span>
+<span class="tag diagram">diagram</span><span class="tag hard">hard</span>
+Draw a single diagram of the production fleet that places each service in the correct tier (web/SSR, realtime, workers, ops, storage) and shows the shared PostgreSQL database. Mark which services are user-facing (publish a port) and which are not.</div>
+
+</div>

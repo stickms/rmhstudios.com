@@ -1,28 +1,17 @@
 'use client';
-import { useCallback, useEffect, useRef } from 'react';
+import { Suspense, lazy, useEffect, useRef } from 'react';
 import { useTempleStore } from '@/lib/temple-of-joy/store';
 import { saveDataToState, computeOfflineProgress, useAutoSave, saveToServer } from '@/lib/temple-of-joy/persistence';
 import { templeAudio } from '@/lib/temple-of-joy/audio';
 import type { SaveData } from '@/lib/temple-of-joy/types';
-import TabBar from '@/components/temple-of-joy/ui/TabBar';
-import SmileButton from '@/components/temple-of-joy/ui/SmileButton';
-import StatsPanel from '@/components/temple-of-joy/ui/StatsPanel';
-import SourcesPanel from '@/components/temple-of-joy/ui/SourcesPanel';
-import UpgradesPanel from '@/components/temple-of-joy/ui/UpgradesPanel';
-import RelicsPanel from '@/components/temple-of-joy/ui/RelicsPanel';
-import WheelOfSamsara from '@/components/temple-of-joy/ui/WheelOfSamsara';
-import AchievementsPanel from '@/components/temple-of-joy/ui/AchievementsPanel';
-import SettingsPanel from '@/components/temple-of-joy/ui/SettingsPanel';
-import MilestonesPanel from '@/components/temple-of-joy/ui/MilestonesPanel';
-import VibeCheck from '@/components/temple-of-joy/ui/VibeCheck';
-import EventModal from '@/components/temple-of-joy/ui/EventModal';
-import EventEffectSummary from '@/components/temple-of-joy/ui/EventEffectSummary';
-import TranscendenceModal from '@/components/temple-of-joy/ui/TranscendenceModal';
-import OfflineModal from '@/components/temple-of-joy/ui/OfflineModal';
-import AchievementToast from '@/components/temple-of-joy/ui/AchievementToast';
+
+// The Three.js world is heavy; load it lazily so the rest of the game shell
+// (and the loading fallback) can paint immediately.
+const TempleScene = lazy(() =>
+  import('@/components/temple-of-joy/three/TempleScene').then((m) => ({ default: m.TempleScene })),
+);
 
 export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveData | null }) {
-  const activeTab = useTempleStore(s => s.activeTab);
   const theme = useTempleStore(s => s.theme);
 
   // ── Initialization ────────────────────────────────────────────────────────
@@ -136,14 +125,6 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
     return () => container.removeEventListener('click', handler);
   }, []);
 
-  // ── Save-and-navigate helper ──────────────────────────────────────────────
-  const handleBackToGames = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    saveToServer(useTempleStore.getState())
-      .catch(() => { /* best-effort */ })
-      .finally(() => { window.location.href = '/builds'; });
-  }, []);
-
   // ── beforeunload: confirm exit + auto-save ────────────────────────────────
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -162,86 +143,22 @@ export function TempleOfJoyGame({ initialSaveData }: { initialSaveData?: SaveDat
     <div
       ref={gameContainerRef}
       data-theme={theme}
-      className="h-screen flex flex-col overflow-hidden font-sans"
+      className="relative h-screen w-screen overflow-hidden font-sans"
       style={{
-        background: theme === 'dark' ? '#1a120b' : '#f5f0e8',
-        color: theme === 'dark' ? '#e8d5b0' : '#3d2c1e',
+        background: theme === 'dark' ? '#0d0904' : '#ece0c8',
+        color: 'var(--temple-text)',
       }}
     >
-      {/* Header */}
-      <header
-        className="flex items-center px-4 py-3 border-b shrink-0"
-        style={{
-          borderColor: theme === 'dark' ? '#6b4c2a' : '#c4a97a',
-          background: theme === 'dark' ? '#2c1d12' : '#ede7d9',
-        }}
-      >
-        <a
-          href="/builds"
-          onClick={handleBackToGames}
-          className="w-24 text-sm opacity-70 hover:opacity-100 transition-opacity shrink-0"
-          style={{ color: theme === 'dark' ? '#d4a847' : '#8b6914' }}
-        >
-          ← Builds
-        </a>
-        <h1
-          className="flex-1 text-center text-xl font-bold tracking-wide"
-          style={{ fontFamily: 'var(--font-cormorant, Georgia, serif)' }}
-        >
-          Temple of Joy
-        </h1>
-        <div className="w-24 shrink-0" />
-      </header>
-
-      {/* Tab Bar — sticky below header */}
-      <div className="shrink-0">
-        <TabBar />
+      {/* 3D temple world — fills the screen. All persistent chrome (HUD, tabs,
+          controls, back button) now lives inside it as real 3D meshes. */}
+      <div className="absolute inset-0">
+        <Suspense fallback={null}>
+          <TempleScene />
+        </Suspense>
       </div>
 
-      {/* Main content — scrollable area */}
-      <main className="flex-1 min-h-0 w-full mx-auto">
-        {activeTab === 'temple' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 overflow-y-auto gap-4 p-4 pb-16 md:pb-4 h-full min-h-0">
-            {/* Left: Sources panel */}
-            <div className="hidden lg:flex lg:flex-col min-h-0">
-              <div className="flex-1 min-h-0">
-                <SourcesPanel />
-              </div>
-            </div>
-            {/* Center: SmileButton + StatsPanel */}
-            <div className="flex flex-col items-center gap-4">
-              <SmileButton />
-              <StatsPanel />
-            </div>
-            {/* Right: Upgrades summary */}
-            <div className="hidden lg:flex lg:flex-col min-h-0">
-              <div className="flex-1 min-h-0">
-                <UpgradesPanel />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'sources'    && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><SourcesPanel /></div>}
-        {activeTab === 'upgrades'     && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><UpgradesPanel /></div>}
-        {activeTab === 'relics'       && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><RelicsPanel /></div>}
-        {activeTab === 'wheel'        && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><WheelOfSamsara /></div>}
-        {activeTab === 'achievements' && (
-          <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0">
-            <AchievementsPanel />
-            <MilestonesPanel />
-          </div>
-        )}
-        {activeTab === 'settings'     && <div className="overflow-y-auto p-4 pb-16 md:pb-4 h-full min-h-0"><SettingsPanel /></div>}
-      </main>
-
-      {/* Overlays */}
-      <VibeCheck />
-      <EventModal />
-      <EventEffectSummary />
-      <TranscendenceModal />
-      <OfflineModal />
-      <AchievementToast />
+      {/* All UI — HUD, tabs, controls, panels and modals — now lives inside the
+          3D scene (Chrome3D / Modals3D in the Hud layer). Nothing else here. */}
     </div>
   );
 }

@@ -5,6 +5,7 @@
 import { createFileRoute, Link, useNavigate, useLocation } from '@tanstack/react-router';
 import { Suspense, useState, useEffect } from 'react';
 import { ArrowLeft, Terminal, AlertCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { BuildForm } from '@/components/user-builds';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/_site/user-builds/submit')({
 });
 
 function SubmitBuildContent() {
+  const { t } = useTranslation("user-builds");
   const navigate = useNavigate();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.searchStr);
@@ -45,7 +47,7 @@ function SubmitBuildContent() {
   if (isPending || loadingBuild || (editId && !build && !fetchError)) {
     return (
       <div className="min-h-screen bg-site-bg pt-20 pb-12 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-site-accent border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -54,12 +56,12 @@ function SubmitBuildContent() {
     return (
       <div className="min-h-screen bg-site-bg pt-20 pb-12">
         <div className="max-w-md mx-auto px-4 text-center">
-          <div className="p-8 rounded-xl border border-site-border bg-site-surface">
-            <Terminal className="w-12 h-12 text-violet-400 mx-auto mb-4" />
-            <h1 className="text-xl font-semibold text-site-text mb-2">Sign In Required</h1>
-            <p className="text-site-text-muted mb-6">You need to sign in to submit a build.</p>
+          <div className="p-8 rounded-site border border-site-border bg-site-surface">
+            <Terminal className="w-12 h-12 text-site-accent mx-auto mb-4" />
+            <h1 className="text-xl font-semibold text-site-text mb-2">{t("sign-in-required", { defaultValue: "Sign In Required" })}</h1>
+            <p className="text-site-text-muted mb-6">{t("sign-in-to-submit", { defaultValue: "You need to sign in to submit a build." })}</p>
             <Link to="/login" search={{ callbackURL: '/user-builds/submit' }}>
-              <Button variant="accent" className="w-full bg-violet-600 hover:bg-violet-500">Sign In</Button>
+              <Button variant="accent" className="w-full bg-site-accent hover:bg-site-accent">{t("sign-in", { defaultValue: "Sign In" })}</Button>
             </Link>
           </div>
         </div>
@@ -71,12 +73,12 @@ function SubmitBuildContent() {
     return (
       <div className="min-h-screen bg-site-bg pt-20 pb-12">
         <div className="max-w-md mx-auto px-4 text-center">
-          <div className="p-8 rounded-xl border border-site-border bg-site-surface">
-            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-            <h1 className="text-xl font-semibold text-site-text mb-2">Error Loading Build</h1>
+          <div className="p-8 rounded-site border border-site-border bg-site-surface">
+            <AlertCircle className="w-12 h-12 text-site-danger mx-auto mb-4" />
+            <h1 className="text-xl font-semibold text-site-text mb-2">{t("error-loading-build", { defaultValue: "Error Loading Build" })}</h1>
             <p className="text-site-text-muted mb-6">{fetchError}</p>
             <Link to="/user-builds/manage">
-              <Button variant="secondary">Back to My Builds</Button>
+              <Button variant="secondary">{t("back-to-my-builds", { defaultValue: "Back to My Builds" })}</Button>
             </Link>
           </div>
         </div>
@@ -94,25 +96,25 @@ function SubmitBuildContent() {
           className="inline-flex items-center gap-2 text-sm text-site-text-muted hover:text-site-text mb-6 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          {isEditing ? 'Back to My Builds' : 'Back to Builds'}
+          {isEditing ? t("back-to-my-builds", { defaultValue: "Back to My Builds" }) : t("back-to-builds", { defaultValue: "Back to Builds" })}
         </Link>
 
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-site-text mb-2">{isEditing ? 'Edit Build' : 'Submit a Build'}</h1>
+          <h1 className="text-3xl font-bold text-site-text mb-2">{isEditing ? t("edit-build", { defaultValue: "Edit Build" }) : t("submit-a-build", { defaultValue: "Submit a Build" })}</h1>
           <p className="text-site-text-muted">
-            {isEditing ? 'Update your build details below.' : 'Share your project with the community. You can save as a draft and publish later.'}
+            {isEditing ? t("update-build-details", { defaultValue: "Update your build details below." }) : t("share-project-with-community", { defaultValue: "Share your project with the community. You can save as a draft and publish later." })}
           </p>
         </div>
 
-        <div className="p-6 rounded-xl border border-site-border bg-site-surface">
+        <div className="p-6 rounded-site border border-site-border bg-site-surface">
           <BuildForm key={build?.id} build={build ?? undefined} />
         </div>
 
         {!isEditing && (
-          <div className="mt-8 p-4 rounded-lg border border-site-border bg-site-surface">
-            <h3 className="font-medium text-site-text mb-2">Prefer the CLI?</h3>
-            <p className="text-sm text-site-text-muted mb-3">You can also publish builds directly from the terminal with rmhcode.</p>
-            <code className="block p-3 rounded bg-site-bg border border-site-border text-sm font-mono text-violet-400">rmhcode push-build</code>
+          <div className="mt-8 p-4 rounded-site-sm border border-site-border bg-site-surface">
+            <h3 className="font-medium text-site-text mb-2">{t("prefer-the-cli", { defaultValue: "Prefer the CLI?" })}</h3>
+            <p className="text-sm text-site-text-muted mb-3">{t("cli-description", { defaultValue: "You can also publish builds directly from the terminal with rmhcode." })}</p>
+            <code className="block p-3 rounded bg-site-bg border border-site-border text-sm font-mono text-site-accent">rmhcode push-build</code>
           </div>
         )}
       </div>
@@ -122,7 +124,7 @@ function SubmitBuildContent() {
 
 function SubmitBuildPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-site-bg pt-20 pb-12 flex items-center justify-center"><div className="w-8 h-8 border-2 border-violet-400 border-t-transparent rounded-full animate-spin" /></div>}>
+    <Suspense fallback={<div className="min-h-screen bg-site-bg pt-20 pb-12 flex items-center justify-center"><div className="w-8 h-8 border-2 border-site-accent border-t-transparent rounded-full animate-spin" /></div>}>
       <SubmitBuildContent />
     </Suspense>
   );

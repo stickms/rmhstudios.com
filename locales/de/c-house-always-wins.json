@@ -1,0 +1,18 @@
+{
+  "back-home": "Zurück zur Startseite",
+  "controls-hint": "WASD/← → Bewegen • Space Springen • Shift Sprinten • E Interagieren • M Menü",
+  "controls-interact": "E — Interagieren",
+  "controls-jump": "Space — Springen",
+  "controls-menu": "M — Menü",
+  "controls-move": "WASD / Pfeile — Bewegen",
+  "debt": "SCHULDEN",
+  "e-continue": "[E] Fortfahren",
+  "loading": "LÄDT...",
+  "login-to-play": "Anmelden zum Spielen",
+  "menu-title": "Menü",
+  "music-volume": "Musiklautstärke",
+  "resume": "Fortsetzen [M]",
+  "sign-in-prompt": "Du musst dich anmelden, bevor du das Casino betreten kannst. Deine Schulden werden aufgezeichnet.",
+  "subtitle": "Der Tisch wartet",
+  "title": "Das Haus gewinnt immer"
+}

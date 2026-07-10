@@ -1,55 +1,125 @@
 // ============================================================
-// Fighter Factory — Creates and manages fighter instances
+// Fighter Factory & Mechanics — 2D-plane arena
 // ============================================================
 
 import {
-    Fighter, FighterClass, FighterState, PunchType,
-    GROUND_Y, RING_LEFT, RING_RIGHT
+    Fighter, FighterClass, InputCommand, PunchType,
+    ARENA_RADIUS, FIGHTER_RADIUS,
+    MOVE_SPEED_SCALE, KNOCKBACK_SCALE,
 } from './types';
 import { CLASS_STATS, CLASS_DISPLAY } from './stats';
-import { PUNCH_DEFS, calculateDamage, calculatePunchSpeed } from '../combat/punches';
-import { detectCombo, COMBO_WINDOW_MS } from '../combat/combos';
+import { PUNCH_DEFS, calculateDamage, PUNCH_COMMIT_FRAMES, punchHitFrame } from '../combat/punches';
+import { COMBO_WINDOW_MS } from '../combat/combos';
 
-/**
- * Create a new fighter instance
- */
-export function createFighter(
-    className: FighterClass,
-    x: number,
-    facingRight: boolean,
-    displayName: string,
-): Fighter {
-    const stats = { ...CLASS_STATS[className] };
-    const display = CLASS_DISPLAY[className];
+/** Create a new fighter instance on the ground plane. */
+export function createFighter(opts: {
+    seat: number;
+    className: FighterClass;
+    team: number;
+    isAI: boolean;
+    isLocal: boolean;
+    x: number;
+    z: number;
+    displayName: string;
+}): Fighter {
+    const stats = { ...CLASS_STATS[opts.className] };
+    const display = CLASS_DISPLAY[opts.className];
 
     return {
-        x,
-        y: GROUND_Y,
-        facingRight,
+        seat: opts.seat,
+        team: opts.team,
+        isAI: opts.isAI,
+        isLocal: opts.isLocal,
+        x: opts.x,
+        z: opts.z,
+        yaw: Math.atan2(-opts.z, -opts.x), // face arena centre initially
+        vx: 0,
+        vz: 0,
         state: 'idle',
         stateFrame: 0,
         health: stats.maxHealth,
         stamina: stats.stamina,
         stats,
-        className,
+        className: opts.className,
         currentPunch: null,
         punchFrame: 0,
+        bufferedPunch: null,
         hitCooldown: 0,
         blockHeld: false,
         comboHistory: [],
         punchConnected: false,
         knockoutTimer: 0,
-        displayName,
+        hitFlash: 0,
+        displayName: opts.displayName,
         spriteColor: display.color,
         spriteAccentColor: display.accent,
+        alive: true,
+        roundWins: 0,
     };
 }
 
+/** Clamp a position to stay inside the circular arena. */
+export function clampToArena(x: number, z: number): { x: number; z: number } {
+    const r = Math.hypot(x, z);
+    const max = ARENA_RADIUS - FIGHTER_RADIUS;
+    if (r <= max || r === 0) return { x, z };
+    const s = max / r;
+    return { x: x * s, z: z * s };
+}
+
 /**
- * Attempt to throw a punch. Returns true if punch started.
+ * Apply a movement command to a fighter (shared by the host sim and the
+ * guest's client-side prediction so they integrate identically).
  */
+export function integrateMovement(fighter: Fighter, cmd: InputCommand): void {
+    const canMove = fighter.state === 'idle' || fighter.state === 'walking' || fighter.state === 'blocking';
+    if (!canMove) {
+        fighter.vx = 0;
+        fighter.vz = 0;
+        if (fighter.state === 'walking') fighter.state = 'idle';
+        return;
+    }
+
+    let mx = cmd.moveX;
+    let mz = cmd.moveZ;
+    const mag = Math.hypot(mx, mz);
+    if (mag > 1) { mx /= mag; mz /= mag; }
+
+    // Blocking slows you to a crawl (defensive shuffle).
+    const blockMod = fighter.state === 'blocking' ? 0.4 : 1;
+    const speed = fighter.stats.moveSpeed * MOVE_SPEED_SCALE * blockMod;
+
+    fighter.vx = mx * speed;
+    fighter.vz = mz * speed;
+
+    const next = clampToArena(fighter.x + fighter.vx, fighter.z + fighter.vz);
+    fighter.x = next.x;
+    fighter.z = next.z;
+
+    if (fighter.state === 'idle' && mag > 0.05) {
+        fighter.state = 'walking';
+    } else if (fighter.state === 'walking' && mag <= 0.05) {
+        fighter.state = 'idle';
+    }
+}
+
+/** Turn the fighter to face a world-space point. */
+export function faceToward(fighter: Fighter, tx: number, tz: number): void {
+    const dx = tx - fighter.x;
+    const dz = tz - fighter.z;
+    if (Math.abs(dx) > 1e-4 || Math.abs(dz) > 1e-4) {
+        fighter.yaw = Math.atan2(dz, dx);
+    }
+}
+
+/** Forward unit vector implied by the fighter's yaw. */
+export function forwardVec(fighter: Fighter): { x: number; z: number } {
+    return { x: Math.cos(fighter.yaw), z: Math.sin(fighter.yaw) };
+}
+
+/** Attempt to throw a punch. Returns true if the punch started. */
 export function startPunch(fighter: Fighter, punchType: PunchType): boolean {
-    if (fighter.state !== 'idle' && fighter.state !== 'walking') return false;
+    if (fighter.state !== 'idle' && fighter.state !== 'walking' && fighter.state !== 'blocking') return false;
 
     const punch = PUNCH_DEFS[punchType];
     if (fighter.stamina < punch.staminaCost) return false;
@@ -60,14 +130,12 @@ export function startPunch(fighter: Fighter, punchType: PunchType): boolean {
     fighter.punchFrame = 0;
     fighter.stamina -= punch.staminaCost;
     fighter.punchConnected = false;
-
+    fighter.vx = 0;
+    fighter.vz = 0;
     return true;
 }
 
-/**
- * Record that the attacker's punch connected (hit or blocked).
- * Adds the punch to combo history for combo detection.
- */
+/** Record that an attacker's punch connected, feeding combo detection. */
 export function recordPunchConnected(attacker: Fighter): void {
     if (!attacker.currentPunch || attacker.punchConnected) return;
     attacker.punchConnected = true;
@@ -77,19 +145,23 @@ export function recordPunchConnected(attacker: Fighter): void {
     }
 }
 
-/**
- * Apply hit to a fighter
- */
+/** Apply a hit to a target. Knockback radiates away from the attacker on the plane. */
 export function applyHit(
     target: Fighter,
     attacker: Fighter,
     comboMultiplier: number = 1.0,
-): { damage: number; blocked: boolean } {
-    if (!attacker.currentPunch) return { damage: 0, blocked: false };
-    if (target.hitCooldown > 0) return { damage: 0, blocked: false };
-    if (target.state === 'knockedOut') return { damage: 0, blocked: false };
+): { damage: number; blocked: boolean; ko: boolean } {
+    if (!attacker.currentPunch) return { damage: 0, blocked: false, ko: false };
+    if (target.hitCooldown > 0 || !target.alive) return { damage: 0, blocked: false, ko: false };
+    if (target.state === 'knockedOut') return { damage: 0, blocked: false, ko: false };
 
-    const isBlocking = target.blockHeld && target.state === 'blocking';
+    // A block only counts if the target is roughly facing the incoming attacker.
+    const toAtkX = attacker.x - target.x;
+    const toAtkZ = attacker.z - target.z;
+    const fwd = forwardVec(target);
+    const facingAtk = (fwd.x * toAtkX + fwd.z * toAtkZ) > 0;
+    const isBlocking = target.blockHeld && target.state === 'blocking' && facingAtk;
+
     const damage = calculateDamage(
         attacker.currentPunch,
         attacker.stats.power,
@@ -100,125 +172,87 @@ export function applyHit(
 
     target.health = Math.max(0, target.health - damage);
     target.hitCooldown = 10;
+    target.hitFlash = isBlocking ? 4 : 8;
 
     if (isBlocking) {
-        // Blocked — less stun, less knockback
         target.stateFrame = 0;
-        return { damage, blocked: true };
+        return { damage, blocked: true, ko: false };
     }
 
-    // Apply knockback
-    const knockDir = target.x > attacker.x ? 1 : -1;
-    target.x += attacker.currentPunch.knockback * knockDir;
-    target.x = Math.max(RING_LEFT + 5, Math.min(RING_RIGHT - 5, target.x));
+    // Knockback along the attacker → target direction.
+    const len = Math.hypot(-toAtkX, -toAtkZ) || 1;
+    const kb = attacker.currentPunch.knockback * KNOCKBACK_SCALE;
+    const moved = clampToArena(target.x + (-toAtkX / len) * kb, target.z + (-toAtkZ / len) * kb);
+    target.x = moved.x;
+    target.z = moved.z;
 
     if (target.health <= 0) {
         target.state = 'knockedOut';
         target.stateFrame = 0;
-        target.knockoutTimer = 600; // 10 seconds at 60fps
-    } else {
-        target.state = 'hit';
-        target.stateFrame = 0;
+        target.knockoutTimer = 600;
+        target.alive = false;
+        target.bufferedPunch = null;
+        return { damage, blocked: false, ko: true };
     }
 
-    return { damage, blocked: false };
+    target.state = 'hit';
+    target.stateFrame = 0;
+    target.bufferedPunch = null;
+    return { damage, blocked: false, ko: false };
 }
 
-/**
- * Update fighter state each frame
- */
+/** Advance a fighter's per-frame state machine. */
 export function updateFighter(fighter: Fighter): void {
     fighter.stateFrame++;
-
-    // Decrease hit cooldown
     if (fighter.hitCooldown > 0) fighter.hitCooldown--;
+    if (fighter.hitFlash > 0) fighter.hitFlash--;
 
-    // Regenerate stamina
     if (fighter.state !== 'punching') {
-        fighter.stamina = Math.min(
-            fighter.stats.stamina,
-            fighter.stamina + fighter.stats.staminaRegen
-        );
+        fighter.stamina = Math.min(fighter.stats.stamina, fighter.stamina + fighter.stats.staminaRegen);
     }
 
-    // Clean up old combo history
     const now = Date.now();
-    fighter.comboHistory = fighter.comboHistory.filter(
-        h => now - h.time < COMBO_WINDOW_MS * 6
-    );
+    fighter.comboHistory = fighter.comboHistory.filter(h => now - h.time < COMBO_WINDOW_MS * 6);
 
     switch (fighter.state) {
         case 'punching': {
-            if (!fighter.currentPunch) {
-                fighter.state = 'idle';
-                break;
-            }
-            const punchDuration = calculatePunchSpeed(fighter.currentPunch, fighter.stats.punchSpeed, fighter.stats.moveSpeed);
+            if (!fighter.currentPunch) { fighter.state = 'idle'; break; }
+            const dur = PUNCH_COMMIT_FRAMES[fighter.currentPunch.type];
             fighter.punchFrame++;
-            if (fighter.punchFrame >= punchDuration) {
-                // Punch finished — if it never connected, it was a whiff → break combo
-                if (!fighter.punchConnected) {
-                    fighter.comboHistory = [];
-                }
+            if (fighter.punchFrame >= dur) {
+                if (!fighter.punchConnected) fighter.comboHistory = [];
                 fighter.state = 'idle';
                 fighter.currentPunch = null;
                 fighter.punchFrame = 0;
                 fighter.stateFrame = 0;
                 fighter.punchConnected = false;
+                // Fire a buffered punch immediately so it feels responsive.
+                if (fighter.bufferedPunch) {
+                    const queued = fighter.bufferedPunch;
+                    fighter.bufferedPunch = null;
+                    startPunch(fighter, queued);
+                }
             }
             break;
         }
-
         case 'hit':
-            if (fighter.stateFrame >= 12) {
-                fighter.state = 'idle';
-                fighter.stateFrame = 0;
-            }
+            if (fighter.stateFrame >= 12) { fighter.state = 'idle'; fighter.stateFrame = 0; }
             break;
-
         case 'stunned':
-            if (fighter.stateFrame >= 30) {
-                fighter.state = 'idle';
-                fighter.stateFrame = 0;
-            }
+            if (fighter.stateFrame >= 30) { fighter.state = 'idle'; fighter.stateFrame = 0; }
             break;
-
         case 'knockedOut':
             fighter.knockoutTimer--;
             break;
-
         case 'blocking':
-            if (!fighter.blockHeld) {
-                fighter.state = 'idle';
-                fighter.stateFrame = 0;
-            }
+            if (!fighter.blockHeld) { fighter.state = 'idle'; fighter.stateFrame = 0; }
             break;
-
         default:
             break;
     }
 }
 
-/**
- * Move a fighter left/right
- */
-export function moveFighter(fighter: Fighter, direction: number): void {
-    if (fighter.state !== 'idle' && fighter.state !== 'walking' && fighter.state !== 'blocking') return;
-
-    const speed = fighter.stats.moveSpeed;
-    fighter.x += direction * speed;
-    fighter.x = Math.max(RING_LEFT + 5, Math.min(RING_RIGHT - 5, fighter.x));
-
-    if (direction !== 0 && fighter.state === 'idle') {
-        fighter.state = 'walking';
-    } else if (direction === 0 && fighter.state === 'walking') {
-        fighter.state = 'idle';
-    }
-}
-
-/**
- * Set blocking state
- */
+/** Set blocking state (only from neutral states). */
 export function setBlocking(fighter: Fighter, blocking: boolean): void {
     fighter.blockHeld = blocking;
     if (blocking && (fighter.state === 'idle' || fighter.state === 'walking')) {
@@ -230,40 +264,31 @@ export function setBlocking(fighter: Fighter, blocking: boolean): void {
     }
 }
 
-/**
- * Check if a punch connects (distance-based hit detection)
- */
-export function checkHit(attacker: Fighter, target: Fighter): boolean {
+/** True on the single frame a punch reaches its active hit window. */
+export function isHitFrame(attacker: Fighter): boolean {
     if (attacker.state !== 'punching' || !attacker.currentPunch) return false;
-
-    // Hit only connects at the "peak" of the punch animation (around 40-60% through)
-    const punchDuration = calculatePunchSpeed(attacker.currentPunch, attacker.stats.punchSpeed, attacker.stats.moveSpeed);
-    const hitWindowStart = Math.floor(punchDuration * 0.35);
-    const hitWindowEnd = Math.floor(punchDuration * 0.55);
-
-    if (attacker.punchFrame < hitWindowStart || attacker.punchFrame > hitWindowEnd) return false;
-    // Already processed this punch's hit
-    if (attacker.punchFrame !== hitWindowStart) return false;
-
-    const distance = Math.abs(attacker.x - target.x);
-    return distance <= attacker.currentPunch.range;
+    return attacker.punchFrame === punchHitFrame(attacker.currentPunch.type);
 }
 
-/**
- * Reset fighter for a new round
- */
-export function resetFighter(fighter: Fighter, x: number): void {
+/** Reset a fighter to a fresh round at the given spawn position. */
+export function resetFighter(fighter: Fighter, x: number, z: number): void {
     fighter.x = x;
-    fighter.y = GROUND_Y;
+    fighter.z = z;
+    fighter.yaw = Math.atan2(-z, -x);
+    fighter.vx = 0;
+    fighter.vz = 0;
     fighter.health = fighter.stats.maxHealth;
     fighter.stamina = fighter.stats.stamina;
     fighter.state = 'idle';
     fighter.stateFrame = 0;
     fighter.currentPunch = null;
     fighter.punchFrame = 0;
+    fighter.bufferedPunch = null;
     fighter.hitCooldown = 0;
+    fighter.hitFlash = 0;
     fighter.blockHeld = false;
     fighter.comboHistory = [];
     fighter.punchConnected = false;
     fighter.knockoutTimer = 0;
+    fighter.alive = true;
 }

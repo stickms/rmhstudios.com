@@ -3,6 +3,8 @@
  * Also includes UI icon mapping (abilities + hearts).
  */
 
+import { asset } from '@/lib/storage/asset';
+
 export interface SpriteConfig {
     /** URL path to the sprite image (relative to /public) */
     url: string;
@@ -42,7 +44,8 @@ export interface SpriteConfig {
 
 export const PLAYER_SPRITE: SpriteConfig = {
     url: '/sprites/void-breaker/player/void-runner.png',
-    leftUrl: '/sprites/void-breaker/player/void-runner-left.png',
+    // No leftUrl: the pre-mirrored asset isn't on the CDN (404 every load), and
+    // drawSprite already horizontally flips the base sprite for left-facing aim.
     anchorX: 0.5,
     anchorY: 0.5,
     scale: 2.2,
@@ -153,6 +156,19 @@ export const HEART_PICKUP_SPRITE: SpriteConfig = {
     rotationMode: 'none',
     glowColor: '#ff00cc',
 };
+
+// Resolve every sprite URL to its CDN origin once at load. Defined as relative
+// `/sprites/...` paths above for readability; rewritten in place so all readers
+// (preloader + renderer) see the CDN URL. No-op when no CDN is configured.
+for (const cfg of [
+    PLAYER_SPRITE,
+    HEART_PICKUP_SPRITE,
+    ...Object.values(ENEMY_SPRITES),
+    ...Object.values(BOSS_SPRITES),
+]) {
+    cfg.url = asset(cfg.url);
+    if (cfg.leftUrl) cfg.leftUrl = asset(cfg.leftUrl);
+}
 
 // ── Helper ───────────────────────────────────────────────────────────
 

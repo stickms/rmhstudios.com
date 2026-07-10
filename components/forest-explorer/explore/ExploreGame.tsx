@@ -2,8 +2,11 @@
 
 import { Canvas } from '@react-three/fiber';
 import { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { TimeOfDay } from '../shared/types';
 import { useForestAudio } from '../audio/useForestAudio';
+import { useGardenStore } from '@/lib/forest-explorer/gardenStore';
+import { stageOf } from '@/lib/forest-explorer/garden';
 import { ExploreScene } from './ExploreScene';
 
 export function ExploreGame() {
@@ -12,7 +15,13 @@ export function ExploreGame() {
     const [flashlightOn, setFlashlightOn] = useState(false);
     const night = mode === 'night';
 
+    const { t } = useTranslation("c-forest-explorer");
     const { muted, toggleMute, volume, setVolume } = useForestAudio(mode, locked);
+
+    const gardenToast = useGardenStore(s => s.toast);
+    const plants = useGardenStore(s => s.plants);
+    const nowTick = useGardenStore(s => s.nowTick);
+    const bloomCount = plants.filter(p => stageOf(p, nowTick || Date.now()) === 'bloom').length;
 
     const nightRef  = useRef(night);
     const lockedRef = useRef(locked);
@@ -42,6 +51,7 @@ export function ExploreGame() {
                     onUnlock={() => setLocked(false)}
                     night={night}
                     flashlightOn={flashlightOn}
+                    locked={locked}
                 />
             </Canvas>
 
@@ -50,9 +60,9 @@ export function ExploreGame() {
                     <div className="text-center text-white px-8 py-9 rounded-2xl bg-black/30 border border-white/10 max-w-xs w-full space-y-3">
                         <div className="text-5xl">🌲</div>
                         <h1 className="text-3xl font-bold tracking-wide text-green-200">
-                            Forest Explorer
+                            {t("forest-explorer-title", { defaultValue: "Forest Explorer" })}
                         </h1>
-                        <p className="text-green-300/70 text-sm">Wander a peaceful ancient forest</p>
+                        <p className="text-green-300/70 text-sm">{t("forest-explorer-subtitle", { defaultValue: "Wander a peaceful ancient forest" })}</p>
 
                         <div className="flex gap-2 pt-1">
                             <button
@@ -63,7 +73,7 @@ export function ExploreGame() {
                                 }`}
                                 onClick={() => setMode('day')}
                             >
-                                ☀ Day
+                                {t("day", { defaultValue: "☀ Day" })}
                             </button>
                             <button
                                 className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
@@ -73,21 +83,31 @@ export function ExploreGame() {
                                 }`}
                                 onClick={() => setMode('night')}
                             >
-                                ☾ Night
+                                {t("night", { defaultValue: "☾ Night" })}
                             </button>
                         </div>
 
                         <div className="pt-1 space-y-1 text-xs text-zinc-400">
                             <p>
-                                <span className="text-zinc-200">WASD</span> — walk &nbsp;·&nbsp;{' '}
-                                <span className="text-zinc-200">Shift</span> — run &nbsp;·&nbsp;{' '}
-                                <span className="text-zinc-200">Space</span> — jump
+                                <span className="text-zinc-200">WASD</span>{t("hint-walk", { defaultValue: " — walk" })} &nbsp;·&nbsp;{' '}
+                                <span className="text-zinc-200">Shift</span>{t("hint-run", { defaultValue: " — run" })} &nbsp;·&nbsp;{' '}
+                                <span className="text-zinc-200">Space</span>{t("hint-jump", { defaultValue: " — jump" })}
                             </p>
                             <p>
-                                <span className="text-zinc-200">Mouse</span> — look &nbsp;·&nbsp;{' '}
-                                <span className="text-zinc-200">ESC</span> — pause
+                                <span className="text-zinc-200">Mouse</span>{t("hint-look", { defaultValue: " — look" })} &nbsp;·&nbsp;{' '}
+                                <span className="text-zinc-200">ESC</span>{t("hint-pause", { defaultValue: " — pause" })}
+                            </p>
+                            <p>
+                                <span className="text-green-300">G</span>{t("hint-plant", { defaultValue: " — plant a seed" })} &nbsp;·&nbsp;{' '}
+                                <span className="text-green-300">E</span>{t("hint-water", { defaultValue: " — water plants" })}
                             </p>
                         </div>
+
+                        {plants.length > 0 && (
+                            <p className="text-green-300/60 text-xs">
+                                {t("garden-status", { defaultValue: "🌼 Your garden: {{count}} plants, {{blooms}} blooming — they grow even while you're away", count: plants.length, blooms: bloomCount })}
+                            </p>
+                        )}
                         <button
                             className={`w-full py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
                                 muted
@@ -96,7 +116,7 @@ export function ExploreGame() {
                             }`}
                             onClick={toggleMute}
                         >
-                            {muted ? '🔇 Sound Off' : '🔊 Sound On'}
+                            {muted ? t("sound-off", { defaultValue: "🔇 Sound Off" }) : t("sound-on", { defaultValue: "🔊 Sound On" })}
                         </button>
                         {!muted && (
                             <div className="flex items-center gap-2 px-1">
@@ -121,9 +141,27 @@ export function ExploreGame() {
                                 canvas?.click();
                             }}
                         >
-                            Enter the Forest
+                            {t("enter-the-forest", { defaultValue: "Enter the Forest" })}
                         </button>
                     </div>
+                </div>
+            )}
+
+            {/* Garden toast */}
+            {locked && gardenToast && (
+                <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+                    <div className="px-4 py-2 rounded-xl bg-green-950/70 backdrop-blur-sm border border-green-600/30 text-green-200 text-sm">
+                        {gardenToast}
+                    </div>
+                </div>
+            )}
+
+            {/* Garden counter */}
+            {locked && plants.length > 0 && (
+                <div className="absolute top-3 left-14 z-50">
+                    <span className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-black/50 backdrop-blur-sm border border-green-700/30 text-green-300/80">
+                        🌼 {t("garden-chip", { defaultValue: "{{count}} planted · {{blooms}} blooming", count: plants.length, blooms: bloomCount })}
+                    </span>
                 </div>
             )}
 
@@ -137,14 +175,14 @@ export function ExploreGame() {
                                     : 'bg-black/50 border-white/10 text-white/40'
                             }`}
                         >
-                            🔦 {flashlightOn ? 'ON' : 'OFF'}
+                            {flashlightOn ? t("flashlight-on", { defaultValue: "🔦 ON" }) : t("flashlight-off", { defaultValue: "🔦 OFF" })}
                         </span>
                     )}
                     <button
                         className="px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white text-xs font-medium transition-colors cursor-pointer"
                         onClick={() => setMode((m) => m === 'day' ? 'night' : 'day')}
                     >
-                        {night ? '☀ Day' : '☾ Night'}
+                        {night ? t("day", { defaultValue: "☀ Day" }) : t("night", { defaultValue: "☾ Night" })}
                     </button>
                     <button
                         className="px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10 text-white/60 hover:text-white text-xs font-medium transition-colors cursor-pointer"
@@ -166,7 +204,9 @@ export function ExploreGame() {
 
             {locked && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/30 text-xs tracking-widest whitespace-nowrap">
-                    WASD · SHIFT run · SPACE jump{night ? ' · F flashlight' : ''} · ESC pause
+                    {night
+                        ? t("locked-hint-night-v2", { defaultValue: "WASD · SHIFT run · SPACE jump · F flashlight · G plant · E water · ESC pause" })
+                        : t("locked-hint-day-v2", { defaultValue: "WASD · SHIFT run · SPACE jump · G plant · E water · ESC pause" })}
                 </div>
             )}
         </div>

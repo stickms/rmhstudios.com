@@ -13,6 +13,7 @@
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Gamepad2 } from 'lucide-react';
 import { connectToRMHbox, getSocket, disconnectFromRMHbox, emit } from '@/lib/rmhbox/socket';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
@@ -23,6 +24,7 @@ import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import type { PublicLobbyInfo } from '@/lib/rmhbox/types';
 
 function RMHboxLanding() {
+  const { t } = useTranslation("r-rmhbox");
   const navigate = useNavigate();
   const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
   const [joinCode, setJoinCode] = useState('');
@@ -77,7 +79,7 @@ function RMHboxLanding() {
           }
         }, 10_000);
       } catch (err) {
-        if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
+        if (mounted) toast.error(err instanceof Error ? err.message : t("connection-failed", { defaultValue: "Connection failed" }));
       }
     }
 
@@ -107,7 +109,7 @@ function RMHboxLanding() {
   const handleJoinLobby = useCallback(() => {
     const code = joinCode.trim().toUpperCase();
     if (code.length !== 6) {
-      toast.warning('Room code must be 6 characters');
+      toast.warning(t("room-code-length", { defaultValue: "Room code must be 6 characters" }));
       return;
     }
     emit(C2S.LOBBY_JOIN, { lobbyId: code });
@@ -130,24 +132,24 @@ function RMHboxLanding() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* Create Lobby */}
           <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-6">
-            <h2 className="text-xl font-semibold mb-4">Create Lobby</h2>
+            <h2 className="text-xl font-semibold mb-4">{t("create-lobby", { defaultValue: "Create Lobby" })}</h2>
             <p className="text-sm mb-4 text-(--rmhbox-text-muted)">
-              Start a new game session and invite friends.
+              {t("create-lobby-desc", { defaultValue: "Start a new game session and invite friends." })}
             </p>
             <button
               onClick={handleCreateLobby}
               disabled={connectionStatus !== 'connected'}
               className="w-full py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhbox-accent) hover:bg-(--rmhbox-accent-hover)"
             >
-              Create Lobby
+              {t("create-lobby", { defaultValue: "Create Lobby" })}
             </button>
           </div>
 
           {/* Join Lobby */}
           <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-6">
-            <h2 className="text-xl font-semibold mb-4">Join Lobby</h2>
+            <h2 className="text-xl font-semibold mb-4">{t("join-lobby", { defaultValue: "Join Lobby" })}</h2>
             <p className="text-sm mb-4 text-(--rmhbox-text-muted)">
-              Enter a 6-character room code to join.
+              {t("join-lobby-desc", { defaultValue: "Enter a 6-character room code to join." })}
             </p>
             <form onSubmit={(e) => { e.preventDefault(); handleJoinLobby(); }} className="flex gap-2">
               <input
@@ -165,7 +167,7 @@ function RMHboxLanding() {
                 disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
                 className="px-6 py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhbox-accent) hover:bg-(--rmhbox-accent-hover)"
               >
-                Join
+                {t("join", { defaultValue: "Join" })}
               </button>
             </form>
           </div>
@@ -174,17 +176,17 @@ function RMHboxLanding() {
         {/* Public Lobbies */}
         <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold">Public Lobbies</h2>
+            <h2 className="text-xl font-semibold">{t("public-lobbies", { defaultValue: "Public Lobbies" })}</h2>
             <button
               onClick={handleBrowse}
               className="text-sm px-3 py-1 rounded-md transition-colors bg-(--rmhbox-surface-hover) text-(--rmhbox-text-muted) hover:text-(--rmhbox-text)"
             >
-              Refresh
+              {t("refresh", { defaultValue: "Refresh" })}
             </button>
           </div>
           {publicLobbies.length === 0 ? (
             <p className="text-sm text-center py-4 text-(--rmhbox-text-muted)">
-              No public lobbies available. Create one!
+              {t("no-public-lobbies", { defaultValue: "No public lobbies available. Create one!" })}
             </p>
           ) : (
             <div className="space-y-2">
@@ -200,7 +202,7 @@ function RMHboxLanding() {
                   <div>
                     <span className="font-mono font-bold">{lobby.lobbyId}</span>
                     <span className="ml-3 text-sm text-(--rmhbox-text-muted)">
-                      Host: {lobby.hostName}
+                      {t("host-name", { defaultValue: "Host: {{name}}", name: lobby.hostName })}
                     </span>
                     {lobby.selectedGame && (
                       <span className="ml-2 text-xs text-(--rmhbox-accent)">
@@ -209,7 +211,7 @@ function RMHboxLanding() {
                     )}
                   </div>
                   <div className="text-sm text-(--rmhbox-text-muted)">
-                    {lobby.playerCount}/{lobby.maxPlayers} players
+                    {t("player-count", { defaultValue: "{{count}}/{{max}} players", count: lobby.playerCount, max: lobby.maxPlayers })}
                   </div>
                 </div>
               ))}
@@ -224,7 +226,7 @@ function RMHboxLanding() {
           data-testid="view-minigames-btn"
         >
           <Gamepad2 className="h-5 w-5" />
-          View Minigames
+          {t("view-minigames", { defaultValue: "View Minigames" })}
         </button>
 
         {/* Leaderboard */}

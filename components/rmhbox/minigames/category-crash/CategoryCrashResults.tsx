@@ -19,6 +19,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Trophy, Star, TrendingUp } from 'lucide-react';
 import type { CCRoundResults } from './CategoryCrashGame';
@@ -49,6 +50,8 @@ export default function CategoryCrashResults({
 }: CategoryCrashResultsProps) {
   void _anonymizationMap;
 
+  const { t } = useTranslation("c-rmhbox");
+
   const { categories, playerResults } = roundResults;
 
   // Sort players by round score descending
@@ -78,10 +81,10 @@ export default function CategoryCrashResults({
       {/* Header */}
       <div className="text-center">
         <h3 className="text-lg font-bold flex items-center justify-center gap-1.5">
-          {isGameOver ? <><Trophy size={18} className="text-(--rmhbox-warning)" /> Final Results</> : `Round ${currentRound} of ${totalRounds}`}
+          {isGameOver ? <><Trophy size={18} className="text-(--rmhbox-warning)" /> {t("final-results", { defaultValue: "Final Results" })}</> : t("round-of", { defaultValue: "Round {{current}} of {{total}}", current: currentRound, total: totalRounds })}
         </h3>
         <p className="text-sm text-(--rmhbox-text-muted)">
-          Letter: <span className="font-bold text-(--rmhbox-accent)">{roundResults.letter}</span>
+          {t("letter-label", { defaultValue: "Letter:" })} <span className="font-bold text-(--rmhbox-accent)">{roundResults.letter}</span>
         </p>
       </div>
 
@@ -108,7 +111,7 @@ export default function CategoryCrashResults({
                   <span className="font-semibold">
                     {result.userName}
                     {isMe && (
-                      <span className="ml-1 text-xs text-(--rmhbox-accent)">(you)</span>
+                      <span className="ml-1 text-xs text-(--rmhbox-accent)">{t("you-label", { defaultValue: "(you)" })}</span>
                     )}
                   </span>
                 </div>
@@ -145,7 +148,7 @@ export default function CategoryCrashResults({
       >
         <h4 className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-(--rmhbox-text-muted)">
           <TrendingUp size={14} />
-          {isGameOver ? 'Final Standings' : 'Leaderboard'}
+          {isGameOver ? t("final-standings", { defaultValue: "Final Standings" }) : t("leaderboard", { defaultValue: "Leaderboard" })}
         </h4>
         <div className="flex flex-col gap-1.5">
           {leaderboard.map((entry, idx) => {
@@ -163,7 +166,7 @@ export default function CategoryCrashResults({
                   </span>
                   {idx === 0 && <Star size={12} className="text-(--rmhbox-warning)" />}
                   <span>{entry.name}</span>
-                  {isMe && <span className="text-xs text-(--rmhbox-accent)">(you)</span>}
+                  {isMe && <span className="text-xs text-(--rmhbox-accent)">{t("you-label", { defaultValue: "(you)" })}</span>}
                 </div>
                 <span className="font-bold">{entry.score}</span>
               </div>

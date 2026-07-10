@@ -1,0 +1,23 @@
+{
+  "cancel": "İptal",
+  "custom-amount": "Özel miktar",
+  "duration": "Süre",
+  "gift-a-membership": "Üyelik hediye et",
+  "gift-desc": "Bu kullanıcıya coinlerle bir üyelik ver.",
+  "gift-desc-named": "{{name}}'e coinlerle bir üyelik ver.",
+  "gift-error": "Üyelik hediye edilemedi",
+  "gift-for": "Hediye edilen",
+  "gift-sign-in": "Üyelik hediye etmek için lütfen giriş yapın.",
+  "gift-success": "{{tier}} seviyesinden {{months}} ay{{s}} hediye edildi!",
+  "gift-success-named": "{{name}}'e {{tier}} seviyesinden {{months}} ay{{s}} hediye edildi!",
+  "note-placeholder": "Not ekle (isteğe bağlı)",
+  "sending": "Gönderiliyor…",
+  "tier": "Seviye",
+  "tip-amount-group-label": "Bahşiş miktarı",
+  "tip-btn": "Bahşiş ver",
+  "tip-dialog-description": "Takdirinizi göstermek için {{recipient}}'e coin gönderin.",
+  "tip-dialog-title": "Bahşiş gönder",
+  "tip-error": "Bahşiş gönderilemedi",
+  "tip-sign-in": "Bahşiş vermek için lütfen giriş yapın.",
+  "tip-success": "{{recipient}}'e {{amount}} coin bahşiş verildi!"
+}

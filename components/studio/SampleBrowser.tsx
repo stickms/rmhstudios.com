@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { FolderOpen, Upload, Play, Trash2, Search, Music } from 'lucide-react';
 import { SampleManager } from '@/lib/studio/samples/SampleManager';
 import { SAMPLE_PACKS } from '@/lib/studio/samples/sample-packs';
 import type { SampleMeta } from '@/lib/studio/types';
 
 export function SampleBrowser() {
+  const { t } = useTranslation("c-studio");
   const [samples, setSamples] = useState<SampleMeta[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'user' | 'packs'>('user');
@@ -60,11 +62,11 @@ export function SampleBrowser() {
     <div className="flex h-full flex-col border-r border-[var(--site-border)] bg-[var(--site-surface)]">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-[var(--site-border)] px-3 py-2">
-        <span className="text-xs font-semibold uppercase text-[var(--site-muted)]">Samples</span>
+        <span className="text-xs font-semibold uppercase text-[var(--site-muted)]">{t("samples-heading", { defaultValue: "Samples" })}</span>
         <button
           onClick={() => fileInputRef.current?.click()}
           className="rounded p-1 text-[var(--site-muted)] hover:bg-white/10 hover:text-[var(--site-text)]"
-          title="Upload samples"
+          title={t("upload-samples", { defaultValue: "Upload samples" })}
         >
           <Upload className="h-3.5 w-3.5" />
         </button>
@@ -84,7 +86,7 @@ export function SampleBrowser() {
           <Search className="h-3 w-3 text-[var(--site-muted)]" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder={t("search-placeholder", { defaultValue: "Search..." })}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="flex-1 bg-transparent text-xs text-[var(--site-text)] outline-none placeholder:text-[var(--site-muted)]"
@@ -100,7 +102,7 @@ export function SampleBrowser() {
             activeTab === 'user' ? 'border-b-2 border-cyan-400 text-cyan-400' : 'text-[var(--site-muted)]'
           }`}
         >
-          My Samples
+          {t("my-samples-tab", { defaultValue: "My Samples" })}
         </button>
         <button
           onClick={() => setActiveTab('packs')}
@@ -108,7 +110,7 @@ export function SampleBrowser() {
             activeTab === 'packs' ? 'border-b-2 border-cyan-400 text-cyan-400' : 'text-[var(--site-muted)]'
           }`}
         >
-          Packs
+          {t("packs-tab", { defaultValue: "Packs" })}
         </button>
       </div>
 
@@ -126,7 +128,7 @@ export function SampleBrowser() {
             <div className="flex flex-col items-center justify-center gap-2 p-4 text-center text-[var(--site-muted)]">
               <FolderOpen className="h-8 w-8 opacity-30" />
               <p className="text-xs">
-                {isDragOver ? 'Drop files here' : 'Drag & drop audio files or click upload'}
+                {isDragOver ? t("drop-files-here", { defaultValue: "Drop files here" }) : t("drag-drop-hint", { defaultValue: "Drag & drop audio files or click upload" })}
               </p>
             </div>
           ) : (
@@ -166,7 +168,7 @@ export function SampleBrowser() {
                 <p className="mt-0.5 text-[9px] text-[var(--site-muted)]">{pack.description}</p>
                 <div className="mt-1 flex items-center gap-2">
                   <span className="rounded bg-cyan-500/10 px-1.5 py-0.5 text-[9px] text-cyan-400">
-                    {pack.samples.length} samples
+                    {t("samples-count", { defaultValue: "{{count}} samples", count: pack.samples.length })}
                   </span>
                   <span className="text-[9px] text-[var(--site-muted)]">{pack.license}</span>
                 </div>

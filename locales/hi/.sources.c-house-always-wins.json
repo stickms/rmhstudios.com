@@ -1,0 +1,18 @@
+{
+  "back-home": "Back Home",
+  "controls-hint": "WASD/← → Move • Space Jump • Shift Dash • E Interact • M Menu",
+  "controls-interact": "E — Interact",
+  "controls-jump": "Space — Jump",
+  "controls-menu": "M — Menu",
+  "controls-move": "WASD / Arrows — Move",
+  "debt": "DEBT",
+  "e-continue": "[E] Continue",
+  "loading": "LOADING...",
+  "login-to-play": "Login to Play",
+  "menu-title": "Menu",
+  "music-volume": "Music Volume",
+  "resume": "Resume [M]",
+  "sign-in-prompt": "You need to sign in before you can enter the casino. Your debts will be recorded.",
+  "subtitle": "The table is waiting",
+  "title": "House Always Wins"
+}

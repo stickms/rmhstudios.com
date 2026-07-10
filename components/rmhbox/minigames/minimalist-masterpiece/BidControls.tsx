@@ -6,6 +6,8 @@
  */
 'use client';
 
+import { useTranslation } from "react-i18next";
+
 interface BidControlsProps {
   currentBid: number;
   currency: number;
@@ -16,6 +18,7 @@ interface BidControlsProps {
 const INCREMENT = 50;
 
 export default function BidControls({ currentBid, currency, onBid, disabled }: BidControlsProps) {
+  const { t } = useTranslation("c-rmhbox");
   const canIncrease = !disabled && currency >= INCREMENT;
   const canDecrease = !disabled && currentBid >= INCREMENT;
 
@@ -25,7 +28,7 @@ export default function BidControls({ currentBid, currency, onBid, disabled }: B
         className="w-8 h-8 rounded-full bg-(--rmhbox-border) text-(--rmhbox-text) font-bold disabled:opacity-40"
         onClick={() => onBid(currentBid - INCREMENT)}
         disabled={!canDecrease}
-        aria-label="Decrease bid"
+        aria-label={t("decrease-bid", { defaultValue: "Decrease bid" })}
       >
         −
       </button>
@@ -36,7 +39,7 @@ export default function BidControls({ currentBid, currency, onBid, disabled }: B
         className="w-8 h-8 rounded-full bg-(--rmhbox-accent) text-white font-bold disabled:opacity-40"
         onClick={() => onBid(currentBid + INCREMENT)}
         disabled={!canIncrease}
-        aria-label="Increase bid"
+        aria-label={t("increase-bid", { defaultValue: "Increase bid" })}
       >
         +
       </button>

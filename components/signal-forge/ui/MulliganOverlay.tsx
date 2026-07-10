@@ -8,6 +8,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslation } from "react-i18next";
 
 interface Props {
   selectedCount: number;
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function MulliganOverlay({ selectedCount, onConfirm }: Props) {
+  const { t } = useTranslation("c-signal-forge");
   return (
     <>
       {/* Gray/blur overlay covering top through played area, blocking canvas interaction */}
@@ -24,9 +26,9 @@ export function MulliganOverlay({ selectedCount, onConfirm }: Props) {
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="bg-linear-to-b from-purple-900 to-purple-950 border-2 border-purple-400 p-4 rounded-lg shadow-2xl max-w-md">
             <div className="text-center mb-3">
-              <h3 className="text-xl font-bold text-purple-300 mb-1">♻️ Mulligan Phase</h3>
+              <h3 className="text-xl font-bold text-purple-300 mb-1">♻️ {t("mulligan-phase", { defaultValue: "Mulligan Phase" })}</h3>
               <p className="text-sm text-purple-200">
-                Click up to 2 cards below to replace them (selected: {selectedCount}/2)
+                {t("mulligan-instructions", { defaultValue: "Click up to 2 cards below to replace them (selected: {{count}}/2)", count: selectedCount })}
               </p>
             </div>
             <div className="flex justify-center">
@@ -34,7 +36,7 @@ export function MulliganOverlay({ selectedCount, onConfirm }: Props) {
                 onClick={onConfirm}
                 className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-lg transition"
               >
-                {selectedCount > 0 ? `Redraw ${selectedCount}` : 'Keep Hand'}
+                {selectedCount > 0 ? t("redraw-count", { defaultValue: "Redraw {{count}}", count: selectedCount }) : t("keep-hand", { defaultValue: "Keep Hand" })}
               </button>
             </div>
           </div>

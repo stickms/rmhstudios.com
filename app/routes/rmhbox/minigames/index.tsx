@@ -9,6 +9,7 @@
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Trophy, History } from 'lucide-react';
 import RMHboxHeader from '@/components/rmhbox/RMHboxHeader';
 import MinigameLeaderboardModal from '@/components/rmhbox/MinigameLeaderboardModal';
@@ -24,17 +25,18 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 function MinigamesPage() {
+  const { t } = useTranslation("r-rmhbox");
   const navigate = useNavigate();
   const minigames = getAllMinigames();
   const [leaderboardGame, setLeaderboardGame] = useState<MinigameDefinition | null>(null);
 
   return (
     <div className="flex h-screen flex-col">
-      <RMHboxHeader context="minigames" backHref="/rmhbox" backLabel="Home" />
+      <RMHboxHeader context="minigames" backHref="/rmhbox" backLabel={t("home", { defaultValue: "Home" })} />
 
       <div className="flex-1 overflow-y-auto p-4 md:p-8" style={{ scrollbarGutter: 'stable both-edges' }}>
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold mb-6 text-(--rmhbox-text)">Minigames</h2>
+          <h2 className="text-2xl font-bold mb-6 text-(--rmhbox-text)">{t("minigames", { defaultValue: "Minigames" })}</h2>
 
           <div className="grid gap-4 sm:grid-cols-2">
             {minigames.map((game) => (
@@ -55,7 +57,7 @@ function MinigamesPage() {
                         {game.category}
                       </span>
                       <span className="text-xs text-(--rmhbox-text-muted)">
-                        {game.minPlayers}–{game.maxPlayers} players
+                        {t("player-range", { minPlayers: game.minPlayers, maxPlayers: game.maxPlayers, defaultValue: "{{minPlayers}}–{{maxPlayers}} players" })}
                       </span>
                     </div>
                   </div>
@@ -72,7 +74,7 @@ function MinigamesPage() {
                     data-testid={`leaderboard-btn-${game.id}`}
                   >
                     <Trophy className="h-4 w-4" />
-                    Leaderboard
+                    {t("leaderboard", { defaultValue: "Leaderboard" })}
                   </button>
                   <button
                     onClick={() => navigate({ to: '/rmhbox/minigames/$minigameId/history', params: { minigameId: game.id } })}
@@ -80,7 +82,7 @@ function MinigamesPage() {
                     data-testid={`history-btn-${game.id}`}
                   >
                     <History className="h-4 w-4" />
-                    History
+                    {t("history", { defaultValue: "History" })}
                   </button>
                 </div>
               </div>

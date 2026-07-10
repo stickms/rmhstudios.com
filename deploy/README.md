@@ -63,6 +63,99 @@ curl -fsS -H "Host: <app_host>" http://127.0.0.1/    # via Traefik
 - Tail a service:  `kubectl -n rmhstudios logs -f deploy/rmhstudios-socket`
 - DNS changes:  see `deploy/terraform/README.md`
 
+## Faster builds (`deploy.sh` compose path)
+
+The single-host `deploy.sh` build is dominated by the Vite frontend build. Two
+opt-in knobs keep it fast, especially on a disk-constrained host that keeps
+wiping its local BuildKit cache.
+
+### Shared / remote BuildKit cache
+
+Import & export the BuildKit layer cache to a registry so a fresh — or
+disk-pressure-wiped — host repopulates the deps / prisma / vite stages from
+remote instead of rebuilding them cold.
+
+```bash
+# 1. Provision the container-driver builder once (mode=max registry export needs
+#    it; the default docker driver can't). Idempotent.
+./deploy/setup-buildx-cache.sh
+
+# 2. If the registry is private, log in once so the builder can push/pull cache.
+docker login ghcr.io
+
+# 3. Set on the deploy env (webhook unit / .env):
+DEPLOY_BUILDKIT_CACHE=ghcr.io/stickms/rmh/buildcache
+# optional, only if you renamed the builder:
+DEPLOY_BUILDX_BUILDER=rmhstudios-cache
+```
+
+`deploy.sh` enables the cache only when the env var is set **and** the builder
+exists; otherwise it warns and falls back to the local cache (never fails the
+build). The `-full` image gets its own `…-full` cache ref automatically. The
+deploy LRU-trims the container builder's cache to the same disk-calibrated cap
+as the local one, so it can't grow unbounded. Disable any time by unsetting
+`DEPLOY_BUILDKIT_CACHE`.
+
+### Disk pressure
+
+When the deploy keeps wiping the BuildKit cache (`wiping ALL build cache` in the
+log), free space on the disk backing Docker has dropped below the ~10 GB a build
+needs. **Find out what's actually filling the disk before assuming it's Docker** —
+on this host it turned out NOT to be:
+
+```bash
+df -h /                                   # is the disk really full? one disk or several?
+sudo du -xh --max-depth=1 / | sort -h     # where the space is: /var/lib/docker vs /home vs …
+docker system df                          # Docker's own split: images vs build cache
+```
+
+Common findings, in order of how often they're the culprit here:
+
+1. **Non-Docker cruft in `/home`** — the usual real cause. Dev-tool caches
+   (`~/.vscode-server`, `~/.cache`, `~/.npm`, `~/go`) and other users' home dirs
+   can quietly eat 5–15 GB. `docker system df` won't show any of it. Clearing the
+   regenerable caches (`rm -rf ~/.vscode-server ~/.cache ~/.npm ~/go`) is usually
+   enough to let the ~6 GB build cache survive between deploys → warm builds. Do
+   NOT `docker builder prune` — that throws away the very cache you want warm.
+2. **Docker footprint** — images here are small (the `runner-full` image is
+   `FROM` the slim one, so they largely share layers). The deploy keeps only **1**
+   rollback image per environment and caps the cache at `total − image reserve −
+   build reserve − headroom`. Tune via `DEPLOY_IMAGE_RESERVE_GB` (12),
+   `DEPLOY_BUILD_RESERVE_GB` (8), `DEPLOY_HEADROOM_GB` (2).
+3. **Genuinely out of disk** — only if the above don't free enough. Check for a
+   real second volume first (`lsblk`): on a single-disk host (one `/dev/sda1` at
+   `/`, with `/mnt/*` just folders on it) there is nowhere to move to — relocating
+   Docker within the same disk gains nothing. If you attach a separate volume, see
+   below.
+
+**If you attach a genuinely separate large volume**, move Docker's data-root onto
+it so images + cache no longer compete with the root disk. One-time, host-level,
+brief downtime (Docker restarts):
+
+```bash
+sudo ./deploy/move-docker-storage.sh /mnt/<separate-volume>/docker
+```
+
+It copies `/var/lib/docker` (rsync, or GNU tar if rsync is absent) and repoints
+the daemon (old copy kept → reversible). The script refuses if the target volume
+lacks room (`used + 5 GB` headroom), so it won't half-migrate onto a full disk.
+Afterwards `deploy.sh`'s cache cap self-calibrates to the new volume
+(`cache_keep_gb` reads the fs backing Docker's data dir) and the warm
+`.vinxi`/pnpm cache survives between deploys.
+
+**Footprint reduction (no extra disk needed):** the deploy keeps only **1**
+rollback image per environment (was 2, frees a full image set) and caps the cache
+at `total − image reserve − build reserve − headroom`. Tune via
+`DEPLOY_IMAGE_RESERVE_GB` (12), `DEPLOY_BUILD_RESERVE_GB` (8),
+`DEPLOY_HEADROOM_GB` (2). With images trimmed, more of the 45 GB stays free for a
+warm cache, so wipes become rarer even without a second disk.
+
+See where the disk actually goes (read-only):
+
+```bash
+./deploy/disk-report.sh
+```
+
 ## Multi-node scaling
 
 The deploy is already **wired for a registry** — switching to multi-node is an

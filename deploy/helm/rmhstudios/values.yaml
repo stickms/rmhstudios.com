@@ -31,6 +31,15 @@ data:
   accessModes:
     - ReadWriteOnce
 
+# MinIO S3-compatible object storage (single-node). The app reaches it via the
+# S3_ENDPOINT secret value, e.g. http://rmhstudios-minio:9000.
+# MULTI-NODE/PROD: disable and point S3_ENDPOINT at Cloudflare R2 instead.
+minio:
+  enabled: true
+  image: minio/minio:latest
+  size: 20Gi
+  storageClass: local-path
+
 # discord-bot bind-mounts the repo for git-worktree ops (Compose: RMHBOT_REPO_PATH).
 rmhbotRepoPath: /home/rmhstudios/rmhstudios.com
 

@@ -1,7 +1,9 @@
 'use client';
 
 import { lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
+import { useMultiplayerSync } from '@/lib/kowloon-knockout/useMultiplayerSync';
 import MainMenu from '@/components/kowloon-knockout/MainMenu';
 import CharacterSelect from '@/components/kowloon-knockout/CharacterSelect';
 import MultiplayerLobby from '@/components/kowloon-knockout/MultiplayerLobby';
@@ -9,10 +11,12 @@ import ResultScreen from '@/components/kowloon-knockout/ResultScreen';
 import { AnimatePresence, motion } from 'framer-motion';
 import './kowloon-knockout.css';
 
-const GameCanvas = lazy(() => import('@/components/kowloon-knockout/GameCanvas'));
+const GameView = lazy(() => import('@/components/kowloon-knockout/arena/GameView'));
 
 export default function KowloonKnockout() {
+  const { t } = useTranslation("c-kowloon-knockout");
   const { phase } = useGameStore();
+  useMultiplayerSync();
 
   return (
     <div className="kowloon-knockout">
@@ -64,13 +68,14 @@ export default function KowloonKnockout() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.3 }}
+              style={{ width: '100%', height: '100%' }}
             >
               <Suspense fallback={
-                <div style={{ color: '#ffcc00', fontSize: '12px' }}>
-                  LOADING...
+                <div style={{ color: '#ffcc00', fontSize: '12px', display: 'grid', placeItems: 'center', height: '100%' }}>
+                  {t("loading", { defaultValue: "LOADING..." })}
                 </div>
               }>
-                <GameCanvas />
+                <GameView />
               </Suspense>
             </motion.div>
           )}

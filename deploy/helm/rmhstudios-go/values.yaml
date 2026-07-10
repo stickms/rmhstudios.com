@@ -55,20 +55,56 @@ services:
     port: 7676
     replicas: 1
     path: /rmhbox-ws/
-  recap:
-    port: 7004
-    replicas: 1
-  doctrine-worker:
+  assets:
+    port: 7007
+    replicas: 2
+    path: /library/
+  # NOTE: there is no standalone `recap` service in the Go topology. recap runs
+  # ONLY as a goroutine inside the supervisor (see cmd/supervisor). A separate
+  # recap Deployment would open a second Discord gateway connection and
+  # double-post the daily recaps. The status page probes the supervisor's shared
+  # /health instead of a standalone recap (STATUS_SUPERVISOR_URL, wired below).
+  # supervisor: single pod running the five background workers as goroutines
+  # (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker).
+  # It exposes only the shared /health + /metrics endpoint on metricsPort (9090).
+  # ─── Env union ──────────────────────────────────────────────────────────────
+  # All secrets come from secretRef (rmhstudios-secrets); the vars below are
+  # inline non-secret values. Secrets the pod needs (all in the Secret):
+  #   DATABASE_URL, SERVER_DB_POOL_SIZE, REDIS_URL (injected below)
+  #   discord-bot:     DISCORD_BOT_TOKEN, DISCORD_ACTIVITY_BOT_TOKEN,
+  #                    DISCORD_DEV_GUILD_ID, OWNER_ID, DEEPSEEK_API_KEY,
+  #                    DEEPSEEK_MODEL, RMHBOT_WORKTREES_DIR, GITHUB_TOKEN,
+  #                    GITHUB_REPO
+  #   recap:           DISCORD_ACTIVITY_BOT_TOKEN, VITE_DISCORD_ACTIVITY_CLIENT_ID,
+  #                    DISCORD_ACTIVITY_CLIENT_ID, SITE_URL, VITE_BETTER_AUTH_URL
+  #   vibe-worker:     PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+  #   bot-worker:      DEEPSEEK_API_KEY, INTERNAL_API_URL, INTERNAL_API_SECRET,
+  #                    BETTER_AUTH_URL, S3_BUCKET, S3_ENDPOINT, S3_ACCESS_KEY_ID,
+  #                    S3_SECRET_ACCESS_KEY, S3_REGION, S3_FORCE_PATH_STYLE,
+  #                    LOCAL_STORAGE_DIR, XAI_API_KEY, XAI_IMAGE_MODEL,
+  #                    XAI_IMAGE_ENABLED, XAI_IMAGE_DAILY_CAP
+  #   doctrine-worker: DATABASE_URL only (no extra env beyond Common)
+  # ─────────────────────────────────────────────────────────────────────────────
+  supervisor:
     worker: true
     replicas: 1
-  vibe-worker:
-    worker: true
+    storage: true          # mounts /app/db PVC for vibe-worker thumbnails
+    terminationGracePeriodSeconds: 90  # discord-bot needs 90 s to disconnect
+    # Emit a ClusterIP Service on metricsPort (9090) so the status page can
+    # probe the supervisor's shared /health. Internal only — no ingress/path.
+    metricsService: true
+    extraEnv:
+      # recap goroutine binds RECAP_PORT inside the supervisor process
+      - name: RECAP_PORT
+        value: "7004"
+  # status: standalone health-dashboard; survives when the rest of the stack is
+  # down. Runs on STATUS_PORT (default 7008); /health is served at /. It probes
+  # the supervisor's shared /health; STATUS_SUPERVISOR_URL is wired in the
+  # deployment template to the rendered supervisor Service name ({release}-supervisor).
+  status:
+    port: 7008
     replicas: 1
-    storage: true # mounts the shared /app/db PVC for vibe-thumbs
-  discord-bot:
-    worker: true
-    replicas: 1
-    terminationGracePeriodSeconds: 90
+    probePath: /health
 
 # Shared storage for vibe-worker thumbnails (same PVC contract as PR #121).
 data:
@@ -81,6 +117,12 @@ ingress:
   className: traefik
   host: REPLACE_ME.example.com
   annotations: {}
+  # Emit security headers (HSTS, nosniff, Referrer-Policy, frame-ancestors CSP,
+  # and a Report-Only CSP for tuning) via a Traefik Middleware so header policy
+  # survives the cutover from the Apache vhost to the Go gateway path. See
+  # templates/security-headers-middleware.yaml.
+  securityHeaders:
+    enabled: true
 
 resources:
   requests: { cpu: 25m, memory: 32Mi }

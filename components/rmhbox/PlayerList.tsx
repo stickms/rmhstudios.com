@@ -13,6 +13,7 @@
  */
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { Crown, Wifi, WifiOff, UserMinus, ArrowRightLeft } from 'lucide-react';
 import type { ClientPlayerInfo } from '@/lib/rmhbox/types';
 
@@ -26,6 +27,7 @@ interface PlayerListProps {
 }
 
 export default function PlayerList({ players, hostUserId, isHost, myUserId, onKick, onTransferHost }: PlayerListProps) {
+  const { t } = useTranslation("c-rmhbox");
   return (
     <ul className="space-y-2">
       {players.map((player) => {
@@ -65,7 +67,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
                 {player.userName}
               </span>
               {isPlayerHost && (
-                <Crown className="h-4 w-4 shrink-0 text-(--rmhbox-warning)" aria-label="Host" />
+                <Crown className="h-4 w-4 shrink-0 text-(--rmhbox-warning)" aria-label={t("host", { defaultValue: "Host" })} />
               )}
             </div>
 
@@ -83,7 +85,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
                   <button
                     onClick={() => onTransferHost(player.userId)}
                     className="rounded p-1.5 text-(--rmhbox-warning) transition-colors hover:bg-(--rmhbox-warning-dim)"
-                    title="Transfer host"
+                    title={t("transfer-host", { defaultValue: "Transfer host" })}
                   >
                     <ArrowRightLeft className="h-3.5 w-3.5" />
                   </button>
@@ -92,7 +94,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
                   <button
                     onClick={() => onKick(player.userId)}
                     className="rounded p-1.5 text-(--rmhbox-danger) transition-colors hover:bg-(--rmhbox-danger-dim)"
-                    title="Kick player"
+                    title={t("kick-player", { defaultValue: "Kick player" })}
                   >
                     <UserMinus className="h-3.5 w-3.5" style={{ transform: 'scaleX(-1)' }} />
                   </button>
@@ -102,9 +104,9 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
 
             {/* Connection indicator */}
             {player.isConnected ? (
-              <Wifi className="h-4 w-4 text-(--rmhbox-success)" aria-label="Connected" />
+              <Wifi className="h-4 w-4 text-(--rmhbox-success)" aria-label={t("connected", { defaultValue: "Connected" })} />
             ) : (
-              <WifiOff className="h-4 w-4 text-(--rmhbox-danger)" aria-label="Disconnected" />
+              <WifiOff className="h-4 w-4 text-(--rmhbox-danger)" aria-label={t("disconnected", { defaultValue: "Disconnected" })} />
             )}
 
             {/* Ready status */}
@@ -115,7 +117,7 @@ export default function PlayerList({ players, hostUserId, isHost, myUserId, onKi
                   : 'bg-(--rmhbox-text-muted)/20 text-(--rmhbox-text-muted)'
               }`}
             >
-              {player.isReady ? 'Ready' : 'Not Ready'}
+              {player.isReady ? t("ready", { defaultValue: "Ready" }) : t("not-ready", { defaultValue: "Not Ready" })}
             </span>
           </li>
         );

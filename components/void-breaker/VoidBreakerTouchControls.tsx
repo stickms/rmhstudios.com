@@ -1,6 +1,7 @@
 'use client';
 
 import type { MutableRefObject } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { InputState } from '@/lib/void-breaker/types';
 
 interface Props {
@@ -10,6 +11,8 @@ interface Props {
 }
 
 export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) {
+  const { t } = useTranslation("c-void-breaker");
+
   if (!visible) return null;
 
   const bind = (key: 'up' | 'down' | 'left' | 'right' | 'detonate' | 'dash' | 'focus') => ({
@@ -76,20 +79,20 @@ export function VoidBreakerTouchControls({ inputRef, onPause, visible }: Props) 
               className={`w-12 h-12 ${btn} bg-[#1a1a24]/80 border border-[#c9a227]/40 active:bg-[#252530]`}
               {...bind('focus')} style={{ touchAction: 'none' }}
             >
-              <span className="text-[#d4af37]/80 font-black text-[8px] tracking-wider">FOCUS</span>
+              <span className="text-[#d4af37]/80 font-black text-[8px] tracking-wider">{t("focus", { defaultValue: "FOCUS" })}</span>
             </button>
             <button
               className={`w-14 h-14 ${btn} bg-[#1a1a24]/80 border border-[#c9a227]/40 active:bg-[#252530]`}
               {...bind('dash')} style={{ touchAction: 'none' }}
             >
-              <span className="text-[#d4af37]/80 font-black text-[9px] tracking-wider">SHIFT</span>
+              <span className="text-[#d4af37]/80 font-black text-[9px] tracking-wider">{t("shift", { defaultValue: "SHIFT" })}</span>
             </button>
             <button
               className={`w-18 h-18 ${btn} bg-[#1a1a24]/80 border-2 border-[#c9a227]/50 active:bg-[#252530]`}
               {...bind('detonate')} style={{ touchAction: 'none' }}
             >
               <span className="text-[#d4af37]/80 font-black text-[9px] tracking-wider leading-tight text-center">
-                VOID<br />BURST
+                {t("void-burst-line1", { defaultValue: "VOID" })}<br />{t("void-burst-line2", { defaultValue: "BURST" })}
               </span>
             </button>
           </div>

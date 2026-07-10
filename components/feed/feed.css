@@ -44,11 +44,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Logo wordmark — geometric grotesque (Space Grotesk) instead of the rounded
-   display font, to match the sharp black/white "anything platform" aesthetic. */
+/* Logo wordmark — Playfair Display serif, matching the membership page. */
 .site-logo {
-  font-family: var(--font-space-grotesk), "SF Pro Display", -apple-system, system-ui, sans-serif;
-  letter-spacing: -0.03em;
+  font-family: var(--font-playfair), Georgia, serif;
+  letter-spacing: -0.02em;
 }
 
 /* Tone down the bubbly corners to match the sharper homepage/builds aesthetic.
@@ -68,6 +67,12 @@
   background: rgba(12, 12, 13, 0.72);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
+}
+
+/* The bottom mobile nav floats over scrolling content, so it needs a more
+   opaque backing than the standard frosted glass to stay legible. */
+.vibe-glass.vibe-mobile-nav {
+  background: rgba(12, 12, 13, 0.96);
 }
 
 /* Cards: subtle translucent surface with a hairline border that brightens on

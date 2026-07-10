@@ -47,6 +47,7 @@ export function asVibeModel(value: unknown): VibeModel {
 }
 
 export type VibeStreamEvent =
+  | { type: 'created'; slug: string } // new page reserved + persisted as "generating"; safe to navigate to
   | { type: 'thinking'; text: string } // reasoning_content delta from the model
   | { type: 'content'; text: string } // answer (HTML) delta — used for progress
   | { type: 'done'; slug: string; versionId: string; html: string; title: string; description: string } // persisted result

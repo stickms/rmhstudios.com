@@ -12,6 +12,9 @@ metadata:
     {{- include "rmhgo.labels" $root | nindent 4 }}
   annotations:
     {{- toYaml .Values.ingress.annotations | nindent 4 }}
+    {{- if .Values.ingress.securityHeaders.enabled }}
+    traefik.ingress.kubernetes.io/router.middlewares: {{ printf "%s-%s-security-headers@kubernetescrd" $root.Release.Namespace (include "rmhgo.fullname" $root) | quote }}
+    {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:

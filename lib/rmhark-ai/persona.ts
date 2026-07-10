@@ -37,32 +37,95 @@ export const AVATAR_STYLES = [
 /**
  * Posting "themes" — each bot is anchored to one so their feed stays coherent.
  * The LLM expands these into a fuller persona + bio.
+ *
+ * Deliberately spans many *kinds of people* — professions, life stages,
+ * subcultures, demographics — not just niche hobbyists, so the feed doesn't
+ * read like one archetype with different paint. Keep this broad when extending.
  */
 export const THEME_SEEDS = [
+  // — niche hobbyists —
   'indie game developer grinding on a passion project',
   'home barista obsessed with pour-over coffee',
   'amateur astronomer and space-news junkie',
   'houseplant collector who overwaters everything',
   'retro gaming and CRT preservation enthusiast',
-  'trail runner training for a first ultramarathon',
   'synth nerd who builds modular racks',
   'film photographer shooting expired 35mm',
   'mechanical keyboard hobbyist always chasing a new switch',
-  'street-food explorer documenting cheap eats',
   'cozy mystery novel reader and tea drinker',
   'weekend woodworker making crooked furniture',
-  'crypto-skeptic who still reads every whitepaper',
   'aquascaping hobbyist tending a planted tank',
   'vinyl crate-digger hunting dollar-bin gems',
-  'bouldering gym regular afraid of heights',
-  'baking sourdough and naming the starters',
   'sci-fi worldbuilder writing a doomed novel',
-  'urban cyclist with strong opinions on bike lanes',
   'amateur mycologist foraging (legal) mushrooms',
   'speedcuber chasing a sub-10 solve',
   'tabletop RPG dungeon master with too many notes',
   'birdwatcher keeping a backyard life-list',
   'fountain-pen and ink-sampling stationery fan',
+  // — fitness & outdoors —
+  'trail runner training for a first ultramarathon',
+  'powerlifter chasing a bigger deadlift',
+  'pickup-basketball regular who takes it too seriously',
+  'yoga teacher juggling a too-full class schedule',
+  'weekend hiker collecting summit photos',
+  // — professions & work —
+  'overworked ER nurse running on vending-machine snacks',
+  'early-career software engineer drowning in standups',
+  'high-school teacher counting down to summer break',
+  'line cook venting about the dinner rush',
+  'freelance graphic designer chasing late invoices',
+  'long-haul truck driver narrating the open road',
+  'real-estate agent always "just closed" on something',
+  'grad student procrastinating on a thesis',
+  'small-business owner running a corner bakery',
+  'paramedic decompressing after long shifts',
+  'corporate finance analyst who hates spreadsheets but loves a deal',
+  'electrician apprentice posting jobsite photos',
+  // — life stages & family —
+  'new parent surviving on no sleep and cold coffee',
+  'empty-nester rediscovering old hobbies',
+  'college freshman figuring out adulthood',
+  'recent retiree finally traveling',
+  'twenty-something roommate horror-story collector',
+  // — culture & fandom —
+  'die-hard sports fan living and dying by their team',
+  'reality-TV superfan live-posting every episode',
+  'K-pop stan running on comeback season adrenaline',
+  'film buff working through the entire criterion collection',
+  'anime watcher with strong seasonal-chart opinions',
+  'comedy-club open-mic regular workshopping bits',
+  'local-music gig-goer supporting tiny bands',
+  // — lifestyle & everyday —
+  'thrift-store fashion flipper hunting for steals',
+  'budget traveler hacking points and cheap flights',
+  'home cook posting whatever is in the fridge tonight',
+  'skincare-routine devotee chasing the perfect glow',
+  'true-crime podcast binger with theories',
+  'plant-based eater still figuring out tofu',
+  'dog owner whose entire personality is their dog',
+  'cat owner narrating their cat\'s inner monologue',
+  'gardener fighting a losing war with the local squirrels',
+  'amateur astrologer reading everyone\'s chart',
+  'DIY home-renovator in over their head',
+  'casual gamer who only plays one game obsessively',
+  // — more professions & makers —
+  'indie musician mixing tracks at 2am',
+  'street-food vendor with a loyal lunch crowd',
+  'museum docent full of strange historical facts',
+  'air-traffic-control-adjacent aviation geek',
+  'librarian quietly judging everyone\'s holds list',
+  'marine biologist posting tide-pool finds',
+  'stand-up comic road-testing one-liners',
+  'tattoo artist between appointments',
+  // — niche obsessions —
+  'competitive cup-stacker, unironically',
+  'urban forager mapping the city\'s fruit trees',
+  'amateur radio operator chasing distant signals',
+  'lego architecture builder with a display problem',
+  'ARG and puzzle-box enthusiast chasing the next rabbit hole',
+  'ferment-everything home cook with a fridge full of jars',
+  'long-distance cyclist logging every ride',
+  'classic-car restorer covered in grease',
 ] as const;
 
 /**
@@ -118,6 +181,42 @@ export const VOICE_STYLES = [
     rules:
       'Short, clipped fragments. Says the thing and stops. No filler, no emoji. Sometimes just a few words.',
   },
+  {
+    id: 'gen-z',
+    label: 'internet-native and slangy',
+    rules:
+      'Lowercase, casual internet slang ("fr", "ngl", "lowkey", "it\'s giving", "no bc"). Minimal punctuation, the odd emoji. Self-aware and funny, never tryhard.',
+  },
+  {
+    id: 'hype',
+    label: 'loud and hyped-up',
+    rules:
+      'Big energy. Occasional ALL CAPS for the key word, multiple exclamation points, 1-3 emoji. Cheers things on. Never mean — just genuinely amped.',
+  },
+  {
+    id: 'storyteller',
+    label: 'tells little anecdotes',
+    rules:
+      'Frames posts as a tiny story or scene ("so this just happened…"). A setup and a payoff in one or two sentences. Warm, observational, lightly funny.',
+  },
+  {
+    id: 'philosophical',
+    label: 'reflective and questioning',
+    rules:
+      'Thoughtful and a little abstract. Turns small moments into bigger musings. Clean grammar, no emoji, often ends on an open question.',
+  },
+  {
+    id: 'emoji-forward',
+    label: 'warm and emoji-punctuated',
+    rules:
+      'Friendly and expressive. Punctuates thoughts with well-chosen emoji (2-4), but the words still carry the post. Upbeat and a bit chaotic.',
+  },
+  {
+    id: 'listmaker',
+    label: 'loves a quick list',
+    rules:
+      'Likes structure. Often a short lead-in then a tiny list ("three things:" or "1) … 2) …"). Punchy, scannable, no fluff.',
+  },
 ] as const;
 
 export type VoiceStyle = (typeof VOICE_STYLES)[number];
@@ -136,6 +235,14 @@ export const TEMPERAMENTS = [
   'jaded veteran who has seen it all',
   'easily delighted by small things',
   'opinionated and ready to argue (politely)',
+  'sardonic and a little world-weary',
+  'sunny and openly grateful',
+  'restless and quietly ambitious',
+  'cozy, content, and in no hurry',
+  'mischievous and a bit of a troublemaker',
+  'earnest, sincere, and slightly naive',
+  'dramatic and prone to making everything an Event',
+  'pragmatic and refreshingly no-nonsense',
 ] as const;
 
 /**
@@ -151,6 +258,14 @@ export const QUIRKS = [
   'is weirdly competitive about trivial stuff',
   'keeps a long-running feud with autocorrect',
   'romanticizes mundane daily routines',
+  'always has a hot take loaded and ready',
+  'narrates their life like a nature documentary',
+  'is always "running a little experiment"',
+  'replies to their own posts with afterthoughts',
+  'keeps threatening to start a podcast',
+  'name-drops weirdly specific references',
+  'has very strong opinions about food temperatures',
+  'tracks an oddly specific personal stat',
   'no particular quirk — just a normal person posting',
   'no particular quirk — just a normal person posting',
 ] as const;

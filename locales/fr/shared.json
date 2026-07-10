@@ -1,0 +1,15 @@
+{
+  "chat-placeholder": "Discuter...",
+  "error-boundary-message": "Une erreur inattendue s'est produite.",
+  "error-boundary-retry": "Réessayer",
+  "error-boundary-title": "Une erreur s'est produite",
+  "failed-to-load-media": "Échec du chargement du média",
+  "game-crashed": "Le jeu a planté",
+  "game-crashed-named": "{{gameName}} a planté",
+  "loading": "Chargement…",
+  "no-messages-yet": "Aucun message pour l'instant",
+  "react": "Réagir",
+  "return-home": "Retour à l'accueil",
+  "try-again": "Réessayer",
+  "unexpected-error": "Une erreur inattendue s'est produite."
+}

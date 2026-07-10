@@ -1,18 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
 import type { Grade } from '@/lib/versecraft/types';
 
-const GRADE_STYLES: Record<Grade, { color: string; label: string; bg: string }> = {
-  S: { color: '#FFD700', label: 'Masterpiece', bg: 'rgba(255, 215, 0, 0.15)' },
-  A: { color: '#4CAF50', label: 'Excellent', bg: 'rgba(76, 175, 80, 0.15)' },
-  B: { color: '#2196F3', label: 'Good', bg: 'rgba(33, 150, 243, 0.15)' },
-  C: { color: '#FF9800', label: 'Decent', bg: 'rgba(255, 152, 0, 0.15)' },
-  D: { color: '#F44336', label: 'Needs Work', bg: 'rgba(244, 67, 54, 0.15)' },
-  F: { color: '#666666', label: 'Rough Draft', bg: 'rgba(102, 102, 102, 0.15)' },
+const GRADE_STYLES: Record<Grade, { color: string; labelKey: string; labelDefault: string; bg: string }> = {
+  S: { color: '#FFD700', labelKey: 'grade-masterpiece', labelDefault: 'Masterpiece', bg: 'rgba(255, 215, 0, 0.15)' },
+  A: { color: '#4CAF50', labelKey: 'grade-excellent', labelDefault: 'Excellent', bg: 'rgba(76, 175, 80, 0.15)' },
+  B: { color: '#2196F3', labelKey: 'grade-good', labelDefault: 'Good', bg: 'rgba(33, 150, 243, 0.15)' },
+  C: { color: '#FF9800', labelKey: 'grade-decent', labelDefault: 'Decent', bg: 'rgba(255, 152, 0, 0.15)' },
+  D: { color: '#F44336', labelKey: 'grade-needs-work', labelDefault: 'Needs Work', bg: 'rgba(244, 67, 54, 0.15)' },
+  F: { color: '#666666', labelKey: 'grade-rough-draft', labelDefault: 'Rough Draft', bg: 'rgba(102, 102, 102, 0.15)' },
 };
 
 function AffinityBar({ characterId, score, affinityChange, reaction, delay }: {
@@ -28,6 +29,7 @@ function AffinityBar({ characterId, score, affinityChange, reaction, delay }: {
 
   if (!char || !affinity) return null;
 
+  const { t } = useTranslation("c-versecraft");
   const name = getCharacterFirstName(characterId, settings.characterPresentations);
   const grade = score >= 90 ? 'S' : score >= 75 ? 'A' : score >= 60 ? 'B' : score >= 45 ? 'C' : score >= 30 ? 'D' : 'F';
   const gs = GRADE_STYLES[grade];
@@ -60,7 +62,7 @@ function AffinityBar({ characterId, score, affinityChange, reaction, delay }: {
           </span>
         </div>
         <p className="text-xs truncate" style={{ color: '#a89888' }}>
-          {name} {reaction} this poem
+          {t("character-reaction", { defaultValue: "{{name}} {{reaction}} this poem", name, reaction })}
         </p>
       </div>
 
@@ -79,6 +81,7 @@ function AffinityBar({ characterId, score, affinityChange, reaction, delay }: {
 }
 
 export function PoemPresentation() {
+  const { t } = useTranslation("c-versecraft");
   const currentPoemScore = useGameStore(s => s.currentPoemScore);
   const poemHistory = useGameStore(s => s.poemHistory);
   const closePoemPresentation = useGameStore(s => s.closePoemPresentation);
@@ -95,7 +98,7 @@ export function PoemPresentation() {
   if (!currentPoemScore || !latestPoem) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p style={{ color: '#a89888' }}>No poem to display.</p>
+        <p style={{ color: '#a89888' }}>{t("no-poem", { defaultValue: "No poem to display." })}</p>
       </div>
     );
   }
@@ -149,7 +152,7 @@ export function PoemPresentation() {
                   {currentPoemScore.grade}
                 </span>
                 <p className="text-sm mt-1" style={{ color: gs.color }}>
-                  {gs.label}
+                  {t(gs.labelKey, { defaultValue: gs.labelDefault })}
                 </p>
               </div>
             </motion.div>
@@ -217,7 +220,7 @@ export function PoemPresentation() {
           whileHover={{ backgroundColor: 'rgba(196, 163, 90, 0.4)' }}
           onClick={closePoemPresentation}
         >
-          Continue
+          {t("continue", { defaultValue: "Continue" })}
         </motion.button>
       )}
     </div>

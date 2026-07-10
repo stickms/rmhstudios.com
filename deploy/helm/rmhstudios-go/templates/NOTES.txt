@@ -9,4 +9,21 @@ Backplane: {{ if .Values.redis.enabled }}Redis at {{ .Values.redis.url }} (realt
 
 Check rollout:   kubectl get deploy -l app.kubernetes.io/part-of=rmhstudios-go
 Gateway health:  kubectl port-forward svc/{{ include "rmhgo.fullname" . }}-gateway {{ .Values.services.gateway.port }} && curl localhost:{{ .Values.services.gateway.port }}/health
-Scale realtime:  kubectl scale deploy/{{ include "rmhgo.fullname" . }}-gamehub --replicas=3
+Supervisor logs: kubectl logs -l app.kubernetes.io/name=supervisor --tail=100
+Status page:     kubectl port-forward svc/{{ include "rmhgo.fullname" . }}-status {{ .Values.services.status.port }} && curl localhost:{{ .Values.services.status.port }}/health
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ROLLBACK TO NODE TOPOLOGY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+The Node chart (deploy/helm/rmhstudios) is the reversible fallback.
+To roll back, tear down this release and install the Node chart:
+
+  helm uninstall {{ .Release.Name }}
+  helm upgrade --install rmhstudios deploy/helm/rmhstudios \
+    -f deploy/helm/rmhstudios/values-prod.yaml --atomic --wait
+
+The Node chart deploys the original 8-service Node topology (web, socket,
+rmhbox, rmhtube, recap, discord-bot, doctrine-worker, vibe-worker, bot-worker)
+from the single rmhstudios image. Both charts share the same Secret
+(rmhstudios-secrets) and PVC (rmhstudios-data), so no data migration is needed.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

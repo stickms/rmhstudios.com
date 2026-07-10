@@ -1,0 +1,15 @@
+{
+  "chat-placeholder": "Sembang...",
+  "error-boundary-message": "Ralat yang tidak dijangka berlaku.",
+  "error-boundary-retry": "Cuba Lagi",
+  "error-boundary-title": "Ada sesuatu yang tidak kena",
+  "failed-to-load-media": "Gagal memuatkan media",
+  "game-crashed": "Permainan ranap",
+  "game-crashed-named": "{{gameName}} ranap",
+  "loading": "Memuatkan…",
+  "no-messages-yet": "Tiada mesej lagi",
+  "react": "Reaksi",
+  "return-home": "Kembali ke Laman Utama",
+  "try-again": "Cuba Lagi",
+  "unexpected-error": "Ralat yang tidak dijangka berlaku."
+}

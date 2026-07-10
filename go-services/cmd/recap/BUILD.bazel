@@ -1,0 +1,19 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "recap_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/rmhstudios/rmh-go/cmd/recap",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//go-services/internal/recap",
+        "//go-services/pkg/config",
+        "//go-services/pkg/worker",
+    ],
+)
+
+go_binary(
+    name = "recap",
+    embed = [":recap_lib"],
+    visibility = ["//visibility:public"],
+)

@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { awardXp } from "@/lib/xp/engine.server";
+import { progressQuests } from "@/lib/quests/engine.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/vote')({
   server: {
@@ -37,11 +39,15 @@ export const Route = createFileRoute('/api/rmharks/$id/vote')({
     // Verify the option belongs to a poll on this rmhark
     const option = await prisma.rMHarkPollOption.findUnique({
       where: { id: optionId },
-      include: { poll: { select: { rmheetId: true, multiSelect: true, id: true } } },
+      include: { poll: { select: { rmheetId: true, multiSelect: true, id: true, closesAt: true } } },
     });
 
     if (!option || option.poll.rmheetId !== id) {
       return Response.json({ error: "Invalid option" }, { status: 400 });
+    }
+
+    if (option.poll.closesAt && option.poll.closesAt.getTime() <= Date.now()) {
+      return Response.json({ error: "This poll has closed" }, { status: 403 });
     }
 
     const userId = session.user.id;
@@ -53,15 +59,18 @@ export const Route = createFileRoute('/api/rmharks/$id/vote')({
       where: { optionId_userId: { optionId, userId } },
     });
 
+    let castVote = false;
     if (existingVote) {
       // Toggle off — remove the vote
       await prisma.rMHarkPollVote.delete({ where: { id: existingVote.id } });
     } else if (isMultiSelect) {
+      castVote = true;
       // Multi-select: just add the vote
       await prisma.rMHarkPollVote.create({
         data: { optionId, userId },
       });
     } else {
+      castVote = true;
       // Single-select: remove any existing votes on this poll, then add new one
       const allOptions = await prisma.rMHarkPollOption.findMany({
         where: { pollId },
@@ -98,6 +107,12 @@ export const Route = createFileRoute('/api/rmharks/$id/vote')({
     });
 
     const totalVotes = updatedOptions.reduce((sum, o) => sum + o._count.votes, 0);
+
+    // Progression: XP + quests only when a vote was actually cast (not toggled off).
+    if (castVote) {
+      await awardXp(userId, 3);
+      await progressQuests(userId, "vote");
+    }
 
     return Response.json({
       success: true,

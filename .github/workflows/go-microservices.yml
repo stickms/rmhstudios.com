@@ -11,27 +11,43 @@ on:
       - "go-services/**"
       - "deploy/helm/rmhstudios-go/**"
 
-defaults:
-  run:
-    working-directory: go-services
+# Cancel superseded runs: a new push to the same branch/PR aborts the in-flight
+# bazel build+test, the Postgres-backed e2e job, and the helm lint instead of
+# letting them run to completion against stale code. Frees runners and gives
+# faster feedback on the latest commit.
+concurrency:
+  group: go-microservices-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    env:
+      # Opt-in remote action cache shared across runners (and dev machines). Set
+      # the BAZEL_REMOTE_CACHE repo secret to a gRPC/HTTP cache URL (BuildBuddy,
+      # NativeLink, a GCS bucket, …) to enable it; inert (local disk cache only)
+      # when the secret is unset, so this never breaks a fork/PR without secrets.
+      BAZEL_REMOTE_CACHE: ${{ secrets.BAZEL_REMOTE_CACHE }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
+      - uses: actions/cache@v4
         with:
-          go-version: "1.23"
-          cache-dependency-path: go-services/go.sum
-      - run: go build ./...
-      - run: go vet ./...
-      - run: go test -race ./...
-      - name: gofmt check
-        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+          path: ~/.cache/bazel-disk
+          key: bazel-disk-${{ runner.os }}-${{ hashFiles('go-services/go.sum', 'MODULE.bazel') }}
+          restore-keys: bazel-disk-${{ runner.os }}-
+      - name: bootstrap toolchain (guard mode — installs bazelisk, no privileged installs)
+        run: ./scripts/preflight.sh --guard
+      - name: configure remote cache (opt-in)
+        if: env.BAZEL_REMOTE_CACHE != ''
+        run: echo "build --remote_cache=${BAZEL_REMOTE_CACHE}" >> .bazelrc
+      - name: build + test (bazel)
+        run: bazelisk test --build_tests_only //go-services/...
 
   e2e:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: go-services
     services:
       postgres:
         image: postgres:16-alpine

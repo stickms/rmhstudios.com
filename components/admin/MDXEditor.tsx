@@ -1,4 +1,5 @@
 import { useState, useCallback, lazy, Suspense } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,7 +34,8 @@ const animatedComponents = {
 
 export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, isEdit?: boolean }) {
   const navigate = useRouter().navigate;
-  
+  const { t } = useTranslation('c-admin');
+
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     slug: initialData?.slug || '',
@@ -88,20 +90,20 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to create post');
+        throw new Error(data.error || t('failed-to-create-post', { defaultValue: 'Failed to create post' }));
       }
 
       toast.success(
         <div>
-           Post {isEdit ? 'updated' : 'created'} successfully!
-           <p className="text-sm mt-1 text-site-text-dim">Your changes are now live.</p>
+           {isEdit ? t('post-updated-successfully', { defaultValue: 'Post updated successfully!' }) : t('post-created-successfully', { defaultValue: 'Post created successfully!' })}
+           <p className="text-sm mt-1 text-site-text-dim">{t('changes-now-live', { defaultValue: 'Your changes are now live.' })}</p>
         </div>,
         { duration: 8000 }
       );
-      
+
       navigate({ to: '/admin' });
     } catch (error: any) {
-      toast.error(error.message || 'An error occurred');
+      toast.error(error.message || t('an-error-occurred', { defaultValue: 'An error occurred' }));
     } finally {
       setIsSubmitting(false);
     }
@@ -111,22 +113,22 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
     <div className="h-screen w-screen flex flex-col bg-site-bg overflow-hidden fixed inset-0 z-50">
         <div className="h-16 border-b border-site-border flex items-center justify-between px-4 lg:px-6 shrink-0 bg-site-surface w-full shadow-sm">
             <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/admin/blog' })} className="text-site-text-dim hover:text-site-text" aria-label="Back to admin">
-                    <span className="hidden md:inline">Back to Admin</span>
+                <Button variant="ghost" size="sm" onClick={() => navigate({ to: '/admin/blog' })} className="text-site-text-dim hover:text-site-text" aria-label={t('back-to-admin', { defaultValue: 'Back to admin' })}>
+                    <span className="hidden md:inline">{t('back-to-admin-label', { defaultValue: 'Back to Admin' })}</span>
                     <ArrowLeft className="w-5 h-5 md:hidden" />
                 </Button>
                 <div className="h-4 w-px bg-site-border hidden md:block"></div>
                 <span className="text-sm font-bold text-site-text truncate max-w-[200px] md:max-w-xs">
-                    {isEdit ? `Editing: ${formData.title || formData.slug || 'Untitled'}` : 'New Blog Post'}
+                    {isEdit ? t('editing-title', { defaultValue: 'Editing: {{title}}', title: formData.title || formData.slug || t('untitled', { defaultValue: 'Untitled' }) }) : t('new-blog-post', { defaultValue: 'New Blog Post' })}
                 </span>
             </div>
             
             <div className="flex gap-2 items-center">
                  <Button type="button" onClick={togglePreview} variant="outline" size="sm" className="lg:hidden">
-                     {isPreviewMode ? 'Hide Preview' : 'Show Preview'}
+                     {isPreviewMode ? t('hide-preview', { defaultValue: 'Hide Preview' }) : t('show-preview', { defaultValue: 'Show Preview' })}
                  </Button>
-                 <Button type="submit" form="blog-form" disabled={isSubmitting || !content.trim()} size="sm" className="bg-site-accent hover:bg-site-accent-hover text-white">
-                     {isSubmitting ? 'Saving...' : (isEdit ? 'Update Post' : 'Save Post')}
+                 <Button type="submit" form="blog-form" disabled={isSubmitting || !content.trim()} size="sm" className="bg-site-accent hover:bg-site-accent-hover text-site-accent-fg">
+                     {isSubmitting ? t('saving', { defaultValue: 'Saving...' }) : (isEdit ? t('update-post', { defaultValue: 'Update Post' }) : t('save-post', { defaultValue: 'Save Post' }))}
                  </Button>
             </div>
         </div>
@@ -136,46 +138,46 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
                <ResizablePanel defaultSize={50} minSize={25} className={`flex flex-col ${isPreviewMode ? 'hidden lg:flex' : 'flex'} relative h-full bg-site-surface min-h-0`}>
                     <div className="flex-1 overflow-y-auto p-4 lg:p-6 flex flex-col gap-6 min-h-0">
                         <div className="flex justify-between items-center">
-                            <h2 className="text-lg font-bold font-display text-site-text">Metadata</h2>
+                            <h2 className="text-lg font-bold font-display text-site-text">{t('metadata', { defaultValue: 'Metadata' })}</h2>
                         </div>
                         <form id="blog-form" onSubmit={handleSubmit} className="space-y-4 shrink-0">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="title">Title <span className="text-red-500">*</span></Label>
-                              <Input id="title" name="title" required value={formData.title} onChange={handleChange} placeholder="My Awesome Post" />
+                              <Label htmlFor="title">{t('title-label', { defaultValue: 'Title' })} <span className="text-site-danger">*</span></Label>
+                              <Input id="title" name="title" required value={formData.title} onChange={handleChange} placeholder={t('title-placeholder', { defaultValue: 'My Awesome Post' })} />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="slug">Slug <span className="text-red-500">*</span></Label>
-                              <Input id="slug" name="slug" required value={formData.slug} onChange={handleChange} placeholder="my-awesome-post" pattern="[a-z0-9-]+" title="Only lowercase letters, numbers, and hyphens" />
+                              <Label htmlFor="slug">{t('slug-label', { defaultValue: 'Slug' })} <span className="text-site-danger">*</span></Label>
+                              <Input id="slug" name="slug" required value={formData.slug} onChange={handleChange} placeholder="my-awesome-post" pattern="[a-z0-9-]+" title={t('slug-title', { defaultValue: 'Only lowercase letters, numbers, and hyphens' })} />
                             </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label htmlFor="date">Date <span className="text-red-500">*</span></Label>
+                              <Label htmlFor="date">{t('date-label', { defaultValue: 'Date' })} <span className="text-site-danger">*</span></Label>
                               <Input id="date" name="date" type="date" required value={formData.date} onChange={handleChange} />
                             </div>
                             <div className="space-y-2">
-                              <Label htmlFor="image">Image URL</Label>
+                              <Label htmlFor="image">{t('image-url-label', { defaultValue: 'Image URL' })}</Label>
                               <Input id="image" name="image" value={formData.image} onChange={handleChange} placeholder="/images/blog/cover.jpg" />
                             </div>
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="tags">Tags (comma-separated)</Label>
-                            <Input id="tags" name="tags" value={formData.tags} onChange={handleChange} placeholder="devlog, gamedev, nextjs" />
+                            <Label htmlFor="tags">{t('tags-label', { defaultValue: 'Tags (comma-separated)' })}</Label>
+                            <Input id="tags" name="tags" value={formData.tags} onChange={handleChange} placeholder={t('tags-placeholder', { defaultValue: 'devlog, gamedev, nextjs' })} />
                           </div>
 
                           <div className="space-y-2">
-                            <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
-                            <Textarea id="description" name="description" required value={formData.description} onChange={handleChange} placeholder="A short summary of the post..." rows={3} />
+                            <Label htmlFor="description">{t('description-label', { defaultValue: 'Description' })} <span className="text-site-danger">*</span></Label>
+                            <Textarea id="description" name="description" required value={formData.description} onChange={handleChange} placeholder={t('description-placeholder', { defaultValue: 'A short summary of the post...' })} rows={3} />
                           </div>
                         </form>
 
                         <div className="flex-1 flex flex-col min-h-0 h-full">
-                            <Label className="mb-2">Content <span className="text-red-500">*</span></Label>
-                            <div className="flex-1 border border-site-border rounded-md overflow-hidden relative min-h-75 sm:min-h-0">
-                              <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-site-surface border border-site-border rounded-md text-site-text-muted">Loading Editor...</div>}>
+                            <Label className="mb-2">{t('content-label', { defaultValue: 'Content' })} <span className="text-site-danger">*</span></Label>
+                            <div className="flex-1 border border-site-border rounded-site-sm overflow-hidden relative min-h-75 sm:min-h-0">
+                              <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-site-surface border border-site-border rounded-site-sm text-site-text-muted">{t('loading-editor', { defaultValue: 'Loading Editor...' })}</div>}>
                                 <Editor
                                   height="100%"
                                   defaultLanguage="markdown"
@@ -198,21 +200,21 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
 
                <ResizablePanel defaultSize={50} minSize={25} className={`h-full ${!isPreviewMode ? 'hidden lg:block' : 'block'} bg-site-bg overflow-y-auto relative border-l border-site-border lg:border-none min-h-0`}>
                     <div className="sticky top-0 bg-site-bg/90 backdrop-blur border-b border-site-border p-4 flex justify-between items-center z-10 w-full h-14">
-                        <h2 className="text-sm font-bold font-display text-site-text uppercase tracking-wider text-site-text-dim">Live Preview</h2>
-                        <Button type="button" variant="ghost" size="sm" onClick={generatePreview} className="h-8">Refresh</Button>
+                        <h2 className="text-sm font-bold font-display text-site-text uppercase tracking-wider text-site-text-dim">{t('live-preview', { defaultValue: 'Live Preview' })}</h2>
+                        <Button type="button" variant="ghost" size="sm" onClick={generatePreview} className="h-8">{t('refresh', { defaultValue: 'Refresh' })}</Button>
                     </div>
                     
-                    <div className="p-6 lg:p-10 prose prose-invert max-w-3xl mx-auto prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-xl prose-img:border prose-img:border-site-border">
+                    <div className="p-6 lg:p-10 prose prose-invert max-w-3xl mx-auto prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-site prose-img:border prose-img:border-site-border">
                       {previewContent ? (
                          <>
-                           <h1 className="text-4xl lg:text-5xl font-black mb-4 tracking-tight leading-tight">{formData.title || 'Untitled Post'}</h1>
+                           <h1 className="text-4xl lg:text-5xl font-black mb-4 tracking-tight leading-tight">{formData.title || t('untitled-post', { defaultValue: 'Untitled Post' })}</h1>
                            {formData.description && <p className="text-xl border-l-4 border-site-accent pl-6 mb-8 text-site-text-muted">{formData.description}</p>}
                            <ReactMarkdown components={animatedComponents}>{previewContent}</ReactMarkdown>
                          </>
                       ) : (
                          <div className="text-center text-site-text-dim mt-32 flex flex-col items-center gap-4">
-                             <p>Start typing to see the preview or click Refresh.</p>
-                             <Button variant="outline" onClick={generatePreview}>Generate Initial Preview</Button>
+                             <p>{t('preview-hint', { defaultValue: 'Start typing to see the preview or click Refresh.' })}</p>
+                             <Button variant="outline" onClick={generatePreview}>{t('generate-initial-preview', { defaultValue: 'Generate Initial Preview' })}</Button>
                          </div>
                       )}
                     </div>

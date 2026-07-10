@@ -1,0 +1,18 @@
+{
+  "clear-filters": "Rensa filter",
+  "clear-search": "Rensa sökning",
+  "like-this-build": "Gilla denna byggnad",
+  "no-builds-found": "Inga byggnader hittades",
+  "read-more": "Läs mer",
+  "screenshot-of": "Skärmdump av {{title}}",
+  "search-aria-label": "Sök byggnader",
+  "search-placeholder": "Sök byggnader...",
+  "sort-builds": "Sortera byggnader",
+  "sort-default": "Standard",
+  "sort-most-discussed": "Mest diskuterade",
+  "sort-most-liked": "Mest gillade",
+  "sort-most-viewed": "Mest visade",
+  "sort-options": "Sorteringsalternativ",
+  "unlike-this-build": "Sluta gilla denna byggnad",
+  "view-comments": "Visa kommentarer"
+}

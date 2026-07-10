@@ -1,19 +1,19 @@
 /**
- * RMH Studios — Library data layer.
+ * RMH Studios — Library data layer (legacy static catalog).
  *
- * The library is the set of PDFs in `public/library`. Their human-readable titles
- * and descriptions are generated once via DeepSeek (see
- * scripts/generate-library-metadata.ts) and cached in data/library-metadata.json,
- * which we import here as the source of truth. Each entry is turned into a
- * `LibraryBook` with a stable slug, a public PDF URL, and a deterministic accent
- * hue so the bookshelf and reader can render rich, consistent cards without any
- * runtime PDF parsing or LLM calls.
+ * Historically the library was the set of bundled PDFs in `public/library`, keyed
+ * by data/library-metadata.json. Those books have since been migrated into object
+ * storage as LibraryDocument rows, the bundled files were removed from the repo,
+ * and the catalog JSON is now empty — so `listLibraryBooks()` returns nothing and
+ * the database (see library.server.ts) is the single source of truth.
  *
- * Pure/static (no fs, no secrets) so it's safe to import from both the server
- * loader and the client.
+ * The types and helpers remain because the rest of the library imports the
+ * `LibraryBook` shape and a few of these functions still resolve (now always to
+ * empty) as a harmless fallback. Pure/static (no fs, no secrets).
  */
 
 import metadata from '@/data/library-metadata.json';
+import { asset } from '@/lib/storage/asset';
 
 /** A table-of-contents entry: a chapter/section title and the page it starts on. */
 export type TocEntry = { title: string; page: number; depth?: number };
@@ -37,14 +37,35 @@ export type LibraryBook = {
   title: string;
   /** One-sentence description (DeepSeek-generated; may be empty). */
   description: string;
-  /** Total page count. */
+  /** Total page count (for EPUBs, the number of spine documents/sections). */
   pages: number;
+  /** Document format: PDFs render in the 3D book reader, EPUBs in the EPUB reader. */
+  format: 'pdf' | 'epub';
   /** Public URL of the rendered first-page cover image, or null if none. */
   coverUrl: string | null;
   /** Deterministic accent hue (0–360) used for the spine tint / cover fallback. */
   hue: number;
   /** Pre-computed table of contents (chapter → page), when known. May be empty. */
   toc: TocEntry[];
+  /** Where the book comes from: the bundled static catalog or a user upload. */
+  source?: 'static' | 'upload';
+  /** LibraryDocument id for uploaded books (used for delete/report/edit). */
+  id?: string;
+  /** Uploader attribution, for user-uploaded books. */
+  uploadedBy?: { handle: string | null; name: string | null } | null;
+  /**
+   * Curated/official entry — bundled static books and admin uploads. Curated
+   * books fill the top section of the shelf; community uploads sit below.
+   */
+  curated?: boolean;
+  /** Manual sort order within a section (lower first); only set for DB rows. */
+  position?: number;
+  /** ISO upload date, for community attribution ("Uploaded … · {date}"). */
+  createdAt?: string | null;
+  /** Hidden from non-admins (only ever surfaced to admins in edit mode). */
+  hidden?: boolean;
+  /** Reported by a user — surfaced to admins in edit mode. */
+  reported?: boolean;
 };
 
 /** "everything_platform_minute_vol1.pdf" → "Everything Platform Minute Vol1". */
@@ -89,13 +110,16 @@ function buildBooks(): LibraryBook[] {
     return {
       slug,
       filename,
-      url: `/library/${encodeURIComponent(filename)}`,
+      url: asset(`/library/${encodeURIComponent(filename)}`),
       title: meta.title || humanize(filename),
       description: meta.description || '',
       pages: meta.pages || 0,
+      format: 'pdf',
       coverUrl: meta.cover ? `/library/covers/${encodeURIComponent(meta.cover)}` : null,
       hue: hueFromString(filename),
       toc: meta.toc ?? [],
+      source: 'static',
+      curated: true,
     } satisfies LibraryBook;
   });
 

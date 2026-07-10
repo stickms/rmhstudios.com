@@ -14,12 +14,11 @@ export const Route = createFileRoute('/api/coins/')({
 
     const profile = await prisma.userProfile.findUnique({
       where: { userId: session.user.id },
-      select: { coins: true, hasProfilePet: true },
+      select: { coins: true },
     });
 
     return Response.json({
       coins: profile?.coins ?? 10,
-      hasProfilePet: profile?.hasProfilePet ?? false,
     });
   } catch (error) {
     console.error("Coins fetch error:", error);

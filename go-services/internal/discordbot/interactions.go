@@ -1,5 +1,5 @@
 // interactions.go holds the small discordgo glue helpers shared by bot.go,
-// chat.go and rmhbot.go: extracting the invoking user, reading command options,
+// chat.go and pet_service.go: extracting the invoking user, reading command options,
 // splitting "action:ownerId" custom IDs, building/reading modals, and the
 // plain-text reply helper.
 package discordbot
@@ -22,6 +22,18 @@ func interactionUser(i *discordgo.InteractionCreate) (id, username string) {
 	return "", ""
 }
 
+// interactionAvatar returns the invoking user's Discord avatar hash (empty when
+// they have no custom avatar), used to render their face on the leaderboard.
+func interactionAvatar(i *discordgo.InteractionCreate) string {
+	if i.Member != nil && i.Member.User != nil {
+		return i.Member.User.Avatar
+	}
+	if i.User != nil {
+		return i.User.Avatar
+	}
+	return ""
+}
+
 // optionMap is a name->option lookup for slash command options.
 type optionMap map[string]*discordgo.ApplicationCommandInteractionDataOption
 
@@ -38,6 +50,13 @@ func (m optionMap) str(name string) string {
 		return o.StringValue()
 	}
 	return ""
+}
+
+func (m optionMap) boolean(name string) bool {
+	if o, ok := m[name]; ok {
+		return o.BoolValue()
+	}
+	return false
 }
 
 // splitCustomID splits a "action:ownerId" custom ID. Mirrors the TS
@@ -94,5 +113,18 @@ func respondText(s *discordgo.Session, i *discordgo.InteractionCreate, content s
 	return s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
 		Data: &discordgo.InteractionResponseData{Content: content},
+	})
+}
+
+// respondEphemeralEmbed sends an immediate ephemeral embed reply (only the
+// invoking user sees it) — used by /prompt so a long persona prompt never
+// clutters the channel.
+func respondEphemeralEmbed(s *discordgo.Session, i *discordgo.InteractionCreate, embed *discordgo.MessageEmbed) error {
+	return s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseChannelMessageWithSource,
+		Data: &discordgo.InteractionResponseData{
+			Embeds: []*discordgo.MessageEmbed{embed},
+			Flags:  discordgo.MessageFlagsEphemeral,
+		},
 	})
 }

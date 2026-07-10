@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,6 +70,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
 
     // Like state
     const [likingId, setLikingId] = useState<string | null>(null);
+    const { t } = useTranslation("c-game");
 
     const handleLike = async (e: React.MouseEvent, song: Song) => {
         e.stopPropagation();
@@ -162,7 +164,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
         if (!file) return;
 
         if (file.size > MAX_AUDIO_SIZE) {
-            toast.error(`Audio file too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum size is 50 MB.`);
+            toast.error(t("audio-too-large", { defaultValue: "Audio file too large ({{sizeMb}} MB). Maximum size is 50 MB.", sizeMb: (file.size / 1024 / 1024).toFixed(1) }));
             e.target.value = '';
             return;
         }
@@ -197,10 +199,10 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
 
         setIsUploading(true);
         setUploadProgress(0);
-        setUploadStatusText("Analyzing audio format...");
+        setUploadStatusText(t("status-analyzing", { defaultValue: "Analyzing audio format..." }));
 
         try {
-            setUploadStatusText("Uploading track & analyzing server-side...");
+            setUploadStatusText(t("status-uploading", { defaultValue: "Uploading track & analyzing server-side..." }));
             const formData = new FormData();
             formData.append('file', uploadFile);
             formData.append('title', uploadTitle);
@@ -222,8 +224,8 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                     setUploadFile(null);
                     setUploadDescription("");
                     setUploadProgress(100);
-                    setUploadStatusText("Success!");
-                    toast.success("Track uploaded and map generated successfully!");
+                    setUploadStatusText(t("status-success", { defaultValue: "Success!" }));
+                    toast.success(t("upload-success", { defaultValue: "Track uploaded and map generated successfully!" }));
                     fetchSongs();
                     // Auto-close dialog after a brief moment
                     setTimeout(() => {
@@ -232,14 +234,14 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                         setIsUploading(false);
                     }, 600);
                 } else {
-                    toast.error("Upload failed");
+                    toast.error(t("upload-failed", { defaultValue: "Upload failed" }));
                     setIsUploading(false);
                     setUploadProgress(0);
                 }
             });
 
             xhr.addEventListener('error', () => {
-                toast.error("Upload error");
+                toast.error(t("upload-error", { defaultValue: "Upload error" }));
                 setIsUploading(false);
                 setUploadProgress(0);
             });
@@ -249,7 +251,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
 
         } catch (err) {
             console.error(err);
-            toast.error("Failed to generate beatmap. Ensure the file is a valid audio format.");
+            toast.error(t("upload-beatmap-error", { defaultValue: "Failed to generate beatmap. Ensure the file is a valid audio format." }));
             setIsUploading(false);
             setUploadProgress(0);
         }
@@ -290,13 +292,13 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
             const res = await fetch(`/api/slice-it/songs/${songToDelete}`, { method: 'DELETE' });
             if (res.ok) {
                 fetchSongs();
-                toast.success("Track purged from system library");
+                toast.success(t("delete-success", { defaultValue: "Track purged from system library" }));
             } else {
-                toast.error("Failure: Could not delete track.");
+                toast.error(t("delete-failed", { defaultValue: "Failure: Could not delete track." }));
             }
         } catch (e) {
             console.error(e);
-            toast.error("Error: System rejection during deletion.");
+            toast.error(t("delete-error", { defaultValue: "Error: System rejection during deletion." }));
         } finally {
             setIsDeleteModalOpen(false);
             setSongToDelete(null);
@@ -310,7 +312,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slice-text-light w-4 h-4" />
                     <Input
-                        placeholder="Search songs, artists..."
+                        placeholder={t("search-placeholder", { defaultValue: "Search songs, artists..." })}
                         className="pl-9 bg-slice-card-bg border border-slice-shadow-dark/50 rounded-lg h-9 text-sm text-slice-text placeholder:text-slice-text-light focus-visible:ring-1 focus-visible:ring-blue-500"
                         value={searchTerm}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
@@ -325,7 +327,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                         </DialogTrigger>
                         <DialogContent className="bg-slice-bg border-none shadow-2xl rounded-2xl max-w-lg">
                             <DialogHeader>
-                                <DialogTitle className="text-slice-text font-black">UPLOAD TRACK</DialogTitle>
+                                <DialogTitle className="text-slice-text font-black">{t("upload-track-title", { defaultValue: "UPLOAD TRACK" })}</DialogTitle>
                             </DialogHeader>
                         <form onSubmit={handleUpload} className="space-y-4">
                             {!uploadFile ? (
@@ -337,34 +339,34 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                         onChange={handleFileSelect}
                                     />
                                     <Upload className="w-12 h-12 mb-4 text-slice-text-light" />
-                                    <span className="font-bold text-lg">Click to select audio file</span>
-                                    <span className="text-sm text-slice-text-light mt-2">MP3, WAV supported</span>
+                                    <span className="font-bold text-lg">{t("click-to-select", { defaultValue: "Click to select audio file" })}</span>
+                                    <span className="text-sm text-slice-text-light mt-2">{t("supported-formats", { defaultValue: "MP3, WAV supported" })}</span>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
                                      <div className="p-4 bg-slice-card-bg rounded-xl border border-slice-shadow-dark/50 flex items-center justify-between">
                                         <div className="font-bold text-blue-600 truncate max-w-[200px]">{uploadFile.name}</div>
-                                        <Button type="button" variant="ghost" size="sm" onClick={() => setUploadFile(null)} className="text-blue-400 hover:text-blue-600">Change</Button>
+                                        <Button type="button" variant="ghost" size="sm" onClick={() => setUploadFile(null)} className="text-blue-400 hover:text-blue-600">{t("change", { defaultValue: "Change" })}</Button>
                                     </div>
                                     
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-1">
-                                            <label className="text-xs font-bold text-slice-text-light uppercase">Title</label>
+                                            <label className="text-xs font-bold text-slice-text-light uppercase">{t("label-title", { defaultValue: "Title" })}</label>
                                             <Input value={uploadTitle} onChange={e => setUploadTitle(e.target.value)} className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all" />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-xs font-bold text-slice-text-light uppercase">Artist</label>
+                                            <label className="text-xs font-bold text-slice-text-light uppercase">{t("label-artist", { defaultValue: "Artist" })}</label>
                                             <Input value={uploadArtist} onChange={e => setUploadArtist(e.target.value)} className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all" />
                                         </div>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <label className="text-xs font-bold text-slice-text-light uppercase">Description (Optional)</label>
-                                        <Input 
-                                            value={uploadDescription} 
+                                        <label className="text-xs font-bold text-slice-text-light uppercase">{t("label-description", { defaultValue: "Description (Optional)" })}</label>
+                                        <Input
+                                            value={uploadDescription}
                                             onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUploadDescription(e.target.value)}
                                             className="bg-slice-card-bg text-slice-text placeholder:text-slice-text-light shadow-[5px_5px_15px_var(--slice-shadow-dark),-5px_-5px_15px_var(--slice-shadow-light)] border border-slice-shadow-dark/30 focus:border-blue-400 focus:shadow-[0_0_0_3px_rgba(59,130,246,0.15)] transition-all"
-                                            placeholder="Tell us about this track..."
+                                            placeholder={t("description-placeholder", { defaultValue: "Tell us about this track..." })}
                                         />
                                     </div>
                                 </div>
@@ -386,7 +388,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                             )}
 
                             <Button type="submit" disabled={isUploading || !uploadFile} className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold h-12 rounded-xl mt-4">
-                                {isUploading ? `PROCESSING...` : 'UPLOAD TRACK'}
+                                {isUploading ? t("processing", { defaultValue: "PROCESSING..." }) : t("upload-track-title", { defaultValue: "UPLOAD TRACK" })}
                             </Button>
                         </form>
                     </DialogContent>
@@ -437,7 +439,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                         <Heart className={`w-2.5 h-2.5 ${song.isLiked ? 'fill-current' : ''}`} />{song.likeCount || 0}
                                     </span>
                                     {session.data?.user?.id === song.uploadedBy && (
-                                        <span className="text-[10px] text-blue-500 font-bold">YOUR TRACK</span>
+                                        <span className="text-[10px] text-blue-500 font-bold">{t("your-track", { defaultValue: "YOUR TRACK" })}</span>
                                     )}
                                 </div>
                             </div>
@@ -450,7 +452,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                     size="sm"
                                     onClick={(e) => { e.stopPropagation(); handleDelete(song.id); }}
                                     className="h-8 w-8 p-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                                    title="Delete Song"
+                                    title={t("delete-song", { defaultValue: "Delete Song" })}
                                 >
                                     <span className="sr-only">Delete</span>
                                     <span className="text-xs font-bold">✕</span>
@@ -463,7 +465,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                     className={`h-8 w-8 rounded-lg shrink-0 transition-colors ${song.isLiked ? 'text-red-500 hover:text-red-400' : 'text-slice-text-light hover:text-red-400'}`}
                                     onClick={(e) => handleLike(e, song)}
                                     disabled={likingId === song.id}
-                                    title={song.isLiked ? 'Unlike' : 'Like'}
+                                    title={song.isLiked ? t("unlike", { defaultValue: "Unlike" }) : t("like", { defaultValue: "Like" })}
                                 >
                                     <Heart className={`w-4 h-4 ${song.isLiked ? 'fill-current' : ''}`} />
                                 </Button>
@@ -473,7 +475,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                                     onClick={(e) => { e.stopPropagation(); onHighlight(song); onSelect(song); }}
                                     className="bg-blue-500 hover:bg-blue-600 text-white font-bold px-3 h-8 rounded-lg text-xs"
                                 >
-                                    PLAY
+                                    {t("play", { defaultValue: "PLAY" })}
                                 </Button>
                             )}
                         </div>
@@ -485,10 +487,10 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
                 isOpen={isDeleteModalOpen}
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={confirmDelete}
-                title="Wipe Track Data?"
-                description="This will permanently delete the song, analysis data, and leaderboard entries. This action is irreversible."
-                confirmText="PURGE"
-                cancelText="CANCEL"
+                title={t("wipe-track-title", { defaultValue: "Wipe Track Data?" })}
+                description={t("wipe-track-description", { defaultValue: "This will permanently delete the song, analysis data, and leaderboard entries. This action is irreversible." })}
+                confirmText={t("purge", { defaultValue: "PURGE" })}
+                cancelText={t("cancel", { defaultValue: "CANCEL" })}
                 variant="danger"
             />
         </div>

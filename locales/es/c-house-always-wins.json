@@ -1,0 +1,18 @@
+{
+  "back-home": "Volver al inicio",
+  "controls-hint": "WASD/← → Moverse • Espacio Saltar • Shift Correr • E Interactuar • M Menú",
+  "controls-interact": "E — Interactuar",
+  "controls-jump": "Espacio — Saltar",
+  "controls-menu": "M — Menú",
+  "controls-move": "WASD / Flechas — Moverse",
+  "debt": "DEUDA",
+  "e-continue": "[E] Continuar",
+  "loading": "CARGANDO...",
+  "login-to-play": "Inicia sesión para jugar",
+  "menu-title": "Menú",
+  "music-volume": "Volumen de música",
+  "resume": "Reanudar [M]",
+  "sign-in-prompt": "Debes iniciar sesión antes de entrar al casino. Tus deudas serán registradas.",
+  "subtitle": "La mesa espera",
+  "title": "La Casa Siempre Gana"
+}

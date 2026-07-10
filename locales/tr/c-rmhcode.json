@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "Token'ı kopyala",
+  "created-date": "Oluşturulma {{date}}",
+  "expired": "Süresi doldu",
+  "generate-token": "Token Oluştur",
+  "last-used-date": "Son kullanım {{date}}",
+  "no-active-tokens": "Aktif token yok. Başlamak için bir tane oluşturun.",
+  "revoke-token-label": "Token'ı iptal et",
+  "token-auth-instruction-post": "ile kimlik doğrulaması yapın.",
+  "token-auth-instruction-pre": "Çalıştır",
+  "token-generated-notice": "Token oluşturuldu! Şimdi kopyalayın - bir daha gösterilmeyecek.",
+  "token-name-placeholder": "Token adı (isteğe bağlı)",
+  "unnamed-token": "Adsız token",
+  "your-tokens": "Token'larınız"
+}

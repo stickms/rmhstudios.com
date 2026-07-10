@@ -56,12 +56,24 @@ type PlayerStatus = 'waiting' | 'betting' | 'playing' | 'standing' | 'busted' | 
 type HandResult = 'win' | 'lose' | 'push' | 'blackjack' | null;
 type TablePhase = 'idle' | 'betting' | 'insurance' | 'dealing' | 'player_turns' | 'dealer_turn' | 'payout' | 'results';
 
-interface SplitHand {
-  hand: Card[];
+/**
+ * A single playable hand. Every dealt seat has at least one hand; splitting
+ * appends more. Modelling all hands uniformly (rather than a special "main"
+ * hand plus a `splitHands` array) is what lets a player act on every hand
+ * without the table freezing, and makes re-splitting a hand trivial.
+ */
+interface Hand {
+  cards: Card[];
   bet: number;
   status: PlayerStatus;
   result: HandResult;
   payout: number;
+  // True once this hand has been produced by a split. A split hand can never
+  // be a "natural" blackjack (a 21 on it pays even money, not 3:2).
+  isSplit: boolean;
+  // Split aces receive exactly one extra card and then auto-stand.
+  fromSplitAces: boolean;
+  doubled: boolean;
 }
 
 interface PlayerSeat {
@@ -70,18 +82,21 @@ interface PlayerSeat {
   userId: string;
   userName: string;
   avatarUrl: string | null;
-  hand: Card[];
+  // Base bet placed during the betting phase. Used to size insurance and as
+  // the per-hand stake for splits/doubles. Individual hands carry their own
+  // (possibly doubled) bet in `hands`.
   bet: number;
+  // Seat-level status. Before cards are dealt this is the lifecycle status
+  // (waiting/betting); the per-hand status lives on each Hand.
   status: PlayerStatus;
-  result: HandResult;
-  payout: number;
+  result: HandResult; // main-hand result, for wire compatibility
+  payout: number;     // total payout across all hands + insurance
   insuranceBet: number;
   insuranceDecision: 'pending' | 'taken' | 'declined';
   insuranceResult: 'won' | 'lost' | null;
-  // Split hands
-  splitHands: SplitHand[];
-  activeSplitIndex: number; // -1 = main hand, 0+ = split hand index
-  hasSplit: boolean;
+  // All hands for this seat. hands[0] is the original hand; splits append.
+  hands: Hand[];
+  activeHandIndex: number; // index into `hands` of the hand currently in play
   // Session stats
   sessionStats: {
     totalBet: number;
@@ -90,6 +105,27 @@ interface PlayerSeat {
     handsWon: number;
     blackjacks: number;
   };
+  // Set when a player leaves/disconnects mid-round but still has money at
+  // stake. The seat is kept until payouts settle, then pruned.
+  pendingRemoval?: boolean;
+}
+
+function makeHand(cards: Card[], bet: number): Hand {
+  return {
+    cards,
+    bet,
+    status: 'waiting',
+    result: null,
+    payout: 0,
+    isSplit: false,
+    fromSplitAces: false,
+    doubled: false,
+  };
+}
+
+/** 10/J/Q/K all count as the same rank for splitting purposes. */
+function splitRank(r: string): string {
+  return ['10', 'J', 'Q', 'K'].includes(r) ? '10' : r;
 }
 
 interface BlackjackRoom {
@@ -114,6 +150,7 @@ interface BlackjackRoom {
   insuranceTimer: ReturnType<typeof setTimeout> | null;
   roundNumber: number;
   bettingDeadline: number | null;
+  turnDeadline: number | null;
 }
 
 // ── Constants ──────────────────────────────────────────────────────
@@ -123,9 +160,18 @@ const MAX_PLAYERS_CAP = 6;
 const BETTING_DURATION_MS = 15_000;
 const TURN_TIMEOUT_MS = 30_000;
 const RESULTS_DISPLAY_MS = 5_000;
+// Client card-flip timing (kept in sync with BlackjackTable.tsx). The server
+// holds the round results until the dealer's cards have visually settled on
+// every client, so nobody sees the outcome before the flip animation finishes.
+const DEAL_STAGGER_MS = 200;
+const CARD_FLIP_MS = 500;
+const REVEAL_SETTLE_BUFFER_MS = 250;
 const INSURANCE_TIMEOUT_MS = 10_000;
 const MIN_BET = 1;
 const RESHUFFLE_THRESHOLD = 75;
+// Maximum number of hands a single seat can hold via splitting (the original
+// hand plus up to three splits — the standard casino limit of four hands).
+const MAX_HANDS = 4;
 
 // ── State ──────────────────────────────────────────────────────────
 
@@ -159,31 +205,38 @@ function drawCard(room: BlackjackRoom): Card {
 // ── Table State Serialization ──────────────────────────────────────
 
 function serializeTableState(room: BlackjackRoom) {
-  const players = Array.from(room.players.values()).map((p) => ({
-    userId: p.userId,
-    userName: p.userName,
-    avatarUrl: p.avatarUrl,
-    seatIndex: p.seatIndex,
-    hand: p.hand,
-    bet: p.bet,
-    status: p.status,
-    handValue: p.hand.length > 0 ? handValue(p.hand).value : null,
-    result: p.result,
-    payout: p.payout,
-    insuranceBet: p.insuranceBet,
-    insuranceResult: p.insuranceResult,
-    sessionStats: p.sessionStats,
-    hasSplit: p.hasSplit,
-    activeSplitIndex: p.activeSplitIndex,
-    splitHands: p.splitHands.map((sh) => ({
-      hand: sh.hand,
-      bet: sh.bet,
-      status: sh.status,
-      handValue: sh.hand.length > 0 ? handValue(sh.hand).value : null,
-      result: sh.result,
-      payout: sh.payout,
-    })),
-  }));
+  const players = Array.from(room.players.values()).map((p) => {
+    // The wire format keeps the original "main hand + splitHands" shape the
+    // client renders. hands[0] is the main hand; the rest are split hands.
+    // activeSplitIndex stays -1 while the main hand is active, 0+ for splits.
+    const main = p.hands[0];
+    const splits = p.hands.slice(1);
+    return {
+      userId: p.userId,
+      userName: p.userName,
+      avatarUrl: p.avatarUrl,
+      seatIndex: p.seatIndex,
+      hand: main ? main.cards : [],
+      bet: main ? main.bet : p.bet,
+      status: main ? main.status : p.status,
+      handValue: main && main.cards.length > 0 ? handValue(main.cards).value : null,
+      result: main ? main.result : p.result,
+      payout: p.payout,
+      insuranceBet: p.insuranceBet,
+      insuranceResult: p.insuranceResult,
+      sessionStats: p.sessionStats,
+      hasSplit: p.hands.length > 1,
+      activeSplitIndex: p.activeHandIndex - 1,
+      splitHands: splits.map((sh) => ({
+        hand: sh.cards,
+        bet: sh.bet,
+        status: sh.status,
+        handValue: sh.cards.length > 0 ? handValue(sh.cards).value : null,
+        result: sh.result,
+        payout: sh.payout,
+      })),
+    };
+  });
 
   let dealerHand = room.dealerHand;
   let dealerValue: number | null = null;
@@ -205,7 +258,9 @@ function serializeTableState(room: BlackjackRoom) {
     bettingCountdown: room.bettingDeadline
       ? Math.max(0, Math.ceil((room.bettingDeadline - Date.now()) / 1000))
       : null,
-    turnTimeout: room.currentTurnUserId ? Math.ceil(TURN_TIMEOUT_MS / 1000) : null,
+    turnTimeout: room.currentTurnUserId && room.turnDeadline
+      ? Math.max(0, Math.ceil((room.turnDeadline - Date.now()) / 1000))
+      : null,
   };
 }
 
@@ -262,7 +317,8 @@ function startBettingPhase(room: BlackjackRoom) {
   room.turnIndex = 0;
 
   for (const p of room.players.values()) {
-    p.hand = [];
+    p.hands = [];
+    p.activeHandIndex = 0;
     p.bet = 0;
     p.status = 'waiting';
     p.result = null;
@@ -270,9 +326,6 @@ function startBettingPhase(room: BlackjackRoom) {
     p.insuranceBet = 0;
     p.insuranceDecision = 'pending';
     p.insuranceResult = null;
-    p.splitHands = [];
-    p.activeSplitIndex = -1;
-    p.hasSplit = false;
   }
 
   room.bettingDeadline = Date.now() + BETTING_DURATION_MS;
@@ -336,10 +389,13 @@ function dealInitialCards(room: BlackjackRoom, bettors: PlayerSeat[]) {
   }
 
   for (const p of bettors) {
-    p.hand = [drawCard(room), drawCard(room)];
-    if (isBlackjack(p.hand)) {
+    const hand = makeHand([drawCard(room), drawCard(room)], p.bet);
+    if (isBlackjack(hand.cards)) {
+      hand.status = 'blackjack';
       p.status = 'blackjack';
     }
+    p.hands = [hand];
+    p.activeHandIndex = 0;
   }
 
   room.dealerHand = [drawCard(room), drawCard(room)];
@@ -462,29 +518,47 @@ function proceedAfterInsurance(room: BlackjackRoom) {
 
 // ── Player Turns ──────────────────────────────────────────────────
 
+/**
+ * (Re)start the turn clock for the player whose turn it currently is. Called
+ * when a turn begins and again whenever that player takes an action that keeps
+ * the turn (hit, split, advancing between split hands) — re-emitting TURN resets
+ * every client's countdown, so acting effectively "extends" the timer.
+ *
+ * When the clock runs out the player is auto-stood; if they're somehow no longer
+ * in a playable state (left, busted out-of-band, etc.) the turn is force-advanced
+ * so the table can never freeze.
+ */
+function armTurnTimer(room: BlackjackRoom, userId: string) {
+  room.turnDeadline = Date.now() + TURN_TIMEOUT_MS;
+
+  ioRef.to(roomKey(room.roomId)).emit(S2C.TURN, {
+    userId,
+    timeoutSeconds: Math.ceil(TURN_TIMEOUT_MS / 1000),
+  });
+
+  if (room.turnTimer) clearTimeout(room.turnTimer);
+  room.turnTimer = setTimeout(() => {
+    if (room.currentTurnUserId !== userId) return;
+    const player = room.players.get(userId);
+    const hand = player?.hands[player.activeHandIndex];
+    if (player && hand && hand.status === 'playing') {
+      // Auto-stand just the hand whose clock expired, then advance.
+      standActiveHand(room, player);
+    } else {
+      room.turnIndex++;
+      advanceToNextPlayer(room);
+    }
+  }, TURN_TIMEOUT_MS);
+}
+
 function advanceToNextPlayer(room: BlackjackRoom) {
   while (room.turnIndex < room.turnOrder.length) {
     const userId = room.turnOrder[room.turnIndex];
     const player = room.players.get(userId);
 
-    if (player && player.status !== 'busted' && player.status !== 'standing' && player.status !== 'blackjack') {
-      player.status = 'playing';
+    if (player && player.hands.length > 0) {
       room.currentTurnUserId = userId;
-
-      ioRef.to(roomKey(room.roomId)).emit(S2C.TURN, {
-        userId,
-        timeoutSeconds: Math.ceil(TURN_TIMEOUT_MS / 1000),
-      });
-
-      broadcastTableState(room);
-
-      if (room.turnTimer) clearTimeout(room.turnTimer);
-      room.turnTimer = setTimeout(() => {
-        if (room.currentTurnUserId === userId) {
-          onStand(room, userId);
-        }
-      }, TURN_TIMEOUT_MS);
-
+      activateHand(room, player, 0);
       return;
     }
 
@@ -492,9 +566,99 @@ function advanceToNextPlayer(room: BlackjackRoom) {
   }
 
   room.currentTurnUserId = null;
+  room.turnDeadline = null;
   if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
   room.phase = 'dealer_turn';
   dealerTurn(room);
+}
+
+/**
+ * Make `index` the player's active hand and begin (or auto-resolve) it.
+ *
+ * A freshly-split hand arrives with a single card, so it is dealt its second
+ * card here. Split aces take exactly one card and auto-stand; any hand that
+ * reaches 21 has nothing left to decide and also auto-stands. Otherwise the
+ * hand becomes playable and the turn clock is armed.
+ */
+function activateHand(room: BlackjackRoom, player: PlayerSeat, index: number) {
+  player.activeHandIndex = index;
+  const hand = player.hands[index];
+  if (!hand) {
+    advanceHandOrPlayer(room, player);
+    return;
+  }
+
+  if (hand.cards.length < 2) {
+    hand.cards.push(drawCard(room));
+  }
+
+  hand.status = 'playing';
+
+  if (hand.fromSplitAces) {
+    hand.status = isBusted(hand.cards) ? 'busted' : 'standing';
+    broadcastTableState(room);
+    advanceHandOrPlayer(room, player);
+    return;
+  }
+
+  if (handValue(hand.cards).value === 21) {
+    hand.status = 'standing';
+    broadcastTableState(room);
+    advanceHandOrPlayer(room, player);
+    return;
+  }
+
+  room.currentTurnUserId = player.userId;
+  armTurnTimer(room, player.userId);
+  broadcastTableState(room);
+}
+
+/**
+ * Advance play to the player's next unplayed hand, or — when every hand is
+ * resolved — to the next player. This is the single path out of any hand, so
+ * the table can never stall on a player who still has hands to play.
+ */
+function advanceHandOrPlayer(room: BlackjackRoom, player: PlayerSeat) {
+  for (let i = player.activeHandIndex + 1; i < player.hands.length; i++) {
+    if (player.hands[i].status === 'waiting') {
+      activateHand(room, player, i);
+      return;
+    }
+  }
+
+  finalizeSeatStatus(player);
+  room.turnIndex++;
+  advanceToNextPlayer(room);
+}
+
+/** Stand the player's currently-active hand and move on. */
+function standActiveHand(room: BlackjackRoom, player: PlayerSeat) {
+  const hand = player.hands[player.activeHandIndex];
+  if (hand && hand.status === 'playing') hand.status = 'standing';
+  advanceHandOrPlayer(room, player);
+}
+
+/** Seat-level status shown once a player has finished all of their hands. */
+function finalizeSeatStatus(player: PlayerSeat) {
+  player.status = player.hands.every((h) => h.status === 'busted') ? 'busted' : 'standing';
+}
+
+/**
+ * Forfeit every remaining hand for a player who left/disconnected on their
+ * turn, then advance to the next player.
+ */
+function forfeitPlayerTurn(room: BlackjackRoom, userId: string) {
+  if (room.phase !== 'player_turns') return;
+  if (room.currentTurnUserId !== userId) return;
+  const player = room.players.get(userId);
+  if (!player) return;
+
+  for (const h of player.hands) {
+    if (h.status === 'playing' || h.status === 'waiting') h.status = 'standing';
+  }
+  finalizeSeatStatus(player);
+  room.turnIndex++;
+  advanceToNextPlayer(room);
 }
 
 function dealerTurn(room: BlackjackRoom) {
@@ -513,7 +677,12 @@ function dealerTurn(room: BlackjackRoom) {
   });
 
   broadcastTableState(room);
-  setTimeout(() => resolvePayouts(room), 1500);
+
+  // Wait for the dealer's cards to finish flipping on every client before
+  // revealing the result — the delay scales with how many cards the dealer drew.
+  const revealSettleMs =
+    Math.max(0, room.dealerHand.length - 1) * DEAL_STAGGER_MS + CARD_FLIP_MS + REVEAL_SETTLE_BUFFER_MS;
+  setTimeout(() => resolvePayouts(room), revealSettleMs);
 }
 
 // ── Payouts ───────────────────────────────────────────────────────
@@ -526,10 +695,11 @@ async function resolvePayouts(room: BlackjackRoom) {
 
   const payoutUpdates: { userId: string; amount: number; result: HandResult; insurancePayout: number }[] = [];
 
-  function resolveHand(hand: Card[], bet: number): { result: HandResult; payout: number } {
+  // A split hand can never be a natural blackjack, so its 21 pays even money.
+  function resolveHand(hand: Card[], bet: number, isSplit: boolean): { result: HandResult; payout: number } {
     const playerVal = handValue(hand).value;
     const playerBusted = playerVal > 21;
-    const playerBJ = isBlackjack(hand);
+    const playerBJ = !isSplit && isBlackjack(hand);
 
     if (playerBusted) return { result: 'lose', payout: 0 };
     if (playerBJ && dealerBJ) return { result: 'push', payout: bet };
@@ -542,22 +712,21 @@ async function resolvePayouts(room: BlackjackRoom) {
   }
 
   for (const p of room.players.values()) {
-    if (p.bet === 0 || p.status === 'waiting') continue;
+    if (p.bet === 0 || p.status === 'waiting' || p.hands.length === 0) continue;
 
     let totalPayout = 0;
+    let totalBet = 0;
 
-    // Resolve main hand
-    const mainResult = resolveHand(p.hand, p.bet);
-    p.result = mainResult.result;
-    totalPayout += mainResult.payout;
-
-    // Resolve split hands
-    for (const sh of p.splitHands) {
-      const splitResult = resolveHand(sh.hand, sh.bet);
-      sh.result = splitResult.result;
-      sh.payout = splitResult.payout;
-      totalPayout += splitResult.payout;
+    // Resolve every hand (the first is the wire "main" hand).
+    for (const h of p.hands) {
+      const r = resolveHand(h.cards, h.bet, h.isSplit);
+      h.result = r.result;
+      h.payout = r.payout;
+      totalPayout += r.payout;
+      totalBet += h.bet;
     }
+    const mainResult = { result: p.hands[0].result, payout: p.hands[0].payout };
+    p.result = mainResult.result;
 
     // Insurance payout: 2:1
     let insurancePayout = 0;
@@ -569,7 +738,7 @@ async function resolvePayouts(room: BlackjackRoom) {
     p.status = 'done';
 
     // Update session stats
-    const totalBetForHand = p.bet + p.splitHands.reduce((s, sh) => s + sh.bet, 0) + p.insuranceBet;
+    const totalBetForHand = totalBet + p.insuranceBet;
     p.sessionStats.totalBet += totalBetForHand;
     p.sessionStats.totalWon += totalPayout + insurancePayout;
     p.sessionStats.handsPlayed++;
@@ -627,11 +796,27 @@ async function resolvePayouts(room: BlackjackRoom) {
   broadcastTableState(room);
 
   room.resultsTimer = setTimeout(() => {
-    for (const [userId, p] of room.players) {
-      const sock = ioRef.sockets.sockets.get(p.socketId);
-      if (!sock || !sock.connected) {
-        room.players.delete(userId);
-        userToRoom.delete(userId);
+    // Prune players who left or disconnected, now that payouts have settled.
+    for (const [uid, p] of room.players) {
+      const sock = p.socketId ? ioRef.sockets.sockets.get(p.socketId) : null;
+      if (p.pendingRemoval || !sock || !sock.connected) {
+        room.players.delete(uid);
+        userToRoom.delete(uid);
+        ioRef.to(roomKey(room.roomId)).emit(S2C.PLAYER_LEFT, { userId: uid, seatIndex: p.seatIndex });
+
+        if (room.ownerId === uid && room.players.size > 0) {
+          const newOwner = room.players.values().next().value!;
+          room.ownerId = newOwner.userId;
+          room.ownerName = newOwner.userName;
+          ioRef.to(roomKey(room.roomId)).emit(S2C.ROOM_UPDATED, {
+            ownerId: room.ownerId,
+            ownerName: room.ownerName,
+            maxPlayers: room.maxPlayers,
+            name: room.name,
+            privacy: room.privacy,
+            joinCode: room.joinCode,
+          });
+        }
       }
     }
 
@@ -640,6 +825,7 @@ async function resolvePayouts(room: BlackjackRoom) {
       return;
     }
 
+    broadcastRoomList();
     startBettingPhase(room);
   }, RESULTS_DISPLAY_MS);
 }
@@ -722,6 +908,7 @@ function onCreateRoom(socket: Socket, payload: unknown) {
     insuranceTimer: null,
     roundNumber: 0,
     bettingDeadline: null,
+    turnDeadline: null,
   };
 
   rooms.set(roomId, room);
@@ -815,7 +1002,6 @@ function joinRoom(room: BlackjackRoom, socket: Socket) {
     userId,
     userName,
     avatarUrl,
-    hand: [],
     bet: 0,
     status: 'waiting',
     result: null,
@@ -823,9 +1009,8 @@ function joinRoom(room: BlackjackRoom, socket: Socket) {
     insuranceBet: 0,
     insuranceDecision: 'pending',
     insuranceResult: null,
-    splitHands: [],
-    activeSplitIndex: -1,
-    hasSplit: false,
+    hands: [],
+    activeHandIndex: 0,
     sessionStats: { totalBet: 0, totalWon: 0, handsPlayed: 0, handsWon: 0, blackjacks: 0 },
   };
 
@@ -886,10 +1071,35 @@ function leaveRoom(userId: string, socketId: string) {
   }
 
   if (room.currentTurnUserId === userId) {
-    onStand(room, userId);
+    forfeitPlayerTurn(room, userId);
   }
 
   const seatIndex = player.seatIndex;
+
+  // If the player leaves while a round is live and still has money at stake,
+  // keep the seat so payouts settle; detach the socket and prune after results.
+  const roundActive = room.phase !== 'idle' && room.phase !== 'betting';
+  const atStake = player.bet > 0 || player.insuranceBet > 0 ||
+    player.hands.some((h) => h.bet > 0);
+  if (roundActive && atStake) {
+    player.pendingRemoval = true;
+    player.socketId = '';
+    userToRoom.delete(userId);
+    socketToUserId.delete(socketId);
+    const leavingSock = ioRef.sockets.sockets.get(socketId);
+    if (leavingSock) {
+      leavingSock.leave(roomKey(roomId));
+      leavingSock.emit(S2C.ROOM_LEFT, { roomId });
+    }
+    logger.info({ event: 'bj_player_left_pending_payout', roomId, userId, seatIndex });
+    // Don't let a departing player stall the insurance phase.
+    if (room.phase === 'insurance' && player.insuranceDecision === 'pending') {
+      player.insuranceDecision = 'declined';
+      checkAllInsuranceDecided(room);
+    }
+    return;
+  }
+
   room.players.delete(userId);
   userToRoom.delete(userId);
   socketToUserId.delete(socketId);
@@ -1132,82 +1342,28 @@ function onDeclineInsurance(socket: Socket) {
   checkAllInsuranceDecided(room);
 }
 
-/** Get the active hand for a player (main hand or split hand). */
-function getActiveHand(player: PlayerSeat): { hand: Card[]; setHand: (h: Card[]) => void; bet: number } {
-  if (player.hasSplit && player.activeSplitIndex >= 0 && player.activeSplitIndex < player.splitHands.length) {
-    const sh = player.splitHands[player.activeSplitIndex];
-    return {
-      hand: sh.hand,
-      setHand: (h) => { sh.hand = h; },
-      bet: sh.bet,
-    };
-  }
-  return {
-    hand: player.hand,
-    setHand: (h) => { player.hand = h; },
-    bet: player.bet,
-  };
-}
-
-/** Advance to next split hand or next player. */
-function advanceSplitOrNext(room: BlackjackRoom, player: PlayerSeat) {
-  if (player.hasSplit && player.activeSplitIndex < player.splitHands.length - 1) {
-    // Move to next split hand
-    player.activeSplitIndex++;
-    const nextSplit = player.splitHands[player.activeSplitIndex];
-    // Deal second card to this split hand
-    nextSplit.hand.push(drawCard(room));
-    nextSplit.status = 'playing';
-    broadcastTableState(room);
-    return;
-  }
-
-  // All hands done for this player — determine overall status
-  if (player.hasSplit) {
-    // Overall status: if all busted → busted, if all standing → standing, else standing
-    const allBusted = player.splitHands.every((sh) => sh.status === 'busted') &&
-                      (player.hand.length === 0 || player.status === 'busted');
-    player.status = allBusted ? 'busted' : 'standing';
-  }
-
-  room.turnIndex++;
-  advanceToNextPlayer(room);
-}
-
 function onHit(room: BlackjackRoom, userId: string) {
   if (room.phase !== 'player_turns') return;
   if (room.currentTurnUserId !== userId) return;
 
   const player = room.players.get(userId);
-  if (!player || player.status !== 'playing') return;
+  if (!player) return;
+  const hand = player.hands[player.activeHandIndex];
+  if (!hand || hand.status !== 'playing') return;
 
-  const active = getActiveHand(player);
-  const card = drawCard(room);
-  active.hand.push(card);
+  hand.cards.push(drawCard(room));
 
-  ioRef.to(roomKey(room.roomId)).emit(S2C.CARD_DEALT, {
-    target: 'player',
-    userId,
-    card,
-    handValue: handValue(active.hand).value,
-    splitIndex: player.hasSplit ? player.activeSplitIndex : undefined,
-  });
-
-  if (isBusted(active.hand)) {
-    if (player.hasSplit && player.activeSplitIndex >= 0) {
-      player.splitHands[player.activeSplitIndex].status = 'busted';
-    } else {
-      player.status = 'busted';
-    }
-    advanceSplitOrNext(room, player);
-  } else if (handValue(active.hand).value === 21) {
-    if (player.hasSplit && player.activeSplitIndex >= 0) {
-      player.splitHands[player.activeSplitIndex].status = 'standing';
-    } else {
-      player.status = 'standing';
-    }
-    advanceSplitOrNext(room, player);
+  if (isBusted(hand.cards)) {
+    hand.status = 'busted';
+    broadcastTableState(room);
+    advanceHandOrPlayer(room, player);
+  } else if (handValue(hand.cards).value === 21) {
+    hand.status = 'standing';
+    broadcastTableState(room);
+    advanceHandOrPlayer(room, player);
   } else {
+    // Turn continues with the same hand — give it a fresh clock.
+    armTurnTimer(room, userId);
     broadcastTableState(room);
   }
 }
@@ -1217,14 +1373,11 @@ function onStand(room: BlackjackRoom, userId: string) {
   if (room.currentTurnUserId !== userId) return;
 
   const player = room.players.get(userId);
-  if (!player || player.status !== 'playing') return;
+  if (!player) return;
+  const hand = player.hands[player.activeHandIndex];
+  if (!hand || hand.status !== 'playing') return;
 
-  if (player.hasSplit && player.activeSplitIndex >= 0) {
-    player.splitHands[player.activeSplitIndex].status = 'standing';
-  } else {
-    player.status = 'standing';
-  }
-  advanceSplitOrNext(room, player);
+  standActiveHand(room, player);
 }
 
 async function onSplit(room: BlackjackRoom, socket: Socket, userId: string) {
@@ -1232,27 +1385,25 @@ async function onSplit(room: BlackjackRoom, socket: Socket, userId: string) {
   if (room.currentTurnUserId !== userId) return;
 
   const player = room.players.get(userId);
-  if (!player || player.status !== 'playing') return;
+  if (!player) return;
+  const hand = player.hands[player.activeHandIndex];
+  if (!hand || hand.status !== 'playing') return;
 
-  // Can only split on 2 cards of same rank
-  if (player.hand.length !== 2) {
+  // Can only split a fresh two-card hand of matching rank.
+  if (hand.cards.length !== 2) {
     socket.emit(S2C.ERROR, { message: 'Can only split with 2 cards.' });
     return;
   }
-
-  // Check if cards have same rank (10/J/Q/K all count as 10-value for splitting)
-  const rankVal = (r: string) => (['10', 'J', 'Q', 'K'].includes(r) ? 10 : r);
-  if (rankVal(player.hand[0].rank) !== rankVal(player.hand[1].rank)) {
+  if (splitRank(hand.cards[0].rank) !== splitRank(hand.cards[1].rank)) {
     socket.emit(S2C.ERROR, { message: 'Can only split matching cards.' });
     return;
   }
-
-  if (player.hasSplit) {
-    socket.emit(S2C.ERROR, { message: 'Already split.' });
+  if (player.hands.length >= MAX_HANDS) {
+    socket.emit(S2C.ERROR, { message: `Maximum of ${MAX_HANDS} hands reached.` });
     return;
   }
 
-  const splitBet = player.bet;
+  const splitBet = hand.bet;
 
   // Deduct coins for the split bet
   try {
@@ -1278,23 +1429,39 @@ async function onSplit(room: BlackjackRoom, socket: Socket, userId: string) {
 
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
 
-    // Split the hand: first card stays in main hand, second goes to split
-    const secondCard = player.hand.pop()!;
-    player.hasSplit = true;
-    player.activeSplitIndex = -1; // playing main hand first
+    const isAces = hand.cards[0].rank === 'A';
 
-    // Create split hand with the second card
-    player.splitHands = [{
-      hand: [secondCard],
-      bet: splitBet,
-      status: 'waiting',
-      result: null,
-      payout: 0,
-    }];
+    // Move the second card into a brand-new hand inserted right after this one.
+    const movedCard = hand.cards.pop()!;
+    hand.isSplit = true;
+    hand.fromSplitAces = isAces;
 
-    // Deal a second card to the main hand
-    player.hand.push(drawCard(room));
+    const newHand = makeHand([movedCard], splitBet);
+    newHand.isSplit = true;
+    newHand.fromSplitAces = isAces;
+    player.hands.splice(player.activeHandIndex + 1, 0, newHand);
 
+    // Deal the current hand its replacement second card.
+    hand.cards.push(drawCard(room));
+
+    if (isAces) {
+      // Split aces take one card only — auto-stand and let play move on (the
+      // sibling ace hand is handled the same way when it is activated).
+      hand.status = isBusted(hand.cards) ? 'busted' : 'standing';
+      broadcastTableState(room);
+      advanceHandOrPlayer(room, player);
+      return;
+    }
+
+    if (handValue(hand.cards).value === 21) {
+      hand.status = 'standing';
+      broadcastTableState(room);
+      advanceHandOrPlayer(room, player);
+      return;
+    }
+
+    // Player keeps playing this hand — refresh the clock for the extra work.
+    armTurnTimer(room, userId);
     broadcastTableState(room);
   } catch (err) {
     if (err instanceof Error && err.message === 'INSUFFICIENT_COINS') {
@@ -1311,14 +1478,20 @@ async function onDoubleDown(room: BlackjackRoom, socket: Socket, userId: string)
   if (room.currentTurnUserId !== userId) return;
 
   const player = room.players.get(userId);
-  if (!player || player.status !== 'playing') return;
+  if (!player) return;
+  const hand = player.hands[player.activeHandIndex];
+  if (!hand || hand.status !== 'playing') return;
 
-  if (player.hand.length !== 2) {
-    socket.emit(S2C.ERROR, { message: 'Can only double down on initial hand.' });
+  if (hand.cards.length !== 2) {
+    socket.emit(S2C.ERROR, { message: 'Can only double down on a two-card hand.' });
+    return;
+  }
+  if (hand.fromSplitAces) {
+    socket.emit(S2C.ERROR, { message: 'Cannot double a split ace.' });
     return;
   }
 
-  const additionalBet = player.bet;
+  const additionalBet = hand.bet;
 
   try {
     const prisma = getPrismaClient();
@@ -1341,27 +1514,15 @@ async function onDoubleDown(room: BlackjackRoom, socket: Socket, userId: string)
       return updated.coins;
     });
 
-    player.bet *= 2;
+    hand.bet *= 2;
+    hand.doubled = true;
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
 
-    const card = drawCard(room);
-    player.hand.push(card);
+    hand.cards.push(drawCard(room));
+    hand.status = isBusted(hand.cards) ? 'busted' : 'standing';
 
-    ioRef.to(roomKey(room.roomId)).emit(S2C.CARD_DEALT, {
-      target: 'player',
-      userId,
-      card,
-      handValue: handValue(player.hand).value,
-    });
-
-    if (isBusted(player.hand)) {
-      player.status = 'busted';
-    } else {
-      player.status = 'standing';
-    }
-
-    room.turnIndex++;
-    advanceToNextPlayer(room);
+    broadcastTableState(room);
+    advanceHandOrPlayer(room, player);
   } catch (err) {
     if (err instanceof Error && err.message === 'INSUFFICIENT_COINS') {
       socket.emit(S2C.ERROR, { message: 'Not enough coins to double down.' });
@@ -1462,7 +1623,7 @@ export function handleBlackjackDisconnect(_io: Server, socket: Socket): void {
   }
 
   if (room.phase === 'player_turns' && room.currentTurnUserId === userId) {
-    onStand(room, userId);
+    forfeitPlayerTurn(room, userId);
   }
 
   if (room.phase === 'idle' || room.phase === 'betting') {

@@ -1,0 +1,23 @@
+{
+  "cancel": "ยกเลิก",
+  "custom-amount": "จำนวนเงินที่กำหนดเอง",
+  "duration": "ระยะเวลา",
+  "gift-a-membership": "มอบสิทธิ์การเป็นสมาชิก",
+  "gift-desc": "มอบสิทธิ์การเป็นสมาชิกให้ผู้ใช้รายนี้ด้วยเหรียญ",
+  "gift-desc-named": "มอบสิทธิ์การเป็นสมาชิกให้ {{name}} ด้วยเหรียญ",
+  "gift-error": "ไม่สามารถมอบสิทธิ์การเป็นสมาชิกได้",
+  "gift-for": "มอบให้",
+  "gift-sign-in": "โปรดลงชื่อเข้าใช้เพื่อมอบสิทธิ์การเป็นสมาชิก",
+  "gift-success": "มอบสิทธิ์ {{tier}} {{months}} เดือนสำเร็จ!",
+  "gift-success-named": "มอบสิทธิ์ {{tier}} {{months}} เดือนให้ {{name}} สำเร็จ!",
+  "note-placeholder": "เพิ่มหมายเหตุ (ไม่บังคับ)",
+  "sending": "กำลังส่ง…",
+  "tier": "ระดับ",
+  "tip-amount-group-label": "จำนวนทิป",
+  "tip-btn": "ทิป",
+  "tip-dialog-description": "ส่งเหรียญ{{recipient}}เพื่อแสดงความชื่นชม",
+  "tip-dialog-title": "ส่งทิป",
+  "tip-error": "ไม่สามารถส่งทิปได้",
+  "tip-sign-in": "โปรดลงชื่อเข้าใช้เพื่อส่งทิป",
+  "tip-success": "ส่งทิป {{amount}} เหรียญ{{recipient}} สำเร็จ!"
+}

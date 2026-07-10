@@ -1,19 +1,20 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import { journalEntries, getEntryById } from './journalData';
 import { JournalEntryCard } from './JournalEntry';
 import type { JournalCategory } from '@/lib/forest-explorer/types';
 
-const CATEGORIES: { id: JournalCategory | 'all'; label: string }[] = [
-    { id: 'all', label: 'All' },
-    { id: 'personal', label: 'Personal' },
-    { id: 'lore', label: 'Lore' },
-    { id: 'landmark', label: 'Landmarks' },
-    { id: 'hint', label: 'Hints' },
-    { id: 'creature', label: 'Creatures' },
-    { id: 'history', label: 'History' },
+const CATEGORIES: { id: JournalCategory | 'all'; labelKey: string; labelDefault: string }[] = [
+    { id: 'all', labelKey: 'journal-category-all', labelDefault: 'All' },
+    { id: 'personal', labelKey: 'journal-category-personal', labelDefault: 'Personal' },
+    { id: 'lore', labelKey: 'journal-category-lore', labelDefault: 'Lore' },
+    { id: 'landmark', labelKey: 'journal-category-landmarks', labelDefault: 'Landmarks' },
+    { id: 'hint', labelKey: 'journal-category-hints', labelDefault: 'Hints' },
+    { id: 'creature', labelKey: 'journal-category-creatures', labelDefault: 'Creatures' },
+    { id: 'history', labelKey: 'journal-category-history', labelDefault: 'History' },
 ];
 
 export function JournalOverlay() {
@@ -22,6 +23,7 @@ export function JournalOverlay() {
     const discoveredEntries = useStoryStore(s => s.discoveredEntries);
     const currentAct = useStoryStore(s => s.currentAct);
 
+    const { t } = useTranslation("c-forest-explorer");
     const [activeCategory, setActiveCategory] = useState<JournalCategory | 'all'>('all');
 
     // Release pointer lock when journal opens
@@ -70,10 +72,10 @@ export function JournalOverlay() {
             <div className="relative z-10 flex flex-col h-full max-w-2xl mx-auto w-full px-4 py-8">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-white">Journal</h2>
+                    <h2 className="text-xl font-bold text-white">{t("journal-title", { defaultValue: "Journal" })}</h2>
                     <div className="flex items-center gap-3">
                         <span className="text-white/30 text-xs">
-                            {discoveredEntries.length}/{journalEntries.length} entries
+                            {t("journal-entries-count", { defaultValue: "{{discovered}}/{{total}} entries", discovered: discoveredEntries.length, total: journalEntries.length })}
                         </span>
                         <button
                             className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors cursor-pointer"
@@ -96,7 +98,7 @@ export function JournalOverlay() {
                             }`}
                             onClick={() => setActiveCategory(cat.id)}
                         >
-                            {cat.label}
+                            {t(cat.labelKey, { defaultValue: cat.labelDefault })}
                         </button>
                     ))}
                 </div>
@@ -106,8 +108,8 @@ export function JournalOverlay() {
                     {displayedEntries.length === 0 ? (
                         <div className="text-center text-white/30 text-sm py-12">
                             {discoveredEntries.length === 0
-                                ? 'No entries discovered yet. Explore the forest to find inscriptions and notes.'
-                                : 'No entries in this category yet.'
+                                ? t("journal-no-entries-yet", { defaultValue: "No entries discovered yet. Explore the forest to find inscriptions and notes." })
+                                : t("journal-no-entries-category", { defaultValue: "No entries in this category yet." })
                             }
                         </div>
                     ) : (
@@ -119,7 +121,7 @@ export function JournalOverlay() {
 
                 {/* Footer hint */}
                 <div className="mt-4 text-center text-white/20 text-xs">
-                    Press TAB or ESC to close
+                    {t("journal-close-hint", { defaultValue: "Press TAB or ESC to close" })}
                 </div>
             </div>
         </div>

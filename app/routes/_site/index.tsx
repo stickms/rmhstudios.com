@@ -15,6 +15,11 @@ const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
 });
 
 export const Route = createFileRoute('/_site/')({
+  // `?q=` drives the feed search so a search (or hashtag click) is shareable.
+  validateSearch: (search: Record<string, unknown>): { q?: string } => {
+    const q = typeof search.q === 'string' ? search.q.trim() : '';
+    return q ? { q } : {};
+  },
   loader: () => fetchSidebarData(),
   head: () => ({
     meta: [

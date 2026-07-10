@@ -1,0 +1,20 @@
+{
+  "cancel": "キャンセル",
+  "details-placeholder": "詳細を追加（任意）",
+  "dialog-description": "問題の内容をお知らせください。報告は、報告対象者に対して匿名で行われます。",
+  "dialog-title": "コンテンツを報告",
+  "reason-harassment": "嫌がらせやいじめ",
+  "reason-hate": "ヘイトスピーチ",
+  "reason-illegal": "違法コンテンツ",
+  "reason-misinformation": "誤情報",
+  "reason-other": "その他",
+  "reason-self-harm": "自傷行為",
+  "reason-sexual": "性的または露骨なコンテンツ",
+  "reason-spam": "スパムまたは詐欺",
+  "reason-violence": "暴力または脅迫",
+  "submit-report": "報告を送信",
+  "submitting": "送信中…",
+  "toast-error": "報告を送信できませんでした。もう一度お試しください。",
+  "toast-sign-in": "コンテンツを報告するにはログインしてください。",
+  "toast-success": "ありがとうございます — チームで確認いたします。"
+}

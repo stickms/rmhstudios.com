@@ -14,15 +14,14 @@
         }
     },
     "include": [
-        "server/socket-server.ts",
         "server/shared/**/*.ts",
         "server/socket-server/**/*.ts",
         "server/rmhbox/**/*.ts",
         "server/rmhtube/**/*.ts",
-        "server/discord-bot/**/*.ts",
-        "server/discord-bot/**/*.tsx",
+        "server/recap/**/*.ts",
         "lib/rmhbox/**/*.ts",
         "lib/blackjack/logic.ts",
-        "lib/lights-out/**/*.ts"
+        "lib/lights-out/**/*.ts",
+        "lib/dream-rift/net/events.ts"
     ]
 }

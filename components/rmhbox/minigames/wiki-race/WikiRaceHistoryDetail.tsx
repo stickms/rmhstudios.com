@@ -14,6 +14,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { HistoryDetailProps, GameLog } from '@/lib/rmhbox/history-display-registry';
 
 // ─── Round data extraction ───────────────────────────────────────
@@ -162,6 +163,7 @@ export default function WikiRaceHistoryDetail({
     );
   }, [gameLog]);
 
+  const { t } = useTranslation("c-rmhbox");
   const totalRounds = rounds.length;
   const isMultiRound = totalRounds > 1;
   const timeLimit = gameLog.initialState?.timeLimitSeconds as number | undefined;
@@ -173,11 +175,11 @@ export default function WikiRaceHistoryDetail({
         <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase">
-              Wiki-Race — {totalRounds} Rounds
+              {t("wiki-race-n-rounds", { defaultValue: "Wiki-Race — {{count}} Rounds", count: totalRounds })}
             </h4>
             {timeLimit && (
               <span className="text-xs text-(--rmhbox-text-muted)">
-                {timeLimit}s per round
+                {t("time-limit-per-round", { defaultValue: "{{seconds}}s per round", seconds: timeLimit })}
               </span>
             )}
           </div>
@@ -199,7 +201,7 @@ export default function WikiRaceHistoryDetail({
       {/* Final scores */}
       <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
         <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-2">
-          {isMultiRound ? 'Cumulative Scores' : 'Final Scores'}
+          {isMultiRound ? t("cumulative-scores", { defaultValue: "Cumulative Scores" }) : t("final-scores", { defaultValue: "Final Scores" })}
         </h4>
         <div className="space-y-1">
           {[...players]
@@ -240,6 +242,7 @@ function RoundSection({
   players: HistoryDetailProps['players'];
   timeLimit: number | undefined;
 }) {
+  const { t } = useTranslation("c-rmhbox");
   // Sort players for this round: finishers first (by rank), then timeouts
   const sortedPlayers = useMemo(() => {
     return [...players].sort((a, b) => {
@@ -274,7 +277,7 @@ function RoundSection({
       <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
         <div className="flex items-center justify-between mb-2">
           <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase">
-            {showRoundHeader ? `Round ${round.round}` : 'Race Details'}
+            {showRoundHeader ? t("round-n", { defaultValue: "Round {{round}}", round: round.round }) : t("race-details", { defaultValue: "Race Details" })}
           </h4>
           <div className="flex items-center gap-2">
             {round.difficulty && (
@@ -299,7 +302,7 @@ function RoundSection({
         </div>
         {!showRoundHeader && timeLimit && (
           <div className="text-xs text-(--rmhbox-text-muted) mt-1">
-            Time limit: {timeLimit}s
+            {t("time-limit-seconds", { defaultValue: "Time limit: {{seconds}}s", seconds: timeLimit })}
           </div>
         )}
       </div>
@@ -307,7 +310,7 @@ function RoundSection({
       {/* Player paths for this round */}
       <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-4">
         <h4 className="text-sm font-semibold text-(--rmhbox-text-muted) mb-3">
-          Player Paths
+          {t("player-paths", { defaultValue: "Player Paths" })}
         </h4>
         <div className="space-y-3">
           {sortedPlayers.map((p) => {
@@ -345,7 +348,7 @@ function RoundSection({
                   <div className="flex items-center gap-2 text-xs">
                     {finish ? (
                       <span className="text-green-400 font-medium">
-                        ✓ Finished — {path.length - 1} clicks
+                        {t("finished-clicks", { defaultValue: "✓ Finished — {{clicks}} clicks", clicks: path.length - 1 })}
                         {(finish.payload.timeMs as number) != null && (
                           <>
                             {' • '}
@@ -358,16 +361,16 @@ function RoundSection({
                       </span>
                     ) : timeout ? (
                       <span className="text-red-400 font-medium">
-                        ✗ Timeout — {path.length - 1} clicks
+                        {t("timeout-clicks", { defaultValue: "✗ Timeout — {{clicks}} clicks", clicks: path.length - 1 })}
                       </span>
                     ) : (
                       <span className="text-(--rmhbox-text-muted)">
-                        In progress
+                        {t("in-progress", { defaultValue: "In progress" })}
                       </span>
                     )}
                     {backs > 0 && (
                       <span className="text-(--rmhbox-text-muted)">
-                        ({backs} back)
+                        {t("n-back", { defaultValue: "({{count}} back)", count: backs })}
                       </span>
                     )}
                     {roundScores?.[p.userId] != null && (
@@ -411,16 +414,15 @@ function RoundSection({
       {round.endAction && (
         <div className="rounded-lg border border-(--rmhbox-border) bg-(--rmhbox-bg) p-3">
           <h4 className="text-xs font-semibold text-(--rmhbox-text-muted) uppercase mb-1">
-            {showRoundHeader ? `Round ${round.round} End` : 'Game End'}
+            {showRoundHeader ? t("round-n-end", { defaultValue: "Round {{round}} End", round: round.round }) : t("game-end", { defaultValue: "Game End" })}
           </h4>
           <div className="text-xs text-(--rmhbox-text-muted)">
             <span className="text-(--rmhbox-text)">
               {(round.endAction.payload.reason as string)?.replace(/_/g, ' ') ??
-                'Game over'}
+                t("game-over", { defaultValue: "Game over" })}
             </span>
             {' — '}
-            {round.endAction.payload.finishedCount as number}/
-            {round.endAction.payload.totalPlayers as number} players finished
+            {t("players-finished", { defaultValue: "{{finished}}/{{total}} players finished", finished: round.endAction.payload.finishedCount as number, total: round.endAction.payload.totalPlayers as number })}
           </div>
         </div>
       )}

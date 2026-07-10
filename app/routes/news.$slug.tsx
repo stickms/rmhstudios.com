@@ -5,11 +5,14 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getNewsArticleBySlug } from '@/lib/news';
+import { buildCanonical } from '@/lib/seo';
+import { articleSchema, jsonLdScript } from '@/lib/schema';
 import ReactMarkdown from 'react-markdown';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Calendar, ExternalLink } from 'lucide-react';
 import { ShareButton } from '@/components/blog/ShareButton';
 import { getCategoryColor } from '@/lib/news-categories';
+import { useTranslation } from 'react-i18next';
 import {
   AnimatedH1, AnimatedH2, AnimatedH3, AnimatedP,
   AnimatedUl, AnimatedOl, AnimatedLi,
@@ -31,18 +34,34 @@ const fetchArticle = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/news/$slug')({
   loader: ({ params }) => fetchArticle({ data: params.slug }),
-  head: ({ loaderData }) => ({
+  head: ({ loaderData, params }) => ({
     meta: loaderData
       ? [
           { title: `${loaderData.title} | RMH News` },
           { name: 'description', content: loaderData.description },
         ]
       : [{ title: 'Article Not Found | RMH Studios' }],
+    links: [buildCanonical(`/news/${params.slug}`)],
+    scripts: loaderData
+      ? [
+          jsonLdScript(
+            articleSchema({
+              title: loaderData.title,
+              description: loaderData.description,
+              datePublished: loaderData.date,
+              path: `/news/${params.slug}`,
+              type: 'NewsArticle',
+              section: loaderData.category ?? undefined,
+            }),
+          ),
+        ]
+      : [],
   }),
   component: NewsArticlePage,
 });
 
 function NewsArticlePage() {
+  const { t } = useTranslation("pages");
   const article = Route.useLoaderData();
   const { slug } = Route.useParams();
 
@@ -50,9 +69,9 @@ function NewsArticlePage() {
     return (
       <main className="min-h-screen pt-20 pb-20 px-4 bg-(--site-bg)">
         <div className="container mx-auto max-w-3xl text-center">
-          <h1 className="text-3xl font-bold text-(--site-text)">Article not found</h1>
+          <h1 className="text-3xl font-bold text-(--site-text)">{t("article-not-found", { defaultValue: "Article not found" })}</h1>
           <Link to="/news" className="text-(--site-accent) mt-4 inline-block hover:underline">
-            &larr; Back to News
+            &larr; {t("back-to-news", { defaultValue: "Back to News" })}
           </Link>
         </div>
       </main>
@@ -68,7 +87,7 @@ function NewsArticlePage() {
           to="/news"
           className="inline-flex items-center gap-2 text-(--site-text-dim) hover:text-(--site-text) mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700"
         >
-          <ArrowLeft className="w-4 h-4" /> Back to News
+          <ArrowLeft className="w-4 h-4" /> {t("back-to-news", { defaultValue: "Back to News" })}
         </Link>
 
         <header className="mb-12">
@@ -100,7 +119,7 @@ function NewsArticlePage() {
         {article.sourceUrl && (
           <div className="mb-10 p-6 rounded-xl border border-(--site-border) bg-(--site-surface) animate-in fade-in slide-in-from-bottom-4 duration-700 delay-450 fill-mode-both">
             <p className="text-xs font-semibold uppercase tracking-widest text-(--site-accent) mb-2">
-              Original Source
+              {t("original-source", { defaultValue: "Original Source" })}
             </p>
             <p className="text-(--site-text) font-bold text-lg mb-1 leading-snug">
               {article.sourceTitle || article.title}
@@ -115,19 +134,19 @@ function NewsArticlePage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm font-bold text-(--site-accent) hover:opacity-80 transition-opacity"
             >
-              Read Original Article <ExternalLink className="w-4 h-4" />
+              {t("read-original-article", { defaultValue: "Read Original Article" })} <ExternalLink className="w-4 h-4" />
             </a>
           </div>
         )}
 
-        <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-(--site-text) prose-p:text-(--site-text-muted) prose-a:text-(--site-accent) hover:prose-a:text-(--site-accent-hover) prose-img:rounded-xl prose-img:border prose-img:border-(--site-border) prose-li:text-(--site-text-muted) prose-strong:text-(--site-text) prose-blockquote:border-l-(--site-accent)">
+        <div className="prose prose-invert prose-lg max-w-none break-words prose-code:break-words prose-headings:font-bold prose-headings:text-(--site-text) prose-p:text-(--site-text-muted) prose-a:text-(--site-accent) hover:prose-a:text-(--site-accent-hover) prose-img:rounded-xl prose-img:border prose-img:border-(--site-border) prose-li:text-(--site-text-muted) prose-strong:text-(--site-text) prose-blockquote:border-l-(--site-accent)">
           <ReactMarkdown components={animatedComponents}>{article.content}</ReactMarkdown>
         </div>
 
         <hr className="my-12 border-(--site-border)" />
 
         <div className="text-center">
-          <p className="text-(--site-text-dim) italic">End of Article</p>
+          <p className="text-(--site-text-dim) italic">{t("end-of-article", { defaultValue: "End of Article" })}</p>
         </div>
       </div>
     </article>

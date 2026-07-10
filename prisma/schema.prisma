@@ -19,8 +19,16 @@ model User {
   emailVerified   Boolean?
   password        String?   // Added for password login
   image           String?
+  stripeCustomerId String?  // Stripe customer id (set by @better-auth/stripe on signup)
   isAdmin         Boolean   @default(false)
   isVerified      Boolean   @default(false)
+  // Moderation: temporary/permanent ban (null = not banned)
+  bannedUntil     DateTime?
+  banReason       String?   @db.VarChar(500)
+  // Presence: last heartbeat from an active client (for "online now")
+  lastSeenAt      DateTime?
+  // Referral program: this user's shareable invite code (lazily generated)
+  referralCode    String?   @unique
   // ─── RMHark AI bot users (generated + driven by the bot-worker) ──
   isBot           Boolean   @default(false) // synthetic account created by the bot-worker
   botPersona      String?   @db.Text         // private prompt seed describing the bot's posting "theme"
@@ -45,6 +53,12 @@ model User {
   synapseStormProfile SynapseStormPlayer?
   rmhboxProfile       RMHboxProfile?
   rmhtypeProfiles     RmhTypeProfile[]
+  libraryUploads      LibraryDocument[] @relation("LibraryUploader")
+  libraryCollections  LibraryCollection[] @relation("LibraryCollectionOwner")
+  /// Per-user library upload quota override (null → the default cap). Raised by
+  /// an admin when approving a quota appeal.
+  libraryUploadQuota  Int?
+  libraryQuotaRequests LibraryQuotaRequest[] @relation("LibraryQuotaRequests")
   rmhstudyProfile     RmhStudyProfile?
   voidBreakerProfile  VoidBreakerPlayer?
   dailyPuzzleScores   DailyPuzzleScore[]
@@ -52,6 +66,8 @@ model User {
   versecraftProgress  VersecraftProgress?
   forestExplorerSave  ForestExplorerSave?
   dreamRiftProfile    DreamRiftPlayer?
+  dreamRiftCoopRuns   DreamRiftCoopRun[]
+  farmingSimFarm      FarmingSimFarm?
 
   // Slice-It Library Relations
   uploadedSongs Song[]            @relation("SongUploader")
@@ -87,16 +103,118 @@ model User {
   rmharkCommentReposts RMHarkCommentRepost[]
   rmharkCommentViews   RMHarkCommentView[]
   rmharkPollVotes      RMHarkPollVote[]
+  announcementPollVotes FeedAnnouncementPollVote[]
+  rmharkReactions        RMHarkReaction[]
+  rmharkCommentReactions RMHarkCommentReaction[]
 
   // Profile & Social
   profile   UserProfile?
   followers Follow[]     @relation("UserFollowing")
   following Follow[]     @relation("UserFollowers")
 
+  // Notifications
+  notifications      Notification[] @relation("UserNotifications")
+  notificationsSent  Notification[] @relation("UserNotificationActor")
+
+  // Engagement: bookmarks, achievements, daily streak
+  bookmarks    RMHarkBookmark[]
+  achievements UserAchievement[]
+  dailyStreak  DailyStreak?
+  postUnlocks  PostUnlock[]
+
+  // Communities created + memberships
+  communitiesCreated Community[]       @relation("CommunityCreator")
+  communityMembers   CommunityMember[]
+  communityAnnouncements CommunityAnnouncement[] @relation("CommunityAnnouncementAuthor")
+
+  // Progression: quests + battle-pass season progress
+  quests         UserQuest[]
+  seasonProgress UserSeasonProgress[]
+
+  // Composer: saved drafts + scheduled posts
+  scheduledPosts ScheduledPost[]
+
+  // Daily coin wheel spins
+  wheelSpins DailyWheelSpin[]
+
+  // Coin staking (interest-bearing vault)
+  coinStake CoinStake?
+
+
+  // Creator storefront
+  storefrontProducts  StorefrontProduct[]  @relation("StorefrontCreator")
+  storefrontPurchases StorefrontPurchase[] @relation("StorefrontBuyer")
+
+  // AI persona chatbots
+  aiPersonas        AiPersona[]        @relation("PersonaOwner")
+  aiPersonaMessages AiPersonaMessage[]
+
+  // Build marketplace unlocks
+  buildUnlocks BuildUnlock[]
+
+  // Ranked play: ELO ratings + challenges
+  eloRatings            EloRating[]
+  challengesIssued      RankedChallenge[] @relation("ChallengeChallenger")
+  challengesReceived    RankedChallenge[] @relation("ChallengeOpponent")
+
+  // Gifted (coin-funded) memberships
+  giftMembershipsReceived GiftMembership[] @relation("GiftRecipient")
+  giftMembershipsSent     GiftMembership[] @relation("GiftGifter")
+
+  // Group DMs
+  groupChatsOwned   GroupChat[]       @relation("GroupOwner")
+  groupMemberships  GroupChatMember[]
+  groupMessages     GroupMessage[]
+  groupPollVotes    GroupPollVote[]
+  groupMessageReactions GroupMessageReaction[]
+
+  // RMHStudy flashcards
+  flashcardDecks   FlashcardDeck[]
+  flashcardReviews FlashcardReview[]
+
+  // RMHTube channel subscriptions
+  rmhtubeSubscriptions RmhTubeSubscription[] @relation("TubeSubscriber")
+  rmhtubeSubscribers   RmhTubeSubscription[] @relation("TubeChannel")
+
+  // RMHMusic "guess the song" game
+  musicPuzzles       MusicGuessPuzzle[]
+  musicGuessAttempts MusicGuessAttempt[]
+
+  // Developer API keys + one-time promo claims
+  developerApiKeys DeveloperApiKey[]
+  webhookEndpoints WebhookEndpoint[] @relation("UserWebhookEndpoints")
+  promoClaims      PromoClaim[]
+
+  // Economy: shop inventory, coin ledger (tips/gifts)
+  inventory       UserInventory[]
+  coinsSent       CoinTransaction[] @relation("CoinSender")
+  coinsReceived   CoinTransaction[] @relation("CoinRecipient")
+
+  // Prediction markets: created markets + open positions
+  predictionsCreated  Prediction[]         @relation("PredictionCreator")
+  predictionPositions PredictionPosition[] @relation("PredictionPositions")
+
+  // Admin-authored feed announcements
+  feedAnnouncements FeedAnnouncement[]
+
+  // Admin moderation: audit log entries authored, strikes received/issued
+  auditLogs      AdminAuditLog[] @relation("AuditAdmin")
+  strikes        UserStrike[]    @relation("StrikeUser")
+  strikesIssued  UserStrike[]    @relation("StrikeAdmin")
+
+  // Moderation (reports filed / received, blocks & mutes)
+  reportsFiled    ContentReport[] @relation("ReportReporter")
+  reportsResolved ContentReport[] @relation("ReportResolver")
+  blocksMade      UserBlock[]     @relation("BlockBlocker")
+  blocksReceived  UserBlock[]     @relation("BlockBlocked")
+  mutesMade       UserMute[]      @relation("MuteMuter")
+  mutesReceived   UserMute[]      @relation("MuteMuted")
+
   // Direct Messages
   conversationsAsOne Conversation[]  @relation("ConversationParticipantOne")
   conversationsAsTwo Conversation[]  @relation("ConversationParticipantTwo")
   directMessages     DirectMessage[]
+  directMessageReactions DirectMessageReaction[]
 
   // rmhcode & User Builds
   rmhCodeTokens RmhCodeToken[]
@@ -129,8 +247,71 @@ model User {
   ladderApplications LadderApplication[]
   ladderAlerts       LadderAlert[]
 
+  // ─── RMH Rideshare ────────────────────────────────────────────
+  rideshareDriver       RideshareDriver?
+  rideshareApplications RideshareDriver[] @relation("RideshareApplicationReviewer")
+  ridesRequested        Ride[]            @relation("RideRider")
+  ridesDriven           Ride[]            @relation("RideDriver")
+  rideMessages          RideMessage[]
+  rideSavedPlaces       RideSavedPlace[]
+
+  // ─── RMHHomes (community housing marketplace) ─────────────────
+  homeListings  HomeListing[]
+  homeFavorites HomeFavorite[]
+  homeWatches   HomeWatch[]
+
+  media         Media[]
+
+  // WebAuthn passkeys (@better-auth/passkey)
+  passkeys Passkey[]
+
+  // Web Push subscriptions
+  pushSubscriptions PushSubscription[]
+
+  // Referral program
+  referralsMade     Referral[] @relation("Referrer")
+  referralReceived  Referral?  @relation("Referee")
+
+  // Notification preferences (per-type opt-outs)
+  notificationPreference NotificationPreference?
+
   @@index([isBot])
   @@map("user")
+}
+
+// Per-type notification opt-outs. A missing row means "everything on"
+// (the default) — rows are created on first save from the preferences panel.
+// Moderation notices (SYSTEM/strike) are always delivered regardless.
+model NotificationPreference {
+  userId   String  @id
+  likes    Boolean @default(true)
+  comments Boolean @default(true) // includes replies
+  follows  Boolean @default(true)
+  mentions Boolean @default(true)
+  reposts  Boolean @default(true)
+  system   Boolean @default(true) // achievements, levels, coins, …
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preference")
+}
+
+// One row per successfully attributed invite. `rewardedAt` is set when the
+// mutual coin reward fires (on the referee's first achievement unlock, so
+// throwaway signups earn nothing).
+model Referral {
+  id         String    @id @default(cuid())
+  referrerId String
+  refereeId  String    @unique
+  code       String    @db.VarChar(32)
+  createdAt  DateTime  @default(now())
+  rewardedAt DateTime?
+
+  referrer User @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee  User @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId])
+  @@map("referral")
 }
 
 model Session {
@@ -145,6 +326,7 @@ model Session {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("session")
 }
 
@@ -166,6 +348,8 @@ model Account {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([providerId, accountId])
   @@map("account")
 }
 
@@ -178,6 +362,46 @@ model Verification {
   updatedAt  DateTime? @updatedAt
 
   @@map("verification")
+}
+
+// Web Push subscriptions — one row per browser/device a user enabled push on.
+// Endpoint is globally unique; rows are removed when the push service reports
+// the subscription gone (404/410) or the user disables push on that device.
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?  @db.VarChar(255)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscription")
+}
+
+// WebAuthn credentials for password-less sign-in (@better-auth/passkey).
+// Field names/types follow the plugin's expected schema exactly.
+model Passkey {
+  id           String    @id @default(cuid())
+  name         String?
+  publicKey    String
+  userId       String
+  credentialID String
+  counter      Int
+  deviceType   String
+  backedUp     Boolean
+  transports   String?
+  createdAt    DateTime? @default(now())
+  aaguid       String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([credentialID])
+  @@map("passkey")
 }
 
 // --- Blog Models ---
@@ -723,6 +947,21 @@ model RmhTubePlaylistItem {
   @@map("rmhtube_playlist_item")
 }
 
+/// Channel subscription — subscribe to another user's RMHTube activity (#32).
+model RmhTubeSubscription {
+  id           String   @id @default(cuid())
+  subscriberId String
+  channelId    String
+  createdAt    DateTime @default(now())
+
+  subscriber User @relation("TubeSubscriber", fields: [subscriberId], references: [id], onDelete: Cascade)
+  channel    User @relation("TubeChannel", fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriberId, channelId])
+  @@index([channelId])
+  @@map("rmhtube_subscription")
+}
+
 model RmhTubeUserStats {
   userId                String   @id
   totalWatchTimeMinutes Int      @default(0)
@@ -877,6 +1116,45 @@ model VersecraftProgress {
   @@map("versecraft_progress")
 }
 
+// A generated, shareable "version" — one seed deterministically maps to one
+// world (cast, setting, route). Persisted so anyone with the seed replays the
+// exact same world, and so the (paid) DeepSeek generation is done once.
+model VersecraftWorld {
+  id        String   @id @default(cuid())
+  seed      String   @unique
+  mcPrompt  String   @default("")
+  source    String   @default("fallback") // 'ai' | 'fallback'
+  world     Json
+  createdBy String?
+  plays     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  chapters VersecraftGenChapter[]
+
+  @@index([createdAt(sort: Desc)])
+  @@map("versecraft_world")
+}
+
+// A generated chapter cached per (seed, index, choicePathHash) so each player's
+// choice-divergent prose is reproducible, and the DeepSeek call for a given
+// (seed, index, path) happens at most once. `ledger` holds the scribe's
+// distillation of this chapter, persisted alongside the prose.
+model VersecraftGenChapter {
+  id            String @id @default(cuid())
+  seed          String
+  index         Int
+  choicePathHash String @default("")
+  source        String @default("fallback")
+  content       Json
+  ledger        Json?
+
+  world VersecraftWorld @relation(fields: [seed], references: [seed], onDelete: Cascade)
+
+  @@unique([seed, index, choicePathHash])
+  @@map("versecraft_gen_chapter")
+}
+
 // ─── Forest Explorer (Story Mode) ──────────────────────────────────
 
 model ForestExplorerSave {
@@ -902,6 +1180,40 @@ model Feedback {
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   @@map("feedback")
+}
+
+// ─── Security / Bug Bounty reports ────────────────────────────────────
+
+enum SecurityReportStatus {
+  NEW
+  TRIAGING
+  ACCEPTED
+  RESOLVED
+  DUPLICATE
+  NOT_APPLICABLE
+}
+
+model SecurityReport {
+  id            String               @id @default(cuid())
+  title         String
+  category      String
+  severity      String
+  affectedArea  String?
+  description   String
+  reporterName  String?
+  reporterEmail String?
+  status        SecurityReportStatus @default(NEW)
+  adminNotes    String?
+  // Set when the reporter was signed in; nullable for external researchers.
+  userId        String?
+  // SHA-256 of the client IP — abuse correlation without storing raw IPs.
+  ipHash        String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("security_report")
 }
 
 // ─── Altair Meta Progression (persisted to DB) ────────────────────────
@@ -999,15 +1311,35 @@ model RMHark {
   userId    String
   content   String   @db.Text
   gifUrl    String?  @db.Text
+  imageUrls String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // ─── Denormalized engagement counters (Phase 1: eventual consistency) ──
+  // Maintained transactionally by the like/comment/repost/view routes via
+  // atomic increment/decrement, so the feed read path never needs `_count`
+  // aggregation. Drift is reconciled by scripts/reconcile-feed-counts.ts.
+  likeCount    Int @default(0)
+  commentCount Int @default(0)
+  repostCount  Int @default(0)
+  viewCount    Int @default(0)
+
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  likes    RMHarkLike[]
-  comments RMHarkComment[]
-  reposts  RMHarkRepost[]
-  views    RMHarkView[]
-  poll     RMHarkPoll?
+  likes     RMHarkLike[]
+  comments  RMHarkComment[]
+  reposts   RMHarkRepost[]
+  views     RMHarkView[]
+  media     Media[]
+  poll      RMHarkPoll?
+  bookmarks RMHarkBookmark[]
+
+  // Paid unlock: coins required to view content (null/0 = free)
+  unlockPrice Int?
+  unlocks     PostUnlock[]
+
+  // Optional community this post belongs to
+  communityId String?
+  community   Community? @relation(fields: [communityId], references: [id], onDelete: SetNull)
 
   // Self-relation for reposts (quote-repost displays the original inline)
   originalId String?
@@ -1017,9 +1349,39 @@ model RMHark {
   deletedAt      DateTime?
   deletedByAdmin Boolean   @default(false)
 
+  // Audience: who can see this post.
+  audience RMHarkAudience @default(PUBLIC)
+
+  // Author-pinned to the top of their profile (one per user, enforced in code).
+  pinnedAt DateTime?
+
+  // Edit history: editedAt set on first edit; prior versions stored separately.
+  editedAt DateTime?
+  edits    RMHarkEdit[]
+
+  reactions RMHarkReaction[]
+
   @@index([userId])
   @@index([createdAt(sort: Desc)])
+  // Composite index backing keyset pagination on (createdAt desc, id desc)
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
+  @@index([userId, pinnedAt])
   @@map("rmheet")
+}
+
+model RMHarkReaction {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([rmheetId, userId, emoji])
+  @@index([rmheetId])
+  @@map("rmheet_reaction")
 }
 
 model RMHarkLike {
@@ -1059,8 +1421,27 @@ model RMHarkComment {
   deletedAt      DateTime?
   deletedByAdmin Boolean   @default(false)
 
+  reactions RMHarkCommentReaction[]
+
   @@index([rmheetId, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([parentId])
   @@map("rmheet_comment")
+}
+
+model RMHarkCommentReaction {
+  id        String   @id @default(cuid())
+  commentId String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  comment RMHarkComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId, emoji])
+  @@index([commentId])
+  @@map("rmheet_comment_reaction")
 }
 
 model RMHarkCommentLike {
@@ -1115,6 +1496,9 @@ model RMHarkRepost {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([rmheetId, userId])
+  @@index([userId])
+  // Composite index backing keyset pagination on (createdAt desc, id desc)
+  @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@map("rmheet_repost")
 }
 
@@ -1135,11 +1519,12 @@ model RMHarkView {
 }
 
 model RMHarkPoll {
-  id          String   @id @default(cuid())
-  rmheetId    String   @unique
-  question    String   @db.VarChar(200)
-  multiSelect Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  id          String    @id @default(cuid())
+  rmheetId    String    @unique
+  question    String    @db.VarChar(200)
+  multiSelect Boolean   @default(false)
+  closesAt    DateTime? // optional scheduled close; null = never closes
+  createdAt   DateTime  @default(now())
 
   rmhark  RMHark             @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   options RMHarkPollOption[]
@@ -1199,10 +1584,83 @@ model UserProfile {
   hasProfilePet         Boolean   @default(false)
   showProfilePet        Boolean   @default(true)
 
+  // Progression: lifetime platform XP (level is derived from this)
+  xp                    Int       @default(0)
+
+  // Creator tip goal (monthly coins target shown on the profile)
+  tipGoal               Int?
+  tipGoalLabel          String?   @db.VarChar(80)
+
+  // First-run onboarding checklist: when the completion reward was claimed
+  // (null = not claimed; also acts as the atomic double-claim guard)
+  onboardingRewardedAt  DateTime?
+
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
   @@map("user_profile")
+}
+
+// ─── Prediction markets ────────────────────────────────────────────
+
+enum PredictionStatus {
+  PENDING // submitted by a user, awaiting admin approval
+  OPEN // approved, trading is live
+  RESOLVED_YES
+  RESOLVED_NO
+  DENIED // rejected by an admin
+}
+
+/// A binary (YES/NO) prediction market priced by an LMSR market maker. The live
+/// YES price is the implied probability and moves as users trade. Shares pay 1
+/// coin each on the winning side at resolution. `creatorId` is null for markets
+/// seeded by the DeepSeek worker.
+model Prediction {
+  id            String           @id @default(cuid())
+  title         String           @db.VarChar(160)
+  description   String?          @db.VarChar(1000)
+  creatorId     String?
+  status        PredictionStatus @default(PENDING)
+  isAiGenerated Boolean          @default(false)
+
+  // LMSR state (floats). Shares pay 1 coin each on the winning side.
+  b      Float @default(120) // liquidity parameter
+  qYes   Float @default(0) // YES shares outstanding
+  qNo    Float @default(0) // NO shares outstanding
+  volume Int   @default(0) // total coins traded (display only)
+
+  closesAt   DateTime? // trading deadline
+  resolvedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  creator   User?                @relation("PredictionCreator", fields: [creatorId], references: [id], onDelete: SetNull)
+  positions PredictionPosition[]
+
+  @@index([status, createdAt(sort: Desc)])
+  @@map("prediction")
+}
+
+/// A user's aggregate holdings in a single market. Updated per trade; settled at
+/// resolution (winning shares credited back as coins).
+model PredictionPosition {
+  id           String  @id @default(cuid())
+  predictionId String
+  userId       String
+  yesShares    Float   @default(0)
+  noShares     Float   @default(0)
+  spent        Int     @default(0) // net coins spent (cost basis)
+  settled      Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prediction Prediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+  user       User       @relation("PredictionPositions", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([predictionId, userId])
+  @@index([userId])
+  @@map("prediction_position")
 }
 
 // ─── News ─────────────────────────────────────────────────────────
@@ -1324,6 +1782,166 @@ model RmhMusicChatMessage {
   @@map("rmh_music_chat_message")
 }
 
+/// "Guess the song" puzzle (#33). Players reveal progressive text hints and
+/// guess the title; needs no external audio. Answers are matched leniently
+/// against `acceptedAnswers`.
+model MusicGuessPuzzle {
+  id              String   @id @default(cuid())
+  authorId        String
+  title           String   @db.VarChar(160) // canonical answer (song title)
+  artist          String   @db.VarChar(160)
+  hints           Json // ordered array of hint strings
+  acceptedAnswers Json // lowercased acceptable answers
+  plays           Int      @default(0)
+  solves          Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  author   User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  attempts MusicGuessAttempt[]
+
+  @@index([createdAt(sort: Desc)])
+  @@map("music_guess_puzzle")
+}
+
+model MusicGuessAttempt {
+  id        String   @id @default(cuid())
+  puzzleId  String
+  userId    String
+  solved    Boolean  @default(false)
+  hintsUsed Int      @default(0)
+  createdAt DateTime @default(now())
+
+  puzzle MusicGuessPuzzle @relation(fields: [puzzleId], references: [id], onDelete: Cascade)
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([puzzleId, userId])
+  @@index([userId])
+  @@map("music_guess_attempt")
+}
+
+/// A developer API key for the subscriber-gated REST API. Only a SHA-256 hash
+/// of the key is stored — the plaintext is shown to the user exactly once at
+/// creation. `prefix` is a short, non-secret label for the UI.
+model DeveloperApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  name       String    @db.VarChar(100)
+  prefix     String    @db.VarChar(16)
+  hashedKey  String    @unique
+  /// Last 4 chars of the plaintext secret, kept for display so a user can tell
+  /// keys apart in the dashboard without the secret ever being recoverable.
+  lastFour   String?   @db.VarChar(8)
+  /// Granular permission grants (e.g. "read:profile", "write:posts"). An empty
+  /// array means the key has no permissions and every scoped endpoint rejects
+  /// it. Enforced per-request against the endpoint's required scope.
+  scopes     String[]  @default([])
+  /// Optional hard expiry. Once past, the key is rejected exactly like a
+  /// revoked key (re-checked on every request, never trusted from a cache).
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idempotencyKeys  ApiIdempotencyKey[]
+
+  @@index([userId])
+  @@map("developer_api_key")
+}
+
+/// Stores the first response produced for a given (key, Idempotency-Key) so a
+/// retried write replays the original result instead of acting twice. Rows are
+/// short-lived; a periodic sweep removes entries older than the replay window.
+model ApiIdempotencyKey {
+  id           String   @id @default(cuid())
+  keyId        String
+  idempotency  String   @db.VarChar(255)
+  method       String   @db.VarChar(8)
+  path         String   @db.VarChar(255)
+  /// SHA-256 of the request body, so the same Idempotency-Key sent with a
+  /// different payload is flagged as a conflict rather than silently replayed.
+  requestHash  String   @db.VarChar(64)
+  statusCode   Int
+  responseBody String   @db.Text
+  createdAt    DateTime @default(now())
+
+  key DeveloperApiKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+
+  @@unique([keyId, idempotency])
+  @@index([createdAt])
+  @@map("api_idempotency_key")
+}
+
+/// A user-registered webhook subscription. Events the owner produces (posts,
+/// follows, likes, …) are delivered to `url` as HMAC-signed POSTs. The `secret`
+/// is shown once at creation and used to sign every delivery so receivers can
+/// verify authenticity.
+model WebhookEndpoint {
+  id           String   @id @default(cuid())
+  userId       String
+  url          String   @db.VarChar(2048)
+  /// Signing secret (whsec_…). Stored to compute the HMAC on each delivery.
+  secret       String   @db.VarChar(128)
+  /// Subscribed event names. "*" matches every event.
+  events       String[] @default([])
+  description  String?  @db.VarChar(200)
+  enabled      Boolean  @default(true)
+  /// Consecutive delivery failures; the endpoint auto-disables past a threshold.
+  failureCount Int      @default(0)
+  lastDeliveryAt DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User              @relation("UserWebhookEndpoints", fields: [userId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@index([userId])
+  @@map("webhook_endpoint")
+}
+
+/// One delivery attempt record for a webhook event. Pending rows are drained by
+/// a retry sweep with exponential backoff; terminal rows are kept for the
+/// recent-deliveries view in the dashboard.
+model WebhookDelivery {
+  id             String    @id @default(cuid())
+  endpointId     String
+  event          String    @db.VarChar(64)
+  payload        Json
+  status         WebhookDeliveryStatus @default(PENDING)
+  attempts       Int       @default(0)
+  responseStatus Int?
+  error          String?   @db.VarChar(500)
+  nextAttemptAt  DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  deliveredAt    DateTime?
+
+  endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@index([endpointId, createdAt(sort: Desc)])
+  @@map("webhook_delivery")
+}
+
+enum WebhookDeliveryStatus {
+  PENDING
+  DELIVERED
+  FAILED
+}
+
+/// Records a one-time promotional claim (e.g. the free-month offer) so the
+/// server can enforce once-ever redemption regardless of client state.
+model PromoClaim {
+  id        String   @id @default(cuid())
+  userId    String
+  promo     String   @db.VarChar(64)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promo])
+  @@map("promo_claim")
+}
+
 // ─── DM Privacy ───────────────────────────────────────────────────
 
 enum DmPrivacy {
@@ -1356,15 +1974,37 @@ model DirectMessage {
   conversationId String
   senderId       String
   content        String   @db.VarChar(2000)
+  // Optional rich media — mirrors RMHark posts. A message can be text, media,
+  // or both. gifUrl is a single GIF (KLIPY/Tenor/Giphy/direct); imageUrls are
+  // up to 4 feed-image URLs owned by the sender.
+  gifUrl         String?  @db.Text
+  imageUrls      String[] @default([])
   read           Boolean  @default(false)
   createdAt      DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
+  reactions DirectMessageReaction[]
+
   @@index([conversationId, createdAt])
   @@index([senderId])
   @@map("direct_message")
+}
+
+model DirectMessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  message DirectMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("direct_message_reaction")
 }
 
 // ─── rmhcode CLI Authentication ─────────────────────────────────────
@@ -1409,6 +2049,8 @@ model UserBuild {
   isCurated    Boolean         @default(false) // Added for "Official Build" status
   position     Int             @default(0) // Added for manual sorting by admins
   technologies Json            @default("[]")
+  // Marketplace: coins to unlock the readme/repo/demo (null/0 = free).
+  price        Int?
   likeCount    Int             @default(0)
   commentCount Int             @default(0)
   viewCount    Int             @default(0)
@@ -1424,11 +2066,220 @@ model UserBuild {
   likes      BuildLike[]
   comments   BuildComment[]
   views      BuildView[]
+  unlocks    BuildUnlock[]
 
   @@index([userId])
   @@index([visibility, publishedAt(sort: Desc)])
   @@index([slug])
   @@map("user_build")
+}
+
+/// A paid unlock of a build's gated content (#16). Mirrors PostUnlock.
+model BuildUnlock {
+  id        String   @id @default(cuid())
+  userId    String
+  buildId   String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  build UserBuild @relation(fields: [buildId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, buildId])
+  @@index([buildId])
+  @@map("build_unlock")
+}
+
+/// Per-game ELO rating for ranked play (#5). Updated when a challenge resolves.
+model EloRating {
+  id        String   @id @default(cuid())
+  userId    String
+  game      String   @db.VarChar(40)
+  rating    Int      @default(1000)
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  draws     Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, game])
+  @@index([game, rating(sort: Desc)])
+  @@map("elo_rating")
+}
+
+/// An async ranked challenge between two players. The result is trust-reported
+/// by either participant; resolving it updates both ELO ratings.
+model RankedChallenge {
+  id           String    @id @default(cuid())
+  game         String    @db.VarChar(40)
+  challengerId String
+  opponentId   String
+  status       String    @db.VarChar(12) @default("pending") // pending|accepted|declined|done
+  winnerId     String? // null winner on a done challenge = draw
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+
+  challenger User @relation("ChallengeChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent   User @relation("ChallengeOpponent", fields: [opponentId], references: [id], onDelete: Cascade)
+
+  @@index([opponentId, status])
+  @@index([challengerId, status])
+  @@map("ranked_challenge")
+}
+
+/// A coin-funded gift membership (#18). Grants a tier for a time window,
+/// independent of Stripe billing. getUserTier folds active grants in.
+model GiftMembership {
+  id        String   @id @default(cuid())
+  userId    String // recipient
+  gifterId  String? // null = system grant
+  tier      String   @db.VarChar(16) // 'starter' | 'pro'
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user   User  @relation("GiftRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  gifter User? @relation("GiftGifter", fields: [gifterId], references: [id], onDelete: SetNull)
+
+  @@index([userId, expiresAt])
+  @@map("gift_membership")
+}
+
+/// A group direct-message thread (#15). Distinct from 1-on-1 Conversations.
+model GroupChat {
+  id            String   @id @default(cuid())
+  name          String   @db.VarChar(60)
+  ownerId       String
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  owner    User              @relation("GroupOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members  GroupChatMember[]
+  messages GroupMessage[]
+
+  @@map("group_chat")
+}
+
+model GroupChatMember {
+  id         String   @id @default(cuid())
+  groupId    String
+  userId     String
+  lastReadAt DateTime @default(now())
+  joinedAt   DateTime @default(now())
+
+  group GroupChat @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@map("group_chat_member")
+}
+
+model GroupMessage {
+  id        String   @id @default(cuid())
+  groupId   String
+  senderId  String
+  content   String   @db.VarChar(2000)
+  // Optional rich media (mirrors DMs): a single GIF and/or up to 4 images.
+  gifUrl    String?  @db.Text
+  imageUrls String[] @default([])
+  // Optional inline poll: a question + 2–6 option labels (votes in GroupPollVote).
+  pollQuestion String?  @db.VarChar(300)
+  pollOptions  String[] @default([])
+  createdAt DateTime @default(now())
+
+  group     GroupChat       @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender    User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  pollVotes GroupPollVote[]
+
+  reactions GroupMessageReaction[]
+
+  @@index([groupId, createdAt])
+  @@map("group_message")
+}
+
+model GroupMessageReaction {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  emoji     String   @db.VarChar(32)
+  createdAt DateTime @default(now())
+
+  message GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, emoji])
+  @@index([messageId])
+  @@map("group_message_reaction")
+}
+
+model GroupPollVote {
+  id        String   @id @default(cuid())
+  messageId String
+  userId    String
+  optionIdx Int
+  createdAt DateTime @default(now())
+
+  message GroupMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@map("group_poll_vote")
+}
+
+/// RMHStudy flashcard deck (#31). Decks are personal but can be shared publicly.
+model FlashcardDeck {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String   @db.VarChar(100)
+  description String?  @db.VarChar(500)
+  isPublic    Boolean  @default(false)
+  cardCount   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards Flashcard[]
+
+  @@index([userId])
+  @@index([isPublic, updatedAt(sort: Desc)])
+  @@map("flashcard_deck")
+}
+
+model Flashcard {
+  id        String   @id @default(cuid())
+  deckId    String
+  front     String   @db.Text
+  back      String   @db.Text
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  deck    FlashcardDeck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  reviews FlashcardReview[]
+
+  @@index([deckId])
+  @@map("flashcard")
+}
+
+/// Per-user spaced-repetition state for a card (SM-2). Lets several users study
+/// the same (public) deck with independent schedules.
+model FlashcardReview {
+  id           String   @id @default(cuid())
+  userId       String
+  cardId       String
+  easeFactor   Float    @default(2.5)
+  intervalDays Int      @default(0)
+  repetitions  Int      @default(0)
+  dueAt        DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card Flashcard @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cardId])
+  @@index([userId, dueAt])
+  @@map("flashcard_review")
 }
 
 model BuildVersion {
@@ -1538,6 +2389,45 @@ model DreamRiftPlayer {
 
   @@index([highScoreNormal(sort: Desc)], map: "idx_dream_rift_high_score")
   @@index([bestStage(sort: Desc)], map: "idx_dream_rift_best_stage")
+}
+
+// A single completed multiplayer (co-op) Dream Rift run. Powers the co-op
+// leaderboards: highest combined squad score and longest time survived.
+model DreamRiftCoopRun {
+  id            String   @id @default(uuid())
+  difficulty    String   @default("normal")
+  combinedScore Int      @default(0)
+  timeSurvived  Int      @default(0) // seconds the squad stayed alive
+  stageReached  Int      @default(1)
+  cleared       Boolean  @default(false)
+  playerCount   Int      @default(2)
+  // [{ name, charId, score }] for each squad member (host-submitted snapshot).
+  players       Json
+  hostUserId    String?
+  hostUser      User?    @relation(fields: [hostUserId], references: [id], onDelete: SetNull)
+  createdAt     DateTime @default(now())
+
+  @@index([difficulty, combinedScore(sort: Desc)], map: "idx_dream_rift_coop_score")
+  @@index([difficulty, timeSurvived(sort: Desc)], map: "idx_dream_rift_coop_time")
+}
+
+// RMH Farming Simulator — one persistent farm per user. The full live world
+// (tiles, money, day/season/weather, inventory, seeds, tool levels, members,
+// shipped value) is stored as a JSON blob; `code` is the shareable join code
+// other players use to request access.
+model FarmingSimFarm {
+  id        String   @id @default(cuid())
+  ownerId   String   @unique
+  code      String   @unique
+  name      String
+  saveData  Json
+  shippedValue Int    @default(0) // surfaced column for future leaderboards
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@map("farming_sim_farm")
 }
 
 // Tracks which Discord channel was last used for an activity per guild.
@@ -1920,6 +2810,95 @@ model DiscordChatSession {
   @@map("discord_chat_session")
 }
 
+// One "Alex" tamagotchi per Discord guild — a communal virtual pet the server
+// raises together. Stats decay over real time (lazily recomputed from
+// statsUpdatedAt on every read), Alex grows from infant to adult with age, and
+// the discord-bot worker sends proactive care/ambient/life-event messages into
+// lastChannelId. See go-services/internal/discordbot/pet*.go.
+model DiscordAlexPet {
+  guildId           String    @id
+  name              String    @default("Alex")
+  generation        Int       @default(1)
+  bornAt            DateTime  @default(now())
+
+  hunger            Float     @default(80)
+  happiness         Float     @default(80)
+  energy            Float     @default(90)
+  hygiene           Float     @default(90)
+  health            Float     @default(100)
+  intelligence      Float     @default(0)
+
+  alive             Boolean   @default(true)
+  lifeStage         String    @default("infant")
+  career            String?
+
+  statsUpdatedAt    DateTime  @default(now())
+  lastInteractionAt DateTime  @default(now())
+  lastChannelId     String?
+
+  lastFedAt         DateTime?
+  lastPlayedAt      DateTime?
+  lastCleanedAt     DateTime?
+  lastSleptAt       DateTime?
+  lastStudiedAt     DateTime?
+  lastChatAt        DateTime?
+
+  lastCareAlertAt   DateTime?
+  lastAmbientAt     DateTime?
+  diedAt            DateTime?
+  introSentAt       DateTime?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@map("discord_alex_pet")
+}
+
+// Per-guild bookkeeping for the single global Alex: which channel he last spoke
+// / was used in for a server, and whether he's already introduced himself there.
+// Decoupled from the (global) pet so his care/ambient posts can broadcast to
+// every server's last-used channel.
+model DiscordAlexGuild {
+  guildId       String    @id
+  lastChannelId String?
+  introSentAt   DateTime?
+  // Per-server proactive-message level, set via /alexmessages by the bot owner or
+  // a member with Manage Messages:
+  //   "all"  — random ambient posts + care alerts + life events (default)
+  //   "care" — care alerts + life events only (no random chatter)
+  //   "off"  — completely silent (no proactive messages at all)
+  messageLevel  String    @default("all")
+  // Per-server override for Alex's personality/system prompt, set via /prompt.
+  // NULL means Alex uses his built-in default persona (for /chat and mentions).
+  customPrompt  String?
+  updatedAt     DateTime  @updatedAt
+
+  @@map("discord_alex_guild")
+}
+
+// Global, per-user caretaking tally that powers the /caretakers leaderboard. A
+// user's caretaking counts once across all servers (rows are keyed by a fixed
+// global sentinel in the guildId column).
+model DiscordAlexCaretaker {
+  guildId      String
+  userId       String
+  username     String
+  avatarHash   String? // Discord avatar hash, for the rendered /caretakers leaderboard image
+  feeds        Int      @default(0)
+  plays        Int      @default(0)
+  cleans       Int      @default(0)
+  naps         Int      @default(0)
+  talks        Int      @default(0)
+  studies      Int      @default(0)
+  interactions Int      @default(0) // replies to Alex's community prompts/events
+  points       Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  @@id([guildId, userId])
+  @@index([guildId, points])
+  @@map("discord_alex_caretaker")
+}
+
 model VibePage {
   id                  String   @id @default(cuid())
   slug                String   @unique // short URL-safe identifier, e.g. "neon-city-3k"
@@ -1927,6 +2906,11 @@ model VibePage {
   title               String?           // model-generated page title (tab + OG)
   description         String?           // model-generated description (OG/social)
   html                String            // full generated HTML — always mirrors the latest version
+  // Generation lifecycle: a brand-new page is created up front as "generating" (with
+  // a reserved slug) so the client can navigate to it immediately and the generation
+  // survives a dropped streaming connection; it flips to "ready" once the build is
+  // persisted, or "error" if generation failed. Existing/legacy rows default "ready".
+  status              String   @default("ready") // "generating" | "ready" | "error"
   thumbnailUrl        String?           // "/api/vibe/thumb/<slug>?v=<ts>" once the screenshot is captured
   thumbnailStale      Boolean  @default(true) // true → the vibe-worker (re)renders the screenshot
   conversationHistory Json              // array of { role, content } turns for "customize" follow-ups
@@ -2407,4 +3391,1107 @@ model LadderAlert {
 
   @@unique([userId, jobId, type])
   @@map("ladder_alert")
+}
+
+// Stripe subscription state, synced by @better-auth/stripe via webhook.
+model Subscription {
+  id                   String    @id @default(cuid())
+  plan                 String    // "starter" | "pro" | "enterprise"
+  referenceId          String    // the owning User.id
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  status               String?   // active | trialing | past_due | canceled | incomplete | ...
+  periodStart          DateTime?
+  periodEnd            DateTime?
+  cancelAtPeriodEnd    Boolean?
+  seats                Int?
+  trialStart           DateTime?
+  trialEnd             DateTime?
+
+  @@index([referenceId])
+  @@index([stripeCustomerId])
+}
+
+// ─── Notifications ────────────────────────────────────────────────────────
+// In-app notifications for social events (likes, comments, replies, follows,
+// mentions, reposts). Recipient is `userId`; `actorId` is who triggered it.
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  REPLY
+  FOLLOW
+  MENTION
+  REPOST
+  SYSTEM
+}
+
+model Notification {
+  id         String           @id @default(cuid())
+  userId     String // recipient
+  actorId    String? // who triggered it (null for system notifications)
+  type       NotificationType
+  entityType String?          @db.VarChar(32) // e.g. "rmhark", "comment", "user"
+  entityId   String?          @db.VarChar(64)
+  preview    String?          @db.VarChar(280) // short snapshot of the content
+  link       String?          @db.VarChar(500) // where clicking should take the user
+  read       Boolean          @default(false)
+  createdAt  DateTime         @default(now())
+
+  user  User  @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  actor User? @relation("UserNotificationActor", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([userId, read, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("notification")
+}
+
+// ─── Moderation ───────────────────────────────────────────────────────────
+// User-facing reporting plus block/mute. Admins review reports via the queue.
+
+enum ReportStatus {
+  PENDING
+  REVIEWING
+  RESOLVED
+  DISMISSED
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  HATE
+  VIOLENCE
+  SEXUAL
+  SELF_HARM
+  MISINFORMATION
+  ILLEGAL
+  OTHER
+}
+
+model ContentReport {
+  id          String       @id @default(cuid())
+  reporterId  String
+  reason      ReportReason
+  details     String?      @db.VarChar(1000)
+  // What is being reported. entityType is "rmhark" | "comment" | "user" | "build" | "dm".
+  entityType  String       @db.VarChar(32)
+  entityId    String       @db.VarChar(64)
+  // Convenience: the user who owns the reported content (for quick triage).
+  targetUserId String?
+
+  status      ReportStatus @default(PENDING)
+  resolvedById String?
+  resolvedAt  DateTime?
+  moderatorNote String?    @db.VarChar(1000)
+
+  createdAt   DateTime     @default(now())
+
+  reporter   User  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  resolvedBy User? @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([entityType, entityId])
+  @@index([reporterId])
+  @@map("content_report")
+}
+
+model UserBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
+  blocker User @relation("BlockBlocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked User @relation("BlockBlocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
+  @@map("user_block")
+}
+
+model UserMute {
+  id        String   @id @default(cuid())
+  muterId   String
+  mutedId   String
+  createdAt DateTime @default(now())
+
+  muter User @relation("MuteMuter", fields: [muterId], references: [id], onDelete: Cascade)
+  muted User @relation("MuteMuted", fields: [mutedId], references: [id], onDelete: Cascade)
+
+  @@unique([muterId, mutedId])
+  @@index([muterId])
+  @@map("user_mute")
+}
+
+// ─── Bookmarks ────────────────────────────────────────────────────────────
+model RMHarkBookmark {
+  id        String   @id @default(cuid())
+  userId    String
+  rmheetId  String
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rmheetId])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("rmheet_bookmark")
+}
+
+// ─── Achievements ─────────────────────────────────────────────────────────
+// Definitions live in code (lib/achievements/catalog.ts); only unlocks are
+// persisted. `progress` supports incremental achievements (e.g. "win 50 games").
+
+model UserAchievement {
+  id            String   @id @default(cuid())
+  userId        String
+  achievementId String   @db.VarChar(64) // matches a catalog key
+  progress      Int      @default(0)
+  unlockedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@index([userId, unlockedAt])
+  @@map("user_achievement")
+}
+
+// ─── Daily Streak ─────────────────────────────────────────────────────────
+model DailyStreak {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  current       Int      @default(0)
+  longest       Int      @default(0)
+  lastCheckIn   DateTime?
+  lastDateKey   String?  @db.VarChar(10) // YYYY-MM-DD in the user's tz
+  totalCheckIns Int      @default(0)
+  freezeTokens  Int      @default(0) // optional "streak freeze" inventory
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("daily_streak")
+}
+
+// ─── Cosmetics Shop ───────────────────────────────────────────────────────
+// Catalog lives in code (lib/shop/catalog.ts). UserInventory records ownership
+// and which item is currently equipped per slot.
+
+enum ShopItemKind {
+  THEME // unlocks a premium site theme
+  PET // profile pet variant
+  NAME_COLOR // username color
+  BADGE // profile flair badge
+  BANNER // profile banner
+  POST_FLAIR // decoration shown on the user's posts
+  AVATAR_FRAME // ring around the avatar
+}
+
+model UserInventory {
+  id        String       @id @default(cuid())
+  userId    String
+  itemId    String       @db.VarChar(64) // catalog key
+  kind      ShopItemKind
+  equipped  Boolean      @default(false)
+  acquiredAt DateTime    @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@index([userId, kind])
+  @@map("user_inventory")
+}
+
+// ─── Coin Ledger (tips & gifts) ───────────────────────────────────────────
+enum CoinTxnType {
+  TIP
+  GIFT
+  PURCHASE
+  REWARD
+  ADMIN
+}
+
+model CoinTransaction {
+  id          String      @id @default(cuid())
+  senderId    String?     // null for system rewards
+  recipientId String
+  amount      Int
+  type        CoinTxnType
+  note        String?     @db.VarChar(280)
+  entityType  String?     @db.VarChar(32) // e.g. "rmhark", "profile"
+  entityId    String?     @db.VarChar(64)
+  createdAt   DateTime    @default(now())
+
+  sender    User? @relation("CoinSender", fields: [senderId], references: [id], onDelete: SetNull)
+  recipient User  @relation("CoinRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+
+  @@index([recipientId, createdAt(sort: Desc)])
+  @@index([senderId, createdAt(sort: Desc)])
+  @@map("coin_transaction")
+}
+
+// ─── Admin Feed Announcements ─────────────────────────────────────────────
+// Pinned banners admins publish from the admin panel; rendered at the top of
+// the home feed for everyone until deactivated or expired.
+
+model FeedAnnouncement {
+  id          String    @id @default(cuid())
+  title       String    @db.VarChar(120)
+  body        String    @db.VarChar(1000)
+  linkUrl     String?   @db.VarChar(500)
+  linkLabel   String?   @db.VarChar(60)
+  variant     String    @default("info") @db.VarChar(16) // info | success | warning | event
+  active      Boolean   @default(true)
+  pinned      Boolean   @default(true)
+  createdById String
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Rich attachments (mirrors RMHark): uploaded images, an embedded GIF/image
+  // URL, and an optional poll. Mentions/hashtags live inline in `body`.
+  imageUrls String[] @default([])
+  gifUrl    String?  @db.Text
+
+  createdBy User                  @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  poll      FeedAnnouncementPoll?
+
+  @@index([active, createdAt(sort: Desc)])
+  @@map("feed_announcement")
+}
+
+model FeedAnnouncementPoll {
+  id             String    @id @default(cuid())
+  announcementId String    @unique
+  question       String    @db.VarChar(200)
+  multiSelect    Boolean   @default(false)
+  closesAt       DateTime? // optional scheduled close; null = never closes
+  createdAt      DateTime  @default(now())
+
+  announcement FeedAnnouncement             @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  options      FeedAnnouncementPollOption[]
+
+  @@map("feed_announcement_poll")
+}
+
+model FeedAnnouncementPollOption {
+  id       String @id @default(cuid())
+  pollId   String
+  text     String @db.VarChar(80)
+  position Int
+
+  poll  FeedAnnouncementPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes FeedAnnouncementPollVote[]
+
+  @@index([pollId])
+  @@map("feed_announcement_poll_option")
+}
+
+model FeedAnnouncementPollVote {
+  id        String   @id @default(cuid())
+  optionId  String
+  userId    String
+  createdAt DateTime @default(now())
+
+  option FeedAnnouncementPollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  user   User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([optionId, userId])
+  @@index([optionId])
+  @@map("feed_announcement_poll_vote")
+}
+
+// ─── RMHark Edit History ──────────────────────────────────────────────────
+// One row per prior version, captured the moment before an edit is applied.
+model RMHarkEdit {
+  id        String   @id @default(cuid())
+  rmheetId  String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@index([rmheetId, createdAt(sort: Desc)])
+  @@map("rmheet_edit")
+}
+
+// ─── Admin Audit Log ──────────────────────────────────────────────────────
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  adminId    String
+  action     String   @db.VarChar(64) // e.g. "report.resolve", "user.ban"
+  targetType String?  @db.VarChar(32)
+  targetId   String?  @db.VarChar(64)
+  detail     String?  @db.VarChar(500)
+  createdAt  DateTime @default(now())
+
+  admin User @relation("AuditAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([targetType, targetId])
+  @@map("admin_audit_log")
+}
+
+// ─── User Strikes ─────────────────────────────────────────────────────────
+model UserStrike {
+  id        String    @id @default(cuid())
+  userId    String
+  adminId   String
+  reason    String    @db.VarChar(500)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user  User @relation("StrikeUser", fields: [userId], references: [id], onDelete: Cascade)
+  admin User @relation("StrikeAdmin", fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("user_strike")
+}
+
+enum RMHarkAudience {
+  PUBLIC // anyone
+  FOLLOWERS // the author's followers only
+  PRIVATE // only the author
+}
+
+// ─── Paid post unlocks ────────────────────────────────────────────────────
+model PostUnlock {
+  id        String   @id @default(cuid())
+  userId    String
+  rmheetId  String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, rmheetId])
+  @@index([rmheetId])
+  @@map("post_unlock")
+}
+
+// ─── Communities ──────────────────────────────────────────────────────────
+enum CommunityRole {
+  MEMBER
+  MOD
+  ADMIN
+}
+
+model Community {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String   @db.VarChar(60)
+  description String?  @db.VarChar(500)
+  color       String?  @db.VarChar(16) // accent color for the header
+  icon        String?  @db.VarChar(8)  // emoji
+  isPrivate   Boolean  @default(false)
+  memberCount Int      @default(1)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  createdBy     User                    @relation("CommunityCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members       CommunityMember[]
+  posts         RMHark[]
+  announcements CommunityAnnouncement[]
+
+  @@index([memberCount(sort: Desc)])
+  @@map("community")
+}
+
+// Mod/admin announcements pinned to the top of a community.
+model CommunityAnnouncement {
+  id          String   @id @default(cuid())
+  communityId String
+  authorId    String
+  body        String   @db.VarChar(2000)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  author    User      @relation("CommunityAnnouncementAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([communityId, createdAt(sort: Desc)])
+  @@map("community_announcement")
+}
+
+model CommunityMember {
+  id          String        @id @default(cuid())
+  communityId String
+  userId      String
+  role        CommunityRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+
+  community Community @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([communityId, userId])
+  @@index([userId])
+  @@map("community_member")
+}
+
+// ─── Progression: Quests ──────────────────────────────────────────────────
+// Quest definitions live in code (lib/quests/catalog.ts). One row per user per
+// quest per period (daily/weekly), tracking progress + claim state.
+model UserQuest {
+  id        String   @id @default(cuid())
+  userId    String
+  questId   String   @db.VarChar(64)
+  periodKey String   @db.VarChar(16) // e.g. "2026-06-21" (daily) or "2026-W25" (weekly)
+  progress  Int      @default(0)
+  completed Boolean  @default(false)
+  claimed   Boolean  @default(false)
+  updatedAt DateTime @default(now()) @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questId, periodKey])
+  @@index([userId, periodKey])
+  @@map("user_quest")
+}
+
+// ─── Progression: Battle Pass ─────────────────────────────────────────────
+// Season + tier rewards defined in code (lib/battlepass/season.ts). Premium
+// track is unlocked by spending RMH coins. Claimed tiers stored as a Json array.
+model UserSeasonProgress {
+  id           String   @id @default(cuid())
+  userId       String
+  seasonId     String   @db.VarChar(32)
+  seasonXp     Int      @default(0)
+  premium      Boolean  @default(false)
+  claimedFree  Json     @default("[]") // tier numbers claimed on the free track
+  claimedPaid  Json     @default("[]") // tier numbers claimed on the premium track
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seasonId])
+  @@map("user_season_progress")
+}
+
+/// A saved draft (scheduledAt = null) or a scheduled post (scheduledAt set).
+/// Scheduled posts are materialized into real RMHarks lazily by the publisher
+/// once their time is due. `publishedId` links to the created post afterwards.
+model ScheduledPost {
+  id          String         @id @default(cuid())
+  userId      String
+  content     String         @db.Text
+  gifUrl      String?        @db.Text
+  imageUrls   String[]       @default([])
+  audience    RMHarkAudience @default(PUBLIC)
+  unlockPrice Int?
+  communityId String?
+  poll        Json? // { question, options[], multiSelect, durationHours }
+  scheduledAt DateTime? // null = plain draft
+  publishedId String? // set once published → the created RMHark id
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([scheduledAt])
+  @@map("scheduled_post")
+}
+
+/// One row per user per UTC day: the daily coin-wheel spin and its reward.
+/// The unique [userId, dateKey] enforces once-per-day server-side.
+model DailyWheelSpin {
+  id        String   @id @default(cuid())
+  userId    String
+  dateKey   String   @db.VarChar(16) // YYYY-MM-DD (UTC)
+  reward    Int
+  segment   Int // winning segment index (for animation replay)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dateKey])
+  @@index([userId])
+  @@map("daily_wheel_spin")
+}
+
+/// An interest-bearing coin vault (#18). One per user. Interest accrues lazily:
+/// each deposit/withdraw first rolls elapsed time into `accrued` so we never
+/// need a background job. `lastAccrued` marks the last roll-up time.
+model CoinStake {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  principal   Int      @default(0)
+  accrued     Int      @default(0)
+  lastAccrued DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("coin_stake")
+}
+
+/// A digital product a creator sells for coins (#19). The `deliverable` (a link,
+/// code, or message) is revealed only to the creator and to buyers. A 10%
+/// platform fee is burned on each sale as a coin sink.
+model StorefrontProduct {
+  id          String   @id @default(cuid())
+  creatorId   String
+  title       String   @db.VarChar(80)
+  description String?  @db.VarChar(500)
+  price       Int // coins
+  deliverable String?  @db.Text
+  active      Boolean  @default(true)
+  salesCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator   User                 @relation("StorefrontCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+  purchases StorefrontPurchase[]
+
+  @@index([creatorId])
+  @@map("storefront_product")
+}
+
+model StorefrontPurchase {
+  id        String   @id @default(cuid())
+  productId String
+  buyerId   String
+  pricePaid Int
+  createdAt DateTime @default(now())
+
+  product StorefrontProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  buyer   User              @relation("StorefrontBuyer", fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, buyerId])
+  @@index([buyerId])
+  @@map("storefront_purchase")
+}
+
+/// A user-authored AI persona chatbot (#8). Its `systemPrompt` shapes replies;
+/// conversations are per (persona, user) and stored in AiPersonaMessage.
+model AiPersona {
+  id           String   @id @default(cuid())
+  ownerId      String
+  name         String   @db.VarChar(40)
+  tagline      String?  @db.VarChar(120)
+  systemPrompt String   @db.VarChar(2000)
+  greeting     String?  @db.VarChar(500)
+  emoji        String?  @db.VarChar(8)
+  // AI-generated avatar (xAI → webp in object storage). Null until the
+  // background generation kicked off on create succeeds; the UI falls back to
+  // the emoji until then.
+  avatarUrl    String?  @db.VarChar(500)
+  isPublic     Boolean  @default(true)
+  chatCount    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  owner    User               @relation("PersonaOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  messages AiPersonaMessage[]
+
+  @@index([ownerId])
+  @@index([isPublic, chatCount(sort: Desc)])
+  @@map("ai_persona")
+}
+
+model AiPersonaMessage {
+  id        String   @id @default(cuid())
+  personaId String
+  userId    String
+  role      String   @db.VarChar(12) // 'user' | 'assistant'
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  persona AiPersona @relation(fields: [personaId], references: [id], onDelete: Cascade)
+  user    User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([personaId, userId, createdAt])
+  @@map("ai_persona_message")
+}
+
+// ─── RMH Rideshare ─────────────────────────────────────────────────
+// Free, community ride-hailing. Riders map pickup/drop-off via OSM and pick
+// a ride class (RMH-X, RMH-XL, …). Drivers apply with a license + vehicle
+// details; admins review and approve, after which the license image is
+// deleted from storage for privacy.
+
+enum RideClass {
+  RMH_X
+  RMH_XL
+  RMH_COMFORT
+  RMH_GREEN
+  RMH_BLACK
+  RMH_BIKE
+  RMH_HELI
+}
+
+enum DriverApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RideStatus {
+  SCHEDULED
+  REQUESTED
+  ACCEPTED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model RideshareDriver {
+  id     String                  @id @default(cuid())
+  userId String                  @unique
+  status DriverApplicationStatus @default(PENDING)
+
+  // Vehicle details
+  vehicleMake  String    @db.VarChar(60)
+  vehicleModel String    @db.VarChar(60)
+  vehicleYear  Int
+  vehicleColor String    @db.VarChar(30)
+  licensePlate String    @db.VarChar(16)
+  vehicleClass RideClass @default(RMH_X)
+  seats        Int       @default(4)
+
+  // Availability: drivers toggle themselves online to receive ride requests.
+  isOnline Boolean @default(false)
+
+  // Live location (updated via heartbeats while a trip is active). Shown to the
+  // rider on the trip map; cleared between trips client-side by staleness.
+  lastLat           Float?
+  lastLng           Float?
+  locationUpdatedAt DateTime?
+
+  // Aggregate rating from completed trips (rider → driver).
+  ratingCount Int @default(0)
+  ratingTotal Int @default(0)
+
+  // Driver's licence number, self-reported on the application. We no longer
+  // collect or store licence images.
+  licenseNumber String? @db.VarChar(40)
+
+  // Review metadata
+  reviewedById    String?
+  reviewedAt      DateTime?
+  rejectionReason String?   @db.VarChar(500)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User?  @relation("RideshareApplicationReviewer", fields: [reviewedById], references: [id])
+
+  @@index([status])
+  @@map("rideshare_driver")
+}
+
+model Ride {
+  id        String     @id @default(cuid())
+  riderId   String
+  driverId  String?
+  rideClass RideClass  @default(RMH_X)
+  status    RideStatus @default(REQUESTED)
+
+  // Pickup
+  pickupLabel String @db.VarChar(300)
+  pickupLat   Float
+  pickupLng   Float
+
+  // Drop-off
+  dropoffLabel String @db.VarChar(300)
+  dropoffLat   Float
+  dropoffLng   Float
+
+  // Trip fare. `estimatedFareCents` is the quote at booking and the amount the
+  // rider pays for the trip; it also drives the driver payout split.
+  distanceMeters   Int?
+  durationSeconds  Int?
+  estimatedFareCents Int @default(0)
+
+  // Optional rider tip, added after a completed trip and paid to the driver
+  // in full. Zero until the rider tips.
+  tipCents Int @default(0)
+
+  // Set when the rider books a trip for later (status starts as SCHEDULED).
+  scheduledFor DateTime?
+
+  notes String? @db.VarChar(500)
+
+  // Post-trip ratings (1–5). `ratingByRider` rates the driver; `ratingByDriver`
+  // rates the rider.
+  ratingByRider  Int?
+  ratingByDriver Int?
+
+  requestedAt DateTime  @default(now())
+  acceptedAt  DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  rider    User          @relation("RideRider", fields: [riderId], references: [id], onDelete: Cascade)
+  driver   User?         @relation("RideDriver", fields: [driverId], references: [id])
+  messages RideMessage[]
+
+  @@index([status, rideClass, requestedAt])
+  @@index([riderId])
+  @@index([driverId])
+  @@map("ride")
+}
+
+model RideMessage {
+  id        String   @id @default(cuid())
+  rideId    String
+  senderId  String
+  content   String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  ride   Ride @relation(fields: [rideId], references: [id], onDelete: Cascade)
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([rideId, createdAt])
+  @@index([senderId])
+  @@map("ride_message")
+}
+
+model RideSavedPlace {
+  id      String @id @default(cuid())
+  userId  String
+  label   String @db.VarChar(40)
+  address String @db.VarChar(300)
+  lat     Float
+  lng     Float
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("ride_saved_place")
+}
+
+// ─── RMHHomes: House / Apartment finder ───────────────────────────────────────
+
+/// A listing a user has favorited. We store a full JSON `snapshot` of the
+enum HomeListingType {
+  RENT
+  SALE
+}
+
+enum HomePropertyType {
+  APARTMENT
+  HOUSE
+  CONDO
+  TOWNHOUSE
+  ROOM
+  OTHER
+}
+
+enum HomeListingStatus {
+  ACTIVE
+  RENTED
+  SOLD
+  REMOVED
+}
+
+/// A housing listing posted by an RMH user. This is the whole data model now —
+/// RMHHomes is a community marketplace, so every listing is real and owned by
+/// the `author`. No external aggregation, scraping, or generated data.
+model HomeListing {
+  id           String            @id @default(cuid())
+  authorId     String
+  status       HomeListingStatus @default(ACTIVE)
+  listingType  HomeListingType
+  propertyType HomePropertyType
+
+  title       String @db.VarChar(120)
+  description String @db.VarChar(4000)
+
+  /// Monthly rent (RENT) or total sale price (SALE), in whole USD cents.
+  priceCents Int
+
+  beds  Int
+  baths Float
+  sqft  Int?
+
+  // Location. `lat`/`lng` come from geocoding the address at post time and
+  // drive the map + radius search.
+  address    String? @db.VarChar(300)
+  city       String  @db.VarChar(120)
+  state      String  @db.VarChar(64)
+  postalCode String? @db.VarChar(16)
+  lat        Float
+  lng        Float
+
+  amenities     String[]  @default([])
+  petsAllowed   Boolean   @default(false)
+  availableFrom DateTime?
+
+  /// Uploaded photo URLs (S3/R2), first is the cover image.
+  images     String[] @default([])
+  /// Subset of `images` that were generated with AI (xAI). Drives the
+  /// "Generated by AI" disclaimer shown on those photos.
+  aiImages   String[] @default([])
+  viewsCount Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author    User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  favorites HomeFavorite[]
+
+  @@index([status, listingType, createdAt])
+  @@index([city, state])
+  @@index([authorId, status])
+  @@map("home_listing")
+}
+
+/// A user's favorited listing.
+model HomeFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  createdAt DateTime @default(now())
+
+  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing HomeListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, listingId])
+  @@index([userId, createdAt])
+  @@map("home_favorite")
+}
+
+/// A saved-search "watch": when a new listing is posted that matches these
+/// criteria, the owner gets an in-app notification. Criteria mirror the browse
+/// filters. `priceCents` bounds are stored in cents to match HomeListing.
+model HomeWatch {
+  id     String @id @default(cuid())
+  userId String
+  label  String @db.VarChar(120)
+
+  listingType   HomeListingType? // null = any
+  propertyTypes HomePropertyType[] @default([])
+
+  // Optional geographic scope: a center + radius (km). When set, matches must
+  // fall within the radius. `locationLabel` is shown in the UI.
+  locationLabel String? @db.VarChar(200)
+  lat           Float?
+  lng           Float?
+  radiusKm      Int?
+
+  minPriceCents Int?
+  maxPriceCents Int?
+  minBeds       Int?
+  minBaths      Float?
+  petsRequired  Boolean @default(false)
+
+  active         Boolean   @default(true)
+  lastNotifiedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([active])
+  @@map("home_watch")
+}
+
+// ─── Developer API: Media Upload ──────────────────────────────────────────────
+
+enum MediaStatus {
+  PENDING
+  ATTACHED
+}
+
+/// Developer-API uploaded media. The `media_id` is an opaque handle; posts
+/// still store the resolved `url` in RMHark.imageUrls. Reclaimed by the
+/// reconciling sweep in lib/media/sweep.server.ts.
+model Media {
+  id          String      @id
+  userId      String
+  key         String
+  url         String
+  contentType String
+  bytes       Int
+  status      MediaStatus @default(PENDING)
+  postId      String?
+  createdAt   DateTime    @default(now())
+  attachedAt  DateTime?
+
+  user User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post RMHark? @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([postId])
+  @@index([userId])
+}
+
+/// Global daily counter for AI image generations (cost guard). One row per UTC day.
+model ImageGenBudget {
+  day   String @id // UTC date, "YYYY-MM-DD"
+  count Int    @default(0)
+
+  @@map("image_gen_budget")
+}
+
+/// A user-uploaded library book. PDF + cover live in R2 (keyed by id); this row
+/// is the metadata the bookshelf and reader resolve. The static catalog
+/// (public/library + data/library-metadata.json) is unaffected.
+model LibraryDocument {
+  id               String   @id @default(cuid())
+  slug             String   @unique
+  title            String
+  description      String   @default("")
+  pages            Int      @default(0)
+  /// Document format: "pdf" (default) or "epub". Drives which reader renders it
+  /// and the content-type / extension used to store and serve the file.
+  format           String   @default("pdf")
+  pdfKey           String
+  coverKey         String?
+  sizeBytes        Int      @default(0)
+  uploadedByUserId String?
+  uploadedBy       User?    @relation("LibraryUploader", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
+  reported         Boolean  @default(false)
+  hidden           Boolean  @default(false)
+  /// Curated/official entry (admin upload or migrated static catalog) — shown in
+  /// the "Curated" section above community uploads.
+  official         Boolean  @default(false)
+  /// Manual sort order within a section (lower first); ties broken by recency.
+  position         Int      @default(0)
+  /// Original public/library filename when this row was migrated from the bundled
+  /// static catalog. Unique so the migration is idempotent and the static list can
+  /// dedupe against already-migrated books.
+  originFilename   String?  @unique
+  /// Preserved table of contents (chapter → page) for migrated/edited books.
+  toc              Json?
+  createdAt        DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([uploadedByUserId])
+  @@index([official])
+  @@map("library_document")
+}
+
+/// A reader-made grouping of books (a "series" / "collection") shown as its own
+/// shelf on the library page. A user owns their collections and may only add books
+/// they uploaded; admins own "official" collections and may add any book. Members
+/// are referenced by book slug (stable for both static-catalog and uploaded books),
+/// so a collection can span both without a hard foreign key to LibraryDocument.
+model LibraryCollection {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String   @default("")
+  ownerUserId String?
+  owner       User?    @relation("LibraryCollectionOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  /// Curated/official collection (admin-made) — surfaced above community series.
+  official    Boolean  @default(false)
+  /// R2 key of the collection's (AI-generated) cover image, served via
+  /// /api/library/cover/<collectionId>. Null until a cover is generated.
+  coverKey    String?
+  hidden      Boolean  @default(false)
+  /// Manual sort order across collections (lower first).
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  items LibraryCollectionItem[]
+
+  @@index([ownerUserId])
+  @@index([official])
+  @@map("library_collection")
+}
+
+model LibraryCollectionItem {
+  id           String   @id @default(cuid())
+  collectionId String
+  collection   LibraryCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  /// The member book's slug (resolved to a LibraryBook at read time).
+  bookSlug     String
+  /// Order within the collection (lower first).
+  position     Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  @@unique([collectionId, bookSlug])
+  @@index([collectionId])
+  @@map("library_collection_item")
+}
+
+/// A regular user's appeal to raise their library upload quota, reviewed by an
+/// admin in the admin panel. Approving sets the user's libraryUploadQuota.
+model LibraryQuotaRequest {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation("LibraryQuotaRequests", fields: [userId], references: [id], onDelete: Cascade)
+  /// The new total cap the user is asking for.
+  requestedTotal  Int
+  reason          String    @default("") @db.Text
+  /// pending | approved | denied
+  status          String    @default("pending")
+  decidedByUserId String?
+  createdAt       DateTime  @default(now())
+  decidedAt       DateTime?
+
+  @@index([status])
+  @@index([userId])
+  @@map("library_quota_request")
+}
+
+// ─── Albums (library photo/video carousels) ─────────────────────────────────
+/// A library album: an ordered set of image/video slides shown in the
+/// fullscreen carousel viewer at /library/albums/$slug. Heavy media lives in
+/// object storage (R2/S3) keyed by slide id — not in the repo / build image —
+/// and is served via the CDN (prod) or the /api/albums/asset proxy (dev).
+model Album {
+  id          String       @id @default(cuid())
+  /// URL slug, e.g. "alex-wu".
+  slug        String       @unique
+  title       String
+  description String       @default("") @db.Text
+  /// Manual ordering on the library page (ascending).
+  position    Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  slides AlbumSlide[]
+
+  @@index([position])
+  @@map("album")
+}
+
+/// One slide in an album. `type` is "image" or "video". Storage keys point at
+/// objects in the `albums/` key space (see lib/storage/keys.ts):
+///  - images: fullKey (full-res original), srcKey (web-optimized webp), thumbKey
+///  - videos: srcKey (compressed mp4), thumbKey (poster frame); fullKey is null.
+model AlbumSlide {
+  id       String @id @default(cuid())
+  albumId  String
+  album    Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  /// "image" | "video".
+  type     String
+  position Int    @default(0)
+  /// Full-resolution original object key (images only; null for video).
+  fullKey  String?
+  /// Web-optimized image / compressed video object key.
+  srcKey   String
+  /// Thumbnail (image) or poster frame (video) object key.
+  thumbKey String
+  /// Video MIME type (e.g. "video/mp4"); null for images.
+  mime     String?
+  alt      String @default("")
+  /// Suggested filename on download.
+  download String @default("")
+  /// Client-supplied idempotency key, stable across upload retries. Lets a
+  /// retried upload (e.g. after a lost response) resolve to the same slide
+  /// instead of creating a duplicate. Null for migrated/legacy rows.
+  uploadKey String?
+  createdAt DateTime @default(now())
+
+  @@unique([albumId, uploadKey])
+  @@index([albumId, position])
+  @@map("album_slide")
 }

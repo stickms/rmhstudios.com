@@ -9,6 +9,7 @@
 
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Circle } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 
 interface RmhTubeHeaderProps {
@@ -26,6 +27,7 @@ export default function RmhTubeHeader({
   roomCode,
   onCopyCode,
 }: RmhTubeHeaderProps) {
+  const { t } = useTranslation("c-rmhtube");
   const connectionStatus = useRmhTubeStore((s) => s.connectionStatus);
 
   const statusColor =
@@ -75,7 +77,7 @@ export default function RmhTubeHeader({
           <button
             onClick={onCopyCode}
             className="flex items-center gap-1.5 rounded-md px-2 py-1 font-mono text-sm font-bold tracking-widest transition-colors bg-(--rmhtube-surface) text-(--rmhtube-text) hover:bg-(--rmhtube-surface-hover)"
-            title="Copy room code"
+            title={t("copy-room-code", { defaultValue: "Copy room code" })}
           >
             {roomCode}
           </button>

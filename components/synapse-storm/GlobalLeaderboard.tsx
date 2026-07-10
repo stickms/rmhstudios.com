@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { fetchGlobalLeaderboard, type LeaderboardEntry } from '../../lib/synapse-storm/persistence';
 import { Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -15,6 +16,7 @@ interface GlobalLeaderboardProps {
 export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
     currentUserId, currentScore, compact = false, autoRefresh = false, refreshKey = 0,
 }) => {
+    const { t } = useTranslation("c-synapse-storm");
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [expanded, setExpanded] = useState(!compact);
@@ -50,7 +52,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
         return (
             <button className="ss-glb-toggle" onClick={() => setExpanded(true)}>
                 <Trophy size={14} />
-                <span>GLOBAL LEADERBOARD</span>
+                <span>{t("global-leaderboard", { defaultValue: "GLOBAL LEADERBOARD" })}</span>
                 {myRank > 0 && <span className="ss-glb-my-rank">#{myRank}</span>}
                 <ChevronDown size={14} />
             </button>
@@ -62,7 +64,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
             <div className="ss-glb-header">
                 <div className="ss-glb-header-left">
                     <Trophy size={14} className="ss-glb-trophy" />
-                    <span>GLOBAL LEADERBOARD</span>
+                    <span>{t("global-leaderboard", { defaultValue: "GLOBAL LEADERBOARD" })}</span>
                 </div>
                 {compact && (
                     <button className="ss-glb-collapse" onClick={() => setExpanded(false)}>
@@ -72,9 +74,9 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
             </div>
 
             {loading ? (
-                <div className="ss-glb-loading">Loading...</div>
+                <div className="ss-glb-loading">{t("loading", { defaultValue: "Loading..." })}</div>
             ) : entries.length === 0 ? (
-                <div className="ss-glb-empty">No scores yet. Be the first!</div>
+                <div className="ss-glb-empty">{t("no-scores-yet", { defaultValue: "No scores yet. Be the first!" })}</div>
             ) : (
                 <div className="ss-glb-list">
                     {entries.map((entry) => {
@@ -93,11 +95,11 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
                                 <div className="ss-glb-player">
                                     <span className="ss-glb-name">
                                         {entry.displayName}
-                                        {isSelf && <span className="ss-glb-you">YOU</span>}
+                                        {isSelf && <span className="ss-glb-you">{t("you", { defaultValue: "YOU" })}</span>}
                                     </span>
                                     {!compact && (
                                         <span className="ss-glb-meta">
-                                            Combo x{entry.maxCombo} &middot; Lv.{entry.peakDifficulty.toFixed(1)}
+                                            {t("combo-lv", { defaultValue: "Combo x{{combo}} · Lv.{{lv}}", combo: entry.maxCombo, lv: entry.peakDifficulty.toFixed(1) })}
                                         </span>
                                     )}
                                 </div>
@@ -112,7 +114,7 @@ export const GlobalLeaderboard: React.FC<GlobalLeaderboardProps> = ({
 
             {myRank === 0 && currentUserId && !loading && entries.length > 0 && (
                 <div className="ss-glb-not-ranked">
-                    You haven't placed yet. Play a round!
+                    {t("not-ranked", { defaultValue: "You haven't placed yet. Play a round!" })}
                 </div>
             )}
         </div>

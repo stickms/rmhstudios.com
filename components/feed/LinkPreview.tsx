@@ -55,7 +55,7 @@ export function LinkPreview({ url, className = '' }: LinkPreviewProps) {
 
   if (loading) {
     return (
-      <div className={`rounded-xl overflow-hidden border border-site-border ${className}`}>
+      <div className={`rounded-site overflow-hidden border border-site-border ${className}`}>
         <div className="w-full h-24 bg-site-surface animate-pulse" />
       </div>
     );
@@ -69,7 +69,7 @@ export function LinkPreview({ url, className = '' }: LinkPreviewProps) {
       target="_blank"
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
-      className={`block rounded-xl overflow-hidden border border-site-border hover:bg-site-surface/40 transition-colors ${className}`}
+      className={`block rounded-site overflow-hidden border border-site-border hover:bg-site-surface/40 transition-colors ${className}`}
     >
       {data.image && !imgError && (
         <div className="w-full h-36 bg-site-surface overflow-hidden">

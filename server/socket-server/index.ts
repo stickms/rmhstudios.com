@@ -23,6 +23,7 @@ import { registerRmhTypeHandlers, handleRmhTypeDisconnect } from './handlers/rmh
 import { registerRmhStudyHandlers, handleRmhStudyDisconnect } from './handlers/rmhstudy';
 import { registerAltairHandlers, handleAltairDisconnect } from './handlers/altair';
 import { registerKowloonKnockoutHandlers, handleKowloonKnockoutDisconnect } from './handlers/kowloon-knockout';
+import { registerRochesterOffensiveHandlers, handleRochesterOffensiveDisconnect } from './handlers/rochester-offensive';
 import { registerRmhMusicHandlers, handleRmhMusicDisconnect } from './handlers/rmhmusic';
 import { registerBlackjackHandlers, handleBlackjackDisconnect, initializeBlackjackPublicTable } from './handlers/blackjack';
 import { registerHoldemHandlers, handleHoldemDisconnect, initializeHoldem } from './handlers/holdem';
@@ -30,6 +31,9 @@ import { registerBaccaratHandlers, handleBaccaratDisconnect, initializeBaccarat 
 import { registerRouletteHandlers, handleRouletteDisconnect, initializeRoulette } from './handlers/roulette';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
 import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
+import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
+import { registerDreamRiftHandlers, handleDreamRiftDisconnect } from './handlers/dream-rift';
+import { registerRmhFarmingSimHandlers, handleRmhFarmingSimDisconnect } from './handlers/rmh-farming-sim';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -149,6 +153,7 @@ io.on('connection', (socket) => {
   registerRmhStudyHandlers(io, socket);
   registerAltairHandlers(io, socket);
   registerKowloonKnockoutHandlers(io, socket);
+  registerRochesterOffensiveHandlers(io, socket);
   registerRmhMusicHandlers(io, socket);
   registerBlackjackHandlers(io, socket);
   registerHoldemHandlers(io, socket);
@@ -156,6 +161,9 @@ io.on('connection', (socket) => {
   registerRouletteHandlers(io, socket);
   registerLightsOutHandlers(io, socket);
   registerDoctrineHandlers(io, socket);
+  registerVelumHandlers(io, socket);
+  registerDreamRiftHandlers(io, socket);
+  registerRmhFarmingSimHandlers(io, socket);
 
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
@@ -168,6 +176,7 @@ io.on('connection', (socket) => {
     handleRmhStudyDisconnect(io, socket);
     handleAltairDisconnect(io, socket);
     handleKowloonKnockoutDisconnect(io, socket);
+    handleRochesterOffensiveDisconnect(io, socket);
     handleRmhMusicDisconnect(io, socket);
     handleBlackjackDisconnect(io, socket);
     handleHoldemDisconnect(io, socket);
@@ -175,6 +184,9 @@ io.on('connection', (socket) => {
     handleRouletteDisconnect(io, socket);
     handleLightsOutDisconnect(io, socket);
     handleDoctrineDisconnect(io, socket);
+    handleVelumDisconnect(io, socket);
+    handleDreamRiftDisconnect(io, socket);
+    handleRmhFarmingSimDisconnect(io, socket);
 
     cleanupRateLimits(socket.id);
   });

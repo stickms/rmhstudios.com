@@ -1,0 +1,27 @@
+{
+  "music": {
+    "stage1": "/dream-rift/audio/bgm.ogg",
+    "boss1": "/dream-rift/audio/bgm.ogg",
+    "stage2": "/dream-rift/audio/bgm.ogg",
+    "boss2": "/dream-rift/audio/bgm.ogg",
+    "stage3": "/dream-rift/audio/bgm.ogg",
+    "boss3": "/dream-rift/audio/bgm.ogg"
+  },
+  "sprites": {
+    "players": {
+      "bllm": { "url": "/dream-rift/sprites/players/bllm.png", "frameW": 64, "frameH": 64, "idle": [0, 1], "left": [0, 1], "right": [0, 1] },
+      "mls":  { "url": "/dream-rift/sprites/players/mls.png",  "frameW": 64, "frameH": 64, "idle": [0, 1], "left": [0, 1], "right": [0, 1] },
+      "qln":  { "url": "/dream-rift/sprites/players/qln.png",  "frameW": 64, "frameH": 64, "idle": [0, 1], "left": [0, 1], "right": [0, 1] },
+      "dyj":  { "url": "/dream-rift/sprites/players/dyj.png",  "frameW": 64, "frameH": 64, "idle": [0, 1], "left": [0, 1], "right": [0, 1] },
+      "lmy":  { "url": "/dream-rift/sprites/players/lmy.png",  "frameW": 64, "frameH": 64, "idle": [0, 1], "left": [0, 1], "right": [0, 1] }
+    },
+    "bosses": {
+      "hml":  { "url": "/dream-rift/sprites/bosses/hml.png",  "frameW": 64, "frameH": 64, "frames": [0, 1] },
+      "pql":  { "url": "/dream-rift/sprites/bosses/pql.png",  "frameW": 64, "frameH": 64, "frames": [0, 1] },
+      "xem":  { "url": "/dream-rift/sprites/bosses/xem.png",  "frameW": 64, "frameH": 64, "frames": [0, 1] },
+      "lmly": { "url": "/dream-rift/sprites/bosses/lmly.png", "frameW": 64, "frameH": 64, "frames": [0, 1] },
+      "xy":   { "url": "/dream-rift/sprites/bosses/xy.png",   "frameW": 64, "frameH": 64, "frames": [0, 1] },
+      "fldl": { "url": "/dream-rift/sprites/bosses/fldl.png", "frameW": 64, "frameH": 64, "frames": [0, 1] }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { createLogger, defineConfig, type Plugin } from "vite";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
@@ -43,6 +44,16 @@ function stubServerFiles(): Plugin {
     enforce: "pre",
     async resolveId(source, importer, options) {
       if (options?.ssr) return null;
+
+      // Fast path: a file matching SERVER_RE (*.server.{ts,tsx,js,jsx}) can only
+      // be reached through an import specifier that literally contains ".server"
+      // (verified: every server-file import site uses such a specifier, and there
+      // are no `index.server.*` barrels that could hide one). So skip the
+      // expensive this.resolve() — which re-runs the whole resolver pipeline — for
+      // the ~99% of imports that cannot be server files. Without this guard the
+      // plugin ran this.resolve() on every module in the graph and was the single
+      // largest consumer of build plugin time (~52%).
+      if (!source.includes(".server")) return null;
 
       // Let Vite resolve the source first so we can check the real file path
       const resolved = await this.resolve(source, importer, {
@@ -210,7 +221,19 @@ export default defineConfig({
       // traces them into .output/node_modules for runtime resolution.
       // NOTE: Vite's ssr.external is ignored by Nitro — this is the only way
       // to externalize from the production server bundle.
-      traceDeps: ["@prisma/client", ".prisma", "@resvg/resvg-js", "satori", "esbuild"],
+      // `reflect-metadata` is externalized (not bundled) so its global-polyfill
+      // side effect isn't tree-shaken away — the startup plugin below relies on
+      // it. traceDeps also copies it into .output/node_modules for runtime.
+      traceDeps: ["@prisma/client", ".prisma", "@resvg/resvg-js", "satori", "esbuild", "reflect-metadata"],
+      // Startup plugins:
+      //  - reflect-metadata: installs the polyfill before any request loads the
+      //    auth/passkey chunk (which needs it via tsyringe).
+      //  - security-headers: adds baseline security headers to every response as
+      //    defense-in-depth (mirrors the edge/Traefik policy for non-proxied paths).
+      plugins: [
+        fileURLToPath(new URL("./server/nitro/reflect-metadata.ts", import.meta.url)),
+        fileURLToPath(new URL("./server/nitro/security-headers.ts", import.meta.url)),
+      ],
       rollupConfig: {
         external: heavyExternals.map((pkg) => new RegExp(`^${pkg.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(/.+)?$`)),
       },
@@ -218,6 +241,14 @@ export default defineConfig({
   ],
   builder: {
     sharedPlugins: true,
+  },
+  // Drop noisy debug logging from production bundles. `pure` only removes calls
+  // whose return value is unused (all console.log/debug calls), and only during
+  // the minify pass — dev transforms keep them. console.warn/error/info are kept.
+  // The standalone server services are bundled by a separate esbuild command
+  // (see the `build` script), so this affects only the client + Nitro SSR output.
+  esbuild: {
+    pure: ["console.log", "console.debug"],
   },
   build: {
     target: "esnext",

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CoinIcon } from './CoinIcon';
 import { useBaccaratStore } from '@/lib/baccarat/store';
 import { getBaccaratSocket } from '@/lib/baccarat/socket';
@@ -13,7 +14,7 @@ interface Props {
 
 const BET_OPTIONS: { type: BetType; label: string; payout: string; color: string; hoverColor: string }[] = [
   { type: 'player', label: 'Player', payout: '1:1', color: 'bg-red-600', hoverColor: 'hover:bg-red-700' },
-  { type: 'banker', label: 'Banker', payout: '0.95:1', color: 'bg-blue-600', hoverColor: 'hover:bg-blue-700' },
+  { type: 'banker', label: 'Banker', payout: '1:1*', color: 'bg-blue-600', hoverColor: 'hover:bg-blue-700' },
   { type: 'tie', label: 'Tie', payout: '8:1', color: 'bg-emerald-600', hoverColor: 'hover:bg-emerald-700' },
 ];
 
@@ -45,6 +46,8 @@ export function BaccaratControls({ coins }: Props) {
     playerDragon: 0,
     bankerDragon: 0,
   });
+
+  const { t } = useTranslation('c-rmhcoins');
 
   const myPlayer = players.find((p) => p.userId === myUserId);
   const totalBet = Object.values(localBets).reduce((sum, v) => sum + v, 0);
@@ -113,7 +116,7 @@ export function BaccaratControls({ coins }: Props) {
   if (tablePhase === 'idle') {
     return (
       <div className="text-center text-site-text-dim py-4">
-        <p className="text-sm">Waiting for the next round...</p>
+        <p className="text-sm">{t("waiting-next-round", { defaultValue: "Waiting for the next round..." })}</p>
       </div>
     );
   }
@@ -126,8 +129,8 @@ export function BaccaratControls({ coins }: Props) {
       <div className="flex flex-col gap-3">
         {countdown !== null && (
           <div className="text-center">
-            <span className="text-sm text-site-text-dim">Betting closes in </span>
-            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-red-500 animate-pulse' : 'text-red-400'}`}>
+            <span className="text-sm text-site-text-dim">{t("betting-closes-in", { defaultValue: "Betting closes in " })}</span>
+            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-site-danger animate-pulse' : 'text-site-accent'}`}>
               {countdown}s
             </span>
           </div>
@@ -148,6 +151,10 @@ export function BaccaratControls({ coins }: Props) {
           ))}
         </div>
 
+        <p className="text-[10px] text-center text-site-text-dim -mt-1">
+          {t("no-commission-note", { defaultValue: "No commission \xB7 Banker win on 6 pays \xBD" })}
+        </p>
+
         {/* Side bet buttons — 2x2 on mobile, 4 across on larger */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {SIDE_BET_OPTIONS.map((opt) => (
@@ -165,7 +172,7 @@ export function BaccaratControls({ coins }: Props) {
 
         {/* Chip amount selector — always horizontal, larger targets */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-site-text-dim shrink-0">Chip:</span>
+          <span className="text-xs text-site-text-dim shrink-0">{t("chip-label", { defaultValue: "Chip:" })}</span>
           <div className="flex gap-1.5 flex-1">
             {[5, 25, 100, 500].map((amt) => (
               <button
@@ -173,7 +180,7 @@ export function BaccaratControls({ coins }: Props) {
                 onClick={() => setChipAmount(amt)}
                 className={`flex-1 min-h-10 text-xs font-bold rounded-xl border transition-colors active:scale-95 ${
                   chipAmount === amt
-                    ? 'bg-red-600 border-red-500 text-white'
+                    ? 'bg-site-accent border-site-accent text-site-accent-fg'
                     : 'bg-site-surface border-site-border text-site-text-dim hover:text-site-text hover:bg-site-surface-hover'
                 }`}
               >
@@ -187,10 +194,10 @@ export function BaccaratControls({ coins }: Props) {
         {totalBet > 0 && (
           <div className="flex flex-col gap-2 p-3 rounded-xl bg-site-surface border border-site-border">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-site-text-dim">Your bets this round:</span>
+              <span className="text-xs text-site-text-dim">{t("your-bets-this-round", { defaultValue: "Your bets this round:" })}</span>
               <div className="flex items-center gap-1">
                 <CoinIcon className="w-3.5 h-3.5" />
-                <span className="text-sm font-bold text-red-400">{totalBet}</span>
+                <span className="text-sm font-bold text-yellow-500">{totalBet}</span>
               </div>
             </div>
             <div className="flex flex-wrap gap-1.5">
@@ -199,7 +206,7 @@ export function BaccaratControls({ coins }: Props) {
                 .map(([type, amount]) => (
                   <span
                     key={type}
-                    className="text-[11px] font-bold px-2 py-1 rounded-full bg-red-500/20 text-red-400"
+                    className="text-[11px] font-bold px-2 py-1 rounded-full bg-site-accent-dim text-site-accent"
                   >
                     {type}: {amount}
                   </span>
@@ -209,7 +216,7 @@ export function BaccaratControls({ coins }: Props) {
               onClick={handleClearBets}
               className="w-full min-h-10 text-xs font-bold rounded-xl border border-red-500/30 text-red-400 hover:bg-red-500/10 active:scale-[0.98] transition-all"
             >
-              Clear All Bets
+              {t("clear-all-bets", { defaultValue: "Clear All Bets" })}
             </button>
           </div>
         )}
@@ -225,7 +232,7 @@ export function BaccaratControls({ coins }: Props) {
   if (tablePhase === 'dealing' || tablePhase === 'drawing') {
     return (
       <div className="text-center text-site-text-dim py-4">
-        <p className="text-sm animate-pulse">Dealing cards...</p>
+        <p className="text-sm animate-pulse">{t("dealing-cards", { defaultValue: "Dealing cards..." })}</p>
       </div>
     );
   }
@@ -235,9 +242,9 @@ export function BaccaratControls({ coins }: Props) {
     const payout = myPlayer?.lastPayout ?? 0;
 
     const resultText: Record<string, { label: string; color: string }> = {
-      player: { label: 'Player Wins!', color: 'text-red-400' },
-      banker: { label: 'Banker Wins!', color: 'text-blue-400' },
-      tie: { label: 'Tie!', color: 'text-emerald-400' },
+      player: { label: t("player-wins", { defaultValue: "Player Wins!" }), color: 'text-red-400' },
+      banker: { label: t("banker-wins", { defaultValue: "Banker Wins!" }), color: 'text-blue-400' },
+      tie: { label: t("tie", { defaultValue: "Tie!" }), color: 'text-emerald-400' },
     };
 
     const r = lastResult ? resultText[lastResult.result] : null;
@@ -246,19 +253,19 @@ export function BaccaratControls({ coins }: Props) {
       <div className="text-center py-4">
         {r && <p className={`text-lg font-bold ${r.color}`}>{r.label}</p>}
         {lastResult?.isNatural && (
-          <p className="text-xs text-red-400 mt-0.5">Natural!</p>
+          <p className="text-xs text-site-accent mt-0.5">{t("natural", { defaultValue: "Natural!" })}</p>
         )}
         {payout > 0 && (
           <p className="text-sm text-site-text-dim mt-1 animate-bounce">
-            +{payout} coins
+            {t("payout-positive", { defaultValue: "+{{payout}} coins", payout })}
           </p>
         )}
         {totalBet > 0 && payout === 0 && (
           <p className="text-sm text-site-text-dim mt-1">
-            -{totalBet} coins
+            {t("payout-negative", { defaultValue: "-{{totalBet}} coins", totalBet })}
           </p>
         )}
-        <p className="text-xs text-site-text-dim mt-2">Next round starting soon...</p>
+        <p className="text-xs text-site-text-dim mt-2">{t("next-round-soon", { defaultValue: "Next round starting soon..." })}</p>
       </div>
     );
   }
@@ -266,7 +273,7 @@ export function BaccaratControls({ coins }: Props) {
   // Fallback
   return (
     <div className="text-center text-site-text-dim py-4">
-      <p className="text-sm animate-pulse">Dealing...</p>
+      <p className="text-sm animate-pulse">{t("dealing", { defaultValue: "Dealing..." })}</p>
     </div>
   );
 }

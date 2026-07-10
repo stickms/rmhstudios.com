@@ -7,6 +7,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useCallback, useEffect, useRef, useState, lazy, Suspense } from 'react'
 import { useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { useAltairGameStore } from '@/lib/altair/stores/game-store'
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store'
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store'
@@ -22,6 +23,7 @@ import BestiaryScreen from '@/components/altair/screens/BestiaryScreen'
 const GameScreen = lazy(() => import('@/components/altair/screens/GameScreen'))
 
 function AltairPage() {
+  const { t } = useTranslation('r-altair')
   const navigate = useNavigate()
   const phase = useAltairGameStore((s) => s.phase)
   const setPhase = useAltairGameStore((s) => s.setPhase)
@@ -163,7 +165,7 @@ function AltairPage() {
       <>
         <AltairHeader
           context="menu"
-          title="Bestiary"
+          title={t("bestiary", { defaultValue: "Bestiary" })}
           onBack={() => {
             setShowBestiary(false)
           }}
@@ -182,7 +184,7 @@ function AltairPage() {
       <>
         <AltairHeader
           context="settings"
-          title="Settings"
+          title={t("settings", { defaultValue: "Settings" })}
           onBack={() => {
             setShowSettings(false)
           }}
@@ -218,7 +220,7 @@ function AltairPage() {
     case 'class_select':
       return (
         <>
-          <AltairHeader context="class_select" title="Class Select" onBack={goToMenu} />
+          <AltairHeader context="class_select" title={t("class-select", { defaultValue: "Class Select" })} onBack={goToMenu} />
           <ClassSelectScreen onSelect={handleClassSelect} onBack={goToMenu} />
         </>
       )
@@ -230,7 +232,7 @@ function AltairPage() {
         <Suspense fallback={
           <div className="fixed inset-0 bg-(--altair-bg) flex items-center justify-center">
             <div className="text-(--altair-accent) font-mono tracking-widest animate-pulse text-sm">
-              INITIALIZING...
+              {t("initializing", { defaultValue: "INITIALIZING..." })}
             </div>
           </div>
         }>
@@ -268,7 +270,7 @@ function AltairPage() {
     case 'meta_shop':
       return (
         <>
-          <AltairHeader context="meta_shop" title="Meta Shop" onBack={goToMenu} />
+          <AltairHeader context="meta_shop" title={t("meta-shop", { defaultValue: "Meta Shop" })} onBack={goToMenu} />
           <MetaShopScreen onBack={goToMenu} />
         </>
       )

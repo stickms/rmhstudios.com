@@ -1,0 +1,22 @@
+{
+  "correct-sort": "正确排序：",
+  "failed-to-load-leaderboard": "无法加载排行榜",
+  "game-description": "看五彩斑斓的衣服从天而降，把它们丢进对应颜色的桶里就能得分，放错桶会扣分哦！",
+  "game-over": "游戏结束",
+  "leaderboard": "排行榜",
+  "loading": "加载中…",
+  "no-scores-yet": "暂无评分，快来当第一个评分的人吧！",
+  "play-again": "再玩一次",
+  "points": "分数",
+  "score": "分数",
+  "score-submitted": "✓ 分数已提交！",
+  "sign-in-to-play": "登录即可开始游戏",
+  "sign-in-to-save": "登录以保存您的分数！",
+  "sign-in-to-submit": "登录以提交",
+  "sort-the-laundry": "整理衣物！",
+  "start-game": "游戏开始",
+  "submitting-score": "提交分数中……",
+  "time": "时间",
+  "time-limit": "时间限制：1分钟",
+  "wrong-bin": "错误垃圾桶："
+}

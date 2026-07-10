@@ -9,6 +9,7 @@ interface AnimatedMainProps {
 export function AnimatedMain({ children, className, targetWidth = DEFAULT_WIDTH }: AnimatedMainProps) {
   return (
     <main
+      id="main-content"
       className={className}
       style={{ maxWidth: targetWidth }}
     >

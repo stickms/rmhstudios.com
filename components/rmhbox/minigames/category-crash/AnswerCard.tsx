@@ -17,6 +17,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { Star, Flame, AlertTriangle } from 'lucide-react';
 
@@ -61,6 +62,7 @@ const statusStyles: Record<AnswerStatus, { bg: string; text: string; border: str
 };
 
 export default function AnswerCard({ answer, category, points, status }: AnswerCardProps) {
+  const { t } = useTranslation("c-rmhbox");
   const style = statusStyles[status];
 
   return (
@@ -83,7 +85,7 @@ export default function AnswerCard({ answer, category, points, status }: AnswerC
           points > 0 ? 'text-(--rmhbox-success)' : points < 0 ? 'text-(--rmhbox-danger)' : 'text-(--rmhbox-text-muted)'
         }`}
       >
-        {points > 0 ? `+${points}` : points === 0 ? '0' : points} pts
+        {points > 0 ? `+${points}` : points === 0 ? '0' : points} {t("pts", { defaultValue: "pts" })}
       </span>
     </motion.div>
   );

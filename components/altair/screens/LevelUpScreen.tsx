@@ -12,6 +12,7 @@ import { RotateCcw, X, Coins } from 'lucide-react';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
 import { WEAPON_ICON_SRC, PASSIVE_ICON_SRC, CATALYST_ICON_SRC } from '@/lib/altair/engine/sprites/sprite-defs';
 import { useKeyboardNav } from '@/lib/altair/hooks/use-keyboard-nav';
+import { useTranslation } from 'react-i18next';
 
 function getChoiceInfo(choice: UpgradeChoice): { name: string; description: string; levelText: string; color: string; isGold: boolean; iconFrame: number; iconType: 'weapon' | 'passive' | 'catalyst' | 'gold' } {
   switch (choice.type) {
@@ -113,6 +114,7 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
   const banish = useAltairGameStore((s) => s.banish);
   const level = useAltairGameStore((s) => s.level);
 
+  const { t } = useTranslation("c-altair");
   const isActive = phase === 'upgrading' && choices.length > 0;
   const { focusedIndex } = useKeyboardNav({
     itemCount: choices.length,
@@ -131,12 +133,12 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
         {/* Title */}
         <div className="text-center mb-4 sm:mb-6">
           <div className="text-xs font-mono text-(--altair-text-dim) uppercase tracking-[0.3em] mb-1">
-            Level Up!
+            {t("level-up", { defaultValue: "Level Up!" })}
           </div>
           <h2 className="text-3xl font-black text-(--altair-info) tracking-wider">
-            LEVEL {level}
+            {t("level-heading", { defaultValue: "LEVEL {{level}}", level })}
           </h2>
-          <p className="text-sm text-(--altair-text-muted) mt-1">Choose an upgrade</p>
+          <p className="text-sm text-(--altair-text-muted) mt-1">{t("choose-upgrade", { defaultValue: "Choose an upgrade" })}</p>
         </div>
 
         {/* Choice cards */}
@@ -191,7 +193,7 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
                       banish(i);
                     }}
                     className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-(--altair-danger) text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                    title={`Banish (${banishesRemaining} left)`}
+                    title={t("banish-title", { defaultValue: "Banish ({{count}} left)", count: banishesRemaining })}
                   >
                     <X size={12} />
                   </button>
@@ -203,7 +205,7 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
 
         {/* Keyboard hint */}
         <div className="text-center mt-3 text-[10px] text-(--altair-text-dim) font-mono hidden sm:block">
-          [A/D] or [←/→] navigate · [Space] select · [1-{choices.length}] quick pick
+          {t("keyboard-hint", { defaultValue: "[A/D] or [←/→] navigate · [Space] select · [1-{{count}}] quick pick", count: choices.length })}
         </div>
 
         {/* Reroll button */}
@@ -216,7 +218,7 @@ export default function LevelUpScreen({ onReroll }: LevelUpScreenProps) {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-(--altair-surface) border border-(--altair-border) text-sm font-medium text-(--altair-text-muted) hover:text-(--altair-text) hover:bg-(--altair-surface-hover) transition-colors"
             >
               <RotateCcw size={14} />
-              Reroll ({rerollsRemaining} left)
+              {t("reroll", { defaultValue: "Reroll ({{count}} left)", count: rerollsRemaining })}
             </button>
           </div>
         )}

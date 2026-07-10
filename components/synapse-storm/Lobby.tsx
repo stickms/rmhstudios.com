@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useMultiplayer } from '../../lib/synapse-storm/MultiplayerProvider';
 import { Copy, Check, Crown, Circle, CheckCircle } from 'lucide-react';
 
@@ -12,6 +13,7 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
         lobbyState, matchState, countdown, error, userId,
         toggleReady, startMatch, leaveLobby, getServerTime,
     } = useMultiplayer();
+    const { t } = useTranslation("c-synapse-storm");
     const [copied, setCopied] = useState(false);
 
     if (!lobbyState) return null;
@@ -40,20 +42,20 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
         <div className="ss-lobby">
             <div className="menu-bg-effect" />
             <div className="ss-lobby-content">
-                <h2 className="ss-mp-title">NEURAL LOBBY</h2>
+                <h2 className="ss-mp-title">{t("neural-lobby", { defaultValue: "NEURAL LOBBY" })}</h2>
 
                 <div className="ss-lobby-code-section">
-                    <span className="ss-lobby-code-label">LOBBY CODE</span>
+                    <span className="ss-lobby-code-label">{t("lobby-code", { defaultValue: "LOBBY CODE" })}</span>
                     <div className="ss-lobby-code-row">
                         <span className="ss-lobby-code">{lobbyState.code}</span>
-                        <button className="ss-lobby-copy-btn" onClick={handleCopy} title="Copy code">
+                        <button className="ss-lobby-copy-btn" onClick={handleCopy} title={t("copy-code", { defaultValue: "Copy code" })}>
                             {copied ? <Check size={16} /> : <Copy size={16} />}
                         </button>
                     </div>
                 </div>
 
                 <div className="ss-lobby-players">
-                    <h3 className="ss-lobby-players-title">NEURAL OPERATIVES ({playerCount}/{MAX_PLAYERS})</h3>
+                    <h3 className="ss-lobby-players-title">{t("neural-operatives", { defaultValue: "NEURAL OPERATIVES ({{count}}/{{max}})", count: playerCount, max: MAX_PLAYERS })}</h3>
                     <div className="ss-lobby-player-list">
                         {lobbyState.players.map((player) => (
                             <div
@@ -63,15 +65,15 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
                                 <div className="ss-lobby-player-info">
                                     {player.isHost && <Crown size={14} className="ss-lobby-host-icon" />}
                                     <span className="ss-lobby-player-name">{player.displayName}</span>
-                                    {player.userId === userId && <span className="ss-lobby-you-badge">YOU</span>}
+                                    {player.userId === userId && <span className="ss-lobby-you-badge">{t("you-badge", { defaultValue: "YOU" })}</span>}
                                 </div>
                                 <div className="ss-lobby-player-status">
                                     {player.isHost ? (
-                                        <span className="ss-lobby-status-host">HOST</span>
+                                        <span className="ss-lobby-status-host">{t("host-status", { defaultValue: "HOST" })}</span>
                                     ) : player.isReady ? (
-                                        <span className="ss-lobby-status-ready"><CheckCircle size={14} /> READY</span>
+                                        <span className="ss-lobby-status-ready"><CheckCircle size={14} /> {t("ready-status", { defaultValue: "READY" })}</span>
                                     ) : (
-                                        <span className="ss-lobby-status-waiting"><Circle size={14} /> WAITING</span>
+                                        <span className="ss-lobby-status-waiting"><Circle size={14} /> {t("waiting-status", { defaultValue: "WAITING" })}</span>
                                     )}
                                 </div>
                             </div>
@@ -82,7 +84,7 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
                 {countdownSeconds !== null && countdownSeconds > 0 && (
                     <div className="ss-lobby-countdown">
                         <span className="ss-lobby-countdown-num">{countdownSeconds}</span>
-                        <span className="ss-lobby-countdown-label">INITIALIZING STORM</span>
+                        <span className="ss-lobby-countdown-label">{t("initializing-storm", { defaultValue: "INITIALIZING STORM" })}</span>
                     </div>
                 )}
 
@@ -94,7 +96,7 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
                             className={`ss-mp-btn ss-mp-btn-wide ${myPlayer?.isReady ? 'ss-mp-btn-ready' : 'ss-mp-btn-primary'}`}
                             onClick={toggleReady}
                         >
-                            {myPlayer?.isReady ? 'UNREADY' : 'READY UP'}
+                            {myPlayer?.isReady ? t("unready", { defaultValue: "UNREADY" }) : t("ready-up", { defaultValue: "READY UP" })}
                         </button>
                     )}
                     {isHost && (
@@ -103,11 +105,11 @@ export const Lobby: React.FC<LobbyProps> = ({ onLeave }) => {
                             onClick={startMatch}
                             disabled={!canStart}
                         >
-                            {canStart ? 'START MATCH' : `WAITING FOR PLAYERS${!allReady ? ' (NOT READY)' : ''}`}
+                            {canStart ? t("start-match", { defaultValue: "START MATCH" }) : t("waiting-for-players", { defaultValue: "WAITING FOR PLAYERS{{notReady}}", notReady: !allReady ? ' (NOT READY)' : '' })}
                         </button>
                     )}
                     <button className="ss-mp-btn ss-mp-btn-ghost" onClick={handleLeave}>
-                        LEAVE LOBBY
+                        {t("leave-lobby", { defaultValue: "LEAVE LOBBY" })}
                     </button>
                 </div>
             </div>

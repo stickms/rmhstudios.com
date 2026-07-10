@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
 import { useHoldemStore } from '@/lib/holdem/store';
@@ -10,6 +11,7 @@ import { evaluateBestHand, HAND_RANK_LABELS } from '@/lib/holdem/logic';
 import type { Card } from '@/lib/holdem/logic';
 
 function MyHandRank({ holeCards, communityCards }: { holeCards: (Card | null)[] | null; communityCards: Card[] }) {
+  const { t } = useTranslation("c-rmhcoins");
   const handLabel = useMemo(() => {
     if (!holeCards || holeCards.length < 2 || communityCards.length < 3) return null;
     const validCards = holeCards.filter((c): c is Card => c !== null);
@@ -20,7 +22,7 @@ function MyHandRank({ holeCards, communityCards }: { holeCards: (Card | null)[] 
   }, [holeCards, communityCards]);
 
   if (!handLabel) return null;
-  return <span className="text-xs text-site-text-dim">Your hand: <span className="font-bold text-site-text">{handLabel}</span></span>;
+  return <span className="text-xs text-site-text-dim">{t("your-hand", { defaultValue: "Your hand:" })} <span className="font-bold text-site-text">{handLabel}</span></span>;
 }
 
 export function HoldemControls() {
@@ -38,6 +40,7 @@ export function HoldemControls() {
     roomInfo,
   } = useHoldemStore();
 
+  const { t } = useTranslation("c-rmhcoins");
   const [raiseAmount, setRaiseAmount] = useState('');
   const [countdown, setCountdown] = useState<number | null>(null);
   const [showingCards, setShowingCards] = useState<boolean[]>([false, false]);
@@ -77,21 +80,21 @@ export function HoldemControls() {
   // Rebuy button for busted players
   const rebuyButton = isBusted ? (
     <Button onClick={() => emit(C2S.REBUY)}
-      className="min-h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm">
-      Rebuy ({roomInfo?.buyIn ?? 0} coins)
+      className="min-h-11 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-xl text-sm">
+      {t("rebuy-coins", { defaultValue: "Rebuy ({{count}} coins)", count: roomInfo?.buyIn ?? 0 })}
     </Button>
   ) : null;
 
   // Sit in/out button shown when sitting out or during waiting/results
   const sitButton = myPlayer && isSittingOut && !isBusted ? (
     <Button onClick={() => emit(C2S.SIT_IN)}
-      className="min-h-11 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm">
-      Sit In
+      className="min-h-11 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-xl text-sm">
+      {t("sit-in", { defaultValue: "Sit In" })}
     </Button>
   ) : myPlayer && !isSittingOut && (phase === 'waiting' || phase === 'results') ? (
     <Button onClick={() => emit(C2S.SIT_OUT)} variant="outline"
       className="min-h-10 rounded-xl text-sm">
-      Sit Out
+      {t("sit-out", { defaultValue: "Sit Out" })}
     </Button>
   ) : null;
 
@@ -100,21 +103,21 @@ export function HoldemControls() {
       <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-2">
         {isBusted ? (
           <>
-            <p className="text-sm font-semibold text-red-400">You&apos;re out of chips!</p>
-            <p className="text-xs">Buy back in for <span className="font-bold text-site-text">{roomInfo?.buyIn ?? 0}</span> coins.</p>
+            <p className="text-sm font-semibold text-red-400">{t("out-of-chips", { defaultValue: "You're out of chips!" })}</p>
+            <p className="text-xs">{t("buy-back-in-for", { defaultValue: "Buy back in for" })} <span className="font-bold text-site-text">{roomInfo?.buyIn ?? 0}</span> {t("coins", { defaultValue: "coins" })}.</p>
           </>
         ) : isSittingOut ? (
-          <p className="text-sm">Sit in to start playing!</p>
+          <p className="text-sm">{t("sit-in-to-play", { defaultValue: "Sit in to start playing!" })}</p>
         ) : (
-          <p className="text-sm">Waiting for more players to sit in...</p>
+          <p className="text-sm">{t("waiting-for-players", { defaultValue: "Waiting for more players to sit in..." })}</p>
         )}
         {isBusted ? rebuyButton : sitButton}
         {roomInfo && (
           <p className="text-xs mt-1">
-            Buy-in: <span className="text-site-text font-bold">{roomInfo.buyIn}</span> coins
+            {t("buy-in-label", { defaultValue: "Buy-in:" })} <span className="text-site-text font-bold">{roomInfo.buyIn}</span> {t("coins", { defaultValue: "coins" })}
             {roomInfo.joinCode && (
               <span className="ml-2">
-                Code: <span className="font-mono font-bold text-emerald-400">{roomInfo.joinCode}</span>
+                {t("code-label", { defaultValue: "Code:" })} <span className="font-mono font-bold text-site-accent">{roomInfo.joinCode}</span>
               </span>
             )}
           </p>
@@ -144,31 +147,31 @@ export function HoldemControls() {
     return (
       <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-2">
         {countdown != null && countdown > 0 && (
-          <p className="text-xs font-mono text-site-text-dim">Next hand in <span className="font-bold text-site-text">{countdown}s</span></p>
+          <p className="text-xs font-mono text-site-text-dim">{t("next-hand-in", { defaultValue: "Next hand in" })} <span className="font-bold text-site-text">{countdown}s</span></p>
         )}
         {isBusted ? (
           <>
-            <p className="text-sm font-semibold text-red-400">You&apos;re out of chips!</p>
-            <p className="text-xs">Buy back in for <span className="font-bold text-site-text">{roomInfo?.buyIn ?? 0}</span> coins to keep playing.</p>
+            <p className="text-sm font-semibold text-red-400">{t("out-of-chips", { defaultValue: "You're out of chips!" })}</p>
+            <p className="text-xs">{t("buy-back-in-for", { defaultValue: "Buy back in for" })} <span className="font-bold text-site-text">{roomInfo?.buyIn ?? 0}</span> {t("coins-to-keep-playing", { defaultValue: "coins to keep playing" })}.</p>
             {rebuyButton}
           </>
         ) : (
           <>
             {hasCards && !isSittingOut && !myPlayer.folded && (
               <div className="flex flex-col items-center gap-1.5">
-                <p className="text-xs text-site-text-dim">Show your cards?</p>
+                <p className="text-xs text-site-text-dim">{t("show-your-cards", { defaultValue: "Show your cards?" })}</p>
                 <div className="flex gap-2">
                   <button onClick={() => toggleCard(0)}
-                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[0] ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-site-surface border-site-border text-site-text-dim hover:border-emerald-500'}`}>
-                    Card 1
+                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[0] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
+                    {t("card-1", { defaultValue: "Card 1" })}
                   </button>
                   <button onClick={() => toggleCard(1)}
-                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[1] ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-site-surface border-site-border text-site-text-dim hover:border-emerald-500'}`}>
-                    Card 2
+                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[1] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
+                    {t("card-2", { defaultValue: "Card 2" })}
                   </button>
                   <button onClick={toggleBoth}
-                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[0] && showingCards[1] ? 'bg-emerald-600 border-emerald-500 text-white' : 'bg-site-surface border-site-border text-site-text-dim hover:border-emerald-500'}`}>
-                    Both
+                    className={`min-h-10 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-colors active:scale-95 ${showingCards[0] && showingCards[1] ? 'bg-site-accent border-site-accent text-site-accent-fg' : 'bg-site-surface border-site-border text-site-text-dim hover:border-site-accent'}`}>
+                    {t("both", { defaultValue: "Both" })}
                   </button>
                 </div>
               </div>
@@ -185,13 +188,13 @@ export function HoldemControls() {
       <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-2">
         {isBusted ? (
           <>
-            <p className="text-sm font-semibold text-red-400">You&apos;re out of chips!</p>
-            <p className="text-xs">Buy back in for <span className="font-bold text-site-text">{roomInfo?.buyIn ?? 0}</span> coins to keep playing.</p>
+            <p className="text-sm font-semibold text-red-400">{t("out-of-chips", { defaultValue: "You're out of chips!" })}</p>
+            <p className="text-xs">{t("buy-back-in-for", { defaultValue: "Buy back in for" })} <span className="font-bold text-site-text">{roomInfo?.buyIn ?? 0}</span> {t("coins-to-keep-playing", { defaultValue: "coins to keep playing" })}.</p>
             {rebuyButton}
           </>
         ) : (
           <>
-            <p className="text-sm">You are sitting out.</p>
+            <p className="text-sm">{t("you-are-sitting-out", { defaultValue: "You are sitting out." })}</p>
             {sitButton}
           </>
         )}
@@ -204,13 +207,13 @@ export function HoldemControls() {
     return (
       <div className="text-center text-site-text-dim py-4 flex flex-col items-center gap-1">
         {myPlayer?.folded ? (
-          <p className="text-sm">You folded this hand.</p>
+          <p className="text-sm">{t("you-folded", { defaultValue: "You folded this hand." })}</p>
         ) : currentPlayer ? (
           <p className="text-sm">
-            Waiting for <span className="text-site-text font-bold">{currentPlayer.userName}</span>...
+            {t("waiting-for-player", { defaultValue: "Waiting for" })} <span className="text-site-text font-bold">{currentPlayer.userName}</span>...
           </p>
         ) : (
-          <p className="text-sm animate-pulse">Dealing...</p>
+          <p className="text-sm animate-pulse">{t("dealing", { defaultValue: "Dealing..." })}</p>
         )}
         <MyHandRank holeCards={myPlayer?.holeCards ?? null} communityCards={communityCards} />
       </div>
@@ -226,35 +229,35 @@ export function HoldemControls() {
   return (
     <div className="flex flex-col gap-3">
       <div className="text-center">
-        <p className="text-sm text-emerald-500 font-bold animate-pulse">Your turn!</p>
+        <p className="text-sm text-site-accent font-bold animate-pulse">{t("your-turn", { defaultValue: "Your turn!" })}</p>
         <p className="text-xs text-site-text-dim">
-          Your chips: <span className="font-bold text-site-text">{myChips}</span>
-          {toCall > 0 && <span> | To call: <span className="font-bold text-yellow-400">{Math.min(toCall, myChips)}</span></span>}
+          {t("your-chips", { defaultValue: "Your chips:" })} <span className="font-bold text-site-text">{myChips}</span>
+          {toCall > 0 && <span> | {t("to-call", { defaultValue: "To call:" })} <span className="font-bold text-yellow-400">{Math.min(toCall, myChips)}</span></span>}
         </p>
       </div>
 
       {/* Action buttons — grid for consistent sizing */}
       <div className="grid grid-cols-3 gap-2">
         <Button onClick={() => emit(C2S.FOLD)}
-          className="min-h-12 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-xl text-sm">
-          Fold
+          className="min-h-12 bg-site-surface-active hover:bg-site-surface-hover text-site-text border border-site-border font-bold rounded-xl text-sm">
+          {t("fold", { defaultValue: "Fold" })}
         </Button>
 
         {canCheck ? (
           <Button onClick={() => emit(C2S.CHECK)}
             className="min-h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-sm">
-            Check
+            {t("check", { defaultValue: "Check" })}
           </Button>
         ) : (
           <Button onClick={() => emit(C2S.CALL)}
             className="min-h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-sm">
-            Call {Math.min(toCall, myChips)}
+            {t("call", { defaultValue: "Call" })} {Math.min(toCall, myChips)}
           </Button>
         )}
 
         <Button onClick={() => emit(C2S.ALL_IN)}
           className="min-h-12 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-sm">
-          All In
+          {t("all-in", { defaultValue: "All In" })}
         </Button>
       </div>
 
@@ -273,12 +276,12 @@ export function HoldemControls() {
               .filter((p) => p.value >= minRaiseTotal && p.value < myChips + (myPlayer?.currentBet ?? 0))
               .map((p) => (
                 <button key={p.label} onClick={() => setRaiseAmount(String(p.value))}
-                  className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-xl bg-site-surface border border-site-border hover:border-emerald-500 hover:text-emerald-400 text-site-text-dim transition-colors active:scale-95">
+                  className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-xl bg-site-surface border border-site-border hover:border-site-accent hover:text-site-accent text-site-text-dim transition-colors active:scale-95">
                   {p.label}
                 </button>
               ))}
             <button onClick={() => setRaiseAmount(String(minRaiseTotal))}
-              className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-xl bg-site-surface border border-site-border hover:border-yellow-500 hover:text-yellow-400 text-site-text-dim transition-colors active:scale-95">
+              className="min-h-9 px-2.5 py-1 text-xs font-semibold rounded-xl bg-site-surface border border-site-border hover:border-site-accent hover:text-site-accent text-site-text-dim transition-colors active:scale-95">
               Min
             </button>
           </div>
@@ -286,15 +289,15 @@ export function HoldemControls() {
           <div className="flex gap-2">
             <div className="relative flex-1">
               <input type="number" min={minRaiseTotal} max={myChips + (myPlayer?.currentBet ?? 0)}
-                placeholder={`Min ${minRaiseTotal}`}
+                placeholder={t("min-raise-placeholder", { defaultValue: "Min {{min}}", min: minRaiseTotal })}
                 value={raiseAmount}
                 onChange={(e) => setRaiseAmount(e.target.value)}
-                className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50" />
+                className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40" />
               <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
             </div>
-            <Button onClick={handleRaise}
-              className="min-h-11 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl">
-              Raise
+            <Button onClick={handleRaise} variant="accent"
+              className="min-h-11 font-bold rounded-xl">
+              {t("raise", { defaultValue: "Raise" })}
             </Button>
           </div>
         </div>

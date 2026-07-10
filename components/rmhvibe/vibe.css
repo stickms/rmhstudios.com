@@ -400,6 +400,135 @@
   font-size: 0.74rem;
 }
 
+/* ─── Build progress (files being written, streamed live) ───────────────────── */
+.vibe-progress {
+  width: min(680px, calc(100vw - 40px));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+}
+
+.vibe-progress__head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vibe-progress__label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(245, 245, 247, 0.45);
+}
+
+.vibe-progress__title {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #f5f5f7;
+}
+
+.vibe-progress__deps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.vibe-progress__dep {
+  padding: 2px 9px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(245, 245, 247, 0.7);
+  font-family:
+    var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.7rem;
+}
+
+.vibe-progress__files {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: min(220px, 32vh);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+.vibe-progress__files::-webkit-scrollbar {
+  width: 6px;
+}
+.vibe-progress__files::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 3px;
+}
+
+.vibe-progress__file {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 4px;
+  font-family:
+    var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  color: rgba(245, 245, 247, 0.55);
+  animation: vibe-rise-soft 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.vibe-progress__file.is-writing {
+  color: #f5f5f7;
+}
+
+.vibe-progress__file-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.vibe-progress__file.is-done .vibe-progress__file-icon {
+  color: #34c759;
+}
+
+.vibe-progress__file.is-writing .vibe-progress__file-icon {
+  color: rgba(245, 245, 247, 0.7);
+}
+
+.vibe-progress__file-kind {
+  flex: none;
+  color: rgba(245, 245, 247, 0.4);
+}
+
+.vibe-progress__file-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vibe-progress__file-size {
+  margin-left: auto;
+  flex: none;
+  font-size: 0.7rem;
+  color: rgba(245, 245, 247, 0.35);
+}
+
+/* compact variant inside the customize panel */
+.vibe-progress--sm {
+  width: 100%;
+  padding: 11px 12px;
+}
+.vibe-progress--sm .vibe-progress__files {
+  max-height: 150px;
+}
+
 /* ─── Loading spinner ───────────────────────────────────────────────────────── */
 .vibe-spinner {
   width: 44px;
@@ -688,6 +817,33 @@
 
 .vibe-search__input:focus {
   border-color: rgba(255, 255, 255, 0.28);
+}
+
+/* Admin-only: re-render every page thumbnail. Sits just right of the search. */
+.vibe-backfill {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  color: #d2d2d7;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.vibe-backfill:hover:not(:disabled) {
+  color: #f5f5f7;
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.vibe-backfill:disabled {
+  opacity: 0.5;
+  cursor: progress;
 }
 
 .vibe-grid {

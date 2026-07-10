@@ -8,6 +8,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslation } from "react-i18next";
 import type { Card } from '@/lib/signal-forge';
 import { cardKeywordTags } from './uiHelpers';
 
@@ -18,11 +19,12 @@ interface Props {
 }
 
 export function CardRewardScreen({ choices, onSelect, onSkip }: Props) {
+  const { t } = useTranslation("c-signal-forge");
   return (
     <div className="w-full h-full bg-black bg-opacity-90 flex items-center justify-center z-50 p-6">
       <div className="bg-linear-to-b from-slate-900 to-black border-2 border-yellow-400 p-8 rounded-lg max-w-4xl w-full shadow-2xl">
         <h2 className="text-3xl font-bold text-center mb-6 text-yellow-400">
-          ⭐ Choose Your Reward ⭐
+          {t("choose-your-reward", { defaultValue: "⭐ Choose Your Reward ⭐" })}
         </h2>
         <div className="flex gap-6 justify-center mb-6">
           {choices.map((card, i) => {
@@ -46,7 +48,7 @@ export function CardRewardScreen({ choices, onSelect, onSkip }: Props) {
                     {card.shield > 0 && <span className="text-blue-400">🛡️ {card.shield} </span>}
                   </div>
                   <div className="text-yellow-400 font-bold">
-                    Cost: {card.cost}
+                    {t("card-cost", { defaultValue: "Cost: {{cost}}", cost: card.cost })}
                   </div>
                 </div>
                 {keywords.length > 0 && (
@@ -66,7 +68,7 @@ export function CardRewardScreen({ choices, onSelect, onSkip }: Props) {
           onClick={onSkip}
           className="block mx-auto text-slate-400 hover:text-yellow-400 font-bold text-lg"
         >
-          Skip (+20 💰)
+          {t("skip-reward", { defaultValue: "Skip (+20 💰)" })}
         </button>
       </div>
     </div>

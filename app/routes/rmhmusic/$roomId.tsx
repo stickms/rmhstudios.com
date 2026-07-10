@@ -14,6 +14,7 @@ const Visualizer = lazy(() => import('@/components/rmhmusic/Visualizer'));
 import PlayerBar from '@/components/rmhmusic/PlayerBar';
 import SearchPanel from '@/components/rmhmusic/SearchPanel';
 import ChatPanel from '@/components/rmhmusic/ChatPanel';
+import GuessPanel from '@/components/rmhmusic/GuessPanel';
 
 export const Route = createFileRoute('/rmhmusic/$roomId')({
   component: RoomPage,
@@ -100,6 +101,7 @@ function RoomPage() {
       )}
       <SearchPanel onPlay={handlePlay} />
       <ChatPanel />
+      <GuessPanel />
       <PlayerBar />
     </div>
   );

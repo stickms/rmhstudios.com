@@ -55,6 +55,68 @@ spec:
             {{- else if eq $svc "recap" }}
             - name: RECAP_PORT
               value: {{ $cfg.port | quote }}
+            {{- else if eq $svc "assets" }}
+            - name: ASSETS_PORT
+              value: {{ $cfg.port | quote }}
+            {{- else if eq $svc "status" }}
+            - name: STATUS_PORT
+              value: {{ $cfg.port | quote }}
+            {{- $fn := include "rmhgo.fullname" $root }}
+            # Background workers (supervisor) and the assets origin have no public
+            # route by design, so they are ALWAYS probed on internal Service DNS
+            # ({release}-<svc>) — that internal health is the meaningful signal.
+            # The supervisor serves /health on its metrics port; cmd/status's bare
+            # "supervisor" default doesn't resolve in k8s, hence the override.
+            - name: STATUS_SUPERVISOR_URL
+              value: "http://{{ $fn }}-supervisor:{{ $root.Values.metricsPort }}/health"
+            {{- with $root.Values.services.assets }}
+            - name: STATUS_ASSETS_URL
+              value: "http://{{ $fn }}-assets:{{ .port }}/health"
+            {{- end }}
+            {{- if and $root.Values.ingress.enabled $root.Values.ingress.host }}
+            # A public ingress host is configured → probe the user-facing services
+            # through the PUBLIC path (ingress → gateway → service) so the
+            # dashboard mirrors real user reachability, not just pod-to-pod health.
+            # STATUS_PUBLIC_ORIGIN drives the website + realtime-hub rows (the
+            # gateway passes /<prefix>/health straight through to each hub).
+            # Gateway and RMHmusic are k3s-only (cmd/status omits them unless their
+            # STATUS_<svc>_URL is set), so wiring them here turns those rows on.
+            - name: STATUS_PUBLIC_ORIGIN
+              value: "https://{{ $root.Values.ingress.host }}"
+            {{- with $root.Values.services.gateway }}
+            - name: STATUS_GATEWAY_URL
+              value: "https://{{ $root.Values.ingress.host }}/health"
+            {{- end }}
+            {{- with $root.Values.services.rmhmusic }}
+            - name: STATUS_RMHMUSIC_URL
+              value: "https://{{ $root.Values.ingress.host }}/rmhmusic-ws/health"
+            {{- end }}
+            {{- else }}
+            # No public ingress (internal/dev cluster) → probe every service on
+            # internal Service DNS so the rows still read correctly. "socket" maps
+            # to the gamehub Service. Gateway/RMHmusic are enabled here too since
+            # there is no public path to reach them through.
+            {{- with $root.Values.services.gateway }}
+            - name: STATUS_GATEWAY_URL
+              value: "http://{{ $fn }}-gateway:{{ .port }}/health"
+            {{- end }}
+            {{- with $root.Values.services.gamehub }}
+            - name: STATUS_SOCKET_URL
+              value: "http://{{ $fn }}-gamehub:{{ .port }}/health"
+            {{- end }}
+            {{- with $root.Values.services.rmhmusic }}
+            - name: STATUS_RMHMUSIC_URL
+              value: "http://{{ $fn }}-rmhmusic:{{ .port }}/health"
+            {{- end }}
+            {{- with $root.Values.services.rmhbox }}
+            - name: STATUS_RMHBOX_URL
+              value: "http://{{ $fn }}-rmhbox:{{ .port }}/health"
+            {{- end }}
+            {{- with $root.Values.services.rmhtube }}
+            - name: STATUS_RMHTUBE_URL
+              value: "http://{{ $fn }}-rmhtube:{{ .port }}/health"
+            {{- end }}
+            {{- end }}
             {{- else if eq $svc "gateway" }}
             - name: PORT_WEB
               value: {{ $cfg.port | quote }}
@@ -78,11 +140,18 @@ spec:
             - name: RMHMUSIC_UPSTREAM
               value: "http://{{ $fn }}-rmhmusic:{{ .port }}"
             {{- end }}
+            {{- with $root.Values.services.assets }}
+            - name: ASSETS_UPSTREAM
+              value: "http://{{ $fn }}-assets:{{ .port }}"
+            {{- end }}
             {{- if $root.Values.webUpstream }}
             - name: WEB_UPSTREAM
               value: {{ $root.Values.webUpstream | quote }}
             {{- end }}
             {{- end }}
+            {{- end }}
+            {{- with $cfg.extraEnv }}
+            {{- toYaml . | nindent 12 }}
             {{- end }}
           ports:
             {{- if $cfg.port }}

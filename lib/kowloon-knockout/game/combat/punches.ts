@@ -59,17 +59,6 @@ export function calculateDamage(
     return Math.max(1, Math.floor(rawDamage * blockReduction * defenseReduction));
 }
 
-/**
- * Calculate actual punch speed (in frames) given fighter stats.
- * Both punchSpeed and moveSpeed contribute — faster fighters strike faster.
- */
-export function calculatePunchSpeed(punch: PunchDef, punchSpeedStat: number, moveSpeed?: number): number {
-    // moveSpeed contributes a 20% bonus to strike speed (baseline moveSpeed ~2.0)
-    const moveSpeedBonus = moveSpeed ? 1 + (moveSpeed - 2.0) * 0.2 : 1;
-    const effectiveSpeed = punchSpeedStat * moveSpeedBonus;
-    return Math.max(4, Math.floor(punch.speed / effectiveSpeed));
-}
-
 /** Stale move decay — repeated same punch type does diminishing damage */
 const STALE_MOVE_DECAY = [1.0, 0.85, 0.72, 0.60];
 
@@ -88,4 +77,18 @@ export function getStaleMoveMultiplier(
     }
     const idx = Math.min(count, STALE_MOVE_DECAY.length - 1);
     return STALE_MOVE_DECAY[idx];
+}
+
+/** Total frames a fighter is committed to a punch (locked out of new actions)
+ *  at the sim's 60Hz step. The animation plays across this whole window, so the
+ *  fighter reads as committed and can't spam. Tunable; preserves the
+ *  jab<cross<hook<uppercut speed ordering. */
+export const PUNCH_COMMIT_FRAMES: Record<PunchType, number> = {
+    jab: 28, cross: 31, hook: 34, uppercut: 37,
+};
+
+/** The single frame a punch becomes active (connects). Kept early in the commit
+ *  window so hits stay snappy — only the recovery/lock is extended. */
+export function punchHitFrame(punch: PunchType): number {
+    return Math.floor(PUNCH_COMMIT_FRAMES[punch] * 0.25);
 }

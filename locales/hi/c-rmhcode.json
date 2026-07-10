@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "टोकन कॉपी करें",
+  "created-date": "{{date}} को बनाया गया",
+  "expired": "समाप्त हो गया",
+  "generate-token": "टोकन जनरेट करें",
+  "last-used-date": "अंतिम बार {{date}} को उपयोग किया गया",
+  "no-active-tokens": "कोई सक्रिय टोकन नहीं। शुरू करने के लिए एक जनरेट करें।",
+  "revoke-token-label": "टोकन रद्द करें",
+  "token-auth-instruction-post": "प्रमाणित करने के लिए।",
+  "token-auth-instruction-pre": "चलाएँ",
+  "token-generated-notice": "टोकन जनरेट हो गया! इसे अभी कॉपी करें - यह दोबारा नहीं दिखाया जाएगा।",
+  "token-name-placeholder": "टोकन का नाम (वैकल्पिक)",
+  "unnamed-token": "बिना नाम का टोकन",
+  "your-tokens": "आपके टोकन"
+}

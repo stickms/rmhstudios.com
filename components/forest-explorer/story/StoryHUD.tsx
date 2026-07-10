@@ -1,34 +1,38 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useStoryStore } from '@/lib/forest-explorer/store';
 import { actMaps } from '@/lib/forest-explorer/actMaps';
 import { getPuzzlesByAct } from '@/lib/forest-explorer/puzzleDefinitions';
 
 function useObjective(currentAct: string, solvedCount: number, totalPuzzles: number, discoveredEntries: string[], storyFlags: Record<string, boolean>) {
+    const { t } = useTranslation("c-forest-explorer");
     return useMemo(() => {
         if (currentAct === 'act1') {
-            if (discoveredEntries.length === 0) return 'Find the glowing notebook nearby';
-            if (solvedCount === 0) return 'Explore — your flashlight reveals hidden puzzle stones';
-            if (solvedCount < totalPuzzles - 1) return `Solve puzzles to unlock the gateway (${solvedCount}/${totalPuzzles})`;
-            if (solvedCount === totalPuzzles - 1) return 'Find and solve the ward seal at the Gateway Arch';
-            if (storyFlags.act1_gateway_opened) return 'Enter the portal at the Gateway Arch';
-            return `${solvedCount}/${totalPuzzles} puzzles solved`;
+            // Portal state first — flags outrank progress counters
+            if (storyFlags.act1_gateway_opened) return t("objective-enter-portal-arch", { defaultValue: "Enter the portal at the Gateway Arch" });
+            if (discoveredEntries.length === 0) return t("objective-find-notebook", { defaultValue: "Find the glowing notebook nearby" });
+            if (solvedCount === 0) return t("objective-explore-flashlight", { defaultValue: "Explore — your flashlight reveals hidden puzzle stones" });
+            if (solvedCount < totalPuzzles - 1) return t("objective-solve-gateway", { solvedCount, totalPuzzles, defaultValue: "Solve puzzles to unlock the gateway ({{solvedCount}}/{{totalPuzzles}})" });
+            return t("objective-ward-seal", { defaultValue: "Find and solve the ward seal at the Gateway Arch" });
         }
         if (currentAct === 'act2') {
-            if (solvedCount < totalPuzzles) return `Calm the shifting forest (${solvedCount}/${totalPuzzles} puzzles)`;
-            if (storyFlags.act2_gateway_opened) return 'Enter the portal to the Tranquil Grove';
-            return `${solvedCount}/${totalPuzzles} puzzles solved`;
+            if (storyFlags.act2_gateway_opened) return t("objective-enter-portal-grove", { defaultValue: "Enter the portal to the Tranquil Grove" });
+            if (solvedCount < totalPuzzles - 1) return t("objective-calm-forest", { solvedCount, totalPuzzles, defaultValue: "Calm the shifting forest ({{solvedCount}}/{{totalPuzzles}} puzzles)" });
+            return t("objective-root-gate", { defaultValue: "Awaken the Root Nexus at the far gate" });
         }
         if (currentAct === 'act3') {
-            if (solvedCount < totalPuzzles) return `Restore the forest (${solvedCount}/${totalPuzzles} puzzles)`;
-            return 'The forest remembers...';
+            if (storyFlags.act3_forest_restored) return t("objective-forest-remembers", { defaultValue: "The forest remembers..." });
+            if (solvedCount < totalPuzzles - 1) return t("objective-restore-forest", { solvedCount, totalPuzzles, defaultValue: "Restore the forest ({{solvedCount}}/{{totalPuzzles}} puzzles)" });
+            return t("objective-heartwood", { defaultValue: "Break the last seal at the Heartwood" });
         }
         return '';
-    }, [currentAct, solvedCount, totalPuzzles, discoveredEntries.length, storyFlags]);
+    }, [currentAct, solvedCount, totalPuzzles, discoveredEntries.length, storyFlags, t]);
 }
 
 export function StoryHUD() {
+    const { t } = useTranslation("c-forest-explorer");
     const currentAct = useStoryStore(s => s.currentAct);
     const flashlightOn = useStoryStore(s => s.flashlightOn);
     const actProgress = useStoryStore(s => s.actProgress);
@@ -47,7 +51,7 @@ export function StoryHUD() {
                 <div className="px-3 py-1.5 rounded-lg bg-black/50 backdrop-blur-sm border border-white/10">
                     <p className="text-white/70 text-xs font-medium">{actConfig.name}</p>
                     <p className="text-white/40 text-[10px]">
-                        {solvedCount}/{puzzles.length} puzzles
+                        {t("puzzles-progress", { solvedCount, total: puzzles.length, defaultValue: "{{solvedCount}}/{{total}} puzzles" })}
                     </p>
                     <p className="text-green-300/50 text-[10px] mt-0.5">{objective}</p>
                 </div>
@@ -62,13 +66,13 @@ export function StoryHUD() {
                             : 'bg-black/50 border-white/10 text-white/40'
                     }`}
                 >
-                    {flashlightOn ? 'ON' : 'OFF'}
+                    {flashlightOn ? t("flashlight-on", { defaultValue: "ON" }) : t("flashlight-off", { defaultValue: "OFF" })}
                 </span>
             </div>
 
             {/* Controls hint */}
             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/30 text-xs tracking-widest whitespace-nowrap z-40">
-                WASD · SHIFT run · SPACE jump · F flashlight · E interact · TAB journal · ESC pause
+                {t("controls-hint", { defaultValue: "WASD · SHIFT run · SPACE jump · F flashlight · E interact · TAB journal · ESC pause" })}
             </div>
 
             {/* Crosshair */}

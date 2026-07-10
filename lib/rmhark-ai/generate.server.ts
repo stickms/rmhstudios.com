@@ -21,6 +21,12 @@ import {
   randomItem,
   type BotPersonaSpec,
 } from './persona';
+import {
+  MAX_POLL_QUESTION_LENGTH,
+  MAX_POLL_OPTION_LENGTH,
+  MIN_POLL_OPTIONS,
+  MAX_POLL_OPTIONS,
+} from '@/lib/rmhark-schema';
 
 const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY!,
@@ -122,6 +128,278 @@ export async function generatePost(opts: {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Polls                                                              */
+/* ------------------------------------------------------------------ */
+
+export interface GeneratedPoll {
+  question: string;
+  options: string[];
+  multiSelect: boolean;
+}
+
+/**
+ * Generate a short, on-theme poll for a bot to post. Returns a validated poll
+ * (2-4 distinct options, clamped to the schema's length caps) or null if the
+ * model output can't be parsed into a usable poll — the caller falls back to a
+ * plain text post. With `persona` the poll stays in the bot's voice/interests;
+ * `topic` optionally nudges it toward the post it accompanies.
+ */
+export async function generatePoll(opts: {
+  persona?: string;
+  topic?: string;
+}): Promise<GeneratedPoll | null> {
+  const system = [
+    'You write a fun, casual poll for a social feed. Output STRICT JSON only — no prose, no markdown fences.',
+    opts.persona
+      ? 'You are the person described below; the poll must fit their interests and voice. Never reveal you are an AI.'
+      : 'Make it light and broadly relatable.',
+    opts.persona ? `\n${opts.persona}\n` : '',
+    `Schema: {"question": string, "options": string[], "multiSelect": boolean}`,
+    `- question: <= ${MAX_POLL_QUESTION_LENGTH} chars, genuinely curious, not a survey or ad.`,
+    `- options: ${MIN_POLL_OPTIONS}-${MAX_POLL_OPTIONS} distinct, punchy choices, each <= ${MAX_POLL_OPTION_LENGTH} chars. A funny/"other" option is welcome.`,
+    '- multiSelect: usually false; true only if picking several genuinely makes sense.',
+  ].join('\n');
+
+  const user = opts.topic?.trim()
+    ? `Write a poll that fits this post:\n"""${opts.topic.trim().slice(0, 280)}"""\n\nReturn only the JSON object.`
+    : 'Write your poll. Return only the JSON object.';
+
+  try {
+    const raw = await chat(
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      { maxTokens: 220, temperature: 1.0 },
+    );
+    const parsed = JSON.parse(stripJson(raw)) as Partial<GeneratedPoll>;
+
+    const question = typeof parsed.question === 'string' ? parsed.question.trim() : '';
+    const seen = new Set<string>();
+    const options = (Array.isArray(parsed.options) ? parsed.options : [])
+      .filter((o): o is string => typeof o === 'string')
+      .map((o) => o.trim().slice(0, MAX_POLL_OPTION_LENGTH))
+      .filter((o) => {
+        const key = o.toLowerCase();
+        if (!o || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, MAX_POLL_OPTIONS);
+
+    if (!question || options.length < MIN_POLL_OPTIONS) return null;
+
+    return {
+      question: question.slice(0, MAX_POLL_QUESTION_LENGTH),
+      options,
+      multiSelect: parsed.multiSelect === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Quote-reposts                                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Generate a short quote-repost comment — the bot's own take placed above a
+ * post it is quoting. Stays in character with `persona`. Never repeats the
+ * quoted text; returns a body clamped to the post limit.
+ */
+export async function generateQuote(opts: {
+  persona?: string;
+  quoted: string;
+}): Promise<string> {
+  const system = [
+    opts.persona
+      ? [
+          'You are roleplaying as a specific person quote-reposting someone else\'s post. Stay completely in character.',
+          'Never reveal or hint that you are an AI. Follow the VOICE rules exactly:',
+          '',
+          opts.persona,
+          '',
+        ].join('\n')
+      : 'You help draft a short quote-repost comment.',
+    `You are adding YOUR brief take above the quoted post — react, agree, riff, or gently push back, and add something. Hard limit ${MAX_POST_CHARS} characters; usually one sentence.`,
+    'Do NOT repeat or quote the original text. Do NOT use markdown, quotes, or a label. Output ONLY your comment.',
+  ].join('\n');
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: `The post you are quoting:\n"""${opts.quoted.slice(0, 280)}"""\n\nWrite your quote-repost comment.` },
+    ],
+    { maxTokens: 160, temperature: 1.05 },
+  );
+  return cleanGeneratedText(raw, MAX_POST_CHARS);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Communities                                                        */
+/* ------------------------------------------------------------------ */
+
+export interface GeneratedCommunity {
+  name: string;
+  description: string;
+  icon: string;
+}
+
+/**
+ * Invent a small, believable community (name + description + emoji icon),
+ * optionally anchored to a `seed` theme. Returns null if the output can't be
+ * parsed into a usable community. Fields are clamped to the Community schema's
+ * caps (name 60, description 500, icon 8).
+ */
+export async function generateCommunity(opts: { seed?: string } = {}): Promise<GeneratedCommunity | null> {
+  const system = [
+    'You invent a small online community / sub-forum people would actually join. Output STRICT JSON only — no prose, no markdown fences.',
+    'Schema: {"name": string, "description": string, "icon": string}',
+    '- name: 2-40 chars, catchy, no leading "#" or "c/". No "official", no "AI", no "bot".',
+    '- description: <= 160 chars, what it is about and who it is for, inviting.',
+    '- icon: exactly one emoji that fits the topic.',
+  ].join('\n');
+
+  const user = opts.seed
+    ? `Base it loosely on this interest: ${opts.seed}\nReturn only the JSON object.`
+    : 'Invent one around any popular interest. Return only the JSON object.';
+
+  try {
+    const raw = await chat(
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: user },
+      ],
+      { maxTokens: 160, temperature: 1.15 },
+    );
+    const parsed = JSON.parse(stripJson(raw)) as Partial<GeneratedCommunity>;
+    const name = typeof parsed.name === 'string' ? parsed.name.trim().replace(/^#+|^c\//i, '').trim().slice(0, 60) : '';
+    if (name.length < 2) return null;
+    const description = typeof parsed.description === 'string' ? parsed.description.trim().slice(0, 500) : '';
+    // Keep whole code points within the icon column's 8-unit cap (no split
+    // surrogate pairs), falling back to a default emoji.
+    let icon = '';
+    for (const ch of Array.from(typeof parsed.icon === 'string' ? parsed.icon.trim() : '')) {
+      if ((icon + ch).length <= 8) icon += ch;
+      else break;
+    }
+    return { name, description, icon: icon || '💬' };
+  } catch {
+    return null;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  GIF search queries                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Turn a post into a short reaction-GIF search query (1-3 plain words) for the
+ * KLIPY picker (lib/rmhark-ai/gif.server.ts). Returns a lowercase phrase, or ''
+ * if it can't produce one — the caller then falls back to trending GIFs.
+ */
+export async function generateGifQuery(opts: { text: string }): Promise<string> {
+  const system = [
+    'You pick a short search query for a reaction-GIF library based on a social post.',
+    'Output ONLY 1-3 plain words — a mood, action, or reaction. Lowercase, no punctuation, no quotes, no emoji.',
+    'Examples: excited · facepalm · monday mood · celebration · so tired · mind blown',
+  ].join('\n');
+
+  try {
+    const raw = await chat(
+      [
+        { role: 'system', content: system },
+        { role: 'user', content: `Post:\n"""${opts.text.trim().slice(0, 280)}"""\n\nGive the GIF search query.` },
+      ],
+      { maxTokens: 16, temperature: 0.8 },
+    );
+    return raw
+      .toLowerCase()
+      .replace(/[^a-z0-9 ]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(' ')
+      .slice(0, 3)
+      .join(' ');
+  } catch {
+    return '';
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Image prompts                                                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Turn a finished post into a concise, literal text-to-image prompt for the
+ * image model. Kept deliberately safe and brand/person-free to minimize
+ * provider refusals. Used by lib/rmhark-ai/image.server.ts.
+ */
+export async function generateImagePrompt(postText: string): Promise<string> {
+  const text = postText.trim().slice(0, 600);
+
+  const system = [
+    'You turn a short social-media post into a prompt for a text-to-image model.',
+    'Output ONE vivid, literal visual description of a single image that fits the post.',
+    'Rules: under 40 words. Describe the subject, setting, style, and mood.',
+    'Do NOT put any text or words in the image. Do NOT depict real, named people, celebrities, brands, or logos.',
+    'Keep it safe-for-work and non-violent.',
+    'Output ONLY the image prompt — no quotes, no labels, no markdown.',
+  ].join('\n');
+
+  const user = text
+    ? `Post:\n"""${text}"""\n\nWrite the image prompt.`
+    : 'Write a tasteful, interesting image prompt for a generic lifestyle social post.';
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+    { maxTokens: 120, temperature: 0.9 },
+  );
+  return cleanGeneratedText(raw, 300);
+}
+
+/**
+ * Turn an AI persona's identity (name / tagline / system prompt) into a concise
+ * text-to-image prompt for a square avatar portrait. Used by
+ * lib/personas/avatar.server.ts. Same safety rails as generateImagePrompt.
+ */
+export async function generatePersonaAvatarPrompt(persona: {
+  name: string;
+  tagline?: string | null;
+  systemPrompt: string;
+}): Promise<string> {
+  const system = [
+    'You write prompts for a text-to-image model that will produce a single SQUARE avatar portrait of a character.',
+    'Given a chatbot persona (its name, tagline, and instructions), describe ONE vivid avatar image that captures who it is.',
+    'Rules: under 40 words. Describe the subject, art style, palette, and mood. Favor a centered head-and-shoulders portrait on a simple background.',
+    'Do NOT put any text, letters, or words in the image. Do NOT depict real, named people, celebrities, brands, or logos.',
+    'Keep it safe-for-work and non-violent.',
+    'Output ONLY the image prompt — no quotes, no labels, no markdown.',
+  ].join('\n');
+
+  const details = [
+    `Name: ${persona.name}`,
+    persona.tagline ? `Tagline: ${persona.tagline}` : '',
+    `Personality / instructions: ${persona.systemPrompt.slice(0, 600)}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: `Persona:\n"""${details}"""\n\nWrite the avatar image prompt.` },
+    ],
+    { maxTokens: 120, temperature: 0.9 },
+  );
+  return cleanGeneratedText(raw, 300);
+}
+
+/* ------------------------------------------------------------------ */
 /*  Replies                                                            */
 /* ------------------------------------------------------------------ */
 
@@ -193,6 +471,96 @@ export async function generateReply(opts: {
     { maxTokens: 300, temperature: 1.0 },
   );
   return cleanGeneratedText(raw, MAX_REPLY_CHARS);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Feed announcements (admin)                                         */
+/* ------------------------------------------------------------------ */
+
+// Mirror the limits enforced by the announcement API/form.
+const ANNOUNCEMENT_TITLE_MAX = 120;
+const ANNOUNCEMENT_BODY_MAX = 1000;
+
+/**
+ * Draft a short headline for a pinned feed announcement banner. Both the
+ * current title draft and the message body are passed as context so the
+ * headline reflects whatever the admin is actually announcing — if they've
+ * started a title, it's refined rather than replaced.
+ */
+export async function generateAnnouncementTitle(opts: {
+  title?: string;
+  body?: string;
+}): Promise<string> {
+  const title = opts.title?.trim();
+  const body = opts.body?.trim();
+
+  const system = [
+    `You write short, punchy titles for pinned announcement banners on a community site called ${FEED_NAME}.`,
+    `Hard limit: ${ANNOUNCEMENT_TITLE_MAX} characters. Aim for a few words — a clear, attention-grabbing headline.`,
+    title
+      ? 'The admin has started a title. Build on it: keep their intent and topic, just sharpen it.'
+      : 'Write a clear, inviting headline that captures the announcement.',
+    'Do NOT use markdown, do NOT wrap the title in quotes, do NOT add a label. Output ONLY the title text.',
+  ].join('\n');
+
+  const context = [
+    title ? `The current title draft is:\n"""${title}"""` : '',
+    body ? `The announcement message is:\n"""${body}"""` : '',
+    !title && !body ? 'Write a friendly, generic announcement headline.' : '',
+    '\nWrite the title.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: context },
+    ],
+    { maxTokens: 60, temperature: 0.9 },
+  );
+  return cleanGeneratedText(raw, ANNOUNCEMENT_TITLE_MAX);
+}
+
+/**
+ * Draft the message body for a pinned feed announcement. The current title and
+ * any in-progress body are folded in so the message stays on-topic; an existing
+ * body draft is refined rather than discarded.
+ */
+export async function generateAnnouncementBody(opts: {
+  title?: string;
+  body?: string;
+}): Promise<string> {
+  const title = opts.title?.trim();
+  const body = opts.body?.trim();
+
+  const system = [
+    `You write the message for a pinned announcement banner on a community site called ${FEED_NAME}.`,
+    `Hard limit: ${ANNOUNCEMENT_BODY_MAX} characters, but keep it tight — one short paragraph (a sentence or three).`,
+    body
+      ? 'The admin has started writing. Build on their draft: keep the intent, specifics, and tone, and finish/refine it.'
+      : 'Write a clear, friendly message that tells the community what is happening.',
+    'Sound like a real person announcing something, not a corporate notice.',
+    'Do NOT use markdown, do NOT wrap the message in quotes, do NOT add a label. Output ONLY the message text.',
+  ].join('\n');
+
+  const context = [
+    title ? `The announcement title is:\n"""${title}"""` : '',
+    body ? `The message I've started writing:\n"""${body}"""` : '',
+    !title && !body ? 'Write a friendly, generic announcement message.' : '',
+    '\nWrite the message.',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const raw = await chat(
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: context },
+    ],
+    { maxTokens: 400, temperature: 0.95 },
+  );
+  return cleanGeneratedText(raw, ANNOUNCEMENT_BODY_MAX);
 }
 
 /* ------------------------------------------------------------------ */

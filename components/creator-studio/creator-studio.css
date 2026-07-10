@@ -1,0 +1,301 @@
+/**
+ * Creator Studio chrome — the page header and the top-level tab bar that sits
+ * above the Pages / Builds / Personas surfaces. The individual tabs reuse the
+ * vibe + builds + library styles; this file only styles the shared shell.
+ */
+
+.cstudio-screen {
+  --studio-gutter: clamp(16px, 4vw, 40px);
+}
+
+/* ── Header / hero ───────────────────────────────────────────────────────── */
+.cstudio-head {
+  padding: clamp(28px, 6vw, 64px) var(--studio-gutter) 0;
+}
+
+.cstudio-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--site-text-dim, #8a8a90);
+}
+
+.cstudio-eyebrow__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--site-accent, #6c5cff);
+  box-shadow: 0 0 12px var(--site-accent, #6c5cff);
+}
+
+.cstudio-title {
+  margin-top: 10px;
+  font-size: clamp(1.9rem, 5vw, 2.9rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--site-text, #f5f5f7);
+}
+
+.cstudio-sub {
+  margin-top: 10px;
+  max-width: 54ch;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: var(--site-text-muted, #a9a9b2);
+}
+
+/* ── Tab bar ─────────────────────────────────────────────────────────────── */
+/* Outer wrapper owns the sticky positioning + chrome. Keeping the horizontal
+   scroll on a separate inner element matters: an element that is BOTH
+   `position: sticky` and an `overflow-x: auto` scroll container doesn't reliably
+   accept horizontal touch scrolling on mobile Safari, so the tabs would clip
+   off-screen with no way to reach them. Decoupling fixes that. */
+.cstudio-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  margin-top: clamp(20px, 4vw, 32px);
+  background: color-mix(in srgb, var(--site-bg, #0c0c0d) 82%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--site-border, #232328);
+}
+.cstudio-tabs__scroll {
+  display: flex;
+  gap: 4px;
+  padding: 8px var(--studio-gutter);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.cstudio-tabs__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.cstudio-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border-radius: 9999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--site-text-muted, #a9a9b2);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.cstudio-tab:hover {
+  color: var(--site-text, #f5f5f7);
+  background: var(--site-surface, #18181b);
+}
+
+.cstudio-tab:active {
+  transform: scale(0.95);
+  transition-duration: 80ms;
+}
+
+.cstudio-tab.is-active {
+  color: var(--site-accent, #6c5cff);
+  background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
+  border-color: color-mix(in srgb, var(--site-accent, #6c5cff) 40%, transparent);
+}
+
+.cstudio-tab__icon {
+  width: 17px;
+  height: 17px;
+}
+
+/* ── Tab body ────────────────────────────────────────────────────────────── */
+.cstudio-body {
+  padding: clamp(16px, 3vw, 28px) var(--studio-gutter) clamp(56px, 9vw, 112px);
+}
+
+/* The Pages tab brings its own hero, so it shouldn't double up the top padding. */
+.cstudio-body--pages {
+  padding-top: 0;
+}
+
+/* ── Ranked summary (top of the Games tab) ──────────────────────────────── */
+.cstudio-ranked {
+  margin-bottom: clamp(16px, 3vw, 24px);
+  border: 1px solid var(--site-border, #232328);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--site-surface, #18181b) 60%, transparent);
+  overflow: hidden;
+}
+
+.cstudio-ranked__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.cstudio-ranked__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  color: var(--site-accent, #6c5cff);
+  background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
+}
+
+.cstudio-ranked__titles {
+  min-width: 0;
+  flex: 1;
+}
+
+.cstudio-ranked__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--site-text, #f5f5f7);
+}
+
+.cstudio-ranked__badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  color: var(--site-accent, #6c5cff);
+  background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
+}
+
+.cstudio-ranked__sub {
+  margin-top: 2px;
+  font-size: 0.82rem;
+  color: var(--site-text-muted, #a9a9b2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cstudio-ranked__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cstudio-ranked__toggle,
+.cstudio-ranked__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 9999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+.cstudio-ranked__toggle {
+  color: var(--site-text-muted, #a9a9b2);
+  background: transparent;
+  border: 1px solid var(--site-border, #232328);
+}
+.cstudio-ranked__toggle:hover {
+  color: var(--site-text, #f5f5f7);
+  background: var(--site-surface, #18181b);
+}
+
+.cstudio-ranked__link {
+  color: var(--site-accent, #6c5cff);
+  background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
+  border: 1px solid color-mix(in srgb, var(--site-accent, #6c5cff) 30%, transparent);
+}
+.cstudio-ranked__link:hover {
+  background: color-mix(in srgb, var(--site-accent, #6c5cff) 22%, transparent);
+}
+
+.cstudio-ranked__chev {
+  transition: transform 0.18s ease;
+}
+.cstudio-ranked__chev.is-open {
+  transform: rotate(180deg);
+}
+
+.cstudio-ranked__body {
+  padding: 4px 16px 16px;
+  border-top: 1px solid var(--site-border, #232328);
+}
+
+.cstudio-ranked__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+}
+
+.cstudio-ranked__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
+.cstudio-ranked__row:hover {
+  background: var(--site-surface, #18181b);
+}
+
+.cstudio-ranked__game {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--site-text, #f5f5f7);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cstudio-ranked__rating {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--site-accent, #6c5cff);
+}
+
+.cstudio-ranked__record {
+  font-variant-numeric: tabular-nums;
+  color: var(--site-text-dim, #8a8a90);
+}
+
+.cstudio-ranked__games {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.cstudio-ranked__chip {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  color: var(--site-text-muted, #a9a9b2);
+  background: var(--site-surface, #18181b);
+  border: 1px solid var(--site-border, #232328);
+}
+
+@media (max-width: 640px) {
+  .cstudio-ranked__sub {
+    display: none;
+  }
+}

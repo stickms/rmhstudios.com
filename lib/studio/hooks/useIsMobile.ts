@@ -1,23 +1,7 @@
-import { useState, useEffect } from 'react';
-import { MOBILE_BREAKPOINT } from '../constants';
-
 /**
- * Returns true when the viewport is narrower than the mobile breakpoint (768px).
- * Uses matchMedia for efficient listening.
+ * Consolidated to a single source of truth. This module historically defined
+ * its own copy of `useIsMobile` (same 768px breakpoint); it now re-exports the
+ * canonical site-wide hook, which uses `useSyncExternalStore` to avoid a
+ * hydration flash. See `hooks/useIsMobile.ts`.
  */
-export function useIsMobile(): boolean {
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.innerWidth < MOBILE_BREAKPOINT;
-  });
-
-  useEffect(() => {
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mql.addEventListener('change', onChange);
-    setIsMobile(mql.matches);
-    return () => mql.removeEventListener('change', onChange);
-  }, []);
-
-  return isMobile;
-}
+export { useIsMobile } from '@/hooks/useIsMobile';

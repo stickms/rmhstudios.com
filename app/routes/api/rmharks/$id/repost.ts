@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
+import { createNotification, removeNotification } from "@/lib/notifications.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/repost')({
   server: {
@@ -53,27 +54,68 @@ export const Route = createFileRoute('/api/rmharks/$id/repost')({
     });
 
     if (existingRepost) {
-      await prisma.rMHarkRepost.delete({ where: { id: existingRepost.id } });
+      const [, updated] = await prisma.$transaction([
+        prisma.rMHarkRepost.delete({ where: { id: existingRepost.id } }),
+        prisma.rMHark.update({
+          where: { id },
+          data: { repostCount: { decrement: 1 } },
+          select: { repostCount: true },
+        }),
+      ]);
 
-      const count = await prisma.rMHarkRepost.count({ where: { rmheetId: id } });
       feedEventBus.publish({
         type: "rmhark.unreposted",
         rmharkId: id,
-        payload: { id, repostCount: count },
+        payload: { id, repostCount: updated.repostCount },
         timestamp: new Date().toISOString(),
       });
+
+      // Retract the (unread) notification when the repost is undone.
+      const owner = await prisma.rMHark.findUnique({ where: { id }, select: { userId: true } });
+      if (owner) {
+        void removeNotification({
+          userId: owner.userId,
+          actorId: userId,
+          type: "REPOST",
+          entityType: "rmhark",
+          entityId: id,
+        });
+      }
 
       return Response.json({ success: true, reposted: false });
     } else {
-      await prisma.rMHarkRepost.create({ data: { rmheetId: id, userId } });
+      const [, updated] = await prisma.$transaction([
+        prisma.rMHarkRepost.create({ data: { rmheetId: id, userId } }),
+        prisma.rMHark.update({
+          where: { id },
+          data: { repostCount: { increment: 1 } },
+          select: { repostCount: true },
+        }),
+      ]);
 
-      const count = await prisma.rMHarkRepost.count({ where: { rmheetId: id } });
       feedEventBus.publish({
         type: "rmhark.reposted",
         rmharkId: id,
-        payload: { id, repostCount: count },
+        payload: { id, repostCount: updated.repostCount },
         timestamp: new Date().toISOString(),
       });
+
+      // Tell the author (dedupes repeated toggle spam; skips self-reposts).
+      const reposted = await prisma.rMHark.findUnique({
+        where: { id },
+        select: { userId: true, content: true },
+      });
+      if (reposted) {
+        void createNotification({
+          userId: reposted.userId,
+          actorId: userId,
+          type: "REPOST",
+          entityType: "rmhark",
+          entityId: id,
+          preview: reposted.content?.slice(0, 140) || null,
+          dedupeUnread: true,
+        });
+      }
 
       return Response.json({ success: true, reposted: true });
     }

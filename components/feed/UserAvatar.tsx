@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import type { FeedItemUser } from '@/lib/feed-types';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
@@ -25,20 +26,22 @@ function userProfileHref(user: FeedItemUser): string {
   return `/u/${user.handle || user.id}`;
 }
 
-export function UserAvatar({ user, size = 'md', linkToProfile = true }: UserAvatarProps) {
+function UserAvatarImpl({ user, size = 'md', linkToProfile = true }: UserAvatarProps) {
+  const { t } = useTranslation('feed');
   const [imgError, setImgError] = useState(false);
 
   if (!user) return null;
 
   const imgSrc = imgError ? DEFAULT_AVATAR : user.image;
   const showImg = !!imgSrc;
+  const frame = user.cosmetics?.avatarFrame;
 
-  const avatar = (
+  const inner = (
     <div className={`${sizeClasses[size]} rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold shrink-0`}>
       {showImg ? (
         <img
           src={imgSrc}
-          alt={user.name || 'User'}
+          alt={user.name || t('user-avatar-alt', { defaultValue: 'User' })}
           loading="lazy"
           width={sizePx[size]}
           height={sizePx[size]}
@@ -51,9 +54,24 @@ export function UserAvatar({ user, size = 'md', linkToProfile = true }: UserAvat
     </div>
   );
 
+  // Equipped avatar frame (cosmetic): a thin gradient/solid ring around the avatar.
+  const avatar = frame ? (
+    <div className="rounded-full p-0.5 shrink-0" style={{ background: frame.gradient ?? frame.color }}>
+      {inner}
+    </div>
+  ) : (
+    inner
+  );
+
   if (linkToProfile) {
     return <Link to={userProfileHref(user)}>{avatar}</Link>;
   }
 
   return avatar;
 }
+
+/**
+ * Memoized: avatars render in long feed/message/leaderboard lists, so skipping
+ * re-renders when the `user`/`size` props are unchanged avoids wasted work.
+ */
+export const UserAvatar = memo(UserAvatarImpl);

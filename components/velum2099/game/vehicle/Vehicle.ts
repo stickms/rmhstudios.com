@@ -52,6 +52,25 @@ export class Vehicle {
         this._collisionCooldowns = new Map();
         this._collisionCooldownTime = 0.3;
 
+        // ── Oriented bounding box (OBB) collision scratch ──
+        // Tight half-extents of the AE86 body footprint (matches the lower body
+        // BoxGeometry 1.7 × 4.2 → half 0.85 × 2.1). Used by the SAT narrow phase.
+        this._halfWidth = 0.85;   // local X
+        this._halfLength = 2.1;   // local Z
+        this._halfHeight = 0.65;  // local Y (for broad-phase AABB)
+        // Two orthonormal world axes of the car's footprint (width, length) and
+        // two for the obstacle. Mutated in place each frame to avoid allocation.
+        this._vAxes = [
+            { x: 1, z: 0, h: this._halfWidth },   // width  (local X)
+            { x: 0, z: 1, h: this._halfLength },  // length (local Z)
+        ];
+        this._oAxes = [
+            { x: 1, z: 0, h: 0 },
+            { x: 0, z: 1, h: 0 },
+        ];
+        this._satScratch = [this._vAxes[0], this._vAxes[1], this._oAxes[0], this._oAxes[1]];
+        this._mtv = { x: 0, z: 0, depth: 0 };
+
         // Reusable vectors (avoid per-frame allocation)
         this._forward = new Vector3();
         this._right = new Vector3();
@@ -64,6 +83,18 @@ export class Vehicle {
             left: false,
             right: false,
             handbrake: false,
+        };
+
+        // Analog input (mobile joystick / touch). When `active` and a control is
+        // deflected it overrides the keyboard for that axis; otherwise keyboard wins.
+        // steer: -1..1 (positive = steer left, matching keys.left)
+        this.mobileInput = {
+            active: false,
+            steer: 0,
+            throttle: 0,
+            brake: 0,
+            handbrake: false,
+            fire: false,
         };
 
         this._buildMesh();
@@ -349,10 +380,15 @@ export class Vehicle {
     }
 
     update(dt) {
-        // Throttle / brake from keys
-        this.throttle = this.keys.forward ? 1 : 0;
-        this.brake = this.keys.backward ? 1 : 0;
-        this.handbrake = this.keys.handbrake;
+        // Resolve input source — analog (mobile joystick) overrides keyboard per-axis
+        const m = this.mobileInput;
+        const useMobileSteer = m.active && Math.abs(m.steer) > 0.02;
+        const useMobileDrive = m.active && (m.throttle > 0.02 || m.brake > 0.02);
+
+        // Throttle / brake from whichever source is active this frame
+        this.throttle = useMobileDrive ? Math.min(1, m.throttle) : (this.keys.forward ? 1 : 0);
+        this.brake = useMobileDrive ? Math.min(1, m.brake) : (this.keys.backward ? 1 : 0);
+        this.handbrake = this.keys.handbrake || (m.active && m.handbrake);
 
         const wasDrifting = this.drifting;
         this.drifting = this.handbrake && Math.abs(this.velocity) > 3;
@@ -367,7 +403,15 @@ export class Vehicle {
         const currentMaxSteer = this.drifting ? this.driftMaxSteer : this.maxSteer;
         const currentSteerSpeed = this.drifting ? this.steerSpeed * this.driftSteerMultiplier : this.steerSpeed;
 
-        if (this.keys.left) {
+        if (useMobileSteer) {
+            // Analog: ease steerAngle toward joystick target
+            const target = Math.max(-1, Math.min(1, m.steer)) * currentMaxSteer;
+            if (this.steerAngle < target) {
+                this.steerAngle = Math.min(this.steerAngle + currentSteerSpeed * dt, target);
+            } else if (this.steerAngle > target) {
+                this.steerAngle = Math.max(this.steerAngle - currentSteerSpeed * dt, target);
+            }
+        } else if (this.keys.left) {
             this.steerAngle = Math.min(this.steerAngle + currentSteerSpeed * dt, currentMaxSteer);
         } else if (this.keys.right) {
             this.steerAngle = Math.max(this.steerAngle - currentSteerSpeed * dt, -currentMaxSteer);
@@ -496,10 +540,12 @@ export class Vehicle {
     /* ── Collision ── */
 
     _updateBoundingBox() {
-        // AE86 body is ~1.7 x 0.65 x 4.2
-        const halfW = 0.85;
-        const halfH = 0.65;
-        const halfD = 2.1;
+        // Broad-phase AABB — the axis-aligned envelope of the rotated car body.
+        // Deliberately an over-approximation of the true OBB so it never misses a
+        // candidate; the SAT narrow phase below rejects the false positives.
+        const halfW = this._halfWidth;
+        const halfH = this._halfHeight;
+        const halfD = this._halfLength;
         const cosY = Math.abs(Math.cos(this.rotation.y));
         const sinY = Math.abs(Math.sin(this.rotation.y));
 
@@ -518,8 +564,72 @@ export class Vehicle {
         );
     }
 
+    /** Refresh the car's two world-space footprint axes from its heading. */
+    _updateVehicleAxes() {
+        const a = this.rotation.y;
+        const ca = Math.cos(a), sa = Math.sin(a);
+        // Local X (width) → (cos, -sin); local Z (length) → (sin, cos)
+        this._vAxes[0].x = ca;  this._vAxes[0].z = -sa; this._vAxes[0].h = this._halfWidth;
+        this._vAxes[1].x = sa;  this._vAxes[1].z = ca;  this._vAxes[1].h = this._halfLength;
+    }
+
+    /**
+     * Separating Axis Theorem test between the car OBB and an obstacle OBB on the
+     * XZ plane. Axes/centres are read from this._vAxes / this._oAxes (pre-filled).
+     * On overlap, writes the minimum translation vector into this._mtv (normal
+     * points from the obstacle toward the car) and returns it; otherwise null.
+     */
+    _satResolve(aCx, aCz, bCx, bCz) {
+        const dx = aCx - bCx, dz = aCz - bCz;
+        const axes = this._satScratch;
+        const a0 = this._vAxes[0], a1 = this._vAxes[1];
+        const b0 = this._oAxes[0], b1 = this._oAxes[1];
+        let minDepth = Infinity, nx = 0, nz = 0;
+
+        for (let i = 0; i < 4; i++) {
+            const ax = axes[i];
+            const ra = Math.abs(a0.x * ax.x + a0.z * ax.z) * a0.h +
+                       Math.abs(a1.x * ax.x + a1.z * ax.z) * a1.h;
+            const rb = Math.abs(b0.x * ax.x + b0.z * ax.z) * b0.h +
+                       Math.abs(b1.x * ax.x + b1.z * ax.z) * b1.h;
+            const dist = dx * ax.x + dz * ax.z;
+            const overlap = ra + rb - Math.abs(dist);
+            if (overlap <= 0) return null; // separating axis → no collision
+            if (overlap < minDepth) {
+                minDepth = overlap;
+                const s = dist < 0 ? -1 : 1; // point normal from obstacle → car
+                nx = ax.x * s; nz = ax.z * s;
+            }
+        }
+
+        this._mtv.x = nx; this._mtv.z = nz; this._mtv.depth = minDepth;
+        return this._mtv;
+    }
+
+    /** Fill this._oAxes / returns centre for a collidable's obstacle OBB. */
+    _setObstacleOBB(col) {
+        const o0 = this._oAxes[0], o1 = this._oAxes[1];
+        if (col.obb) {
+            // Oriented obstacle (moving car): heading + local half-extents.
+            const b = col.obb.angle;
+            const cb = Math.cos(b), sb = Math.sin(b);
+            o0.x = cb; o0.z = -sb; o0.h = col.obb.hw; // width  (local X)
+            o1.x = sb; o1.z = cb;  o1.h = col.obb.hd; // length (local Z)
+            // Centre = box centre (kept in sync with the mesh by the caller).
+            this._obCx = (col.box.min.x + col.box.max.x) * 0.5;
+            this._obCz = (col.box.min.z + col.box.max.z) * 0.5;
+        } else {
+            // Static obstacle (building/barrier/pole/cone): axis-aligned footprint.
+            o0.x = 1; o0.z = 0; o0.h = (col.box.max.x - col.box.min.x) * 0.5;
+            o1.x = 0; o1.z = 1; o1.h = (col.box.max.z - col.box.min.z) * 0.5;
+            this._obCx = (col.box.min.x + col.box.max.x) * 0.5;
+            this._obCz = (col.box.min.z + col.box.max.z) * 0.5;
+        }
+    }
+
     checkCollisions(collidables, dt) {
         this._updateBoundingBox();
+        this._updateVehicleAxes();
 
         // Tick down cooldowns
         for (const [mesh, t] of this._collisionCooldowns) {
@@ -533,23 +643,19 @@ export class Vehicle {
         const PUSH_MARGIN = 0.05;
 
         for (const col of collidables) {
-            if (pushed) this._updateBoundingBox();
+            if (pushed) { this._updateBoundingBox(); }
+            // Broad phase — cheap AABB reject (includes the vertical axis so we
+            // don't collide with bridges/highways at a different elevation).
             if (!this.boundingBox.intersectsBox(col.box)) continue;
 
-            const overlapX1 = this.boundingBox.max.x - col.box.min.x;
-            const overlapX2 = col.box.max.x - this.boundingBox.min.x;
-            const overlapZ1 = this.boundingBox.max.z - col.box.min.z;
-            const overlapZ2 = col.box.max.z - this.boundingBox.min.z;
+            // Narrow phase — true oriented-box overlap on the XZ plane.
+            this._setObstacleOBB(col);
+            const mtv = this._satResolve(this.position.x, this.position.z, this._obCx, this._obCz);
+            if (!mtv) continue;
 
-            const minOverlapX = Math.min(overlapX1, overlapX2);
-            const minOverlapZ = Math.min(overlapZ1, overlapZ2);
-
-            let pushX = 0, pushZ = 0;
-            if (minOverlapX < minOverlapZ) {
-                pushX = (overlapX1 < overlapX2 ? -1 : 1) * (minOverlapX + PUSH_MARGIN);
-            } else {
-                pushZ = (overlapZ1 < overlapZ2 ? -1 : 1) * (minOverlapZ + PUSH_MARGIN);
-            }
+            const nx = mtv.x, nz = mtv.z;
+            const depth = mtv.depth + PUSH_MARGIN;
+            const pushX = nx * depth, pushZ = nz * depth;
 
             const isNewCollision = !this._collisionCooldowns.has(col.mesh);
 
@@ -563,8 +669,6 @@ export class Vehicle {
 
                     if (Math.abs(this.velocity) > 0.1) {
                         this._fwd.set(0, 0, -1).applyEuler(this.rotation);
-                        const nx = pushX !== 0 ? Math.sign(pushX) : 0;
-                        const nz = pushZ !== 0 ? Math.sign(pushZ) : 0;
                         const dot = this._fwd.x * nx + this._fwd.z * nz;
                         if (dot < 0) {
                             this.velocity *= Math.max(0, 1 + dot);
@@ -583,11 +687,25 @@ export class Vehicle {
                     }
                     break;
 
+                case 'police':
+                    // Solid cop car — shove the player out and bleed speed, and
+                    // nudge the cruiser so ramming/blocking feels physical.
+                    this.position.x += pushX;
+                    this.position.z += pushZ;
+                    pushed = true;
+                    if (isNewCollision) {
+                        this.velocity *= 0.45;
+                        col.mesh.position.x -= pushX * 0.7;
+                        col.mesh.position.z -= pushZ * 0.7;
+                    }
+                    break;
+
                 case 'cone':
                     if (isNewCollision) {
                         this.velocity *= 0.9;
-                        col.mesh.position.x += pushX * 3;
-                        col.mesh.position.z += pushZ * 3;
+                        // Knock the cone away along the car's travel direction.
+                        col.mesh.position.x -= nx * (depth + 0.6) * 3;
+                        col.mesh.position.z -= nz * (depth + 0.6) * 3;
                         col.mesh.position.y += 0.2;
                     }
                     break;

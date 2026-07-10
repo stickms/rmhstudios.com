@@ -4,11 +4,15 @@ import { motion } from 'framer-motion';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { useEffect, useState } from 'react';
 import { COMBO_DEFS } from '@/lib/kowloon-knockout/game/combat/combos';
+import { useTranslation } from 'react-i18next';
+import GraphicsSettings from './GraphicsSettings';
 
 export default function MainMenu() {
+    const { t } = useTranslation("c-kowloon-knockout");
     const { setPhase, setMultiplayer } = useGameStore();
     const [showControls, setShowControls] = useState(false);
     const [showCombos, setShowCombos] = useState(false);
+    const [showGraphics, setShowGraphics] = useState(false);
     const [flickerClass, setFlickerClass] = useState('');
 
     useEffect(() => {
@@ -67,11 +71,11 @@ export default function MainMenu() {
                 >
                     <motion.button
                         className="neon-button neon-button-fight"
-                        onClick={() => setPhase('select')}
+                        onClick={() => { setMultiplayer(false); setPhase('select'); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        FIGHT
+                        {t("fight", { defaultValue: "FIGHT" })}
                     </motion.button>
 
                     <motion.button
@@ -80,25 +84,34 @@ export default function MainMenu() {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        VERSUS
+                        {t("versus", { defaultValue: "VERSUS" })}
                     </motion.button>
 
                     <motion.button
                         className="neon-button neon-button-controls"
-                        onClick={() => { setShowControls(!showControls); setShowCombos(false); }}
+                        onClick={() => { setShowControls(!showControls); setShowCombos(false); setShowGraphics(false); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        HOW TO PLAY
+                        {t("how-to-play", { defaultValue: "HOW TO PLAY" })}
                     </motion.button>
 
                     <motion.button
                         className="neon-button neon-button-controls"
-                        onClick={() => { setShowCombos(!showCombos); setShowControls(false); }}
+                        onClick={() => { setShowCombos(!showCombos); setShowControls(false); setShowGraphics(false); }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        COMBOS
+                        {t("combos", { defaultValue: "COMBOS" })}
+                    </motion.button>
+
+                    <motion.button
+                        className="neon-button neon-button-controls"
+                        onClick={() => { setShowGraphics(!showGraphics); setShowControls(false); setShowCombos(false); }}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        {t("graphics", { defaultValue: "GRAPHICS" })}
                     </motion.button>
                 </motion.div>
 
@@ -109,65 +122,65 @@ export default function MainMenu() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.3 }}
                     >
-                        <h2 className="controls-title">CONTROLS</h2>
+                        <h2 className="controls-title">{t("controls", { defaultValue: "CONTROLS" })}</h2>
                         <div className="controls-grid">
                             <div className="controls-section">
-                                <h3>MOVEMENT</h3>
+                                <h3>{t("movement", { defaultValue: "MOVEMENT" })}</h3>
                                 <div className="control-row">
                                     <kbd>A</kbd> / <kbd>←</kbd>
-                                    <span>Move Left</span>
+                                    <span>{t("move-left", { defaultValue: "Move Left" })}</span>
                                 </div>
                                 <div className="control-row">
                                     <kbd>D</kbd> / <kbd>→</kbd>
-                                    <span>Move Right</span>
+                                    <span>{t("move-right", { defaultValue: "Move Right" })}</span>
                                 </div>
                                 <div className="control-row">
                                     <kbd>S</kbd> / <kbd>↓</kbd>
-                                    <span>Block</span>
+                                    <span>{t("block", { defaultValue: "Block" })}</span>
                                 </div>
                             </div>
 
                             <div className="controls-section">
-                                <h3>PUNCHES</h3>
+                                <h3>{t("punches", { defaultValue: "PUNCHES" })}</h3>
                                 <div className="control-row">
                                     <kbd>J</kbd>
-                                    <span>Jab <small>(fast, low dmg)</small></span>
+                                    <span>{t("jab", { defaultValue: "Jab" })} <small>{t("jab-desc", { defaultValue: "(fast, low dmg)" })}</small></span>
                                 </div>
                                 <div className="control-row">
                                     <kbd>K</kbd>
-                                    <span>Cross <small>(med speed/dmg)</small></span>
+                                    <span>{t("cross", { defaultValue: "Cross" })} <small>{t("cross-desc", { defaultValue: "(med speed/dmg)" })}</small></span>
                                 </div>
                                 <div className="control-row">
                                     <kbd>L</kbd>
-                                    <span>Hook <small>(slow, high dmg)</small></span>
+                                    <span>{t("hook", { defaultValue: "Hook" })} <small>{t("hook-desc", { defaultValue: "(slow, high dmg)" })}</small></span>
                                 </div>
                                 <div className="control-row">
                                     <kbd>U</kbd>
-                                    <span>Uppercut <small>(slowest, max dmg)</small></span>
+                                    <span>{t("uppercut", { defaultValue: "Uppercut" })} <small>{t("uppercut-desc", { defaultValue: "(slowest, max dmg)" })}</small></span>
                                 </div>
                             </div>
 
                             <div className="controls-section combos-section">
-                                <h3>COMBOS</h3>
+                                <h3>{t("combos", { defaultValue: "COMBOS" })}</h3>
                                 <div className="control-row">
                                     <span className="combo-keys">J → K</span>
-                                    <span>One-Two <small>(+20%)</small></span>
+                                    <span>{t("one-two", { defaultValue: "One-Two" })} <small>(+20%)</small></span>
                                 </div>
                                 <div className="control-row">
                                     <span className="combo-keys">J → K → L</span>
-                                    <span>Classic Triple <small>(+35%)</small></span>
+                                    <span>{t("classic-triple", { defaultValue: "Classic Triple" })} <small>(+35%)</small></span>
                                 </div>
                                 <div className="control-row">
                                     <span className="combo-keys">J → J → U</span>
-                                    <span>Body Breaker <small>(+30%)</small></span>
+                                    <span>{t("body-breaker", { defaultValue: "Body Breaker" })} <small>(+30%)</small></span>
                                 </div>
                                 <div className="control-row">
                                     <span className="combo-keys">K → L → U</span>
-                                    <span>Haymaker <small>(+50%)</small></span>
+                                    <span>{t("haymaker", { defaultValue: "Haymaker" })} <small>(+50%)</small></span>
                                 </div>
                                 <div className="control-row">
                                     <span className="combo-keys">J → K → L → U</span>
-                                    <span>Fury Combo <small>(+75%)</small></span>
+                                    <span>{t("fury-combo", { defaultValue: "Fury Combo" })} <small>(+75%)</small></span>
                                 </div>
                             </div>
                         </div>
@@ -176,7 +189,7 @@ export default function MainMenu() {
                             className="neon-button neon-button-close"
                             onClick={() => setShowControls(false)}
                         >
-                            CLOSE
+                            {t("close", { defaultValue: "CLOSE" })}
                         </button>
                     </motion.div>
                 )}
@@ -188,7 +201,7 @@ export default function MainMenu() {
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.3 }}
                     >
-                        <h2 className="controls-title">COMBOS</h2>
+                        <h2 className="controls-title">{t("combos", { defaultValue: "COMBOS" })}</h2>
                         <div className="controls-grid">
                             <div className="controls-section combos-section">
                                 {COMBO_DEFS.map((combo) => {
@@ -213,14 +226,16 @@ export default function MainMenu() {
                             className="neon-button neon-button-close"
                             onClick={() => setShowCombos(false)}
                         >
-                            CLOSE
+                            {t("close", { defaultValue: "CLOSE" })}
                         </button>
                     </motion.div>
                 )}
+
+                {showGraphics && <GraphicsSettings onClose={() => setShowGraphics(false)} />}
             </motion.div>
 
             <div className="menu-footer">
-                <span>PRESS START</span>
+                <span>{t("press-start", { defaultValue: "PRESS START" })}</span>
             </div>
         </div>
     );

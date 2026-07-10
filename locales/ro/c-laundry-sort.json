@@ -1,0 +1,22 @@
+{
+  "correct-sort": "Sortare corectă:",
+  "failed-to-load-leaderboard": "Încărcarea clasamentului a eșuat",
+  "game-description": "Privește cum hainele colorate cad de sus. Lasă-le să cadă în coșurile de culoare potrivite pentru a câștiga puncte. Coșurile greșite pierd puncte!",
+  "game-over": "JOC TERMINAT",
+  "leaderboard": "CLASAMENT",
+  "loading": "Se încarcă…",
+  "no-scores-yet": "Încă nu există scoruri. Fii primul!",
+  "play-again": "Joacă din nou",
+  "points": "puncte",
+  "score": "SCOR",
+  "score-submitted": "✓ Scor trimis!",
+  "sign-in-to-play": "Conectează-te pentru a juca",
+  "sign-in-to-save": "Conectează-te pentru a-ți salva scorul!",
+  "sign-in-to-submit": "Conectează-te pentru a trimite",
+  "sort-the-laundry": "SORTEAZĂ RUFELE!",
+  "start-game": "Începe jocul",
+  "submitting-score": "Se trimite scorul…",
+  "time": "TIMP",
+  "time-limit": "Limită de timp: 1 minut",
+  "wrong-bin": "Coș greșit:"
+}

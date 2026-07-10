@@ -174,3 +174,21 @@ export const actMaps: Record<string, ActMapConfig> = {
 export function getActMap(act: import('./types').ActId): ActMapConfig {
     return actMaps[act];
 }
+
+/**
+ * True when (x, z) falls inside any corridor of the given map (+margin).
+ * Shared by scene generation and collider generation so visible trees and
+ * collision always agree.
+ */
+export function isInCorridor(config: ActMapConfig, x: number, z: number, margin = 0): boolean {
+    return config.corridors.some(c => {
+        const [sx, sz] = c.start;
+        const [ex, ez] = c.end;
+        const dx = ex - sx, dz = ez - sz;
+        const len2 = dx * dx + dz * dz;
+        const t = len2 > 0 ? Math.max(0, Math.min(1, ((x - sx) * dx + (z - sz) * dz) / len2)) : 0;
+        const px = sx + t * dx, pz = sz + t * dz;
+        const dist = Math.sqrt((x - px) * (x - px) + (z - pz) * (z - pz));
+        return dist < c.width * 0.5 + margin;
+    });
+}

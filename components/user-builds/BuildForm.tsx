@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
 import { Loader2, Plus, X, Upload, AlertCircle } from 'lucide-react';
 import type { Build, BuildCategory } from '@/lib/user-builds-types';
@@ -19,6 +20,7 @@ const COMMON_TECHNOLOGIES = [
 ];
 
 export function BuildForm({ build, onSuccess }: BuildFormProps) {
+  const { t } = useTranslation("c-user-builds");
   const navigate = useNavigate();
   const isEditing = !!build;
 
@@ -36,6 +38,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
   const [categoryId, setCategoryId] = useState(build?.category?.id || '');
   const [technologies, setTechnologies] = useState<string[]>(build?.technologies || []);
   const [tags, setTags] = useState<string[]>(build?.tags || []);
+  const [price, setPrice] = useState<string>(build?.price ? String(build.price) : '');
   const [visibility, setVisibility] = useState<'PUBLIC' | 'UNLISTED' | 'PRIVATE'>(
     build?.visibility || 'PUBLIC'
   );
@@ -67,6 +70,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         technologies,
         tags,
         visibility,
+        price: price ? Math.max(0, parseInt(price, 10) || 0) : 0,
       };
 
       const res = await fetch(
@@ -80,7 +84,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || 'Failed to save build');
+        throw new Error(data.error || t("failed-to-save", { defaultValue: "Failed to save build" }));
       }
 
       const savedBuild = await res.json();
@@ -91,7 +95,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         navigate({ to: `/user-builds/${savedBuild.slug}` });
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Failed to save build');
+      setError(e instanceof Error ? e.message : t("failed-to-save", { defaultValue: "Failed to save build" }));
     } finally {
       setLoading(false);
     }
@@ -128,7 +132,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
-        <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center gap-3 text-red-400">
+        <div className="p-4 rounded-site-sm bg-site-danger/10 border border-site-danger/30 flex items-center gap-3 text-site-danger">
           <AlertCircle className="w-5 h-5 shrink-0" />
           {error}
         </div>
@@ -137,14 +141,14 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
       {/* Title */}
       <div>
         <label className="block text-sm font-medium text-site-text mb-2">
-          Title <span className="text-red-400">*</span>
+          {t("label-title", { defaultValue: "Title" })} <span className="text-site-danger">*</span>
         </label>
         <input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="My Awesome Project"
-          className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text outline-none focus:border-violet-500/50 transition-colors"
+          placeholder={t("placeholder-title", { defaultValue: "My Awesome Project" })}
+          className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text outline-none focus:border-site-accent/50 transition-colors"
           maxLength={100}
           required
         />
@@ -154,13 +158,13 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
       {/* Description */}
       <div>
         <label className="block text-sm font-medium text-site-text mb-2">
-          Description <span className="text-red-400">*</span>
+          {t("label-description", { defaultValue: "Description" })} <span className="text-site-danger">*</span>
         </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          placeholder="A brief description of your project..."
-          className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text outline-none focus:border-violet-500/50 transition-colors resize-none"
+          placeholder={t("placeholder-description", { defaultValue: "A brief description of your project..." })}
+          className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text outline-none focus:border-site-accent/50 transition-colors resize-none"
           rows={3}
           maxLength={500}
           required
@@ -170,13 +174,13 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
 
       {/* Category */}
       <div>
-        <label className="block text-sm font-medium text-site-text mb-2">Category</label>
+        <label className="block text-sm font-medium text-site-text mb-2">{t("label-category", { defaultValue: "Category" })}</label>
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text outline-none focus:border-violet-500/50 transition-colors"
+          className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text outline-none focus:border-site-accent/50 transition-colors"
         >
-          <option value="">Select a category...</option>
+          <option value="">{t("select-category", { defaultValue: "Select a category..." })}</option>
           {categories.map((cat) => (
             <option key={cat.id} value={cat.id}>
               {cat.name}
@@ -187,7 +191,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
 
       {/* Technologies */}
       <div>
-        <label className="block text-sm font-medium text-site-text mb-2">Technologies</label>
+        <label className="block text-sm font-medium text-site-text mb-2">{t("label-technologies", { defaultValue: "Technologies" })}</label>
         <div className="flex flex-wrap gap-2 mb-3">
           {COMMON_TECHNOLOGIES.map((tech) => (
             <button
@@ -196,8 +200,8 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
               onClick={() => toggleTechnology(tech)}
               className={`px-3 py-1 rounded-full text-xs border transition-colors ${
                 technologies.includes(tech)
-                  ? 'bg-violet-500/20 text-violet-400 border-violet-500/30'
-                  : 'bg-site-surface text-site-text-muted border-site-border hover:border-violet-500/30'
+                  ? 'bg-site-accent/20 text-site-accent border-site-accent/30'
+                  : 'bg-site-surface text-site-text-muted border-site-border hover:border-site-accent/30'
               }`}
             >
               {tech}
@@ -210,8 +214,8 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
             value={newTech}
             onChange={(e) => setNewTech(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCustomTech())}
-            placeholder="Add custom technology..."
-            className="flex-1 px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
+            placeholder={t("placeholder-custom-tech", { defaultValue: "Add custom technology..." })}
+            className="flex-1 px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
           />
           <Button type="button" onClick={addCustomTech} variant="secondary" size="sm">
             <Plus className="w-4 h-4" />
@@ -222,10 +226,10 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
             {technologies.map((tech) => (
               <span
                 key={tech}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-violet-500/20 text-violet-400 text-xs"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded bg-site-accent/20 text-site-accent text-xs"
               >
                 {tech}
-                <button type="button" onClick={() => toggleTechnology(tech)} className="p-0.5 hover:bg-violet-500/30 rounded transition-colors" aria-label={`Remove ${tech}`}>
+                <button type="button" onClick={() => toggleTechnology(tech)} className="p-0.5 hover:bg-site-accent/30 rounded transition-colors" aria-label={t("remove-item", { defaultValue: "Remove {{name}}", name: tech })}>
                   <X className="w-3.5 h-3.5" />
                 </button>
               </span>
@@ -236,15 +240,15 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
 
       {/* Tags */}
       <div>
-        <label className="block text-sm font-medium text-site-text mb-2">Tags</label>
+        <label className="block text-sm font-medium text-site-text mb-2">{t("label-tags", { defaultValue: "Tags" })}</label>
         <div className="flex gap-2">
           <input
             type="text"
             value={newTag}
             onChange={(e) => setNewTag(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
-            placeholder="Add a tag..."
-            className="flex-1 px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
+            placeholder={t("placeholder-tag", { defaultValue: "Add a tag..." })}
+            className="flex-1 px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
             maxLength={30}
           />
           <Button type="button" onClick={addTag} variant="secondary" size="sm">
@@ -259,72 +263,88 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
                 className="flex items-center gap-1 px-2 py-1 rounded bg-site-surface border border-site-border text-site-text-muted text-xs"
               >
                 #{tag}
-                <button type="button" onClick={() => removeTag(tag)} className="p-0.5 hover:bg-site-border rounded transition-colors" aria-label={`Remove ${tag}`}>
+                <button type="button" onClick={() => removeTag(tag)} className="p-0.5 hover:bg-site-border rounded transition-colors" aria-label={t("remove-item", { defaultValue: "Remove {{name}}", name: tag })}>
                   <X className="w-3.5 h-3.5" />
                 </button>
               </span>
             ))}
           </div>
         )}
-        <p className="text-xs text-site-text-dim mt-1">{tags.length}/10 tags</p>
+        <p className="text-xs text-site-text-dim mt-1">{t("tags-count", { defaultValue: "{{count}}/10 tags", count: tags.length })}</p>
       </div>
 
       {/* URLs */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-site-text mb-2">Repository URL</label>
+          <label className="block text-sm font-medium text-site-text mb-2">{t("label-repo-url", { defaultValue: "Repository URL" })}</label>
           <input
             type="url"
             value={repoUrl}
             onChange={(e) => setRepoUrl(e.target.value)}
             placeholder="https://github.com/..."
-            className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
+            className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-site-text mb-2">Demo URL</label>
+          <label className="block text-sm font-medium text-site-text mb-2">{t("label-demo-url", { defaultValue: "Demo URL" })}</label>
           <input
             type="url"
             value={demoUrl}
             onChange={(e) => setDemoUrl(e.target.value)}
             placeholder="https://..."
-            className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
+            className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
           />
         </div>
       </div>
 
       {/* Thumbnail URL */}
       <div>
-        <label className="block text-sm font-medium text-site-text mb-2">Thumbnail URL</label>
+        <label className="block text-sm font-medium text-site-text mb-2">{t("label-thumbnail-url", { defaultValue: "Thumbnail URL" })}</label>
         <input
           type="url"
           value={thumbnailUrl}
           onChange={(e) => setThumbnailUrl(e.target.value)}
           placeholder="https://..."
-          className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-violet-500/50 transition-colors"
+          className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text text-sm outline-none focus:border-site-accent/50 transition-colors"
         />
         {thumbnailUrl && (
-          <div className="mt-3 rounded-lg overflow-hidden border border-site-border max-w-xs">
-            <img src={thumbnailUrl} alt="Thumbnail preview" className="w-full" />
+          <div className="mt-3 rounded-site-sm overflow-hidden border border-site-border max-w-xs">
+            <img src={thumbnailUrl} alt={t("thumbnail-preview", { defaultValue: "Thumbnail preview" })} className="w-full" />
           </div>
         )}
       </div>
 
       {/* README */}
       <div>
-        <label className="block text-sm font-medium text-site-text mb-2">README (Markdown)</label>
+        <label className="block text-sm font-medium text-site-text mb-2">{t("label-readme", { defaultValue: "README (Markdown)" })}</label>
         <textarea
           value={readme}
           onChange={(e) => setReadme(e.target.value)}
           placeholder="# Project Name&#10;&#10;Description of your project..."
-          className="w-full px-4 py-2 rounded-lg bg-site-surface border border-site-border text-site-text font-mono text-sm outline-none focus:border-violet-500/50 transition-colors resize-none"
+          className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text font-mono text-sm outline-none focus:border-site-accent/50 transition-colors resize-none"
           rows={10}
         />
       </div>
 
+      {/* Marketplace price */}
+      <div>
+        <label className="block text-sm font-medium text-site-text mb-2">{t("label-price", { defaultValue: "Price (coins)" })}</label>
+        <input
+          type="number"
+          min={0}
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder={t("placeholder-price", { defaultValue: "0 (free)" })}
+          className="w-full rounded-site-sm border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
+        />
+        <p className="mt-1 text-xs text-site-text-dim">
+          {t("price-description", { defaultValue: "Charge coins to unlock the README, source, and demo. Leave 0 to keep it free. A 10% platform fee applies to sales." })}
+        </p>
+      </div>
+
       {/* Visibility */}
       <div>
-        <label className="block text-sm font-medium text-site-text mb-2">Visibility</label>
+        <label className="block text-sm font-medium text-site-text mb-2">{t("label-visibility", { defaultValue: "Visibility" })}</label>
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           {(['PUBLIC', 'UNLISTED', 'PRIVATE'] as const).map((v) => (
             <label key={v} className="flex items-center gap-2 cursor-pointer py-1">
@@ -334,7 +354,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
                 value={v}
                 checked={visibility === v}
                 onChange={() => setVisibility(v)}
-                className="w-5 h-5 text-violet-500"
+                className="w-5 h-5 text-site-accent"
               />
               <span className="text-sm text-site-text capitalize">{v.toLowerCase()}</span>
             </label>
@@ -347,10 +367,10 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
         <Button
           type="submit"
           variant="accent"
-          className="bg-violet-600 hover:bg-violet-500 w-full md:w-auto px-8"
+          className="bg-site-accent hover:bg-site-accent w-full md:w-auto px-8"
           disabled={loading}
         >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : isEditing ? 'Update Build' : 'Save Build'}
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : isEditing ? t("update-build", { defaultValue: "Update Build" }) : t("save-build", { defaultValue: "Save Build" })}
         </Button>
       </div>
     </form>

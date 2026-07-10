@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { DialogueData } from "@/lib/house-always-wins/types";
 
 interface DialogBoxProps {
@@ -10,6 +11,7 @@ interface DialogBoxProps {
 }
 
 export function DialogBox({ dialogue, onChoice, onAdvance }: DialogBoxProps) {
+  const { t } = useTranslation("c-house-always-wins");
   const [selectedIdx, setSelectedIdx] = useState(0);
   const line = dialogue.lines[0];
 
@@ -82,7 +84,7 @@ export function DialogBox({ dialogue, onChoice, onAdvance }: DialogBoxProps) {
           </div>
         ) : (
           <div className="text-[#555] text-xs font-mono mt-2">
-            [E] Continue
+            {t("e-continue", { defaultValue: "[E] Continue" })}
           </div>
         )}
       </div>

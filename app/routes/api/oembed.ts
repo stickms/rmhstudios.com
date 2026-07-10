@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 /**
  * /api/oembed — Resolve media URLs and extract OpenGraph metadata.
  *
@@ -52,13 +53,10 @@ export const Route = createFileRoute('/api/oembed')({
 
   // ── Tenor resolution ──────────────────────────────────────────
   if (type === 'tenor') {
-    if (!url.includes('tenor.com/')) {
-      return Response.json({ error: 'Invalid Tenor URL' }, { status: 400 });
-    }
-
     try {
-      const res = await fetch(url, {
+      const res = await safeFetch(url, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RmhBot/1.0)' },
+        allowedHosts: ['tenor.com'],
       });
 
       if (!res.ok) {
@@ -86,7 +84,8 @@ export const Route = createFileRoute('/api/oembed')({
           },
         },
       );
-    } catch {
+    } catch (e) {
+      if (e instanceof SsrfError) return Response.json({ error: 'Disallowed URL' }, { status: 400 });
       return Response.json({ error: 'Fetch failed' }, { status: 502 });
     }
   }
@@ -94,9 +93,9 @@ export const Route = createFileRoute('/api/oembed')({
   // ── OpenGraph metadata extraction ─────────────────────────────
   if (type === 'og') {
     try {
-      const res = await fetch(url, {
+      const res = await safeFetch(url, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; RmhBot/1.0)' },
-        signal: AbortSignal.timeout(5000),
+        timeoutMs: 5000,
       });
 
       if (!res.ok) {
@@ -137,7 +136,8 @@ export const Route = createFileRoute('/api/oembed')({
           },
         },
       );
-    } catch {
+    } catch (e) {
+      if (e instanceof SsrfError) return Response.json({ error: 'Disallowed URL' }, { status: 400 });
       return Response.json({ error: 'Fetch failed' }, { status: 502 });
     }
   }

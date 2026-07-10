@@ -16,6 +16,7 @@
 'use client';
 
 import { lazy, Suspense, useCallback, useEffect, type ComponentType } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2, Gamepad2, HelpCircle } from 'lucide-react';
 import { useRMHboxStore, type TimerInfo, type MinigameRoundInfo } from '@/lib/rmhbox/store';
 
@@ -108,13 +109,16 @@ interface MinigameRendererProps {
 
 /** Stub component factory — creates a simple placeholder for each minigame. */
 function createStub(name: string): ComponentType<MinigameProps> {
-  const Stub = () => (
+  const Stub = () => {
+    const { t } = useTranslation("c-rmhbox");
+    return (
     <div className="flex flex-col items-center justify-center gap-2 p-8 text-center text-(--rmhbox-text)">
       <Gamepad2 className="h-10 w-10 text-(--rmhbox-text-muted)" />
       <h3 className="text-xl font-bold">{name}</h3>
-      <p className="text-sm text-(--rmhbox-text-muted)">Minigame coming soon…</p>
+      <p className="text-sm text-(--rmhbox-text-muted)">{t("minigame-coming-soon", { defaultValue: "Minigame coming soon…" })}</p>
     </div>
-  );
+    );
+  };
   Stub.displayName = name;
   return Stub;
 }
@@ -145,22 +149,24 @@ const MINIGAME_COMPONENTS: Record<string, React.LazyExoticComponent<ComponentTyp
 
 /** Loading fallback shown while the component loads. */
 function LoadingFallback() {
+  const { t } = useTranslation("c-rmhbox");
   return (
     <div className="flex items-center justify-center gap-2 p-8 text-(--rmhbox-text-muted)">
       <Loader2 className="h-6 w-6 animate-spin" />
-      <span>Loading minigame…</span>
+      <span>{t("loading-minigame", { defaultValue: "Loading minigame…" })}</span>
     </div>
   );
 }
 
 /** Error fallback for unknown minigame IDs. */
 function UnknownMinigame({ id }: { id: string }) {
+  const { t } = useTranslation("c-rmhbox");
   return (
     <div className="flex flex-col items-center justify-center gap-2 p-8 text-center">
       <HelpCircle className="h-10 w-10 text-(--rmhbox-danger)" />
-      <h3 className="text-lg font-bold text-(--rmhbox-danger)">Unknown Minigame</h3>
+      <h3 className="text-lg font-bold text-(--rmhbox-danger)">{t("unknown-minigame", { defaultValue: "Unknown Minigame" })}</h3>
       <p className="text-sm text-(--rmhbox-text-muted)">
-        No component found for &quot;{id}&quot;
+        {t("no-component-found", { defaultValue: "No component found for \"{{id}}\"", id })}
       </p>
     </div>
   );

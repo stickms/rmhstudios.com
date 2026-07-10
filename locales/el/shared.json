@@ -1,0 +1,15 @@
+{
+  "chat-placeholder": "Συνομιλία...",
+  "error-boundary-message": "Παρουσιάστηκε ένα απροσδόκητο σφάλμα.",
+  "error-boundary-retry": "Δοκιμάστε ξανά",
+  "error-boundary-title": "Κάτι πήγε στραβά",
+  "failed-to-load-media": "Αποτυχία φόρτωσης πολυμέσων",
+  "game-crashed": "Το παιχνίδι κατέρρευσε",
+  "game-crashed-named": "Το {{gameName}} κατέρρευσε",
+  "loading": "Φόρτωση…",
+  "no-messages-yet": "Δεν υπάρχουν ακόμη μηνύματα",
+  "react": "Αντίδραση",
+  "return-home": "Επιστροφή στην αρχική",
+  "try-again": "Δοκιμάστε ξανά",
+  "unexpected-error": "Παρουσιάστηκε ένα απροσδόκητο σφάλμα."
+}

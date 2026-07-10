@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { getUserTier, checkTierAccess } from '@/lib/doctrine/tiers';
 import { createDisclosure, transitionDisclosure } from '@/lib/doctrine/narrative';
+import { logAdminAction } from '@/lib/admin-audit.server';
 import type { DisclosureStatus, TierId } from '@/lib/doctrine/types';
 
 const VALID_STATUSES: DisclosureStatus[] = ['CLASSIFIED', 'TEASED', 'DISCLOSED', 'ARCHIVED'];
@@ -49,6 +50,12 @@ export const Route = createFileRoute('/api/doctrine/admin/disclosures')({
             mediaUrls,
           });
 
+          await logAdminAction(session.user.id, 'doctrine.disclosure.create', {
+            targetType: 'DoctrineDisclosure',
+            targetId: (disclosure as { id?: string })?.id,
+            detail: String(codename),
+          });
+
           return Response.json({ success: true, disclosure });
         } catch (e) {
           console.error('Doctrine admin disclosure create failed:', e);
@@ -85,6 +92,11 @@ export const Route = createFileRoute('/api/doctrine/admin/disclosures')({
           }
 
           const disclosure = await transitionDisclosure(id, status);
+          await logAdminAction(session.user.id, 'doctrine.disclosure.transition', {
+            targetType: 'DoctrineDisclosure',
+            targetId: String(id),
+            detail: String(status),
+          });
           return Response.json({ success: true, disclosure });
         } catch (e) {
           console.error('Doctrine admin disclosure transition failed:', e);

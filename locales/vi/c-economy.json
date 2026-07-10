@@ -1,0 +1,23 @@
+{
+  "cancel": "Hủy",
+  "custom-amount": "Số tiền tùy chỉnh",
+  "duration": "Thời hạn",
+  "gift-a-membership": "Tặng gói thành viên",
+  "gift-desc": "Tặng người dùng này gói thành viên bằng coins.",
+  "gift-desc-named": "Tặng {{name}} gói thành viên bằng coins.",
+  "gift-error": "Không thể tặng gói thành viên",
+  "gift-for": "Tặng cho",
+  "gift-sign-in": "Vui lòng đăng nhập để tặng gói thành viên.",
+  "gift-success": "Đã tặng {{months}} tháng {{tier}}!",
+  "gift-success-named": "Đã tặng {{months}} tháng {{tier}} cho {{name}}!",
+  "note-placeholder": "Thêm ghi chú (không bắt buộc)",
+  "sending": "Đang gửi…",
+  "tier": "Hạng",
+  "tip-amount-group-label": "Số tiền tip",
+  "tip-btn": "Tip",
+  "tip-dialog-description": "Gửi coins{{recipient}} để bày tỏ sự trân trọng.",
+  "tip-dialog-title": "Gửi tip",
+  "tip-error": "Không thể gửi tip",
+  "tip-sign-in": "Vui lòng đăng nhập để tip.",
+  "tip-success": "Đã tip {{amount}} coins{{recipient}}!"
+}

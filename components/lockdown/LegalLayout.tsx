@@ -1,12 +1,14 @@
 import type { ReactNode } from 'react';
 import { ChevronLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import './lockdown.css';
 
 const LEGAL_LINKS = [
-  { href: '/terms',     label: 'Terms of Use' },
-  { href: '/privacy',   label: 'Privacy Policy' },
-  { href: '/cookies',   label: 'Cookie Policy' },
-  { href: '/copyright', label: 'Copyright' },
+  { href: '/terms',     key: 'terms-of-use',    defaultLabel: 'Terms of Use' },
+  { href: '/privacy',   key: 'privacy-policy',  defaultLabel: 'Privacy Policy' },
+  { href: '/cookies',   key: 'cookie-policy',   defaultLabel: 'Cookie Policy' },
+  { href: '/copyright', key: 'copyright',       defaultLabel: 'Copyright' },
+  { href: '/security',  key: 'security',        defaultLabel: 'Security' },
 ];
 
 export function LegalLayout({
@@ -20,10 +22,12 @@ export function LegalLayout({
   updatedDate: string;
   children: ReactNode;
 }) {
+  const { t } = useTranslation("c-lockdown");
+
   return (
     <div className="legal-page">
-      <nav className="legal-nav" aria-label="Legal navigation">
-        <a href="/" className="legal-nav__back" aria-label="Back to RMHStudios">
+      <nav className="legal-nav" aria-label={t("legal-navigation", { defaultValue: "Legal navigation" })}>
+        <a href="/" className="legal-nav__back" aria-label={t("back-to-rmhstudios", { defaultValue: "Back to RMHStudios" })}>
           <ChevronLeft size={14} strokeWidth={2.2} aria-hidden="true" />
           RMHStudios
         </a>
@@ -34,7 +38,7 @@ export function LegalLayout({
       <main className="legal-content">
         <p className="legal-content__eyebrow">{eyebrow}</p>
         <h1 className="legal-content__title">{title}</h1>
-        <p className="legal-content__date">Last updated: {updatedDate}</p>
+        <p className="legal-content__date">{t("last-updated", { defaultValue: "Last updated: {{date}}", date: updatedDate })}</p>
 
         <div className="legal-content__body">{children}</div>
       </main>
@@ -42,7 +46,7 @@ export function LegalLayout({
       <footer className="legal-footer" role="contentinfo">
         {LEGAL_LINKS.map((l) => (
           <a key={l.href} href={l.href} className="legal-footer__link">
-            {l.label}
+            {t(l.key, { defaultValue: l.defaultLabel })}
           </a>
         ))}
         <span className="legal-footer__link" style={{ cursor: 'default' }}>

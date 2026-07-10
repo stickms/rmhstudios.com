@@ -1,0 +1,23 @@
+{
+  "cancel": "Cancelar",
+  "custom-amount": "Monto personalizado",
+  "duration": "Duración",
+  "gift-a-membership": "Regalar una membresía",
+  "gift-desc": "Regala una membresía a este usuario con monedas.",
+  "gift-desc-named": "Regala una membresía a {{name}} con monedas.",
+  "gift-error": "No se pudo regalar la membresía",
+  "gift-for": "Regalo para",
+  "gift-sign-in": "Inicia sesión para regalar una membresía.",
+  "gift-success": "¡{{tier}} regalado por {{months}} mes{{s}}!",
+  "gift-success-named": "¡{{tier}} regalado por {{months}} mes{{s}} a {{name}}!",
+  "note-placeholder": "Añadir una nota (opcional)",
+  "sending": "Enviando…",
+  "tier": "Nivel",
+  "tip-amount-group-label": "Monto de la propina",
+  "tip-btn": "Propina",
+  "tip-dialog-description": "Envía monedas{{recipient}} para mostrar agradecimiento.",
+  "tip-dialog-title": "Enviar una propina",
+  "tip-error": "No se pudo enviar la propina",
+  "tip-sign-in": "Inicia sesión para dar propina.",
+  "tip-success": "¡{{amount}} monedas de propina enviadas{{recipient}}!"
+}

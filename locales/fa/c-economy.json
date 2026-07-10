@@ -1,0 +1,23 @@
+{
+  "cancel": "لغو",
+  "custom-amount": "مبلغ دلخواه",
+  "duration": "مدت زمان",
+  "gift-a-membership": "هدیه دادن عضویت",
+  "gift-desc": "به این کاربر با سکه‌ها عضویت بدهید.",
+  "gift-desc-named": "به {{name}} با سکه‌ها عضویت بدهید.",
+  "gift-error": "امکان هدیه دادن عضویت وجود نداشت",
+  "gift-for": "هدیه برای",
+  "gift-sign-in": "لطفاً برای هدیه دادن عضویت وارد شوید.",
+  "gift-success": "{{months}} ماه از {{tier}} هدیه داده شد!",
+  "gift-success-named": "{{months}} ماه از {{tier}} به {{name}} هدیه داده شد!",
+  "note-placeholder": "افزودن یادداشت (اختیاری)",
+  "sending": "در حال ارسال…",
+  "tier": "رتبه",
+  "tip-amount-group-label": "مبلغ انعام",
+  "tip-btn": "انعام",
+  "tip-dialog-description": "برای قدردانی، سکه‌ها{{recipient}} ارسال کنید.",
+  "tip-dialog-title": "ارسال انعام",
+  "tip-error": "امکان ارسال انعام وجود نداشت",
+  "tip-sign-in": "لطفاً برای انعام دادن وارد شوید.",
+  "tip-success": "{{amount}} سکه{{recipient}} انعام داده شد!"
+}

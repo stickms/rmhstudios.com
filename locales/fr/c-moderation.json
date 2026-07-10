@@ -1,0 +1,20 @@
+{
+  "cancel": "Annuler",
+  "details-placeholder": "Ajoutez des détails (facultatif)",
+  "dialog-description": "Dites-nous ce qui ne va pas. Les signalements sont anonymes pour la personne que vous signalez.",
+  "dialog-title": "Signaler un contenu",
+  "reason-harassment": "Harcèlement ou intimidation",
+  "reason-hate": "Discours haineux",
+  "reason-illegal": "Contenu illégal",
+  "reason-misinformation": "Désinformation",
+  "reason-other": "Autre chose",
+  "reason-self-harm": "Automutilation",
+  "reason-sexual": "Contenu sexuel ou explicite",
+  "reason-spam": "Spam ou arnaque",
+  "reason-violence": "Violence ou menaces",
+  "submit-report": "Soumettre le signalement",
+  "submitting": "Soumission en cours…",
+  "toast-error": "Impossible de soumettre le signalement. Veuillez réessayer.",
+  "toast-sign-in": "Veuillez vous connecter pour signaler un contenu.",
+  "toast-success": "Merci — notre équipe examinera ce signalement."
+}

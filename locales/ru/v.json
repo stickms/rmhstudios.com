@@ -1,0 +1,12 @@
+{
+  "empty-gallery": "Пока нет страниц — создайте первую.",
+  "generate-aria-label": "Сгенерировать",
+  "hero-headline": "Платформа для всего.",
+  "loading": "Загрузка…",
+  "no-results": "Нет страниц по этому запросу.",
+  "pages-title": "Страницы",
+  "prompt-aria-label": "Опишите страницу, которую хотите создать",
+  "prompt-placeholder": "Куда вы хотите отправиться?",
+  "search-aria-label": "Поиск страниц",
+  "search-placeholder": "Поиск страниц..."
+}

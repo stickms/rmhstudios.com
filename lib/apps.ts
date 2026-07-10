@@ -96,9 +96,9 @@ export const apps: AppInfo[] = [
     {
         id: 'rmhmusic',
         title: 'RMHMusic',
-        description: 'Listen to Spotify together. Create rooms, share queues, and vibe with friends.',
+        description: 'Listen to Spotify together. Create rooms, share queues, vibe with friends, and play Guess the Song.',
         longDescription:
-            'RMHMusic is a social music player powered by Spotify. Connect your Premium account, create a listening room, and enjoy synced playback with friends. Features a mesmerizing WebGL particle visualizer, shared queues, and real-time chat.',
+            'RMHMusic is a social music player powered by Spotify. Connect your Premium account, create a listening room, and enjoy synced playback with friends. Features a mesmerizing WebGL particle visualizer, shared queues, real-time chat, and Guess the Song — create and solve music puzzles for coins.',
         href: '/rmhmusic',
         status: 'Beta',
         cta: 'Listen Together',
@@ -113,9 +113,9 @@ export const apps: AppInfo[] = [
     {
         id: 'rmhstudy',
         title: 'RMH Study',
-        description: 'Study together with synced Pomodoro timers, focus tracking, and ambient sounds.',
+        description: 'Study together with synced Pomodoro timers, focus tracking, and flashcards.',
         longDescription:
-            'RMH Study brings the Pomodoro technique to a social setting. Create a study room, invite friends, and stay focused together with synced timers. Track your focus time, set session goals, and climb the study leaderboard.',
+            'RMH Study brings the Pomodoro technique to a social setting. Create a study room, invite friends, and stay focused together with synced timers. Track your focus time, set session goals, climb the study leaderboard, and drill solo with flashcard decks and an AI tutor.',
         href: '/rmhstudy',
         cta: 'Start Studying',
         isSteam: false,
@@ -174,6 +174,22 @@ export const apps: AppInfo[] = [
         iconName: 'Shield',
         color: 'from-orange-500/20 to-red-600/20 hover:border-orange-500/50',
         tags: ['Puzzles', 'Community', 'Reputation', 'Beta'],
+        authGate: true,
+    },
+    {
+        id: 'rmhhomes',
+        title: 'RMHHomes',
+        description: 'A community housing marketplace — post your rental or house, browse listings on a map, and message the poster.',
+        longDescription:
+            'RMHHomes is a community housing marketplace. RMH members post their own rentals and houses with photos, and everyone can browse real listings on an interactive map, filter by price, beds, baths, property type and more, save favorites, and message the poster directly. Every listing is real and owned by its author — no scraping, no external data.',
+        href: '/homes',
+        status: 'Beta',
+        cta: 'Find a Home',
+        isSteam: false,
+        gradient: 'from-teal-500 via-emerald-500 to-green-600',
+        iconName: 'Home',
+        color: 'from-teal-500/20 to-green-600/20 hover:border-teal-500/50',
+        tags: ['Housing', 'Search', 'Maps', 'Beta'],
         authGate: true,
     },
 ];

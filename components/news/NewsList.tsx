@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import { Search, X, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Search, X } from 'lucide-react';
+import { Pagination } from '@/components/ui/pagination';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
 import { NewsCategoryTabs } from './NewsCategoryTabs';
@@ -27,6 +29,7 @@ interface NewsListProps {
 }
 
 export function NewsList({ initialArticles, featuredArticles, filtersOpen = false }: NewsListProps) {
+    const { t } = useTranslation("c-news");
     const navigate = useNavigate();
     const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
 
@@ -156,15 +159,15 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
                     <NewsCategoryTabs activeCategory={selectedCategory} onCategoryChange={setSelectedCategory} availableCategories={availableCategories} />
 
                     {/* Search + Sort Row */}
-                    <div className="flex flex-col gap-3 bg-(--site-surface) p-3 rounded-xl border border-(--site-border)">
+                    <div className="flex flex-col gap-3 bg-(--site-surface) p-3 rounded-site border border-(--site-border)">
                         <div className="relative w-full">
                             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <Search className="h-4 w-4 text-(--site-text-dim)" />
                             </div>
                             <input
                                 type="text"
-                                placeholder="Search articles..."
-                                className="w-full bg-(--site-bg) border border-(--site-border) rounded-lg py-2 pl-9 pr-9 text-sm text-(--site-text) placeholder-(--site-text-dim) focus:outline-none focus:border-(--site-accent) focus:ring-1 focus:ring-(--site-accent) transition-all"
+                                placeholder={t("search-placeholder", { defaultValue: "Search articles..." })}
+                                className="w-full bg-(--site-bg) border border-(--site-border) rounded-site-sm py-2 pl-9 pr-9 text-sm text-(--site-text) placeholder-(--site-text-dim) focus:outline-none focus:border-(--site-accent) focus:ring-1 focus:ring-(--site-accent) transition-all"
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
                             />
@@ -181,20 +184,20 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
                         <div className="flex items-center gap-3 whitespace-nowrap">
                             {hasActiveFilters && (
                                 <button onClick={clearAllFilters} className="text-xs text-(--site-danger) hover:text-(--site-text) transition-colors font-mono flex items-center gap-1">
-                                    <X className="w-3 h-3" /> Clear
+                                    <X className="w-3 h-3" /> {t("clear", { defaultValue: "Clear" })}
                                 </button>
                             )}
-                            <span className="text-sm text-(--site-text-dim)">Sort:</span>
+                            <span className="text-sm text-(--site-text-dim)">{t("sort-label", { defaultValue: "Sort:" })}</span>
                             <select
                                 value={sortMode}
                                 onChange={(e) => setSortMode(e.target.value as 'newest' | 'oldest')}
-                                className="bg-(--site-bg) border border-(--site-border) rounded-lg py-1 px-3 text-sm text-(--site-text) focus:outline-none focus:border-(--site-accent)"
+                                className="bg-(--site-bg) border border-(--site-border) rounded-site-sm py-1 px-3 text-sm text-(--site-text) focus:outline-none focus:border-(--site-accent)"
                             >
-                                <option value="newest">Newest</option>
-                                <option value="oldest">Oldest</option>
+                                <option value="newest">{t("sort-newest", { defaultValue: "Newest" })}</option>
+                                <option value="oldest">{t("sort-oldest", { defaultValue: "Oldest" })}</option>
                             </select>
                             <span className="text-sm text-(--site-text-dim) font-mono ml-auto">
-                                {filteredArticles.length} {filteredArticles.length === 1 ? 'article' : 'articles'}
+                                {t("article-count", { count: filteredArticles.length, defaultValue: "{{count}} article", defaultValue_other: "{{count}} articles" })}
                             </span>
                         </div>
                     </div>
@@ -204,8 +207,8 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
             {/* Active filter indicator when collapsed */}
             {!filtersOpen && hasActiveFilters && (
                 <div className="mb-3 flex items-center gap-2 text-xs text-(--site-text-dim)">
-                    <span className="font-mono">{filteredArticles.length} results</span>
-                    <button onClick={clearAllFilters} className="text-(--site-accent) hover:underline">Clear filters</button>
+                    <span className="font-mono">{t("results-count", { count: filteredArticles.length, defaultValue: "{{count}} results" })}</span>
+                    <button onClick={clearAllFilters} className="text-(--site-accent) hover:underline">{t("clear-filters", { defaultValue: "Clear filters" })}</button>
                 </div>
             )}
 
@@ -221,9 +224,9 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
 
                 {filteredArticles.length === 0 && (
                     <div className="col-span-full text-center py-20 text-(--site-text-dim)">
-                        <p className="text-lg">No articles found matching your filters.</p>
+                        <p className="text-lg">{t("no-articles", { defaultValue: "No articles found matching your filters." })}</p>
                         <button onClick={clearAllFilters} className="mt-4 text-(--site-accent) hover:underline">
-                            Clear All Filters
+                            {t("clear-all-filters", { defaultValue: "Clear All Filters" })}
                         </button>
                     </div>
                 )}
@@ -231,39 +234,8 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <motion.div className="mt-8 flex flex-col items-center gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
-                    <div className="flex items-center gap-1 sm:gap-2">
-                        <button onClick={() => goToPage(1)} disabled={safePage === 1} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-all" aria-label="First page">
-                            <ChevronsLeft className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => goToPage(safePage - 1)} disabled={safePage === 1} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-all" aria-label="Previous page">
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        {pageNumbers.map((page, i) =>
-                            page === '...' ? (
-                                <span key={`ellipsis-${i}`} className="px-2 text-(--site-text-dim) text-sm">
-                                    ...
-                                </span>
-                            ) : (
-                                <button
-                                    key={page}
-                                    onClick={() => goToPage(page as number)}
-                                    className={`w-9 h-9 rounded-lg text-sm font-bold transition-all ${safePage === page ? 'bg-(--site-accent) text-white' : 'text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface)'}`}
-                                >
-                                    {page}
-                                </button>
-                            ),
-                        )}
-                        <button onClick={() => goToPage(safePage + 1)} disabled={safePage === totalPages} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-all" aria-label="Next page">
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                        <button onClick={() => goToPage(totalPages)} disabled={safePage === totalPages} className="p-2 rounded-lg text-(--site-text-dim) hover:text-(--site-text) hover:bg-(--site-surface) disabled:opacity-20 disabled:cursor-not-allowed transition-all" aria-label="Last page">
-                            <ChevronsRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                    <p className="text-xs text-(--site-text-dim) font-mono">
-                        Page {safePage} of {totalPages}
-                    </p>
+                <motion.div className="mt-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}>
+                    <Pagination page={safePage} totalPages={totalPages} onPageChange={goToPage} />
                 </motion.div>
             )}
         </div>

@@ -1,0 +1,337 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Explain what a <strong>build system</strong> does and why a large codebase needs one beyond a handful of shell commands.</li>
+  <li>Define a <strong>hermetic, reproducible build</strong> and contrast it with a convenient non-hermetic one, using this repository's Bazel core and Vite frontend leaf as the two poles.</li>
+  <li>Describe <strong>toolchain pinning</strong> — how Bazel 7.4.1 and a hermetic Go 1.23 SDK are nailed down so no system Go is required.</li>
+  <li>Explain the <strong>monorepo</strong> idea: one repository, many deployables, with pnpm workspaces and a single Bazel module.</li>
+  <li>Read a Bazel <code>BUILD</code> target and explain how <strong>Gazelle</strong> generates the Go ones automatically.</li>
+  <li>Trace how a service becomes a <strong>distroless container image</strong> through <code>rules_oci</code> and <code>rules_pkg</code>.</li>
+  <li>Explain why the frontend is a <em>coarse leaf</em> and what that buys: new frontend files need no BUILD edits.</li>
+</ul></div>
+
+<p class="lead">Every other chapter has treated the codebase as something that already runs. This chapter asks the duller but load-bearing question: how does source on a developer's laptop become a Go binary, a JavaScript bundle, and a container image that a cluster can pull and start? rmhstudios.com answers that question with two deliberately different tools. The Go service fleet is built by <strong>Bazel</strong>, which goes to extreme lengths to be hermetic and reproducible — it ships its own Go compiler so that no two machines disagree about what "build" means. The TypeScript frontend is built by <strong>Vite</strong> through a thin shell script that reuses whatever <code>node_modules</code> the developer already has — fast and convenient, deliberately not hermetic. Understanding why the same repository chooses both, and where the seam between them sits, is the point of this chapter.</p>
+
+<h2 id="what-a-build-system-is">What a build system does, and why</h2>
+<p>A <strong>build</strong> turns sources into runnable artifacts: compiling, linking, bundling, generating code, and packaging. For a one-file program you do this by hand. For rmhstudios.com — nine Go binaries, a TypeScript SSR app, nine standalone WebSocket/worker servers, a generated Prisma client, and per-service container images — doing it by hand is hopeless. You need a tool that knows the <em>dependency graph</em> between artifacts so it can build them in the right order, skip work whose inputs have not changed, and produce the same result on your laptop and in CI.</p>
+
+<div class="keyterm"><span class="term">Build system</span> — a tool that, given a description of artifacts and their dependencies, computes and executes the minimal set of actions to produce up-to-date outputs from sources. It owns ordering, caching, and incrementality so humans do not have to.</div>
+
+<p>The repository draws a clean line. Bazel owns the <em>hermetic core</em>: the Go binaries and the OCI images. A top-level <code>Makefile</code> is the <em>ergonomic face</em> — a thin set of human-friendly targets that mostly delegate to Bazel, plus a few edges Bazel does not touch (the frontend leaf, the special base images, the Helm deploy). The operator runbook states the split plainly: "Bazel (via bazelisk) owns the hermetic core (Go binaries + container images); this Makefile is the ergonomic face and orchestrates the edges."</p>
+
+<h2 id="hermetic-builds">Hermetic and reproducible builds</h2>
+<p>The strongest idea in this chapter is <em>hermeticity</em>. A build is hermetic when its inputs are fully declared and pinned, so it does not depend on whatever happens to be installed on the machine running it. A reproducible build goes one step further: the same inputs always yield byte-for-byte the same outputs.</p>
+
+<div class="keyterm"><span class="term">Hermetic build</span> — a build whose every input (compiler, libraries, source) is declared and version-pinned, so it ignores the host's installed tools and produces the same result everywhere. The opposite — a <em>non-hermetic</em> build — reaches out to whatever the host provides (a system Go, the developer's <code>node_modules</code>) and can therefore differ machine to machine.</div>
+
+<div class="keyterm"><span class="term">Toolchain pinning</span> — fixing the exact version of each tool a build uses (here: Bazel 7.4.1 and a downloaded Go 1.23 SDK) so upgrades are explicit and intentional rather than accidental drift from whatever a laptop has on its <code>PATH</code>.</div>
+
+<p>Bazel achieves this in three layers. First, the version of <em>Bazel itself</em> is pinned. The repo does not call <code>bazel</code> directly; it calls <strong>bazelisk</strong>, a launcher that reads <code>.bazelversion</code> and downloads exactly that release. Both files agree on the version:</p>
+
+<pre><code># .bazelversion
+7.4.1
+
+# .bazeliskrc
+USE_BAZEL_VERSION=7.4.1</code></pre>
+
+<p>Second, the Go compiler is pinned and downloaded by Bazel — <strong>not</strong> taken from the host. <code>MODULE.bazel</code> declares the rule sets and asks <code>rules_go</code> to fetch a specific Go SDK:</p>
+
+<pre><code># MODULE.bazel (excerpt)
+bazel_dep(name = "rules_go", version = "0.50.1")
+bazel_dep(name = "gazelle", version = "0.39.1")
+bazel_dep(name = "rules_oci", version = "2.0.0")
+bazel_dep(name = "rules_pkg", version = "1.0.1")
+
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.23.0")</code></pre>
+
+<p>Because <code>rules_go</code> ships the toolchain, the runbook can make a striking claim: <em>"Go is NOT required locally — <code>rules_go</code> ships a hermetic Go 1.23 SDK."</em> A contributor can build all nine Go services without ever installing Go. Third, <code>.bazelrc</code> tightens the sandbox so actions cannot silently read the host environment, and sets a shared disk cache so unchanged work is reused:</p>
+
+<pre><code># .bazelrc
+common --enable_bzlmod
+build --disk_cache=~/.cache/bazel-disk
+build --incompatible_strict_action_env
+test --test_output=errors
+
+# Cross-compile Go services for Linux containers.
+build:linux_amd64 --platforms=@rules_go//go/toolchain:linux_amd64
+build:linux_arm64 --platforms=@rules_go//go/toolchain:linux_arm64</code></pre>
+
+<p><code>--incompatible_strict_action_env</code> scrubs the environment passed to build actions so a stray variable on one laptop cannot change the output; <code>--enable_bzlmod</code> turns on the modern <code>MODULE.bazel</code> dependency system. The two <code>build:linux_amd64</code> / <code>build:linux_arm64</code> config groups let the same Go source be cross-compiled for either container architecture by passing <code>--config=linux_amd64</code> at build time — the developer's CPU is irrelevant.</p>
+
+<div class="note"><b>Why pin so hard?</b> The payoff is that "works on my machine" stops being a category of bug. CI, a teammate's laptop, and a release box all run Bazel 7.4.1 and Go 1.23, so a green build in one place is a green build everywhere. Pinning makes upgrades a deliberate one-line change rather than invisible drift.</div>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  subgraph Pinned["Pinned, hermetic inputs"]
+    BV["bazelversion 7.4.1"]
+    GO["rules_go Go 1.23 SDK"]
+    DEP["MODULE.bazel rule deps"]
+  end
+  BAZ["bazelisk + Bazel"]
+  BV --> BAZ
+  GO --> BAZ
+  DEP --> BAZ
+  BAZ --> OUT["Identical outputs on every host"]
+  </div>
+  <figcaption>Figure 11.1: Hermeticity in one picture. bazelisk pins Bazel, rules_go pins the Go SDK, and MODULE.bazel pins every rule set, so the build ignores the host and yields the same artifacts everywhere.</figcaption>
+</figure>
+
+<h2 id="the-monorepo">The monorepo: one repo, many deployables</h2>
+<p>rmhstudios.com is a <strong>monorepo</strong>: a single Git repository holding the web app, the Go fleet, the Node WebSocket servers, shared libraries, the database schema, and the deploy configuration. The alternative — a repo per service — trades atomic cross-cutting changes for independent versioning. A monorepo keeps everything in lockstep: one commit can change a shared type and every consumer of it at once.</p>
+
+<div class="keyterm"><span class="term">Monorepo</span> — one version-controlled repository that contains many independently deployable units (here: the SSR web app, nine Go services, nine Node servers/workers). It favors atomic cross-service changes and a single source of truth over the isolation of many small repos.</div>
+
+<p>On the JavaScript side, the monorepo is held together by <strong>pnpm workspaces</strong>. The <code>pnpm-workspace.yaml</code> file declares which built dependencies are allowed to run install-time scripts and which are skipped — a security-and-speed control over native packages:</p>
+
+<pre><code># pnpm-workspace.yaml (excerpt)
+ignoredBuiltDependencies:
+  - '@prisma/engines'
+  - prisma
+  - sharp
+  - unrs-resolver
+onlyBuiltDependencies:
+  - esbuild
+  - '@swc/core'</code></pre>
+
+<p>A companion <code>.npmrc</code> hoists the generated Prisma client to the top-level <code>node_modules/.prisma/</code> so the production server bundle can resolve it at runtime — a concrete example of monorepo plumbing the build must get right:</p>
+
+<pre><code># .npmrc
+public-hoist-pattern[]=.prisma*</code></pre>
+
+<p>On the Go side, the whole module lives under <code>//go-services</code> with a single <code>go.mod</code> (<code>module github.com/rmhstudios/rmh-go</code>, <code>go 1.23</code>), and Bazel treats the entire repository as one module named <code>rmhstudios</code>. One repo, but the build can target any subset of it: <code>//go-services/cmd/...</code> for the binaries, <code>//:frontend</code> for the web app.</p>
+
+<h2 id="build-targets-and-gazelle">BUILD targets and Gazelle</h2>
+<p>Bazel describes the world as <strong>targets</strong> written in <code>BUILD.bazel</code> files. A target names an artifact and lists its sources and dependencies. Here is a real, hand-trimmed one for the <code>gateway</code> service:</p>
+
+<pre><code># go-services/cmd/gateway/BUILD.bazel
+go_library(
+    name = "gateway_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/rmhstudios/rmh-go/cmd/gateway",
+    deps = [
+        "//go-services/internal/gateway",
+        "//go-services/pkg/auth",
+        "//go-services/pkg/config",
+        # ...
+    ],
+)
+
+go_binary(
+    name = "gateway",
+    embed = [":gateway_lib"],
+    visibility = ["//visibility:public"],
+)</code></pre>
+
+<div class="keyterm"><span class="term">BUILD target</span> — a named unit in a <code>BUILD.bazel</code> file (e.g. <code>//go-services/cmd/gateway:gateway</code>) that declares an artifact, its sources, and its dependencies on other targets. Bazel builds the dependency graph these targets form.</div>
+
+<p>Writing that <code>deps</code> list by hand for every package would be tedious and error-prone — exactly the kind of bookkeeping a tool should do. <strong>Gazelle</strong> reads the Go source, follows its <code>import</code> statements, and generates and updates the <code>go_library</code> / <code>go_binary</code> targets automatically. The root <code>BUILD.bazel</code> wires it up:</p>
+
+<pre><code># BUILD.bazel (root)
+load("@gazelle//:def.bzl", "gazelle")
+
+# gazelle:exclude node_modules
+gazelle(name = "gazelle")</code></pre>
+
+<div class="keyterm"><span class="term">Gazelle</span> — a Bazel tool that reads Go source and generates/updates the corresponding <code>BUILD.bazel</code> targets (libraries, binaries, dependency lists) so developers do not maintain them by hand. Run via <code>make gazelle</code> after adding or moving Go files.</div>
+
+<p>So the Go workflow is: add a <code>.go</code> file, run <code>make gazelle</code>, and the BUILD files catch up. The <code>gazelle:exclude node_modules</code> directive keeps it from wandering into the JavaScript tree. The <code>MODULE.bazel</code> even notes that the external Go dependency list is "populated by <code>bazelisk mod tidy</code>" — another generation step rather than hand-editing.</p>
+
+<h2 id="images-distroless">From binary to distroless image</h2>
+<p>A Go binary is not deployable on its own; the cluster wants a container image. Bazel builds those too, via <code>rules_pkg</code> (to tar the binary into a layer) and <code>rules_oci</code> (to assemble the image). The repository factors the repetition into one reusable macro, <code>go_service_image</code>, in <code>bazel/defs.bzl</code>:</p>
+
+<pre><code># bazel/defs.bzl (excerpt)
+def go_service_image(name, binary, base = "@distroless_base", ...):
+    pkg_tar(
+        name = name + "_layer",
+        srcs = [binary],
+        package_dir = "/usr/local/bin",
+    )
+    oci_image(
+        name = name + "_image",
+        base = base,
+        tars = [":" + name + "_layer"],
+        entrypoint = ["/usr/local/bin/" + bin_name],
+        env = env or {},
+    )
+    oci_load(name = name + "_load",
+        image = ":" + name + "_image",
+        repo_tags = ["rmhstudios-go-" + name + ":dev"])
+    oci_push(name = name + "_push",
+        image = ":" + name + "_image",
+        repository = registry_repo or
+            ("ghcr.io/rmhstudios/rmhstudios-go-" + name))</code></pre>
+
+<p>For each service the macro generates three targets: <code>&lt;name&gt;_image</code> (the image), <code>&lt;name&gt;_load</code> (load it into local Docker, tagged <code>rmhstudios-go-&lt;name&gt;:dev</code>), and <code>&lt;name&gt;_push</code> (push it to a registry, defaulting to <code>ghcr.io/rmhstudios/rmhstudios-go-&lt;name&gt;</code>). The call sites live in <code>go-services/images/BUILD.bazel</code>, kept in their own package so Gazelle's generated <code>cmd/*</code> files stay untouched.</p>
+
+<p>The base image is <strong>distroless</strong>. Seven of the nine services sit on <code>@distroless_base</code>, pinned by digest in <code>MODULE.bazel</code> to <code>gcr.io/distroless/static-debian12</code>. A distroless image contains the application and its runtime files but no shell, no package manager, and no general-purpose userland — a smaller, harder-to-attack surface.</p>
+
+<div class="keyterm"><span class="term">Distroless image</span> — a container base that ships only what the program needs to run (libraries, CA certs) and omits a shell and package manager. Smaller and more secure than a full OS image, at the cost of being harder to poke at interactively.</div>
+
+<p>Two services need more than the static base, and the macro's <code>base</code> argument handles the exceptions: <code>vibe-worker</code> runs on <code>@base_chromium</code> (headless Chromium, with <code>PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH</code> set in the image env) and <code>discord-bot</code> runs on <code>@base_git</code>. Those two bases are not pinned by digest — they are pulled by tag from GHCR and built separately by <code>make base-images</code>, which is why the runbook warns you to build them <em>first</em>.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  SRC["go-services cmd main.go"] --> LIB["go_library + go_binary"]
+  LIB --> TAR["pkg_tar layer"]
+  BASE["distroless_base by digest"] --> IMG["oci_image"]
+  TAR --> IMG
+  IMG --> LOAD["oci_load tag dev"]
+  IMG --> PUSH["oci_push to GHCR"]
+  </div>
+  <figcaption>Figure 11.2: One service's image build graph. Gazelle generates the library/binary; the macro tars it, layers it on the distroless base, and exposes load and push targets.</figcaption>
+</figure>
+
+<h2 id="the-frontend-leaf">The frontend: a coarse, non-hermetic leaf</h2>
+<p>The TypeScript frontend is built differently on purpose. Rather than model every <code>.tsx</code> file as a Bazel target, the root <code>BUILD.bazel</code> exposes the whole frontend as a single coarse target that shells out to pnpm:</p>
+
+<pre><code># BUILD.bazel (root)
+# Coarse frontend leaf — `bazel run //:frontend` builds the Vite app via
+# pnpm. Non-hermetic by design (reuses repo node_modules).
+sh_binary(
+    name = "frontend",
+    srcs = ["scripts/frontend-build.sh"],
+    visibility = ["//visibility:public"],
+)</code></pre>
+
+<p>The script it runs is small and honest about being non-hermetic. It changes into the source tree, installs dependencies and generates the Prisma client only if <code>node_modules</code> is absent, then builds:</p>
+
+<pre><code># scripts/frontend-build.sh (excerpt)
+cd "${BUILD_WORKSPACE_DIRECTORY:-$PWD}"
+if [ ! -d node_modules ]; then
+  pnpm install --frozen-lockfile --ignore-scripts
+  pnpm exec prisma generate
+fi
+pnpm run build:frontend   # → .output/</code></pre>
+
+<div class="keyterm"><span class="term">Coarse leaf</span> — a single Bazel target that wraps an entire external build (here, the whole Vite frontend) as one opaque step, instead of modeling its internal files as targets. It trades fine-grained incrementality for the freedom to add files without editing BUILD definitions.</div>
+
+<p>The phrase to remember from the runbook is: <em>"New frontend files need no BUILD changes."</em> Because the leaf is opaque, a developer can add a hundred React components and never open a <code>BUILD.bazel</code> file. The cost is that this step is not hermetic — it reuses the repo's <code>node_modules</code> (which include native packages like <code>@napi-rs/canvas</code> and <code>@resvg/resvg-js</code>) and runs in the source tree, so Bazel cannot guarantee the byte-for-byte reproducibility it gives the Go side. The team accepts that trade deliberately: the JS ecosystem's native-dependency reality makes a fully hermetic frontend expensive, and the frontend is a leaf with no Bazel consumers downstream.</p>
+
+<h3>What Vite and esbuild actually produce</h3>
+<p>Under that leaf, two bundlers do the real work. <strong>Vite</strong> (configured in <code>vite.config.ts</code>) builds the SSR web app: it runs the TanStack Start plugin, Tailwind, React, and the <strong>Nitro</strong> server plugin, emitting a runnable server into <code>.output/</code>. <code>build:frontend</code> in <code>package.json</code> is just <code>build-vibe-packages</code> followed by <code>vite build</code> with an 8&nbsp;GB Node heap.</p>
+
+<div class="keyterm"><span class="term">Bundler</span> — a tool that resolves a module graph and packs many source files into a few optimized output files. Vite (on Rolldown) bundles the web app and its SSR server; esbuild bundles the standalone Node WebSocket/worker servers.</div>
+
+<p>The nine standalone WebSocket/worker servers under <code>server/*</code> are <em>not</em> built by Vite. The full <code>build</code> script in <code>package.json</code> first runs <code>vite build</code>, then invokes <strong>esbuild</strong> directly to bundle each server entry into <code>dist-server/</code> as a CommonJS <code>.cjs</code> file:</p>
+
+<pre><code># package.json "build" (esbuild stage, trimmed)
+pnpm exec esbuild \
+  server/socket-server/index.ts server/rmhbox/index.ts \
+  server/rmhtube/index.ts server/recap/index.ts \
+  server/discord-bot/index.ts server/vibe-worker/index.ts ... \
+  --bundle --platform=node --target=node20 \
+  --outdir=dist-server --format=cjs \
+  --out-extension:.js=.cjs --packages=external \
+  --tree-shaking=true --tsconfig=tsconfig.server.json</code></pre>
+
+<p>So the frontend leaf hides two distinct bundlers with different jobs: Vite/Nitro for the browser app and its SSR server (<code>.output/</code>), and a separate esbuild pass for the long-lived realtime/worker processes (<code>dist-server/</code>). Vite externalizes heavy native and client-only packages (three.js, monaco-editor, Tone.js, and others) via <code>traceDeps</code> and <code>ssr.external</code> so they are not pulled into the wrong bundle.</p>
+
+<div class="scope"><b>Scope: the leaf vs. the core.</b> The Go services are fully Bazel-built and hermetic; that path is production. The frontend leaf is a real, used target (<code>make build</code> calls <code>bazel run //:frontend</code>), but it is intentionally non-hermetic and exists mostly to give the frontend a single Bazel entry point — its actual work is delegated to pnpm/Vite/esbuild, which the same scripts drive in CI and in the Dockerfile.</div>
+
+<h2 id="putting-it-together">Putting it together: the Makefile</h2>
+<p>The <code>Makefile</code> is where a human meets all of this. Its targets are short and mostly delegate. The key ones:</p>
+
+<pre><code># Makefile (excerpt)
+build:   ## all Go binaries + frontend bundle
+	@$(GUARD)
+	$(BAZEL) build //go-services/cmd/...
+	$(BAZEL) run //:frontend
+
+images:  ## build + load every service image into Docker
+	@for svc in $(SERVICES); do \
+	  $(BAZEL) run --config=$(PLATFORM) //go-services/images:$${svc}_load; \
+	done
+
+gazelle: ## regenerate Go BUILD.bazel files
+	$(BAZEL) run //:gazelle</code></pre>
+
+<p>Notice the division of labor in <code>build</code>: <code>bazel build //go-services/cmd/...</code> compiles the hermetic Go core, and <code>bazel run //:frontend</code> fires the non-hermetic leaf — the two worlds, one command. <code>images</code> loops over the nine services, passing <code>--config=$(PLATFORM)</code> (defaulting to <code>linux_amd64</code>) so each image is built for the target container architecture. A guard, <code>./scripts/preflight.sh --guard</code>, runs first and hard-fails if Docker is missing, since no image can be built without it. Note <code>make dev</code> is the exception — it runs <code>pnpm run dev</code> and Bazel is not involved at all.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart TB
+  MK["make build / make images"] --> GUARD["preflight guard, needs Docker"]
+  GUARD --> COREB["bazel build go-services cmd"]
+  GUARD --> LEAF["bazel run frontend"]
+  COREB --> BINS["9 Go binaries"]
+  LEAF --> OUT["Vite .output + esbuild dist-server"]
+  BINS --> IMGS["bazel run images svc_load"]
+  IMGS --> DOCKER["distroless images in Docker"]
+  </div>
+  <figcaption>Figure 11.3: The Makefile as the ergonomic face. One human command fans out into the hermetic Bazel core and the non-hermetic frontend leaf, then into per-service distroless images.</figcaption>
+</figure>
+
+<h2 id="pinned-versions">A table of pinned tools</h2>
+<p>Hermeticity is only as good as the list of things you pinned. Here is the load-bearing set, drawn from <code>.bazelversion</code>, <code>.bazeliskrc</code>, <code>MODULE.bazel</code>, and <code>go-services/go.mod</code>:</p>
+
+<table>
+  <thead><tr><th>Tool / dependency</th><th>Pinned version</th><th>Pinned where</th><th>Role</th></tr></thead>
+  <tbody>
+    <tr><td>Bazel (via bazelisk)</td><td><code>7.4.1</code></td><td><code>.bazelversion</code>, <code>.bazeliskrc</code></td><td>The build system itself</td></tr>
+    <tr><td>Go SDK</td><td><code>1.23.0</code></td><td><code>MODULE.bazel</code> (<code>go_sdk.download</code>)</td><td>Hermetic Go compiler — no system Go needed</td></tr>
+    <tr><td><code>rules_go</code></td><td><code>0.50.1</code></td><td><code>MODULE.bazel</code></td><td>Builds Go libraries/binaries</td></tr>
+    <tr><td><code>gazelle</code></td><td><code>0.39.1</code></td><td><code>MODULE.bazel</code></td><td>Generates Go BUILD files</td></tr>
+    <tr><td><code>rules_oci</code></td><td><code>2.0.0</code></td><td><code>MODULE.bazel</code></td><td>Assembles OCI container images</td></tr>
+    <tr><td><code>rules_pkg</code></td><td><code>1.0.1</code></td><td><code>MODULE.bazel</code></td><td>Tars the binary into an image layer</td></tr>
+    <tr><td><code>aspect_bazel_lib</code></td><td><code>2.8.1</code></td><td><code>MODULE.bazel</code></td><td>Shared Bazel helpers</td></tr>
+    <tr><td><code>platforms</code></td><td><code>0.0.10</code></td><td><code>MODULE.bazel</code></td><td>Platform/arch definitions</td></tr>
+    <tr><td><code>distroless_base</code></td><td>digest <code>sha256:d093aa3e…</code></td><td><code>MODULE.bazel</code> (<code>oci.pull</code>)</td><td>Minimal image base for 7 services</td></tr>
+  </tbody>
+</table>
+
+<p>The frontend tools are pinned too, but in a different file and a softer way — <code>package.json</code> + <code>pnpm-lock.yaml</code> lock <code>vite</code>, <code>esbuild</code>, <code>typescript</code>, <code>nitro</code>, and the rest, and <code>pnpm install --frozen-lockfile</code> refuses to drift from the lockfile. That is real version control, just not Bazel-level hermeticity.</p>
+
+<div class="summary"><h4>Summary</h4>
+<ul>
+  <li>A <strong>build system</strong> owns ordering, caching, and incrementality so artifacts come from sources reliably. rmhstudios.com splits the job: Bazel for the hermetic core, a Makefile as the ergonomic face.</li>
+  <li><strong>Hermetic builds</strong> pin every input. Bazel is pinned to <code>7.4.1</code> via bazelisk, and <code>rules_go</code> ships a Go <code>1.23</code> SDK, so <em>no system Go is required</em> and outputs match across machines.</li>
+  <li>It is a <strong>monorepo</strong>: one repo, many deployables, with pnpm workspaces on the JS side and a single Bazel module plus one <code>go.mod</code> on the Go side.</li>
+  <li><strong>Gazelle</strong> generates the Go <code>BUILD</code> targets from imports, so adding a Go file means running <code>make gazelle</code>, not hand-editing deps.</li>
+  <li>The <code>go_service_image</code> macro turns each binary into a <strong>distroless</strong> OCI image via <code>rules_pkg</code> + <code>rules_oci</code>, exposing <code>_load</code> and <code>_push</code> targets; <code>vibe-worker</code> and <code>discord-bot</code> override the base.</li>
+  <li>The frontend is a deliberately <strong>coarse, non-hermetic leaf</strong> (<code>//:frontend</code> → <code>scripts/frontend-build.sh</code> → Vite + a separate esbuild pass). New frontend files need no BUILD changes.</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch11-exercises">Practice Exercises</h2>
+
+<div class="exercise"><span class="qid">11.1</span>
+<span class="tag concept">concept</span><span class="tag easy">easy</span>
+Define a <em>hermetic build</em> in your own words. Then give one concrete way this repository makes its Go build hermetic and one concrete way the frontend build is <em>not</em> hermetic.</div>
+
+<div class="exercise"><span class="qid">11.2</span>
+<span class="tag concept">concept</span><span class="tag easy">easy</span>
+The runbook claims "Go is NOT required locally." Explain precisely which mechanism makes that true, naming the file and the directive that pins the Go toolchain.</div>
+
+<div class="exercise"><span class="qid">11.3</span>
+<span class="tag trace">trace</span><span class="tag medium">medium</span>
+A developer adds a new Go package <code>go-services/pkg/ratelimit</code> and imports it from <code>cmd/gateway/main.go</code>. List, in order, the commands they should run so the gateway image rebuilds, and explain what each step does to the BUILD files and artifacts.</div>
+
+<div class="exercise"><span class="qid">11.4</span>
+<span class="tag concept">concept</span><span class="tag medium">medium</span>
+The <code>go_service_image</code> macro generates three targets per service. Name them, state what each does, and give the exact local tag and the default push repository for the <code>rmhbox</code> service.</div>
+
+<div class="exercise"><span class="qid">11.5</span>
+<span class="tag concept">concept</span><span class="tag medium">medium</span>
+Explain why <code>vibe-worker</code> and <code>discord-bot</code> cannot use <code>@distroless_base</code>, what bases they use instead, and why <code>make base-images</code> must run before <code>make images</code> for those two.</div>
+
+<div class="exercise"><span class="qid">11.6</span>
+<span class="tag design">design</span><span class="tag hard">hard</span>
+The frontend is a single coarse Bazel leaf rather than a fine-grained graph of per-file targets. State two benefits and two costs of this choice, and argue whether you would keep it or model the frontend in Bazel if reproducible frontend builds became a hard requirement.</div>
+
+<div class="exercise"><span class="qid">11.7</span>
+<span class="tag trace">trace</span><span class="tag medium">medium</span>
+Two bundlers run inside the frontend leaf. For each of (a) the SSR web app and (b) the <code>server/rmhbox/index.ts</code> WebSocket server, name the bundler that builds it, the output directory it lands in, and the package.json script that invokes it.</div>
+
+<div class="exercise"><span class="qid">11.8</span>
+<span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+Draw a build-graph flowchart for one Go service from <code>main.go</code> to a pushed image, labeling every Bazel target/rule involved (<code>go_library</code>, <code>go_binary</code>, <code>pkg_tar</code>, <code>oci_image</code>, <code>oci_push</code>) and where the distroless base attaches.</div>
+
+<div class="exercise"><span class="qid">11.9</span>
+<span class="tag concept">concept</span><span class="tag hard">hard</span>
+<code>.bazelrc</code> sets <code>--incompatible_strict_action_env</code> and two <code>--platforms</code> config groups. Explain what each contributes to reproducibility, and describe a bug that could appear if <code>--incompatible_strict_action_env</code> were removed.</div>
+
+<div class="exercise"><span class="qid">11.10</span>
+<span class="tag design">design</span><span class="tag medium">medium</span>
+The Makefile separates <code>make build</code> (which uses Bazel) from <code>make dev</code> (which runs <code>pnpm run dev</code> with Bazel uninvolved). Explain why a project would deliberately keep the dev inner loop off the hermetic build path, and one risk that this creates.</div>
+
+</div>

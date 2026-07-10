@@ -1,0 +1,159 @@
+<div class="exam-meta"><span class="pill">120 minutes</span><span class="pill">120 points</span><span class="pill">Comprehensive &mdash; Chapters 1&ndash;13</span></div>
+
+<p class="lead">This is the <b>Comprehensive</b> exam, spanning the whole book &mdash; the process split and its history, the SSR web tier and client state, the Prisma data layer and RMH Auth, the realtime fleet, the games and content apps, the strangler-fig Go tier, the build toolchain, deployment, and scaling. It is deliberately cross-cutting: the best answers trace a value or a request <i>across</i> subsystems rather than treating each chapter in isolation. The exam has three parts &mdash; multiple choice, short answer, and integration/design &mdash; for 120 points over 120 minutes. Answer in your own words; where a question names a real file, port, script, model, or event, cite it. Throughout, favour the book's honest-scope discipline: say plainly what is <i>built</i> versus <i>planned</i>, <i>ported</i> versus <i>scaffolded</i>, and which constraint a given mechanism actually relieves. Budget your time roughly in proportion to the points.</p>
+
+<div class="exam-section">
+<h2 id="comp-part-i">Part I &mdash; Multiple Choice (36 points)</h2>
+<p>Twelve questions, 3 points each. Choose the single best answer.</p>
+
+<div class="exam-q"><span class="qid">C1</span><span class="pts">3 pts</span>
+The defining design decision of rmhstudios.com is its <em>process-split architecture</em>. Which statement best captures how the tiers coordinate?
+<ol class="choices">
+  <li>The web tier makes direct in-process function calls into the socket server to share lobby state.</li>
+  <li>One web/SSR process is surrounded by a fleet of standalone Node processes that never call each other directly and instead coordinate through a shared PostgreSQL database.</li>
+  <li>Every service is a thread inside a single Node event loop, isolated by namespaces.</li>
+  <li>Each service owns its own database, and a message broker reconciles them nightly.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">C2</span><span class="pts">3 pts</span>
+A stale <code>docs/codebase-overview.md</code> still describes the web tier as &ldquo;Next.js 16&rdquo; on port 7000. According to the book, what is the authoritative current truth?
+<ol class="choices">
+  <li>Next.js 16 on port 7000 &mdash; the doc is correct.</li>
+  <li>TanStack Start + Vite + Nitro on port 7005 &mdash; confirmed by the README and the running code; the doc is a fossil.</li>
+  <li>Express + Socket.io on port 7001.</li>
+  <li>A static export served by Apache on port 9000.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">C3</span><span class="pts">3 pts</span>
+The same single application image, <code>rmhstudios-app</code>, is started with different commands to run <code>web</code>, <code>socket</code>, <code>rmhbox</code>, the workers, and so on. What is the primary operational benefit of this &ldquo;one image, many commands&rdquo; approach?
+<ol class="choices">
+  <li>It forces every service to share one event loop.</li>
+  <li>One build artifact, SHA-taggable for instant rollback, runs the whole fleet &mdash; build and migrate once, run many.</li>
+  <li>It lets each service run a different language runtime.</li>
+  <li>It removes the need for a reverse proxy.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">C4</span><span class="pts">3 pts</span>
+In <code>app/routes/__root.tsx</code>, the server function <code>getInitialUser</code> reads the session cookie on the server and seeds <code>initialUser</code> into the loader. What problem does this specifically prevent?
+<ol class="choices">
+  <li>It prevents Postgres from running out of connection slots.</li>
+  <li>It prevents the first server-rendered paint from flashing &ldquo;signed out&rdquo; before the live session resolves on the client.</li>
+  <li>It prevents the games library from loading <code>three</code> into the server bundle.</li>
+  <li>It prevents a hydration mismatch in the realtime socket connection.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">C5</span><span class="pts">3 pts</span>
+The social post model is declared as <code>RMHark</code> in the Prisma schema but carries <code>@@map("rmheet")</code>. What does this most directly illustrate?
+<ol class="choices">
+  <li>A bug &mdash; the model name and table name must always match.</li>
+  <li>The ORM&rsquo;s ability to decouple the code-side model name from the database table name, here preserving a table named after an earlier product identity.</li>
+  <li>That the feed is stored as a single JSON blob.</li>
+  <li>That <code>rmheet</code> is a Postgres reserved word being escaped.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">C6</span><span class="pts">3 pts</span>
+Both the web tier (<code>lib/prisma.server.ts</code>, default pool 10) and the standalone realtime servers (<code>server/shared/prisma-client.ts</code>, default pool 5) open their own connection pools against <em>one</em> Postgres instance. Why does the book insist the sum of every pool&rsquo;s <code>max</code> stay under the database connection limit?
+<ol class="choices">
+  <li>Prisma refuses to start if pools overlap.</li>
+  <li>Postgres serves a fixed-size worker pool and runs out of connection slots before CPU; every replica that opens its own pool eats into that finite budget.</li>
+  <li>Each pool requires a dedicated CPU core.</li>
+  <li>Connection pools are billed per byte.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">C7</span><span class="pts">3 pts</span>
+The realtime servers do <em>not</em> import the Better Auth library to identify a user; instead they run a SQL lookup that joins the <code>session</code> table to <code>user</code> on the handshake token. The Go <code>pkg/auth</code> package ports that same query verbatim. What invariant does this preserve across both languages?
+<ol class="choices">
+  <li>Sessions are <em>issued</em> by every service independently.</li>
+  <li>Session <em>issuance</em> (OAuth callbacks, cookie signing, row creation) stays in the Node/Better Auth tier, while other services only <em>validate</em> an existing session against the shared table.</li>
+  <li>The token is a self-contained JWT that needs no database.</li>
+  <li>Each realtime service maintains its own copy of the session table.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">C8</span><span class="pts">3 pts</span>
+For multiplayer games, a live <code>updateScore</code> stream is throttled and drives only the opponent HUD, yet a final ranked score still travels a different path. Which path carries the <em>authoritative</em> score that lands in the leaderboard?
+<ol class="choices">
+  <li>The throttled <code>updateScore</code> socket event, written straight to Postgres by the socket server.</li>
+  <li>The HTTP POST to <code>app/routes/api/&lt;game&gt;/score.ts</code>, which rate-limits, bounds, authenticates, and persists.</li>
+  <li>A WebSocket broadcast that every client mirrors into the database.</li>
+  <li>The MinIO object store.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">C9</span><span class="pts">3 pts</span>
+RmhTube ships <code>extrapolate</code>/<code>reanchor</code> sync math, an NTP-lite clock handshake, and two-tier drift correction; RmhMusic syncs with one inline expression and a 5-second heartbeat. Which single fact explains the difference?
+<ol class="choices">
+  <li>RmhMusic runs as its own process on its own port, so it needs less code.</li>
+  <li>RmhTube embeds the player and must correct drift, whereas RmhMusic delegates the playhead to an external Spotify Web Playback SDK that each client already keeps in step.</li>
+  <li>RmhMusic uses fan-out-on-write and RmhTube uses fan-out-on-read.</li>
+  <li>RmhTube stores its media in MinIO and RmhMusic does not.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">C10</span><span class="pts">3 pts</span>
+The Go <code>gateway</code> selects an upstream by <em>longest-matching path prefix</em>: <code>/socket/</code>, <code>/rmhbox-ws/</code>, <code>/rmhtube-ws/</code>, <code>/rmhmusic-ws/</code> go to Go services, and the catch-all <code>/</code> falls back to the Node <code>web</code> tier. Why does this make the gateway the <em>strangler-fig boundary</em>?
+<ol class="choices">
+  <li>It re-implements the React SSR renderer in Go so the Node app can be deleted.</li>
+  <li>It lets the migration cut over one prefix at a time, with everything not yet ported still served by the unchanged Node tier.</li>
+  <li>It compiles all nine Go binaries into a single container.</li>
+  <li>It issues Better Auth sessions on behalf of every upstream.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">C11</span><span class="pts">3 pts</span>
+During a production deploy, <code>deploy.sh</code> brings up every service except <code>web</code> with <code>--scale web=0</code> and hands <code>web</code> to <code>hotswap-web.sh</code> (blue 7005 / green 7015). If the freshly built green container never passes its health poll within the 60-second budget, what happens?
+<ol class="choices">
+  <li>Apache flips to green anyway and serves 503s until a human intervenes.</li>
+  <li>Traffic is never moved; blue keeps serving, so a bad build degrades to &ldquo;old version stays up.&rdquo;</li>
+  <li>Helm performs an <code>--atomic</code> rollback of the Compose stack.</li>
+  <li>The webhook re-runs the migration step.</li>
+</ol></div>
+
+<div class="exam-q"><span class="qid">C12</span><span class="pts">3 pts</span>
+The book argues that rewriting the realtime tier in Go is <em>not</em>, by itself, a scaling strategy for the two binding constraints. Which reasoning is correct?
+<ol class="choices">
+  <li>Go cannot hold WebSocket connections, so it would make Constraint B worse.</li>
+  <li>Neither constraint is a per-connection-cost problem: the single-Postgres limit is relieved by PgBouncer/read replicas (language-agnostic), and the single-replica websocket limit still needs a Redis backplane plus sticky sessions in exactly the same form regardless of language.</li>
+  <li>Go services would each need their own database, eliminating Constraint A.</li>
+  <li>A Go rewrite automatically enables a CDN in front of websockets.</li>
+</ol></div>
+</div>
+
+<div class="exam-section">
+<h2 id="comp-part-ii">Part II &mdash; Short Answer (35 points)</h2>
+<p>Seven questions, 5 points each. Two to four sentences each unless asked for more; cite real identifiers where relevant.</p>
+
+<div class="exam-q"><span class="qid">C13</span><span class="pts">5 pts</span>
+The book reconstructs the system&rsquo;s history as six eras, each ended by a design pressure. Name the commit and approximate date that ends Era 1 and begins Era 2 (the move off Next.js), state what stack the system landed on, and give the one production port that changed as a result. Then explain in one sentence why the Era 3 process split is called &ldquo;the precondition&rdquo; for the later orchestration (Era 4) and Go (Era 5) work.</div>
+
+<div class="exam-q"><span class="qid">C14</span><span class="pts">5 pts</span>
+Classify each of the following into <em>local</em>, <em>client</em>, or <em>server</em> state from Chapter 4, and name the tool that owns it: (a) whether a dropdown is open; (b) which of the 30 site themes the visitor selected; (c) the doctrine reputation leaderboard. For (c), explain what the &ldquo;ownership / freshness&rdquo; test is and why it lands in that category.</div>
+
+<div class="exam-q"><span class="qid">C15</span><span class="pts">5 pts</span>
+Distinguish <em>authentication</em> from <em>authorization</em>. Then trace what happens when a request reaches a game score endpoint such as <code>app/routes/api/slice-it/score.ts</code> carrying an <em>expired</em> session cookie: what does <code>auth.api.getSession</code> return, what exact HTTP status does the route send, and why is that status (rather than 403) the correct one here?</div>
+
+<div class="exam-q"><span class="qid">C16</span><span class="pts">5 pts</span>
+Explain why a leaderboard score is described as &ldquo;server-authoritative&rdquo; using the typing-race event <code>rmhtype:game:progress</code> as your example: what does the client actually send, what does the server compute and from whose clock, and what state must the room be in for the event to be honored at all? Then state, in one sentence, the one lever a cheating client still has and why it is bounded.</div>
+
+<div class="exam-q"><span class="qid">C17</span><span class="pts">5 pts</span>
+Both the dormant feed-SSE bus (behind <code>REDIS_URL</code>) and the Go <code>pkg/events</code> bus default to an in-process implementation and &ldquo;light up&rdquo; a Redis backplane only when <code>REDIS_URL</code> is set. Explain what a <em>backplane</em> does for a multi-replica deployment, and why the very same primitive shows up independently in the Node feed layer (Chapter 9), the Go tier (Chapter 10), and the Stage-1 scaling plan (Chapter 13).</div>
+
+<div class="exam-q"><span class="qid">C18</span><span class="pts">5 pts</span>
+The repository runs two deliberately different build worlds. Name one concrete mechanism that makes the Bazel-built Go core <em>hermetic</em> (such that &ldquo;Go is NOT required locally&rdquo;) and one concrete way the <code>//:frontend</code> leaf is intentionally <em>non-hermetic</em>. State the payoff the team accepts in exchange for the leaf&rsquo;s non-hermeticity.</div>
+
+<div class="exam-q"><span class="qid">C19</span><span class="pts">5 pts</span>
+The production deploy has two coexisting <em>run-layers</em>. Name each (the script that drives it, the supervisor/orchestrator, and the reverse-proxy/ingress), state the single contract they share that lets one substitute for the other, and name the one-variable switch that flips between them and how rollback works.</div>
+</div>
+
+<div class="exam-section">
+<h2 id="comp-part-iii">Part III &mdash; Integration &amp; Design (49 points)</h2>
+<p>Four questions. These are meaty, cross-cutting problems. Draw clearly where asked (a labelled sketch or a text-described flow is fine), state your assumptions, and defend trade-offs against the constraints the book actually names.</p>
+
+<div class="exam-q"><span class="qid">C20</span><span class="pts">12 pts</span>
+<strong>Trace a multiplayer score end to end.</strong> A logged-in user finishes a ranked Neon Driftway run. Trace the score&rsquo;s full journey across subsystems: (a) the <em>live</em> in-game updates &mdash; which socket process and port carry them, why those updates are throttled, and which HUD they drive; (b) the moment the game ends &mdash; the authoritative HTTP path the final score takes (name the route family), the order of gates it passes (rate limit, bound/shape, authenticate, persist), and how the server identifies <em>which</em> user&rsquo;s row to write without trusting the client; (c) where the score finally rests &mdash; the single shared Postgres instance, and how the leaderboard read later finds it cheaply (name the indexing idea). Then explain in one sentence why the live socket path and the authoritative HTTP path are deliberately <em>different</em> paths rather than one.</div>
+
+<div class="exam-q"><span class="qid">C21</span><span class="pts">12 pts</span>
+<strong>Relate the two scaling constraints to the data and realtime tiers.</strong> The book names exactly two constraints that &ldquo;actually bind.&rdquo; (a) State each precisely &mdash; what bites, and which chapter&rsquo;s subsystem it is rooted in (the single Postgres of the data layer; the in-memory per-lobby Socket.io state of the realtime fleet). (b) Sort the fleet into stateless (<code>web</code>, the workers) and stateful (<code>socket</code>, <code>rmhbox</code>, <code>rmhtube</code>) using the &ldquo;interchangeability test,&rdquo; and explain why only the stateless set scales out cleanly today. (c) For each constraint, name the Stage-1 relief mechanism and say which tier it sits in. (d) Explain why a CDN, which relieves load for the static surface, is <em>useless</em> for the websocket surface &mdash; tie your answer to what a CDN fundamentally caches.</div>
+
+<div class="exam-q"><span class="qid">C22</span><span class="pts">12 pts</span>
+<strong>Adopt one Go service, honouring the strangler-fig posture.</strong> Metrics show the Node <code>rmhmusic</code> handlers are CPU-bound at peak. You are asked to adopt <em>only</em> the Go <code>rmhmusic</code> binary, leaving the other eight Node services untouched. Address: (1) the single <code>gateway</code> prefix-routing change that points <code>/rmhmusic-ws/</code> at the Go binary, and exactly how rollback works if it misbehaves; (2) the Socket.IO-v4 versus JSON-over-raw-WebSocket wire-protocol gap &mdash; what is missing today and what must exist before a real browser can connect; (3) what must <em>stay</em> in JavaScript regardless (be explicit about session issuance and the React SSR tier) and why; and (4) why this per-service, metrics-gated move honours PR&nbsp;#121&rsquo;s &ldquo;Stage-4, only if metrics demand&rdquo; decision rather than amounting to a big-bang rewrite. Tie point (1) back to the same run-layer reversibility discipline used by the deploy chapter.</div>
+
+<div class="exam-q"><span class="qid">C23</span><span class="pts">13 pts</span>
+<strong>Scale <code>rmhbox</code> from one replica to three, end to end.</strong> Two players join the same six-character <code>rmhbox</code> lobby. <code>rmhbox</code> is currently pinned to <code>replicas: 1</code>. (a) Explain the concrete failure two lobby-mates experience if you naively scale to three replicas behind an ordinary load balancer &mdash; reason from where lobby state actually lives (the per-process <code>Map</code>). (b) Name the two complementary Stage-1 mechanisms that fix it and state precisely what each guarantees (one keeps a <em>connection</em> coherent; the other keeps a <em>lobby</em> coherent across replicas). (c) Construct a failure scenario that occurs if you enable exactly one of the two but not the other. (d) Draw the post-Stage-1 path of a single game event from player X (pinned to replica 1) to player Y&rsquo;s screen (pinned to replica 2), naming every component it passes through &mdash; ingress, the two replicas, and the backplane. (e) In one sentence, explain why this exact machinery (backplane + sticky sessions + a connection pooler for Postgres) would still be required even if <code>rmhbox</code> were rewritten in Go &mdash; i.e. why the rewrite is a per-service optimization, not a scaling plan.</div>
+</div>

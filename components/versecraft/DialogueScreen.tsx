@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
@@ -8,9 +9,10 @@ import { getChapterEntry } from '@/lib/versecraft/chapters/registry';
 import { getWordPool } from '@/lib/versecraft/words';
 import { getSpritePath } from '@/lib/versecraft/sprites';
 import type { DialogueNode, Scene, WordSelectPuzzleData } from '@/lib/versecraft/types';
+import { asset } from '@/lib/storage/asset';
 
 // Background image presets (Sutemo VN backgrounds)
-const BG_BASE = '/sprites/versecraft/backgrounds';
+const BG_BASE = asset('/sprites/versecraft/backgrounds');
 const BACKGROUNDS: Record<string, { image: string; fallback: string }> = {
   school_hallway: { image: `${BG_BASE}/school_hallway_day.png`, fallback: '#4A3F35' },
   club_room:      { image: `${BG_BASE}/club_room_day.png`, fallback: '#4A3B6B' },
@@ -156,6 +158,7 @@ function CharacterSprite({ characterId, expression, position, isSpeaking, sprite
 }
 
 export function DialogueScreen() {
+  const { t } = useTranslation("c-versecraft");
   const {
     currentChapter, currentSceneIndex, currentDialogueIndex, settings,
     setScreen, advanceDialogue, applyChoiceEffects,
@@ -279,7 +282,7 @@ export function DialogueScreen() {
   if (!currentScene || !currentNode) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p style={{ color: '#a89888' }}>Loading...</p>
+        <p style={{ color: '#a89888' }}>{t("loading", { defaultValue: "Loading..." })}</p>
       </div>
     );
   }
@@ -426,7 +429,7 @@ export function DialogueScreen() {
                   animate={{ opacity: [0.3, 0.8, 0.3] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  ▸ Click to continue
+                  {t("click-to-continue", { defaultValue: "▸ Click to continue" })}
                 </motion.span>
               ) : (
                 <span className="text-xs" style={{ color: '#c4a35a40' }}>...</span>
@@ -438,10 +441,10 @@ export function DialogueScreen() {
         {/* Quick action bar */}
         <div className="max-w-4xl mx-auto mt-2 flex gap-2 justify-end">
           {([
-            { key: 'menu', label: 'Menu' },
-            { key: 'settings', label: 'Settings' },
-            { key: 'save', label: 'Save' },
-            { key: 'journal', label: 'Journal' },
+            { key: 'menu', label: t("menu", { defaultValue: "Menu" }) },
+            { key: 'settings', label: t("settings", { defaultValue: "Settings" }) },
+            { key: 'save', label: t("save", { defaultValue: "Save" }) },
+            { key: 'journal', label: t("journal", { defaultValue: "Journal" }) },
           ] as const).map(action => (
             <button
               key={action.key}

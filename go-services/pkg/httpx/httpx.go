@@ -114,3 +114,22 @@ func WaitForSignal() os.Signal {
 	signal.Notify(stop, syscall.SIGINT, syscall.SIGTERM)
 	return <-stop
 }
+
+// SignalContext returns a context cancelled on SIGINT/SIGTERM — the standalone
+// wrapper equivalent of the WaitForSignal pattern.
+func SignalContext() (context.Context, context.CancelFunc) {
+	return signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+}
+
+// ServeMetrics starts a background /health + /metrics server for a standalone
+// worker. A bind failure is fatal (an unprobeable pod is never restarted).
+func ServeMetrics(addr, service string, h http.Handler, logger *log.Logger) {
+	go func() {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/health", Health(service, nil))
+		mux.Handle("/metrics", h)
+		if err := http.ListenAndServe(addr, mux); err != nil {
+			logger.Fatal("metrics server", "error", err)
+		}
+	}()
+}

@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "டோக்கனை நகலெடு",
+  "created-date": "உருவாக்கப்பட்டது {{date}}",
+  "expired": "காலாவதியானது",
+  "generate-token": "டோக்கனை உருவாக்கு",
+  "last-used-date": "கடைசியாகப் பயன்படுத்தப்பட்டது {{date}}",
+  "no-active-tokens": "செயலில் உள்ள டோக்கன்கள் இல்லை. தொடங்க ஒன்றை உருவாக்கவும்.",
+  "revoke-token-label": "டோக்கனை ரத்துசெய்",
+  "token-auth-instruction-post": "அங்கீகரிக்க.",
+  "token-auth-instruction-pre": "இயக்கு",
+  "token-generated-notice": "டோக்கன் உருவாக்கப்பட்டது! இப்போது அதை நகலெடுக்கவும் - இது மீண்டும் காட்டப்படாது.",
+  "token-name-placeholder": "டோக்கன் பெயர் (விருப்பம்)",
+  "unnamed-token": "பெயரிடப்படாத டோக்கன்",
+  "your-tokens": "உங்கள் டோக்கன்கள்"
+}

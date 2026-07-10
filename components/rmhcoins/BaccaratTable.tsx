@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useBaccaratStore } from '@/lib/baccarat/store';
 import { handValue, isNatural } from '@/lib/baccarat/logic';
 import type { Card, BaccaratResult } from '@/lib/baccarat/logic';
@@ -12,13 +13,17 @@ import { CoinIcon } from './CoinIcon';
 const SUIT_SYMBOLS: Record<string, string> = { H: '\u2665', D: '\u2666', C: '\u2663', S: '\u2660' };
 const SUIT_COLORS: Record<string, string> = { H: 'text-red-500', D: 'text-red-500', C: 'text-gray-900', S: 'text-gray-900' };
 
-function CardFace({ card, flipDelay }: { card: Card; flipDelay?: number }) {
+const FLIP_DURATION_MS = 600;
+
+function CardFace({ card }: { card: Card }) {
   const [flipped, setFlipped] = useState(false);
 
+  // Flip shortly after mount. Cards already arrive staggered from the server,
+  // so we only need a small delay to trigger the CSS transition.
   useEffect(() => {
-    const timer = setTimeout(() => setFlipped(true), flipDelay ?? 100);
+    const timer = setTimeout(() => setFlipped(true), 60);
     return () => clearTimeout(timer);
-  }, [flipDelay]);
+  }, []);
 
   return (
     <div className="shrink-0 w-11 h-15 sm:w-13 sm:h-18" style={{ perspective: '600px' }}>
@@ -34,12 +39,12 @@ function CardFace({ card, flipDelay }: { card: Card; flipDelay?: number }) {
       >
         {/* Back */}
         <div
-          className="rounded-lg border border-red-500/30"
+          className="rounded-lg border border-site-accent/40"
           style={{
             position: 'absolute',
             inset: 0,
             backfaceVisibility: 'hidden',
-            background: 'linear-gradient(135deg, #7f1d1d, #450a0a)',
+            background: 'linear-gradient(135deg, var(--site-accent), var(--site-accent-hover))',
           }}
         />
         {/* Front */}
@@ -63,9 +68,9 @@ function CardFace({ card, flipDelay }: { card: Card; flipDelay?: number }) {
 function CardBack() {
   return (
     <div
-      className="shrink-0 w-11 h-15 sm:w-13 sm:h-18 rounded-lg border border-red-500/30"
+      className="shrink-0 w-11 h-15 sm:w-13 sm:h-18 rounded-lg border border-site-accent/40"
       style={{
-        background: 'linear-gradient(135deg, #7f1d1d, #450a0a)',
+        background: 'linear-gradient(135deg, var(--site-accent), var(--site-accent-hover))',
       }}
     />
   );
@@ -73,13 +78,29 @@ function CardBack() {
 
 // ── Hand Display ───────────────────────────────────────────────────
 
-function HandDisplay({ cards, label, value, natural, staggerOffset }: {
+function HandDisplay({ cards, label, value, natural, showValue }: {
   cards: Card[];
   label: string;
   value: number | null;
   natural: boolean;
-  staggerOffset?: number;
+  showValue: boolean;
 }) {
+  const { t } = useTranslation("c-rmhcoins");
+  // Gate the running total behind the flip animation: only reveal the value
+  // once the most recently dealt card has finished flipping face-up.
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (cards.length === 0) {
+      setSettled(false);
+      return;
+    }
+    setSettled(false);
+    const timer = setTimeout(() => setSettled(true), FLIP_DURATION_MS + 120);
+    return () => clearTimeout(timer);
+  }, [cards.length]);
+
+  const valueVisible = showValue && settled && value !== null;
+
   return (
     <div className="flex flex-col items-center gap-1.5 sm:gap-2 min-w-0">
       <span className="text-[10px] sm:text-xs text-site-text-dim font-bold uppercase tracking-wider">{label}</span>
@@ -89,7 +110,6 @@ function HandDisplay({ cards, label, value, natural, staggerOffset }: {
             <CardFace
               key={`${card.rank}${card.suit}${i}`}
               card={card}
-              flipDelay={(staggerOffset ?? 0) + i * 500}
             />
           ))
         ) : (
@@ -99,12 +119,12 @@ function HandDisplay({ cards, label, value, natural, staggerOffset }: {
           </>
         )}
       </div>
-      {value !== null && (
+      {valueVisible && (
         <div className="flex flex-col items-center gap-0.5">
           <span className="text-xl sm:text-2xl font-bold text-site-text font-mono">{value}</span>
           {natural && (
-            <span className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase tracking-wider">
-              Natural
+            <span className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-site-accent-dim text-site-accent uppercase tracking-wider">
+              {t("natural", { defaultValue: "Natural" })}
             </span>
           )}
         </div>
@@ -116,10 +136,11 @@ function HandDisplay({ cards, label, value, natural, staggerOffset }: {
 // ── Result Announcement ────────────────────────────────────────────
 
 function ResultAnnouncement({ result }: { result: BaccaratResult }) {
+  const { t } = useTranslation("c-rmhcoins");
   const cfg: Record<BaccaratResult, { label: string; color: string; bg: string }> = {
-    player: { label: 'Player Wins!', color: 'text-red-400', bg: 'bg-red-500/20 border-red-500/30' },
-    banker: { label: 'Banker Wins!', color: 'text-blue-400', bg: 'bg-blue-500/20 border-blue-500/30' },
-    tie: { label: 'Tie!', color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30' },
+    player: { label: t("player-wins", { defaultValue: "Player Wins!" }), color: 'text-red-400', bg: 'bg-red-500/20 border-red-500/30' },
+    banker: { label: t("banker-wins", { defaultValue: "Banker Wins!" }), color: 'text-blue-400', bg: 'bg-blue-500/20 border-blue-500/30' },
+    tie: { label: t("tie", { defaultValue: "Tie!" }), color: 'text-emerald-400', bg: 'bg-emerald-500/20 border-emerald-500/30' },
   };
 
   const c = cfg[result];
@@ -134,6 +155,7 @@ function ResultAnnouncement({ result }: { result: BaccaratResult }) {
 // ── History Bead Road ──────────────────────────────────────────────
 
 function HistoryScoreboard({ history }: { history: BaccaratResult[] }) {
+  const { t } = useTranslation("c-rmhcoins");
   if (history.length === 0) return null;
 
   const dotColor: Record<BaccaratResult, string> = {
@@ -177,7 +199,7 @@ function HistoryScoreboard({ history }: { history: BaccaratResult[] }) {
           T: {history.filter((r) => r === 'tie').length}
         </span>
         {currentStreak > 1 && (
-          <span className="text-site-text-dim">Streak: {currentStreak}</span>
+          <span className="text-site-text-dim">{t("streak", { defaultValue: "Streak: {{count}}", count: currentStreak })}</span>
         )}
       </div>
     </div>
@@ -197,6 +219,7 @@ const BET_LABELS: Record<BetType, { short: string; color: string }> = {
 };
 
 export function BaccaratTable() {
+  const { t } = useTranslation("c-rmhcoins");
   const {
     playerHand,
     bankerHand,
@@ -208,8 +231,8 @@ export function BaccaratTable() {
   } = useBaccaratStore();
 
   const showValues = tablePhase === 'dealing' || tablePhase === 'drawing' || tablePhase === 'results';
-  const playerValue = showValues && playerHand.length > 0 ? handValue(playerHand) : null;
-  const bankerValue = showValues && bankerHand.length > 0 ? handValue(bankerHand) : null;
+  const playerValue = playerHand.length > 0 ? handValue(playerHand) : null;
+  const bankerValue = bankerHand.length > 0 ? handValue(bankerHand) : null;
   const playerNatural = playerHand.length === 2 && isNatural(playerHand);
   const bankerNatural = bankerHand.length === 2 && isNatural(bankerHand);
 
@@ -228,44 +251,44 @@ export function BaccaratTable() {
       {/* Dealing indicator */}
       {(tablePhase === 'dealing' || tablePhase === 'drawing') && (
         <div className="text-center">
-          <span className="text-sm text-red-400 font-bold animate-pulse">
-            {tablePhase === 'dealing' ? 'Dealing...' : 'Drawing third card...'}
+          <span className="text-sm text-site-accent font-bold animate-pulse">
+            {tablePhase === 'dealing' ? t("dealing", { defaultValue: "Dealing..." }) : t("drawing-third-card", { defaultValue: "Drawing third card..." })}
           </span>
         </div>
       )}
 
       {/* Hands — responsive gap and padding */}
-      <div className={`flex items-start justify-center gap-4 sm:gap-10 p-3 sm:p-5 rounded-xl bg-red-900/20 border border-red-700/20 min-h-28 sm:min-h-32 w-full transition-all ${
-        tablePhase === 'dealing' || tablePhase === 'drawing' ? 'ring-1 ring-red-500/30' : ''
+      <div className={`flex items-start justify-center gap-4 sm:gap-10 p-3 sm:p-5 rounded-xl bg-site-bg-subtle border border-site-border min-h-28 sm:min-h-32 w-full transition-all ${
+        tablePhase === 'dealing' || tablePhase === 'drawing' ? 'ring-1 ring-site-accent/40' : ''
       }`}>
         <HandDisplay
           cards={playerHand}
-          label="Player"
+          label={t("player", { defaultValue: "Player" })}
           value={playerValue}
           natural={playerNatural}
-          staggerOffset={0}
+          showValue={showValues}
         />
 
         <div className="flex flex-col items-center justify-center py-3 sm:py-4">
-          <div className="w-px h-8 sm:h-12 bg-red-700/30" />
-          <span className="text-[10px] text-site-text-dim font-bold my-1">VS</span>
-          <div className="w-px h-8 sm:h-12 bg-red-700/30" />
+          <div className="w-px h-8 sm:h-12 bg-site-border" />
+          <span className="text-[10px] text-site-text-dim font-bold my-1">{t("vs", { defaultValue: "VS" })}</span>
+          <div className="w-px h-8 sm:h-12 bg-site-border" />
         </div>
 
         <HandDisplay
           cards={bankerHand}
-          label="Banker"
+          label={t("banker", { defaultValue: "Banker" })}
           value={bankerValue}
           natural={bankerNatural}
-          staggerOffset={200}
+          showValue={showValues}
         />
       </div>
 
       {/* Players & their bets — scrollable on mobile */}
       {activeBets.length > 0 && (
         <div className="w-full flex flex-col gap-1.5">
-          <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold text-center">Bets at Table</span>
-          <div className="flex flex-wrap justify-center gap-2 max-h-32 overflow-y-auto">
+          <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold text-center">{t("bets-at-table", { defaultValue: "Bets at Table" })}</span>
+          <div className="flex flex-wrap justify-center gap-2">
             {activeBets.map((p) => {
               const isMe = p.userId === myUserId;
               const betEntries = (Object.entries(p.bets) as [BetType, number][]).filter(([, v]) => v > 0);
@@ -273,17 +296,17 @@ export function BaccaratTable() {
                 <div
                   key={p.userId}
                   className={`flex flex-col gap-1 p-2 rounded-lg border ${
-                    isMe ? 'bg-red-500/5 border-red-500/20' : 'bg-site-surface/50 border-site-border/50'
+                    isMe ? 'bg-site-accent-dim border-site-accent/30' : 'bg-site-surface/50 border-site-border/50'
                   }`}
                 >
                   <div className="flex items-center gap-1.5">
                     {p.avatarUrl && <img src={p.avatarUrl} alt="" className="w-4 h-4 rounded-full" />}
-                    <span className={`text-xs font-bold truncate max-w-20 ${isMe ? 'text-red-400' : 'text-site-text'}`}>
-                      {isMe ? 'You' : p.userName}
+                    <span className={`text-xs font-bold truncate max-w-20 ${isMe ? 'text-site-accent' : 'text-site-text'}`}>
+                      {isMe ? t("you", { defaultValue: "You" }) : p.userName}
                     </span>
                     <div className="flex items-center gap-0.5 ml-auto">
                       <CoinIcon className="w-3 h-3" />
-                      <span className="text-[10px] font-bold text-red-400">{p.totalBetThisRound}</span>
+                      <span className="text-[10px] font-bold text-yellow-500">{p.totalBetThisRound}</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1">

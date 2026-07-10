@@ -9,6 +9,7 @@
 'use client';
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import type { Card, Relic } from '@/lib/signal-forge';
 import { cardKeywordTags, keywordColor, keywordTooltip, typeColor } from './uiHelpers';
@@ -33,6 +34,7 @@ export function ShopScreen({
   onOpenUpgrade,
   onOpenCollection,
 }: Props) {
+  const { t } = useTranslation("c-signal-forge");
   const costScale = 1 + (gameState.floor - 1) * 0.08;
   const removalPrice = Math.round(50 * Math.pow(2, gameState.shopRemovalsUsed) * costScale);
   const upgradePrice = Math.round(50 * Math.pow(2, gameState.shopUpgradesUsed) * costScale);
@@ -48,13 +50,13 @@ export function ShopScreen({
       <div className="bg-linear-to-b from-slate-900 to-black border-2 border-cyan-500 p-6 rounded-lg max-w-4xl w-full shadow-2xl max-h-full overflow-y-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-cyan-400">Shop — Floor {gameState.floor}</h2>
+          <h2 className="text-2xl font-bold text-cyan-400">{t("shop-floor-heading", { defaultValue: "Shop — Floor {{floor}}", floor: gameState.floor })}</h2>
           <div className="flex gap-4 items-center">
             <button
               onClick={onOpenCollection}
               className="bg-cyan-600 hover:bg-cyan-700 text-white font-bold py-1 px-3 rounded text-sm"
             >
-              📚 Collection
+              📚 {t("collection", { defaultValue: "Collection" })}
             </button>
             <div className="text-yellow-400 font-bold text-lg">💰 {gameState.currency}</div>
           </div>
@@ -62,7 +64,7 @@ export function ShopScreen({
 
         {/* Cards */}
         <div className="mb-4">
-          <h3 className="text-sm font-bold text-cyan-300 uppercase tracking-wider mb-2 border-b border-cyan-800 pb-1">Cards</h3>
+          <h3 className="text-sm font-bold text-cyan-300 uppercase tracking-wider mb-2 border-b border-cyan-800 pb-1">{t("cards-section", { defaultValue: "Cards" })}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {shopCards.map((item) => {
               const card = item.item as Card;
@@ -94,7 +96,7 @@ export function ShopScreen({
                     disabled={!isAffordable}
                     className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:bg-slate-700 text-white font-bold py-1.5 rounded text-xs"
                   >
-                    Buy
+                    {t("buy", { defaultValue: "Buy" })}
                   </Button>
                 </div>
               );
@@ -106,7 +108,7 @@ export function ShopScreen({
         {shopRelics.length > 0 && (
           <div className="mb-4">
             <h3 className="text-sm font-bold text-orange-300 uppercase tracking-wider mb-2 border-b border-orange-800 pb-1">
-              Relics {gameState.relicBoughtThisShop && <span className="text-slate-500 text-xs normal-case ml-2">(limit 1 per visit — purchased)</span>}
+              {t("relics-section", { defaultValue: "Relics" })} {gameState.relicBoughtThisShop && <span className="text-slate-500 text-xs normal-case ml-2">({t("relic-limit-notice", { defaultValue: "limit 1 per visit — purchased" })})</span>}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {shopRelics.map((item) => {
@@ -119,14 +121,14 @@ export function ShopScreen({
                       <h3 className="font-bold text-slate-100 text-sm">🔮 {relic.name}</h3>
                       <span className={`text-sm font-bold ${isAffordable ? 'text-yellow-400' : 'text-slate-500'}`}>{item.price}💰</span>
                     </div>
-                    <p className="text-[10px] text-slate-400 capitalize mb-1">{relic.rarity} Relic</p>
+                    <p className="text-[10px] text-slate-400 capitalize mb-1">{t("relic-rarity-label", { defaultValue: "{{rarity}} Relic", rarity: relic.rarity })}</p>
                     <p className="text-xs text-slate-300 mb-2">{relic.description}</p>
                     <Button
                       onClick={() => onBuyItem?.(item.id)}
                       disabled={!isAffordable}
                       className="w-full bg-yellow-600 hover:bg-yellow-700 disabled:bg-slate-700 text-white font-bold py-1.5 rounded text-xs"
                     >
-                      {gameState.relicBoughtThisShop ? 'Sold Out' : 'Buy'}
+                      {gameState.relicBoughtThisShop ? t("sold-out", { defaultValue: "Sold Out" }) : t("buy", { defaultValue: "Buy" })}
                     </Button>
                   </div>
                 );
@@ -137,14 +139,14 @@ export function ShopScreen({
 
         {/* Services */}
         <div className="mb-4">
-          <h3 className="text-sm font-bold text-emerald-300 uppercase tracking-wider mb-2 border-b border-emerald-800 pb-1">Services</h3>
+          <h3 className="text-sm font-bold text-emerald-300 uppercase tracking-wider mb-2 border-b border-emerald-800 pb-1">{t("services-section", { defaultValue: "Services" })}</h3>
           <div className="flex gap-3">
             <Button
               onClick={onOpenRemoval}
               disabled={!canAffordRemoval || gameState.deckList.length === 0}
               className="flex-1 bg-red-800/50 hover:bg-red-700/60 disabled:bg-slate-800 border border-red-500 disabled:border-slate-700 text-white font-bold py-3 rounded-lg text-sm"
             >
-              <span className="block">🗑️ Remove Card</span>
+              <span className="block">🗑️ {t("remove-card", { defaultValue: "Remove Card" })}</span>
               <span className={`text-xs ${canAffordRemoval ? 'text-yellow-400' : 'text-slate-500'}`}>{removalPrice}💰</span>
             </Button>
             <Button
@@ -152,7 +154,7 @@ export function ShopScreen({
               disabled={!canAffordUpgrade || upgradableCards.length === 0}
               className="flex-1 bg-yellow-800/50 hover:bg-yellow-700/60 disabled:bg-slate-800 border border-yellow-500 disabled:border-slate-700 text-white font-bold py-3 rounded-lg text-sm"
             >
-              <span className="block">⬆️ Upgrade Card</span>
+              <span className="block">⬆️ {t("upgrade-card", { defaultValue: "Upgrade Card" })}</span>
               <span className={`text-xs ${canAffordUpgrade ? 'text-yellow-400' : 'text-slate-500'}`}>{upgradePrice}💰</span>
             </Button>
           </div>
@@ -166,14 +168,14 @@ export function ShopScreen({
               disabled={gameState.currency < Math.round(20 * costScale)}
               className="bg-purple-600 hover:bg-purple-700 disabled:bg-slate-700 text-white font-bold py-3 px-4 rounded-lg text-sm"
             >
-              🔄 Refresh ({Math.round(20 * costScale)}💰) [{2 - gameState.shopRefreshesUsed} left]
+              🔄 {t("refresh-shop", { defaultValue: "Refresh ({{price}}💰) [{{left}} left]", price: Math.round(20 * costScale), left: 2 - gameState.shopRefreshesUsed })}
             </Button>
           )}
           <Button
             onClick={onProceedFromShop}
             className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg"
           >
-            Continue (Floor {gameState.floor})
+            {t("continue-floor", { defaultValue: "Continue (Floor {{floor}})", floor: gameState.floor })}
           </Button>
         </div>
       </div>

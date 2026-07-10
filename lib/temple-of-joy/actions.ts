@@ -11,7 +11,12 @@ import {
   computeBlissShards,
   computeUpgradeCost,
   computeTotalHPS,
+  computeCanAscend,
+  computeRadianceGain,
+  computeAscensionBonusRelicSlots,
+  computeAscensionStartingShards,
 } from './engine';
+import { ASCENSION_MAP } from './data/ascension';
 import { SOURCE_MAP, INITIAL_SOURCES, SOURCES } from './data/sources';
 import { UPGRADE_MAP, UPGRADES } from './data/upgrades';
 import { RELIC_MAP, RELICS } from './data/relics';
@@ -42,6 +47,11 @@ function makeInitialState(
     wheelPurchased: new Set<string>(),
     samsaraGiftStacks: 0,
     emberSelections: [],
+    radiance: 0,
+    lifetimeRadiance: 0,
+    ascensionCount: 0,
+    ascensionUpgrades: new Set<string>(),
+    completedObjectives: new Set<string>(),
     lastSaved: now,
     lastTickTime: now,
     totalPlaytime: 0,
@@ -619,6 +629,93 @@ export function doTriggerTranscendence(state: GameState): GameState {
   }
 
   return newState;
+}
+
+// ─── Ascension (meta-prestige) ──────────────────────────────────────────────────
+
+/**
+ * Ascend: the meta-prestige reset. Everything in the prestige layer (sources,
+ * upgrades, wheel, relics, milestones, prestige count, bliss shards, karma)
+ * resets, but the player keeps achievements, lifetime counters, preferences,
+ * objectives, and their Ascension upgrades — and earns Radiance, a permanent
+ * currency. Ascension upgrades grant compounding multipliers + run head-starts.
+ */
+export function doTriggerAscension(state: GameState): GameState {
+  if (!computeCanAscend(state)) return state;
+
+  const radianceEarned = computeRadianceGain(state);
+  const newAscensionCount = state.ascensionCount + 1;
+  const newRadiance = state.radiance + radianceEarned;
+  const newLifetimeRadiance = state.lifetimeRadiance + radianceEarned;
+
+  const startingShards = computeAscensionStartingShards(state);
+  const bonusRelicSlots = computeAscensionBonusRelicSlots(state);
+
+  let newState = makeInitialState({
+    // ── Reset prestige layer entirely ──
+    sources: { ...INITIAL_SOURCES },
+    upgrades: new Set<string>(),
+    wheelPurchased: new Set<string>(),
+    activeRelics: [],
+    milestones: new Set<string>(),
+    prestigeCount: 0,
+    samsaraGiftStacks: 0,
+    blissShards: startingShards,
+    karma: 0,
+    peakKarma: 0,
+    happiness: 0,
+    runHappiness: 0,
+    peakHappiness: 0,
+    maxRelicSlots: 3 + bonusRelicSlots,
+    // ── Keep meta / all-time ──
+    radiance: newRadiance,
+    lifetimeRadiance: newLifetimeRadiance,
+    ascensionCount: newAscensionCount,
+    ascensionUpgrades: new Set(state.ascensionUpgrades),
+    completedObjectives: new Set(state.completedObjectives),
+    achievements: new Set(state.achievements),
+    lifetimeHappiness: state.lifetimeHappiness,
+    equippedRelicsHistory: state.equippedRelicsHistory,
+    emberSelections: state.emberSelections,
+    // ── Preserve user preferences ──
+    theme: state.theme,
+    numberFormat: state.numberFormat,
+    sourceBuyQty: state.sourceBuyQty,
+    soundEnabled: state.soundEnabled,
+    musicVolume: state.musicVolume,
+    sfxVolume: state.sfxVolume,
+    autoBuyEnabled: state.autoBuyEnabled,
+    // ── Preserve lifetime counters ──
+    totalPlaytime: state.totalPlaytime,
+    totalClicks: state.totalClicks,
+    totalPilgrimages: state.totalPilgrimages,
+    totalVibeChecks: state.totalVibeChecks,
+    totalEventsResolved: state.totalEventsResolved,
+    totalRituals: state.totalRituals,
+    totalOfferings: state.totalOfferings,
+    epicurusApprovedCount: state.epicurusApprovedCount,
+  });
+
+  newState = grantAchievement(newState, 'firstAscension');
+  if (newAscensionCount >= 5) newState = grantAchievement(newState, 'fiveAscension');
+  if (newAscensionCount >= 10) newState = grantAchievement(newState, 'tenAscension');
+
+  return newState;
+}
+
+export function doPurchaseAscensionUpgrade(state: GameState, upgradeId: string): GameState {
+  const def = ASCENSION_MAP[upgradeId];
+  if (!def) return state;
+  if (state.ascensionUpgrades.has(upgradeId)) return state;
+  if (state.radiance < def.cost) return state;
+  // Prerequisites must be owned
+  if (def.requires && !def.requires.every((id) => state.ascensionUpgrades.has(id))) return state;
+
+  return {
+    ...state,
+    radiance: state.radiance - def.cost,
+    ascensionUpgrades: new Set([...state.ascensionUpgrades, upgradeId]),
+  };
 }
 
 // ─── Wheel ────────────────────────────────────────────────────────────────────

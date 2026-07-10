@@ -1,0 +1,19 @@
+# Build output & generated files
+.output/
+.tanstack/
+.vinxi/
+dist-server/
+build/
+node_modules/
+pnpm-lock.yaml
+app/routeTree.gen.ts
+
+# Go services (gofmt owns these)
+go-services/
+
+# Data & locale JSON (machine-generated / large)
+locales/
+data/
+
+# Deploy manifests / vendored config
+deploy/

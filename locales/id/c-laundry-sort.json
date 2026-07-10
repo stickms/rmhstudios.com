@@ -1,0 +1,22 @@
+{
+  "correct-sort": "Urutan yang benar:",
+  "failed-to-load-leaderboard": "Gagal memuat papan peringkat",
+  "game-description": "Saksikan pakaian warna-warni jatuh dari atas. Biarkan mereka jatuh ke dalam tempat sampah dengan warna yang cocok untuk mendapatkan poin. Tempat sampah yang salah akan mengurangi poin!",
+  "game-over": "PERMAINAN BERAKHIR",
+  "leaderboard": "PAPAN PERINGKAT",
+  "loading": "Memuat…",
+  "no-scores-yet": "Belum ada skor. Jadilah yang pertama!",
+  "play-again": "Main Lagi",
+  "points": "poin",
+  "score": "SKOR",
+  "score-submitted": "✓ Skor terkirim!",
+  "sign-in-to-play": "Masuk untuk Bermain",
+  "sign-in-to-save": "Masuk untuk menyimpan skor Anda!",
+  "sign-in-to-submit": "Masuk untuk Mengirim",
+  "sort-the-laundry": "URUTKAN CUCIAN!",
+  "start-game": "Mulai Permainan",
+  "submitting-score": "Mengirim skor…",
+  "time": "WAKTU",
+  "time-limit": "Batas waktu: 1 menit",
+  "wrong-bin": "Tempat sampah salah:"
+}

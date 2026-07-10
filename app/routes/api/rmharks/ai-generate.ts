@@ -25,6 +25,8 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import {
   generatePost,
   generateReply,
+  generateAnnouncementTitle,
+  generateAnnouncementBody,
   isRmharkAIConfigured,
 } from '@/lib/rmhark-ai/generate.server';
 
@@ -41,6 +43,16 @@ const bodySchema = z.union([
     rmharkId: z.string().min(1),
     parentId: z.string().min(1).optional(),
     draft: draftField,
+  }),
+  z.object({
+    mode: z.literal('announcement-title'),
+    title: draftField,
+    body: draftField,
+  }),
+  z.object({
+    mode: z.literal('announcement-body'),
+    title: draftField,
+    body: draftField,
   }),
 ]);
 
@@ -101,6 +113,19 @@ export const Route = createFileRoute('/api/rmharks/ai-generate')({
           let content: string;
           if (data.mode === 'post') {
             content = await generatePost({ draft: data.draft });
+          } else if (
+            data.mode === 'announcement-title' ||
+            data.mode === 'announcement-body'
+          ) {
+            // Announcement drafting is an admin-only tool (announcements
+            // themselves are admin-gated), so don't let non-admins spend calls.
+            if (!(session.user as { isAdmin?: boolean }).isAdmin) {
+              return Response.json({ error: 'Forbidden' }, { status: 403 });
+            }
+            content =
+              data.mode === 'announcement-title'
+                ? await generateAnnouncementTitle({ title: data.title, body: data.body })
+                : await generateAnnouncementBody({ title: data.title, body: data.body });
           } else {
             // Pull the post (plus the original it quotes, if it's a repost) and
             // the ancestor comments server-side so we never trust client-supplied

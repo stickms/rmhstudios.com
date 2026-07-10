@@ -1,13 +1,16 @@
 import { lazy, Suspense } from 'react'
 import { createFileRoute, Link } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 import { GameErrorBoundary } from '@/components/shared/GameErrorBoundary'
 import { GameLoadingFallback } from '@/components/shared/GameLoadingFallback'
+import { DesktopControlsGate } from '@/components/shared/DesktopControlsGate'
 
 const ExploreGame = lazy(() => import('@/components/forest-explorer/explore/ExploreGame').then(m => ({ default: m.ExploreGame })))
 
 function ForestExplorerExplorePage() {
+  const { t } = useTranslation("r-forest-explorer")
   return (
     <main
       className="fixed inset-0 bg-black flex flex-col overflow-hidden"
@@ -21,15 +24,17 @@ function ForestExplorerExplorePage() {
             className="text-zinc-500 hover:text-white flex items-center gap-1.5 bg-black/50 backdrop-blur-sm border border-zinc-800 text-xs sm:text-sm"
           >
             <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4" />
-            <span className="hidden sm:inline">Back</span>
+            <span className="hidden sm:inline">{t("back", { defaultValue: "Back" })}</span>
           </Button>
         </Link>
       </div>
       <div className="grow relative overflow-hidden">
         <GameErrorBoundary gameName="Forest Explorer">
-          <Suspense fallback={<GameLoadingFallback />}>
-            <ExploreGame />
-          </Suspense>
+          <DesktopControlsGate gameName="Forest Explorer" backTo="/forest-explorer">
+            <Suspense fallback={<GameLoadingFallback />}>
+              <ExploreGame />
+            </Suspense>
+          </DesktopControlsGate>
         </GameErrorBoundary>
       </div>
     </main>

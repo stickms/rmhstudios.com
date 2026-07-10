@@ -2,43 +2,35 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTranslation } from 'react-i18next';
 import { useGameStore } from '@/lib/versecraft/store';
 import { loadGame } from '@/lib/versecraft/persistence';
+import { spriteUrl } from '@/lib/versecraft/sprites/registry';
+import { ShareSeed } from './ShareSeed';
+import { GeneratingState } from './GeneratingState';
 
 const FLOATING_WORDS = [
-  'whisper', 'shadow', 'bloom', 'echo', 'ember',
-  'drift', 'moonlight', 'silence', 'dream', 'verse',
-  'solitude', 'trembling', 'aurora', 'cadence', 'infinity',
-  'crystal', 'ephemeral', 'luminous', 'tender', 'shatter',
+  'whisper', 'shadow', 'bloom', 'echo', 'ember', 'drift', 'moonlight', 'silence',
+  'dream', 'verse', 'solitude', 'aurora', 'cadence', 'infinity', 'luminous', 'tender',
+];
+
+const TAGLINES = [
+  'A new emotional story every time — written for you.',
+  'Your cast. Your bonds. Your seed to share.',
+  'No two playthroughs are ever the same.',
+  'Prompt a life, or let fate deal the cards.',
 ];
 
 function FloatingWord({ word, index }: { word: string; index: number }) {
-  const duration = 15 + Math.random() * 20;
-  const delay = index * 0.8;
-  const startX = Math.random() * 100;
-
+  const duration = 16 + ((index * 37) % 18);
+  const startX = (index * 53) % 100;
   return (
     <motion.span
-      className="absolute text-sm pointer-events-none"
-      style={{
-        left: `${startX}%`,
-        color: '#c4a35a',
-        opacity: 0,
-        fontFamily: 'var(--font-patrick-hand, serif)',
-        fontSize: `${12 + Math.random() * 8}px`,
-      }}
+      className="absolute pointer-events-none"
+      style={{ left: `${startX}%`, color: '#c4a35a', fontFamily: 'var(--font-patrick-hand, serif)', fontSize: `${12 + (index % 4) * 3}px` }}
       initial={{ y: '110vh', opacity: 0 }}
-      animate={{
-        y: '-10vh',
-        opacity: [0, 0.15, 0.15, 0],
-        x: [0, (Math.random() - 0.5) * 80],
-      }}
-      transition={{
-        duration,
-        delay,
-        repeat: Infinity,
-        ease: 'linear',
-      }}
+      animate={{ y: '-10vh', opacity: [0, 0.16, 0.16, 0] }}
+      transition={{ duration, delay: index * 0.9, repeat: Infinity, ease: 'linear' }}
     >
       {word}
     </motion.span>
@@ -46,174 +38,155 @@ function FloatingWord({ word, index }: { word: string; index: number }) {
 }
 
 export function MainMenu() {
-  const startNewGame = useGameStore(s => s.startNewGame);
+  const { t } = useTranslation('c-versecraft');
   const continueGame = useGameStore(s => s.continueGame);
   const setScreen = useGameStore(s => s.setScreen);
   const isLoggedIn = useGameStore(s => s.isLoggedIn);
+  const world = useGameStore(s => s.world);
+  const chapterIndex = useGameStore(s => s.currentChapterIndex);
+  const reducedMotion = useGameStore(s => s.settings.reducedMotion);
+
   const [hasSave, setHasSave] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [continuing, setContinuing] = useState(false);
+  const [tagline, setTagline] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
-
-    async function checkSave() {
-      // Check localStorage first (fast)
-      if (loadGame(0)) {
-        if (!cancelled) { setHasSave(true); setChecking(false); }
-        return;
-      }
-      // Check DB if logged in
+    (async () => {
+      if (loadGame(0)) { if (!cancelled) { setHasSave(true); setChecking(false); } return; }
       if (isLoggedIn) {
         try {
           const res = await fetch('/api/versecraft/save');
-          if (res.ok) {
-            const data = await res.json();
-            if (!cancelled && data?.saveData) setHasSave(true);
-          }
+          if (res.ok) { const d = await res.json(); if (!cancelled && d?.saveData) setHasSave(true); }
         } catch { /* ignore */ }
       }
       if (!cancelled) setChecking(false);
-    }
-
-    checkSave();
+    })();
     return () => { cancelled = true; };
   }, [isLoggedIn]);
 
-  const menuItems = [
-    { label: 'New Game', action: startNewGame, always: true },
-    { label: 'Continue', action: () => continueGame(), always: false },
-    { label: 'Load Save', action: () => setScreen('load'), always: false },
-    { label: 'Progress', action: () => setScreen('progress'), always: false },
-    { label: 'Poem Journal', action: () => setScreen('journal'), always: false },
-    { label: 'Settings', action: () => setScreen('settings'), always: true },
-  ];
+  useEffect(() => {
+    if (reducedMotion) return;
+    const i = setInterval(() => setTagline(v => (v + 1) % TAGLINES.length), 4200);
+    return () => clearInterval(i);
+  }, [reducedMotion]);
+
+  if (continuing) {
+    return (
+      <GeneratingState title="Loading your story…" note="Restoring your cast and where you left off."
+        steps={['Finding your save…', 'Waking the cast…', 'Returning to the scene…']} />
+    );
+  }
+
+  const tile = 'group rounded-xl px-4 py-3.5 text-left transition-all active:scale-[0.98] flex items-center gap-3';
+  const tileStyle = { backgroundColor: 'rgba(26,21,32,0.66)', border: '1px solid rgba(196,163,90,0.16)', color: '#e8e0d0', minHeight: 56 } as const;
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden">
-      {/* Floating words background */}
-      <div className="absolute inset-0 overflow-hidden">
-        {FLOATING_WORDS.map((word, i) => (
-          <FloatingWord key={word} word={word} index={i} />
-        ))}
-      </div>
-
-      {/* Vignette overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: 'radial-gradient(ellipse at center, transparent 40%, #1a1520 90%)',
-        }}
-      />
-
-      {/* Title */}
-      <motion.div
-        className="relative z-10 text-center mb-12"
-        initial={{ opacity: 0, y: -30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.2, ease: 'easeOut' }}
-      >
-        <motion.div
-          className="text-sm tracking-[0.5em] uppercase mb-4"
-          style={{ color: '#c4a35a' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.7 }}
-          transition={{ delay: 0.5, duration: 1 }}
-        >
-          ✦
-        </motion.div>
-        <h1
-          className="text-5xl md:text-7xl font-bold tracking-wide mb-3"
-          style={{
-            fontFamily: 'var(--font-cinzel, serif)',
-            color: '#e8e0d0',
-            textShadow: '0 0 40px rgba(196, 163, 90, 0.3)',
-          }}
-        >
-          VERSECRAFT
-        </h1>
-        <p
-          className="text-lg md:text-xl italic tracking-wider"
-          style={{
-            fontFamily: 'var(--font-playfair, serif)',
-            color: '#a89888',
-          }}
-        >
-          Whispers of the Muse
-        </p>
-      </motion.div>
-
-      {/* Menu options */}
-      <motion.div
-        className="relative z-10 flex flex-col items-center gap-3 min-w-[260px]"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8, duration: 0.8 }}
-      >
-        <AnimatePresence>
-          {menuItems
-            .filter(item => item.always || hasSave)
-            .map((item, i) => (
-              <motion.button
-                key={item.label}
-                className="w-full px-8 py-3 text-lg tracking-wider rounded-sm transition-all duration-200 border border-transparent"
-                style={{
-                  fontFamily: 'var(--font-playfair, serif)',
-                  color: '#e8e0d0',
-                  backgroundColor: 'rgba(42, 34, 53, 0.6)',
-                }}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 1 + i * 0.1, duration: 0.4 }}
-                whileHover={{
-                  backgroundColor: 'rgba(196, 163, 90, 0.15)',
-                  borderColor: 'rgba(196, 163, 90, 0.4)',
-                  scale: 1.02,
-                  x: 5,
-                }}
-                whileTap={{ scale: 0.98 }}
-                onClick={item.action}
-              >
-                <span className="mr-2" style={{ color: '#c4a35a' }}>▸</span>
-                {item.label}
-              </motion.button>
-            ))}
-        </AnimatePresence>
-      </motion.div>
-
-      {/* Sign-in hint */}
-      {!isLoggedIn && !checking && (
-        <motion.p
-          className="relative z-10 mt-6 text-xs text-center"
-          style={{ color: '#666' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.7 }}
-          transition={{ delay: 1.5, duration: 1 }}
-        >
-          Sign in to save progress to the cloud
-        </motion.p>
+    <div className="relative min-h-[100dvh] overflow-hidden">
+      {/* Atmosphere */}
+      <div className="absolute inset-0" style={{ background: 'radial-gradient(120% 80% at 50% -10%, #2a2038 0%, #1a1520 55%, #100d16 100%)' }} />
+      {!reducedMotion && (
+        <div className="absolute inset-0 overflow-hidden" aria-hidden>
+          {FLOATING_WORDS.map((w, i) => <FloatingWord key={w} word={w} index={i} />)}
+        </div>
       )}
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, transparent 45%, #100d16 95%)' }} />
 
-      {/* Tagline */}
-      <motion.p
-        className="relative z-10 mt-6 text-sm italic text-center max-w-md px-4"
-        style={{ color: '#a89888' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.6 }}
-        transition={{ delay: 1.5, duration: 1 }}
-      >
-        "Every poem is a door. What will you find on the other side?"
-      </motion.p>
+      <div className="relative z-10 min-h-[100dvh] flex flex-col items-center justify-center px-5 py-10">
+        {/* Title */}
+        <motion.div className="text-center mb-7" initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.9 }}>
+          <div className="text-[11px] tracking-[0.6em] uppercase mb-3" style={{ color: '#c4a35a', opacity: 0.7 }}>✦ poetry · romance · fate ✦</div>
+          <h1 className="text-6xl md:text-8xl font-bold tracking-wide" style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#e8e0d0', textShadow: '0 0 50px rgba(196,163,90,0.35)' }}>
+            VERSECRAFT
+          </h1>
+          <div className="h-6 mt-3 relative w-full max-w-md mx-auto">
+            <AnimatePresence mode="wait">
+              <motion.p key={tagline} className="absolute inset-x-0 text-sm md:text-base italic px-4"
+                style={{ fontFamily: 'var(--font-playfair, serif)', color: '#a89888' }}
+                initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.5 }}>
+                {TAGLINES[tagline]}
+              </motion.p>
+            </AnimatePresence>
+          </div>
+        </motion.div>
 
-      {/* Studio credit */}
-      <motion.p
-        className="absolute bottom-4 text-xs tracking-widest"
-        style={{ color: '#555' }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.4 }}
-        transition={{ delay: 2, duration: 1 }}
-      >
-        RMH STUDIOS
-      </motion.p>
+        <div className="w-full max-w-sm flex flex-col gap-3">
+          {/* Active story panel */}
+          <AnimatePresence>
+            {world && (
+              <motion.div
+                className="rounded-2xl p-4"
+                style={{ background: `linear-gradient(150deg, ${world.characters[0]?.color ?? '#4A3B6B'}26, rgba(26,21,32,0.8))`, border: '1px solid rgba(196,163,90,0.22)' }}
+                initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              >
+                <div className="text-[10px] uppercase tracking-[0.2em] mb-1" style={{ color: '#c4a35a' }}>Your current story</div>
+                <div className="text-lg leading-tight mb-0.5" style={{ fontFamily: 'var(--font-playfair, serif)', color: '#e8e0d0' }}>{world.title}</div>
+                <div className="text-xs mb-3" style={{ color: '#a89888' }}>Chapter {chapterIndex + 1} of {world.routePlan.totalChapters}</div>
+                <div className="flex -space-x-2 mb-3">
+                  {world.characters.slice(0, 5).map(c => {
+                    const u = spriteUrl(c.packId, 'happy') ?? spriteUrl(c.packId, 'neutral');
+                    return (
+                      <div key={c.id} className="w-9 h-9 rounded-full overflow-hidden flex items-end justify-center"
+                        style={{ background: `linear-gradient(160deg, ${c.color}55, #1a1520)`, border: `2px solid ${c.color}` }}>
+                        {u && <img src={u} alt={c.name} className="h-[150%] object-contain object-bottom" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={async () => { setContinuing(true); try { await continueGame(); } finally { setContinuing(false); } }}
+                    className="flex-1 rounded-lg py-2.5 text-sm active:scale-95 transition-transform"
+                    style={{ backgroundColor: 'rgba(196,163,90,0.25)', border: '1px solid rgba(196,163,90,0.5)', color: '#fff', fontFamily: 'var(--font-playfair, serif)' }}>
+                    ▸ Continue
+                  </button>
+                  <button onClick={() => setScreen('cast')} className="rounded-lg px-4 py-2.5 text-sm active:scale-95 transition-transform"
+                    style={{ backgroundColor: 'rgba(42,34,53,0.7)', border: '1px solid rgba(196,163,90,0.2)', color: '#e8e0d0' }}>♥ Cast</button>
+                </div>
+                <div className="mt-2 flex justify-center"><ShareSeed seed={world.seed} compact /></div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Hero: New Story */}
+          <motion.button
+            onClick={() => setScreen('world_setup')}
+            className="relative overflow-hidden rounded-2xl px-5 py-5 text-left active:scale-[0.98] transition-transform"
+            style={{ background: 'linear-gradient(135deg, rgba(196,163,90,0.28), rgba(123,63,160,0.28))', border: '1px solid rgba(196,163,90,0.45)' }}
+            whileHover={reducedMotion ? undefined : { scale: 1.01 }}
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+          >
+            <div className="text-xl mb-0.5" style={{ fontFamily: 'var(--font-cinzel, serif)', color: '#fff' }}>✦ New Story</div>
+            <div className="text-xs" style={{ color: '#d8cdb8' }}>Prompt the life you want, or roll the dice.</div>
+          </motion.button>
+
+          {/* Continue (if save exists but no world loaded yet) */}
+          {hasSave && !world && (
+            <button className={tile} style={tileStyle}
+              onClick={async () => { setContinuing(true); try { await continueGame(); } finally { setContinuing(false); } }}>
+              <span style={{ color: '#c4a35a' }}>▸</span>
+              <span className="flex-1">{t('continue', { defaultValue: 'Continue' })}</span>
+            </button>
+          )}
+
+          {/* Secondary tiles */}
+          <div className="grid grid-cols-2 gap-3">
+            <button className={tile} style={tileStyle} onClick={() => setScreen('world_setup')}>
+              <span style={{ color: '#c4a35a' }}>⧉</span><span className="flex-1 text-sm">Play a seed</span>
+            </button>
+            <button className={tile} style={tileStyle} onClick={() => setScreen('settings')}>
+              <span style={{ color: '#c4a35a' }}>⚙</span><span className="flex-1 text-sm">Settings</span>
+            </button>
+          </div>
+        </div>
+
+        {!isLoggedIn && !checking && (
+          <p className="mt-7 text-xs text-center px-6 max-w-xs" style={{ color: '#6f6657' }}>
+            {t('sign-in-hint', { defaultValue: 'Sign in to save your stories to the cloud and replay them anywhere.' })}
+          </p>
+        )}
+        <p className="mt-5 text-[11px] tracking-widest" style={{ color: '#4f4a44' }}>RMH STUDIOS</p>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "doctrine-worker_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/rmhstudios/rmh-go/cmd/doctrine-worker",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//go-services/internal/doctrine",
+        "//go-services/pkg/worker",
+    ],
+)
+
+go_binary(
+    name = "doctrine-worker",
+    embed = [":doctrine-worker_lib"],
+    visibility = ["//visibility:public"],
+)

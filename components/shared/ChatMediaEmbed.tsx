@@ -8,6 +8,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { ImageOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 // ─── URL extraction & classification ─────────────────────────────
 
@@ -161,6 +162,7 @@ function useTenorResolve(url: string | null): { src: string | null; loading: boo
 // ─── Single embed renderer ───────────────────────────────────────
 
 function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix: string }) {
+  const { t } = useTranslation('shared');
   const [error, setError] = useState(false);
   const tenor = useTenorResolve(
     embed.type === 'tenor-pending' ? embed.originalUrl : null,
@@ -172,7 +174,7 @@ function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix:
     if (embed.type === 'tenor-pending' && tenor.loading) {
       return (
         <div
-          className="mt-1 w-48 h-32 rounded-lg animate-pulse"
+          className="mt-1 w-48 h-32 rounded-site-sm animate-pulse"
           style={{ backgroundColor: `var(--${themePrefix}-surface)` }}
         />
       );
@@ -180,14 +182,14 @@ function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix:
     if (error) {
       return (
         <div
-          className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-xs"
+          className="mt-1 inline-flex items-center gap-1.5 px-2 py-1 rounded-site-sm text-xs"
           style={{
             backgroundColor: `var(--${themePrefix}-surface)`,
             color: `var(--${themePrefix}-text-dim)`,
           }}
         >
           <ImageOff className="h-3.5 w-3.5" />
-          Failed to load media
+          {t('failed-to-load-media', { defaultValue: 'Failed to load media' })}
         </div>
       );
     }
@@ -206,7 +208,7 @@ function EmbedItem({ embed, themePrefix }: { embed: MediaEmbedInfo; themePrefix:
         alt=""
         loading="lazy"
         onError={() => setError(true)}
-        className="rounded-lg max-h-48 max-w-full object-contain"
+        className="rounded-site-sm max-h-48 max-w-full object-contain"
         style={{ borderWidth: 1, borderStyle: 'solid', borderColor: `var(--${themePrefix}-border)` }}
       />
     </a>

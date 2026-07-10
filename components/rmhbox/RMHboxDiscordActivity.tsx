@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { PartyPopper, Trophy, Gamepad2 } from 'lucide-react';
 import type { DiscordContext } from '@/lib/discord-sdk';
 import { connectToRMHbox, getSocket, emit } from '@/lib/rmhbox/socket';
@@ -57,6 +58,7 @@ interface LobbyBrowserProps {
 }
 
 function LobbyBrowser({ connectionStatus, onCreateLobby, onJoinLobby }: LobbyBrowserProps) {
+    const { t } = useTranslation("c-rmhbox");
     const [joinCode, setJoinCode] = useState('');
 
     return (
@@ -66,26 +68,26 @@ function LobbyBrowser({ connectionStatus, onCreateLobby, onJoinLobby }: LobbyBro
                     <Gamepad2 className="w-6 h-6 text-(--rmhbox-accent)" />
                     <h1 className="text-2xl font-bold text-(--rmhbox-text)">RMHBox</h1>
                 </div>
-                <p className="text-xs text-(--rmhbox-text-muted) mt-1">Party games for Discord</p>
+                <p className="text-xs text-(--rmhbox-text-muted) mt-1">{t("party-games-tagline", { defaultValue: "Party games for Discord" })}</p>
             </div>
 
             {/* Create Lobby */}
             <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4">
-                <h2 className="text-base font-semibold mb-2">Create Lobby</h2>
-                <p className="text-xs mb-3 text-(--rmhbox-text-muted)">Start a new session and invite friends.</p>
+                <h2 className="text-base font-semibold mb-2">{t("create-lobby", { defaultValue: "Create Lobby" })}</h2>
+                <p className="text-xs mb-3 text-(--rmhbox-text-muted)">{t("create-lobby-desc", { defaultValue: "Start a new session and invite friends." })}</p>
                 <button
                     onClick={onCreateLobby}
                     disabled={connectionStatus !== 'connected'}
                     className="w-full py-2.5 rounded-lg font-semibold text-white text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhbox-accent) hover:bg-(--rmhbox-accent-hover)"
                 >
-                    Create Lobby
+                    {t("create-lobby", { defaultValue: "Create Lobby" })}
                 </button>
             </div>
 
             {/* Join Lobby */}
             <div className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4">
-                <h2 className="text-base font-semibold mb-2">Join Lobby</h2>
-                <p className="text-xs mb-3 text-(--rmhbox-text-muted)">Enter a 6-character room code.</p>
+                <h2 className="text-base font-semibold mb-2">{t("join-lobby", { defaultValue: "Join Lobby" })}</h2>
+                <p className="text-xs mb-3 text-(--rmhbox-text-muted)">{t("join-lobby-desc", { defaultValue: "Enter a 6-character room code." })}</p>
                 <form
                     onSubmit={(e) => { e.preventDefault(); onJoinLobby(joinCode); }}
                     className="flex gap-2"
@@ -103,7 +105,7 @@ function LobbyBrowser({ connectionStatus, onCreateLobby, onJoinLobby }: LobbyBro
                         disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
                         className="px-4 py-2 rounded-lg font-semibold text-white text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhbox-accent) hover:bg-(--rmhbox-accent-hover)"
                     >
-                        Join
+                        {t("join", { defaultValue: "Join" })}
                     </button>
                 </form>
             </div>
@@ -114,9 +116,11 @@ function LobbyBrowser({ connectionStatus, onCreateLobby, onJoinLobby }: LobbyBro
 // ─── Main Component ───────────────────────────────────────────────
 
 export function RMHboxDiscordActivity({ discord }: Props) {
+    const { t } = useTranslation("c-rmhbox");
     const lobby = useRMHboxStore((s) => s.lobby);
     const connectionStatus = useRMHboxStore((s) => s.connectionStatus);
     const spectatorTarget = useRMHboxStore((s) => s.spectatorTarget);
+    const timerInfo = useRMHboxStore((s) => s.timerInfo);
 
     const [layoutMode, setLayoutMode] = useState<number>(LAYOUT_FOCUSED);
     const [voteCandidates, setVoteCandidates] = useState<VoteCandidate[]>([]);
@@ -274,7 +278,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
 
     const handleJoinLobby = useCallback((code: string) => {
         const trimmed = code.trim().toUpperCase();
-        if (trimmed.length !== 6) { toast.warning('Room code must be 6 characters'); return; }
+        if (trimmed.length !== 6) { toast.warning(t("room-code-length-error", { defaultValue: "Room code must be 6 characters" })); return; }
         emit(C2S.LOBBY_JOIN, { lobbyId: trimmed });
     }, []);
 
@@ -296,7 +300,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                 {!lobby && (connectionStatus === 'connecting' || connectionStatus === 'disconnected') && (
                     <div className="flex flex-1 items-center justify-center">
                         <div className="text-center">
-                            <div className="text-xl mb-4 text-(--rmhbox-text)">Connecting...</div>
+                            <div className="text-xl mb-4 text-(--rmhbox-text)">{t("connecting", { defaultValue: "Connecting..." })}</div>
                             <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto border-(--rmhbox-accent)" />
                         </div>
                     </div>
@@ -356,7 +360,11 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                         {lobby.state === 'COUNTDOWN' && (
                             <div className="flex items-center justify-center h-full">
                                 <div className="text-9xl font-bold animate-pulse text-(--rmhbox-accent)" style={{ fontFamily: 'var(--rmhbox-font-display)' }}>
-                                    {lobby.currentGame?.timeRemaining ?? countdownValue}
+                                    {/* Read from the centralized timer (TIMER_START/TICK), not
+                                        currentGame.timeRemaining — the latter is reset to null by
+                                        every full sync, which would freeze the countdown on the
+                                        stale countdownValue fallback if a sync lands mid-countdown. */}
+                                    {timerInfo && !timerInfo.infinite ? Math.max(0, Math.ceil(timerInfo.remaining)) : countdownValue}
                                 </div>
                             </div>
                         )}
@@ -373,7 +381,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                             ) : (
                                 <div className="flex items-center justify-center h-full">
                                     <div className="text-center">
-                                        <div className="text-xl mb-3 text-(--rmhbox-text)">Starting game...</div>
+                                        <div className="text-xl mb-3 text-(--rmhbox-text)">{t("starting-game", { defaultValue: "Starting game..." })}</div>
                                         <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto" style={{ borderColor: 'var(--rmhbox-accent)', borderTopColor: 'transparent' }} />
                                     </div>
                                 </div>
@@ -394,12 +402,12 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                         {lobby.state === 'SESSION_RESULTS' && (
                             <div className="mx-auto flex w-full max-w-2xl flex-col items-center gap-6 p-6 h-full justify-center">
                                 <h1 className="text-4xl font-bold" style={{ fontFamily: 'var(--rmhbox-font-display)' }}>
-                                    Session Complete! <PartyPopper className="h-8 w-8 inline" />
+                                    {t("session-complete", { defaultValue: "Session Complete!" })} <PartyPopper className="h-8 w-8 inline" />
                                 </h1>
 
                                 {sessionResults?.standings && sessionResults.standings.length > 0 && (
                                     <div className="w-full rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4">
-                                        <h2 className="mb-3 text-lg font-semibold text-(--rmhbox-accent)">Final Standings</h2>
+                                        <h2 className="mb-3 text-lg font-semibold text-(--rmhbox-accent)">{t("final-standings", { defaultValue: "Final Standings" })}</h2>
                                         <div className="space-y-2">
                                             {sessionResults.standings.map((s) => (
                                                 <div key={s.userId} className="flex items-center justify-between rounded-lg bg-(--rmhbox-bg) px-4 py-2">
@@ -410,8 +418,8 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                                                         <span className="font-semibold">{s.userName}</span>
                                                     </div>
                                                     <div className="flex items-center gap-4 text-sm">
-                                                        <span className="text-(--rmhbox-text-muted)">{s.wins} win{s.wins !== 1 ? 's' : ''}</span>
-                                                        <span className="font-bold text-(--rmhbox-accent)">{s.totalScore} pts</span>
+                                                        <span className="text-(--rmhbox-text-muted)">{t("wins-count", { count: s.wins, defaultValue: "{{count}} win" })}</span>
+                                                        <span className="font-bold text-(--rmhbox-accent)">{t("score-pts", { count: s.totalScore, defaultValue: "{{count}} pts" })}</span>
                                                     </div>
                                                 </div>
                                             ))}
@@ -421,13 +429,13 @@ export function RMHboxDiscordActivity({ discord }: Props) {
 
                                 {sessionResults?.matchHistory && sessionResults.matchHistory.length > 0 && (
                                     <div className="w-full rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4">
-                                        <h2 className="mb-3 text-lg font-semibold text-(--rmhbox-accent)">Match History</h2>
+                                        <h2 className="mb-3 text-lg font-semibold text-(--rmhbox-accent)">{t("match-history", { defaultValue: "Match History" })}</h2>
                                         <div className="space-y-2">
                                             {sessionResults.matchHistory.map((m) => (
                                                 <div key={m.matchId} className="flex items-center justify-between rounded-lg bg-(--rmhbox-bg) px-4 py-2 text-sm">
                                                     <div>
                                                         <span className="font-semibold">{m.minigameDisplayName}</span>
-                                                        <span className="ml-2 text-(--rmhbox-text-muted)">· {m.playerCount} players</span>
+                                                        <span className="ml-2 text-(--rmhbox-text-muted)">· {t("player-count", { count: m.playerCount, defaultValue: "{{count}} players" })}</span>
                                                     </div>
                                                     <span className="text-(--rmhbox-success) flex items-center gap-1">
                                                         <Trophy className="h-3.5 w-3.5" /> {m.winnerUserName ?? 'N/A'}
@@ -442,7 +450,7 @@ export function RMHboxDiscordActivity({ discord }: Props) {
                                     onClick={() => useRMHboxStore.getState().leaveLobby()}
                                     className="px-8 py-3 rounded-lg font-semibold bg-(--rmhbox-accent) text-white hover:bg-(--rmhbox-accent-hover) transition-colors"
                                 >
-                                    Back to Lobby Browser
+                                    {t("back-to-lobby-browser", { defaultValue: "Back to Lobby Browser" })}
                                 </button>
                             </div>
                         )}

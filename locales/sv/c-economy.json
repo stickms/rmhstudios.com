@@ -1,0 +1,23 @@
+{
+  "cancel": "Avbryt",
+  "custom-amount": "Eget belopp",
+  "duration": "Varaktighet",
+  "gift-a-membership": "Skänk ett medlemskap",
+  "gift-desc": "Ge denna användare ett medlemskap med mynt.",
+  "gift-desc-named": "Ge {{name}} ett medlemskap med mynt.",
+  "gift-error": "Kunde inte skänka medlemskap",
+  "gift-for": "Skänk till",
+  "gift-sign-in": "Vänligen logga in för att skänka ett medlemskap.",
+  "gift-success": "Skänkte {{months}} månad{{s}} av {{tier}}!",
+  "gift-success-named": "Skänkte {{months}} månad{{s}} av {{tier}} till {{name}}!",
+  "note-placeholder": "Lägg till en anteckning (valfritt)",
+  "sending": "Skickar…",
+  "tier": "Nivå",
+  "tip-amount-group-label": "Dricksbelopp",
+  "tip-btn": "Dricks",
+  "tip-dialog-description": "Skicka mynt{{recipient}} för att visa uppskattning.",
+  "tip-dialog-title": "Skicka en dricks",
+  "tip-error": "Kunde inte skicka dricks",
+  "tip-sign-in": "Vänligen logga in för att ge dricks.",
+  "tip-success": "Dricksade {{amount}} mynt{{recipient}}!"
+}

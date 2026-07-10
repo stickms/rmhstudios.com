@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
-import { feedEventBus } from "@/lib/feed-sse";
+import { togglePostLike } from "@/lib/social/engagement.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/like')({
   server: {
@@ -48,35 +48,13 @@ export const Route = createFileRoute('/api/rmharks/$id/like')({
     const { id } = params;
     const userId = session.user.id;
 
-    const existingLike = await prisma.rMHarkLike.findUnique({
-      where: { rmheetId_userId: { rmheetId: id, userId } },
-    });
-
-    if (existingLike) {
-      await prisma.rMHarkLike.delete({ where: { id: existingLike.id } });
-
-      const count = await prisma.rMHarkLike.count({ where: { rmheetId: id } });
-      feedEventBus.publish({
-        type: "rmhark.unliked",
-        rmharkId: id,
-        payload: { id, likeCount: count },
-        timestamp: new Date().toISOString(),
-      });
-
-      return Response.json({ success: true, liked: false });
-    } else {
-      await prisma.rMHarkLike.create({ data: { rmheetId: id, userId } });
-
-      const count = await prisma.rMHarkLike.count({ where: { rmheetId: id } });
-      feedEventBus.publish({
-        type: "rmhark.liked",
-        rmharkId: id,
-        payload: { id, likeCount: count },
-        timestamp: new Date().toISOString(),
-      });
-
-      return Response.json({ success: true, liked: true });
+    // Toggle via the shared engagement service (counters, SSE, notifications,
+    // XP, quests, achievements, and webhooks all live there).
+    const result = await togglePostLike(userId, id);
+    if (!result.found) {
+      return Response.json({ error: "Post not found" }, { status: 404 });
     }
+    return Response.json({ success: true, liked: result.liked });
   } catch (error) {
     console.error("Toggle like error:", error);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });

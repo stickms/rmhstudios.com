@@ -1,9 +1,11 @@
 'use client';
 
 import { Users } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 
 export default function MemberList() {
+  const { t } = useTranslation("c-rmhmusic");
   const { room } = useRmhMusicStore();
   if (!room) return null;
 
@@ -12,7 +14,7 @@ export default function MemberList() {
       <div className="flex items-center gap-1.5 mb-1.5">
         <Users className="w-3.5 h-3.5" style={{ color: 'var(--site-text-muted)' }} />
         <span className="text-xs" style={{ color: 'var(--site-text-muted)' }}>
-          {room.members.length} listener{room.members.length !== 1 ? 's' : ''}
+          {t("listener-count", { count: room.members.length, defaultValue: "{{count}} listener" })}
         </span>
       </div>
       <div className="flex flex-wrap gap-1">
@@ -28,7 +30,7 @@ export default function MemberList() {
             />
             {m.userName}
             {m.isHost && (
-              <span className="text-[10px] font-semibold" style={{ color: 'var(--site-accent)' }}>HOST</span>
+              <span className="text-[10px] font-semibold" style={{ color: 'var(--site-accent)' }}>{t("host-label", { defaultValue: "HOST" })}</span>
             )}
           </div>
         ))}

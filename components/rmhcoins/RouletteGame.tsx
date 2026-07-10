@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Circle, Loader2 } from 'lucide-react';
 import { connectToRoulette, disconnectFromRoulette, getRouletteSocket, onRouletteBalanceUpdate } from '@/lib/roulette/socket';
 import { useRouletteStore } from '@/lib/roulette/store';
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function RouletteGame({ coins, setCoins }: Props) {
+  const { t } = useTranslation("c-rmhcoins");
   const connectionStatus = useRouletteStore((s) => s.connectionStatus);
   const viewMode = useRouletteStore((s) => s.viewMode);
   const roomInfo = useRouletteStore((s) => s.roomInfo);
@@ -54,7 +56,7 @@ export function RouletteGame({ coins, setCoins }: Props) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
-        <span className="ml-2 text-sm text-site-text-dim">Connecting...</span>
+        <span className="ml-2 text-sm text-site-text-dim">{t("connecting", { defaultValue: "Connecting..." })}</span>
       </div>
     );
   }
@@ -62,7 +64,7 @@ export function RouletteGame({ coins, setCoins }: Props) {
   if (connectionStatus === 'error') {
     return (
       <div className="text-center py-12">
-        <p className="text-sm text-red-400">Failed to connect. Please try again.</p>
+        <p className="text-sm text-red-400">{t("failed-to-connect", { defaultValue: "Failed to connect. Please try again." })}</p>
       </div>
     );
   }
@@ -76,7 +78,7 @@ export function RouletteGame({ coins, setCoins }: Props) {
     return (
       <div className="flex flex-col gap-4 px-3 sm:px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-bold text-site-text">Roulette Rooms</h3>
+          <h3 className="text-sm font-bold text-site-text">{t("roulette-rooms", { defaultValue: "Roulette Rooms" })}</h3>
           <Circle className={`h-3 w-3 fill-current ${statusColor}`} />
         </div>
         <div className="max-w-125 mx-auto w-full">
@@ -101,7 +103,7 @@ export function RouletteGame({ coins, setCoins }: Props) {
             onClick={handleLeave}
             className="shrink-0 min-h-8 px-2 text-xs text-site-text-dim hover:text-site-text transition-colors"
           >
-            &larr; Leave
+            &larr; {t("leave", { defaultValue: "Leave" })}
           </button>
           <h3 className="text-sm font-bold text-site-text truncate">
             {roomInfo.name}
@@ -110,7 +112,7 @@ export function RouletteGame({ coins, setCoins }: Props) {
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {roomInfo.joinCode && (
             <span className="text-[10px] sm:text-xs text-site-text-dim hidden sm:inline">
-              Code: <span className="font-mono font-bold text-violet-400">{roomInfo.joinCode}</span>
+              {t("join-code-label", { defaultValue: "Code:" })} <span className="font-mono font-bold text-site-accent">{roomInfo.joinCode}</span>
             </span>
           )}
           <span className="text-[10px] sm:text-xs text-site-text-dim">
@@ -120,9 +122,13 @@ export function RouletteGame({ coins, setCoins }: Props) {
         </div>
       </div>
 
-      <div className="max-w-175 mx-auto w-full flex flex-col gap-2">
-        <RouletteTable coins={coins} />
-        <RouletteControls coins={coins} />
+      <div className="w-full flex flex-col lg:flex-row lg:items-start gap-4">
+        <div className="flex-1 min-w-0 rounded-xl border border-site-border bg-site-surface/30 p-3 sm:p-5">
+          <RouletteTable coins={coins} />
+        </div>
+        <div className="w-full lg:w-80 shrink-0 rounded-xl border border-site-border bg-site-surface/30 p-3 sm:p-4">
+          <RouletteControls coins={coins} />
+        </div>
       </div>
     </div>
   );

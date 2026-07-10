@@ -17,6 +17,9 @@ import {
 import { getDailyShape, getShapeLabel } from '../../lib/lights-out/shapes';
 import { generatePuzzle, getOptimalMoves } from '../../lib/lights-out/lights-out';
 import { stripTrailingSlash } from '../../lib/url';
+import { sweepUnreferencedMedia } from '../../lib/media/sweep.server';
+import { deleteObject } from '../../lib/storage/s3.server';
+import { purgeFromCdn } from '../../lib/storage/cdn.server';
 
 const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL!,
@@ -281,10 +284,20 @@ async function main() {
         await processDueRecaps().catch(e => log(`Error: ${e}`));
     }, CHECK_INTERVAL_MS);
 
+    // Hourly media sweep
+    const MEDIA_SWEEP_INTERVAL_MS = 60 * 60 * 1000; // 1h
+    const runMediaSweep = () =>
+      sweepUnreferencedMedia({ prisma: prisma as any, deleteObject, purgeFromCdn })
+        .then((r) => { if (r.deleted) log(`Media sweep removed ${r.deleted} object(s).`); })
+        .catch((e) => log(`Media sweep error: ${e}`));
+    const mediaSweepInterval = setInterval(runMediaSweep, MEDIA_SWEEP_INTERVAL_MS);
+    runMediaSweep(); // run once on boot
+
     // Graceful shutdown
     const shutdown = async (signal: string) => {
         log(`${signal} received — shutting down.`);
         clearInterval(interval);
+        clearInterval(mediaSweepInterval);
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         if (gatewayWs) gatewayWs.close();
         await prisma.$disconnect();

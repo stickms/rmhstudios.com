@@ -31,8 +31,8 @@
     font-family: var(--font-body);
     background: var(--bg-primary);
     color: var(--text-primary);
-    height: 100vh;
-    width: 100vw;
+    height: 100dvh;
+    width: 100%;
     position: relative;
     overflow: hidden;
 }
@@ -43,8 +43,8 @@
 
 /* ---- GLOBAL APP ---- */
 .app-container {
-    height: 100vh;
-    width: 100vw;
+    height: 100dvh;
+    width: 100%;
     position: relative;
     background: var(--bg-primary);
     background-image:
@@ -72,7 +72,7 @@
    MAIN MENU
    ============================================ */
 .main-menu {
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -368,7 +368,7 @@
    GAME BOARD
    ============================================ */
 .game-board {
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     transition: box-shadow 0.3s ease;
@@ -1075,7 +1075,7 @@
    GAME OVER
    ============================================ */
 .game-over {
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1168,7 +1168,7 @@
    MULTIPLAYER MENU
    ============================================ */
 .ss-mp-menu {
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1337,7 +1337,7 @@
    LOBBY
    ============================================ */
 .ss-lobby {
-    height: 100vh;
+    height: 100dvh;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1518,8 +1518,8 @@
    ============================================ */
 .ss-mp-game-layout {
     display: flex;
-    height: 100vh;
-    width: 100vw;
+    height: 100dvh;
+    width: 100%;
 }
 
 .ss-mp-game-main {

@@ -4,7 +4,9 @@ import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { createCommentSchema } from "@/lib/rmhark-schema";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
-import { feedEventBus } from "@/lib/feed-sse";
+import { getActiveBan } from "@/lib/admin-audit.server";
+import { createComment } from "@/lib/social/engagement.server";
+import { groupReactions } from "@/lib/social/reactions";
 
 export const Route = createFileRoute('/api/rmharks/$id/comment')({
   server: {
@@ -25,6 +27,7 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
     const commentInclude = {
       user: { select: userDisplaySelect },
       _count: { select: { likes: true, reposts: true, views: true } },
+      reactions: { select: { emoji: true, userId: true } },
       ...(userId
         ? {
             likes: { where: { userId }, select: { id: true } },
@@ -65,6 +68,7 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
         reposted: userId ? ("reposts" in c ? (c.reposts as { id: string }[]).length > 0 : false) : false,
         deletedAt: c.deletedAt?.toISOString() || null,
         deletedByAdmin: c.deletedByAdmin,
+        reactions: groupReactions(c.reactions, userId),
       };
     };
 
@@ -102,6 +106,14 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const ban = await getActiveBan(session.user.id);
+    if (ban) {
+      return Response.json(
+        { error: `Your account is suspended${ban.reason ? `: ${ban.reason}` : ''}` },
+        { status: 403 }
+      );
+    }
+
     const ip = getClientIp(request);
     const { allowed, retryAfter } = rateLimit(ip, {
       limit: 10,
@@ -125,26 +137,18 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       );
     }
 
-    const comment = await prisma.rMHarkComment.create({
-      data: {
-        content: parsed.data.content.trim(),
-        rmheetId: id,
-        userId: session.user.id,
-        parentId: parsed.data.parentId ?? null,
-      },
-      include: {
-        user: { select: userDisplaySelect },
-      },
+    // Delegate to the shared engagement service (counters, SSE, notifications,
+    // mention fan-out, XP, quests, achievements, and webhooks all live there).
+    const result = await createComment({
+      userId: session.user.id,
+      postId: id,
+      content: parsed.data.content,
+      parentId: parsed.data.parentId ?? null,
     });
-
-    // Broadcast comment count update via SSE
-    const commentCount = await prisma.rMHarkComment.count({ where: { rmheetId: id } });
-    feedEventBus.publish({
-      type: "rmhark.commented",
-      rmharkId: id,
-      payload: { id, commentCount },
-      timestamp: new Date().toISOString(),
-    });
+    if (!result.found || !result.comment) {
+      return Response.json({ error: "Post not found" }, { status: 404 });
+    }
+    const comment = result.comment;
 
     return Response.json({
       ...comment,
@@ -157,6 +161,7 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       replies: [],
       deletedAt: null,
       deletedByAdmin: false,
+      reactions: [],
     }, { status: 201 });
   } catch (error) {
     console.error("Post comment error:", error);

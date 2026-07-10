@@ -1,13 +1,14 @@
-// bot.go is the Go port of server/discord-bot/index.ts: the gateway bootstrap.
-// It opens a discordgo session (Guilds intent), bulk-registers the slash
-// commands on ready (guild-scoped if DISCORD_DEV_GUILD_ID is set, else global,
-// preserving Entry Point commands), routes interactions (slash commands +
-// buttons + modals) with owner-gating, and shuts down gracefully.
+// bot.go is the gateway bootstrap. It opens a discordgo session (Guilds intent),
+// bulk-registers the slash commands on ready (guild-scoped if DISCORD_DEV_GUILD_ID
+// is set, else global, preserving Entry Point commands), routes interactions
+// (slash commands + buttons + modals) with owner-gating, starts Alex's background
+// care loop, and shuts down gracefully.
 package discordbot
 
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,21 +16,25 @@ import (
 	"github.com/rmhstudios/rmh-go/pkg/log"
 )
 
-// interactionTimeout bounds a single interaction's work (the agent loop /
-// DeepSeek calls). It is generous because the rmhbot agent loop can run many
-// tool rounds, but it guarantees the per-interaction context is eventually
-// cancelled even if the gateway connection lingers.
-const interactionTimeout = 10 * time.Minute
+// interactionTimeout bounds a single interaction's work (a DeepSeek chat reply or
+// an xAI image generation). Generous, but it guarantees the per-interaction
+// context is eventually cancelled even if the gateway connection lingers.
+const interactionTimeout = 2 * time.Minute
 
 // Config holds the bot's runtime configuration (resolved from env by main()).
 type Config struct {
-	Token        string // DISCORD_BOT_TOKEN || DISCORD_ACTIVITY_BOT_TOKEN
-	DevGuildID   string // DISCORD_DEV_GUILD_ID (empty => global registration)
-	OwnerID      string // OWNER_ID — gates button/modal interactions
-	DeepSeekKey  string // DEEPSEEK_API_KEY
-	DeepSeekMod  string // DEEPSEEK_MODEL (default "deepseek-chat")
-	WorktreesDir string // RMHBOT_WORKTREES_DIR
-	GithubToken  string // GITHUB_TOKEN
+	Token       string // DISCORD_BOT_TOKEN || DISCORD_ACTIVITY_BOT_TOKEN
+	DevGuildID  string // DISCORD_DEV_GUILD_ID (empty => global registration)
+	OwnerID     string // OWNER_ID — gates button/modal interactions
+	DeepSeekKey string // DEEPSEEK_API_KEY
+	DeepSeekMod string // DEEPSEEK_MODEL (default "deepseek-chat")
+
+	// MessageContent requests the privileged Message Content intent (must also be
+	// enabled in the Discord Developer Portal) so Alex can read full channel
+	// context for his mention replies. Off by default; mention/reply content is
+	// still delivered without it, so Alex replies either way — just with less
+	// surrounding context.
+	MessageContent bool // ALEX_MESSAGE_CONTENT
 }
 
 // Bot is the long-running gateway bot.
@@ -38,7 +43,7 @@ type Bot struct {
 	logger  *log.Logger
 	session *discordgo.Session
 	chat    *ChatService
-	rmhbot  *RmhbotService
+	pet     *PetService
 
 	// lifecycleCtx is set when Run starts; per-interaction contexts are derived
 	// from it (with interactionTimeout) so in-flight agent loops / DeepSeek calls
@@ -48,49 +53,98 @@ type Bot struct {
 	lifecycleCtx context.Context
 }
 
-// slashCommands defines the bot's slash commands. Mirrors the SlashCommandBuilder
-// definitions in commands/*.ts.
+// slashCommands defines the bot's slash commands: chatting with Alex plus the
+// tamagotchi care commands.
 func slashCommands() []*discordgo.ApplicationCommand {
 	return []*discordgo.ApplicationCommand{
 		{
 			Name:        "chat",
-			Description: "Chat with Alex Wu 💬",
+			Description: "Chat with Alex 💬",
 			Options: []*discordgo.ApplicationCommandOption{
 				{Type: discordgo.ApplicationCommandOptionString, Name: "message",
 					Description: "What do you wanna say?", Required: true},
 			},
 		},
 		{
-			Name:        "rmhbot",
-			Description: "Request a website change via AI",
+			Name:        "alex",
+			Description: "Check on Alex — his stats, age, and mood 🧋",
+		},
+		{
+			Name:        "feed",
+			Description: "Feed Alex to fill his hunger 🍽️",
 			Options: []*discordgo.ApplicationCommandOption{
-				{Type: discordgo.ApplicationCommandOptionString, Name: "request",
-					Description: "What to change on the website", Required: true},
-				// NOTE: the TS command also took an attachment option; attachment
-				// ingestion is not ported (see rmhbot.go header), so it is omitted.
+				{
+					Type: discordgo.ApplicationCommandOptionString, Name: "food",
+					Description: "What to feed him (defaults to boba)", Required: false,
+					Choices: []*discordgo.ApplicationCommandOptionChoice{
+						{Name: "🧋 Boba (his fave)", Value: "boba"},
+						{Name: "🍜 A full meal", Value: "meal"},
+						{Name: "🍪 A snack", Value: "snack"},
+					},
+				},
+			},
+		},
+		{Name: "play", Description: "Play with Alex to boost his happiness 🎮"},
+		{Name: "clean", Description: "Clean Alex up so he doesn't get funky 🧼"},
+		{Name: "rest", Description: "Put Alex down for a nap to restore energy 😴"},
+		{Name: "study", Description: "Help Alex study to build his intelligence 🧠"},
+		{
+			Name:        "career",
+			Description: "Set Alex's dream career — a preset or ANY career you type (or view it) 🎯",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type: discordgo.ApplicationCommandOptionString, Name: "path",
+					Description: "swe/data/founder/quant/pm/design — or type any dream career (blank = view)", Required: false,
+				},
+			},
+		},
+		{Name: "show", Description: "See a pic of what Alex looks like right now 📸"},
+		{Name: "revive", Description: "Bring Alex back if he's passed out ✨"},
+		{Name: "newlife", Description: "Start a New Game+ once Alex is a grown adult 🎓"},
+		{Name: "caretakers", Description: "See who's taken the best care of Alex 🏆"},
+		{
+			Name:        "alexmessages",
+			Description: "Set Alex's messages in this server (Manage Messages / owner only) 🔔",
+			Options: []*discordgo.ApplicationCommandOption{
+				{
+					Type: discordgo.ApplicationCommandOptionString, Name: "level",
+					Description: "How much Alex talks here (blank = show current)", Required: false,
+					Choices: []*discordgo.ApplicationCommandOptionChoice{
+						{Name: "🔔 All messages", Value: "all"},
+						{Name: "🩹 Care messages only", Value: "care"},
+						{Name: "🔕 Completely silent", Value: "off"},
+					},
+				},
 			},
 		},
 		{
-			Name:        "rmhbot-continue",
-			Description: "Continue editing on your active RMHBot branch",
+			Name:        "rename",
+			Description: "Give Alex a new name 📝",
 			Options: []*discordgo.ApplicationCommandOption{
-				{Type: discordgo.ApplicationCommandOptionString, Name: "request",
-					Description: "Follow-up change or refinement", Required: true},
+				{Type: discordgo.ApplicationCommandOptionString, Name: "name",
+					Description: "Alex's new name (1–32 characters)", Required: true},
 			},
 		},
 		{
-			Name:        "rmhbot-push",
-			Description: "Open a GitHub PR from your active RMHBot branch",
+			Name:        "prompt",
+			Description: "Set Alex's personality for this server — for /chat + @mentions (Manage Messages / owner) 🧠",
 			Options: []*discordgo.ApplicationCommandOption{
-				{Type: discordgo.ApplicationCommandOptionString, Name: "title",
-					Description: "PR title (defaults to last commit message)", Required: false},
+				{
+					Type: discordgo.ApplicationCommandOptionString, Name: "text",
+					Description: "New personality prompt (blank = view current)", Required: false,
+					MaxLength: promptMaxLen,
+				},
+				{
+					Type: discordgo.ApplicationCommandOptionBoolean, Name: "reset",
+					Description: "Reset Alex back to his default personality", Required: false,
+				},
 			},
 		},
 	}
 }
 
 // New builds the bot from its already-constructed services.
-func New(cfg Config, chat *ChatService, rmhbot *RmhbotService, logger *log.Logger) (*Bot, error) {
+func New(cfg Config, chat *ChatService, pet *PetService, logger *log.Logger) (*Bot, error) {
 	if cfg.Token == "" {
 		return nil, fmt.Errorf("discord bot token is required")
 	}
@@ -98,12 +152,87 @@ func New(cfg Config, chat *ChatService, rmhbot *RmhbotService, logger *log.Logge
 	if err != nil {
 		return nil, fmt.Errorf("create discord session: %w", err)
 	}
-	session.Identify.Intents = discordgo.IntentsGuilds
+	// Guilds for slash commands + guild bookkeeping; GuildMessages so Alex can hear
+	// when he's @mentioned or replied to. Message content for mentions/replies is
+	// delivered without the privileged MessageContent intent, so it's opt-in.
+	session.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMessages
+	if cfg.MessageContent {
+		session.Identify.Intents |= discordgo.IntentsMessageContent
+	}
 
-	b := &Bot{cfg: cfg, logger: logger, session: session, chat: chat, rmhbot: rmhbot}
+	b := &Bot{cfg: cfg, logger: logger, session: session, chat: chat, pet: pet}
 	session.AddHandler(b.onReady)
 	session.AddHandler(b.onInteraction)
+	session.AddHandler(b.onGuildCreate)
+	session.AddHandler(b.onMessageCreate)
 	return b, nil
+}
+
+// onMessageCreate lets Alex reply when he's @mentioned or someone replies to one
+// of his messages. Runs the AI reply off the gateway goroutine under a bounded
+// context. Ignores bots (including himself) to avoid loops.
+func (b *Bot) onMessageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if b.chat == nil || m.Author == nil || m.Author.Bot || m.GuildID == "" {
+		return
+	}
+	botID := ""
+	if s.State != nil && s.State.User != nil {
+		botID = s.State.User.ID
+	}
+	if botID == "" {
+		return
+	}
+
+	mentioned := false
+	for _, u := range m.Mentions {
+		if u.ID == botID {
+			mentioned = true
+			break
+		}
+	}
+	isReplyToAlex := m.ReferencedMessage != nil && m.ReferencedMessage.Author != nil &&
+		m.ReferencedMessage.Author.ID == botID
+	if !mentioned && !isReplyToAlex {
+		return
+	}
+
+	b.ctxMu.RLock()
+	parent := b.lifecycleCtx
+	b.ctxMu.RUnlock()
+	if parent == nil {
+		parent = context.Background()
+	}
+	// One goroutine per triggering message, so Alex answers many pings concurrently
+	// (he's no longer limited to one reply at a time).
+	go func() {
+		ctx, cancel := context.WithTimeout(parent, 50*time.Second)
+		defer cancel()
+		if err := b.chat.HandleMention(ctx, s, m, botID); err != nil {
+			b.logger.Warn("mention reply failed", "channel", m.ChannelID, "error", err)
+		}
+	}()
+}
+
+// onGuildCreate fires for every guild on startup (as state syncs) and whenever the
+// bot is added to a new server. It triggers Alex's one-time intro announcement,
+// which is idempotent (persisted via introSentAt), so startup never re-posts.
+func (b *Bot) onGuildCreate(s *discordgo.Session, e *discordgo.GuildCreate) {
+	if b.pet == nil || e == nil || e.Guild == nil || e.Guild.Unavailable {
+		return
+	}
+	b.ctxMu.RLock()
+	parent := b.lifecycleCtx
+	b.ctxMu.RUnlock()
+	if parent == nil {
+		parent = context.Background()
+	}
+	guildID := e.Guild.ID
+	// Run off the gateway event goroutine — the intro may make several REST calls.
+	go func() {
+		ctx, cancel := context.WithTimeout(parent, 30*time.Second)
+		defer cancel()
+		b.pet.AnnounceIntro(ctx, s, guildID)
+	}()
 }
 
 // Run opens the gateway session and blocks until ctx is cancelled, then closes
@@ -121,6 +250,12 @@ func (b *Bot) Run(ctx context.Context) error {
 	}
 	b.logger.Info("discord gateway opened")
 
+	// Start Alex's background caretaking loop (care alerts / ambient life / growth
+	// + death announcements). Stops when ctx is cancelled.
+	if b.pet != nil {
+		b.pet.StartCareLoop(ctx, b.session)
+	}
+
 	<-ctx.Done()
 
 	b.logger.Info("shutdown_start")
@@ -131,7 +266,7 @@ func (b *Bot) Run(ctx context.Context) error {
 	return nil
 }
 
-// onReady bulk-registers slash commands (index.ts registerCommands).
+// onReady bulk-registers the slash commands.
 func (b *Bot) onReady(s *discordgo.Session, r *discordgo.Ready) {
 	b.logger.Info("bot_ready", "user", r.User.String(), "guilds", len(r.Guilds))
 
@@ -198,12 +333,54 @@ func (b *Bot) routeCommand(ctx context.Context, s *discordgo.Session, i *discord
 	switch data.Name {
 	case "chat":
 		err = b.chat.HandleChat(ctx, s, i, opts.str("message"), true)
-	case "rmhbot":
-		err = b.rmhbot.HandleRmhbotCommand(ctx, s, i, opts.str("request"), true)
-	case "rmhbot-continue":
-		err = b.rmhbot.HandleRmhbotCommand(ctx, s, i, opts.str("request"), false)
-	case "rmhbot-push":
-		err = b.rmhbot.HandlePush(ctx, s, i, opts.str("title"))
+	case "alex":
+		err = b.pet.HandleStatus(ctx, s, i)
+	case "feed":
+		err = b.pet.HandleFeed(ctx, s, i, opts.str("food"))
+	case "play":
+		err = b.pet.HandlePlay(ctx, s, i)
+	case "clean":
+		err = b.pet.HandleClean(ctx, s, i)
+	case "rest":
+		err = b.pet.HandleRest(ctx, s, i)
+	case "study":
+		err = b.pet.HandleStudy(ctx, s, i)
+	case "career":
+		err = b.pet.HandleCareer(ctx, s, i, opts.str("path"))
+	case "show":
+		err = b.pet.HandleShow(ctx, s, i)
+	case "revive":
+		err = b.pet.HandleRevive(ctx, s, i)
+	case "newlife":
+		err = b.pet.HandleNewLife(ctx, s, i)
+	case "rename":
+		err = b.pet.HandleRename(ctx, s, i, opts.str("name"))
+	case "caretakers":
+		err = b.pet.HandleCaretakers(ctx, s, i)
+	case "alexmessages":
+		if !b.canToggleAlex(s, i) {
+			_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "🔒 You need to be the **server owner**, have the **Manage Messages** permission, or be the bot owner to change Alex's messages here.",
+					Flags:   discordgo.MessageFlagsEphemeral,
+				},
+			})
+			return
+		}
+		err = b.pet.HandleSetMessages(ctx, s, i, opts.str("level"))
+	case "prompt":
+		if !b.canToggleAlex(s, i) {
+			_ = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+				Type: discordgo.InteractionResponseChannelMessageWithSource,
+				Data: &discordgo.InteractionResponseData{
+					Content: "🔒 You need to be the **server owner**, have the **Manage Messages** permission, or be the bot owner to change Alex's personality here.",
+					Flags:   discordgo.MessageFlagsEphemeral,
+				},
+			})
+			return
+		}
+		err = b.chat.HandlePrompt(ctx, s, i, opts.str("text"), opts.boolean("reset"))
 	default:
 		b.logger.Warn("unknown_command", "name", data.Name)
 		return
@@ -213,26 +390,13 @@ func (b *Bot) routeCommand(ctx context.Context, s *discordgo.Session, i *discord
 	}
 }
 
-// routeComponent handles button presses: rmhbot_continue, rmhbot_push,
-// chat_continue. customID format is "action:ownerId" — owner-gated.
-func (b *Bot) routeComponent(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
+// routeComponent handles button presses. customID format is "action:ownerId" —
+// owner-gated. The only interactive button is "Keep talking" on a /chat reply.
+func (b *Bot) routeComponent(_ context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	action, ownerID := splitCustomID(i.MessageComponentData().CustomID)
 	userID, _ := interactionUser(i)
 
 	switch action {
-	case "rmhbot_continue":
-		if !b.ownerOK(s, i, userID, ownerID, "This session belongs to another user.") {
-			return
-		}
-		_ = showModal(s, i, "rmhbot_continue_modal:"+ownerID, "Continue Editing",
-			"request", "What would you like to change next?")
-	case "rmhbot_push":
-		if !b.ownerOK(s, i, userID, ownerID, "This session belongs to another user.") {
-			return
-		}
-		if err := b.rmhbot.HandlePush(ctx, s, i, ""); err != nil {
-			b.logger.Error("button_error", "customId", action, "error", err)
-		}
 	case "chat_continue":
 		if !b.ownerOK(s, i, userID, ownerID, "This chat belongs to another user — run `/chat` to start your own 💬") {
 			return
@@ -242,20 +406,12 @@ func (b *Bot) routeComponent(ctx context.Context, s *discordgo.Session, i *disco
 	}
 }
 
-// routeModal handles modal submits: rmhbot_continue_modal, chat_continue_modal.
+// routeModal handles modal submits — the chat_continue "keep talking" modal.
 func (b *Bot) routeModal(ctx context.Context, s *discordgo.Session, i *discordgo.InteractionCreate) {
 	action, ownerID := splitCustomID(i.ModalSubmitData().CustomID)
 	userID, _ := interactionUser(i)
 
 	switch action {
-	case "rmhbot_continue_modal":
-		if !b.ownerOK(s, i, userID, ownerID, "This session belongs to another user.") {
-			return
-		}
-		request := modalValue(i, "request")
-		if err := b.rmhbot.HandleRmhbotCommand(ctx, s, i, request, false); err != nil {
-			b.logger.Error("modal_error", "customId", action, "error", err)
-		}
 	case "chat_continue_modal":
 		if !b.ownerOK(s, i, userID, ownerID, "This chat belongs to another user — run `/chat` to start your own 💬") {
 			return
@@ -265,6 +421,38 @@ func (b *Bot) routeModal(ctx context.Context, s *discordgo.Session, i *discordgo
 			b.logger.Error("modal_error", "customId", action, "error", err)
 		}
 	}
+}
+
+// canToggleAlex reports whether the interacting user may change Alex's per-server
+// message settings. Any of these qualifies:
+//   - the configured bot owner (OWNER_ID; trimmed to tolerate stray whitespace),
+//   - the server's own owner (guild.OwnerID) — always allowed in their server,
+//   - a member with Manage Messages or Administrator (Discord resolves the
+//     member's channel permissions into i.Member.Permissions for slash commands).
+//
+// The guild-owner path is independent of both OWNER_ID config and the permissions
+// bitfield, so it works even when OWNER_ID is unset or the permission field is
+// empty for some reason.
+func (b *Bot) canToggleAlex(s *discordgo.Session, i *discordgo.InteractionCreate) bool {
+	userID, _ := interactionUser(i)
+
+	if owner := strings.TrimSpace(b.cfg.OwnerID); owner != "" && userID == owner {
+		return true
+	}
+
+	if s != nil && i.GuildID != "" {
+		if g, err := s.State.Guild(i.GuildID); err == nil && g != nil && g.OwnerID == userID {
+			return true
+		}
+	}
+
+	if i.Member != nil {
+		p := i.Member.Permissions
+		if p&discordgo.PermissionManageMessages != 0 || p&discordgo.PermissionAdministrator != 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // ownerOK enforces owner-gating. The customID carries the owner's id; the

@@ -50,7 +50,8 @@ export const Route = createFileRoute('/api/profile')({
       profileSongArtist,
       profileSongPreviewUrl,
       profileSongAlbumArt,
-      showProfilePet,
+      tipGoal,
+      tipGoalLabel,
     } = parsed.data;
 
     // Handle change logic
@@ -123,7 +124,8 @@ export const Route = createFileRoute('/api/profile')({
         website: website || null,
         showLikes: showLikes ?? false,
         ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
-        ...(showProfilePet !== undefined ? { showProfilePet } : {}),
+        ...(tipGoal !== undefined ? { tipGoal } : {}),
+        ...(tipGoalLabel !== undefined ? { tipGoalLabel: tipGoalLabel || null } : {}),
         ...songFields,
       },
       update: {
@@ -133,7 +135,8 @@ export const Route = createFileRoute('/api/profile')({
         website: website || null,
         ...(showLikes !== undefined ? { showLikes } : {}),
         ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
-        ...(showProfilePet !== undefined ? { showProfilePet } : {}),
+        ...(tipGoal !== undefined ? { tipGoal } : {}),
+        ...(tipGoalLabel !== undefined ? { tipGoalLabel: tipGoalLabel || null } : {}),
         ...songFields,
       },
     });
@@ -151,8 +154,6 @@ export const Route = createFileRoute('/api/profile')({
       profileSongArtist: profile.profileSongArtist,
       profileSongPreviewUrl: profile.profileSongPreviewUrl,
       profileSongAlbumArt: profile.profileSongAlbumArt,
-      hasProfilePet: profile.hasProfilePet,
-      showProfilePet: profile.showProfilePet,
     });
   } catch (error) {
     console.error("Profile update error:", error);

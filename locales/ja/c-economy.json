@@ -1,0 +1,23 @@
+{
+  "cancel": "キャンセル",
+  "custom-amount": "カスタム金額",
+  "duration": "期間",
+  "gift-a-membership": "メンバーシップをギフト",
+  "gift-desc": "コインを使ってこのユーザーにメンバーシップを贈ります。",
+  "gift-desc-named": "コインを使って{{name}}にメンバーシップを贈ります。",
+  "gift-error": "メンバーシップをギフトできませんでした",
+  "gift-for": "ギフト先",
+  "gift-sign-in": "メンバーシップをギフトするにはサインインしてください。",
+  "gift-success": "{{tier}}の{{months}}ヶ月分をギフトしました！",
+  "gift-success-named": "{{name}}に{{tier}}の{{months}}ヶ月分をギフトしました！",
+  "note-placeholder": "メモを追加（任意）",
+  "sending": "送信中…",
+  "tier": "ティア",
+  "tip-amount-group-label": "チップ金額",
+  "tip-btn": "チップ",
+  "tip-dialog-description": "コインを送って{{recipient}}に感謝の気持ちを伝えましょう。",
+  "tip-dialog-title": "チップを送る",
+  "tip-error": "チップを送信できませんでした",
+  "tip-sign-in": "チップを送るにはサインインしてください。",
+  "tip-success": "{{amount}}コインをチップしました{{recipient}}！"
+}

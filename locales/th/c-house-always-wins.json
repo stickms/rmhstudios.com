@@ -1,0 +1,18 @@
+{
+  "back-home": "กลับหน้าแรก",
+  "controls-hint": "WASD/← → เคลื่อนที่ • Space กระโดด • Shift วิ่ง • E โต้ตอบ • M เมนู",
+  "controls-interact": "E — โต้ตอบ",
+  "controls-jump": "Space — กระโดด",
+  "controls-menu": "M — เมนู",
+  "controls-move": "WASD / ลูกศร — เคลื่อนที่",
+  "debt": "หนี้",
+  "e-continue": "[E] ดำเนินการต่อ",
+  "loading": "กำลังโหลด...",
+  "login-to-play": "เข้าสู่ระบบเพื่อเล่น",
+  "menu-title": "เมนู",
+  "music-volume": "ระดับเสียงเพลง",
+  "resume": "เล่นต่อ [M]",
+  "sign-in-prompt": "คุณต้องเข้าสู่ระบบก่อนจึงจะเข้าไปในคาสิโนได้ หนี้ของคุณจะถูกบันทึกไว้",
+  "subtitle": "โต๊ะกำลังรออยู่",
+  "title": "บ้านชนะเสมอ"
+}

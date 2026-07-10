@@ -1,0 +1,64 @@
+<p class="lead">This book teaches modern full-stack architecture by reading one real system
+closely: rmhstudios.com. Rather than survey patterns in the abstract, it follows how a
+single codebase grew from a starter template into a process-split platform with
+server-side rendering, a fleet of realtime services, a large relational data layer, an
+in-browser games library, and a live migration toward Kubernetes.</p>
+
+<h2 id="who-this-is-for">Who this book is for</h2>
+<p>The intended reader is a computer-science student who has written some web code —
+enough to recognize HTTP, a database query, and a React component — but who has not yet
+seen how the pieces fit together at the scale of a production platform. No prior
+knowledge of TanStack Start, Prisma, Socket.io, Go, or Kubernetes is assumed; each is
+introduced from first principles when the case study first needs it.</p>
+
+<h2 id="how-chapters-work">How each chapter works</h2>
+<p>Every chapter follows the same rhythm so you always know where you are:</p>
+<ul>
+  <li><b>Learning objectives</b> open the chapter — the concrete things you should be
+  able to do or explain afterward.</li>
+  <li>The <b>body</b> develops the ideas with diagrams (every figure is numbered),
+  real code excerpts from the repository, and <span class="keyterm" style="display:inline;padding:1px 6px;border-left-width:3px;">key-term</span>
+  callouts that define vocabulary the first time it appears.</li>
+  <li>A <b>summary</b> distills the chapter to a handful of load-bearing ideas.</li>
+  <li><b>Practice exercises</b> close the chapter. Each is numbered
+  <code>chapter.item</code> (for example, <code>5.3</code>) and tagged by <i>type</i>
+  and <i>difficulty</i>.</li>
+</ul>
+
+<h2 id="exercise-tags">Reading the exercise tags</h2>
+<p>Exercises carry two badges. The first names the kind of thinking required; the second
+estimates effort.</p>
+<table>
+  <thead><tr><th>Type tag</th><th>What it asks you to do</th></tr></thead>
+  <tbody>
+    <tr><td><span class="tag concept">concept</span></td><td>Explain or compare an idea in your own words.</td></tr>
+    <tr><td><span class="tag trace">trace</span></td><td>Follow a request, event, or value through the system step by step.</td></tr>
+    <tr><td><span class="tag diagram">diagram</span></td><td>Read, complete, or draw an architecture diagram.</td></tr>
+    <tr><td><span class="tag design">design</span></td><td>Make and defend a design decision under stated constraints.</td></tr>
+  </tbody>
+</table>
+<p>Difficulty is one of <span class="tag easy">easy</span>,
+<span class="tag medium">medium</span>, or <span class="tag hard">hard</span>.</p>
+
+<h2 id="exams-solutions">Practice exams and solutions</h2>
+<p>The back matter contains three practice exams — a <b>Midterm</b> covering Chapters 1–7,
+a <b>Final</b> covering Chapters 8–13, and a <b>Comprehensive</b> exam spanning the whole
+book. Each states a time budget and point allocation. <b>Appendix A</b> gives worked
+solutions to every chapter exercise; <b>Appendix B</b> gives full answer keys for the
+exams. Use them honestly: attempt first, check second.</p>
+
+<h2 id="accuracy">A standing promise about accuracy</h2>
+<div class="ok"><b>Grounded in the repository.</b> Ports, file paths, model names, event
+names, and scripts in this book are drawn from the actual codebase. Where a subsystem is
+a scaffold or an in-progress migration rather than a finished, battle-tested component,
+the text marks it with a scope note instead of overstating it.</div>
+
+<h2 id="conventions">Typographic conventions</h2>
+<ul>
+  <li><code>monospace</code> marks code: identifiers, file paths, commands, ports.</li>
+  <li>Blue <b>note</b>, amber <b>warning</b>, green <b>tip</b>, and purple <b>scope</b>
+  callouts highlight, respectively, useful asides, hazards, good practice, and honest
+  limits on what a component actually does.</li>
+  <li>Figures are numbered by chapter (<i>Figure 7.2</i> is the second figure in
+  Chapter 7).</li>
+</ul>

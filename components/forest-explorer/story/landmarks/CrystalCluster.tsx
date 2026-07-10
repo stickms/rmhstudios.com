@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Color, type Mesh, type MeshStandardMaterial } from 'three';
-import { useStoryStore } from '@/lib/forest-explorer/store';
+import { useLandmarkState } from './useLandmarkState';
 
 interface CrystalClusterProps {
     position: [number, number, number];
@@ -13,8 +13,7 @@ interface CrystalClusterProps {
 
 export function CrystalCluster({ position, scale = 1, id }: CrystalClusterProps) {
     const crystalRefs = useRef<(Mesh | null)[]>([]);
-    const revealedIds = useStoryStore(s => s.flashlightRevealedIds);
-    const isRevealed = revealedIds.some(rid => rid.includes(id));
+    const { isRevealed, isSolved } = useLandmarkState(id);
 
     const crystals = [
         { pos: [0, 1.2, 0] as [number, number, number], h: 2.4, r: 0.25, rot: 0.1, color: '#66aadd' },
@@ -29,7 +28,10 @@ export function CrystalCluster({ position, scale = 1, id }: CrystalClusterProps)
         crystalRefs.current.forEach((ref, i) => {
             if (!ref) return;
             const mat = ref.material as MeshStandardMaterial;
-            if (isRevealed) {
+            if (isSolved) {
+                mat.emissiveIntensity = 0.35 + Math.sin(t * 1.2 + i) * 0.15;
+                mat.emissive.set('#66ffaa');
+            } else if (isRevealed) {
                 mat.emissiveIntensity = 0.5 + Math.sin(t * 2 + i) * 0.3;
             } else {
                 mat.emissiveIntensity = 0.05;

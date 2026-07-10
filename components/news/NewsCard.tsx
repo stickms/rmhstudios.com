@@ -3,6 +3,7 @@
 import { Link } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { Calendar, ArrowRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { getCategoryColor } from '@/lib/news-categories';
 import { NewsSourceBadge } from './NewsSourceBadge';
 import type { NewsArticle } from '@/lib/news';
@@ -13,6 +14,7 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ article, index }: NewsCardProps) {
+    const { t } = useTranslation("c-news");
     const categoryColor = getCategoryColor(article.category ?? '');
 
     return (
@@ -24,12 +26,11 @@ export function NewsCard({ article, index }: NewsCardProps) {
         >
             <div
                 data-slot="card"
-                className="h-full bg-(--site-surface) border overflow-hidden hover:border-(--site-accent)/50 transition-all group relative flex flex-col"
+                className="h-full bg-(--site-surface) border overflow-hidden hover:border-(--site-accent)/50 hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.98] transition-[transform,border-color,box-shadow] duration-200 group relative flex flex-col"
                 style={{
                     borderRadius: 'var(--site-radius)',
                     borderWidth: 'var(--site-border-width)',
                     borderColor: 'var(--site-border)',
-                    transitionDuration: 'var(--site-transition-speed)',
                 }}
             >
                 <Link to={`/news/${article.slug}` as string} className="absolute inset-0 z-0" />
@@ -83,7 +84,7 @@ export function NewsCard({ article, index }: NewsCardProps) {
                     )}
 
                     <div className="mt-auto flex items-center gap-2 text-(--site-accent) text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                        Read Our Take <ArrowRight className="w-3 h-3" />
+                        {t("read-our-take", { defaultValue: "Read Our Take" })} <ArrowRight className="w-3 h-3" />
                     </div>
                 </div>
             </div>

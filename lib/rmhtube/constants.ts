@@ -18,8 +18,22 @@ export const CHAT_HISTORY_LENGTH = 200;
 // ─── Sync ────────────────────────────────────────────────────────
 
 export const SYNC_HEARTBEAT_INTERVAL_MS = 2_000;
-export const SYNC_TOLERANCE_S = 2;
 export const HOST_STATE_INTERVAL_MS = 1_000;
+
+// Two-tier drift correction:
+//   |drift| <= SOFT          → considered in-sync (restore room speed)
+//   SOFT < |drift| <= HARD   → gentle playbackRate nudge
+//   |drift| > HARD           → hard seek
+export const SYNC_SOFT_TOLERANCE_S = 0.5;
+export const SYNC_HARD_TOLERANCE_S = 2;
+export const SYNC_NUDGE_RATE = 0.05; // ±5% playback-rate nudge while closing a gap
+
+/** @deprecated use SYNC_HARD_TOLERANCE_S — kept for back-compat */
+export const SYNC_TOLERANCE_S = SYNC_HARD_TOLERANCE_S;
+
+// Clock synchronization (NTP-lite): map client time ↔ server time.
+export const CLOCK_SYNC_SAMPLES = 5;
+export const CLOCK_SYNC_INTERVAL_MS = 30_000;
 
 // ─── Timers ──────────────────────────────────────────────────────
 

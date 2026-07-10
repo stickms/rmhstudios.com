@@ -4,7 +4,8 @@
  * Turns a user prompt into a self-contained, INTERACTIVE web app via an LLM.
  * The caller picks a model (Kimi or DeepSeek, each in a faster / higher-quality
  * tier), which maps to a concrete model ID and provider client (see
- * VIBE_MODEL_IDS / PROVIDERS). The model emits a small
+ * VIBE_MODEL_IDS / PROVIDER_CONFIG), with automatic fallback to a broadly-available
+ * model when the chosen tier isn't enabled on the account. The model emits a small
  * multi-file React/TypeScript project, which we bundle server-side with esbuild (see
  * vibe-bundle.server.ts) into one static HTML document — no in-browser Babel. We
  * stream the model's chain-of-thought ("thinking") back to the caller, persist the
@@ -21,26 +22,49 @@ import OpenAI from 'openai';
 import { nanoid } from 'nanoid';
 import { prisma } from '@/lib/prisma.server';
 import type { VibeStreamEvent, VibeModel, VibeProvider } from '@/lib/rmhvibe/vibe-types';
-import { DEFAULT_VIBE_MODEL, VIBE_MODEL_META } from '@/lib/rmhvibe/vibe-types';
-import { parseVibeProject, buildVibeHtml, BundleError } from '@/lib/rmhvibe/vibe-bundle.server';
+import { DEFAULT_VIBE_MODEL, VIBE_MODEL_META, VIBE_PROVIDER_LABELS } from '@/lib/rmhvibe/vibe-types';
+import {
+  parseVibeProject,
+  buildVibeHtml,
+  BundleError,
+  injectVibeStorageShim,
+} from '@/lib/rmhvibe/vibe-bundle.server';
 
 export type VibeMessage = { role: 'system' | 'user' | 'assistant'; content: string };
 
-// One OpenAI-compatible client per provider. Kimi (Moonshot) and DeepSeek both
-// expose OpenAI-compatible chat endpoints and stream reasoning_content (the
+// Per-provider connection config. Kimi (Moonshot) and DeepSeek both expose
+// OpenAI-compatible chat endpoints and stream `reasoning_content` (the
 // chain-of-thought) alongside the final answer when the model supports it.
-const PROVIDERS: Record<VibeProvider, OpenAI> = {
-  kimi: new OpenAI({
-    baseURL: 'https://api.moonshot.ai/v1',
-    apiKey: process.env.KIMI_API_KEY!,
-    maxRetries: 1, // streaming stalls are handled below; don't silently retry for minutes
-  }),
-  deepseek: new OpenAI({
-    baseURL: 'https://api.deepseek.com',
-    apiKey: process.env.DEEPSEEK_API_KEY!,
-    maxRetries: 1,
-  }),
+const PROVIDER_CONFIG: Record<VibeProvider, { baseURL: string; keyEnv: string }> = {
+  kimi: { baseURL: 'https://api.moonshot.ai/v1', keyEnv: 'KIMI_API_KEY' },
+  deepseek: { baseURL: 'https://api.deepseek.com', keyEnv: 'DEEPSEEK_API_KEY' },
 };
+
+/** Thrown when a provider's API key isn't configured — surfaced as a clean error. */
+class MissingKeyError extends Error {
+  constructor(readonly provider: VibeProvider) {
+    super(`${VIBE_PROVIDER_LABELS[provider]} is not configured`);
+  }
+}
+
+// Clients are built LAZILY and cached, not at module load. The OpenAI constructor
+// throws when its apiKey is empty, and this module is imported by the read-only
+// viewer paths too (getVibePage etc. in v.$slug.tsx) — so eager construction with
+// a `!` non-null assertion would crash the whole viewer if one key were unset.
+// Lazy creation contains a missing key to the one request that actually needs it.
+const clients: Partial<Record<VibeProvider, OpenAI>> = {};
+function getClient(provider: VibeProvider): OpenAI {
+  const cached = clients[provider];
+  if (cached) return cached;
+  const cfg = PROVIDER_CONFIG[provider];
+  const apiKey = process.env[cfg.keyEnv];
+  if (!apiKey) throw new MissingKeyError(provider);
+  // maxRetries: 1 — streaming stalls are handled by the timers below; we don't want
+  // the SDK silently retrying a long generation for minutes behind the scenes.
+  const client = new OpenAI({ baseURL: cfg.baseURL, apiKey, maxRetries: 1 });
+  clients[provider] = client;
+  return client;
+}
 
 // Maps each selectable model to its concrete provider model ID. None of these
 // support response_format/json mode, so we use a plain text protocol and parse it.
@@ -49,6 +73,16 @@ const VIBE_MODEL_IDS: Record<VibeModel, string> = {
   'kimi-k2-turbo': 'kimi-k2.7-code-highspeed',
   'deepseek-flash': 'deepseek-v4-flash',
   'deepseek-pro': 'deepseek-v4-pro',
+};
+
+// When a selected model isn't available on the configured account (e.g. Kimi's
+// HighSpeed tier, which rolls out gradually, or a not-yet-enabled DeepSeek tier),
+// the provider rejects the request. Rather than fail the whole generation, fall
+// back to a broadly-available model from the SAME provider. Models with no entry
+// here have no fallback (they're already the safe, GA option).
+const MODEL_FALLBACK_IDS: Partial<Record<VibeModel, string>> = {
+  'kimi-k2-turbo': 'kimi-k2.7-code', // HighSpeed → base K2.7 Code
+  'deepseek-pro': 'deepseek-v4-flash', // Pro → Flash
 };
 
 const VIBE_SYSTEM_PROMPT = `You are a world-class creative web developer and designer. Given a user's prompt, build a COMPLETE, polished, INTERACTIVE web app that captures the vibe of their request, written as a small multi-file React + TypeScript project. The result must look finished and shippable, never a rough draft.
@@ -67,14 +101,15 @@ How your code is built and run (this is different from a single HTML file — re
 - React 19 and react-dom are ALWAYS available — import them directly (\`import React, { useState, useEffect } from 'react'\`, \`import { createRoot } from 'react-dom/client'\`). Do NOT list react/react-dom in DEPS.
 
 npm packages — this is a real strength, use it:
-- You can import ANY browser-compatible npm package; bare imports resolve at runtime from esm.sh. LARGE libraries work great and load straight from the CDN — including three, @react-three/fiber, @react-three/drei, pixi.js, p5, matter-js, konva, d3, chart.js, gsap, animejs, motion (framer-motion), tone, howler, zustand, immer, lodash-es, date-fns, nanoid, and more.
+- You can import ANY browser-compatible npm package. A curated set is PRE-INSTALLED and served from our own servers, so it loads instantly and reliably (no third-party CDN) — PREFER these whenever they fit: three, @react-three/fiber, @react-three/drei, pixi.js, p5, matter-js, konva, d3, chart.js, gsap, framer-motion, tone, zustand, immer, lodash-es, date-fns, nanoid, zod, clsx, tailwind-merge, uuid. (react and react-dom are always available — see above.)
+- Any other browser-compatible package still works too; it resolves at runtime from esm.sh as a fallback. Lean on the curated list first for speed and reliability, and reach for others when you genuinely need them.
 - For EVERY bare npm package you import (other than react/react-dom), list it on the DEPS line with a PINNED version, comma-separated: \`DEPS: three@0.183, @react-three/fiber@9, gsap@3\`. Subpath imports such as \`three/examples/jsm/controls/OrbitControls.js\` are fine — just list the base package (\`three@0.183\`) in DEPS.
 
 Runtime environment — use it to the fullest, and respect its limits:
 - The app runs in a sandboxed iframe with an opaque origin, auto-focused, so keyboard input (arrow keys, WASD, spacebar, typing) works immediately — keyboard games and shortcuts are fine.
 - The full client-side web platform is available: Canvas 2D, WebGL, the Web Audio API, SVG, CSS animations/transitions, requestAnimationFrame, IntersectionObserver/ResizeObserver, pointer/touch/mouse/keyboard events, drag-and-drop, the Web Animations API, and Pointer Lock (for mouse-look). alert/confirm/prompt are allowed.
 - HARD LIMITS (the sandbox enforces these — code that ignores them WILL crash or be blocked):
-  - NO localStorage, sessionStorage, cookies, or IndexedDB — accessing them throws. Keep state in memory (React state). For shareable or persistent state, encode it into location.hash.
+  - Storage is EPHEMERAL, not persistent. localStorage and sessionStorage ARE available (backed by an in-memory shim, so reading/writing them is safe and won't throw), but their contents are wiped on every reload and are never shared between visitors. cookies and IndexedDB are unavailable. Never rely on any of them for real persistence — treat them as session-only scratch space. Keep primary state in React state; for state that must survive a reload or be shareable via the URL, encode it into location.hash.
   - NO arbitrary network: no fetch/XHR/WebSocket to other origins, and no external image/font/media URLs. Generate all visuals with SVG, emoji, CSS gradients, canvas, or data: URIs. The ONE exception is the built-in AI helper below — do not hand-roll fetch() to any AI/LLM API or hardcode an API key (it will be blocked and is a security risk).
 - Be ambitious: games, physics simulations, generative art, audio toys/sequencers, data visualizations, 3D scenes, productivity tools, and dashboards are all in scope — everything runs client-side.
 
@@ -109,6 +144,13 @@ Quality (strict):
 - FINISHED, not a skeleton: every section fully built with real, specific, readable copy. No "lorem ipsum", placeholders, "coming soon", TODOs, or cut-off sections.
 - The code MUST compile: valid TypeScript/JSX, every import resolvable (relative files you define, or packages listed in DEPS). The entry must call \`createRoot(document.getElementById('root')!).render(...)\`.
 
+Robustness — the page must RENDER, not just compile (a crash here shows the user a blank/black screen):
+- An uncaught error during render unmounts the WHOLE React tree and leaves a blank page. Define a small top-level error boundary (a class component with componentDidCatch / getDerivedStateFromError that renders a simple fallback) and wrap <App/> in it in index.tsx, so a fault shows a fallback instead of nothing.
+- Code DEFENSIVELY against runtime crashes: never read properties off values that can be undefined/null without guarding; give every useState a sensible initial value (don't rely on data that arrives later); guard array indexing and \`.map\` over possibly-empty data; verify a ref/canvas/DOM node exists before using it (e.g. inside useEffect, after mount).
+- The FIRST paint must not depend on anything async. Render meaningful content synchronously on mount; if you load data, generate visuals, or dynamically import a package, show that content immediately and fill in the async parts after — never gate the entire UI behind an await that could fail or hang.
+- Wrap every \`await\` (RMHVibeAI calls, dynamic imports, any promise) in try/catch and render a visible fallback on failure. An unhandled rejection must never be the reason the screen is empty.
+- Don't paint the app the same color as the background with nothing on it — ensure there is always visible, contentful UI on first render.
+
 OUTPUT FORMAT — this response is parsed by a machine, not read by a human. Any deviation BREAKS the build and wastes the whole generation. Follow it EXACTLY:
 - The VERY FIRST characters of your answer MUST be \`SLUG:\`. No preamble, no greeting, no "Here's the…", no "Sure!", no explanation, no summary — not before the SLUG and not after the last file.
 - There is NO acceptable non-project response. Even if the request is vague, impossible, unclear, or you'd normally ask a clarifying question, do NOT reply with prose, an apology, or a question — always make a reasonable assumption and output a COMPLETE, valid project in the format below. Plain text that isn't this format is treated as a failure and discarded.
@@ -138,8 +180,9 @@ DEPS: <comma-separated bare npm packages with pinned versions, excluding react/r
  * Adapted from the open-source "frontend-design" skill
  * (https://github.com/Ilm-Alan/frontend-design): pick ONE aesthetic anchor per
  * page and hold its locked CSS tokens, with disciplined on-screen content.
- * Note the sandbox font limits below — webfonts only load via the @fontsource npm
- * packages (through esm.sh) or system stacks; there are no Google-Fonts URLs.
+ * Note the sandbox font limits below — webfonts can't load at all (no Google-Fonts
+ * URLs, and @fontsource packages are CSS-only and break native ESM), so anchors map
+ * their named typefaces to the nearest system stack.
  */
 const VIBE_FRONTEND_DESIGN_SKILL = `
 
@@ -165,7 +208,7 @@ THE EIGHT ANCHORS (pick one; if rendered output drifts outside its tokens, the a
 7. Organic — Surface earth tones (sage #8B9D83, clay #B08B6E, terracotta #C66B3D, ochre #C08E3A, moss #606C38); light surface sand #E8DCC7 / oat #D4B895, NEVER cream warm-paper. Type: humanist serif (Fraunces — this anchor only — Caslon) or warm geometric sans (Epilogue, Recoleta). Rounded corners 16–32px; grain 1–3% via SVG feTurbulence; gentle ease 300–500ms, breathing animations. Breaks if: cream backgrounds, cold greys, pure white/black, or hard rectangles.
 8. Lo-Fi — Surface paper-yellow #E8E0C0 / #EDE4CF (more saturated than cream). Type: mixed system fonts colliding (Times + Helvetica + Courier). Rotated elements 2–8° off-grid; halftone dot transitions; Risograph misregistration (text-shadow: 3px 0 #FF006E, -3px 0 #00FFCC); SVG staple/tape/torn-edge. Breaks if: precision, single typeface, smooth motion, grid-squared rectangles, or cream.
 
-FONTS IN THIS SANDBOX: no external font URLs. Use a strong system stack matching the anchor, OR import an @fontsource package and list it in DEPS (e.g. \`DEPS: @fontsource/fraunces@5\`) then \`import '@fontsource/fraunces'\`. If a named typeface can't be loaded, pick the closest in-spec system fallback rather than abandoning the anchor.
+FONTS IN THIS SANDBOX: webfonts CANNOT be loaded — no external font URLs, no Google Fonts, and NO \`@fontsource/*\` packages (those are CSS-only and fail to load as ES modules, crashing the page). Use ONLY system / web-safe font stacks. When an anchor names a specific typeface, map it to the closest system stack rather than importing it — the anchor holds through weight, size, spacing, and case, not the exact font file. Reliable stacks: sans — \`'Helvetica Neue', Helvetica, Arial, sans-serif\` or \`system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif\`; mono — \`'SF Mono', 'JetBrains Mono', ui-monospace, Menlo, Consolas, monospace\`; serif — \`Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif\`. Never list a font package in DEPS.
 
 BEFORE SHIPPING: unexpected pairing (not the safe default)? every rendered token inside the anchor's range? content discipline held (no fabrication/filler/themed-copy/glyph-icons/slop)? differentiator actually rendered? one anchor held (no drift into hybrids)?`;
 
@@ -361,15 +404,20 @@ export async function listVibePages(opts: { q?: string; cursor?: string }): Prom
   nextCursor: string | null;
 }> {
   const q = opts.q?.trim();
-  const where = q
-    ? {
-        OR: [
-          { title: { contains: q, mode: 'insensitive' as const } },
-          { prompt: { contains: q, mode: 'insensitive' as const } },
-          { description: { contains: q, mode: 'insensitive' as const } },
-        ],
-      }
-    : undefined;
+  // Only surface finished pages — never the empty "generating" placeholders or
+  // failed rows that the up-front reservation can leave behind.
+  const where = {
+    status: 'ready',
+    ...(q
+      ? {
+          OR: [
+            { title: { contains: q, mode: 'insensitive' as const } },
+            { prompt: { contains: q, mode: 'insensitive' as const } },
+            { description: { contains: q, mode: 'insensitive' as const } },
+          ],
+        }
+      : {}),
+  };
 
   const rows = await prisma.vibePage.findMany({
     where,
@@ -440,7 +488,9 @@ async function materialize(content: string): Promise<Materialized> {
   if (parsed.html && looksLikeHtmlDoc(parsed.html)) {
     return {
       ok: true,
-      html: injectCsp(parsed.html),
+      // Storage shim first (so legacy pages can't crash on localStorage either),
+      // then our strict CSP — same crash-resistance as the bundled path.
+      html: injectCsp(injectVibeStorageShim(parsed.html)),
       slug: parsed.slug,
       title: parsed.title,
       description: parsed.description,
@@ -460,6 +510,125 @@ const MAX_GENERATION_ATTEMPTS = 3;
 // request and surface a specific error instead of spinning forever.
 const STREAM_IDLE_MS = 60_000; // no token for 60s → treat as stalled
 const STREAM_TOTAL_MS = 300_000; // hard cap on a single attempt (5 min)
+
+/** Why a single model streaming attempt failed — drives both fallback and messaging. */
+type StreamFailReason = 'stalled' | 'timeout' | 'unavailable' | 'failed';
+
+class ModelStreamError extends Error {
+  constructor(readonly reason: StreamFailReason) {
+    super(reason);
+  }
+}
+
+/**
+ * Does this provider error mean "that model can't be used on this account" (so we
+ * should fall back to another model) rather than a transient failure (retry the
+ * same model)? Covers a 404 model-not-found, and 400/403 responses whose message
+ * names the model / a permission or availability problem. Kept liberal: a wrong
+ * guess only changes which model we try next, never correctness.
+ */
+function isModelUnavailableError(err: unknown): boolean {
+  const e = err as {
+    status?: number;
+    code?: string;
+    message?: string;
+    error?: { message?: string; code?: string };
+  };
+  const status = e?.status;
+  const msg = (e?.message || e?.error?.message || '').toLowerCase();
+  const code = (e?.code || e?.error?.code || '').toLowerCase();
+  if (status === 404) return true;
+  if (code.includes('model')) return true;
+  if (
+    (status === 400 || status === 403) &&
+    /(model|not found|does not exist|no permission|not available|unavailable|access)/.test(msg)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/** User-facing message for a stream failure that exhausted its options. */
+function messageForStreamFail(reason: StreamFailReason | undefined): string {
+  switch (reason) {
+    case 'stalled':
+      return 'The model stopped responding partway through. Please try again.';
+    case 'timeout':
+      return 'Generation took too long and was stopped. Try again, or simplify your prompt.';
+    case 'unavailable':
+      return 'The selected model isn’t available right now. Try a different model.';
+    default:
+      return 'The model failed to respond. Try again.';
+  }
+}
+
+/**
+ * Run ONE streaming completion against a concrete model id. Yields `thinking`
+ * (reasoning_content) and `content` (answer) deltas as they arrive and RETURNS the
+ * full accumulated answer text. Throws a `ModelStreamError` (classified) on any
+ * failure: a stall (no token for STREAM_IDLE_MS), the total-time cap, an
+ * unavailable model, or a generic provider/network error. The caller drives it via
+ * the iterator protocol so it can read the returned content and forward the deltas.
+ */
+async function* streamModel(
+  client: OpenAI,
+  modelId: string,
+  messages: VibeMessage[],
+): AsyncGenerator<VibeStreamEvent, string> {
+  const abort = new AbortController();
+  let stalled = false;
+  let timedOut = false;
+  let idleTimer: ReturnType<typeof setTimeout> | undefined;
+  const armIdle = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      stalled = true;
+      abort.abort();
+    }, STREAM_IDLE_MS);
+  };
+  const totalTimer = setTimeout(() => {
+    timedOut = true;
+    abort.abort();
+  }, STREAM_TOTAL_MS);
+
+  let content = '';
+  try {
+    armIdle(); // also bounds time-to-first-token
+    const stream = await client.chat.completions.create(
+      {
+        model: modelId,
+        messages,
+        // Generous budget so finished, polished pages don't get truncated.
+        max_tokens: 16384,
+        stream: true,
+      },
+      { signal: abort.signal },
+    );
+
+    for await (const chunk of stream) {
+      armIdle();
+      // reasoning_content is a provider extension (Kimi/DeepSeek) not in the SDK types.
+      const delta = chunk.choices[0]?.delta as
+        | { content?: string | null; reasoning_content?: string | null }
+        | undefined;
+      if (delta?.reasoning_content) yield { type: 'thinking', text: delta.reasoning_content };
+      if (delta?.content) {
+        content += delta.content;
+        yield { type: 'content', text: delta.content };
+      }
+    }
+  } catch (err) {
+    // A fired timer takes precedence over the abort error it caused.
+    if (stalled) throw new ModelStreamError('stalled');
+    if (timedOut) throw new ModelStreamError('timeout');
+    if (isModelUnavailableError(err)) throw new ModelStreamError('unavailable');
+    throw new ModelStreamError('failed');
+  } finally {
+    if (idleTimer) clearTimeout(idleTimer);
+    clearTimeout(totalTimer);
+  }
+  return content;
+}
 
 /**
  * Stream generation of a vibe page. If `slug` is provided, this is a "customize"
@@ -483,9 +652,33 @@ export async function* generateVibeStream(opts: {
   model?: VibeModel;
 }): AsyncGenerator<VibeStreamEvent> {
   const model = opts.model ?? DEFAULT_VIBE_MODEL;
-  const modelId = VIBE_MODEL_IDS[model];
   const provider = VIBE_MODEL_META[model].provider;
-  const client = PROVIDERS[provider];
+
+  // Resolve the provider client up front (before reserving any DB row) so a missing
+  // API key fails cleanly instead of orphaning a "generating" page.
+  let client: OpenAI;
+  try {
+    client = getClient(provider);
+  } catch (err) {
+    if (err instanceof MissingKeyError) {
+      yield {
+        type: 'error',
+        message: `The ${VIBE_PROVIDER_LABELS[provider]} model isn’t configured on this server. Pick another model or try again later.`,
+      };
+      return;
+    }
+    yield { type: 'error', message: 'Could not start generation. Try again.' };
+    return;
+  }
+
+  // Models to try, in order: the selected one, then its fallback if the selected
+  // tier isn't available on this account. Deduped so a model with no real fallback
+  // (or one pointing at itself) is tried exactly once.
+  const primaryId = VIBE_MODEL_IDS[model];
+  const fallbackId = MODEL_FALLBACK_IDS[model];
+  const modelCandidates =
+    fallbackId && fallbackId !== primaryId ? [primaryId, fallbackId] : [primaryId];
+
   // Kimi tends toward generic, templated UI — give it the frontend-design skill
   // (art-direction guidance) on top of the base prompt. DeepSeek keeps the base.
   const systemPrompt =
@@ -519,6 +712,35 @@ export async function* generateVibeStream(opts: {
     }
   }
 
+  // For a BRAND-NEW page, reserve the slug and persist a "generating" placeholder
+  // row up front. This is what makes generation survive a dropped streaming
+  // connection: the client gets the slug immediately (the `created` event) and can
+  // navigate straight to /v/<slug>, and because the row already exists the page is
+  // never lost even if the SSE stream is cut before `done`. The row flips to "ready"
+  // (or "error") below once the build resolves. `newPageId`/`reservedSlug` are set
+  // only on this path; the customize path updates the existing row instead.
+  let newPageId: string | undefined;
+  let reservedSlug: string | undefined;
+  if (!opts.slug) {
+    reservedSlug = await uniqueSlug(opts.prompt);
+    const created = await prisma.vibePage.create({
+      data: {
+        slug: reservedSlug,
+        prompt: opts.prompt,
+        title: opts.prompt.slice(0, 80),
+        description: `A vibe page about "${opts.prompt}".`.slice(0, 300),
+        html: '',
+        status: 'generating',
+        conversationHistory: [],
+        // Don't screenshot a half-built page; the completion update re-flags it.
+        thumbnailStale: false,
+      },
+      select: { id: true },
+    });
+    newPageId = created.id;
+    yield { type: 'created', slug: reservedSlug };
+  }
+
   const messages: VibeMessage[] = [
     { role: 'system', content: systemPrompt },
     ...history,
@@ -530,67 +752,54 @@ export async function* generateVibeStream(opts: {
   // corrective prompts live only in `messages` and are never saved to history.
   let content = '';
   let result: Extract<Materialized, { ok: true }> | undefined;
+  // Track whether we reached a persisted result so the `finally` can mark a
+  // brand-new page's reserved row as failed on any early-return / throw.
+  let succeeded = false;
+  try {
+
+  // Index into `modelCandidates`. Once a candidate proves unavailable we advance
+  // past it permanently, so corrective retries don't keep re-hitting a dead model.
+  let candidateIdx = 0;
 
   for (let attempt = 1; attempt <= MAX_GENERATION_ATTEMPTS && !result; attempt++) {
     content = '';
 
-    // Abort the request if it stalls (no tokens for STREAM_IDLE_MS) or runs past
-    // the total cap. The idle timer is re-armed on every chunk; `stalled`/`timedOut`
-    // record which guard fired so we can give a specific error.
-    const abort = new AbortController();
-    let stalled = false;
-    let timedOut = false;
-    let idleTimer: ReturnType<typeof setTimeout> | undefined;
-    const armIdle = () => {
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(() => {
-        stalled = true;
-        abort.abort();
-      }, STREAM_IDLE_MS);
-    };
-    const totalTimer = setTimeout(() => {
-      timedOut = true;
-      abort.abort();
-    }, STREAM_TOTAL_MS);
-
-    try {
-      armIdle(); // also bounds time-to-first-token
-      const stream = await client.chat.completions.create(
-        {
-          model: modelId,
-          messages,
-          // Generous budget so finished, polished pages don't get truncated.
-          max_tokens: 16384,
-          stream: true,
-        },
-        { signal: abort.signal },
-      );
-
-      for await (const chunk of stream) {
-        armIdle();
-        // reasoning_content is a provider extension (Kimi/DeepSeek) not in the SDK types.
-        const delta = chunk.choices[0]?.delta as
-          | { content?: string | null; reasoning_content?: string | null }
-          | undefined;
-        if (delta?.reasoning_content) yield { type: 'thinking', text: delta.reasoning_content };
-        if (delta?.content) {
-          content += delta.content;
-          yield { type: 'content', text: delta.content };
+    // Run one streaming attempt, falling back through the model candidates if the
+    // chosen tier is unavailable on this account. `produced` flips true once a model
+    // actually streamed an answer; otherwise `lastFail` says why we're giving up.
+    let produced = false;
+    let lastFail: StreamFailReason | undefined;
+    while (candidateIdx < modelCandidates.length && !produced) {
+      const modelId = modelCandidates[candidateIdx];
+      try {
+        const inner = streamModel(client, modelId, messages);
+        let step = await inner.next();
+        while (!step.done) {
+          yield step.value; // forward thinking / content deltas
+          step = await inner.next();
         }
+        content = step.value; // generator's return = full answer text
+        produced = true;
+      } catch (err) {
+        const reason = err instanceof ModelStreamError ? err.reason : 'failed';
+        lastFail = reason;
+        // Only an availability problem is worth switching models for, and only while
+        // a later candidate remains. Everything else fails this attempt outright.
+        if (reason === 'unavailable' && candidateIdx < modelCandidates.length - 1) {
+          candidateIdx++;
+          yield {
+            type: 'thinking',
+            text: `\n\n↻ The selected model is unavailable — switching to a fallback model…\n\n`,
+          };
+          continue;
+        }
+        break;
       }
-    } catch {
-      yield {
-        type: 'error',
-        message: stalled
-          ? 'The model stopped responding partway through. Please try again.'
-          : timedOut
-            ? 'Generation took too long and was stopped. Try again, or simplify your prompt.'
-            : 'The model failed to respond. Try again.',
-      };
+    }
+
+    if (!produced) {
+      yield { type: 'error', message: messageForStreamFail(lastFail) };
       return;
-    } finally {
-      if (idleTimer) clearTimeout(idleTimer);
-      clearTimeout(totalTimer);
     }
 
     const materialized = await materialize(content);
@@ -627,7 +836,7 @@ export async function* generateVibeStream(opts: {
     return;
   }
 
-  const { html, slug: parsedSlug, title, description } = result;
+  const { html, title, description } = result;
 
   const cleanTitle = (title || opts.prompt).slice(0, 80);
   const cleanDescription = (description || `A vibe page about "${opts.prompt}".`).slice(0, 300);
@@ -663,38 +872,58 @@ export async function* generateVibeStream(opts: {
           select: { id: true },
         }),
       ]);
+      succeeded = true;
       yield { type: 'done', slug: existingSlug, versionId: version.id, html, title: cleanTitle, description: cleanDescription };
-    } else {
-      const slug = await uniqueSlug(parsedSlug || opts.prompt);
+    } else if (newPageId && reservedSlug) {
       const conversationHistory: VibeMessage[] = [
         { role: 'user', content: opts.prompt },
         assistantTurn,
       ];
-      // Create the page and seed its first version snapshot from the same content.
-      const page = await prisma.vibePage.create({
-        data: {
-          slug,
-          prompt: opts.prompt,
-          title: cleanTitle,
-          description: cleanDescription,
-          html,
-          conversationHistory,
-          versions: {
-            create: {
-              prompt: opts.prompt,
-              title: cleanTitle,
-              description: cleanDescription,
-              html,
-              conversationHistory,
-            },
+      // Fill in the reserved "generating" row with the finished build, flip it to
+      // "ready", and seed its first version snapshot — atomically, so the page and
+      // its history land together. We keep the slug we reserved up front (the client
+      // may already be viewing /v/<slug>), ignoring the model's SLUG suggestion.
+      // thumbnailStale: true → the vibe-worker now renders the screenshot.
+      const [, version] = await prisma.$transaction([
+        prisma.vibePage.update({
+          where: { id: newPageId },
+          data: {
+            html,
+            title: cleanTitle,
+            description: cleanDescription,
+            conversationHistory,
+            status: 'ready',
+            thumbnailStale: true,
           },
-        },
-        select: { versions: { select: { id: true } } },
-      });
-      // thumbnailStale defaults to true → the vibe-worker renders the screenshot.
-      yield { type: 'done', slug, versionId: page.versions[0].id, html, title: cleanTitle, description: cleanDescription };
+        }),
+        prisma.vibePageVersion.create({
+          data: {
+            pageId: newPageId,
+            prompt: opts.prompt,
+            title: cleanTitle,
+            description: cleanDescription,
+            html,
+            conversationHistory,
+          },
+          select: { id: true },
+        }),
+      ]);
+      succeeded = true;
+      yield { type: 'done', slug: reservedSlug, versionId: version.id, html, title: cleanTitle, description: cleanDescription };
     }
   } catch {
     yield { type: 'error', message: 'Failed to save the page. Try again.' };
+  }
+
+  } finally {
+    // Any path that didn't reach a persisted result leaves a brand-new page's
+    // reserved row orphaned in "generating" — flip it to "error" so the viewer
+    // (which the client may have already navigated to) shows a failure instead of
+    // polling forever. Best-effort; the customize path has no reserved row.
+    if (newPageId && !succeeded) {
+      await prisma.vibePage
+        .update({ where: { id: newPageId }, data: { status: 'error' } })
+        .catch(() => {});
+    }
   }
 }

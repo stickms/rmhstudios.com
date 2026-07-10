@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Plus, Users, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
@@ -9,6 +10,7 @@ import { getBlackjackSocket } from '@/lib/blackjack/socket';
 import { C2S } from '@/lib/blackjack/events';
 
 export function BlackjackLobby() {
+  const { t } = useTranslation("c-rmhcoins");
   const roomList = useBlackjackStore((s) => s.roomList);
   const [showCreate, setShowCreate] = useState(false);
   const [joinCodeInput, setJoinCodeInput] = useState('');
@@ -62,18 +64,18 @@ export function BlackjackLobby() {
       <div className="flex gap-2">
         <input
           type="text"
-          placeholder="Join code..."
+          placeholder={t("join-code-placeholder", { defaultValue: "Join code..." })}
           value={joinCodeInput}
           onChange={(e) => setJoinCodeInput(e.target.value.toUpperCase())}
           maxLength={5}
-          className="flex-1 bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
+          className="flex-1 bg-site-surface border border-site-border rounded-lg px-3 py-2 text-site-text text-sm font-mono uppercase focus:outline-none focus:ring-2 focus:ring-site-accent/40"
         />
         <Button
           onClick={handleJoinByCode}
           disabled={!joinCodeInput.trim()}
-          className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg text-sm"
+          className="bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm"
         >
-          Join
+          {t("join", { defaultValue: "Join" })}
         </Button>
       </div>
 
@@ -82,15 +84,15 @@ export function BlackjackLobby() {
         <div className="flex flex-col gap-2 p-3 rounded-lg bg-site-surface border border-site-border">
           <input
             type="text"
-            placeholder="Room name (optional)"
+            placeholder={t("room-name-placeholder", { defaultValue: "Room name (optional)" })}
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             maxLength={30}
-            className="w-full bg-site-bg border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50"
+            className="w-full bg-site-bg border border-site-border rounded-lg px-3 py-2 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40"
           />
           <div className="grid grid-cols-2 gap-2">
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">Max players</label>
+              <label className="text-xs text-site-text-dim">{t("max-players", { defaultValue: "Max players" })}</label>
               <Select
                 value={maxPlayers}
                 onChange={(e) => setMaxPlayers(Number(e.target.value))}
@@ -101,29 +103,29 @@ export function BlackjackLobby() {
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs text-site-text-dim">Privacy</label>
+              <label className="text-xs text-site-text-dim">{t("privacy", { defaultValue: "Privacy" })}</label>
               <Select
                 value={privacy}
                 onChange={(e) => setPrivacy(e.target.value as 'public' | 'unlisted')}
               >
-                <option value="public">Public</option>
-                <option value="unlisted">Unlisted</option>
+                <option value="public">{t("privacy-public", { defaultValue: "Public" })}</option>
+                <option value="unlisted">{t("privacy-unlisted", { defaultValue: "Unlisted" })}</option>
               </Select>
             </div>
           </div>
           <div className="flex gap-2">
             <Button
               onClick={handleCreate}
-              className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg text-sm"
+              className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm"
             >
-              Create
+              {t("create", { defaultValue: "Create" })}
             </Button>
             <Button
               onClick={() => setShowCreate(false)}
               variant="outline"
               className="flex-1 rounded-lg text-sm"
             >
-              Cancel
+              {t("cancel", { defaultValue: "Cancel" })}
             </Button>
           </div>
         </div>
@@ -131,10 +133,10 @@ export function BlackjackLobby() {
         <div className="flex gap-2">
           <Button
             onClick={() => setShowCreate(true)}
-            className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg text-sm"
+            className="flex-1 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg font-bold rounded-lg text-sm"
           >
             <Plus className="w-4 h-4 mr-1" />
-            Create Room
+            {t("create-room", { defaultValue: "Create Room" })}
           </Button>
           <button
             onClick={handleRefresh}
@@ -148,7 +150,7 @@ export function BlackjackLobby() {
       {/* Room list */}
       {roomList.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-sm text-site-text-dim">No rooms yet. Create one to start playing!</p>
+          <p className="text-sm text-site-text-dim">{t("no-rooms", { defaultValue: "No rooms yet. Create one to start playing!" })}</p>
         </div>
       ) : (
         <div className="flex flex-col gap-2">
@@ -162,9 +164,9 @@ export function BlackjackLobby() {
               <div className="flex flex-col gap-0.5">
                 <span className="text-sm font-bold text-site-text">{room.name}</span>
                 <span className="text-xs text-site-text-dim">
-                  hosted by {room.ownerName}
+                  {t("hosted-by", { defaultValue: "hosted by {{ownerName}}", ownerName: room.ownerName })}
                   {room.inProgress && (
-                    <span className="ml-1.5 text-yellow-500">In progress</span>
+                    <span className="ml-1.5 text-site-accent">{t("in-progress", { defaultValue: "In progress" })}</span>
                   )}
                 </span>
               </div>

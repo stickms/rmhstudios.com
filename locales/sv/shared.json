@@ -1,0 +1,15 @@
+{
+  "chat-placeholder": "Chat...",
+  "error-boundary-message": "Ett oväntat fel inträffade.",
+  "error-boundary-retry": "Försök igen",
+  "error-boundary-title": "Något gick fel",
+  "failed-to-load-media": "Det gick inte att ladda media",
+  "game-crashed": "Spelet kraschade",
+  "game-crashed-named": "{{gameName}} kraschade",
+  "loading": "Laddar…",
+  "no-messages-yet": "Inga meddelanden än",
+  "react": "Reagera",
+  "return-home": "Gå till startsidan",
+  "try-again": "Försök igen",
+  "unexpected-error": "Ett oväntat fel inträffade."
+}

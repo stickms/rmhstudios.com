@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "bot-worker_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/rmhstudios/rmh-go/cmd/bot-worker",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//go-services/internal/botworker",
+        "//go-services/pkg/worker",
+    ],
+)
+
+go_binary(
+    name = "bot-worker",
+    embed = [":bot-worker_lib"],
+    visibility = ["//visibility:public"],
+)

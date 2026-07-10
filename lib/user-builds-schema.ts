@@ -47,6 +47,8 @@ export const createBuildSchema = z.object({
     .max(MAX_TAGS, `Maximum ${MAX_TAGS} tags allowed`)
     .default([]),
   visibility: z.enum(['PUBLIC', 'UNLISTED', 'PRIVATE']).default('UNLISTED'),
+  // Marketplace price in coins to unlock readme/repo/demo (0 = free).
+  price: z.number().int().min(0).max(1_000_000).optional(),
 });
 
 export const updateBuildSchema = createBuildSchema

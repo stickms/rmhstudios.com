@@ -16,8 +16,10 @@ import { formatRelativeTime } from '@/lib/rmhtube/utils';
 import RmhTubeHeader from '@/components/rmhtube/RmhTubeHeader';
 import type { PublicRoomInfo, RoomHistoryStatus } from '@/lib/rmhtube/types';
 import { useRouter } from '@tanstack/react-router';
+import { useTranslation } from "react-i18next";
 
 export default function RmhTubeLanding() {
+  const { t } = useTranslation("c-rmhtube");
   const router = useRouter();
   const connectionStatus = useRmhTubeStore((s) => s.connectionStatus);
   const roomHistory = useRmhTubeStore((s) => s.settings.roomHistory);
@@ -90,7 +92,7 @@ export default function RmhTubeLanding() {
           }
         }, 10_000);
       } catch (err) {
-        if (mounted) toast.error(err instanceof Error ? err.message : 'Connection failed');
+        if (mounted) toast.error(err instanceof Error ? err.message : t("connection-failed", { defaultValue: "Connection failed" }));
       }
     }
 
@@ -118,7 +120,7 @@ export default function RmhTubeLanding() {
   const handleJoinRoom = useCallback(() => {
     const code = joinCode.trim().toUpperCase();
     if (code.length !== 6) {
-      toast.warning('Room code must be 6 characters');
+      toast.warning(t("room-code-length", { defaultValue: "Room code must be 6 characters" }));
       return;
     }
     emit(C2S.ROOM_JOIN, { roomId: code });
@@ -155,11 +157,11 @@ export default function RmhTubeLanding() {
                 className="text-3xl font-bold"
                 style={{ fontFamily: 'var(--rmhtube-font-display)' }}
               >
-                Watch Together
+                {t("watch-together", { defaultValue: "Watch Together" })}
               </h2>
             </div>
             <p className="text-sm text-(--rmhtube-text-muted)">
-              Create a room, share the link, and watch YouTube, Twitch, or direct videos in sync.
+              {t("hero-subtitle", { defaultValue: "Create a room, share the link, and watch YouTube, Twitch, or direct videos in sync." })}
             </p>
           </div>
 
@@ -167,24 +169,24 @@ export default function RmhTubeLanding() {
           <div className="grid md:grid-cols-2 gap-6">
             {/* Create Room */}
             <div className="rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6">
-              <h2 className="text-xl font-semibold mb-4">Create Room</h2>
+              <h2 className="text-xl font-semibold mb-4">{t("create-room", { defaultValue: "Create Room" })}</h2>
               <p className="text-sm mb-4 text-(--rmhtube-text-muted)">
-                Start a new watch session and invite friends.
+                {t("create-room-desc", { defaultValue: "Start a new watch session and invite friends." })}
               </p>
               <button
                 onClick={handleCreateRoom}
                 disabled={connectionStatus !== 'connected'}
                 className="w-full py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
               >
-                Create Room
+                {t("create-room", { defaultValue: "Create Room" })}
               </button>
             </div>
 
             {/* Join Room */}
             <div className="rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6">
-              <h2 className="text-xl font-semibold mb-4">Join Room</h2>
+              <h2 className="text-xl font-semibold mb-4">{t("join-room", { defaultValue: "Join Room" })}</h2>
               <p className="text-sm mb-4 text-(--rmhtube-text-muted)">
-                Enter a 6-character room code to join.
+                {t("join-room-desc", { defaultValue: "Enter a 6-character room code to join." })}
               </p>
               <form onSubmit={(e) => { e.preventDefault(); handleJoinRoom(); }} className="flex gap-2">
                 <input
@@ -202,7 +204,7 @@ export default function RmhTubeLanding() {
                   disabled={connectionStatus !== 'connected' || joinCode.trim().length !== 6}
                   className="px-6 py-3 rounded-lg font-semibold text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--rmhtube-accent) hover:bg-(--rmhtube-accent-hover)"
                 >
-                  Join
+                  {t("join", { defaultValue: "Join" })}
                 </button>
               </form>
             </div>
@@ -213,7 +215,7 @@ export default function RmhTubeLanding() {
             <div className="rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6">
               <div className="flex items-center gap-2 mb-4">
                 <Star className="h-5 w-5 text-(--rmhtube-warning)" />
-                <h2 className="text-xl font-semibold">Favorites</h2>
+                <h2 className="text-xl font-semibold">{t("favorites", { defaultValue: "Favorites" })}</h2>
               </div>
               <div className="flex flex-wrap gap-2">
                 {favoriteRooms.map((favRoomId) => {
@@ -232,7 +234,7 @@ export default function RmhTubeLanding() {
                         role="button"
                         onClick={(e) => { e.stopPropagation(); toggleFavoriteRoom(favRoomId); }}
                         className="text-(--rmhtube-warning) hover:text-(--rmhtube-warning)"
-                        title="Remove from favorites"
+                        title={t("remove-from-favorites", { defaultValue: "Remove from favorites" })}
                       >
                         <StarOff className="h-3.5 w-3.5" />
                       </span>
@@ -246,17 +248,17 @@ export default function RmhTubeLanding() {
           {/* Public Rooms */}
           <div className="rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Public Rooms</h2>
+              <h2 className="text-xl font-semibold">{t("public-rooms", { defaultValue: "Public Rooms" })}</h2>
               <button
                 onClick={handleBrowse}
                 className="text-sm px-3 py-1 rounded-md transition-colors bg-(--rmhtube-surface-hover) text-(--rmhtube-text-muted) hover:text-(--rmhtube-text)"
               >
-                Refresh
+                {t("refresh", { defaultValue: "Refresh" })}
               </button>
             </div>
             {publicRooms.length === 0 ? (
               <p className="text-sm text-center py-4 text-(--rmhtube-text-muted)">
-                No public rooms available. Create one!
+                {t("no-public-rooms", { defaultValue: "No public rooms available. Create one!" })}
               </p>
             ) : (
               <div className="space-y-2">
@@ -273,7 +275,7 @@ export default function RmhTubeLanding() {
                       <span className="font-mono font-bold">{room.roomId}</span>
                       {room.hasPassword && <Lock className="h-3.5 w-3.5 text-(--rmhtube-text-dim)" />}
                       <span className="text-sm text-(--rmhtube-text-muted)">
-                        Host: {room.hostName}
+                        {t("host-name", { defaultValue: "Host: {{name}}", name: room.hostName })}
                       </span>
                       {room.currentVideo && (
                         <span className="text-xs text-(--rmhtube-accent) truncate max-w-48">
@@ -283,7 +285,7 @@ export default function RmhTubeLanding() {
                       {room.scheduledFor && room.scheduledFor > Date.now() && (
                         <span className="text-xs text-(--rmhtube-info) flex items-center gap-0.5">
                           <Clock className="h-3 w-3" />
-                          Scheduled
+                          {t("scheduled", { defaultValue: "Scheduled" })}
                         </span>
                       )}
                     </div>
@@ -302,7 +304,7 @@ export default function RmhTubeLanding() {
             <div className="rounded-xl border border-(--rmhtube-border) bg-(--rmhtube-surface) p-6">
               <div className="flex items-center gap-2 mb-4">
                 <History className="h-5 w-5 text-(--rmhtube-info)" />
-                <h2 className="text-xl font-semibold">Recent Rooms</h2>
+                <h2 className="text-xl font-semibold">{t("recent-rooms", { defaultValue: "Recent Rooms" })}</h2>
               </div>
               <div className="space-y-2">
                 {openRecentRooms.slice(0, 10).map((entry) => {
@@ -317,7 +319,7 @@ export default function RmhTubeLanding() {
                       <div className="flex items-center gap-3 min-w-0">
                         <span className="font-mono font-bold text-sm">{entry.roomId}</span>
                         <span className="text-sm text-(--rmhtube-text-muted) truncate">
-                          {entry.roomName ?? `Host: ${status.hostName ?? entry.hostName}`}
+                          {entry.roomName ?? t("host-name", { defaultValue: "Host: {{name}}", name: status.hostName ?? entry.hostName })}
                         </span>
                         {status.currentVideo && (
                           <span className="text-xs text-(--rmhtube-accent) truncate max-w-48">
@@ -342,7 +344,7 @@ export default function RmhTubeLanding() {
                               ? 'text-(--rmhtube-warning)'
                               : 'text-(--rmhtube-text-dim) hover:text-(--rmhtube-warning)'
                           }`}
-                          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+                          title={isFavorite ? t("remove-from-favorites", { defaultValue: "Remove from favorites" }) : t("add-to-favorites", { defaultValue: "Add to favorites" })}
                         >
                           <Star className={`h-3.5 w-3.5 ${isFavorite ? 'fill-current' : ''}`} />
                         </span>

@@ -7,28 +7,19 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, UserX, Undo2 } from 'lucide-react';
 import { emit } from '@/lib/rmhstudy/socket';
 import { C2S } from '@/lib/rmhstudy/events';
 import { useRmhStudyStore } from '@/lib/rmhstudy/store';
-
-function formatRelativeTime(timestamp: number): string {
-  const diff = Date.now() - timestamp;
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 10) return 'just now';
-  if (seconds < 60) return `${seconds}s`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
+import { formatRelativeTime } from '@/lib/utils';
 
 interface BanListModalProps {
   onClose: () => void;
 }
 
 export default function BanListModal({ onClose }: BanListModalProps) {
+  const { t } = useTranslation("c-rmhstudy");
   const room = useRmhStudyStore((s) => s.room);
 
   const handleUnban = useCallback((userId: string) => {
@@ -44,7 +35,7 @@ export default function BanListModal({ onClose }: BanListModalProps) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <UserX className="h-5 w-5 text-(--rmhstudy-danger)" />
-            <h3 className="text-lg font-semibold text-(--rmhstudy-text)">Banned Users</h3>
+            <h3 className="text-lg font-semibold text-(--rmhstudy-text)">{t("banned-users", { defaultValue: "Banned Users" })}</h3>
           </div>
           <button
             onClick={onClose}
@@ -56,7 +47,7 @@ export default function BanListModal({ onClose }: BanListModalProps) {
 
         {room.bannedUsers.length === 0 ? (
           <p className="text-sm text-center py-6 text-(--rmhstudy-text-dim)">
-            No banned users
+            {t("no-banned-users", { defaultValue: "No banned users" })}
           </p>
         ) : (
           <div className="space-y-2 max-h-72 overflow-y-auto">
@@ -70,17 +61,17 @@ export default function BanListModal({ onClose }: BanListModalProps) {
                     {ban.userName}
                   </p>
                   <p className="text-xs text-(--rmhstudy-text-dim)">
-                    Banned {formatRelativeTime(ban.bannedAt)}
+                    {t("banned-at", { defaultValue: "Banned {{time}}", time: formatRelativeTime(ban.bannedAt) })}
                     {ban.reason && ` · ${ban.reason}`}
                   </p>
                 </div>
                 <button
                   onClick={() => handleUnban(ban.userId)}
                   className="shrink-0 ml-2 flex items-center gap-1 rounded-md px-2 py-1 text-xs transition-colors bg-(--rmhstudy-surface-hover) text-(--rmhstudy-text-muted) hover:text-(--rmhstudy-success) hover:bg-(--rmhstudy-success-dim)"
-                  title="Unban user"
+                  title={t("unban-user", { defaultValue: "Unban user" })}
                 >
                   <Undo2 className="h-3 w-3" />
-                  Unban
+                  {t("unban", { defaultValue: "Unban" })}
                 </button>
               </div>
             ))}

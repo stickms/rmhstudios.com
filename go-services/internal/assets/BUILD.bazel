@@ -1,0 +1,22 @@
+load("@rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "assets",
+    srcs = ["handler.go"],
+    importpath = "github.com/rmhstudios/rmh-go/internal/assets",
+    visibility = ["//go-services:__subpackages__"],
+    deps = [
+        "//go-services/pkg/log",
+        "//go-services/pkg/objectstore",
+    ],
+)
+
+go_test(
+    name = "assets_test",
+    srcs = ["handler_test.go"],
+    embed = [":assets"],
+    deps = [
+        "//go-services/pkg/log",
+        "//go-services/pkg/objectstore",
+    ],
+)

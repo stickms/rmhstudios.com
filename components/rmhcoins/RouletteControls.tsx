@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from "react-i18next";
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
 import { useRouletteStore } from '@/lib/roulette/store';
@@ -19,8 +20,8 @@ const CHIP_VALUES = [1, 5, 25, 100, 500];
 const QUICK_BETS: { type: BetType; label: string; color: string }[] = [
   { type: 'red', label: 'Red', color: 'bg-red-600 hover:bg-red-500 text-white' },
   { type: 'black', label: 'Black', color: 'bg-gray-800 hover:bg-gray-700 text-white' },
-  { type: 'odd', label: 'Odd', color: 'bg-violet-700 hover:bg-violet-600 text-white' },
-  { type: 'even', label: 'Even', color: 'bg-violet-700 hover:bg-violet-600 text-white' },
+  { type: 'odd', label: 'Odd', color: 'bg-site-accent hover:bg-site-accent-hover text-site-accent-fg' },
+  { type: 'even', label: 'Even', color: 'bg-site-accent hover:bg-site-accent-hover text-site-accent-fg' },
   { type: 'low', label: '1-18', color: 'bg-site-surface hover:bg-site-surface-hover text-site-text border border-site-border' },
   { type: 'high', label: '19-36', color: 'bg-site-surface hover:bg-site-surface-hover text-site-text border border-site-border' },
 ];
@@ -39,6 +40,8 @@ export function RouletteControls({ coins }: Props) {
 
   const addStagedBet = useRouletteStore((s) => s.addStagedBet);
   const clearStagedBets = useRouletteStore((s) => s.clearStagedBets);
+
+  const { t } = useTranslation("c-rmhcoins");
 
   const [selectedChip, setSelectedChip] = useState(5);
   const [countdown, setCountdown] = useState<number | null>(null);
@@ -92,7 +95,7 @@ export function RouletteControls({ coins }: Props) {
   if (tablePhase === 'idle') {
     return (
       <div className="text-center text-site-text-dim py-4">
-        <p className="text-sm">Waiting for next round...</p>
+        <p className="text-sm">{t("waiting-for-next-round", { defaultValue: "Waiting for next round..." })}</p>
       </div>
     );
   }
@@ -105,8 +108,8 @@ export function RouletteControls({ coins }: Props) {
       <div className="flex flex-col gap-2.5">
         {countdown !== null && (
           <div className="text-center">
-            <span className="text-sm text-site-text-dim">Betting closes in </span>
-            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-violet-300 animate-pulse' : 'text-violet-400'}`}>
+            <span className="text-sm text-site-text-dim">{t("betting-closes-in", { defaultValue: "Betting closes in " })}</span>
+            <span className={`font-bold text-lg tabular-nums ${isLow ? 'text-site-danger animate-pulse' : 'text-site-accent'}`}>
               {countdown}s
             </span>
           </div>
@@ -114,7 +117,7 @@ export function RouletteControls({ coins }: Props) {
 
         {/* Chip selector — circular chips, scrollable on tiny screens */}
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-site-text-dim text-center">Select chip value</span>
+          <span className="text-xs text-site-text-dim text-center">{t("select-chip-value", { defaultValue: "Select chip value" })}</span>
           <div className="flex justify-center gap-2 py-1 overflow-x-auto">
             {CHIP_VALUES.map((val) => (
               <button
@@ -123,20 +126,20 @@ export function RouletteControls({ coins }: Props) {
                 disabled={val > coins}
                 className={`relative w-10 h-10 sm:w-11 sm:h-11 rounded-full font-bold text-xs shrink-0 transition-all active:scale-90 ${
                   selectedChip === val
-                    ? 'bg-violet-600 text-white ring-2 ring-violet-400 ring-offset-1 ring-offset-site-bg'
-                    : 'bg-site-surface border-2 border-site-border text-site-text hover:border-violet-500/50'
+                    ? 'bg-site-accent text-site-accent-fg ring-2 ring-site-accent ring-offset-1 ring-offset-site-bg'
+                    : 'bg-site-surface border-2 border-site-border text-site-text hover:border-site-accent/50'
                 } disabled:opacity-30 disabled:cursor-not-allowed`}
               >
                 {val}
               </button>
             ))}
           </div>
-          <p className="text-[11px] text-site-text-dim text-center">Place your bets on the board above</p>
+          <p className="text-[11px] text-site-text-dim text-center">{t("place-bets-hint", { defaultValue: "Place your bets on the board above" })}</p>
         </div>
 
         {/* Quick bet buttons — 3 columns on mobile, 6 on desktop */}
         <div className="flex flex-col gap-1">
-          <span className="text-xs text-site-text-dim text-center">Quick bets</span>
+          <span className="text-xs text-site-text-dim text-center">{t("quick-bets", { defaultValue: "Quick bets" })}</span>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
             {QUICK_BETS.map(({ type, label, color }) => (
               <button
@@ -155,10 +158,10 @@ export function RouletteControls({ coins }: Props) {
         {stagedBets.length > 0 && (
           <div className="flex flex-col gap-1.5 p-2.5 rounded-xl bg-site-surface border border-site-border">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-site-text-dim">Your bets</span>
+              <span className="text-xs text-site-text-dim">{t("your-bets", { defaultValue: "Your bets" })}</span>
               <div className="flex items-center gap-1">
                 <CoinIcon className="w-3.5 h-3.5" />
-                <span className="text-sm font-bold text-violet-400">{totalBet}</span>
+                <span className="text-sm font-bold text-yellow-500">{totalBet}</span>
               </div>
             </div>
             {stagedBets.length > 0 && (
@@ -166,7 +169,7 @@ export function RouletteControls({ coins }: Props) {
                 {stagedBets.map((bet, i) => (
                   <span
                     key={i}
-                    className="inline-flex items-center gap-0.5 text-[10px] bg-violet-600/20 text-violet-300 rounded-full px-1.5 py-0.5"
+                    className="inline-flex items-center gap-0.5 text-[10px] bg-site-accent-dim text-site-accent rounded-full px-1.5 py-0.5"
                   >
                     {bet.type === 'straight' ? `#${numberLabel(bet.numbers[0])}` : bet.type}: {bet.amount}
                   </span>
@@ -178,7 +181,7 @@ export function RouletteControls({ coins }: Props) {
               variant="outline"
               className="w-full min-h-10 text-xs rounded-xl"
             >
-              Clear All Bets
+              {t("clear-all-bets", { defaultValue: "Clear All Bets" })}
             </Button>
           </div>
         )}
@@ -194,8 +197,8 @@ export function RouletteControls({ coins }: Props) {
   if (tablePhase === 'spinning') {
     return (
       <div className="text-center text-site-text-dim py-4">
-        <p className="text-sm font-bold text-violet-400 animate-pulse">
-          No more bets! Spinning...
+        <p className="text-sm font-bold text-site-accent animate-pulse">
+          {t("no-more-bets-spinning", { defaultValue: "No more bets! Spinning..." })}
         </p>
       </div>
     );
@@ -211,7 +214,7 @@ export function RouletteControls({ coins }: Props) {
         {/* Winning number */}
         {spinResult !== null && (
           <div className="flex flex-col items-center gap-1">
-            <span className="text-xs text-site-text-dim uppercase tracking-wider">Winning Number</span>
+            <span className="text-xs text-site-text-dim uppercase tracking-wider">{t("winning-number", { defaultValue: "Winning Number" })}</span>
             <div
               className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-xl sm:text-2xl font-bold text-white shadow-lg ${
                 resultColor === 'red' ? 'bg-red-600'
@@ -229,23 +232,23 @@ export function RouletteControls({ coins }: Props) {
           <div className="text-center">
             {myPayout.netGain > 0 ? (
               <>
-                <p className="text-lg font-bold text-emerald-400">You win!</p>
+                <p className="text-lg font-bold text-site-success">{t("you-win", { defaultValue: "You win!" })}</p>
                 <div className="flex items-center justify-center gap-1 mt-1">
                   <CoinIcon className="w-4 h-4" />
-                  <span className="text-sm text-site-text-dim">+{myPayout.payout} coins</span>
+                  <span className="text-sm text-site-text-dim">+{myPayout.payout} {t("coins", { defaultValue: "coins" })}</span>
                 </div>
               </>
             ) : myPayout.netGain === 0 ? (
-              <p className="text-lg font-bold text-blue-400">Push</p>
+              <p className="text-lg font-bold text-blue-400">{t("push", { defaultValue: "Push" })}</p>
             ) : (
-              <p className="text-lg font-bold text-red-400">Better luck next time</p>
+              <p className="text-lg font-bold text-site-danger">{t("better-luck-next-time", { defaultValue: "Better luck next time" })}</p>
             )}
           </div>
         ) : totalBet > 0 ? (
-          <p className="text-sm text-red-400">No wins this round</p>
+          <p className="text-sm text-site-danger">{t("no-wins-this-round", { defaultValue: "No wins this round" })}</p>
         ) : null}
 
-        <p className="text-xs text-site-text-dim">Next round starting soon...</p>
+        <p className="text-xs text-site-text-dim">{t("next-round-starting-soon", { defaultValue: "Next round starting soon..." })}</p>
       </div>
     );
   }
@@ -253,7 +256,7 @@ export function RouletteControls({ coins }: Props) {
   // Fallback
   return (
     <div className="text-center text-site-text-dim py-4">
-      <p className="text-sm animate-pulse">Loading...</p>
+      <p className="text-sm animate-pulse">{t("loading", { defaultValue: "Loading..." })}</p>
     </div>
   );
 }

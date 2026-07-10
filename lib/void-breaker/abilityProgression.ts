@@ -7,7 +7,6 @@ export type AbilityId =
     | 'dash' | 'focus'           // base
     | 'void_pulse'               // wave 8
     | 'phase_shift'              // wave 15
-    | 'area_burst'               // wave 22
     | 'reflect_shield'           // wave 30
     | 'ally_synergy';            // wave 35
 
@@ -25,7 +24,6 @@ export const ABILITY_UNLOCK_CONFIGS: AbilityUnlockConfig[] = [
     { id: 'focus', wave: 1, name: 'Focus', description: 'Slow time. Bonus shards on kills.', keybind: 'F' },
     { id: 'void_pulse', wave: 8, name: 'Void Pulse', description: 'Emit an energy burst. Clears nearby projectiles.', keybind: 'Q' },
     { id: 'phase_shift', wave: 15, name: 'Phase Shift', description: 'Brief full invincibility. The shards protect you.', keybind: 'E' },
-    { id: 'area_burst', wave: 22, name: 'Area Burst', description: 'Upgraded Void Burst — larger radius, more damage.', keybind: 'Space' },
     { id: 'reflect_shield', wave: 30, name: 'Reflect Shield', description: 'Reflect projectiles for 1.5 seconds.', keybind: 'R' },
     { id: 'ally_synergy', wave: 35, name: 'Ally Synergy', description: "Friend's shots deal double damage for 8 seconds.", keybind: 'T' },
 ];
@@ -36,7 +34,6 @@ export const ABILITY_COOLDOWNS: Record<AbilityId, number> = {
     focus: 12,
     void_pulse: 8,
     phase_shift: 18,
-    area_burst: 1, // replaces space detonation — same key, just upgraded
     reflect_shield: 25,
     ally_synergy: 30,
 };
@@ -47,7 +44,6 @@ export const ABILITY_DURATIONS: Record<AbilityId, number> = {
     focus: 2.5,
     void_pulse: 0,   // instant
     phase_shift: 1.8,
-    area_burst: 0,   // instant
     reflect_shield: 1.5,
     ally_synergy: 8,
 };

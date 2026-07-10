@@ -4,39 +4,38 @@ import { Link } from '@tanstack/react-router';
 import { Heart, MessageCircle, Eye, ExternalLink, Github, Award } from 'lucide-react';
 import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
-import { OptimizedImage } from '@/components/ui/OptimizedImage';
+import { BlurImage } from '@/components/ui/BlurImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useCardSheen } from '@/hooks/useCardSheen';
+import { formatCount } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 interface BuildCardProps {
   build: Build;
   onLike?: (id: string) => void;
 }
 
-function formatCount(count: number): string {
-  if (count >= 1000000) return `${(count / 1000000).toFixed(1)}M`;
-  if (count >= 1000) return `${(count / 1000).toFixed(1)}K`;
-  return String(count);
-}
+type TFunc = (key: string, opts: { defaultValue: string; count?: number }) => string;
 
-function timeAgo(dateStr: string): string {
+function timeAgo(dateStr: string, t: TFunc): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const seconds = Math.floor((now - then) / 1000);
 
-  if (seconds < 60) return 'just now';
+  if (seconds < 60) return t('just-now', { defaultValue: 'just now' });
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
+  if (minutes < 60) return t('minutes-ago', { defaultValue: '{{count}}m ago', count: minutes }).replace('{{count}}', String(minutes));
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return t('hours-ago', { defaultValue: '{{count}}h ago', count: hours }).replace('{{count}}', String(hours));
   const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return t('days-ago', { defaultValue: '{{count}}d ago', count: days }).replace('{{count}}', String(days));
   const months = Math.floor(days / 30);
-  if (months < 12) return `${months}mo ago`;
-  return `${Math.floor(months / 12)}y ago`;
+  if (months < 12) return t('months-ago', { defaultValue: '{{count}}mo ago', count: months }).replace('{{count}}', String(months));
+  return t('years-ago', { defaultValue: '{{count}}y ago', count: Math.floor(months / 12) }).replace('{{count}}', String(Math.floor(months / 12)));
 }
 
 export function BuildCard({ build, onLike }: BuildCardProps) {
+  const { t } = useTranslation("c-user-builds");
   const { cardRef, sheenStyle, handlers: sheenHandlers } = useCardSheen();
 
   const handleLike = async (e: React.MouseEvent) => {
@@ -52,32 +51,34 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
       {...sheenHandlers}
     >
       <Link to={`/user-builds/${build.slug}` as string} className="block h-full">
-        <div className="group relative rounded-xl border border-site-border bg-site-surface hover:border-violet-500/50 transition-all overflow-hidden flex flex-col h-full">
+        <div className="group relative rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden flex flex-col h-full">
           {/* Mouse-tracking sheen */}
-          <div style={sheenStyle} className="rounded-xl" />
+          <div style={sheenStyle} className="rounded-site" />
         {/* Thumbnail */}
         <div className="relative">
           {build.thumbnailUrl ? (
             <div className="aspect-video w-full overflow-hidden bg-site-bg">
-              <OptimizedImage
+              <BlurImage
                 src={build.thumbnailUrl}
                 alt={build.title}
+                fit="cover"
                 width={640}
-                height={360}
                 quality={75}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                sizes="(max-width: 640px) 100vw, 400px"
+                className="w-full h-full"
+                imgClassName="w-full h-full group-hover:scale-105 transition-transform duration-300"
               />
             </div>
           ) : (
             <div className="aspect-video w-full bg-gradient-to-br from-violet-500/20 to-fuchsia-600/20 flex items-center justify-center">
-              <div className="text-4xl font-bold text-violet-400/50">
+              <div className="text-4xl font-bold text-site-accent/50">
                 {build.title[0]?.toUpperCase()}
               </div>
             </div>
           )}
           {build.featured && (
-            <div className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 backdrop-blur-sm" title="Curated">
-              <Award className="w-4 h-4 text-amber-400" />
+            <div className="absolute top-2 right-2 p-1.5 rounded-site-sm bg-black/60 backdrop-blur-sm" title={t("curated", { defaultValue: "Curated" })}>
+              <Award className="w-4 h-4 text-site-warning" />
             </div>
           )}
         </div>
@@ -94,7 +95,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
           )}
 
           {/* Title */}
-          <h3 className="font-semibold text-site-text group-hover:text-violet-400 transition-colors line-clamp-1 mb-1">
+          <h3 className="font-semibold text-site-text group-hover:text-site-accent transition-colors line-clamp-1 mb-1">
             {build.title}
           </h3>
 
@@ -113,12 +114,12 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
           {/* Author & Meta */}
           <div className="flex items-center justify-between mt-auto">
             <div className="flex items-center gap-2 min-w-0">
-              <UserAvatar src={build.user.image ?? undefined} alt={build.user.name || 'User'} size={24} fallbackName={build.user.name ?? undefined} />
+              <UserAvatar src={build.user.image ?? undefined} alt={build.user.name || t("user", { defaultValue: "User" })} size={24} fallbackName={build.user.name ?? undefined} />
               <span className="text-sm text-site-text-muted truncate">
-                {build.user.name || 'Anonymous'}
+                {build.user.name || t("anonymous", { defaultValue: "Anonymous" })}
               </span>
               <span className="text-xs text-site-text-dim">
-                {timeAgo(build.publishedAt || build.createdAt)}
+                {timeAgo(build.publishedAt || build.createdAt, t)}
               </span>
             </div>
 
@@ -131,7 +132,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="hover:text-site-text transition-colors"
-                  title="View source"
+                  title={t("view-source", { defaultValue: "View source" })}
                 >
                   <Github className="w-4 h-4" />
                 </a>
@@ -143,7 +144,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
                   className="hover:text-site-text transition-colors"
-                  title="View demo"
+                  title={t("view-demo", { defaultValue: "View demo" })}
                 >
                   <ExternalLink className="w-4 h-4" />
                 </a>
@@ -156,13 +157,13 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
             <button
               onClick={handleLike}
               className={`flex items-center gap-1 transition-colors ${
-                build.liked ? 'text-red-400' : 'hover:text-red-400'
+                build.liked ? 'text-site-danger' : 'hover:text-site-danger'
               }`}
             >
               <Heart className={`w-4 h-4 ${build.liked ? 'fill-current' : ''}`} />
               {formatCount(build.likeCount)}
             </button>
-            <span className="flex items-center gap-1 hover:text-blue-400 transition-colors">
+            <span className="flex items-center gap-1 hover:text-site-accent transition-colors">
               <MessageCircle className="w-4 h-4" />
               {formatCount(build.commentCount)}
             </span>

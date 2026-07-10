@@ -1,12 +1,19 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { MapPin, Link as LinkIcon, Calendar, Loader2, ArrowLeft, MessageCircle, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { MapPin, Link as LinkIcon, Calendar, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
+import { TipDialog } from '@/components/economy/TipDialog';
+import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
+import { MobileMenuButton } from './MobileMenuButton';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { RMHarkCard } from './RMHarkCard';
+import { AchievementsColumn } from './AchievementsColumn';
+import { AchievementBadgeStrip } from './AchievementBadgeStrip';
 import { ProfileEditModal } from './ProfileEditModal';
 import { SocialListModal } from './SocialListModal';
 import { VinylRecord } from './VinylRecord';
@@ -14,7 +21,8 @@ import { Link } from '@tanstack/react-router';
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { useUserDisplayStore } from '@/stores/userDisplayStore';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
-import { ProfilePet } from '@/components/rmhcoins/ProfilePet';
+import { useOptimisticAction } from '@/hooks/useOptimisticAction';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 
 interface ProfileData {
   id: string;
@@ -43,22 +51,33 @@ interface ProfileData {
   handleCooldownMs?: number;
   hasCustomAvatar?: boolean;
   coins: number;
-  hasProfilePet: boolean;
-  showProfilePet: boolean;
+  isOnline?: boolean;
+  tipGoal?: number | null;
+  tipGoalLabel?: string | null;
+  tipsThisMonth?: number;
+  cosmetics?: {
+    nameColor?: { color?: string; gradient?: string };
+    avatarFrame?: { color?: string; gradient?: string };
+    badge?: { emoji?: string };
+    banner?: { gradient?: string };
+    pet?: { emoji?: string };
+    theme?: { id: string; accent?: string; accentHover?: string; accentFg?: string; accentDim?: string; gradient?: string };
+  };
 }
 
-type ProfileTab = 'rmharks' | 'likes';
+type ProfileTab = 'rmharks' | 'likes' | 'achievements';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
 
 function ProfileAvatar({ image, name }: { image: string | null; name: string | null }) {
+  const { t } = useTranslation('feed');
   const [imgError, setImgError] = useState(false);
   const imgSrc = imgError ? DEFAULT_AVATAR : image;
 
   return (
     <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-2xl ring-4 ring-site-bg shrink-0">
       {imgSrc ? (
-        <img src={imgSrc} alt={name || 'User'} className="w-full h-full rounded-full object-cover" onError={() => setImgError(true)} />
+        <img src={imgSrc} alt={name || t('user', { defaultValue: 'User' })} className="w-full h-full rounded-full object-cover" onError={() => setImgError(true)} />
       ) : (
         (name?.[0] || 'U').toUpperCase()
       )}
@@ -66,11 +85,27 @@ function ProfileAvatar({ image, name }: { image: string | null; name: string | n
   );
 }
 
-export function ProfileColumn({ userId }: { userId: string }) {
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [notFound, setNotFound] = useState(false);
+export function ProfileColumn({
+  userId,
+  initialProfile,
+}: {
+  userId: string;
+  /**
+   * Profile prefetched by the route loader. `undefined` = no loader (fall back
+   * to the client fetch); `null` = loader ran and the user wasn't found.
+   */
+  initialProfile?: ProfileData | null;
+}) {
+  // Seed from the route loader when present so the profile paints immediately.
+  // `undefined` initialProfile means no loader supplied one → client fetch.
+  const seeded = useRef(initialProfile !== undefined);
+  const [profile, setProfile] = useState<ProfileData | null>(initialProfile ?? null);
+  const { run: runFollow } = useOptimisticAction();
+  const [loading, setLoading] = useState(initialProfile === undefined);
+  const [notFound, setNotFound] = useState(initialProfile === null);
   const [showEdit, setShowEdit] = useState(false);
+  const [tipOpen, setTipOpen] = useState(false);
+  const [giftOpen, setGiftOpen] = useState(false);
   const [tab, setTab] = useState<ProfileTab>('rmharks');
   const [socialModal, setSocialModal] = useState<'followers' | 'following' | null>(null);
   const { refresh: refreshResolvedUser } = useResolvedUser();
@@ -103,6 +138,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   const controllerRef = useRef<any>(null);
   const scriptLoadedRef = useRef(false);
 
+  const { t } = useTranslation('feed');
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   const [messageSending, setMessageSending] = useState(false);
@@ -110,6 +146,19 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
   // Fetch profile
   useEffect(() => {
+    // Loader already provided this profile — prime the display cache from it and
+    // skip the redundant client fetch. (The component is remounted via `key` on
+    // profile→profile navigation, so `seeded`/`initialProfile` are always fresh.)
+    if (seeded.current) {
+      if (initialProfile) {
+        useUserDisplayStore.getState().setUsers([{
+          id: initialProfile.id, name: initialProfile.name, image: initialProfile.image,
+          username: initialProfile.username, handle: initialProfile.handle,
+          isVerified: initialProfile.isVerified, isAdmin: initialProfile.isAdmin,
+        }]);
+      }
+      return;
+    }
     setLoading(true);
     setNotFound(false);
     fetch(`/api/profile/${encodeURIComponent(userId)}`)
@@ -129,6 +178,24 @@ export function ProfileColumn({ userId }: { userId: string }) {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
+  }, [userId]);
+
+  // Reset per-profile post state when navigating to a different profile. The
+  // ProfileColumn instance is reused across /u/$userid routes, so without this
+  // the previous user's RMHarks/likes (and the "already fetched" refs) linger
+  // until a full page refresh.
+  useEffect(() => {
+    setItems([]);
+    setCursor(null);
+    setHasMore(true);
+    setLoadingItems(false);
+    initialFetched.current = false;
+    setLikedItems([]);
+    setLikedCursor(null);
+    setLikedHasMore(true);
+    setLoadingLiked(false);
+    likedInitialFetched.current = false;
+    setTab('rmharks');
   }, [userId]);
 
   // Spotify IFrame API — load script & create controller for profile song
@@ -289,34 +356,24 @@ export function ProfileColumn({ userId }: { userId: string }) {
   }, [likedObserverCallback, tab]);
 
   // Follow toggle
-  const handleFollowToggle = async () => {
+  const handleFollowToggle = () => {
     if (!profile || !session) return;
     const wasFollowing = profile.isFollowing;
-
-    setProfile((prev) =>
-      prev
-        ? {
-            ...prev,
-            isFollowing: !wasFollowing,
-            followerCount: prev.followerCount + (wasFollowing ? -1 : 1),
-          }
-        : prev
-    );
-
-    try {
-      const res = await fetch(`/api/profile/${encodeURIComponent(userId)}/follow`, {
-        method: 'POST',
-      });
-      if (!res.ok) {
+    runFollow({
+      apply: () =>
         setProfile((prev) =>
-          prev ? { ...prev, isFollowing: wasFollowing, followerCount: prev.followerCount + (wasFollowing ? 1 : -1) } : prev
-        );
-      }
-    } catch {
-      setProfile((prev) =>
-        prev ? { ...prev, isFollowing: wasFollowing, followerCount: prev.followerCount + (wasFollowing ? 1 : -1) } : prev
-      );
-    }
+          prev
+            ? { ...prev, isFollowing: !wasFollowing, followerCount: prev.followerCount + (wasFollowing ? -1 : 1) }
+            : prev
+        ),
+      rollback: () =>
+        setProfile((prev) =>
+          prev
+            ? { ...prev, isFollowing: wasFollowing, followerCount: prev.followerCount + (wasFollowing ? 1 : -1) }
+            : prev
+        ),
+      commit: () => fetch(`/api/profile/${encodeURIComponent(userId)}/follow`, { method: 'POST' }),
+    });
   };
 
   const handleMessage = async () => {
@@ -333,14 +390,14 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
       if (!res.ok) {
         const data = await res.json();
-        setMessageError(data.error || 'Failed to start conversation');
+        setMessageError(data.error || t('failed-to-start-conversation', { defaultValue: 'Failed to start conversation' }));
         return;
       }
 
       const data = await res.json();
       navigate({ to: `/messages/${data.conversationId}` });
     } catch {
-      setMessageError('Failed to start conversation');
+      setMessageError(t('failed-to-start-conversation', { defaultValue: 'Failed to start conversation' }));
     } finally {
       setMessageSending(false);
     }
@@ -362,7 +419,7 @@ export function ProfileColumn({ userId }: { userId: string }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+        <Spinner size={32} />
       </div>
     );
   }
@@ -370,12 +427,12 @@ export function ProfileColumn({ userId }: { userId: string }) {
   if (notFound || !profile) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-lg font-medium text-site-text mb-1">User not found</p>
+        <p className="text-lg font-medium text-site-text mb-1">{t('user-not-found', { defaultValue: 'User not found' })}</p>
         <p className="text-sm text-site-text-muted mb-4">
-          This user doesn&apos;t exist.
+          {t('user-not-found-desc', { defaultValue: "This user doesn't exist." })}
         </p>
         <Link to="/">
-          <Button variant="accent" size="sm">Go Home</Button>
+          <Button variant="accent" size="sm">{t('go-home', { defaultValue: 'Go Home' })}</Button>
         </Link>
       </div>
     );
@@ -383,22 +440,34 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
   const showLikesTab = profile.isOwnProfile || profile.showLikes;
 
+  // An equipped premium theme recolors this profile by overriding the accent CSS
+  // variables for the column's subtree (follow button, links, name, tab indicator,
+  // badges). Its gradient also backs the profile header when no banner is equipped.
+  const theme = profile.cosmetics?.theme;
+  const themeStyle = theme
+    ? ({
+        ...(theme.accent ? { '--site-accent': theme.accent } : {}),
+        ...(theme.accentHover ? { '--site-accent-hover': theme.accentHover } : {}),
+        ...(theme.accentFg ? { '--site-accent-fg': theme.accentFg } : {}),
+        ...(theme.accentDim ? { '--site-accent-dim': theme.accentDim } : {}),
+      } as React.CSSProperties)
+    : undefined;
+  const headerBackdrop = profile.cosmetics?.banner?.gradient ?? theme?.gradient;
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col" style={themeStyle}>
       {/* Header bar */}
       <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link to="/" className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors">
-            <ArrowLeft className="w-5 h-5 text-site-text" />
-          </Link>
+          <MobileMenuButton />
           <div>
             <div className="flex items-center gap-1">
               <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text truncate">
                 {displayName || profile.username || 'User'}
               </h1>
-              {profile.isVerified && <BadgeCheck className="w-4 h-4 text-emerald-500 shrink-0" />}
+              {profile.isVerified && <BadgeCheck className="w-4 h-4 text-site-success shrink-0" />}
               {profile.isAdmin && (
-                <span title="Admin" className="inline-flex items-center shrink-0">
+                <span title={t('admin', { defaultValue: 'Admin' })} className="inline-flex items-center shrink-0">
                   <ShieldCheck className="w-4 h-4 text-site-accent" />
                 </span>
               )}
@@ -410,25 +479,48 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
       {/* Profile header */}
       <div className="px-4 pt-6 pb-4 border-b border-site-border">
-        <div className="flex items-start justify-between mb-4">
-          <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
-
-          {/* Profile Pet banner between avatar and vinyl */}
-          {profile.hasProfilePet && profile.showProfilePet && (
-            <div className="flex-1 mx-3 self-stretch">
-              <ProfilePet />
-            </div>
-          )}
-
-          {profile.profileSongSpotifyId && profile.profileSongAlbumArt && (
-            <VinylRecord
-              albumArt={profile.profileSongAlbumArt}
-              title={profile.profileSongTitle ?? 'Unknown'}
-              artist={profile.profileSongArtist ?? 'Unknown'}
-              isPlaying={isPlaying}
-              onToggle={handleTogglePlay}
+        {/* The equipped banner sits behind the avatar + song row and spans the
+            full profile width (full-bleed past the header padding) — filling the
+            area the old profile pet used to occupy. */}
+        <div className="relative mb-12">
+          {headerBackdrop && (
+            <div
+              className="absolute inset-x-[-16px] top-[-24px] bottom-[-24px]"
+              style={{ background: headerBackdrop }}
+              aria-hidden
             />
           )}
+          <div className="relative flex items-start justify-between">
+            <div className="relative shrink-0">
+              {profile.cosmetics?.avatarFrame ? (
+                <div
+                  className="rounded-full p-[3px]"
+                  style={{ background: profile.cosmetics.avatarFrame.gradient ?? profile.cosmetics.avatarFrame.color }}
+                >
+                  <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
+                </div>
+              ) : (
+                <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
+              )}
+              {profile.isOnline && (
+                <span
+                  className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-site-bg bg-site-success"
+                  title={t('online-now', { defaultValue: 'Online now' })}
+                  aria-label={t('online-now', { defaultValue: 'Online now' })}
+                />
+              )}
+            </div>
+
+            {profile.profileSongSpotifyId && profile.profileSongAlbumArt && (
+              <VinylRecord
+                albumArt={profile.profileSongAlbumArt}
+                title={profile.profileSongTitle ?? 'Unknown'}
+                artist={profile.profileSongArtist ?? 'Unknown'}
+                isPlaying={isPlaying}
+                onToggle={handleTogglePlay}
+              />
+            )}
+          </div>
         </div>
 
         {messageError && (
@@ -438,21 +530,35 @@ export function ProfileColumn({ userId }: { userId: string }) {
         <div className="flex items-start justify-between mb-3">
           <div>
             <div className="flex items-center gap-1.5 align-middle">
-              <h2 className="font-bold text-xl text-site-text truncate">{displayName || 'Unknown'}</h2>
-              {profile.isVerified && <BadgeCheck className="w-5 h-5 text-emerald-500 shrink-0" />}
+              <h2
+                className="font-bold text-xl text-site-text truncate"
+                style={
+                  profile.cosmetics?.nameColor?.gradient
+                    ? { background: profile.cosmetics.nameColor.gradient, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
+                    : profile.cosmetics?.nameColor?.color
+                    ? { color: profile.cosmetics.nameColor.color }
+                    : undefined
+                }
+              >
+                {displayName || 'Unknown'}
+              </h2>
+              {profile.cosmetics?.badge?.emoji && (
+                <span className="shrink-0 text-lg" title={t('equipped-badge', { defaultValue: 'Equipped badge' })}>{profile.cosmetics.badge.emoji}</span>
+              )}
+              {profile.isVerified && <BadgeCheck className="w-5 h-5 text-site-success shrink-0" />}
               {profile.isAdmin && (
-                <span title="Admin" className="inline-flex items-center shrink-0">
+                <span title={t('admin', { defaultValue: 'Admin' })} className="inline-flex items-center shrink-0">
                   <ShieldCheck className="w-5 h-5 text-site-accent" />
                 </span>
               )}
               {/* RMH Coins */}
               <Link
-                to="/wallet"
+                to="/predictions"
                 className="inline-flex items-center gap-0.5 shrink-0 hover:opacity-80 transition-opacity"
-                title={`${profile.coins} RMH Coins`}
+                title={t('rmh-coins-count', { count: profile.coins, defaultValue: '{{count}} RMH Coins' })}
               >
                 <CoinIcon className="w-4 h-4" />
-                <span className="text-sm font-bold text-yellow-500">{profile.coins}</span>
+                <AnimatedCount value={profile.coins} format={(n) => n.toLocaleString()} className="text-sm font-bold text-site-warning" />
               </Link>
             </div>
             {profile.handle && (
@@ -460,24 +566,54 @@ export function ProfileColumn({ userId }: { userId: string }) {
             )}
           </div>
           <div className="flex items-center gap-2">
+            <Link to={`/store/${profile.handle || profile.id}` as string} title={t('storefront', { defaultValue: 'Storefront' })} aria-label={t('storefront', { defaultValue: 'Storefront' })}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
+              >
+                <Store className="w-4 h-4" />
+              </Button>
+            </Link>
             {profile.isOwnProfile ? (
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => setShowEdit(true)}
-                className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
+                className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
               >
-                Edit Profile
+                {t('edit-profile', { defaultValue: 'Edit Profile' })}
               </Button>
             ) : session ? (
               <>
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setTipOpen(true)}
+                  className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
+                  title={t('send-a-tip', { defaultValue: 'Send a tip' })}
+                  aria-label={t('send-a-tip', { defaultValue: 'Send a tip' })}
+                >
+                  <Coins className="w-4 h-4 text-site-warning" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setGiftOpen(true)}
+                  className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
+                  title={t('gift-a-membership', { defaultValue: 'Gift a membership' })}
+                  aria-label={t('gift-a-membership', { defaultValue: 'Gift a membership' })}
+                >
+                  <Gift className="w-4 h-4 text-site-accent" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleMessage}
                   disabled={messageSending}
-                  className="rounded-lg border-site-border text-site-text hover:bg-site-surface"
-                  title="Message"
+                  className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
+                  title={t('message', { defaultValue: 'Message' })}
+                  aria-label={t('message', { defaultValue: 'Message' })}
                 >
                   <MessageCircle className="w-4 h-4" />
                 </Button>
@@ -485,9 +621,10 @@ export function ProfileColumn({ userId }: { userId: string }) {
                   variant={profile.isFollowing ? 'outline' : 'accent'}
                   size="sm"
                   onClick={handleFollowToggle}
-                  className={`rounded-lg ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
+                  aria-pressed={profile.isFollowing}
+                  className={`rounded-site-sm active:scale-95 ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
                 >
-                  {profile.isFollowing ? 'Following' : 'Follow'}
+                  {profile.isFollowing ? t('following', { defaultValue: 'Following' }) : t('follow', { defaultValue: 'Follow' })}
                 </Button>
               </>
             ) : null}
@@ -498,6 +635,26 @@ export function ProfileColumn({ userId }: { userId: string }) {
           <p className="text-site-text text-[15px] whitespace-pre-wrap break-words mb-3">
             {profile.bio}
           </p>
+        )}
+
+        {/* Creator tip goal */}
+        {profile.tipGoal && profile.tipGoal > 0 && (
+          <div className="mb-3 rounded-site border border-site-border bg-site-surface p-3">
+            <div className="mb-1 flex items-center justify-between text-sm">
+              <span className="inline-flex items-center gap-1.5 font-medium text-site-text">
+                <CoinIcon className="h-4 w-4" /> {profile.tipGoalLabel || t('tip-goal', { defaultValue: 'Tip goal' })}
+              </span>
+              <span className="text-site-text-muted">
+                {(profile.tipsThisMonth ?? 0).toLocaleString()} / {profile.tipGoal.toLocaleString()}
+              </span>
+            </div>
+            <div className="h-2 w-full overflow-hidden rounded-full bg-site-bg">
+              <div
+                className="h-full rounded-full bg-site-warning transition-all"
+                style={{ width: `${Math.min(100, ((profile.tipsThisMonth ?? 0) / profile.tipGoal) * 100)}%` }}
+              />
+            </div>
+          </div>
         )}
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-site-text-dim mb-3">
@@ -520,24 +677,27 @@ export function ProfileColumn({ userId }: { userId: string }) {
           )}
           <span className="flex items-center gap-1">
             <Calendar className="w-4 h-4" />
-            Joined {formatDate(profile.createdAt)}
+            {t('joined-date', { date: formatDate(profile.createdAt), defaultValue: 'Joined {{date}}' })}
           </span>
         </div>
+
+        {/* Best unlocked badges — links to the Achievements tab */}
+        <AchievementBadgeStrip userId={profile.id} onShowAll={() => handleTabChange('achievements')} />
 
         <div className="flex items-center gap-4 text-sm">
           <button
             onClick={() => setSocialModal('following')}
-            className="hover:underline text-left"
+            className="hover:underline text-left transition-transform active:scale-95"
           >
-            <span className="font-bold text-site-text">{profile.followingCount}</span>{' '}
-            <span className="text-site-text-dim">Following</span>
+            <AnimatedCount value={profile.followingCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
+            <span className="text-site-text-dim">{t('following-label', { defaultValue: 'Following' })}</span>
           </button>
           <button
             onClick={() => setSocialModal('followers')}
-            className="hover:underline text-left"
+            className="hover:underline text-left transition-transform active:scale-95"
           >
-            <span className="font-bold text-site-text">{profile.followerCount}</span>{' '}
-            <span className="text-site-text-dim">Followers</span>
+            <AnimatedCount value={profile.followerCount} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
+            <span className="text-site-text-dim">{t('followers-label', { defaultValue: 'Followers' })}</span>
           </button>
         </div>
 
@@ -556,26 +716,57 @@ export function ProfileColumn({ userId }: { userId: string }) {
         <div className="flex">
           <button
             onClick={() => handleTabChange('rmharks')}
-            className={`flex-1 py-3 text-center text-sm font-bold transition-colors ${
+            aria-pressed={tab === 'rmharks'}
+            className={`relative flex-1 py-3 text-center text-sm font-bold transition-colors duration-150 ${
               tab === 'rmharks'
-                ? 'text-site-accent border-b-2 border-site-accent'
+                ? 'text-site-accent'
                 : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
             }`}
           >
             RMHarks
+            <span
+              aria-hidden
+              className={`pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-center bg-site-accent transition-transform duration-150 ${
+                tab === 'rmharks' ? 'scale-x-100' : 'scale-x-0'
+              }`}
+            />
           </button>
           {showLikesTab && (
             <button
               onClick={() => handleTabChange('likes')}
-              className={`flex-1 py-3 text-center text-sm font-bold transition-colors ${
+              aria-pressed={tab === 'likes'}
+              className={`relative flex-1 py-3 text-center text-sm font-bold transition-colors duration-150 ${
                 tab === 'likes'
-                  ? 'text-site-accent border-b-2 border-site-accent'
+                  ? 'text-site-accent'
                   : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
               }`}
             >
-              Likes
+              {t('likes', { defaultValue: 'Likes' })}
+              <span
+                aria-hidden
+                className={`pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-center bg-site-accent transition-transform duration-150 ${
+                  tab === 'likes' ? 'scale-x-100' : 'scale-x-0'
+                }`}
+              />
             </button>
           )}
+          <button
+            onClick={() => handleTabChange('achievements')}
+            aria-pressed={tab === 'achievements'}
+            className={`relative flex-1 py-3 text-center text-sm font-bold transition-colors duration-150 ${
+              tab === 'achievements'
+                ? 'text-site-accent'
+                : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
+            }`}
+          >
+            {t('achievements', { defaultValue: 'Achievements' })}
+            <span
+              aria-hidden
+              className={`pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-center bg-site-accent transition-transform duration-150 ${
+                tab === 'achievements' ? 'scale-x-100' : 'scale-x-0'
+              }`}
+            />
+          </button>
         </div>
       </div>
 
@@ -588,24 +779,24 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
           {loadingItems && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+              <Spinner />
             </div>
           )}
 
           {!loadingItems && items.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-              <p className="text-lg font-medium text-site-text mb-1">No RMHarks yet</p>
+              <p className="text-lg font-medium text-site-text mb-1">{t('no-rmharks-yet', { defaultValue: 'No RMHarks yet' })}</p>
               <p className="text-sm text-site-text-muted">
                 {profile.isOwnProfile
-                  ? "You haven't posted any RMHarks yet."
-                  : `@${profile.handle} hasn't posted any RMHarks yet.`}
+                  ? t('no-rmharks-own', { defaultValue: "You haven't posted any RMHarks yet." })
+                  : t('no-rmharks-other', { handle: profile.handle, defaultValue: "@{{handle}} hasn't posted any RMHarks yet." })}
               </p>
             </div>
           )}
 
           {!hasMore && items.length > 0 && (
             <div className="py-8 text-center text-sm text-site-text-dim">
-              You&apos;ve reached the end
+              {t('reached-the-end', { defaultValue: "You've reached the end" })}
             </div>
           )}
 
@@ -622,29 +813,58 @@ export function ProfileColumn({ userId }: { userId: string }) {
 
           {loadingLiked && (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+              <Spinner />
             </div>
           )}
 
           {!loadingLiked && likedItems.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-              <p className="text-lg font-medium text-site-text mb-1">No likes yet</p>
+              <p className="text-lg font-medium text-site-text mb-1">{t('no-likes-yet', { defaultValue: 'No likes yet' })}</p>
               <p className="text-sm text-site-text-muted">
                 {profile.isOwnProfile
-                  ? "You haven't liked any posts yet."
-                  : `@${profile.handle} hasn't liked any posts yet.`}
+                  ? t('no-likes-own', { defaultValue: "You haven't liked any posts yet." })
+                  : t('no-likes-other', { handle: profile.handle, defaultValue: "@{{handle}} hasn't liked any posts yet." })}
               </p>
             </div>
           )}
 
           {!likedHasMore && likedItems.length > 0 && (
             <div className="py-8 text-center text-sm text-site-text-dim">
-              You&apos;ve reached the end
+              {t('reached-the-end', { defaultValue: "You've reached the end" })}
             </div>
           )}
 
           <div ref={likedSentinelRef} className="h-1" />
         </div>
+      )}
+
+      {/* Achievements tab content — AchievementsColumn self-fetches (public API) */}
+      {tab === 'achievements' && (
+        <div className="p-4">
+          <AchievementsColumn userId={profile.id} hideHeader />
+        </div>
+      )}
+
+      {/* Tip dialog (non-owner) */}
+      {profile && !profile.isOwnProfile && (
+        <TipDialog
+          open={tipOpen}
+          onOpenChange={setTipOpen}
+          recipientId={profile.id}
+          recipientName={displayName ?? profile.name}
+          entityType="profile"
+          entityId={profile.id}
+        />
+      )}
+
+      {/* Gift membership dialog (non-owner) */}
+      {profile && !profile.isOwnProfile && (
+        <GiftSubDialog
+          open={giftOpen}
+          onOpenChange={setGiftOpen}
+          recipientId={profile.id}
+          recipientName={displayName ?? profile.name}
+        />
       )}
 
       {/* Edit modal */}
@@ -663,8 +883,8 @@ export function ProfileColumn({ userId }: { userId: string }) {
             website: profile.website,
             showLikes: profile.showLikes,
             dmPrivacy: profile.dmPrivacy,
-            hasProfilePet: profile.hasProfilePet,
-            showProfilePet: profile.showProfilePet,
+            tipGoal: profile.tipGoal,
+            tipGoalLabel: profile.tipGoalLabel,
             profileSongSpotifyId: profile.profileSongSpotifyId,
             profileSongTitle: profile.profileSongTitle,
             profileSongArtist: profile.profileSongArtist,
@@ -679,7 +899,6 @@ export function ProfileColumn({ userId }: { userId: string }) {
                 ...(data.displayName !== undefined ? { name: data.displayName } : {}),
                 ...(data.image !== undefined ? { image: data.image, hasCustomAvatar: !!data.image?.startsWith('/api/profile/avatar/') } : {}),
                 ...(data.handle !== undefined ? { handle: data.handle } : {}),
-                ...(data.showProfilePet !== undefined ? { showProfilePet: data.showProfilePet } : {}),
                 bio: data.bio,
                 location: data.location,
                 website: data.website,

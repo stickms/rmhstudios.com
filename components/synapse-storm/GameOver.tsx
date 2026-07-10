@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { GameState } from '../../lib/synapse-storm/types';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
 
@@ -12,6 +13,7 @@ interface GameOverProps {
 }
 
 export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, currentUserId, scoreSaved }) => {
+    const { t } = useTranslation("c-synapse-storm");
     const accuracy = state.puzzlesSolved > 0
         ? Math.round((state.puzzlesSolved / (state.puzzlesSolved + state.puzzlesMissed)) * 100)
         : 0;
@@ -24,35 +26,35 @@ export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, cu
 
             <div className="go-content">
                 <h2 className="hud-label" style={{ fontSize: '1.2rem', color: 'var(--accent-red)' }}>
-                    NEURAL COLLAPSE
+                    {t("neural-collapse", { defaultValue: "NEURAL COLLAPSE" })}
                 </h2>
 
                 <div className="go-final-score">{state.score.toLocaleString()}</div>
-                <p className="menu-tagline">Final Neural Efficiency Rating: <span style={{ color: 'var(--accent-cyan)', fontWeight: 800 }}>{rank}</span></p>
+                <p className="menu-tagline">{t("final-rating-prefix", { defaultValue: "Final Neural Efficiency Rating:" })} <span style={{ color: 'var(--accent-cyan)', fontWeight: 800 }}>{rank}</span></p>
 
                 <div className="go-stats-grid">
                     <div className="go-stat">
-                        <span className="hud-label">Solved</span>
+                        <span className="hud-label">{t("stat-solved", { defaultValue: "Solved" })}</span>
                         <div className="hud-value">{state.puzzlesSolved}</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">Max Combo</span>
+                        <span className="hud-label">{t("stat-max-combo", { defaultValue: "Max Combo" })}</span>
                         <div className="hud-value">{state.maxCombo}</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">Accuracy</span>
+                        <span className="hud-label">{t("stat-accuracy", { defaultValue: "Accuracy" })}</span>
                         <div className="hud-value">{accuracy}%</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">Survival</span>
+                        <span className="hud-label">{t("stat-survival", { defaultValue: "Survival" })}</span>
                         <div className="hud-value">{Math.floor(state.totalTime)}s</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">Peak Intensity</span>
+                        <span className="hud-label">{t("stat-peak-intensity", { defaultValue: "Peak Intensity" })}</span>
                         <div className="hud-value">{state.difficulty.toFixed(1)}</div>
                     </div>
                     <div className="go-stat">
-                        <span className="hud-label">New Best?</span>
+                        <span className="hud-label">{t("stat-new-best", { defaultValue: "New Best?" })}</span>
                         <div className="hud-value" style={{ color: 'var(--accent-gold)' }}>--</div>
                     </div>
                 </div>
@@ -66,10 +68,10 @@ export const GameOver: React.FC<GameOverProps> = ({ state, onRestart, onMenu, cu
 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', marginTop: '1rem' }}>
                     <button className="go-button go-restart" onClick={onRestart}>
-                        REBOOT NEURAL LINK
+                        {t("reboot-neural-link", { defaultValue: "REBOOT NEURAL LINK" })}
                     </button>
                     <button className="go-button" style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-secondary)' }} onClick={onMenu}>
-                        RETURN TO HUB
+                        {t("return-to-hub", { defaultValue: "RETURN TO HUB" })}
                     </button>
                 </div>
             </div>

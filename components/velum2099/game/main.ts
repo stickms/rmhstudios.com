@@ -7,12 +7,15 @@
 
 import { Terminal } from './terminal/Terminal';
 import { GameSettings } from './settings/GameSettings';
+import { GameHud } from './ui/GameHud';
+import { MobileControls } from './ui/MobileControls';
+import { Minimap } from './ui/Minimap';
 
 // Heavy simulation modules — lazy-loaded on first simulation start
-let CyberpunkScene, Vehicle, Segmenter, DataCollector, Exporter, TextureManager, LiveStreamClient, LofiRadio, EngineSound;
+let CyberpunkScene, Vehicle, Segmenter, DataCollector, Exporter, TextureManager, LiveStreamClient, LofiRadio, EngineSound, MissionManager, Weapon;
 async function loadSimModules() {
     if (CyberpunkScene) return; // already loaded
-    const [scene, vehicle, seg, dc, exp, tm, lsc, radio, engine] = await Promise.all([
+    const [scene, vehicle, seg, dc, exp, tm, lsc, radio, engine, mission, weapon] = await Promise.all([
         import('./scene/CyberpunkScene'),
         import('./vehicle/Vehicle'),
         import('./segmentation/Segmenter'),
@@ -22,6 +25,8 @@ async function loadSimModules() {
         import('./textures/LiveStreamClient'),
         import('./audio/LofiRadio'),
         import('./audio/EngineSound'),
+        import('./gameplay/MissionManager'),
+        import('./gameplay/Weapon'),
     ]);
     CyberpunkScene = scene.CyberpunkScene;
     Vehicle = vehicle.Vehicle;
@@ -32,6 +37,8 @@ async function loadSimModules() {
     LiveStreamClient = lsc.LiveStreamClient;
     LofiRadio = radio.LofiRadio;
     EngineSound = engine.EngineSound;
+    MissionManager = mission.MissionManager;
+    Weapon = weapon.Weapon;
 }
 
 /* ── Scrolling Chinese text overlay ── */
@@ -158,14 +165,13 @@ export class App {
 
         if (this._destroyed) return;
 
-        // Pre-load simulation modules in background while user sees the terminal
+        // Pre-load simulation modules in background while user sees the terminal.
+        // The segmenter is created but NOT initialised here — OpenCV.js only loads
+        // the first time data collection actually runs (see _ensureDataPipeline).
         loadSimModules().then(() => {
             if (this._destroyed) return;
             this.segmenter = new Segmenter();
             this.collector = new DataCollector();
-            this.segmenter.init().catch(err => {
-                console.warn('[Segmenter] 初始化警告:', err);
-            });
         });
     }
 
@@ -173,6 +179,12 @@ export class App {
         switch (action) {
             case 'start':
                 this._startSimulation();
+                break;
+            case 'story':
+                this._openStory();
+                break;
+            case 'multiplayer':
+                this._openLobby();
                 break;
             case 'export':
                 this._exportData();
@@ -183,7 +195,75 @@ export class App {
         }
     }
 
-    async _startSimulation() {
+    /** Open the multiplayer lobby overlay (create / join a shared cruise). */
+    async _openLobby() {
+        const [{ LobbyUI }, { VelumMultiplayerClient }] = await Promise.all([
+            import('./multiplayer/LobbyUI'),
+            import('@/lib/velum2099/multiplayer'),
+        ]);
+        if (this._destroyed) return;
+
+        this.terminal.hide();
+        this._lobby = new LobbyUI(this._container, {
+            onStart: (roomId, selfInfo) => {
+                this._mpRoomId = roomId;
+                this._mpSelfColor = (selfInfo && selfInfo.colorIndex) || 0;
+                if (this._lobby) { this._lobby.dispose(); this._lobby = null; }
+                this._startSimulation({ multiplayer: true, roomId });
+            },
+            onExit: () => {
+                if (this._lobby) { this._lobby.dispose(); this._lobby = null; }
+                VelumMultiplayerClient.getInstance().disconnect();
+                this.terminal.show();
+            },
+        });
+        this._lobby.show();
+    }
+
+    /** Open the Story Mode (GHOST ROUTE) menu overlay. */
+    async _openStory() {
+        const [{ StorySave }, { StoryMenu }] = await Promise.all([
+            import('./story/StorySave'),
+            import('./story/StoryMenu'),
+        ]);
+        if (this._destroyed) return;
+
+        if (!this._storySave) this._storySave = new StorySave();
+        this.terminal.hide();
+        this.canvasEl.style.display = 'none';
+
+        if (this._storyMenu) { this._storyMenu.dispose(); this._storyMenu = null; }
+        this._storyMenu = new StoryMenu(this._container, this._storySave, {
+            onPlay: (missionId) => {
+                if (this._storyMenu) { this._storyMenu.dispose(); this._storyMenu = null; }
+                this._startSimulation({ story: true, missionId });
+            },
+            onExit: () => {
+                if (this._storyMenu) { this._storyMenu.dispose(); this._storyMenu = null; }
+                this.terminal.show();
+            },
+        });
+        this._storyMenu.show();
+    }
+
+    /** Tear down the running simulation and return to the Story Mode menu. */
+    _exitStoryToMenu() {
+        this._teardownSimulation();
+        this._openStory();
+    }
+
+    /** ESC / mobile-exit router: Story Mode returns to its menu, else the terminal. */
+    _exitSimulation() {
+        if (this._storyActive) this._exitStoryToMenu();
+        else this._stopSimulation();
+    }
+
+    async _startSimulation(opts = {}) {
+        const multiplayer = !!opts.multiplayer;
+        this._multiplayer = multiplayer;
+        this._storyActive = !!opts.story;
+        this._mpRoomId = opts.roomId || this._mpRoomId || null;
+
         // Ensure simulation modules are loaded
         await loadSimModules();
         if (this._destroyed) return;
@@ -227,9 +307,9 @@ export class App {
             if (e.code === 'KeyC') {
                 this._captureRequested = true;
             }
-            // ESC returns to menu
+            // ESC returns to menu (Story Mode → story menu, else terminal)
             if (e.code === 'Escape') {
-                this._stopSimulation();
+                this._exitSimulation();
             }
             // Cycle palette with E
             if (e.code === 'KeyE') {
@@ -260,8 +340,18 @@ export class App {
                 const mode = this._radio.toggle();
                 this._updateRadioHud(mode);
             }
+            // Fire laser with F (or Ctrl) — hold to keep firing
+            if (e.code === 'KeyF' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
+                this._fireHeld = true;
+            }
+        };
+        this._captureKeyUpHandler = (e) => {
+            if (e.code === 'KeyF' || e.code === 'ControlLeft' || e.code === 'ControlRight') {
+                this._fireHeld = false;
+            }
         };
         window.addEventListener('keydown', this._captureKeyHandler);
+        window.addEventListener('keyup', this._captureKeyUpHandler);
 
         // Show VHS timestamp
         if (this._vhsEl) this._vhsEl.style.display = 'block';
@@ -290,6 +380,65 @@ export class App {
         }
         this._hexHud.show();
 
+        // ── Gameplay HUD + mission/pursuit system ──
+        if (!this._gameHud) this._gameHud = new GameHud(this._container);
+        this._gameHud.show();
+
+        if (!this._mission) {
+            this._mission = new MissionManager(this.scene, this.vehicle, {
+                onToast: (text, kind) => { if (this._gameHud) this._gameHud.toast(text, kind); },
+            });
+        }
+        // Story Mode drives the pursuit system itself; free roam clears the hook.
+        this._mission.setStoryMode(!!opts.story);
+        if (!opts.story) this._mission.onEvent = null;
+        this._mission.startSession();
+
+        // ── Laser cannon ──
+        if (!this._weapon) {
+            this._weapon = new Weapon(this.scene, this.vehicle, this._mission, {
+                onToast: (text, kind) => { if (this._gameHud) this._gameHud.toast(text, kind); },
+            });
+        }
+
+        // ── GTA-style minimap ──
+        if (!this._minimap) {
+            this._minimap = new Minimap(this._container, this.scene, this.vehicle, this._mission);
+        }
+        this._minimap.show();
+
+        // ── Mobile touch controls (joystick) — only on touch devices ──
+        if (MobileControls.isTouch()) {
+            if (!this._mobileControls) {
+                this._mobileControls = new MobileControls(this._container, this.vehicle, {
+                    onExit: () => this._exitSimulation(),
+                });
+            }
+            this._mobileControls.show();
+        } else {
+            // Desktop controls hint
+            this._gameHud.toast('WASD 驾驶 · SPACE 漂移 · F 开火 · ESC 返回菜单', 'info');
+        }
+
+        // ── Multiplayer: remote players + driving-state sync ──
+        if (multiplayer) {
+            await this._setupMultiplayer();
+            if (this._destroyed) return;
+        }
+
+        // ── Story Mode (GHOST ROUTE): objective engine over the live world ──
+        if (opts.story && this._storySave) {
+            const { StoryManager } = await import('./story/StoryManager');
+            if (this._destroyed) return;
+            if (this._story) { this._story.dispose(); this._story = null; }
+            this._story = new StoryManager(this.scene, this.vehicle, this._mission, this._storySave, {
+                container: this._container,
+                gameHud: this._gameHud,
+                onExit: () => this._exitStoryToMenu(),
+            });
+            this._story.startMission(opts.missionId);
+        }
+
         // Start game loop
         this.running = true;
         this._lastTime = performance.now();
@@ -297,6 +446,64 @@ export class App {
 
         // Seatbelt chime
         this._playSeatbeltChime();
+    }
+
+    /** Wire up the shared-cruise networking once the scene/vehicle exist. */
+    async _setupMultiplayer() {
+        const [{ RemotePlayers }, { VelumMultiplayerClient }] = await Promise.all([
+            import('./multiplayer/RemotePlayers'),
+            import('@/lib/velum2099/multiplayer'),
+        ]);
+        if (this._destroyed) return;
+
+        this._mpClient = VelumMultiplayerClient.getInstance();
+        this._mpClient.connect();
+        this._remotePlayers = new RemotePlayers(this.scene.scene);
+        this._mpSendTimer = 0;
+        this._mpSendInterval = 1 / 15; // ~15 Hz state broadcast
+
+        // Spread players out around the spawn so they don't stack on launch.
+        const slot = this._mpSelfColor || 0;
+        const offsetX = (slot - 3.5) * 3.6;
+        this.vehicle.position.set(offsetX, 0, 0);
+        this.vehicle.rotation.set(0, 0, 0);
+        this.vehicle.velocity = 0;
+        this.vehicle.lateralVelocity = 0;
+        this.vehicle.group.position.copy(this.vehicle.position);
+
+        // Inbound handlers
+        this._mpHandlers = {
+            state: (s) => { if (this._remotePlayers && s && s.id !== this._mpClient.getSocketId()) this._remotePlayers.upsert(s); },
+            left: (d) => { if (this._remotePlayers && d) this._remotePlayers.remove(d.id); },
+            chat: (m) => {
+                if (m && m.id !== this._mpClient.getSocketId() && this._gameHud) {
+                    this._gameHud.toast(`💬 ${m.name}: ${m.text}`, 'info');
+                }
+            },
+        };
+        this._mpClient.on('velum:playerState', this._mpHandlers.state);
+        this._mpClient.on('velum:playerLeft', this._mpHandlers.left);
+        this._mpClient.on('velum:chat', this._mpHandlers.chat);
+
+        if (this._gameHud) this._gameHud.toast('多人巡航已连接 · MULTIPLAYER LIVE', 'good');
+    }
+
+    /** Tear down all multiplayer state (handlers, ghosts, lobby membership). */
+    _teardownMultiplayer() {
+        if (this._mpClient && this._mpHandlers) {
+            this._mpClient.off('velum:playerState', this._mpHandlers.state);
+            this._mpClient.off('velum:playerLeft', this._mpHandlers.left);
+            this._mpClient.off('velum:chat', this._mpHandlers.chat);
+        }
+        if (this._mpClient && this._mpRoomId) {
+            this._mpClient.leaveLobby(this._mpRoomId);
+            this._mpClient.disconnect();
+        }
+        if (this._remotePlayers) { this._remotePlayers.dispose(); this._remotePlayers = null; }
+        this._mpHandlers = null;
+        this._mpClient = null;
+        this._mpRoomId = null;
+        this._multiplayer = false;
     }
 
     _gameLoop() {
@@ -310,23 +517,74 @@ export class App {
         this.vehicle.groundY = this.scene.getGroundHeight(this.vehicle.position.x, this.vehicle.position.z);
         this.vehicle.update(dt);
 
-        // Collision detection
+        // Collision detection — include solid cop cars so they can block/ram
         const collidables = this.scene.getCollidables(this.vehicle.position, 30);
-        this.vehicle.checkCollisions(collidables, dt);
+        if (this._mission) this._mission.getPoliceCollidables(collidables);
+        const collisions = this.vehicle.checkCollisions(collidables, dt);
 
         // Update scene (camera, rain, neon flicker, post-processing render)
         this.scene.update(this.vehicle.position, this.vehicle.rotation, dt);
 
-        // Segmentation
-        const mask = this.segmenter.processFrame(this.canvasEl);
+        // ── Gameplay: missions + police pursuit ──
+        if (this._mission) {
+            this._mission.reportCollisions(collisions);
+            this._mission.update(dt);
 
-        // Data collection
-        this.collector.tick(
-            this.canvasEl,
-            this.vehicle,
-            mask,
-            this._captureRequested
-        );
+            // Story Mode objective engine — drives objectives, dialogue and markers,
+            // and (when active) supplies the objective/timer shown on the gameplay HUD.
+            if (this._story) {
+                this._story.reportCollisions(collisions);
+                this._story.update(dt);
+            }
+
+            // Laser cannon — fire while held (respects cooldown/overheat)
+            if (this._weapon) {
+                const firing = this._fireHeld ||
+                    (this.vehicle.mobileInput && this.vehicle.mobileInput.fire);
+                if (firing) this._weapon.fire();
+                this._weapon.update(dt);
+            }
+
+            if (this._gameHud) {
+                const hudState = this._story ? this._story.getHudState() : this._mission.getState();
+                this._gameHud.update(hudState, this._weapon ? this._weapon.getState() : null);
+                this._gameHud.tickToasts(dt);
+            }
+            if (this._minimap) this._minimap.update(dt);
+        }
+
+        // ── Multiplayer: broadcast our state (≈15 Hz) + interpolate ghosts ──
+        if (this._multiplayer && this._mpClient) {
+            this._mpSendTimer += dt;
+            if (this._mpSendTimer >= this._mpSendInterval && this._mpRoomId) {
+                this._mpSendTimer = 0;
+                this._mpClient.sendPlayerState(this._mpRoomId, {
+                    x: this.vehicle.position.x,
+                    y: this.vehicle.position.y,
+                    z: this.vehicle.position.z,
+                    ry: this.vehicle.rotation.y,
+                    speed: this.vehicle.velocity,
+                    drifting: !!this.vehicle.drifting,
+                });
+            }
+            if (this._remotePlayers) this._remotePlayers.update(dt);
+        }
+
+        // Segmentation + data collection — the OpenCV pass is expensive, so only
+        // run it when data is actually being recorded (continuous mode, or a
+        // manual capture this frame). Idle gameplay skips it entirely.
+        const needSeg = this.collector.recording &&
+            (this.collector.mode === 'continuous' || this._captureRequested);
+        if (needSeg) this._ensureDataPipeline();
+        const mask = needSeg ? this.segmenter.processFrame(this.canvasEl) : null;
+        if (needSeg) {
+            this.collector.tick(
+                this.canvasEl,
+                this.vehicle,
+                mask,
+                this._captureRequested
+            );
+        }
         this._captureRequested = false;
 
         // VHS timestamp — throttled to 1Hz
@@ -374,7 +632,17 @@ export class App {
         this._animFrameId = requestAnimationFrame(() => this._gameLoop());
     }
 
-    _stopSimulation() {
+    /** Lazily initialise the segmentation/OpenCV pipeline on first data capture. */
+    _ensureDataPipeline() {
+        if (this._segInitStarted || !this.segmenter) return;
+        this._segInitStarted = true;
+        this.segmenter.init().catch(err => {
+            console.warn('[Segmenter] 初始化警告:', err);
+        });
+    }
+
+    /** Tear down all running-simulation state (without choosing where to go next). */
+    _teardownSimulation() {
         this.running = false;
         if (this._animFrameId) {
             cancelAnimationFrame(this._animFrameId);
@@ -386,6 +654,11 @@ export class App {
             window.removeEventListener('keydown', this._captureKeyHandler);
             this._captureKeyHandler = null;
         }
+        if (this._captureKeyUpHandler) {
+            window.removeEventListener('keyup', this._captureKeyUpHandler);
+            this._captureKeyUpHandler = null;
+        }
+        this._fireHeld = false;
 
         // Disconnect live stream if active
         if (this._liveClient) {
@@ -402,10 +675,31 @@ export class App {
         this._updateRadioHud(false);
         if (this._hexHud) this._hexHud.hide();
 
-        // Hide canvas, VHS overlay, and FPS counter, show terminal
+        // Multiplayer cleanup (leave lobby, drop ghosts, unsubscribe)
+        if (this._multiplayer) this._teardownMultiplayer();
+
+        // Story Mode cleanup (dispose engine + overlays, drop pursuit hook)
+        if (this._story) { this._story.dispose(); this._story = null; }
+        this._storyActive = false;
+
+        // Gameplay HUD + mobile controls + pursuit cleanup
+        if (this._mission) {
+            this._mission.setStoryMode(false);
+            this._mission.onEvent = null;
+            this._mission.suspend();
+        }
+        if (this._gameHud) this._gameHud.hide();
+        if (this._minimap) this._minimap.hide();
+        if (this._mobileControls) this._mobileControls.hide();
+
+        // Hide canvas, VHS overlay, and FPS counter
         this.canvasEl.style.display = 'none';
         if (this._vhsEl) this._vhsEl.style.display = 'none';
         if (this._fpsEl) this._fpsEl.style.display = 'none';
+    }
+
+    _stopSimulation() {
+        this._teardownSimulation();
         this.terminal.show();
     }
 
@@ -514,6 +808,15 @@ export class App {
         if (this._captureKeyHandler) {
             window.removeEventListener('keydown', this._captureKeyHandler);
         }
+        if (this._captureKeyUpHandler) {
+            window.removeEventListener('keyup', this._captureKeyUpHandler);
+        }
+        this._fireHeld = false;
+
+        // Hide gameplay HUD/controls while the console is open
+        if (this._gameHud) this._gameHud.hide();
+        if (this._minimap) this._minimap.hide();
+        if (this._mobileControls) this._mobileControls.hide();
 
         // Show terminal as overlay (canvas stays visible behind)
         this.terminalEl.classList.add('overlay-mode');
@@ -534,9 +837,17 @@ export class App {
         // Re-apply settings to scene/vehicle
         this._applySettings();
 
+        // Restore gameplay HUD/controls
+        if (this._gameHud) this._gameHud.show();
+        if (this._minimap) this._minimap.show();
+        if (this._mobileControls) this._mobileControls.show();
+
         // Rebind simulation keys
         if (this._captureKeyHandler) {
             window.addEventListener('keydown', this._captureKeyHandler);
+        }
+        if (this._captureKeyUpHandler) {
+            window.addEventListener('keyup', this._captureKeyUpHandler);
         }
 
         // Resume game loop
@@ -560,6 +871,10 @@ export class App {
             window.removeEventListener('keydown', this._captureKeyHandler);
             this._captureKeyHandler = null;
         }
+        if (this._captureKeyUpHandler) {
+            window.removeEventListener('keyup', this._captureKeyUpHandler);
+            this._captureKeyUpHandler = null;
+        }
 
         // Stop audio
         if (this._radio) { this._radio.dispose(); this._radio = null; }
@@ -575,6 +890,21 @@ export class App {
         // Clean up dynamic DOM elements
         if (this._fpsEl) { this._fpsEl.remove(); this._fpsEl = null; }
         if (this._radioHud) { this._radioHud.remove(); this._radioHud = null; }
+
+        // Clean up multiplayer (lobby overlay + networking + ghosts)
+        if (this._lobby) { this._lobby.dispose(); this._lobby = null; }
+        if (this._multiplayer || this._mpClient) this._teardownMultiplayer();
+
+        // Clean up Story Mode (engine overlays + pre-game menu)
+        if (this._story) { this._story.dispose(); this._story = null; }
+        if (this._storyMenu) { this._storyMenu.dispose(); this._storyMenu = null; }
+
+        // Clean up gameplay systems
+        if (this._weapon) { this._weapon.dispose(); this._weapon = null; }
+        if (this._mission) { this._mission.dispose(); this._mission = null; }
+        if (this._gameHud) { this._gameHud.dispose(); this._gameHud = null; }
+        if (this._minimap) { this._minimap.dispose(); this._minimap = null; }
+        if (this._mobileControls) { this._mobileControls.dispose(); this._mobileControls = null; }
 
         // Dispose Three.js resources
         if (this.scene) {

@@ -1,0 +1,15 @@
+{
+  "chat-placeholder": "Chat...",
+  "error-boundary-message": "Si è verificato un errore imprevisto.",
+  "error-boundary-retry": "Riprova",
+  "error-boundary-title": "Qualcosa è andato storto",
+  "failed-to-load-media": "Impossibile caricare i contenuti multimediali",
+  "game-crashed": "Gioco interrotto",
+  "game-crashed-named": "{{gameName}} si è interrotto",
+  "loading": "Caricamento…",
+  "no-messages-yet": "Ancora nessun messaggio",
+  "react": "Reagisci",
+  "return-home": "Torna alla home",
+  "try-again": "Riprova",
+  "unexpected-error": "Si è verificato un errore imprevisto."
+}

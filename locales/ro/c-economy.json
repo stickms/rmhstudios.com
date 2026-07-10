@@ -1,0 +1,23 @@
+{
+  "cancel": "Anulează",
+  "custom-amount": "Sumă personalizată",
+  "duration": "Durată",
+  "gift-a-membership": "Oferă un abonament cadou",
+  "gift-desc": "Oferă acestui utilizator un abonament cu monede.",
+  "gift-desc-named": "Oferă-i lui {{name}} un abonament cu monede.",
+  "gift-error": "Nu s-a putut oferi abonamentul cadou",
+  "gift-for": "Cadou pentru",
+  "gift-sign-in": "Te rugăm să te autentifici pentru a oferi un abonament cadou.",
+  "gift-success": "Ai oferit {{months}} lună/luni de {{tier}} cadou!",
+  "gift-success-named": "Ai oferit {{months}} lună/luni de {{tier}} lui {{name}} cadou!",
+  "note-placeholder": "Adaugă o notă (opțional)",
+  "sending": "Se trimite…",
+  "tier": "Nivel",
+  "tip-amount-group-label": "Sumă bacșiș",
+  "tip-btn": "Bacșiș",
+  "tip-dialog-description": "Trimite monede{{recipient}} pentru a arăta apreciere.",
+  "tip-dialog-title": "Trimite un bacșiș",
+  "tip-error": "Nu s-a putut trimite bacșișul",
+  "tip-sign-in": "Te rugăm să te autentifici pentru a da bacșiș.",
+  "tip-success": "Ai oferit {{amount}} monede bacșiș{{recipient}}!"
+}

@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "トークンをコピー",
+  "created-date": "作成日: {{date}}",
+  "expired": "期限切れ",
+  "generate-token": "トークンを生成",
+  "last-used-date": "最終使用日: {{date}}",
+  "no-active-tokens": "アクティブなトークンがありません。まずはトークンを生成してください。",
+  "revoke-token-label": "トークンを取り消す",
+  "token-auth-instruction-post": "を実行して認証します。",
+  "token-auth-instruction-pre": "",
+  "token-generated-notice": "トークンが生成されました！今すぐコピーしてください。再表示されることはありません。",
+  "token-name-placeholder": "トークン名（任意）",
+  "unnamed-token": "無名のトークン",
+  "your-tokens": "あなたのトークン"
+}

@@ -21,6 +21,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emitGameInput, useGameSocket, extractTimerTick } from '@/lib/rmhbox/minigame-client';
@@ -41,6 +42,7 @@ interface RhymeTimeGameProps {
 
 export default function RhymeTimeGame({ playerId, playerName: _playerName }: RhymeTimeGameProps) {
   void _playerName; // Consumed by MinigameProps interface; not directly used in this component
+  const { t } = useTranslation("c-rmhbox");
   const [phase, setPhase] = useState<Phase>('ROUND_START');
   const [currentRound, setCurrentRound] = useState(1);
   const [totalRounds, setTotalRounds] = useState(0);
@@ -343,7 +345,9 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           className="flex flex-col items-center justify-center gap-4 text-(--rmhbox-text)"
         >
           <p className="text-sm uppercase tracking-wider text-(--rmhbox-text-muted)">
-            {totalRounds > 0 ? `Round ${currentRound} of ${totalRounds}` : `Round ${currentRound}`}
+            {totalRounds > 0
+              ? t("round-of", { defaultValue: "Round {{current}} of {{total}}", current: currentRound, total: totalRounds })
+              : t("round-number", { defaultValue: "Round {{current}}", current: currentRound })}
           </p>
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
@@ -353,7 +357,7 @@ export default function RhymeTimeGame({ playerId, playerName: _playerName }: Rhy
           >
             {rootWord}
           </motion.h1>
-          <p className="text-sm text-(--rmhbox-text-muted)">Get ready to rhyme!</p>
+          <p className="text-sm text-(--rmhbox-text-muted)">{t("get-ready-to-rhyme", { defaultValue: "Get ready to rhyme!" })}</p>
         </motion.div>
       )}
 

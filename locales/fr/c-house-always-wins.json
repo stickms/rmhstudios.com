@@ -1,0 +1,18 @@
+{
+  "back-home": "Retour à l'accueil",
+  "controls-hint": "WASD/← → Déplacer • Space Sauter • Shift Dash • E Interagir • M Menu",
+  "controls-interact": "E — Interagir",
+  "controls-jump": "Space — Sauter",
+  "controls-menu": "M — Menu",
+  "controls-move": "WASD / Flèches — Déplacer",
+  "debt": "DETTE",
+  "e-continue": "[E] Continuer",
+  "loading": "CHARGEMENT...",
+  "login-to-play": "Connectez-vous pour jouer",
+  "menu-title": "Menu",
+  "music-volume": "Volume de la musique",
+  "resume": "Reprendre [M]",
+  "sign-in-prompt": "Vous devez vous connecter avant d'entrer dans le casino. Vos dettes seront enregistrées.",
+  "subtitle": "La table vous attend",
+  "title": "La Maison Gagne Toujours"
+}

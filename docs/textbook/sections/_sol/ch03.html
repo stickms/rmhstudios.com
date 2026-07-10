@@ -1,0 +1,125 @@
+<div class="solution"><span class="qid">3.1</span> <span class="ans">Answer:</span>
+<b>Server-side rendering</b> is the per-request execution of the React component tree on the server,
+producing a finished HTML string that is sent to the browser so content is visible on the first
+response. <b>Hydration</b> is the subsequent browser-side phase in which React attaches event listeners
+and component state to the server-rendered DOM that already exists, rather than recreating it. In the
+window between first paint and the end of hydration, the page is <i>visible but not interactive</i>:
+text, images, and the correct (e.g. signed-in) shell are painted, but clicks, form inputs, and other
+event handlers do nothing yet because React has not yet wired them up.</div>
+
+<div class="solution"><span class="qid">3.2</span> <span class="ans">Answer:</span>
+(1) Browser sends <code>GET /</code> with the session cookie. (2) The Nitro server
+(<code>.output/server/index.mjs</code>) matches the URL against the generated route tree:
+<code>__root</code> &rarr; <code>_site</code> &rarr; <code>_site/index</code>. (3) Loaders run on the
+server — the root route's <code>getInitialUser</code> (in <code>app/routes/__root.tsx</code>) reads the
+cookie via <code>getRequest()</code> and queries Better Auth (<code>auth.api.getSession</code>); the
+index route's <code>fetchSidebarData</code> (in <code>app/routes/_site/index.tsx</code>) calls
+<code>getSidebarData()</code>. (4) React renders the matched component tree (sidebar + feed + correct
+signed-in shell) to an HTML string. (5) Nitro returns that HTML plus the serialized loader data
+embedded in the document. (6) The browser paints content, then downloads the client bundle. (7)
+Hydration: React re-runs the components in the browser, matches the existing DOM, and attaches handlers
+and state. The page is now interactive. (Matches Figure 3.1.)</div>
+
+<div class="solution"><span class="qid">3.3</span> <span class="ans">Answer:</span>
+<ul>
+  <li><code>app/routes/_site.tsx</code> &rarr; serves no URL of its own; it is a <b>pathless layout</b>
+  (the leading <code>_</code>) at <code>/_site</code> that adds the sidebar shell.</li>
+  <li><code>app/routes/_site/index.tsx</code> &rarr; <code>/</code> (the home feed), a <b>page route</b>
+  nested inside the <code>_site</code> layout.</li>
+  <li><code>app/routes/blog.$slug.tsx</code> &rarr; <code>/blog/&lt;slug&gt;</code>, a <b>page route</b>
+  with a dynamic <code>$slug</code> parameter.</li>
+  <li><code>app/routes/api/search.ts</code> &rarr; <code>/api/search</code>, a <b>server route</b>.</li>
+</ul>
+You can tell <code>search.ts</code> is not a page route two ways: its extension is <code>.ts</code>
+(no JSX, so no React component), and it exports a <code>server.handlers</code> object (a <code>GET</code>
+function returning a <code>Response</code>) rather than a <code>component</code>.</div>
+
+<div class="solution"><span class="qid">3.4</span> <span class="ans">Answer:</span>
+Layout is determined purely by position in the route tree. <code>app/routes/_site/index.tsx</code> lives
+<i>inside</i> the <code>_site</code> folder, so it nests under the pathless <code>_site</code> layout and
+renders into that layout's <code>&lt;Outlet /&gt;</code>, inheriting the <code>LeftSidebar</code>. By
+contrast <code>app/routes/altair.tsx</code> sits at the <i>top level</i> of <code>app/routes/</code>,
+not under <code>_site/</code>, so it is never wrapped by that layout and renders full-screen with no
+sidebar. The file comment in <code>_site.tsx</code> states this explicitly: game routes, <code>/secret</code>,
+and <code>/login</code> are deliberately kept out of the <code>_site</code> layout. No runtime switch is
+involved — moving the file in or out of the folder is the entire mechanism.</div>
+
+<div class="solution"><span class="qid">3.5</span> <span class="ans">Answer:</span>
+Three concrete arguments against a pure SPA: (1) <b>Personalized first paint</b> — <code>getInitialUser</code>
+reads the session cookie on the server so the shell renders signed-in immediately; an SPA would flash a
+signed-out state until the client session loaded, which is exactly the bug the comment in
+<code>__root.tsx</code> says SSR avoids. (2) <b>Crawlability/SEO</b> — blog, news, and public builds must
+be indexable; <code>sitemap[.]xml.ts</code> emits real URLs for crawlers, and a crawler hitting an SPA
+shell sees no content. (3) <b>Time-to-content</b> — a content document should show text on the first
+response rather than after a large JS bundle executes. The legitimate concession: the <i>games</i> do
+not want server rendering — <code>three</code>, <code>pixi.js</code>, <code>monaco-editor</code>,
+<code>tone</code> are browser-only and huge. The config already supports this client-only lane via
+<code>heavyExternals</code>/<code>traceDeps</code> (kept out of the server bundle), <code>manualChunks</code>
+(split into <code>vendor-*</code> chunks), and <code>stubServerFiles</code>. So the right answer is SSR
+by default with client-only escape hatches, not a wholesale SPA.</div>
+
+<div class="solution"><span class="qid">3.6</span> <span class="ans">Answer:</span>
+The <code>GET</code> handler first computes the client IP via <code>getClientIp(request)</code> and calls
+<code>rateLimit(ip, { limit: 60, windowMs: 60_000, prefix: 'search' })</code>. When the caller exceeds
+the limit, <code>allowed</code> is false and the handler immediately returns
+<code>Response.json({ error: 'Too many requests' }, { status: 429 })</code> — HTTP <b>429</b> with a JSON
+body <code>{ &quot;error&quot;: &quot;Too many requests&quot; }</code> — without touching the database.
+(Note also that <code>q=ab</code> is length 2, so even if allowed it would proceed; but the rate-limit
+branch returns first.) The contrast: a server route's handler returns a Web <code>Response</code>
+(status + headers + body) that the client consumes as an HTTP response, whereas a page route's
+<code>loader</code> returns plain data that TanStack Start serializes into the rendered document and
+exposes to the component via <code>Route.useLoaderData()</code> — there is no explicit status code or
+<code>Response</code> object in the loader path.</div>
+
+<div class="solution"><span class="qid">3.7</span> <span class="ans">Answer:</span>
+A <b>backend-for-frontend (BFF)</b> is a server layer built to serve one specific frontend, shaping and
+aggregating data exactly as that UI needs (applying auth, rate limits, and per-page selection) rather
+than exposing a generic, reusable API. In this codebase two mechanisms implement it together: (1) the
+<b>server routes</b> under <code>app/routes/api/</code> (e.g. <code>search.ts</code>, <code>explore.ts</code>),
+which expose HTTP endpoints, and (2) <b>server functions</b> created with <code>createServerFn</code>
+(e.g. <code>getInitialUser</code>, <code>fetchSidebarData</code>) called from route loaders. The
+description &quot;the same file-based router, just exporting handlers instead of a component&quot; is
+accurate because API endpoints are ordinary files in the same <code>app/routes/</code> tree, matched by
+the same router; they simply export a <code>server.handlers</code> object returning a <code>Response</code>
+rather than exporting a React <code>component</code> — same routing machinery, different output.</div>
+
+<div class="solution"><span class="qid">3.8</span> <span class="ans">Answer:</span>
+Pipeline (compare Figure 3.2): <code>app/routes/*</code> (route files on disk) &rarr; the TanStack Start
+plugin generates <code>app/routeTree.gen.ts</code> (the typed route tree, imported by
+<code>app/router.tsx</code>) &rarr; <code>vite build</code> (driven by the <code>build:frontend</code>
+script with <code>NODE_OPTIONS=--max-old-space-size=8192</code>) compiles client + Nitro SSR &rarr;
+output entry <code>.output/server/index.mjs</code> &rarr; the container runs
+<code>node .output/server/index.mjs</code> &rarr; the process listens on port <code>7005</code> (per the
+Dockerfile <code>EXPOSE</code> and <code>deploy.sh</code> <code>PORT_WEB</code>). The web entry is
+produced by either script, but <code>build:frontend</code> is the minimal one (just the Vite/Nitro
+build); the full <code>build</code> script additionally bundles the standalone WebSocket/worker servers
+(<code>server/socket-server</code>, <code>server/rmhbox</code>, <code>server/rmhtube</code>, recap,
+status, discord-bot, and the workers) via a separate <code>esbuild</code> command into
+<code>dist-server/</code>.</div>
+
+<div class="solution"><span class="qid">3.9</span> <span class="ans">Answer:</span>
+Two distinct problems: (a) <b>Server bundle bloat / unrunnable server</b> — these packages are
+browser-only (canvas/WebGL/native), so if Nitro's Rolldown bundler tried to include them the server
+bundle would balloon (monaco alone is ~2.6&nbsp;MB) or fail to build. Solution: list them in
+<code>heavyExternals</code> and use Nitro's <code>traceDeps</code> to externalize them from the
+production server bundle (and trace truly server-needed natives like Prisma into
+<code>.output/node_modules</code>). (b) <b>Client over-download</b> — a content visitor who never opens a
+game should not download megabytes of game code. Solution: <code>manualChunks</code> splits them into
+named <code>vendor-three</code>, <code>vendor-pixi</code>, <code>vendor-monaco-*</code> chunks loaded
+only when needed. Separately, <code>stubServerFiles</code> replaces <code>*.server.ts</code> imports
+with empty stubs on the client so Node-only deps (e.g. <code>pg</code>) never enter the browser bundle.
+<code>ssr.external</code> alone is insufficient because, as the config comment states, Nitro's bundler
+ignores Vite's <code>ssr.external</code> — it only affects Vite's <i>dev</i> SSR bundling, so production
+externalization must go through the <code>nitro()</code> plugin's <code>traceDeps</code>/<code>rollupConfig.external</code>.</div>
+
+<div class="solution"><span class="qid">3.10</span> <span class="ans">Answer:</span>
+The server cannot know the user's chosen theme (it lives in <code>localStorage</code> under
+<code>rmh-style</code>), so it renders a generic default shell. If the theme class were applied only
+inside a React effect that runs <i>after</i> hydration, the user would see a <b>flash of the wrong
+theme</b> (FOUC): the default-themed page paints first, then visibly snaps to the correct theme a moment
+later once JavaScript runs. The inline <code>themeScript</code> avoids this by running synchronously
+<i>before</i> React hydrates — it reads <code>localStorage</code>, adds the <code>style-*</code> class
+and background color to <code>&lt;html&gt;</code> immediately, so the very first paint already shows the
+correct theme. <code>suppressHydrationWarning</code> is needed because this means the server-rendered
+markup and the (script-modified) client markup intentionally differ; without it React would warn about
+the hydration mismatch the script deliberately introduces.</div>

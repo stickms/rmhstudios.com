@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search, Check, X, Music } from '@/lib/icons';
 
 export interface SpotifyTrack {
@@ -17,6 +18,7 @@ interface SpotifySongSearchProps {
 }
 
 export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps) {
+  const { t } = useTranslation('feed');
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SpotifyTrack[]>([]);
   const [loading, setLoading] = useState(false);
@@ -69,8 +71,8 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
   if (selected && !showSearch) {
     return (
       <div className="space-y-2">
-        <label className="block text-xs font-medium text-site-text-dim">Profile Song</label>
-        <div className="flex items-center gap-3 p-3 bg-site-surface rounded-xl border border-site-border">
+        <label className="block text-xs font-medium text-site-text-dim">{t("profile-song", { defaultValue: "Profile Song" })}</label>
+        <div className="flex items-center gap-3 p-3 bg-site-surface rounded-site border border-site-border">
           {selected.albumArt ? (
             <img src={selected.albumArt} alt={selected.title} className="w-10 h-10 rounded object-cover shrink-0" />
           ) : (
@@ -88,13 +90,13 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
               onClick={() => setShowSearch(true)}
               className="text-xs text-site-accent hover:underline"
             >
-              Change
+              {t("change", { defaultValue: "Change" })}
             </button>
             <button
               type="button"
               onClick={handleRemove}
               className="p-1 rounded hover:bg-site-border transition-colors"
-              title="Remove song"
+              title={t("remove-song", { defaultValue: "Remove song" })}
             >
               <X className="w-3.5 h-3.5 text-site-text-dim" />
             </button>
@@ -107,14 +109,14 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="block text-xs font-medium text-site-text-dim">Profile Song</label>
+        <label className="block text-xs font-medium text-site-text-dim">{t("profile-song", { defaultValue: "Profile Song" })}</label>
         {showSearch && selected && (
           <button
             type="button"
             onClick={() => { setShowSearch(false); setQuery(''); setResults([]); }}
             className="text-xs text-site-text-dim hover:text-site-text"
           >
-            Cancel
+            {t("cancel", { defaultValue: "Cancel" })}
           </button>
         )}
       </div>
@@ -123,10 +125,10 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
         <button
           type="button"
           onClick={() => setShowSearch(true)}
-          className="w-full flex items-center gap-2 p-3 bg-site-surface rounded-xl border border-site-border text-sm text-site-text-dim hover:border-site-accent transition-colors"
+          className="w-full flex items-center gap-2 p-3 bg-site-surface rounded-site border border-site-border text-sm text-site-text-dim hover:border-site-accent transition-colors"
         >
           <Music className="w-4 h-4" />
-          Add a profile song
+          {t("add-profile-song", { defaultValue: "Add a profile song" })}
         </button>
       ) : (
         <>
@@ -137,19 +139,19 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
               type="text"
               value={query}
               onChange={(e) => handleQueryChange(e.target.value)}
-              placeholder="Search for a song..."
+              placeholder={t("search-for-a-song", { defaultValue: "Search for a song..." })}
               autoFocus
-              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl pl-9 pr-3 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors"
+              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site pl-9 pr-3 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors"
             />
           </div>
 
           {/* Results */}
           {loading && (
-            <div className="text-center py-3 text-xs text-site-text-dim">Searching...</div>
+            <div className="text-center py-3 text-xs text-site-text-dim">{t("searching", { defaultValue: "Searching..." })}</div>
           )}
 
           {!loading && results.length > 0 && (
-            <div className="max-h-48 overflow-y-auto space-y-0.5 rounded-xl border border-site-border bg-site-surface">
+            <div className="max-h-48 overflow-y-auto space-y-0.5 rounded-site border border-site-border bg-site-surface">
               {results.map((track) => {
                 const isSelected = selected?.id === track.id;
                 return (
@@ -181,7 +183,7 @@ export function SpotifySongSearch({ selected, onSelect }: SpotifySongSearchProps
 
           {!loading && query.trim() && results.length === 0 && (
             <div className="text-center py-3 text-xs text-site-text-dim">
-              No songs found
+              {t("no-songs-found", { defaultValue: "No songs found" })}
             </div>
           )}
         </>

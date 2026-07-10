@@ -14,6 +14,7 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { updateBuildSchema, adminUpdateBuildSchema } from '@/lib/user-builds-schema';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getAuthenticatedUser } from '@/lib/rmhcode-auth';
+import { logAdminAction } from '@/lib/admin-audit.server';
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -84,15 +85,30 @@ export const Route = createFileRoute('/api/user-builds/$id')({
       liked = !!like;
     }
 
+    // Marketplace gating: paid builds hide readme/repo/demo until unlocked.
+    const price = build.price ?? 0;
+    let unlocked = isOwner || price <= 0;
+    if (!unlocked && currentUserId) {
+      const u = await prisma.buildUnlock.findUnique({
+        where: { userId_buildId: { userId: currentUserId, buildId: build.id } },
+        select: { id: true },
+      });
+      unlocked = !!u;
+    }
+    const locked = price > 0 && !unlocked;
+
     return Response.json({
       id: build.id,
       slug: build.slug,
       title: build.title,
       description: build.description,
-      readme: build.readme,
+      readme: locked ? null : build.readme,
       thumbnailUrl: build.thumbnailUrl,
-      repoUrl: build.repoUrl,
-      demoUrl: build.demoUrl,
+      repoUrl: locked ? null : build.repoUrl,
+      demoUrl: locked ? null : build.demoUrl,
+      price,
+      locked,
+      unlocked,
       visibility: build.visibility,
       featured: build.featured,
       isCurated: build.isCurated,
@@ -195,6 +211,8 @@ export const Route = createFileRoute('/api/user-builds/$id')({
     if (data.repoUrl === '') data.repoUrl = null;
     if (data.demoUrl === '') data.demoUrl = null;
     if (data.thumbnailUrl === '') data.thumbnailUrl = null;
+    // Normalize marketplace price: 0/undefined → free (null).
+    if (data.price !== undefined) data.price = (data.price as number) > 0 ? data.price : null;
 
     // Update build and tags
     const updated = await prisma.$transaction(async (tx) => {
@@ -222,6 +240,15 @@ export const Route = createFileRoute('/api/user-builds/$id')({
 
       return result;
     });
+
+    // Record admin moderation (editing a build the admin doesn't own).
+    if (isAdmin && build.userId !== userId) {
+      await logAdminAction(userId, 'user-build.edit', {
+        targetType: 'UserBuild',
+        targetId: build.id,
+        detail: `author:${build.userId}`,
+      });
+    }
 
     // Fetch updated tags
     const buildTags = await prisma.buildTag.findMany({
@@ -278,12 +305,22 @@ export const Route = createFileRoute('/api/user-builds/$id')({
     }
 
     // Check ownership
-    if (build.userId !== userId && !(session?.user as any)?.isAdmin) {
+    const isAdmin = !!(session?.user as any)?.isAdmin;
+    if (build.userId !== userId && !isAdmin) {
       return Response.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Delete build (cascade deletes tags, likes, comments, views)
     await prisma.userBuild.delete({ where: { id: build.id } });
+
+    // Record admin moderation (deleting a build the admin doesn't own).
+    if (isAdmin && build.userId !== userId) {
+      await logAdminAction(userId, 'user-build.delete', {
+        targetType: 'UserBuild',
+        targetId: build.id,
+        detail: `author:${build.userId}`,
+      });
+    }
 
     return Response.json({ success: true });
   } catch (error) {

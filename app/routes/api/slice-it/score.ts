@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { recordGamePlay } from '@/lib/quests/engine.server';
 
 export const Route = createFileRoute('/api/slice-it/score')({
   server: {
@@ -137,6 +138,7 @@ export const Route = createFileRoute('/api/slice-it/score')({
             }
         }
         
+        await recordGamePlay(userId);
         return Response.json({ success: true, isNewBest });
     } catch (e) {
         console.error('[SCORE SUBMIT] CRITICAL FAILURE:', e);

@@ -3,10 +3,11 @@
  */
 
 import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import { useState, useRef, useEffect } from 'react';
 import { FaDiscord, FaGoogle, FaGithub } from 'react-icons/fa';
-import { MdEmail, MdLock, MdPerson, MdCameraAlt } from 'react-icons/md';
+import { MdEmail, MdLock, MdPerson, MdCameraAlt, MdFingerprint } from 'react-icons/md';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
 import '@/components/rmhvibe/vibe.css';
 
@@ -20,12 +21,28 @@ export const Route = createFileRoute('/login')({
   component: LoginPage,
 });
 
+/**
+ * Only allow a same-site absolute path as a post-login redirect target.
+ * Browsers strip control characters and normalize "\" to "/", so a naive
+ * `startsWith('/') && !startsWith('//')` guard is bypassed by "/\evil.com" or
+ * "/\t//evil.com" — both resolve to an off-site protocol-relative URL when
+ * assigned to `window.location.href`. Require a leading "/" NOT followed by "/"
+ * or "\", and reject control characters. (SSR-safe: no `window` access.)
+ */
+function safeInternalPath(raw?: string): string {
+  if (!raw) return '/';
+  // Detecting control characters is the point here (browsers strip them before
+  // navigating), so the control-regex lint rule is intentionally disabled.
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/.test(raw)) return '/';
+  return /^\/(?![/\\])/.test(raw) ? raw : '/';
+}
+
 function LoginPage() {
+  const { t } = useTranslation("pages");
   const { callbackURL: rawCallback } = Route.useSearch();
 
-  const [callbackURL, setCallbackURL] = useState(() =>
-    rawCallback?.startsWith('/') && !rawCallback.startsWith('//') ? rawCallback : '/'
-  );
+  const [callbackURL, setCallbackURL] = useState(() => safeInternalPath(rawCallback));
 
   useEffect(() => {
     if (!rawCallback?.startsWith('/')) {
@@ -68,7 +85,7 @@ function LoginPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be under 5 MB.');
+      setError(t("image-size-error", { defaultValue: "Image must be under 5 MB." }));
       return;
     }
     const objectUrl = URL.createObjectURL(file);
@@ -88,6 +105,49 @@ function LoginPage() {
   const handleCropCancel = () => {
     if (cropSrc) URL.revokeObjectURL(cropSrc);
     setCropSrc(null);
+  };
+
+  // Conditional-UI passkey sign-in: when the browser supports it, a saved
+  // passkey is offered directly in the email field's autofill dropdown.
+  useEffect(() => {
+    if (isSignUp) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (
+          typeof window.PublicKeyCredential === 'undefined' ||
+          !(await window.PublicKeyCredential.isConditionalMediationAvailable?.())
+        ) {
+          return;
+        }
+        const res = await authClient.signIn.passkey({ autoFill: true });
+        if (!cancelled && res && 'data' in res && res.data?.session) {
+          window.location.href = callbackURL;
+        }
+      } catch {
+        // Conditional mediation aborted (navigation, second call) — ignore.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignUp, callbackURL]);
+
+  const handlePasskeySignIn = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await authClient.signIn.passkey();
+      if (res && 'data' in res && res.data?.session) {
+        window.location.href = callbackURL;
+        return;
+      }
+      if (res?.error?.message) setError(res.error.message);
+    } catch {
+      setError(t('passkey-error', { defaultValue: 'Passkey sign-in was cancelled or failed.' }));
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleDiscordSignIn = async () => {
@@ -157,20 +217,23 @@ function LoginPage() {
       }
     } catch {
       setLoading(false);
-      setError('Something went wrong. Please try again.');
+      setError(t("generic-error", { defaultValue: "Something went wrong. Please try again." }));
     }
   };
 
   if (isPending || session?.user) {
     return (
       <div className="vibe-screen min-h-screen flex items-center justify-center">
-        <p className="vibe-hint">Loading…</p>
+        <p className="vibe-hint">{t("loading", { defaultValue: "Loading…" })}</p>
       </div>
     );
   }
 
   const socialBtn =
     'w-full flex items-center justify-center gap-3 h-12 rounded-full bg-white/[0.05] border border-white/12 text-[#f5f5f7] font-medium transition-all hover:bg-white/[0.09] hover:border-white/25 disabled:opacity-50';
+  // Promoted primary CTA — filled, brighter than the social buttons.
+  const passkeyBtn =
+    'w-full flex items-center justify-center gap-3 h-12 rounded-full bg-[#f5f5f7] text-[#0a0a0a] font-semibold transition-all hover:bg-white disabled:opacity-50';
   const field =
     'w-full h-12 rounded-2xl bg-white/[0.05] border border-white/12 pl-11 pr-4 text-[#f5f5f7] placeholder-[#6e6e73] outline-none focus:border-white/30 transition-colors';
   const fieldIcon = 'absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6e6e73]';
@@ -181,43 +244,58 @@ function LoginPage() {
         <div className="text-center mb-7">
           <p className="vibe-presents mb-2">RMH Studios</p>
           <h1 className="text-2xl font-bold tracking-tight text-[#f5f5f7]">
-            {isSignUp ? 'Create your account' : 'Welcome back'}
+            {isSignUp ? t("create-account-heading", { defaultValue: "Create your account" }) : t("welcome-back", { defaultValue: "Welcome back" })}
           </h1>
           <p className="text-sm text-[#a1a1a6] mt-1.5">
-            {isSignUp ? 'Make an identity to access the platform.' : 'Sign in to access your profile.'}
+            {isSignUp ? t("signup-subheading", { defaultValue: "Make an identity to access the platform." }) : t("signin-subheading", { defaultValue: "Sign in to access your profile." })}
           </p>
         </div>
 
         <div className="space-y-3">
+          {/* Passkey is the promoted primary path: fastest + phishing-resistant.
+              (Conditional-UI autofill also offers it directly in the email field.) */}
+          {!isSignUp && (
+            <button onClick={handlePasskeySignIn} disabled={loading} className={passkeyBtn}>
+              {loading ? (
+                <span className="animate-pulse text-[#0a0a0a]/70">{t("connecting", { defaultValue: "Connecting…" })}</span>
+              ) : (
+                <>
+                  <MdFingerprint className="text-xl" />
+                  <span>{t("continue-with-passkey", { defaultValue: "Sign in with a passkey" })}</span>
+                </>
+              )}
+            </button>
+          )}
+
           <button onClick={handleDiscordSignIn} disabled={loading} className={socialBtn}>
             {loading ? (
-              <span className="animate-pulse text-[#a1a1a6]">Connecting…</span>
+              <span className="animate-pulse text-[#a1a1a6]">{t("connecting", { defaultValue: "Connecting…" })}</span>
             ) : (
               <>
                 <FaDiscord className="text-xl text-[#5865F2]" />
-                <span>Continue with Discord</span>
+                <span>{t("continue-with-discord", { defaultValue: "Continue with Discord" })}</span>
               </>
             )}
           </button>
 
           <button onClick={handleGoogleSignIn} disabled={loading} className={socialBtn}>
             {loading ? (
-              <span className="animate-pulse text-[#a1a1a6]">Connecting…</span>
+              <span className="animate-pulse text-[#a1a1a6]">{t("connecting", { defaultValue: "Connecting…" })}</span>
             ) : (
               <>
                 <FaGoogle className="text-xl text-[#ea4335]" />
-                <span>Continue with Google</span>
+                <span>{t("continue-with-google", { defaultValue: "Continue with Google" })}</span>
               </>
             )}
           </button>
 
           <button onClick={handleGitHubSignIn} disabled={loading} className={socialBtn}>
             {loading ? (
-              <span className="animate-pulse text-[#a1a1a6]">Connecting…</span>
+              <span className="animate-pulse text-[#a1a1a6]">{t("connecting", { defaultValue: "Connecting…" })}</span>
             ) : (
               <>
                 <FaGithub className="text-xl" />
-                <span>Continue with GitHub</span>
+                <span>{t("continue-with-github", { defaultValue: "Continue with GitHub" })}</span>
               </>
             )}
           </button>
@@ -228,7 +306,7 @@ function LoginPage() {
             </div>
             <div className="relative flex justify-center">
               <span className="px-3 text-[0.68rem] uppercase tracking-[0.14em] text-[#6e6e73] bg-[#0c0c0d]">
-                or with email
+                {t("or-with-email", { defaultValue: "or with email" })}
               </span>
             </div>
           </div>
@@ -244,7 +322,7 @@ function LoginPage() {
                   >
                     <img
                       src={avatarPreview || '/images/social/default_avatar.png'}
-                      alt="Avatar preview"
+                      alt={t("avatar-preview-alt", { defaultValue: "Avatar preview" })}
                       className="w-full h-full rounded-full object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                     />
@@ -259,14 +337,14 @@ function LoginPage() {
                     className="hidden"
                     onChange={handleAvatarSelect}
                   />
-                  <p className="text-xs text-[#6e6e73]">Optional profile picture</p>
+                  <p className="text-xs text-[#6e6e73]">{t("optional-profile-picture", { defaultValue: "Optional profile picture" })}</p>
                 </div>
 
                 <div className="relative">
                   <MdPerson className={fieldIcon} />
                   <input
                     type="text"
-                    placeholder="Display name"
+                    placeholder={t("display-name-placeholder", { defaultValue: "Display name" })}
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     required
@@ -280,10 +358,13 @@ function LoginPage() {
               <MdEmail className={fieldIcon} />
               <input
                 type="email"
-                placeholder="Email address"
+                placeholder={t("email-placeholder", { defaultValue: "Email address" })}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                // "webauthn" lets the browser offer saved passkeys in the
+                // autofill dropdown (conditional UI, wired above).
+                autoComplete={isSignUp ? 'email' : 'username webauthn'}
                 className={field}
               />
             </div>
@@ -292,7 +373,7 @@ function LoginPage() {
               <MdLock className={fieldIcon} />
               <input
                 type="password"
-                placeholder="Password"
+                placeholder={t("password-placeholder", { defaultValue: "Password" })}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -312,7 +393,7 @@ function LoginPage() {
               disabled={loading}
               className="w-full h-12 rounded-full bg-[#f5f5f7] text-[#0a0a0a] font-semibold transition-all hover:bg-white disabled:opacity-50"
             >
-              {loading ? 'Processing…' : isSignUp ? 'Create account' : 'Sign in'}
+              {loading ? t("processing", { defaultValue: "Processing…" }) : isSignUp ? t("create-account-btn", { defaultValue: "Create account" }) : t("sign-in-btn", { defaultValue: "Sign in" })}
             </button>
           </form>
 
@@ -324,7 +405,7 @@ function LoginPage() {
               }}
               className="text-[#6e6e73] hover:text-[#f5f5f7] text-sm transition-colors"
             >
-              {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+              {isSignUp ? t("already-have-account", { defaultValue: "Already have an account? Sign in" }) : t("no-account", { defaultValue: "Don't have an account? Sign up" })}
             </button>
           </div>
         </div>

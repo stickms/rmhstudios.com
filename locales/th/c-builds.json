@@ -1,0 +1,18 @@
+{
+  "clear-filters": "ล้างตัวกรอง",
+  "clear-search": "ล้างการค้นหา",
+  "like-this-build": "กดถูกใจบิลด์นี้",
+  "no-builds-found": "ไม่พบบิลด์",
+  "read-more": "อ่านเพิ่มเติม",
+  "screenshot-of": "ภาพหน้าจอของ {{title}}",
+  "search-aria-label": "ค้นหาบิลด์",
+  "search-placeholder": "ค้นหาบิลด์...",
+  "sort-builds": "เรียงลำดับบิลด์",
+  "sort-default": "ค่าเริ่มต้น",
+  "sort-most-discussed": "มีการพูดถึงมากที่สุด",
+  "sort-most-liked": "ถูกใจมากที่สุด",
+  "sort-most-viewed": "เข้าชมมากที่สุด",
+  "sort-options": "ตัวเลือกการเรียงลำดับ",
+  "unlike-this-build": "ยกเลิกถูกใจบิลด์นี้",
+  "view-comments": "ดูความคิดเห็น"
+}

@@ -23,6 +23,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MousePointerClick } from 'lucide-react';
 import type { GridTileClient } from './UndercoverAgentGame';
@@ -66,6 +67,7 @@ interface GridBoardProps {
 }
 
 export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts, onTileClick, onHighlightChange }: GridBoardProps) {
+  const { t } = useTranslation("c-rmhbox");
   // Track which tiles the operative has locally highlighted (multi-select)
   const [highlighted, setHighlighted] = useState<Set<number>>(new Set());
 
@@ -159,7 +161,7 @@ export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.5 }}
                   className="absolute -top-1.5 -left-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-black shadow-lg sm:h-6 sm:w-6"
-                  title={`${hlCount} operative${hlCount !== 1 ? 's' : ''} highlighting`}
+                  title={t("operatives-highlighting", { count: hlCount, defaultValue: "{{count}} operative highlighting", defaultValue_other: "{{count}} operatives highlighting" })}
                 >
                   <span className="text-[9px] font-bold sm:text-[10px]">{hlCount}</span>
                 </motion.div>
@@ -175,7 +177,7 @@ export default function GridBoard({ grid, canGuess, isSpymaster, highlightCounts
                   exit={{ opacity: 0, scale: 0.5 }}
                   onClick={(e) => handleConfirmClick(e, tile.position)}
                   className="absolute -bottom-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-amber-400 text-black shadow-lg cursor-pointer hover:bg-amber-300 transition-colors sm:h-6 sm:w-6"
-                  title="Confirm guess"
+                  title={t("confirm-guess", { defaultValue: "Confirm guess" })}
                 >
                   <MousePointerClick className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 </motion.div>

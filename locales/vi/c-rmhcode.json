@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "Sao chép token",
+  "created-date": "Đã tạo {{date}}",
+  "expired": "Đã hết hạn",
+  "generate-token": "Tạo Token",
+  "last-used-date": "Sử dụng lần cuối {{date}}",
+  "no-active-tokens": "Không có token hoạt động. Hãy tạo một token để bắt đầu.",
+  "revoke-token-label": "Thu hồi token",
+  "token-auth-instruction-post": "để xác thực.",
+  "token-auth-instruction-pre": "Chạy",
+  "token-generated-notice": "Token đã được tạo! Hãy sao chép ngay - nó sẽ không được hiển thị lại.",
+  "token-name-placeholder": "Tên token (không bắt buộc)",
+  "unnamed-token": "Token không tên",
+  "your-tokens": "Token của bạn"
+}

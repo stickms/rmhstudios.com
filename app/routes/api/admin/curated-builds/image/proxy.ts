@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
+import { safeFetch, SsrfError } from "@/lib/ssrf-guard.server";
 /**
  * Proxies an external image URL so the client can load it as a blob
  * for re-cropping without CORS issues.
@@ -20,7 +21,15 @@ export const Route = createFileRoute('/api/admin/curated-builds/image/proxy')({
       return Response.json({ error: "Missing url parameter" }, { status: 400 });
     }
 
-    const res = await fetch(url);
+    let res: Response;
+    try {
+      res = await safeFetch(url, { timeoutMs: 10_000 });
+    } catch (e) {
+      if (e instanceof SsrfError) {
+        return Response.json({ error: "Disallowed image URL" }, { status: 400 });
+      }
+      throw e;
+    }
     if (!res.ok) {
       return Response.json({ error: "Failed to fetch image" }, { status: 502 });
     }

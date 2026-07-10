@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { generateDailyImage, generateRaceImage, generateLeaderboardImage } from '@/lib/discord-activity-image';
+import { generateDailyImage, generateRaceImage, generateLeaderboardImage, generateCaretakersImage, type CaretakerEntry } from '@/lib/discord-activity-image';
 import { prisma } from '@/lib/prisma.server';
 import { getDateSeed } from '@/lib/lights-out/seed';
 import { getDailyShape, getShapeLabel } from '@/lib/lights-out/shapes';
@@ -70,6 +70,32 @@ export const Route = createFileRoute('/api/discord/activity-image')({
 
                         png = await generateRaceImage(players, phase, round, raceMode, raceStartedAt);
                         maxAge = phase === 'results' ? 120 : 15;
+                    } else if (type === 'caretakers') {
+                        // Global Alex caretaker leaderboard (one shared Alex → keyed by
+                        // the "global" sentinel; mirrors globalPetKey in the Go bot).
+                        const rows = await prisma.discordAlexCaretaker.findMany({
+                            where: { guildId: 'global' },
+                            orderBy: [{ points: 'desc' }, { updatedAt: 'asc' }],
+                            take: 10,
+                        });
+                        if (rows.length === 0) {
+                            return new Response('No caretakers yet', { status: 404 });
+                        }
+                        const entries: CaretakerEntry[] = rows.map(r => ({
+                            userId: r.userId,
+                            username: r.username,
+                            avatarHash: r.avatarHash ?? null,
+                            points: r.points,
+                            feeds: r.feeds,
+                            plays: r.plays,
+                            cleans: r.cleans,
+                            naps: r.naps,
+                            talks: r.talks,
+                            studies: r.studies,
+                            interactions: r.interactions,
+                        }));
+                        png = await generateCaretakersImage(entries);
+                        maxAge = 20;
                     } else {
                         return new Response('Missing or invalid type parameter', { status: 400 });
                     }

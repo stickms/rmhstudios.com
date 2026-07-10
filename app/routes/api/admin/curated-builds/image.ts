@@ -4,8 +4,12 @@ import { writeFile, mkdir, unlink } from "fs/promises";
 import path from "path";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { validateImageBuffer, resolvePathUnder } from "@/lib/slice-it/upload-validation";
+import { optimizeImage } from "@/lib/image-optimize";
+import { logAdminAction } from "@/lib/admin-audit.server";
 
 const BUILD_IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+// Build thumbnails render at card size — cap the long edge and store as WebP.
+const BUILD_THUMB_MAX_DIM = 1280;
 
 export const Route = createFileRoute('/api/admin/curated-builds/image')({
   server: {
@@ -46,16 +50,24 @@ export const Route = createFileRoute('/api/admin/curated-builds/image')({
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const validation = validateImageBuffer(buffer);
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
+    const validation = validateImageBuffer(rawBuffer);
     if (!validation.ok) {
       return Response.json({ error: validation.error }, { status: 400 });
     }
 
+    // Compress to WebP (preserve aspect ratio, cap the long edge) before storing.
+    const { buffer } = await optimizeImage(rawBuffer, {
+      width: BUILD_THUMB_MAX_DIM,
+      height: BUILD_THUMB_MAX_DIM,
+      format: "webp",
+      quality: 82,
+      autoOrient: true,
+    });
+
     // Write new file
-    const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    const fileName = `build-${uniqueSuffix}-${safeName}`;
+    const fileName = `build-${uniqueSuffix}.webp`;
 
     const buildsDir = path.join(process.cwd(), "db", "builds");
     await mkdir(buildsDir, { recursive: true });
@@ -76,6 +88,11 @@ export const Route = createFileRoute('/api/admin/curated-builds/image')({
     }
 
     const imageUrl = `/api/admin/curated-builds/image/${fileName}`;
+
+    await logAdminAction((session.user as { id: string }).id, 'curated-build.image-upload', {
+      targetType: 'CuratedBuildImage',
+      targetId: fileName,
+    });
 
     return Response.json({ image: imageUrl });
   } catch (error) {

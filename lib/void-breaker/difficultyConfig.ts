@@ -45,7 +45,9 @@ export function getScaledEnemyHp(baseHp: number, wave: number): number {
  */
 export function getScaledProjSpeed(baseSpeed: number, wave: number): number {
     if (wave <= 1) return baseSpeed;
-    return baseSpeed + (wave - 1) * difficultyPerStage.projectileSpeedIncrease;
+    // Cap the speed bonus so late-game bullets stay dodgeable (difficulty comes
+    // from bullet density/count, not unreadably fast projectiles).
+    return baseSpeed + Math.min((wave - 1) * difficultyPerStage.projectileSpeedIncrease, 90);
 }
 
 /**
@@ -67,7 +69,9 @@ export function getScaledBossAttackInterval(baseInterval: number, tier: number):
  * Compute scaled enemy damage (fractional, use in projectile damage logic).
  */
 export function getScaledEnemyDamage(baseDamage: number, wave: number): number {
-    if (wave <= 4) return baseDamage;
-    // Every 4 waves above wave 4, damage increases by 1
-    return baseDamage + Math.floor((wave - 4) / 4);
+    if (wave <= 6) return baseDamage;
+    // Bullets do more over time but are CAPPED at +2 — the late game must remain
+    // survivable (you dodge dense curtains, you don't get one-shot). Difficulty
+    // comes from bullet count/patterns, not escalating per-hit damage.
+    return baseDamage + Math.min(2, Math.floor((wave - 6) / 6));
 }

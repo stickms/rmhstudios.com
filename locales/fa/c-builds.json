@@ -1,0 +1,18 @@
+{
+  "clear-filters": "پاک کردن فیلترها",
+  "clear-search": "پاک کردن جستجو",
+  "like-this-build": "پسندیدن این بیلد",
+  "no-builds-found": "هیچ بیلدی یافت نشد",
+  "read-more": "بیشتر بخوانید",
+  "screenshot-of": "تصویر از {{title}}",
+  "search-aria-label": "جستجوی بیلدها",
+  "search-placeholder": "جستجوی بیلدها...",
+  "sort-builds": "مرتب‌سازی بیلدها",
+  "sort-default": "پیش‌فرض",
+  "sort-most-discussed": "بیشترین بحث",
+  "sort-most-liked": "بیشترین پسند",
+  "sort-most-viewed": "بیشترین بازدید",
+  "sort-options": "گزینه‌های مرتب‌سازی",
+  "unlike-this-build": "لغو پسندیدن این بیلد",
+  "view-comments": "مشاهده نظرات"
+}

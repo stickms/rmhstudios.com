@@ -10,6 +10,7 @@
 
 import { useState, useCallback } from 'react';
 import { Copy, Check, LogOut } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface RoomCodeDisplayProps {
   code: string;
@@ -17,6 +18,7 @@ interface RoomCodeDisplayProps {
 }
 
 export default function RoomCodeDisplay({ code, onLeave }: RoomCodeDisplayProps) {
+  const { t } = useTranslation("c-rmhbox");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -36,8 +38,8 @@ export default function RoomCodeDisplay({ code, onLeave }: RoomCodeDisplayProps)
         <button
           onClick={onLeave}
           className="mr-2 rounded-lg p-2 text-(--rmhbox-danger) transition-colors hover:bg-(--rmhbox-danger)/15 hover:text-(--rmhbox-danger)"
-          aria-label="Leave lobby"
-          title="Leave lobby"
+          aria-label={t("leave-lobby", { defaultValue: "Leave lobby" })}
+          title={t("leave-lobby", { defaultValue: "Leave lobby" })}
         >
           <LogOut className="h-5 w-5 -scale-x-100" />
         </button>
@@ -45,14 +47,14 @@ export default function RoomCodeDisplay({ code, onLeave }: RoomCodeDisplayProps)
 
       <span
         className="font-mono text-4xl font-bold tracking-[0.3em] text-(--rmhbox-text) select-all"
-        aria-label={`Room code: ${code.split('').join(' ')}`}
+        aria-label={t("room-code-label", { defaultValue: "Room code: {{code}}", code: code.split('').join(' ') })}
       >
         {code}
       </span>
       <button
         onClick={handleCopy}
         className="ml-2 rounded-lg p-2 text-(--rmhbox-text-muted) transition-colors hover:bg-(--rmhbox-surface-hover) hover:text-(--rmhbox-accent)"
-        aria-label={copied ? 'Copied' : 'Copy room code'}
+        aria-label={copied ? t("copied", { defaultValue: "Copied" }) : t("copy-room-code", { defaultValue: "Copy room code" })}
       >
         {copied ? <Check className="h-5 w-5 text-(--rmhbox-success)" /> : <Copy className="h-5 w-5" />}
       </button>

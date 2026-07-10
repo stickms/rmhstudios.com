@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Menu } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { AnimatedMain } from './AnimatedMain';
-import { MobileSidebarDrawer } from './MobileSidebarDrawer';
+import { MobileMenuButton } from './MobileMenuButton';
+import { MobileBrandPrefix } from './MobileHeader';
 import { DEFAULT_WIDTH, WIDE_NO_RIGHT_SIDEBAR_WIDTH, WIDE_WIDTH } from '@/lib/layout-width';
 
 interface PageLayoutProps {
@@ -16,8 +16,14 @@ interface PageLayoutProps {
   headerRight?: React.ReactNode;
   /** Use a wider center column (800 px) – useful for grid-heavy pages like Builds. */
   wide?: boolean;
-  /** Optional back button href to show in the header */
-  backHref?: string;
+  /**
+   * When set, a back arrow appears at the start of the header linking here.
+   * Especially useful on nested pages (e.g. admin sub-pages) and on mobile,
+   * where there's otherwise no obvious way back to the parent.
+   */
+  backTo?: string;
+  /** Accessible label for the back arrow (defaults to "Back"). */
+  backLabel?: string;
 }
 
 export function PageLayout({
@@ -27,9 +33,9 @@ export function PageLayout({
   headerExtra,
   headerRight,
   wide,
-  backHref,
+  backTo,
+  backLabel,
 }: PageLayoutProps) {
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const hasRightSidebar = Boolean(rightSidebar);
   const targetWidth = wide
     ? (hasRightSidebar ? WIDE_WIDTH : WIDE_NO_RIGHT_SIDEBAR_WIDTH)
@@ -46,31 +52,21 @@ export function PageLayout({
           {/* Sticky Header */}
           <div className="sticky top-0 z-10 h-15 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
             <div className="h-full flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3">
-                {/* Mobile: sandwich menu or back button */}
-                {backHref ? (
-                  <Link to={backHref} className="md:hidden p-1 -ml-1 text-site-text-muted hover:text-site-text rounded-md hover:bg-site-surface transition-colors flex shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-                  </Link>
-                ) : (
-                  <button
-                    onClick={() => setDrawerOpen(true)}
-                    className="md:hidden p-2 -ml-2 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
-                    aria-label="Open menu"
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Mobile: always show the sidebar button in the top-left */}
+                <MobileMenuButton />
+                {backTo && (
+                  <Link
+                    to={backTo}
+                    aria-label={backLabel ?? 'Back'}
+                    className="shrink-0 -ml-1 rounded-full p-1.5 text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text active:scale-95"
                   >
-                    <Menu className="w-5 h-5" />
-                  </button>
-                )}
-                {/* Desktop: back button */}
-                {backHref && (
-                  <Link to={backHref} className="hidden md:flex p-1 -ml-1 text-site-text-muted hover:text-site-text rounded-md hover:bg-site-surface transition-colors shrink-0">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                    <ArrowLeft className="h-5 w-5" />
                   </Link>
                 )}
-                <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2">
-                  {/* Mobile: centered RMH + title handled via flex */}
-                  <span className="md:hidden text-site-accent">RMH</span>
-                  <span className="md:hidden w-px h-5 bg-site-border" aria-hidden="true" />
+                <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0 truncate">
+                  {/* Mobile: "RMH |" brand prefix before the page title */}
+                  <MobileBrandPrefix />
                   {title}
                 </h1>
               </div>
@@ -95,13 +91,6 @@ export function PageLayout({
         // Keep the same trailing gutter feel as the right sidebar layout.
         <div className="hidden lg:block w-4 shrink-0" />
       )}
-
-      {/* Mobile sidebar drawer */}
-      <MobileSidebarDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        onOpen={() => setDrawerOpen(true)}
-      />
     </>
   );
 }

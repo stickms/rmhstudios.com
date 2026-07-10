@@ -1,0 +1,78 @@
+{
+  "title": "Indonesia: A Comprehensive History",
+  "footer": "Indonesia: A Comprehensive History",
+  "headerRight": "Indonesia — A Comprehensive History",
+  "cover": "00-cover.html",
+  "sections": [
+    { "id": "preface", "label": "Front Matter", "part": "Front Matter", "title": "Preface: How to Use This Book", "file": "00-preface.html" },
+    { "id": "intro", "label": "Introduction", "title": "The Idea of \"Indonesia\"", "file": "01-introduction.html" },
+
+    { "id": "ch1", "label": "Chapter 1", "part": "Part I — Land, Peoples, Deep Time", "title": "The Archipelago: Geography, Geology, and the Sea", "file": "02-archipelago.html" },
+    { "id": "ch2", "label": "Chapter 2", "title": "Human Origins: Java Man and the Hobbit of Flores", "file": "03-human-origins.html" },
+    { "id": "ch3", "label": "Chapter 3", "title": "The Austronesian Expansion and Early Societies", "file": "04-austronesian-expansion.html" },
+    { "id": "ch4", "label": "Chapter 4", "title": "Early Trade and the Coming of Indian Influence", "file": "05-indian-influence.html" },
+
+    { "id": "ch5", "label": "Chapter 5", "part": "Part II — Classical Hindu-Buddhist Era", "title": "First Kingdoms: Kutai, Tarumanagara, and the Earliest Inscriptions", "file": "06-first-kingdoms.html" },
+    { "id": "ch6", "label": "Chapter 6", "title": "Srivijaya: The Maritime Empire of Sumatra", "file": "07-srivijaya.html" },
+    { "id": "ch7", "label": "Chapter 7", "title": "Central Java's Golden Age: Sailendra, Borobudur, and Prambanan", "file": "08-central-java-golden-age.html" },
+    { "id": "ch8", "label": "Chapter 8", "title": "Eastern Java: Kediri and Singhasari", "file": "09-kediri-singhasari.html" },
+    { "id": "ch9", "label": "Chapter 9", "title": "Majapahit: The Great Archipelagic Empire", "file": "10-majapahit.html" },
+    { "id": "ch10", "label": "Chapter 10", "title": "Bali and Cultural-Religious Continuity", "file": "11-bali.html" },
+
+    { "id": "ch11", "label": "Chapter 11", "part": "Part III — Islam & the Sultanates", "title": "The Coming of Islam", "file": "12-coming-of-islam.html" },
+    { "id": "ch12", "label": "Chapter 12", "title": "Malacca and the Maritime Muslim World", "file": "13-malacca.html" },
+    { "id": "ch13", "label": "Chapter 13", "title": "The Sultanates: Aceh, Banten, Demak, Mataram, Makassar, Ternate", "file": "14-sultanates.html" },
+    { "id": "ch14", "label": "Chapter 14", "title": "The Spice Trade and the Early Global Economy", "file": "15-spice-trade.html" },
+
+    { "id": "ch15", "label": "Chapter 15", "part": "Part IV — Encounter & the VOC", "title": "The Portuguese and the First European Intrusion", "file": "16-portuguese.html" },
+    { "id": "ch16", "label": "Chapter 16", "title": "The Dutch VOC: A Company-State", "file": "17-voc.html" },
+    { "id": "ch17", "label": "Chapter 17", "title": "VOC Expansion, the Banda Massacre, and Decline", "file": "18-voc-decline.html" },
+
+    { "id": "ch18", "label": "Chapter 18", "part": "Part V — The Colonial State", "title": "From Company to Crown: The Netherlands East Indies", "file": "19-east-indies-state.html" },
+    { "id": "ch19", "label": "Chapter 19", "title": "The Cultivation System and Its Consequences", "file": "20-cultivation-system.html" },
+    { "id": "ch20", "label": "Chapter 20", "title": "The Java War, Padri War, and Regional Resistance", "file": "21-java-padri-wars.html" },
+    { "id": "ch21", "label": "Chapter 21", "title": "The Aceh War and the Completion of Conquest", "file": "22-aceh-war.html" },
+    { "id": "ch22", "label": "Chapter 22", "title": "Liberal Era, Plantation Economy, and the Ethical Policy", "file": "23-ethical-policy.html" },
+    { "id": "ch23", "label": "Chapter 23", "title": "Colonial Society: Race, Class, and Daily Life", "file": "24-colonial-society.html" },
+
+    { "id": "ch24", "label": "Chapter 24", "part": "Part VI — National Awakening", "title": "The Origins of Nationalism", "file": "25-nationalism-origins.html" },
+    { "id": "ch25", "label": "Chapter 25", "title": "Ideologies in Contest: Islam, Communism, and Secular Nationalism", "file": "26-ideologies-contest.html" },
+    { "id": "ch26", "label": "Chapter 26", "title": "Sukarno, Hatta, and the Movement; Sumpah Pemuda 1928", "file": "27-sukarno-movement.html" },
+
+    { "id": "ch27", "label": "Chapter 27", "part": "Part VII — Occupation, Revolution & Sukarno", "title": "The Japanese Occupation, 1942–1945", "file": "28-japanese-occupation.html" },
+    { "id": "ch28", "label": "Chapter 28", "title": "Proclamation and the National Revolution, 1945–1949", "file": "29-national-revolution.html" },
+    { "id": "ch29", "label": "Chapter 29", "title": "Parliamentary Democracy and Its Crises, 1950–1957", "file": "30-parliamentary-democracy.html" },
+    { "id": "ch30", "label": "Chapter 30", "title": "Guided Democracy, Konfrontasi, and Regional Rebellions", "file": "31-guided-democracy.html" },
+
+    { "id": "ch31", "label": "Chapter 31", "part": "Part VIII — The New Order", "title": "1965: The Coup, the Killings, and Suharto's Rise", "file": "32-1965.html" },
+    { "id": "ch32", "label": "Chapter 32", "title": "The New Order State: Developmentalism, Pancasila, Dwifungsi", "file": "33-new-order-state.html" },
+    { "id": "ch33", "label": "Chapter 33", "title": "Economic Transformation and Its Discontents", "file": "34-economic-transformation.html" },
+    { "id": "ch34", "label": "Chapter 34", "title": "East Timor, Aceh, and Papua: Integration and Insurgency", "file": "35-timor-aceh-papua.html" },
+    { "id": "ch35", "label": "Chapter 35", "title": "Society, Religion, and Culture under the New Order", "file": "36-new-order-society.html" },
+
+    { "id": "ch36", "label": "Chapter 36", "part": "Part IX — Reformasi & Contemporary Indonesia", "title": "The 1997–98 Crisis and the Fall of Suharto", "file": "37-1998-crisis.html" },
+    { "id": "ch37", "label": "Chapter 37", "title": "Democratization, Decentralization, and Reformasi", "file": "38-democratization.html" },
+    { "id": "ch38", "label": "Chapter 38", "title": "Reform-Era Presidents: Habibie, Wahid, Megawati, SBY", "file": "39-reform-presidents.html" },
+    { "id": "ch39", "label": "Chapter 39", "title": "Jokowi, Prabowo, and the 2024 Election", "file": "40-jokowi-prabowo.html" },
+    { "id": "ch40", "label": "Chapter 40", "title": "Contemporary Economy, Infrastructure, and the New Capital", "file": "41-contemporary-economy.html" },
+    { "id": "ch41", "label": "Chapter 41", "title": "Religion, Islam, and Pluralism Today", "file": "42-religion-pluralism.html" },
+    { "id": "ch42", "label": "Chapter 42", "title": "Separatism, Human Rights, and Unresolved Pasts", "file": "43-separatism-human-rights.html" },
+    { "id": "ch43", "label": "Chapter 43", "title": "Indonesia in the World: ASEAN, China, and Geopolitics", "file": "44-indonesia-in-world.html" },
+
+    { "id": "ch44", "label": "Chapter 44", "part": "Part X — Thematic Syntheses", "title": "Cultural History: Language, Literature, Wayang, Batik, Architecture", "file": "45-cultural-history.html" },
+    { "id": "ch45", "label": "Chapter 45", "title": "Religious History across the Archipelago", "file": "46-religious-history.html" },
+    { "id": "ch46", "label": "Chapter 46", "title": "Economic History: From Spices to Palm Oil and Nickel", "file": "47-economic-history.html" },
+    { "id": "ch47", "label": "Chapter 47", "title": "The Chinese Indonesians and Other Diasporas", "file": "48-chinese-diasporas.html" },
+    { "id": "ch48", "label": "Chapter 48", "title": "Women, Gender, and Family Through Indonesian History", "file": "49-women-gender-family.html" },
+    { "id": "ch49", "label": "Chapter 49", "title": "Environmental History: Forests, Volcanoes, and Climate", "file": "50-environmental-history.html" },
+    { "id": "ch50", "label": "Chapter 50", "title": "Historiography: How We Know — Sources, Debates, and Contested Pasts", "file": "51-historiography.html" },
+
+    { "id": "chronology", "label": "Appendix A", "part": "Back Matter", "title": "Master Chronology", "file": "52-chronology.html" },
+    { "id": "glossary", "label": "Appendix B", "title": "Glossary and Transliteration Guide", "file": "53-glossary.html" },
+    { "id": "dynastic-tables", "label": "Appendix C", "title": "Dynastic and Presidential Tables", "file": "54-dynastic-tables.html" },
+    { "id": "maps", "label": "Appendix D", "title": "Maps", "file": "55-maps.html" },
+    { "id": "bibliography", "label": "Appendix E", "title": "Consolidated Bibliography", "file": "56-bibliography.html" },
+    { "id": "image-credits", "label": "Appendix F", "title": "Image Credits and Licenses", "file": "57-image-credits.html" },
+    { "id": "index", "label": "Appendix G", "title": "Index of Key Terms", "file": "58-index.html" }
+  ]
+}

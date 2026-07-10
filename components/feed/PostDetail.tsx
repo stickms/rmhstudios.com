@@ -1,14 +1,19 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { ArrowLeft, Loader2, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { ArrowLeft, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { useFreshUser, useUserDisplayStore } from '@/stores/userDisplayStore';
+import { useFeedStore } from '@/stores/feedStore';
 import { RMHarkActions } from './RMHarkActions';
 import { CommentItem } from './CommentItem';
 import { AIGenerateButton } from './AIGenerateButton';
+import { MentionTextarea } from './MentionTextarea';
 import type { Comment } from './CommentItem';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { Link, useNavigate } from '@tanstack/react-router';
@@ -16,16 +21,21 @@ import type { FeedItem } from '@/lib/feed-types';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
+import { PostImageGrid } from './PostImageGrid';
+import { postMediaVTName } from '@/lib/view-transition';
 import { LinkPreview } from './LinkPreview';
 import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
 import { ShareModal } from './ShareModal';
+import { ThreadSummary } from './ThreadSummary';
+import { RelatedPosts } from './RelatedPosts';
 
 interface PostDetailProps {
   postId: string;
 }
 
 export function PostDetail({ postId }: PostDetailProps) {
+  const { t } = useTranslation("feed");
   const navigate = useNavigate();
   const [post, setPost] = useState<FeedItem | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -42,8 +52,27 @@ export function PostDetail({ postId }: PostDetailProps) {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // Keep the shared feed store in sync with engagement that happens here, so
+  // navigating back to the feed reflects the new counts instead of stale ones.
+  const syncToFeed = useCallback((updates: Partial<FeedItem>) => {
+    const store = useFeedStore.getState();
+    if (store.items.some((i) => i.id === postId)) {
+      store.updateItem(postId, updates);
+    }
+  }, [postId]);
+
+  const bumpFeedComment = useCallback((delta: number) => {
+    const store = useFeedStore.getState();
+    const current = store.items.find((i) => i.id === postId);
+    if (current) {
+      store.updateItem(postId, {
+        commentCount: Math.max(0, (current.commentCount ?? 0) + delta),
+      });
+    }
+  }, [postId]);
+
   const linkPreviewUrl = useMemo(() => {
-    if (!post || post.poll || post.gifUrl || !post.content) return null;
+    if (!post || post.poll || post.gifUrl || (post.imageUrls && post.imageUrls.length > 0) || !post.content) return null;
     return extractFirstUrl(post.content);
   }, [post]);
 
@@ -129,6 +158,7 @@ export function PostDetail({ postId }: PostDetailProps) {
         setComments((prev) => [comment, ...prev]);
         setCommentContent('');
         setPost((prev) => prev ? { ...prev, commentCount: (prev.commentCount ?? 0) + 1 } : prev);
+        bumpFeedComment(1);
       }
     } catch (error) {
       console.error('Comment error:', error);
@@ -150,7 +180,8 @@ export function PostDetail({ postId }: PostDetailProps) {
       });
     setComments((prev) => addReplyDeep(prev));
     setPost((prev) => prev ? { ...prev, commentCount: (prev.commentCount ?? 0) + 1 } : prev);
-  }, []);
+    bumpFeedComment(1);
+  }, [bumpFeedComment]);
 
   const handleCommentRemoved = useCallback((commentId: string) => {
     const removeDeep = (comments: Comment[]): Comment[] =>
@@ -159,7 +190,8 @@ export function PostDetail({ postId }: PostDetailProps) {
         .map((c) => c.replies?.length ? { ...c, replies: removeDeep(c.replies) } : c);
     setComments((prev) => removeDeep(prev));
     setPost((prev) => prev ? { ...prev, commentCount: Math.max(0, (prev.commentCount ?? 0) - 1) } : prev);
-  }, []);
+    bumpFeedComment(-1);
+  }, [bumpFeedComment]);
 
   const formatFullDate = (dateStr: string) => {
     const d = new Date(dateStr);
@@ -172,7 +204,7 @@ export function PostDetail({ postId }: PostDetailProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+        <Spinner size={32} />
       </div>
     );
   }
@@ -180,9 +212,9 @@ export function PostDetail({ postId }: PostDetailProps) {
   if (notFound || !post) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-lg font-medium text-site-text mb-1">Post not found</p>
-        <p className="text-sm text-site-text-muted mb-4">This post doesn&apos;t exist or was deleted.</p>
-        <Link to="/"><Button variant="accent" size="sm">Go Home</Button></Link>
+        <p className="text-lg font-medium text-site-text mb-1">{t("post-not-found", { defaultValue: "Post not found" })}</p>
+        <p className="text-sm text-site-text-muted mb-4">{t("post-not-found-detail", { defaultValue: "This post doesn't exist or was deleted." })}</p>
+        <Link to="/"><Button variant="accent" size="sm">{t("go-home", { defaultValue: "Go Home" })}</Button></Link>
       </div>
     );
   }
@@ -194,12 +226,12 @@ export function PostDetail({ postId }: PostDetailProps) {
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             onClick={() => window.history.back()}
-            className="p-1.5 -ml-1.5 rounded-lg hover:bg-site-surface transition-colors"
+            className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </button>
           <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
-            Post
+            {t("post-header", { defaultValue: "Post" })}
           </h1>
         </div>
       </div>
@@ -215,27 +247,27 @@ export function PostDetail({ postId }: PostDetailProps) {
             <MoreHorizontal className="w-5 h-5" />
           </button>
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-xl shadow-xl py-1 z-30">
+            <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
               <button
                 onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
               >
                 <Heart className="w-4 h-4 text-site-text-dim" />
-                Liked by
+                {t("liked-by", { defaultValue: "Liked by" })}
               </button>
               <button
                 onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
               >
                 <Repeat className="w-4 h-4 text-site-text-dim" />
-                reRMHark'd by
+                {t("rermharkd-by", { defaultValue: "reRMHark'd by" })}
               </button>
               <button
                 onClick={handleShare}
                 className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
               >
                 <Share2 className="w-5 h-5 text-site-text-dim" />
-                Share
+                {t("share", { defaultValue: "Share" })}
               </button>
               {isAuthor && (
                 <button
@@ -243,7 +275,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                   className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  Delete
+                  {t("delete", { defaultValue: "Delete" })}
                 </button>
               )}
             </div>
@@ -255,7 +287,7 @@ export function PostDetail({ postId }: PostDetailProps) {
           <UserAvatar user={freshPostUser} size="lg" />
           <div>
             <Link to={`/u/${freshPostUser?.handle || freshPostUser?.id}` as string} className="hover:underline">
-              <span className="font-bold text-site-text">{freshPostUser?.name || 'Unknown'}</span>
+              <span className="font-bold text-site-text">{freshPostUser?.name || t("unknown-user", { defaultValue: "Unknown" })}</span>
             </Link>
             {freshPostUser?.handle && (
               <p className="text-sm text-site-text-dim">@{freshPostUser.handle}</p>
@@ -282,22 +314,27 @@ export function PostDetail({ postId }: PostDetailProps) {
         {/* Image / GIF */}
         {post.gifUrl && <GifEmbed url={post.gifUrl} className="mb-3" />}
 
+        {/* Uploaded images grid */}
+        {post.imageUrls && post.imageUrls.length > 0 && (
+          <PostImageGrid urls={post.imageUrls} className="mb-3" heroName={postMediaVTName(postId)} />
+        )}
+
         {/* Link preview — only when no poll, gif, or image */}
         {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mb-3" />}
 
         {/* Quoted original */}
         {post.original && (
-          <div className="mb-3 border border-site-border rounded-xl p-3 bg-site-surface/30">
+          <div className="mb-3 border border-site-border rounded-site p-3 bg-site-surface/30">
             <div className="flex items-center gap-1.5 text-sm mb-1">
               {freshOriginalUser ? (
                 <Link to={`/u/${freshOriginalUser.handle || freshOriginalUser.id}` as string} className="flex items-center gap-1.5 min-w-0 hover:underline">
-                  <span className="font-bold text-site-text truncate">{freshOriginalUser.name || 'Unknown'}</span>
+                  <span className="font-bold text-site-text truncate">{freshOriginalUser.name || t("unknown-user", { defaultValue: "Unknown" })}</span>
                   {freshOriginalUser.handle && (
                     <span className="text-site-text-dim truncate">@{freshOriginalUser.handle}</span>
                   )}
                 </Link>
               ) : (
-                <span className="font-bold text-site-text truncate">Unknown</span>
+                <span className="font-bold text-site-text truncate">{t("unknown-user", { defaultValue: "Unknown" })}</span>
               )}
             </div>
             <RMHarkContent text={post.original.content ?? ''} className="text-site-text text-sm whitespace-pre-wrap break-words" />
@@ -310,16 +347,16 @@ export function PostDetail({ postId }: PostDetailProps) {
         {/* Engagement stats bar */}
         {!post.deletedAt && <div className="flex items-center gap-4 py-3 border-t border-site-border text-sm">
           <span>
-            <span className="font-bold text-site-text">{post.repostCount ?? 0}</span>{' '}
-            <span className="text-site-text-dim">reRMHarks</span>
+            <AnimatedCount value={post.repostCount ?? 0} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
+            <span className="text-site-text-dim">{t("rermharks", { defaultValue: "reRMHarks" })}</span>
           </span>
           <span>
-            <span className="font-bold text-site-text">{post.likeCount ?? 0}</span>{' '}
-            <span className="text-site-text-dim">Likes</span>
+            <AnimatedCount value={post.likeCount ?? 0} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
+            <span className="text-site-text-dim">{t("likes", { defaultValue: "Likes" })}</span>
           </span>
           <span>
-            <span className="font-bold text-site-text">{post.viewCount ?? 0}</span>{' '}
-            <span className="text-site-text-dim">Views</span>
+            <AnimatedCount value={post.viewCount ?? 0} format={(n) => n.toLocaleString()} className="font-bold text-site-text" />{' '}
+            <span className="text-site-text-dim">{t("views", { defaultValue: "Views" })}</span>
           </span>
         </div>}
 
@@ -328,7 +365,10 @@ export function PostDetail({ postId }: PostDetailProps) {
           <div className="border-t border-site-border pt-1">
             <RMHarkActions
               item={post}
-              onUpdate={(_, updates) => setPost((prev) => prev ? { ...prev, ...updates } : prev)}
+              onUpdate={(_, updates) => {
+                setPost((prev) => prev ? { ...prev, ...updates } : prev);
+                syncToFeed(updates);
+              }}
             />
           </div>
         )}
@@ -339,8 +379,8 @@ export function PostDetail({ postId }: PostDetailProps) {
         <div className="px-4 py-4 border-b border-site-border">
           <p className="text-sm text-site-text-dim text-center">
             {post.deletedByAdmin
-              ? 'This RMHark was deleted by an admin.'
-              : 'This RMHark was deleted by the user.'}
+              ? t("deleted-by-admin", { defaultValue: "This RMHark was deleted by an admin." })
+              : t("deleted-by-user", { defaultValue: "This RMHark was deleted by the user." })}
           </p>
         </div>
       )}
@@ -360,14 +400,14 @@ export function PostDetail({ postId }: PostDetailProps) {
               linkToProfile={false}
             />
             <div className="flex-1 min-w-0">
-              <textarea
+              <MentionTextarea
                 id="post-comment-input"
                 value={commentContent}
-                onChange={(e) => setCommentContent(e.target.value)}
-                placeholder="Post your reply..."
+                onChange={setCommentContent}
+                placeholder={t("reply-placeholder", { defaultValue: "Post your reply..." })}
                 rows={2}
                 maxLength={MAX_COMMENT_LENGTH}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-xl p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
+                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border resize-none outline-none focus:border-site-accent transition-colors"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                     handleSubmit();
@@ -383,7 +423,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                     request={{ mode: 'reply', rmharkId: postId, draft: commentContent }}
                     onGenerated={(text) => setCommentContent(text)}
                     size="sm"
-                    title="Generate a reply with AI"
+                    title={t("ai-generate-title", { defaultValue: "Generate a reply with AI" })}
                   />
                   <Button
                     variant="accent"
@@ -391,7 +431,7 @@ export function PostDetail({ postId }: PostDetailProps) {
                     disabled={!commentContent.trim() || remaining < 0 || submitting}
                     onClick={handleSubmit}
                   >
-                    {submitting ? 'Posting...' : 'Reply'}
+                    {submitting ? t("posting", { defaultValue: "Posting..." }) : t("reply", { defaultValue: "Reply" })}
                   </Button>
                 </div>
               </div>
@@ -400,19 +440,22 @@ export function PostDetail({ postId }: PostDetailProps) {
         </div>
       ) : !post.deletedAt ? (
         <div className="px-4 py-3 border-b border-site-border text-center text-sm text-site-text-dim">
-          Sign in to reply
+          {t("sign-in-to-reply", { defaultValue: "Sign in to reply" })}
         </div>
       ) : null}
 
       {/* Comments list */}
       {!post.deletedAt && <div className="px-4">
+        {!loadingComments && comments.length > 0 && (
+          <ThreadSummary postId={postId} commentCount={comments.length} />
+        )}
         {loadingComments ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="w-6 h-6 text-site-accent animate-spin" />
+            <Spinner />
           </div>
         ) : comments.length === 0 ? (
           <p className="text-center text-sm text-site-text-dim py-8">
-            No replies yet. Be the first!
+            {t("no-replies", { defaultValue: "No replies yet. Be the first!" })}
           </p>
         ) : (
           <div className="divide-y divide-site-border">
@@ -429,6 +472,8 @@ export function PostDetail({ postId }: PostDetailProps) {
           </div>
         )}
       </div>}
+
+      {!post.deletedAt && <RelatedPosts postId={postId} />}
 
       {engagementModal && (
         <EngagementListModal

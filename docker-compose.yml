@@ -10,8 +10,12 @@
 #   Production:  7005 / 7001 / 7676 / 7003
 #   Staging:     8005 / 8001 / 8676 / 8003
 #
-# A single image (rmhstudios-app) is built once by the `web` service and
-# shared by all other services — no redundant rebuilds.
+# TWO images are built from the SAME Dockerfile + build args (only the target
+# stage differs):
+#   - rmhstudios-app       (slim): web, socket, rmhbox, rmhtube  (Node, no Chromium)
+#   - rmhstudios-app-full         : supervisor, status, assets  (+ Go bins, Chromium, git)
+# The slim image is shared by the four Node services; the full image is shared by
+# the three Go services. No redundant rebuilds — shared stages cache once.
 #
 # All four application services start independently in parallel for faster
 # deployment. No artificial dependency ordering.
@@ -30,28 +34,50 @@ x-common: &common
       max-size: "10m"
       max-file: "3"
 
+# Shared BUILD config for both images. Factored out so the long arg list isn't
+# duplicated and the slim (`runner`) and full (`runner-full`) images can never
+# drift apart — they differ only in the `target:` overridden by each service.
+x-build: &build-common
+  context: .
+  dockerfile: Dockerfile
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  args:
+    COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-rmhstudios}
+    # Base image for the runner-full stage. Defaults to the `runner` stage (so a
+    # plain `compose build` is self-contained); the deploy sets WEB_IMAGE to the
+    # already-built slim web image tag when building `supervisor`, so runner-full
+    # starts FROM that image and doesn't re-run the vite build. The `web` service
+    # (target runner) doesn't reference it, so carrying it here is harmless.
+    WEB_IMAGE: ${WEB_IMAGE:-runner}
+    DATABASE_URL: ${DATABASE_URL}
+    BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+    BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+    VITE_BETTER_AUTH_URL: ${VITE_BETTER_AUTH_URL}
+    VITE_SOCKET_URL: ${VITE_SOCKET_URL}
+    VITE_RMHBOX_SOCKET_URL: ${VITE_RMHBOX_SOCKET_URL}
+    VITE_RMHTUBE_SOCKET_URL: ${VITE_RMHTUBE_SOCKET_URL}
+    VITE_DISCORD_ACTIVITY_CLIENT_ID: ${VITE_DISCORD_ACTIVITY_CLIENT_ID}
+    VITE_CDN_BASE_URL: ${VITE_CDN_BASE_URL}
+    # Used at build time to auto-generate library covers/metadata for new
+    # PDFs. Optional — covers still render without it (titles fall back).
+    DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+
 services:
   # ─── Vite/Nitro Web App ─────────────────────────────────────────────────────
   web:
     <<: *common
+    # Slim image (no Chromium / git / Go binaries). image: comes from *common
+    # (${COMPOSE_PROJECT_NAME}-app:latest) and is shared by socket/rmhbox/rmhtube.
     build:
-      context: .
-      dockerfile: Dockerfile
-      extra_hosts:
-        - "host.docker.internal:host-gateway"
-      args:
-        COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-rmhstudios}
-        DATABASE_URL: ${DATABASE_URL}
-        BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
-        BETTER_AUTH_URL: ${BETTER_AUTH_URL}
-        VITE_BETTER_AUTH_URL: ${VITE_BETTER_AUTH_URL}
-        VITE_SOCKET_URL: ${VITE_SOCKET_URL}
-        VITE_RMHBOX_SOCKET_URL: ${VITE_RMHBOX_SOCKET_URL}
-        VITE_RMHTUBE_SOCKET_URL: ${VITE_RMHTUBE_SOCKET_URL}
-        VITE_DISCORD_ACTIVITY_CLIENT_ID: ${VITE_DISCORD_ACTIVITY_CLIENT_ID}
+      <<: *build-common
+      target: runner
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-web
-    ports:
-      - "127.0.0.1:${PORT_WEB:-7005}:${PORT_WEB:-7005}"
+    # NOTE: web does NOT publish a fixed host port. It is deployed blue/green by
+    # deploy/hotswap-web.sh (zero-downtime), which publishes the active port
+    # (7005 blue / 7015 green) itself and flips Apache between them. deploy.sh
+    # brings the rest of the stack up with `--scale web=0` so compose never
+    # recreates web in place (the old cause of the Cloudflare 520 during deploy).
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - PORT=${PORT_WEB:-7005}
@@ -114,63 +140,157 @@ services:
       retries: 3
       start_period: 15s
 
-  # ─── Discord Bot (slash commands + RMHBot AI editor) ──────────────────────
-  discord-bot:
+  # ─── Go Supervisor (discord-bot + recap + doctrine-worker + vibe-worker + bot-worker) ─
+  # Runs the five background workers as goroutines in a single Go process.
+  # Env union: every variable the five old Node services needed is carried here.
+  # Volumes union: db/ (from *common) + RMHBOT_REPO_PATH (needed by discord-bot
+  #   for RMHBot git operations).
+  # stop_grace_period: 90s = max of discord-bot (90s) and vibe-worker (30s) so
+  #   in-flight AI requests and Chromium captures both get time to finish.
+  supervisor:
     <<: *common
-    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-discord-bot
+    # Full image: Go binaries + Chromium (vibe-worker chromedp) + git (discord-bot).
+    # This service carries the `runner-full` build; `status` reuses the image it
+    # produces. Overrides the slim image: from *common.
+    image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app-full:latest
+    build:
+      <<: *build-common
+      target: runner-full
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-supervisor
     env_file: ${ENV_FILE:-.env.production}
-    # Override volumes to add repo mount for RMHBot git operations
+    # Override volumes to add the repo mount required by the discord-bot worker
+    # (RMHBot git operations). The db/ mount comes from *common but must be
+    # repeated here because volumes: overrides the anchor.
     volumes:
       - ${STORAGE_PATH:-./db}:/app/db
       - ${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}:${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}
-    command: ["node", "dist-server/server/discord-bot/index.cjs"]
+    environment:
+      # recap worker's internal HTTP port (doctrine / vibe-worker idles if absent)
+      - RECAP_PORT=${PORT_RECAP:-7004}
+      # Merged /metrics + /health endpoint for all five workers (httpx.ServeMetrics).
+      # Templated so the healthcheck below stays in sync with the bind port.
+      - METRICS_ADDR=:${PORT_SUPERVISOR_METRICS:-9090}
+    command: ["/app/bin/supervisor"]
     restart: unless-stopped
-    # Allow in-flight AI requests (up to 2 min) to finish before force-kill
+    # discord-bot needs 90s for in-flight AI; vibe-worker needs 30s for Chromium
     stop_grace_period: 90s
+    # Supervisor serves /health on METRICS_ADDR (default :9090). This restores
+    # the health signal the removed recap service had. start_period covers the
+    # db-wait (WaitForReachable: up to 10 tries × 5s = 50s) before the metrics
+    # server comes up.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_SUPERVISOR_METRICS:-9090}/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
-  # ─── Lights Out Recap Runner ───────────────────────────────────────────────
-  recap:
+  # ─── Status Page (status.rmhstudios.com) ───────────────────────────────────
+  # Standalone health dashboard. Probes the website via its PUBLIC URL (so the
+  # status reflects the real user path through Apache/DNS, not just a live
+  # container) and the internal services by compose DNS name. Serves an HTML +
+  # JSON status page; Apache proxies status.rmhstudios.com to the loopback port
+  # published below.
+  status:
     <<: *common
-    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-recap
+    # Runs the Go /app/bin/status binary, so it uses the full image (built by the
+    # supervisor service above). Overrides the slim image: from *common.
+    image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app-full:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-status
+    ports:
+      - "127.0.0.1:${PORT_STATUS:-7008}:${PORT_STATUS:-7008}"
     env_file: ${ENV_FILE:-.env.production}
     environment:
-      - RECAP_PORT=${PORT_RECAP:-7004}
-    command: ["node", "dist-server/server/recap/index.cjs"]
+      - STATUS_PORT=${PORT_STATUS:-7008}
+      # Public origin every user-facing probe goes through (DNS → Cloudflare →
+      # Apache → service), so the dashboard reflects real reachability rather than
+      # internal container health. The website row hits "/" here; the realtime
+      # hubs are probed at <origin>/socket/health, /rmhbox-ws/health and
+      # /rmhtube-ws/health — Apache rewrites those to each service's /health (see
+      # deploy/apache/rmhstudios.conf). cmd/status derives the origin from
+      # STATUS_WEBSITE_URL, so this one value configures them all (e.g. point it
+      # at the staging host on the staging stack).
+      - STATUS_WEBSITE_URL=${STATUS_WEBSITE_URL:-https://rmhstudios.com/}
+      # The Go assets origin runs under compose (service `assets` below) but sits
+      # behind the public CDN, so it has no public path — probe it on internal
+      # compose DNS. Keep the port in sync with the assets service.
+      - ASSETS_PORT=${PORT_ASSETS:-7007}
+      # Gateway and RMHmusic are k3s-only (not run under compose), so their
+      # STATUS_*_URL is intentionally left unset — cmd/status omits those rows
+      # rather than probing a service that isn't here.
+      # Uptime history persists to the shared db/ volume (mounted at /app/db).
+      - STATUS_DATA_DIR=/app/db
+    command: ["/app/bin/status"]
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT_RECAP:-7004}/"]
-      interval: 60s
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_STATUS:-7008}/health"]
+      interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
 
-  # ─── Doctrine Engine Worker (puzzle gen, reputation decay, Sahur activation) ─
-  doctrine-worker:
+  # ─── Assets (streams /library /music /models /sprites from object storage) ──
+  # Go port of the Apache-off-disk static CDN for the heavy media prefixes. In
+  # the production/Helm topology the gateway proxies those four prefixes here;
+  # in compose the main user path still goes through web/Apache, so this service
+  # is for local dev/smoke-testing — hit it directly on the published port
+  # (e.g. curl -r 0-1023 http://127.0.0.1:7007/models/<key> → 206). It reads
+  # from the same S3-compatible bucket as bot-worker (S3_* from env_file; locally
+  # S3_ENDPOINT points at the minio service below), so it waits for minio.
+  assets:
     <<: *common
-    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-doctrine-worker
+    # Runs the Go /app/bin/assets binary, so it uses the full image (built by the
+    # supervisor service's runner-full build). Overrides the slim image: from *common.
+    image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app-full:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-assets
+    ports:
+      - "127.0.0.1:${PORT_ASSETS:-7007}:${PORT_ASSETS:-7007}"
     env_file: ${ENV_FILE:-.env.production}
-    command: ["node", "dist-server/server/doctrine-worker/index.cjs"]
-    restart: unless-stopped
+    environment:
+      - ASSETS_PORT=${PORT_ASSETS:-7007}
+    command: ["/app/bin/assets"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_ASSETS:-7007}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
-  # ─── RMHVibe Thumbnail Worker (renders gallery screenshots via headless Chromium) ─
-  # Shares the db/ volume (via *common) so screenshots it writes to db/vibe-thumbs
-  # are served by the web service. Chromium + PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
-  # come from the shared image (see Dockerfile runner stage).
-  vibe-worker:
-    <<: *common
-    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-vibe-worker
-    env_file: ${ENV_FILE:-.env.production}
-    command: ["node", "dist-server/server/vibe-worker/index.cjs"]
+  # ─── MinIO (S3-compatible object storage) ──────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-minio
     restart: unless-stopped
-    # Chromium captures can outlive a quick SIGTERM; give them room to finish.
-    stop_grace_period: 30s
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      - MINIO_ROOT_USER=${S3_ACCESS_KEY_ID:-rmhminio}
+      - MINIO_ROOT_PASSWORD=${S3_SECRET_ACCESS_KEY:-rmhminio-dev-secret}
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - ${MINIO_DATA_PATH:-./minio-data}:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
-  # ─── RMHark Bot Worker (generates synthetic users + posts via DeepSeek) ─
-  # Invents bot accounts and posts from them throughout the day. Idles if no
-  # DEEPSEEK_API_KEY is set.
-  bot-worker:
-    <<: *common
-    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-bot-worker
-    env_file: ${ENV_FILE:-.env.production}
-    command: ["node", "dist-server/server/bot-worker/index.cjs"]
-    restart: unless-stopped
+  # ─── MinIO bucket bootstrap (creates the bucket, then exits) ────────────────
+  minio-init:
+    image: minio/mc:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${S3_ACCESS_KEY_ID:-rmhminio} ${S3_SECRET_ACCESS_KEY:-rmhminio-dev-secret} &&
+      mc mb --ignore-existing local/${S3_BUCKET:-rmh-media} &&
+      echo 'bucket ready';
+      "
+    restart: "no"
 

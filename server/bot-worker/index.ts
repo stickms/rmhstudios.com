@@ -5,10 +5,13 @@
  * on the RMHark feed:
  *
  *   1. Maintains a pool of AI-generated "bot" users — each with a DeepSeek-
- *      invented name, handle, and bio, an online-sourced avatar, and a private
- *      persona (theme + temperament + voice) that defines how they post.
+ *      invented name, handle, and bio, a unique xAI (Grok) avatar generated as
+ *      webp (DiceBear fallback), and a private persona (theme + temperament +
+ *      voice) that defines how they post.
  *   2. Throughout the day, randomly posts from those users in their own voice,
- *      paced per-bot by how active their persona is.
+ *      paced per-bot by how active their persona is — text, the occasional
+ *      AI-generated image, a KLIPY reaction GIF, or an on-theme poll.
+ *   3. Reacts in-character to replies, @-mentions, and direct messages.
  *
  * Bots never announce that they are bots and are instructed never to reveal it.
  * Runs as a separate Docker service / dev process. Idles harmlessly if no
@@ -27,17 +30,33 @@ import {
 import {
   generateBotProfile,
   generatePost,
+  generatePoll,
+  generateQuote,
+  generateCommunity,
+  generateGifQuery,
   generateReply,
   generateDirectMessageReply,
   generateDirectMessageOpener,
   isRmharkAIConfigured,
 } from '@/lib/rmhark-ai/generate.server';
 import {
+  isImageGenConfigured,
+  generatePostImage,
+} from '@/lib/rmhark-ai/image.server';
+import { generateBotAvatar } from '@/lib/rmhark-ai/bot-avatar.server';
+import { isBotGifConfigured, pickBotGif } from '@/lib/rmhark-ai/gif.server';
+import {
   canBotMessage,
   decideInitiation,
   formatDmHistory,
   type DmPrivacy,
 } from '@/lib/rmhark-ai/dm-policy';
+import { consecutiveBotDepth, shouldReplyToMention } from '@/lib/rmhark-ai/mention-policy';
+import {
+  seedPredictions,
+  placeNoiseBets,
+  resolveDuePredictions,
+} from '@/lib/predictions/predictions-ai.server';
 import type { MessagePayload } from '@/lib/message-events';
 
 // ─── Config ─────────────────────────────────────────────────────
@@ -61,6 +80,31 @@ const USER_CHECK_MS = intEnv('BOT_USER_CHECK_MS', 2 * 60 * 60 * 1000);
 const POST_TICK_MS = intEnv('BOT_POST_TICK_MS', 5 * 60 * 1000);
 // Most posts we'll create in a single tick (protects the DB + paid API).
 const MAX_POSTS_PER_TICK = intEnv('BOT_MAX_POSTS_PER_TICK', 5);
+// Chance a given bot post also gets an AI-generated image (0..1).
+const BOT_IMAGE_PROBABILITY = probEnv('BOT_IMAGE_PROBABILITY', 0.05);
+// Chance a given bot post is a poll instead of a plain text post (0..1).
+const BOT_POLL_PROBABILITY = probEnv('BOT_POLL_PROBABILITY', 0.08);
+// Chance a given bot post attaches a KLIPY GIF (0..1). Skipped if the post is
+// already a poll or AI image.
+const BOT_GIF_PROBABILITY = probEnv('BOT_GIF_PROBABILITY', 0.06);
+// Generate a unique xAI (Grok) avatar for each new bot, stored as webp. Falls
+// back to the deterministic DiceBear avatar when off / unconfigured / on failure.
+const BOT_AVATAR_GEN = (process.env.BOT_AVATAR_GEN ?? 'true') !== 'false';
+// Chance a given bot "post" is instead a quote-repost of a recent post (0..1).
+const BOT_QUOTE_PROBABILITY = probEnv('BOT_QUOTE_PROBABILITY', 0.08);
+// Only quote posts newer than this (default 24h).
+const QUOTE_LOOKBACK_MS = intEnv('BOT_QUOTE_LOOKBACK_MS', 24 * 60 * 60 * 1000);
+// Chance a (non-quote) bot post is published into a community the bot belongs to.
+const BOT_COMMUNITY_POST_PROBABILITY = probEnv('BOT_COMMUNITY_POST_PROBABILITY', 0.25);
+
+// ─── Communities ────────────────────────────────────────────────
+// How often bots tend the community pool — create one if below target, and a
+// few bots join existing ones (default 3h).
+const COMMUNITY_TICK_MS = intEnv('BOT_COMMUNITY_TICK_MS', 3 * 60 * 60 * 1000);
+// Keep at least this many communities in existence (bots create up to it).
+const BOT_COMMUNITY_TARGET = intEnv('BOT_COMMUNITY_TARGET', 8);
+// How many bot→community joins to perform per community tick.
+const BOT_COMMUNITY_JOINS_PER_TICK = intEnv('BOT_COMMUNITY_JOINS_PER_TICK', 4);
 
 // ─── Reply behaviour ────────────────────────────────────────────
 // How often bots check for replies to answer (default = same as posting).
@@ -80,6 +124,22 @@ const PROACTIVE_PROB = probEnv('BOT_PROACTIVE_PROB', 0.4);
 // Proactive replies only target posts newer than this (default 6h).
 const PROACTIVE_LOOKBACK_MS = intEnv('BOT_PROACTIVE_LOOKBACK_MS', 6 * 60 * 60 * 1000);
 
+// ─── Mention-reply behaviour ────────────────────────────────────
+// How often bots answer @mentions (default 60s — snappier than the post tick).
+const MENTION_TICK_MS = intEnv('BOT_MENTION_TICK_MS', 60 * 1000);
+// Only answer mentions whose notification is newer than this (default 24h) —
+// bounds a backlog so a long-idle bot doesn't answer days of old mentions at once.
+const MENTION_LOOKBACK_MS = intEnv('BOT_MENTION_LOOKBACK_MS', 24 * 60 * 60 * 1000);
+// Cap mention replies created per tick (protects the DB + paid API).
+const MAX_MENTION_REPLIES_PER_TICK = intEnv('BOT_MAX_MENTION_REPLIES_PER_TICK', 4);
+// Stop bot↔bot @mention ping-pong: skip once this many consecutive bot-authored
+// comments lead the thread (default 3). Human mentions are always answered.
+// (Defensive: bot-authored content bypasses the API routes, so the queue is
+// effectively human/admin mentions only — see plan's Global Constraints.)
+const MAX_BOT_MENTION_DEPTH = intEnv('MAX_BOT_MENTION_DEPTH', 3);
+// Min gap between a single bot's mention replies (default 30s).
+const MENTION_COOLDOWN_MS = intEnv('BOT_MENTION_COOLDOWN_MS', 30 * 1000);
+
 // ─── DM behaviour ───────────────────────────────────────────────
 // How often the worker services DMs (snappier than the feed tick).
 const DM_TICK_MS = intEnv('BOT_DM_TICK_MS', 60 * 1000);
@@ -97,8 +157,24 @@ const MAX_DM_OPENERS_PER_TICK = intEnv('BOT_MAX_DM_OPENERS_PER_TICK', 1);
 const DM_FOLLOWUP_SILENCE_MS = intEnv('BOT_DM_FOLLOWUP_SILENCE_MS', 3 * 24 * 60 * 60 * 1000);
 // Window defining "recently-active" candidate humans for openers (default 7 days).
 const DM_ACTIVE_HUMAN_LOOKBACK_MS = intEnv('BOT_DM_ACTIVE_HUMAN_LOOKBACK_MS', 7 * 24 * 60 * 60 * 1000);
+// Chance a bot DM (reply or opener) attaches a reaction GIF (0..1).
+const BOT_DM_GIF_PROBABILITY = probEnv('BOT_DM_GIF_PROBABILITY', 0.08);
 
 const TICKS_PER_DAY = (24 * 60 * 60 * 1000) / POST_TICK_MS;
+
+// ─── Prediction-market automation ───────────────────────────────
+// How often to seed new AI prediction markets (default 3h).
+const PREDICTION_SEED_MS = intEnv('PREDICTION_SEED_MS', 3 * 60 * 60 * 1000);
+// New AI markets minted per seed tick.
+const PREDICTION_SEED_BATCH = intEnv('PREDICTION_SEED_BATCH', 3);
+// Cap on simultaneously-open AI markets.
+const PREDICTION_OPEN_CAP = intEnv('PREDICTION_OPEN_CAP', 24);
+// How often bot users place noise trades (default 10m).
+const PREDICTION_NOISE_MS = intEnv('PREDICTION_NOISE_MS', 10 * 60 * 1000);
+// Max noise trades per tick.
+const PREDICTION_NOISE_MAX = intEnv('PREDICTION_NOISE_MAX', 6);
+// How often to resolve due AI markets (default 30m).
+const PREDICTION_RESOLVE_MS = intEnv('PREDICTION_RESOLVE_MS', 30 * 60 * 1000);
 
 // ─── Prisma (standalone client for the worker process) ──────────
 function createPrisma() {
@@ -143,9 +219,11 @@ async function createBot(): Promise<void> {
   const profile = await generateBotProfile(spec);
   const handle = await uniqueHandle(profile.handle);
   const persona = composePersona(spec);
+  // Deterministic DiceBear avatar as an immediate fallback so the bot always has
+  // a picture; upgraded to a unique generated portrait below when enabled.
   const avatar = buildAvatarUrl(handle, spec.avatarStyle);
 
-  await prisma.user.create({
+  const created = await prisma.user.create({
     data: {
       name: profile.name,
       handle,
@@ -158,8 +236,25 @@ async function createBot(): Promise<void> {
         },
       },
     },
+    select: { id: true },
   });
-  log(`created bot @${handle} (${profile.name}) — ${spec.theme} / ${spec.voice.id}`);
+
+  // Give the bot a custom xAI (Grok) avatar, stored as webp. Never throws (it
+  // returns null on any failure), so a missing/over-budget/disabled image just
+  // leaves the DiceBear fallback in place.
+  let generatedAvatar = false;
+  if (BOT_AVATAR_GEN) {
+    const url = await generateBotAvatar(created.id, {
+      name: profile.name,
+      bio: profile.bio,
+      persona,
+    });
+    generatedAvatar = Boolean(url);
+  }
+  log(
+    `created bot @${handle} (${profile.name}) — ${spec.theme} / ${spec.voice.id}` +
+      (generatedAvatar ? ' [grok avatar]' : ''),
+  );
 }
 
 async function maintainBotPool(): Promise<void> {
@@ -177,12 +272,163 @@ async function maintainBotPool(): Promise<void> {
   }
 }
 
+// ─── Communities ────────────────────────────────────────────────
+
+/** URL-safe slug from a community name (mirrors app/routes/api/communities). */
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 40);
+}
+
+/** Pull the THEME line out of a composed persona, for seeding generation. */
+function personaTheme(persona: string | null): string | undefined {
+  const line = (persona ?? '').split('\n').find((l) => l.startsWith('THEME:'));
+  return line ? line.replace('THEME:', '').trim().replace(/\.$/, '') : undefined;
+}
+
+/** A bot invents and founds a new public community (becomes its ADMIN). */
+async function createBotCommunity(): Promise<void> {
+  const bots = await prisma.user.findMany({
+    where: { isBot: true },
+    select: { id: true, botPersona: true },
+    take: 50,
+  });
+  if (!bots.length) return;
+  const creator = randomItem(bots);
+
+  const community = await generateCommunity({ seed: personaTheme(creator.botPersona) });
+  if (!community) return;
+
+  let slug = slugify(community.name);
+  if (!slug) return;
+  if (await prisma.community.findUnique({ where: { slug }, select: { id: true } })) {
+    slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
+  }
+
+  await prisma.community.create({
+    data: {
+      slug,
+      name: community.name,
+      description: community.description || null,
+      icon: community.icon || null,
+      isPrivate: false,
+      memberCount: 1,
+      createdById: creator.id,
+      members: { create: { userId: creator.id, role: 'ADMIN' } },
+    },
+  });
+  log(`bot ${creator.id} founded community c/${slug} (${community.name})`);
+}
+
+/** Keep a small pool of communities alive and drift bots into them. */
+async function communityTick(): Promise<void> {
+  // 1) Top up the pool — one new community per tick until we hit the target.
+  try {
+    const count = await prisma.community.count();
+    if (count < BOT_COMMUNITY_TARGET) await createBotCommunity();
+  } catch (e) {
+    errlog('createBotCommunity failed:', e);
+  }
+
+  // 2) A few bots join public communities they're not already in.
+  const communities = await prisma.community.findMany({
+    where: { isPrivate: false },
+    select: { id: true },
+    take: 50,
+  });
+  if (!communities.length) return;
+
+  const bots = shuffle(
+    await prisma.user.findMany({ where: { isBot: true }, select: { id: true }, take: 100 }),
+  );
+  let joins = 0;
+  for (const bot of bots) {
+    if (joins >= BOT_COMMUNITY_JOINS_PER_TICK) break;
+    const target = randomItem(communities);
+    try {
+      const existing = await prisma.communityMember.findUnique({
+        where: { communityId_userId: { communityId: target.id, userId: bot.id } },
+        select: { id: true },
+      });
+      if (existing) continue;
+      await prisma.$transaction([
+        prisma.communityMember.create({
+          data: { communityId: target.id, userId: bot.id, role: 'MEMBER' },
+        }),
+        prisma.community.update({
+          where: { id: target.id },
+          data: { memberCount: { increment: 1 } },
+        }),
+      ]);
+      joins++;
+    } catch (e) {
+      errlog('bot community join failed:', e);
+    }
+  }
+  if (joins) log(`bots joined ${joins} community(ies)`);
+}
+
 // ─── Posting ────────────────────────────────────────────────────
 
 interface BotRow {
   id: string;
   botPersona: string | null;
   botLastPostAt: Date | null;
+}
+
+/**
+ * Try to quote-repost a recent post in the bot's voice. Returns true if it
+ * posted (so the caller skips the normal post), false if there was nothing good
+ * to quote.
+ */
+async function tryBotQuoteRepost(bot: BotRow): Promise<boolean> {
+  const since = new Date(Date.now() - QUOTE_LOOKBACK_MS);
+  const candidates = await prisma.rMHark.findMany({
+    where: {
+      deletedAt: null,
+      createdAt: { gte: since },
+      userId: { not: bot.id },
+      content: { not: '' },
+      communityId: null, // quote main-feed posts so they stay broadly visible
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 40,
+    select: { id: true, content: true, originalId: true },
+  });
+  if (!candidates.length) return false;
+
+  const target = randomItem(candidates);
+  // Quote the root, never a quote-of-a-quote.
+  const rootId = target.originalId ?? target.id;
+  const root = await prisma.rMHark.findUnique({
+    where: { id: rootId },
+    select: { id: true, content: true, deletedAt: true },
+  });
+  if (!root || root.deletedAt || !root.content.trim()) return false;
+
+  const content = await generateQuote({ persona: bot.botPersona ?? undefined, quoted: root.content });
+  if (!content.trim()) return false;
+
+  await prisma.$transaction([
+    prisma.rMHark.create({ data: { userId: bot.id, content, originalId: root.id } }),
+    prisma.rMHark.update({ where: { id: root.id }, data: { repostCount: { increment: 1 } } }),
+  ]);
+  await prisma.user.update({ where: { id: bot.id }, data: { botLastPostAt: new Date() } });
+  log(`bot ${bot.id} quote-reposted ${root.id}`);
+  return true;
+}
+
+/** Pick a community the bot belongs to, to post into — or undefined. */
+async function pickBotCommunity(botId: string): Promise<string | undefined> {
+  const mems = await prisma.communityMember.findMany({
+    where: { userId: botId },
+    select: { communityId: true },
+    take: 20,
+  });
+  return mems.length ? randomItem(mems).communityId : undefined;
 }
 
 /** Decide whether a given bot should post this tick. */
@@ -214,16 +460,106 @@ async function postTick(): Promise<void> {
   const due = shuffle(bots.filter(shouldPost)).slice(0, MAX_POSTS_PER_TICK);
   for (const bot of due) {
     try {
+      // Sometimes quote-repost a recent post instead of posting something new.
+      // If there's nothing good to quote, fall through to a normal post.
+      if (Math.random() < BOT_QUOTE_PROBABILITY) {
+        try {
+          if (await tryBotQuoteRepost(bot)) continue;
+        } catch (e) {
+          errlog('bot quote-repost failed:', e);
+        }
+      }
+
       const content = await generatePost({ persona: bot.botPersona ?? undefined });
       if (!content.trim()) continue;
-      await prisma.rMHark.create({
-        data: { userId: bot.id, content },
+
+      // Sometimes the post is a poll instead — adds an interactive, on-theme
+      // post type to the feed. Generated to fit the post text; null on any
+      // failure (we then just post the text).
+      let poll: Awaited<ReturnType<typeof generatePoll>> = null;
+      if (isRmharkAIConfigured() && Math.random() < BOT_POLL_PROBABILITY) {
+        try {
+          poll = await generatePoll({ persona: bot.botPersona ?? undefined, topic: content });
+        } catch (e) {
+          errlog('bot poll gen failed:', e);
+        }
+      }
+
+      // Otherwise, occasionally attach an AI-generated image (skipped when the
+      // post is a poll, to keep it clean). Never let image failure block the
+      // post — fall back to text-only.
+      let imageUrls: string[] = [];
+      if (!poll && isImageGenConfigured() && Math.random() < BOT_IMAGE_PROBABILITY) {
+        try {
+          const imageUrl = await generatePostImage({ text: content, userId: bot.id });
+          if (imageUrl) imageUrls = [imageUrl];
+        } catch (e) {
+          errlog('bot image gen failed:', e);
+        }
+      }
+
+      // Or attach a reaction GIF (only when there's no poll/image). A short
+      // query is derived from the post; empty falls back to trending. Never
+      // blocks the post.
+      let gifUrl: string | undefined;
+      if (
+        !poll &&
+        !imageUrls.length &&
+        isBotGifConfigured() &&
+        Math.random() < BOT_GIF_PROBABILITY
+      ) {
+        try {
+          // generateGifQuery returns '' if DeepSeek is unconfigured/fails;
+          // pickBotGif('') falls back to trending GIFs.
+          const query = await generateGifQuery({ text: content });
+          const url = await pickBotGif({ query });
+          if (url) gifUrl = url;
+        } catch (e) {
+          errlog('bot gif pick failed:', e);
+        }
+      }
+
+      // Sometimes publish into a community the bot belongs to instead of the
+      // main feed (taking advantage of communities they've joined).
+      let communityId: string | undefined;
+      if (Math.random() < BOT_COMMUNITY_POST_PROBABILITY) {
+        try {
+          communityId = await pickBotCommunity(bot.id);
+        } catch (e) {
+          errlog('bot community pick failed:', e);
+        }
+      }
+
+      const created = await prisma.rMHark.create({
+        data: {
+          userId: bot.id,
+          content,
+          ...(imageUrls.length ? { imageUrls } : {}),
+          ...(gifUrl ? { gifUrl } : {}),
+          ...(communityId ? { communityId } : {}),
+        },
       });
+      if (poll) {
+        try {
+          await prisma.rMHarkPoll.create({
+            data: {
+              rmheetId: created.id,
+              question: poll.question,
+              multiSelect: poll.multiSelect,
+              options: { create: poll.options.map((text, i) => ({ text, position: i })) },
+            },
+          });
+        } catch (e) {
+          errlog('bot poll create failed:', e);
+        }
+      }
       await prisma.user.update({
         where: { id: bot.id },
         data: { botLastPostAt: new Date() },
       });
-      log(`posted as ${bot.id}: ${content.slice(0, 60).replace(/\n/g, ' ')}…`);
+      const kind = poll ? ' [poll]' : imageUrls.length ? ' [image]' : gifUrl ? ' [gif]' : '';
+      const where = communityId ? ' →community' : '';
+      log(`posted as ${bot.id}${kind}${where}: ${content.slice(0, 60).replace(/\n/g, ' ')}…`);
     } catch (e) {
       errlog('post failed:', e);
     }
@@ -320,15 +656,40 @@ async function notifyMessageDelivered(userId: string, message: MessagePayload): 
   }
 }
 
+/**
+ * Push a live typing indicator for a bot into the web process. Best-effort:
+ * mirrors notifyMessageDelivered, but for the ephemeral "thinking" state.
+ */
+async function notifyTyping(
+  userId: string,
+  typing: { conversationId: string; senderId: string; isTyping: boolean },
+): Promise<void> {
+  const secret = process.env.INTERNAL_API_SECRET;
+  if (!secret) return; // bridge disabled — graceful degradation
+  try {
+    await fetch(`${internalApiBase()}/api/internal/notify-typing`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-internal-secret': secret },
+      body: JSON.stringify({ userId, typing }),
+      signal: AbortSignal.timeout(5000),
+    });
+  } catch (e) {
+    errlog('typing bridge failed:', e);
+  }
+}
+
 /** Create one DM from `botId`, bump the conversation, and push the live event. */
 async function sendBotDm(
   conversationId: string,
   botId: string,
   humanId: string,
   content: string,
+  gifUrl?: string | null,
 ): Promise<void> {
   const [message] = await prisma.$transaction([
-    prisma.directMessage.create({ data: { conversationId, senderId: botId, content } }),
+    prisma.directMessage.create({
+      data: { conversationId, senderId: botId, content, ...(gifUrl ? { gifUrl } : {}) },
+    }),
     prisma.conversation.update({ where: { id: conversationId }, data: { lastMessageAt: new Date() } }),
   ]);
   const payload: MessagePayload = {
@@ -338,8 +699,21 @@ async function sendBotDm(
     senderId: message.senderId,
     read: message.read,
     createdAt: message.createdAt.toISOString(),
+    gifUrl: message.gifUrl,
+    imageUrls: message.imageUrls,
   };
   await notifyMessageDelivered(humanId, payload);
+}
+
+/** Occasionally pick a reaction GIF for a bot DM (null when off / no match). */
+async function maybeBotDmGif(text: string): Promise<string | null> {
+  if (!isBotGifConfigured() || Math.random() >= BOT_DM_GIF_PROBABILITY) return null;
+  try {
+    const query = await generateGifQuery({ text });
+    return await pickBotGif({ query });
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -399,12 +773,21 @@ async function answerDirectMessages(): Promise<number> {
       });
       const history = formatDmHistory(recent.reverse(), cand.botId);
 
-      const content = await generateDirectMessageReply({ persona, history });
+      // Show the bot as "typing" while it generates a reply, then clear it.
+      const typingBase = { conversationId: cand.conversationId, senderId: cand.botId };
+      await notifyTyping(cand.humanId, { ...typingBase, isTyping: true });
+      let content: string;
+      try {
+        content = await generateDirectMessageReply({ persona, history });
+      } finally {
+        await notifyTyping(cand.humanId, { ...typingBase, isTyping: false });
+      }
       if (!content.trim()) continue;
 
-      await sendBotDm(cand.conversationId, cand.botId, cand.humanId, content);
+      const gif = await maybeBotDmGif(content);
+      await sendBotDm(cand.conversationId, cand.botId, cand.humanId, content, gif);
       made++;
-      log(`bot ${cand.botId} answered DM from ${cand.humanId}`);
+      log(`bot ${cand.botId} answered DM from ${cand.humanId}${gif ? ' [gif]' : ''}`);
     } catch (e) {
       errlog('reactive DM failed:', e);
     }
@@ -498,9 +881,10 @@ async function initiateDirectMessages(): Promise<void> {
         select: { id: true },
       });
 
-      await sendBotDm(conversation.id, bot.id, humanId, content);
+      const gif = await maybeBotDmGif(content);
+      await sendBotDm(conversation.id, bot.id, humanId, content, gif);
       opened++;
-      log(`bot ${bot.id} ${decision === 'followup' ? 'followed up with' : 'opened DM to'} ${humanId}`);
+      log(`bot ${bot.id} ${decision === 'followup' ? 'followed up with' : 'opened DM to'} ${humanId}${gif ? ' [gif]' : ''}`);
     } catch (e) {
       errlog('DM initiation failed:', e);
     }
@@ -524,11 +908,72 @@ async function replyToComment(
   });
   if (!content.trim()) return false;
 
-  await prisma.rMHarkComment.create({
-    data: { rmheetId: comment.rmheetId, userId: botId, content, parentId: comment.id },
-  });
+  await prisma.$transaction([
+    prisma.rMHarkComment.create({
+      data: { rmheetId: comment.rmheetId, userId: botId, content, parentId: comment.id },
+    }),
+    // Keep the denormalized counter in sync (Phase 1).
+    prisma.rMHark.update({
+      where: { id: comment.rmheetId },
+      data: { commentCount: { increment: 1 } },
+    }),
+  ]);
   await prisma.user.update({ where: { id: botId }, data: { botLastPostAt: new Date() } });
   return true;
+}
+
+/**
+ * Post an in-character top-level comment from `botId` onto `postId` — used when a
+ * *post* @mentions the bot. Skips deleted posts and posts the bot already answered.
+ */
+async function replyToPostMention(botId: string, postId: string): Promise<boolean> {
+  const post = await prisma.rMHark.findUnique({
+    where: { id: postId },
+    select: {
+      content: true,
+      deletedAt: true,
+      original: { select: { content: true } },
+      comments: { where: { userId: botId }, take: 1, select: { id: true } },
+    },
+  });
+  if (!post || post.deletedAt) return false;
+  if (post.comments.length > 0) return false; // already answered this post
+
+  const content = await generateReply({
+    postContent: post.content,
+    quotedPostContent: post.original?.content || undefined,
+    thread: [],
+    persona: await getPersona(botId),
+  });
+  if (!content.trim()) return false;
+
+  await prisma.$transaction([
+    prisma.rMHarkComment.create({ data: { rmheetId: postId, userId: botId, content } }),
+    prisma.rMHark.update({ where: { id: postId }, data: { commentCount: { increment: 1 } } }),
+  ]);
+  await prisma.user.update({ where: { id: botId }, data: { botLastPostAt: new Date() } });
+  return true;
+}
+
+/**
+ * Walk a comment thread tip→root collecting whether each author is a bot, then
+ * return the leading run of bot authors (consecutiveBotDepth). Bounds the walk
+ * so a deep thread can't stall the tick.
+ */
+async function commentChainBotDepth(commentId: string): Promise<number> {
+  const tipToRootIsBot: boolean[] = [];
+  let currentId: string | null = commentId;
+  for (let i = 0; currentId && i < MAX_BOT_MENTION_DEPTH + 2; i++) {
+    const node: { parentId: string | null; user: { isBot: boolean } } | null =
+      await prisma.rMHarkComment.findUnique({
+        where: { id: currentId },
+        select: { parentId: true, user: { select: { isBot: true } } },
+      });
+    if (!node) break;
+    tipToRootIsBot.push(node.user.isBot);
+    currentId = node.parentId;
+  }
+  return consecutiveBotDepth(tipToRootIsBot);
 }
 
 /**
@@ -589,6 +1034,109 @@ async function reactToComments(): Promise<number> {
 }
 
 /**
+ * Answer @mentions of bots. The post/comment routes persist mentions as MENTION
+ * notifications; this consumes the unread ones addressed to bot users, replies
+ * in-context, and marks them read (bots have no UI, so `read` is a safe
+ * processed-marker). Humans are always answered; bot↔bot mention chains are
+ * depth-capped so they don't ping-pong.
+ */
+async function reactToMentions(): Promise<number> {
+  const since = new Date(Date.now() - MENTION_LOOKBACK_MS);
+  const mentions = await prisma.notification.findMany({
+    where: {
+      type: 'MENTION',
+      read: false,
+      createdAt: { gte: since },
+      user: { is: { isBot: true } },
+    },
+    orderBy: { createdAt: 'asc' },
+    take: 60,
+    select: {
+      id: true,
+      actorId: true,
+      entityType: true,
+      entityId: true,
+      user: { select: { id: true, botLastPostAt: true } },
+    },
+  });
+
+  const markRead = (id: string) =>
+    prisma.notification.update({ where: { id }, data: { read: true } });
+
+  let made = 0;
+  for (const n of mentions) {
+    if (made >= MAX_MENTION_REPLIES_PER_TICK) break;
+    const bot = n.user;
+    if (!n.entityId) {
+      await markRead(n.id);
+      continue;
+    }
+
+    // Per-bot cooldown — leave the notification unread so it retries on a later tick.
+    if (bot.botLastPostAt && Date.now() - bot.botLastPostAt.getTime() < MENTION_COOLDOWN_MS) {
+      continue;
+    }
+
+    try {
+      // Loop cap: how deep is the bot↔bot mention chain at the thread tip?
+      const actor = n.actorId
+        ? await prisma.user.findUnique({ where: { id: n.actorId }, select: { isBot: true } })
+        : null;
+      const actorIsBot = !!actor?.isBot;
+      // Only a bot-authored mention can form a bot↔bot chain; a human actor is
+      // always answered, so skip the (multi-query) chain walk for humans.
+      const depth = !actorIsBot
+        ? 0
+        : n.entityType === 'comment'
+          ? await commentChainBotDepth(n.entityId)
+          : 1; // bot post-mention: a one-step chain
+      if (
+        !shouldReplyToMention({
+          actorIsBot,
+          botChainDepth: depth,
+          maxBotMentionDepth: MAX_BOT_MENTION_DEPTH,
+        })
+      ) {
+        await markRead(n.id);
+        continue;
+      }
+
+      let replied = false;
+      if (n.entityType === 'comment') {
+        const comment = await prisma.rMHarkComment.findUnique({
+          where: { id: n.entityId },
+          select: {
+            id: true,
+            rmheetId: true,
+            deletedAt: true,
+            replies: { where: { userId: bot.id }, take: 1, select: { id: true } },
+          },
+        });
+        if (comment && !comment.deletedAt && comment.replies.length === 0) {
+          replied = await replyToComment(bot.id, { id: comment.id, rmheetId: comment.rmheetId });
+        }
+      } else if (n.entityType === 'rmhark') {
+        replied = await replyToPostMention(bot.id, n.entityId);
+      }
+
+      await markRead(n.id);
+      if (replied) {
+        made++;
+        log(`bot ${bot.id} answered ${n.entityType} mention (${n.entityId})`);
+      } else {
+        // No reply produced — e.g. the thread is past MAX_REPLY_DEPTH, the
+        // post/comment was deleted, or the bot already answered it. Logged so a
+        // silent non-answer to a human mention is observable.
+        log(`bot ${bot.id} did not reply to ${n.entityType} mention (${n.entityId})`);
+      }
+    } catch (e) {
+      errlog('mention reply failed:', e);
+    }
+  }
+  return made;
+}
+
+/**
  * Proactive bot-to-bot chatter: occasionally a bot starts a conversation by
  * replying to another bot's recent post. Kept infrequent (one per tick, gated
  * by a probability) so the feed doesn't fill with bot small-talk.
@@ -629,9 +1177,16 @@ async function seedBotConversation(): Promise<void> {
       persona: bot.botPersona ?? undefined,
     });
     if (!content.trim()) return;
-    await prisma.rMHarkComment.create({
-      data: { rmheetId: post.id, userId: bot.id, content },
-    });
+    await prisma.$transaction([
+      prisma.rMHarkComment.create({
+        data: { rmheetId: post.id, userId: bot.id, content },
+      }),
+      // Keep the denormalized counter in sync (Phase 1).
+      prisma.rMHark.update({
+        where: { id: post.id },
+        data: { commentCount: { increment: 1 } },
+      }),
+    ]);
     await prisma.user.update({ where: { id: bot.id }, data: { botLastPostAt: new Date() } });
     log(`bot ${bot.id} proactively replied to bot post ${post.id}`);
   } catch (e) {
@@ -651,15 +1206,30 @@ async function dmTick(): Promise<void> {
   await initiateDirectMessages();
 }
 
+async function mentionTick(): Promise<void> {
+  personaCache.clear();
+  await reactToMentions();
+}
+
 // ─── Loops ──────────────────────────────────────────────────────
 let userTimer: NodeJS.Timeout | undefined;
 let postTimer: NodeJS.Timeout | undefined;
 let replyTimer: NodeJS.Timeout | undefined;
 let dmTimer: NodeJS.Timeout | undefined;
+let mentionTimer: NodeJS.Timeout | undefined;
+let predictionSeedTimer: NodeJS.Timeout | undefined;
+let predictionNoiseTimer: NodeJS.Timeout | undefined;
+let predictionResolveTimer: NodeJS.Timeout | undefined;
+let communityTimer: NodeJS.Timeout | undefined;
 let maintaining = false;
 let posting = false;
 let replying = false;
 let dmRunning = false;
+let mentionRunning = false;
+let predictionSeeding = false;
+let predictionNoising = false;
+let predictionResolving = false;
+let communityRunning = false;
 
 async function safeMaintain() {
   if (maintaining) return;
@@ -709,6 +1279,71 @@ async function safeDmTick() {
   }
 }
 
+async function safeMentionTick() {
+  if (mentionRunning) return;
+  mentionRunning = true;
+  try {
+    await mentionTick();
+  } catch (e) {
+    errlog('mention tick failed:', e);
+  } finally {
+    mentionRunning = false;
+  }
+}
+
+async function safePredictionSeedTick() {
+  if (predictionSeeding) return;
+  predictionSeeding = true;
+  try {
+    const n = await seedPredictions(prisma, {
+      target: PREDICTION_SEED_BATCH,
+      cap: PREDICTION_OPEN_CAP,
+    });
+    if (n > 0) log(`seeded ${n} prediction market(s)`);
+  } catch (e) {
+    errlog('prediction seed tick failed:', e);
+  } finally {
+    predictionSeeding = false;
+  }
+}
+
+async function safePredictionNoiseTick() {
+  if (predictionNoising) return;
+  predictionNoising = true;
+  try {
+    await placeNoiseBets(prisma, { maxBets: PREDICTION_NOISE_MAX });
+  } catch (e) {
+    errlog('prediction noise tick failed:', e);
+  } finally {
+    predictionNoising = false;
+  }
+}
+
+async function safePredictionResolveTick() {
+  if (predictionResolving) return;
+  predictionResolving = true;
+  try {
+    const n = await resolveDuePredictions(prisma);
+    if (n > 0) log(`resolved ${n} prediction market(s)`);
+  } catch (e) {
+    errlog('prediction resolve tick failed:', e);
+  } finally {
+    predictionResolving = false;
+  }
+}
+
+async function safeCommunityTick() {
+  if (communityRunning) return;
+  communityRunning = true;
+  try {
+    await communityTick();
+  } catch (e) {
+    errlog('community tick failed:', e);
+  } finally {
+    communityRunning = false;
+  }
+}
+
 async function startup() {
   log('Starting…');
   if (!isRmharkAIConfigured()) {
@@ -716,7 +1351,7 @@ async function startup() {
     return;
   }
   log(
-    `config: target=${TARGET_BOT_COUNT}, postTick=${POST_TICK_MS}ms, replyTick=${REPLY_TICK_MS}ms, dmTick=${DM_TICK_MS}ms, userCheck=${USER_CHECK_MS}ms`,
+    `config: target=${TARGET_BOT_COUNT}, postTick=${POST_TICK_MS}ms, replyTick=${REPLY_TICK_MS}ms, dmTick=${DM_TICK_MS}ms, mentionTick=${MENTION_TICK_MS}ms, userCheck=${USER_CHECK_MS}ms`,
   );
 
   await safeMaintain();
@@ -725,6 +1360,15 @@ async function startup() {
   postTimer = setInterval(() => void safePostTick(), POST_TICK_MS);
   replyTimer = setInterval(() => void safeReplyTick(), REPLY_TICK_MS);
   dmTimer = setInterval(() => void safeDmTick(), DM_TICK_MS);
+  mentionTimer = setInterval(() => void safeMentionTick(), MENTION_TICK_MS);
+  predictionSeedTimer = setInterval(() => void safePredictionSeedTick(), PREDICTION_SEED_MS);
+  predictionNoiseTimer = setInterval(() => void safePredictionNoiseTick(), PREDICTION_NOISE_MS);
+  predictionResolveTimer = setInterval(() => void safePredictionResolveTick(), PREDICTION_RESOLVE_MS);
+  communityTimer = setInterval(() => void safeCommunityTick(), COMMUNITY_TICK_MS);
+  // Kick off an initial seed so a fresh deploy has markets to trade.
+  void safePredictionSeedTick();
+  // And an initial community pass so a fresh deploy has communities to join.
+  void safeCommunityTick();
   log('Scheduled.');
 }
 
@@ -737,6 +1381,11 @@ async function shutdown(signal: string) {
   if (postTimer) clearInterval(postTimer);
   if (replyTimer) clearInterval(replyTimer);
   if (dmTimer) clearInterval(dmTimer);
+  if (mentionTimer) clearInterval(mentionTimer);
+  if (predictionSeedTimer) clearInterval(predictionSeedTimer);
+  if (predictionNoiseTimer) clearInterval(predictionNoiseTimer);
+  if (predictionResolveTimer) clearInterval(predictionResolveTimer);
+  if (communityTimer) clearInterval(communityTimer);
   await prisma.$disconnect();
   process.exit(0);
 }

@@ -350,21 +350,31 @@ export class CyberpunkScene {
     /** Walk outward from 0 with variable strides to decide if coord is a road line */
     _isRoadLine(coord, seed) {
         if (coord === 0) return true;
+        // Memoize — this walks from the origin so it is O(coord); the minimap
+        // queries it heavily, so cache results to keep cost flat far from origin.
+        const cache = this._roadLineCache || (this._roadLineCache = new Map());
+        const key = seed * 4194319 + coord;
+        const hit = cache.get(key);
+        if (hit !== undefined) return hit;
+
         let pos = 0;
+        let res = false;
         if (coord > 0) {
             while (pos < coord) {
                 const stride = 2 + (((hashChunk(pos, seed) >>> 0) & 3));  // 2–5
                 pos += stride;
-                if (pos === coord) return true;
+                if (pos === coord) { res = true; break; }
             }
         } else {
             while (pos > coord) {
                 const stride = 2 + (((hashChunk(pos, seed) >>> 0) & 3));  // 2–5
                 pos -= stride;
-                if (pos === coord) return true;
+                if (pos === coord) { res = true; break; }
             }
         }
-        return false;
+        if (cache.size > 40000) cache.clear();
+        cache.set(key, res);
+        return res;
     }
 
     _isNSRoadLine(cx) { return this._isRoadLine(cx, 7777); }
@@ -373,21 +383,29 @@ export class CyberpunkScene {
     /** Highway lines — much rarer, fixed stride of 10-14 chunks */
     _isHighwayLine(coord, seed) {
         if (coord === 0) return false; // no highway at origin
+        const cache = this._hwyLineCache || (this._hwyLineCache = new Map());
+        const key = seed * 4194319 + coord;
+        const hit = cache.get(key);
+        if (hit !== undefined) return hit;
+
         let pos = 0;
+        let res = false;
         if (coord > 0) {
             while (pos < coord) {
                 const stride = 10 + (((hashChunk(pos, seed) >>> 0) & 3)); // 10-13
                 pos += stride;
-                if (pos === coord) return true;
+                if (pos === coord) { res = true; break; }
             }
         } else {
             while (pos > coord) {
                 const stride = 10 + (((hashChunk(pos, seed) >>> 0) & 3));
                 pos -= stride;
-                if (pos === coord) return true;
+                if (pos === coord) { res = true; break; }
             }
         }
-        return false;
+        if (cache.size > 40000) cache.clear();
+        cache.set(key, res);
+        return res;
     }
     _isNSHighwayLine(cx) { return this._isHighwayLine(cx, 11111); }
     _isEWHighwayLine(cz) { return this._isHighwayLine(cz, 22222); }
@@ -2015,18 +2033,106 @@ export class CyberpunkScene {
             }
         }
 
-        // Traffic vehicles (dynamic — recompute boxes from current position)
+        // Traffic vehicles (dynamic — recompute boxes from current position).
+        // Reuse pooled Box3/OBB objects to avoid per-frame allocation. The broad-
+        // phase box is the rotation-aware AABB envelope of the car so it correctly
+        // encloses cars driving east-west (the precise test is the OBB below).
+        if (!this._trafficBoxPool) this._trafficBoxPool = [];
+        if (!this._trafficObbPool) this._trafficObbPool = [];
+        const tHW = this._trafficSize.x * 0.5;
+        const tHD = this._trafficSize.z * 0.5;
+        const tHY = this._trafficSize.y * 0.5;
+        let boxIdx = 0;
         for (const tv of this.trafficVehicles) {
             const pos = tv.mesh.position;
             const dx = vehiclePos.x - pos.x;
             const dz = vehiclePos.z - pos.z;
             if (dx * dx + dz * dz > rSq) continue;
 
-            const box = new Box3().setFromCenterAndSize(pos, this._trafficSize);
-            result.push({ box, mesh: tv.mesh, type: 'traffic' });
+            let box = this._trafficBoxPool[boxIdx];
+            if (!box) { box = new Box3(); this._trafficBoxPool[boxIdx] = box; }
+            let obb = this._trafficObbPool[boxIdx];
+            if (!obb) { obb = { angle: 0, hw: tHW, hd: tHD }; this._trafficObbPool[boxIdx] = obb; }
+
+            const a = tv.mesh.rotation.y;
+            const ca = Math.abs(Math.cos(a)), sa = Math.abs(Math.sin(a));
+            const extX = tHW * ca + tHD * sa;
+            const extZ = tHW * sa + tHD * ca;
+            box.min.set(pos.x - extX, pos.y - tHY, pos.z - extZ);
+            box.max.set(pos.x + extX, pos.y + tHY, pos.z + extZ);
+            obb.angle = a; obb.hw = tHW; obb.hd = tHD;
+            boxIdx++;
+            result.push({ box, mesh: tv.mesh, type: 'traffic', obb });
         }
 
         return result;
+    }
+
+    /**
+     * Find a drivable, ground-level road position within [minDist, maxDist] of an
+     * origin. Used to place mission markers somewhere the player can actually reach.
+     * Deterministic chunk types mean this works for far-off, not-yet-generated chunks.
+     * Returns {x, z} world coordinates (chunk centre) or null if none found.
+     */
+    findRoadTarget(originX, originZ, minDist, maxDist) {
+        const ocx = Math.round(originX / CHUNK_SIZE);
+        const ocz = Math.round(originZ / CHUNK_SIZE);
+        const minC = Math.max(1, Math.floor(minDist / CHUNK_SIZE));
+        const maxC = Math.max(minC + 1, Math.ceil(maxDist / CHUNK_SIZE));
+
+        const crosses = [];
+        const roads = [];
+        for (let dx = -maxC; dx <= maxC; dx++) {
+            for (let dz = -maxC; dz <= maxC; dz++) {
+                const d = Math.sqrt(dx * dx + dz * dz);
+                if (d < minC || d > maxC) continue;
+                const cx = ocx + dx;
+                const cz = ocz + dz;
+                const t = this._getChunkType(cx, cz);
+                if (t === CHUNK_CROSS) crosses.push([cx, cz]);
+                else if (t === CHUNK_STRAIGHT_NS || t === CHUNK_STRAIGHT_EW) roads.push([cx, cz]);
+            }
+        }
+        // Prefer intersections (open, easy to spot); fall back to straight roads.
+        const pool = crosses.length ? crosses : roads;
+        if (!pool.length) return null;
+        const pick = pool[Math.floor(Math.random() * pool.length)];
+        return { x: pick[0] * CHUNK_SIZE, z: pick[1] * CHUNK_SIZE };
+    }
+
+    /** World units per chunk — exposed for the minimap. */
+    getChunkSize() { return CHUNK_SIZE; }
+
+    /** True if the chunk at (cx,cz) is a drivable, ground-level road. */
+    isRoadChunk(cx, cz) {
+        const t = this._getChunkType(cx, cz);
+        return t === CHUNK_CROSS || t === CHUNK_STRAIGHT_NS || t === CHUNK_STRAIGHT_EW;
+    }
+
+    /**
+     * Collect static collidables (buildings, barriers, poles) within `radius` of
+     * an XZ point, scanning only the local 3×3 chunk neighbourhood so it stays
+     * cheap enough to call per-AI-car per-frame. Results are pushed into `out`.
+     */
+    getNearbyStatic(x, z, radius, out) {
+        out.length = 0;
+        const r2 = radius * radius;
+        const ccx = Math.round(x / CHUNK_SIZE);
+        const ccz = Math.round(z / CHUNK_SIZE);
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dz = -1; dz <= 1; dz++) {
+                const chunk = this.chunks.get(`${ccx + dx},${ccz + dz}`);
+                if (!chunk) continue;
+                for (const c of chunk.collidables) {
+                    if (c.type !== 'building' && c.type !== 'barrier' && c.type !== 'pole') continue;
+                    const mxc = (c.box.min.x + c.box.max.x) * 0.5;
+                    const mzc = (c.box.min.z + c.box.max.z) * 0.5;
+                    const ddx = mxc - x, ddz = mzc - z;
+                    if (ddx * ddx + ddz * ddz <= r2) out.push(c);
+                }
+            }
+        }
+        return out;
     }
 
     /** Get ground height at a world XZ position (for vehicle Y) */

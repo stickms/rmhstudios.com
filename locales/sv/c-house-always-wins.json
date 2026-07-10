@@ -1,0 +1,18 @@
+{
+  "back-home": "Tillbaka hem",
+  "controls-hint": "WASD/← → Flytta • Space Hoppa • Shift Dash • E Interagera • M Meny",
+  "controls-interact": "E — Interagera",
+  "controls-jump": "Space — Hoppa",
+  "controls-menu": "M — Meny",
+  "controls-move": "WASD / Pilar — Flytta",
+  "debt": "SKULD",
+  "e-continue": "[E] Fortsätt",
+  "loading": "LADDAR...",
+  "login-to-play": "Logga in för att spela",
+  "menu-title": "Meny",
+  "music-volume": "Musikvolym",
+  "resume": "Fortsätt [M]",
+  "sign-in-prompt": "Du måste logga in innan du kan gå in i kasinot. Dina skulder kommer att registreras.",
+  "subtitle": "Bordet väntar",
+  "title": "Huset vinner alltid"
+}

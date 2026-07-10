@@ -1,0 +1,15 @@
+{
+  "copy-token-label": "Copier le jeton",
+  "created-date": "Créé le {{date}}",
+  "expired": "Expiré",
+  "generate-token": "Générer un jeton",
+  "last-used-date": "Dernière utilisation le {{date}}",
+  "no-active-tokens": "Aucun jeton actif. Générez-en un pour commencer.",
+  "revoke-token-label": "Révoquer le jeton",
+  "token-auth-instruction-post": "pour vous authentifier.",
+  "token-auth-instruction-pre": "Exécutez",
+  "token-generated-notice": "Jeton généré ! Copiez-le maintenant – il ne sera plus affiché.",
+  "token-name-placeholder": "Nom du jeton (facultatif)",
+  "unnamed-token": "Jeton sans nom",
+  "your-tokens": "Vos jetons"
+}

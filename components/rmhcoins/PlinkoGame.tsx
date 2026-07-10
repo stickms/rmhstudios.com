@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
@@ -131,6 +132,7 @@ function drawBall(ctx: CanvasRenderingContext2D, x: number, y: number) {
 
 // ---- Component ----
 export function PlinkoGame({ coins, setCoins }: Props) {
+  const { t } = useTranslation('c-rmhcoins');
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef<number>(0);
 
@@ -268,8 +270,8 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         setResultWon(won);
         setResultMessage(
           won
-            ? `You won ${payout} coins!`
-            : `Ball landed in bin ${landedBin + 1}. You lost ${betAmount} coins.`
+            ? t('result-won', { defaultValue: 'You won {{payout}} coins!', payout })
+            : t('result-lost', { defaultValue: 'Ball landed in bin {{bin}}. You lost {{amount}} coins.', bin: landedBin + 1, amount: betAmount })
         );
         setGameState('result');
 
@@ -333,7 +335,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
       if (!res.ok) {
         const data = await res.json();
-        setResultMessage(data.error || 'Something went wrong');
+        setResultMessage(data.error || t('error-generic', { defaultValue: 'Something went wrong' }));
         setResultWon(false);
         setGameState('result');
         setTimeout(() => {
@@ -352,7 +354,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         data.newBalance
       );
     } catch {
-      setResultMessage('Network error');
+      setResultMessage(t('error-network', { defaultValue: 'Network error' }));
       setGameState('result');
       setTimeout(() => {
         setGameState('idle');
@@ -366,26 +368,26 @@ export function PlinkoGame({ coins, setCoins }: Props) {
   const isIdle = gameState === 'idle';
 
   return (
-    <div className="flex flex-col items-center gap-3 sm:gap-4 px-3 sm:px-4 py-4 sm:py-6">
-      <div className="w-full max-w-[390px] aspect-[390/420] relative">
+    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-center gap-4 sm:gap-6 px-3 sm:px-4 py-4 sm:py-6">
+      <div className="w-full max-w-[390px] mx-auto lg:mx-0 aspect-390/420 relative shrink-0 rounded-xl border border-site-border overflow-hidden shadow-(--site-shadow)">
         <canvas
           ref={canvasRef}
           width={CANVAS_W}
           height={CANVAS_H}
-          className="w-full h-full rounded-lg"
+          className="w-full h-full"
           style={{ imageRendering: 'auto' }}
         />
         {resultMessage && (
           <div
-            className={`absolute inset-0 flex items-center justify-center rounded-lg ${
-              resultWon ? 'bg-emerald-500/20' : 'bg-red-500/20'
+            className={`absolute inset-0 flex items-center justify-center backdrop-blur-[1px] ${
+              resultWon ? 'bg-site-success/15' : 'bg-site-danger/15'
             }`}
           >
             <div
-              className={`px-3 py-2 rounded-lg font-bold text-sm sm:text-lg ${
+              className={`px-4 py-2.5 rounded-xl font-bold text-sm sm:text-lg shadow-lg ${
                 resultWon
-                  ? 'bg-emerald-500/90 text-white'
-                  : 'bg-red-500/90 text-white'
+                  ? 'bg-site-success text-black'
+                  : 'bg-site-danger text-black'
               }`}
             >
               {resultMessage}
@@ -394,8 +396,9 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         )}
       </div>
 
-      <div className="w-full max-w-[390px]">
-        <p className="text-sm text-site-text-dim mb-2">Select a bin:</p>
+      <div className="w-full lg:max-w-md mx-auto lg:mx-0 flex flex-col gap-4">
+      <div className="w-full">
+        <p className="text-sm text-site-text-dim mb-2">{t('select-a-bin', { defaultValue: 'Select a bin:' })}</p>
         <div className="flex gap-1.5 sm:gap-2">
           {Array.from({ length: NUM_BINS }, (_, i) => (
             <button
@@ -404,7 +407,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               disabled={!isIdle}
               className={`flex-1 min-h-10 py-2 rounded-xl text-sm font-bold transition-all active:scale-95 ${
                 selectedBin === i
-                  ? 'ring-2 ring-yellow-500 text-white'
+                  ? 'ring-2 ring-site-accent text-white scale-105'
                   : 'text-site-text-dim hover:text-site-text'
               } disabled:opacity-50`}
               style={{
@@ -418,8 +421,8 @@ export function PlinkoGame({ coins, setCoins }: Props) {
         </div>
       </div>
 
-      <div className="w-full max-w-[390px]">
-        <p className="text-sm text-site-text-dim mb-2">Bet amount:</p>
+      <div className="w-full">
+        <p className="text-sm text-site-text-dim mb-2">{t('bet-amount', { defaultValue: 'Bet amount:' })}</p>
         <div className="flex flex-col gap-2">
           <div className="relative">
             <input
@@ -430,7 +433,7 @@ export function PlinkoGame({ coins, setCoins }: Props) {
               onChange={(e) => setBetInput(e.target.value)}
               onBlur={handleBetBlur}
               disabled={!isIdle}
-              className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500/50 disabled:opacity-50"
+              className="w-full bg-site-surface border border-site-border rounded-xl px-3 py-2.5 text-site-text text-sm focus:outline-none focus:ring-2 focus:ring-site-accent/40 disabled:opacity-50"
             />
             <CoinIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" />
           </div>
@@ -448,9 +451,9 @@ export function PlinkoGame({ coins, setCoins }: Props) {
             <button
               onClick={() => isIdle && setQuickBet(coins)}
               disabled={!isIdle}
-              className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-xl text-yellow-500 hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-all"
+              className="min-h-10 text-xs font-bold bg-site-surface border border-site-border rounded-xl text-site-accent hover:bg-site-surface-hover disabled:opacity-50 active:scale-95 transition-all"
             >
-              All
+              {t('bet-all', { defaultValue: 'All' })}
             </button>
           </div>
         </div>
@@ -459,23 +462,25 @@ export function PlinkoGame({ coins, setCoins }: Props) {
       <Button
         onClick={handleSubmit}
         disabled={!isIdle || selectedBin === null || submitting}
-        className="w-full max-w-[390px] min-h-11 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-xl"
+        variant="accent"
+        className="w-full min-h-11 font-bold rounded-xl text-base"
       >
         {submitting ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : gameState === 'dropping' ? (
-          'Dropping...'
+          t('dropping', { defaultValue: 'Dropping...' })
         ) : (
-          'Drop Ball'
+          t('drop-ball', { defaultValue: 'Drop Ball' })
         )}
       </Button>
 
       {coins === 0 && isIdle && (
         <p className="text-sm text-site-text-dim text-center">
-          You&apos;re out of coins! Visit the{' '}
-          <span className="text-yellow-500">Shop</span> tab to get more.
+          {t('out-of-coins', { defaultValue: "You're out of coins! Visit the" })}{' '}
+          <span className="text-site-accent">{t('shop-tab', { defaultValue: 'Shop' })}</span> {t('out-of-coins-suffix', { defaultValue: 'tab to get more.' })}
         </p>
       )}
+      </div>
     </div>
   );
 }

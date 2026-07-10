@@ -39,6 +39,8 @@ export const updateProfileSchema = z.object({
     .or(z.literal("")),
   showLikes: z.boolean().optional(),
   dmPrivacy: z.enum(["EVERYONE", "FOLLOWERS", "NONE"]).optional(),
+  tipGoal: z.number().int().min(0).max(10_000_000).optional().nullable(),
+  tipGoalLabel: z.string().max(80).optional().nullable(),
   profileSongSpotifyId: z.string().max(50).optional().nullable(),
   profileSongTitle: z.string().max(200).optional().nullable(),
   profileSongArtist: z.string().max(200).optional().nullable(),
@@ -56,7 +58,6 @@ export const updateProfileSchema = z.object({
     .optional()
     .nullable()
     .or(z.literal("")),
-  showProfilePet: z.boolean().optional(),
 });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

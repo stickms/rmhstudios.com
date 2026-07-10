@@ -1,6 +1,12 @@
 import { z } from "zod";
+import { isFeedImageUrl } from "@/lib/storage/keys";
 
 export const MAX_RMHARK_LENGTH = 280;
+export const MAX_RMHARK_IMAGES = 4;
+// Accepts the local proxy path or the public CDN URL (see isFeedImageUrl).
+export const feedImageUrlSchema = z
+  .string()
+  .refine(isFeedImageUrl, "Invalid image reference");
 export const MAX_COMMENT_LENGTH = 500;
 export const MAX_POLL_QUESTION_LENGTH = 200;
 export const MAX_POLL_OPTION_LENGTH = 80;
@@ -9,7 +15,7 @@ export const MAX_POLL_OPTIONS = 4;
 
 const IMAGE_EXT_REGEX = /\.(gif|png|jpe?g|webp|avif)(\?[^\s]*)?$/i;
 
-const gifUrlSchema = z
+export const gifUrlSchema = z
   .string()
   .url("Must be a valid URL")
   .refine(
@@ -42,6 +48,8 @@ const pollSchema = z.object({
     .min(MIN_POLL_OPTIONS, `Poll must have at least ${MIN_POLL_OPTIONS} options`)
     .max(MAX_POLL_OPTIONS, `Poll can have at most ${MAX_POLL_OPTIONS} options`),
   multiSelect: z.boolean().default(false),
+  // Optional scheduled close, in hours from now (max 30 days).
+  durationHours: z.number().int().min(1).max(720).optional(),
 });
 
 export const createRMHarkSchema = z
@@ -53,11 +61,38 @@ export const createRMHarkSchema = z
       .default(""),
     poll: pollSchema.optional(),
     gifUrl: gifUrlSchema.optional(),
+    imageUrls: z
+      .array(feedImageUrlSchema)
+      .max(MAX_RMHARK_IMAGES, `At most ${MAX_RMHARK_IMAGES} images allowed`)
+      .optional(),
+    // Quote-repost: id of the post being quoted.
+    originalId: z.string().max(64).optional(),
+    // Audience visibility.
+    audience: z.enum(["PUBLIC", "FOLLOWERS", "PRIVATE"]).optional(),
+    // Paid post: coins required to unlock (0/undefined = free).
+    unlockPrice: z.number().int().min(0).max(1_000_000).optional(),
+    // Optional community to post into (viewer must be a member).
+    communityId: z.string().max(64).optional(),
   })
   .refine(
-    (data) => data.content.trim().length > 0 || data.poll || data.gifUrl,
-    { message: "Post must have text, a poll, or an image/GIF" }
+    (data) =>
+      data.content.trim().length > 0 ||
+      data.poll ||
+      data.gifUrl ||
+      (data.imageUrls?.length ?? 0) > 0 ||
+      !!data.originalId,
+    { message: "Post must have text, a poll, an image/GIF, or be a quote" }
   );
+
+export const editRMHarkSchema = z.object({
+  content: z
+    .string()
+    .max(MAX_RMHARK_LENGTH, `RMHark must be at most ${MAX_RMHARK_LENGTH} characters`)
+    .optional()
+    .default(""),
+  // null clears an existing GIF; undefined leaves it unchanged.
+  gifUrl: gifUrlSchema.nullish(),
+});
 
 export const createCommentSchema = z.object({
   content: z

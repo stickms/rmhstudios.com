@@ -17,6 +17,7 @@
 
 import { motion } from 'framer-motion';
 import { Trophy, ArrowUp, Award as AwardIcon } from 'lucide-react';
+import { useTranslation } from "react-i18next";
 import LucideAwardIcon from '../../LucideAwardIcon';
 
 export interface Standing {
@@ -60,6 +61,7 @@ export default function RhymeTimeScoreboard({
   isGameOver,
   awards = [],
 }: RhymeTimeScoreboardProps) {
+  const { t } = useTranslation("c-rmhbox");
   const sorted = [...standings].sort((a, b) => b.totalScore - a.totalScore);
   const mvpId = sorted.length > 0 ? sorted[0].userId : null;
 
@@ -73,11 +75,11 @@ export default function RhymeTimeScoreboard({
       {/* Header */}
       <motion.div variants={rowVariants} className="text-center">
         <h2 className="text-2xl font-bold">
-          {isGameOver ? 'Final Scores' : 'Scoreboard'}
+          {isGameOver ? t("final-scores", { defaultValue: "Final Scores" }) : t("scoreboard", { defaultValue: "Scoreboard" })}
         </h2>
         {!isGameOver && (
           <p className="mt-1 text-sm text-(--rmhbox-text-muted)">
-            After round {currentRound} of {totalRounds}
+            {t("after-round", { defaultValue: "After round {{round}} of {{total}}", round: currentRound, total: totalRounds })}
           </p>
         )}
       </motion.div>
@@ -109,7 +111,7 @@ export default function RhymeTimeScoreboard({
                   <span className="font-semibold">{player.userName}</span>
                   {isMvp && (
                     <span className="rounded-full bg-(--rmhbox-warning)/20 px-2 py-0.5 text-[10px] font-medium text-(--rmhbox-warning) border border-(--rmhbox-warning)/30">
-                      MVP
+                      {t("mvp", { defaultValue: "MVP" })}
                     </span>
                   )}
                 </div>
@@ -140,7 +142,7 @@ export default function RhymeTimeScoreboard({
           variants={rowVariants}
           className="text-center text-sm text-(--rmhbox-text-muted)"
         >
-          Next up: Round {currentRound + 1} of {totalRounds}
+          {t("next-up-round", { defaultValue: "Next up: Round {{round}} of {{total}}", round: currentRound + 1, total: totalRounds })}
         </motion.p>
       )}
 
@@ -151,7 +153,7 @@ export default function RhymeTimeScoreboard({
           className="rounded-xl border border-(--rmhbox-border) bg-(--rmhbox-surface) p-4"
         >
           <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wider text-(--rmhbox-text-muted)">
-            <AwardIcon className="h-4 w-4" /> Awards
+            <AwardIcon className="h-4 w-4" /> {t("awards", { defaultValue: "Awards" })}
           </h3>
           <ul className="space-y-3">
             {awards.map((award, i) => (

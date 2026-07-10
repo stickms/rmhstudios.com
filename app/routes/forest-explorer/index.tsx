@@ -2,8 +2,10 @@ import { createFileRoute } from '@tanstack/react-router'
 import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, TreePine, BookOpen } from 'lucide-react'
+import { useTranslation } from "react-i18next"
 
 function ForestExplorerPage() {
+  const { t } = useTranslation("r-forest-explorer")
   return (
     <main className="fixed inset-0 bg-gradient-to-b from-[#0a1a0e] via-[#0d200f] to-[#071208] flex flex-col overflow-hidden">
       <div className="absolute top-3 left-3 z-50">
@@ -23,10 +25,10 @@ function ForestExplorerPage() {
         <div className="text-center mb-10">
           <div className="text-6xl mb-4">🌲</div>
           <h1 className="text-4xl sm:text-5xl font-bold tracking-wide text-green-200 mb-2">
-            Forest Explorer
+            {t("forest-explorer-title", { defaultValue: "Forest Explorer" })}
           </h1>
           <p className="text-green-300/50 text-sm sm:text-base">
-            Choose your path through the ancient woods
+            {t("choose-your-path", { defaultValue: "Choose your path through the ancient woods" })}
           </p>
         </div>
 
@@ -39,13 +41,12 @@ function ForestExplorerPage() {
                   <TreePine className="w-5 h-5 text-green-300" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-green-100">Free Explore</h2>
-                  <span className="text-xs text-green-400/60 font-medium">SANDBOX</span>
+                  <h2 className="text-lg font-semibold text-green-100">{t("free-explore", { defaultValue: "Free Explore" })}</h2>
+                  <span className="text-xs text-green-400/60 font-medium">{t("sandbox-label", { defaultValue: "SANDBOX" })}</span>
                 </div>
               </div>
               <p className="text-sm text-green-300/60 leading-relaxed">
-                Wander freely through a peaceful forest with day and night cycles,
-                glowing fireflies, and a winding river. No objectives — just explore.
+                {t("free-explore-desc-v2", { defaultValue: "Wander freely through a peaceful forest with day and night cycles, fireflies, butterflies, and a winding river. Plant seeds and return to watch your garden bloom." })}
               </p>
             </div>
           </Link>
@@ -58,13 +59,12 @@ function ForestExplorerPage() {
                   <BookOpen className="w-5 h-5 text-amber-300" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-amber-100">Story Mode</h2>
-                  <span className="text-xs text-amber-400/60 font-medium">3 ACTS</span>
+                  <h2 className="text-lg font-semibold text-amber-100">{t("story-mode", { defaultValue: "Story Mode" })}</h2>
+                  <span className="text-xs text-amber-400/60 font-medium">{t("three-acts-label", { defaultValue: "3 ACTS" })}</span>
                 </div>
               </div>
               <p className="text-sm text-amber-300/50 leading-relaxed">
-                A narrative journey through whispering woods, shifting canopies,
-                and a tranquil grove. Solve puzzles, uncover secrets, restore the forest.
+                {t("story-mode-desc-v2", { defaultValue: "Follow the last Warden's trail through whispering woods, a shifting canopy, and a tranquil grove. Solve puzzles, uncover the journal, restore the forest." })}
               </p>
             </div>
           </Link>

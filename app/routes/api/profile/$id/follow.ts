@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { toggleFollow } from "@/lib/social/engagement.server";
 
 export const Route = createFileRoute('/api/profile/$id/follow')({
   server: {
@@ -30,29 +31,12 @@ export const Route = createFileRoute('/api/profile/$id/follow')({
     const resolvedUser = await prisma.user.findUnique({ where: { handle: idOrHandle }, select: { id: true } });
     const followingId = resolvedUser?.id ?? idOrHandle;
     const followerId = session.user.id;
+    const followerHandle = (session.user as { handle?: string }).handle ?? null;
 
-    if (followingId === followerId) {
-      return Response.json({ error: "Cannot follow yourself" }, { status: 400 });
-    }
-
-    const existingFollow = await prisma.follow.findUnique({
-      where: {
-        followerId_followingId: {
-          followerId,
-          followingId,
-        },
-      },
-    });
-
-    if (existingFollow) {
-      await prisma.follow.delete({ where: { id: existingFollow.id } });
-      return Response.json({ success: true, following: false });
-    } else {
-      await prisma.follow.create({
-        data: { followerId, followingId },
-      });
-      return Response.json({ success: true, following: true });
-    }
+    const result = await toggleFollow({ followerId, followingId, followerHandle });
+    if (result.selfFollow) return Response.json({ error: "Cannot follow yourself" }, { status: 400 });
+    if (!result.found) return Response.json({ error: "User not found" }, { status: 404 });
+    return Response.json({ success: true, following: result.following });
   } catch (error) {
     console.error("Toggle follow error:", error);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });

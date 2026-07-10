@@ -3,7 +3,7 @@
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Color, type Mesh, type MeshStandardMaterial } from 'three';
-import { useStoryStore } from '@/lib/forest-explorer/store';
+import { useLandmarkState } from './useLandmarkState';
 
 interface AncientStoneProps {
     position: [number, number, number];
@@ -13,13 +13,7 @@ interface AncientStoneProps {
 
 export function AncientStone({ position, scale = 1, id }: AncientStoneProps) {
     const glowRef = useRef<Mesh>(null);
-    const revealedIds = useStoryStore(s => s.flashlightRevealedIds);
-    const puzzleStates = useStoryStore(s => s.puzzleStates);
-
-    // Find the related interactable — check if it's revealed or solved
-    const isRevealed = revealedIds.some(rid => rid.includes(id));
-    const relatedPuzzle = Object.entries(puzzleStates).find(([pid]) => pid.includes(id.replace('_landmark', '')));
-    const isSolved = relatedPuzzle?.[1]?.status === 'solved';
+    const { isRevealed, isSolved } = useLandmarkState(id);
 
     useFrame((state) => {
         if (!glowRef.current) return;

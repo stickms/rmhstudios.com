@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { transitionIncidentStatus, addIncidentEvent } from '@/lib/doctrine/incidents';
+import { logAdminAction } from '@/lib/admin-audit.server';
 import type { IncidentStatus } from '@/lib/doctrine/types';
 
 const VALID_STATUSES: IncidentStatus[] = ['ACTIVE', 'MITIGATED', 'RESOLVED', 'LEGENDARY'];
@@ -58,6 +59,12 @@ export const Route = createFileRoute('/api/doctrine/admin/incidents')({
           const incident = await prisma.doctrineIncident.findUnique({
             where: { id },
             include: { timeline: { orderBy: { createdAt: 'asc' } } },
+          });
+
+          await logAdminAction(session.user.id, 'doctrine.incident.update', {
+            targetType: 'DoctrineIncident',
+            targetId: String(id),
+            detail: typeof status === 'string' ? status : 'update',
           });
 
           return Response.json({ success: true, incident });

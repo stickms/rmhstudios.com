@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { Spinner } from '@/components/ui/spinner';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Link } from '@tanstack/react-router';
 import { authClient } from '@/lib/auth-client';
 
@@ -34,15 +36,9 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
   const fetchingRef = useRef(false);
   const { data: session } = authClient.useSession();
 
-  const title = type === 'followers' ? 'Followers' : 'Following';
+  const { t } = useTranslation('feed');
+  const title = type === 'followers' ? t('followers', { defaultValue: 'Followers' }) : t('following', { defaultValue: 'Following' });
   const endpoint = `/api/profile/${encodeURIComponent(userId)}/${type}`;
-
-  // Prevent body scroll while open
-  useEffect(() => {
-    if (open) document.body.style.overflow = 'hidden';
-    else document.body.style.overflow = '';
-    return () => { document.body.style.overflow = ''; };
-  }, [open]);
 
   // Reset when type/userId changes or modal opens
   useEffect(() => {
@@ -142,43 +138,25 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
     }
   };
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-
-      {/* Modal panel */}
-      <div
-        className="relative z-10 w-full max-w-md bg-site-bg border border-site-border rounded-2xl shadow-xl flex flex-col max-h-[80vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Dialog open={open} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md p-0 gap-0 bg-site-bg flex flex-col max-h-[80vh] overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-site-border shrink-0">
-          <h2 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
+          <DialogTitle className="font-(family-name:--site-font-display) font-bold text-lg text-site-text">
             {title}
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          </DialogTitle>
         </div>
 
         {/* List */}
         <div className="overflow-y-auto flex-1">
           {users.length === 0 && !loading && (
             <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-              <p className="text-site-text font-medium mb-1">No {title.toLowerCase()} yet</p>
+              <p className="text-site-text font-medium mb-1">{t('no-list-yet', { defaultValue: 'No {{title}} yet', title: title.toLowerCase() })}</p>
               <p className="text-sm text-site-text-muted">
                 {type === 'followers'
-                  ? 'Nobody is following this user yet.'
-                  : 'This user isn\'t following anyone yet.'}
+                  ? t('no-followers-description', { defaultValue: 'Nobody is following this user yet.' })
+                  : t('no-following-description', { defaultValue: "This user isn't following anyone yet." })}
               </p>
             </div>
           )}
@@ -193,10 +171,10 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
                 onClick={onClose}
                 className="flex items-center gap-3 flex-1 min-w-0"
               >
-                <UserAvatar src={user.image ?? undefined} alt={user.name || 'User'} size={40} fallbackName={user.name ?? undefined} />
+                <UserAvatar src={user.image ?? undefined} alt={user.name || t('user-alt', { defaultValue: 'User' })} size={40} fallbackName={user.name ?? undefined} />
                 <div className="min-w-0">
                   <p className="font-bold text-site-text text-sm truncate">
-                    {user.name || user.username || 'Unknown'}
+                    {user.name || user.username || t('unknown-user', { defaultValue: 'Unknown' })}
                   </p>
                   {user.handle && (
                     <p className="text-xs text-site-text-dim truncate">@{user.handle}</p>
@@ -208,13 +186,13 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
                 <button
                   onClick={() => handleFollowToggle(user)}
                   disabled={followingInProgress.has(user.id)}
-                  className={`shrink-0 px-4 py-1.5 rounded-lg text-xs font-bold transition-colors ${
+                  className={`shrink-0 px-4 py-1.5 rounded-site-sm text-xs font-bold transition-colors ${
                     user.isFollowing
                       ? 'border border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10'
                       : 'bg-site-accent text-site-bg hover:bg-site-accent-hover'
                   }`}
                 >
-                  {user.isFollowing ? 'Following' : 'Follow'}
+                  {user.isFollowing ? t('following', { defaultValue: 'Following' }) : t('follow', { defaultValue: 'Follow' })}
                 </button>
               )}
             </div>
@@ -222,13 +200,13 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
 
           {loading && (
             <div className="flex justify-center py-6">
-              <Loader2 className="w-5 h-5 text-site-accent animate-spin" />
+              <Spinner size={20} />
             </div>
           )}
 
           <div ref={sentinelRef} className="h-1" />
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
 type PipeType = 'empty' | 'straight_h' | 'straight_v' | 'corner_ne' | 'corner_nw' | 'corner_se' | 'corner_sw' | 'tee_up' | 'tee_down' | 'tee_left' | 'tee_right' | 'cross';
@@ -21,7 +22,8 @@ const PIPE_DISPLAY: Record<string, string> = {
 };
 
 const CYCLE_ORDER: PipeType[] = [
-    'empty', 'straight_h', 'straight_v', 'corner_ne', 'corner_nw', 'corner_se', 'corner_sw', 'cross',
+    'empty', 'straight_h', 'straight_v', 'corner_ne', 'corner_nw', 'corner_se', 'corner_sw',
+    'tee_up', 'tee_down', 'tee_left', 'tee_right', 'cross',
 ];
 
 // Each pipe has openings: top, right, bottom, left
@@ -40,10 +42,26 @@ const PIPE_CONNECTIONS: Record<string, [boolean, boolean, boolean, boolean]> = {
     cross: [true, true, true, true],
 };
 
+// Source and target mouths accept flow from every direction
+const OMNI: [boolean, boolean, boolean, boolean] = [true, true, true, true];
+
+/** Deterministic tiny RNG so the pre-placed pipes are stable across mounts */
+function seededRng(seed: number) {
+    let h = seed | 0;
+    return () => {
+        h = (h + 0x6D2B79F5) | 0;
+        let t = Math.imul(h ^ (h >>> 15), 1 | h);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
 export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentProps) {
+    const { t } = useTranslation("c-forest-explorer");
     const gridSize = (config.gridSize as number) ?? 6;
     const source = (config.source as [number, number]) ?? [0, 3];
     const target = (config.target as [number, number]) ?? [5, 2];
+    const preplacedCount = (config.preplacedCount as number) ?? 0;
 
     const [grid, setGrid] = useState<PipeType[][]>(() => {
         const g: PipeType[][] = [];
@@ -53,6 +71,21 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
                 row.push('empty');
             }
             g.push(row);
+        }
+        // Scatter a few starter pipes (rotatable like any other cell)
+        const rng = seededRng(gridSize * 1000 + preplacedCount);
+        const placeable: PipeType[] = ['straight_h', 'straight_v', 'corner_ne', 'corner_sw'];
+        let placed = 0;
+        let guard = 0;
+        while (placed < preplacedCount && guard < 100) {
+            guard++;
+            const r = Math.floor(rng() * gridSize);
+            const c = Math.floor(rng() * gridSize);
+            if (r === source[1] && c === source[0]) continue;
+            if (r === target[1] && c === target[0]) continue;
+            if (g[r][c] !== 'empty') continue;
+            g[r][c] = placeable[Math.floor(rng() * placeable.length)];
+            placed++;
         }
         return g;
     });
@@ -69,17 +102,22 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
         setGrid(newGrid);
     };
 
-    // BFS to check if source connects to target
-    const isConnected = useMemo(() => {
+    /** Connection openings for a cell — source/target act as open mouths */
+    const cellConnections = (r: number, c: number): [boolean, boolean, boolean, boolean] => {
+        if (r === source[1] && c === source[0]) return OMNI;
+        if (r === target[1] && c === target[0]) return OMNI;
+        return PIPE_CONNECTIONS[grid[r]?.[c] ?? 'empty'] ?? [false, false, false, false];
+    };
+
+    // BFS from source through connected pipes; returns every reached cell
+    const flowCells = useMemo(() => {
         const visited = new Set<string>();
         const queue: [number, number][] = [[source[1], source[0]]];
         visited.add(`${source[1]},${source[0]}`);
 
         while (queue.length > 0) {
             const [r, c] = queue.shift()!;
-            const pipe = grid[r]?.[c];
-            if (!pipe) continue;
-            const conn = PIPE_CONNECTIONS[pipe] ?? [false, false, false, false];
+            const conn = cellConnections(r, c);
 
             // Check neighbors: top, right, bottom, left
             const neighbors: [number, number, number, number][] = [
@@ -94,9 +132,7 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
                 const key = `${nr},${nc}`;
                 if (visited.has(key)) continue;
 
-                const neighborPipe = grid[nr][nc];
-                const neighborConn = PIPE_CONNECTIONS[neighborPipe] ?? [false, false, false, false];
-
+                const neighborConn = cellConnections(nr, nc);
                 if (conn[myDir] && neighborConn[theirDir]) {
                     visited.add(key);
                     queue.push([nr, nc]);
@@ -104,8 +140,11 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
             }
         }
 
-        return visited.has(`${target[1]},${target[0]}`);
+        return visited;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [grid, gridSize, source, target]);
+
+    const isConnected = flowCells.has(`${target[1]},${target[0]}`);
 
     const handleCheck = () => {
         if (isConnected) {
@@ -120,7 +159,7 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
     return (
         <div className="w-full max-w-lg mx-auto space-y-4">
             <p className="text-center text-white/50 text-sm">
-                Click tiles to route flow from source to target
+                {t("click-tiles-instruction-v2", { defaultValue: "Click tiles to rotate through pipe shapes and route the wind from S to T" })}
             </p>
 
             <div className="flex justify-center">
@@ -132,6 +171,7 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
                         row.map((pipe, c) => {
                             const isSource = r === source[1] && c === source[0];
                             const isTarget = r === target[1] && c === target[0];
+                            const hasFlow = flowCells.has(`${r},${c}`) && (pipe !== 'empty' || isSource || isTarget);
 
                             return (
                                 <button
@@ -140,8 +180,12 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
                                         isSource
                                             ? 'bg-green-800/50 border border-green-600/50 text-green-300'
                                             : isTarget
-                                                ? 'bg-red-800/50 border border-red-600/50 text-red-300'
-                                                : 'bg-white/5 hover:bg-white/10 border border-white/10 text-white/70'
+                                                ? isConnected
+                                                    ? 'bg-green-800/60 border border-green-500/60 text-green-200'
+                                                    : 'bg-red-800/50 border border-red-600/50 text-red-300'
+                                                : hasFlow
+                                                    ? 'bg-emerald-900/40 border border-emerald-500/40 text-emerald-200'
+                                                    : 'bg-white/5 hover:bg-white/10 border border-white/10 text-white/70'
                                     }`}
                                     style={{ width: cellSize, height: cellSize }}
                                     onClick={() => cyclePipe(r, c)}
@@ -159,7 +203,7 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
                     className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white/60 rounded-lg text-xs cursor-pointer"
                     onClick={() => setGrid(grid.map(row => row.map(() => 'empty' as PipeType)))}
                 >
-                    Reset
+                    {t("reset", { defaultValue: "Reset" })}
                 </button>
                 <button
                     className={`px-6 py-2.5 rounded-xl text-sm font-medium cursor-pointer ${
@@ -169,7 +213,7 @@ export function SoundPipePuzzle({ config, onSolve, onAttempt }: PuzzleComponentP
                     }`}
                     onClick={handleCheck}
                 >
-                    {isConnected ? 'Path Connected!' : 'Check Path'}
+                    {isConnected ? t("channel-the-wind", { defaultValue: "Channel the Wind!" }) : t("check-path", { defaultValue: "Check Path" })}
                 </button>
             </div>
         </div>

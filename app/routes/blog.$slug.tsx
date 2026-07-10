@@ -5,7 +5,10 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getPostBySlug } from '@/lib/blog';
+import { buildCanonical } from '@/lib/seo';
+import { articleSchema, jsonLdScript } from '@/lib/schema';
 import ReactMarkdown from 'react-markdown';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { ShareButton } from '@/components/blog/ShareButton';
@@ -45,11 +48,25 @@ const fetchPostMeta = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/blog/$slug')({
   loader: ({ params }) => fetchPost({ data: params.slug }),
-  head: ({ loaderData }) => ({
+  head: ({ loaderData, params }) => ({
     meta: [
       { title: `${loaderData?.title ?? 'Post'} | RMH Studios Devlog` },
-      { name: 'description', content: loaderData?.description as string ?? '' },
+      { name: 'description', content: (loaderData?.description as string) ?? '' },
     ],
+    links: [buildCanonical(`/blog/${params.slug}`)],
+    scripts: loaderData
+      ? [
+          jsonLdScript(
+            articleSchema({
+              title: loaderData.title as string,
+              description: loaderData.description as string | undefined,
+              datePublished: loaderData.date as string | undefined,
+              path: `/blog/${params.slug}`,
+              type: 'BlogPosting',
+            }),
+          ),
+        ]
+      : [],
   }),
   component: BlogPost,
 });
@@ -57,12 +74,13 @@ export const Route = createFileRoute('/blog/$slug')({
 function BlogPost() {
   const post = Route.useLoaderData();
   const { slug } = Route.useParams();
+  const { t } = useTranslation("pages");
 
   return (
     <article className="min-h-screen pt-20 pb-20 px-4 bg-site-bg relative overflow-hidden">
       <div className="container mx-auto max-w-3xl relative z-10">
-        <Link to="/blog" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700">
-          <ArrowLeft className="w-4 h-4" /> Back to Logs
+        <Link to="/library" className="inline-flex items-center gap-2 text-site-text-dim hover:text-site-text mb-8 transition-colors animate-in fade-in slide-in-from-left-4 duration-700">
+          <ArrowLeft className="w-4 h-4" /> {t("back-to-logs", { defaultValue: "Back to Logs" })}
         </Link>
 
         <header className="mb-12">
@@ -81,14 +99,14 @@ function BlogPost() {
           </p>
         </header>
 
-        <div className="prose prose-invert prose-lg max-w-none prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-xl prose-img:border prose-img:border-site-border">
+        <div className="prose prose-invert prose-lg max-w-none break-words prose-code:break-words prose-headings:font-bold prose-headings:text-site-text prose-p:text-site-text-muted prose-a:text-site-accent hover:prose-a:text-site-accent-hover prose-img:rounded-xl prose-img:border prose-img:border-site-border">
           <ReactMarkdown components={animatedComponents}>{post.content as string}</ReactMarkdown>
         </div>
 
         <hr className="my-12 border-site-border" />
 
         <div className="text-center">
-          <p className="text-site-text-dim italic">End of Log</p>
+          <p className="text-site-text-dim italic">{t("end-of-log", { defaultValue: "End of Log" })}</p>
         </div>
       </div>
     </article>

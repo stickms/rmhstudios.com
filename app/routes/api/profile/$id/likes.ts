@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import type { FeedItem, FeedPoll } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
+import { groupReactions } from "@/lib/social/reactions";
 
 function pollInclude(userId: string | null) {
   return {
@@ -88,6 +89,7 @@ export const Route = createFileRoute('/api/profile/$id/likes')({
           include: {
             user: { select: userDisplaySelect },
             _count: { select: { likes: true, comments: true, reposts: true, views: true } },
+            reactions: { select: { emoji: true, userId: true } },
             ...(viewerId
               ? {
                   likes: { where: { userId: viewerId }, select: { id: true } },
@@ -120,8 +122,11 @@ export const Route = createFileRoute('/api/profile/$id/likes')({
         viewCount: r._count.views,
         liked: viewerId ? r.likes.length > 0 : false,
         reposted: viewerId ? r.reposts.length > 0 : false,
+        edited: !!r.editedAt,
         poll: mapPoll(r.poll),
         gifUrl: r.gifUrl ?? undefined,
+        imageUrls: r.imageUrls ?? undefined,
+        reactions: groupReactions(r.reactions ?? [], viewerId),
         original: r.original
           ? {
               id: r.original.id,

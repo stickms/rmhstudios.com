@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { Zap, Brain, Activity, Target, Layers, Timer, Settings2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { GlobalLeaderboard } from './GlobalLeaderboard';
 import { getSettings, setMusicVolume, setSfxVolume } from '@/lib/synapse-storm/settings';
 import { soundManager } from '@/lib/synapse-storm/sounds';
@@ -12,16 +13,17 @@ interface MainMenuProps {
     currentUserId?: string;
 }
 
-const FEATURES = [
-    { icon: <Zap size={14} />, label: 'Reaction' },
-    { icon: <Brain size={14} />, label: 'Memory' },
-    { icon: <Layers size={14} />, label: 'Patterns' },
-    { icon: <Target size={14} />, label: 'Spatial' },
-    { icon: <Activity size={14} />, label: 'Math' },
-    { icon: <Timer size={14} />, label: 'Fast-paced' },
+const FEATURE_KEYS = [
+    { icon: <Zap size={14} />, key: 'feature-reaction', defaultValue: 'Reaction' },
+    { icon: <Brain size={14} />, key: 'feature-memory', defaultValue: 'Memory' },
+    { icon: <Layers size={14} />, key: 'feature-patterns', defaultValue: 'Patterns' },
+    { icon: <Target size={14} />, key: 'feature-spatial', defaultValue: 'Spatial' },
+    { icon: <Activity size={14} />, key: 'feature-math', defaultValue: 'Math' },
+    { icon: <Timer size={14} />, key: 'feature-fast-paced', defaultValue: 'Fast-paced' },
 ];
 
 export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, currentUserId }) => {
+    const { t } = useTranslation("c-synapse-storm");
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [musicVol, setMusicVol] = useState(0.25);
     const [sfxVol, setSfxVol] = useState(0.3);
@@ -58,27 +60,26 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, curr
                 </div>
 
                 <p className="menu-tagline">
-                    Juggle a storm of micro-challenges. Stay sharp.
-                    See how long your mind can keep up before the load becomes too great.
+                    {t("tagline", { defaultValue: "Juggle a storm of micro-challenges. Stay sharp. See how long your mind can keep up before the load becomes too great." })}
                 </p>
 
                 <div className="menu-features">
-                    {FEATURES.map((f, i) => (
+                    {FEATURE_KEYS.map((f, i) => (
                         <div key={i} className="feature">
                             <span className="feature-icon">{f.icon}</span>
-                            {f.label}
+                            {t(f.key, { defaultValue: f.defaultValue })}
                         </div>
                     ))}
                 </div>
 
                 <div className="menu-buttons">
                     <button className="start-button" onClick={onStart}>
-                        SOLO NEURAL LINK
+                        {t("solo-neural-link", { defaultValue: "SOLO NEURAL LINK" })}
                         <div className="start-glow" />
                     </button>
                     {onMultiplayer && (
                         <button className="start-button multiplayer-button" onClick={onMultiplayer}>
-                            MULTIPLAYER STORM
+                            {t("multiplayer-storm", { defaultValue: "MULTIPLAYER STORM" })}
                             <div className="start-glow" />
                         </button>
                     )}
@@ -92,12 +93,12 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, curr
                         aria-expanded={settingsOpen}
                     >
                         <Settings2 size={18} />
-                        Settings
+                        {t("settings", { defaultValue: "Settings" })}
                     </button>
                     {settingsOpen && (
                         <div className="settings-panel">
                             <div className="settings-row">
-                                <label>Music</label>
+                                <label>{t("music", { defaultValue: "Music" })}</label>
                                 <input
                                     type="range"
                                     min="0"
@@ -108,7 +109,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, curr
                                 <span className="settings-value">{Math.round(musicVol * 100)}%</span>
                             </div>
                             <div className="settings-row">
-                                <label>Sound effects</label>
+                                <label>{t("sound-effects", { defaultValue: "Sound effects" })}</label>
                                 <input
                                     type="range"
                                     min="0"
@@ -123,12 +124,12 @@ export const MainMenu: React.FC<MainMenuProps> = ({ onStart, onMultiplayer, curr
                 </div>
 
                 <div className="menu-instructions">
-                    <h3>Transmission Protocol:</h3>
+                    <h3>{t("transmission-protocol", { defaultValue: "Transmission Protocol:" })}</h3>
                     <ul>
-                        <li>Solve cards before they expire to maintain system stability.</li>
-                        <li>Maintain combos to exponentially increase your score.</li>
-                        <li>Integrity failure occurs after 5 data casualties (Misses).</li>
-                        <li>Difficulty scales dynamically with your neural efficiency.</li>
+                        <li>{t("instruction-solve-cards", { defaultValue: "Solve cards before they expire to maintain system stability." })}</li>
+                        <li>{t("instruction-combos", { defaultValue: "Maintain combos to exponentially increase your score." })}</li>
+                        <li>{t("instruction-integrity", { defaultValue: "Integrity failure occurs after 5 data casualties (Misses)." })}</li>
+                        <li>{t("instruction-difficulty", { defaultValue: "Difficulty scales dynamically with your neural efficiency." })}</li>
                     </ul>
                 </div>
 

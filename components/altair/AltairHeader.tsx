@@ -9,6 +9,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Sun, Moon, Settings, Circle } from 'lucide-react';
 import { useAltairSettingsStore } from '@/lib/altair/stores/settings-store';
@@ -36,6 +37,7 @@ export default function AltairHeader({
   onSettings,
   connectionStatus,
 }: AltairHeaderProps) {
+  const { t } = useTranslation("c-altair");
   const theme = useAltairSettingsStore((s) => s.theme);
   const toggleTheme = useAltairSettingsStore((s) => s.toggleTheme);
   const timeSurvived = useAltairGameStore((s) => s.timeSurvived);
@@ -64,7 +66,7 @@ export default function AltairHeader({
             >
               <span className="flex items-center gap-1">
                 <ArrowLeft size={16} />
-                Builds
+                {t("builds", { defaultValue: "Builds" })}
               </span>
             </Link>
           ) : (
@@ -75,7 +77,7 @@ export default function AltairHeader({
             >
               <span className="flex items-center gap-1">
                 <ArrowLeft size={16} />
-                Back
+                {t("back", { defaultValue: "Back" })}
               </span>
             </button>
           )
@@ -103,7 +105,7 @@ export default function AltairHeader({
       {/* Right side */}
       <div className="ml-auto flex items-center gap-2 z-10">
         {connectionStatus && (
-          <span title={connectionStatus === 'connected' ? 'Connected' : connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}>
+          <span title={connectionStatus === 'connected' ? t("connected", { defaultValue: "Connected" }) : connectionStatus === 'connecting' ? t("connecting", { defaultValue: "Connecting..." }) : t("disconnected", { defaultValue: "Disconnected" })}>
             <Circle
               className={`h-2.5 w-2.5 ${
                 connectionStatus === 'connected' ? 'fill-green-500 text-green-500' :
@@ -115,14 +117,14 @@ export default function AltairHeader({
         )}
         {isShop && (
           <span className="text-sm font-bold text-(--altair-warning)">
-            {coins} coins
+            {t("coins-balance", { defaultValue: "{{count}} coins", count: coins })}
           </span>
         )}
         <button
           onClick={toggleTheme}
           data-altair-sfx="menu_toggle"
           className="w-8 h-8 rounded-full flex items-center justify-center text-(--altair-text-muted) hover:text-(--altair-accent) hover:bg-(--altair-surface-hover) transition-colors"
-          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={theme === 'dark' ? t("switch-to-light-mode", { defaultValue: "Switch to light mode" }) : t("switch-to-dark-mode", { defaultValue: "Switch to dark mode" })}
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
@@ -130,7 +132,7 @@ export default function AltairHeader({
           <button
             onClick={onSettings}
             className="w-8 h-8 rounded-full flex items-center justify-center text-(--altair-text-muted) hover:text-(--altair-accent) hover:bg-(--altair-surface-hover) transition-colors"
-            title="Settings"
+            title={t("settings", { defaultValue: "Settings" })}
           >
             <Settings size={16} />
           </button>

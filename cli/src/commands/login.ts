@@ -42,6 +42,18 @@ async function loginWithBrowser(): Promise<void> {
       const token = url.searchParams.get('token');
       const errorParam = url.searchParams.get('error');
       const userParam = url.searchParams.get('user');
+      const returnedSession = url.searchParams.get('session');
+
+      // Bind the callback to THIS login attempt. Without this check, any local
+      // web page could hit our localhost callback and fixate an attacker's
+      // token into the user's CLI config (login CSRF / token fixation).
+      if ((token || errorParam) && returnedSession !== sessionId) {
+        res.writeHead(400, { 'Content-Type': 'text/html' });
+        res.end('<html><body>Session mismatch. Ignoring callback.</body></html>');
+        error('Authorization rejected: session mismatch (possible CSRF). Please run login again.');
+        server.close();
+        process.exit(1);
+      }
 
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(`

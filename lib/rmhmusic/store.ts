@@ -40,6 +40,7 @@ export interface RmhMusicStore {
   searchQuery: string;
   isSearchOpen: boolean;
   isChatOpen: boolean;
+  isGuessOpen: boolean;
 
   setConnectionStatus: (status: RmhMusicStore['connectionStatus']) => void;
   applyAction: (action: RoomAction) => void;
@@ -56,6 +57,7 @@ export interface RmhMusicStore {
   setSearchQuery: (query: string) => void;
   setSearchOpen: (open: boolean) => void;
   setChatOpen: (open: boolean) => void;
+  setGuessOpen: (open: boolean) => void;
 
   addRoomToHistory: (entry: RoomHistoryEntry) => void;
 }
@@ -76,6 +78,7 @@ export const useRmhMusicStore = create<RmhMusicStore>()(
       searchQuery: '',
       isSearchOpen: false,
       isChatOpen: false,
+      isGuessOpen: false,
 
       setConnectionStatus: (status) => set({ connectionStatus: status }),
 
@@ -105,6 +108,7 @@ export const useRmhMusicStore = create<RmhMusicStore>()(
       setSearchQuery: (query) => set({ searchQuery: query }),
       setSearchOpen: (open) => set({ isSearchOpen: open }),
       setChatOpen: (open) => set({ isChatOpen: open }),
+      setGuessOpen: (open) => set({ isGuessOpen: open }),
 
       addRoomToHistory: (entry) => {
         set((s) => {

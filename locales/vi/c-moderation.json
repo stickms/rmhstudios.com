@@ -1,0 +1,20 @@
+{
+  "cancel": "Hủy",
+  "details-placeholder": "Thêm chi tiết (không bắt buộc)",
+  "dialog-description": "Hãy cho chúng tôi biết vấn đề. Báo cáo sẽ được ẩn danh với người bạn đang báo cáo.",
+  "dialog-title": "Báo cáo nội dung",
+  "reason-harassment": "Quấy rối hoặc bắt nạt",
+  "reason-hate": "Ngôn từ thù địch",
+  "reason-illegal": "Nội dung bất hợp pháp",
+  "reason-misinformation": "Thông tin sai lệch",
+  "reason-other": "Lý do khác",
+  "reason-self-harm": "Tự hại bản thân",
+  "reason-sexual": "Nội dung khiêu dâm hoặc tục tĩu",
+  "reason-spam": "Spam hoặc lừa đảo",
+  "reason-violence": "Bạo lực hoặc đe dọa",
+  "submit-report": "Gửi báo cáo",
+  "submitting": "Đang gửi…",
+  "toast-error": "Không thể gửi báo cáo. Vui lòng thử lại.",
+  "toast-sign-in": "Vui lòng đăng nhập để báo cáo nội dung.",
+  "toast-success": "Cảm ơn — nhóm của chúng tôi sẽ xem xét nội dung này."
+}

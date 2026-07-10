@@ -1,0 +1,22 @@
+{
+  "correct-sort": "Classificação correta:",
+  "failed-to-load-leaderboard": "Falha ao carregar o placar",
+  "game-description": "Observe as roupas coloridas caindo de cima. Deixe-as cair nos cestos da cor correspondente para ganhar pontos. Cestos errados perdem pontos!",
+  "game-over": "FIM DE JOGO",
+  "leaderboard": "PLACAR",
+  "loading": "Carregando…",
+  "no-scores-yet": "Nenhuma pontuação ainda. Seja o primeiro!",
+  "play-again": "Jogar Novamente",
+  "points": "pontos",
+  "score": "PONTUAÇÃO",
+  "score-submitted": "✓ Pontuação enviada!",
+  "sign-in-to-play": "Faça login para jogar",
+  "sign-in-to-save": "Faça login para salvar sua pontuação!",
+  "sign-in-to-submit": "Faça login para enviar",
+  "sort-the-laundry": "SEPARE A ROUPA!",
+  "start-game": "Iniciar Jogo",
+  "submitting-score": "Enviando pontuação…",
+  "time": "TEMPO",
+  "time-limit": "Limite de tempo: 1 minuto",
+  "wrong-bin": "Cesto errado:"
+}

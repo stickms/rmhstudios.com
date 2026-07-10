@@ -1,0 +1,18 @@
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "discord-bot_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/rmhstudios/rmh-go/cmd/discord-bot",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//go-services/internal/discordbot",
+        "//go-services/pkg/worker",
+    ],
+)
+
+go_binary(
+    name = "discord-bot",
+    embed = [":discord-bot_lib"],
+    visibility = ["//visibility:public"],
+)

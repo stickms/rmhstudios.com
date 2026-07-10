@@ -1,5 +1,7 @@
+import { getRequest } from '@tanstack/react-start/server';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
+import { auth } from '@/lib/auth';
 import { games } from './games';
 import { apps } from './apps';
 
@@ -116,10 +118,18 @@ async function getUserBuilds(): Promise<SidebarBuild[]> {
   });
 }
 
-async function getRecommendedUsers(): Promise<SidebarUser[]> {
+async function getRecommendedUsers(viewerId: string | null): Promise<SidebarUser[]> {
+  // Never recommend the viewer themselves, bots, or people they already follow.
+  const following = viewerId
+    ? await prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } })
+    : [];
+  const excludeIds = [...(viewerId ? [viewerId] : []), ...following.map((f) => f.followingId)];
+
   const users = await prisma.user.findMany({
     where: {
       OR: [{ handle: { not: null } }, { username: { not: null } }],
+      isBot: false,
+      ...(excludeIds.length ? { id: { notIn: excludeIds } } : {}),
     },
     orderBy: {
       followers: {
@@ -173,10 +183,19 @@ async function getBlogPosts(): Promise<SidebarPost[]> {
 }
 
 export async function getSidebarData() {
+  // Resolve the viewer so recommendations can exclude self / already-followed.
+  let viewerId: string | null = null;
+  try {
+    const session = await auth.api.getSession({ headers: getRequest().headers });
+    viewerId = session?.user?.id ?? null;
+  } catch {
+    viewerId = null;
+  }
+
   const [userBuilds, recommendedUsers, blogPosts] =
     await Promise.all([
       getUserBuilds(),
-      getRecommendedUsers(),
+      getRecommendedUsers(viewerId),
       getBlogPosts(),
     ]);
 

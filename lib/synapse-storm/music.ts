@@ -5,8 +5,9 @@
  */
 
 import { Howl } from 'howler';
+import { asset } from '@/lib/storage/asset';
 
-const TRACK_PATH = '/music/synapse-storm/when-you-find-me.mp3';
+const TRACK_PATH = asset('/music/synapse-storm/when-you-find-me.mp3');
 
 let howl: Howl | null = null;
 let _volume = 0.25;

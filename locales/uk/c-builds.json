@@ -1,0 +1,18 @@
+{
+  "clear-filters": "Очистити фільтри",
+  "clear-search": "Очистити пошук",
+  "like-this-build": "Вподобати цю збірку",
+  "no-builds-found": "Збірок не знайдено",
+  "read-more": "Читати далі",
+  "screenshot-of": "Скріншот {{title}}",
+  "search-aria-label": "Пошук збірок",
+  "search-placeholder": "Пошук збірок...",
+  "sort-builds": "Сортувати збірки",
+  "sort-default": "За замовчуванням",
+  "sort-most-discussed": "Найбільш обговорювані",
+  "sort-most-liked": "Найбільш вподобані",
+  "sort-most-viewed": "Найбільш переглянуті",
+  "sort-options": "Параметри сортування",
+  "unlike-this-build": "Прибрати вподобання",
+  "view-comments": "Переглянути коментарі"
+}

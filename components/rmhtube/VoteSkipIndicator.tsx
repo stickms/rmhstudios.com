@@ -4,12 +4,14 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { SkipForward } from 'lucide-react';
 import { emit } from '@/lib/rmhtube/socket';
 import { C2S } from '@/lib/rmhtube/events';
 import { useRmhTubeStore } from '@/lib/rmhtube/store';
 
 export default function VoteSkipIndicator() {
+  const { t } = useTranslation("c-rmhtube");
   const room = useRmhTubeStore((s) => s.room);
 
   const handleVoteSkip = useCallback(() => {
@@ -37,7 +39,7 @@ export default function VoteSkipIndicator() {
         }`}
       >
         <SkipForward className="h-3 w-3" />
-        {hasVoted ? 'Voted' : 'Vote Skip'}
+        {hasVoted ? t("voted", { defaultValue: "Voted" }) : t("vote-skip", { defaultValue: "Vote Skip" })}
       </button>
       <span className="text-xs text-(--rmhtube-text-dim)">
         {room.skipVotes.length}/{votesNeeded}

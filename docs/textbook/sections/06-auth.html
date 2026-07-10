@@ -1,0 +1,324 @@
+<div class="objectives"><h4>Learning Objectives</h4><ul>
+  <li>Distinguish <b>authentication</b> (who you are) from <b>authorization</b> (what you may do), and locate each in the rmhstudios codebase.</li>
+  <li>Trace a session-based login end to end: credentials, a <code>Session</code> row, a signed cookie, and the next request reading that cookie.</li>
+  <li>Explain the OAuth 2.0 authorization-code flow used by the Discord, Google, and GitHub buttons, including the redirect dance and the callback.</li>
+  <li>Read the single catch-all route <code>/api/auth/$</code> and explain why every <code>/api/auth/*</code> request is delegated to one library handler.</li>
+  <li>Describe the auth data model — <code>User</code>, <code>Session</code>, <code>Account</code>, <code>Verification</code> — and how OAuth identities attach to a user.</li>
+  <li>Explain how a game route uses <code>auth.api.getSession</code> to gate a leaderboard write, and why password hashing and CSRF are the library's job, not the application's.</li>
+</ul></div>
+
+<p class="lead">Almost every feature in this book eventually asks the same question: <i>who is making this request, and are they allowed to?</i> A leaderboard write must know whose score it is. A subscription endpoint must refuse to let one user edit another's plan. Chapter 6 reads the one subsystem that answers that question for the entire platform — RMH Auth — built on the <code>better-auth</code> library and wired into the same Prisma database, the same TanStack Start router, and the same SSR pipeline you have already met. The remarkable thing is how little application code it takes: one server config in <code>lib/auth.ts</code>, one client in <code>lib/auth-client.ts</code>, and one catch-all route that hands every auth request to the library.</p>
+
+<h2 id="authn-vs-authz">Authentication versus authorization</h2>
+<p>Two words that sound alike name two genuinely different jobs, and confusing them is the source of a great many security bugs.</p>
+
+<div class="keyterm"><span class="term">Authentication</span> (authn) — establishing <i>who</i> a principal is. "This request is from the user with id <code>u_abc</code>." It answers identity.</div>
+<div class="keyterm"><span class="term">Authorization</span> (authz) — deciding <i>what</i> an already-identified principal may do. "This user may write to <i>their own</i> leaderboard row, but not someone else's." It answers permission.</div>
+
+<p>RMH Auth is overwhelmingly an authentication system: its purpose is to turn an anonymous HTTP request into a known <code>User</code>. Authorization lives <i>after</i> that, scattered across the routes that consume the identity. You can see the seam clearly in two places. In <code>lib/auth.ts</code>, the Stripe subscription plugin defines an authorization rule:</p>
+
+<pre><code>// lib/auth.ts — authorization, not authentication
+authorizeReference: async ({ user, referenceId }) =&gt; {
+  return referenceId === user.id;
+},</code></pre>
+
+<p>The user has <i>already</i> been authenticated by the time this runs; the rule only decides whether that known user may manage the subscription whose reference id was passed. And in a game route, the same split appears: first authenticate, then authorize.</p>
+
+<pre><code>// app/routes/api/slice-it/score.ts
+const session = await auth.api.getSession({ headers: request.headers });
+if (!session?.user) {
+  return Response.json({ error: 'Unauthorized.' }, { status: 401 });
+}
+const userId = session.user.id; // now we know WHO; the row we touch is theirs</code></pre>
+
+<div class="note">The HTTP status code <code>401 Unauthorized</code> is, by a historical naming accident, an <i>authentication</i> failure ("we don't know who you are"). A pure authorization failure ("we know you, but no") is conventionally <code>403 Forbidden</code>. The route above returns 401 because a missing session means no identity at all.</div>
+
+<h2 id="server-config">The server: one config object</h2>
+<p>The whole server-side auth surface is a single call to <code>betterAuth(...)</code> exported from <code>lib/auth.ts</code>. Reading its shape tells you almost everything the platform supports.</p>
+
+<div class="keyterm"><span class="term">Better Auth</span> — the authentication library (<code>better-auth</code>) RMH uses. It owns password hashing, session issuance, cookie signing, OAuth flows, and rate limiting; the application supplies configuration and a database adapter.</div>
+
+<pre><code>// lib/auth.ts (abridged)
+export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL,
+  database: prismaAdapter(prisma, { provider: "postgresql" }),
+  trustedOrigins: [
+    "https://rmhstudios.com",
+    "https://www.rmhstudios.com",
+    "https://staging.rmhstudios.com",
+  ],
+  advanced: {
+    useSecureCookies: process.env.BETTER_AUTH_URL?.startsWith("https"),
+  },
+  socialProviders: { discord: {...}, google: {...}, github: {...} },
+  emailAndPassword: { enabled: true },
+  user: { additionalFields: { username, handle, isAdmin, isVerified } },
+});</code></pre>
+
+<p>Four design decisions are worth naming. First, the <b>database adapter</b>: <code>prismaAdapter(prisma, ...)</code> tells the library to persist users, sessions, accounts, and verifications through the very same Prisma client the rest of the app uses (Chapter 5). There is no separate auth database. Second, <b>email and password</b> sign-in is enabled. Third, three <b>social providers</b> are configured. Fourth, the <code>user</code> object adds <b>custom fields</b> — <code>username</code>, <code>handle</code>, <code>isAdmin</code>, <code>isVerified</code> — onto the library's base user, so the application's own columns travel with the identity.</p>
+
+<div class="keyterm"><span class="term">Custom / additional fields</span> — application-specific columns (here <code>handle</code>, <code>isAdmin</code>) declared in the auth config so the library knows to read and write them on the <code>User</code> record alongside its built-in fields.</div>
+
+<p>A small but instructive detail: a <code>databaseHooks.user.create.after</code> hook auto-assigns a <code>handle</code> to brand-new users via <code>generateHandle(...)</code>. This is application logic running <i>inside</i> the library's lifecycle — proof that "use a library" does not mean "give up control."</p>
+
+<div class="scope">The config also registers the <code>@better-auth/stripe</code> plugin (billing, subscriptions) and a per-process rate limiter with stricter caps on <code>/sign-in/email</code> and <code>/sign-up/email</code>. Billing is the subject of a later chapter; here we note only that rate limiting at the auth layer is a defense against credential-stuffing, and that its storage is in-memory unless <code>BETTER_AUTH_RATE_LIMIT_DB=1</code> coordinates it across processes through the database.</div>
+
+<h2 id="catch-all-route">The catch-all route: delegation in one file</h2>
+<p>A library that owns dozens of endpoints — sign-in, sign-up, callbacks for three providers, session lookup, password reset — could demand dozens of route files. RMH instead exposes <i>all</i> of them through a single <b>catch-all route</b>.</p>
+
+<div class="keyterm"><span class="term">Catch-all route</span> — a router pattern (here the file <code>app/routes/api/auth/$.ts</code>, where <code>$</code> matches any trailing path) that captures every URL under a prefix and forwards it to one handler instead of declaring a file per endpoint.</div>
+
+<pre><code>// app/routes/api/auth/$.ts
+export const Route = createFileRoute('/api/auth/$')({
+  server: {
+    handlers: {
+      GET:     async ({ request }) =&gt; withCors(await auth.handler(request), request),
+      POST:    async ({ request }) =&gt; withCors(await auth.handler(request), request),
+      OPTIONS: async ({ request }) =&gt; withCors(await auth.handler(request), request),
+    },
+  },
+});</code></pre>
+
+<p>Every method does the same thing: pass the raw <code>Request</code> to <code>auth.handler(request)</code> and wrap the result. The library inspects the URL and method internally and routes <code>/api/auth/sign-in/email</code>, <code>/api/auth/callback/discord</code>, <code>/api/auth/get-session</code>, and the rest to the correct logic. The application's only added responsibility is CORS: <code>withCors</code> echoes <code>Access-Control-Allow-Origin</code> back only for the origins in <code>ALLOWED_ORIGINS</code>, and sets <code>Allow-Credentials: true</code> so the session cookie may ride cross-origin from the platform's own subdomains. Note that the allow-list is hard-coded here and mirrors the <code>trustedOrigins</code> in the config — two gates, same guests.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+flowchart LR
+  A[Browser] --&gt;|/api/auth/anything| B["/api/auth/$ route"]
+  B --&gt; C[withCors wrapper]
+  C --&gt; D["auth.handler(request)"]
+  D --&gt; E{Internal dispatch}
+  E --&gt; F[sign-in / sign-up]
+  E --&gt; G[OAuth callback]
+  E --&gt; H[get-session]
+  F --&gt; I[(Postgres via Prisma)]
+  G --&gt; I
+  H --&gt; I
+  </div>
+  <figcaption>Figure 6.1: One catch-all route fans every <code>/api/auth/*</code> request into the library's internal dispatch, which reads and writes through the shared Prisma client.</figcaption>
+</figure>
+
+<h2 id="session-flow">Session-based authentication, step by step</h2>
+<p>RMH uses <b>session-based</b> auth (sometimes called stateful auth) rather than self-contained tokens. The server keeps a record of every live session and hands the browser a key to it.</p>
+
+<div class="keyterm"><span class="term">Session</span> — a server-stored record that a particular user is currently logged in. Here it is a row in the <code>session</code> table holding a unique <code>token</code>, the <code>userId</code>, an <code>expiresAt</code>, and forensic fields <code>ipAddress</code> and <code>userAgent</code>.</div>
+
+<p>Follow an email/password login. On the client, the login page calls the library:</p>
+
+<pre><code>// app/routes/login.tsx
+await authClient.signIn.email(
+  { email, password, callbackURL },
+  { onSuccess: () =&gt; { window.location.href = callbackURL; } }
+);</code></pre>
+
+<p>That fires a <code>POST /api/auth/sign-in/email</code>, which the catch-all hands to <code>auth.handler</code>. Server-side the library: (1) looks up the <code>Account</code> for that email, (2) verifies the submitted password against the stored hash, (3) on success inserts a <code>Session</code> row with a fresh random <code>token</code> and an <code>expiresAt</code>, recording the request's <code>ipAddress</code> and <code>userAgent</code>, and (4) returns a <code>Set-Cookie</code> header carrying that token. Because <code>useSecureCookies</code> is true under HTTPS, the cookie is sent <code>Secure</code> and <code>HttpOnly</code> — invisible to JavaScript, which is what keeps a stray XSS bug from reading it.</p>
+
+<p>On every subsequent request the browser automatically attaches the cookie. Server code that needs identity calls <code>auth.api.getSession({ headers: request.headers })</code>: the library reads the token from the cookie, finds the matching unexpired <code>Session</code> row, joins to its <code>User</code>, and returns <code>{ user, session }</code> — or <code>null</code> if the token is missing, forged, or expired. The client mirror is <code>authClient.useSession()</code>, the React hook the login page uses to redirect an already-logged-in visitor away.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant B as Browser
+  participant R as "/api/auth/$ route"
+  participant A as Better Auth
+  participant DB as Postgres
+  B-&gt;&gt;R: POST /api/auth/sign-in/email
+  R-&gt;&gt;A: auth.handler(request)
+  A-&gt;&gt;DB: find Account, verify password hash
+  A-&gt;&gt;DB: INSERT Session (token, userId, expiresAt, ip, ua)
+  A--&gt;&gt;B: 200 + Set-Cookie session token
+  Note over B: cookie stored HttpOnly + Secure
+  B-&gt;&gt;R: GET /api/slice-it/score (cookie attached)
+  R-&gt;&gt;A: getSession(headers)
+  A-&gt;&gt;DB: SELECT Session by token, join User
+  A--&gt;&gt;R: { user, session }
+  </div>
+  <figcaption>Figure 6.2: A session-based login. The token lives in a server row; the cookie is only the key to it, replayed automatically on the next request.</figcaption>
+</figure>
+
+<div class="warn">Because the session is a server row, the token in the cookie is meaningless on its own — deleting or expiring the row instantly invalidates the cookie everywhere. This is the chief advantage of stateful sessions over self-contained tokens, which remain valid until they expire because the server holds no record to revoke.</div>
+
+<h2 id="oauth-flow">OAuth 2.0: signing in with Discord, Google, GitHub</h2>
+<p>The three social buttons do not collect a password. Instead they start an <b>OAuth 2.0 authorization-code flow</b>, in which RMH asks an external <b>identity provider</b> to vouch for the user.</p>
+
+<div class="keyterm"><span class="term">OAuth 2.0</span> — a delegation protocol that lets a user authorize one site (RMH) to receive an identity assertion from another (Discord/Google/GitHub) without sharing a password with RMH.</div>
+<div class="keyterm"><span class="term">Identity provider (IdP)</span> — the external service that authenticates the user and issues the assertion. Here Discord, Google, and GitHub act as IdPs; RMH is the relying party.</div>
+
+<p>The client kickoff is one call:</p>
+
+<pre><code>// app/routes/login.tsx
+await authClient.signIn.social({ provider: 'discord', callbackURL });</code></pre>
+
+<p>From there the <b>redirect dance</b> runs: the library redirects the browser to Discord's authorize URL with RMH's <code>clientId</code> and a redirect URI pointing back at <code>/api/auth/callback/discord</code>. The user approves on Discord's own page (RMH never sees their Discord password). Discord redirects the browser back with a short-lived <b>authorization code</b>. The catch-all route receives the callback, and the library exchanges that code — server to server — for an <code>accessToken</code> (and often a <code>refreshToken</code> and <code>idToken</code>), fetches the user's profile, then finds or creates a <code>User</code> and an <code>Account</code> row before issuing a session exactly as the password flow does. From the browser's point of view, it ends logged in with a session cookie either way.</p>
+
+<pre><code>// lib/auth.ts — each provider supplies credentials from the environment
+socialProviders: {
+  discord: { clientId: ..., clientSecret: ..., overrideUserInfoOnSignIn: true },
+  google:  { clientId: ..., clientSecret: ..., overrideUserInfoOnSignIn: true },
+  github:  { clientId: ..., clientSecret: ..., overrideUserInfoOnSignIn: true },
+}</code></pre>
+
+<p>The <code>overrideUserInfoOnSignIn: true</code> flag means that on each social sign-in the provider's current profile (name, image) refreshes the stored <code>User</code> — the IdP stays the source of truth for that data.</p>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+sequenceDiagram
+  participant B as Browser
+  participant A as RMH / Better Auth
+  participant D as Discord IdP
+  participant DB as Postgres
+  B-&gt;&gt;A: signIn.social discord
+  A--&gt;&gt;B: 302 redirect to Discord authorize
+  B-&gt;&gt;D: user approves on Discord
+  D--&gt;&gt;B: 302 back to /api/auth/callback/discord with code
+  B-&gt;&gt;A: GET callback with code
+  A-&gt;&gt;D: exchange code for tokens (server to server)
+  D--&gt;&gt;A: access token + profile
+  A-&gt;&gt;DB: upsert User, upsert Account, INSERT Session
+  A--&gt;&gt;B: Set-Cookie session + redirect to callbackURL
+  </div>
+  <figcaption>Figure 6.3: The OAuth authorization-code redirect dance. RMH never handles the user's Discord credentials; it receives a code and trades it for an identity.</figcaption>
+</figure>
+
+<div class="note"><b>CSRF, briefly.</b> Because the session cookie is sent automatically on every request to RMH's origin, a malicious third-party page could try to forge a state-changing request on the user's behalf — a <b>cross-site request forgery</b>. Better Auth defends the OAuth flow with a <code>state</code> parameter that must round-trip through the IdP, and the route's strict origin allow-list (<code>trustedOrigins</code> plus <code>ALLOWED_ORIGINS</code>) blocks credentialed requests from unknown origins. CSRF protection is the library's and the route's responsibility, not each feature's.</div>
+
+<h2 id="data-model">The data model: User, Session, Account, Verification</h2>
+<p>Four Prisma models in <code>prisma/schema.prisma</code> hold the entire auth state. They are deliberately small and they map (via <code>@@map</code>) to the lower-cased table names Better Auth expects.</p>
+
+<table>
+  <thead><tr><th>Model</th><th>Holds</th><th>Key fields</th><th>Cardinality to User</th></tr></thead>
+  <tbody>
+    <tr><td><code>User</code></td><td>The identity itself</td><td><code>id</code>, <code>email</code>, <code>password</code>, <code>handle</code>, <code>isAdmin</code>, <code>isVerified</code></td><td>—</td></tr>
+    <tr><td><code>Session</code></td><td>One active login</td><td><code>token</code> (unique), <code>expiresAt</code>, <code>ipAddress</code>, <code>userAgent</code></td><td>many per user</td></tr>
+    <tr><td><code>Account</code></td><td>One sign-in method / linked provider</td><td><code>providerId</code>, <code>accountId</code>, <code>accessToken</code>, <code>refreshToken</code>, <code>idToken</code>, <code>password</code></td><td>many per user</td></tr>
+    <tr><td><code>Verification</code></td><td>Pending email/reset tokens</td><td><code>identifier</code>, <code>value</code>, <code>expiresAt</code></td><td>none (keyed by identifier)</td></tr>
+  </tbody>
+</table>
+
+<p>The shape repays study. A <code>User</code> has <i>many</i> <code>Session</code> rows, so one person can be logged in on a phone and a laptop simultaneously, each row carrying its own <code>ipAddress</code> and <code>userAgent</code>. A <code>User</code> also has <i>many</i> <code>Account</code> rows — that is how the same person can link Discord <i>and</i> GitHub <i>and</i> an email/password to one identity. For social accounts the OAuth tokens live on the <code>Account</code> (<code>accessToken</code>, <code>refreshToken</code>, <code>idToken</code>, <code>scope</code>); for the email/password method the hashed password lives on the <code>Account</code>'s <code>password</code> column. Both <code>Session</code> and <code>Account</code> declare <code>onDelete: Cascade</code>, so deleting a user atomically sweeps away their logins and linked providers.</p>
+
+<pre><code>// prisma/schema.prisma (excerpt)
+model Session {
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("session")
+}
+model Account {
+  userId       String
+  accountId    String
+  providerId   String
+  accessToken  String?
+  password     String?  // hashed, for the email/password "account"
+  @@index([providerId, accountId])
+  @@map("account")
+}</code></pre>
+
+<figure class="mermaid-fig">
+  <div class="mermaid">
+erDiagram
+  User ||--o{ Session : has
+  User ||--o{ Account : links
+  User {
+    string id PK
+    string email
+    string handle
+    boolean isAdmin
+  }
+  Session {
+    string token UK
+    string userId FK
+    datetime expiresAt
+    string ipAddress
+  }
+  Account {
+    string providerId
+    string accountId
+    string userId FK
+    string accessToken
+    string password
+  }
+  Verification {
+    string identifier
+    string value
+    datetime expiresAt
+  }
+  </div>
+  <figcaption>Figure 6.4: The auth schema. One user fans out to many sessions and many accounts; Verification stands alone, keyed by identifier rather than user.</figcaption>
+</figure>
+
+<div class="warn">Notice that the application never stores a plaintext password and never writes hashing code. The <code>password</code> column on <code>Account</code> holds a hash produced and verified entirely inside Better Auth. Rolling your own password hashing is a classic, dangerous mistake; here it is simply not the application's concern.</div>
+
+<h2 id="games-leaderboards">How games use auth for leaderboards</h2>
+<p>Most of the games library (Chapter coverage of the games comes later) is playable anonymously. Auth becomes relevant the moment a game wants to <i>attribute</i> something to a person — a high score, progression, a ranked match. The pattern is uniform: a server route calls <code>getSession</code>, refuses the write if there is no user, and otherwise keys the persisted row on <code>session.user.id</code>.</p>
+
+<pre><code>// app/routes/api/slice-it/score.ts — auth-gated leaderboard write
+const session = await auth.api.getSession({ headers: request.headers });
+if (!session?.user) {
+  return Response.json({ error: 'Unauthorized.' }, { status: 401 });
+}
+const userId = session.user.id;
+const existingProfile = await prisma.player.findFirst({ where: { userId } });
+// ...increment totalScore / gamesPlayed on the row that belongs to THIS user</code></pre>
+
+<p>This is the authn-then-authz split from the opening section, made concrete: the session establishes <i>who</i>, and keying every read and write on <code>userId</code> enforces <i>that they only touch their own row</i>. The same route also rate-limits by client IP and rejects implausible scores before it ever consults the session — auth is one layer of defense among several, not the only one.</p>
+
+<div class="scope">"Optional auth" is a real third mode worth naming. A route may call <code>getSession</code> and simply branch: write to the global leaderboard when a user is present, fall back to a local or anonymous experience when not. Whether a given game requires a session or merely prefers one is decided route by route; the slice-it score endpoint above <i>requires</i> it, returning 401 to anonymous callers.</div>
+
+<div class="summary"><h4>Summary</h4>
+<ul>
+  <li><b>Authentication</b> establishes who; <b>authorization</b> decides what. RMH Auth does the former; routes and plugin rules like <code>authorizeReference</code> do the latter.</li>
+  <li>The entire server surface is one <code>betterAuth(...)</code> config in <code>lib/auth.ts</code>: a Prisma adapter, email/password, three social providers, custom user fields, and a Stripe plugin.</li>
+  <li>A single <b>catch-all route</b>, <code>app/routes/api/auth/$.ts</code>, forwards every <code>/api/auth/*</code> request to <code>auth.handler</code>, adding only CORS.</li>
+  <li>Sessions are <b>stateful</b>: login writes a <code>Session</code> row with a unique <code>token</code> and returns it as an <code>HttpOnly</code>, <code>Secure</code> cookie; later requests are identified by <code>getSession</code> reading that cookie.</li>
+  <li><b>OAuth 2.0</b> sign-in runs a redirect dance — authorize, approve, code, server-side exchange — and ends by upserting <code>User</code> + <code>Account</code> and issuing a session, never touching the user's IdP password.</li>
+  <li>The model is four tables: <code>User</code> (one) to many <code>Session</code> and many <code>Account</code>, plus standalone <code>Verification</code>. Password hashing and CSRF defenses are the library's job.</li>
+  <li>Games gate attributed writes by calling <code>getSession</code> and keying rows on <code>session.user.id</code>.</li>
+</ul></div>
+
+<div class="exercises"><h2 id="ch6-exercises">Practice Exercises</h2>
+
+  <div class="exercise"><span class="qid">6.1</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    In your own words, distinguish authentication from authorization. Point to one line in <code>lib/auth.ts</code> that is authorization rather than authentication and explain why.</div>
+
+  <div class="exercise"><span class="qid">6.2</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    Trace an email/password login from the <code>authClient.signIn.email</code> call in <code>login.tsx</code> to the moment the browser holds a session cookie. Name every component the request passes through and the single database row that gets created.</div>
+
+  <div class="exercise"><span class="qid">6.3</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    The route file <code>app/routes/api/auth/$.ts</code> defines GET, POST, and OPTIONS handlers that all call <code>auth.handler(request)</code>. Explain what the <code>$</code> in the filename means and why a single route can serve sign-in, the Discord callback, and get-session.</div>
+
+  <div class="exercise"><span class="qid">6.4</span>
+    <span class="tag diagram">diagram</span><span class="tag medium">medium</span>
+    Draw the OAuth authorization-code sequence for the Google button as a labeled diagram: browser, RMH, the Google IdP, and Postgres. Mark the exact point at which RMH first learns the user's Google identity.</div>
+
+  <div class="exercise"><span class="qid">6.5</span>
+    <span class="tag concept">concept</span><span class="tag medium">medium</span>
+    Why can one <code>User</code> have many <code>Account</code> rows? Give a concrete scenario using the real providers configured in <code>lib/auth.ts</code>, and say which column on <code>Account</code> stores a hashed password versus an OAuth access token.</div>
+
+  <div class="exercise"><span class="qid">6.6</span>
+    <span class="tag trace">trace</span><span class="tag medium">medium</span>
+    A request arrives at <code>/api/slice-it/score</code> with an expired session cookie. Walk through what <code>auth.api.getSession</code> returns and exactly which response the route sends, citing the real status code from the source.</div>
+
+  <div class="exercise"><span class="qid">6.7</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    The <code>Session</code> model stores <code>ipAddress</code> and <code>userAgent</code>. Design a "log out of all other devices" feature using only the existing schema. What query revokes the other sessions, and why does deleting the rows immediately invalidate those cookies?</div>
+
+  <div class="exercise"><span class="qid">6.8</span>
+    <span class="tag concept">concept</span><span class="tag easy">easy</span>
+    The application code never hashes a password. Where does hashing happen, which column holds the result, and why is "never write your own password hashing" sound advice?</div>
+
+  <div class="exercise"><span class="qid">6.9</span>
+    <span class="tag design">design</span><span class="tag hard">hard</span>
+    Compare stateful sessions (as RMH uses) with self-contained tokens that carry their claims and are verified by signature alone. Give one advantage of each, and explain why RMH's choice makes the "log out everywhere" feature from 6.7 straightforward.</div>
+
+  <div class="exercise"><span class="qid">6.10</span>
+    <span class="tag diagram">diagram</span><span class="tag easy">easy</span>
+    Sketch the four auth models and the relationships among them as an ER diagram, marking cardinality (one-to-many vs none) and which model has no relation to <code>User</code>.</div>
+
+</div>
