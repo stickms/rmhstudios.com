@@ -73,6 +73,7 @@ function ApplicationCard({
     <button
       type="button"
       className={`rl-app-card${selected ? ' rl-app-card--selected' : ''}`}
+      data-app-id={app.id as string}
       onClick={() => onSelect(app)}
       onKeyDown={handleKey}
       aria-label={`${(job?.title as string) ?? 'Application'}${company ? ` at ${company}` : ''} — ${STAGE_LABELS[app.status as string]}. Arrow up or down moves stage.`}

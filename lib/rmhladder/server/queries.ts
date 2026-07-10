@@ -38,7 +38,12 @@ export interface QueriesPrisma {
 
 const NON_US_STATUSES = ['non_us_role', 'blocked_or_inaccessible'];
 const DAY = 86_400_000;
-/** listJobs fetches at most this many candidates before JS-side scoring. */
+/**
+ * listJobs fetches at most this many candidates before JS-side scoring.
+ * DB query orders by relevanceScoreBase desc so truncation deterministically
+ * keeps the best base-score candidates. Tradeoff: a keyword-boosted job with a
+ * low base score can be cut when total matching jobs > CANDIDATE_CAP.
+ */
 const CANDIDATE_CAP = 500;
 const DEFAULT_TAKE = 50;
 
@@ -111,7 +116,11 @@ export async function listJobs(
   filters: ListJobsFilters,
 ): Promise<{ rows: JobRow[]; nextCursor: string | null }> {
   const now = new Date();
-  const where: AnyRow = { status: 'active' };
+  // non-US rows persist with status 'unknown' (see process-source mapJobStatus);
+  // include them only when the toggle is on.
+  const where: AnyRow = filters.includeNonUS
+    ? { status: { in: ['active', 'unknown'] } }
+    : { status: 'active' };
 
   switch (filters.preset) {
     case 'new':
@@ -143,6 +152,7 @@ export async function listJobs(
       company: true,
       verifications: { orderBy: { checkedAt: 'desc' }, take: 1 },
     },
+    orderBy: [{ relevanceScoreBase: 'desc' }],
     take: CANDIDATE_CAP,
   });
 
@@ -266,6 +276,7 @@ export async function listCompanies(
   const companies = await prisma.ladderCompany.findMany({
     where,
     include: { sources: true, _count: { select: { jobs: { where: { status: 'active' } } } } },
+    orderBy: [{ name: 'asc' }],
   });
   return companies.map((c) => ({
     ...c,

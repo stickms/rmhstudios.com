@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { listCompanies, getSettings, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
@@ -25,8 +26,18 @@ const actionsPrisma = prisma as unknown as ActionsPrisma;
 
 type AnyRow = Record<string, unknown>;
 
+const fetchCompaniesSchema = z.object({
+  q: z.string().max(200).optional(),
+});
+
+const doCompanyActionSchema = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('enabled'), companyId: z.string().min(1), enabled: z.boolean() }),
+  z.object({ kind: z.literal('priority'), companyId: z.string().min(1), priorityLevel: z.number().int().min(1).max(5) }),
+  z.object({ kind: z.literal('watchlist'), companyId: z.string().min(1), on: z.boolean() }),
+]);
+
 const fetchCompanies = createServerFn({ method: 'GET' })
-  .validator((input: { q?: string }) => input)
+  .validator((input: unknown) => fetchCompaniesSchema.parse(input))
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
@@ -39,12 +50,7 @@ const fetchCompanies = createServerFn({ method: 'GET' })
   });
 
 const doCompanyAction = createServerFn({ method: 'POST' })
-  .validator(
-    (input:
-      | { kind: 'enabled'; companyId: string; enabled: boolean }
-      | { kind: 'priority'; companyId: string; priorityLevel: number }
-      | { kind: 'watchlist'; companyId: string; on: boolean }) => input,
-  )
+  .validator((input: unknown) => doCompanyActionSchema.parse(input))
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
@@ -86,6 +92,7 @@ function CompaniesPage() {
   const [rows, setRows] = useState<AnyRow[]>(companies as AnyRow[]);
   const [watchlist, setWatchlist] = useState<Set<string>>(new Set(watchlistCompanyIds));
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [errorLine, setErrorLine] = useState<string | null>(null);
 
   const prevRef = useRef(companies);
   useEffect(() => {
@@ -113,26 +120,47 @@ function CompaniesPage() {
 
   async function handlePriority(companyId: string, next: number) {
     if (next < 1 || next > 5) return;
+    const prev = rows.find((r) => r.id === companyId)?.priorityLevel as number | undefined;
     patchRow(companyId, { priorityLevel: next });
-    await doCompanyAction({ data: { kind: 'priority', companyId, priorityLevel: next } });
-    await router.invalidate();
+    setErrorLine(null);
+    try {
+      await doCompanyAction({ data: { kind: 'priority', companyId, priorityLevel: next } });
+      await router.invalidate();
+    } catch (err) {
+      if (prev !== undefined) patchRow(companyId, { priorityLevel: prev });
+      setErrorLine(err instanceof Error ? err.message : 'Failed to update priority');
+    }
   }
 
   async function handleEnabled(companyId: string, enabled: boolean) {
+    const prev = rows.find((r) => r.id === companyId)?.enabled as boolean | undefined;
     patchRow(companyId, { enabled });
-    await doCompanyAction({ data: { kind: 'enabled', companyId, enabled } });
-    await router.invalidate();
+    setErrorLine(null);
+    try {
+      await doCompanyAction({ data: { kind: 'enabled', companyId, enabled } });
+      await router.invalidate();
+    } catch (err) {
+      if (prev !== undefined) patchRow(companyId, { enabled: prev });
+      setErrorLine(err instanceof Error ? err.message : 'Failed to update enabled state');
+    }
   }
 
   async function handleWatchlist(companyId: string, on: boolean) {
+    const prevWatchlist = new Set(watchlist);
     setWatchlist((prev) => {
       const next = new Set(prev);
       if (on) next.add(companyId);
       else next.delete(companyId);
       return next;
     });
-    await doCompanyAction({ data: { kind: 'watchlist', companyId, on } });
-    await router.invalidate();
+    setErrorLine(null);
+    try {
+      await doCompanyAction({ data: { kind: 'watchlist', companyId, on } });
+      await router.invalidate();
+    } catch (err) {
+      setWatchlist(prevWatchlist);
+      setErrorLine(err instanceof Error ? err.message : 'Failed to update watchlist');
+    }
   }
 
   return (
@@ -141,6 +169,8 @@ function CompaniesPage() {
         <p className="rl-eyebrow">RMHLADDER · COMPANIES</p>
         <h1 className="rl-display">Companies</h1>
       </div>
+
+      {errorLine && <p className="rl-review-error rl-mono">{errorLine}</p>}
 
       <div className="rl-filter-bar">
         <input

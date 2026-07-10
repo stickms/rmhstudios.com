@@ -36,13 +36,19 @@ function makeFakePrisma() {
 
   return {
     ladderCompany: {
-      async findMany({ where, include, take }: FakeArgs) {
+      async findMany({ where, include, orderBy, take }: FakeArgs) {
         let rows = Array.from(companies.values());
         if (where?.enabled) rows = rows.filter((r) => r.enabled === true);
         if (where?.OR) {
           rows = rows.filter((r) => {
             const q = (where.OR as any)[0].name?.contains;
             return !q || (r.name as string).toLowerCase().includes(q.toLowerCase());
+          });
+        }
+        if (orderBy?.length && orderBy[0].name) {
+          rows.sort((a, b) => {
+            const dir = orderBy[0].name === 'desc' ? -1 : 1;
+            return dir * (a.name as string).localeCompare(b.name as string);
           });
         }
         rows = rows.slice(0, take ?? rows.length);
@@ -65,7 +71,11 @@ function makeFakePrisma() {
 
         // WHERE filters: status only — the fake is DUMB; non-US display
         // filtering is queries.ts's job (latest-verification rule).
-        if (where?.status) rows = rows.filter((r) => r.status === where.status);
+        if (where?.status) {
+          rows = where.status.in
+            ? rows.filter((r) => (where.status.in as string[]).includes(r.status as string))
+            : rows.filter((r) => r.status === where.status);
+        }
 
         // Preset filters
         if (where?.discoveredAt?.gte) {
@@ -101,7 +111,8 @@ function makeFakePrisma() {
           if (orderBy.length && orderBy[0].relevanceScoreBase) {
             rows.sort((a, b) => {
               const dir = orderBy[0].relevanceScoreBase === 'desc' ? -1 : 1;
-              return dir * ((b.relevanceScoreBase as number) - (a.relevanceScoreBase as number));
+              // convention matches discoveredAt branch: dir * (a - b) so dir=-1 → descending
+              return dir * ((a.relevanceScoreBase as number) - (b.relevanceScoreBase as number));
             });
           } else if (orderBy.length && orderBy[0].discoveredAt) {
             rows.sort((a, b) => {
@@ -346,12 +357,13 @@ describe('queries.ts', () => {
         remoteStatus: 'onsite',
         relevanceScoreBase: 50,
       });
+      // Realistic: pipeline sets non-US rows to status 'unknown' (see process-source mapJobStatus)
       prisma._state.jobs.set(jobId2, {
         id: jobId2,
         companyId: c1.id,
         title: 'Non-US Job',
         normalizedTitle: 'non-us job',
-        status: 'active',
+        status: 'unknown',
         discoveredAt: new Date(),
         remoteStatus: 'onsite',
         relevanceScoreBase: 50,
@@ -362,10 +374,12 @@ describe('queries.ts', () => {
         { id: 'v2', jobId: jobId2, status: 'non_us_role', confidence: 100, checkedAt: new Date() },
       );
 
+      // Default: only 'active' → non-US job not fetched at all
       const resultDefault = await listJobs(prisma, 'user1', {});
       expect(resultDefault.rows.length).toBe(1);
       expect(resultDefault.rows[0].id).toBe(jobId1);
 
+      // includeNonUS: fetches { in: ['active', 'unknown'] } → both visible
       const resultInclude = await listJobs(prisma, 'user1', { includeNonUS: true });
       expect(resultInclude.rows.length).toBe(2);
     });
@@ -428,6 +442,31 @@ describe('queries.ts', () => {
       const result = await listJobs(prisma, 'user1', {});
       expect(result.rows.map((r) => r.id)).toEqual(['boosted', 'higherBase']);
       expect(result.rows[0].finalRelevance).toBe(75);
+    });
+
+    it('candidate findMany receives orderBy relevanceScoreBase desc; fake sorts and listJobs returns desc', async () => {
+      const prisma = makeFakePrisma();
+      const c1 = (await prisma.ladderCompany.create({
+        data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank' },
+      })) as AnyRow;
+      // Seed in ascending base order so the test would fail if fake/listJobs don't sort
+      for (const [id, base] of [['low', 10], ['mid', 50], ['high', 90]] as [string, number][]) {
+        prisma._state.jobs.set(id, {
+          id, companyId: c1.id, title: `Job ${id}`, normalizedTitle: `job ${id}`,
+          status: 'active', discoveredAt: new Date(), remoteStatus: 'onsite', relevanceScoreBase: base,
+        });
+      }
+      // Direct fake call: orderBy desc + take 2 should return the two highest base scores
+      const top2 = await prisma.ladderJob.findMany({
+        where: { status: 'active' },
+        orderBy: [{ relevanceScoreBase: 'desc' }],
+        take: 2,
+        include: {},
+      }) as AnyRow[];
+      expect(top2.map((j) => j.id)).toEqual(['high', 'mid']);
+      // listJobs returns final-relevance-desc (base scores are the only differentiator here)
+      const result = await listJobs(prisma, 'user1', {});
+      expect(result.rows.map((r) => r.id)).toEqual(['high', 'mid', 'low']);
     });
 
     it('paginates with cursor', async () => {
@@ -651,6 +690,16 @@ describe('queries.ts', () => {
       expect(result).toHaveLength(1);
       expect((result[0] as AnyRow).name).toBe('Goldman Sachs');
       expect((result[0] as AnyRow).activeJobCount).toBe(0);
+    });
+
+    it('returns companies alphabetically by name', async () => {
+      const prisma = makeFakePrisma();
+      // Seed intentionally out of order
+      await prisma.ladderCompany.create({ data: { name: 'Stripe', normalizedName: 'stripe', industry: 'Technology', firmType: 'technology' } });
+      await prisma.ladderCompany.create({ data: { name: 'Apollo', normalizedName: 'apollo', industry: 'Private Equity', firmType: 'pe' } });
+      await prisma.ladderCompany.create({ data: { name: 'Morgan Stanley', normalizedName: 'morgan stanley', industry: 'Investment Banking', firmType: 'bank' } });
+      const result = await listCompanies(prisma, {});
+      expect(result.map((c) => (c as AnyRow).name)).toEqual(['Apollo', 'Morgan Stanley', 'Stripe']);
     });
   });
 

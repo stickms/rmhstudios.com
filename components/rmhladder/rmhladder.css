@@ -299,7 +299,7 @@
   transition: border-color 0.15s;
 }
 
-.rl-search-box:focus {
+.rl-search-box:focus-visible {
   outline: none;
   border-color: var(--brass);
 }
@@ -323,7 +323,7 @@
   transition: border-color 0.15s;
 }
 
-.rl-sort-select:focus {
+.rl-sort-select:focus-visible {
   outline: none;
   border-color: var(--brass);
 }
@@ -360,7 +360,7 @@
   transition: border-color 0.15s;
 }
 
-.rl-city-input:focus {
+.rl-city-input:focus-visible {
   outline: none;
   border-color: var(--brass);
 }

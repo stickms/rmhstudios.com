@@ -9,6 +9,7 @@ import { useState } from 'react';
 import { createFileRoute, Link, redirect, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { getSettings, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
@@ -32,25 +33,39 @@ const fetchSettings = createServerFn({ method: 'GET' }).handler(async () => {
   return getSettings(queriesPrisma, session.user.id);
 });
 
+// updatePrefs parses authoritatively; passthrough here ensures any unknown keys
+// from future fields reach the handler without breaking validation.
+const doUpdatePrefsSchema = z.object({}).passthrough();
+
+const doKeywordSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('upsert'),
+    keyword: z.string().min(1).max(100),
+    type: z.enum(['boost', 'block']),
+    weight: z.number().int().min(0).max(50),
+  }),
+  z.object({
+    kind: z.literal('delete'),
+    keyword: z.string().min(1),
+    type: z.enum(['boost', 'block']),
+  }),
+]);
+
 const doUpdatePrefs = createServerFn({ method: 'POST' })
-  .validator((input: PrefsPatch) => input)
+  .validator((input: unknown) => doUpdatePrefsSchema.parse(input))
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/settings' } });
     try {
-      return { ok: true as const, prefs: await updatePrefs(actionsPrisma, session.user.id, data) };
+      return { ok: true as const, prefs: await updatePrefs(actionsPrisma, session.user.id, data as PrefsPatch) };
     } catch (err) {
       return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
     }
   });
 
 const doKeyword = createServerFn({ method: 'POST' })
-  .validator(
-    (input:
-      | { kind: 'upsert'; keyword: string; type: 'boost' | 'block'; weight: number }
-      | { kind: 'delete'; keyword: string; type: 'boost' | 'block' }) => input,
-  )
+  .validator((input: unknown) => doKeywordSchema.parse(input))
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });

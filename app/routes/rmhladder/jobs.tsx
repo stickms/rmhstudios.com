@@ -10,6 +10,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import {
@@ -35,8 +36,24 @@ import { JobDrawer } from '@/components/rmhladder/JobDrawer';
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
 
+const fetchJobsSchema = z.object({
+  preset: z.enum(['new', 'finance', 'consulting', 'tech', 'expiring', 'remote']).optional(),
+  q: z.string().max(200).optional(),
+  cities: z.array(z.string()).max(50).optional(),
+  programTypes: z.array(z.string()).max(50).optional(),
+  includeNonUS: z.boolean().optional(),
+  sort: z.enum(['relevance', 'posted', 'deadline']).optional(),
+  cursor: z.string().regex(/^\d+$/).optional(),
+  take: z.number().int().min(1).max(100).optional(),
+});
+
+const setJobActionSchema = z.object({
+  jobId: z.string().min(1),
+  action: z.enum(['saved', 'applied', 'ignored']).nullable(),
+});
+
 const fetchJobs = createServerFn({ method: 'GET' })
-  .validator((filters: ListJobsFilters) => filters)
+  .validator((input: unknown) => fetchJobsSchema.parse(input))
   .handler(async ({ data: filters }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
@@ -45,7 +62,7 @@ const fetchJobs = createServerFn({ method: 'GET' })
   });
 
 const doSetJobAction = createServerFn({ method: 'POST' })
-  .validator((input: { jobId: string; action: JobActionValue }) => input)
+  .validator((input: unknown) => setJobActionSchema.parse(input))
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });

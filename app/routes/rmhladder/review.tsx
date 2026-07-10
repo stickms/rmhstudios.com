@@ -5,10 +5,11 @@
  * tasks (no job) only offer task-only resolutions. Resolved tab for history.
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { listReviewTasks, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
@@ -24,8 +25,17 @@ const actionsPrisma = prisma as unknown as ActionsPrisma;
 
 type AnyRow = Record<string, unknown>;
 
+const fetchTasksSchema = z.object({
+  tab: z.enum(['open', 'resolved']),
+});
+
+const doResolveSchema = z.object({
+  taskId: z.string().min(1),
+  resolution: z.enum(['verify', 'expire', 'duplicate', 'non_us', 'ignore']),
+});
+
 const fetchTasks = createServerFn({ method: 'GET' })
-  .validator((input: { tab: 'open' | 'resolved' }) => input)
+  .validator((input: unknown) => fetchTasksSchema.parse(input))
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
@@ -35,7 +45,7 @@ const fetchTasks = createServerFn({ method: 'GET' })
   });
 
 const doResolve = createServerFn({ method: 'POST' })
-  .validator((input: { taskId: string; resolution: ReviewResolution }) => input)
+  .validator((input: unknown) => doResolveSchema.parse(input))
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
@@ -109,7 +119,17 @@ function ReviewPage() {
   const [removed, setRemoved] = useState<Set<string>>(new Set());
   const [errorLine, setErrorLine] = useState<string | null>(null);
 
-  const visible = (tasks as AnyRow[]).filter((t) => !removed.has(t.id as string));
+  // Clear the optimistic-removal set when the loader refreshes (new loaderData identity)
+  const prevTasksRef = useRef(tasks);
+  useEffect(() => {
+    if (prevTasksRef.current !== tasks) {
+      prevTasksRef.current = tasks;
+      setRemoved(new Set());
+    }
+  }, [tasks]);
+
+  // Apply optimistic removal only on the open tab; resolved tab shows all loaded rows
+  const visible = (tasks as AnyRow[]).filter((t) => tab !== 'open' || !removed.has(t.id as string));
 
   async function handleResolve(task: AnyRow, resolution: ReviewResolution) {
     const id = task.id as string;

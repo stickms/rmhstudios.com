@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { listApplications, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
@@ -37,14 +38,21 @@ const fetchApplications = createServerFn({ method: 'GET' }).handler(async () => 
   return { applications: await listApplications(queriesPrisma, session.user.id) };
 });
 
+const doUpdateApplicationSchema = z.object({
+  jobId: z.string().min(1),
+  // Restrict to a plain object; actions layer parses patch fields authoritatively
+  patch: z.object({}).passthrough(),
+});
+
 const doUpdateApplication = createServerFn({ method: 'POST' })
-  .validator((input: { jobId: string; patch: ApplicationPatch }) => input)
+  .validator((input: unknown) => doUpdateApplicationSchema.parse(input))
   .handler(async ({ data }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/pipeline' } });
     try {
-      const row = await updateApplication(actionsPrisma, session.user.id, data.jobId, data.patch);
+      // Actions layer's applicationPatchSchema is the authority; cast here is safe.
+      const row = await updateApplication(actionsPrisma, session.user.id, data.jobId, data.patch as ApplicationPatch);
       return { ok: true as const, row };
     } catch (err) {
       return { ok: false as const, error: err instanceof Error ? err.message : String(err) };
@@ -99,7 +107,15 @@ function PipelinePage() {
     const to = nextStage(app.status as string, direction);
     if (!to) return;
     const ok = await applyPatch(app, { status: to });
-    if (ok) announce(`Moved to ${STAGE_LABELS[to]}`);
+    if (ok) {
+      announce(`Moved to ${STAGE_LABELS[to]}`);
+      // Card re-parents to a new rung on stage change, dropping focus to body.
+      // rAF gives React one frame to commit the new DOM before we refocus.
+      const appId = app.id as string;
+      requestAnimationFrame(() => {
+        (document.querySelector(`[data-app-id="${appId}"]`) as HTMLElement | null)?.focus();
+      });
+    }
   }
 
   return (
