@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useMemo, useEffect, useCallback } from 'react';
 import { Stars, Sky } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { Color, type Group, type PointLight } from 'three';
@@ -13,10 +13,20 @@ import { Rock } from '../../shared/Rock';
 import { Mushroom } from '../../shared/Mushroom';
 import { Flashlight } from '../../shared/Flashlight';
 import { CrystalCluster } from '../landmarks/CrystalCluster';
-import { AncientStone } from '../landmarks/AncientStone';
-import { HollowTree } from '../landmarks/HollowTree';
+import { Observatory } from '../landmarks/Observatory';
+import { ShatteredMonument } from '../landmarks/ShatteredMonument';
+import { Interactables3D } from '../Interactables3D';
+import { CorridorLanterns } from '../scenery/CorridorLanterns';
+import { PathStrips } from '../scenery/PathStrips';
+import { ScatterDecor } from '../scenery/ScatterDecor';
+import { LightShafts } from '../scenery/LightShafts';
+import { DriftParticles } from '../scenery/DriftParticles';
 import { useStoryStore } from '@/lib/forest-explorer/store';
-import { actMaps } from '@/lib/forest-explorer/actMaps';
+import { actMaps, isInCorridor } from '@/lib/forest-explorer/actMaps';
+
+const FERN_PALETTE = ['#2a4a26', '#3a5c30', '#22401f'];
+const FLOWER_PALETTE = ['#e8a0b8', '#f0c070', '#c8a0e8', '#f8e0a0'];
+const SHAFT_POSITIONS: Array<[number, number]> = [[20, -40], [-20, -80], [0, -50], [40, -70], [10, -15]];
 
 /**
  * Act 3 — Sunrise Over the Tranquil Grove
@@ -128,6 +138,12 @@ export function ActThreeScene() {
         return () => { treeMeshes.forEach(m => group.remove(m)); };
     }, [treeMeshes]);
 
+    // Ground cover stays off the paths
+    const rejectScatter = useCallback(
+        (x: number, z: number) => isInCorridor(config, x, z, 0.5),
+        [config],
+    );
+
     // Interpolated atmosphere colors based on dawn progress
     const fogColor = useMemo(() => {
         const start = new Color('#1a0a1a');
@@ -206,12 +222,44 @@ export function ActThreeScene() {
             <Fireflies night />
             <Mist />
 
+            {/* Falling petals — the grove celebrates its remembering */}
+            <DriftParticles mode="petals" count={80 + act3Solved * 30} area={130} />
+
+            {/* Worn paths + golden Warden lanterns */}
+            <PathStrips corridors={config.corridors} color="#4d4028" />
+            <CorridorLanterns corridors={config.corridors} color="#ffd27f" />
+
+            {/* Dawn meadow: soft ferns and pale blossoms */}
+            <ScatterDecor
+                seed={config.treeSeed}
+                radius={100}
+                fernCount={170}
+                flowerCount={130}
+                fernPalette={FERN_PALETTE}
+                flowerPalette={FLOWER_PALETTE}
+                reject={rejectScatter}
+                flowerGlow={dawnProgress < 0.5}
+            />
+
+            {/* Dawn god-rays strengthen as the forest heals */}
+            {dawnProgress > 0.2 && (
+                <LightShafts
+                    positions={SHAFT_POSITIONS}
+                    color="#ffdba8"
+                    opacity={0.03 + dawnProgress * 0.05}
+                    tilt={0.35}
+                />
+            )}
+
             {/* Flashlight — less needed as dawn brightens */}
             {flashlightOn && <Flashlight />}
 
+            {/* Physical puzzle stones + journal pages */}
+            <Interactables3D />
+
             {/* Landmarks */}
-            <AncientStone id="shattered_monument" position={[20, 0, -40]} scale={1.0} />
-            <CrystalCluster id="twilight_observatory" position={[-20, 0, -80]} scale={1.3} />
+            <ShatteredMonument id="shattered_monument" position={[20, 0, -40]} scale={1.0} />
+            <Observatory id="twilight_observatory" position={[-20, 0, -80]} scale={1.3} />
             <CrystalCluster id="crystal_nexus" position={[0, 0, -50]} scale={1.5} />
             <HeartwoodTree position={[40, 0, -70]} scale={2.0} solved={act3Solved >= 4} />
 

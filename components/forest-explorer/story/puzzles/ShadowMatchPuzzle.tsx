@@ -29,8 +29,9 @@ export function ShadowMatchPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
     const objects = useMemo<DraggableObject[]>(() => {
         return Array.from({ length: objectCount }, (_, i) => ({
             id: i,
-            x: 50 + Math.random() * 200,
-            y: 250 + Math.random() * 80,
+            // Deterministic scatter, offset so no totem starts under its own slot
+            x: 60 + ((i + Math.floor(objectCount / 2)) % objectCount) * (280 / Math.max(1, objectCount - 1)),
+            y: 260 + (i % 2) * 55,
             targetX: 50 + i * 90,
             targetY: 60,
             shape: targetShapes[i] ?? 'tree',
@@ -42,6 +43,14 @@ export function ShadowMatchPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
     );
     const [dragging, setDragging] = useState<number | null>(null);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const [wrongFlash, setWrongFlash] = useState(false);
+
+    const isAligned = (i: number) => {
+        const dx = positions[i].x - objects[i].targetX;
+        const dy = positions[i].y - objects[i].targetY;
+        return Math.sqrt(dx * dx + dy * dy) < snapTolerance;
+    };
+    const alignedCount = objects.reduce((n, _, i) => n + (isAligned(i) ? 1 : 0), 0);
 
     const handleMouseDown = (idx: number, e: React.MouseEvent) => {
         setDragging(idx);
@@ -68,13 +77,23 @@ export function ShadowMatchPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
 
     const handleMouseUp = () => {
         if (dragging === null) return;
+        const idx = dragging;
         setDragging(null);
+
+        // Magnetic snap onto the slot when close enough
+        const newPositions = [...positions];
+        const dx = newPositions[idx].x - objects[idx].targetX;
+        const dy = newPositions[idx].y - objects[idx].targetY;
+        if (Math.sqrt(dx * dx + dy * dy) < snapTolerance) {
+            newPositions[idx] = { x: objects[idx].targetX, y: objects[idx].targetY };
+            setPositions(newPositions);
+        }
 
         // Check if all objects are in correct positions
         const allCorrect = objects.every((obj, i) => {
-            const dx = positions[i].x - obj.targetX;
-            const dy = positions[i].y - obj.targetY;
-            return Math.sqrt(dx * dx + dy * dy) < snapTolerance;
+            const ddx = newPositions[i].x - obj.targetX;
+            const ddy = newPositions[i].y - obj.targetY;
+            return Math.sqrt(ddx * ddx + ddy * ddy) < snapTolerance;
         });
 
         if (allCorrect) {
@@ -83,22 +102,20 @@ export function ShadowMatchPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
     };
 
     const handleCheck = () => {
-        const allCorrect = objects.every((obj, i) => {
-            const dx = positions[i].x - obj.targetX;
-            const dy = positions[i].y - obj.targetY;
-            return Math.sqrt(dx * dx + dy * dy) < snapTolerance;
-        });
+        const allCorrect = objects.every((_, i) => isAligned(i));
         if (allCorrect) {
             onSolve();
         } else {
             onAttempt();
+            setWrongFlash(true);
+            setTimeout(() => setWrongFlash(false), 600);
         }
     };
 
     return (
         <div className="w-full max-w-lg mx-auto space-y-4">
             <p className="text-center text-white/50 text-sm">
-                {t("drag-totems-instruction", { defaultValue: "Drag the totems to match the shadow silhouettes" })}
+                {t("drag-totems-instruction-v2", { defaultValue: "Drag the totems to match the shadow silhouettes ({{aligned}}/{{total}})", aligned: alignedCount, total: objectCount })}
             </p>
 
             <div className="relative bg-gradient-to-b from-[#1a1a2e] to-[#0a0a1e] rounded-xl border border-white/10 overflow-hidden">
@@ -126,22 +143,25 @@ export function ShadowMatchPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
                     </text>
 
                     {/* Draggable objects */}
-                    {objects.map((obj, i) => (
-                        <g
-                            key={`obj-${i}`}
-                            transform={`translate(${positions[i].x}, ${positions[i].y})`}
-                            className="cursor-grab active:cursor-grabbing"
-                            onMouseDown={(e) => handleMouseDown(i, e)}
-                        >
-                            <path
-                                d={shapePaths[obj.shape] ?? shapePaths.tree}
-                                fill={dragging === i ? '#88aaff' : '#6688cc'}
-                                stroke="#aaccff"
-                                strokeWidth="1"
-                                opacity="0.8"
-                            />
-                        </g>
-                    ))}
+                    {objects.map((obj, i) => {
+                        const aligned = isAligned(i);
+                        return (
+                            <g
+                                key={`obj-${i}`}
+                                transform={`translate(${positions[i].x}, ${positions[i].y})`}
+                                className="cursor-grab active:cursor-grabbing"
+                                onMouseDown={(e) => handleMouseDown(i, e)}
+                            >
+                                <path
+                                    d={shapePaths[obj.shape] ?? shapePaths.tree}
+                                    fill={aligned ? '#55cc88' : dragging === i ? '#88aaff' : '#6688cc'}
+                                    stroke={wrongFlash && !aligned ? '#ff5566' : aligned ? '#88ffbb' : '#aaccff'}
+                                    strokeWidth={aligned ? 1.5 : 1}
+                                    opacity="0.85"
+                                />
+                            </g>
+                        );
+                    })}
                 </svg>
             </div>
 

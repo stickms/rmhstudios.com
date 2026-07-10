@@ -10,21 +10,22 @@ function useObjective(currentAct: string, solvedCount: number, totalPuzzles: num
     const { t } = useTranslation("c-forest-explorer");
     return useMemo(() => {
         if (currentAct === 'act1') {
+            // Portal state first — flags outrank progress counters
+            if (storyFlags.act1_gateway_opened) return t("objective-enter-portal-arch", { defaultValue: "Enter the portal at the Gateway Arch" });
             if (discoveredEntries.length === 0) return t("objective-find-notebook", { defaultValue: "Find the glowing notebook nearby" });
             if (solvedCount === 0) return t("objective-explore-flashlight", { defaultValue: "Explore — your flashlight reveals hidden puzzle stones" });
             if (solvedCount < totalPuzzles - 1) return t("objective-solve-gateway", { solvedCount, totalPuzzles, defaultValue: "Solve puzzles to unlock the gateway ({{solvedCount}}/{{totalPuzzles}})" });
-            if (solvedCount === totalPuzzles - 1) return t("objective-ward-seal", { defaultValue: "Find and solve the ward seal at the Gateway Arch" });
-            if (storyFlags.act1_gateway_opened) return t("objective-enter-portal-arch", { defaultValue: "Enter the portal at the Gateway Arch" });
-            return t("objective-puzzles-solved", { solvedCount, totalPuzzles, defaultValue: "{{solvedCount}}/{{totalPuzzles}} puzzles solved" });
+            return t("objective-ward-seal", { defaultValue: "Find and solve the ward seal at the Gateway Arch" });
         }
         if (currentAct === 'act2') {
-            if (solvedCount < totalPuzzles) return t("objective-calm-forest", { solvedCount, totalPuzzles, defaultValue: "Calm the shifting forest ({{solvedCount}}/{{totalPuzzles}} puzzles)" });
             if (storyFlags.act2_gateway_opened) return t("objective-enter-portal-grove", { defaultValue: "Enter the portal to the Tranquil Grove" });
-            return t("objective-puzzles-solved", { solvedCount, totalPuzzles, defaultValue: "{{solvedCount}}/{{totalPuzzles}} puzzles solved" });
+            if (solvedCount < totalPuzzles - 1) return t("objective-calm-forest", { solvedCount, totalPuzzles, defaultValue: "Calm the shifting forest ({{solvedCount}}/{{totalPuzzles}} puzzles)" });
+            return t("objective-root-gate", { defaultValue: "Awaken the Root Nexus at the far gate" });
         }
         if (currentAct === 'act3') {
-            if (solvedCount < totalPuzzles) return t("objective-restore-forest", { solvedCount, totalPuzzles, defaultValue: "Restore the forest ({{solvedCount}}/{{totalPuzzles}} puzzles)" });
-            return t("objective-forest-remembers", { defaultValue: "The forest remembers..." });
+            if (storyFlags.act3_forest_restored) return t("objective-forest-remembers", { defaultValue: "The forest remembers..." });
+            if (solvedCount < totalPuzzles - 1) return t("objective-restore-forest", { solvedCount, totalPuzzles, defaultValue: "Restore the forest ({{solvedCount}}/{{totalPuzzles}} puzzles)" });
+            return t("objective-heartwood", { defaultValue: "Break the last seal at the Heartwood" });
         }
         return '';
     }, [currentAct, solvedCount, totalPuzzles, discoveredEntries.length, storyFlags, t]);

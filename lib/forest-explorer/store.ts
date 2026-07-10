@@ -1,8 +1,30 @@
 import { create } from 'zustand';
 import type { ActId, ActPhase, PuzzleState, ActProgress, ForestExplorerSave } from './types';
 import { saveGame, loadGame, createNewSave, dbSave, dbLoad } from './saveSystem';
-import { getPuzzleById } from './puzzleDefinitions';
+import { getPuzzleById, getPuzzlesByAct, isPuzzleLocked } from './puzzleDefinitions';
 import { getEntryById } from '@/components/forest-explorer/story/journal/journalData';
+
+// ─── Narration beats (letterboxed story text) ───────────────────────────────
+
+const ACT_INTRO_NARRATION: Record<ActId, string[]> = {
+    act1: [
+        'The forest is old, and it is forgetting.',
+        'Somewhere ahead, a Warden walked this path before you. Follow the lanterns. Wake the stones.',
+    ],
+    act2: [
+        'Beyond the gate, the deep wood thrashes in its sleep.',
+        'Calm the wind, the light, and the echoes — and the fever will break.',
+    ],
+    act3: [
+        'Dawn gathers at the edge of the grove, held back by a purple forgetting.',
+        'The Heartwood waits at the end of the Warden\'s trail. Finish the song.',
+    ],
+};
+
+const GATEWAY_NARRATION: Record<string, string[]> = {
+    act1_gateway_opened: ['The arch exhales a slow blue light.', 'The deep wood is open — it was waiting for you.'],
+    act2_gateway_opened: ['The roots unknot. The canopy stills.', 'Beyond, the sky is thinking about morning.'],
+};
 
 // ─── State shape ────────────────────────────────────────────────────────────
 
@@ -33,6 +55,9 @@ interface StoryState {
     // Toast
     toastMessage: string | null;
 
+    // Narration (letterboxed story lines, advanced by click/E)
+    narrationLines: string[] | null;
+
     // Meta
     playtime: number;
     storyFlags: Record<string, boolean>;
@@ -44,6 +69,8 @@ interface StoryState {
     // Actions
     showToast: (msg: string) => void;
     dismissToast: () => void;
+    showNarration: (lines: string[]) => void;
+    dismissNarration: () => void;
     initializeGame: (isLoggedIn: boolean) => Promise<void>;
     newGame: () => void;
     solvePuzzle: (puzzleId: string) => void;
@@ -110,6 +137,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     playerRotation: [0, 0],
     flashlightOn: true,
     toastMessage: null,
+    narrationLines: null,
     playtime: 0,
     storyFlags: {},
     treesShiftCount: 0,
@@ -128,6 +156,9 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     },
 
     dismissToast: () => set({ toastMessage: null }),
+
+    showNarration: (lines: string[]) => set({ narrationLines: lines }),
+    dismissNarration: () => set({ narrationLines: null }),
 
     initializeGame: async (isLoggedIn: boolean) => {
         set({ isLoggedIn });
@@ -179,6 +210,7 @@ export const useStoryStore = create<StoryState>((set, get) => ({
             playerRotation: [0, 0],
             flashlightOn: true,
             toastMessage: null,
+            narrationLines: ACT_INTRO_NARRATION.act1,
             playtime: 0,
             storyFlags: {},
             treesShiftCount: 0,
@@ -215,10 +247,20 @@ export const useStoryStore = create<StoryState>((set, get) => ({
             puzzleStates,
             actProgress: actProg,
             storyFlags,
-            showPuzzleOverlay: false,
-            activePuzzleId: null,
-            actPhase: 'exploring',
         });
+
+        // Gateway world events get a narration beat
+        if (puzzle.worldEvent && GATEWAY_NARRATION[puzzle.worldEvent]) {
+            set({ narrationLines: GATEWAY_NARRATION[puzzle.worldEvent] });
+        }
+
+        // Story auto-discoveries driven by act 3 restoration progress
+        if (puzzle.act === 'act3') {
+            const act3Ids = getPuzzlesByAct('act3').map(p => p.id);
+            const solvedCount = act3Ids.filter(id => puzzleStates[id]?.status === 'solved').length;
+            if (solvedCount === 1) get().discoverEntry('act3_corruption');
+            if (solvedCount === 3) get().discoverEntry('act3_final_lore');
+        }
 
         // Auto-save
         get().saveProgress();
@@ -226,6 +268,27 @@ export const useStoryStore = create<StoryState>((set, get) => ({
 
     openPuzzle: (puzzleId: string) => {
         const state = get();
+
+        // Gateway puzzles stay sealed until the act's other mysteries are solved
+        if (isPuzzleLocked(puzzleId, state.puzzleStates)) {
+            const puzzle = getPuzzleById(puzzleId);
+            get().showToast(puzzle?.lockedHint ?? 'Something still binds this seal.');
+            const current = state.puzzleStates[puzzleId];
+            if (current?.status !== 'discovered') {
+                set({
+                    puzzleStates: {
+                        ...state.puzzleStates,
+                        [puzzleId]: {
+                            status: 'discovered',
+                            attemptCount: current?.attemptCount ?? 0,
+                            partialState: current?.partialState,
+                        },
+                    },
+                });
+            }
+            return;
+        }
+
         const current = state.puzzleStates[puzzleId];
         const newStatus = current?.status === 'solved' ? 'solved' : 'active';
 
@@ -328,7 +391,11 @@ export const useStoryStore = create<StoryState>((set, get) => ({
             flashlightRevealedIds: [],
             playerPosition: [0, 1.7, 0],
             playerRotation: [0, 0],
+            narrationLines: ACT_INTRO_NARRATION[act] ?? null,
         });
+        // The explorer writes an opening journal entry as each act begins
+        if (act === 'act2') get().discoverEntry('act2_intro');
+        if (act === 'act3') get().discoverEntry('act3_intro');
         get().saveProgress();
     },
 
@@ -337,7 +404,15 @@ export const useStoryStore = create<StoryState>((set, get) => ({
     },
 
     incrementTreeSeedOffset: () => {
-        set((s) => ({ treesShiftCount: s.treesShiftCount + 1 }));
+        const next = get().treesShiftCount + 1;
+        set({ treesShiftCount: next });
+        // The explorer records the shifting after living through it
+        if (next === 1) {
+            setTimeout(() => get().discoverEntry('act2_shifting_trees'), 2500);
+        }
+        if (next === 3) {
+            setTimeout(() => get().discoverEntry('act2_calm_returns'), 2500);
+        }
     },
 
     saveProgress: () => {

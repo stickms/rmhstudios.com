@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { PuzzleComponentProps } from './PuzzleRegistry';
 
@@ -29,36 +29,40 @@ export function RuneSequencePuzzle({ config, onSolve, onAttempt }: PuzzleCompone
         return seq;
     }, [seqLength, symbolCount]);
 
+    // All pending timers, cleared on unmount and before each round
+    const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+    const queueTimer = useCallback((fn: () => void, ms: number) => {
+        timersRef.current.push(setTimeout(fn, ms));
+    }, []);
+
     // Start showing sequence
     const startRound = useCallback(() => {
+        timersRef.current.forEach(clearTimeout);
+        timersRef.current = [];
+
         const seq = generateSequence();
         setSequence(seq);
         setPlayerInput([]);
         setPhase('showing');
         setShowingIndex(-1);
 
-        // Animate showing each symbol
-        let idx = 0;
-        const show = () => {
-            if (idx >= seq.length) {
-                setTimeout(() => {
-                    setShowingIndex(-1);
-                    setPhase('input');
-                }, pauseBetween);
-                return;
-            }
-            setShowingIndex(seq[idx]);
-            idx++;
-            setTimeout(() => {
-                setShowingIndex(-1);
-                setTimeout(show, pauseBetween);
-            }, displayDuration);
-        };
-        setTimeout(show, 500);
-    }, [generateSequence, displayDuration, pauseBetween]);
+        // Animate showing each symbol on a fixed schedule
+        seq.forEach((symbolIdx, i) => {
+            const startAt = 500 + i * (displayDuration + pauseBetween);
+            queueTimer(() => setShowingIndex(symbolIdx), startAt);
+            queueTimer(() => setShowingIndex(-1), startAt + displayDuration);
+        });
+        queueTimer(() => {
+            setShowingIndex(-1);
+            setPhase('input');
+        }, 500 + seq.length * (displayDuration + pauseBetween) + pauseBetween);
+    }, [generateSequence, displayDuration, pauseBetween, queueTimer]);
 
     useEffect(() => {
         startRound();
+        return () => {
+            timersRef.current.forEach(clearTimeout);
+        };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSymbolClick = (idx: number) => {
@@ -71,13 +75,13 @@ export function RuneSequencePuzzle({ config, onSolve, onAttempt }: PuzzleCompone
         if (newInput[pos] !== sequence[pos]) {
             setPhase('wrong');
             onAttempt();
-            setTimeout(() => startRound(), 1200);
+            queueTimer(() => startRound(), 1200);
             return;
         }
 
         if (newInput.length === sequence.length) {
             setPhase('correct');
-            setTimeout(onSolve, 800);
+            queueTimer(onSolve, 800);
         }
     };
 

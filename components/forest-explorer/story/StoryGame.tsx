@@ -14,6 +14,7 @@ import { ActTransition } from './ActTransition';
 import { PuzzleOverlay } from './puzzles/PuzzleOverlay';
 import { JournalOverlay } from './journal/JournalOverlay';
 import { StoryToast } from './StoryToast';
+import { StoryNarration } from './StoryNarration';
 import type { ActId } from '@/lib/forest-explorer/types';
 
 export function StoryGame() {
@@ -63,7 +64,11 @@ export function StoryGame() {
     // Act 3: game completion when act3_forest_restored flag is set (final puzzle)
     useEffect(() => {
         if (storyFlags.act3_forest_restored && currentAct === 'act3') {
-            const timer = setTimeout(() => setShowCompletion(true), 2000);
+            const timer = setTimeout(() => {
+                setShowCompletion(true);
+                // The explorer's closing journal entry — the forest keeps its new warden
+                useStoryStore.getState().discoverEntry('act3_new_warden');
+            }, 2000);
             return () => clearTimeout(timer);
         }
     }, [storyFlags.act3_forest_restored, currentAct]);
@@ -267,7 +272,7 @@ export function StoryGame() {
             {/* Intro guidance overlay */}
             {introMounted && (
                 <div
-                    className="absolute inset-0 flex items-end justify-center pb-40 z-[45] pointer-events-none transition-opacity duration-1000"
+                    className="absolute inset-0 flex items-start justify-center pt-20 z-[45] pointer-events-none transition-opacity duration-1000"
                     style={{ opacity: introVisible ? 1 : 0 }}
                 >
                     <div className="text-center px-8 py-6 rounded-2xl bg-black/50 backdrop-blur-sm border border-white/10 max-w-sm space-y-3">
@@ -289,6 +294,9 @@ export function StoryGame() {
 
             {/* Toast notifications */}
             <StoryToast />
+
+            {/* Letterboxed story narration */}
+            {!showMenu && !paused && <StoryNarration />}
 
             {/* Act 2: tree shift darkness overlay */}
             <div

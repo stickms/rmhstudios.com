@@ -36,6 +36,12 @@ export interface PuzzleDefinition {
     worldEvent?: string;
     /** Journal entry IDs that provide hints for this puzzle */
     hintEntryIds?: string[];
+    /** Puzzles that must be solved before this one unlocks */
+    requiresPuzzleIds?: string[];
+    /** Toast shown when interacting while still locked */
+    lockedHint?: string;
+    /** Thematic line shown on the solved screen */
+    solveText?: string;
 }
 
 // ─── Interactable Definitions ───────────────────────────────────────────────

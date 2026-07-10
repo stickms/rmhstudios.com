@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, useEffect, useState } from 'react';
+import { useRef, useMemo, useEffect, useState, useCallback } from 'react';
 import { Stars } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import type { Group, AmbientLight } from 'three';
@@ -13,13 +13,20 @@ import { Clouds } from '../../shared/Clouds';
 import { Rock } from '../../shared/Rock';
 import { Mushroom } from '../../shared/Mushroom';
 import { Flashlight } from '../../shared/Flashlight';
-import { TikiTorches } from '../../shared/TikiTorches';
 import { HollowTree } from '../landmarks/HollowTree';
 import { CrystalCluster } from '../landmarks/CrystalCluster';
-import { AncientStone } from '../landmarks/AncientStone';
+import { EchoChamber } from '../landmarks/EchoChamber';
 import { GatewayArch } from '../landmarks/GatewayArch';
+import { Interactables3D } from '../Interactables3D';
+import { CorridorLanterns } from '../scenery/CorridorLanterns';
+import { PathStrips } from '../scenery/PathStrips';
+import { ScatterDecor } from '../scenery/ScatterDecor';
+import { DriftParticles } from '../scenery/DriftParticles';
 import { useStoryStore } from '@/lib/forest-explorer/store';
-import { actMaps } from '@/lib/forest-explorer/actMaps';
+import { actMaps, isInCorridor } from '@/lib/forest-explorer/actMaps';
+
+const FERN_PALETTE = ['#3a2c14', '#4a3618', '#2c220f'];
+const FLOWER_PALETTE = ['#d8823a', '#c05a2a', '#e0a04a'];
 
 /**
  * Act 2 — Confronting the Shifting Canopy
@@ -139,6 +146,12 @@ export function ActTwoScene() {
         return () => { treeMeshes.forEach(m => group.remove(m)); };
     }, [treeMeshes]);
 
+    // Ground cover stays off the paths
+    const rejectScatter = useCallback(
+        (x: number, z: number) => isInCorridor(config, x, z, 0.5),
+        [config],
+    );
+
     return (
         <>
             {/* Atmosphere: orange-red dusk */}
@@ -173,45 +186,36 @@ export function ActTwoScene() {
             <Clouds night />
             <Fireflies night />
             <Mist />
-            <TikiTorches />
+
+            {/* Rising embers — the deep wood smoulders */}
+            <DriftParticles mode="embers" count={110} area={120} />
+
+            {/* Worn paths + amber Warden lanterns (replace the old misplaced torches) */}
+            <PathStrips corridors={config.corridors} color="#453320" />
+            <CorridorLanterns corridors={config.corridors} color="#ffab5e" spacing={15} />
+
+            {/* Scorched undergrowth + ember-colored blooms */}
+            <ScatterDecor
+                seed={config.treeSeed}
+                radius={80}
+                fernCount={150}
+                flowerCount={70}
+                fernPalette={FERN_PALETTE}
+                flowerPalette={FLOWER_PALETTE}
+                reject={rejectScatter}
+            />
 
             {/* Flashlight */}
             {flashlightOn && <Flashlight />}
 
+            {/* Physical puzzle stones + journal pages */}
+            <Interactables3D />
+
             {/* Landmarks */}
             <HollowTree position={[0, 0, -30]} scale={1.8} />
             <CrystalCluster id="mirror_pool" position={[-30, 0, -60]} scale={1.0} />
-            <AncientStone id="echo_chamber" position={[40, 0, -20]} scale={1.0} />
+            <EchoChamber id="echo_chamber" position={[40, 0, -20]} scale={1.0} />
             <GatewayArch id="act2_root_gate" position={[70, 0, -40]} scale={1.5} />
-
-            {/* Eerie amber wisps near landmarks */}
-            {[
-                [2, 0.5, -28], [-2, 0.8, -32], [4, 0.3, -27],
-                [-28, 0.6, -58], [-32, 0.4, -62],
-                [38, 0.7, -18], [42, 0.5, -22],
-                [68, 0.5, -38], [72, 0.4, -42],
-            ].map(([x, y, z], i) => (
-                <pointLight key={`wisp-${i}`} position={[x, y, z]} color="#ff8844" intensity={0.3} distance={6} decay={2} />
-            ))}
-
-            {/* Corridor wall indicators: dim fog lights along path edges */}
-            {config.corridors.map((corridor, ci) => {
-                const [sx, sz] = corridor.start;
-                const [ex, ez] = corridor.end;
-                const dx = ex - sx, dz = ez - sz;
-                const len = Math.sqrt(dx * dx + dz * dz);
-                const nx = -dz / len, nz = dx / len;
-                const steps = Math.floor(len / 15);
-                return Array.from({ length: steps }, (_, si) => {
-                    const t = (si + 1) / (steps + 1);
-                    const px = sx + dx * t;
-                    const pz = sz + dz * t;
-                    return [
-                        <pointLight key={`cw-${ci}-${si}-l`} position={[px + nx * corridor.width * 0.4, 0.5, pz + nz * corridor.width * 0.4]} color="#aa4400" intensity={0.15} distance={4} decay={2} />,
-                        <pointLight key={`cw-${ci}-${si}-r`} position={[px - nx * corridor.width * 0.4, 0.5, pz - nz * corridor.width * 0.4]} color="#aa4400" intensity={0.15} distance={4} decay={2} />,
-                    ];
-                });
-            })}
 
             {/* Shifting darkness overlay — rendered as a CSS overlay in the parent,
                 but we also dim the scene lights during shift */}

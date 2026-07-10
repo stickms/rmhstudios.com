@@ -19,6 +19,7 @@ import { Route as StudioRouteImport } from './routes/studio'
 import { Route as StrategiesRouteImport } from './routes/strategies'
 import { Route as SliceItRouteImport } from './routes/slice-it'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SecurityRouteImport } from './routes/security'
 import { Route as SecretRouteImport } from './routes/secret'
 import { Route as RochesterOffensiveRouteImport } from './routes/rochester-offensive'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
@@ -30,7 +31,6 @@ import { Route as RmhboxRouteImport } from './routes/rmhbox'
 import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
 import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
-import { Route as SecurityRouteImport } from './routes/security'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
@@ -358,9 +358,9 @@ import { Route as SiteGroupsIdRouteImport } from './routes/_site/groups/$id'
 import { Route as SiteCSlugRouteImport } from './routes/_site/c.$slug'
 import { Route as SiteAdminUsersRouteImport } from './routes/_site/admin/users'
 import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/user-builds'
+import { Route as SiteAdminSecurityReportsRouteImport } from './routes/_site/admin/security-reports'
 import { Route as SiteAdminRideshareRouteImport } from './routes/_site/admin/rideshare'
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
-import { Route as SiteAdminSecurityReportsRouteImport } from './routes/_site/admin/security-reports'
 import { Route as SiteAdminPredictionsRouteImport } from './routes/_site/admin/predictions'
 import { Route as SiteAdminLibraryStorageRouteImport } from './routes/_site/admin/library-storage'
 import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/library-quota'
@@ -594,6 +594,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SecurityRoute = SecurityRouteImport.update({
+  id: '/security',
+  path: '/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SecretRoute = SecretRouteImport.update({
   id: '/secret',
   path: '/secret',
@@ -647,11 +652,6 @@ const RmhFarmingSimRoute = RmhFarmingSimRouteImport.update({
 const RmhCapitalRoute = RmhCapitalRouteImport.update({
   id: '/rmh-capital',
   path: '/rmh-capital',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SecurityRoute = SecurityRouteImport.update({
-  id: '/security',
-  path: '/security',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -2306,6 +2306,12 @@ const SiteAdminUserBuildsRoute = SiteAdminUserBuildsRouteImport.update({
   path: '/user-builds',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminSecurityReportsRoute =
+  SiteAdminSecurityReportsRouteImport.update({
+    id: '/security-reports',
+    path: '/security-reports',
+    getParentRoute: () => SiteAdminRouteRoute,
+  } as any)
 const SiteAdminRideshareRoute = SiteAdminRideshareRouteImport.update({
   id: '/rideshare',
   path: '/rideshare',
@@ -2314,11 +2320,6 @@ const SiteAdminRideshareRoute = SiteAdminRideshareRouteImport.update({
 const SiteAdminReportsRoute = SiteAdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
-  getParentRoute: () => SiteAdminRouteRoute,
-} as any)
-const SiteAdminSecurityReportsRoute = SiteAdminSecurityReportsRouteImport.update({
-  id: '/security-reports',
-  path: '/security-reports',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
 const SiteAdminPredictionsRoute = SiteAdminPredictionsRouteImport.update({
@@ -3312,7 +3313,6 @@ export interface FileRoutesByFullPath {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
-  '/security': typeof SecurityRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
@@ -3324,6 +3324,7 @@ export interface FileRoutesByFullPath {
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/secret': typeof SecretRouteWithChildren
+  '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/strategies': typeof StrategiesRouteWithChildren
@@ -3444,8 +3445,8 @@ export interface FileRoutesByFullPath {
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
-  '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
+  '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
   '/c/$slug': typeof SiteCSlugRoute
@@ -3842,8 +3843,8 @@ export interface FileRoutesByTo {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
-  '/security': typeof SecurityRoute
   '/rochester-offensive': typeof RochesterOffensiveRoute
+  '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
@@ -3955,8 +3956,8 @@ export interface FileRoutesByTo {
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
-  '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
+  '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/admin/users': typeof SiteAdminUsersRoute
   '/c/$slug': typeof SiteCSlugRoute
@@ -4359,7 +4360,6 @@ export interface FileRoutesById {
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
   '/privacy': typeof PrivacyRoute
-  '/security': typeof SecurityRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
@@ -4371,6 +4371,7 @@ export interface FileRoutesById {
   '/rmhtype': typeof RmhtypeRouteWithChildren
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/secret': typeof SecretRouteWithChildren
+  '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/strategies': typeof StrategiesRouteWithChildren
@@ -4492,8 +4493,8 @@ export interface FileRoutesById {
   '/_site/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/_site/admin/predictions': typeof SiteAdminPredictionsRoute
   '/_site/admin/reports': typeof SiteAdminReportsRoute
-  '/_site/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/_site/admin/rideshare': typeof SiteAdminRideshareRoute
+  '/_site/admin/security-reports': typeof SiteAdminSecurityReportsRoute
   '/_site/admin/user-builds': typeof SiteAdminUserBuildsRoute
   '/_site/admin/users': typeof SiteAdminUsersRoute
   '/_site/c/$slug': typeof SiteCSlugRoute
@@ -4897,7 +4898,6 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/offline'
     | '/privacy'
-    | '/security'
     | '/rmh-capital'
     | '/rmh-farming-sim'
     | '/rmh-pmc'
@@ -4909,6 +4909,7 @@ export interface FileRouteTypes {
     | '/rmhtype'
     | '/rochester-offensive'
     | '/secret'
+    | '/security'
     | '/sitemap.xml'
     | '/slice-it'
     | '/strategies'
@@ -5029,8 +5030,8 @@ export interface FileRouteTypes {
     | '/admin/library-storage'
     | '/admin/predictions'
     | '/admin/reports'
-    | '/admin/security-reports'
     | '/admin/rideshare'
+    | '/admin/security-reports'
     | '/admin/user-builds'
     | '/admin/users'
     | '/c/$slug'
@@ -5427,8 +5428,8 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/offline'
     | '/privacy'
-    | '/security'
     | '/rochester-offensive'
+    | '/security'
     | '/sitemap.xml'
     | '/synapse-storm'
     | '/terms'
@@ -5540,8 +5541,8 @@ export interface FileRouteTypes {
     | '/admin/library-storage'
     | '/admin/predictions'
     | '/admin/reports'
-    | '/admin/security-reports'
     | '/admin/rideshare'
+    | '/admin/security-reports'
     | '/admin/user-builds'
     | '/admin/users'
     | '/c/$slug'
@@ -5943,7 +5944,6 @@ export interface FileRouteTypes {
     | '/neon-driftway'
     | '/offline'
     | '/privacy'
-    | '/security'
     | '/rmh-capital'
     | '/rmh-farming-sim'
     | '/rmh-pmc'
@@ -5955,6 +5955,7 @@ export interface FileRouteTypes {
     | '/rmhtype'
     | '/rochester-offensive'
     | '/secret'
+    | '/security'
     | '/sitemap.xml'
     | '/slice-it'
     | '/strategies'
@@ -6076,8 +6077,8 @@ export interface FileRouteTypes {
     | '/_site/admin/library-storage'
     | '/_site/admin/predictions'
     | '/_site/admin/reports'
-    | '/_site/admin/security-reports'
     | '/_site/admin/rideshare'
+    | '/_site/admin/security-reports'
     | '/_site/admin/user-builds'
     | '/_site/admin/users'
     | '/_site/c/$slug'
@@ -6479,7 +6480,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   OfflineRoute: typeof OfflineRoute
-  SecurityRoute: typeof SecurityRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
@@ -6492,6 +6492,7 @@ export interface RootRouteChildren {
   RmhtypeRoute: typeof RmhtypeRouteWithChildren
   RochesterOffensiveRoute: typeof RochesterOffensiveRoute
   SecretRoute: typeof SecretRouteWithChildren
+  SecurityRoute: typeof SecurityRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SliceItRoute: typeof SliceItRouteWithChildren
   StrategiesRoute: typeof StrategiesRouteWithChildren
@@ -6829,6 +6830,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/security': {
+      id: '/security'
+      path: '/security'
+      fullPath: '/security'
+      preLoaderRoute: typeof SecurityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/secret': {
       id: '/secret'
       path: '/secret'
@@ -6904,13 +6912,6 @@ declare module '@tanstack/react-router' {
       path: '/rmh-capital'
       fullPath: '/rmh-capital'
       preLoaderRoute: typeof RmhCapitalRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/security': {
-      id: '/security'
-      path: '/security'
-      fullPath: '/security'
-      preLoaderRoute: typeof SecurityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -9202,6 +9203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminUserBuildsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/security-reports': {
+      id: '/_site/admin/security-reports'
+      path: '/security-reports'
+      fullPath: '/admin/security-reports'
+      preLoaderRoute: typeof SiteAdminSecurityReportsRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/rideshare': {
       id: '/_site/admin/rideshare'
       path: '/rideshare'
@@ -9214,13 +9222,6 @@ declare module '@tanstack/react-router' {
       path: '/reports'
       fullPath: '/admin/reports'
       preLoaderRoute: typeof SiteAdminReportsRouteImport
-      parentRoute: typeof SiteAdminRouteRoute
-    }
-    '/_site/admin/security-reports': {
-      id: '/_site/admin/security-reports'
-      path: '/security-reports'
-      fullPath: '/admin/security-reports'
-      preLoaderRoute: typeof SiteAdminSecurityReportsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
     '/_site/admin/predictions': {
@@ -10508,8 +10509,8 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminLibraryStorageRoute: typeof SiteAdminLibraryStorageRoute
   SiteAdminPredictionsRoute: typeof SiteAdminPredictionsRoute
   SiteAdminReportsRoute: typeof SiteAdminReportsRoute
-  SiteAdminSecurityReportsRoute: typeof SiteAdminSecurityReportsRoute
   SiteAdminRideshareRoute: typeof SiteAdminRideshareRoute
+  SiteAdminSecurityReportsRoute: typeof SiteAdminSecurityReportsRoute
   SiteAdminUserBuildsRoute: typeof SiteAdminUserBuildsRoute
   SiteAdminUsersRoute: typeof SiteAdminUsersRoute
   SiteAdminIndexRoute: typeof SiteAdminIndexRoute
@@ -10528,8 +10529,8 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminLibraryStorageRoute: SiteAdminLibraryStorageRoute,
   SiteAdminPredictionsRoute: SiteAdminPredictionsRoute,
   SiteAdminReportsRoute: SiteAdminReportsRoute,
-  SiteAdminSecurityReportsRoute: SiteAdminSecurityReportsRoute,
   SiteAdminRideshareRoute: SiteAdminRideshareRoute,
+  SiteAdminSecurityReportsRoute: SiteAdminSecurityReportsRoute,
   SiteAdminUserBuildsRoute: SiteAdminUserBuildsRoute,
   SiteAdminUsersRoute: SiteAdminUsersRoute,
   SiteAdminIndexRoute: SiteAdminIndexRoute,
@@ -11647,7 +11648,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   OfflineRoute: OfflineRoute,
-  SecurityRoute: SecurityRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,
@@ -11660,6 +11660,7 @@ const rootRouteChildren: RootRouteChildren = {
   RmhtypeRoute: RmhtypeRouteWithChildren,
   RochesterOffensiveRoute: RochesterOffensiveRoute,
   SecretRoute: SecretRouteWithChildren,
+  SecurityRoute: SecurityRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SliceItRoute: SliceItRouteWithChildren,
   StrategiesRoute: StrategiesRouteWithChildren,

@@ -46,7 +46,7 @@ function ForestExplorerPage() {
                 </div>
               </div>
               <p className="text-sm text-green-300/60 leading-relaxed">
-                {t("free-explore-desc", { defaultValue: "Wander freely through a peaceful forest with day and night cycles, glowing fireflies, and a winding river. No objectives — just explore." })}
+                {t("free-explore-desc-v2", { defaultValue: "Wander freely through a peaceful forest with day and night cycles, fireflies, butterflies, and a winding river. Plant seeds and return to watch your garden bloom." })}
               </p>
             </div>
           </Link>
@@ -64,7 +64,7 @@ function ForestExplorerPage() {
                 </div>
               </div>
               <p className="text-sm text-amber-300/50 leading-relaxed">
-                {t("story-mode-desc", { defaultValue: "A narrative journey through whispering woods, shifting canopies, and a tranquil grove. Solve puzzles, uncover secrets, restore the forest." })}
+                {t("story-mode-desc-v2", { defaultValue: "Follow the last Warden's trail through whispering woods, a shifting canopy, and a tranquil grove. Solve puzzles, uncover the journal, restore the forest." })}
               </p>
             </div>
           </Link>
