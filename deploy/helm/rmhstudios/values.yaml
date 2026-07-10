@@ -114,6 +114,10 @@ services:
     command: ["node", "dist-server/server/bot-worker/index.cjs"]
     replicas: 1
 
+  ladder-worker:
+    command: ["node", "dist-server/server/ladder-worker/index.cjs"]
+    replicas: 1
+
 # Migration hook (pre-install/pre-upgrade). Mirrors deploy.sh step 3.
 migrations:
   enabled: true

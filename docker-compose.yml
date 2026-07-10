@@ -140,6 +140,15 @@ services:
       retries: 3
       start_period: 15s
 
+  # ─── Ladder Worker (RMHLadder job-discovery cron) ──────────────────────────
+  # Node cron process: self-bootstraps an empty DB (seed → probe → run), then
+  # runs the pipeline on LADDER_CRON_SCHEDULE (default every 6h). No port.
+  ladder-worker:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-ladder-worker
+    env_file: ${ENV_FILE:-.env.production}
+    command: ["node", "dist-server/server/ladder-worker/index.cjs"]
+
   # ─── Go Supervisor (discord-bot + recap + doctrine-worker + vibe-worker + bot-worker) ─
   # Runs the five background workers as goroutines in a single Go process.
   # Env union: every variable the five old Node services needed is carried here.
