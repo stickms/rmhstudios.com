@@ -107,6 +107,24 @@
   border-top-color: var(--brass);
 }
 
+/* Exit rung — back to the main rmhstudios site. Sits at the bottom of the
+   rail (margin-top: auto on the flex column), quieter than the nav rungs. */
+.rl-rail .rl-exit {
+  margin-top: auto;
+  border-bottom: 1.5px solid var(--ink);
+  font-size: 12px;
+  color: color-mix(in srgb, var(--slate) 75%, transparent);
+}
+
+.rl-rail .rl-exit:hover {
+  color: var(--ink);
+}
+
+.rl-topbar .rl-exit {
+  margin-left: auto;
+  opacity: 0.75;
+}
+
 /* ─── Content Area ──────────────────────────────────────────────── */
 
 .rl-content {

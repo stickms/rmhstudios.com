@@ -14,6 +14,8 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { schedule } from 'node-cron';
 import type { ScheduledTask } from 'node-cron';
 import { runPipeline, type RunPrisma } from '../../lib/rmhladder/pipeline/run';
+import { probeUnconfiguredSources, type ProbePrisma } from '../../lib/rmhladder/pipeline/probe-sources';
+import { seedLadder, type SeedPrisma } from '../../lib/rmhladder/seed/run-seed';
 
 // ─── Prisma Client (standalone for worker process) ──────────────
 
@@ -52,6 +54,51 @@ async function tick() {
   }
 }
 
+// ─── Startup bootstrap ──────────────────────────────────────────
+// A fresh database has no companies/sources/jobs, and the first cron tick can
+// be hours away — self-initialize so the dashboard has postings right after
+// deploy: seed if empty, probe sources if none are active, run the pipeline
+// if there are no active jobs. Every step is idempotent and skipped once done.
+
+async function bootstrap() {
+  if (running) return;
+  running = true;
+  try {
+    const companyCount = await prisma.ladderCompany.count();
+    if (companyCount === 0) {
+      console.log('[ladder-worker] Bootstrap: empty database — seeding companies/sources/rules');
+      const seeded = await seedLadder(prisma as unknown as SeedPrisma);
+      console.log(`[ladder-worker] Bootstrap: seeded ${seeded.companies} companies, ${seeded.sources} sources`);
+    }
+
+    // Manual sources are seeded 'active', so gate the probe on API sources only.
+    const activeApiSources = await prisma.ladderSource.count({
+      where: { status: 'active', platform: { not: 'manual' } },
+    });
+    if (activeApiSources === 0) {
+      console.log('[ladder-worker] Bootstrap: no active API sources — probing board slugs (this takes a while)');
+      const probed = await probeUnconfiguredSources(prisma as unknown as ProbePrisma, {
+        log: (line) => console.log(`[ladder-worker] ${line}`),
+      });
+      console.log(
+        `[ladder-worker] Bootstrap: probed ${probed.companiesProbed} companies, activated ${probed.sourcesActivated} sources`,
+      );
+    }
+
+    const activeJobs = await prisma.ladderJob.count({ where: { status: 'active' } });
+    if (activeJobs === 0) {
+      console.log('[ladder-worker] Bootstrap: no active jobs — running pipeline now');
+      running = false; // hand the overlap guard to tick()
+      await tick();
+      return;
+    }
+  } catch (e) {
+    console.error('[ladder-worker] Bootstrap failed:', e);
+  } finally {
+    running = false;
+  }
+}
+
 // ─── Scheduler ──────────────────────────────────────────────────
 
 const cronSchedule = process.env.LADDER_CRON_SCHEDULE ?? '0 */6 * * *';
@@ -59,6 +106,8 @@ const cronSchedule = process.env.LADDER_CRON_SCHEDULE ?? '0 */6 * * *';
 const task: ScheduledTask = schedule(cronSchedule, tick);
 
 console.log(`[ladder-worker] Started — schedule="${cronSchedule}"`);
+
+void bootstrap();
 
 // ─── Graceful shutdown ──────────────────────────────────────────
 

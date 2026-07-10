@@ -41,6 +41,9 @@ export default function RmhLadderShell({ children }: { children: React.ReactNode
             {label}
           </Link>
         ))}
+        <Link to="/" className="rl-topbar__rung rl-exit">
+          ← RMH Studios
+        </Link>
       </nav>
 
       {/* Ladder rail (desktop) */}
@@ -58,6 +61,9 @@ export default function RmhLadderShell({ children }: { children: React.ReactNode
             </Link>
           ))}
         </div>
+        <Link to="/" className="rl-rung rl-exit">
+          ← RMH Studios
+        </Link>
       </nav>
 
       {/* Content */}
