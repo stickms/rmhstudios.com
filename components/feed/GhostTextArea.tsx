@@ -62,6 +62,10 @@ export const GhostTextArea = forwardRef<HTMLTextAreaElement, GhostTextAreaProps>
       <div className="relative flex-1 min-w-0">
         <div
           aria-hidden
+          // The mirror is invisible (text-transparent) and re-renders on every
+          // keystroke; letting twemoji rewrite an emoji here into an <img>
+          // desyncs React and crashes the next update with a removeChild error.
+          data-no-twemoji
           className={`${className} pointer-events-none absolute inset-0 w-full overflow-hidden whitespace-pre-wrap wrap-break-word text-transparent`}
           // The mirror shares the textarea's box classes (incl. `border`) for
           // pixel-perfect alignment, but the visible border must be drawn only

@@ -796,7 +796,11 @@ export function ConversationView({
             />
             {shortcodes.menu}
           </div>
-          <EmojiPickerButton direction="up" onSelect={insertEmoji} />
+          <EmojiPickerButton
+            direction="up"
+            onSelect={insertEmoji}
+            className="flex h-[42px] shrink-0 items-center"
+          />
           {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer. */}
           <div className="relative shrink-0" ref={attachRef}>
             <button

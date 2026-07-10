@@ -38,6 +38,17 @@ function parseTarget(node: Node): HTMLElement | null {
 }
 
 /**
+ * Opt-out for regions React re-renders and that manage their own emoji (form
+ * mirrors, the emoji-picker widget, etc.). Rewriting an emoji text node into an
+ * <img> inside such a subtree desyncs React's reconciler from the real DOM, so a
+ * later update throws "Node.removeChild: The node to be removed is not a child
+ * of this node". Marking the subtree with `data-no-twemoji` keeps twemoji out.
+ */
+function isTwemojiExempt(el: HTMLElement): boolean {
+  return el.closest('[data-no-twemoji]') != null;
+}
+
+/**
  * Replaces native emoji characters with Twemoji SVGs inside its subtree so
  * emojis look identical on every platform (instead of OS-specific glyphs).
  *
@@ -75,11 +86,11 @@ export function TwemojiProvider({ children, className, tag: Tag = 'span' }: Twem
       for (const rec of records) {
         if (rec.type === 'characterData') {
           const t = parseTarget(rec.target);
-          if (t) pending.add(t);
+          if (t && !isTwemojiExempt(t)) pending.add(t);
         } else {
           rec.addedNodes.forEach((n) => {
             const t = parseTarget(n);
-            if (t) pending.add(t);
+            if (t && !isTwemojiExempt(t)) pending.add(t);
           });
         }
       }

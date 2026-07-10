@@ -594,7 +594,7 @@ export default function ChatPanel() {
         <EmojiPickerButton
           direction="up"
           onSelect={insertEmoji}
-          className="shrink-0"
+          className="flex shrink-0 items-center"
           buttonClassName="text-(--rmhtube-text-dim) hover:text-(--rmhtube-accent)"
         />
         <button

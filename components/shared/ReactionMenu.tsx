@@ -47,18 +47,23 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
   return createPortal(
     <div ref={rootRef} className="fixed z-[100]" style={style}>
       {showFull ? (
-        <Suspense
-          fallback={
-            <div className="w-[300px] h-[360px] rounded-site border border-site-border bg-site-bg animate-pulse" />
-          }
-        >
-          <EmojiPickerPanel
-            onSelect={(emoji) => {
-              onSelect(emoji);
-              onClose();
-            }}
-          />
-        </Suspense>
+        // Exempt the emoji-picker widget from the app-wide twemoji observer: it
+        // renders its own emoji and re-renders internally, so letting twemoji
+        // rewrite its nodes crashes React with a removeChild error.
+        <div data-no-twemoji>
+          <Suspense
+            fallback={
+              <div className="w-[300px] h-[360px] rounded-site border border-site-border bg-site-bg animate-pulse" />
+            }
+          >
+            <EmojiPickerPanel
+              onSelect={(emoji) => {
+                onSelect(emoji);
+                onClose();
+              }}
+            />
+          </Suspense>
+        </div>
       ) : (
         <div className="flex items-center gap-1 rounded-full border border-site-border bg-site-bg px-2 py-1.5 shadow-xl">
           {CHAT_REACTION_EMOJIS.map((emoji) => (

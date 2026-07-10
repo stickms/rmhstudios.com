@@ -66,6 +66,11 @@ export function EmojiPickerButton({
       </button>
       {open && (
         <div
+          // The picker renders its own emoji and re-renders as you scroll/pick;
+          // exclude it from the app-wide twemoji observer so it never rewrites a
+          // node the picker owns (which crashes React) and never walks its huge
+          // subtree on every scroll mutation.
+          data-no-twemoji
           className={`absolute right-0 z-50 ${
             direction === 'up' ? 'bottom-full mb-2' : 'top-full mt-2'
           }`}
