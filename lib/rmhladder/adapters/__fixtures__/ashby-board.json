@@ -1,0 +1,42 @@
+{
+  "jobs": [
+    {
+      "id": "uuid-1",
+      "title": "Software Engineering Intern",
+      "location": "New York",
+      "secondaryLocations": [],
+      "isRemote": false,
+      "isListed": true,
+      "publishedAt": "2026-06-15T00:00:00Z",
+      "jobUrl": "https://jobs.ashbyhq.com/ramp/uuid-1",
+      "applyUrl": "https://jobs.ashbyhq.com/ramp/uuid-1/application",
+      "descriptionHtml": "<p>Build fintech.</p>",
+      "address": {
+        "postalAddress": {
+          "addressLocality": "New York",
+          "addressRegion": "New York",
+          "addressCountry": "United States"
+        }
+      }
+    },
+    {
+      "id": "uuid-2",
+      "title": "Staff Engineer",
+      "location": "Remote",
+      "secondaryLocations": [],
+      "isRemote": true,
+      "isListed": false,
+      "publishedAt": "2026-05-01T00:00:00Z",
+      "jobUrl": "https://jobs.ashbyhq.com/ramp/uuid-2",
+      "applyUrl": null,
+      "descriptionHtml": "<p>10+ years required.</p>",
+      "address": {
+        "postalAddress": {
+          "addressLocality": "Remote",
+          "addressRegion": "Remote",
+          "addressCountry": "United States"
+        }
+      }
+    }
+  ]
+}
