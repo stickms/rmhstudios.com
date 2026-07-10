@@ -361,7 +361,7 @@ export default function ChatPanel({
         <EmojiPickerButton
           direction="up"
           onSelect={insertEmoji}
-          className="shrink-0"
+          className="flex shrink-0 items-center"
           buttonStyle={{ color: `var(--${themePrefix}-text-dim)` }}
         />
         <button

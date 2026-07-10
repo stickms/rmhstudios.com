@@ -533,7 +533,11 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               </div>
             )}
           </div>
-          <EmojiPickerButton direction="up" onSelect={insertEmoji} />
+          <EmojiPickerButton
+            direction="up"
+            onSelect={insertEmoji}
+            className="flex h-9 items-center"
+          />
           <div className="flex-1 min-w-0">
             <MentionTextarea
               ref={inputRef}
