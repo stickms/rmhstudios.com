@@ -328,6 +328,7 @@ export function RightSidebar({
         <p>{t('footer-tagline', { defaultValue: 'RMH | The Everything Platform' })}</p>
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
           <Link to="/security" className="hover:text-site-text transition-colors">{t('security', { defaultValue: 'Security' })}</Link>
+          <Link to="/optimization" className="hover:text-site-text transition-colors">{t('optimization', { defaultValue: 'Speed' })}</Link>
           <Link to="/roadmap" className="hover:text-site-text transition-colors">{t('roadmap', { defaultValue: 'Roadmap' })}</Link>
         </div>
       </div>

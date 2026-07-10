@@ -20,6 +20,7 @@ import { Route as StrategiesRouteImport } from './routes/strategies'
 import { Route as SliceItRouteImport } from './routes/slice-it'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SecurityRouteImport } from './routes/security'
+import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as SecretRouteImport } from './routes/secret'
 import { Route as RochesterOffensiveRouteImport } from './routes/rochester-offensive'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
@@ -597,6 +598,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const SecurityRoute = SecurityRouteImport.update({
   id: '/security',
   path: '/security',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OptimizationRoute = OptimizationRouteImport.update({
+  id: '/optimization',
+  path: '/optimization',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SecretRoute = SecretRouteImport.update({
@@ -3325,6 +3331,7 @@ export interface FileRoutesByFullPath {
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/secret': typeof SecretRouteWithChildren
   '/security': typeof SecurityRoute
+  '/optimization': typeof OptimizationRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/strategies': typeof StrategiesRouteWithChildren
@@ -3845,6 +3852,7 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/security': typeof SecurityRoute
+  '/optimization': typeof OptimizationRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
@@ -4372,6 +4380,7 @@ export interface FileRoutesById {
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/secret': typeof SecretRouteWithChildren
   '/security': typeof SecurityRoute
+  '/optimization': typeof OptimizationRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/strategies': typeof StrategiesRouteWithChildren
@@ -4910,6 +4919,7 @@ export interface FileRouteTypes {
     | '/rochester-offensive'
     | '/secret'
     | '/security'
+    | '/optimization'
     | '/sitemap.xml'
     | '/slice-it'
     | '/strategies'
@@ -5430,6 +5440,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/rochester-offensive'
     | '/security'
+    | '/optimization'
     | '/sitemap.xml'
     | '/synapse-storm'
     | '/terms'
@@ -5956,6 +5967,7 @@ export interface FileRouteTypes {
     | '/rochester-offensive'
     | '/secret'
     | '/security'
+    | '/optimization'
     | '/sitemap.xml'
     | '/slice-it'
     | '/strategies'
@@ -6493,6 +6505,7 @@ export interface RootRouteChildren {
   RochesterOffensiveRoute: typeof RochesterOffensiveRoute
   SecretRoute: typeof SecretRouteWithChildren
   SecurityRoute: typeof SecurityRoute
+  OptimizationRoute: typeof OptimizationRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SliceItRoute: typeof SliceItRouteWithChildren
   StrategiesRoute: typeof StrategiesRouteWithChildren
@@ -6828,6 +6841,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/optimization': {
+      id: '/optimization'
+      path: '/optimization'
+      fullPath: '/optimization'
+      preLoaderRoute: typeof OptimizationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/security': {
@@ -11661,6 +11681,7 @@ const rootRouteChildren: RootRouteChildren = {
   RochesterOffensiveRoute: RochesterOffensiveRoute,
   SecretRoute: SecretRouteWithChildren,
   SecurityRoute: SecurityRoute,
+  OptimizationRoute: OptimizationRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SliceItRoute: SliceItRouteWithChildren,
   StrategiesRoute: StrategiesRouteWithChildren,

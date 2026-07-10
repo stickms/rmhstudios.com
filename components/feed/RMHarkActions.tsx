@@ -26,7 +26,9 @@ function formatCount(n: number | undefined): string {
 export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
   const navigate = useNavigate();
   const { t } = useTranslation('feed');
-  const { updateItem: storeUpdate } = useFeedStore();
+  // Select just the action (a stable reference) so this component doesn't
+  // re-render on every unrelated feed-store change.
+  const storeUpdate = useFeedStore((s) => s.updateItem);
   const { data: session } = authClient.useSession();
   const [repostMenu, setRepostMenu] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);

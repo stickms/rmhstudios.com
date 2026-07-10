@@ -17,6 +17,10 @@ import {
   CheckCircle2,
   XCircle,
   Scale,
+  Database,
+  Download,
+  Trash2,
+  Cookie,
   type LucideIcon,
 } from 'lucide-react';
 import './security.css';
@@ -140,6 +144,131 @@ const LEGAL_LINKS: { href: string; label: string }[] = [
 ];
 
 const SECURITY_EMAIL = 'security@rmhstudios.com';
+
+interface Spec {
+  term: string;
+  desc: string;
+}
+
+const SIGN_IN_SPECS: Spec[] = [
+  {
+    term: 'Passkeys (WebAuthn)',
+    desc: 'The strongest option, and the one we recommend. Your device creates a key pair; the private key never leaves its secure enclave, and you unlock it with Face ID, Touch ID, or a hardware key. There is no shared secret to phish, guess, or leak — and nothing on our side that a breach could expose.',
+  },
+  {
+    term: 'Social sign-in',
+    desc: 'Sign in with Google, Discord, or GitHub over OAuth 2.0. You lean on an account you already protect (and its own two-factor), and we only ever receive the profile fields we need — never your password with that provider.',
+  },
+  {
+    term: 'Email & password',
+    desc: 'If you use a password, it is hashed with a modern, salted algorithm and stored only in that form — we can never read it back. Sign-in, sign-up, and reset are each rate-limited to stop credential stuffing.',
+  },
+  {
+    term: 'Session cookies',
+    desc: 'Your session lives in a cookie that is HTTP-only (JavaScript can’t read it), SameSite (other sites can’t ride it), and marked Secure over HTTPS. Requests are checked against an allow-list of trusted origins.',
+  },
+  {
+    term: 'Brute-force limits',
+    desc: 'Auth endpoints are throttled per window: sign-in and sign-up at 10 attempts a minute, password reset at 6 — loose enough for a real typo, tight enough to shut down guessing.',
+  },
+];
+
+const DEFENSE_SPECS: Spec[] = [
+  {
+    term: 'In transit',
+    desc: 'Everything runs over TLS. HTTP Strict Transport Security is sent with a one-year max-age and includeSubDomains, so browsers refuse to talk to us insecurely — no downgrade, no first-request window.',
+  },
+  {
+    term: 'Security headers',
+    desc: 'X-Content-Type-Options: nosniff, a strict Referrer-Policy, X-Permitted-Cross-Domain-Policies: none, and a Content-Security-Policy that pins who may frame us. They’re applied at the edge and re-applied at the app layer, so no serving path is left uncovered.',
+  },
+  {
+    term: 'SSRF protection',
+    desc: 'Any time the server fetches a URL you gave us (link previews, image proxy, webhooks) it goes through a guard that resolves DNS, rejects private and reserved IP ranges, allows only HTTPS, and re-validates every redirect hop — closing DNS-rebinding and redirect bypasses.',
+  },
+  {
+    term: 'Input validation',
+    desc: 'Every write is validated against a strict schema before it touches the database. Malformed or oversized input is rejected at the door, not somewhere deep in the stack.',
+  },
+  {
+    term: 'Constant-time secrets',
+    desc: 'Internal and webhook secrets are compared in constant time, so an attacker can’t recover them a byte at a time by measuring how long a check takes.',
+  },
+  {
+    term: 'Safe file handling',
+    desc: 'Uploads are validated by their actual bytes (not a claimed extension), re-encoded, and stored under server-generated keys. File paths are resolved and confirmed to stay inside their directory, so “../” tricks go nowhere.',
+  },
+];
+
+interface DataPractice {
+  icon: LucideIcon;
+  text: string;
+}
+
+const DATA_PRACTICES: DataPractice[] = [
+  { icon: EyeOff, text: 'We collect the minimum we need to run the product — and we never sell your personal data.' },
+  { icon: Lock, text: 'Your data is encrypted in transit with TLS and at rest in our managed databases and object storage.' },
+  { icon: Database, text: 'Access to production data is restricted by the principle of least privilege, and admin actions are recorded in a tamper-evident audit log.' },
+  { icon: Download, text: 'You can export your data whenever you want — it’s yours.' },
+  { icon: Trash2, text: 'You can delete your account and its data on your terms, not ours.' },
+  { icon: Cookie, text: 'We keep cookies to what the product needs; the details live in our Cookie Policy.' },
+];
+
+interface Step {
+  title: string;
+  body: string;
+}
+
+const REPORT_STEPS: Step[] = [
+  {
+    title: 'Acknowledge',
+    body: 'We confirm we’ve received your report within two business days — a real human, not an auto-responder that closes the loop.',
+  },
+  {
+    title: 'Triage & validate',
+    body: 'We reproduce the issue, confirm its impact, and set a severity. If we need more detail, we’ll ask; if it’s a duplicate or out of scope, we’ll tell you honestly and why.',
+  },
+  {
+    title: 'Fix & verify',
+    body: 'We patch it, verify the fix actually closes the hole (and doesn’t open another), and ship it. Critical issues jump the queue.',
+  },
+  {
+    title: 'Reward & credit',
+    body: 'Once it’s confirmed, we pay out based on severity and impact — up to $2,500,000 — and, with your permission, add you to our thanks.',
+  },
+  {
+    title: 'Disclose together',
+    body: 'When you’re ready and the fix is live, we’re happy to coordinate public disclosure so your work gets the recognition it deserves.',
+  },
+];
+
+interface Faq {
+  q: string;
+  a: string;
+}
+
+const SECURITY_FAQ: Faq[] = [
+  {
+    q: 'Do you support two-factor authentication?',
+    a: 'A passkey is inherently multi-factor — it binds something you have (your device) to something you are (your biometric) — so it’s stronger than a password plus a texted code. If you sign in with Google, Discord, or GitHub, any two-factor you’ve enabled there protects your RMH Studios account too.',
+  },
+  {
+    q: 'Do you store my password?',
+    a: 'If you use a passkey, there is no password anywhere — nothing to store or steal. If you use email and password, it’s salted and hashed with a modern algorithm and stored only in that irreversible form; we can never read it back.',
+  },
+  {
+    q: 'Is my payment information safe?',
+    a: 'Your card details go straight to Stripe, which is certified to PCI DSS Level 1 — the highest tier. They never touch, and never rest on, our servers, so there is nothing here for an attacker to take.',
+  },
+  {
+    q: 'Do you sell my data?',
+    a: 'No. We never sell your personal data. We collect the minimum we need to run the product, and you can export or delete it at any time.',
+  },
+  {
+    q: 'I found a bug that isn’t security-related. Where do I report it?',
+    a: 'Use the in-app feedback tools for product bugs and ideas. This page and security@rmhstudios.com are specifically for vulnerabilities — please keep those channels for issues that could put accounts or data at risk.',
+  },
+];
 
 export function SecurityPage() {
   const pageRef = useRef<HTMLDivElement>(null);
@@ -354,6 +483,83 @@ export function SecurityPage() {
           </div>
         </section>
 
+        {/* ─── How sign-in works ────────────────────────────────────────── */}
+        <section className="sec-section sec-section--hair" aria-labelledby="sec-signin-title">
+          <div className="sec-shell">
+            <div className="sec-section__head">
+              <p className="sec-eyebrow sec-reveal">How signing in works</p>
+              <h2 id="sec-signin-title" className="sec-section__title sec-reveal">
+                Three ways in — all of them hardened.
+              </h2>
+              <p className="sec-section__sub sec-reveal">
+                However you choose to sign in, the goal is the same: prove it’s
+                you without ever creating something an attacker can steal.
+              </p>
+            </div>
+            <div className="sec-spec sec-reveal">
+              {SIGN_IN_SPECS.map((s) => (
+                <div className="sec-spec__row" key={s.term}>
+                  <div className="sec-spec__term">{s.term}</div>
+                  <p className="sec-spec__desc">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Defense in depth ─────────────────────────────────────────── */}
+        <section className="sec-section sec-section--hair" aria-labelledby="sec-defense-title">
+          <div className="sec-shell">
+            <div className="sec-section__head">
+              <p className="sec-eyebrow sec-reveal">Defense in depth</p>
+              <h2 id="sec-defense-title" className="sec-section__title sec-reveal">
+                Layer by layer.
+              </h2>
+              <p className="sec-section__sub sec-reveal">
+                No single control is a silver bullet, so we stack them. This is
+                what actually runs between a threat and your data on every request.
+              </p>
+            </div>
+            <div className="sec-spec sec-reveal">
+              {DEFENSE_SPECS.map((s) => (
+                <div className="sec-spec__row" key={s.term}>
+                  <div className="sec-spec__term">{s.term}</div>
+                  <p className="sec-spec__desc">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Your data ────────────────────────────────────────────────── */}
+        <section className="sec-section sec-section--hair" aria-labelledby="sec-data-title">
+          <div className="sec-shell">
+            <div className="sec-section__head">
+              <p className="sec-eyebrow sec-reveal">Your data, your call</p>
+              <h2 id="sec-data-title" className="sec-section__title sec-reveal">
+                Privacy is a security feature.
+              </h2>
+              <p className="sec-section__sub sec-reveal">
+                The safest data is the data we never collected. What we do hold,
+                we protect — and you stay in control of it.
+              </p>
+            </div>
+            <ul className="sec-list sec-reveal">
+              {DATA_PRACTICES.map((d) => {
+                const Icon = d.icon;
+                return (
+                  <li key={d.text}>
+                    <span className="sec-list__icon">
+                      <Icon aria-hidden="true" />
+                    </span>
+                    <span>{d.text}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </section>
+
         {/* ─── Bug bounty program ───────────────────────────────────────── */}
         <section
           id="sec-bounty"
@@ -461,6 +667,37 @@ export function SecurityPage() {
           </div>
         </section>
 
+        {/* ─── How we handle a report ───────────────────────────────────── */}
+        <section className="sec-section sec-section--hair" aria-labelledby="sec-process-title">
+          <div className="sec-shell">
+            <div className="sec-section__head">
+              <p className="sec-eyebrow sec-reveal">What happens next</p>
+              <h2 id="sec-process-title" className="sec-section__title sec-reveal">
+                From report to reward.
+              </h2>
+              <p className="sec-section__sub sec-reveal">
+                No black hole, no radio silence. Here’s exactly what happens after
+                you hit submit.
+              </p>
+            </div>
+            <ol className="sec-steps">
+              {REPORT_STEPS.map((s, i) => (
+                <li
+                  className="sec-step sec-reveal"
+                  key={s.title}
+                  style={{ '--sec-delay': `${(i % 2) * 80}ms` } as CSSProperties}
+                >
+                  <span className="sec-step__num">{i + 1}</span>
+                  <div>
+                    <h3 className="sec-step__title">{s.title}</h3>
+                    <p className="sec-step__body">{s.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
         {/* ─── Submit a report ──────────────────────────────────────────── */}
         <section
           id="sec-disclosure"
@@ -491,6 +728,25 @@ export function SecurityPage() {
                   <a href={`mailto:${SECURITY_EMAIL}`}>{SECURITY_EMAIL}</a>.
                 </p>
               </div>
+            </div>
+          </div>
+        </section>
+        {/* ─── FAQ ──────────────────────────────────────────────────────── */}
+        <section className="sec-section sec-section--hair" aria-labelledby="sec-faq-title">
+          <div className="sec-shell">
+            <div className="sec-section__head sec-section__head--center">
+              <p className="sec-eyebrow sec-reveal">Questions, answered</p>
+              <h2 id="sec-faq-title" className="sec-section__title sec-reveal">
+                The things people ask.
+              </h2>
+            </div>
+            <div className="sec-faq sec-reveal">
+              {SECURITY_FAQ.map((f) => (
+                <details className="sec-faq__item" key={f.q}>
+                  <summary className="sec-faq__q">{f.q}</summary>
+                  <p className="sec-faq__a">{f.a}</p>
+                </details>
+              ))}
             </div>
           </div>
         </section>
