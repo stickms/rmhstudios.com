@@ -99,8 +99,8 @@ export function RootNetworkPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
         setActiveEdges(newActive);
     };
 
-    // Check connectivity from source to target using only active edges
-    const isConnected = useMemo(() => {
+    // Nodes reachable from the source through active edges (live sap-flow highlight)
+    const reachable = useMemo(() => {
         const adj: Map<number, number[]> = new Map();
         for (const idx of activeEdges) {
             const e = edges[idx];
@@ -116,7 +116,6 @@ export function RootNetworkPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
 
         while (queue.length > 0) {
             const node = queue.shift()!;
-            if (node === targetNode) return true;
             for (const neighbor of adj.get(node) ?? []) {
                 if (!visited.has(neighbor)) {
                     visited.add(neighbor);
@@ -125,8 +124,10 @@ export function RootNetworkPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
             }
         }
 
-        return false;
-    }, [activeEdges, edges, sourceNode, targetNode]);
+        return visited;
+    }, [activeEdges, edges, sourceNode]);
+
+    const isConnected = reachable.has(targetNode);
 
     const handleCheck = () => {
         if (isConnected) onSolve();
@@ -141,22 +142,30 @@ export function RootNetworkPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
 
             <div className="relative bg-gradient-to-b from-[#0a1a0a] to-[#0a0a0a] rounded-xl border border-white/10 overflow-hidden">
                 <svg viewBox="0 0 400 400" className="w-full h-auto">
-                    {/* Edges */}
+                    {/* Edges (with a wide invisible hit area so they're easy to click) */}
                     {edges.map((e, i) => {
                         const from = nodes[e.from];
                         const to = nodes[e.to];
                         const isActive = activeEdges.has(i);
+                        const carriesFlow = isActive && reachable.has(e.from) && reachable.has(e.to);
                         return (
-                            <line
-                                key={`edge-${i}`}
-                                x1={from.x} y1={from.y}
-                                x2={to.x} y2={to.y}
-                                stroke={isActive ? '#44aa44' : '#ffffff'}
-                                strokeWidth={isActive ? 3 : 1}
-                                opacity={isActive ? 0.8 : 0.15}
-                                className="cursor-pointer"
-                                onClick={() => toggleEdge(i)}
-                            />
+                            <g key={`edge-${i}`} className="cursor-pointer" onClick={() => toggleEdge(i)}>
+                                <line
+                                    x1={from.x} y1={from.y}
+                                    x2={to.x} y2={to.y}
+                                    stroke="#000000"
+                                    strokeWidth={12}
+                                    opacity={0}
+                                />
+                                <line
+                                    x1={from.x} y1={from.y}
+                                    x2={to.x} y2={to.y}
+                                    stroke={carriesFlow ? '#66dd66' : isActive ? '#44aa44' : '#ffffff'}
+                                    strokeWidth={isActive ? 3 : 1}
+                                    opacity={carriesFlow ? 0.95 : isActive ? 0.7 : 0.18}
+                                    pointerEvents="none"
+                                />
+                            </g>
                         );
                     })}
 
@@ -164,6 +173,7 @@ export function RootNetworkPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
                     {nodes.map((node) => {
                         const isSource = node.id === sourceNode;
                         const isTarget = node.id === targetNode;
+                        const lit = reachable.has(node.id);
                         return (
                             <g key={node.id}>
                                 <circle
@@ -172,13 +182,13 @@ export function RootNetworkPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
                                     r={isSource || isTarget ? 12 : 8}
                                     fill={
                                         isSource ? '#226622' :
-                                            isTarget ? '#662222' :
-                                                '#1a1a2a'
+                                            isTarget ? (lit ? '#226622' : '#662222') :
+                                                lit ? '#1e3a1e' : '#1a1a2a'
                                     }
                                     stroke={
                                         isSource ? '#44aa44' :
-                                            isTarget ? '#aa4444' :
-                                                '#444466'
+                                            isTarget ? (lit ? '#44dd88' : '#aa4444') :
+                                                lit ? '#55aa55' : '#444466'
                                     }
                                     strokeWidth="2"
                                 />
@@ -186,7 +196,7 @@ export function RootNetworkPuzzle({ config, onSolve, onAttempt }: PuzzleComponen
                                     <text x={node.x} y={node.y + 4} textAnchor="middle" fill="#88ff88" fontSize="10">S</text>
                                 )}
                                 {isTarget && (
-                                    <text x={node.x} y={node.y + 4} textAnchor="middle" fill="#ff8888" fontSize="10">T</text>
+                                    <text x={node.x} y={node.y + 4} textAnchor="middle" fill={lit ? '#aaffcc' : '#ff8888'} fontSize="10">T</text>
                                 )}
                             </g>
                         );

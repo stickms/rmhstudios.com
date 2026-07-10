@@ -20,33 +20,21 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
     const lightSource = (config.lightSource as [number, number]) ?? [0, 0];
     const target = (config.target as [number, number]) ?? [6, 6];
     const obstacleCoords = (config.obstacles as [number, number][]) ?? [];
+    const prismCoords = (config.prisms as [number, number][]) ?? [];
 
-    const [mirrors, setMirrors] = useState<Mirror[]>(() => {
-        const m: Mirror[] = [];
-        // Pre-place some mirrors at random positions
-        for (let i = 0; i < mirrorCount; i++) {
-            let r: number, c: number;
-            do {
-                r = Math.floor(Math.random() * gridSize);
-                c = Math.floor(Math.random() * gridSize);
-            } while (
-                (r === lightSource[1] && c === lightSource[0]) ||
-                (r === target[1] && c === target[0]) ||
-                obstacleCoords.some(([oc, or_]) => or_ === r && oc === c) ||
-                m.some(existing => existing.r === r && existing.c === c)
-            );
-            m.push({ r, c, type: Math.random() > 0.5 ? '/' : '\\' });
-        }
-        return m;
-    });
+    // Board starts empty — the player places every mirror deliberately
+    const [mirrors, setMirrors] = useState<Mirror[]>([]);
+    const maxMirrors = mirrorCount;
 
     const obstacles = useMemo(() => new Set(obstacleCoords.map(([c, r]) => `${r},${c}`)), [obstacleCoords]);
+    const prisms = useMemo(() => new Set(prismCoords.map(([c, r]) => `${r},${c}`)), [prismCoords]);
 
     const toggleMirror = (r: number, c: number) => {
-        // Don't toggle source, target, or obstacle
+        // Don't toggle source, target, obstacle, or prism cells
         if (r === lightSource[1] && c === lightSource[0]) return;
         if (r === target[1] && c === target[0]) return;
         if (obstacles.has(`${r},${c}`)) return;
+        if (prisms.has(`${r},${c}`)) return;
 
         const existing = mirrors.findIndex(m => m.r === r && m.c === c);
         if (existing >= 0) {
@@ -57,20 +45,21 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
                 m.splice(existing, 1);
             }
             setMirrors(m);
-        } else if (mirrors.length < mirrorCount + 3) {
+        } else if (mirrors.length < maxMirrors) {
             setMirrors([...mirrors, { r, c, type: '/' }]);
         }
     };
 
-    // Trace light beam
-    const beamPath = useMemo(() => {
+    // Trace light beam; track prisms the beam passes through
+    const { beamPath, prismsHit } = useMemo(() => {
         const path: [number, number][] = [[lightSource[0], lightSource[1]]];
+        const hit = new Set<string>();
         let r = lightSource[1];
         let c = lightSource[0];
         let dir: Direction = 'right'; // Light starts going right
         const visited = new Set<string>();
 
-        for (let step = 0; step < 100; step++) {
+        for (let step = 0; step < 200; step++) {
             // Move in current direction
             if (dir === 'up') r--;
             else if (dir === 'down') r++;
@@ -88,6 +77,11 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
             visited.add(key);
 
             path.push([c, r]);
+
+            // Prisms let the beam pass straight through but mark it refined
+            if (prisms.has(`${r},${c}`)) {
+                hit.add(`${r},${c}`);
+            }
 
             // Check for mirror
             const mirror = mirrors.find(m => m.r === r && m.c === c);
@@ -109,12 +103,14 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
             if (r === target[1] && c === target[0]) break;
         }
 
-        return path;
-    }, [mirrors, gridSize, lightSource, target, obstacles]);
+        return { beamPath: path, prismsHit: hit };
+    }, [mirrors, gridSize, lightSource, target, obstacles, prisms]);
 
-    const hitsTarget = beamPath.length > 0 &&
+    const reachesTarget = beamPath.length > 0 &&
         beamPath[beamPath.length - 1][0] === target[0] &&
         beamPath[beamPath.length - 1][1] === target[1];
+    const allPrismsHit = prismCoords.length === 0 || prismsHit.size === prismCoords.length;
+    const hitsTarget = reachesTarget && allPrismsHit;
 
     const handleCheck = () => {
         if (hitsTarget) onSolve();
@@ -125,9 +121,16 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
 
     return (
         <div className="w-full max-w-lg mx-auto space-y-4">
-            <p className="text-center text-white/50 text-sm">
-                {t("reflection-instructions", { defaultValue: "Click to place/rotate mirrors and guide the light beam to the target" })}
-            </p>
+            <div className="flex items-center justify-center gap-4">
+                <p className="text-center text-white/50 text-sm">
+                    {prismCoords.length > 0
+                        ? t("reflection-instructions-prisms", { defaultValue: "Guide the beam through every prism ◆ to the target" })
+                        : t("reflection-instructions", { defaultValue: "Click to place/rotate mirrors and guide the light beam to the target" })}
+                </p>
+                <span className="text-xs font-mono px-2 py-0.5 rounded text-white/40 bg-white/5 whitespace-nowrap">
+                    {t("mirrors-count", { defaultValue: "{{used}}/{{max}} mirrors", used: mirrors.length, max: maxMirrors })}
+                </span>
+            </div>
 
             <div className="flex justify-center">
                 <svg
@@ -141,6 +144,8 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
                             const isSource = r === lightSource[1] && c === lightSource[0];
                             const isTarget_ = r === target[1] && c === target[0];
                             const isObstacle = obstacles.has(`${r},${c}`);
+                            const isPrism = prisms.has(`${r},${c}`);
+                            const prismLit = isPrism && prismsHit.has(`${r},${c}`);
                             const mirror = mirrors.find(m => m.r === r && m.c === c);
 
                             return (
@@ -155,7 +160,9 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
                                             isSource ? '#1a5a2a' :
                                                 isTarget_ ? '#5a1a2a' :
                                                     isObstacle ? '#2a2a2a' :
-                                                        '#0a0a1a'
+                                                        prismLit ? '#3a2a5a' :
+                                                            isPrism ? '#241a3a' :
+                                                                '#0a0a1a'
                                         }
                                         stroke="#ffffff15"
                                         strokeWidth="1"
@@ -171,6 +178,17 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
                                     {isObstacle && (
                                         <rect x={c * cellSize + 8} y={r * cellSize + 8} width={cellSize - 16} height={cellSize - 16} fill="#333" rx="2" />
                                     )}
+                                    {isPrism && (
+                                        <g transform={`translate(${c * cellSize + cellSize / 2}, ${r * cellSize + cellSize / 2})`} pointerEvents="none">
+                                            <polygon
+                                                points={`0,${-cellSize * 0.28} ${cellSize * 0.28},0 0,${cellSize * 0.28} ${-cellSize * 0.28},0`}
+                                                fill={prismLit ? '#cba6ff' : '#6a4aaa'}
+                                                stroke={prismLit ? '#eeddff' : '#9a7ada'}
+                                                strokeWidth="1.5"
+                                                opacity={prismLit ? 1 : 0.8}
+                                            />
+                                        </g>
+                                    )}
                                     {mirror && (
                                         <line
                                             x1={c * cellSize + (mirror.type === '/' ? 6 : cellSize - 6)}
@@ -180,6 +198,7 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
                                             stroke="#aaccff"
                                             strokeWidth="3"
                                             strokeLinecap="round"
+                                            pointerEvents="none"
                                         />
                                     )}
                                 </g>
@@ -197,12 +216,19 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
                             stroke={hitsTarget ? '#44ff88' : '#ffcc44'}
                             strokeWidth="2"
                             opacity="0.7"
+                            pointerEvents="none"
                         />
                     )}
                 </svg>
             </div>
 
             <div className="flex justify-center gap-3">
+                <button
+                    className="px-4 py-2 bg-white/10 hover:bg-white/15 text-white/60 rounded-lg text-xs cursor-pointer"
+                    onClick={() => setMirrors([])}
+                >
+                    {t("reset", { defaultValue: "Reset" })}
+                </button>
                 <button
                     className={`px-6 py-2.5 rounded-xl text-sm font-medium cursor-pointer ${
                         hitsTarget
@@ -211,7 +237,11 @@ export function ReflectionPuzzle({ config, onSolve, onAttempt }: PuzzleComponent
                     }`}
                     onClick={handleCheck}
                 >
-                    {hitsTarget ? t("beam-hits-target", { defaultValue: "Beam hits target!" }) : t("check-beam", { defaultValue: "Check Beam" })}
+                    {hitsTarget
+                        ? t("beam-hits-target", { defaultValue: "Beam hits target!" })
+                        : reachesTarget && !allPrismsHit
+                            ? t("beam-misses-prisms", { defaultValue: "Missing a prism..." })
+                            : t("check-beam", { defaultValue: "Check Beam" })}
                 </button>
             </div>
         </div>

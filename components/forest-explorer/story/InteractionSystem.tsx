@@ -59,7 +59,7 @@ export function InteractionSystem() {
             const dz = inter.position[2] - pz;
             const dist = Math.sqrt(dx * dx + dz * dz);
 
-            // Flashlight reveal check
+            // Reveal check per method
             if (inter.revealMethod === 'flashlight_only' && !isPuzzleSolved) {
                 if (flashlightOn && dist < 40) {
                     const toObj = new Vector3(dx, 0, dz).normalize();
@@ -67,6 +67,11 @@ export function InteractionSystem() {
                     if (angle < 0.4) { // ~23 degrees — matches visual spotlight cone
                         revealedIds.push(inter.id);
                     }
+                }
+            } else if (inter.revealMethod === 'proximity' && !isPuzzleSolved) {
+                // Proximity secrets fade in as the player draws near
+                if (dist < 14) {
+                    revealedIds.push(inter.id);
                 }
             } else {
                 // Always-visible items are always "revealed"

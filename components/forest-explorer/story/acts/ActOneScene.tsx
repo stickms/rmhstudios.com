@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useMemo, useEffect } from 'react';
+import { useRef, useMemo, useEffect, useCallback } from 'react';
 import { Stars } from '@react-three/drei';
 import { Color, type Group } from 'three';
 import type { TreeData } from '../../shared/types';
@@ -13,20 +13,30 @@ import { Clouds } from '../../shared/Clouds';
 import { Rock } from '../../shared/Rock';
 import { Mushroom } from '../../shared/Mushroom';
 import { Flashlight } from '../../shared/Flashlight';
-import { TikiTorches } from '../../shared/TikiTorches';
 import { AncientStone } from '../landmarks/AncientStone';
 import { GatewayArch } from '../landmarks/GatewayArch';
 import { CrystalCluster } from '../landmarks/CrystalCluster';
+import { ShadowWall } from '../landmarks/ShadowWall';
+import { Interactables3D } from '../Interactables3D';
+import { CorridorLanterns } from '../scenery/CorridorLanterns';
+import { PathStrips } from '../scenery/PathStrips';
+import { ScatterDecor } from '../scenery/ScatterDecor';
+import { LightShafts } from '../scenery/LightShafts';
 import { useStoryStore } from '@/lib/forest-explorer/store';
-import { actMaps } from '@/lib/forest-explorer/actMaps';
+import { actMaps, isInCorridor } from '@/lib/forest-explorer/actMaps';
 import { CONSTELLATION_PATTERNS } from '../puzzles/ConstellationPuzzle';
+
+const FERN_PALETTE = ['#16381c', '#1d4a24', '#122d18'];
+const FLOWER_PALETTE = ['#7f9fe8', '#a58fe0', '#6fc4c9'];
+const SHAFT_POSITIONS: Array<[number, number]> = [[0, -60], [50, -40], [-40, 20], [8, -8]];
 
 export function ActOneScene() {
     const groupRef = useRef<Group>(null);
     const flashlightOn = useStoryStore(s => s.flashlightOn);
     const config = actMaps.act1;
 
-    // Procedural trees using act-specific seed, avoiding landmark positions
+    // Procedural trees using act-specific seed, avoiding landmarks AND corridors
+    // (colliders reject corridor trees, so the visible forest must too)
     const { treeMeshes, rocks, mushrooms } = useMemo(() => {
         const rng = (n: number) => {
             const x = Math.sin(n + config.treeSeed) * 43758.5453;
@@ -53,6 +63,9 @@ export function ActOneScene() {
                 return dx * dx + dz * dz < l.r * l.r;
             });
             if (nearLandmark) continue;
+
+            // Keep the story paths walkable (matches collider generation)
+            if (isInCorridor(config, x, z)) continue;
 
             const giant = rng(s + 4) < p.giantThreshold;
             const scale = giant
@@ -88,6 +101,12 @@ export function ActOneScene() {
         return () => { treeMeshes.forEach(m => group.remove(m)); };
     }, [treeMeshes]);
 
+    // Ground cover stays off the paths
+    const rejectScatter = useCallback(
+        (x: number, z: number) => isInCorridor(config, x, z, 0.5),
+        [config],
+    );
+
     return (
         <>
             {/* Atmosphere: permanent night */}
@@ -118,27 +137,39 @@ export function ActOneScene() {
                 {mushrooms.map(m => <Mushroom key={m.id} position={m.position} />)}
             </group>
 
+            {/* Worn paths + the Warden's lanterns marking the way */}
+            <PathStrips corridors={config.corridors} color="#3c3626" />
+            <CorridorLanterns corridors={config.corridors} color="#7fd4a8" />
+
+            {/* Ground cover: ferns + night wildflowers that faintly glow */}
+            <ScatterDecor
+                seed={config.treeSeed}
+                radius={90}
+                fernCount={200}
+                flowerCount={110}
+                fernPalette={FERN_PALETTE}
+                flowerPalette={FLOWER_PALETTE}
+                reject={rejectScatter}
+                flowerGlow
+            />
+
+            {/* Moonbeams over the key clearings */}
+            <LightShafts
+                positions={SHAFT_POSITIONS}
+                color="#a8c4f0"
+                opacity={0.045}
+            />
+
             {/* Atmosphere effects */}
             <Clouds night />
             <Fireflies night />
             <Mist />
-            <TikiTorches />
 
             {/* Flashlight */}
             {flashlightOn && <Flashlight />}
 
-            {/* Worn notebook near spawn */}
-            <group position={[2, 0.3, 2]}>
-                <mesh rotation={[-0.1, 0.3, 0]}>
-                    <boxGeometry args={[0.3, 0.04, 0.4]} />
-                    <meshStandardMaterial
-                        color="#8B7355"
-                        emissive={new Color('#44ffaa')}
-                        emissiveIntensity={0.3}
-                    />
-                </mesh>
-                <pointLight color="#44ffaa" intensity={0.4} distance={4} decay={2} />
-            </group>
+            {/* Physical puzzle stones + journal pages */}
+            <Interactables3D />
 
             {/* Constellation hint tree — carved star pattern on trunk */}
             <group position={[25, 0, -50]}>
@@ -199,7 +230,7 @@ export function ActOneScene() {
             {/* Landmarks */}
             <AncientStone id="stone_circle" position={[0, 0, -60]} scale={1.2} />
             <CrystalCluster id="stargazer_clearing" position={[50, 0, -40]} scale={1.0} />
-            <AncientStone id="shadow_wall" position={[30, 0, 30]} scale={1.0} />
+            <ShadowWall id="shadow_wall" position={[30, 0, 30]} scale={1.0} />
             <GatewayArch id="act1_gateway_arch" position={[-40, 0, 20]} scale={1.5} />
 
             {/* Bioluminescent mushrooms near landmarks */}
@@ -207,6 +238,7 @@ export function ActOneScene() {
                 [2, 0, -57], [-3, 0, -62], [5, 0, -58],
                 [48, 0, -37], [52, 0, -42],
                 [28, 0, 28], [32, 0, 32],
+                [3, 0, -34], [5.5, 0, -36],
             ].map(([x, y, z], i) => (
                 <group key={`bio-${i}`} position={[x, y, z]}>
                     <mesh position={[0, 0.13, 0]}>

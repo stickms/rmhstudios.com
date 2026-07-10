@@ -20,6 +20,7 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         },
         worldEvent: 'act1_stones_awakened',
         hintEntryIds: ['act1_stone_lore'],
+        solveText: 'The stones hum in unison — a chord held for a thousand years finally resolves.',
     },
     {
         id: 'act1_constellation',
@@ -38,6 +39,7 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         },
         worldEvent: 'act1_stars_aligned',
         hintEntryIds: ['act1_star_map'],
+        solveText: 'The Tree of Life burns bright above the canopy. Somewhere far below, roots stir.',
     },
     {
         id: 'act1_shadow_match',
@@ -55,6 +57,7 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         },
         worldEvent: 'act1_shadows_aligned',
         hintEntryIds: ['act1_shadow_legend'],
+        solveText: 'The shadows settle into their old story, and the wall remembers how it ends.',
     },
     {
         id: 'act1_ward_seal',
@@ -73,6 +76,9 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         },
         worldEvent: 'act1_gateway_opened',
         hintEntryIds: ['act1_ward_inscription'],
+        requiresPuzzleIds: ['act1_rune_sequence', 'act1_constellation', 'act1_shadow_match'],
+        lockedHint: 'The ward is dormant. The stones, the stars, and the shadows must wake first.',
+        solveText: 'The rings lock into alignment and the arch exhales a slow blue light. The way is open.',
     },
 
     // ─── Act 2: Confronting the Shifting Canopy ─────────────────────────────
@@ -95,6 +101,7 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         },
         worldEvent: 'trees_calm_briefly',
         hintEntryIds: ['act2_wind_song'],
+        solveText: 'The breeze threads the pipes and the hollow tree sings. For a moment, the canopy is still.',
     },
     {
         id: 'act2_reflection',
@@ -114,6 +121,7 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         },
         worldEvent: 'trees_calm_briefly',
         hintEntryIds: ['act2_mirror_legend'],
+        solveText: 'Moonlight finds the seal at last. The pool holds its reflection like a kept promise.',
     },
     {
         id: 'act2_memory_echo',
@@ -132,6 +140,7 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         },
         worldEvent: 'trees_calm_briefly',
         hintEntryIds: ['act2_echo_lore'],
+        solveText: 'The chamber replays the song back to you, note-perfect. The forest heard itself remembered.',
     },
     {
         id: 'act2_root_network',
@@ -151,6 +160,9 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         },
         worldEvent: 'act2_gateway_opened',
         hintEntryIds: ['act2_root_history'],
+        requiresPuzzleIds: ['act2_sound_pipe', 'act2_reflection', 'act2_memory_echo'],
+        lockedHint: 'The roots refuse you. The wind, the light, and the echoes must be calmed first.',
+        solveText: 'Light races along the roots like a thought completing itself. The gate ahead unknots.',
     },
 
     // ─── Act 3: Sunrise Over the Tranquil Grove ─────────────────────────────
@@ -166,12 +178,13 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         landmarkId: 'shattered_monument',
         config: {
             fragmentCount: 8,
-            rotationSnap: 90,
+            rotationSnap: 45,
             snapDistance: 20,
             targetImage: 'forest_glyph',
         },
         worldEvent: 'act3_corruption_recedes_1',
         hintEntryIds: ['act3_monument_lore'],
+        solveText: '"Balance." The word settles back into the stone, and the purple haze nearby thins.',
     },
     {
         id: 'act3_constellation',
@@ -188,9 +201,11 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
             decoyStars: 13,
             pattern: 'phoenix_rising',
             timedFade: true,
+            fadeSeconds: 75,
         },
         worldEvent: 'act3_corruption_recedes_2',
         hintEntryIds: ['act3_final_star_map'],
+        solveText: 'The Phoenix holds against the dawn a heartbeat longer, then dissolves into daylight — reborn.',
     },
     {
         id: 'act3_reflection',
@@ -208,9 +223,11 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
             obstacles: [[2, 3], [4, 1], [6, 5], [3, 7]],
             gridSize: 9,
             hasPrisms: true,
+            prisms: [[4, 4], [7, 2]],
         },
         worldEvent: 'act3_corruption_recedes_3',
         hintEntryIds: ['act3_crystal_legend'],
+        solveText: 'Dawn light splits through the prisms and pours into the heart of the grove, gold on gold.',
     },
     {
         id: 'act3_ward_seal',
@@ -229,6 +246,9 @@ export const puzzleDefinitions: PuzzleDefinition[] = [
         },
         worldEvent: 'act3_forest_restored',
         hintEntryIds: ['act3_heartwood_inscription'],
+        requiresPuzzleIds: ['act3_corrupted_glyph', 'act3_constellation', 'act3_reflection'],
+        lockedHint: 'The Heartwood sleeps too deeply. Restore the monument, the stars, and the light first.',
+        solveText: 'The last seal breaks. The Heartwood blazes green, and a thousand years of memory come flooding home.',
     },
 ];
 
@@ -238,4 +258,17 @@ export function getPuzzlesByAct(act: import('./types').ActId): PuzzleDefinition[
 
 export function getPuzzleById(id: string): PuzzleDefinition | undefined {
     return puzzleDefinitions.find(p => p.id === id);
+}
+
+/**
+ * A puzzle is locked while any of its prerequisite puzzles remain unsolved.
+ * Used to gate each act's gateway puzzle behind the act's other mysteries.
+ */
+export function isPuzzleLocked(
+    puzzleId: string,
+    puzzleStates: Record<string, { status: string } | undefined>,
+): boolean {
+    const puzzle = getPuzzleById(puzzleId);
+    if (!puzzle?.requiresPuzzleIds?.length) return false;
+    return puzzle.requiresPuzzleIds.some(id => puzzleStates[id]?.status !== 'solved');
 }

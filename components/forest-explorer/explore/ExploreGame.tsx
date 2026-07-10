@@ -5,6 +5,8 @@ import { useRef, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TimeOfDay } from '../shared/types';
 import { useForestAudio } from '../audio/useForestAudio';
+import { useGardenStore } from '@/lib/forest-explorer/gardenStore';
+import { stageOf } from '@/lib/forest-explorer/garden';
 import { ExploreScene } from './ExploreScene';
 
 export function ExploreGame() {
@@ -15,6 +17,11 @@ export function ExploreGame() {
 
     const { t } = useTranslation("c-forest-explorer");
     const { muted, toggleMute, volume, setVolume } = useForestAudio(mode, locked);
+
+    const gardenToast = useGardenStore(s => s.toast);
+    const plants = useGardenStore(s => s.plants);
+    const nowTick = useGardenStore(s => s.nowTick);
+    const bloomCount = plants.filter(p => stageOf(p, nowTick || Date.now()) === 'bloom').length;
 
     const nightRef  = useRef(night);
     const lockedRef = useRef(locked);
@@ -44,6 +51,7 @@ export function ExploreGame() {
                     onUnlock={() => setLocked(false)}
                     night={night}
                     flashlightOn={flashlightOn}
+                    locked={locked}
                 />
             </Canvas>
 
@@ -89,7 +97,17 @@ export function ExploreGame() {
                                 <span className="text-zinc-200">Mouse</span>{t("hint-look", { defaultValue: " — look" })} &nbsp;·&nbsp;{' '}
                                 <span className="text-zinc-200">ESC</span>{t("hint-pause", { defaultValue: " — pause" })}
                             </p>
+                            <p>
+                                <span className="text-green-300">G</span>{t("hint-plant", { defaultValue: " — plant a seed" })} &nbsp;·&nbsp;{' '}
+                                <span className="text-green-300">E</span>{t("hint-water", { defaultValue: " — water plants" })}
+                            </p>
                         </div>
+
+                        {plants.length > 0 && (
+                            <p className="text-green-300/60 text-xs">
+                                {t("garden-status", { defaultValue: "🌼 Your garden: {{count}} plants, {{blooms}} blooming — they grow even while you're away", count: plants.length, blooms: bloomCount })}
+                            </p>
+                        )}
                         <button
                             className={`w-full py-2 rounded-xl text-sm font-medium transition-colors cursor-pointer ${
                                 muted
@@ -126,6 +144,24 @@ export function ExploreGame() {
                             {t("enter-the-forest", { defaultValue: "Enter the Forest" })}
                         </button>
                     </div>
+                </div>
+            )}
+
+            {/* Garden toast */}
+            {locked && gardenToast && (
+                <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+                    <div className="px-4 py-2 rounded-xl bg-green-950/70 backdrop-blur-sm border border-green-600/30 text-green-200 text-sm">
+                        {gardenToast}
+                    </div>
+                </div>
+            )}
+
+            {/* Garden counter */}
+            {locked && plants.length > 0 && (
+                <div className="absolute top-3 left-14 z-50">
+                    <span className="px-2.5 py-1.5 rounded-lg text-xs font-medium bg-black/50 backdrop-blur-sm border border-green-700/30 text-green-300/80">
+                        🌼 {t("garden-chip", { defaultValue: "{{count}} planted · {{blooms}} blooming", count: plants.length, blooms: bloomCount })}
+                    </span>
                 </div>
             )}
 
@@ -169,8 +205,8 @@ export function ExploreGame() {
             {locked && (
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-white/30 text-xs tracking-widest whitespace-nowrap">
                     {night
-                        ? t("locked-hint-night", { defaultValue: "WASD · SHIFT run · SPACE jump · F flashlight · ESC pause" })
-                        : t("locked-hint-day", { defaultValue: "WASD · SHIFT run · SPACE jump · ESC pause" })}
+                        ? t("locked-hint-night-v2", { defaultValue: "WASD · SHIFT run · SPACE jump · F flashlight · G plant · E water · ESC pause" })
+                        : t("locked-hint-day-v2", { defaultValue: "WASD · SHIFT run · SPACE jump · G plant · E water · ESC pause" })}
                 </div>
             )}
         </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { PointerLockControls, Sky, Stars } from '@react-three/drei';
 import { Ground } from '../shared/Ground';
 import { Pond } from '../shared/Pond';
@@ -14,18 +15,34 @@ import { Moon } from '../shared/Moon';
 import { TikiTorches } from '../shared/TikiTorches';
 import { Flashlight } from '../shared/Flashlight';
 import { Player } from '../shared/PlayerController';
+import { ScatterDecor } from '../story/scenery/ScatterDecor';
+import { Garden } from './Garden';
+import { Butterflies } from './Butterflies';
+import { distToRiver, RIVER_HALF_WIDTH } from '../shared/constants';
+
+const FERN_PALETTE = ['#1d4a22', '#2a5c2e', '#173d1e'];
+const FLOWER_PALETTE = ['#cc6688', '#8899ee', '#ddaa55', '#bb77dd', '#e0e8ff'];
 
 export function ExploreScene({
     onLock,
     onUnlock,
     night,
     flashlightOn,
+    locked,
 }: {
     onLock: () => void;
     onUnlock: () => void;
     night: boolean;
     flashlightOn: boolean;
+    locked: boolean;
 }) {
+    // Wild ground cover keeps clear of the river and pond
+    const rejectScatter = useCallback((x: number, z: number) => {
+        if (distToRiver(x, z) < RIVER_HALF_WIDTH + 1.0) return true;
+        const dx = x - 28, dz = z + 22;
+        return dx * dx + dz * dz < 100;
+    }, []);
+
     return (
         <>
             {night && <color attach="background" args={['#050914']} />}
@@ -92,6 +109,25 @@ export function ExploreScene({
             <Mist />
             {night && <TikiTorches />}
             {night && flashlightOn && <Flashlight />}
+
+            {/* Wild meadow cover */}
+            <ScatterDecor
+                seed={1}
+                radius={95}
+                fernCount={190}
+                flowerCount={120}
+                fernPalette={FERN_PALETTE}
+                flowerPalette={FLOWER_PALETTE}
+                reject={rejectScatter}
+                flowerGlow={night}
+            />
+
+            {/* Daytime butterflies over the meadow */}
+            {!night && <Butterflies count={16} />}
+
+            {/* Your garden: G to plant, E to water, grows over real time */}
+            <Garden night={night} locked={locked} />
+
             <Player />
 
             <PointerLockControls onLock={onLock} onUnlock={onUnlock} />
