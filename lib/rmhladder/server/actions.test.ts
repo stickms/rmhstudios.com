@@ -10,6 +10,7 @@ import {
   deleteKeyword,
   updatePrefs,
   toggleWatchlist,
+  markAlertsRead,
 } from './actions';
 
 type AnyRow = Record<string, any>;
@@ -26,6 +27,7 @@ function makeFakePrisma() {
   const keywords: AnyRow[] = [];
   const watchlist: AnyRow[] = [];
   const prefs = new Map<string, AnyRow>();
+  const alerts: AnyRow[] = [];
 
   let actSeq = 0, appSeq = 0, veriSeq = 0, kwSeq = 0;
 
@@ -143,7 +145,16 @@ function makeFakePrisma() {
         if (idx >= 0) watchlist.splice(idx, 1);
       },
     },
-    _state: { companies, jobs, jobActions, applications, reviewTasks, verifications, keywords, watchlist, prefs },
+    ladderAlert: {
+      async updateMany({ where, data }: FakeArgs) {
+        const targets = alerts.filter(
+          (a) => a.userId === where.userId && (where.readAt !== null || a.readAt == null),
+        );
+        for (const a of targets) Object.assign(a, data);
+        return { count: targets.length };
+      },
+    },
+    _state: { companies, jobs, jobActions, applications, reviewTasks, verifications, keywords, watchlist, prefs, alerts },
   } as any;
 }
 
@@ -330,6 +341,22 @@ describe('actions.ts', () => {
       const result = await toggleWatchlist(prisma, 'user1', 'company1', false);
       expect(result.isWatchlisted).toBe(false);
       expect(prisma._state.watchlist.length).toBe(0);
+    });
+  });
+
+  describe('markAlertsRead', () => {
+    it('stamps readAt on the user’s unread alerts only', async () => {
+      const prisma = makeFakePrisma();
+      const alreadyRead = new Date('2026-01-01');
+      prisma._state.alerts.push(
+        { id: 'a1', userId: 'user1', readAt: null },
+        { id: 'a2', userId: 'user1', readAt: alreadyRead },
+        { id: 'a3', userId: 'other', readAt: null },
+      );
+      await markAlertsRead(prisma, 'user1');
+      expect(prisma._state.alerts[0].readAt).not.toBeNull();
+      expect(prisma._state.alerts[1].readAt).toBe(alreadyRead); // untouched
+      expect(prisma._state.alerts[2].readAt).toBeNull();
     });
   });
 

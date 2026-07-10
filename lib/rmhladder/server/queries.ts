@@ -306,6 +306,14 @@ export async function getSettings(prisma: QueriesPrisma, userId: string) {
   return { prefs, keywords, watchlistCompanyIds: watchlist.map((w) => w.companyId as string) };
 }
 
+/** All of a user's applications with job + company context, for the pipeline ladder. */
+export async function listApplications(prisma: QueriesPrisma, userId: string) {
+  return prisma.ladderApplication.findMany({
+    where: { userId },
+    include: { job: { include: { company: true } } },
+  });
+}
+
 export async function listAlerts(prisma: QueriesPrisma, userId: string) {
   return prisma.ladderAlert.findMany({
     where: { userId },

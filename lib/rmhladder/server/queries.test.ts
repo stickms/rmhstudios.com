@@ -10,6 +10,7 @@ import {
   listStaleSources,
   getSettings,
   listAlerts,
+  listApplications,
 } from './queries';
 
 type AnyRow = Record<string, any>;
@@ -251,8 +252,19 @@ function makeFakePrisma() {
       },
     },
     ladderApplication: {
-      async findMany({ where }: FakeArgs) {
-        return applications.filter((a) => a.userId === where.userId);
+      async findMany({ where, include }: FakeArgs) {
+        return applications
+          .filter((a) => a.userId === where.userId)
+          .map((a) => ({
+            ...a,
+            job: include?.job
+              ? (() => {
+                  const job = jobs.get(a.jobId as string);
+                  if (!job) return null;
+                  return { ...job, company: companies.get(job.companyId as string) };
+                })()
+              : undefined,
+          }));
       },
     },
     ladderAlert: {
@@ -651,6 +663,21 @@ describe('queries.ts', () => {
       const result = await listRuns(prisma, 10);
       expect(result).toHaveLength(2);
       expect((result[1] as AnyRow).errors).toHaveLength(1);
+    });
+  });
+
+  describe('listApplications', () => {
+    it('returns user applications with job + company context', async () => {
+      const prisma = makeFakePrisma();
+      prisma._state.companies.set('c1', { id: 'c1', name: 'Stripe' });
+      prisma._state.jobs.set('j1', { id: 'j1', companyId: 'c1', title: 'PM Intern', status: 'active' });
+      prisma._state.applications.push(
+        { id: 'ap1', userId: 'user1', jobId: 'j1', status: 'interviewing' },
+        { id: 'ap2', userId: 'other', jobId: 'j1', status: 'applied' },
+      );
+      const result = await listApplications(prisma, 'user1');
+      expect(result).toHaveLength(1);
+      expect((result[0] as AnyRow).job?.company?.name).toBe('Stripe');
     });
   });
 

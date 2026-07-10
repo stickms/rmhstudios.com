@@ -221,6 +221,17 @@ export async function updatePrefs(prisma: ActionsPrisma, userId: string, patch: 
   });
 }
 
+export async function markAlertsRead(
+  prisma: ActionsPrisma & { ladderAlert: { updateMany(args: AnyRow): Promise<unknown> } },
+  userId: string,
+) {
+  await prisma.ladderAlert.updateMany({
+    where: { userId, readAt: null },
+    data: { readAt: new Date() },
+  });
+  return { ok: true };
+}
+
 export async function toggleWatchlist(
   prisma: ActionsPrisma,
   userId: string,
