@@ -57,11 +57,15 @@ export function ExploreScene({
                 color={night ? '#1a2a50' : '#c0d8a8'}
             />
 
+            {/* Shadows only by day — at night they're invisible but the
+                shadow pass still re-renders every tree. Key forces a light
+                rebuild so the renderer fully drops the shadow map. */}
             <directionalLight
+                key={night ? 'night-sun' : 'day-sun'}
                 position={night ? [-60, 90, -40] : [60, 80, 40]}
                 intensity={night ? 0.18 : 1.6}
                 color={night ? '#8aa8d0' : '#fde68a'}
-                castShadow
+                castShadow={!night}
                 shadow-mapSize={[1024, 1024] as unknown as number}
                 shadow-camera-far={200}
                 shadow-camera-left={-100}

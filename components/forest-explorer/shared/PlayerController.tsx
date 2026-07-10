@@ -22,6 +22,15 @@ export function Player() {
     const verticalVel = useRef(0);
     const isGrounded  = useRef(true);
 
+    // Scratch vectors reused every frame (no per-frame allocation)
+    const scratch = useRef({
+        input: new Vector2(),
+        forward: new Vector3(),
+        right: new Vector3(),
+        move: new Vector3(),
+        up: new Vector3(0, 1, 0),
+    });
+
     useEffect(() => {
         camera.position.set(0, GROUND_Y, 0);
 
@@ -45,8 +54,9 @@ export function Player() {
 
     useFrame((_, delta) => {
         const k = keys.current;
+        const { input, forward: camForward, right: camRight, move, up } = scratch.current;
 
-        const input = new Vector2(0, 0);
+        input.set(0, 0);
         if (k['KeyW'] || k['ArrowUp'])    input.y += 1;
         if (k['KeyS'] || k['ArrowDown'])  input.y -= 1;
         if (k['KeyA'] || k['ArrowLeft'])  input.x -= 1;
@@ -56,15 +66,13 @@ export function Player() {
         if (input.lengthSq() > 0) input.normalize().multiplyScalar(speed);
         localVel.current.lerp(input, 0.15);
 
-        const camForward = new Vector3();
         camera.getWorldDirection(camForward);
         camForward.y = 0;
         camForward.normalize();
 
-        const camRight = new Vector3();
-        camRight.crossVectors(camForward, new Vector3(0, 1, 0));
+        camRight.crossVectors(camForward, up);
 
-        const move = new Vector3();
+        move.set(0, 0, 0);
         move.addScaledVector(camForward, localVel.current.y * delta);
         move.addScaledVector(camRight,   localVel.current.x * delta);
 

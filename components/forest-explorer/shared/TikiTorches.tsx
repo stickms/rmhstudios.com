@@ -33,7 +33,7 @@ function TikiTorch({ position, phase }: { position: [number, number, number]; ph
         if (lightRef.current) {
             const dx = position[0] - PLAYER_POS.x;
             const dz = position[2] - PLAYER_POS.z;
-            const nearPlayer = dx * dx + dz * dz < 900;
+            const nearPlayer = dx * dx + dz * dz < 576; // within 24m
             lightRef.current.visible = nearPlayer;
             if (nearPlayer) lightRef.current.intensity = 7 + flicker * 2;
         }
@@ -45,19 +45,9 @@ function TikiTorch({ position, phase }: { position: [number, number, number]; ph
                 <cylinderGeometry args={[0.06, 0.08, 2.2, 6]} />
                 <meshLambertMaterial color="#6b3e1a" />
             </mesh>
-            {[0.5, 1.0, 1.5].map((y, i) => (
-                <mesh key={i} position={[0, y, 0]}>
-                    <cylinderGeometry args={[0.075, 0.075, 0.07, 6]} />
-                    <meshLambertMaterial color="#8a5a28" />
-                </mesh>
-            ))}
             <mesh position={[0, 2.35, 0]}>
                 <cylinderGeometry args={[0.18, 0.12, 0.28, 7]} />
                 <meshLambertMaterial color="#3a2000" />
-            </mesh>
-            <mesh position={[0, 2.38, 0]}>
-                <coneGeometry args={[0.20, 0.12, 6]} />
-                <meshStandardMaterial color="#ffaa00" transparent opacity={0.55} />
             </mesh>
             <mesh ref={midFlameRef} position={[0, 2.44, 0]}>
                 <coneGeometry args={[0.13, 0.22, 6]} />
@@ -87,11 +77,13 @@ function TikiTorch({ position, phase }: { position: [number, number, number]; ph
 export function TikiTorches() {
     const torches = useMemo(() => {
         const positions: { pos: [number, number, number]; phase: number }[] = [];
+        // Trimmed ring density: every torch is 7 meshes + a (culled) light,
+        // so torch count is a direct night frame cost
         const rings = [
-            { r: 8,  count: 4,  offset: 0 },
-            { r: 25, count: 6,  offset: Math.PI / 6 },
-            { r: 50, count: 8,  offset: Math.PI / 8 },
-            { r: 80, count: 10, offset: Math.PI / 10 },
+            { r: 8,  count: 4, offset: 0 },
+            { r: 25, count: 5, offset: Math.PI / 6 },
+            { r: 50, count: 6, offset: Math.PI / 8 },
+            { r: 80, count: 6, offset: Math.PI / 10 },
         ];
         let id = 0;
         for (const { r, count, offset } of rings) {

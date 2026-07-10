@@ -43,7 +43,8 @@ export function ExploreGame() {
         <div className="w-full h-full relative select-none" style={{ touchAction: 'none' }}>
             <Canvas
                 shadows
-                gl={{ antialias: true }}
+                gl={{ antialias: true, powerPreference: 'high-performance' }}
+                dpr={[1, 1.5]}
                 camera={{ fov: 75, near: 0.1, far: 600 }}
             >
                 <ExploreScene

@@ -113,17 +113,12 @@ export function ActOneScene() {
             <color attach="background" args={['#050914']} />
             <fog attach="fog" args={['#060d1a', 15, 80]} />
             <ambientLight intensity={0.06} color="#1a2a50" />
+            {/* No shadow pass: moonlight at 0.18 intensity produces shadows
+                too faint to see, but the pass re-rendered every tree */}
             <directionalLight
                 position={[-60, 90, -40]}
                 intensity={0.18}
                 color="#8aa8d0"
-                castShadow
-                shadow-mapSize={[1024, 1024] as unknown as number}
-                shadow-camera-far={200}
-                shadow-camera-left={-100}
-                shadow-camera-right={100}
-                shadow-camera-top={100}
-                shadow-camera-bottom={-100}
             />
             <directionalLight position={[-50, 25, -50]} intensity={0.03} color="#040810" />
 
@@ -250,12 +245,17 @@ export function ActOneScene() {
                         <meshStandardMaterial
                             color="#44ffaa"
                             emissive={new Color('#22ff88')}
-                            emissiveIntensity={0.8}
+                            emissiveIntensity={1.2}
                             transparent
-                            opacity={0.85}
+                            opacity={0.9}
                         />
                     </mesh>
-                    <pointLight color="#44ffaa" intensity={0.5} distance={5} decay={2} />
+                    {/* Ground halo instead of a point light — 9 always-on
+                        lights here were a major night frame cost */}
+                    <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                        <circleGeometry args={[0.6, 10]} />
+                        <meshBasicMaterial color="#1a5c3a" transparent opacity={0.4} depthWrite={false} />
+                    </mesh>
                 </group>
             ))}
         </>

@@ -27,8 +27,9 @@ export function InteractionSystem() {
     // Throttle to avoid hammering every frame
     const frameCount = useRef(0);
 
-    // Reusable flat direction vector for flashlight cone checks
+    // Reusable vectors for flashlight cone checks (no per-item allocation)
     const flatDir = useMemo(() => new Vector3(), []);
+    const toObj = useMemo(() => new Vector3(), []);
 
     useFrame(() => {
         frameCount.current++;
@@ -62,7 +63,7 @@ export function InteractionSystem() {
             // Reveal check per method
             if (inter.revealMethod === 'flashlight_only' && !isPuzzleSolved) {
                 if (flashlightOn && dist < 40) {
-                    const toObj = new Vector3(dx, 0, dz).normalize();
+                    toObj.set(dx, 0, dz).normalize();
                     const angle = flatDir.angleTo(toObj);
                     if (angle < 0.4) { // ~23 degrees — matches visual spotlight cone
                         revealedIds.push(inter.id);
@@ -92,7 +93,12 @@ export function InteractionSystem() {
             }
         }
 
-        setFlashlightRevealed(revealedIds);
+        // Only publish when the revealed set actually changed — a fresh array
+        // every check re-rendered every landmark ~20×/sec for nothing
+        const prev = useStoryStore.getState().flashlightRevealedIds;
+        if (prev.length !== revealedIds.length || revealedIds.some((id, i) => id !== prev[i])) {
+            setFlashlightRevealed(revealedIds);
+        }
         // Portals always take priority when in range
         setNearbyInteractable((closestPortal ?? closest)?.id ?? null);
     });

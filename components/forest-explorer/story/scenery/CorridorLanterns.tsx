@@ -21,7 +21,7 @@ interface CorridorLanternsProps {
  *
  * Point lights cull by player distance so only nearby lanterns cost anything.
  */
-export function CorridorLanterns({ corridors, color = '#7fd4a8', spacing = 18 }: CorridorLanternsProps) {
+export function CorridorLanterns({ corridors, color = '#7fd4a8', spacing = 22 }: CorridorLanternsProps) {
     const lanterns = useMemo(() => {
         const out: Array<{ pos: [number, number, number]; phase: number }> = [];
         let id = 0;
@@ -73,7 +73,7 @@ function Lantern({ position, phase, color }: { position: [number, number, number
             const player = useStoryStore.getState().playerPosition;
             const dx = px - player[0];
             const dz = pz - player[2];
-            const nearPlayer = dx * dx + dz * dz < 1600; // within 40m
+            const nearPlayer = dx * dx + dz * dz < 676; // within 26m
             lightRef.current.visible = nearPlayer;
             if (nearPlayer) lightRef.current.intensity = 1.6 + breathe * 0.8;
         }
@@ -95,10 +95,6 @@ function Lantern({ position, phase, color }: { position: [number, number, number
                 <mesh>
                     <boxGeometry args={[0.2, 0.28, 0.2]} />
                     <meshLambertMaterial color="#332a1a" transparent opacity={0.5} />
-                </mesh>
-                <mesh position={[0, 0.17, 0]}>
-                    <coneGeometry args={[0.16, 0.12, 4]} />
-                    <meshLambertMaterial color="#2c2415" />
                 </mesh>
                 {/* Glowing core */}
                 <mesh ref={coreRef}>

@@ -1,8 +1,8 @@
 'use client';
 
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useFrame } from '@react-three/fiber';
-import type { Group } from 'three';
+import { SphereGeometry, MeshLambertMaterial, InstancedMesh, Object3D } from 'three';
 
 const CLOUD_PUFFS: [number, number, number, number][] = [
     [0,    0,   0,   2.2],
@@ -15,24 +15,26 @@ const CLOUD_PUFFS: [number, number, number, number][] = [
     [0.3,  1.8, 0,   0.9],
 ];
 
-function CloudPuff({ position, scale, color }: { position: [number, number, number]; scale: number; color: string }) {
-    return (
-        <group position={position} scale={scale}>
-            {CLOUD_PUFFS.map(([x, y, z, r], i) => (
-                <mesh key={i} position={[x, y, z]}>
-                    <sphereGeometry args={[r, 7, 5]} />
-                    <meshLambertMaterial color={color} transparent opacity={0.82} />
-                </mesh>
-            ))}
-        </group>
-    );
+interface CloudData {
+    x: number;
+    y: number;
+    z: number;
+    scale: number;
+    speed: number;
 }
 
+/**
+ * Drifting clouds as ONE instanced mesh (previously 14 clouds × 8 puffs =
+ * 112 separate transparent meshes/draw calls). Per-instance matrices are
+ * recomputed as clouds drift — trivial CPU, one GPU draw.
+ */
 export function Clouds({ night }: { night: boolean }) {
-    const cloudData = useMemo(() => {
+    const meshRef = useRef<InstancedMesh>(null);
+    const dummy = useMemo(() => new Object3D(), []);
+
+    const clouds = useMemo<CloudData[]>(() => {
         const rng = (n: number) => { const x = Math.sin(n + 1) * 43758.5453; return x - Math.floor(x); };
         return Array.from({ length: 14 }, (_, i) => ({
-            id: i,
             x: (rng(i * 7.33) - 0.5) * 220,
             y: 42 + rng(i * 3.11) * 18,
             z: (rng(i * 11.71) - 0.5) * 220,
@@ -41,25 +43,56 @@ export function Clouds({ night }: { night: boolean }) {
         }));
     }, []);
 
-    const refs = useRef<(Group | null)[]>([]);
+    // Mutable drift offsets (one per cloud)
+    const offsets = useRef<number[]>(clouds.map(() => 0));
+
+    const { geometry, material, count } = useMemo(() => ({
+        geometry: new SphereGeometry(1, 7, 5),
+        material: new MeshLambertMaterial({ transparent: true, opacity: 0.82 }),
+        count: clouds.length * CLOUD_PUFFS.length,
+    }), [clouds.length]);
+
+    useEffect(() => () => {
+        geometry.dispose();
+        material.dispose();
+    }, [geometry, material]);
+
+    useEffect(() => {
+        material.color.set(night ? '#1a1f2a' : '#f0f4f0');
+    }, [night, material]);
 
     useFrame((_, delta) => {
-        refs.current.forEach((ref, i) => {
-            if (!ref) return;
-            ref.position.x += cloudData[i].speed * delta;
-            if (ref.position.x > 120) ref.position.x = -120;
-        });
+        const mesh = meshRef.current;
+        if (!mesh) return;
+
+        let idx = 0;
+        for (let c = 0; c < clouds.length; c++) {
+            const cloud = clouds[c];
+            offsets.current[c] += cloud.speed * delta;
+            let cx = cloud.x + offsets.current[c];
+            if (cx > 120) {
+                offsets.current[c] -= cx + 120 - cloud.x;
+                cx = -120;
+            }
+            for (const [px, py, pz, pr] of CLOUD_PUFFS) {
+                dummy.position.set(
+                    cx + px * cloud.scale,
+                    cloud.y + py * cloud.scale,
+                    cloud.z + pz * cloud.scale,
+                );
+                dummy.scale.setScalar(pr * cloud.scale);
+                dummy.updateMatrix();
+                mesh.setMatrixAt(idx++, dummy.matrix);
+            }
+        }
+        mesh.instanceMatrix.needsUpdate = true;
     });
 
-    const cloudColor = night ? '#1a1f2a' : '#f0f4f0';
-
     return (
-        <>
-            {cloudData.map((c, i) => (
-                <group key={c.id} ref={(el) => { refs.current[i] = el; }} position={[c.x, c.y, c.z]}>
-                    <CloudPuff position={[0, 0, 0]} scale={c.scale} color={cloudColor} />
-                </group>
-            ))}
-        </>
+        <instancedMesh
+            ref={meshRef}
+            args={[geometry, material, count]}
+            frustumCulled={false}
+        />
     );
 }

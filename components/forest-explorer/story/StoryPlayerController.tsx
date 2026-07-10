@@ -83,6 +83,16 @@ export function StoryPlayer() {
     const isGrounded = useRef(true);
     const posFrameCount = useRef(0);
 
+    // Scratch objects reused every frame (no per-frame allocation)
+    const scratch = useRef({
+        input: new Vector2(),
+        forward: new Vector3(),
+        right: new Vector3(),
+        move: new Vector3(),
+        up: new Vector3(0, 1, 0),
+        euler: new Euler(),
+    });
+
     const currentAct = useStoryStore(s => s.currentAct);
     const setPlayerPosition = useStoryStore(s => s.setPlayerPosition);
     const setPlayerRotation = useStoryStore(s => s.setPlayerRotation);
@@ -93,7 +103,6 @@ export function StoryPlayer() {
     const visitLandmark = useStoryStore(s => s.visitLandmark);
     const showPuzzleOverlay = useStoryStore(s => s.showPuzzleOverlay);
     const journalOpen = useStoryStore(s => s.journalOpen);
-    const playerPosition = useStoryStore(s => s.playerPosition);
     const treesShiftCount = useStoryStore(s => s.treesShiftCount);
 
     // Derive map config from current act
@@ -107,9 +116,12 @@ export function StoryPlayer() {
         [actConfig, seedOffset],
     );
 
-    // Spawn at checkpoint position
+    // Spawn at checkpoint position. Read via getState() — subscribing to
+    // playerPosition would re-render this component on every position write
+    // it makes itself (every 3rd frame).
     useEffect(() => {
-        camera.position.set(playerPosition[0], playerPosition[1], playerPosition[2]);
+        const pos = useStoryStore.getState().playerPosition;
+        camera.position.set(pos[0], pos[1], pos[2]);
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     useEffect(() => {
@@ -169,7 +181,9 @@ export function StoryPlayer() {
         if (showPuzzleOverlay || journalOpen) return;
 
         const k = keys.current;
-        const input = new Vector2(0, 0);
+        const { input, forward: camForward, right: camRight, move, up } = scratch.current;
+
+        input.set(0, 0);
         if (k['KeyW'] || k['ArrowUp'])    input.y += 1;
         if (k['KeyS'] || k['ArrowDown'])  input.y -= 1;
         if (k['KeyA'] || k['ArrowLeft'])  input.x -= 1;
@@ -179,15 +193,13 @@ export function StoryPlayer() {
         if (input.lengthSq() > 0) input.normalize().multiplyScalar(speed);
         localVel.current.lerp(input, 0.15);
 
-        const camForward = new Vector3();
         camera.getWorldDirection(camForward);
         camForward.y = 0;
         camForward.normalize();
 
-        const camRight = new Vector3();
-        camRight.crossVectors(camForward, new Vector3(0, 1, 0));
+        camRight.crossVectors(camForward, up);
 
-        const move = new Vector3();
+        move.set(0, 0, 0);
         move.addScaledVector(camForward, localVel.current.y * delta);
         move.addScaledVector(camRight, localVel.current.x * delta);
 
@@ -235,7 +247,7 @@ export function StoryPlayer() {
             setPlayerPosition([camera.position.x, camera.position.y, camera.position.z]);
         }
         if (posFrameCount.current % 6 === 0) {
-            const euler = new Euler().setFromQuaternion(camera.quaternion);
+            const euler = scratch.current.euler.setFromQuaternion(camera.quaternion);
             setPlayerRotation([euler.x, euler.y]);
         }
     });

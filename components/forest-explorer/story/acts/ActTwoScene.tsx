@@ -158,17 +158,12 @@ export function ActTwoScene() {
             <color attach="background" args={['#0d0806']} />
             <fog attach="fog" args={['#1a0f0a', 12, 65]} />
             <ambientLight intensity={0.08} color="#3a2010" />
+            {/* No shadow pass: dusk light is too dim for visible shadows,
+                but the pass re-rendered every tree */}
             <directionalLight
                 position={[40, 60, -30]}
                 intensity={0.25}
                 color="#d4713a"
-                castShadow
-                shadow-mapSize={[1024, 1024] as unknown as number}
-                shadow-camera-far={200}
-                shadow-camera-left={-100}
-                shadow-camera-right={100}
-                shadow-camera-top={100}
-                shadow-camera-bottom={-100}
             />
             <directionalLight position={[-30, 15, 40]} intensity={0.04} color="#1a0806" />
 
@@ -192,7 +187,7 @@ export function ActTwoScene() {
 
             {/* Worn paths + amber Warden lanterns (replace the old misplaced torches) */}
             <PathStrips corridors={config.corridors} color="#453320" />
-            <CorridorLanterns corridors={config.corridors} color="#ffab5e" spacing={15} />
+            <CorridorLanterns corridors={config.corridors} color="#ffab5e" spacing={19} />
 
             {/* Scorched undergrowth + ember-colored blooms */}
             <ScatterDecor

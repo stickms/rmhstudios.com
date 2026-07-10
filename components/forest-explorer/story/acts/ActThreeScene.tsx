@@ -357,14 +357,16 @@ function CorruptionZones({ positions, intensity }: { positions: [number, number]
         <>
             {positions.slice(0, 20).map(([x, z], i) => (
                 <group key={`corrupt-${i}`} position={[x, 0, z]}>
-                    {/* Purple corruption glow */}
-                    <pointLight
-                        color="#8833aa"
-                        intensity={intensity * 0.4}
-                        distance={6}
-                        decay={2}
-                        position={[0, 1.5, 0]}
-                    />
+                    {/* Ground glow disc — replaces 20 always-on point lights */}
+                    <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                        <circleGeometry args={[1.4, 10]} />
+                        <meshBasicMaterial
+                            color="#5a2280"
+                            transparent
+                            opacity={intensity * 0.3}
+                            depthWrite={false}
+                        />
+                    </mesh>
                     {/* Corruption tendril mesh */}
                     <mesh position={[0, 0.8, 0]} rotation={[0, i * 1.3, 0]}>
                         <cylinderGeometry args={[0.05, 0.15, 1.6, 4]} />

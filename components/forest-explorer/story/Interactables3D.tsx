@@ -56,9 +56,16 @@ function RunePedestal({ item }: { item: InteractableDefinition }) {
             mat.opacity += (((revealed || solved) ? 0.95 : 0.25) - mat.opacity) * 0.1;
         }
         if (lightRef.current) {
-            const target = solved ? 0.5 : revealed ? 1.1 + Math.sin(t * 3) * 0.25 : 0;
-            lightRef.current.intensity += (target - lightRef.current.intensity) * 0.1;
-            lightRef.current.color.set(color);
+            // visible=false removes the light from the shader's light list;
+            // intensity 0 does not — it still costs on every lit fragment.
+            const dx = item.position[0] - state.camera.position.x;
+            const dz = item.position[2] - state.camera.position.z;
+            const active = (revealed || solved) && dx * dx + dz * dz < 484; // within 22m
+            lightRef.current.visible = active;
+            if (active) {
+                lightRef.current.intensity = solved ? 0.5 : 1.1 + Math.sin(t * 3) * 0.25;
+                lightRef.current.color.set(color);
+            }
         }
     });
 
