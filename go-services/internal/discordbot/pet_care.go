@@ -381,6 +381,16 @@ var ambientLinesByStage = map[LifeStage][]string{
 		"refactored code that wasn't broke and now nothin works, classic 💀",
 		"networkin on LinkedIn like it's a full time job fr fr 🤝",
 		"deployed on a Friday, livin dangerously 😤",
+		"stared at the same bug for an hour, it was a typo 🫠",
+		"meal prepped for the week, ate all of it by tuesday 🍱💀",
+		"my commute playlist is carryin my whole mental health rn 🎧",
+		"tried to touch grass, mosquitos said not today 🦟🌱",
+		"3 monitors and I still alt-tab to my phone, insane 📱",
+		"someone scheduled a 9am meeting, praying for their downfall 😤",
+		"impulse-bought a mechanical keyboard I did NOT need, worth it ⌨️",
+		"laundry's been in the dryer for 2 days, it lives there now 🧺",
+		"cooked actual food for once and felt like a whole chef 👨‍🍳",
+		"opened 40 browser tabs to solve one error, this is the job 🗂️",
 	},
 }
 
@@ -389,6 +399,14 @@ var ambientGeneral = []string{
 	"lowkey thinkin about boba again... it's a lifestyle at this point 🧋",
 	"manifesting a return offer and infinite tapioca pearls 🙏✨",
 	"reminder: you're crushin it today, no cap 💪 (now `/feed` me lol)",
+	"hope everybody drank some water today, hydration is self care fr 💧",
+	"random check-in: what's the best thing that happened to you today? 👀",
+	"my brain at 100 tabs open and 3% battery rn, anybody else? 🔋",
+	"low-key grateful for this lil server, y'all keep me going fr 🙏",
+	"the weather's doin somethin today and I have feelings about it 🌤️",
+	"debating a nap vs a boba run... why not both honestly 🧋😴",
+	"shoutout to whoever's grinding late tonight, we up together 🌙",
+	"just had a thought so deep I gotta lie down about it 🧠",
 }
 
 // careerAmbient adds career-flavoured slice-of-life lines once Alex has a dream.

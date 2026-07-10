@@ -1,0 +1,31 @@
+[
+  {
+    "id": "a1b2c3d4-uuid",
+    "text": "Data Science Intern",
+    "hostedUrl": "https://jobs.lever.co/plaid/a1b2c3d4-uuid",
+    "applyUrl": "https://jobs.lever.co/plaid/a1b2c3d4-uuid/apply",
+    "createdAt": 1750000000000,
+    "categories": {
+      "location": "San Francisco, CA",
+      "commitment": "Intern",
+      "team": "Data"
+    },
+    "country": "US",
+    "workplaceType": "hybrid",
+    "descriptionPlain": "Work on ML.",
+    "description": "<div>Work on ML.</div>"
+  },
+  {
+    "id": "e5f6-uuid",
+    "text": "Engineering Manager",
+    "hostedUrl": "https://jobs.lever.co/plaid/e5f6-uuid",
+    "applyUrl": "https://jobs.lever.co/plaid/e5f6-uuid/apply",
+    "createdAt": 1749000000000,
+    "categories": {
+      "location": "Remote - United States",
+      "commitment": "Full-time"
+    },
+    "workplaceType": "remote",
+    "description": "<div>Lead a team.</div>"
+  }
+]

@@ -27,6 +27,7 @@ import { Route as RmhtypeRouteImport } from './routes/rmhtype'
 import { Route as RmhtubeRouteImport } from './routes/rmhtube'
 import { Route as RmhstudyRouteImport } from './routes/rmhstudy'
 import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
+import { Route as RmhladderRouteImport } from './routes/rmhladder'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
 import { Route as RmhboxRouteImport } from './routes/rmhbox'
 import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
@@ -60,6 +61,7 @@ import { Route as RmhtypeIndexRouteImport } from './routes/rmhtype/index'
 import { Route as RmhtubeIndexRouteImport } from './routes/rmhtube/index'
 import { Route as RmhstudyIndexRouteImport } from './routes/rmhstudy/index'
 import { Route as RmhmusicIndexRouteImport } from './routes/rmhmusic/index'
+import { Route as RmhladderIndexRouteImport } from './routes/rmhladder/index'
 import { Route as RmhcodeIndexRouteImport } from './routes/rmhcode/index'
 import { Route as RmhboxIndexRouteImport } from './routes/rmhbox/index'
 import { Route as RmhPmcIndexRouteImport } from './routes/rmh-pmc/index'
@@ -85,6 +87,13 @@ import { Route as RmhtubeRoomIdRouteImport } from './routes/rmhtube/$roomId'
 import { Route as RmhstudyRoomIdRouteImport } from './routes/rmhstudy/$roomId'
 import { Route as RmhmusicPlayerRouteImport } from './routes/rmhmusic/player'
 import { Route as RmhmusicRoomIdRouteImport } from './routes/rmhmusic/$roomId'
+import { Route as RmhladderSettingsRouteImport } from './routes/rmhladder/settings'
+import { Route as RmhladderReviewRouteImport } from './routes/rmhladder/review'
+import { Route as RmhladderPipelineRouteImport } from './routes/rmhladder/pipeline'
+import { Route as RmhladderJobsRouteImport } from './routes/rmhladder/jobs'
+import { Route as RmhladderHealthRouteImport } from './routes/rmhladder/health'
+import { Route as RmhladderCompaniesRouteImport } from './routes/rmhladder/companies'
+import { Route as RmhladderAlertsRouteImport } from './routes/rmhladder/alerts'
 import { Route as RmhcodeAuthRouteImport } from './routes/rmhcode/auth'
 import { Route as RmhboxLobbyIdRouteImport } from './routes/rmhbox/$lobbyId'
 import { Route as RmhPmcOperatorsRouteImport } from './routes/rmh-pmc/operators'
@@ -635,6 +644,11 @@ const RmhmusicRoute = RmhmusicRouteImport.update({
   path: '/rmhmusic',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RmhladderRoute = RmhladderRouteImport.update({
+  id: '/rmhladder',
+  path: '/rmhladder',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RmhcodeRoute = RmhcodeRouteImport.update({
   id: '/rmhcode',
   path: '/rmhcode',
@@ -799,6 +813,11 @@ const RmhmusicIndexRoute = RmhmusicIndexRouteImport.update({
   path: '/',
   getParentRoute: () => RmhmusicRoute,
 } as any)
+const RmhladderIndexRoute = RmhladderIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => RmhladderRoute,
+} as any)
 const RmhcodeIndexRoute = RmhcodeIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -923,6 +942,41 @@ const RmhmusicRoomIdRoute = RmhmusicRoomIdRouteImport.update({
   id: '/$roomId',
   path: '/$roomId',
   getParentRoute: () => RmhmusicRoute,
+} as any)
+const RmhladderSettingsRoute = RmhladderSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => RmhladderRoute,
+} as any)
+const RmhladderReviewRoute = RmhladderReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => RmhladderRoute,
+} as any)
+const RmhladderPipelineRoute = RmhladderPipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => RmhladderRoute,
+} as any)
+const RmhladderJobsRoute = RmhladderJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => RmhladderRoute,
+} as any)
+const RmhladderHealthRoute = RmhladderHealthRouteImport.update({
+  id: '/health',
+  path: '/health',
+  getParentRoute: () => RmhladderRoute,
+} as any)
+const RmhladderCompaniesRoute = RmhladderCompaniesRouteImport.update({
+  id: '/companies',
+  path: '/companies',
+  getParentRoute: () => RmhladderRoute,
+} as any)
+const RmhladderAlertsRoute = RmhladderAlertsRouteImport.update({
+  id: '/alerts',
+  path: '/alerts',
+  getParentRoute: () => RmhladderRoute,
 } as any)
 const RmhcodeAuthRoute = RmhcodeAuthRouteImport.update({
   id: '/auth',
@@ -3324,6 +3378,7 @@ export interface FileRoutesByFullPath {
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
+  '/rmhladder': typeof RmhladderRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhstudy': typeof RmhstudyRouteWithChildren
   '/rmhtube': typeof RmhtubeRouteWithChildren
@@ -3410,6 +3465,13 @@ export interface FileRoutesByFullPath {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhladder/alerts': typeof RmhladderAlertsRoute
+  '/rmhladder/companies': typeof RmhladderCompaniesRoute
+  '/rmhladder/health': typeof RmhladderHealthRoute
+  '/rmhladder/jobs': typeof RmhladderJobsRoute
+  '/rmhladder/pipeline': typeof RmhladderPipelineRoute
+  '/rmhladder/review': typeof RmhladderReviewRoute
+  '/rmhladder/settings': typeof RmhladderSettingsRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
@@ -3434,6 +3496,7 @@ export interface FileRoutesByFullPath {
   '/rmh-pmc/': typeof RmhPmcIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
+  '/rmhladder/': typeof RmhladderIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
   '/rmhstudy/': typeof RmhstudyIndexRoute
   '/rmhtube/': typeof RmhtubeIndexRoute
@@ -3923,6 +3986,13 @@ export interface FileRoutesByTo {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhladder/alerts': typeof RmhladderAlertsRoute
+  '/rmhladder/companies': typeof RmhladderCompaniesRoute
+  '/rmhladder/health': typeof RmhladderHealthRoute
+  '/rmhladder/jobs': typeof RmhladderJobsRoute
+  '/rmhladder/pipeline': typeof RmhladderPipelineRoute
+  '/rmhladder/review': typeof RmhladderReviewRoute
+  '/rmhladder/settings': typeof RmhladderSettingsRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
@@ -3947,6 +4017,7 @@ export interface FileRoutesByTo {
   '/rmh-pmc': typeof RmhPmcIndexRoute
   '/rmhbox': typeof RmhboxIndexRoute
   '/rmhcode': typeof RmhcodeIndexRoute
+  '/rmhladder': typeof RmhladderIndexRoute
   '/rmhmusic': typeof RmhmusicIndexRoute
   '/rmhstudy': typeof RmhstudyIndexRoute
   '/rmhtube': typeof RmhtubeIndexRoute
@@ -4373,6 +4444,7 @@ export interface FileRoutesById {
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
+  '/rmhladder': typeof RmhladderRouteWithChildren
   '/rmhmusic': typeof RmhmusicRouteWithChildren
   '/rmhstudy': typeof RmhstudyRouteWithChildren
   '/rmhtube': typeof RmhtubeRouteWithChildren
@@ -4459,6 +4531,13 @@ export interface FileRoutesById {
   '/rmh-pmc/operators': typeof RmhPmcOperatorsRoute
   '/rmhbox/$lobbyId': typeof RmhboxLobbyIdRoute
   '/rmhcode/auth': typeof RmhcodeAuthRoute
+  '/rmhladder/alerts': typeof RmhladderAlertsRoute
+  '/rmhladder/companies': typeof RmhladderCompaniesRoute
+  '/rmhladder/health': typeof RmhladderHealthRoute
+  '/rmhladder/jobs': typeof RmhladderJobsRoute
+  '/rmhladder/pipeline': typeof RmhladderPipelineRoute
+  '/rmhladder/review': typeof RmhladderReviewRoute
+  '/rmhladder/settings': typeof RmhladderSettingsRoute
   '/rmhmusic/$roomId': typeof RmhmusicRoomIdRoute
   '/rmhmusic/player': typeof RmhmusicPlayerRoute
   '/rmhstudy/$roomId': typeof RmhstudyRoomIdRoute
@@ -4484,6 +4563,7 @@ export interface FileRoutesById {
   '/rmh-pmc/': typeof RmhPmcIndexRoute
   '/rmhbox/': typeof RmhboxIndexRoute
   '/rmhcode/': typeof RmhcodeIndexRoute
+  '/rmhladder/': typeof RmhladderIndexRoute
   '/rmhmusic/': typeof RmhmusicIndexRoute
   '/rmhstudy/': typeof RmhstudyIndexRoute
   '/rmhtube/': typeof RmhtubeIndexRoute
@@ -4912,6 +4992,7 @@ export interface FileRouteTypes {
     | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
+    | '/rmhladder'
     | '/rmhmusic'
     | '/rmhstudy'
     | '/rmhtube'
@@ -4998,6 +5079,13 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhladder/alerts'
+    | '/rmhladder/companies'
+    | '/rmhladder/health'
+    | '/rmhladder/jobs'
+    | '/rmhladder/pipeline'
+    | '/rmhladder/review'
+    | '/rmhladder/settings'
     | '/rmhmusic/$roomId'
     | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
@@ -5022,6 +5110,7 @@ export interface FileRouteTypes {
     | '/rmh-pmc/'
     | '/rmhbox/'
     | '/rmhcode/'
+    | '/rmhladder/'
     | '/rmhmusic/'
     | '/rmhstudy/'
     | '/rmhtube/'
@@ -5511,6 +5600,13 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhladder/alerts'
+    | '/rmhladder/companies'
+    | '/rmhladder/health'
+    | '/rmhladder/jobs'
+    | '/rmhladder/pipeline'
+    | '/rmhladder/review'
+    | '/rmhladder/settings'
     | '/rmhmusic/$roomId'
     | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
@@ -5535,6 +5631,7 @@ export interface FileRouteTypes {
     | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
+    | '/rmhladder'
     | '/rmhmusic'
     | '/rmhstudy'
     | '/rmhtube'
@@ -5960,6 +6057,7 @@ export interface FileRouteTypes {
     | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
+    | '/rmhladder'
     | '/rmhmusic'
     | '/rmhstudy'
     | '/rmhtube'
@@ -6046,6 +6144,13 @@ export interface FileRouteTypes {
     | '/rmh-pmc/operators'
     | '/rmhbox/$lobbyId'
     | '/rmhcode/auth'
+    | '/rmhladder/alerts'
+    | '/rmhladder/companies'
+    | '/rmhladder/health'
+    | '/rmhladder/jobs'
+    | '/rmhladder/pipeline'
+    | '/rmhladder/review'
+    | '/rmhladder/settings'
     | '/rmhmusic/$roomId'
     | '/rmhmusic/player'
     | '/rmhstudy/$roomId'
@@ -6071,6 +6176,7 @@ export interface FileRouteTypes {
     | '/rmh-pmc/'
     | '/rmhbox/'
     | '/rmhcode/'
+    | '/rmhladder/'
     | '/rmhmusic/'
     | '/rmhstudy/'
     | '/rmhtube/'
@@ -6498,6 +6604,7 @@ export interface RootRouteChildren {
   RmhPmcRoute: typeof RmhPmcRouteWithChildren
   RmhboxRoute: typeof RmhboxRouteWithChildren
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
+  RmhladderRoute: typeof RmhladderRouteWithChildren
   RmhmusicRoute: typeof RmhmusicRouteWithChildren
   RmhstudyRoute: typeof RmhstudyRouteWithChildren
   RmhtubeRoute: typeof RmhtubeRouteWithChildren
@@ -6899,6 +7006,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhmusicRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rmhladder': {
+      id: '/rmhladder'
+      path: '/rmhladder'
+      fullPath: '/rmhladder'
+      preLoaderRoute: typeof RmhladderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rmhcode': {
       id: '/rmhcode'
       path: '/rmhcode'
@@ -7130,6 +7244,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RmhmusicIndexRouteImport
       parentRoute: typeof RmhmusicRoute
     }
+    '/rmhladder/': {
+      id: '/rmhladder/'
+      path: '/'
+      fullPath: '/rmhladder/'
+      preLoaderRoute: typeof RmhladderIndexRouteImport
+      parentRoute: typeof RmhladderRoute
+    }
     '/rmhcode/': {
       id: '/rmhcode/'
       path: '/'
@@ -7304,6 +7425,55 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhmusic/$roomId'
       preLoaderRoute: typeof RmhmusicRoomIdRouteImport
       parentRoute: typeof RmhmusicRoute
+    }
+    '/rmhladder/settings': {
+      id: '/rmhladder/settings'
+      path: '/settings'
+      fullPath: '/rmhladder/settings'
+      preLoaderRoute: typeof RmhladderSettingsRouteImport
+      parentRoute: typeof RmhladderRoute
+    }
+    '/rmhladder/review': {
+      id: '/rmhladder/review'
+      path: '/review'
+      fullPath: '/rmhladder/review'
+      preLoaderRoute: typeof RmhladderReviewRouteImport
+      parentRoute: typeof RmhladderRoute
+    }
+    '/rmhladder/pipeline': {
+      id: '/rmhladder/pipeline'
+      path: '/pipeline'
+      fullPath: '/rmhladder/pipeline'
+      preLoaderRoute: typeof RmhladderPipelineRouteImport
+      parentRoute: typeof RmhladderRoute
+    }
+    '/rmhladder/jobs': {
+      id: '/rmhladder/jobs'
+      path: '/jobs'
+      fullPath: '/rmhladder/jobs'
+      preLoaderRoute: typeof RmhladderJobsRouteImport
+      parentRoute: typeof RmhladderRoute
+    }
+    '/rmhladder/health': {
+      id: '/rmhladder/health'
+      path: '/health'
+      fullPath: '/rmhladder/health'
+      preLoaderRoute: typeof RmhladderHealthRouteImport
+      parentRoute: typeof RmhladderRoute
+    }
+    '/rmhladder/companies': {
+      id: '/rmhladder/companies'
+      path: '/companies'
+      fullPath: '/rmhladder/companies'
+      preLoaderRoute: typeof RmhladderCompaniesRouteImport
+      parentRoute: typeof RmhladderRoute
+    }
+    '/rmhladder/alerts': {
+      id: '/rmhladder/alerts'
+      path: '/alerts'
+      fullPath: '/rmhladder/alerts'
+      preLoaderRoute: typeof RmhladderAlertsRouteImport
+      parentRoute: typeof RmhladderRoute
     }
     '/rmhcode/auth': {
       id: '/rmhcode/auth'
@@ -10887,6 +11057,32 @@ const RmhcodeRouteChildren: RmhcodeRouteChildren = {
 const RmhcodeRouteWithChildren =
   RmhcodeRoute._addFileChildren(RmhcodeRouteChildren)
 
+interface RmhladderRouteChildren {
+  RmhladderAlertsRoute: typeof RmhladderAlertsRoute
+  RmhladderCompaniesRoute: typeof RmhladderCompaniesRoute
+  RmhladderHealthRoute: typeof RmhladderHealthRoute
+  RmhladderJobsRoute: typeof RmhladderJobsRoute
+  RmhladderPipelineRoute: typeof RmhladderPipelineRoute
+  RmhladderReviewRoute: typeof RmhladderReviewRoute
+  RmhladderSettingsRoute: typeof RmhladderSettingsRoute
+  RmhladderIndexRoute: typeof RmhladderIndexRoute
+}
+
+const RmhladderRouteChildren: RmhladderRouteChildren = {
+  RmhladderAlertsRoute: RmhladderAlertsRoute,
+  RmhladderCompaniesRoute: RmhladderCompaniesRoute,
+  RmhladderHealthRoute: RmhladderHealthRoute,
+  RmhladderJobsRoute: RmhladderJobsRoute,
+  RmhladderPipelineRoute: RmhladderPipelineRoute,
+  RmhladderReviewRoute: RmhladderReviewRoute,
+  RmhladderSettingsRoute: RmhladderSettingsRoute,
+  RmhladderIndexRoute: RmhladderIndexRoute,
+}
+
+const RmhladderRouteWithChildren = RmhladderRoute._addFileChildren(
+  RmhladderRouteChildren,
+)
+
 interface RmhmusicRouteChildren {
   RmhmusicRoomIdRoute: typeof RmhmusicRoomIdRoute
   RmhmusicPlayerRoute: typeof RmhmusicPlayerRoute
@@ -11674,6 +11870,7 @@ const rootRouteChildren: RootRouteChildren = {
   RmhPmcRoute: RmhPmcRouteWithChildren,
   RmhboxRoute: RmhboxRouteWithChildren,
   RmhcodeRoute: RmhcodeRouteWithChildren,
+  RmhladderRoute: RmhladderRouteWithChildren,
   RmhmusicRoute: RmhmusicRouteWithChildren,
   RmhstudyRoute: RmhstudyRouteWithChildren,
   RmhtubeRoute: RmhtubeRouteWithChildren,
