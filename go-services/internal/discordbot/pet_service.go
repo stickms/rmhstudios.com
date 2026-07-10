@@ -44,6 +44,9 @@ type PetService struct {
 	promptMu sync.Mutex
 	prompt   *activePrompt // the currently-live community prompt (see pet_events.go)
 
+	recentMu    sync.Mutex
+	recentPosts []string // last few AI-generated proactive posts, for anti-repetition
+
 	sessMu  sync.RWMutex
 	session *discordgo.Session // set once the gateway is open (for the care loop)
 }

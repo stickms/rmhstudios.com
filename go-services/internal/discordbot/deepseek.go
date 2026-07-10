@@ -38,12 +38,36 @@ type ChatMessage struct {
 }
 
 // chatCompletionRequest is the POST body for /chat/completions. We do not stream:
-// a single blocking call is made and the final embed rendered once.
+// a single blocking call is made and the final embed rendered once. The sampling
+// knobs are pointers so an unset one is omitted from the JSON (DeepSeek then uses
+// its own default) — see ChatOptions.
 type chatCompletionRequest struct {
-	Model    string        `json:"model"`
-	Messages []ChatMessage `json:"messages"`
-	Stream   bool          `json:"stream"`
+	Model            string        `json:"model"`
+	Messages         []ChatMessage `json:"messages"`
+	Stream           bool          `json:"stream"`
+	Temperature      *float64      `json:"temperature,omitempty"`
+	PresencePenalty  *float64      `json:"presence_penalty,omitempty"`
+	FrequencyPenalty *float64      `json:"frequency_penalty,omitempty"`
 }
+
+// ChatOptions tunes the sampling for one completion. All fields are optional;
+// a nil Temperature falls back to conversationalTemperature (a bit above the
+// model's default) so Alex reads less robotic even on a plain reply. The
+// proactive-quip path passes a higher temperature plus repetition penalties so
+// his ambient posts stop collapsing onto the same handful of boba jokes.
+type ChatOptions struct {
+	Temperature      *float64
+	PresencePenalty  *float64
+	FrequencyPenalty *float64
+}
+
+// conversationalTemperature is DeepSeek's recommended setting for general
+// conversation (their guidance: ~1.3 for chat, ~1.5 for creative writing). The
+// API otherwise defaults to 1.0, which makes Alex noticeably repetitive.
+const conversationalTemperature = 1.3
+
+// floatPtr is a tiny helper for building the optional sampling pointers.
+func floatPtr(v float64) *float64 { return &v }
 
 // chatCompletionResponse is the (non-streamed) response shape.
 type chatCompletionResponse struct {
@@ -85,13 +109,32 @@ func NewDeepSeekClient(apiKey, model string) *DeepSeekClient {
 }
 
 // Chat issues a single non-streamed chat completion and returns the assistant's
-// reply text. Used by the /chat persona.
+// reply text, using the conversational sampling defaults. Used by the /chat
+// persona and @mention replies.
 func (c *DeepSeekClient) Chat(ctx context.Context, messages []ChatMessage) (string, error) {
+	return c.ChatWith(ctx, messages, ChatOptions{})
+}
+
+// ChatWith is Chat with explicit sampling controls, so callers that want more
+// variety (Alex's proactive quips) can crank the temperature and add repetition
+// penalties. A nil Temperature defaults to conversationalTemperature.
+func (c *DeepSeekClient) ChatWith(ctx context.Context, messages []ChatMessage, opts ChatOptions) (string, error) {
 	if c.apiKey == "" {
 		return "", fmt.Errorf("DEEPSEEK_API_KEY is not set")
 	}
 
-	raw, err := json.Marshal(chatCompletionRequest{Model: c.model, Messages: messages, Stream: false})
+	temp := opts.Temperature
+	if temp == nil {
+		temp = floatPtr(conversationalTemperature)
+	}
+	raw, err := json.Marshal(chatCompletionRequest{
+		Model:            c.model,
+		Messages:         messages,
+		Stream:           false,
+		Temperature:      temp,
+		PresencePenalty:  opts.PresencePenalty,
+		FrequencyPenalty: opts.FrequencyPenalty,
+	})
 	if err != nil {
 		return "", fmt.Errorf("marshal request: %w", err)
 	}

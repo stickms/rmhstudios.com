@@ -101,8 +101,21 @@ func petStateLine(p *PetState) string {
 		stageWord(p.LifeStage), mood.Label, career)
 }
 
+// proactiveTemperature / proactivePresence / proactiveFrequency are the creative
+// sampling knobs for Alex's ambient chatter — a higher temperature than a normal
+// reply, plus presence/frequency penalties, so his self-initiated posts stop
+// collapsing onto the same few boba/LinkedIn jokes every time.
+const (
+	proactiveTemperature = 1.5
+	proactivePresence    = 0.5
+	proactiveFrequency   = 0.4
+)
+
 // proactiveContent generates Alex's message for a proactive broadcast via
-// DeepSeek, or returns "" if unavailable (caller falls back to a template).
+// DeepSeek, or returns "" if unavailable (caller falls back to a template). The
+// instruction is seeded with a rotating topic and a list of his recent posts to
+// steer away from, and sampled with creative settings, so the stream of quips
+// stays varied instead of repeating itself.
 func (ps *PetService) proactiveContent(ctx context.Context, pl plan) string {
 	if ps.deepseek == nil || !ps.deepseek.configured() {
 		return ""
@@ -110,10 +123,12 @@ func (ps *PetService) proactiveContent(ctx context.Context, pl plan) string {
 
 	system := alexSystemPrompt + "\n\n" + petStateLine(&pl.pet)
 	var instruction string
+	seedTopic := true
 
 	switch pl.kind {
 	case kindCareAlert:
 		instruction = careInstruction(pl.need)
+		seedTopic = false // a care plea is about a specific need; don't derail it
 	case kindAmbient:
 		instruction = ambientInstruction(ctx)
 	case kindPrompt:
@@ -126,17 +141,93 @@ func (ps *PetService) proactiveContent(ctx context.Context, pl plan) string {
 		return ""
 	}
 
+	if seedTopic {
+		instruction += ambientTopicHint()
+	}
+	instruction += ps.recentPostsHint()
+
 	reqCtx, cancel := context.WithTimeout(ctx, aiTimeout)
 	defer cancel()
-	reply, err := ps.deepseek.Chat(reqCtx, []ChatMessage{
+	reply, err := ps.deepseek.ChatWith(reqCtx, []ChatMessage{
 		{Role: roleSystem, Content: system},
 		{Role: roleUser, Content: instruction},
+	}, ChatOptions{
+		Temperature:      floatPtr(proactiveTemperature),
+		PresencePenalty:  floatPtr(proactivePresence),
+		FrequencyPenalty: floatPtr(proactiveFrequency),
 	})
 	if err != nil {
 		ps.logger.Warn("proactive AI generation failed, using template", "error", err)
 		return ""
 	}
-	return boundMessage(reply)
+	out := boundMessage(reply)
+	ps.rememberPost(out)
+	return out
+}
+
+// ambientTopics is a broad rotation of themes to steer Alex's self-initiated
+// chatter, so he isn't always on about boba. A random one is suggested to the
+// model each time (as a soft lean, not a hard requirement).
+var ambientTopics = []string{
+	"grabbing boba or trying a new boba flavor",
+	"the gym, a workout, or the post-workout soreness",
+	"a video game or getting cooked online",
+	"dorm / apartment / roommate life",
+	"a bug, a broken deploy, or merge conflicts from hell",
+	"cooking a meal, a snack, or ordering takeout",
+	"weekend plans or the weather today",
+	"a show, movie, anime, or a song stuck in his head",
+	"his Wells Fargo internship / intern life",
+	"a slightly unhinged LinkedIn humble-brag",
+	"a random shower thought or a spicy hot take",
+	"intramurals or a sports team he's into",
+	"a side project he's vibe coding with zero plan",
+	"being broke on a student budget",
+	"missing home, family, or hometown food",
+	"gassing up the server / a wholesome check-in",
+	"caffeine, energy drinks, or running on no sleep",
+	"a class, an exam, or procrastinating on homework",
+	"touching grass / actually going outside for once",
+	"AI, the job market, or the future of tech",
+	"public transit, his commute, or Minnesota winters",
+	"an impulse purchase he can't stop thinking about",
+}
+
+// ambientTopicHint suggests one rotating theme for a proactive post.
+func ambientTopicHint() string {
+	return "\n\nLean this one toward: " + pick(ambientTopics) +
+		" — but only if it fits you naturally. Whatever you pick, make it feel fresh and specific, not generic."
+}
+
+// recentPostsN caps how many recent AI posts are remembered / fed back as
+// "don't repeat these" context.
+const recentPostsN = 6
+
+// rememberPost records a freshly-generated proactive post so future generations
+// can be told to avoid repeating it. Keeps only the last recentPostsN.
+func (ps *PetService) rememberPost(post string) {
+	post = strings.TrimSpace(post)
+	if post == "" {
+		return
+	}
+	ps.recentMu.Lock()
+	defer ps.recentMu.Unlock()
+	ps.recentPosts = append(ps.recentPosts, post)
+	if len(ps.recentPosts) > recentPostsN {
+		ps.recentPosts = ps.recentPosts[len(ps.recentPosts)-recentPostsN:]
+	}
+}
+
+// recentPostsHint returns an instruction fragment listing Alex's recent posts so
+// the model steers clear of repeating them, or "" if there are none yet.
+func (ps *PetService) recentPostsHint() string {
+	ps.recentMu.Lock()
+	defer ps.recentMu.Unlock()
+	if len(ps.recentPosts) == 0 {
+		return ""
+	}
+	return "\n\nYou recently posted these — say something clearly DIFFERENT (new topic, " +
+		"new opener, don't recycle the same jokes or emoji):\n- " + strings.Join(ps.recentPosts, "\n- ")
 }
 
 // actionReaction generates Alex's in-character reaction to a care action just
@@ -207,6 +298,16 @@ var eventPromptLines = []string{
 	"reply with your go-to coding snack rn 💻🍪 limited-time, don't sleep on it!",
 	"name a boba topping that goes CRAZY — reply and put me on 🧋 first few repliers!",
 	"reply with your biggest W of the week 🏆 limited time, lessgo hype me up!",
+	"flash prompt ⚡ reply with the app or site you can't live without rn 📱",
+	"reply with your current hyperfixation, no judgment 👀 quick lil window, go!",
+	"drop the last song you had on repeat 🎧 first few replies get me vibin fr",
+	"reply with a hot take that'd start a war in the group chat 🔥 limited time!",
+	"what's your comfort show for background noise while you grind? reply fast 📺",
+	"reply with your dream job in 3 words or less 💼 clock's runnin, lemme see!",
+	"name the city you'd move to tomorrow if money wasn't real 🌆 reply quick!",
+	"reply with your controversial food combo 🍕 the weirder the better, go go!",
+	"drop your most-used emoji, it says everything about you 😭 quick reply!",
+	"reply with the tab you always have open but never close 🗂️ limited time!",
 }
 
 var questionPromptLines = []string{
@@ -215,6 +316,17 @@ var questionPromptLines = []string{
 	"what should I vibe-code next? drop ideas in the replies 🚀",
 	"what's everybody grinding on today? reply and put me on 👀",
 	"if you could intern anywhere this summer, where? reply, I'm nosy 💼",
+	"what's the move this weekend, I need plans fr 🗓️ reply lemme live vicariously",
+	"coffee or energy drink for the grind? reply, pick a side ☕⚡",
+	"what game's eatin up all your time rn? reply and put me on 🎮",
+	"what's a skill you wanna learn but keep putting off? reply, we accountability buddies now 📚",
+	"morning grinder or 2am gremlin? reply and expose yourself 🌙",
+	"what's the last thing that genuinely made you laugh? reply, I need it 😂",
+	"if your life had a theme song rn what is it? reply 🎵",
+	"desk setup check — what's the one thing you'd upgrade first? reply 🖥️",
+	"what's a food everyone loves that you low-key can't stand? reply, be brave 🍽️",
+	"what city has the best food scene, no wrong answers... except the wrong ones 🌎 reply!",
+	"what's on your bucket list this year? reply and manifest it with me ✨",
 }
 
 func eventPromptLine() string    { return pick(eventPromptLines) }
