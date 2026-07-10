@@ -1,0 +1,76 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Continuous deployment — every push to main SSHes into the VPS and runs the
+# battle-tested ./deploy.sh production (which self-serializes via flock, pulls
+# origin/main, builds, migrates, and rolls the compose stack blue/green).
+#
+# One-time setup (see deploy/README.md "Automated deploys"):
+#   1. On the VPS:  ssh-keygen -t ed25519 -f ~/.ssh/gh-deploy -N "" -C gh-deploy
+#                   cat ~/.ssh/gh-deploy.pub >> ~/.ssh/authorized_keys
+#   2. Repo secrets: DEPLOY_HOST (IP or hostname), DEPLOY_USER (rmhstudios),
+#                    DEPLOY_SSH_KEY (contents of ~/.ssh/gh-deploy private key),
+#                    optional DEPLOY_PORT (default 22),
+#                    optional DEPLOY_KNOWN_HOSTS (ssh-keyscan output; pins the
+#                    host key — otherwise first connection uses accept-new).
+# ─────────────────────────────────────────────────────────────────────────────
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# One deploy at a time; a push during a deploy queues (never cancels) the next.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Verify deploy secrets are configured
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          missing=""
+          [ -n "$DEPLOY_HOST" ]    || missing="$missing DEPLOY_HOST"
+          [ -n "$DEPLOY_USER" ]    || missing="$missing DEPLOY_USER"
+          [ -n "$DEPLOY_SSH_KEY" ] || missing="$missing DEPLOY_SSH_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Deploy secrets not configured:$missing — see deploy/README.md 'Automated deploys'." >&2
+            exit 1
+          fi
+
+      - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+            chmod 644 ~/.ssh/known_hosts
+            echo "STRICT_HOST_KEY=yes" >> "$GITHUB_ENV"
+          else
+            echo "STRICT_HOST_KEY=accept-new" >> "$GITHUB_ENV"
+          fi
+
+      - name: Deploy to production
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          # deploy.sh pulls origin/main itself, so no checkout is needed here.
+          # ServerAlive keeps the connection open through the long image build.
+          ssh -i ~/.ssh/deploy_key \
+              -p "${DEPLOY_PORT:-22}" \
+              -o StrictHostKeyChecking="$STRICT_HOST_KEY" \
+              -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
+              "$DEPLOY_USER@$DEPLOY_HOST" \
+              'cd "$HOME/rmhstudios.com" && ./deploy.sh production'

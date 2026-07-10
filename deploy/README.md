@@ -63,6 +63,29 @@ curl -fsS -H "Host: <app_host>" http://127.0.0.1/    # via Traefik
 - Tail a service:  `kubectl -n rmhstudios logs -f deploy/rmhstudios-socket`
 - DNS changes:  see `deploy/terraform/README.md`
 
+## Automated deploys (GitHub Actions → `deploy.sh`)
+
+`.github/workflows/deploy.yml` deploys every push to `main`: the runner SSHes
+into the VPS and runs `./deploy.sh production` (which self-serializes with a
+flock and pulls `origin/main` itself). One-time setup:
+
+1. **On the VPS** — create a dedicated deploy key and authorize it:
+   ```bash
+   ssh-keygen -t ed25519 -f ~/.ssh/gh-deploy -N "" -C gh-deploy
+   cat ~/.ssh/gh-deploy.pub >> ~/.ssh/authorized_keys
+   cat ~/.ssh/gh-deploy          # copy the PRIVATE key for step 2
+   ssh-keyscan -H <vps-host>     # optional: copy for DEPLOY_KNOWN_HOSTS
+   ```
+2. **Repo secrets** (Settings → Secrets → Actions, or `gh secret set`):
+   - `DEPLOY_HOST` — VPS IP or hostname (the SSH host, not the Cloudflare-proxied domain)
+   - `DEPLOY_USER` — `rmhstudios`
+   - `DEPLOY_SSH_KEY` — contents of `~/.ssh/gh-deploy` (the private key)
+   - `DEPLOY_PORT` — optional, default 22
+   - `DEPLOY_KNOWN_HOSTS` — optional `ssh-keyscan` output; pins the host key
+
+Manual runs: Actions → deploy → "Run workflow". Deploy history, full
+`deploy.sh` output, and failures all live in the Actions tab.
+
 ## Faster builds (`deploy.sh` compose path)
 
 The single-host `deploy.sh` build is dominated by the Vite frontend build. Two
