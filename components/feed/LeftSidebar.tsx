@@ -29,6 +29,7 @@ import {
   ChevronDown,
   Car,
   Building2,
+  Briefcase,
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -106,6 +107,7 @@ const NAV: NavItem[] = [
     icon: MoreHorizontal,
     children: [
       { href: '/homes', tKey: 'nav-homes', label: 'RMHHomes', icon: Building2 },
+      { href: '/rmhladder', tKey: 'nav-rmhladder', label: 'RMHLadder', icon: Briefcase },
       { href: '/rideshare', tKey: 'nav-rideshare', label: 'Rideshare', icon: Car },
       { href: '/developer', tKey: 'nav-developer', label: 'Developer', icon: Terminal },
       { href: '/rmh-capital', tKey: 'nav-rmh-capital', label: 'RMH Capital', icon: Landmark },
