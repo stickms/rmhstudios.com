@@ -61,7 +61,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const actualId = item.actualId ?? item.id;
   const { data: session } = authClient.useSession();
   const { resolved: resolvedUser } = useResolvedUser();
-  const { removeItem, updateItem } = useFeedStore();
+  // Select actions individually (stable references) instead of subscribing to
+  // the whole store, so an unrelated store change doesn't re-render this card.
+  const removeItem = useFeedStore((s) => s.removeItem);
+  const updateItem = useFeedStore((s) => s.updateItem);
   const { run: runBookmark } = useOptimisticAction();
   const { run: runPin } = useOptimisticAction();
   const isAuthor = session?.user?.id === item.user?.id;
