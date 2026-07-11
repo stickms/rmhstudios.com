@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
+import { TrendingUp, Dice5 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { CoinIcon } from './CoinIcon';
@@ -61,7 +62,7 @@ export function RMHCoinsPage() {
   if (isPending || loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 text-site-accent animate-spin" />
+        <Spinner size={32} />
       </div>
     );
   }
@@ -83,34 +84,60 @@ export function RMHCoinsPage() {
             loading={claiming}
             variant="outline"
             size="sm"
-            className="rounded-lg border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
+            className="border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
           >
             {t("claim-free-coins", { defaultValue: "Claim 10 Free Coins" })}
           </Button>
         )}
       </div>
 
-      {/* Markets / Games tab switch */}
-      <div className="flex border-b border-site-border">
+      {/* Mode switch — two descriptive cards so the casino games read as an
+          equal, obvious choice instead of a bare tab that's easy to miss. */}
+      <div className="grid grid-cols-2 gap-2 border-b border-site-border p-3">
         {([
-          { id: 'markets' as const, label: t("tab-markets", { defaultValue: "Markets" }) },
-          { id: 'games' as const, label: t("tab-games", { defaultValue: "Games" }) },
-        ]).map((tb) => (
-          <button
-            key={tb.id}
-            onClick={() => setTab(tb.id)}
-            className={`flex-1 py-3 text-sm font-semibold transition-colors relative ${
-              tab === tb.id
-                ? 'text-site-text'
-                : 'text-site-text-dim hover:text-site-text'
-            }`}
-          >
-            {tb.label}
-            {tab === tb.id && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-site-accent" />
-            )}
-          </button>
-        ))}
+          {
+            id: 'markets' as const,
+            icon: TrendingUp,
+            title: t("tab-markets", { defaultValue: "Prediction Markets" }),
+            sub: t("tab-markets-sub", { defaultValue: "Back YES / NO calls" }),
+          },
+          {
+            id: 'games' as const,
+            icon: Dice5,
+            title: t("tab-games", { defaultValue: "Casino Games" }),
+            sub: t("tab-games-sub", { defaultValue: "Plinko, Blackjack, Hold'em & more" }),
+          },
+        ]).map((tb) => {
+          const Icon = tb.icon;
+          const active = tab === tb.id;
+          return (
+            <button
+              key={tb.id}
+              type="button"
+              onClick={() => setTab(tb.id)}
+              aria-pressed={active}
+              className={`flex items-center gap-3 rounded-site border px-3 py-2.5 text-left transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/40 ${
+                active
+                  ? 'border-site-accent/50 bg-site-accent-dim'
+                  : 'border-site-border bg-site-surface hover:bg-site-surface-hover'
+              }`}
+            >
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm ${
+                  active ? 'bg-site-accent/15 text-site-accent' : 'bg-site-bg text-site-text-muted'
+                }`}
+              >
+                <Icon className="h-5 w-5" aria-hidden />
+              </span>
+              <span className="min-w-0">
+                <span className={`block text-sm font-bold ${active ? 'text-site-accent' : 'text-site-text'}`}>
+                  {tb.title}
+                </span>
+                <span className="block truncate text-xs text-site-text-dim">{tb.sub}</span>
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Tab content */}
