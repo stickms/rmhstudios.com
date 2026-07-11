@@ -34,14 +34,14 @@ export function RideClassPicker({ value, onChange, fareLabels }: RideClassPicker
             type="button"
             onClick={() => onChange(cls.id)}
             aria-pressed={selected}
-            className={`flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${
+            className={`flex w-full items-center gap-3 rounded-site border p-3 text-left transition-all ${
               selected
                 ? 'border-site-accent bg-site-accent/10'
                 : 'border-site-border bg-site-surface hover:border-site-border-bright'
             }`}
           >
             <div
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-site-sm ${
                 selected ? 'bg-site-accent/20 text-site-accent' : 'bg-site-surface-hover text-site-text-muted'
               }`}
             >

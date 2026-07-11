@@ -56,7 +56,7 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
   }
 
   return (
-    <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+    <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-lg font-bold text-site-text">
           <Star className="h-4 w-4 text-amber-400" /> {t("saved-places", { defaultValue: "Saved places" })}
@@ -80,7 +80,7 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
       {places.length > 0 && (
         <ul className="space-y-2">
           {places.map((p) => (
-            <li key={p.id} className="flex items-center gap-2 rounded-lg border border-site-border bg-site-surface px-3 py-2">
+            <li key={p.id} className="flex items-center gap-2 rounded-site-sm border border-site-border bg-site-surface px-3 py-2">
               <Star className="h-3.5 w-3.5 shrink-0 text-amber-400" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-site-text">{p.savedLabel}</div>
@@ -88,7 +88,7 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
               </div>
               <button
                 onClick={() => remove(p.id)}
-                className="shrink-0 rounded-md p-1 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-red-400"
+                className="shrink-0 rounded-site-sm p-1 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-red-400"
                 aria-label={t("remove-place", { defaultValue: "Remove {{name}}", name: p.savedLabel })}
               >
                 <Trash2 className="h-4 w-4" />
@@ -99,12 +99,12 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
       )}
 
       {adding && (
-        <div className="mt-3 space-y-3 rounded-lg border border-site-border bg-site-surface p-3">
+        <div className="mt-3 space-y-3 rounded-site-sm border border-site-border bg-site-surface p-3">
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-site-text">{t("new-place", { defaultValue: "New place" })}</span>
             <button
               onClick={() => { setAdding(false); setPlace(null); setLabel(''); }}
-              className="rounded-md p-1 text-site-text-muted hover:text-site-text"
+              className="rounded-site-sm p-1 text-site-text-muted hover:text-site-text"
               aria-label={t("cancel", { defaultValue: "Cancel" })}
             >
               <X className="h-4 w-4" />
@@ -117,14 +117,14 @@ export function SavedPlaces({ places, onChanged }: SavedPlacesProps) {
               onChange={(e) => setLabel(e.target.value)}
               maxLength={40}
               placeholder={t("name-placeholder", { defaultValue: "Home" })}
-              className="w-full rounded-lg border border-site-border bg-site-bg px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
+              className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 sm:py-2 sm:text-sm"
             />
           </div>
           <LocationSearch label={t("location-label", { defaultValue: "Location" })} value={place} onSelect={setPlace} placeholder={t("location-placeholder", { defaultValue: "Search for the address" })} allowCurrentLocation />
           <button
             onClick={save}
             disabled={saving}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-site-accent px-4 py-2 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-site-sm bg-site-accent px-4 py-2 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:opacity-50"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             {t("save-place", { defaultValue: "Save place" })}

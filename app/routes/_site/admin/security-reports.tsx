@@ -229,7 +229,7 @@ function ReportCard({
       ) : null}
 
       <textarea
-        className="mt-3 w-full rounded-lg border border-site-border bg-site-bg p-2 text-sm text-site-text placeholder:text-site-text-dim"
+        className="mt-3 w-full rounded-site-sm border border-site-border bg-site-bg p-2 text-sm text-site-text placeholder:text-site-text-dim"
         rows={2}
         placeholder="Internal triage notes…"
         value={notes}
@@ -242,7 +242,7 @@ function ReportCard({
         </label>
         <select
           id={`status-${report.id}`}
-          className="rounded-lg border border-site-border bg-site-bg px-2 py-1.5 text-sm text-site-text"
+          className="rounded-site-sm border border-site-border bg-site-bg px-2 py-1.5 text-sm text-site-text"
           value={report.status}
           disabled={busy}
           onChange={(e) => onStatus(report.id, e.target.value as SecurityReportStatus)}
@@ -257,7 +257,7 @@ function ReportCard({
           type="button"
           onClick={() => onNotes(report.id, notes)}
           disabled={busy}
-          className="rounded-lg bg-site-accent px-3 py-1.5 text-sm font-medium text-site-accent-fg transition disabled:opacity-60 hover:opacity-90"
+          className="rounded-site-sm bg-site-accent px-3 py-1.5 text-sm font-medium text-site-accent-fg transition disabled:opacity-60 hover:opacity-90"
         >
           Save notes
         </button>
@@ -265,7 +265,7 @@ function ReportCard({
           type="button"
           onClick={() => onDelete(report.id)}
           disabled={busy}
-          className="ml-auto rounded-lg p-1.5 text-site-danger transition hover:bg-site-danger/10 disabled:opacity-60"
+          className="ml-auto rounded-site-sm p-1.5 text-site-danger transition hover:bg-site-danger/10 disabled:opacity-60"
           aria-label="Delete report"
         >
           <Trash2 className="size-4" aria-hidden="true" />
