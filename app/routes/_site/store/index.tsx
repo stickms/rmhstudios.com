@@ -10,12 +10,15 @@ import { useTranslation } from 'react-i18next';
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import { Crown } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { ShopColumn } from '@/components/feed/ShopColumn';
+import { StoreSectionNav } from '@/components/store/StoreSectionNav';
+import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { getShopData } from '@/lib/shop/list.server';
 
@@ -54,8 +57,24 @@ function Store() {
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <MobileTopBar title={t('store-title', { defaultValue: 'Store' })} />
-        <MembershipPanel currentTier={currentTier} returnPath="/store" coinShopAnchorId="coins-shop" />
-        <div id="coins-shop" className="scroll-mt-4 border-t border-site-border">
+        <StoreSectionNav
+          sections={[
+            {
+              id: 'membership',
+              label: t('store-nav-membership', { defaultValue: 'Membership' }),
+              icon: <Crown className="h-4 w-4" aria-hidden />,
+            },
+            {
+              id: 'coins-shop',
+              label: t('store-nav-shop', { defaultValue: 'RMH Coins Shop' }),
+              icon: <CoinIcon className="h-4 w-4" />,
+            },
+          ]}
+        />
+        <div id="membership" className="scroll-mt-14">
+          <MembershipPanel currentTier={currentTier} returnPath="/store" />
+        </div>
+        <div id="coins-shop" className="scroll-mt-14 border-t border-site-border">
           <ShopColumn initialData={shop} />
         </div>
       </AnimatedMain>
