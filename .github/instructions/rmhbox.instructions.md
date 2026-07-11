@@ -9,10 +9,11 @@ applyTo: "**/rmhbox/**"
 RMHbox is a real-time multiplayer party game platform within the rmhstudios.com project. It consists of:
 
 - **Standalone WebSocket server** (`server/rmhbox/`) — Socket.io server on port 7676 handling lobby management, game coordination, voting, chat, reconnection, and leaderboards
-- **Next.js frontend** (`app/rmhbox/`, `components/rmhbox/`) — React UI with Zustand state management, lazy-loaded minigame components, and a dedicated theme system
+- **TanStack Start frontend** (`app/routes/rmhbox/`, `components/rmhbox/`) — React UI with Zustand state management, lazy-loaded minigame components, and a dedicated theme system. (The stack is TanStack Start + Vite, **not** Next.js; routes are file-based under `app/routes/`.)
 - **Shared library** (`lib/rmhbox/`) — Types, events, constants, schemas, and utilities shared between client and server
 - **Static data** (`data/rmhbox/`) — JSON data files for minigames
 - **Tests** (`testing/rmhbox/`) — Vitest test suites organized by implementation phase
+- **Go port** (`go-services/internal/rmhbox/`) — a Go implementation of the server exists (lobby FSM complete, 1 minigame ported) but the Node server is what runs in production; see `server/CLAUDE.md` and `go-services/CLAUDE.md`
 
 ## Essential Architecture
 
