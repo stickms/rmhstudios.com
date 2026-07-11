@@ -20,7 +20,6 @@ import { Route as StrategiesRouteImport } from './routes/strategies'
 import { Route as SliceItRouteImport } from './routes/slice-it'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SecurityRouteImport } from './routes/security'
-import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as SecretRouteImport } from './routes/secret'
 import { Route as RochesterOffensiveRouteImport } from './routes/rochester-offensive'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
@@ -34,6 +33,7 @@ import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
 import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as LoginRouteImport } from './routes/login'
@@ -609,11 +609,6 @@ const SecurityRoute = SecurityRouteImport.update({
   path: '/security',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OptimizationRoute = OptimizationRouteImport.update({
-  id: '/optimization',
-  path: '/optimization',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SecretRoute = SecretRouteImport.update({
   id: '/secret',
   path: '/secret',
@@ -677,6 +672,11 @@ const RmhCapitalRoute = RmhCapitalRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OptimizationRoute = OptimizationRouteImport.update({
+  id: '/optimization',
+  path: '/optimization',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineRoute = OfflineRouteImport.update({
@@ -3372,6 +3372,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
+  '/optimization': typeof OptimizationRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -3386,7 +3387,6 @@ export interface FileRoutesByFullPath {
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/secret': typeof SecretRouteWithChildren
   '/security': typeof SecurityRoute
-  '/optimization': typeof OptimizationRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/strategies': typeof StrategiesRouteWithChildren
@@ -3912,10 +3912,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
+  '/optimization': typeof OptimizationRoute
   '/privacy': typeof PrivacyRoute
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/security': typeof SecurityRoute
-  '/optimization': typeof OptimizationRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
@@ -4438,6 +4438,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
+  '/optimization': typeof OptimizationRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -4452,7 +4453,6 @@ export interface FileRoutesById {
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/secret': typeof SecretRouteWithChildren
   '/security': typeof SecurityRoute
-  '/optimization': typeof OptimizationRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/strategies': typeof StrategiesRouteWithChildren
@@ -4986,6 +4986,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/offline'
+    | '/optimization'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -5000,7 +5001,6 @@ export interface FileRouteTypes {
     | '/rochester-offensive'
     | '/secret'
     | '/security'
-    | '/optimization'
     | '/sitemap.xml'
     | '/slice-it'
     | '/strategies'
@@ -5526,10 +5526,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/offline'
+    | '/optimization'
     | '/privacy'
     | '/rochester-offensive'
     | '/security'
-    | '/optimization'
     | '/sitemap.xml'
     | '/synapse-storm'
     | '/terms'
@@ -6051,6 +6051,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/offline'
+    | '/optimization'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -6065,7 +6066,6 @@ export interface FileRouteTypes {
     | '/rochester-offensive'
     | '/secret'
     | '/security'
-    | '/optimization'
     | '/sitemap.xml'
     | '/slice-it'
     | '/strategies'
@@ -6598,6 +6598,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   OfflineRoute: typeof OfflineRoute
+  OptimizationRoute: typeof OptimizationRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
@@ -6612,7 +6613,6 @@ export interface RootRouteChildren {
   RochesterOffensiveRoute: typeof RochesterOffensiveRoute
   SecretRoute: typeof SecretRouteWithChildren
   SecurityRoute: typeof SecurityRoute
-  OptimizationRoute: typeof OptimizationRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SliceItRoute: typeof SliceItRouteWithChildren
   StrategiesRoute: typeof StrategiesRouteWithChildren
@@ -6950,13 +6950,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/optimization': {
-      id: '/optimization'
-      path: '/optimization'
-      fullPath: '/optimization'
-      preLoaderRoute: typeof OptimizationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/security': {
       id: '/security'
       path: '/security'
@@ -7053,6 +7046,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/optimization': {
+      id: '/optimization'
+      path: '/optimization'
+      fullPath: '/optimization'
+      preLoaderRoute: typeof OptimizationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline': {
@@ -11864,6 +11864,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   OfflineRoute: OfflineRoute,
+  OptimizationRoute: OptimizationRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,
@@ -11878,7 +11879,6 @@ const rootRouteChildren: RootRouteChildren = {
   RochesterOffensiveRoute: RochesterOffensiveRoute,
   SecretRoute: SecretRouteWithChildren,
   SecurityRoute: SecurityRoute,
-  OptimizationRoute: OptimizationRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SliceItRoute: SliceItRouteWithChildren,
   StrategiesRoute: StrategiesRouteWithChildren,

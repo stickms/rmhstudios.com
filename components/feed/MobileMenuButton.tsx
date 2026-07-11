@@ -15,7 +15,7 @@ export function MobileMenuButton({ className = '' }: { className?: string }) {
   return (
     <button
       onClick={open}
-      className={`md:hidden p-2 -ml-2 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${className}`}
+      className={`md:hidden -ml-2 inline-flex min-h-12 min-w-12 items-center justify-center rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface-hover active:scale-95 transition-[color,background-color,transform] shrink-0 ${className}`}
       aria-label={t("open-menu", { defaultValue: "Open menu" })}
     >
       <Menu className="w-5 h-5" />

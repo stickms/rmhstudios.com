@@ -50,8 +50,8 @@ export function PageLayout({
       >
         <div className="flex flex-col">
           {/* Sticky Header */}
-          <div className="sticky top-0 z-10 h-15 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
-            <div className="h-full flex items-center justify-between px-4 py-3">
+          <div className="sticky top-0 z-10 h-16 vibe-glass border-b border-site-border">
+            <div className="h-full flex items-center justify-between px-5 py-3">
               <div className="flex items-center gap-3 min-w-0">
                 {/* Mobile: always show the sidebar button in the top-left */}
                 <MobileMenuButton />
@@ -59,12 +59,12 @@ export function PageLayout({
                   <Link
                     to={backTo}
                     aria-label={backLabel ?? 'Back'}
-                    className="shrink-0 -ml-1 rounded-full p-1.5 text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text active:scale-95"
+                    className="shrink-0 -ml-1 rounded-full p-1.5 text-site-text-muted transition-colors hover:bg-site-surface-hover hover:text-site-text active:scale-95"
                   >
                     <ArrowLeft className="h-5 w-5" />
                   </Link>
                 )}
-                <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0 truncate">
+                <h1 className="font-(family-name:--site-font-display) font-bold text-xl tracking-[-0.022em] text-site-text flex items-center gap-2 min-w-0 truncate">
                   {/* Mobile: "RMH |" brand prefix before the page title */}
                   <MobileBrandPrefix />
                   {title}

@@ -25,10 +25,10 @@ export function MobileBrandPrefix() {
  */
 export function MobileTopBar({ title }: { title: string }) {
   return (
-    <div className="md:hidden bg-site-bg/85 backdrop-blur-md border-b border-site-border">
+    <div className="md:hidden vibe-glass border-b border-site-border">
       <div className="flex items-center gap-2 px-4 py-3">
         <MobileMenuButton />
-        <h1 className="flex items-center gap-2 font-(family-name:--site-font-display) font-bold text-lg text-site-text min-w-0">
+        <h1 className="flex items-center gap-2 font-(family-name:--site-font-display) font-bold text-lg tracking-[-0.022em] text-site-text min-w-0">
           <MobileBrandPrefix />
           <span className="truncate">{title}</span>
         </h1>
