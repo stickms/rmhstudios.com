@@ -1,0 +1,72 @@
+'use client';
+
+/**
+ * Feed / motion performance rules (read before adding animation to any list):
+ *
+ * - Animate transform/opacity ONLY. Never animate height/width/top/left — that
+ *   thrashes layout on every frame.
+ * - In feeds, `viewport.once: true` always; never put scroll-linked (useScroll)
+ *   values inside feed cards.
+ * - Do NOT wrap every FeedItem in Reveal. `.feed-card-cv` (content-visibility)
+ *   plus the `feed-item-enter` CSS animation already handle feed entrance.
+ *   Reveal is for section-level content and at most the first screen of a
+ *   static list.
+ * - ScrollScene is forbidden inside infinite-scroll columns.
+ * - No new scroll listeners — rely on framer's IntersectionObserver / rAF
+ *   batching only.
+ * - Don't double-animate elements already animated by the `.page-root > *`
+ *   page-enter CSS. Apply Reveal one level deeper than route roots.
+ */
+import type { ElementType, ReactNode } from 'react';
+import { motion } from 'framer-motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { DUR_BASE, EASE_OUT_EXPO } from './motionTokens';
+
+export interface RevealProps {
+  /** Element/tag to render (defaults to a div). */
+  as?: ElementType;
+  /** Animation delay in seconds. */
+  delay?: number;
+  /** Starting vertical offset in px (rises to 0). */
+  y?: number;
+  /** Animation duration in seconds. */
+  duration?: number;
+  className?: string;
+  children?: ReactNode;
+}
+
+/**
+ * Scroll-triggered reveal wrapper. Fades + rises its children into view once,
+ * when they scroll near the viewport. Under reduced motion it renders a plain
+ * element with no motion node at all (belt-and-suspenders alongside the global
+ * `MotionConfig reducedMotion="user"`).
+ */
+export function Reveal({
+  as = 'div',
+  delay = 0,
+  y = 16,
+  duration = DUR_BASE,
+  className,
+  children,
+}: RevealProps) {
+  const reduced = useReducedMotion();
+
+  if (reduced) {
+    const Tag = as as 'div';
+    return <Tag className={className}>{children}</Tag>;
+  }
+
+  const MotionTag = motion[as as keyof typeof motion] as typeof motion.div;
+
+  return (
+    <MotionTag
+      className={className}
+      initial={{ opacity: 0, y }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-10% 0px' }}
+      transition={{ duration, delay, ease: EASE_OUT_EXPO }}
+    >
+      {children}
+    </MotionTag>
+  );
+}
