@@ -18,6 +18,7 @@ import { LanguageFirstRunModal } from '@/components/site/LanguageFirstRunModal';
 import { WhatsNewModal } from '@/components/feed/WhatsNewModal';
 import { FreeMonthModal } from '@/components/feed/FreeMonthModal';
 import { CookieConsent } from '@/components/site/CookieConsent';
+import { OfflineBanner } from '@/components/site/OfflineBanner';
 import { KeyboardShortcuts } from '@/components/site/KeyboardShortcuts';
 import { BackToTop } from '@/components/ui/back-to-top';
 import { MiniPlayer } from '@/components/rmhmusic/MiniPlayer';
@@ -34,6 +35,8 @@ function SiteLayout() {
   const { t } = useTranslation('common');
   return (
     <div className="vibe-app min-h-dvh bg-site-bg flex flex-col md:flex-row">
+      {/* Global connection feedback for slow / dropped networks. */}
+      <OfflineBanner />
       {/* Keyboard skip link — visually hidden until focused. */}
       <a
         href="#main-content"

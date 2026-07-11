@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { CoinIcon } from './CoinIcon';
 import { PlayTab } from './PlayTab';
 import { PredictionsMarketTab } from '@/components/predictions/PredictionsMarketTab';
+import { fetchWithTimeout } from '@/lib/fetch-timeout';
 
 export function RMHCoinsPage() {
   const { t } = useTranslation("c-rmhcoins");
@@ -31,7 +32,7 @@ export function RMHCoinsPage() {
   // Fetch coin balance
   useEffect(() => {
     if (!session?.user) return;
-    fetch('/api/coins')
+    fetchWithTimeout('/api/coins', { timeoutMs: 10_000 })
       .then((r) => r.json())
       .then((data) => {
         setCoins(data.coins ?? 0);
@@ -44,7 +45,7 @@ export function RMHCoinsPage() {
     if (claiming || coins >= 10) return;
     setClaiming(true);
     try {
-      const res = await fetch('/api/coins/claim', { method: 'POST' });
+      const res = await fetchWithTimeout('/api/coins/claim', { method: 'POST', timeoutMs: 10_000 });
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || t("claim-failed", { defaultValue: "Claim failed" }));
