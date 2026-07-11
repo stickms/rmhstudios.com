@@ -49,8 +49,9 @@ export function PageLayout({
         targetWidth={targetWidth}
       >
         <div className="flex flex-col">
-          {/* Sticky Header */}
-          <div className="sticky top-0 z-10 h-15 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
+          {/* Sticky Header — frosted glass chrome, unified on .vibe-glass so it
+              matches the mobile top bar and nav across all themes. */}
+          <div className="vibe-glass sticky top-0 z-10 h-18 border-b border-site-border">
             <div className="h-full flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3 min-w-0">
                 {/* Mobile: always show the sidebar button in the top-left */}
@@ -64,7 +65,7 @@ export function PageLayout({
                     <ArrowLeft className="h-5 w-5" />
                   </Link>
                 )}
-                <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0 truncate">
+                <h1 className="font-(family-name:--site-font-display) font-semibold text-2xl tracking-[-0.022em] text-site-text flex items-center gap-2 min-w-0 truncate">
                   {/* Mobile: "RMH |" brand prefix before the page title */}
                   <MobileBrandPrefix />
                   {title}
