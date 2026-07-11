@@ -19,7 +19,7 @@ import {
   Home, Compass, Inbox, Bell, Bookmark, Library, Users, ShoppingBag,
   TrendingUp, Wand2, Trophy, Wallet, Puzzle, Newspaper, BookOpen,
   Map as MapIcon, Gem, Gamepad2, LayoutGrid, PenSquare, Flame, LogOut, User,
-  KeyRound, Search, CornerDownLeft, type LucideIcon,
+  KeyRound, ShieldUser, Search, CornerDownLeft, type LucideIcon,
 } from 'lucide-react';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
@@ -76,7 +76,8 @@ const PAGES: Array<Omit<Command, 'section'>> = [
   { id: 'page-roadmap', label: 'Roadmap', href: '/roadmap', icon: MapIcon, keywords: 'plans upcoming features' },
   { id: 'page-pricing', label: 'Pricing', href: '/pricing', icon: Gem, keywords: 'subscription membership plans upgrade' },
   { id: 'page-ranked', label: 'Ranked', href: '/ranked', icon: Trophy, keywords: 'leaderboard elo competitive' },
-  { id: 'page-security', label: 'Passkeys & Security', href: '/settings/security', icon: KeyRound, keywords: 'passkey webauthn password sign-in settings account', requiresAuth: true },
+  { id: 'page-security', label: 'Passkeys & Security', href: '/settings/security', icon: KeyRound, keywords: 'passkey webauthn password sign-in settings account sessions devices', requiresAuth: true },
+  { id: 'page-privacy', label: 'Privacy & Data', href: '/settings/privacy', icon: ShieldUser, keywords: 'privacy data export download gdpr delete account erasure settings', requiresAuth: true },
 ];
 
 const SECTION_LABELS: Record<Section, { key: string; fallback: string }> = {

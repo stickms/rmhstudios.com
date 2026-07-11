@@ -20,7 +20,6 @@ import { Route as StrategiesRouteImport } from './routes/strategies'
 import { Route as SliceItRouteImport } from './routes/slice-it'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SecurityRouteImport } from './routes/security'
-import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as SecretRouteImport } from './routes/secret'
 import { Route as RochesterOffensiveRouteImport } from './routes/rochester-offensive'
 import { Route as RmhtypeRouteImport } from './routes/rmhtype'
@@ -34,6 +33,7 @@ import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
 import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as LoginRouteImport } from './routes/login'
@@ -348,6 +348,8 @@ import { Route as ApiAdminAuditLogRouteImport } from './routes/api/admin/audit-l
 import { Route as ApiAdminAnnouncementsRouteImport } from './routes/api/admin/announcements'
 import { Route as ApiAdminAnalyticsRouteImport } from './routes/api/admin/analytics'
 import { Route as ApiAchievementsUserIdRouteImport } from './routes/api/achievements/$userId'
+import { Route as ApiAccountExportRouteImport } from './routes/api/account/export'
+import { Route as ApiAccountDeleteRouteImport } from './routes/api/account/delete'
 import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/multiplayer/$lobbyId'
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
 import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-builds/manage'
@@ -355,6 +357,7 @@ import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
 import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
 import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
+import { Route as SiteSettingsPrivacyRouteImport } from './routes/_site/settings/privacy'
 import { Route as SiteRideshareRideRouteImport } from './routes/_site/rideshare/ride'
 import { Route as SiteRideshareDriveRouteImport } from './routes/_site/rideshare/drive'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
@@ -609,11 +612,6 @@ const SecurityRoute = SecurityRouteImport.update({
   path: '/security',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OptimizationRoute = OptimizationRouteImport.update({
-  id: '/optimization',
-  path: '/optimization',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const SecretRoute = SecretRouteImport.update({
   id: '/secret',
   path: '/secret',
@@ -677,6 +675,11 @@ const RmhCapitalRoute = RmhCapitalRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OptimizationRoute = OptimizationRouteImport.update({
+  id: '/optimization',
+  path: '/optimization',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineRoute = OfflineRouteImport.update({
@@ -2264,6 +2267,16 @@ const ApiAchievementsUserIdRoute = ApiAchievementsUserIdRouteImport.update({
   path: '/api/achievements/$userId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAccountExportRoute = ApiAccountExportRouteImport.update({
+  id: '/api/account/export',
+  path: '/api/account/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAccountDeleteRoute = ApiAccountDeleteRouteImport.update({
+  id: '/api/account/delete',
+  path: '/api/account/delete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AltairMultiplayerLobbyIdRoute =
   AltairMultiplayerLobbyIdRouteImport.update({
     id: '/$lobbyId',
@@ -2298,6 +2311,11 @@ const SiteStoreUseridRoute = SiteStoreUseridRouteImport.update({
 const SiteSettingsSecurityRoute = SiteSettingsSecurityRouteImport.update({
   id: '/settings/security',
   path: '/settings/security',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSettingsPrivacyRoute = SiteSettingsPrivacyRouteImport.update({
+  id: '/settings/privacy',
+  path: '/settings/privacy',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteRideshareRideRoute = SiteRideshareRideRouteImport.update({
@@ -3372,6 +3390,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
+  '/optimization': typeof OptimizationRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -3386,7 +3405,6 @@ export interface FileRoutesByFullPath {
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/secret': typeof SecretRouteWithChildren
   '/security': typeof SecurityRoute
-  '/optimization': typeof OptimizationRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/strategies': typeof StrategiesRouteWithChildren
@@ -3530,6 +3548,7 @@ export interface FileRoutesByFullPath {
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
+  '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
@@ -3537,6 +3556,8 @@ export interface FileRoutesByFullPath {
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
+  '/api/account/delete': typeof ApiAccountDeleteRoute
+  '/api/account/export': typeof ApiAccountExportRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
@@ -3912,10 +3933,10 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
+  '/optimization': typeof OptimizationRoute
   '/privacy': typeof PrivacyRoute
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/security': typeof SecurityRoute
-  '/optimization': typeof OptimizationRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/synapse-storm': typeof SynapseStormRoute
   '/terms': typeof TermsRoute
@@ -4050,6 +4071,7 @@ export interface FileRoutesByTo {
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
+  '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
@@ -4057,6 +4079,8 @@ export interface FileRoutesByTo {
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
+  '/api/account/delete': typeof ApiAccountDeleteRoute
+  '/api/account/export': typeof ApiAccountExportRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
@@ -4438,6 +4462,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
+  '/optimization': typeof OptimizationRoute
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
@@ -4452,7 +4477,6 @@ export interface FileRoutesById {
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/secret': typeof SecretRouteWithChildren
   '/security': typeof SecurityRoute
-  '/optimization': typeof OptimizationRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/slice-it': typeof SliceItRouteWithChildren
   '/strategies': typeof StrategiesRouteWithChildren
@@ -4597,6 +4621,7 @@ export interface FileRoutesById {
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/rideshare/drive': typeof SiteRideshareDriveRoute
   '/_site/rideshare/ride': typeof SiteRideshareRideRoute
+  '/_site/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/_site/settings/security': typeof SiteSettingsSecurityRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
   '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
@@ -4604,6 +4629,8 @@ export interface FileRoutesById {
   '/_site/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
+  '/api/account/delete': typeof ApiAccountDeleteRoute
+  '/api/account/export': typeof ApiAccountExportRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
@@ -4986,6 +5013,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/offline'
+    | '/optimization'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -5000,7 +5028,6 @@ export interface FileRouteTypes {
     | '/rochester-offensive'
     | '/secret'
     | '/security'
-    | '/optimization'
     | '/sitemap.xml'
     | '/slice-it'
     | '/strategies'
@@ -5144,6 +5171,7 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/rideshare/drive'
     | '/rideshare/ride'
+    | '/settings/privacy'
     | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
@@ -5151,6 +5179,8 @@ export interface FileRouteTypes {
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
+    | '/api/account/delete'
+    | '/api/account/export'
     | '/api/achievements/$userId'
     | '/api/admin/analytics'
     | '/api/admin/announcements'
@@ -5526,10 +5556,10 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/offline'
+    | '/optimization'
     | '/privacy'
     | '/rochester-offensive'
     | '/security'
-    | '/optimization'
     | '/sitemap.xml'
     | '/synapse-storm'
     | '/terms'
@@ -5664,6 +5694,7 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/rideshare/drive'
     | '/rideshare/ride'
+    | '/settings/privacy'
     | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
@@ -5671,6 +5702,8 @@ export interface FileRouteTypes {
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
+    | '/api/account/delete'
+    | '/api/account/export'
     | '/api/achievements/$userId'
     | '/api/admin/analytics'
     | '/api/admin/announcements'
@@ -6051,6 +6084,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/neon-driftway'
     | '/offline'
+    | '/optimization'
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
@@ -6065,7 +6099,6 @@ export interface FileRouteTypes {
     | '/rochester-offensive'
     | '/secret'
     | '/security'
-    | '/optimization'
     | '/sitemap.xml'
     | '/slice-it'
     | '/strategies'
@@ -6210,6 +6243,7 @@ export interface FileRouteTypes {
     | '/_site/profile/$id'
     | '/_site/rideshare/drive'
     | '/_site/rideshare/ride'
+    | '/_site/settings/privacy'
     | '/_site/settings/security'
     | '/_site/store/$userid'
     | '/_site/study/$deckId'
@@ -6217,6 +6251,8 @@ export interface FileRouteTypes {
     | '/_site/user-builds/manage'
     | '/_site/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
+    | '/api/account/delete'
+    | '/api/account/export'
     | '/api/achievements/$userId'
     | '/api/admin/analytics'
     | '/api/admin/announcements'
@@ -6598,6 +6634,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   OfflineRoute: typeof OfflineRoute
+  OptimizationRoute: typeof OptimizationRoute
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
@@ -6612,7 +6649,6 @@ export interface RootRouteChildren {
   RochesterOffensiveRoute: typeof RochesterOffensiveRoute
   SecretRoute: typeof SecretRouteWithChildren
   SecurityRoute: typeof SecurityRoute
-  OptimizationRoute: typeof OptimizationRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SliceItRoute: typeof SliceItRouteWithChildren
   StrategiesRoute: typeof StrategiesRouteWithChildren
@@ -6651,6 +6687,8 @@ export interface RootRouteChildren {
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
+  ApiAccountDeleteRoute: typeof ApiAccountDeleteRoute
+  ApiAccountExportRoute: typeof ApiAccountExportRoute
   ApiAchievementsUserIdRoute: typeof ApiAchievementsUserIdRoute
   ApiAdminAnalyticsRoute: typeof ApiAdminAnalyticsRoute
   ApiAdminAnnouncementsRoute: typeof ApiAdminAnnouncementsRouteWithChildren
@@ -6950,13 +6988,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/optimization': {
-      id: '/optimization'
-      path: '/optimization'
-      fullPath: '/optimization'
-      preLoaderRoute: typeof OptimizationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/security': {
       id: '/security'
       path: '/security'
@@ -7053,6 +7084,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/optimization': {
+      id: '/optimization'
+      path: '/optimization'
+      fullPath: '/optimization'
+      preLoaderRoute: typeof OptimizationRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline': {
@@ -9253,6 +9291,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAchievementsUserIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/account/export': {
+      id: '/api/account/export'
+      path: '/api/account/export'
+      fullPath: '/api/account/export'
+      preLoaderRoute: typeof ApiAccountExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/account/delete': {
+      id: '/api/account/delete'
+      path: '/api/account/delete'
+      fullPath: '/api/account/delete'
+      preLoaderRoute: typeof ApiAccountDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/altair/multiplayer/$lobbyId': {
       id: '/altair/multiplayer/$lobbyId'
       path: '/$lobbyId'
@@ -9300,6 +9352,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/security'
       fullPath: '/settings/security'
       preLoaderRoute: typeof SiteSettingsSecurityRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/settings/privacy': {
+      id: '/_site/settings/privacy'
+      path: '/settings/privacy'
+      fullPath: '/settings/privacy'
+      preLoaderRoute: typeof SiteSettingsPrivacyRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/rideshare/ride': {
@@ -10798,6 +10857,7 @@ interface SiteRouteChildren {
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteRideshareDriveRoute: typeof SiteRideshareDriveRoute
   SiteRideshareRideRoute: typeof SiteRideshareRideRoute
+  SiteSettingsPrivacyRoute: typeof SiteSettingsPrivacyRoute
   SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
   SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
@@ -10857,6 +10917,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteRideshareDriveRoute: SiteRideshareDriveRoute,
   SiteRideshareRideRoute: SiteRideshareRideRoute,
+  SiteSettingsPrivacyRoute: SiteSettingsPrivacyRoute,
   SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
   SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,
@@ -11864,6 +11925,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   OfflineRoute: OfflineRoute,
+  OptimizationRoute: OptimizationRoute,
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,
@@ -11878,7 +11940,6 @@ const rootRouteChildren: RootRouteChildren = {
   RochesterOffensiveRoute: RochesterOffensiveRoute,
   SecretRoute: SecretRouteWithChildren,
   SecurityRoute: SecurityRoute,
-  OptimizationRoute: OptimizationRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SliceItRoute: SliceItRouteWithChildren,
   StrategiesRoute: StrategiesRouteWithChildren,
@@ -11917,6 +11978,8 @@ const rootRouteChildren: RootRouteChildren = {
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
+  ApiAccountDeleteRoute: ApiAccountDeleteRoute,
+  ApiAccountExportRoute: ApiAccountExportRoute,
   ApiAchievementsUserIdRoute: ApiAchievementsUserIdRoute,
   ApiAdminAnalyticsRoute: ApiAdminAnalyticsRoute,
   ApiAdminAnnouncementsRoute: ApiAdminAnnouncementsRouteWithChildren,

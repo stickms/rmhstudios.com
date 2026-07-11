@@ -15,6 +15,7 @@ import { progressQuests } from "@/lib/quests/engine.server";
 import { getTimeline, type FeedSurface } from "@/lib/feed/timeline";
 import { ownsFeedImageUrl } from "@/lib/storage/keys";
 import { publishDueForUser } from "@/lib/scheduled/publish.server";
+import { screenNewContent } from "@/lib/moderation/auto-moderate.server";
 
 export const Route = createFileRoute('/api/rmharks')({
   server: {
@@ -178,6 +179,17 @@ export const Route = createFileRoute('/api/rmharks')({
 
       return created;
     });
+
+    // Fire-and-forget AI pre-screen for policy violations. Never blocks or
+    // delays the post; only files a report for human review if clearly abusive.
+    if (rmhark.content.trim()) {
+      void screenNewContent({
+        entityType: "rmhark",
+        entityId: rmhark.id,
+        authorId: session.user.id,
+        text: rmhark.content,
+      });
+    }
 
     // Re-fetch with poll data if poll was created
     let pollData: FeedItem["poll"] | undefined;
