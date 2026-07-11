@@ -11,6 +11,7 @@ import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
 import { AppI18nProvider } from "@/components/i18n/AppI18nProvider";
 import { CommandPalette } from "@/components/site/CommandPalette";
+import { RecentsTracker } from "@/components/site/RecentsTracker";
 import type { Locale } from "@/lib/i18n/config";
 import type { LocaleBundle } from "@/lib/i18n/resources";
 
@@ -358,6 +359,7 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
         <ResolvedUserCtx.Provider value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}>
         {children}
         <CommandPalette />
+        <RecentsTracker />
         </ResolvedUserCtx.Provider>
         <Toaster
           theme="dark"

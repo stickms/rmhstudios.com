@@ -18,11 +18,12 @@ import { useTranslation } from 'react-i18next';
 import {
   Home, Compass, Inbox, Bell, Bookmark, Library, Users, ShoppingBag,
   TrendingUp, Wand2, Trophy, Wallet, Puzzle, Newspaper, BookOpen,
-  Map as MapIcon, Gem, Gamepad2, LayoutGrid, PenSquare, Flame, LogOut, User,
-  KeyRound, ShieldUser, Search, CornerDownLeft, type LucideIcon,
+  Map as MapIcon, Gem, Gamepad2, Keyboard, LayoutGrid, PenSquare, Flame, LogOut, User,
+  KeyRound, ShieldUser, Search, SlidersHorizontal, CornerDownLeft, type LucideIcon,
 } from 'lucide-react';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
+import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SITE_STYLES, useThemeStore, type SiteStyle } from '@/stores/themeStore';
 import { useSession } from '@/components/Providers';
 import { authClient } from '@/lib/auth-client';
@@ -40,7 +41,7 @@ export function openCommandPalette() {
   window.dispatchEvent(new CustomEvent(COMMAND_PALETTE_EVENT));
 }
 
-type Section = 'pages' | 'games' | 'apps' | 'actions' | 'themes';
+type Section = 'pages' | 'games' | 'apps' | 'actions' | 'themes' | 'people' | 'posts';
 
 interface Command {
   id: string;
@@ -49,6 +50,10 @@ interface Command {
   keywords: string;
   icon?: LucideIcon;
   emoji?: string;
+  /** Avatar URL for server-search results (people). */
+  image?: string | null;
+  /** Secondary text after the label (e.g. @handle, post author). */
+  sublabel?: string;
   /** Present for navigation commands. */
   href?: string;
   external?: boolean;
@@ -76,6 +81,7 @@ const PAGES: Array<Omit<Command, 'section'>> = [
   { id: 'page-roadmap', label: 'Roadmap', href: '/roadmap', icon: MapIcon, keywords: 'plans upcoming features' },
   { id: 'page-pricing', label: 'Pricing', href: '/pricing', icon: Gem, keywords: 'subscription membership plans upgrade' },
   { id: 'page-ranked', label: 'Ranked', href: '/ranked', icon: Trophy, keywords: 'leaderboard elo competitive' },
+  { id: 'page-settings', label: 'Settings', href: '/settings', icon: SlidersHorizontal, keywords: 'settings preferences appearance theme language locale notifications account' },
   { id: 'page-security', label: 'Passkeys & Security', href: '/settings/security', icon: KeyRound, keywords: 'passkey webauthn password sign-in settings account sessions devices', requiresAuth: true },
   { id: 'page-privacy', label: 'Privacy & Data', href: '/settings/privacy', icon: ShieldUser, keywords: 'privacy data export download gdpr delete account erasure settings', requiresAuth: true },
 ];
@@ -83,12 +89,29 @@ const PAGES: Array<Omit<Command, 'section'>> = [
 const SECTION_LABELS: Record<Section, { key: string; fallback: string }> = {
   actions: { key: 'palette-section-actions', fallback: 'Actions' },
   pages: { key: 'palette-section-pages', fallback: 'Pages' },
+  people: { key: 'palette-section-people', fallback: 'People' },
+  posts: { key: 'palette-section-posts', fallback: 'Posts' },
   games: { key: 'palette-section-games', fallback: 'Games' },
   apps: { key: 'palette-section-apps', fallback: 'Apps' },
   themes: { key: 'palette-section-themes', fallback: 'Themes' },
 };
 
-const SECTION_ORDER: Section[] = ['actions', 'pages', 'games', 'apps', 'themes'];
+const SECTION_ORDER: Section[] = ['actions', 'pages', 'people', 'posts', 'games', 'apps', 'themes'];
+
+const EMPTY_REMOTE: { people: Command[]; posts: Command[] } = { people: [], posts: [] };
+
+interface SearchPerson {
+  id: string;
+  name: string | null;
+  handle: string | null;
+  image: string | null;
+}
+
+interface SearchPost {
+  id: string;
+  content: string;
+  user: { name: string | null; handle: string | null } | null;
+}
 
 export function CommandPalette() {
   const { t } = useTranslation('feed');
@@ -99,6 +122,7 @@ export function CommandPalette() {
   const [composeOpen, setComposeOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [remote, setRemote] = useState(EMPTY_REMOTE);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -127,8 +151,56 @@ export function CommandPalette() {
     if (open) {
       setQuery('');
       setActiveIndex(0);
+      setRemote(EMPTY_REMOTE);
     }
   }, [open]);
+
+  // Debounced server search: people + posts join the local fuzzy results so
+  // ⌘K works as a real quick-switcher, not just a static page list.
+  useEffect(() => {
+    if (!open) return;
+    const q = query.trim();
+    if (q.length < 2) {
+      setRemote(EMPTY_REMOTE);
+      return;
+    }
+    const ctrl = new AbortController();
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(q)}`, {
+          credentials: 'include',
+          signal: ctrl.signal,
+        });
+        if (!res.ok) return;
+        const data: { people?: SearchPerson[]; posts?: SearchPost[] } = await res.json();
+        setRemote({
+          people: (data.people ?? []).slice(0, 5).map((u) => ({
+            id: `person-${u.id}`,
+            label: u.name || u.handle || t('palette-user', { defaultValue: 'User' }),
+            section: 'people' as const,
+            keywords: '',
+            image: u.image,
+            sublabel: u.handle ? `@${u.handle}` : undefined,
+            href: `/u/${u.handle ?? u.id}`,
+          })),
+          posts: (data.posts ?? []).slice(0, 5).map((p) => ({
+            id: `post-${p.id}`,
+            label: p.content.length > 80 ? `${p.content.slice(0, 80)}…` : p.content,
+            section: 'posts' as const,
+            keywords: '',
+            sublabel: p.user?.name ?? undefined,
+            href: `/u/${p.user?.handle ?? '_'}/post/${p.id}`,
+          })),
+        });
+      } catch {
+        // Aborted or offline — local results still render.
+      }
+    }, 200);
+    return () => {
+      ctrl.abort();
+      clearTimeout(timer);
+    };
+  }, [query, open, t]);
 
   const go = useCallback(
     (href: string, external?: boolean) => {
@@ -166,6 +238,19 @@ export function CommandPalette() {
       icon: Flame,
       requiresAuth: true,
       run: () => go('/achievements'),
+    });
+    list.push({
+      id: 'action-shortcuts',
+      label: t('palette-shortcuts', { defaultValue: 'Keyboard shortcuts' }),
+      section: 'actions',
+      keywords: 'keyboard shortcuts hotkeys keys help',
+      icon: Keyboard,
+      run: () => {
+        setOpen(false);
+        // Literal event name (mirrors SHORTCUTS_HELP_EVENT in KeyboardShortcuts)
+        // to avoid a palette ⇄ shortcuts module cycle.
+        window.dispatchEvent(new Event('rmh:shortcuts-help'));
+      },
     });
     if (userHandle) {
       list.push({
@@ -269,10 +354,16 @@ export function CommandPalette() {
     return fuse.search(query.trim()).map((r) => r.item);
   }, [query, commands, fuse]);
 
+  // Local fuzzy results + server search results (people/posts sections).
+  const combined = useMemo(() => {
+    if (!query.trim()) return results;
+    return [...results, ...remote.people, ...remote.posts];
+  }, [results, remote, query]);
+
   // Group results by section, preserving fuzzy rank within each group.
   const grouped = useMemo(() => {
     const bySection = new Map<Section, Command[]>();
-    for (const c of results) {
+    for (const c of combined) {
       const arr = bySection.get(c.section) ?? [];
       arr.push(c);
       bySection.set(c.section, arr);
@@ -281,7 +372,7 @@ export function CommandPalette() {
       section: s,
       items: bySection.get(s)!,
     }));
-  }, [results]);
+  }, [combined]);
 
   const flat = useMemo(() => grouped.flatMap((g) => g.items), [grouped]);
 
@@ -350,7 +441,7 @@ export function CommandPalette() {
               aria-controls="command-palette-list"
               aria-activedescendant={flat[activeIndex]?.id}
               aria-label={t('palette-input-label', { defaultValue: 'Search pages, games, apps, and actions' })}
-              placeholder={t('palette-placeholder', { defaultValue: 'Search pages, games, themes…' })}
+              placeholder={t('palette-placeholder', { defaultValue: 'Search pages, people, posts, games…' })}
               className="w-full bg-transparent py-3.5 text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
             />
             <kbd className="hidden shrink-0 rounded border border-site-border px-1.5 py-0.5 text-[10px] text-site-text-dim sm:block">
@@ -393,14 +484,27 @@ export function CommandPalette() {
                           : 'text-site-text-muted hover:bg-site-surface-hover'
                       }`}
                     >
-                      {Icon ? (
+                      {cmd.section === 'people' ? (
+                        <UserAvatar
+                          src={cmd.image}
+                          alt=""
+                          size={20}
+                          fallbackName={cmd.label}
+                          className="shrink-0"
+                        />
+                      ) : Icon ? (
                         <Icon className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
                       ) : cmd.emoji ? (
                         <span className="w-4 shrink-0 text-center text-sm leading-none" aria-hidden>
                           {cmd.emoji}
                         </span>
                       ) : null}
-                      <span className="min-w-0 flex-1 truncate">{cmd.label}</span>
+                      <span className="min-w-0 flex-1 truncate">
+                        {cmd.label}
+                        {cmd.sublabel && (
+                          <span className="ml-1.5 text-xs text-site-text-dim">{cmd.sublabel}</span>
+                        )}
+                      </span>
                       {active && (
                         <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-site-text-dim" aria-hidden />
                       )}

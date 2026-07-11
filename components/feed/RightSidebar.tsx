@@ -17,6 +17,8 @@ import {
   Check,
 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
+import { TodayWidget } from '@/components/feed/TodayWidget';
+import { FriendsOnlineWidget } from '@/components/feed/FriendsOnlineWidget';
 
 interface SidebarOfficialBuild {
   id: string;
@@ -164,6 +166,10 @@ export function RightSidebar({
   return (
     <div className="p-4 space-y-6">
       <OnlineNowPill />
+
+      <TodayWidget />
+
+      <FriendsOnlineWidget />
 
       <InviteFriendsCard />
 

@@ -16,6 +16,8 @@ import {
   User,
   ShieldCheck,
   MoreHorizontal,
+  Pin,
+  Settings,
   TrendingUp,
   Inbox,
   Landmark,
@@ -36,8 +38,10 @@ import { useTranslation } from 'react-i18next';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
+import { NotificationsPopover } from '@/components/site/NotificationsPopover';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useUnreadCount } from '@/lib/useUnreadCount';
+import { useNavStore } from '@/stores/navStore';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
 import { useAppBadge } from '@/lib/useAppBadge';
@@ -166,11 +170,21 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const userMenuBtnRef = useRef<HTMLButtonElement>(null);
   const [userMenuPos, setUserMenuPos] = useState({ bottom: 0, right: 0 });
 
+  // Pinned "More" destinations (persisted per device). Hydrated after mount so
+  // the SSR markup — which can't know this device's pins — never mismatches.
+  const pinned = useNavStore((s) => s.pinned);
+  const navHydrated = useNavStore((s) => s.hydrated);
+  const togglePin = useNavStore((s) => s.togglePin);
+  useEffect(() => {
+    useNavStore.getState().hydrate();
+  }, []);
+
   const { data: session, isPending } = useSession();
   const isAdmin = !!(session?.user as any)?.isAdmin;
   const { resolved: resolvedUser } = useResolvedUser();
   const unreadCount = useUnreadCount(!!session);
-  const { count: notificationCount } = useNotificationCount(!!session);
+  const { count: notificationCount, refresh: refreshNotificationCount } =
+    useNotificationCount(!!session);
   const { counts: reviewCounts } = useAdminReviewCount(isAdmin);
   const streak = useStreak(!!session);
   usePresenceHeartbeat(!!session);
@@ -271,6 +285,33 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     );
   };
 
+  // A "More" destination with a pin toggle: pinned items also render in the
+  // main rail so frequent app users can promote what they actually use.
+  const renderPinnable = (link: NavLeaf, nested: boolean) => {
+    const isPinned = pinned.includes(link.href);
+    const name = t(link.tKey, { defaultValue: link.label });
+    const pinLabel = isPinned
+      ? t('nav-unpin', { defaultValue: 'Unpin {{name}} from sidebar', name })
+      : t('nav-pin', { defaultValue: 'Pin {{name}} to sidebar', name });
+    return (
+      <div key={link.href} className="relative group/pin">
+        {renderLeaf(link, nested)}
+        <button
+          type="button"
+          onClick={() => togglePin(link.href)}
+          aria-pressed={isPinned}
+          aria-label={pinLabel}
+          title={pinLabel}
+          className={`absolute right-2 top-1/2 -translate-y-1/2 rounded-site-sm p-1 text-site-text-dim transition-opacity hover:text-site-text hover:bg-site-surface-hover focus-visible:opacity-100 ${labelClass} ${
+            isPinned ? 'opacity-100' : 'opacity-0 group-hover/pin:opacity-100'
+          }`}
+        >
+          <Pin className="w-3.5 h-3.5" fill={isPinned ? 'currentColor' : 'none'} aria-hidden />
+        </button>
+      </div>
+    );
+  };
+
   return (
     <div className={`flex flex-col gap-1 h-full min-h-0 ${paddingClass}`}>
       {/* Logo */}
@@ -299,8 +340,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           const groupLabel = t(item.tKey, { defaultValue: item.label });
           const isOpen = !!openGroups[item.group];
           const groupActive = item.children.some((c) => pathname?.startsWith(c.href));
+          // Pinned children surface in the main rail, right above their group.
+          const pinnedChildren = navHydrated
+            ? item.children.filter((c) => pinned.includes(c.href))
+            : [];
           return (
             <div key={item.group} className="flex flex-col gap-1">
+              {pinnedChildren.map((c) => renderPinnable(c, false))}
               <button
                 type="button"
                 onClick={() => toggleGroup(item.group)}
@@ -319,7 +365,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 />
               </button>
               {reduced ? (
-                isOpen && item.children.map((c) => renderLeaf(c, true))
+                isOpen && item.children.map((c) => renderPinnable(c, true))
               ) : (
                 <AnimatePresence initial={false}>
                   {isOpen && (
@@ -340,7 +386,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                       >
                         {item.children.map((c) => (
                           <motion.div key={c.href} variants={SUBMENU_ITEM}>
-                            {renderLeaf(c, true)}
+                            {renderPinnable(c, true)}
                           </motion.div>
                         ))}
                       </motion.div>
@@ -352,6 +398,18 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           );
         })}
       </nav>
+
+      {/* Notification bell — quick triage without leaving the page */}
+      {session && (
+        <div className="shrink-0">
+          <NotificationsPopover
+            count={notificationCount}
+            refreshCount={refreshNotificationCount}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-site text-sm font-medium transition-colors w-full text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
+            labelClass={labelClass}
+          />
+        </div>
+      )}
 
       {/* Language Switcher — pinned above auth section */}
       <div className="px-3 py-2 shrink-0">
@@ -448,6 +506,14 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 >
                   <Bookmark className="w-4 h-4" />
                   <span>{t('bookmarks', { defaultValue: 'Bookmarks' })}</span>
+                </Link>
+                <Link
+                  to="/settings"
+                  onClick={() => setShowUserMenu(false)}
+                  className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span>{t('settings', { defaultValue: 'Settings' })}</span>
                 </Link>
                 <div className="my-1 border-t border-site-border" />
                 <button

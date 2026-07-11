@@ -8,6 +8,7 @@ import { ComposeBox } from './ComposeBox';
 import { FeedList } from './FeedList';
 import { FeedAnnouncements } from './FeedAnnouncements';
 import { OnboardingChecklist } from './OnboardingChecklist';
+import { JumpBackIn } from './JumpBackIn';
 import { useMobileSidebar } from './MobileSidebarShell';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
@@ -233,6 +234,9 @@ export function FeedColumn() {
 
       {/* First-run onboarding checklist (new accounts only) */}
       {!search && <OnboardingChecklist />}
+
+      {/* Resume rail — recently played games/apps (device-local) */}
+      {!search && <JumpBackIn />}
 
       {/* Compose */}
       {!search && <ComposeBox />}

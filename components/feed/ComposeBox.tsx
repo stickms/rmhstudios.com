@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, ImagePlay, X, ImagePlus, Globe, Users, Lock, Coins, Type, FileText, CalendarClock, Check, ChevronDown } from 'lucide-react';
+import { Plus, BarChart3, History, ImagePlay, X, ImagePlus, Globe, Users, Lock, Coins, Type, FileText, CalendarClock, Check, ChevronDown } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { GifPicker } from './GifPicker';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -24,6 +24,12 @@ import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { FeedItem } from '@/lib/feed-types';
+import {
+  readComposeDraft,
+  clearComposeDraft,
+  useComposeDraftAutosave,
+  type ComposeDraft,
+} from '@/hooks/useComposeDraft';
 
 const MAX_IMAGES = 4;
 
@@ -59,6 +65,7 @@ export function ComposeBox({
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleAt, setScheduleAt] = useState(''); // datetime-local value
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
+  const [pendingDraft, setPendingDraft] = useState<ComposeDraft | null>(null);
   const [showPriceModal, setShowPriceModal] = useState(false); // unlock-price popover
   const [showCheatSheet, setShowCheatSheet] = useState(false); // markdown cheat sheet
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -66,6 +73,13 @@ export function ComposeBox({
   const audienceRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
+
+  // Autosave the draft text so a refresh/navigation can't eat an unsent post;
+  // offer any stored draft back once on mount.
+  useComposeDraftAutosave(content, gifUrl);
+  useEffect(() => {
+    setPendingDraft(readComposeDraft());
+  }, []);
   const { prependItem, removeItem, reconcileItem } = useFeedStore();
 
   const { t } = useTranslation('feed');
@@ -149,6 +163,7 @@ export function ComposeBox({
   };
 
   const resetForm = () => {
+    clearComposeDraft();
     setContent('');
     setAudience('PUBLIC');
     setUnlockPrice('');
@@ -350,6 +365,36 @@ export function ComposeBox({
 
   return (
     <div className="px-4 py-3 border-b border-site-border">
+      {pendingDraft && !content && (
+        <div className="mb-3 flex items-center gap-2 rounded-site border border-site-border bg-site-bg-subtle px-3 py-2">
+          <History className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
+          <p className="min-w-0 flex-1 truncate text-xs text-site-text-muted">
+            {t('draft-restore-prompt', { defaultValue: 'You have an unsent draft:' })}{' '}
+            <span className="text-site-text">{pendingDraft.content}</span>
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setContent(pendingDraft.content);
+              if (pendingDraft.gifUrl) setGifUrl(pendingDraft.gifUrl);
+              setPendingDraft(null);
+            }}
+            className="shrink-0 text-xs font-semibold text-site-accent hover:underline"
+          >
+            {t('draft-restore', { defaultValue: 'Restore' })}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              clearComposeDraft();
+              setPendingDraft(null);
+            }}
+            className="shrink-0 text-xs text-site-text-dim hover:text-site-text"
+          >
+            {t('draft-discard', { defaultValue: 'Discard' })}
+          </button>
+        </div>
+      )}
       <div className="flex gap-3">
         {/* Avatar */}
         <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0">
