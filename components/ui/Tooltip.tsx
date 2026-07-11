@@ -85,8 +85,8 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
                     left: 0,
                 }}
                 className={cn(
-                    "px-2 py-1 text-[10px] font-bold text-site-text whitespace-nowrap",
-                    "bg-site-surface backdrop-blur-md rounded-site-sm shadow-site border border-site-border",
+                    "px-2.5 py-1 text-[11px] font-medium tracking-[-0.01em] text-site-text whitespace-nowrap",
+                    "bg-site-surface/90 backdrop-blur-xl rounded-site-sm shadow-site border border-site-border",
                     className
                 )}
             >
