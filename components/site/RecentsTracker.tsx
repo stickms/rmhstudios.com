@@ -16,10 +16,10 @@ import { recordRecent } from '@/hooks/useRecents';
 const ENTRIES = [
   ...games
     .filter((g) => !g.unlisted && g.href.startsWith('/'))
-    .map((g) => ({ href: g.href, title: g.title, gradient: g.gradient, kind: 'game' as const })),
+    .map((g) => ({ href: g.href, title: g.title, gradient: g.gradient, image: g.imagePath, kind: 'game' as const })),
   ...apps
     .filter((a) => !a.hidden && !a.unlisted && a.href.startsWith('/'))
-    .map((a) => ({ href: a.href, title: a.title, gradient: a.gradient, kind: 'app' as const })),
+    .map((a) => ({ href: a.href, title: a.title, gradient: a.gradient, image: a.imagePath, kind: 'app' as const })),
 ].sort((a, b) => b.href.length - a.href.length);
 
 export function RecentsTracker() {
@@ -35,6 +35,7 @@ export function RecentsTracker() {
         href: match.href,
         title: match.title,
         gradient: match.gradient,
+        image: match.image,
         kind: match.kind,
       });
     }
