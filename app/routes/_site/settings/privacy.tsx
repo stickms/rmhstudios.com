@@ -1,24 +1,25 @@
 /**
- * Security settings — passkey management for the signed-in user.
+ * Privacy & data settings — data export (DSAR) and account deletion (erasure)
+ * for the signed-in user.
  */
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldUser } from 'lucide-react';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
-import { PasskeyManager } from '@/components/site/PasskeyManager';
-import { SessionManager } from '@/components/site/SessionManager';
+import { DataExportPanel } from '@/components/site/DataExportPanel';
+import { DeleteAccountPanel } from '@/components/site/DeleteAccountPanel';
 import { useSession } from '@/components/Providers';
 
-export const Route = createFileRoute('/_site/settings/security')({
+export const Route = createFileRoute('/_site/settings/privacy')({
   head: () => ({
-    meta: [{ title: 'Security | RMH Studios' }],
+    meta: [{ title: 'Privacy & data | RMH Studios' }],
   }),
-  component: SecuritySettingsPage,
+  component: PrivacySettingsPage,
 });
 
-function SecuritySettingsPage() {
+function PrivacySettingsPage() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
 
@@ -30,13 +31,13 @@ function SecuritySettingsPage() {
       >
         <div className="border-b border-site-border px-4 py-3">
           <div className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-site-accent" aria-hidden />
+            <ShieldUser className="h-5 w-5 text-site-accent" aria-hidden />
             <h1 className="text-lg font-bold text-site-text">
-              {t('security-title', { defaultValue: 'Security' })}
+              {t('privacy-title', { defaultValue: 'Privacy & data' })}
             </h1>
           </div>
           <p className="text-sm text-site-text-muted">
-            {t('security-subtitle', { defaultValue: 'Manage how you sign in to your account.' })}
+            {t('privacy-subtitle', { defaultValue: 'Export or delete the data tied to your account.' })}
           </p>
         </div>
 
@@ -45,17 +46,17 @@ function SecuritySettingsPage() {
             <p className="text-sm text-site-text-muted">
               <Link
                 to="/login"
-                search={{ callbackURL: '/settings/security' }}
+                search={{ callbackURL: '/settings/privacy' }}
                 className="text-site-accent hover:underline"
               >
-                {t('security-sign-in', { defaultValue: 'Sign in' })}
+                {t('privacy-sign-in', { defaultValue: 'Sign in' })}
               </Link>{' '}
-              {t('security-sign-in-rest', { defaultValue: 'to manage your security settings.' })}
+              {t('privacy-sign-in-rest', { defaultValue: 'to manage your privacy settings.' })}
             </p>
           ) : (
             <>
-              <PasskeyManager />
-              <SessionManager />
+              <DataExportPanel />
+              <DeleteAccountPanel />
             </>
           )}
         </div>

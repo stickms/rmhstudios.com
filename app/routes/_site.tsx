@@ -16,6 +16,7 @@ import { MobileSidebarShell } from '@/components/feed/MobileSidebarShell';
 import { WelcomeModal } from '@/components/feed/WelcomeModal';
 import { WhatsNewModal } from '@/components/feed/WhatsNewModal';
 import { FreeMonthModal } from '@/components/feed/FreeMonthModal';
+import { CookieConsent } from '@/components/site/CookieConsent';
 import '@/components/feed/feed.css';
 
 export const Route = createFileRoute('/_site')({
@@ -65,6 +66,9 @@ function SiteLayout() {
 
       {/* Mobile bottom nav */}
       <MobileNav />
+
+      {/* One-time, non-blocking cookie notice (site pages only). */}
+      <CookieConsent />
     </div>
   );
 }
