@@ -37,7 +37,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
-import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { NotificationsPopover } from '@/components/site/NotificationsPopover';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useUnreadCount } from '@/lib/useUnreadCount';
@@ -410,11 +409,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           />
         </div>
       )}
-
-      {/* Language Switcher — pinned above auth section */}
-      <div className="px-3 py-2 shrink-0">
-        <LanguageSwitcher />
-      </div>
 
       {/* Auth Section — pinned to bottom */}
       <div className="border-t border-site-border pt-3 shrink-0">

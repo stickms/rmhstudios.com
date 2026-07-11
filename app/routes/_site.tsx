@@ -14,6 +14,7 @@ import { LeftSidebar } from '@/components/feed/LeftSidebar';
 import { MobileNav } from '@/components/feed/MobileNav';
 import { MobileSidebarShell } from '@/components/feed/MobileSidebarShell';
 import { WelcomeModal } from '@/components/feed/WelcomeModal';
+import { LanguageFirstRunModal } from '@/components/site/LanguageFirstRunModal';
 import { WhatsNewModal } from '@/components/feed/WhatsNewModal';
 import { FreeMonthModal } from '@/components/feed/FreeMonthModal';
 import { CookieConsent } from '@/components/site/CookieConsent';
@@ -40,6 +41,7 @@ function SiteLayout() {
       >
         {t('skipToContent', { defaultValue: 'Skip to content' })}
       </a>
+      <LanguageFirstRunModal />
       <WelcomeModal />
       <WhatsNewModal />
       <FreeMonthModal />
