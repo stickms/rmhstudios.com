@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, ArrowLeft, Send, Users, LogOut, ImagePlus, ImagePlay, X, BarChart3, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from './UserAvatar';
 import { MentionTextarea } from './MentionTextarea';
@@ -51,6 +52,7 @@ const MAX_IMAGES = 4;
 
 export function GroupChatView({ id, currentUserId }: { id: string; currentUserId: string }) {
   const { t } = useTranslation("feed");
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const [group, setGroup] = useState<Group | null>(null);
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -351,7 +353,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   }
 
   async function leave() {
-    if (!confirm(t("leave-group-confirm", { defaultValue: "Leave this group?" }))) return;
+    if (!(await confirm({ title: t("leave-group-confirm", { defaultValue: "Leave this group?" }), danger: true }))) return;
     const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/leave`, { method: 'POST', credentials: 'include' });
     if (res.ok) navigate({ to: '/messages', search: { tab: 'groups' } });
   }

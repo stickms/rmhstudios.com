@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Megaphone, Trash2, BarChart3, Image as ImageIcon, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { AIGenerateButton } from '@/components/feed/AIGenerateButton';
@@ -77,6 +78,7 @@ function isValidMediaUrl(url: string): boolean {
 
 function AdminAnnouncementsPage() {
   const { t } = useTranslation('admin');
+  const confirm = useConfirm();
   const [list, setList] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState('');
@@ -200,7 +202,7 @@ function AdminAnnouncementsPage() {
   };
 
   const remove = async (a: Announcement) => {
-    if (!confirm(t('confirm-delete', { defaultValue: 'Delete this announcement?' }))) return;
+    if (!(await confirm({ title: t('confirm-delete', { defaultValue: 'Delete this announcement?' }), danger: true }))) return;
     await fetch(`/api/admin/announcements/${a.id}`, { method: 'DELETE', credentials: 'include' });
     load();
   };

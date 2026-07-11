@@ -4,6 +4,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useCallback, useEffect, useState } from 'react';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { formatDistanceToNow } from 'date-fns';
 import { ShieldAlert, Trash2 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
@@ -38,6 +39,7 @@ export const Route = createFileRoute('/_site/admin/security-reports')({
 const SEVERITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 function AdminSecurityReportsPage() {
+  const confirm = useConfirm();
   const [status, setStatus] = useState<SecurityReportStatus>('NEW');
   const [items, setItems] = useState<SecurityReportDTO[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -97,7 +99,7 @@ function AdminSecurityReportsPage() {
   };
 
   const remove = async (id: string) => {
-    if (!window.confirm('Delete this report permanently? This cannot be undone.')) return;
+    if (!(await confirm({ title: 'Delete this report permanently?', description: 'This cannot be undone.', danger: true }))) return;
     setBusyId(id);
     try {
       const res = await updateSecurityReport({ data: { id, delete: true } });

@@ -14,6 +14,7 @@ import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { AlbumUploader, type AdminSlide } from '@/components/library/AlbumUploader';
 import '@/components/library/album-admin.css';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -42,6 +43,7 @@ type AdminAlbum = {
 function ManageAlbumPage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
+  const confirm = useConfirm();
 
   const [album, setAlbum] = useState<AdminAlbum | null>(null);
   const [loading, setLoading] = useState(true);
@@ -136,7 +138,7 @@ function ManageAlbumPage() {
 
   async function deleteAlbum() {
     if (!album) return;
-    if (!confirm(`Delete album "${album.title}" and all ${album.slides.length} item(s)? This cannot be undone.`)) return;
+    if (!(await confirm({ title: `Delete album "${album.title}"?`, description: `All ${album.slides.length} item(s) will be removed. This cannot be undone.`, danger: true }))) return;
     const res = await fetch(`/api/admin/albums/${album.id}`, { method: 'DELETE' }).catch(() => null);
     if (res?.ok) {
       toast.success('Album deleted.');
