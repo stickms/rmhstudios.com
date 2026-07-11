@@ -20,7 +20,7 @@ interface PaginationProps {
 }
 
 const navButton =
-  "p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100 outline-none focus-visible:ring-2 focus-visible:ring-site-accent focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg"
+  "p-2 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface-hover disabled:opacity-20 disabled:cursor-not-allowed transition-[transform,color,background-color] duration-150 active:scale-95 disabled:active:scale-100 outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50"
 
 /**
  * Shared pagination control. Extracted from the duplicated first/prev/
@@ -85,7 +85,7 @@ export function Pagination({
               onClick={() => onPageChange(p)}
               aria-current={safePage === p ? "page" : undefined}
               className={cn(
-                "w-9 h-9 rounded-full text-sm font-bold transition-[transform,color,background-color] duration-150 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-site-accent focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg",
+                "w-9 h-9 rounded-full text-sm font-semibold transition-[transform,color,background-color] duration-150 active:scale-95 outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50",
                 safePage === p
                   ? "bg-site-accent text-site-accent-fg"
                   : "text-site-text-dim hover:text-site-text hover:bg-site-surface-hover"

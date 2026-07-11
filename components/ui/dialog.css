@@ -1,0 +1,46 @@
+/* Dialog enter/exit animation, driven by Radix's data-state.
+ *
+ * The tailwindcss-animate plugin is not installed in this repo, so utilities
+ * like `animate-in` / `slide-in-from-bottom-2` are inert; the sheet-like enter
+ * is hand-rolled here instead. Transform/opacity only. Centering uses Tailwind
+ * v4's native `translate` property, which the `transform` animated below
+ * composes with rather than overrides. Gated on no-preference so reduced-motion
+ * users get an instant appearance (the global reduce rule also neutralizes it).
+ */
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="dialog-overlay"][data-state="open"] {
+    animation: ui-dialog-overlay-in 0.3s ease-out;
+  }
+  [data-slot="dialog-overlay"][data-state="closed"] {
+    animation: ui-dialog-overlay-out 0.2s ease-in forwards;
+  }
+  [data-slot="dialog-content"][data-state="open"] {
+    animation: ui-dialog-content-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  [data-slot="dialog-content"][data-state="closed"] {
+    animation: ui-dialog-content-out 0.15s ease-in forwards;
+  }
+}
+
+@keyframes ui-dialog-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ui-dialog-overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes ui-dialog-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+}
+@keyframes ui-dialog-content-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
