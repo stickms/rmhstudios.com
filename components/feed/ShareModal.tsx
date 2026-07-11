@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link2, Check, Code2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useClipboard } from '@/hooks/useClipboard';
 
 interface ShareModalProps {
   open: boolean;
@@ -16,43 +16,14 @@ interface ShareModalProps {
 
 export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProps) {
   const { t } = useTranslation('feed');
-  const [copied, setCopied] = useState(false);
-  const [embedCopied, setEmbedCopied] = useState(false);
+  const { copied, copy } = useClipboard();
+  const { copied: embedCopied, copy: copyEmbed } = useClipboard();
 
   const embedCode = embedId
     ? `<iframe src="https://rmhstudios.com/embed/post/${embedId}" width="100%" height="320" frameborder="0" style="border:1px solid #2a2a2a;border-radius:16px;max-width:560px" title="RMH Studios post"></iframe>`
     : null;
 
-  const copyText = async (value: string, setFlag: (b: boolean) => void) => {
-    try {
-      await navigator.clipboard.writeText(value);
-      setFlag(true);
-    } catch {
-      const ta = document.createElement('textarea');
-      ta.value = value;
-      document.body.appendChild(ta);
-      ta.select();
-      document.execCommand('copy');
-      document.body.removeChild(ta);
-      setFlag(true);
-    }
-  };
-
-  useEffect(() => {
-    if (copied) {
-      const t = setTimeout(() => setCopied(false), 2000);
-      return () => clearTimeout(t);
-    }
-  }, [copied]);
-
-  useEffect(() => {
-    if (embedCopied) {
-      const t = setTimeout(() => setEmbedCopied(false), 2000);
-      return () => clearTimeout(t);
-    }
-  }, [embedCopied]);
-
-  const handleCopy = () => copyText(url, setCopied);
+  const handleCopy = () => copy(url);
 
   const shareToX = () => {
     const params = new URLSearchParams({ url, ...(text ? { text } : {}) });
@@ -127,7 +98,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
           {embedCode && (
             <div className="px-3 pb-1">
               <button
-                onClick={() => copyText(embedCode, setEmbedCopied)}
+                onClick={() => copyEmbed(embedCode)}
                 className="flex items-center gap-3 w-full px-3 py-2.5 rounded-site text-sm text-site-text hover:bg-site-surface transition-colors"
               >
                 {embedCopied ? (
