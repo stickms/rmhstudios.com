@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { BedDouble, Bath, Ruler, MapPin, PawPrint, ImageOff, Sparkles } from 'lucide-react';
+import { BedDouble, Bath, Ruler, MapPin, PawPrint, ImageOff, Sparkles, Globe } from 'lucide-react';
 import type { Listing } from '@/lib/homes/types';
 import {
   formatBaths,
@@ -84,6 +84,15 @@ export function ListingCard({
             </Badge>
           )}
         </div>
+        {listing.source === 'EXTERNAL' && (
+          <span
+            className="absolute bottom-2 right-2 inline-flex max-w-[70%] items-center gap-1 truncate rounded-full bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white backdrop-blur"
+            title={listing.sourceName ?? 'Aggregated listing'}
+          >
+            <Globe className="h-3 w-3 shrink-0" />
+            <span className="truncate">{listing.sourceName ?? 'Web'}</span>
+          </span>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-3.5">

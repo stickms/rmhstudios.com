@@ -33,6 +33,12 @@ const LISTING_TABS: { id: ListingType | 'any'; label: string }[] = [
   { id: 'SALE', label: 'Buy' },
 ];
 
+const SOURCE_LABELS: Record<SearchFilters['source'], string> = {
+  any: 'All sources',
+  community: 'Member posts',
+  external: 'Aggregated',
+};
+
 export function FiltersBar({ filters, onChange }: FiltersBarProps) {
   const [advanced, setAdvanced] = useState(false);
 
@@ -84,6 +90,19 @@ export function FiltersBar({ filters, onChange }: FiltersBarProps) {
           {BED_OPTIONS.map((b) => (
             <option key={b} value={b}>
               {b === 0 ? 'Studio+' : `${b}+ beds`}
+            </option>
+          ))}
+        </Select>
+
+        <Select
+          value={filters.source}
+          onChange={(e) => onChange({ source: e.target.value as SearchFilters['source'] })}
+          aria-label="Listing source"
+          className="h-9 w-auto min-w-[9.5rem]"
+        >
+          {(Object.keys(SOURCE_LABELS) as SearchFilters['source'][]).map((s) => (
+            <option key={s} value={s}>
+              {SOURCE_LABELS[s]}
             </option>
           ))}
         </Select>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:dc="http://purl.org/dc/elements/1.1/"
+         xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#">
+  <item rdf:about="https://rochester.craigslist.org/apa/d/x/1001.html">
+    <title><![CDATA[$1,850 / 2br - 900ft2 - Sunny flat near the park (Park Ave)]]></title>
+    <link>https://rochester.craigslist.org/apa/d/x/1001.html</link>
+    <description><![CDATA[<p>Cats are OK. Dishwasher and in-unit laundry.</p>]]></description>
+    <dc:date>2026-07-08T09:30:00-04:00</dc:date>
+    <geo:lat>43.2000</geo:lat>
+    <geo:long>-77.6000</geo:long>
+  </item>
+  <item rdf:about="https://rochester.craigslist.org/apa/d/y/1002.html">
+    <title><![CDATA[$2,100 / studio - Modern loft downtown (Center City)]]></title>
+    <link>https://rochester.craigslist.org/apa/d/y/1002.html</link>
+    <description>Bright studio. Sorry, no pets.</description>
+    <dc:date>2026-07-09T10:00:00-04:00</dc:date>
+  </item>
+</rdf:RDF>
