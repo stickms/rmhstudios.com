@@ -80,12 +80,12 @@ export function RMHCoinsPage() {
         {coins < 10 && (
           <Button
             onClick={handleClaimCoins}
-            disabled={claiming}
+            loading={claiming}
             variant="outline"
             size="sm"
             className="rounded-lg border-yellow-500/50 text-yellow-500 hover:bg-yellow-500/10"
           >
-            {claiming ? <Loader2 className="w-4 h-4 animate-spin" /> : t("claim-free-coins", { defaultValue: "Claim 10 Free Coins" })}
+            {t("claim-free-coins", { defaultValue: "Claim 10 Free Coins" })}
           </Button>
         )}
       </div>

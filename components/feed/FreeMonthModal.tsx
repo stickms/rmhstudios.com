@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Gift, Check, Loader2, Sparkles } from 'lucide-react';
+import { Gift, Check, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -106,8 +106,8 @@ export function FreeMonthModal() {
               {t("offer-body", { defaultValue: "Try RMH Pro free for one month — no payment, no card. Unlock the developer API, the profile badge, and more." })}
             </p>
             <div className="mt-5 flex flex-col gap-2">
-              <Button variant="accent" disabled={claiming} onClick={claim} className="w-full gap-1.5">
-                {claiming ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gift className="h-4 w-4" />}
+              <Button variant="accent" loading={claiming} onClick={claim} className="w-full gap-1.5">
+                {!claiming && <Gift className="h-4 w-4" />}
                 {t("claim-free-month", { defaultValue: "Claim free month" })}
               </Button>
               <Button variant="ghost" size="sm" onClick={snooze} className="w-full text-site-text-muted">

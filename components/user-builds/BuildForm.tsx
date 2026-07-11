@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from '@tanstack/react-router';
-import { Loader2, Plus, X, Upload, AlertCircle } from 'lucide-react';
+import { Plus, X, Upload, AlertCircle } from 'lucide-react';
 import type { Build, BuildCategory } from '@/lib/user-builds-types';
 import { Button } from '@/components/ui/button';
 
@@ -368,9 +368,9 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
           type="submit"
           variant="accent"
           className="bg-site-accent hover:bg-site-accent w-full md:w-auto px-8"
-          disabled={loading}
+          loading={loading}
         >
-          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : isEditing ? t("update-build", { defaultValue: "Update Build" }) : t("save-build", { defaultValue: "Save Build" })}
+          {isEditing ? t("update-build", { defaultValue: "Update Build" }) : t("save-build", { defaultValue: "Save Build" })}
         </Button>
       </div>
     </form>

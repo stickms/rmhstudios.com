@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Swords, Trophy, Check, X, Flag } from 'lucide-react';
+import { Swords, Trophy, Check, X, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from './UserAvatar';
@@ -204,8 +204,8 @@ export function RankedColumn({
                     className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
                   />
                 </div>
-                <Button size="sm" variant="accent" disabled={busy === 'send' || !opponent.trim()} onClick={sendChallenge}>
-                  {busy === 'send' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t('challenge-btn', { defaultValue: 'Challenge' })}
+                <Button size="sm" variant="accent" loading={busy === 'send'} disabled={!opponent.trim()} onClick={sendChallenge}>
+                  {t('challenge-btn', { defaultValue: 'Challenge' })}
                 </Button>
               </div>
               {formMsg && <p className="mt-2 text-xs text-site-text-muted">{formMsg}</p>}

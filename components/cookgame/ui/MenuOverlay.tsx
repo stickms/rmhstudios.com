@@ -2,10 +2,12 @@
 import { useEffect, useState } from 'react';
 import { useCookgameStore } from '@/lib/cookgame/store';
 import { OverlayFrame } from '@/components/cookgame/ui/OverlayFrame';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 export function MenuOverlay() {
   const activeOverlay = useCookgameStore((s) => s.activeOverlay);
   const [saved, setSaved] = useState(false);
+  const confirm = useConfirm();
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -28,8 +30,8 @@ export function MenuOverlay() {
     setTimeout(() => setSaved(false), 1500);
   };
 
-  const handleReset = () => {
-    if (window.confirm('Reset all progress?')) {
+  const handleReset = async () => {
+    if (await confirm({ title: 'Reset all progress?', danger: true })) {
       useCookgameStore.getState().resetGame();
       useCookgameStore.getState().setActiveOverlay(null);
     }

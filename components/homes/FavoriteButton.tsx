@@ -68,13 +68,10 @@ export function FavoriteButton({ listingId, favorited, onChange, compact }: Favo
       type="button"
       variant={isFav ? 'accent-outline' : 'secondary'}
       onClick={toggle}
+      loading={busy}
       className={isFav ? 'border-rose-500/40 text-rose-400 hover:bg-rose-500/10' : ''}
     >
-      {busy ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
-      ) : (
-        <Heart className={`h-4 w-4 ${isFav ? 'fill-rose-500 text-rose-500' : ''}`} />
-      )}
+      {!busy && <Heart className={`h-4 w-4 ${isFav ? 'fill-rose-500 text-rose-500' : ''}`} />}
       {isFav ? 'Saved' : 'Save'}
     </Button>
   );
