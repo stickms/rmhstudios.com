@@ -2845,3 +2845,35 @@ html.nav-restoring .feed-card-cv {
     animation: none;
   }
 }
+
+/* ─── Skeleton shimmer ───────────────────────────────────────────────────
+ * A moving light sweep for loading placeholders, an upgrade on the plain
+ * opacity pulse: it reads as "content streaming in" and improves perceived
+ * speed. Opt in via `<Skeleton shimmer />` (the default stays `animate-pulse`
+ * so existing skeletons are unchanged). The gradient rides on top of the
+ * element's `bg-site-surface`, so it stays theme-correct everywhere.
+ * `--site-text` at low alpha keeps the highlight subtle on both light and dark
+ * themes. */
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+.animate-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--site-text) 10%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+/* A travelling sweep is more distracting than the pulse we preserve elsewhere,
+ * so under reduced motion drop it back to a static themed surface. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer {
+    animation: none;
+    background-image: none;
+  }
+}
