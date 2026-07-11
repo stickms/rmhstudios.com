@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
-import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, BellRing, BellOff, CheckCheck, Loader2, Trophy, Sparkles, Zap, Gift, Car, MapPin, Settings2 } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, BellRing, BellOff, CheckCheck, Trophy, Sparkles, Zap, Gift, Car, MapPin, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
@@ -469,8 +469,8 @@ export function NotificationsColumn({
 
       {nextCursor && (
         <div className="flex justify-center py-4">
-          <Button variant="secondary" size="sm" onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : t('load-more', { defaultValue: 'Load more' })}
+          <Button variant="secondary" size="sm" onClick={loadMore} loading={loadingMore}>
+            {t('load-more', { defaultValue: 'Load more' })}
           </Button>
         </div>
       )}
