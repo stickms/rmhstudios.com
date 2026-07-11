@@ -106,6 +106,12 @@ Work through this for every new or edited page:
       (`components/errors/RouteErrorFallback`); throw `notFound()` in loaders
       for 404s (renders `components/errors/NotFound`).
 - [ ] Feedback: `toast` from `sonner` — never custom toast UI.
+- [ ] Destructive confirmations: `await useConfirm()({ title, danger })` — never
+      native `window.confirm` (it ignores the 31 themes, i18n, and focus-trapping).
+- [ ] Copy-to-clipboard: `<CopyButton value={…} label={…} />` — don't re-roll
+      `navigator.clipboard.writeText` + a local `copied` state.
+- [ ] Nested pages (2+ levels): give orientation via `PageLayout`'s
+      `breadcrumbs` / `backTo` props (or the `<Breadcrumbs>` primitive).
 - [ ] Signed-out (if auth-gated): either redirect in `beforeLoad`
       (`throw redirect({ to: "/login", search: { callbackURL } })`) or render a
       centered sign-in prompt with `<Button variant="accent">`.
@@ -170,8 +176,9 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    that square corners off (gamer, comic-book, high-contrast).
 3. Custom headers instead of `PageLayout`'s sticky header.
 4. Arbitrary column widths instead of `lib/layout-width.ts` constants.
-5. Hand-rolled modals/spinners/empty states instead of the `components/ui/`
-   primitives.
+5. Hand-rolled modals/spinners/empty states/copy-buttons instead of the
+   `components/ui/` primitives, or native `window.confirm` instead of
+   `useConfirm`.
 6. Untranslated strings (missing `t()`), or `t()` without `defaultValue`.
 7. Forgetting `pb-16 md:pb-0` on custom columns → content hidden behind the
    mobile bottom nav.

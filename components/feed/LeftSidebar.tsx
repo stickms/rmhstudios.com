@@ -473,11 +473,10 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </button>
             {showUserMenu && (
               <div
-                className="vibe-glass fixed w-48 border border-site-border rounded-site shadow-lg py-1 z-50"
+                className="fixed w-48 border border-site-border rounded-site bg-site-surface shadow-site py-1 z-50"
                 style={{
                   bottom: `${userMenuPos.bottom}px`,
                   right: `${userMenuPos.right}px`,
-                  background: 'rgba(12, 12, 13, 0.96)',
                 }}
               >
                 <Link

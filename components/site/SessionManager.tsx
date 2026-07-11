@@ -16,6 +16,7 @@ import { authClient } from '@/lib/auth-client';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 interface SessionRow {
   id: string;
@@ -49,6 +50,7 @@ function describeDevice(ua?: string | null): { label: string; kind: 'mobile' | '
 
 export function SessionManager() {
   const { t } = useTranslation('feed');
+  const confirm = useConfirm();
   const { data: session } = useSession();
   const currentToken = (session as { session?: { token?: string } } | null)?.session?.token;
   const [sessions, setSessions] = useState<SessionRow[]>([]);
@@ -72,15 +74,15 @@ export function SessionManager() {
   }, [load]);
 
   const revokeOne = async (row: SessionRow) => {
-    if (
-      !window.confirm(
-        t('session-revoke-confirm', {
-          defaultValue: 'Sign this device out? It will need to log in again.',
-        })
-      )
-    ) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: t('session-revoke-title', { defaultValue: 'Sign this device out?' }),
+      description: t('session-revoke-confirm', {
+        defaultValue: 'It will need to log in again.',
+      }),
+      confirmLabel: t('session-revoke', { defaultValue: 'Sign out device' }),
+      danger: true,
+    });
+    if (!confirmed) return;
     setBusy(true);
     try {
       await authClient.revokeSession({ token: row.token });
@@ -94,15 +96,15 @@ export function SessionManager() {
   };
 
   const revokeOthers = async () => {
-    if (
-      !window.confirm(
-        t('session-revoke-others-confirm', {
-          defaultValue: 'Sign out of every other device? You will stay signed in here.',
-        })
-      )
-    ) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: t('session-revoke-others-title', { defaultValue: 'Sign out of every other device?' }),
+      description: t('session-revoke-others-confirm', {
+        defaultValue: 'You will stay signed in here.',
+      }),
+      confirmLabel: t('sessions-revoke-others', { defaultValue: 'Log out of all other devices' }),
+      danger: true,
+    });
+    if (!confirmed) return;
     setBusy(true);
     try {
       await authClient.revokeOtherSessions();
@@ -173,7 +175,7 @@ export function SessionManager() {
                     onClick={() => revokeOne(s)}
                     disabled={busy}
                     aria-label={t('session-revoke', { defaultValue: 'Sign out device' })}
-                    className="rounded-site-sm p-1.5 text-site-text-dim transition-colors hover:bg-red-500/10 hover:text-red-400"
+                    className="rounded-site-sm p-1.5 text-site-text-dim transition-colors hover:bg-site-danger/10 hover:text-site-danger"
                   >
                     <LogOut className="h-4 w-4" aria-hidden />
                   </button>

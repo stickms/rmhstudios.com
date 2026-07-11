@@ -18,6 +18,7 @@ import { WhatsNewModal } from '@/components/feed/WhatsNewModal';
 import { FreeMonthModal } from '@/components/feed/FreeMonthModal';
 import { CookieConsent } from '@/components/site/CookieConsent';
 import { KeyboardShortcuts } from '@/components/site/KeyboardShortcuts';
+import { BackToTop } from '@/components/ui/back-to-top';
 import { MiniPlayer } from '@/components/rmhmusic/MiniPlayer';
 import '@/components/feed/feed.css';
 
@@ -77,6 +78,9 @@ function SiteLayout() {
 
       {/* Music keeps playing when you leave RMHMusic — surface controls here. */}
       <MiniPlayer />
+
+      {/* Floating scroll-to-top affordance for long pages. */}
+      <BackToTop />
     </div>
   );
 }

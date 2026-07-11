@@ -5,6 +5,7 @@ import { ArrowLeft } from 'lucide-react';
 import { AnimatedMain } from './AnimatedMain';
 import { MobileMenuButton } from './MobileMenuButton';
 import { MobileBrandPrefix } from './MobileHeader';
+import { Breadcrumbs, type BreadcrumbItem } from '@/components/ui/breadcrumbs';
 import { DEFAULT_WIDTH, WIDE_NO_RIGHT_SIDEBAR_WIDTH, WIDE_WIDTH } from '@/lib/layout-width';
 
 interface PageLayoutProps {
@@ -24,6 +25,11 @@ interface PageLayoutProps {
   backTo?: string;
   /** Accessible label for the back arrow (defaults to "Back"). */
   backLabel?: string;
+  /**
+   * Optional "where am I" trail shown above the title on nested pages
+   * (e.g. Settings → Security). The last item is the current page.
+   */
+  breadcrumbs?: BreadcrumbItem[];
 }
 
 export function PageLayout({
@@ -35,10 +41,13 @@ export function PageLayout({
   wide,
   backTo,
   backLabel,
+  breadcrumbs,
 }: PageLayoutProps) {
   const hasRightSidebar = Boolean(rightSidebar);
   const targetWidth = wide
-    ? (hasRightSidebar ? WIDE_WIDTH : WIDE_NO_RIGHT_SIDEBAR_WIDTH)
+    ? hasRightSidebar
+      ? WIDE_WIDTH
+      : WIDE_NO_RIGHT_SIDEBAR_WIDTH
     : DEFAULT_WIDTH;
 
   return (
@@ -64,11 +73,16 @@ export function PageLayout({
                     <ArrowLeft className="h-5 w-5" />
                   </Link>
                 )}
-                <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0 truncate">
-                  {/* Mobile: "RMH |" brand prefix before the page title */}
-                  <MobileBrandPrefix />
-                  {title}
-                </h1>
+                <div className="flex flex-col justify-center min-w-0">
+                  {breadcrumbs && breadcrumbs.length > 0 && (
+                    <Breadcrumbs items={breadcrumbs} className="mb-0.5 hidden sm:block" />
+                  )}
+                  <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text flex items-center gap-2 min-w-0 truncate">
+                    {/* Mobile: "RMH |" brand prefix before the page title */}
+                    <MobileBrandPrefix />
+                    {title}
+                  </h1>
+                </div>
               </div>
               {headerRight}
             </div>
@@ -82,9 +96,7 @@ export function PageLayout({
 
       {/* Right Sidebar or Spacer - hidden below lg */}
       {hasRightSidebar ? (
-        <aside className="hidden lg:block w-80 shrink-0 self-start">
-          {rightSidebar}
-        </aside>
+        <aside className="hidden lg:block w-80 shrink-0 self-start">{rightSidebar}</aside>
       ) : !wide ? (
         <div className="hidden lg:block w-80 shrink-0" />
       ) : (
