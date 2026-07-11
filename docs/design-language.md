@@ -143,7 +143,12 @@ Always reach for these before writing new markup. Helper: `cn()` from
 | `EmptyState` | `components/ui/empty-state.tsx` | Canonical zero-state: `{icon, title, description, action}`. |
 | `Skeleton` | `components/ui/skeleton.tsx` | Canonical loading placeholder. |
 | `Spinner` | `components/ui/spinner.tsx` | Canonical spinner (lucide `Loader2`, `role="status"`). |
-| `Tooltip` | `components/ui/Tooltip.tsx` | Portal + framer-motion. |
+| `Tooltip` | `components/ui/Tooltip.tsx` | Portal + framer-motion. Shows on **hover and keyboard focus**, dismisses on Escape, wires `aria-describedby`. |
+| `IconButton` | `components/ui/icon-button.tsx` | Icon-only `Button` that requires a `label` (becomes `aria-label` **and** a `Tooltip`). Reach for this instead of a bare `<button aria-label>`. |
+| `CopyButton` / `useClipboard` | `components/ui/copy-button.tsx`, `hooks/useClipboard.ts` | Canonical copy-to-clipboard: icon → check, sonner toast, `execCommand` fallback. Don't hand-roll `navigator.clipboard.writeText` + `useState`. |
+| `ConfirmDialog` / `useConfirm` | `components/ui/confirm-dialog.tsx` | Themed promise-based confirm — `await confirm({ title, description, danger })`. Replaces native `window.confirm` (which ignores themes/i18n/a11y). `<ConfirmProvider>` is already mounted in `Providers`. |
+| `Breadcrumbs` | `components/ui/breadcrumbs.tsx` | "Where am I" trail for nested pages; also a `breadcrumbs?` prop on `PageLayout`. Last item is the current page (`aria-current`). |
+| `BackToTop` | `components/ui/back-to-top.tsx` | Floating scroll-to-top button, mounted once in the `_site` shell (targets the window **and** the mobile `[data-scroll-root]` scroller). |
 | `NotificationBadge` | `components/ui/notification-badge.tsx` | Count pill (`bg-site-danger`). |
 | `UserAvatar` | `components/ui/UserAvatar.tsx` | Default fallback `/images/social/default_avatar.png`. |
 | `OptimizedImage`, `BlurImage` | `components/ui/` | Image loading. |

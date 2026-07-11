@@ -62,9 +62,11 @@
 }
 
 /* Frosted-glass treatment for the app chrome + sticky headers, matching the
-   homepage's vibe-dock. Applied to elements tagged with .vibe-glass. */
+   homepage's vibe-dock. Applied to elements tagged with .vibe-glass.
+   Derived from the theme's own --site-bg so it frosts correctly on light,
+   high-contrast, and pastel themes instead of forcing a hardcoded near-black. */
 .vibe-glass {
-  background: rgba(12, 12, 13, 0.72);
+  background: color-mix(in srgb, var(--site-bg) 78%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
@@ -72,7 +74,7 @@
 /* The bottom mobile nav floats over scrolling content, so it needs a more
    opaque backing than the standard frosted glass to stay legible. */
 .vibe-glass.vibe-mobile-nav {
-  background: rgba(12, 12, 13, 0.96);
+  background: color-mix(in srgb, var(--site-bg) 94%, transparent);
 }
 
 /* Cards: subtle translucent surface with a hairline border that brightens on

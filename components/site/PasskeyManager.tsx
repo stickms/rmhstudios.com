@@ -14,6 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 interface PasskeyRow {
   id: string;
@@ -25,6 +26,7 @@ interface PasskeyRow {
 
 export function PasskeyManager() {
   const { t } = useTranslation('feed');
+  const confirm = useConfirm();
   const [passkeys, setPasskeys] = useState<PasskeyRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -94,15 +96,15 @@ export function PasskeyManager() {
   };
 
   const deletePasskey = async (pk: PasskeyRow) => {
-    if (
-      !window.confirm(
-        t('passkey-delete-confirm', {
-          defaultValue: 'Remove this passkey? You will no longer be able to sign in with it.',
-        })
-      )
-    ) {
-      return;
-    }
+    const confirmed = await confirm({
+      title: t('passkey-delete-title', { defaultValue: 'Remove this passkey?' }),
+      description: t('passkey-delete-confirm', {
+        defaultValue: 'You will no longer be able to sign in with it.',
+      }),
+      confirmLabel: t('passkey-delete', { defaultValue: 'Delete passkey' }),
+      danger: true,
+    });
+    if (!confirmed) return;
     setBusy(true);
     try {
       await authClient.$fetch('/passkey/delete-passkey', {
@@ -182,7 +184,7 @@ export function PasskeyManager() {
                 onClick={() => deletePasskey(pk)}
                 disabled={busy}
                 aria-label={t('passkey-delete', { defaultValue: 'Delete passkey' })}
-                className="rounded-site-sm p-1.5 text-site-text-dim transition-colors hover:bg-red-500/10 hover:text-red-400"
+                className="rounded-site-sm p-1.5 text-site-text-dim transition-colors hover:bg-site-danger/10 hover:text-site-danger"
               >
                 <Trash2 className="h-4 w-4" aria-hidden />
               </button>
