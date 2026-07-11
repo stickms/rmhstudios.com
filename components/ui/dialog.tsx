@@ -8,6 +8,8 @@ import { useTranslation } from "react-i18next"
 
 import { cn } from "@/lib/utils"
 
+import "./dialog.css"
+
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
@@ -22,10 +24,8 @@ const DialogOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Overlay
     ref={ref}
-    className={cn(
-      "fixed inset-0 z-50 bg-black/60 backdrop-blur-xl data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className
-    )}
+    data-slot="dialog-overlay"
+    className={cn("fixed inset-0 z-50 bg-black/60 backdrop-blur-xl", className)}
     {...props}
   />
 ))
@@ -41,8 +41,9 @@ const DialogContent = React.forwardRef<
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
+        data-slot="dialog-content"
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg max-h-[85dvh] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 border border-site-border bg-site-surface text-site-text p-6 shadow-site duration-200 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-[0.98] data-[state=open]:zoom-in-[0.98] data-[state=closed]:slide-out-to-bottom-2 data-[state=open]:slide-in-from-bottom-2 rounded-site",
+          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg max-h-[85dvh] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 border border-site-border bg-site-surface text-site-text p-6 shadow-site rounded-site",
           className
         )}
         {...props}
