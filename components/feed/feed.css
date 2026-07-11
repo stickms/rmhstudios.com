@@ -32,9 +32,11 @@
 }
 
 /* The bottom mobile nav floats over scrolling content, so it needs a more
-   opaque backing than the standard frosted glass to stay legible. */
+   opaque backing than the standard frosted glass to stay legible. Theme-aware:
+   derived from --site-bg so it tints correctly in light/high-contrast instead
+   of staying stuck dark. */
 .vibe-glass.vibe-mobile-nav {
-  background: rgba(12, 12, 13, 0.96);
+  background: color-mix(in srgb, var(--site-bg) 96%, transparent);
 }
 
 /* Cards: subtle translucent surface with a hairline border that brightens on
