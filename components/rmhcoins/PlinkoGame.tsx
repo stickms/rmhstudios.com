@@ -2,7 +2,6 @@
 
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from './CoinIcon';
 import {
@@ -461,17 +460,14 @@ export function PlinkoGame({ coins, setCoins }: Props) {
 
       <Button
         onClick={handleSubmit}
-        disabled={!isIdle || selectedBin === null || submitting}
+        loading={submitting}
+        disabled={!isIdle || selectedBin === null}
         variant="accent"
         className="w-full min-h-11 font-bold rounded-xl text-base"
       >
-        {submitting ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : gameState === 'dropping' ? (
-          t('dropping', { defaultValue: 'Dropping...' })
-        ) : (
-          t('drop-ball', { defaultValue: 'Drop Ball' })
-        )}
+        {gameState === 'dropping'
+          ? t('dropping', { defaultValue: 'Dropping...' })
+          : t('drop-ball', { defaultValue: 'Drop Ball' })}
       </Button>
 
       {coins === 0 && isIdle && (

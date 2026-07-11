@@ -225,12 +225,8 @@ export function ImageUploader({ value, aiImages, onChange, max = 8 }: ImageUploa
             disabled={generating || atMax}
           />
           <div className="mt-2 flex items-center gap-2">
-            <Button type="button" size="sm" onClick={generate} disabled={generating || atMax}>
-              {generating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
+            <Button type="button" size="sm" onClick={generate} loading={generating} disabled={atMax}>
+              {!generating && <Sparkles className="h-4 w-4" />}
               Generate
             </Button>
             <span className="text-xs text-site-text-muted">

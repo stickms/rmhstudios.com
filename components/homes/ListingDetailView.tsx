@@ -355,12 +355,8 @@ export function ListingDetailView({ id }: { id: string }) {
               <div className="truncate font-medium text-site-text">{authorName}</div>
             </div>
             {!listing.isOwner && (
-              <Button onClick={messagePoster} disabled={messaging} className="ml-auto">
-                {messaging ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <MessageCircle className="h-4 w-4" />
-                )}
+              <Button onClick={messagePoster} loading={messaging} className="ml-auto">
+                {!messaging && <MessageCircle className="h-4 w-4" />}
                 Message
               </Button>
             )}
