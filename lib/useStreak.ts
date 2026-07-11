@@ -9,6 +9,8 @@ interface StreakState {
   totalCheckIns: number;
   checkedInToday: boolean;
   reward: number;
+  freezeTokens?: number;
+  freezeUsed?: number;
 }
 
 const LAST_CHECKIN_KEY = 'rmh-streak-last-checkin';
@@ -56,6 +58,9 @@ export function useStreak(isLoggedIn: boolean) {
           localStorage.setItem(LAST_CHECKIN_KEY, todayKey());
         } catch {
           // ignore
+        }
+        if (data.freezeUsed && data.freezeUsed > 0) {
+          toast.success(`🧊 Streak freeze used — your ${data.current}-day streak survived!`);
         }
         if (data.reward > 0) {
           toast.success(`🔥 ${data.current}-day streak! +${data.reward} coins`);

@@ -17,6 +17,8 @@ import { WelcomeModal } from '@/components/feed/WelcomeModal';
 import { WhatsNewModal } from '@/components/feed/WhatsNewModal';
 import { FreeMonthModal } from '@/components/feed/FreeMonthModal';
 import { CookieConsent } from '@/components/site/CookieConsent';
+import { KeyboardShortcuts } from '@/components/site/KeyboardShortcuts';
+import { MiniPlayer } from '@/components/rmhmusic/MiniPlayer';
 import '@/components/feed/feed.css';
 
 export const Route = createFileRoute('/_site')({
@@ -69,6 +71,12 @@ function SiteLayout() {
 
       {/* One-time, non-blocking cookie notice (site pages only). */}
       <CookieConsent />
+
+      {/* Site-wide shortcuts (c compose, g+<x> navigation, ? help overlay). */}
+      <KeyboardShortcuts />
+
+      {/* Music keeps playing when you leave RMHMusic — surface controls here. */}
+      <MiniPlayer />
     </div>
   );
 }
