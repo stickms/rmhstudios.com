@@ -38,6 +38,7 @@ type ListingRow = Prisma.HomeListingGetPayload<{
 function toDTO(row: ListingRow, viewerId: string | null): Listing {
   return {
     id: row.id,
+    source: row.source,
     status: row.status,
     listingType: row.listingType,
     propertyType: row.propertyType,
@@ -61,14 +62,18 @@ function toDTO(row: ListingRow, viewerId: string | null): Listing {
     viewsCount: row.viewsCount,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
-    author: {
-      id: row.author.id,
-      name: row.author.name,
-      handle: row.author.handle ?? row.author.username ?? null,
-      image: row.author.image,
-    },
+    author: row.author
+      ? {
+          id: row.author.id,
+          name: row.author.name,
+          handle: row.author.handle ?? row.author.username ?? null,
+          image: row.author.image,
+        }
+      : null,
+    externalUrl: row.externalUrl,
+    sourceName: row.sourceName,
     favorited: viewerId ? row.favorites.some((f) => f.userId === viewerId) : false,
-    isOwner: viewerId === row.authorId,
+    isOwner: viewerId != null && viewerId === row.authorId,
   };
 }
 
@@ -108,6 +113,8 @@ export async function browseListings(
 
   const where: Prisma.HomeListingWhereInput = { status: 'ACTIVE' };
   if (filters.listingType !== 'any') where.listingType = filters.listingType;
+  if (filters.source === 'community') where.source = 'COMMUNITY';
+  else if (filters.source === 'external') where.source = 'EXTERNAL';
   if (filters.propertyTypes.length) where.propertyType = { in: filters.propertyTypes };
   if (filters.minPrice != null || filters.maxPrice != null) {
     const pc: Prisma.IntFilter = {};

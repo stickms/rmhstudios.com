@@ -46,6 +46,10 @@ export function parseFilters(params: URLSearchParams): SearchFilters {
     ? (sortRaw as SortOrder)
     : DEFAULT_FILTERS.sort;
 
+  const sourceRaw = params.get('source');
+  const source: SearchFilters['source'] =
+    sourceRaw === 'community' || sourceRaw === 'external' ? sourceRaw : DEFAULT_FILTERS.source;
+
   const latRaw = params.get('lat');
   const lngRaw = params.get('lng');
   const lat = latRaw != null && latRaw !== '' ? Number(latRaw) : undefined;
@@ -58,6 +62,7 @@ export function parseFilters(params: URLSearchParams): SearchFilters {
     radiusKm: clampInt(params.get('radiusKm'), 1, 400, DEFAULT_FILTERS.radiusKm),
     listingType,
     propertyTypes,
+    source,
     minPrice: optionalPositive(params.get('minPrice')),
     maxPrice: optionalPositive(params.get('maxPrice')),
     minBeds: optionalPositive(params.get('minBeds')),
@@ -76,6 +81,7 @@ export function serializeFilters(filters: SearchFilters): URLSearchParams {
   if (filters.lng != null) p.set('lng', String(filters.lng));
   if (filters.radiusKm !== DEFAULT_FILTERS.radiusKm) p.set('radiusKm', String(filters.radiusKm));
   if (filters.listingType !== DEFAULT_FILTERS.listingType) p.set('type', filters.listingType);
+  if (filters.source !== DEFAULT_FILTERS.source) p.set('source', filters.source);
   if (filters.propertyTypes.length) p.set('propertyTypes', filters.propertyTypes.join(','));
   if (filters.minPrice != null) p.set('minPrice', String(filters.minPrice));
   if (filters.maxPrice != null) p.set('maxPrice', String(filters.maxPrice));

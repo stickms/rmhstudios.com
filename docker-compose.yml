@@ -149,6 +149,16 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     command: ["node", "dist-server/server/ladder-worker/index.cjs"]
 
+  # ─── Homes Worker (RMHHomes external-listing scraper cron) ─────────────────
+  # Node cron process: self-bootstraps an empty DB (seed sources → scrape), then
+  # aggregates public housing feeds on HOMES_CRON_SCHEDULE (default every 6h).
+  # No port. Disable entirely with HOMES_SCRAPE_ENABLED=false.
+  homes-worker:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-homes-worker
+    env_file: ${ENV_FILE:-.env.production}
+    command: ["node", "dist-server/server/homes-worker/index.cjs"]
+
   # ─── Go Supervisor (discord-bot + recap + doctrine-worker + vibe-worker + bot-worker) ─
   # Runs the five background workers as goroutines in a single Go process.
   # Env union: every variable the five old Node services needed is carried here.

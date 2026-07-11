@@ -13,6 +13,7 @@ export default defineConfig({
       'lib/dream-rift/__tests__/**/*.test.ts',
       'lib/rmhark-ai/__tests__/**/*.test.ts',
       'lib/rmhladder/**/*.test.ts',
+      'lib/homes/**/*.test.ts',
       'lib/personas/__tests__/**/*.test.ts',
       'lib/predictions/__tests__/**/*.test.ts',
       'lib/__tests__/**/*.test.ts',

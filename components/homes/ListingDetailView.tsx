@@ -15,7 +15,9 @@ import {
   Bath,
   BedDouble,
   CalendarClock,
+  ExternalLink,
   Eye,
+  Globe,
   Home,
   Loader2,
   MapPin,
@@ -84,7 +86,7 @@ export function ListingDetailView({ id }: { id: string }) {
   }, [id]);
 
   const messagePoster = useCallback(async () => {
-    if (!listing) return;
+    if (!listing || !listing.author) return;
     if (!session) {
       navigate({ to: '/login', search: { callbackURL: `/homes/listing/${listing.id}` } });
       return;
@@ -175,7 +177,8 @@ export function ListingDetailView({ id }: { id: string }) {
   const sqft = formatSqft(listing.sqft);
   const posted = formatPostedAt(listing.createdAt, Date.now());
   const available = formatAvailable(listing.availableFrom);
-  const authorName = listing.author.name || listing.author.handle || 'RMH member';
+  const isExternal = listing.source === 'EXTERNAL';
+  const authorName = listing.author?.name || listing.author?.handle || 'RMH member';
 
   return (
     <PageLayout title={listing.title} backTo="/homes" backLabel="Back to browse" wide>
@@ -308,30 +311,68 @@ export function ListingDetailView({ id }: { id: string }) {
           )}
         </div>
 
-        {/* Poster card */}
-        <div className="mt-5 flex flex-wrap items-center gap-3 rounded-site border border-site-border bg-site-surface/80 p-4">
-          <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
-            {listing.author.image ? (
-              <img src={listing.author.image} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-sm font-semibold">{authorName.slice(0, 1).toUpperCase()}</span>
+        {/* Poster / source card */}
+        {isExternal ? (
+          <div className="mt-5 flex flex-wrap items-center gap-3 rounded-site border border-site-border bg-site-surface/80 p-4">
+            <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
+              <Globe className="h-5 w-5" />
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs text-site-text-muted">Aggregated from</div>
+              <div className="truncate font-medium text-site-text">
+                {listing.sourceName ?? 'the web'}
+              </div>
+            </div>
+            {listing.externalUrl && (
+              <a
+                href={listing.externalUrl}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="ml-auto"
+              >
+                <Button>
+                  <ExternalLink className="h-4 w-4" />
+                  View original
+                </Button>
+              </a>
             )}
-          </span>
-          <div className="min-w-0">
-            <div className="text-xs text-site-text-muted">Posted by</div>
-            <div className="truncate font-medium text-site-text">{authorName}</div>
           </div>
-          {!listing.isOwner && (
-            <Button onClick={messagePoster} disabled={messaging} className="ml-auto">
-              {messaging ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <div className="mt-5 flex flex-wrap items-center gap-3 rounded-site border border-site-border bg-site-surface/80 p-4">
+            <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-site-accent/15 text-site-accent">
+              {listing.author?.image ? (
+                <img src={listing.author.image} alt="" className="h-full w-full object-cover" />
               ) : (
-                <MessageCircle className="h-4 w-4" />
+                <span className="text-sm font-semibold">
+                  {authorName.slice(0, 1).toUpperCase()}
+                </span>
               )}
-              Message
-            </Button>
-          )}
-        </div>
+            </span>
+            <div className="min-w-0">
+              <div className="text-xs text-site-text-muted">Posted by</div>
+              <div className="truncate font-medium text-site-text">{authorName}</div>
+            </div>
+            {!listing.isOwner && (
+              <Button onClick={messagePoster} disabled={messaging} className="ml-auto">
+                {messaging ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <MessageCircle className="h-4 w-4" />
+                )}
+                Message
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* Aggregation disclaimer for third-party listings */}
+        {isExternal && (
+          <p className="mt-3 text-xs text-site-text-muted">
+            This is a third-party listing aggregated from {listing.sourceName ?? 'a public feed'}.
+            Details may be out of date — always confirm on the original posting. RMHHomes isn’t
+            affiliated with the source and can’t verify it.
+          </p>
+        )}
 
         {/* Description */}
         <div className="mt-5">

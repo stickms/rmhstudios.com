@@ -1,14 +1,18 @@
 /**
- * RMHHomes — shared types (community housing marketplace).
+ * RMHHomes — shared types (housing marketplace).
  *
- * Client-safe (no server-only imports). RMHHomes is a marketplace where RMH
- * users post their own rentals/houses; every listing is real and owned by an
- * author. These types describe the listing DTO the API returns and the
- * search/filter contract shared between the API and the UI.
+ * Client-safe (no server-only imports). RMHHomes lists both member-posted
+ * rentals/houses (COMMUNITY, owned by an `author`) and real postings aggregated
+ * from public feeds by the scraper (EXTERNAL, no author, linking back to the
+ * original via `externalUrl`). These types describe the listing DTO the API
+ * returns and the search/filter contract shared between the API and the UI.
  */
 
 export type ListingType = 'RENT' | 'SALE';
 export const LISTING_TYPES: ListingType[] = ['RENT', 'SALE'];
+
+/** Where a listing came from. */
+export type ListingSource = 'COMMUNITY' | 'EXTERNAL';
 
 export type PropertyType = 'APARTMENT' | 'HOUSE' | 'CONDO' | 'TOWNHOUSE' | 'ROOM' | 'OTHER';
 export const PROPERTY_TYPES: PropertyType[] = [
@@ -36,6 +40,7 @@ export interface ListingAuthor {
  */
 export interface Listing {
   id: string;
+  source: ListingSource;
   status: ListingStatus;
   listingType: ListingType;
   propertyType: PropertyType;
@@ -67,7 +72,12 @@ export interface Listing {
   createdAt: string;
   updatedAt: string;
 
-  author: ListingAuthor;
+  /** The RMH member who posted it (COMMUNITY), or null for EXTERNAL listings. */
+  author: ListingAuthor | null;
+  /** For EXTERNAL listings: the original posting URL ("View original"). */
+  externalUrl: string | null;
+  /** For EXTERNAL listings: the source label, e.g. "Craigslist — Rochester". */
+  sourceName: string | null;
   /** Whether the requesting user has favorited this listing. */
   favorited: boolean;
   /** Whether the requesting user is the author (can edit/delete). */
@@ -90,6 +100,8 @@ export interface SearchFilters {
 
   listingType: ListingType | 'any';
   propertyTypes: PropertyType[];
+  /** Filter by origin: everything, member posts only, or aggregated only. */
+  source: 'any' | 'community' | 'external';
 
   minPrice?: number;
   maxPrice?: number;
@@ -107,6 +119,7 @@ export const DEFAULT_FILTERS: SearchFilters = {
   radiusKm: 40,
   listingType: 'any',
   propertyTypes: [],
+  source: 'any',
   sort: 'newest',
   page: 1,
   pageSize: 24,
