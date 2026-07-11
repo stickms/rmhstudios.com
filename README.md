@@ -36,21 +36,24 @@ rmhstudios.com is a modern, high-performance web application designed to showcas
 
 ## Backend Services (Go)
 
-The backend service layer has been ported to Go (`go-services/`). The React SSR
-`web` tier stays on Node; everything behind it has a Go equivalent. The deploy is
-reversible — the original Node services are preserved as fallbacks (commented
-`# FALLBACK (Node):` blocks in `docker-compose.yml`; the Node Helm chart for k3s).
+The backend service layer has a Go implementation (`go-services/`). Production
+today is a **hybrid**: the React SSR `web` tier and the realtime hubs
+(socket-server, rmhbox, rmhtube) run Node, while the Go fleet runs the five
+background workers (as one `supervisor` process), the `status` dashboard, and
+the `assets` streamer. The full-Go topology (gateway + Go hubs) is deployable
+via Helm/k3s but is not the production request path yet — see
+[`docs/architecture.md`](docs/architecture.md) for what actually runs where.
 
-| Service | Port | Role |
-|---|---|---|
-| `gateway` | 7005 | Edge / reverse-proxy in front of the hubs + assets |
-| `gamehub` (socket) | 7001 | Realtime games WebSocket hub |
-| `rmhbox` | 7676 | Party-game WebSocket hub |
-| `rmhtube` | 7003 | Watch-together WebSocket hub |
-| `rmhmusic` | 7002 | Collaborative listening WebSocket hub |
-| `assets` | 7007 | Streams `/library` `/music` `/models` `/sprites` from S3 (Range-aware), replacing the Apache-off-disk CDN |
-| `status` | 7008 | Standalone health dashboard (`/`, `/api/status`); survives outages |
-| `supervisor` | 9090 | Runs the five background workers (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker) as goroutines in one process |
+| Service | Port | Role | In prod today? |
+|---|---|---|---|
+| `gateway` | 7005 | Edge / reverse-proxy in front of the hubs + assets | k3s topology only |
+| `gamehub` (socket) | 7001 | Realtime games WebSocket hub | Node runs this |
+| `rmhbox` | 7676 | Party-game WebSocket hub | Node runs this |
+| `rmhtube` | 7003 | Watch-together WebSocket hub | Node runs this |
+| `rmhmusic` | 7002 | Collaborative listening WebSocket hub | Node (inside socket-server) |
+| `assets` | 7007 | Streams `/library` `/music` `/models` `/sprites` from S3 (Range-aware), replacing the Apache-off-disk CDN | ✅ Go |
+| `status` | 7008 | Standalone health dashboard (`/`, `/api/status`); survives outages | ✅ Go |
+| `supervisor` | 9090 | Runs the five background workers (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker) as goroutines in one process | ✅ Go |
 
 Build & test the Go services with Bazel:
 
@@ -141,7 +144,10 @@ SOCKET_CORS_ORIGIN=http://localhost:7005
 
 ## Build & Deployment
 
-The application is deployed to a VPS using PM2 to manage the Nitro web server and standalone WebSocket servers.
+The application is deployed to a VPS with **Docker Compose** behind
+Apache/Cloudflare. The web container deploys blue/green with a health-gated
+port flip (`deploy/hotswap-web.sh`). Full pipeline details:
+[`docs/architecture.md`](docs/architecture.md).
 
 1.  **To create a production build:**
     ```bash
@@ -149,10 +155,15 @@ The application is deployed to a VPS using PM2 to manage the Nitro web server an
     ```
     This compiles the Vite/Nitro app and bundles the WebSocket servers via esbuild.
 
-2.  **Deployment via Script:**
-    The provided `deploy.sh` script automates pulling, building, migrating, and swapping the PM2 processes.
+2.  **Deployment:**
+    Pushing to `main` triggers `.github/workflows/deploy.yml`, which SSHes to
+    the VPS and runs `./deploy.sh production` (pull → build two images →
+    prisma migrate → compose up → blue/green web hotswap). The script can
+    also be run manually; a legacy webhook receiver (`webhook-server.cjs`)
+    can trigger it as well.
 
-    ```bash
-    ./deploy.sh
-    ```
-    *Note: A webhook server (`webhook-server.cjs`) can trigger `deploy.sh` automatically on GitHub push.*
+## Documentation
+
+- **Coding agents / contributors start here:** [`CLAUDE.md`](CLAUDE.md) (or [`AGENTS.md`](AGENTS.md)) — repo-wide conventions, plus per-directory guides in `app/`, `components/`, `lib/`, `server/`, and `go-services/`.
+- **Docs index:** [`docs/README.md`](docs/README.md) — reference docs, runbooks, design docs, and known-stale docs.
+- **Design language:** [`docs/design-language.md`](docs/design-language.md) · **Page consistency:** [`docs/page-consistency.md`](docs/page-consistency.md) · **Runtime & deploy:** [`docs/architecture.md`](docs/architecture.md)

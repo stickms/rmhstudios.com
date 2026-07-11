@@ -9,6 +9,14 @@ React SSR tier with a fleet of Go realtime microservices behind it.
 > project is **not** Next.js — earlier revisions of this doc said so; that is
 > stale.)
 
+> **Companion docs:** agent guides live at [`/CLAUDE.md`](../CLAUDE.md) and in
+> each major directory (`app/`, `components/`, `lib/`, `server/`,
+> `go-services/`). Runtime topology & deploy pipeline:
+> [`architecture.md`](./architecture.md). Visual system:
+> [`design-language.md`](./design-language.md) +
+> [`page-consistency.md`](./page-consistency.md). Docs index:
+> [`README.md`](./README.md).
+
 ---
 
 ## 1. Tech stack
@@ -70,20 +78,26 @@ locales/            32 locale dirs × 66 namespaces (en is the reference)
 | Service | Port | Role |
 |---|---|---|
 | web (Vite/Nitro) | 7005 | React SSR app + API routes |
-| socket-server | 7001 | Games realtime hub (Slice It!, Neon Driftway, …) |
-| rmhmusic | 7002 | Collaborative listening |
+| socket-server | 7001 | Games realtime hub (Slice It!, Neon Driftway, …) — also hosts rmhmusic |
 | rmhtube | 7003 | Watch-together |
 | rmhbox | 7676 | Party-game hub |
+| ladder-worker | — | RMHLadder job-discovery cron (`lib/rmhladder` pipeline) |
 
-In production these are fronted by the Go **gateway** (§4).
+In production these same Node services serve traffic directly behind Apache;
+the Go **gateway** (§4) fronts them only in the k3s/Helm topology. See
+[`architecture.md`](./architecture.md) for the production picture.
 
 ---
 
 ## 4. Go microservice fleet (`go-services/`)
 
-The backend service layer is ported to Go (built with Bazel + gazelle). The
-React SSR `web` tier stays on Node; everything behind it has a Go equivalent.
-The Node services are preserved as reversible fallbacks.
+The backend service layer has a Go implementation (built with Bazel +
+gazelle). **Production today is a hybrid:** Go runs the background workers
+(one `supervisor` process), `status`, and `assets`; Node still runs the web
+SSR and all realtime hubs. The gateway + Go-hub topology below is deployable
+via Helm/k3s but is not yet the production request path. Details:
+[`architecture.md`](./architecture.md) and
+[`../go-services/CLAUDE.md`](../go-services/CLAUDE.md).
 
 | Service | Port | Role |
 |---|---|---|
