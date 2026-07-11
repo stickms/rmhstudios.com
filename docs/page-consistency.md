@@ -99,8 +99,10 @@ Work through this for every new or edited page:
       `lucide-react`.
 
 ### States
-- [ ] Loading: `<Skeleton>` blocks or `<Spinner>` (router-level pending is
-      already handled by `RoutePending`).
+- [ ] Loading: `<Skeleton>` blocks (add `shimmer` for hero placeholders) or
+      `<Spinner>` (router-level pending is already handled by `RoutePending`).
+      Buttons that trigger async work use `<Button loading={…}>` for in-flight
+      feedback — never a hand-rolled `disabled` + `<Loader2>`.
 - [ ] Empty: `<EmptyState icon title description action?>`.
 - [ ] Errors: rely on route `errorComponent` inheritance
       (`components/errors/RouteErrorFallback`); throw `notFound()` in loaders
@@ -130,7 +132,8 @@ Work through this for every new or edited page:
 
 ### Motion & accessibility
 - [ ] framer-motion for JS animation (MotionConfig already gates reduced
-      motion); gate imperative animation with `useReducedMotion()`.
+      motion); gate imperative animation with `useReducedMotion()`. Prefer the
+      shared tokens/variants in `lib/motion.ts` over ad-hoc `duration`/`ease`.
 - [ ] Icon-only controls have `aria-label` or `sr-only` text; decorative icons
       `aria-hidden`.
 - [ ] Keyboard path works (focus-visible rings are global; don't suppress

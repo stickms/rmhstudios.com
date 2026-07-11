@@ -133,7 +133,7 @@ Always reach for these before writing new markup. Helper: `cn()` from
 
 | Component | File | Notes |
 |---|---|---|
-| `Button` / `buttonVariants` | `components/ui/button.tsx` | CVA. Variants: `default`, `destructive`, `danger`, `outline`, `secondary`, `ghost`, `link`, `accent`, `accent-outline`, `accent-ghost`. Sizes: `xs`, `sm`, `default`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. `asChild` supported. |
+| `Button` / `buttonVariants` | `components/ui/button.tsx` | CVA. Variants: `default`, `destructive`, `danger`, `outline`, `secondary`, `ghost`, `link`, `accent`, `accent-outline`, `accent-ghost`. Sizes: `xs`, `sm`, `default`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. `asChild` supported. **`loading` prop** (+ optional `loadingText`) shows an inline spinner, sets `aria-busy`, and disables the button — reach for this instead of hand-rolling `disabled={x}` + a separate `<Loader2>`. |
 | `Badge` / `badgeVariants` | `components/ui/badge.tsx` | CVA pill. Variants: `default`, `accent`, `solid`, `success`, `warning`, `danger`, `outline`. |
 | `Card` + Header/Title/Description/Action/Content/Footer | `components/ui/card.tsx` | `bg-site-surface border border-site-border rounded-site shadow-site`. |
 | `Dialog` (Radix wrapper) | `components/ui/dialog.tsx` | Themed content, `bg-black/70 backdrop-blur-sm` overlay, built-in close X with translated `sr-only` label. |
@@ -141,7 +141,7 @@ Always reach for these before writing new markup. Helper: `cn()` from
 | `Select` | `components/ui/select.tsx` | Styled **native** `<select>` + lucide chevron (not Radix Select). |
 | `Label` | `components/ui/label.tsx` | Radix Label. |
 | `EmptyState` | `components/ui/empty-state.tsx` | Canonical zero-state: `{icon, title, description, action}`. |
-| `Skeleton` | `components/ui/skeleton.tsx` | Canonical loading placeholder. |
+| `Skeleton` | `components/ui/skeleton.tsx` | Canonical loading placeholder. Defaults to a gentle `animate-pulse`; pass **`shimmer`** for a travelling highlight sweep (reduced-motion-safe) — nicer for above-the-fold / hero placeholders. |
 | `Spinner` | `components/ui/spinner.tsx` | Canonical spinner (lucide `Loader2`, `role="status"`) for **standalone / section loading** (accent-coloured, centred). A bare inline `<Loader2 className="animate-spin" />` inside a button/label is fine — it inherits `currentColor` so it contrasts its container; forcing `<Spinner>` there would paint it accent-on-accent. |
 | `Tooltip` | `components/ui/Tooltip.tsx` | Portal + framer-motion. Shows on **hover and keyboard focus**, dismisses on Escape, wires `aria-describedby`. |
 | `IconButton` | `components/ui/icon-button.tsx` | Icon-only `Button` that requires a `label` (becomes `aria-label` **and** a `Tooltip`). Reach for this instead of a bare `<button aria-label>`. |
@@ -197,9 +197,15 @@ no shell.
 
 ## 7. Motion
 
-- **framer-motion** is the animation library; motion props are written inline
-  (there is no shared variants file). Typical transition:
-  `{ duration: 0.15, ease: "easeOut" }` with opacity/scale/y.
+- **framer-motion** is the animation library. Reach for the shared motion
+  system in **`lib/motion.ts`** rather than hand-typing durations/easings:
+  it exports the timing tokens (`DURATION`, `EASE`, `SPRING`, `transition`)
+  and ready-made variants (`fade`, `fadeRise`, `fadeDown`, `scaleIn`, `popIn`,
+  `overlay`, `modalContent`, `staggerContainer`/`staggerItem`). Keeping enters,
+  exits, and lists on these tokens is what makes motion feel like one system
+  — smooth and quick (nothing here is slower than 0.3s). Inline props are still
+  fine for one-offs, but prefer `transition` / a named variant so a global
+  re-tune stays a one-line change.
 - `<MotionConfig reducedMotion="user">` wraps the app (`Providers.tsx`), so
   framer-motion automatically respects OS reduced-motion.
 - CSS motion: `.page-root > *` runs the `page-enter` animation (0.22s fade +
@@ -284,6 +290,9 @@ lazy locale chunks).
   `rounded-site`, …) for every color, radius, shadow, and font.
 - Use `components/ui/` primitives, `PageLayout`/`AnimatedMain`, `EmptyState`,
   `Skeleton`, `Spinner`, sonner toasts, lucide icons.
+- Give buttons in-flight feedback with `<Button loading>` (not a hand-rolled
+  `disabled` + `<Loader2>`), and animate with the tokens/variants in
+  `lib/motion.ts` instead of ad-hoc `duration`/`ease` numbers.
 - Add `data-slot="..."` to new shared primitives so themes can restyle them.
 - Wire every string through `t(..., { defaultValue })`.
 - Test in `default`, `light`, and `high-contrast` themes and under reduced
