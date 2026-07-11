@@ -6,6 +6,7 @@ import { ArrowLeft, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { useFreshUser, useUserDisplayStore } from '@/stores/userDisplayStore';
@@ -36,6 +37,7 @@ interface PostDetailProps {
 
 export function PostDetail({ postId }: PostDetailProps) {
   const { t } = useTranslation("feed");
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const [post, setPost] = useState<FeedItem | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -106,7 +108,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
   const handleDelete = async () => {
     setMenuOpen(false);
-    if (!confirm('Delete this RMHark?')) return;
+    if (!(await confirm({ title: 'Delete this RMHark?', danger: true }))) return;
     try {
       await fetch(`/api/rmharks/${postId}`, { method: 'DELETE' });
       navigate({ to: '/' });

@@ -7,6 +7,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { Boxes, Plus, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import type { Build } from '@/lib/user-builds-types';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +18,7 @@ export const Route = createFileRoute('/_site/user-builds/manage')({
 
 function ManageContent() {
   const { t } = useTranslation("user-builds");
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const location = useLocation();
   const { data: session, isPending } = useSession();
@@ -47,7 +49,7 @@ function ManageContent() {
   }, [fetchBuilds, session?.user?.id]);
 
   const handleDelete = async (build: Build) => {
-    if (!confirm(t("delete-confirm", { title: build.title, defaultValue: `Delete "{{title}}"? This cannot be undone.` }))) return;
+    if (!(await confirm({ title: t("delete-confirm", { title: build.title, defaultValue: `Delete "{{title}}"? This cannot be undone.` }), danger: true }))) return;
     setDeleting(build.id);
     try {
       const res = await fetch(`/api/user-builds/${build.id}`, { method: 'DELETE' });

@@ -36,6 +36,7 @@ import { timeAgoShort } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useLocaleStore } from '@/stores/localeStore';
 import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 interface RMHarkCardProps {
   item: FeedItem;
@@ -55,6 +56,7 @@ function postHref(user: FeedItemUser | undefined | null, postId: string): string
 
 export function RMHarkCard({ item }: RMHarkCardProps) {
   const { t } = useTranslation('feed');
+  const confirm = useConfirm();
   const locale = useLocaleStore((s) => s.locale);
   const viewTracked = useRef(false);
   const navigate = useNavigate();
@@ -275,7 +277,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
   const handleDelete = async () => {
     setMenuOpen(false);
-    if (!confirm(t('delete-confirm', { defaultValue: 'Delete this RMHark?' }))) return;
+    if (!(await confirm({ title: t('delete-confirm', { defaultValue: 'Delete this RMHark?' }), danger: true }))) return;
     removeItem(item.id);
     try {
       await fetch(`/api/rmharks/${actualId}`, { method: 'DELETE' });

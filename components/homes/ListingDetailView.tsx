@@ -34,6 +34,7 @@ import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select } from '@/components/ui/select';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { ListingsMap } from '@/components/homes/ListingsMap';
 import { FavoriteButton } from '@/components/homes/FavoriteButton';
 import type { Listing, ListingStatus } from '@/lib/homes/types';
@@ -52,6 +53,7 @@ import {
 
 export function ListingDetailView({ id }: { id: string }) {
   const { data: session } = useSession();
+  const confirm = useConfirm();
   const navigate = useNavigate();
 
   const [listing, setListing] = useState<Listing | null>(null);
@@ -135,7 +137,7 @@ export function ListingDetailView({ id }: { id: string }) {
 
   const remove = useCallback(async () => {
     if (!listing) return;
-    if (!confirm('Delete this listing? This cannot be undone.')) return;
+    if (!(await confirm({ title: 'Delete this listing? This cannot be undone.', danger: true }))) return;
     try {
       const res = await fetch(`/api/homes/listings/${listing.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Could not delete');
@@ -144,7 +146,7 @@ export function ListingDetailView({ id }: { id: string }) {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Could not delete listing');
     }
-  }, [listing, navigate]);
+  }, [listing, navigate, confirm]);
 
   if (loading) {
     return (

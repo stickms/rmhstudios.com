@@ -8,6 +8,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Loader2, Check, X, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 interface AdminMarket {
   id: string;
@@ -28,6 +29,7 @@ export const Route = createFileRoute('/_site/admin/predictions')({
 
 function AdminPredictionsPage() {
   const { t } = useTranslation('admin');
+  const confirm = useConfirm();
   const [pending, setPending] = useState<AdminMarket[]>([]);
   const [open, setOpen] = useState<AdminMarket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +72,7 @@ function AdminPredictionsPage() {
   }
 
   async function resolve(id: string, outcome: 'YES' | 'NO') {
-    if (!confirm(t('resolve-confirm', { defaultValue: `Resolve this market to ${outcome}? This pays out winners and cannot be undone.`, outcome }))) {
+    if (!(await confirm({ title: t('resolve-confirm', { defaultValue: `Resolve this market to ${outcome}? This pays out winners and cannot be undone.`, outcome }), danger: true }))) {
       return;
     }
     setBusy(id);

@@ -44,7 +44,7 @@ export function RideChat({ messages, currentUserId, onSend, disabled, otherName 
   }
 
   return (
-    <div className="flex flex-col rounded-xl border border-site-border bg-site-surface/80">
+    <div className="flex flex-col rounded-site border border-site-border bg-site-surface/80">
       <div className="flex items-center gap-2 border-b border-site-border px-4 py-2.5">
         <MessageCircle className="h-4 w-4 text-site-accent" />
         <span className="text-sm font-semibold text-site-text">
@@ -63,7 +63,7 @@ export function RideChat({ messages, currentUserId, onSend, disabled, otherName 
             return (
               <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
                 <div
-                  className={`max-w-[80%] rounded-2xl px-3 py-1.5 text-sm ${
+                  className={`max-w-[80%] rounded-site px-3 py-1.5 text-sm ${
                     mine
                       ? 'rounded-br-sm bg-site-accent text-(--site-accent-fg)'
                       : 'rounded-bl-sm bg-site-surface-hover text-site-text'
@@ -84,12 +84,12 @@ export function RideChat({ messages, currentUserId, onSend, disabled, otherName 
           disabled={disabled}
           maxLength={500}
           placeholder={disabled ? t("chat-unavailable", { defaultValue: "Chat unavailable" }) : t("type-message", { defaultValue: "Type a message…" })}
-          className="min-w-0 flex-1 rounded-lg border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 disabled:opacity-50 sm:py-2 sm:text-sm"
+          className="min-w-0 flex-1 rounded-site-sm border border-site-border bg-site-surface px-3 py-2.5 text-base text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60 disabled:opacity-50 sm:py-2 sm:text-sm"
         />
         <button
           type="submit"
           disabled={disabled || sending || !input.trim()}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-site-accent text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm bg-site-accent text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={t("send-message", { defaultValue: "Send message" })}
         >
           <Send className="h-4 w-4" />

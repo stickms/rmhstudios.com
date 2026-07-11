@@ -238,7 +238,7 @@ export function MembershipPanel({
             return (
               <article
                 key={plan.tier}
-                className={`pricing-card pricing-fade group relative flex flex-col rounded-3xl border p-6 ${
+                className={`pricing-card pricing-fade group relative flex flex-col rounded-site border p-6 ${
                   plan.featured
                     ? 'pricing-card--featured border-transparent bg-site-surface/70'
                     : 'border-site-border bg-site-surface/30'

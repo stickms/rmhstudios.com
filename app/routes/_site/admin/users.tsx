@@ -9,6 +9,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { Loader2, Search, CheckCircle, Shield, AlertCircle, Pencil, Check, X, Crown, Coins } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useSession } from '@/components/Providers';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 interface User {
   id: string;
@@ -30,6 +31,7 @@ export const Route = createFileRoute('/_site/admin/users')({
 
 function AdminUsersPage() {
   const { t } = useTranslation("admin");
+  const confirm = useConfirm();
   const { data: session } = useSession();
   const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
@@ -81,7 +83,7 @@ function AdminUsersPage() {
   };
 
   const toggleStatus = async (userId: string, field: 'isAdmin' | 'isVerified', currentValue: boolean) => {
-    if (field === 'isAdmin' && !currentValue && !confirm(t("confirm-grant-admin", { defaultValue: "Are you sure you want to grant Admin privileges to this user? They will have full access to the database." }))) return;
+    if (field === 'isAdmin' && !currentValue && !(await confirm({ title: t("confirm-grant-admin", { defaultValue: "Are you sure you want to grant Admin privileges to this user? They will have full access to the database." }), danger: true }))) return;
     if (field === 'isAdmin' && currentValue && userId === session?.user?.id) { alert(t("alert-self-admin-remove", { defaultValue: "You cannot remove your own admin privileges from the dashboard." })); return; }
     setUpdating(userId);
     try {

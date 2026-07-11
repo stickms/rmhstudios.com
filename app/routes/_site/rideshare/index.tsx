@@ -59,7 +59,7 @@ export function RideshareLanding() {
         <motion.section
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-3xl border border-site-border bg-gradient-to-b from-site-surface to-site-bg p-8 md:p-12"
+          className="relative overflow-hidden rounded-site border border-site-border bg-gradient-to-b from-site-surface to-site-bg p-8 md:p-12"
         >
           <div
             className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full opacity-30 blur-3xl"
@@ -160,7 +160,7 @@ export function RideshareLanding() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="mt-12 overflow-hidden rounded-3xl border border-site-border bg-site-surface/80 p-8 md:flex md:items-center md:justify-between md:gap-8"
+          className="mt-12 overflow-hidden rounded-site border border-site-border bg-site-surface/80 p-8 md:flex md:items-center md:justify-between md:gap-8"
         >
           <div className="max-w-lg">
             <div className="flex items-center gap-2 text-site-accent">
