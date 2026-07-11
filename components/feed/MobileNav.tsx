@@ -30,7 +30,7 @@ export function MobileNav() {
   const { t } = useTranslation("feed");
 
   const tabClass = (active: boolean) =>
-    `relative flex items-center justify-center p-3 rounded-full transition-[color,transform] duration-150 active:scale-90 ${
+    `relative flex items-center justify-center p-3 transition-[color,transform] duration-150 active:scale-90 ${
       active ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text'
     }`;
 
@@ -47,7 +47,7 @@ export function MobileNav() {
       {session && isHome && (
         <button
           onClick={() => setComposeOpen(true)}
-          className="md:hidden fixed right-4 z-50 w-14 h-14 rounded-full bg-site-accent hover:bg-site-accent-hover text-site-bg shadow-lg flex items-center justify-center transition-colors active:scale-95"
+          className="md:hidden fixed right-4 z-50 w-14 h-14 rounded-full bg-site-accent hover:bg-site-accent-hover text-site-accent-fg shadow-lg flex items-center justify-center transition-colors active:scale-95"
           // Sit above the bottom nav AND the home-indicator safe area, so the
           // FAB never collides with the bar or tucks under the indicator.
           style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
@@ -59,16 +59,7 @@ export function MobileNav() {
 
       {/* Bottom navigation bar — pb-safe keeps the tab row clear of the iOS
           home-indicator (fixed elements don't inherit the body's safe-area pad). */}
-      {/* Theme-aware opaque backing: the floating bottom nav needs a more opaque
-          backing than the standard .vibe-glass (72%) to stay legible over
-          scrolling content. An inline style beats the unlayered .vibe-glass rule
-          in the cascade, and derives from --site-bg so it tints correctly in
-          Light / High-Contrast (the old hardcoded rgba(12,12,13,.96) stayed dark
-          in Light theme — the Phase 1 carry-forward bug this fixes). */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 z-50 vibe-glass border-t border-site-border pb-safe"
-        style={{ background: 'color-mix(in srgb, var(--site-bg) 92%, transparent)' }}
-      >
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 vibe-glass vibe-mobile-nav border-t border-site-border pb-safe">
         <div className="flex items-center justify-around min-h-12">
           <Link to="/" className={tabClass(isHome)} aria-label={t("home", { defaultValue: "Home" })} aria-current={isHome ? 'page' : undefined}>
             {activeBar(isHome)}

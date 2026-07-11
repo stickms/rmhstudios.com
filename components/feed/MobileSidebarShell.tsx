@@ -283,7 +283,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           className={`relative z-10 min-h-dvh bg-site-bg touch-pan-y ${
             dragging
               ? ''
-              : 'transition-transform duration-[340ms] ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
+              : 'transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0'
           }`}
           style={{ transform }}
         >
@@ -292,10 +292,10 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           {/* Scrim over the pushed content: dims it and captures taps to close */}
           {offset > 0 && (
             <div
-              className={`absolute inset-0 z-50 bg-black/60 backdrop-blur-sm ${
+              className={`absolute inset-0 z-50 bg-black/30 ${
                 dragging
                   ? ''
-                  : 'transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
+                  : 'transition-opacity duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
               }`}
               style={{ opacity: scrimProgress }}
               onClick={close}
