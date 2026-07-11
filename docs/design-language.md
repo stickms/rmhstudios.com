@@ -142,7 +142,7 @@ Always reach for these before writing new markup. Helper: `cn()` from
 | `Label` | `components/ui/label.tsx` | Radix Label. |
 | `EmptyState` | `components/ui/empty-state.tsx` | Canonical zero-state: `{icon, title, description, action}`. |
 | `Skeleton` | `components/ui/skeleton.tsx` | Canonical loading placeholder. |
-| `Spinner` | `components/ui/spinner.tsx` | Canonical spinner (lucide `Loader2`, `role="status"`). |
+| `Spinner` | `components/ui/spinner.tsx` | Canonical spinner (lucide `Loader2`, `role="status"`) for **standalone / section loading** (accent-coloured, centred). A bare inline `<Loader2 className="animate-spin" />` inside a button/label is fine — it inherits `currentColor` so it contrasts its container; forcing `<Spinner>` there would paint it accent-on-accent. |
 | `Tooltip` | `components/ui/Tooltip.tsx` | Portal + framer-motion. Shows on **hover and keyboard focus**, dismisses on Escape, wires `aria-describedby`. |
 | `IconButton` | `components/ui/icon-button.tsx` | Icon-only `Button` that requires a `label` (becomes `aria-label` **and** a `Tooltip`). Reach for this instead of a bare `<button aria-label>`. |
 | `CopyButton` / `useClipboard` | `components/ui/copy-button.tsx`, `hooks/useClipboard.ts` | Canonical copy-to-clipboard: icon → check, sonner toast, `execCommand` fallback. Don't hand-roll `navigator.clipboard.writeText` + `useState`. |
@@ -294,6 +294,8 @@ lazy locale chunks).
 - Hardcode hex/oklch colors, `rounded-lg`, custom shadows, or font families in
   site UI.
 - Re-add navigation/sidebars inside a page (the `_site` shell owns them).
-- Use `react-icons`, ad-hoc `Loader2` spinners, or hand-rolled dialogs.
+- Use `react-icons`, an ad-hoc **standalone** `Loader2` where `<Spinner>`
+  belongs (inline `Loader2` inheriting a button's colour is fine), or
+  hand-rolled dialogs.
 - Put a full-screen experience under `_site/`, or a standard page outside it.
 - Bypass Twemoji for emoji or `jsonLdScript()` for JSON-LD.
