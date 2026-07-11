@@ -17,6 +17,8 @@ export interface RecentEntry {
   href: string;
   title: string;
   gradient: string;
+  /** Thumbnail captured at visit time; falls back to `gradient` when absent. */
+  image?: string;
   kind: 'game' | 'app';
   at: number;
 }

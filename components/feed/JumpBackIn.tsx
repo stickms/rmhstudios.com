@@ -37,11 +37,23 @@ export function JumpBackIn() {
             title={r.title}
             className="group relative flex h-16 w-32 shrink-0 flex-col justify-end overflow-hidden rounded-site border border-site-border p-2"
           >
-            <span
-              aria-hidden
-              className={`absolute inset-0 bg-linear-to-br ${r.gradient} opacity-80 transition-opacity group-hover:opacity-100`}
-            />
-            <span className="absolute inset-0 bg-black/25" aria-hidden />
+            {/* Prefer the game/app's own thumbnail; fall back to its gradient. */}
+            {r.image ? (
+              <img
+                src={r.image}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="absolute inset-0 h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+              />
+            ) : (
+              <span
+                aria-hidden
+                className={`absolute inset-0 bg-linear-to-br ${r.gradient} opacity-80 transition-opacity group-hover:opacity-100`}
+              />
+            )}
+            {/* Darken so the title stays legible over any thumbnail. */}
+            <span className="absolute inset-0 bg-black/35" aria-hidden />
             <span className="relative truncate text-xs font-semibold text-white drop-shadow">
               {r.title}
             </span>
