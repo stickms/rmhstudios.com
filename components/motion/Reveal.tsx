@@ -16,6 +16,10 @@
  *   batching only.
  * - Don't double-animate elements already animated by the `.page-root > *`
  *   page-enter CSS. Apply Reveal one level deeper than route roots.
+ * - For reduced-motion users, `useReducedMotion` returns false on the server and
+ *   first client render, so Reveal/RevealGroup briefly mount a motion node on
+ *   first paint before settling (post-mount, via effect) to plain elements —
+ *   benign, and it introduces no hydration mismatch.
  */
 import type { ElementType, ReactNode } from 'react';
 import { motion } from 'framer-motion';

@@ -10,7 +10,7 @@ vi.mock('@/hooks/useReducedMotion', () => ({
   prefersReducedMotion: () => reduced.value,
 }));
 
-import { ScrollScene } from '../ScrollScene';
+import { ScrollScene, useScrollScene } from '../ScrollScene';
 
 afterEach(() => {
   reduced.value = false;
@@ -57,5 +57,25 @@ describe('ScrollScene', () => {
     expect(html).not.toContain('position:sticky');
     expect(html).not.toContain('500vh');
     expect(html).not.toContain('100svh');
+  });
+
+  it('exposes the progress MotionValue to a descendant via useScrollScene() (reduced-motion path fixes it at 1)', () => {
+    reduced.value = true;
+    let received: unknown;
+    function Consumer() {
+      received = useScrollScene();
+      return <div>consumer</div>;
+    }
+    const html = renderToString(
+      <ScrollScene>
+        {() => <Consumer />}
+      </ScrollScene>,
+    );
+    expect(html).toContain('consumer');
+    // Frozen public API: descendants get the same progress MotionValue.
+    const progress = received as { get: () => number };
+    expect(progress).toBeDefined();
+    expect(typeof progress.get).toBe('function');
+    expect(progress.get()).toBe(1);
   });
 });
