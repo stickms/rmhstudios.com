@@ -19,7 +19,7 @@ export function Spinner({ size = 24, className, label }: SpinnerProps) {
     <Loader2
       role="status"
       aria-label={label ?? "Loading"}
-      className={cn("animate-spin text-site-accent", className)}
+      className={cn("animate-spin text-site-text-muted", className)}
       style={{ width: size, height: size }}
     />
   )
