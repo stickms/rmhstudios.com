@@ -6,6 +6,7 @@ import { Link } from '@tanstack/react-router';
 import { Loader2, Bot, Send, ArrowLeft, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 interface Msg {
   role: string;
@@ -36,6 +37,7 @@ export function PersonaChatColumn({
   initialData?: { persona: Persona; messages: Msg[]; signedIn: boolean } | null;
 }) {
   const { t } = useTranslation('feed');
+  const confirm = useConfirm();
   // Seed from the loader when it ran (even a `null` result is a definitive
   // not-found seed) so the column paints immediately without a mount fetch.
   const seeded = useRef(initialData !== undefined);
@@ -107,7 +109,7 @@ export function PersonaChatColumn({
   }
 
   async function del() {
-    if (!confirm(t('delete-persona-confirm', { defaultValue: 'Delete this persona?' }))) return;
+    if (!(await confirm({ title: t('delete-persona-confirm', { defaultValue: 'Delete this persona?' }), danger: true }))) return;
     const res = await fetch(`/api/personas/${encodeURIComponent(id)}`, { method: 'DELETE', credentials: 'include' });
     if (res.ok) window.location.href = '/personas';
   }

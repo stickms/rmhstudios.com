@@ -15,6 +15,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Check, Loader2, Plus, Trash2, X } from 'lucide-react';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { analyzeBook, isEpubFile } from '@/lib/library/pdf-client';
 import { libraryPdfMaxBytes } from '@/lib/library/upload-validation';
 
@@ -74,6 +75,7 @@ export function UploadModal({
 }) {
   const navigate = useNavigate();
   const { t } = useTranslation('c-library');
+  const confirm = useConfirm();
   const maxBytes = libraryPdfMaxBytes(isAdmin);
   const maxMb = Math.round(maxBytes / 1024 / 1024);
 
@@ -97,7 +99,7 @@ export function UploadModal({
 
   const deleteMine = useCallback(
     async (slug: string) => {
-      if (!window.confirm(t('confirm-delete-upload', { defaultValue: 'Delete this upload? This cannot be undone.' }))) return;
+      if (!(await confirm({ title: t('confirm-delete-upload', { defaultValue: 'Delete this upload? This cannot be undone.' }), danger: true }))) return;
       setGateBusy(slug);
       const res = await fetch(`/api/library/${slug}`, { method: 'DELETE' }).catch(() => null);
       setGateBusy(null);
@@ -106,7 +108,7 @@ export function UploadModal({
         await fetchQuota();
       }
     },
-    [fetchQuota, onUploaded, t],
+    [fetchQuota, onUploaded, t, confirm],
   );
 
   const appeal = useCallback(

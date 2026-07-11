@@ -10,6 +10,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowUp, ArrowDown, Pencil, Star, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import type { LibraryBook } from '@/lib/library/library';
 import { LibraryContextMenu, type MenuItem, type MenuPos } from './LibraryContextMenu';
 
@@ -49,6 +50,7 @@ export function BookContextMenu({
   onChanged: () => void;
 }) {
   const { t } = useTranslation('c-library');
+  const confirm = useConfirm();
 
   const act = async (fn: () => Promise<string | null>) => {
     const err = await fn().catch(() => 'Action failed.');
@@ -99,8 +101,8 @@ export function BookContextMenu({
           icon: <Trash2 size={15} />,
           label: t('edit-delete', { defaultValue: 'Delete' }),
           danger: true,
-          onSelect: () => {
-            if (window.confirm(t('edit-delete-confirm', { defaultValue: 'Delete this book permanently?' }))) {
+          onSelect: async () => {
+            if (await confirm({ title: t('edit-delete-confirm', { defaultValue: 'Delete this book permanently?' }), danger: true })) {
               void act(async () => {
                 const res = await fetch(`/api/admin/library/${book.id}`, { method: 'DELETE' });
                 if (res.ok) return null;

@@ -21,6 +21,7 @@ import { FareBreakdown } from './FareBreakdown';
 import { PayoutBreakdown } from './PayoutBreakdown';
 import { TipPrompt } from './TipPrompt';
 import { StarRating } from './StarRating';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { rideClassName } from '@/lib/rideshare/classes';
 import { formatDistance, formatDuration, type LatLng } from '@/lib/rideshare/geo';
 import { useDriverLocationShare } from '@/lib/rideshare/useDriverLocationShare';
@@ -99,6 +100,7 @@ export function ActiveRidePanel({
   onClose?: () => void;
 }) {
   const { t } = useTranslation("c-rideshare");
+  const confirm = useConfirm();
   const [ride, setRide] = useState<SyncRide | null>(null);
   const [role, setRole] = useState<'rider' | 'driver'>('rider');
   const [loading, setLoading] = useState(true);
@@ -142,7 +144,7 @@ export function ActiveRidePanel({
   const locationState = useDriverLocationShare(sharingActive);
 
   async function act(action: 'start' | 'complete' | 'cancel') {
-    if (action === 'cancel' && !confirm(t("cancel-this-ride", { defaultValue: "Cancel this ride?" }))) return;
+    if (action === 'cancel' && !(await confirm({ title: t("cancel-this-ride", { defaultValue: "Cancel this ride?" }), danger: true }))) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/rideshare/rides/${rideId}`, {
