@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "bot.go",
         "chat.go",
+        "chat_memory.go",
         "deepseek.go",
         "interactions.go",
         "pet.go",
@@ -33,6 +34,7 @@ go_library(
 go_test(
     name = "discordbot_test",
     srcs = [
+        "chat_memory_test.go",
         "discordbot_test.go",
         "run_test.go",
     ],
