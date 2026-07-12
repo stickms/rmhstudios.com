@@ -42,8 +42,8 @@
   transform: translateY(-160%);
   padding: 10px 16px;
   border-radius: 10px;
-  background: #f5f5f7;
-  color: #000;
+  background: var(--site-accent, #9d7bff);
+  color: var(--site-accent-fg, #fff);
   font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
@@ -219,8 +219,8 @@
     border-color 160ms var(--sec-ease), opacity 160ms var(--sec-ease);
 }
 .sec-btn svg { width: 17px; height: 17px; }
-.sec-btn--primary { background: #f5f5f7; color: #000; }
-.sec-btn--primary:hover { background: #fff; transform: translateY(-1px); }
+.sec-btn--primary { background: var(--site-accent, #9d7bff); color: var(--site-accent-fg, #fff); }
+.sec-btn--primary:hover { background: var(--site-accent-hover, #ae8fff); transform: translateY(-1px); }
 .sec-btn--ghost { background: rgba(255, 255, 255, 0.04); border-color: var(--sec-line); color: var(--sec-ink); }
 .sec-btn--ghost:hover { background: rgba(255, 255, 255, 0.09); border-color: rgba(255, 255, 255, 0.22); transform: translateY(-1px); }
 
@@ -509,7 +509,7 @@
 /* Focus visibility — consistent ring across the page. */
 .sec-page a:focus-visible,
 .sec-page button:focus-visible {
-  outline: 2px solid #f5f5f7;
+  outline: 2px solid var(--site-accent, #9d7bff);
   outline-offset: 3px;
   border-radius: 6px;
 }
@@ -634,7 +634,7 @@
   overflow-x: auto;
   background: rgba(255, 255, 255, 0.02);
 }
-.sec-bounty-table-wrap:focus-visible { outline: 2px solid #f5f5f7; outline-offset: 2px; }
+.sec-bounty-table-wrap:focus-visible { outline: 2px solid var(--site-accent, #9d7bff); outline-offset: 2px; }
 .sec-bounty-table-title {
   margin: 0;
   padding: 20px clamp(18px, 3vw, 26px) 6px;
@@ -884,7 +884,7 @@ select.sec-field__input {
   transition: transform 200ms var(--sec-ease);
 }
 .sec-faq__item[open] .sec-faq__q::after { transform: rotate(45deg); }
-.sec-faq__q:focus-visible { outline: 2px solid #f5f5f7; outline-offset: -2px; }
+.sec-faq__q:focus-visible { outline: 2px solid var(--site-accent, #9d7bff); outline-offset: -2px; }
 .sec-faq__a { margin: 0; padding: 0 clamp(18px, 3vw, 24px) 20px; font-size: 0.93rem; line-height: 1.62; color: var(--sec-ink-2); }
 .sec-faq__a a { color: var(--sec-ink); text-underline-offset: 3px; }
 

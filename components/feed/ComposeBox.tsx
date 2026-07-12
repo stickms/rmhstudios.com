@@ -364,7 +364,9 @@ export function ComposeBox({
   const CurrentAudienceIcon = currentAudience.icon;
 
   return (
-    <div className="px-4 py-3 border-b border-site-border">
+    // focus-within lifts the composer to a faint surface + brighter hairline
+    // while writing, then settles back — an activation cue, not a layout change.
+    <div className="px-4 py-3 border-b border-site-border transition-colors duration-200 focus-within:bg-site-surface/20 focus-within:border-site-border-bright">
       {pendingDraft && !content && (
         <div className="mb-3 flex items-center gap-2 rounded-site border border-site-border bg-site-bg-subtle px-3 py-2">
           <History className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />

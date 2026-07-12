@@ -148,34 +148,6 @@ const THEME_BG: Record<SiteStyle, string> = {
   default: "#000",
   light: "#f5f5f7",
   "high-contrast": "#000",
-  gamer: "#0a0a0a",
-  anime: "#fff5f9",
-  musical: "#0c0e1a",
-  hyperpop: "#120018",
-  "comic-book": "#fffde0",
-  cinema: "#0a0a08",
-  "gen-z": "#1a1820",
-  boomer: "#f5f0e8",
-  aries: "#1a0a0a",
-  taurus: "#141a10",
-  gemini: "#0e0e22",
-  cancer: "#0c1018",
-  leo: "#140e1e",
-  virgo: "#f4f6f2",
-  libra: "#f8f0f6",
-  scorpio: "#0e0608",
-  sagittarius: "#100c1e",
-  capricorn: "#141416",
-  aquarius: "#060e18",
-  pisces: "#0c1018",
-  spring: "#f2f8f0",
-  summer: "#fff8f0",
-  autumn: "#1a1410",
-  winter: "#0a0e14",
-  elementary: "#fffef4",
-  "middle-school": "#181e24",
-  "high-school": "#121418",
-  university: "#f5f0e8",
 };
 
 /** Routes where the site-wide theme must NOT be applied (apps/games own their styling). */
@@ -305,11 +277,16 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     document.documentElement.classList.toggle("app-route", isAppRoute);
   }, [isAppRoute]);
 
-  // Hydrate style from localStorage on mount
+  // Hydrate style from localStorage on mount. Self-heal legacy values: the
+  // theme set was reduced to Dark / Light / High Contrast, so any retired
+  // novelty style still persisted from before falls back to "default" and is
+  // rewritten so it doesn't linger.
   useEffect(() => {
-    const stored = localStorage.getItem("rmh-style") as SiteStyle | null;
+    const stored = localStorage.getItem("rmh-style");
     if (stored && SITE_STYLES.some((s) => s.id === stored)) {
-      useThemeStore.getState().setStyle(stored);
+      useThemeStore.getState().setStyle(stored as SiteStyle);
+    } else if (stored) {
+      localStorage.setItem("rmh-style", "default");
     }
   }, []);
 
@@ -365,7 +342,7 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
         </ConfirmProvider>
         </ResolvedUserCtx.Provider>
         <Toaster
-          theme="dark"
+          theme={style === "light" ? "light" : "dark"}
           position="bottom-left"
           toastOptions={{
             style: {

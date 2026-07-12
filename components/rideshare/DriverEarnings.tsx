@@ -71,7 +71,7 @@ export function DriverEarnings() {
     { icon: Wallet, label: tr("trip-fares", { defaultValue: "Trip fares" }), value: data.grossFaresCents, tone: 'text-site-text' },
     { icon: Building2, label: tr("rmh-studios-fee", { defaultValue: "RMH Studios fee" }), value: -data.serviceFeeCents, tone: 'text-site-text-muted' },
     { icon: ShieldCheck, label: tr("insurance-safety", { defaultValue: "Insurance & safety" }), value: -data.insuranceCents, tone: 'text-site-text-muted' },
-    { icon: Gift, label: tr("tips", { defaultValue: "Tips" }), value: data.tipsCents, tone: 'text-emerald-400' },
+    { icon: Gift, label: tr("tips", { defaultValue: "Tips" }), value: data.tipsCents, tone: 'text-site-success' },
   ];
 
   return (
@@ -81,7 +81,7 @@ export function DriverEarnings() {
       {/* Earnings headline */}
       <div className="flex items-center justify-between rounded-site border border-site-border bg-linear-to-r from-site-surface to-site-bg p-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-site bg-emerald-500/15 text-emerald-400">
+          <div className="flex h-11 w-11 items-center justify-center rounded-site bg-site-success/15 text-site-success">
             <Wallet className="h-5 w-5" />
           </div>
           <div>
@@ -110,7 +110,7 @@ export function DriverEarnings() {
         </dl>
         <div className="mt-3 flex items-center justify-between border-t border-site-border pt-3">
           <span className="text-base font-bold text-site-text">{tr("take-home", { defaultValue: "Take-home" })}</span>
-          <span className="text-lg font-bold text-emerald-400">{formatUsd(data.earningsCents)}</span>
+          <span className="text-lg font-bold text-site-success">{formatUsd(data.earningsCents)}</span>
         </div>
       </div>
 
@@ -147,7 +147,7 @@ export function DriverEarnings() {
                   </div>
                 </div>
                 <div className="shrink-0 text-right">
-                  <div className="text-sm font-semibold text-emerald-400">{formatUsd(t.driverEarningsCents)}</div>
+                  <div className="text-sm font-semibold text-site-success">{formatUsd(t.driverEarningsCents)}</div>
                   <div className="text-[11px] text-site-text-dim">
                     {tr("fare-amount", { defaultValue: "{{amount}} fare", amount: formatUsd(t.estimatedFareCents) })}{t.tipCents > 0 ? ' · ' + tr("tip-amount", { defaultValue: "+{{amount}} tip", amount: formatUsd(t.tipCents) }) : ''}
                   </div>

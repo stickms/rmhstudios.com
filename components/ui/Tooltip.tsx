@@ -97,22 +97,26 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
             pointerEvents: 'none',
           }}
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 0, x: '-50%' }}
-            animate={{ opacity: 1, scale: 1, y: -8, x: '-50%' }}
-            exit={{ opacity: 0, scale: 0.9, y: 0, x: '-50%' }}
-            transition={{ duration: 0.15, ease: 'easeOut' }}
-            style={{ position: 'absolute', bottom: 0, left: 0 }}
-            className={cn(
-              'px-2 py-1 text-xs font-medium text-site-text whitespace-nowrap',
-              'bg-site-surface backdrop-blur-md rounded-site-sm shadow-site border border-site-border',
-              className,
-            )}
-          >
-            {content}
-            {/* Arrow */}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 border-4 border-transparent border-t-site-border" />
-          </motion.div>
+            <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 0, x: "-50%" }}
+                animate={{ opacity: 1, scale: 1, y: -8, x: "-50%" }}
+                exit={{ opacity: 0, scale: 0.9, y: 0, x: "-50%" }}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+                style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                }}
+                className={cn(
+                    "px-2.5 py-1 text-[11px] font-medium tracking-[-0.01em] text-site-text whitespace-nowrap",
+                    "bg-site-surface/90 backdrop-blur-xl rounded-site-sm shadow-site border border-site-border",
+                    className
+                )}
+            >
+                {content}
+                {/* Arrow */}
+                <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-0.5 border-4 border-transparent border-t-site-border" />
+            </motion.div>
         </div>
       )}
     </AnimatePresence>

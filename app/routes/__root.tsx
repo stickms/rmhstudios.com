@@ -58,7 +58,7 @@ const getInitialUser = createServerFn({ method: "GET" }).handler(async () => {
  * Inline script that applies the persisted theme class to <html> before
  * React hydrates, preventing a flash-of-unstyled-content (FOUC).
  */
-const themeScript = `(function(){try{var m={default:"#000",light:"#f5f5f7","high-contrast":"#000",gamer:"#0a0a0a",anime:"#fff5f9",musical:"#0c0e1a",hyperpop:"#120018","comic-book":"#fffde0",cinema:"#0a0a08","gen-z":"#1a1820",boomer:"#f5f0e8",aries:"#1a0a0a",taurus:"#141a10",gemini:"#0e0e22",cancer:"#0c1018",leo:"#140e1e",virgo:"#f4f6f2",libra:"#f8f0f6",scorpio:"#0e0608",sagittarius:"#100c1e",capricorn:"#141416",aquarius:"#060e18",pisces:"#0c1018",spring:"#f2f8f0",summer:"#fff8f0",autumn:"#1a1410",winter:"#0a0e14",elementary:"#fffef4","middle-school":"#181e24","high-school":"#121418",university:"#f5f0e8"};var s=localStorage.getItem("rmh-style");if(s&&s!=="default"){document.documentElement.classList.add("style-"+s)}var bg=m[s||"default"]||m.default;window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}}catch(e){}})()`;
+const themeScript = `(function(){try{var m={default:"#000",light:"#f5f5f7","high-contrast":"#000"};var s=localStorage.getItem("rmh-style");if(!s||!m.hasOwnProperty(s)){if(s)localStorage.setItem("rmh-style","default");s="default"}if(s!=="default"){document.documentElement.classList.add("style-"+s)}var bg=m[s];window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}}catch(e){}})()`;
 
 /**
  * Inline guard that reads the locale cookie and sets lang/dir on <html> before
@@ -139,7 +139,7 @@ export const Route = createRootRoute({
         { rel: "stylesheet", href: appCss },
         {
           rel: "stylesheet",
-          href: "https://fonts.googleapis.com/css2?family=Nunito:wght@200..1000&family=Inter:wght@100..900&display=swap",
+          href: "https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap",
         },
       ],
       scripts: [
@@ -177,7 +177,7 @@ function RootDocument({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body
-        className="font-nunito antialiased"
+        className="font-body antialiased"
         suppressHydrationWarning
       >
         <script dangerouslySetInnerHTML={{ __html: bodyThemeScript }} />

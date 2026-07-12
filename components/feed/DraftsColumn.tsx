@@ -7,6 +7,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
+import { Reveal } from '@/components/motion';
+import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 interface ScheduledRow {
   id: string;
@@ -117,7 +119,9 @@ export function DraftsColumn({
       </header>
 
       {empty ? (
-        <EmptyState description={t('no-drafts-yet', { defaultValue: 'No drafts yet. Use the "Save as draft" or "Schedule" options in the composer.' })} />
+        <Reveal className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
+          <EmptyState description={t('no-drafts-yet', { defaultValue: 'No drafts yet. Use the "Save as draft" or "Schedule" options in the composer.' })} />
+        </Reveal>
       ) : (
         <div className="space-y-8 p-4">
           <Section
@@ -160,7 +164,7 @@ function Section({
   const { t } = useTranslation('feed');
   if (rows.length === 0) return null;
   return (
-    <section>
+    <Reveal as="section">
       <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
         <Icon className="h-3.5 w-3.5" /> {title}
       </h2>
@@ -168,7 +172,7 @@ function Section({
         {rows.map((r) => {
           const AudienceIcon = AUDIENCE_ICON[r.audience];
           return (
-            <div key={r.id} className="rounded-site border border-site-border bg-site-surface p-3">
+            <div key={r.id} className={`rounded-site border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}>
               <p className="whitespace-pre-wrap break-words text-sm text-site-text">
                 {r.content || <span className="text-site-text-dim">{t('no-text', { defaultValue: '(no text)' })}</span>}
               </p>
@@ -223,6 +227,6 @@ function Section({
           );
         })}
       </div>
-    </section>
+    </Reveal>
   );
 }

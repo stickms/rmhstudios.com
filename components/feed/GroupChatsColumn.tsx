@@ -6,6 +6,7 @@ import { Loader2, Users, Plus, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Reveal } from '@/components/motion';
 import { HandleInput } from './HandleInput';
 import { useTranslation } from 'react-i18next';
 
@@ -186,12 +187,12 @@ export function GroupChatsColumn({
       ) : visibleGroups.length === 0 ? (
         <EmptyState description={t("no-groups-match", { defaultValue: "No groups match your search." })} />
       ) : (
-        <div className="divide-y divide-site-border/60">
+        <Reveal className="divide-y divide-site-border/60">
           {visibleGroups.map((g) => (
             <Link
               key={g.id}
               to={`/groups/${g.id}` as string}
-              className="flex items-center gap-3 px-4 py-3 transition-colors hover:bg-site-surface/50"
+              className="flex items-center gap-3 px-4 py-3 transition-[background-color,transform] duration-150 hover:bg-site-surface/50 active:scale-[0.99]"
             >
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-site-accent/12 text-site-accent">
                 <Users className="h-5 w-5" />
@@ -207,7 +208,7 @@ export function GroupChatsColumn({
               </div>
             </Link>
           ))}
-        </div>
+        </Reveal>
       )}
     </div>
   );

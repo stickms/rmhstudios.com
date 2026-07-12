@@ -8,6 +8,8 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 import { KIND_LABELS, KIND_ORDER, RARITY_COLORS, RARITY_ORDER, type ShopItemKind, type Rarity } from '@/lib/shop/catalog';
+import { PinnedHero } from './PinnedHero';
+import { Reveal } from '@/components/motion';
 
 interface ShopItemView {
   id: string;
@@ -51,9 +53,14 @@ function Preview({ item }: { item: ShopItemView }) {
 
 export function ShopColumn({
   initialData,
+  showHero = false,
 }: {
   /** Shop payload prefetched by the route loader. */
   initialData?: { coins: number; items: ShopItemView[]; signedIn: boolean } | null;
+  /** Render the pinned scroll hero above the catalog. On the combined /store
+   *  page the MembershipPanel already owns the page's one pinned moment, so the
+   *  shop section below it opts out. */
+  showHero?: boolean;
 } = {}) {
   const { t } = useTranslation("feed");
   const seeded = useRef(initialData !== undefined && initialData !== null);
@@ -135,6 +142,17 @@ export function ShopColumn({
 
   return (
     <div className="min-h-screen">
+      {showHero && (
+        <PinnedHero
+          eyebrow={t("shop-eyebrow", { defaultValue: "Cosmetics & flair" })}
+          title={t("shop-title", { defaultValue: "Shop" })}
+          subtitle={t("shop-hero-sub", {
+            defaultValue:
+              "Spend your coins on name colors, badges, avatar frames and more — then equip them across the studio.",
+          })}
+          scrollCue={t("shop-scroll-cue", { defaultValue: "Browse the shop" })}
+        />
+      )}
       <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <div className="flex items-center gap-2">
           <ShoppingBag className="h-5 w-5 text-site-accent" />
@@ -172,7 +190,7 @@ export function ShopColumn({
           <Spinner />
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2">
+        <Reveal className="grid grid-cols-1 gap-2 p-4 sm:grid-cols-2">
           {visible.map((item) => (
             <div
               key={item.id}
@@ -212,7 +230,7 @@ export function ShopColumn({
               </div>
             </div>
           ))}
-        </div>
+        </Reveal>
       )}
     </div>
   );

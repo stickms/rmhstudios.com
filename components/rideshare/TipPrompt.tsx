@@ -29,8 +29,8 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
 
   if (tipCents > 0) {
     return (
-      <div className="rounded-site border border-emerald-500/30 bg-emerald-500/10 p-5 text-center">
-        <Heart className="mx-auto h-7 w-7 fill-emerald-400 text-emerald-400" />
+      <div className="rounded-site border border-site-success/30 bg-site-success/10 p-5 text-center">
+        <Heart className="mx-auto h-7 w-7 fill-site-success text-site-success" />
         <h3 className="mt-2 font-semibold text-site-text">
           {t("you-tipped", { defaultValue: "You tipped {{amount}}", amount: formatUsd(tipCents) })}
         </h3>

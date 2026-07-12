@@ -6,6 +6,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { LayoutGroup, motion } from 'framer-motion';
 import { BuildCard } from './BuildCard';
 import type { Build, BuildSortOption } from '@/lib/user-builds-types';
+import { Reveal } from '@/components/motion';
 
 interface BuildGridProps {
   initialBuilds?: Build[];
@@ -150,14 +151,14 @@ export function BuildGrid({
 
   if (builds.length === 0) {
     return (
-      <div className="text-center py-20">
+      <Reveal className="text-center py-20">
         <p className="text-site-text-muted">{t("no-builds-found", { defaultValue: "No builds found" })}</p>
         {search && (
           <p className="text-sm text-site-text-dim mt-2">
             {t("try-different-search", { defaultValue: "Try a different search term" })}
           </p>
         )}
-      </div>
+      </Reveal>
     );
   }
 

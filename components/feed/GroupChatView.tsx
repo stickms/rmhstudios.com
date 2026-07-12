@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, ArrowLeft, Send, Users, LogOut, ImagePlus, ImagePlay, X, BarChart3, Plus } from 'lucide-react';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { EASE_OUT_EXPO } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
@@ -72,6 +75,10 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   const attachRef = useRef<HTMLDivElement>(null);
   const lastAtRef = useRef<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  // The initial message page is history (no entrance); everything appended
+  // afterward (sent / received / streamed) rises in once.
+  const historyIds = useRef<Set<string>>(new Set());
+  const reducedMotion = useReducedMotion();
   const insertEmoji = useEmojiInsert(inputRef, input, setInput);
   const reactionTriggerFor = useItemReactionTrigger((x, y, messageId) => setReactionMenu({ x, y, messageId }));
 
@@ -86,6 +93,8 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   }, [attachOpen]);
 
   const setMsgs = useCallback((msgs: Msg[]) => {
+    // Initial load — the whole batch is history, so none of it animates in.
+    for (const m of msgs) historyIds.current.add(m.id);
     setMessages(msgs);
     if (msgs.length) lastAtRef.current = msgs[msgs.length - 1].createdAt;
   }, []);
@@ -399,8 +408,15 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.map((m) => {
           const mine = m.sender.id === currentUserId;
+          const animateIn = !reducedMotion && !historyIds.current.has(m.id);
           return (
-            <div key={m.id} className={`flex gap-2 ${mine ? 'flex-row-reverse' : ''}`}>
+            <motion.div
+              key={m.id}
+              initial={animateIn ? { opacity: 0, y: 8 } : false}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.26, ease: EASE_OUT_EXPO }}
+              className={`flex gap-2 ${mine ? 'flex-row-reverse' : ''}`}
+            >
               {/* Show the sender's avatar on every message — including your own
                   (right-aligned), matching the 1:1 chat layout. */}
               <UserAvatar user={m.sender} />
@@ -432,7 +448,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
                   />
                 )}
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>

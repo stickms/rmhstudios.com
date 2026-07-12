@@ -1,48 +1,13 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   feed.css — the black/white "vibe" aesthetic for the signed-in app shell
-   (sidebar, feed, profile). It overrides the site-design-system custom
-   properties, but ONLY for the default theme: the selector is scoped to
-   `html:not([class*='style-'])` so that as soon as a user picks any of the 31
-   themes (which add a `.style-*` class to <html>), these overrides drop out and
-   the selected theme's `--site-*` tokens cascade through instead. Without this
-   scope the vibe palette won on every page and theme switching did nothing.
-   Mirrors the homepage palette in components/rmhvibe/vibe.css.
+   feed.css — app-shell chrome for the signed-in app (sidebar, feed, profile).
+   The signed-in shell now inherits the site design tokens directly (no local
+   --site-* override), so it follows the active theme (Dark / Light /
+   High Contrast). This file only carries structural chrome that can't live in
+   Tailwind utilities: the body-font re-resolution + smoothing, the Playfair
+   wordmark, the frosted-glass backing, and the card hover treatment.
    ───────────────────────────────────────────────────────────────────────────── */
 
-html:not([class*='style-']) .vibe-app {
-  --site-bg: #000;
-  --site-bg-subtle: #0b0b0c;
-  /* Opaque equivalents of the old translucent white surfaces (their composite
-     over the #000 page bg). Solid so floating chrome — dropdowns, popovers,
-     menus, selects — never shows page content bleeding through, while cards on
-     the black page keep the same look. */
-  --site-surface: #0d0d0e;
-  --site-surface-hover: #16161a;
-  --site-surface-active: #202024;
-  --site-border: rgba(255, 255, 255, 0.1);
-  --site-border-bright: rgba(255, 255, 255, 0.2);
-  --site-text: #f5f5f7;
-  --site-text-muted: #a1a1a6;
-  --site-text-dim: #6e6e73;
-  --site-accent: #f5f5f7;
-  --site-accent-hover: #ffffff;
-  --site-accent-dim: rgba(255, 255, 255, 0.1);
-  --site-success: #6ee7a8;
-  --site-danger: #ff6b6b;
-  --site-warning: #f5d76e;
-  --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
-  --site-radius: 10px;
-  --site-radius-sm: 7px;
-  --site-border-width: 1px;
-  --site-card-transform: translateY(-2px);
-  --site-heading-transform: none;
-  --site-glow: none;
-  --site-text-shadow: none;
-  --site-letter-spacing: -0.02em;
-  --site-font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    "Helvetica Neue", Arial, sans-serif;
-  --site-font-body: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
-    "Helvetica Neue", Arial, sans-serif;
+.vibe-app {
   /* Re-resolve the font here (not just via the variable): the <body> computes
      its font-family with the theme's value and children inherit that, so the
      override only takes effect when applied directly on this subtree root. */
@@ -57,33 +22,21 @@ html:not([class*='style-']) .vibe-app {
   letter-spacing: -0.02em;
 }
 
-/* Tone down the bubbly corners to match the sharper homepage/builds aesthetic.
-   Avatars and small status pills keep their full rounding. */
-.vibe-app .rounded-3xl { border-radius: 16px; }
-.vibe-app .rounded-2xl { border-radius: 12px; }
-.vibe-app .rounded-xl { border-radius: 10px; }
-
-/* In the default vibe theme the accent is near-white, so accent-filled buttons
-   need dark text. Scoped to the default theme only — themed accent buttons use
-   their own `--site-accent-fg` (applied by the Button component). */
-html:not([class*='style-']) .vibe-app [data-variant="accent"] {
-  color: #0a0a0a;
-}
-
 /* Frosted-glass treatment for the app chrome + sticky headers, matching the
-   homepage's vibe-dock. Applied to elements tagged with .vibe-glass.
-   Derived from the theme's own --site-bg so it frosts correctly on light,
-   high-contrast, and pastel themes instead of forcing a hardcoded near-black. */
+   homepage's vibe-dock. Applied to elements tagged with .vibe-glass. Theme-aware:
+   derived from --site-bg so it tints correctly in light/high-contrast. */
 .vibe-glass {
-  background: color-mix(in srgb, var(--site-bg) 78%, transparent);
+  background: color-mix(in srgb, var(--site-bg) 72%, transparent);
   backdrop-filter: saturate(180%) blur(20px);
   -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 
 /* The bottom mobile nav floats over scrolling content, so it needs a more
-   opaque backing than the standard frosted glass to stay legible. */
+   opaque backing than the standard frosted glass to stay legible. Theme-aware:
+   derived from --site-bg so it tints correctly in light/high-contrast instead
+   of staying stuck dark. */
 .vibe-glass.vibe-mobile-nav {
-  background: color-mix(in srgb, var(--site-bg) 94%, transparent);
+  background: color-mix(in srgb, var(--site-bg) 96%, transparent);
 }
 
 /* Cards: subtle translucent surface with a hairline border that brightens on

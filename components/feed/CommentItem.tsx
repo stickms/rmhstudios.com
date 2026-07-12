@@ -358,7 +358,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
               {sessionUser && (
                 <button
                   onClick={() => setReplyOpen((v) => !v)}
-                  className="flex items-center gap-1.5 px-1.5 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-colors group"
+                  className="flex items-center gap-1.5 px-1.5 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-[color,background-color,transform] duration-150 group active:scale-95"
                 >
                   <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
                 </button>
@@ -370,7 +370,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
               }`}>
                 <button
                   onClick={toggleRepost}
-                  className="p-1 rounded-full hover:bg-site-success/10 transition-colors group"
+                  className="p-1 rounded-full hover:bg-site-success/10 transition-[background-color,transform] duration-150 group active:scale-95"
                   title="reRMHark"
                 >
                   <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
@@ -384,7 +384,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
               }`}>
                 <button
                   onClick={toggleLike}
-                  className="p-1 rounded-full hover:bg-site-danger/10 transition-colors group"
+                  className="p-1 rounded-full hover:bg-site-danger/10 transition-[background-color,transform] duration-150 group active:scale-95"
                   title="Like"
                 >
                   <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${liked ? 'fill-current' : ''}`} />

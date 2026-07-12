@@ -8,6 +8,8 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from './UserAvatar';
+import { PinnedHero } from './PinnedHero';
+import { Reveal } from '@/components/motion';
 
 interface Product {
   id: string;
@@ -168,6 +170,15 @@ export function StorefrontColumn({
 
   return (
     <div className="min-h-screen">
+      <PinnedHero
+        screens={2}
+        eyebrow={creator.handle ? `@${creator.handle}` : t('storefront-eyebrow', { defaultValue: 'Creator store' })}
+        title={creator.name || t('creator', { defaultValue: 'Creator' })}
+        subtitle={t('storefront-hero-sub', {
+          defaultValue: 'Coin-purchasable drops, straight from the creator.',
+        })}
+        scrollCue={t('storefront-scroll-cue', { defaultValue: 'View products' })}
+      />
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <Store className="h-5 w-5 text-site-accent" />
         <div className="min-w-0">
@@ -240,7 +251,7 @@ export function StorefrontColumn({
         </div>
       )}
 
-      <div className="space-y-2 p-4">
+      <Reveal className="space-y-2 p-4">
         {products.length === 0 ? (
           <EmptyState description={isOwner ? t('no-products-owner', { defaultValue: 'No products yet — list your first one!' }) : t('no-products-visitor', { defaultValue: 'This creator has no products yet.' })} />
         ) : (
@@ -306,7 +317,7 @@ export function StorefrontColumn({
             </div>
           ))
         )}
-      </div>
+      </Reveal>
     </div>
   );
 }

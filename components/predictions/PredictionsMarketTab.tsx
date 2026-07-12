@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { PredictionCard } from './PredictionCard';
 import { CreatePredictionModal } from './CreatePredictionModal';
 import type { Market } from './types';
+import { Reveal } from '@/components/motion';
 
 interface Props {
   coins: number;
@@ -81,7 +82,7 @@ export function PredictionsMarketTab({ coins, setCoins }: Props) {
           <Loader2 className="w-7 h-7 text-site-accent animate-spin" />
         </div>
       ) : markets.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-3 text-site-text-dim">
+        <Reveal className="flex flex-col items-center justify-center py-16 text-center gap-3 text-site-text-dim">
           <TrendingUp className="w-10 h-10 opacity-40" />
           <p className="text-sm max-w-xs">
             {filter === 'mine'
@@ -90,9 +91,9 @@ export function PredictionsMarketTab({ coins, setCoins }: Props) {
                 ? t('empty-resolved', { defaultValue: 'No resolved markets yet.' })
                 : t('empty-open', { defaultValue: 'No open markets right now. Create the first one!' })}
           </p>
-        </div>
+        </Reveal>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
+        <Reveal className="grid gap-3 sm:grid-cols-2">
           {markets.map((m) => (
             <PredictionCard
               key={m.id}
@@ -102,7 +103,7 @@ export function PredictionsMarketTab({ coins, setCoins }: Props) {
               onUpdated={handleUpdated}
             />
           ))}
-        </div>
+        </Reveal>
       )}
 
       <CreatePredictionModal

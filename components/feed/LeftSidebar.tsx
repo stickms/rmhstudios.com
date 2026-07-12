@@ -230,7 +230,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ? 'pl-10'
         : 'md:justify-center xl:justify-start xl:pl-10'
       : itemJustifyClass;
-    const leafClass = `flex items-center gap-3 px-3 ${nested ? 'py-2' : 'py-2.5'} rounded-site text-sm font-medium transition-colors ${indent} ${
+    const leafClass = `flex items-center gap-3 px-3.5 ${nested ? 'py-2' : 'py-3'} rounded-full text-sm font-medium transition-colors ${indent} ${
       isActive
         ? 'text-site-accent bg-site-accent-dim'
         : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -350,7 +350,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 type="button"
                 onClick={() => toggleGroup(item.group)}
                 aria-expanded={isOpen}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-site text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
+                className={`flex items-center gap-3 px-3.5 py-3 rounded-full text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
                   groupActive
                     ? 'text-site-accent bg-site-accent-dim'
                     : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'

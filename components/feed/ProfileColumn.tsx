@@ -20,6 +20,7 @@ import { VinylRecord } from './VinylRecord';
 import { Link } from '@tanstack/react-router';
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { useUserDisplayStore } from '@/stores/userDisplayStore';
+import { Reveal } from '@/components/motion';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
@@ -478,7 +479,7 @@ export function ProfileColumn({
       </div>
 
       {/* Profile header */}
-      <div className="px-4 pt-6 pb-4 border-b border-site-border">
+      <Reveal className="px-4 pt-6 pb-4 border-b border-site-border">
         {/* The equipped banner sits behind the avatar + song row and spans the
             full profile width (full-bleed past the header padding) — filling the
             area the old profile pet used to occupy. */}
@@ -709,7 +710,7 @@ export function ProfileColumn({
             aria-hidden="true"
           />
         )}
-      </div>
+      </Reveal>
 
       {/* Tab bar */}
       <div className="border-b border-site-border">

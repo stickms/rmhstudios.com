@@ -22,6 +22,7 @@ export default defineConfig({
       'lib/kowloon-knockout/render/**/__tests__/**/*.test.ts',
       'lib/kowloon-knockout/game/**/__tests__/**/*.test.ts',
       'components/rmhladder/**/*.test.tsx',
+      'components/motion/__tests__/**/*.test.tsx',
     ],
     environment: 'node',
     globals: true,

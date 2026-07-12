@@ -47,7 +47,7 @@ export function MobileNav() {
       {session && isHome && (
         <button
           onClick={() => setComposeOpen(true)}
-          className="md:hidden fixed right-4 z-50 w-14 h-14 rounded-full bg-site-accent hover:bg-site-accent-hover text-site-bg shadow-lg flex items-center justify-center transition-colors active:scale-95"
+          className="md:hidden fixed right-4 z-50 w-14 h-14 rounded-full bg-site-accent hover:bg-site-accent-hover text-site-accent-fg shadow-lg flex items-center justify-center transition-colors active:scale-95"
           // Sit above the bottom nav AND the home-indicator safe area, so the
           // FAB never collides with the bar or tucks under the indicator.
           style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}

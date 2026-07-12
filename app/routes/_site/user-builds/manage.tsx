@@ -11,6 +11,8 @@ import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import type { Build } from '@/lib/user-builds-types';
 import { useTranslation } from 'react-i18next';
+import { Reveal } from '@/components/motion';
+import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 export const Route = createFileRoute('/_site/user-builds/manage')({
   component: ManageBuildsPage,
@@ -91,7 +93,7 @@ function ManageContent() {
   return (
     <div className="min-h-screen bg-site-bg pt-20 pb-12">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
+        <Reveal className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-bold text-site-text flex items-center gap-3 mb-2">
               <Boxes className="w-8 h-8 text-site-accent" />
@@ -104,14 +106,14 @@ function ManageContent() {
               <Plus className="w-4 h-4 mr-2" /> {t("new-build", { defaultValue: "New Build" })}
             </Button>
           </Link>
-        </div>
+        </Reveal>
 
         {loading ? (
           <div className="flex justify-center py-12">
             <Spinner size={32} />
           </div>
         ) : builds.length === 0 ? (
-          <div className="text-center py-12 rounded-site border border-site-border bg-site-surface">
+          <Reveal className="text-center py-12 rounded-site border border-site-border bg-site-surface">
             <Boxes className="w-12 h-12 text-site-text-dim mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-site-text mb-2">{t("no-builds-yet", { defaultValue: "No builds yet" })}</h2>
             <p className="text-site-text-muted mb-6">{t("no-builds-description", { defaultValue: "Create your first build and share it with the community." })}</p>
@@ -120,11 +122,11 @@ function ManageContent() {
                 <Plus className="w-4 h-4 mr-2" /> {t("create-build", { defaultValue: "Create Build" })}
               </Button>
             </Link>
-          </div>
+          </Reveal>
         ) : (
-          <div className="space-y-4">
+          <Reveal className="space-y-4">
             {builds.map((build) => (
-              <div key={build.id} className="flex items-center gap-4 p-4 rounded-site border border-site-border bg-site-surface">
+              <div key={build.id} className={`flex items-center gap-4 p-4 rounded-site border border-site-border bg-site-surface ${LIFT_CARD}`}>
                 {build.thumbnailUrl ? (
                   <img src={build.thumbnailUrl} alt={build.title} className="w-20 h-14 rounded object-cover shrink-0" />
                 ) : (
@@ -158,7 +160,7 @@ function ManageContent() {
                 </div>
               </div>
             ))}
-          </div>
+          </Reveal>
         )}
       </div>
     </div>

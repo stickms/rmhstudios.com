@@ -5,10 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Compass, Hash, Sparkles, TrendingUp, Coins } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
+import { RevealGroup, RevealItem } from '@/components/motion';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import type { FeedItem } from '@/lib/feed-types';
+import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 interface ExploreData {
   trendingTags: { tag: string; count: number }[];
@@ -108,10 +110,10 @@ export function ExploreColumn({
           <Spinner />
         </div>
       ) : (
-        <>
+        <RevealGroup>
           {/* Trending tags */}
           {data && data.trendingTags.length > 0 && (
-            <section className="border-b border-site-border p-4">
+            <RevealItem as="section" className="border-b border-site-border p-4">
               <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
                 <TrendingUp className="h-3.5 w-3.5" /> {t('trending', { defaultValue: 'Trending' })}
               </h2>
@@ -120,7 +122,7 @@ export function ExploreColumn({
                   <Link
                     key={t.tag}
                     to={`/tag/${t.tag}` as string}
-                    className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm text-site-text hover:border-site-accent/50"
+                    className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm text-site-text transition-colors duration-200 hover:border-site-accent/50"
                   >
                     <Hash className="h-3 w-3 text-site-accent" />
                     {t.tag}
@@ -128,19 +130,19 @@ export function ExploreColumn({
                   </Link>
                 ))}
               </div>
-            </section>
+            </RevealItem>
           )}
 
           {/* Who to follow */}
           {data && data.suggestedUsers.length > 0 && (
-            <section className="border-b border-site-border p-4">
+            <RevealItem as="section" className="border-b border-site-border p-4">
               <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('who-to-follow', { defaultValue: 'Who to follow' })}</h2>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {data.suggestedUsers.map((u) => (
                   <Link
                     key={u.id}
                     to={`/u/${u.handle || u.id}` as string}
-                    className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                    className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
                   >
                     <UserAvatar src={u.image} alt={u.name || t('user-fallback', { defaultValue: 'User' })} size={36} fallbackName={u.name || 'U'} />
                     <div className="min-w-0">
@@ -150,12 +152,12 @@ export function ExploreColumn({
                   </Link>
                 ))}
               </div>
-            </section>
+            </RevealItem>
           )}
 
           {/* Top supported creators */}
           {tipLeaders.length > 0 && (
-            <section className="border-b border-site-border p-4">
+            <RevealItem as="section" className="border-b border-site-border p-4">
               <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
                 <Coins className="h-3.5 w-3.5 text-site-warning" /> {t('top-supported-this-week', { defaultValue: 'Top supported this week' })}
               </h2>
@@ -175,21 +177,22 @@ export function ExploreColumn({
                   </Link>
                 ))}
               </div>
-            </section>
+            </RevealItem>
           )}
 
-          {/* Hot posts */}
+          {/* Hot posts — the feed cards keep their own entrance; the section
+              block reveals once as a unit (no per-card reveal). */}
           {data && data.hotPosts.length > 0 && (
-            <section>
+            <RevealItem as="section">
               <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('hot-this-week', { defaultValue: 'Hot this week' })}</h2>
               <div className="divide-y divide-site-border">
                 {data.hotPosts.map((item) => (
                   <RMHarkCard key={item.id} item={item} />
                 ))}
               </div>
-            </section>
+            </RevealItem>
           )}
-        </>
+        </RevealGroup>
       )}
     </div>
   );

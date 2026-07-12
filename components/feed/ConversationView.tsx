@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { Loader2, ArrowLeft, Send, ImagePlus, ImagePlay, X, Plus } from 'lucide-react';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { EASE_OUT_EXPO } from '@/components/motion';
 import { Spinner } from '@/components/ui/spinner';
 import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -75,6 +78,11 @@ export function ConversationView({
   const attachRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const initialFetched = useRef(false);
+  // IDs of messages that should NOT animate in: the initial page and any
+  // "load older" pages are history — only genuinely new (sent / received)
+  // messages get the entrance. Populated as those pages arrive.
+  const historyIds = useRef<Set<string>>(new Set());
+  const reducedMotion = useReducedMotion();
   // Typing-indicator bookkeeping
   const typingActiveRef = useRef(false);
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -138,6 +146,10 @@ export function ConversationView({
       }
       if (!res.ok) return;
       const data = await res.json();
+
+      // Everything fetched here is existing history — mark it so it renders
+      // in place without an entrance animation.
+      for (const m of data.messages as Message[]) historyIds.current.add(m.id);
 
       if (isInitial) {
         setMessages(data.messages);
@@ -469,6 +481,9 @@ export function ConversationView({
       }
 
       const data = await res.json();
+      // The optimistic bubble already animated in; the temp→real id swap
+      // remounts it, so mark the real id as history to avoid a second entrance.
+      historyIds.current.add(data.message.id);
       // Replace optimistic message with real one
       setMessages((prev) =>
         prev.map((m) => (m.id === tempId ? data.message : m))
@@ -625,8 +640,16 @@ export function ConversationView({
                 bubbleRounding = `${tl} ${tr} ${bl} ${br}`;
               }
 
+              // New (sent/received) messages rise in; history renders in place.
+              const animateIn = !reducedMotion && !historyIds.current.has(msg.id);
+
               return (
-                <div key={msg.id}>
+                <motion.div
+                  key={msg.id}
+                  initial={animateIn ? { opacity: 0, y: 8 } : false}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.26, ease: EASE_OUT_EXPO }}
+                >
                   {showDate && (
                     <div className="flex items-center justify-center my-4">
                       <span className="text-xs text-site-text-dim bg-site-surface px-3 py-1 rounded-full">
@@ -680,7 +703,7 @@ export function ConversationView({
                       className={`mt-1 ${isSelf ? 'justify-end' : ''}`}
                     />
                   )}
-                </div>
+                </motion.div>
               );
             })}
 

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bookmark, Loader2 } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
+import { Reveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import type { FeedItem } from '@/lib/feed-types';
@@ -62,7 +63,7 @@ export function BookmarksColumn({
           <Spinner />
         </div>
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
+        <Reveal className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
           <div className="rounded-site border border-site-border bg-site-surface p-4">
             <Bookmark className="h-8 w-8 text-site-text-muted" />
           </div>
@@ -70,7 +71,7 @@ export function BookmarksColumn({
           <p className="max-w-xs text-sm text-site-text-muted">
             {t("no-bookmarks-hint", { defaultValue: "Save posts from the “…” menu and they’ll show up here." })}
           </p>
-        </div>
+        </Reveal>
       ) : (
         <div className="divide-y divide-site-border">
           {items.map((item) => (
