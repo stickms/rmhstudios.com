@@ -19,7 +19,7 @@ function UserRow({ user }: { user: SidebarUser }) {
   return (
     <Link
       to={`/u/${(user as any).handle || user.id}` as string}
-      className="flex items-center gap-2.5 px-2 py-1.5 rounded-site-sm hover:bg-site-surface-hover transition-colors group"
+      className="flex items-center gap-2.5 px-2 py-1.5 rounded-site-sm hover:bg-site-surface-hover active:scale-[0.99] transition-[background-color,transform] duration-150 group"
     >
       <UserAvatar src={user.image ?? undefined} alt={user.name || t("user-alt", { defaultValue: "User" })} size={32} fallbackName={user.name ?? undefined} />
       <div className="min-w-0">

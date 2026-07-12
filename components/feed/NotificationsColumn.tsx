@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { Reveal } from '@/components/motion';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 import { usePushSubscription } from '@/lib/usePushSubscription';
@@ -374,7 +375,7 @@ export function NotificationsColumn({
           <Spinner />
         </div>
       ) : items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
+        <Reveal className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
           <div className="rounded-site border border-site-border bg-site-surface p-4">
             <Bell className="h-8 w-8 text-site-text-muted" />
           </div>
@@ -382,9 +383,9 @@ export function NotificationsColumn({
           <p className="max-w-xs text-sm text-site-text-muted">
             {t('no-notifications-description', { defaultValue: "When someone likes, comments on, reposts, or mentions you, it'll show up here." })}
           </p>
-        </div>
+        </Reveal>
       ) : (
-        <ul className="divide-y divide-site-border">
+        <Reveal as="ul" className="divide-y divide-site-border">
           {groups.map((g) => {
             const n = g.newest;
             const grouped = g.count > 1;
@@ -409,8 +410,8 @@ export function NotificationsColumn({
                   type="button"
                   onClick={() => handleClick(n)}
                   disabled={!clickable}
-                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-colors ${
-                    clickable ? 'cursor-pointer hover:bg-site-surface-hover' : 'cursor-default'
+                  className={`flex w-full items-start gap-3 px-4 py-3 text-left transition-[background-color,transform] duration-150 ${
+                    clickable ? 'cursor-pointer hover:bg-site-surface-hover active:scale-[0.99]' : 'cursor-default'
                   } ${g.read ? '' : 'bg-site-accent-dim/40'}`}
                 >
                   {sys ? (
@@ -464,7 +465,7 @@ export function NotificationsColumn({
               </li>
             );
           })}
-        </ul>
+        </Reveal>
       )}
 
       {nextCursor && (
