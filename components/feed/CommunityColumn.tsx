@@ -6,6 +6,7 @@ import { ArrowLeft, Users, MessageSquare, Megaphone, Shield, ShieldOff, UserX, X
 import { formatDistanceToNow } from 'date-fns';
 import { RMHarkCard } from './RMHarkCard';
 import { ComposeBox } from './ComposeBox';
+import { Reveal } from '@/components/motion';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
@@ -147,7 +148,7 @@ export function CommunityColumn({
         <h1 className="truncate text-lg font-bold text-site-text">{community.name}</h1>
       </header>
 
-      <div className="border-b border-site-border p-4">
+      <Reveal className="border-b border-site-border p-4">
         <div className="flex items-start gap-3">
           <div
             className="flex h-14 w-14 shrink-0 items-center justify-center rounded-site text-2xl"
@@ -185,11 +186,11 @@ export function CommunityColumn({
           </div>
         </div>
         {community.description && <p className="mt-2 text-sm text-site-text-muted">{community.description}</p>}
-      </div>
+      </Reveal>
 
       {/* Pinned announcements */}
       {(community.announcements.length > 0 || isMod) && (
-        <div className="border-b border-site-border bg-site-accent-dim/30 p-4">
+        <Reveal delay={0.06} className="border-b border-site-border bg-site-accent-dim/30 p-4">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
               <Megaphone className="h-4 w-4 text-site-accent" /> {t('announcements', { defaultValue: 'Announcements' })}
@@ -231,7 +232,7 @@ export function CommunityColumn({
               ))}
             </ul>
           )}
-        </div>
+        </Reveal>
       )}
 
       {/* Composer for members */}

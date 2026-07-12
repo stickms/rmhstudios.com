@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Hash, Loader2 } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
+import { Reveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -76,7 +77,9 @@ export function TagColumn({
           <Spinner />
         </div>
       ) : items.length === 0 ? (
-        <EmptyState description={t('no-posts-with-tag', { tag, defaultValue: 'No posts with #{{tag}} yet.' })} />
+        <Reveal>
+          <EmptyState description={t('no-posts-with-tag', { tag, defaultValue: 'No posts with #{{tag}} yet.' })} />
+        </Reveal>
       ) : (
         <div className="divide-y divide-site-border">
           {items.map((item) => (
