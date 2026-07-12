@@ -5,11 +5,16 @@ import { Link } from '@tanstack/react-router';
 import { Hash, TrendingUp, Users, Package, BookOpen } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { RMHarkCard } from './RMHarkCard';
+import { RevealGroup, RevealItem } from '@/components/motion';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import type { FeedItem } from '@/lib/feed-types';
+
+// Hairline card that lifts subtly on hover — shared across the discovery grids.
+const LIFT_CARD =
+  'transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-site-accent/50';
 
 interface Community {
   id: string;
@@ -110,10 +115,10 @@ export function ExploreRecommendations({
   const builds = [...officialBuilds, ...userBuilds];
 
   return (
-    <div>
+    <RevealGroup as="div">
       {/* Trending tags */}
       {showTrending && data && data.trendingTags.length > 0 && (
-        <section className="border-b border-site-border p-4">
+        <RevealItem as="section" className="border-b border-site-border p-4">
           <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
             <TrendingUp className="h-3.5 w-3.5" /> {t('trending-heading', { defaultValue: 'Trending' })}
           </h2>
@@ -122,7 +127,7 @@ export function ExploreRecommendations({
               <Link
                 key={tag.tag}
                 to={`/tag/${tag.tag}` as string}
-                className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm text-site-text hover:border-site-accent/50"
+                className="inline-flex items-center gap-1 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm text-site-text transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-site-accent/50"
               >
                 <Hash className="h-3 w-3 text-site-accent" />
                 {tag.tag}
@@ -130,19 +135,19 @@ export function ExploreRecommendations({
               </Link>
             ))}
           </div>
-        </section>
+        </RevealItem>
       )}
 
       {/* Who to follow */}
       {showPeople && data && data.suggestedUsers.length > 0 && (
-        <section className="border-b border-site-border p-4">
+        <RevealItem as="section" className="border-b border-site-border p-4">
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('who-to-follow', { defaultValue: 'Who to follow' })}</h2>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {data.suggestedUsers.map((u) => (
               <Link
                 key={u.id}
                 to={`/u/${u.handle || u.id}` as string}
-                className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
               >
                 <UserAvatar src={u.image} alt={u.name || t('user-alt', { defaultValue: 'User' })} size={36} fallbackName={u.name || 'U'} />
                 <div className="min-w-0">
@@ -152,12 +157,12 @@ export function ExploreRecommendations({
               </Link>
             ))}
           </div>
-        </section>
+        </RevealItem>
       )}
 
       {/* Communities to discover */}
       {showCommunities && data && data.communities.length > 0 && (
-        <section className="border-b border-site-border p-4">
+        <RevealItem as="section" className="border-b border-site-border p-4">
           <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
             <Users className="h-3.5 w-3.5" /> {t('communities-heading', { defaultValue: 'Communities' })}
           </h2>
@@ -166,7 +171,7 @@ export function ExploreRecommendations({
               <Link
                 key={c.id}
                 to={`/c/${c.slug}` as string}
-                className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
               >
                 <div
                   className="flex h-10 w-10 shrink-0 items-center justify-center rounded-site text-xl"
@@ -184,13 +189,13 @@ export function ExploreRecommendations({
               </Link>
             ))}
           </div>
-        </section>
+        </RevealItem>
       )}
 
       {/* Builds to try */}
       {showBuilds && (
         builds.length > 0 ? (
-          <section className="p-4">
+          <RevealItem as="section" className="p-4">
             <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
               <Package className="h-3.5 w-3.5" /> {t('builds-heading', { defaultValue: 'Builds to try' })}
             </h2>
@@ -199,7 +204,7 @@ export function ExploreRecommendations({
                 <a
                   key={b.id}
                   href={b.href}
-                  className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                  className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
                 >
                   <BuildThumb src={b.thumbnailUrl} title={b.title} />
                   <div className="min-w-0">
@@ -212,7 +217,7 @@ export function ExploreRecommendations({
                 <Link
                   key={b.id}
                   to={`/user-builds/${b.slug}` as string}
-                  className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 hover:border-site-accent/50"
+                  className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
                 >
                   <BuildThumb src={b.thumbnailUrl} title={b.title} />
                   <div className="min-w-0">
@@ -222,7 +227,7 @@ export function ExploreRecommendations({
                 </Link>
               ))}
             </div>
-          </section>
+          </RevealItem>
         ) : (
           <EmptyState description={t('search-builds-hint', { defaultValue: 'Type to search games, apps, and community builds.' })} />
         )
@@ -231,7 +236,7 @@ export function ExploreRecommendations({
       {/* Blog to read */}
       {showBlog && (
         blogPosts.length > 0 ? (
-          <section className="py-2">
+          <RevealItem as="section" className="py-2">
             <h2 className="flex items-center gap-1.5 px-4 py-1 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
               <BookOpen className="h-3.5 w-3.5" /> {t('blog-heading', { defaultValue: 'From the blog' })}
             </h2>
@@ -248,29 +253,29 @@ export function ExploreRecommendations({
                 </div>
               </Link>
             ))}
-          </section>
+          </RevealItem>
         ) : (
           <EmptyState description={t('search-blog-hint', { defaultValue: 'Type to search the blog.' })} />
         )
       )}
 
-      {/* Hot posts */}
+      {/* Hot posts — feed cards keep their own entrance; the block reveals once. */}
       {showHot && data && data.hotPosts.length > 0 && (
-        <section>
+        <RevealItem as="section">
           <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('hot-this-week', { defaultValue: 'Hot this week' })}</h2>
           <div className="divide-y divide-site-border">
             {data.hotPosts.map((item) => (
               <RMHarkCard key={item.id} item={item} />
             ))}
           </div>
-        </section>
+        </RevealItem>
       )}
 
       {/* Nothing to show for the social tabs (no data yet). */}
       {needsExploreData && !data && (
         <EmptyState description={t('explore-empty-hint', { defaultValue: 'Start typing to search across people, posts, builds, and the blog.' })} />
       )}
-    </div>
+    </RevealGroup>
   );
 }
 
