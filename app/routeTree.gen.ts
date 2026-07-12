@@ -279,6 +279,7 @@ import { Route as ApiProfileIdRouteImport } from './routes/api/profile/$id'
 import { Route as ApiPresenceOnlineCountRouteImport } from './routes/api/presence/online-count'
 import { Route as ApiPresenceHeartbeatRouteImport } from './routes/api/presence/heartbeat'
 import { Route as ApiPresenceFriendsRouteImport } from './routes/api/presence/friends'
+import { Route as ApiPreferencesAppearanceRouteImport } from './routes/api/preferences/appearance'
 import { Route as ApiPredictionsIdRouteImport } from './routes/api/predictions/$id'
 import { Route as ApiNotificationsUnreadCountRouteImport } from './routes/api/notifications/unread-count'
 import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
@@ -1919,6 +1920,12 @@ const ApiPresenceFriendsRoute = ApiPresenceFriendsRouteImport.update({
   path: '/api/presence/friends',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPreferencesAppearanceRoute =
+  ApiPreferencesAppearanceRouteImport.update({
+    id: '/api/preferences/appearance',
+    path: '/api/preferences/appearance',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPredictionsIdRoute = ApiPredictionsIdRouteImport.update({
   id: '/api/predictions/$id',
   path: '/api/predictions/$id',
@@ -3656,6 +3663,7 @@ export interface FileRoutesByFullPath {
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
+  '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
@@ -4183,6 +4191,7 @@ export interface FileRoutesByTo {
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
+  '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
@@ -4737,6 +4746,7 @@ export interface FileRoutesById {
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
+  '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
@@ -5291,6 +5301,7 @@ export interface FileRouteTypes {
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
+    | '/api/preferences/appearance'
     | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
@@ -5818,6 +5829,7 @@ export interface FileRouteTypes {
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
+    | '/api/preferences/appearance'
     | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
@@ -6371,6 +6383,7 @@ export interface FileRouteTypes {
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
+    | '/api/preferences/appearance'
     | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
@@ -6805,6 +6818,7 @@ export interface RootRouteChildren {
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
   ApiNotificationsUnreadCountRoute: typeof ApiNotificationsUnreadCountRoute
   ApiPredictionsIdRoute: typeof ApiPredictionsIdRouteWithChildren
+  ApiPreferencesAppearanceRoute: typeof ApiPreferencesAppearanceRoute
   ApiPresenceFriendsRoute: typeof ApiPresenceFriendsRoute
   ApiPresenceHeartbeatRoute: typeof ApiPresenceHeartbeatRoute
   ApiPresenceOnlineCountRoute: typeof ApiPresenceOnlineCountRoute
@@ -8856,6 +8870,13 @@ declare module '@tanstack/react-router' {
       path: '/api/presence/friends'
       fullPath: '/api/presence/friends'
       preLoaderRoute: typeof ApiPresenceFriendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/preferences/appearance': {
+      id: '/api/preferences/appearance'
+      path: '/api/preferences/appearance'
+      fullPath: '/api/preferences/appearance'
+      preLoaderRoute: typeof ApiPreferencesAppearanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/predictions/$id': {
@@ -12140,6 +12161,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
   ApiNotificationsUnreadCountRoute: ApiNotificationsUnreadCountRoute,
   ApiPredictionsIdRoute: ApiPredictionsIdRouteWithChildren,
+  ApiPreferencesAppearanceRoute: ApiPreferencesAppearanceRoute,
   ApiPresenceFriendsRoute: ApiPresenceFriendsRoute,
   ApiPresenceHeartbeatRoute: ApiPresenceHeartbeatRoute,
   ApiPresenceOnlineCountRoute: ApiPresenceOnlineCountRoute,

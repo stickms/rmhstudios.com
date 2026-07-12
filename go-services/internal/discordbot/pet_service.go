@@ -847,7 +847,9 @@ func (ps *PetService) StatusLineForChat(ctx context.Context, guildID string) str
 	pet.applyDecay(now)
 	mood := pet.mood()
 	if !pet.Alive {
-		return "\n\nCURRENT STATE: You (Alex) are currently passed out / not well and waiting to be revived. Reply weakly, like you're barely hanging on but still you."
+		return "\n\nCURRENT STATE: You (Alex) have PASSED OUT from neglect and can barely respond — you are NOT okay. " +
+			"Reply weakly and briefly, like you're barely hanging on. Do NOT ask for food, boba, play, or talk about " +
+			"normal daily life — only faintly acknowledge them and hint that you need someone to run /revive."
 	}
 	career := "still figuring out what you wanna be"
 	if pet.Career != "" {
@@ -881,6 +883,16 @@ func (ps *PetService) snapshot(ctx context.Context) *PetState {
 	pet.applyDecay(time.Now().UTC())
 	cp := *pet
 	return &cp
+}
+
+// IsPassedOut reports whether the global Alex is currently passed out (dead,
+// awaiting /revive), advancing decay first so the answer is correct-as-of-now. A
+// missing pet / unavailable DB is treated as "not passed out" so callers default
+// to his normal, lively behavior. Used by the AI-fallback reply paths so a
+// passed-out Alex never falls back to a chipper "mid-boba run" line.
+func (ps *PetService) IsPassedOut(ctx context.Context) bool {
+	snap := ps.snapshot(ctx)
+	return snap != nil && !snap.Alive
 }
 
 // NoteMentioned records that Alex was @mentioned/replied-to in a channel: it

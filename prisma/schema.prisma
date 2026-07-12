@@ -275,6 +275,9 @@ model User {
   // Notification preferences (per-type opt-outs)
   notificationPreference NotificationPreference?
 
+  // Appearance preferences (theme + accent), synced across devices
+  appearancePreference AppearancePreference?
+
   @@index([isBot])
   @@map("user")
 }
@@ -294,6 +297,21 @@ model NotificationPreference {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preference")
+}
+
+// Per-user appearance preferences, synced across devices (localStorage is the
+// no-flash cache; this row is the source of truth once signed in). Every field is
+// nullable and means "use the built-in default" when unset, so new preference
+// knobs (density, font scale, …) can be added later as additional nullable
+// columns without a data backfill. A missing row = all defaults.
+model AppearancePreference {
+  userId String @id
+  style  String? // site theme id (see SITE_STYLES); null → default (dark)
+  accent String? // accent preset id (see ACCENT_PRESETS); null → theme's own accent
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("appearance_preference")
 }
 
 // One row per successfully attributed invite. `rewardedAt` is set when the

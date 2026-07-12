@@ -23,6 +23,8 @@ import { initWebVitals } from "@/lib/rum";
 import { registerServiceWorker } from "@/lib/sw-register";
 import { organizationSchema, websiteSchema, jsonLdScript } from "@/lib/schema";
 import { auth } from "@/lib/auth";
+import { THEME_BG } from "@/stores/themeStore";
+import { ACCENT_MAP } from "@/lib/appearance";
 import appCss from "@/app/globals.css?url";
 import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
 import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from "@/lib/i18n/config";
@@ -55,10 +57,13 @@ const getInitialUser = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 /**
- * Inline script that applies the persisted theme class to <html> before
- * React hydrates, preventing a flash-of-unstyled-content (FOUC).
+ * Inline script that applies the persisted theme class + accent override to
+ * <html> before React hydrates, preventing a flash-of-unstyled-content (FOUC).
+ * The theme→background map and the accent palette are serialized here from their
+ * single source (stores/themeStore.ts, lib/appearance.ts) so this script never
+ * drifts from the runtime that mirrors it.
  */
-const themeScript = `(function(){try{var m={default:"#000",light:"#f5f5f7","high-contrast":"#000"};var s=localStorage.getItem("rmh-style");if(!s||!m.hasOwnProperty(s)){if(s)localStorage.setItem("rmh-style","default");s="default"}if(s!=="default"){document.documentElement.classList.add("style-"+s)}var bg=m[s];window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}}catch(e){}})()`;
+const themeScript = `(function(){try{var m=${JSON.stringify(THEME_BG)};var s=localStorage.getItem("rmh-style");if(!s||!m.hasOwnProperty(s)){if(s)localStorage.setItem("rmh-style","default");s="default"}if(s!=="default"){document.documentElement.classList.add("style-"+s)}var bg=m[s];window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}var A=${JSON.stringify(ACCENT_MAP)};var ac=localStorage.getItem("rmh-accent");if(ac&&A[ac]){var d=document.documentElement.style;d.setProperty("--site-accent",A[ac].value);d.setProperty("--site-accent-fg",A[ac].fg);d.setProperty("--site-accent-hover","color-mix(in oklab,"+A[ac].value+" 82%, #000)");d.setProperty("--site-accent-dim","color-mix(in oklab,"+A[ac].value+" 15%, transparent)")}}catch(e){}})()`;
 
 /**
  * Inline guard that reads the locale cookie and sets lang/dir on <html> before

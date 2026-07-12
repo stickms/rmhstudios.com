@@ -4,7 +4,8 @@ import { useLocation } from "@tanstack/react-router";
 import { MotionConfig } from "framer-motion";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { useThemeStore, SITE_STYLES, SiteStyle } from "@/stores/themeStore";
+import { useThemeStore, SITE_STYLES, THEME_BG, SiteStyle } from "@/stores/themeStore";
+import { applyAccent, isAccentId, ACCENT_STORAGE_KEY } from "@/lib/appearance";
 import { useLocaleStore, writeLocaleCookie } from "@/stores/localeStore";
 import { applyHtmlLangDir } from "@/lib/i18n/dom";
 import { games } from "@/lib/games";
@@ -138,17 +139,11 @@ interface ProvidersProps {
 
 const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 
-/** Background colors for each theme — used to update theme-color meta + body bg
- *  synchronously instead of waiting for CSS to resolve via getComputedStyle. */
-const THEME_BG: Record<SiteStyle, string> = {
-  // Pure black — matches the inline themeScript (__root.tsx), the :root
-  // `--site-bg` token, and the `.vibe-app`/`.vibe-screen` shells. A grey value
-  // here made the document background flip to grey after hydration/navigation
-  // while the app chrome stayed black.
-  default: "#000",
-  light: "#f5f5f7",
-  "high-contrast": "#000",
-};
+// THEME_BG (theme → document background color) lives in stores/themeStore.ts,
+// derived from SITE_STYLES, so the runtime and the no-flash inline script share
+// one source. The default is pure black — matching the :root `--site-bg` token
+// and the `.vibe-app`/`.vibe-screen` shells (a grey value here made the document
+// background flip to grey after hydration while the app chrome stayed black).
 
 /** Routes where the site-wide theme must NOT be applied (apps/games own their styling). */
 const THEME_EXCLUDED_ROUTES = [
@@ -159,6 +154,8 @@ const THEME_EXCLUDED_ROUTES = [
 export function Providers({ children, initialUser = null, locale = "en", i18nResources = null }: ProvidersProps) {
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
+  const preview = useThemeStore((s) => s.preview);
+  const accent = useThemeStore((s) => s.accent);
   const { pathname } = useLocation();
   const isFirstRun = useRef(true);
 
@@ -288,14 +285,20 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     } else if (stored) {
       localStorage.setItem("rmh-style", "default");
     }
+    const storedAccent = localStorage.getItem(ACCENT_STORAGE_KEY);
+    if (isAccentId(storedAccent)) {
+      useThemeStore.getState().setAccent(storedAccent);
+    }
   }, []);
 
-  // Sync style class to <html> and persist
+  // Sync style class + accent override to <html> and persist. `preview` (the
+  // gallery's hover "try it on") is rendered in place of the committed style but
+  // never persisted, so hovering a swatch previews instantly without saving.
   useEffect(() => {
     // On the very first render the Zustand store still holds "default"
     // because localStorage hasn't hydrated yet. The inline ThemeScript
-    // already applied the correct class, background colour, and meta tag
-    // — touching ANYTHING here would flash the wrong colour and Safari
+    // already applied the correct class, background colour, meta tag, and
+    // accent — touching ANYTHING here would flash the wrong colour and Safari
     // (iOS 26+) derives its bar tint from the body background-color on
     // the first paint, so a single wrong frame is enough to break it.
     if (isFirstRun.current) {
@@ -304,15 +307,24 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     }
 
     const html = document.documentElement;
+    const activeStyle = preview ?? style;
     // Remove all style classes
     html.classList.remove(...STYLE_CLASSES);
-    // Add current style class only on non-app pages (default needs no class — uses :root tokens)
-    if (style !== "default" && !isAppRoute) {
-      html.classList.add(`style-${style}`);
+    // Add active style class only on non-app pages (default needs no class — uses :root tokens)
+    if (activeStyle !== "default" && !isAppRoute) {
+      html.classList.add(`style-${activeStyle}`);
     }
+    // Persist the COMMITTED style (not a transient preview).
     localStorage.setItem("rmh-style", style);
 
-    const bg = THEME_BG[style] ?? THEME_BG.default;
+    // Accent override: apply on content pages; clear on app/game routes (they own
+    // their palette) and when no accent is chosen. applyAccent no-ops safely for a
+    // null/unknown id by clearing the tokens.
+    applyAccent(html, isAppRoute ? null : accent);
+    if (isAccentId(accent)) localStorage.setItem(ACCENT_STORAGE_KEY, accent);
+    else localStorage.removeItem(ACCENT_STORAGE_KEY);
+
+    const bg = THEME_BG[activeStyle] ?? THEME_BG.default;
     html.style.backgroundColor = bg;
     document.body.style.backgroundColor = bg;
 
@@ -326,7 +338,72 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
       meta.content = bg;
       document.head.appendChild(meta);
     }
-  }, [style, isAppRoute]);
+  }, [style, preview, accent, isAppRoute]);
+
+  // ── Account sync ─────────────────────────────────────────────────────────
+  // Appearance follows the signed-in user across devices. On sign-in we pull the
+  // saved theme/accent; the account wins when it has a value, otherwise the
+  // current device value is kept (and seeded up so the account isn't left empty).
+  const appearanceSyncedRef = useRef(false);
+  const lastSavedAppearanceRef = useRef<{ style: string; accent: string | null } | null>(null);
+
+  // Fire-and-forget PUT of the appearance to the account, recording it as the
+  // last-saved value so the change-watcher below never echoes it straight back.
+  const saveAppearance = useCallback((next: { style: string; accent: string | null }) => {
+    lastSavedAppearanceRef.current = next;
+    fetch("/api/preferences/appearance", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(next),
+    }).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    if (!userId) {
+      appearanceSyncedRef.current = false;
+      lastSavedAppearanceRef.current = null;
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/preferences/appearance", { credentials: "include" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((remote: { style: string | null; accent: string | null } | null) => {
+        if (cancelled || !remote) return;
+        const store = useThemeStore.getState();
+        // The account wins where it has a saved value; otherwise this device's
+        // current value is kept.
+        const nextStyle =
+          remote.style && SITE_STYLES.some((s) => s.id === remote.style)
+            ? (remote.style as SiteStyle)
+            : store.style;
+        const nextAccent = isAccentId(remote.accent) ? remote.accent : store.accent;
+        if (remote.style !== nextStyle || remote.accent !== nextAccent) {
+          // Server was missing a value this device has → seed the account with the
+          // merged result (also records it as last-saved).
+          saveAppearance({ style: nextStyle, accent: nextAccent });
+        } else {
+          lastSavedAppearanceRef.current = { style: nextStyle, accent: nextAccent };
+        }
+        store.setStyle(nextStyle);
+        store.setAccent(nextAccent);
+        appearanceSyncedRef.current = true;
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, saveAppearance]);
+
+  // Persist later appearance changes (theme gallery, accent picker, command
+  // palette) for signed-in users. Guarded so it never fires before the initial
+  // sync and never re-saves a value we just pulled from the server.
+  useEffect(() => {
+    if (!userId || !appearanceSyncedRef.current) return;
+    const last = lastSavedAppearanceRef.current;
+    if (last && last.style === style && last.accent === accent) return;
+    saveAppearance({ style, accent });
+  }, [style, accent, userId, saveAppearance]);
 
   return (
     <QueryClientProvider client={queryClient}>

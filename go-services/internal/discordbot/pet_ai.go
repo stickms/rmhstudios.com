@@ -90,7 +90,9 @@ const aiTimeout = 15 * time.Second
 // dump — enough to color the message).
 func petStateLine(p *PetState) string {
 	if !p.Alive {
-		return "You (Alex) are currently passed out from neglect, waiting to be revived."
+		return "You (Alex) have PASSED OUT from neglect and can barely respond — you are NOT okay. " +
+			"Do NOT ask for food, boba, play, or chat about normal daily life. You can only weakly, " +
+			"faintly acknowledge things and hint that you need someone to revive you (run /revive)."
 	}
 	mood := p.mood()
 	career := "still figuring out your career"
@@ -373,7 +375,21 @@ var promptAckLines = []string{
 	"okok I see you 👀 love that answer, respect 🤝",
 }
 
-func promptAckLine() string {
+// promptAckPassedOutLines are used when someone answers one of Alex's prompts
+// after he's since passed out — he can only weakly appreciate it and beg for a
+// revive, never his usual hype.
+var promptAckPassedOutLines = []string{
+	"*weakly* I see you pullin up... but I'm passed out rn 💀 `/revive` me pls",
+	"appreciate you fr... barely hangin on tho 🥀 someone `/revive` me",
+	"y'all still showin up while I'm knocked out 😵 `/revive` me and I got you",
+}
+
+// promptAckLine returns a static prompt-ack fallback, weak-and-passed-out when
+// Alex is down so his reply reflects his state instead of hyping like normal.
+func promptAckLine(passedOut bool) string {
+	if passedOut {
+		return pick(promptAckPassedOutLines)
+	}
 	return pick(promptAckLines)
 }
 
@@ -405,9 +421,17 @@ func (ps *PetService) careerReaction(ctx context.Context, pet *PetState, career 
 
 // careInstruction asks Alex to plead for a specific need, mentioning the command.
 func careInstruction(need string) string {
+	// Passed out is not a "need" like hunger — he's collapsed and can only beg to
+	// be revived, so it gets its own instruction instead of the generic plea (which
+	// would have him cheerfully asking for boba while unconscious).
+	if need == "gone" {
+		return "You have PASSED OUT from neglect and collapsed. Post a short, weak, dramatic message to your " +
+			"Discord server letting everyone know you're down and need someone to run /revive to bring you back. " +
+			"1–2 sentences, barely-hanging-on energy — do NOT ask for food, boba, or play. No hashtags. Don't use markdown headers."
+	}
 	cmd := map[string]string{
 		"hungry": "/feed", "sleepy": "/rest", "stinky": "/clean",
-		"sad": "/play or /chat", "sick": "/feed and /rest", "gone": "/revive",
+		"sad": "/play or /chat", "sick": "/feed and /rest",
 	}[need]
 	if cmd == "" {
 		cmd = "/alex"
