@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, MessageCircle, CheckCheck, Plus, Search, X } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { Reveal } from '@/components/motion';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { MobileMenuButton } from './MobileMenuButton';
 import { MobileBrandPrefix } from './MobileHeader';
@@ -371,7 +372,7 @@ export function MessagesColumn({
           </p>
         </div>
       ) : (
-        <div>
+        <Reveal>
           {conversations.map((conv) => (
             <ConversationRow key={conv.id} conv={conv} currentUserId={session.user.id} t={t} formatTime={formatTime} />
           ))}
@@ -389,7 +390,7 @@ export function MessagesColumn({
           )}
 
           <div ref={sentinelRef} className="h-1" />
-        </div>
+        </Reveal>
       )}
 
       {newChatOpen && (
@@ -432,7 +433,7 @@ function ConversationRow({
   return (
     <Link
       to={`/messages/${conv.id}` as string}
-      className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border"
+      className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 active:scale-[0.99] transition-[background-color,transform] duration-150 border-b border-site-border"
     >
       <UserAvatar src={conv.otherUser.image ?? undefined} alt={conv.otherUser.name || t("user-alt", { defaultValue: "User" })} size={48} fallbackName={conv.otherUser.name ?? undefined} className="ring-2 ring-site-bg" />
       <div className="flex-1 min-w-0">
