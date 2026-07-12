@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import {
-  Sparkles,
   PenSquare,
   Heart,
   MessageCircle,
@@ -17,6 +16,10 @@ import {
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
+import { PinnedHero } from '@/components/feed/PinnedHero';
+import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
+import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 interface Wrapped {
   year: number;
@@ -78,64 +81,92 @@ export function WrappedColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-site-accent" />
-          <h1 className="text-lg font-bold text-site-text">{t('wrapped-heading', { year: data.year, defaultValue: '{{year}} Wrapped' })}</h1>
-        </div>
-      </header>
+      {/* Pinned scroll-narrative hero — marquee moment for the year review. */}
+      <PinnedHero
+        eyebrow={t('your-year-on-rmh', { defaultValue: 'Your year on RMH' })}
+        title={
+          <>
+            {data.year}{' '}
+            <span style={{ color: 'var(--site-accent)' }}>
+              {t('wrapped-heading-word', { defaultValue: 'Wrapped' })}
+            </span>
+          </>
+        }
+        subtitle={data.blurb}
+        actions={
+          <Link to="/recap">
+            <Button variant="accent" size="sm">
+              {t('recap-year-wrapped', { defaultValue: 'This week' })}
+            </Button>
+          </Link>
+        }
+        scrollCue={t('wrapped-scroll-cue', { defaultValue: 'Scroll to explore' })}
+        screens={2.6}
+      />
 
       <div className="space-y-6 p-4">
-        {/* Hero */}
-        <section className="overflow-hidden rounded-site border border-site-border bg-gradient-to-br from-site-accent/20 via-site-surface to-site-surface p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-site-accent">{t('your-year-on-rmh', { defaultValue: 'Your year on RMH' })}</p>
-          <p className="mt-2 text-2xl font-extrabold leading-snug text-site-text">{data.blurb}</p>
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-site-bg px-3 py-1.5 text-sm font-semibold text-site-text">
-            <Star className="h-4 w-4 text-site-accent" /> {t('level-value', { level: data.level, defaultValue: 'Level {{level}}' })}
+        {/* Level badge — leads the below-fold content. */}
+        <Reveal>
+          <div className="flex items-center gap-2 rounded-site border border-site-border bg-site-surface px-4 py-3">
+            <Star className="h-5 w-5 text-site-accent" />
+            <span className="text-sm font-semibold text-site-text">
+              {t('level-value', { level: data.level, defaultValue: 'Level {{level}}' })}
+            </span>
           </div>
-        </section>
+        </Reveal>
 
         {/* Stat tiles */}
-        <section className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {tiles.map((t) => (
-            <div key={t.label} className="rounded-site border border-site-border bg-site-surface p-4">
-              <t.icon className="h-5 w-5 text-site-accent" />
-              <p className="mt-2 text-2xl font-extrabold text-site-text">{t.value}</p>
-              <p className="text-xs text-site-text-dim">{t.label}</p>
-            </div>
-          ))}
-          <div className="rounded-site border border-site-border bg-site-surface p-4">
-            <CoinIcon className="h-5 w-5" />
-            <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.coinsEarned)}</p>
-            <p className="text-xs text-site-text-dim">{t('tile-coins-earned', { defaultValue: 'Coins earned' })}</p>
-          </div>
-          {data.busiestMonth && (
-            <div className="rounded-site border border-site-border bg-site-surface p-4">
-              <CalendarDays className="h-5 w-5 text-site-accent" />
-              <p className="mt-2 text-2xl font-extrabold text-site-text">{data.busiestMonth}</p>
-              <p className="text-xs text-site-text-dim">{t('tile-busiest-month', { defaultValue: 'Busiest month' })}</p>
-            </div>
-          )}
-        </section>
+        <Reveal>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+            {t('wrapped-stats-heading', { defaultValue: 'Your year in numbers' })}
+          </h2>
+          <RevealGroup as="div" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {tiles.map((tile) => (
+              <RevealItem key={tile.label}>
+                <div className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}>
+                  <tile.icon className="h-5 w-5 text-site-accent" />
+                  <p className="mt-2 text-2xl font-extrabold text-site-text">{tile.value}</p>
+                  <p className="text-xs text-site-text-dim">{tile.label}</p>
+                </div>
+              </RevealItem>
+            ))}
+            <RevealItem>
+              <div className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}>
+                <CoinIcon className="h-5 w-5" />
+                <p className="mt-2 text-2xl font-extrabold text-site-text">{fmt(data.coinsEarned)}</p>
+                <p className="text-xs text-site-text-dim">{t('tile-coins-earned', { defaultValue: 'Coins earned' })}</p>
+              </div>
+            </RevealItem>
+            {data.busiestMonth && (
+              <RevealItem>
+                <div className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}>
+                  <CalendarDays className="h-5 w-5 text-site-accent" />
+                  <p className="mt-2 text-2xl font-extrabold text-site-text">{data.busiestMonth}</p>
+                  <p className="text-xs text-site-text-dim">{t('tile-busiest-month', { defaultValue: 'Busiest month' })}</p>
+                </div>
+              </RevealItem>
+            )}
+          </RevealGroup>
+        </Reveal>
 
         {/* Top post */}
         {data.topPost && (
-          <section>
+          <Reveal>
             <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
               {t('your-top-post', { defaultValue: 'Your top post' })}
             </h2>
             <Link
               to={`/u/me/post/${data.topPost.id}` as string}
-              className="block rounded-site border border-site-border bg-site-surface p-4 transition-colors hover:border-site-accent/60"
+              className={`block rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}
             >
               <p className="line-clamp-4 whitespace-pre-wrap break-words text-sm text-site-text">
                 {data.topPost.content || t('media-post-fallback', { defaultValue: '(media post)' })}
               </p>
-              <p className="mt-2 inline-flex items-center gap-1 text-xs text-site-text-dim">
+              <p className="mt-2 inline-flex items-center gap-1 text-xs text-site-text-muted">
                 <Heart className="h-3.5 w-3.5 text-site-accent" /> {t('top-post-likes', { count: data.topPost.likeCount, formattedCount: fmt(data.topPost.likeCount), defaultValue: '{{formattedCount}} likes' })}
               </p>
             </Link>
-          </section>
+          </Reveal>
         )}
       </div>
     </div>
