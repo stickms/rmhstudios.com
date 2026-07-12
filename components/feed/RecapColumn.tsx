@@ -5,7 +5,11 @@ import { Link } from '@tanstack/react-router';
 import { Sparkles, Heart, MessageCircle, UserPlus, Trophy, Flame, PenSquare } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
+import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
+import { PinnedHero } from '@/components/feed/PinnedHero';
+import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
+import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 interface Recap {
   posts: number;
@@ -53,17 +57,6 @@ export function RecapColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
-        <Sparkles className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">{t('recap-your-week', { defaultValue: 'Your week on RMH' })}</h1>
-        <Link
-          to="/wrapped"
-          className="ml-auto inline-flex items-center gap-1 rounded-full border border-site-border px-3 py-1 text-xs font-semibold text-site-accent transition-colors hover:bg-site-surface"
-        >
-          <Sparkles className="h-3.5 w-3.5" /> {t('recap-year-wrapped', { defaultValue: 'Year Wrapped' })}
-        </Link>
-      </header>
-
       {loading ? (
         <div className="flex justify-center py-20">
           <Spinner />
@@ -71,36 +64,73 @@ export function RecapColumn({
       ) : !recap ? (
         <EmptyState description={t('recap-load-error', { defaultValue: 'Could not load your recap.' })} />
       ) : (
-        <div className="space-y-4 p-4">
-          <div className="rounded-site border border-site-accent/30 bg-site-accent-dim p-4">
-            <p className="text-sm text-site-text">{recap.blurb}</p>
+        <>
+          {/* Pinned scroll-narrative hero — marquee moment for the weekly review. */}
+          <PinnedHero
+            eyebrow={t('recap-your-week', { defaultValue: 'Your week on RMH' })}
+            title={
+              <>
+                {t('recap-weekly-headline', { defaultValue: 'Weekly' })}{' '}
+                <span className="text-site-accent">
+                  {t('recap-recap-word', { defaultValue: 'Recap' })}
+                </span>
+              </>
+            }
+            subtitle={recap.blurb}
+            actions={
+              <Link to="/wrapped">
+                <Button variant="accent" size="sm">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  {t('recap-year-wrapped', { defaultValue: 'Year Wrapped' })}
+                </Button>
+              </Link>
+            }
+            scrollCue={t('recap-scroll-cue', { defaultValue: 'Scroll to explore' })}
+            screens={2.6}
+          />
+
+          <div className="space-y-4 p-4">
+            {/* Stat grid */}
+            <Reveal>
+              <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+                {t('recap-stats-heading', { defaultValue: 'This week' })}
+              </h2>
+              <RevealGroup as="div" className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {STAT_META.map(({ key, labelKey, labelDefault, icon: Icon }) => (
+                  <RevealItem key={key}>
+                    <div className={`rounded-site border border-site-border bg-site-surface p-3 text-center ${LIFT_CARD}`}>
+                      <Icon className="mx-auto h-5 w-5 text-site-accent" />
+                      <p className="mt-1 text-2xl font-bold text-site-text">{recap[key] as number}</p>
+                      <p className="text-xs text-site-text-muted">{t(labelKey, { defaultValue: labelDefault })}</p>
+                    </div>
+                  </RevealItem>
+                ))}
+              </RevealGroup>
+            </Reveal>
+
+            {recap.topPost && (
+              <Reveal>
+                <div className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}>
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('recap-top-post', { defaultValue: 'Your top post' })}</p>
+                  <p className="line-clamp-3 text-sm text-site-text">{recap.topPost.content}</p>
+                  <p className="mt-1 text-xs text-site-text-muted">
+                    <Heart className="mr-0.5 inline h-3.5 w-3.5 text-site-accent" />
+                    {recap.topPost.likeCount} {t('recap-likes', { defaultValue: 'likes' })}
+                  </p>
+                </div>
+              </Reveal>
+            )}
+
+            <Reveal>
+              <Link
+                to="/achievements"
+                className={`block rounded-site border border-site-border bg-site-surface p-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover ${LIFT_CARD}`}
+              >
+                {t('recap-view-achievements', { defaultValue: 'View your achievements →' })}
+              </Link>
+            </Reveal>
           </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {STAT_META.map(({ key, labelKey, labelDefault, icon: Icon }) => (
-              <div key={key} className="rounded-site border border-site-border bg-site-surface p-3 text-center">
-                <Icon className="mx-auto h-5 w-5 text-site-accent" />
-                <p className="mt-1 text-2xl font-bold text-site-text">{recap[key] as number}</p>
-                <p className="text-xs text-site-text-muted">{t(labelKey, { defaultValue: labelDefault })}</p>
-              </div>
-            ))}
-          </div>
-
-          {recap.topPost && (
-            <div className="rounded-site border border-site-border bg-site-surface p-4">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('recap-top-post', { defaultValue: 'Your top post' })}</p>
-              <p className="line-clamp-3 text-sm text-site-text">{recap.topPost.content}</p>
-              <p className="mt-1 text-xs text-site-text-muted">❤️ {recap.topPost.likeCount} {t('recap-likes', { defaultValue: 'likes' })}</p>
-            </div>
-          )}
-
-          <Link
-            to="/achievements"
-            className="block rounded-site border border-site-border bg-site-surface p-3 text-center text-sm font-medium text-site-accent hover:bg-site-surface-hover"
-          >
-            {t('recap-view-achievements', { defaultValue: 'View your achievements →' })}
-          </Link>
-        </div>
+        </>
       )}
     </div>
   );

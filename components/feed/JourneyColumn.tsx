@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { ProgressColumn } from './ProgressColumn';
 import { AchievementsColumn } from './AchievementsColumn';
 import { StreakColumn } from './StreakColumn';
+import { Reveal } from '@/components/motion';
 import type { AchievementsPayload } from '@/lib/achievements.server';
 
 export type JourneyTab = 'streaks' | 'progress' | 'achievements';
@@ -53,30 +54,33 @@ export function JourneyColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 backdrop-blur">
-        <nav className="flex" role="tablist" aria-label={t("journey-sections-label", { defaultValue: "Journey sections" })}>
-          {TABS.map(({ id, labelKey, defaultLabel, icon: Icon }) => {
-            const active = tab === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => selectTab(id)}
-                className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 px-3 py-3 text-sm font-semibold transition-colors ${
-                  active
-                    ? 'border-site-accent text-site-text'
-                    : 'border-transparent text-site-text-muted hover:text-site-text'
-                }`}
-              >
-                <Icon className={`h-4 w-4 ${id === 'streaks' && active ? 'text-site-warning' : ''}`} />
-                <span>{t(labelKey, { defaultValue: defaultLabel })}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </header>
+      {/* Reveal header — stat-grid dashboard, lighter treatment than marquee pages. */}
+      <Reveal>
+        <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 backdrop-blur">
+          <nav className="flex" role="tablist" aria-label={t("journey-sections-label", { defaultValue: "Journey sections" })}>
+            {TABS.map(({ id, labelKey, defaultLabel, icon: Icon }) => {
+              const active = tab === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => selectTab(id)}
+                  className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 px-3 py-3 text-sm font-semibold transition-colors ${
+                    active
+                      ? 'border-site-accent text-site-text'
+                      : 'border-transparent text-site-text-muted hover:text-site-text'
+                  }`}
+                >
+                  <Icon className={`h-4 w-4 ${id === 'streaks' && active ? 'text-site-warning' : ''}`} />
+                  <span>{t(labelKey, { defaultValue: defaultLabel })}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </header>
+      </Reveal>
 
       {tab === 'streaks' && <StreakColumn hideHeader />}
       {tab === 'progress' && <ProgressColumn hideHeader />}
