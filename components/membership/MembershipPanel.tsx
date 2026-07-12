@@ -16,6 +16,8 @@ import { useTranslation } from 'react-i18next';
 import { Check, Loader2, ArrowUpRight, ChevronDown, X } from 'lucide-react';
 import type { Tier } from '@/lib/entitlements';
 import { authClient } from '@/lib/auth-client';
+import { PinnedHero } from '@/components/feed/PinnedHero';
+import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 
 // Local display-only ordering (do NOT import the server-side TIER_RANK — it
 // pulls the prisma client into the client bundle).
@@ -163,21 +165,60 @@ export function MembershipPanel({
   }
 
   return (
-    <section className="pricing-root relative isolate overflow-hidden">
+    {/* No `overflow-hidden` here: it would establish a scroll container and
+        break the pinned hero's position:sticky. The hero clips its own glow. */}
+    <section className="pricing-root relative isolate">
       <PricingStyles />
 
-      {/* ── Atmosphere ───────────────────────────────────────── */}
-      <div aria-hidden className="pricing-glow" />
-      <div aria-hidden className="pricing-grid" />
-      <div aria-hidden className="pricing-grain" />
+      {/* ── Signature pinned hero ────────────────────────────── */}
+      <PinnedHero
+        eyebrow={t('membership-title', { defaultValue: 'Membership' })}
+        title={
+          <>
+            {t('hero-heading-line1', { defaultValue: 'Choose your' })}
+            <br />
+            <span className="text-site-accent">{t('hero-heading-line2', { defaultValue: 'altitude.' })}</span>
+          </>
+        }
+        subtitle={t('hero-subheading', {
+          defaultValue:
+            'Four tiers, one studio. Unlock the full toolset, the RMH API, and a verified badge — or scale the whole thing to your company.',
+        })}
+        scrollCue={t('scroll-to-compare', { defaultValue: 'Compare tiers' })}
+        actions={
+          <>
+            {currentTier !== 'free' && (
+              <button
+                type="button"
+                onClick={manageBilling}
+                disabled={busy === 'portal'}
+                className="inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface/60 px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover disabled:opacity-50"
+              >
+                {busy === 'portal' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpRight className="h-4 w-4" />}
+                {t('manage-billing', { defaultValue: 'Manage billing' })}
+              </button>
+            )}
+            {coinShopAnchorId && (
+              <button
+                type="button"
+                onClick={() => scrollToAnchor(coinShopAnchorId)}
+                className="group inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface/40 px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover"
+              >
+                {t('coins-shop-jump', { defaultValue: 'RMH Coins shop' })}
+                <ChevronDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
+              </button>
+            )}
+          </>
+        }
+      />
 
       {/* Content padding only — the center-column width is governed by the
           surrounding AnimatedMain so the gutters match blog/library. */}
-      <div className="relative px-5 py-16 sm:px-8 sm:py-20">
+      <div className="relative border-t border-site-border px-5 pb-16 pt-12 sm:px-8 sm:pt-16">
         {/* ── Status banner ──────────────────────────────────── */}
         {status && (
-          <div
-            className={`pricing-fade mb-10 flex items-center justify-between gap-3 rounded-site border px-5 py-3.5 text-sm ${
+          <Reveal
+            className={`mb-10 flex items-center justify-between gap-3 rounded-site border px-5 py-3.5 text-sm ${
               status === 'success'
                 ? 'border-[color:var(--site-success)]/30 bg-[color:var(--site-success)]/10 text-[color:var(--site-success)]'
                 : 'border-site-border bg-site-surface/60 text-site-text-muted'
@@ -191,60 +232,26 @@ export function MembershipPanel({
             <button type="button" onClick={() => setStatus(null)} className="shrink-0 opacity-60 hover:opacity-100">
               <X className="h-4 w-4" />
             </button>
-          </div>
+          </Reveal>
         )}
 
-        {/* ── Header ─────────────────────────────────────────── */}
-        <header className="pricing-fade max-w-2xl">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <h1 className="pricing-display text-5xl leading-[0.95] text-site-text sm:text-6xl">
-              {t('hero-heading-line1', { defaultValue: 'Choose your' })}
-              <br />
-              <span className="pricing-italic text-site-accent">{t('hero-heading-line2', { defaultValue: 'altitude.' })}</span>
-            </h1>
-            {coinShopAnchorId && (
-              <button
-                type="button"
-                onClick={() => scrollToAnchor(coinShopAnchorId)}
-                className="group mt-1 inline-flex shrink-0 items-center gap-2 rounded-full border border-site-border bg-site-surface/40 px-4 py-2 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover"
-              >
-                {t('coins-shop-jump', { defaultValue: 'RMH Coins shop' })}
-                <ChevronDown className="h-4 w-4 transition-transform group-hover:translate-y-0.5" />
-              </button>
-            )}
-          </div>
-          <p className="mt-6 max-w-md text-base leading-relaxed text-site-text-muted">
-            {t('hero-subheading', { defaultValue: 'Four tiers, one studio. Unlock the full toolset, the RMH API, and a verified badge — or scale the whole thing to your company.' })}
-          </p>
-
-          {currentTier !== 'free' && (
-            <button
-              type="button"
-              onClick={manageBilling}
-              disabled={busy === 'portal'}
-              className="mt-7 inline-flex items-center gap-2 rounded-full border border-site-border bg-site-surface/60 px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover disabled:opacity-50"
-            >
-              {busy === 'portal' ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUpRight className="h-4 w-4" />}
-              {t('manage-billing', { defaultValue: 'Manage billing' })}
-            </button>
-          )}
-        </header>
-
         {/* ── Plan grid ──────────────────────────────────────── */}
-        <div className="mt-14 grid items-stretch gap-5 lg:grid-cols-4">
-          {PLANS.map((plan, i) => {
+        <RevealGroup className="grid items-stretch gap-5 lg:grid-cols-4">
+          {PLANS.map((plan) => {
             const isCurrent = currentTier === plan.tier;
             const owned = RANK[currentTier] > RANK[plan.tier];
             return (
-              <article
-                key={plan.tier}
-                className={`pricing-card pricing-fade group relative flex flex-col rounded-3xl border p-6 ${
-                  plan.featured
-                    ? 'pricing-card--featured border-transparent bg-site-surface/70'
-                    : 'border-site-border bg-site-surface/30'
-                }`}
-                style={{ animationDelay: `${120 + i * 90}ms` }}
-              >
+              <RevealItem key={plan.tier} className="flex">
+                {/* Card is a plain <article> so its CSS hover/featured transforms
+                    aren't clobbered by the RevealItem motion node's inline
+                    transform. */}
+                <article
+                  className={`pricing-card group relative flex w-full flex-col rounded-3xl border p-6 ${
+                    plan.featured
+                      ? 'pricing-card--featured border-transparent bg-site-surface/70'
+                      : 'border-site-border bg-site-surface/30'
+                  }`}
+                >
                 {plan.featured && (
                   <span className="pricing-ribbon">{t('most-popular', { defaultValue: 'Most popular' })}</span>
                 )}
@@ -335,15 +342,19 @@ export function MembershipPanel({
                     </a>
                   )}
                 </div>
-              </article>
+                </article>
+              </RevealItem>
             );
           })}
-        </div>
+        </RevealGroup>
 
         {/* ── Footnote ───────────────────────────────────────── */}
-        <p className="pricing-fade mt-12 text-center font-mono text-xs text-site-text-dim">
+        <Reveal
+          as="p"
+          className="mt-12 text-center font-mono text-xs text-site-text-dim"
+        >
           {t('billing-footnote', { defaultValue: 'Billed monthly · cancel anytime · secure checkout by Stripe' })}
-        </p>
+        </Reveal>
       </div>
     </section>
   );
@@ -354,31 +365,9 @@ function PricingStyles() {
   return (
     <style>{`
       .pricing-display { font-family: var(--font-playfair); font-weight: 700; letter-spacing: -0.02em; }
-      .pricing-italic { font-style: italic; }
       .pricing-price { font-family: var(--font-jetbrains-mono); font-weight: 600; letter-spacing: -0.04em; }
 
       .pricing-root { background: var(--site-bg); }
-
-      /* Layered atmosphere */
-      .pricing-glow {
-        position: absolute; inset: -20% -10% auto -10%; height: 70%;
-        background:
-          radial-gradient(60% 60% at 30% 0%, color-mix(in srgb, var(--site-accent) 22%, transparent), transparent 70%),
-          radial-gradient(50% 50% at 85% 10%, color-mix(in srgb, var(--site-warning) 12%, transparent), transparent 70%);
-        filter: blur(20px); pointer-events: none; z-index: -2;
-      }
-      .pricing-grid {
-        position: absolute; inset: 0; z-index: -2; pointer-events: none;
-        background-image:
-          linear-gradient(to right, color-mix(in srgb, var(--site-text) 4%, transparent) 1px, transparent 1px),
-          linear-gradient(to bottom, color-mix(in srgb, var(--site-text) 4%, transparent) 1px, transparent 1px);
-        background-size: 56px 56px;
-        mask-image: radial-gradient(120% 80% at 50% 0%, #000 30%, transparent 75%);
-      }
-      .pricing-grain {
-        position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0.18; mix-blend-mode: overlay;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-      }
 
       /* Cards */
       .pricing-card { transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
@@ -409,14 +398,9 @@ function PricingStyles() {
          doesn't fight the inline background. */
       .pricing-btn:not(:disabled):hover { filter: brightness(1.08); transform: translateY(-1px); }
 
-      /* Entrance */
-      @keyframes pricing-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-      .pricing-fade { opacity: 0; animation: pricing-rise 620ms cubic-bezier(0.22, 1, 0.36, 1) forwards; }
-      .pricing-card.pricing-fade { animation-name: pricing-rise; }
-
       @media (prefers-reduced-motion: reduce) {
-        .pricing-fade { animation: none; opacity: 1; }
-        .pricing-card:hover, .pricing-card--featured, .pricing-card--featured:hover { transform: none; }
+        .pricing-card:hover { transform: none; }
+        .pricing-card--featured, .pricing-card--featured:hover { transform: none; }
       }
     `}</style>
   );
