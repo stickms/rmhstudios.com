@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from './UserAvatar';
 import { HandleInput } from './HandleInput';
+import { Reveal } from '@/components/motion';
+import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 interface Rating {
   game: string;
@@ -182,7 +184,7 @@ export function RankedColumn({
         {signedIn && (
           <>
             {/* Issue a challenge */}
-            <section className="rounded-site border border-site-border bg-site-surface p-4">
+            <Reveal as="section" className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}>
               <h2 className="mb-2 text-sm font-bold text-site-text">{t('challenge-a-player', { defaultValue: 'Challenge a player' })}</h2>
               <div className="flex flex-wrap items-center gap-2">
                 <select
@@ -209,15 +211,15 @@ export function RankedColumn({
                 </Button>
               </div>
               {formMsg && <p className="mt-2 text-xs text-site-text-muted">{formMsg}</p>}
-            </section>
+            </Reveal>
 
             {/* Incoming challenges */}
             {incoming.length > 0 && (
-              <section>
+              <Reveal as="section">
                 <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('challenges-for-you', { defaultValue: 'Challenges for you' })}</h2>
                 <div className="space-y-2">
                   {incoming.map((c) => (
-                    <div key={c.id} className="flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5">
+                    <div key={c.id} className={`flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}>
                       <UserAvatar user={c.user} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-site-text">{c.user.name || c.user.handle || t('player-fallback', { defaultValue: 'Player' })}</p>
@@ -238,16 +240,16 @@ export function RankedColumn({
                     </div>
                   ))}
                 </div>
-              </section>
+              </Reveal>
             )}
 
             {/* Outgoing challenges */}
             {outgoing.length > 0 && (
-              <section>
+              <Reveal as="section">
                 <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-challenges', { defaultValue: 'Your challenges' })}</h2>
                 <div className="space-y-2">
                   {outgoing.map((c) => (
-                    <div key={c.id} className="flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5">
+                    <div key={c.id} className={`flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}>
                       <UserAvatar user={c.user} />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-semibold text-site-text">{c.user.name || c.user.handle || t('player-fallback', { defaultValue: 'Player' })}</p>
@@ -257,16 +259,16 @@ export function RankedColumn({
                     </div>
                   ))}
                 </div>
-              </section>
+              </Reveal>
             )}
 
             {/* Your ratings */}
             {ratings.length > 0 && (
-              <section>
+              <Reveal as="section">
                 <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-ratings', { defaultValue: 'Your ratings' })}</h2>
                 <div className="space-y-1">
                   {ratings.map((r) => (
-                    <div key={r.game} className="flex items-center justify-between rounded-site border border-site-border bg-site-surface px-3 py-2.5">
+                    <div key={r.game} className={`flex items-center justify-between rounded-site border border-site-border bg-site-surface px-3 py-2.5 ${LIFT_CARD}`}>
                       <span className="text-sm font-medium text-site-text">{nameOf(r.game)}</span>
                       <span className="text-sm text-site-text-dim">
                         <strong className="text-site-text">{fmt(r.rating)}</strong> · {r.wins}W {r.losses}L {r.draws}D
@@ -274,13 +276,13 @@ export function RankedColumn({
                     </div>
                   ))}
                 </div>
-              </section>
+              </Reveal>
             )}
           </>
         )}
 
         {/* Leaderboard */}
-        <section>
+        <Reveal as="section">
           <div className="mb-2 flex items-center justify-between">
             <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
               <Trophy className="h-3.5 w-3.5" /> {t('leaderboard', { defaultValue: 'Leaderboard' })}
@@ -306,7 +308,7 @@ export function RankedColumn({
           ) : (
             <div className="space-y-1">
               {lb.map((row) => (
-                <div key={row.user.id} className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5">
+                <div key={row.user.id} className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}>
                   <span className="w-5 text-center text-xs font-bold text-site-text-dim">{row.rank}</span>
                   <UserAvatar user={row.user} />
                   <div className="min-w-0 flex-1">
@@ -318,7 +320,7 @@ export function RankedColumn({
               ))}
             </div>
           )}
-        </section>
+        </Reveal>
       </div>
     </div>
   );
