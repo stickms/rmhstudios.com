@@ -50,7 +50,7 @@ function Store() {
   return (
     <>
       <AnimatedMain
-        className="relative isolate min-h-screen w-full min-w-0 overflow-hidden border-r border-site-border pb-16 md:pb-0"
+        className="relative isolate min-h-screen w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <MobileTopBar title={t('store-title', { defaultValue: 'Store' })} />

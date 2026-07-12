@@ -29,7 +29,7 @@ function ShopPage() {
         className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
-        <ShopColumn initialData={shop} />
+        <ShopColumn initialData={shop} showHero />
       </AnimatedMain>
       <div className="hidden lg:block w-4 shrink-0" />
     </>
