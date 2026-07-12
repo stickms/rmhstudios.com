@@ -11,10 +11,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { OptimizedImage } from '@/components/ui/OptimizedImage';
 import type { FeedItem } from '@/lib/feed-types';
-
-// Hairline card that lifts subtly on hover — shared across the discovery grids.
-const LIFT_CARD =
-  'transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-site-accent/50';
+import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 interface Community {
   id: string;

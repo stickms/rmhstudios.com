@@ -10,11 +10,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import type { FeedItem } from '@/lib/feed-types';
-
-// Hairline card that lifts subtly on hover — the quiet micro-interaction shared
-// across the hand-tuned discovery grids.
-const LIFT_CARD =
-  'transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-site-accent/50';
+import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 interface ExploreData {
   trendingTags: { tag: string; count: number }[];
