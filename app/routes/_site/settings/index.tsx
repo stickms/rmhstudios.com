@@ -23,6 +23,7 @@ import {
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { ThemeGallery } from '@/components/settings/ThemeGallery';
+import { AccentPicker } from '@/components/settings/AccentPicker';
 import { NotificationPrefsPanel } from '@/components/settings/NotificationPrefsPanel';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useSession } from '@/components/Providers';
@@ -138,10 +139,24 @@ function SettingsPage() {
             icon={Palette}
             title={t('settings-appearance', { defaultValue: 'Appearance' })}
             subtitle={t('settings-appearance-hint', {
-              defaultValue: 'Pick a theme — it applies instantly and is saved on this device.',
+              defaultValue:
+                "Theme and accent apply instantly — and follow you across devices when you're signed in.",
             })}
           >
             <ThemeGallery />
+
+            <div className="mt-5 border-t border-site-border pt-4">
+              <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-site-text-dim">
+                {t('settings-accent-title', { defaultValue: 'Accent color' })}
+              </h3>
+              <p className="mb-3 text-xs text-site-text-muted">
+                {t('settings-accent-hint', {
+                  defaultValue: 'Recolor highlights on top of any theme, or keep the theme default.',
+                })}
+              </p>
+              <AccentPicker />
+            </div>
+
             <div className="mt-4 flex items-center gap-2 rounded-site border border-site-border bg-site-bg-subtle px-3 py-2.5">
               <Sparkles className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
               <p className="text-xs text-site-text-muted">

@@ -45,6 +45,7 @@ export function ThemeGallery() {
   const { t } = useTranslation('feed');
   const style = useThemeStore((s) => s.style);
   const setStyle = useThemeStore((s) => s.setStyle);
+  const setPreview = useThemeStore((s) => s.setPreview);
 
   return (
     <div className="space-y-5">
@@ -53,6 +54,9 @@ export function ThemeGallery() {
           <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-site-text-dim">
             {t(`settings-theme-group-${group.toLowerCase()}`, { defaultValue: group })}
           </h3>
+          {/* Leaving a group's grid reverts any hover preview to the committed
+              theme (clearing on the radiogroup rather than each swatch avoids a
+              flicker as the pointer crosses between adjacent swatches). */}
           <div
             role="radiogroup"
             aria-label={t('settings-theme-group-aria', {
@@ -60,6 +64,7 @@ export function ThemeGallery() {
               group,
             })}
             className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
+            onMouseLeave={() => setPreview(null)}
           >
             {SITE_STYLES.filter((s) => s.group === group).map((s) => {
               const active = style === s.id;
@@ -70,6 +75,9 @@ export function ThemeGallery() {
                   role="radio"
                   aria-checked={active}
                   onClick={() => setStyle(s.id)}
+                  onMouseEnter={() => setPreview(s.id)}
+                  onFocus={() => setPreview(s.id)}
+                  onBlur={() => setPreview(null)}
                   className={cn(
                     'overflow-hidden rounded-site border text-left transition-all',
                     active
