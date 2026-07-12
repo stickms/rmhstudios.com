@@ -697,6 +697,7 @@
   "won": "Won",
   "wrapped-heading": "{{year}} Wrapped",
   "wrapped-load-error": "Could not load your Wrapped.",
+  "wrapped-recap-cta": "This week",
   "write-comment-placeholder": "Write a comment...",
   "xp-to-next-level": "{{xpIntoLevel}} / {{xpForNextLevel}} XP to level {{nextLevel}}",
   "yesterday": "Yesterday",
