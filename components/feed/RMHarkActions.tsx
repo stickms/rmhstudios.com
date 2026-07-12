@@ -90,7 +90,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
       {/* Comment */}
       <button
         onClick={handleCommentClick}
-        className="flex items-center gap-1.5 px-2 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-colors group active:scale-95"
+        className="flex items-center gap-1.5 px-2 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-[color,background-color,transform] duration-150 group active:scale-95"
       >
         <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
         <AnimatedCount value={item.commentCount} format={formatCount} hideZero className="text-xs" />
@@ -100,7 +100,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
       <div className="relative" ref={repostRef}>
         <button
           onClick={(e) => { e.stopPropagation(); setRepostMenu((v) => !v); }}
-          className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-colors group active:scale-95 ${
+          className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
             item.reposted
               ? 'text-site-success'
               : 'text-site-text-dim hover:text-site-success hover:bg-site-success/10'
@@ -139,7 +139,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
       {/* Like */}
       <button
         onClick={toggleLike}
-        className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-colors group active:scale-95 ${
+        className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
           item.liked
             ? 'text-site-danger'
             : 'text-site-text-dim hover:text-site-danger hover:bg-site-danger/10'

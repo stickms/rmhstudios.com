@@ -349,7 +349,9 @@ export function ComposeBox({
   const CurrentAudienceIcon = currentAudience.icon;
 
   return (
-    <div className="px-4 py-3 border-b border-site-border">
+    // focus-within lifts the composer to a faint surface + brighter hairline
+    // while writing, then settles back — an activation cue, not a layout change.
+    <div className="px-4 py-3 border-b border-site-border transition-colors duration-200 focus-within:bg-site-surface/20 focus-within:border-site-border-bright">
       <div className="flex gap-3">
         {/* Avatar */}
         <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0">
