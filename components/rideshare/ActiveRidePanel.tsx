@@ -400,7 +400,7 @@ export function ActiveRidePanel({
             <button
               onClick={() => act('complete')}
               disabled={busy}
-              className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 disabled:opacity-50 sm:flex-1 sm:py-2.5"
+              className="flex items-center justify-center gap-2 rounded-xl bg-site-success px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-site-success/90 disabled:opacity-50 sm:flex-1 sm:py-2.5"
             >
               <Flag className="h-4 w-4" /> {t("complete-trip", { defaultValue: "Complete trip" })}
             </button>
