@@ -81,6 +81,12 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
   // Live drag offset in px (0 → DRAWER_WIDTH). null means "not dragging — animate
   // to the resting position via CSS transition".
   const [dragX, setDragX] = useState<number | null>(null);
+  // Whether the fixed sidebar layer should paint. When the drawer is fully
+  // closed and idle we hide it (see the effect below): the `<aside>` is
+  // `position: fixed`, so during a vertical overscroll / pull-to-refresh bounce
+  // the page rubber-bands away while the fixed sidebar stays put and would
+  // otherwise peek out behind it.
+  const [asidePainted, setAsidePainted] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -236,6 +242,22 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
   const transform = offset === 0 ? undefined : `translateX(${offset}px)`;
   const scrimProgress = offset / DRAWER_WIDTH;
 
+  // Paint the fixed sidebar only while it's actually being revealed. It must
+  // stay painted through the whole close animation (React snaps `offset` to 0 at
+  // once, but the page keeps sliding back over the sidebar for ~380ms), then be
+  // hidden once fully closed so it can't peek out during a pull-to-refresh
+  // bounce. The timeout also covers reduced-motion users, where the page has no
+  // transition to slide back.
+  useEffect(() => {
+    if (offset > 0) {
+      setAsidePainted(true);
+      return;
+    }
+    const id = window.setTimeout(() => setAsidePainted(false), 420);
+    return () => window.clearTimeout(id);
+  }, [offset]);
+  const asideRevealed = offset > 0 || asidePainted;
+
   return (
     <MobileSidebarContext.Provider value={{ isOpen, open, close, toggle }}>
       <div
@@ -259,17 +281,22 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           isOpen ? 'overflow-y-hidden' : 'overflow-y-auto'
         }`}
       >
-        {/* Sidebar — sits fixed behind the page content. `overscroll-contain`
-            (plus `touch-pan-y`) means grabbing and swiping the sidebar scrolls
-            only the sidebar itself — never the page behind it, even when its
-            content is too short to scroll. */}
+        {/* Sidebar — sits fixed behind the page content. `overflow-hidden`
+            (not `-y-auto`) so the aside itself never scrolls: LeftSidebar fills
+            it exactly and owns the only scroll (its nav list), which keeps the
+            profile/sign-in footer pinned to the bottom as its own region rather
+            than scrolling with — or floating on top of — the nav. The bottom
+            padding lifts that footer clear of the fixed mobile bottom-nav bar.
+            `overscroll-contain` + `touch-pan-y` keep a swipe on the sidebar
+            scrolling only the sidebar, never the page behind it. */}
         <aside
-          className="fixed left-0 top-0 bottom-0 z-0 w-64 bg-site-bg border-r border-site-border overflow-y-auto overscroll-contain touch-pan-y"
+          className={`fixed left-0 top-0 bottom-0 z-0 w-64 bg-site-bg border-r border-site-border overflow-hidden overscroll-contain touch-pan-y ${
+            asideRevealed ? '' : 'invisible'
+          }`}
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 4.5rem)' }}
           aria-hidden={!isOpen}
         >
           <LeftSidebar expanded />
-          {/* Clear the fixed bottom nav so the last items stay reachable */}
-          <div className="h-20 shrink-0" aria-hidden="true" />
         </aside>
 
         {/* Page content — slides right to reveal the sidebar */}

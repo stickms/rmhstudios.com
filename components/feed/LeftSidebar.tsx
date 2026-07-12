@@ -404,7 +404,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           <NotificationsPopover
             count={notificationCount}
             refreshCount={refreshNotificationCount}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-site text-sm font-medium transition-colors w-full text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
+            className={`flex items-center gap-3 px-3.5 py-3 rounded-full text-sm font-medium transition-colors w-full text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
             labelClass={labelClass}
           />
         </div>
@@ -413,12 +413,12 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       {/* Auth Section — pinned to bottom */}
       <div className="border-t border-site-border pt-3 shrink-0">
         {isPending ? (
-          <div className="h-10 bg-site-surface rounded-site animate-pulse" />
+          <div className="h-10 bg-site-surface rounded-full animate-pulse" />
         ) : session ? (
           <div className="relative flex items-center gap-2" ref={userMenuRef}>
             <Link
               to={`/u/${(session.user as any).handle || session.user.id}` as string}
-              className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-site transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
+              className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-full transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
             >
               <UserAvatar
                 src={resolvedUser?.image || session.user.image}
