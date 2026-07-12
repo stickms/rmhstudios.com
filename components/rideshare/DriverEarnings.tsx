@@ -81,7 +81,7 @@ export function DriverEarnings() {
       {/* Earnings headline */}
       <div className="flex items-center justify-between rounded-2xl border border-site-border bg-linear-to-r from-site-surface to-site-bg p-5">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-site-success/15 text-site-success">
             <Wallet className="h-5 w-5" />
           </div>
           <div>
