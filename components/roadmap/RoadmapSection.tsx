@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { Reveal } from "@/components/motion";
+import { LIFT_CARD } from "@/components/feed/motionHelpers";
 
 type Milestone = {
   title: string;
@@ -839,16 +841,16 @@ function MilestoneCard({ title, body }: { title: string; body: string }) {
   return (
     <div
       data-slot="card"
-      className="roadmap-card border border-site-border bg-site-surface backdrop-blur-sm p-5 transition-colors hover:border-site-accent/30 hover:bg-site-surface-hover"
+      className={`roadmap-card border border-site-border bg-site-surface p-5 ${LIFT_CARD}`}
       style={{
         borderRadius: "var(--site-radius)",
         borderWidth: "var(--site-border-width)",
       }}
     >
-      <h3 className="text-xs font-bold uppercase tracking-wider mb-2 text-site-accent">
+      <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-site-accent">
         {title}
       </h3>
-      <p className="text-site-text-muted text-sm leading-relaxed">{body}</p>
+      <p className="text-sm leading-relaxed text-site-text-muted">{body}</p>
     </div>
   );
 }
@@ -898,11 +900,13 @@ export function RoadmapSection() {
       `}</style>
 
       {/* Intro */}
-      <div className="roadmap-animate mb-6 rounded-site border border-site-border bg-site-surface backdrop-blur-sm p-4">
-        <p className="text-site-text-muted text-sm leading-relaxed">
-          {t("intro-body", { defaultValue: "We're an indie studio building rhythm games, deckbuilders, narrative horror, and more. Our roadmap isn't tied to one title—we're growing the catalog, Discord, and new worlds in parallel. Timelines are guides, not promises." })}
-        </p>
-      </div>
+      <Reveal>
+        <div className="mb-6 rounded-site border border-site-border bg-site-surface p-4">
+          <p className="text-sm leading-relaxed text-site-text-muted">
+            {t("intro-body", { defaultValue: "We're an indie studio building rhythm games, deckbuilders, narrative horror, and more. Our roadmap isn't tied to one title—we're growing the catalog, Discord, and new worlds in parallel. Timelines are guides, not promises." })}
+          </p>
+        </div>
+      </Reveal>
 
       {/* Year sections */}
       <div className="space-y-10">
