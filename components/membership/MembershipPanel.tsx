@@ -165,8 +165,9 @@ export function MembershipPanel({
   }
 
   return (
-    {/* No `overflow-hidden` here: it would establish a scroll container and
-        break the pinned hero's position:sticky. The hero clips its own glow. */}
+    // No `overflow-hidden` on this section: it would establish a scroll
+    // container and break the pinned hero's position:sticky. The hero clips
+    // its own glow internally.
     <section className="pricing-root relative isolate">
       <PricingStyles />
 
