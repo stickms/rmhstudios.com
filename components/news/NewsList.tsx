@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Search, X } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
+import { Reveal } from '@/components/motion';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
 import { NewsCategoryTabs } from './NewsCategoryTabs';
@@ -147,9 +148,9 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
         <div className="px-4 py-4">
             {/* Featured Hero */}
             {!hasActiveFilters && featuredArticles.length > 0 && (
-                <div className="mb-4">
+                <Reveal className="mb-4">
                     <NewsHero articles={featuredArticles} />
-                </div>
+                </Reveal>
             )}
 
             {/* Filter Controls - collapsible */}

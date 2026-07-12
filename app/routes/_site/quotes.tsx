@@ -5,6 +5,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
+import { Reveal } from '@/components/motion';
 
 export const Route = createFileRoute('/_site/quotes')({
   head: () => ({
@@ -183,7 +184,7 @@ function QuotesPage() {
     <PageLayout title={t("steve-jobs-quotes-title", { defaultValue: "Steve Jobs Quotes" })} wide>
       <div className="px-4 pt-4 pb-12 max-w-2xl mx-auto">
         {/* Hero section */}
-        <div className="text-center mb-12">
+        <Reveal className="text-center mb-12">
           <div className="w-20 h-20 mx-auto mb-6 rounded-site bg-site-surface border border-site-border flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-site-accent">
               <path d="M3 21c3 0 7-1 7-8" />
@@ -195,7 +196,7 @@ function QuotesPage() {
           <p className="text-site-text-muted text-sm leading-relaxed max-w-lg mx-auto">
             {t("quotes-hero-description", { defaultValue: "A curated collection of the most memorable words from Steve Jobs — co-founder of Apple, visionary, and one of the most influential thinkers of the modern era." })}
           </p>
-        </div>
+        </Reveal>
 
         {/* Category filter chips */}
         <div className="flex flex-wrap gap-2 mb-8 justify-center">
@@ -221,10 +222,12 @@ function QuotesPage() {
           </div>
         </div>
 
-        {/* Quote list */}
+        {/* Quote list — each entry reveals once as it scrolls into view. */}
         <div className="space-y-0 divide-y divide-site-border">
           {quotes.map((quote, index) => (
-            <QuoteCard key={index} quote={quote} index={index} />
+            <Reveal key={index} y={12}>
+              <QuoteCard quote={quote} index={index} />
+            </Reveal>
           ))}
         </div>
 

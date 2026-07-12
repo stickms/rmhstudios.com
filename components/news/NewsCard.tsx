@@ -6,6 +6,7 @@ import { Calendar, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getCategoryColor } from '@/lib/news-categories';
 import { NewsSourceBadge } from './NewsSourceBadge';
+import { DUR_FAST, EASE_OUT_EXPO, STAGGER } from '@/components/motion';
 import type { NewsArticle } from '@/lib/news';
 
 interface NewsCardProps {
@@ -19,9 +20,9 @@ export function NewsCard({ article, index }: NewsCardProps) {
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: index * 0.08 }}
+            transition={{ duration: DUR_FAST, delay: Math.min(index, 8) * STAGGER, ease: EASE_OUT_EXPO }}
             className="h-full"
         >
             <div
