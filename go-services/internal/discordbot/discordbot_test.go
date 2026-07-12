@@ -662,3 +662,87 @@ func TestClaimPromptRespectsCap(t *testing.T) {
 		t.Errorf("expected exactly %d winners (cap), got %d", promptMaxClaims, claimed)
 	}
 }
+
+// ─── passed-out message state ───────────────────────────────────────────────
+//
+// When Alex has passed out (health hit 0, awaiting /revive), EVERY message path —
+// the AI system context and the no-AI static fallbacks — must reflect that he's
+// down and never have him chirping for food/boba like he's fine.
+
+// foodWords are the "acting alive" tells a passed-out message must not contain.
+var foodWords = []string{"boba", "feed", "food", "hungry", "snack", "meal"}
+
+func containsAnyFold(s string, subs []string) string {
+	low := strings.ToLower(s)
+	for _, sub := range subs {
+		if strings.Contains(low, sub) {
+			return sub
+		}
+	}
+	return ""
+}
+
+func TestPetStateLinePassedOut(t *testing.T) {
+	now := time.Unix(1_700_000_000, 0).UTC()
+	p := newPet("g1", now)
+	p.Alive = false
+
+	line := petStateLine(p)
+	if !strings.Contains(strings.ToLower(line), "revive") {
+		t.Errorf("passed-out state line should point at a revive, got %q", line)
+	}
+	if bad := containsAnyFold(line, foodWords); bad == "" {
+		t.Errorf("passed-out state line should forbid, not invite, food talk (missing the guard), got %q", line)
+	}
+
+	// A living Alex's state line still describes his mood normally.
+	p.Alive = true
+	if line := petStateLine(p); strings.Contains(strings.ToLower(line), "passed out") {
+		t.Errorf("living Alex should not read as passed out, got %q", line)
+	}
+}
+
+func TestCareInstructionGoneIsReviveNotFood(t *testing.T) {
+	got := careInstruction("gone")
+	if !strings.Contains(strings.ToLower(got), "/revive") {
+		t.Errorf("the 'gone' care plea should ask for a /revive, got %q", got)
+	}
+	if !strings.Contains(strings.ToLower(got), "passed out") {
+		t.Errorf("the 'gone' care plea should say he's passed out, got %q", got)
+	}
+	// A normal need still names its own care command.
+	if got := careInstruction("hungry"); !strings.Contains(got, "/feed") {
+		t.Errorf("the 'hungry' plea should ask for a /feed, got %q", got)
+	}
+}
+
+func TestMentionFallbackLinePassedOut(t *testing.T) {
+	// Every passed-out fallback points at a revive and mentions no food.
+	for _, line := range mentionPassedOutLines {
+		if !strings.Contains(strings.ToLower(line), "revive") {
+			t.Errorf("passed-out mention line should mention revive, got %q", line)
+		}
+		if bad := containsAnyFold(line, foodWords); bad != "" {
+			t.Errorf("passed-out mention line should not mention %q, got %q", bad, line)
+		}
+	}
+	// The passedOut branch of the picker only ever draws from that pool.
+	for i := 0; i < 50; i++ {
+		if bad := containsAnyFold(mentionFallbackLine(true), foodWords); bad != "" {
+			t.Fatalf("mentionFallbackLine(true) drew a food line %q", bad)
+		}
+	}
+}
+
+func TestPromptAckLinePassedOut(t *testing.T) {
+	for _, line := range promptAckPassedOutLines {
+		if !strings.Contains(strings.ToLower(line), "revive") {
+			t.Errorf("passed-out prompt-ack line should mention revive, got %q", line)
+		}
+	}
+	for i := 0; i < 50; i++ {
+		if bad := containsAnyFold(promptAckLine(true), foodWords); bad != "" {
+			t.Fatalf("promptAckLine(true) drew a food line %q", bad)
+		}
+	}
+}

@@ -512,7 +512,7 @@ func (s *ChatService) HandleMention(ctx context.Context, sess *discordgo.Session
 		reply = boundMessage(raw)
 	}
 	if reply == "" {
-		reply = mentionFallbackLine()
+		reply = mentionFallbackLine(s.pet != nil && s.pet.IsPassedOut(ctx))
 	}
 
 	// Send as a reply to the triggering message. If that fails (e.g. the referenced
@@ -572,7 +572,7 @@ func (s *ChatService) handlePromptClaim(ctx context.Context, sess *discordgo.Ses
 		reply = s.pet.promptAckContent(ctx, pet, username, answer)
 	}
 	if reply == "" {
-		reply = promptAckLine()
+		reply = promptAckLine(pet != nil && !pet.Alive)
 	}
 
 	if _, err := sess.ChannelMessageSendReply(m.ChannelID, reply, m.Reference()); err != nil {
@@ -615,8 +615,13 @@ func keepTyping(ctx context.Context, sess *discordgo.Session, channelID string) 
 }
 
 // mentionFallbackLine is a short, in-character reply used when AI generation is
-// unavailable, so a ping always gets an answer.
-func mentionFallbackLine() string {
+// unavailable, so a ping always gets an answer. When Alex is passed out it returns
+// a weak "I'm down, revive me" line instead of his usual lively chatter, so the
+// fallback path reflects his state just like the AI path does.
+func mentionFallbackLine(passedOut bool) string {
+	if passedOut {
+		return pick(mentionPassedOutLines)
+	}
 	lines := []string{
 		"yooo what's good 🧋",
 		"sup! lowkey caught me mid-boba run fr",
@@ -625,6 +630,15 @@ func mentionFallbackLine() string {
 		"ayo you rang? 🤙",
 	}
 	return lines[rand.Intn(len(lines))]
+}
+
+// mentionPassedOutLines are the weak, barely-conscious replies used when someone
+// pings Alex while he's passed out and AI generation isn't available.
+var mentionPassedOutLines = []string{
+	"*faintly* ...I can't... I passed out fr 💀 someone `/revive` me pls",
+	"barely... hangin on rn 🥀 need a `/revive` before I can talk fr",
+	"ngl I'm knocked out cold 😵 hit `/revive` and I'll be back",
+	"*weakly* I hear you... but I'm down bad 💀 `/revive` me pls",
 }
 
 // gatherMentionMessages collects the messages that make up a mention's context by
