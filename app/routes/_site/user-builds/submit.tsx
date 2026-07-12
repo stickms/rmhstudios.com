@@ -10,6 +10,7 @@ import { useSession } from '@/components/Providers';
 import { BuildForm } from '@/components/user-builds';
 import { Button } from '@/components/ui/button';
 import type { Build } from '@/lib/user-builds-types';
+import { Reveal } from '@/components/motion';
 
 export const Route = createFileRoute('/_site/user-builds/submit')({
   component: SubmitBuildPage,
@@ -99,16 +100,16 @@ function SubmitBuildContent() {
           {isEditing ? t("back-to-my-builds", { defaultValue: "Back to My Builds" }) : t("back-to-builds", { defaultValue: "Back to Builds" })}
         </Link>
 
-        <div className="mb-8">
+        <Reveal className="mb-8">
           <h1 className="text-3xl font-bold text-site-text mb-2">{isEditing ? t("edit-build", { defaultValue: "Edit Build" }) : t("submit-a-build", { defaultValue: "Submit a Build" })}</h1>
           <p className="text-site-text-muted">
             {isEditing ? t("update-build-details", { defaultValue: "Update your build details below." }) : t("share-project-with-community", { defaultValue: "Share your project with the community. You can save as a draft and publish later." })}
           </p>
-        </div>
+        </Reveal>
 
-        <div className="p-6 rounded-site border border-site-border bg-site-surface">
+        <Reveal className="p-6 rounded-site border border-site-border bg-site-surface">
           <BuildForm key={build?.id} build={build ?? undefined} />
-        </div>
+        </Reveal>
 
         {!isEditing && (
           <div className="mt-8 p-4 rounded-site-sm border border-site-border bg-site-surface">

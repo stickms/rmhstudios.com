@@ -6,6 +6,8 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, BookOpen, Plus, Sparkles, X, Globe, Lock, Layers } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { Reveal } from '@/components/motion';
+import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 interface Deck {
   id: string;
@@ -98,7 +100,7 @@ export function FlashcardsColumn({
     <Link
       key={d.id}
       to={`/study/${d.id}` as string}
-      className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-3 transition-colors hover:border-site-accent/60"
+      className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}
     >
       <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-site bg-site-accent/12 text-site-accent">
         <Layers className="h-5 w-5" />
@@ -182,19 +184,19 @@ export function FlashcardsColumn({
 
       <div className="space-y-6 p-4">
         {mine.length > 0 && (
-          <section>
+          <Reveal as="section">
             <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-decks', { defaultValue: 'Your decks' })}</h2>
             <div className="space-y-2">{mine.map((d) => DeckCard(d))}</div>
-          </section>
+          </Reveal>
         )}
-        <section>
+        <Reveal as="section">
           <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('public-decks', { defaultValue: 'Public decks' })}</h2>
           {popular.length === 0 ? (
             <p className="py-10 text-center text-sm text-site-text-muted">{t('no-public-decks', { defaultValue: 'No public decks yet.' })}</p>
           ) : (
             <div className="space-y-2">{popular.map((d) => DeckCard(d, true))}</div>
           )}
-        </section>
+        </Reveal>
       </div>
     </div>
   );

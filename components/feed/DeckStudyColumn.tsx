@@ -6,6 +6,8 @@ import { Loader2, ArrowLeft, Plus, Trash2, RotateCcw, GraduationCap, Check } fro
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { useTranslation } from 'react-i18next';
+import { Reveal } from '@/components/motion';
+import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 interface Card {
   id: string;
@@ -230,14 +232,16 @@ export function DeckStudyColumn({
 
       <div className="space-y-4 p-4">
         {signedIn && (
-          <Button variant="accent" className="w-full gap-2" disabled={cards.length === 0} onClick={startReview}>
-            <GraduationCap className="h-4 w-4" />
-            {dueCount > 0 ? t('study-due-cards', { count: dueCount, defaultValue: 'Study {{count}} due card' }) : t('review-deck', { defaultValue: 'Review deck' })}
-          </Button>
+          <Reveal>
+            <Button variant="accent" className="w-full gap-2" disabled={cards.length === 0} onClick={startReview}>
+              <GraduationCap className="h-4 w-4" />
+              {dueCount > 0 ? t('study-due-cards', { count: dueCount, defaultValue: 'Study {{count}} due card' }) : t('review-deck', { defaultValue: 'Review deck' })}
+            </Button>
+          </Reveal>
         )}
 
         {deck.isOwner && (
-          <div className="rounded-site border border-site-border bg-site-surface p-3">
+          <Reveal className={`rounded-site border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}>
             <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
               <Plus className="h-3.5 w-3.5" /> {t('add-a-card', { defaultValue: 'Add a card' })}
             </p>
@@ -263,22 +267,22 @@ export function DeckStudyColumn({
                 </Button>
               </div>
             </div>
-          </div>
+          </Reveal>
         )}
 
-        <section>
+        <Reveal as="section">
           <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
             <RotateCcw className="h-3.5 w-3.5" /> {t('card-count', { count: cards.length, defaultValue: '{{count}} card' })}
           </h2>
           <div className="space-y-1">
             {cards.map((c) => (
-              <div key={c.id} className="rounded-site-sm border border-site-border bg-site-surface p-3">
+              <div key={c.id} className={`rounded-site-sm border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}>
                 <p className="text-sm font-medium text-site-text">{c.front}</p>
                 <p className="mt-0.5 text-sm text-site-text-muted">{c.back}</p>
               </div>
             ))}
           </div>
-        </section>
+        </Reveal>
       </div>
     </div>
   );

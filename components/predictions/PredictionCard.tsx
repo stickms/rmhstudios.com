@@ -6,6 +6,7 @@ import { Loader2, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import type { Market } from './types';
+import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
 interface Props {
   market: Market;
@@ -69,7 +70,7 @@ export function PredictionCard({ market, coins, setCoins, onUpdated }: Props) {
   const hasPos = pos && (pos.yesShares > 0.5 || pos.noShares > 0.5);
 
   return (
-    <div className="rounded-site border border-site-border bg-site-surface p-4 flex flex-col gap-3">
+    <div className={`rounded-site border border-site-border bg-site-surface p-4 flex flex-col gap-3 ${LIFT_CARD}`}>
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
