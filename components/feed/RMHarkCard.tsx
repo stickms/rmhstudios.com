@@ -315,10 +315,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   return (
     <div
       {...(item.pending || item.deletedAt ? {} : reactionTrigger)}
-      className={`relative px-4 py-3 border-b border-site-border transition-colors ${
+      className={`relative px-4 py-3 border-b border-site-border transition-colors duration-200 ${
         item.pending
           ? 'opacity-60 pointer-events-none select-none'
-          : 'hover:bg-site-surface/30 cursor-pointer'
+          : 'hover:bg-site-surface/30 hover:border-site-border-bright cursor-pointer'
       }`}
       onClick={item.pending ? undefined : handleCardClick}
       aria-busy={item.pending || undefined}
