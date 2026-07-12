@@ -8,9 +8,9 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { createNotification } from '@/lib/notifications.server';
-import { haversineKm } from './geo.server';
+import { listingMatchesWatch } from './watch-match';
 import type { Watch, WatchInput } from './types';
-import type { Prisma, HomeListing } from '@prisma/client';
+import type { Prisma } from '@prisma/client';
 
 const MAX_WATCHES = 50;
 
@@ -95,64 +95,35 @@ export async function deleteWatch(userId: string, id: string): Promise<void> {
   await prisma.homeWatch.deleteMany({ where: { id, userId } });
 }
 
-/** Does `listing` satisfy every criterion set on `watch`? */
-function matches(
-  watch: {
-    listingType: 'RENT' | 'SALE' | null;
-    propertyTypes: string[];
-    lat: number | null;
-    lng: number | null;
-    radiusKm: number | null;
-    minPriceCents: number | null;
-    maxPriceCents: number | null;
-    minBeds: number | null;
-    minBaths: number | null;
-    petsRequired: boolean;
-  },
-  listing: HomeListing,
-): boolean {
-  if (watch.listingType && listing.listingType !== watch.listingType) return false;
-  if (watch.propertyTypes.length && !watch.propertyTypes.includes(listing.propertyType))
-    return false;
-  if (watch.minPriceCents != null && listing.priceCents < watch.minPriceCents) return false;
-  if (watch.maxPriceCents != null && listing.priceCents > watch.maxPriceCents) return false;
-  if (watch.minBeds != null && listing.beds < watch.minBeds) return false;
-  if (watch.minBaths != null && listing.baths < watch.minBaths) return false;
-  if (watch.petsRequired && !listing.petsAllowed) return false;
-  if (watch.lat != null && watch.lng != null && watch.radiusKm != null) {
-    const d = haversineKm(
-      { lat: watch.lat, lng: watch.lng },
-      { lat: listing.lat, lng: listing.lng },
-    );
-    if (d > watch.radiusKm) return false;
-  }
-  return true;
-}
-
 /**
- * After a listing is created, notify the owners of every active watch it
- * matches (excluding the poster). Best-effort and fire-and-forget: never throws.
+ * After a listing is created (member post OR scraped), notify the owners of
+ * every active watch it matches. For member posts the poster is excluded; for
+ * scraped listings there is no author. Best-effort and fire-and-forget.
  */
 export async function notifyWatchersOfNewListing(listingId: string): Promise<void> {
   try {
     const listing = await prisma.homeListing.findUnique({ where: { id: listingId } });
     if (!listing || listing.status !== 'ACTIVE') return;
 
-    // Bounded scan of active watches from other users. The `active` index keeps
-    // this cheap; matching is done in memory since criteria are heterogeneous.
+    // Bounded scan of active watches (excluding the poster, if any). The
+    // `active` index keeps this cheap; matching is done in memory since
+    // criteria are heterogeneous.
     const watches = await prisma.homeWatch.findMany({
-      where: { active: true, userId: { not: listing.authorId } },
+      where: {
+        active: true,
+        ...(listing.authorId ? { userId: { not: listing.authorId } } : {}),
+      },
       take: 2000,
     });
 
     const priceDollars = Math.round(listing.priceCents / 100).toLocaleString('en-US');
     const kind = listing.listingType === 'RENT' ? 'rental' : 'home for sale';
 
-    const toNotify = watches.filter((w) => matches(w, listing));
+    const toNotify = watches.filter((w) => listingMatchesWatch(w, listing));
     for (const w of toNotify) {
       await createNotification({
         userId: w.userId,
-        actorId: listing.authorId,
+        actorId: listing.authorId ?? undefined,
         type: 'SYSTEM',
         entityType: 'home_listing',
         entityId: listing.id,

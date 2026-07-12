@@ -11,6 +11,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession } from '@/components/Providers';
 import { toast } from 'sonner';
@@ -318,6 +319,7 @@ function AnnounceDialog({ slug, onClose, onPosted }: { slug: string; onClose: ()
 
 function MembersDialog({ slug, viewerId, onClose }: { slug: string; viewerId: string | null; onClose: () => void }) {
   const { t } = useTranslation('feed');
+  const confirm = useConfirm();
   const [members, setMembers] = useState<Member[]>([]);
   const [viewerRole, setViewerRole] = useState<string | null>(null);
   const [createdById, setCreatedById] = useState<string | null>(null);
@@ -357,7 +359,7 @@ function MembersDialog({ slug, viewerId, onClose }: { slug: string; viewerId: st
   };
 
   const kick = async (m: Member) => {
-    if (!window.confirm(t('kick-confirm', { name: m.name ?? m.handle ?? 'this member', defaultValue: 'Remove {{name}} from the community?' }))) return;
+    if (!(await confirm({ title: t('kick-confirm', { name: m.name ?? m.handle ?? 'this member', defaultValue: 'Remove {{name}} from the community?' }), danger: true }))) return;
     setBusy(m.id);
     try {
       const res = await fetch(`/api/communities/${slug}/members/${m.id}`, { method: 'DELETE', credentials: 'include' });

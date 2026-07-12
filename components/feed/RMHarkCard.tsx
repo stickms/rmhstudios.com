@@ -4,11 +4,9 @@ import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Repeat2, MoreHorizontal, Heart, Repeat, Trash2, Share2, BadgeCheck, ShieldCheck, Flag, Ban, VolumeX, Bookmark, Coins, Pin, Pencil, Languages, TrendingUp } from 'lucide-react';
+import { Repeat2, BadgeCheck, ShieldCheck, Pin } from 'lucide-react';
 import { toast } from 'sonner';
-import { ReportDialog } from '@/components/moderation/ReportDialog';
-import { TipDialog } from '@/components/economy/TipDialog';
-import { EditPostModal } from './EditPostModal';
+import { RMHarkOverflowMenu } from './RMHarkOverflowMenu';
 import { PostLockedCard } from './PostLockedCard';
 import { Link } from '@tanstack/react-router';
 import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
@@ -20,7 +18,6 @@ import { PostImageGrid } from './PostImageGrid';
 import { runViewTransition, postMediaVTName } from '@/lib/view-transition';
 import { UserAvatar } from './UserAvatar';
 import { Spinner } from '@/components/ui/spinner';
-import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { useFeedStore } from '@/stores/feedStore';
 import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { ReactionChips } from '@/components/shared/ReactionChips';
@@ -29,9 +26,6 @@ import { applyReactionToggle } from '@/lib/social/reactions';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { useFreshUser } from '@/stores/userDisplayStore';
-import { EngagementListModal } from './EngagementListModal';
-import { InsightsModal } from './InsightsModal';
-import { ShareModal } from './ShareModal';
 import { timeAgoShort } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { useLocaleStore } from '@/stores/localeStore';
@@ -65,8 +59,6 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   // the whole store, so an unrelated store change doesn't re-render this card.
   const removeItem = useFeedStore((s) => s.removeItem);
   const updateItem = useFeedStore((s) => s.updateItem);
-  const { run: runBookmark } = useOptimisticAction();
-  const { run: runPin } = useOptimisticAction();
   const isAuthor = session?.user?.id === item.user?.id;
 
   // Use freshest user data from cache (covers all users, not just current)
@@ -81,19 +73,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   }, [cachedUser, item.user, isAuthor, resolvedUser]);
   const freshRepostedBy = useFreshUser(item.repostedBy);
   const freshOriginalUser = useFreshUser(item.original?.user);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
-  const [shareModalOpen, setShareModalOpen] = useState(false);
-  const [reportOpen, setReportOpen] = useState(false);
-  const [tipOpen, setTipOpen] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
-  const [insightsOpen, setInsightsOpen] = useState(false);
-  const [pinned, setPinned] = useState(!!item.pinned);
-  const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
   const [translatedText, setTranslatedText] = useState<string | null>(null);
   const [showTranslated, setShowTranslated] = useState(false);
   const [translating, setTranslating] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number } | null>(null);
   const reactionTrigger = useReactionTrigger((x, y) => setReactionMenu({ x, y }));
 
@@ -120,7 +102,6 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   }, [locale]);
 
   const handleTranslate = async () => {
-    setMenuOpen(false);
     if (translatedText) {
       setShowTranslated((s) => !s);
       return;
@@ -142,147 +123,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     }
   };
 
-  const handlePin = () => {
-    setMenuOpen(false);
-    const next = !pinned;
-    runPin({
-      apply: () => setPinned(next),
-      rollback: () => setPinned(!next),
-      commit: () =>
-        fetch(`/api/rmharks/${actualId}/pin`, { method: 'POST', credentials: 'include' }),
-      reconcile: async (res) => {
-        const data = await res.json().catch(() => ({}));
-        setPinned(!!data.pinned);
-        toast.success(
-          data.pinned
-            ? t('pinned-success', { defaultValue: 'Pinned to your profile' })
-            : t('unpinned-success', { defaultValue: 'Unpinned' })
-        );
-      },
-      onError: (_err, res) => {
-        // A bad status may carry a specific message; a thrown error won't.
-        if (res) {
-          res
-            .json()
-            .catch(() => ({}))
-            .then((data: { error?: string }) =>
-              toast.error(data.error || t('pin-error', { defaultValue: 'Could not pin post' }))
-            );
-        } else {
-          toast.error(t('pin-error', { defaultValue: 'Could not pin post' }));
-        }
-      },
-    });
-  };
-
-  const handleBookmark = () => {
-    setMenuOpen(false);
-    const next = !bookmarked;
-    runBookmark({
-      apply: () => setBookmarked(next),
-      rollback: () => setBookmarked(!next),
-      commit: () =>
-        fetch(`/api/rmharks/${actualId}/bookmark`, { method: 'POST', credentials: 'include' }),
-      reconcile: async (res) => {
-        const data = await res.json().catch(() => ({}));
-        setBookmarked(!!data.bookmarked);
-        toast.success(
-          data.bookmarked
-            ? t('bookmark-saved', { defaultValue: 'Saved to bookmarks' })
-            : t('bookmark-removed', { defaultValue: 'Removed from bookmarks' })
-        );
-      },
-      onError: (_err, res) => {
-        if (res?.status === 401)
-          toast.error(t('bookmark-sign-in', { defaultValue: 'Please sign in to bookmark posts.' }));
-      },
-    });
-  };
-
-  const targetUserId = item.user?.id;
-  const handleBlock = async () => {
-    setMenuOpen(false);
-    if (!targetUserId) return;
-    try {
-      const res = await fetch('/api/moderation/block', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ targetUserId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(data.blocked ? t('user-blocked', { defaultValue: 'User blocked' }) : t('user-unblocked', { defaultValue: 'User unblocked' }));
-        if (data.blocked) removeItem(item.id);
-      } else {
-        toast.error(data.error || t('block-error', { defaultValue: 'Could not block user' }));
-      }
-    } catch {
-      toast.error(t('block-error', { defaultValue: 'Could not block user' }));
-    }
-  };
-  const handleMute = async () => {
-    setMenuOpen(false);
-    if (!targetUserId) return;
-    try {
-      const res = await fetch('/api/moderation/mute', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ targetUserId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        toast.success(data.muted ? t('user-muted', { defaultValue: 'User muted' }) : t('user-unmuted', { defaultValue: 'User unmuted' }));
-        if (data.muted) removeItem(item.id);
-      } else {
-        toast.error(data.error || t('mute-error', { defaultValue: 'Could not mute user' }));
-      }
-    } catch {
-      toast.error(t('mute-error', { defaultValue: 'Could not mute user' }));
-    }
-  };
-
   const linkPreviewUrl = useMemo(() => {
     if (item.poll || item.gifUrl || (item.imageUrls && item.imageUrls.length > 0) || !item.content) return null;
     return extractFirstUrl(item.content);
   }, [item.poll, item.gifUrl, item.imageUrls, item.content]);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!menuOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [menuOpen]);
-
-  const shareUrl = typeof window !== 'undefined' ? `${window.location.origin}${postHref(item.user, actualId)}` : '';
-
-  const handleShare = () => {
-    setMenuOpen(false);
-    const userName = item.user?.name || item.user?.handle || 'someone';
-    const shareText = `Check out what ${userName} RMHark'd on RMH Studios!`;
-    if (navigator.share) {
-      navigator.share({ title: 'RMH', text: shareText, url: shareUrl }).catch(() => {});
-    } else {
-      setShareModalOpen(true);
-    }
-  };
-
-  const handleDelete = async () => {
-    setMenuOpen(false);
-    if (!confirm(t('delete-confirm', { defaultValue: 'Delete this RMHark?' }))) return;
-    removeItem(item.id);
-    try {
-      await fetch(`/api/rmharks/${actualId}`, { method: 'DELETE' });
-    } catch {
-      // Item already removed from UI
-    }
-  };
 
   // Track view when card becomes visible. Skip optimistic (pending) posts —
   // their temp id isn't a real post yet.
@@ -331,130 +175,27 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
         </div>
       )}
 
-      {/* More menu — top right of card */}
+      {/* More menu — top right of card (shared with the post page) */}
       {!item.deletedAt && !item.pending && (
-        <div className={`absolute top-3 right-3 ${menuOpen ? 'z-40' : 'z-10'}`} ref={menuRef}>
-          <button
-            onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
-            className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
-          >
-            <MoreHorizontal className="w-4 h-4" />
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30" onClick={(e) => e.stopPropagation()}>
-              {session && (
-                <button
-                  onClick={handleBookmark}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-                >
-                  <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-site-accent text-site-accent' : 'text-site-text-dim'}`} />
-                  {bookmarked ? t('bookmark-saved-label', { defaultValue: 'Saved' }) : t('bookmark-label', { defaultValue: 'Bookmark' })}
-                </button>
-              )}
-              <button
-                onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-              >
-                <Heart className="w-4 h-4 text-site-text-dim" />
-                {t('liked-by', { defaultValue: 'Liked by' })}
-              </button>
-              <button
-                onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-              >
-                <Repeat className="w-4 h-4 text-site-text-dim" />
-                {t('rermharkd-by', { defaultValue: "reRMHark'd by" })}
-              </button>
-              <button
-                onClick={handleShare}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-              >
-                <Share2 className="w-4 h-4 text-site-text-dim" />
-                {t('share', { defaultValue: 'Share' })}
-              </button>
-              {item.content && !item.deletedAt && item.content.length > 8 && (
-                <button
-                  onClick={handleTranslate}
-                  disabled={translating}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors disabled:opacity-60"
-                >
-                  <Languages className="w-4 h-4 text-site-text-dim" />
-                  {translating ? t('translating', { defaultValue: 'Translating…' }) : translatedText ? (showTranslated ? t('show-original', { defaultValue: 'Show original' }) : t('show-translation', { defaultValue: 'Show translation' })) : t('translate', { defaultValue: 'Translate' })}
-                </button>
-              )}
-              {isAuthor && (
-                <>
-                  <button
-                    onClick={() => { setMenuOpen(false); setInsightsOpen(true); }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-                  >
-                    <TrendingUp className="w-4 h-4 text-site-text-dim" />
-                    {t('view-insights', { defaultValue: 'View insights' })}
-                  </button>
-                  <button
-                    onClick={() => { setMenuOpen(false); setEditOpen(true); }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-                  >
-                    <Pencil className="w-4 h-4 text-site-text-dim" />
-                    {t('edit', { defaultValue: 'Edit' })}
-                  </button>
-                  <button
-                    onClick={handlePin}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-                  >
-                    <Pin className={`w-4 h-4 ${pinned ? 'fill-site-accent text-site-accent' : 'text-site-text-dim'}`} />
-                    {pinned ? t('unpin-from-profile', { defaultValue: 'Unpin from profile' }) : t('pin-to-profile', { defaultValue: 'Pin to profile' })}
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    {t('delete', { defaultValue: 'Delete' })}
-                  </button>
-                </>
-              )}
-              {!isAuthor && session && (
-                <>
-                  {targetUserId && (
-                    <button
-                      onClick={() => { setMenuOpen(false); setTipOpen(true); }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-                    >
-                      <Coins className="w-4 h-4 text-site-warning" />
-                      {t('send-tip', { defaultValue: 'Send tip' })}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => { setMenuOpen(false); setReportOpen(true); }}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-                  >
-                    <Flag className="w-4 h-4 text-site-text-dim" />
-                    {t('report', { defaultValue: 'Report' })}
-                  </button>
-                  <button
-                    onClick={handleMute}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-                  >
-                    <VolumeX className="w-4 h-4 text-site-text-dim" />
-                    {t('mute', { defaultValue: 'Mute' })}
-                  </button>
-                  <button
-                    onClick={handleBlock}
-                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
-                  >
-                    <Ban className="w-4 h-4" />
-                    {t('block', { defaultValue: 'Block' })}
-                  </button>
-                </>
-              )}
-            </div>
-          )}
+        <div className="absolute top-3 right-3 z-10">
+          <RMHarkOverflowMenu
+            item={item}
+            isAuthor={isAuthor}
+            onUpdate={(updates) => updateItem(item.id, updates)}
+            onRemove={() => removeItem(item.id)}
+            iconClassName="w-4 h-4"
+            translate={{
+              translating,
+              hasTranslation: translatedText !== null,
+              showing: showTranslated,
+              onToggle: handleTranslate,
+            }}
+          />
         </div>
       )}
 
       {/* Pinned label */}
-      {pinned && (
+      {item.pinned && (
         <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
           <Pin className="w-3.5 h-3.5 fill-site-accent text-site-accent" />
           <span>{t('pinned', { defaultValue: 'Pinned' })}</span>
@@ -639,56 +380,6 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           {!item.deletedAt && <RMHarkActions item={item} />}
         </div>
       </div>
-
-      {engagementModal && (
-        <EngagementListModal
-          open={engagementModal !== null}
-          onClose={() => setEngagementModal(null)}
-          postId={actualId}
-          type={engagementModal}
-        />
-      )}
-
-      <ShareModal
-        open={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        url={shareUrl}
-        embedId={actualId}
-        text={`Check out what ${item.user?.name || item.user?.handle || 'someone'} RMHark'd on RMH Studios!`}
-      />
-
-      <ReportDialog
-        open={reportOpen}
-        onOpenChange={setReportOpen}
-        entityType="rmhark"
-        entityId={actualId}
-      />
-
-      {targetUserId && (
-        <TipDialog
-          open={tipOpen}
-          onOpenChange={setTipOpen}
-          recipientId={targetUserId}
-          recipientName={item.user?.name ?? item.user?.handle}
-          entityType="rmhark"
-          entityId={actualId}
-        />
-      )}
-
-      {isAuthor && (
-        <EditPostModal
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          postId={actualId}
-          initialContent={item.content ?? ''}
-          initialGifUrl={item.gifUrl ?? ''}
-          onSaved={(content, gifUrl) => updateItem(item.id, { content, gifUrl: gifUrl ?? undefined, edited: true })}
-        />
-      )}
-
-      {isAuthor && insightsOpen && (
-        <InsightsModal open={insightsOpen} onClose={() => setInsightsOpen(false)} postId={actualId} />
-      )}
 
       {reactionMenu && (
         <ReactionMenu

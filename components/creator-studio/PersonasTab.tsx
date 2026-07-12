@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { Loader2, Bot, Plus, MessageSquare, X, Globe, Lock } from 'lucide-react';
+import { Bot, Plus, MessageSquare, X, Globe, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
@@ -212,8 +212,8 @@ export function PersonasTab({ seed }: { seed: number }) {
                 {form.isPublic ? t('public', { defaultValue: 'Public' }) : t('private-label', { defaultValue: 'Private' })}
               </button>
               {error && <p className="text-xs text-site-danger">{error}</p>}
-              <Button size="sm" variant="accent" disabled={!validForm || busy} onClick={create}>
-                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t('create-persona', { defaultValue: 'Create persona' })}
+              <Button size="sm" variant="accent" loading={busy} disabled={!validForm} onClick={create}>
+                {t('create-persona', { defaultValue: 'Create persona' })}
               </Button>
             </div>
           </div>

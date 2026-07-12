@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, FileText, CalendarClock, Send, Trash2, Globe, Users, Lock, BarChart3, Image as ImageIcon } from 'lucide-react';
+import { FileText, CalendarClock, Send, Trash2, Globe, Users, Lock, BarChart3, Image as ImageIcon } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
@@ -205,21 +205,21 @@ function Section({
                 <Button
                   size="sm"
                   variant="accent"
-                  disabled={busy === `p:${r.id}`}
+                  loading={busy === `p:${r.id}`}
                   onClick={() => onPublish(r.id)}
                   className="gap-1"
                 >
-                  {busy === `p:${r.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                  {busy !== `p:${r.id}` && <Send className="h-3.5 w-3.5" />}
                   {t('post-now', { defaultValue: 'Post now' })}
                 </Button>
                 <Button
                   size="sm"
                   variant="ghost"
-                  disabled={busy === `d:${r.id}`}
+                  loading={busy === `d:${r.id}`}
                   onClick={() => onDiscard(r.id)}
                   className="gap-1 text-site-text-muted hover:text-site-danger"
                 >
-                  {busy === `d:${r.id}` ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                  {busy !== `d:${r.id}` && <Trash2 className="h-3.5 w-3.5" />}
                   {t('discard', { defaultValue: 'Discard' })}
                 </Button>
               </div>

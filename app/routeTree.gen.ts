@@ -124,6 +124,7 @@ import { Route as BuildsSlugRouteImport } from './routes/builds_.$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as ApiWrappedRouteImport } from './routes/api/wrapped'
 import { Route as ApiUserBuildsRouteImport } from './routes/api/user-builds'
+import { Route as ApiTodayRouteImport } from './routes/api/today'
 import { Route as ApiStreakRouteImport } from './routes/api/streak'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as ApiRumRouteImport } from './routes/api/rum'
@@ -185,6 +186,7 @@ import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
 import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
 import { Route as SiteStudyIndexRouteImport } from './routes/_site/study/index'
 import { Route as SiteStoreIndexRouteImport } from './routes/_site/store/index'
+import { Route as SiteSettingsIndexRouteImport } from './routes/_site/settings/index'
 import { Route as SiteRideshareIndexRouteImport } from './routes/_site/rideshare/index'
 import { Route as SitePersonasIndexRouteImport } from './routes/_site/personas/index'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
@@ -235,6 +237,7 @@ import { Route as ApiTipsLeaderboardRouteImport } from './routes/api/tips/leader
 import { Route as ApiTempleOfJoySaveRouteImport } from './routes/api/temple-of-joy/save'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
 import { Route as ApiStudyTutorRouteImport } from './routes/api/study/tutor'
+import { Route as ApiStreakFreezeRouteImport } from './routes/api/streak.freeze'
 import { Route as ApiStakingWithdrawRouteImport } from './routes/api/staking/withdraw'
 import { Route as ApiStakingDepositRouteImport } from './routes/api/staking/deposit'
 import { Route as ApiSpotifySearchRouteImport } from './routes/api/spotify/search'
@@ -275,6 +278,7 @@ import { Route as ApiProfileAvatarRouteImport } from './routes/api/profile/avata
 import { Route as ApiProfileIdRouteImport } from './routes/api/profile/$id'
 import { Route as ApiPresenceOnlineCountRouteImport } from './routes/api/presence/online-count'
 import { Route as ApiPresenceHeartbeatRouteImport } from './routes/api/presence/heartbeat'
+import { Route as ApiPresenceFriendsRouteImport } from './routes/api/presence/friends'
 import { Route as ApiPredictionsIdRouteImport } from './routes/api/predictions/$id'
 import { Route as ApiNotificationsUnreadCountRouteImport } from './routes/api/notifications/unread-count'
 import { Route as ApiNotificationsReadRouteImport } from './routes/api/notifications/read'
@@ -348,6 +352,8 @@ import { Route as ApiAdminAuditLogRouteImport } from './routes/api/admin/audit-l
 import { Route as ApiAdminAnnouncementsRouteImport } from './routes/api/admin/announcements'
 import { Route as ApiAdminAnalyticsRouteImport } from './routes/api/admin/analytics'
 import { Route as ApiAchievementsUserIdRouteImport } from './routes/api/achievements/$userId'
+import { Route as ApiAccountExportRouteImport } from './routes/api/account/export'
+import { Route as ApiAccountDeleteRouteImport } from './routes/api/account/delete'
 import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/multiplayer/$lobbyId'
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
 import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-builds/manage'
@@ -355,6 +361,7 @@ import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
 import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
 import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
+import { Route as SiteSettingsPrivacyRouteImport } from './routes/_site/settings/privacy'
 import { Route as SiteRideshareRideRouteImport } from './routes/_site/rideshare/ride'
 import { Route as SiteRideshareDriveRouteImport } from './routes/_site/rideshare/drive'
 import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
@@ -1128,6 +1135,11 @@ const ApiUserBuildsRoute = ApiUserBuildsRouteImport.update({
   path: '/api/user-builds',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiTodayRoute = ApiTodayRouteImport.update({
+  id: '/api/today',
+  path: '/api/today',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStreakRoute = ApiStreakRouteImport.update({
   id: '/api/streak',
   path: '/api/streak',
@@ -1434,6 +1446,11 @@ const SiteStoreIndexRoute = SiteStoreIndexRouteImport.update({
   path: '/store/',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteSettingsIndexRoute = SiteSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteRideshareIndexRoute = SiteRideshareIndexRouteImport.update({
   id: '/rideshare/',
   path: '/rideshare/',
@@ -1691,6 +1708,11 @@ const ApiStudyTutorRoute = ApiStudyTutorRouteImport.update({
   path: '/api/study/tutor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStreakFreezeRoute = ApiStreakFreezeRouteImport.update({
+  id: '/freeze',
+  path: '/freeze',
+  getParentRoute: () => ApiStreakRoute,
+} as any)
 const ApiStakingWithdrawRoute = ApiStakingWithdrawRouteImport.update({
   id: '/api/staking/withdraw',
   path: '/api/staking/withdraw',
@@ -1890,6 +1912,11 @@ const ApiPresenceOnlineCountRoute = ApiPresenceOnlineCountRouteImport.update({
 const ApiPresenceHeartbeatRoute = ApiPresenceHeartbeatRouteImport.update({
   id: '/api/presence/heartbeat',
   path: '/api/presence/heartbeat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPresenceFriendsRoute = ApiPresenceFriendsRouteImport.update({
+  id: '/api/presence/friends',
+  path: '/api/presence/friends',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPredictionsIdRoute = ApiPredictionsIdRouteImport.update({
@@ -2264,6 +2291,16 @@ const ApiAchievementsUserIdRoute = ApiAchievementsUserIdRouteImport.update({
   path: '/api/achievements/$userId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAccountExportRoute = ApiAccountExportRouteImport.update({
+  id: '/api/account/export',
+  path: '/api/account/export',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAccountDeleteRoute = ApiAccountDeleteRouteImport.update({
+  id: '/api/account/delete',
+  path: '/api/account/delete',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AltairMultiplayerLobbyIdRoute =
   AltairMultiplayerLobbyIdRouteImport.update({
     id: '/$lobbyId',
@@ -2298,6 +2335,11 @@ const SiteStoreUseridRoute = SiteStoreUseridRouteImport.update({
 const SiteSettingsSecurityRoute = SiteSettingsSecurityRouteImport.update({
   id: '/settings/security',
   path: '/settings/security',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSettingsPrivacyRoute = SiteSettingsPrivacyRouteImport.update({
+  id: '/settings/privacy',
+  path: '/settings/privacy',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteRideshareRideRoute = SiteRideshareRideRouteImport.update({
@@ -3434,7 +3476,8 @@ export interface FileRoutesByFullPath {
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRoute
-  '/api/streak': typeof ApiStreakRoute
+  '/api/streak': typeof ApiStreakRouteWithChildren
+  '/api/today': typeof ApiTodayRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -3530,6 +3573,7 @@ export interface FileRoutesByFullPath {
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
+  '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
@@ -3537,6 +3581,8 @@ export interface FileRoutesByFullPath {
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
+  '/api/account/delete': typeof ApiAccountDeleteRoute
+  '/api/account/export': typeof ApiAccountExportRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
@@ -3610,6 +3656,7 @@ export interface FileRoutesByFullPath {
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
+  '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
@@ -3650,6 +3697,7 @@ export interface FileRoutesByFullPath {
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
+  '/api/streak/freeze': typeof ApiStreakFreezeRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
@@ -3700,6 +3748,7 @@ export interface FileRoutesByFullPath {
   '/news/': typeof SiteNewsIndexRoute
   '/personas/': typeof SitePersonasIndexRoute
   '/rideshare/': typeof SiteRideshareIndexRoute
+  '/settings/': typeof SiteSettingsIndexRoute
   '/store/': typeof SiteStoreIndexRoute
   '/study/': typeof SiteStudyIndexRoute
   '/user-builds/': typeof SiteUserBuildsIndexRoute
@@ -3955,7 +4004,8 @@ export interface FileRoutesByTo {
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRoute
-  '/api/streak': typeof ApiStreakRoute
+  '/api/streak': typeof ApiStreakRouteWithChildren
+  '/api/today': typeof ApiTodayRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -4050,6 +4100,7 @@ export interface FileRoutesByTo {
   '/profile/$id': typeof SiteProfileIdRoute
   '/rideshare/drive': typeof SiteRideshareDriveRoute
   '/rideshare/ride': typeof SiteRideshareRideRoute
+  '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
@@ -4057,6 +4108,8 @@ export interface FileRoutesByTo {
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
+  '/api/account/delete': typeof ApiAccountDeleteRoute
+  '/api/account/export': typeof ApiAccountExportRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
@@ -4130,6 +4183,7 @@ export interface FileRoutesByTo {
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
+  '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
@@ -4170,6 +4224,7 @@ export interface FileRoutesByTo {
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
+  '/api/streak/freeze': typeof ApiStreakFreezeRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
@@ -4220,6 +4275,7 @@ export interface FileRoutesByTo {
   '/news': typeof SiteNewsIndexRoute
   '/personas': typeof SitePersonasIndexRoute
   '/rideshare': typeof SiteRideshareIndexRoute
+  '/settings': typeof SiteSettingsIndexRoute
   '/store': typeof SiteStoreIndexRoute
   '/study': typeof SiteStudyIndexRoute
   '/user-builds': typeof SiteUserBuildsIndexRoute
@@ -4500,7 +4556,8 @@ export interface FileRoutesById {
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
   '/api/search': typeof ApiSearchRoute
-  '/api/streak': typeof ApiStreakRoute
+  '/api/streak': typeof ApiStreakRouteWithChildren
+  '/api/today': typeof ApiTodayRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
@@ -4597,6 +4654,7 @@ export interface FileRoutesById {
   '/_site/profile/$id': typeof SiteProfileIdRoute
   '/_site/rideshare/drive': typeof SiteRideshareDriveRoute
   '/_site/rideshare/ride': typeof SiteRideshareRideRoute
+  '/_site/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/_site/settings/security': typeof SiteSettingsSecurityRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
   '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
@@ -4604,6 +4662,8 @@ export interface FileRoutesById {
   '/_site/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
+  '/api/account/delete': typeof ApiAccountDeleteRoute
+  '/api/account/export': typeof ApiAccountExportRoute
   '/api/achievements/$userId': typeof ApiAchievementsUserIdRoute
   '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
   '/api/admin/announcements': typeof ApiAdminAnnouncementsRouteWithChildren
@@ -4677,6 +4737,7 @@ export interface FileRoutesById {
   '/api/notifications/read': typeof ApiNotificationsReadRoute
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
+  '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
@@ -4717,6 +4778,7 @@ export interface FileRoutesById {
   '/api/spotify/search': typeof ApiSpotifySearchRoute
   '/api/staking/deposit': typeof ApiStakingDepositRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
+  '/api/streak/freeze': typeof ApiStreakFreezeRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
@@ -4767,6 +4829,7 @@ export interface FileRoutesById {
   '/_site/news/': typeof SiteNewsIndexRoute
   '/_site/personas/': typeof SitePersonasIndexRoute
   '/_site/rideshare/': typeof SiteRideshareIndexRoute
+  '/_site/settings/': typeof SiteSettingsIndexRoute
   '/_site/store/': typeof SiteStoreIndexRoute
   '/_site/study/': typeof SiteStudyIndexRoute
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
@@ -5049,6 +5112,7 @@ export interface FileRouteTypes {
     | '/api/rum'
     | '/api/search'
     | '/api/streak'
+    | '/api/today'
     | '/api/user-builds'
     | '/api/wrapped'
     | '/blog/$slug'
@@ -5144,6 +5208,7 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/rideshare/drive'
     | '/rideshare/ride'
+    | '/settings/privacy'
     | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
@@ -5151,6 +5216,8 @@ export interface FileRouteTypes {
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
+    | '/api/account/delete'
+    | '/api/account/export'
     | '/api/achievements/$userId'
     | '/api/admin/analytics'
     | '/api/admin/announcements'
@@ -5224,6 +5291,7 @@ export interface FileRouteTypes {
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
+    | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
     | '/api/profile/$id'
@@ -5264,6 +5332,7 @@ export interface FileRouteTypes {
     | '/api/spotify/search'
     | '/api/staking/deposit'
     | '/api/staking/withdraw'
+    | '/api/streak/freeze'
     | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
@@ -5314,6 +5383,7 @@ export interface FileRouteTypes {
     | '/news/'
     | '/personas/'
     | '/rideshare/'
+    | '/settings/'
     | '/store/'
     | '/study/'
     | '/user-builds/'
@@ -5570,6 +5640,7 @@ export interface FileRouteTypes {
     | '/api/rum'
     | '/api/search'
     | '/api/streak'
+    | '/api/today'
     | '/api/user-builds'
     | '/api/wrapped'
     | '/blog/$slug'
@@ -5664,6 +5735,7 @@ export interface FileRouteTypes {
     | '/profile/$id'
     | '/rideshare/drive'
     | '/rideshare/ride'
+    | '/settings/privacy'
     | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
@@ -5671,6 +5743,8 @@ export interface FileRouteTypes {
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
+    | '/api/account/delete'
+    | '/api/account/export'
     | '/api/achievements/$userId'
     | '/api/admin/analytics'
     | '/api/admin/announcements'
@@ -5744,6 +5818,7 @@ export interface FileRouteTypes {
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
+    | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
     | '/api/profile/$id'
@@ -5784,6 +5859,7 @@ export interface FileRouteTypes {
     | '/api/spotify/search'
     | '/api/staking/deposit'
     | '/api/staking/withdraw'
+    | '/api/streak/freeze'
     | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
@@ -5834,6 +5910,7 @@ export interface FileRouteTypes {
     | '/news'
     | '/personas'
     | '/rideshare'
+    | '/settings'
     | '/store'
     | '/study'
     | '/user-builds'
@@ -6114,6 +6191,7 @@ export interface FileRouteTypes {
     | '/api/rum'
     | '/api/search'
     | '/api/streak'
+    | '/api/today'
     | '/api/user-builds'
     | '/api/wrapped'
     | '/blog/$slug'
@@ -6210,6 +6288,7 @@ export interface FileRouteTypes {
     | '/_site/profile/$id'
     | '/_site/rideshare/drive'
     | '/_site/rideshare/ride'
+    | '/_site/settings/privacy'
     | '/_site/settings/security'
     | '/_site/store/$userid'
     | '/_site/study/$deckId'
@@ -6217,6 +6296,8 @@ export interface FileRouteTypes {
     | '/_site/user-builds/manage'
     | '/_site/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
+    | '/api/account/delete'
+    | '/api/account/export'
     | '/api/achievements/$userId'
     | '/api/admin/analytics'
     | '/api/admin/announcements'
@@ -6290,6 +6371,7 @@ export interface FileRouteTypes {
     | '/api/notifications/read'
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
+    | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
     | '/api/profile/$id'
@@ -6330,6 +6412,7 @@ export interface FileRouteTypes {
     | '/api/spotify/search'
     | '/api/staking/deposit'
     | '/api/staking/withdraw'
+    | '/api/streak/freeze'
     | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
@@ -6380,6 +6463,7 @@ export interface FileRouteTypes {
     | '/_site/news/'
     | '/_site/personas/'
     | '/_site/rideshare/'
+    | '/_site/settings/'
     | '/_site/store/'
     | '/_site/study/'
     | '/_site/user-builds/'
@@ -6638,7 +6722,8 @@ export interface RootRouteChildren {
   ApiRmharksRoute: typeof ApiRmharksRouteWithChildren
   ApiRumRoute: typeof ApiRumRoute
   ApiSearchRoute: typeof ApiSearchRoute
-  ApiStreakRoute: typeof ApiStreakRoute
+  ApiStreakRoute: typeof ApiStreakRouteWithChildren
+  ApiTodayRoute: typeof ApiTodayRoute
   ApiUserBuildsRoute: typeof ApiUserBuildsRouteWithChildren
   ApiWrappedRoute: typeof ApiWrappedRoute
   BlogSlugRoute: typeof BlogSlugRoute
@@ -6651,6 +6736,8 @@ export interface RootRouteChildren {
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
   VNewRoute: typeof VNewRoute
+  ApiAccountDeleteRoute: typeof ApiAccountDeleteRoute
+  ApiAccountExportRoute: typeof ApiAccountExportRoute
   ApiAchievementsUserIdRoute: typeof ApiAchievementsUserIdRoute
   ApiAdminAnalyticsRoute: typeof ApiAdminAnalyticsRoute
   ApiAdminAnnouncementsRoute: typeof ApiAdminAnnouncementsRouteWithChildren
@@ -6718,6 +6805,7 @@ export interface RootRouteChildren {
   ApiNotificationsReadRoute: typeof ApiNotificationsReadRoute
   ApiNotificationsUnreadCountRoute: typeof ApiNotificationsUnreadCountRoute
   ApiPredictionsIdRoute: typeof ApiPredictionsIdRouteWithChildren
+  ApiPresenceFriendsRoute: typeof ApiPresenceFriendsRoute
   ApiPresenceHeartbeatRoute: typeof ApiPresenceHeartbeatRoute
   ApiPresenceOnlineCountRoute: typeof ApiPresenceOnlineCountRoute
   ApiPromoFreeMonthRoute: typeof ApiPromoFreeMonthRoute
@@ -7685,6 +7773,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiUserBuildsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/today': {
+      id: '/api/today'
+      path: '/api/today'
+      fullPath: '/api/today'
+      preLoaderRoute: typeof ApiTodayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/streak': {
       id: '/api/streak'
       path: '/api/streak'
@@ -8112,6 +8207,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteStoreIndexRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/settings/': {
+      id: '/_site/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof SiteSettingsIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/rideshare/': {
       id: '/_site/rideshare/'
       path: '/rideshare'
@@ -8462,6 +8564,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStudyTutorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/streak/freeze': {
+      id: '/api/streak/freeze'
+      path: '/freeze'
+      fullPath: '/api/streak/freeze'
+      preLoaderRoute: typeof ApiStreakFreezeRouteImport
+      parentRoute: typeof ApiStreakRoute
+    }
     '/api/staking/withdraw': {
       id: '/api/staking/withdraw'
       path: '/api/staking/withdraw'
@@ -8740,6 +8849,13 @@ declare module '@tanstack/react-router' {
       path: '/api/presence/heartbeat'
       fullPath: '/api/presence/heartbeat'
       preLoaderRoute: typeof ApiPresenceHeartbeatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/presence/friends': {
+      id: '/api/presence/friends'
+      path: '/api/presence/friends'
+      fullPath: '/api/presence/friends'
+      preLoaderRoute: typeof ApiPresenceFriendsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/predictions/$id': {
@@ -9253,6 +9369,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAchievementsUserIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/account/export': {
+      id: '/api/account/export'
+      path: '/api/account/export'
+      fullPath: '/api/account/export'
+      preLoaderRoute: typeof ApiAccountExportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/account/delete': {
+      id: '/api/account/delete'
+      path: '/api/account/delete'
+      fullPath: '/api/account/delete'
+      preLoaderRoute: typeof ApiAccountDeleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/altair/multiplayer/$lobbyId': {
       id: '/altair/multiplayer/$lobbyId'
       path: '/$lobbyId'
@@ -9300,6 +9430,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/security'
       fullPath: '/settings/security'
       preLoaderRoute: typeof SiteSettingsSecurityRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/settings/privacy': {
+      id: '/_site/settings/privacy'
+      path: '/settings/privacy'
+      fullPath: '/settings/privacy'
+      preLoaderRoute: typeof SiteSettingsPrivacyRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/rideshare/ride': {
@@ -10798,6 +10935,7 @@ interface SiteRouteChildren {
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteRideshareDriveRoute: typeof SiteRideshareDriveRoute
   SiteRideshareRideRoute: typeof SiteRideshareRideRoute
+  SiteSettingsPrivacyRoute: typeof SiteSettingsPrivacyRoute
   SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
   SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
@@ -10814,6 +10952,7 @@ interface SiteRouteChildren {
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
   SitePersonasIndexRoute: typeof SitePersonasIndexRoute
   SiteRideshareIndexRoute: typeof SiteRideshareIndexRoute
+  SiteSettingsIndexRoute: typeof SiteSettingsIndexRoute
   SiteStoreIndexRoute: typeof SiteStoreIndexRoute
   SiteStudyIndexRoute: typeof SiteStudyIndexRoute
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
@@ -10857,6 +10996,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteRideshareDriveRoute: SiteRideshareDriveRoute,
   SiteRideshareRideRoute: SiteRideshareRideRoute,
+  SiteSettingsPrivacyRoute: SiteSettingsPrivacyRoute,
   SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
   SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,
@@ -10873,6 +11013,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteNewsIndexRoute: SiteNewsIndexRoute,
   SitePersonasIndexRoute: SitePersonasIndexRoute,
   SiteRideshareIndexRoute: SiteRideshareIndexRoute,
+  SiteSettingsIndexRoute: SiteSettingsIndexRoute,
   SiteStoreIndexRoute: SiteStoreIndexRoute,
   SiteStudyIndexRoute: SiteStudyIndexRoute,
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
@@ -11438,6 +11579,18 @@ const ApiRmharksRouteWithChildren = ApiRmharksRoute._addFileChildren(
   ApiRmharksRouteChildren,
 )
 
+interface ApiStreakRouteChildren {
+  ApiStreakFreezeRoute: typeof ApiStreakFreezeRoute
+}
+
+const ApiStreakRouteChildren: ApiStreakRouteChildren = {
+  ApiStreakFreezeRoute: ApiStreakFreezeRoute,
+}
+
+const ApiStreakRouteWithChildren = ApiStreakRoute._addFileChildren(
+  ApiStreakRouteChildren,
+)
+
 interface ApiUserBuildsIdRouteChildren {
   ApiUserBuildsIdCommentsRoute: typeof ApiUserBuildsIdCommentsRoute
   ApiUserBuildsIdLikeRoute: typeof ApiUserBuildsIdLikeRoute
@@ -11904,7 +12057,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmharksRoute: ApiRmharksRouteWithChildren,
   ApiRumRoute: ApiRumRoute,
   ApiSearchRoute: ApiSearchRoute,
-  ApiStreakRoute: ApiStreakRoute,
+  ApiStreakRoute: ApiStreakRouteWithChildren,
+  ApiTodayRoute: ApiTodayRoute,
   ApiUserBuildsRoute: ApiUserBuildsRouteWithChildren,
   ApiWrappedRoute: ApiWrappedRoute,
   BlogSlugRoute: BlogSlugRoute,
@@ -11917,6 +12071,8 @@ const rootRouteChildren: RootRouteChildren = {
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
   VNewRoute: VNewRoute,
+  ApiAccountDeleteRoute: ApiAccountDeleteRoute,
+  ApiAccountExportRoute: ApiAccountExportRoute,
   ApiAchievementsUserIdRoute: ApiAchievementsUserIdRoute,
   ApiAdminAnalyticsRoute: ApiAdminAnalyticsRoute,
   ApiAdminAnnouncementsRoute: ApiAdminAnnouncementsRouteWithChildren,
@@ -11984,6 +12140,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsReadRoute: ApiNotificationsReadRoute,
   ApiNotificationsUnreadCountRoute: ApiNotificationsUnreadCountRoute,
   ApiPredictionsIdRoute: ApiPredictionsIdRouteWithChildren,
+  ApiPresenceFriendsRoute: ApiPresenceFriendsRoute,
   ApiPresenceHeartbeatRoute: ApiPresenceHeartbeatRoute,
   ApiPresenceOnlineCountRoute: ApiPresenceOnlineCountRoute,
   ApiPromoFreeMonthRoute: ApiPromoFreeMonthRoute,

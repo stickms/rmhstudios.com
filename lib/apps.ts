@@ -179,9 +179,9 @@ export const apps: AppInfo[] = [
     {
         id: 'rmhhomes',
         title: 'RMHHomes',
-        description: 'A community housing marketplace — post your rental or house, browse listings on a map, and message the poster.',
+        description: 'A housing marketplace — browse member posts plus real listings aggregated from across the web on a map, filter, and save favorites.',
         longDescription:
-            'RMHHomes is a community housing marketplace. RMH members post their own rentals and houses with photos, and everyone can browse real listings on an interactive map, filter by price, beds, baths, property type and more, save favorites, and message the poster directly. Every listing is real and owned by its author — no scraping, no external data.',
+            'RMHHomes is a housing marketplace that blends member-posted rentals and houses with real apartment/home postings aggregated from public feeds across the web. Browse everything on an interactive map, filter by price, beds, baths, property type and source, save favorites, and set up alerts for new matches. Post your own listing and message the owner directly, or jump straight to the original posting for aggregated listings.',
         href: '/homes',
         status: 'Beta',
         cta: 'Find a Home',

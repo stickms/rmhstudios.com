@@ -123,18 +123,20 @@ export function StakingCard() {
         <Button
           size="sm"
           variant="accent"
+          loading={busy === 'deposit'}
           disabled={!validAmt || busy !== null}
           onClick={() => act('/api/staking/deposit', { amount: amt }, 'deposit')}
         >
-          {busy === 'deposit' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("stake", { defaultValue: "Stake" })}
+          {t("stake", { defaultValue: "Stake" })}
         </Button>
         <Button
           size="sm"
           variant="outline"
+          loading={busy === 'unstake'}
           disabled={!validAmt || busy !== null || amt > data.principal}
           onClick={() => act('/api/staking/withdraw', { amount: amt }, 'unstake')}
         >
-          {busy === 'unstake' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("unstake", { defaultValue: "Unstake" })}
+          {t("unstake", { defaultValue: "Unstake" })}
         </Button>
       </div>
       {data.accrued > 0 && (

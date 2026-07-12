@@ -5,6 +5,7 @@ import { Link, useNavigate } from '@tanstack/react-router';
 import { Loader2, ArrowLeft, Plus, Trash2, RotateCcw, GraduationCap, Check } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { useTranslation } from 'react-i18next';
 import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
@@ -43,6 +44,7 @@ export function DeckStudyColumn({
   initialData?: { deck: Deck; cards: Card[]; dueCount: number; signedIn: boolean } | null;
 }) {
   const { t } = useTranslation('feed');
+  const confirm = useConfirm();
   const navigate = useNavigate();
   // Seed from the loader when it ran (even a `null` result is a resolved
   // not-found, so skip the client fetch in that case too).
@@ -150,7 +152,7 @@ export function DeckStudyColumn({
   }
 
   async function deleteDeck() {
-    if (!confirm(t('delete-deck-confirm', { defaultValue: 'Delete this deck and all its cards?' }))) return;
+    if (!(await confirm({ title: t('delete-deck-confirm', { defaultValue: 'Delete this deck and all its cards?' }), danger: true }))) return;
     const res = await fetch(`/api/study/decks/${encodeURIComponent(deckId)}`, { method: 'DELETE', credentials: 'include' });
     if (res.ok) navigate({ to: '/study' });
   }

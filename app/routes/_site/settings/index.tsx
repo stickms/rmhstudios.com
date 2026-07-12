@@ -1,0 +1,244 @@
+/**
+ * Settings hub — one place for appearance, language, notifications, and
+ * account management. Theme and language work signed-out; notification and
+ * account sections prompt for sign-in.
+ */
+
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import {
+  Settings,
+  Palette,
+  Languages,
+  Bell,
+  User,
+  KeyRound,
+  ShieldUser,
+  Wallet,
+  Zap,
+  ChevronRight,
+  Sparkles,
+  type LucideIcon,
+} from 'lucide-react';
+import { AnimatedMain } from '@/components/feed/AnimatedMain';
+import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
+import { ThemeGallery } from '@/components/settings/ThemeGallery';
+import { NotificationPrefsPanel } from '@/components/settings/NotificationPrefsPanel';
+import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
+import { useSession } from '@/components/Providers';
+
+export const Route = createFileRoute('/_site/settings/')({
+  head: () => ({
+    meta: [{ title: 'Settings | RMH Studios' }],
+  }),
+  component: SettingsPage,
+});
+
+function SectionCard({
+  id,
+  icon: Icon,
+  title,
+  subtitle,
+  children,
+}: {
+  id: string;
+  icon: LucideIcon;
+  title: string;
+  subtitle: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      id={id}
+      aria-labelledby={`${id}-heading`}
+      className="rounded-site border border-site-border bg-site-surface p-4"
+    >
+      <div className="mb-4 flex items-center gap-2">
+        <Icon className="h-4.5 w-4.5 text-site-accent" aria-hidden />
+        <div>
+          <h2 id={`${id}-heading`} className="text-sm font-bold text-site-text">
+            {title}
+          </h2>
+          <p className="text-xs text-site-text-muted">{subtitle}</p>
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function AccountLink({
+  to,
+  icon: Icon,
+  label,
+  hint,
+}: {
+  to: string;
+  icon: LucideIcon;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center gap-3 rounded-site px-3 py-2.5 text-sm transition-colors hover:bg-site-surface-hover"
+    >
+      <Icon className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+      <span className="min-w-0 flex-1">
+        <span className="block font-medium text-site-text">{label}</span>
+        <span className="block text-xs text-site-text-muted">{hint}</span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+    </Link>
+  );
+}
+
+function SettingsPage() {
+  const { t } = useTranslation('feed');
+  const { data: session, isPending } = useSession();
+  const signedIn = !!session?.user;
+  const handle = (session?.user as { handle?: string | null } | undefined)?.handle;
+
+  const signInPrompt = (
+    <p className="text-sm text-site-text-muted">
+      <Link
+        to="/login"
+        search={{ callbackURL: '/settings' }}
+        className="text-site-accent hover:underline"
+      >
+        {t('settings-sign-in', { defaultValue: 'Sign in' })}
+      </Link>{' '}
+      {t('settings-sign-in-rest', { defaultValue: 'to manage this section.' })}
+    </p>
+  );
+
+  return (
+    <>
+      <AnimatedMain
+        className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
+        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
+      >
+        <div className="border-b border-site-border px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-site-accent" aria-hidden />
+            <h1 className="text-lg font-bold text-site-text">
+              {t('settings-title', { defaultValue: 'Settings' })}
+            </h1>
+          </div>
+          <p className="text-sm text-site-text-muted">
+            {t('settings-subtitle', {
+              defaultValue: 'Appearance, language, notifications, and your account.',
+            })}
+          </p>
+        </div>
+
+        <div className="space-y-4 p-4">
+          <SectionCard
+            id="appearance"
+            icon={Palette}
+            title={t('settings-appearance', { defaultValue: 'Appearance' })}
+            subtitle={t('settings-appearance-hint', {
+              defaultValue: 'Pick a theme — it applies instantly and is saved on this device.',
+            })}
+          >
+            <ThemeGallery />
+            <div className="mt-4 flex items-center gap-2 rounded-site border border-site-border bg-site-bg-subtle px-3 py-2.5">
+              <Sparkles className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
+              <p className="text-xs text-site-text-muted">
+                {t('settings-premium-themes', {
+                  defaultValue: 'Looking for more? Premium profile themes are in the shop.',
+                })}{' '}
+                <Link to="/shop" className="text-site-accent hover:underline">
+                  {t('settings-premium-themes-link', { defaultValue: 'Browse the shop' })}
+                </Link>
+              </p>
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            id="language"
+            icon={Languages}
+            title={t('settings-language', { defaultValue: 'Language' })}
+            subtitle={t('settings-language-hint', {
+              defaultValue: 'RMH Studios is available in 32 languages.',
+            })}
+          >
+            <LanguageSwitcher />
+          </SectionCard>
+
+          <SectionCard
+            id="notifications"
+            icon={Bell}
+            title={t('settings-notifications', { defaultValue: 'Notifications' })}
+            subtitle={t('settings-notifications-hint', {
+              defaultValue: 'Choose which activity creates a notification.',
+            })}
+          >
+            {!isPending && !signedIn ? signInPrompt : <NotificationPrefsPanel />}
+          </SectionCard>
+
+          <SectionCard
+            id="account"
+            icon={User}
+            title={t('settings-account', { defaultValue: 'Account' })}
+            subtitle={t('settings-account-hint', {
+              defaultValue: 'Profile, security, privacy, and your wallet.',
+            })}
+          >
+            {!isPending && !signedIn ? (
+              signInPrompt
+            ) : (
+              <div className="-mx-3 flex flex-col">
+                {handle && (
+                  <AccountLink
+                    to={`/u/${handle}`}
+                    icon={User}
+                    label={t('settings-account-profile', { defaultValue: 'Profile' })}
+                    hint={t('settings-account-profile-hint', {
+                      defaultValue: 'Your public page and posts',
+                    })}
+                  />
+                )}
+                <AccountLink
+                  to="/settings/security"
+                  icon={KeyRound}
+                  label={t('settings-account-security', { defaultValue: 'Passkeys & security' })}
+                  hint={t('settings-account-security-hint', {
+                    defaultValue: 'Passkeys, sessions, and devices',
+                  })}
+                />
+                <AccountLink
+                  to="/settings/privacy"
+                  icon={ShieldUser}
+                  label={t('settings-account-privacy', { defaultValue: 'Privacy & data' })}
+                  hint={t('settings-account-privacy-hint', {
+                    defaultValue: 'Export or delete your data',
+                  })}
+                />
+                <AccountLink
+                  to="/wallet"
+                  icon={Wallet}
+                  label={t('settings-account-wallet', { defaultValue: 'Wallet' })}
+                  hint={t('settings-account-wallet-hint', {
+                    defaultValue: 'Coins, transactions, and memberships',
+                  })}
+                />
+                <AccountLink
+                  to="/progress"
+                  icon={Zap}
+                  label={t('settings-account-progress', { defaultValue: 'Progress' })}
+                  hint={t('settings-account-progress-hint', {
+                    defaultValue: 'XP, streaks, quests, and achievements',
+                  })}
+                />
+              </div>
+            )}
+          </SectionCard>
+        </div>
+      </AnimatedMain>
+
+      {/* Trailing gutter to match the blog/feed wide layout */}
+      <div className="hidden lg:block w-4 shrink-0" />
+    </>
+  );
+}

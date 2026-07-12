@@ -14,8 +14,13 @@ import { LeftSidebar } from '@/components/feed/LeftSidebar';
 import { MobileNav } from '@/components/feed/MobileNav';
 import { MobileSidebarShell } from '@/components/feed/MobileSidebarShell';
 import { WelcomeModal } from '@/components/feed/WelcomeModal';
+import { LanguageFirstRunModal } from '@/components/site/LanguageFirstRunModal';
 import { WhatsNewModal } from '@/components/feed/WhatsNewModal';
 import { FreeMonthModal } from '@/components/feed/FreeMonthModal';
+import { CookieConsent } from '@/components/site/CookieConsent';
+import { KeyboardShortcuts } from '@/components/site/KeyboardShortcuts';
+import { BackToTop } from '@/components/ui/back-to-top';
+import { MiniPlayer } from '@/components/rmhmusic/MiniPlayer';
 import '@/components/feed/feed.css';
 
 export const Route = createFileRoute('/_site')({
@@ -36,6 +41,7 @@ function SiteLayout() {
       >
         {t('skipToContent', { defaultValue: 'Skip to content' })}
       </a>
+      <LanguageFirstRunModal />
       <WelcomeModal />
       <WhatsNewModal />
       <FreeMonthModal />
@@ -65,6 +71,18 @@ function SiteLayout() {
 
       {/* Mobile bottom nav */}
       <MobileNav />
+
+      {/* One-time, non-blocking cookie notice (site pages only). */}
+      <CookieConsent />
+
+      {/* Site-wide shortcuts (c compose, g+<x> navigation, ? help overlay). */}
+      <KeyboardShortcuts />
+
+      {/* Music keeps playing when you leave RMHMusic — surface controls here. */}
+      <MiniPlayer />
+
+      {/* Floating scroll-to-top affordance for long pages. */}
+      <BackToTop />
     </div>
   );
 }

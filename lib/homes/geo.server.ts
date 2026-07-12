@@ -10,6 +10,10 @@
 import { apiCache } from '@/lib/cache';
 import type { SearchCenter } from './types';
 
+// Re-exported for callers that historically imported it from here; the
+// implementation now lives in the dependency-free ./distance module.
+export { haversineKm } from './distance';
+
 const USER_AGENT =
   process.env.HOMES_USER_AGENT || 'RMHHomes/1.0 (https://rmhstudios.com; homes@rmhstudios.com)';
 
@@ -69,23 +73,4 @@ export async function resolveCenter(location: string): Promise<SearchCenter | nu
   const top = results[0];
   if (!top) return null;
   return { lat: top.lat, lng: top.lng, label: top.label };
-}
-
-const EARTH_RADIUS_KM = 6371;
-
-/** Great-circle distance in kilometers between two coordinates. */
-export function haversineKm(
-  a: { lat: number; lng: number },
-  b: { lat: number; lng: number },
-): number {
-  const dLat = toRad(b.lat - a.lat);
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-  return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(h)));
-}
-
-function toRad(deg: number): number {
-  return (deg * Math.PI) / 180;
 }

@@ -111,16 +111,22 @@ COPY lib/url.ts ./lib/url.ts
 # ladder-worker (RMHLadder job-discovery cron) is the one Node worker not in
 # the Go supervisor — it needs lib/rmhladder for its pipeline/seed/probe code.
 COPY lib/rmhladder ./lib/rmhladder/
+# homes-worker (RMHHomes external-listing scraper cron) needs lib/homes for its
+# scrape pipeline/seed and the dependency-light watch notifier. Its bundle only
+# reaches lib/homes/scrape + types/distance/watch-match, so the heavier
+# geo/watches/listings modules in this dir are copied but never traversed.
+COPY lib/homes ./lib/homes/
 # Only the Node services still served by compose/helm (socket/rmhbox/rmhtube +
-# ladder-worker) are bundled here. recap, status, discord-bot, doctrine-worker,
-# vibe-worker and bot-worker were migrated to the Go supervisor/status binaries
-# (built in the go-builder stage), so their Node entrypoints are no longer
-# compiled or shipped.
+# ladder-worker + homes-worker) are bundled here. recap, status, discord-bot,
+# doctrine-worker, vibe-worker and bot-worker were migrated to the Go
+# supervisor/status binaries (built in the go-builder stage), so their Node
+# entrypoints are no longer compiled or shipped.
 RUN pnpm exec esbuild \
     server/socket-server/index.ts \
     server/rmhbox/index.ts \
     server/rmhtube/index.ts \
     server/ladder-worker/index.ts \
+    server/homes-worker/index.ts \
     --bundle --platform=node --target=node20 \
     --outdir=dist-server --outbase=. \
     --format=cjs --out-extension:.js=.cjs --packages=external --tree-shaking=true \
@@ -129,7 +135,8 @@ RUN pnpm exec esbuild \
 RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/rmhbox/index.cjs && \
     test -f dist-server/server/rmhtube/index.cjs && \
-    test -f dist-server/server/ladder-worker/index.cjs
+    test -f dist-server/server/ladder-worker/index.cjs && \
+    test -f dist-server/server/homes-worker/index.cjs
 
 # ── Stage 3: Vite/Nitro build (env-specific) ─────────────────────────────
 # BuildKit executes this IN PARALLEL with server-builder (stage 2).

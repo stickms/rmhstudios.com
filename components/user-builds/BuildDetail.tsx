@@ -6,6 +6,7 @@ import { Heart, Eye, Github, ExternalLink, Calendar, ArrowLeft, Edit, Trash2, Lo
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
@@ -31,6 +32,7 @@ function formatDate(dateStr: string): string {
 
 export function BuildDetail({ build: initialBuild, backHref = '/builds' }: BuildDetailProps) {
   const { t } = useTranslation("c-user-builds");
+  const confirm = useConfirm();
   const navigate = useNavigate();
   const { data: session } = authClient.useSession();
   const [build, setBuild] = useState(initialBuild);
@@ -87,7 +89,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
   };
 
   const handleDelete = async () => {
-    if (!confirm(t("delete-confirm", { defaultValue: 'Delete "{{title}}"? This cannot be undone.', title: build.title }))) return;
+    if (!(await confirm({ title: t("delete-confirm", { defaultValue: 'Delete "{{title}}"? This cannot be undone.', title: build.title }), danger: true }))) return;
 
     setDeleting(true);
     try {

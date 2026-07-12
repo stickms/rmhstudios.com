@@ -21,19 +21,19 @@ export function RoutePending() {
       className="mx-auto w-full max-w-2xl px-4 py-8 animate-in fade-in duration-200"
     >
       <div className="flex gap-3">
-        <Skeleton className="size-10 shrink-0 rounded-full" />
+        <Skeleton shimmer className="size-10 shrink-0 rounded-full" />
         <div className="min-w-0 flex-1 space-y-3">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-3.5 w-24" />
+          <Skeleton shimmer className="h-4 w-40" />
+          <Skeleton shimmer className="h-3.5 w-24" />
         </div>
       </div>
       <div className="mt-6 space-y-3">
-        <Skeleton className="h-3.5 w-full" />
-        <Skeleton className="h-3.5 w-11/12" />
-        <Skeleton className="h-3.5 w-4/5" />
-        <Skeleton className="h-40 w-full rounded-site" />
-        <Skeleton className="h-3.5 w-3/4" />
-        <Skeleton className="h-3.5 w-2/3" />
+        <Skeleton shimmer className="h-3.5 w-full" />
+        <Skeleton shimmer className="h-3.5 w-11/12" />
+        <Skeleton shimmer className="h-3.5 w-4/5" />
+        <Skeleton shimmer className="h-40 w-full rounded-site" />
+        <Skeleton shimmer className="h-3.5 w-3/4" />
+        <Skeleton shimmer className="h-3.5 w-2/3" />
       </div>
       <span className="sr-only">Loading…</span>
     </div>

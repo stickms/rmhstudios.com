@@ -168,6 +168,32 @@
 
 /* ==================== SITE STYLE THEMES ==================== */
 
+/* Default (dark) — restated as a class so scoped previews (the settings theme
+   gallery renders each theme's tokens inside a card) can show the default
+   palette while another theme is active. Keep in sync with the :root block. */
+.style-default {
+  --site-bg: #000;
+  --site-bg-subtle: #0b0b0c;
+  --site-surface: #27282c;
+  --site-surface-hover: #313238;
+  --site-surface-active: #3a3b42;
+  --site-border: #3a3b42;
+  --site-border-bright: #4a4b54;
+  --site-text: #e8e8ec;
+  --site-text-muted: #9a9ba4;
+  --site-text-dim: #6a6b74;
+  --site-accent: #9b7ad8;
+  --site-accent-fg: #000;
+  --site-accent-hover: #8a68c9;
+  --site-accent-dim: rgba(155, 122, 216, 0.12);
+  --site-success: #7bc88a;
+  --site-danger: #d98a8a;
+  --site-warning: #d9c36e;
+  --site-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --site-radius: 12px;
+  --site-radius-sm: 8px;
+}
+
 /* Light — clean white surfaces */
 .style-light {
   --site-bg: #f5f5f7;
@@ -1406,5 +1432,37 @@ html.nav-restoring .feed-card-cv {
 @media (prefers-reduced-motion: reduce) {
   .feed-item-enter {
     animation: none;
+  }
+}
+
+/* ─── Skeleton shimmer ───────────────────────────────────────────────────
+ * A moving light sweep for loading placeholders, an upgrade on the plain
+ * opacity pulse: it reads as "content streaming in" and improves perceived
+ * speed. Opt in via `<Skeleton shimmer />` (the default stays `animate-pulse`
+ * so existing skeletons are unchanged). The gradient rides on top of the
+ * element's `bg-site-surface`, so it stays theme-correct everywhere.
+ * `--site-text` at low alpha keeps the highlight subtle on both light and dark
+ * themes. */
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+.animate-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in oklab, var(--site-text) 10%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+/* A travelling sweep is more distracting than the pulse we preserve elsewhere,
+ * so under reduced motion drop it back to a static themed surface. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-shimmer {
+    animation: none;
+    background-image: none;
   }
 }

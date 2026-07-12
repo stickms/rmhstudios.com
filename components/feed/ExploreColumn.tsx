@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { Compass, Hash, Loader2, Sparkles, TrendingUp, Coins } from 'lucide-react';
+import { Compass, Hash, Sparkles, TrendingUp, Coins } from 'lucide-react';
 import { RMHarkCard } from './RMHarkCard';
 import { RevealGroup, RevealItem } from '@/components/motion';
 import { Spinner } from '@/components/ui/spinner';
@@ -98,8 +98,8 @@ export function ExploreColumn({
             placeholder={t('ask-placeholder', { defaultValue: "What's everyone talking about?" })}
             className="flex-1 rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
           />
-          <Button variant="accent" onClick={ask} disabled={asking || question.trim().length < 3}>
-            {asking ? <Loader2 className="h-4 w-4 animate-spin" /> : t('ask-button', { defaultValue: 'Ask' })}
+          <Button variant="accent" onClick={ask} loading={asking} disabled={question.trim().length < 3}>
+            {t('ask-button', { defaultValue: 'Ask' })}
           </Button>
         </div>
         {answer && <p className="mt-3 whitespace-pre-line rounded-site-sm bg-site-surface p-3 text-sm text-site-text">{answer}</p>}

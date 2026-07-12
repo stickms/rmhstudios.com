@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Link } from '@tanstack/react-router';
-import { Bell, Loader2, X } from 'lucide-react';
+import { Bell, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -156,12 +156,8 @@ export function WatchButton({ filters, center }: WatchButtonProps) {
             </div>
 
             <div className="mt-5 flex items-center gap-2">
-              <Button onClick={create} disabled={saving}>
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Bell className="h-4 w-4" />
-                )}
+              <Button onClick={create} loading={saving}>
+                {!saving && <Bell className="h-4 w-4" />}
                 Create alert
               </Button>
               <Link

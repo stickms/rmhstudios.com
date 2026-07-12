@@ -1,11 +1,15 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, MoreHorizontal, Heart, Repeat, Trash2, Share2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
+import { RMHarkOverflowMenu } from './RMHarkOverflowMenu';
+import { useLocaleStore } from '@/stores/localeStore';
+import { LOCALE_TO_LANGUAGE_NAME } from '@/lib/i18n/config';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { useFreshUser, useUserDisplayStore } from '@/stores/userDisplayStore';
@@ -24,9 +28,7 @@ import { GifEmbed } from './GifEmbed';
 import { PostImageGrid } from './PostImageGrid';
 import { postMediaVTName } from '@/lib/view-transition';
 import { LinkPreview } from './LinkPreview';
-import { EngagementListModal } from './EngagementListModal';
 import { UserAvatar } from './UserAvatar';
-import { ShareModal } from './ShareModal';
 import { ThreadSummary } from './ThreadSummary';
 import { RelatedPosts } from './RelatedPosts';
 
@@ -37,6 +39,7 @@ interface PostDetailProps {
 export function PostDetail({ postId }: PostDetailProps) {
   const { t } = useTranslation("feed");
   const navigate = useNavigate();
+  const locale = useLocaleStore((s) => s.locale);
   const [post, setPost] = useState<FeedItem | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,10 +50,9 @@ export function PostDetail({ postId }: PostDetailProps) {
   const { data: session } = authClient.useSession();
   const { resolved: resolvedUser } = useResolvedUser();
   const remaining = MAX_COMMENT_LENGTH - commentContent.length;
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [engagementModal, setEngagementModal] = useState<'likes' | 'reposts' | null>(null);
-  const [shareModalOpen, setShareModalOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [translatedText, setTranslatedText] = useState<string | null>(null);
+  const [showTranslated, setShowTranslated] = useState(false);
+  const [translating, setTranslating] = useState(false);
 
   // Keep the shared feed store in sync with engagement that happens here, so
   // navigating back to the feed reflects the new counts instead of stale ones.
@@ -80,38 +82,35 @@ export function PostDetail({ postId }: PostDetailProps) {
   const freshPostUser = useFreshUser(post?.user);
   const freshOriginalUser = useFreshUser(post?.original?.user);
 
-  // Close dropdown on outside click
+  // Drop any cached translation when the site language changes, so the next
+  // "Translate" re-translates into the newly selected language.
   useEffect(() => {
-    if (!menuOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [menuOpen]);
+    setTranslatedText(null);
+    setShowTranslated(false);
+  }, [locale]);
 
-  const handleShare = () => {
-    setMenuOpen(false);
-    const shareUrl = `${window.location.origin}/u/${post?.user?.handle || post?.user?.id}/post/${postId}`;
-    const userName = post?.user?.name || post?.user?.handle || 'someone';
-    const shareText = `Check out what ${userName} RMHark'd on RMH Studios!`;
-    if (navigator.share) {
-      navigator.share({ title: 'RMH', text: shareText, url: shareUrl }).catch(() => {});
-    } else {
-      setShareModalOpen(true);
+  const handleTranslate = async () => {
+    if (translatedText) {
+      setShowTranslated((s) => !s);
+      return;
     }
-  };
-
-  const handleDelete = async () => {
-    setMenuOpen(false);
-    if (!confirm('Delete this RMHark?')) return;
+    setTranslating(true);
     try {
-      await fetch(`/api/rmharks/${postId}`, { method: 'DELETE' });
-      navigate({ to: '/' });
-    } catch {
-      // ignore
+      const res = await fetch(
+        `/api/rmharks/${postId}/translate?to=${encodeURIComponent(LOCALE_TO_LANGUAGE_NAME[locale])}`,
+        { credentials: 'include' }
+      );
+      if (!res.ok) {
+        toast.error(t('translate-error', { defaultValue: 'Could not translate this post.' }));
+        return;
+      }
+      const data = await res.json();
+      if (data.text) {
+        setTranslatedText(data.text);
+        setShowTranslated(true);
+      }
+    } finally {
+      setTranslating(false);
     }
   };
 
@@ -238,49 +237,26 @@ export function PostDetail({ postId }: PostDetailProps) {
 
       {/* Post content (expanded) */}
       <div className="relative px-4 pt-4 pb-3 border-b border-site-border">
-        {/* More menu — top right */}
-        {!post.deletedAt && <div className="absolute top-4 right-4 z-10" ref={menuRef}>
-          <button
-            onClick={() => setMenuOpen((v) => !v)}
-            className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
-          >
-            <MoreHorizontal className="w-5 h-5" />
-          </button>
-          {menuOpen && (
-            <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
-              <button
-                onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-              >
-                <Heart className="w-4 h-4 text-site-text-dim" />
-                {t("liked-by", { defaultValue: "Liked by" })}
-              </button>
-              <button
-                onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-              >
-                <Repeat className="w-4 h-4 text-site-text-dim" />
-                {t("rermharkd-by", { defaultValue: "reRMHark'd by" })}
-              </button>
-              <button
-                onClick={handleShare}
-                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
-              >
-                <Share2 className="w-5 h-5 text-site-text-dim" />
-                {t("share", { defaultValue: "Share" })}
-              </button>
-              {isAuthor && (
-                <button
-                  onClick={handleDelete}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  {t("delete", { defaultValue: "Delete" })}
-                </button>
-              )}
-            </div>
-          )}
-        </div>}
+        {/* More menu — top right (shared with the feed card so features match) */}
+        {!post.deletedAt && (
+          <div className="absolute top-4 right-4 z-20">
+            <RMHarkOverflowMenu
+              item={post}
+              isAuthor={isAuthor}
+              onUpdate={(updates) => {
+                setPost((prev) => (prev ? { ...prev, ...updates } : prev));
+                syncToFeed(updates);
+              }}
+              onRemove={() => navigate({ to: '/' })}
+              translate={{
+                translating,
+                hasTranslation: translatedText !== null,
+                showing: showTranslated,
+                onToggle: handleTranslate,
+              }}
+            />
+          </div>
+        )}
 
         {/* User header */}
         <div className="flex items-center gap-3 mb-3 pr-8">
@@ -298,6 +274,13 @@ export function PostDetail({ postId }: PostDetailProps) {
         {/* Content - larger text for detail view */}
         {post.content && (
           <RMHarkContent text={post.content} className="text-site-text text-[17px] leading-relaxed whitespace-pre-wrap break-words mb-3" />
+        )}
+
+        {/* Translation (toggled from the overflow menu) */}
+        {showTranslated && translatedText && (
+          <div className="mb-3 rounded-site border border-site-border bg-site-surface/40 p-3 text-[15px] leading-relaxed text-site-text whitespace-pre-wrap break-words">
+            {translatedText}
+          </div>
         )}
 
         {/* Poll */}
@@ -475,21 +458,6 @@ export function PostDetail({ postId }: PostDetailProps) {
 
       {!post.deletedAt && <RelatedPosts postId={postId} />}
 
-      {engagementModal && (
-        <EngagementListModal
-          open={engagementModal !== null}
-          onClose={() => setEngagementModal(null)}
-          postId={postId}
-          type={engagementModal}
-        />
-      )}
-
-      <ShareModal
-        open={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        url={typeof window !== 'undefined' ? `${window.location.origin}/u/${post?.user?.handle || post?.user?.id}/post/${postId}` : ''}
-        text={`Check out what ${post?.user?.name || post?.user?.handle || 'someone'} RMHark'd on RMH Studios!`}
-      />
     </div>
   );
 }

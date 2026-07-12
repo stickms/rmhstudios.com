@@ -17,6 +17,9 @@ import {
   Check,
 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
+import { useClipboard } from '@/hooks/useClipboard';
+import { TodayWidget } from '@/components/feed/TodayWidget';
+import { FriendsOnlineWidget } from '@/components/feed/FriendsOnlineWidget';
 
 interface SidebarOfficialBuild {
   id: string;
@@ -106,7 +109,7 @@ function OnlineNowPill() {
 function InviteFriendsCard() {
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
-  const [copied, setCopied] = useState(false);
+  const { copied, copy } = useClipboard({ resetMs: 2500 });
   const [reward, setReward] = useState(50);
 
   if (!session?.user) return null;
@@ -117,9 +120,7 @@ function InviteFriendsCard() {
       if (!res.ok) return;
       const data = (await res.json()) as { url: string; reward: number };
       setReward(data.reward);
-      await navigator.clipboard.writeText(data.url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
+      await copy(data.url);
     } catch {
       // clipboard unavailable — nothing to do
     }
@@ -164,6 +165,10 @@ export function RightSidebar({
   return (
     <div className="p-4 space-y-6">
       <OnlineNowPill />
+
+      <TodayWidget />
+
+      <FriendsOnlineWidget />
 
       <InviteFriendsCard />
 

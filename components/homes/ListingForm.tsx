@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -340,8 +339,7 @@ export function ListingForm({ listing }: ListingFormProps) {
       </div>
 
       <div className="flex items-center gap-3 pt-2">
-        <Button type="submit" size="lg" disabled={submitting}>
-          {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+        <Button type="submit" size="lg" loading={submitting}>
           {isEditing ? 'Save changes' : 'Post listing'}
         </Button>
         <Button

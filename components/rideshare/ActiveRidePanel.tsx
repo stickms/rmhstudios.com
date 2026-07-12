@@ -21,6 +21,7 @@ import { FareBreakdown } from './FareBreakdown';
 import { PayoutBreakdown } from './PayoutBreakdown';
 import { TipPrompt } from './TipPrompt';
 import { StarRating } from './StarRating';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { rideClassName } from '@/lib/rideshare/classes';
 import { formatDistance, formatDuration, type LatLng } from '@/lib/rideshare/geo';
 import { useDriverLocationShare } from '@/lib/rideshare/useDriverLocationShare';
@@ -99,6 +100,7 @@ export function ActiveRidePanel({
   onClose?: () => void;
 }) {
   const { t } = useTranslation("c-rideshare");
+  const confirm = useConfirm();
   const [ride, setRide] = useState<SyncRide | null>(null);
   const [role, setRole] = useState<'rider' | 'driver'>('rider');
   const [loading, setLoading] = useState(true);
@@ -142,7 +144,7 @@ export function ActiveRidePanel({
   const locationState = useDriverLocationShare(sharingActive);
 
   async function act(action: 'start' | 'complete' | 'cancel') {
-    if (action === 'cancel' && !confirm(t("cancel-this-ride", { defaultValue: "Cancel this ride?" }))) return;
+    if (action === 'cancel' && !(await confirm({ title: t("cancel-this-ride", { defaultValue: "Cancel this ride?" }), danger: true }))) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/rideshare/rides/${rideId}`, {
@@ -208,7 +210,7 @@ export function ActiveRidePanel({
 
   if (loading) {
     return (
-      <div className="flex justify-center rounded-2xl border border-site-border bg-site-surface/80 py-12">
+      <div className="flex justify-center rounded-site border border-site-border bg-site-surface/80 py-12">
         <Loader2 className="h-6 w-6 animate-spin text-site-text-muted" />
       </div>
     );
@@ -232,7 +234,7 @@ export function ActiveRidePanel({
   return (
     <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
       {/* Status timeline */}
-      <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+      <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-site-text">{rideClassName(ride.rideClass)}</h2>
           {status === 'CANCELLED' ? (
@@ -283,7 +285,7 @@ export function ActiveRidePanel({
 
       {/* Other party */}
       {other && (
-        <div className="flex items-center gap-3 rounded-2xl border border-site-border bg-site-surface/80 p-4">
+        <div className="flex items-center gap-3 rounded-site border border-site-border bg-site-surface/80 p-4">
           <div className="flex h-11 w-11 items-center justify-center rounded-full bg-site-accent/15 text-site-accent">
             <Car className="h-5 w-5" />
           </div>
@@ -308,7 +310,7 @@ export function ActiveRidePanel({
 
       {/* Driver location-sharing hint */}
       {sharingActive && (
-        <div className="flex items-center gap-2 rounded-xl border border-site-border bg-site-surface/80 px-4 py-2.5 text-xs">
+        <div className="flex items-center gap-2 rounded-site border border-site-border bg-site-surface/80 px-4 py-2.5 text-xs">
           <Crosshair className={`h-4 w-4 ${locationState === 'sharing' ? 'text-emerald-400' : 'text-amber-400'}`} />
           <span className="text-site-text-muted">
             {locationState === 'sharing'
@@ -352,7 +354,7 @@ export function ActiveRidePanel({
 
       {/* Completed → rate */}
       {status === 'COMPLETED' && (
-        <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5 text-center">
+        <div className="rounded-site border border-site-border bg-site-surface/80 p-5 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-emerald-400" />
           <h3 className="mt-2 font-semibold text-site-text">
             {myRatingGiven ? t("thanks-for-riding", { defaultValue: "Thanks for riding with RMH!" }) : (isDriver ? t("rate-your-rider", { defaultValue: "Rate your rider" }) : t("rate-your-driver", { defaultValue: "Rate your driver" }))}
@@ -378,7 +380,7 @@ export function ActiveRidePanel({
       {(status === 'COMPLETED' || status === 'CANCELLED') && onClose && (
         <button
           onClick={onClose}
-          className="w-full rounded-xl border border-site-border bg-site-surface px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover"
+          className="w-full rounded-site border border-site-border bg-site-surface px-5 py-2.5 text-sm font-semibold text-site-text transition-colors hover:bg-site-surface-hover"
         >
           {t("done", { defaultValue: "Done" })}
         </button>
@@ -391,7 +393,7 @@ export function ActiveRidePanel({
             <button
               onClick={() => act('start')}
               disabled={busy}
-              className="flex items-center justify-center gap-2 rounded-xl bg-site-accent px-5 py-3 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:opacity-50 sm:flex-1 sm:py-2.5"
+              className="flex items-center justify-center gap-2 rounded-site bg-site-accent px-5 py-3 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:opacity-50 sm:flex-1 sm:py-2.5"
             >
               <Navigation className="h-4 w-4" /> {t("start-trip", { defaultValue: "Start trip" })}
             </button>
@@ -400,7 +402,7 @@ export function ActiveRidePanel({
             <button
               onClick={() => act('complete')}
               disabled={busy}
-              className="flex items-center justify-center gap-2 rounded-xl bg-site-success px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-site-success/90 disabled:opacity-50 sm:flex-1 sm:py-2.5"
+              className="flex items-center justify-center gap-2 rounded-site bg-site-success px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-site-success/90 disabled:opacity-50 sm:flex-1 sm:py-2.5"
             >
               <Flag className="h-4 w-4" /> {t("complete-trip", { defaultValue: "Complete trip" })}
             </button>
@@ -408,7 +410,7 @@ export function ActiveRidePanel({
           <button
             onClick={() => act('cancel')}
             disabled={busy}
-            className="flex items-center justify-center gap-2 rounded-xl border border-site-border px-5 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-50 sm:py-2.5"
+            className="flex items-center justify-center gap-2 rounded-site border border-site-border px-5 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-500/10 disabled:opacity-50 sm:py-2.5"
           >
             <XCircle className="h-4 w-4" /> {t("cancel", { defaultValue: "Cancel" })}
           </button>

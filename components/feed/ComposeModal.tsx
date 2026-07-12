@@ -20,6 +20,7 @@ import {
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
 } from '@/lib/rmhark-schema';
+import { clearComposeDraft, useComposeDraftAutosave } from '@/hooks/useComposeDraft';
 
 const MAX_IMAGES = 4;
 
@@ -64,6 +65,10 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
   const { resolved: resolvedUser } = useResolvedUser();
 
   const remaining = MAX_RMHARK_LENGTH - content.length;
+
+  // Autosave plain drafts (not quotes/seeded shares — those would overwrite a
+  // draft typed elsewhere). Restore is offered by the feed ComposeBox.
+  useComposeDraftAutosave(content, gifUrl, open && !quoteItem && !initialContent);
 
   // Close menu on outside click
   useEffect(() => {
@@ -136,6 +141,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
 
       const item = await res.json();
       prependItem(item);
+      if (!quoteItem && !initialContent) clearComposeDraft();
       setContent('');
       setAttachment(null);
       setPoll({ question: '', options: ['', ''], multiSelect: false });

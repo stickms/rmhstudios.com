@@ -1,0 +1,64 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Frontend CI gate — the TS/React app previously merged with no typecheck, lint,
+# test, or build run (the only workflows are Go-scoped + an author-gated LLM
+# review). This runs the standard local checks on every PR and push so a broken
+# frontend change can't land silently. No secrets/env required.
+# ─────────────────────────────────────────────────────────────────────────────
+name: web-ci
+
+on:
+  pull_request:
+    paths-ignore:
+      - "go-services/**"
+      - "deploy/**"
+      - "docs/**"
+      - "**/*.md"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "go-services/**"
+      - "deploy/**"
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch: {}
+
+# Newer pushes to the same ref cancel older in-progress runs.
+concurrency:
+  group: web-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # postinstall runs `prisma generate` (schema-only, no DB needed).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm exec vitest run
+
+      # Full frontend build (vibe packages → vite). Catches build-time breakage
+      # that typecheck alone misses. No runtime env is read at build time.
+      - name: Build
+        run: pnpm run build:frontend
+        env:
+          NODE_OPTIONS: --max-old-space-size=8192

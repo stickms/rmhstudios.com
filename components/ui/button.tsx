@@ -1,6 +1,7 @@
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import { Slot } from "@radix-ui/react-slot"
+import { Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -52,21 +53,49 @@ function Button({
   variant = "default",
   size = "default",
   asChild = false,
+  loading = false,
+  loadingText,
+  disabled,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    /**
+     * Show an inline spinner, disable interaction, and set `aria-busy`. This is
+     * the canonical way to give a button in-flight feedback — don't hand-roll
+     * `disabled={x}` + a separate `<Loader2 />`. Ignored when `asChild` (a Slot
+     * must wrap a single child, so no spinner is injected).
+     */
+    loading?: boolean
+    /** Optional label to swap in while loading (e.g. "Saving…"). Falls back to the button's children. */
+    loadingText?: React.ReactNode
   }) {
   const Comp = asChild ? Slot : "button"
+  // The spinner can only be injected into a real <button>; a Slot must receive a
+  // single child, so for asChild we only carry the busy/disabled semantics.
+  const showSpinner = loading && !asChild
 
   return (
     <Comp
       data-slot="button"
       data-variant={variant}
       data-size={size}
+      data-loading={loading ? "" : undefined}
       className={cn(buttonVariants({ variant, size, className }))}
+      disabled={asChild ? disabled : disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
-    />
+    >
+      {showSpinner ? (
+        <>
+          <Loader2 className="animate-spin" aria-hidden />
+          {loadingText ?? children}
+        </>
+      ) : (
+        children
+      )}
+    </Comp>
   )
 }
 

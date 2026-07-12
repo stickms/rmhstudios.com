@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -111,8 +110,8 @@ export function CreatePredictionModal({ open, onClose, onCreated }: Props) {
           />
         </div>
 
-        <Button variant="accent" onClick={submit} disabled={submitting} className="w-full">
-          {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : t('submit', { defaultValue: 'Submit for review' })}
+        <Button variant="accent" onClick={submit} loading={submitting} className="w-full">
+          {t('submit', { defaultValue: 'Submit for review' })}
         </Button>
         </div>
       </DialogContent>

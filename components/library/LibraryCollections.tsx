@@ -19,6 +19,7 @@ import type { CollectionView } from '@/lib/library/collections';
 import { useReveal } from './LibraryReveal';
 import { LibraryContextMenu, useContextMenu, type MenuItem } from './LibraryContextMenu';
 import { BlurImage } from '@/components/ui/BlurImage';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 
 /** Cover image styled to fill the 3D book cover (absolute inset-0), with blur-up. */
 const COVER_WRAP = 'absolute inset-0 z-0 h-full w-full rounded-[3px_6px_6px_3px]';
@@ -40,6 +41,7 @@ export function LibraryCollections({
   canCreate: boolean;
 }) {
   const { t } = useTranslation('library');
+  const confirm = useConfirm();
   const [creating, setCreating] = useState(false);
   const [addingTo, setAddingTo] = useState<CollectionView | null>(null);
   const [opened, setOpened] = useState<CollectionView | null>(null);
@@ -61,7 +63,7 @@ export function LibraryCollections({
   }
 
   async function removeCollection(c: CollectionView) {
-    if (!window.confirm(t('collection-delete-confirm', { defaultValue: 'Delete this collection? The books are not deleted.' }))) return;
+    if (!(await confirm({ title: t('collection-delete-confirm', { defaultValue: 'Delete this collection? The books are not deleted.' }), danger: true }))) return;
     const res = await fetch(`/api/library/collection/${c.id}`, { method: 'DELETE' }).catch(() => null);
     if (res?.ok) await onChanged();
   }

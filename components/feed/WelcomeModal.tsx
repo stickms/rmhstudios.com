@@ -9,6 +9,10 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useTranslation } from 'react-i18next';
 
 const STORAGE_KEY = 'rmh-welcome-seen-v1';
+// Set once the first-run language chooser has been dismissed (see
+// LanguageFirstRunModal). We wait for it so the two modals don't stack.
+const LANG_PICKED_KEY = 'rmh-lang-picked-v1';
+const LANG_PICKED_EVENT = 'rmh:lang-picked';
 
 const STEP_ICONS = [Sparkles, Gamepad2, Search, UserCircle];
 const STEP_TOS = [undefined, '/games', '/search', '/profile'];
@@ -33,11 +37,20 @@ export function WelcomeModal() {
 
   useEffect(() => {
     if (isPending || !session) return;
-    try {
-      if (!localStorage.getItem(STORAGE_KEY)) setOpen(true);
-    } catch {
-      // ignore storage errors (private mode, etc.)
-    }
+    const check = () => {
+      try {
+        // Hold until the first-run language chooser is done so we don't stack
+        // two dialogs; it fires `rmh:lang-picked` when dismissed.
+        if (!localStorage.getItem(STORAGE_KEY) && localStorage.getItem(LANG_PICKED_KEY)) {
+          setOpen(true);
+        }
+      } catch {
+        // ignore storage errors (private mode, etc.)
+      }
+    };
+    check();
+    window.addEventListener(LANG_PICKED_EVENT, check);
+    return () => window.removeEventListener(LANG_PICKED_EVENT, check);
   }, [session, isPending]);
 
   const dismiss = () => {

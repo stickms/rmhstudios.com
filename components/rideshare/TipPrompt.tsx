@@ -29,7 +29,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
 
   if (tipCents > 0) {
     return (
-      <div className="rounded-2xl border border-site-success/30 bg-site-success/10 p-5 text-center">
+      <div className="rounded-site border border-site-success/30 bg-site-success/10 p-5 text-center">
         <Heart className="mx-auto h-7 w-7 fill-site-success text-site-success" />
         <h3 className="mt-2 font-semibold text-site-text">
           {t("you-tipped", { defaultValue: "You tipped {{amount}}", amount: formatUsd(tipCents) })}
@@ -56,7 +56,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
   }
 
   return (
-    <div className="rounded-2xl border border-site-border bg-site-surface/80 p-5">
+    <div className="rounded-site border border-site-border bg-site-surface/80 p-5">
       <div className="flex items-center gap-2">
         <Gift className="h-5 w-5 text-site-accent" />
         <h3 className="font-semibold text-site-text">{t("add-tip-header", { defaultValue: "Add a tip for your driver" })}</h3>
@@ -77,7 +77,7 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
                 setSelected(cents);
                 setCustom('');
               }}
-              className={`rounded-lg border px-2 py-2.5 text-center transition-colors ${
+              className={`rounded-site-sm border px-2 py-2.5 text-center transition-colors ${
                 active
                   ? 'border-site-accent bg-site-accent/10 text-site-accent'
                   : 'border-site-border bg-site-surface text-site-text hover:border-site-border-bright'
@@ -104,13 +104,13 @@ export function TipPrompt({ fareCents, tipCents, onTip }: TipPromptProps) {
               setSelected(null);
             }}
             placeholder={t("custom-amount-placeholder", { defaultValue: "Custom amount" })}
-            className="w-full rounded-lg border border-site-border bg-site-surface py-2.5 pl-7 pr-3 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
+            className="w-full rounded-site-sm border border-site-border bg-site-surface py-2.5 pl-7 pr-3 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
           />
         </div>
         <button
           onClick={submit}
           disabled={!valid || submitting}
-          className="flex items-center justify-center gap-2 rounded-lg bg-site-accent px-5 py-2.5 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-site-sm bg-site-accent px-5 py-2.5 text-sm font-semibold text-(--site-accent-fg) transition-colors hover:bg-(--site-accent-hover) disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gift className="h-4 w-4" />}
           {amount > 0 ? t("tip-with-amount", { defaultValue: "Tip {{amount}}", amount: formatUsd(amount) }) : t("tip-label", { defaultValue: "Tip" })}

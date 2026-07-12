@@ -2,26 +2,32 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
+interface SkeletonProps extends React.ComponentProps<"div"> {
+  /**
+   * Use the travelling light-sweep instead of the default opacity pulse. Reads
+   * as "content streaming in" — nice for above-the-fold / hero placeholders.
+   * Reduced-motion-safe (falls back to a static themed surface in
+   * `globals.css`).
+   */
+  shimmer?: boolean
+}
+
 /**
- * Canonical loading placeholder. Uses the site surface colour with a subtle
- * left-to-right shimmer so skeletons read as "loading" without pulsing hard.
- * The shimmer keyframe is scoped here (the ui/* track cannot edit globals.css);
- * `prefers-reduced-motion` neutralizes it site-wide via the global rule, and
- * the base `animate-pulse` is preserved as gentle loading feedback.
+ * Canonical loading placeholder. Uses the site surface colour so skeletons
+ * match the design system across the app and all 31 themes. Defaults to a
+ * gentle `animate-pulse`; pass `shimmer` for a moving highlight sweep.
  */
-function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
+function Skeleton({ className, shimmer = false, ...props }: SkeletonProps) {
   return (
     <div
       data-slot="skeleton"
       className={cn(
-        "relative overflow-hidden rounded-site-sm bg-site-surface animate-pulse",
-        "after:absolute after:inset-0 after:-translate-x-full after:animate-[skeleton-shimmer_2s_ease-in-out_infinite] after:bg-gradient-to-r after:from-transparent after:via-white/[0.06] after:to-transparent",
-        className
+        "rounded-site-sm bg-site-surface",
+        shimmer ? "animate-shimmer" : "animate-pulse",
+        className,
       )}
       {...props}
-    >
-      <style>{`@keyframes skeleton-shimmer{100%{transform:translateX(100%)}}`}</style>
-    </div>
+    />
   )
 }
 

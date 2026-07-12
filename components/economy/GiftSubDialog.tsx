@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
-import { Gift, Loader2 } from 'lucide-react';
+import { Gift } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface GiftSubDialogProps {
@@ -110,8 +110,8 @@ export function GiftSubDialog({ open, onOpenChange, recipientId, recipientName }
         </div>
 
         <DialogFooter>
-          <Button variant="accent" disabled={submitting} onClick={submit} className="gap-1.5">
-            {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Gift className="h-4 w-4" />}
+          <Button variant="accent" loading={submitting} onClick={submit} className="gap-1.5">
+            {!submitting && <Gift className="h-4 w-4" />}
             {t('gift-for', { defaultValue: 'Gift for' })} <CoinIcon className="h-4 w-4" /> {cost.toLocaleString()}
           </Button>
         </DialogFooter>

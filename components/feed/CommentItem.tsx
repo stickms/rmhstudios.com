@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { MessageCircle, Repeat2, Heart, Eye, Trash2, MoreHorizontal, Repeat, BadgeCheck, ShieldCheck, Languages, Image as ImageIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useConfirm } from '@/components/ui/confirm-dialog';
 import { MAX_COMMENT_LENGTH } from '@/lib/rmhark-schema';
 import { RMHarkContent } from './RMHarkContent';
 import ChatMediaEmbed, { stripEmbedUrls, extractMediaEmbeds } from '@/components/shared/ChatMediaEmbed';
@@ -81,6 +82,7 @@ interface CommentItemProps {
 
 export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onCommentRemoved, depth = 0 }: CommentItemProps) {
   const { t } = useTranslation("feed");
+  const confirm = useConfirm();
   const locale = useLocaleStore((s) => s.locale);
   const freshCommentUser = useFreshUser(comment.user) ?? comment.user;
   const [replyOpen, setReplyOpen] = useState(false);
@@ -217,7 +219,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   };
 
   const handleDelete = async () => {
-    if (!confirm(t('delete-reply-confirm', { defaultValue: 'Delete this reply?' }))) return;
+    if (!(await confirm({ title: t('delete-reply-confirm', { defaultValue: 'Delete this reply?' }), danger: true }))) return;
     try {
       const res = await fetch(`/api/rmharks/${postId}/comment/${comment.id}`, { method: 'DELETE' });
       if (res.ok) {

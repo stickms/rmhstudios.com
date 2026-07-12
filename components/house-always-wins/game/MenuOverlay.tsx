@@ -5,6 +5,7 @@ import { MusicManager } from "@/lib/house-always-wins/music";
 import { SfxManager } from "@/lib/house-always-wins/sfx";
 import { useHouseAlwaysWinsStore } from "@/lib/store/houseAlwaysWinsStore";
 import { OBJECTIVES } from "@/lib/house-always-wins/quests";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Check, Volume2, VolumeX, Music, Music2 } from "lucide-react";
 
 interface MenuOverlayProps {
@@ -23,6 +24,7 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
   const abilities = useHouseAlwaysWinsStore((s) => s.abilities);
   const flags = useHouseAlwaysWinsStore((s) => s.flags);
   const resetRun = useHouseAlwaysWinsStore((s) => s.resetRun);
+  const confirm = useConfirm();
 
   const qs = { debt, chips, keys, abilities, flags };
 
@@ -71,8 +73,13 @@ export function MenuOverlay({ open, onClose }: MenuOverlayProps) {
 
   if (!open) return null;
 
-  const confirmReset = () => {
-    if (window.confirm("Abandon this run? All progress, keys and chips are lost.")) {
+  const confirmReset = async () => {
+    if (
+      await confirm({
+        title: "Abandon this run? All progress, keys and chips are lost.",
+        danger: true,
+      })
+    ) {
       resetRun();
       window.location.reload();
     }

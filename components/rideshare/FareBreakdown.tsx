@@ -37,7 +37,7 @@ export function FareBreakdown({ distanceMeters, durationSeconds, classId, compac
   ];
 
   return (
-    <div className="rounded-xl border border-site-border bg-site-surface p-4">
+    <div className="rounded-site border border-site-border bg-site-surface p-4">
       <div className="mb-3 flex items-center justify-between">
         <h4 className="text-sm font-semibold text-site-text">{t("fare-estimate", { defaultValue: "Fare estimate" })}</h4>
         <span className="text-xs text-site-text-muted">{rideClassName(classId)}</span>
