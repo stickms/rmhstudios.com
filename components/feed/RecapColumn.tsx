@@ -71,7 +71,7 @@ export function RecapColumn({
             title={
               <>
                 {t('recap-weekly-headline', { defaultValue: 'Weekly' })}{' '}
-                <span style={{ color: 'var(--site-accent)' }}>
+                <span className="text-site-accent">
                   {t('recap-recap-word', { defaultValue: 'Recap' })}
                 </span>
               </>

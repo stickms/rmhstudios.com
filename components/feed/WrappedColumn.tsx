@@ -87,7 +87,7 @@ export function WrappedColumn({
         title={
           <>
             {data.year}{' '}
-            <span style={{ color: 'var(--site-accent)' }}>
+            <span className="text-site-accent">
               {t('wrapped-heading-word', { defaultValue: 'Wrapped' })}
             </span>
           </>
@@ -96,7 +96,7 @@ export function WrappedColumn({
         actions={
           <Link to="/recap">
             <Button variant="accent" size="sm">
-              {t('recap-year-wrapped', { defaultValue: 'This week' })}
+              {t('wrapped-recap-cta', { defaultValue: 'This week' })}
             </Button>
           </Link>
         }

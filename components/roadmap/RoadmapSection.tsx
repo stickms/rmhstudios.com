@@ -901,7 +901,7 @@ export function RoadmapSection() {
 
       {/* Intro */}
       <Reveal>
-        <div className="mb-6 rounded-site border border-site-border bg-site-surface p-4">
+        <div className="mb-6 rounded-site border border-site-border bg-site-surface p-4 backdrop-blur-sm">
           <p className="text-sm leading-relaxed text-site-text-muted">
             {t("intro-body", { defaultValue: "We're an indie studio building rhythm games, deckbuilders, narrative horror, and more. Our roadmap isn't tied to one title—we're growing the catalog, Discord, and new worlds in parallel. Timelines are guides, not promises." })}
           </p>
