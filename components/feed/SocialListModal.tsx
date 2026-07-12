@@ -164,7 +164,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
           {users.map((user) => (
             <div
               key={user.id}
-              className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface/50 transition-colors border-b border-site-border/50"
+              className="flex items-center gap-3 px-5 py-3 hover:bg-site-surface-hover transition-colors border-b border-site-border/50"
             >
               <Link
                 to={`/u/${user.handle || user.id}` as string}
@@ -186,7 +186,7 @@ export function SocialListModal({ open, onClose, userId, type }: SocialListModal
                 <button
                   onClick={() => handleFollowToggle(user)}
                   disabled={followingInProgress.has(user.id)}
-                  className={`shrink-0 px-4 py-1.5 rounded-site-sm text-xs font-bold transition-colors ${
+                  className={`shrink-0 px-4 py-1.5 rounded-site-sm text-xs font-bold transition-[color,background-color,border-color,transform] duration-150 active:scale-95 ${
                     user.isFollowing
                       ? 'border border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10'
                       : 'bg-site-accent text-site-bg hover:bg-site-accent-hover'
