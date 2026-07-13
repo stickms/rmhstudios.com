@@ -15,8 +15,8 @@ interface FeedListProps {
   following?: boolean;
   /** Cold-start CTA: switch the viewer to the For You surface. */
   onSwitchToForYou?: () => void;
-  /** Server-prefetched first page (For You / all) — rendered in the SSR HTML
-   *  and used to seed the store on mount so the feed needs no client fetch. */
+  /** Server-streamed first page (For You / all). Rendered on first paint and
+   *  used to seed the store on mount, so the feed needs no client fetch. */
   initialItems?: FeedItemType[];
   initialCursor?: string | null;
   initialHasMore?: boolean;
@@ -32,10 +32,10 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
   // than pop. Cleared after the animation window.
   const [enteringIds, setEnteringIds] = useState<Set<string>>(() => new Set());
 
-  // Before the store is seeded (SSR + first client render, when the module-level
-  // store is still pristine), render the server-prefetched first page so posts
-  // are in the initial HTML — no skeleton, no post-hydration fetch. Only for the
-  // default For You surface the prefetch corresponds to.
+  // Before the store is seeded (the module-level store is still pristine on the
+  // server render and the first client render), show the server-streamed first
+  // page so posts are in the streamed HTML — no skeleton, no post-hydration
+  // fetch. Only for the default For You surface the prefetch corresponds to.
   const usingInitial =
     !initialized && items.length === 0 && !following && !!initialItems && initialItems.length > 0;
   const displayItems = usingInitial ? initialItems : items;
@@ -50,7 +50,7 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
       initialFetched.current = true;
       if (items.length === 0) {
         const s = useFeedStore.getState();
-        // Seed from the SSR prefetch when it matches the surface the store
+        // Seed from the streamed prefetch when it matches the surface the store
         // starts on (For You / all, no search) — otherwise fetch client-side.
         if (initialItems && initialItems.length > 0 && s.filter === 'all' && !s.search) {
           hydrate(initialItems, initialCursor, initialHasMore);

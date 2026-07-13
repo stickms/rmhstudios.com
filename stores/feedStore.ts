@@ -30,8 +30,9 @@ interface FeedState {
   fetchNextPage: () => Promise<void>;
   /** Re-attempt the current surface after an error (clears the error flag). */
   retry: () => void;
-  /** Seed the first page from a server prefetch (SSR) — no-ops unless the store
-   *  is still pristine, so it never clobbers a live or navigated-back timeline. */
+  /** Seed the first page from the server (streamed SSR prefetch) — no-ops unless
+   *  the store is still pristine, so it never clobbers a live or navigated-back
+   *  timeline. */
   hydrate: (items: FeedItem[], cursor: string | null, hasMore: boolean) => void;
   prependItem: (item: FeedItem) => void;
   updateItem: (id: string, updates: Partial<FeedItem>) => void;
@@ -132,7 +133,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   hydrate: (items, cursor, hasMore) => {
     const s = get();
     // Only seed a pristine store — never overwrite an in-flight load or a
-    // timeline the user already scrolled/navigated back to.
+    // timeline the reader already scrolled/navigated back to.
     if (s.initialized || s.loading || s.items.length > 0) return;
     cacheItemUsers(items);
     set({ items, cursor, hasMore, initialized: true, error: false });

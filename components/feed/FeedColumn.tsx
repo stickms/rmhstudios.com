@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, Suspense } from 'react';
 import { SlidersHorizontal, Search, X, BadgeCheck, ShieldCheck, Menu } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { FeedTabs } from './FeedTabs';
@@ -13,8 +13,9 @@ import { useMobileSidebar } from './MobileSidebarShell';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { authClient } from '@/lib/auth-client';
-import { Link, useNavigate, useSearch } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch, Await } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
 import type { FeedItem as FeedItemType } from '@/lib/feed-types';
 
 interface SearchUser {
@@ -27,14 +28,14 @@ interface SearchUser {
   isAdmin: boolean;
 }
 
-/** Server-prefetched first page (For You / all), passed down to seed the feed. */
+/** The server-streamed first page (For You / all), resolved via <Await>. */
 export interface InitialFeed {
   items: FeedItemType[];
   nextCursor: string | null;
   hasMore: boolean;
 }
 
-export function FeedColumn({ initialFeed }: { initialFeed?: InitialFeed | null }) {
+export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed> | null }) {
   const { t } = useTranslation('feed');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
@@ -262,14 +263,25 @@ export function FeedColumn({ initialFeed }: { initialFeed?: InitialFeed | null }
             {t("sign-in", { defaultValue: "Sign in" })}
           </Link>
         </div>
+      ) : mode === 'friends' ? (
+        <FeedList following onSwitchToForYou={() => handleModeChange('feed')} />
+      ) : initialFeed ? (
+        // For You initial load: the shell has already streamed to the client;
+        // the feed streams into this Suspense slot when the server resolves it.
+        <Suspense fallback={<PostListSkeleton count={6} />}>
+          <Await promise={initialFeed}>
+            {(feed) => (
+              <FeedList
+                onSwitchToForYou={() => handleModeChange('feed')}
+                initialItems={feed.items}
+                initialCursor={feed.nextCursor}
+                initialHasMore={feed.hasMore}
+              />
+            )}
+          </Await>
+        </Suspense>
       ) : (
-        <FeedList
-          following={mode === 'friends'}
-          onSwitchToForYou={() => handleModeChange('feed')}
-          initialItems={initialFeed?.items}
-          initialCursor={initialFeed?.nextCursor ?? null}
-          initialHasMore={initialFeed?.hasMore ?? false}
-        />
+        <FeedList onSwitchToForYou={() => handleModeChange('feed')} />
       )}
     </div>
   );
