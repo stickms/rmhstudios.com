@@ -146,9 +146,15 @@ don't remove that plugin.
 ## Testing
 
 - Main suite: `pnpm exec vitest run` (config `vitest.config.ts`) — covers
-  `testing/` (RMHBox phases) and colocated tests under `lib/rmhladder`,
+  `testing/` (RMHBox phases + canvas), colocated tests under `lib/rmhladder`,
   `lib/cookgame`, `lib/dream-rift`, `lib/rmhark-ai`, `lib/personas`,
-  `lib/predictions`, `lib/versecraft/gen`, `lib/kowloon-knockout`, and some
-  `components/`.
+  `lib/predictions`, `lib/versecraft/gen`, `lib/kowloon-knockout`, some
+  `components/`, and `canvas-ui/__tests__/`.
+- **Canvas overhaul tests** (see `docs/canvas-architecture.md` §Testing):
+  `canvas-ui/__tests__/` unit-tests the `tw()` parser and the theme token
+  bridge; `testing/canvas/route-conversion-guard.test.ts` statically
+  enforces the route manifest (`testing/canvas/route-manifest.ts`) —
+  completeness, converted-routes-use-CanvasPage, banned imports. Every new
+  page route must be added to the manifest or the suite fails.
 - Separate: `pnpm epic:test` (`vitest.epic.config.ts`, 60s timeout, spawns
   Chromium) for `scripts/epic/`.

@@ -9,6 +9,18 @@ few shared directories. Rule of thumb: a component used by exactly one
 feature lives in that feature's directory; genuinely shared primitives live in
 `ui/`.
 
+> **Canvas overhaul (in progress):** components for CONVERTED routes are
+> Konva scene components built from `canvas-ui/` (widgets, `tw()`, theme
+> tokens, `CanvasText`/`RichText`) — not DOM/Tailwind. They still live here,
+> organized by feature (see `lockdown/LegalCanvasPage.tsx` for the pattern:
+> one structured content model driving both the canvas scene and the
+> semantic DOM mirror). Everything below about Tailwind classes, Radix,
+> `ui/` primitives, framer-motion, and sonner applies ONLY to components on
+> not-yet-converted DOM routes. Do not add NEW consumers of `ui/`,
+> framer-motion, sonner, or Radix on converted surfaces — the guard test
+> bans those imports there. See
+> [`docs/canvas-architecture.md`](../docs/canvas-architecture.md).
+
 ## Directory map
 
 | Directory | Contents |

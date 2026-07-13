@@ -4,6 +4,15 @@
 > to [`docs/design-language.md`](./design-language.md) (tokens, themes,
 > primitives) and [`app/CLAUDE.md`](../app/CLAUDE.md) (routing mechanics).
 
+> **⚠ Canvas overhaul (in progress):** on converted routes (see
+> `testing/canvas/route-manifest.ts`), pages render through
+> `CanvasPage` + a Konva scene + a semantic DOM mirror instead of
+> `PageLayout` — follow the recipe in
+> [`docs/canvas-architecture.md`](./canvas-architecture.md) and copy from
+> `app/routes/privacy.tsx`. Everything below (shell placement, head/SEO,
+> i18n, auth, loading/error conventions) still applies EXCEPT the DOM
+> markup/`PageLayout`/`components/ui` specifics, which are legacy-route-only.
+
 Pages on rmhstudios.com look consistent because they share four things: the
 `_site` shell, the `PageLayout` column system, the `--site-*` token contract,
 and the same route-level conventions (head/SEO, i18n, auth, loading and error

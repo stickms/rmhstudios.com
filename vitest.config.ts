@@ -23,6 +23,10 @@ export default defineConfig({
       'lib/kowloon-knockout/game/**/__tests__/**/*.test.ts',
       'components/rmhladder/**/*.test.tsx',
       'components/motion/__tests__/**/*.test.tsx',
+      // Canvas overhaul: framework unit tests (tw parser, theme bridge) +
+      // the route-conversion guard under testing/canvas/ (already matched by
+      // the testing/** glob above).
+      'canvas-ui/__tests__/**/*.test.ts',
     ],
     environment: 'node',
     globals: true,

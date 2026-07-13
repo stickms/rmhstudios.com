@@ -21,11 +21,34 @@ Tailwind CSS v4, framer-motion, Zustand + React Query, PostgreSQL + Prisma 7
 Stripe), Socket.io Node hubs, Go microservices built with Bazel, i18next (32
 locales, RTL for ar/ur/fa).
 
+## Canvas overhaul (IN PROGRESS — read before touching any page UI)
+
+The frontend is being rewritten to render **all visible UI into a single
+full-viewport Konva canvas** (`canvas-ui/`). On converted routes the canvas
+is the only visible element; the DOM keeps three non-visible roles: hidden
+platform helpers (IME proxy, media pipes, file pickers), a visually-hidden
+semantic **mirror** (SSR/SEO + screen readers), and positioned **overlays**
+for iframes/WebGL. Converted and legacy DOM routes coexist until the final
+merge gate. Rules:
+
+- **New/edited page UI on converted routes** uses `canvas-ui` widgets +
+  `tw()` + `theme/tokens.ts` — NOT Tailwind DOM, NOT `components/ui/`.
+- **Every page route** must have an entry in
+  `testing/canvas/route-manifest.ts`; converting a route means
+  `CanvasPage` + scene + mirror + flipping `converted: true`. The guard test
+  (`testing/canvas/route-conversion-guard.test.ts`) enforces both.
+- Converted routes must not import: `framer-motion`, `@radix-ui/*`,
+  `sonner`, `react-markdown`, `@monaco-editor/*`, `@/components/ui/*`,
+  `PageLayout`.
+- Full architecture, conversion recipe, and accepted product costs:
+  [`docs/canvas-architecture.md`](docs/canvas-architecture.md).
+
 ## Repository map
 
 | Path | What | Details |
 |---|---|---|
-| `app/` | TanStack Start routes: pages, API routes, `globals.css` (31 themes), router. `routeTree.gen.ts` is GENERATED — never edit. | [`app/CLAUDE.md`](app/CLAUDE.md) |
+| `canvas-ui/` | **Konva canvas rendering framework**: StageHost, CanvasPage, yoga layout + `tw()`, theme token bridge, widgets, text/RichText, mirror, overlays, motion. | [`docs/canvas-architecture.md`](docs/canvas-architecture.md) |
+| `app/` | TanStack Start routes: pages, API routes, `globals.css` (3 themes + sr-mirror), router. `routeTree.gen.ts` is GENERATED — never edit. | [`app/CLAUDE.md`](app/CLAUDE.md) |
 | `components/` | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper. | [`components/CLAUDE.md`](components/CLAUDE.md) |
 | `lib/` | Shared logic: auth, prisma, feed, economy, i18n, per-game logic, `.server.ts` server-only modules. | [`lib/CLAUDE.md`](lib/CLAUDE.md) |
 | `server/` | **Node** service tier: socket-server (7001), rmhbox (7676), rmhtube (7003), ladder-worker; plus fallback sources for workers now run in Go. | [`server/CLAUDE.md`](server/CLAUDE.md) |
@@ -74,18 +97,25 @@ status 7008 · assets 7007. Env: see `.env.example`; minimum is
    session check (`auth.api.getSession({ headers: request.headers })`) →
    `rateLimit(getClientIp(request), …)` → zod `safeParse` →
    `Response.json(...)`. Admin = `(session.user as any).isAdmin`.
-4. **Design language:** every color/radius/shadow/font via `--site-*` token
-   utilities (`bg-site-surface`, `rounded-site`, …) so all 31 themes work.
-   Use `components/ui/` primitives, `PageLayout`, lucide icons, sonner
-   toasts. See [`docs/design-language.md`](docs/design-language.md) and the
-   checklist in [`docs/page-consistency.md`](docs/page-consistency.md).
+4. **Design language:** the token contract is `--site-*` (3 themes:
+   dark/light/high-contrast — older docs saying 31 are stale). On
+   **canvas-converted routes**: tokens come from `canvas-ui/theme/tokens.ts`
+   via `tw()` classes + `useTheme()`, widgets from `canvas-ui/widgets/`. On
+   **not-yet-converted DOM routes**: legacy Tailwind utilities
+   (`bg-site-surface`, `rounded-site`, …) + `components/ui/` + `PageLayout`
+   still apply. Token values must stay in sync between `app/globals.css` and
+   `canvas-ui/theme/tokens.ts` (tested in `canvas-ui/__tests__/theme.test.ts`).
+   See [`docs/design-language.md`](docs/design-language.md).
 5. **i18n:** all user-facing strings through `t("key", { defaultValue })`;
    then `pnpm i18n:extract`. English is authoritative.
 6. **SEO:** per-route `head()`; `buildMeta`/`buildCanonical` from `@/lib/seo`;
    JSON-LD only via `jsonLdScript()` + builders from `@/lib/schema`.
-7. **Accessibility:** Radix/native primitives, focus-visible rings are
-   global, skip link exists, respect `useReducedMotion`. Test `light` and
-   `high-contrast` themes.
+7. **Accessibility:** on canvas routes, a11y lives in the **mirror** —
+   interactive widgets auto-register real DOM controls via
+   `useMirrorControl` (opting out is the explicit act), and route mirrors
+   carry the page's headings/text/links. On legacy DOM routes: Radix/native
+   primitives + focus-visible rings + skip link, as before. Both: respect
+   `useReducedMotion`; test `light` and `high-contrast` themes.
 8. **Security:** zod-validate all input; rate-limit writes/AI/uploads;
    user-supplied URL fetches through `lib/ssrf-guard.server`; CSP/security
    headers must change in BOTH `deploy/apache/rmhstudios.conf` and the Helm

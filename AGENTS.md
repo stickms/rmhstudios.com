@@ -13,9 +13,16 @@
   `lib/i18n/resources.<locale>.ts` files.
 - **Server-only modules** are `lib/**/*.server.ts` — a Vite plugin strips
   them from the client bundle. Never import them from client code.
-- **Design language:** all colors/radii/shadows/fonts via `--site-*` Tailwind
-  utilities (`bg-site-surface`, `rounded-site`, …); use `components/ui/`
-  primitives and `components/feed/PageLayout.tsx`. 31 themes depend on this.
+- **Canvas overhaul (in progress):** visible page UI is being rewritten to
+  render into a single Konva canvas via the `canvas-ui/` framework. On
+  converted routes (see `testing/canvas/route-manifest.ts`): use `canvas-ui`
+  widgets + `tw()` + `theme/tokens.ts`, provide a semantic DOM mirror, and
+  never import `framer-motion`/`@radix-ui/*`/`sonner`/`components/ui`.
+  Architecture + conversion recipe: `docs/canvas-architecture.md`.
+- **Design language (legacy DOM routes only):** colors/radii/shadows/fonts
+  via `--site-*` Tailwind utilities (`bg-site-surface`, `rounded-site`, …);
+  `components/ui/` primitives and `components/feed/PageLayout.tsx`. The
+  theme set is 3 (dark/light/high-contrast); docs claiming 31 are stale.
   Reference: `docs/design-language.md` + checklist in
   `docs/page-consistency.md`.
 - **i18n:** every user-facing string through `t("key", { defaultValue })`,
@@ -33,6 +40,7 @@
 | Area | Guide |
 |---|---|
 | Whole repo (start here) | [`CLAUDE.md`](./CLAUDE.md) |
+| Canvas rendering framework | [`docs/canvas-architecture.md`](./docs/canvas-architecture.md) |
 | Routes, pages, API endpoints | [`app/CLAUDE.md`](./app/CLAUDE.md) |
 | React components & UI primitives | [`components/CLAUDE.md`](./components/CLAUDE.md) |
 | Shared logic, auth, prisma, i18n | [`lib/CLAUDE.md`](./lib/CLAUDE.md) |

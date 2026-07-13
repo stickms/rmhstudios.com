@@ -7,7 +7,7 @@ import {
   useRouterState,
   useNavigate,
 } from "@tanstack/react-router";
-import { type ReactNode, useEffect } from "react";
+import { type ReactNode, lazy, Suspense, useEffect, useState } from "react";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { isDiscordActivity } from "@/lib/discord-sdk";
@@ -101,6 +101,27 @@ const getInitialI18n = createServerFn({ method: "GET" }).handler(async () => {
 /** Check if a URL path is a Discord Activity route (embedded iframe) */
 function isDiscordRoute(pathname: string): boolean {
   return pathname.startsWith('/discord/') || pathname === '/discord';
+}
+
+/**
+ * The canvas stage (see canvas-ui/) — the single visible element on
+ * converted routes. Loaded lazily on the client only: konva/yoga never enter
+ * the SSR path, and unconverted DOM routes pay nothing until a canvas route
+ * registers a scene.
+ */
+const StageHostLazy = lazy(() =>
+  import("@/canvas-ui/runtime/StageHost").then((m) => ({ default: m.StageHost }))
+);
+
+function CanvasStageMount() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return (
+    <Suspense fallback={null}>
+      <StageHostLazy />
+    </Suspense>
+  );
 }
 
 export const Route = createRootRoute({
@@ -231,6 +252,7 @@ function RootComponent() {
       <TwemojiProvider>
         <Outlet />
       </TwemojiProvider>
+      <CanvasStageMount />
     </Providers>
   );
 }

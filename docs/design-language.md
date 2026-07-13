@@ -5,12 +5,25 @@
 > step-by-step "build a page that fits" checklist, see
 > [`docs/page-consistency.md`](./page-consistency.md).
 
-The whole visual system rests on one idea: **a single CSS custom-property
-contract (`--site-*`) that every theme re-defines.** Components never hardcode
-colors, radii, fonts, or shadows — they consume the contract through Tailwind
-utilities. Because of that, all 31 themes (dark, light, high-contrast, gamer,
-anime, zodiac signs, seasons, …) restyle the entire site without a single
-component change.
+> **⚠ Canvas overhaul (in progress):** the rendering substrate is moving
+> from DOM/Tailwind to a single Konva canvas (`canvas-ui/`). The *visual*
+> system below (tokens, themes, typography, spacing) still defines how the
+> site looks — but on **converted routes** it is consumed through
+> `canvas-ui/theme/tokens.ts` + the `tw()` class subset + `canvas-ui`
+> widgets instead of CSS utilities and `components/ui/`. The DOM guidance
+> below applies only to not-yet-converted routes. Canvas equivalents:
+> `components/ui` primitives → `canvas-ui/widgets` · Tailwind classes →
+> `tw()` (unknown classes throw — extend the parser deliberately) ·
+> framer-motion → `canvas-ui/motion` · sonner → canvas Toast · lucide-react →
+> `canvas-ui/widgets/Icon` (lucide geometry as Konva paths). See
+> [`docs/canvas-architecture.md`](./canvas-architecture.md).
+
+The whole visual system rests on one idea: **a single design-token contract
+(`--site-*` in CSS; `ThemeTokens` in `canvas-ui/theme/tokens.ts`) that every
+theme re-defines.** Components never hardcode colors, radii, fonts, or
+shadows — they consume the contract. The live theme set is **3** — dark
+(default), light, high-contrast — with 14 accent presets on top; references
+to 31 novelty themes elsewhere are stale (the set was reduced).
 
 ---
 

@@ -244,6 +244,24 @@
   --foreground: #ffffff;
 }
 
+/* ==================== CANVAS-UI MIRROR ==================== */
+
+/* The semantic DOM mirror of a canvas-converted route (see canvas-ui/).
+   Screen-reader-only technique: 1px clipped, NEVER display:none — crawlers
+   index it and assistive tech reads/focuses it while sighted users see the
+   Konva stage. Focus events on mirror controls draw the canvas focus ring. */
+.sr-mirror {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Respect the OS "reduce motion" preference site-wide: neutralize enter
    animations, transitions and smooth scrolling that can trigger vestibular
    discomfort, while preserving essential loading feedback (spinners, skeleton

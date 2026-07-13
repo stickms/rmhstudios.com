@@ -8,6 +8,16 @@
 This is a **TanStack Start** app (file-based routing) on Vite 8 + React 19 +
 Nitro SSR. It is **not Next.js** — ignore any Next.js idioms you know.
 
+> **Canvas overhaul (in progress):** page routes are being converted to
+> render through a single Konva canvas via `canvas-ui/` — a converted route
+> renders `<CanvasPage routeId scene sceneProps mirror shell>` instead of
+> DOM JSX, and must be flagged `converted: true` in
+> `testing/canvas/route-manifest.ts` (every NEW page route must be added to
+> that manifest either way — the guard test fails otherwise). `head()`,
+> loaders, and API routes are unchanged by the overhaul. Recipe + first
+> examples (`privacy.tsx`, `terms.tsx`, `cookies.tsx`, `copyright.tsx`):
+> [`docs/canvas-architecture.md`](../docs/canvas-architecture.md).
+
 ## Contents
 
 ```
@@ -19,7 +29,7 @@ app/
     api/             server routes (~337 files)
     <game>.tsx       full-screen games/apps (top level, no shell)
     sitemap[.]xml.ts /sitemap.xml ([.]= escaped literal dot)
-  globals.css        theme tokens: 31 themes as .style-* classes (see design-language.md)
+  globals.css        theme tokens: 3 themes as .style-* classes + .sr-mirror (see design-language.md)
   router.tsx         router config: intent preloading, pending component timings
   routeTree.gen.ts   GENERATED (~487 KB) — never edit by hand
   icon.svg

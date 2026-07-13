@@ -14,10 +14,11 @@ writing, not necessarily the current code).
 
 | Doc | Contents |
 |---|---|
+| [`canvas-architecture.md`](./canvas-architecture.md) | **The canvas overhaul** (in progress): the Konva `canvas-ui/` framework, single-canvas paradigm, mirror/overlay/helper rules, conversion recipe, testing layers |
 | [`codebase-overview.md`](./codebase-overview.md) | Canonical code-layout overview: stack, repo layout, conventions, where to look first |
 | [`architecture.md`](./architecture.md) | Runtime topology + deploy pipeline: what runs where in production, images, CI, ports, auth across tiers |
-| [`design-language.md`](./design-language.md) | The visual system: `--site-*` token contract, 31 themes, primitives, typography, motion, a11y |
-| [`page-consistency.md`](./page-consistency.md) | Checklist + recipes for building pages that look native |
+| [`design-language.md`](./design-language.md) | The visual system: token contract, 3 themes + accents, primitives, typography, motion, a11y (DOM specifics are legacy-route-only — see its banner; "31 themes" claims anywhere are stale) |
+| [`page-consistency.md`](./page-consistency.md) | Checklist + recipes for building pages that look native (PageLayout specifics are legacy-route-only — see its banner) |
 | [`developer-api.md`](./developer-api.md) | Scoped public developer API summary (canonical spec is in-app at `/developer/docs`) |
 | [`albums-storage.md`](./albums-storage.md) | Albums storage architecture (DB + R2/S3) |
 | [`coins.md`](./coins.md) | Coin economy design (implementation plan, largely shipped) |
