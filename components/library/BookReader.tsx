@@ -26,8 +26,12 @@ import {
   BookmarkCheck,
   Check,
   Download,
+  Info,
   List,
   Loader2,
+  Maximize2,
+  Minimize2,
+  Minus,
   Plus,
   SlidersHorizontal,
   StickyNote,
@@ -37,6 +41,7 @@ import type { LibraryBook } from '@/lib/library/library';
 import { PageStore } from '@/lib/library/page-store';
 import { useBookState, type Bookmark as BookmarkT, type Note } from '@/lib/library/reader-store';
 import { BookCanvas } from './BookCanvas';
+import { ReaderDetails } from './ReaderDetails';
 
 // Minimal shape of the pdfjs document we use — avoids a hard type dep on pdfjs.
 type OutlineNode = { title: string; dest: string | unknown[] | null; items: OutlineNode[] };
@@ -63,9 +68,9 @@ type PdfPage = {
 // it down on a weak device. Default is the highest.
 export type PageQuality = 'low' | 'medium' | 'high';
 const QUALITY_WIDTH: Record<PageQuality, number> = {
-  low: 1100,
-  medium: 1600,
-  high: 2200,
+  low: 1200,
+  medium: 1900,
+  high: 2600,
 };
 const QUALITY_LABEL: Record<PageQuality, string> = {
   low: 'Low',
@@ -112,6 +117,7 @@ async function buildChapters(pdf: PdfDoc): Promise<Chapter[]> {
 
 export function BookReader({ book }: { book: LibraryBook }) {
   const { t } = useTranslation("c-library");
+  const readerRef = useRef<HTMLElement>(null);
   const [numPages, setNumPages] = useState(0);
   const [aspect, setAspect] = useState(0.72); // page width / height (from page 1)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
@@ -125,6 +131,10 @@ export function BookReader({ book }: { book: LibraryBook }) {
   );
   const [editingPage, setEditingPage] = useState(false);
   const [quality, setQuality] = useState<PageQuality>(DEFAULT_QUALITY);
+  const [zoom, setZoom] = useState(1);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const detailsTriggerRef = useRef<HTMLElement | null>(null);
 
   const hasToc = book.toc.length > 0;
 
@@ -254,15 +264,40 @@ export function BookReader({ book }: { book: LibraryBook }) {
     marks.toggleBookmark(curPage, label);
   }, [chapters, curPage, marks, t]);
 
+  useEffect(() => {
+    const onFullscreen = () => setFullscreen(document.fullscreenElement === readerRef.current);
+    document.addEventListener('fullscreenchange', onFullscreen);
+    return () => document.removeEventListener('fullscreenchange', onFullscreen);
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await readerRef.current?.requestFullscreen();
+    } catch {
+      /* Browser policy may deny fullscreen. */
+    }
+  }, []);
+
+  const setReaderZoom = useCallback((next: number) => {
+    setZoom(Math.max(0.8, Math.min(1.5, Math.round(next * 10) / 10)));
+  }, []);
+
+  const openDetails = useCallback((trigger: HTMLElement) => {
+    detailsTriggerRef.current = trigger;
+    setDetailsOpen(true);
+  }, []);
+
   return (
-    <main className="vibe-screen lib-reader">
+    <main ref={readerRef} className="vibe-screen lib-reader">
       <header className="lib-reader__bar">
         <Link to="/library" aria-label={t("back-to-library", { defaultValue: "Back to library" })} className="vibe-toolbar__icon transition-transform duration-150 active:scale-90">
           <ArrowLeft size={17} />
         </Link>
-        <span className="lib-reader__title" title={book.title}>
-          {book.title}
-        </span>
+        <button type="button" className="lib-reader__identity" onClick={(event) => openDetails(event.currentTarget)} aria-label={t('show-book-details', { defaultValue: 'Show book details' })}>
+          <span className="lib-reader__eyebrow">{t('now-reading', { defaultValue: 'Now reading' })}</span>
+          <span className="lib-reader__title" title={book.title}>{book.title}</span>
+        </button>
         <div className="lib-reader__actions">
           {status === 'ready' && chapters.length > 0 && (
             <ChapterMenu chapters={chapters} curPage={curPage} onJump={goToPage} />
@@ -315,6 +350,12 @@ export function BookReader({ book }: { book: LibraryBook }) {
             />
           )}
           {status === 'ready' && <QualityMenu quality={quality} onChange={setQuality} />}
+          <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={(event) => openDetails(event.currentTarget)} aria-label={t('book-details', { defaultValue: 'Book details' })} title={t('book-details', { defaultValue: 'Book details' })}>
+            <Info size={16} />
+          </button>
+          <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={toggleFullscreen} aria-label={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })} title={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })}>
+            {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
           <a href={book.url} download className="vibe-toolbar__icon transition-transform duration-150 active:scale-90" aria-label={t("download-pdf", { defaultValue: "Download PDF" })}>
             <Download size={16} />
           </a>
@@ -323,13 +364,13 @@ export function BookReader({ book }: { book: LibraryBook }) {
 
       <div className="lib-reader__stage">
         {status === 'loading' && (
-          <div className="lib-reader__status">
+          <div className="lib-reader__status" role="status" aria-live="polite">
             <Loader2 className="lib-spin" size={22} />
             <span>{t("opening-book", { defaultValue: "Opening book…" })}</span>
           </div>
         )}
         {status === 'error' && (
-          <div className="lib-reader__status">
+          <div className="lib-reader__status" role="alert">
             <span>{t("couldnt-open-pdf", { defaultValue: "Couldn't open this PDF." })}</span>
             <a href={book.url} className="lib-reader__fallback" target="_blank" rel="noreferrer">
               {t("open-directly", { defaultValue: "Open it directly →" })}
@@ -338,26 +379,42 @@ export function BookReader({ book }: { book: LibraryBook }) {
         )}
         {status === 'ready' && (
           <>
-            <BookCanvas
-              aspect={aspect}
-              single={single}
-              numPages={numPages}
-              getTex={getTex}
-              ensurePage={ensurePage}
-              seek={seek}
-              onPageChange={onPageChange}
-            />
+            <div className="lib-reader__viewport">
+              <BookCanvas
+                aspect={aspect}
+                single={single}
+                numPages={numPages}
+                getTex={getTex}
+                ensurePage={ensurePage}
+                seek={seek}
+                zoom={zoom}
+                onPageChange={onPageChange}
+              />
+            </div>
             {numPages > 1 && (
               <ScrubBar
                 numPages={numPages}
                 curPage={curPage}
                 bookmarks={marks.state.bookmarks}
                 onScrub={goToPage}
+                zoom={zoom}
+                onZoom={setReaderZoom}
               />
             )}
           </>
         )}
       </div>
+      {detailsOpen && (
+        <ReaderDetails
+          book={book}
+          numPages={numPages}
+          chapters={chapters}
+          portalContainer={readerRef.current}
+          returnFocus={detailsTriggerRef.current}
+          onJump={goToPage}
+          onClose={() => setDetailsOpen(false)}
+        />
+      )}
     </main>
   );
 }
@@ -367,20 +424,29 @@ export function BookReader({ book }: { book: LibraryBook }) {
  * PageStore's low-res preview tier keeps it from ever pausing on a blank page.
  * Bookmark ticks sit under the track so saved spots are easy to land on.
  */
-function ScrubBar({
+export function ScrubBar({
   numPages,
   curPage,
   bookmarks,
   onScrub,
+  zoom,
+  onZoom,
 }: {
   numPages: number;
   curPage: number;
   bookmarks: BookmarkT[];
   onScrub: (page: number) => void;
+  zoom: number;
+  onZoom: (zoom: number) => void;
 }) {
   const { t } = useTranslation('c-library');
   return (
     <div className="lib-reader__scrub">
+      <div className="lib-reader__zoom" aria-label={t('page-size', { defaultValue: 'Page size' })}>
+        <button type="button" onClick={() => onZoom(zoom - 0.1)} disabled={zoom <= 0.8} aria-label={t('make-pages-smaller', { defaultValue: 'Make pages smaller' })}><Minus size={14} /></button>
+        <button type="button" className="lib-reader__zoom-value" onClick={() => onZoom(1)} aria-label={t('reset-page-size', { defaultValue: 'Reset page size' })}>{Math.round(zoom * 100)}%</button>
+        <button type="button" onClick={() => onZoom(zoom + 0.1)} disabled={zoom >= 1.5} aria-label={t('make-pages-larger', { defaultValue: 'Make pages larger' })}><Plus size={14} /></button>
+      </div>
       <span className="lib-reader__scrub-num" aria-hidden="true">
         {Math.min(curPage, numPages)}
       </span>
@@ -479,12 +545,14 @@ export function Dropdown({
   on,
   children,
   wide,
+  panelRole = 'menu',
 }: {
   icon: React.ReactNode;
   label: string;
   on?: boolean;
   children: (close: () => void) => React.ReactNode;
   wide?: boolean;
+  panelRole?: 'menu' | 'dialog';
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -511,7 +579,7 @@ export function Dropdown({
         type="button"
         className={`vibe-toolbar__icon transition-transform duration-150 active:scale-90${on ? ' is-on' : ''}`}
         onClick={() => setOpen((o) => !o)}
-        aria-haspopup="menu"
+        aria-haspopup={panelRole}
         aria-expanded={open}
         aria-label={label}
         title={label}
@@ -519,7 +587,7 @@ export function Dropdown({
         {icon}
       </button>
       {open && (
-        <div className={`lib-reader__chapters-menu${wide ? ' lib-reader__marks-menu' : ''}`} role="menu" aria-label={label}>
+        <div className={`lib-reader__chapters-menu${wide ? ' lib-reader__marks-menu' : ''}`} role={panelRole} aria-label={label}>
           {children(() => setOpen(false))}
         </div>
       )}
@@ -553,6 +621,7 @@ export function MarksMenu({
     <Dropdown
       wide
       on={count > 0}
+      panelRole="dialog"
       icon={<StickyNote size={16} />}
       label={t('bookmarks-notes', { defaultValue: 'Bookmarks & notes' })}
     >
@@ -653,11 +722,13 @@ function QualityMenu({ quality, onChange }: { quality: PageQuality; onChange: (q
   return (
     <Dropdown icon={<SlidersHorizontal size={16} />} label={t('page-quality', { defaultValue: 'Page quality' })}>
       {(close) => (
-        <ul className="lib-reader__quality-menu" role="listbox" aria-label={t('page-quality', { defaultValue: 'Page quality' })}>
+        <ul className="lib-reader__quality-menu" aria-label={t('page-quality', { defaultValue: 'Page quality' })}>
           {QUALITY_ORDER.map((q) => (
-            <li key={q} role="option" aria-selected={q === quality}>
+            <li key={q}>
               <button
                 type="button"
+                role="menuitemradio"
+                aria-checked={q === quality}
                 className={`lib-reader__chapter${q === quality ? ' is-active' : ''}`}
                 onClick={() => {
                   onChange(q);
@@ -696,11 +767,13 @@ export function ChapterMenu({
   return (
     <Dropdown icon={<List size={16} />} label={t('chapters', { defaultValue: 'Chapters' })}>
       {(close) => (
-        <ul className="lib-reader__chapters-list" role="listbox" aria-label={t('chapters', { defaultValue: 'Chapters' })}>
+        <ul className="lib-reader__chapters-list" aria-label={t('chapters', { defaultValue: 'Chapters' })}>
           {chapters.map((c, i) => (
-            <li key={`${c.page}-${i}`} role="option" aria-selected={i === activeIdx}>
+            <li key={`${c.page}-${i}`}>
               <button
                 type="button"
+                role="menuitem"
+                aria-current={i === activeIdx ? 'page' : undefined}
                 className={`lib-reader__chapter${i === activeIdx ? ' is-active' : ''}`}
                 style={{ paddingLeft: `${14 + c.depth * 14}px` }}
                 onClick={() => {

@@ -14,12 +14,13 @@
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Bookmark, BookmarkCheck, Download, Loader2, Palette } from 'lucide-react';
+import { ArrowLeft, Bookmark, BookmarkCheck, Download, Info, Loader2, Maximize2, Minimize2, Palette } from 'lucide-react';
 import type { LibraryBook } from '@/lib/library/library';
 import { EpubRasterStore, type EpubTheme, type EpubToc } from '@/lib/library/epub-raster';
 import { useBookState } from '@/lib/library/reader-store';
 import { BookCanvas } from './BookCanvas';
-import { Dropdown, MarksMenu, ChapterMenu, type Chapter } from './BookReader';
+import { Dropdown, MarksMenu, ChapterMenu, ScrubBar, type Chapter } from './BookReader';
+import { ReaderDetails } from './ReaderDetails';
 
 const THEME_KEY = 'rmh-epub-theme';
 const THEMES: EpubTheme[] = ['light', 'sepia', 'dark'];
@@ -36,6 +37,7 @@ function loadTheme(): EpubTheme {
 
 export function EpubReader({ book }: { book: LibraryBook }) {
   const { t } = useTranslation('c-library');
+  const readerRef = useRef<HTMLElement>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [numPages, setNumPages] = useState(0);
   const [aspect, setAspect] = useState(0.64);
@@ -44,6 +46,10 @@ export function EpubReader({ book }: { book: LibraryBook }) {
   const [curPage, setCurPage] = useState(1);
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [theme, setTheme] = useState<EpubTheme>(() => loadTheme());
+  const [zoom, setZoom] = useState(1);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
+  const detailsTriggerRef = useRef<HTMLElement | null>(null);
 
   const marks = useBookState(book.slug);
   const storeRef = useRef<EpubRasterStore | null>(null);
@@ -139,15 +145,40 @@ export function EpubReader({ book }: { book: LibraryBook }) {
     marks.toggleBookmark(curPage, label);
   }, [chapters, curPage, marks, t]);
 
+  useEffect(() => {
+    const onFullscreen = () => setFullscreen(document.fullscreenElement === readerRef.current);
+    document.addEventListener('fullscreenchange', onFullscreen);
+    return () => document.removeEventListener('fullscreenchange', onFullscreen);
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await readerRef.current?.requestFullscreen();
+    } catch {
+      /* Browser policy may deny fullscreen. */
+    }
+  }, []);
+
+  const setReaderZoom = useCallback((next: number) => {
+    setZoom(Math.max(0.8, Math.min(1.5, Math.round(next * 10) / 10)));
+  }, []);
+
+  const openDetails = useCallback((trigger: HTMLElement) => {
+    detailsTriggerRef.current = trigger;
+    setDetailsOpen(true);
+  }, []);
+
   return (
-    <main className="vibe-screen lib-reader">
+    <main ref={readerRef} className="vibe-screen lib-reader">
       <header className="lib-reader__bar">
         <Link to="/library" aria-label={t('back-to-library', { defaultValue: 'Back to library' })} className="vibe-toolbar__icon transition-transform duration-150 active:scale-90">
           <ArrowLeft size={17} />
         </Link>
-        <span className="lib-reader__title" title={book.title}>
-          {book.title}
-        </span>
+        <button type="button" className="lib-reader__identity" onClick={(event) => openDetails(event.currentTarget)} aria-label={t('show-book-details', { defaultValue: 'Show book details' })}>
+          <span className="lib-reader__eyebrow">{t('now-reading', { defaultValue: 'Now reading' })}</span>
+          <span className="lib-reader__title" title={book.title}>{book.title}</span>
+        </button>
         <div className="lib-reader__actions">
           {status === 'ready' && chapters.length > 0 && (
             <ChapterMenu chapters={chapters} curPage={curPage} onJump={goToPage} />
@@ -179,6 +210,12 @@ export function EpubReader({ book }: { book: LibraryBook }) {
             />
           )}
           {status === 'ready' && <ThemeMenu theme={theme} onChange={changeTheme} />}
+          <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={(event) => openDetails(event.currentTarget)} aria-label={t('book-details', { defaultValue: 'Book details' })} title={t('book-details', { defaultValue: 'Book details' })}>
+            <Info size={16} />
+          </button>
+          <button type="button" className="vibe-toolbar__icon lib-reader__desktop-action" onClick={toggleFullscreen} aria-label={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })} title={fullscreen ? t('exit-fullscreen', { defaultValue: 'Exit fullscreen' }) : t('enter-fullscreen', { defaultValue: 'Enter fullscreen' })}>
+            {fullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+          </button>
           <a href={book.url} download className="vibe-toolbar__icon transition-transform duration-150 active:scale-90" aria-label={t('download-book', { defaultValue: 'Download book' })}>
             <Download size={16} />
           </a>
@@ -187,13 +224,13 @@ export function EpubReader({ book }: { book: LibraryBook }) {
 
       <div className="lib-reader__stage">
         {status === 'loading' && (
-          <div className="lib-reader__status">
+          <div className="lib-reader__status" role="status" aria-live="polite">
             <Loader2 className="lib-spin" size={22} />
             <span>{t('opening-book', { defaultValue: 'Opening book…' })}</span>
           </div>
         )}
         {status === 'error' && (
-          <div className="lib-reader__status">
+          <div className="lib-reader__status" role="alert">
             <span>{t('couldnt-open-epub', { defaultValue: "Couldn't open this EPUB." })}</span>
             <a href={book.url} className="lib-reader__fallback" download>
               {t('download-book', { defaultValue: 'Download book' })}
@@ -202,43 +239,42 @@ export function EpubReader({ book }: { book: LibraryBook }) {
         )}
         {status === 'ready' && (
           <>
-            <BookCanvas
-              aspect={aspect}
-              single={single}
-              numPages={numPages}
-              getTex={getTex}
-              ensurePage={ensurePage}
-              seek={seek}
-              onPageChange={onPageChange}
-            />
+            <div className="lib-reader__viewport">
+              <BookCanvas
+                aspect={aspect}
+                single={single}
+                numPages={numPages}
+                getTex={getTex}
+                ensurePage={ensurePage}
+                seek={seek}
+                zoom={zoom}
+                onPageChange={onPageChange}
+              />
+            </div>
             {numPages > 1 && (
-              <div className="lib-reader__scrub">
-                <span className="lib-reader__scrub-num" aria-hidden="true">{Math.min(curPage, numPages)}</span>
-                <div className="lib-reader__scrub-track">
-                  {marks.state.bookmarks.map((b) => (
-                    <span
-                      key={b.id}
-                      className="lib-reader__scrub-tick"
-                      style={{ left: `${((b.page - 1) / Math.max(1, numPages - 1)) * 100}%` }}
-                      aria-hidden="true"
-                    />
-                  ))}
-                  <input
-                    type="range"
-                    min={1}
-                    max={numPages}
-                    value={Math.min(curPage, numPages)}
-                    onChange={(e) => goToPage(Number(e.target.value))}
-                    className="lib-reader__scrub-input"
-                    aria-label={t('scrub-pages', { defaultValue: 'Scrub through pages' })}
-                  />
-                </div>
-                <span className="lib-reader__scrub-num" aria-hidden="true">{numPages}</span>
-              </div>
+              <ScrubBar
+                numPages={numPages}
+                curPage={curPage}
+                bookmarks={marks.state.bookmarks}
+                onScrub={goToPage}
+                zoom={zoom}
+                onZoom={setReaderZoom}
+              />
             )}
           </>
         )}
       </div>
+      {detailsOpen && (
+        <ReaderDetails
+          book={book}
+          numPages={numPages}
+          chapters={chapters}
+          portalContainer={readerRef.current}
+          returnFocus={detailsTriggerRef.current}
+          onJump={goToPage}
+          onClose={() => setDetailsOpen(false)}
+        />
+      )}
     </main>
   );
 }
@@ -257,13 +293,14 @@ function ThemeMenu({ theme, onChange }: { theme: EpubTheme; onChange: (t: EpubTh
                 <button
                   key={th}
                   type="button"
+                  role="menuitemradio"
+                  aria-checked={theme === th}
                   className={`lib-epub__theme lib-epub__theme--${th}${theme === th ? ' is-active' : ''}`}
                   onClick={() => {
                     onChange(th);
                     close();
                   }}
                   aria-label={t(`theme-${th}`, { defaultValue: th })}
-                  aria-pressed={theme === th}
                 />
               ))}
             </div>
