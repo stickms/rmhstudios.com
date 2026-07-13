@@ -109,7 +109,7 @@ Work through this for every new or edited page:
       for 404s (renders `components/errors/NotFound`).
 - [ ] Feedback: `toast` from `sonner` — never custom toast UI.
 - [ ] Destructive confirmations: `await useConfirm()({ title, danger })` — never
-      native `window.confirm` (it ignores the 31 themes, i18n, and focus-trapping).
+      native `window.confirm` (it ignores the theme system, i18n, and focus-trapping).
 - [ ] Copy-to-clipboard: `<CopyButton value={…} label={…} />` — don't re-roll
       `navigator.clipboard.writeText` + a local `copied` state.
 - [ ] Nested pages (2+ levels): give orientation via `PageLayout`'s
@@ -174,9 +174,9 @@ Games own their viewport but still share:
 These are the mistakes that make a page feel "off" — reviewers will flag them:
 
 1. Hardcoded colors (`bg-zinc-900`, `text-white`, hex values) instead of
-   `site-*` tokens — breaks 30+ themes at once.
-2. `rounded-lg`/`rounded-2xl` instead of `rounded-site*` — breaks the themes
-   that square corners off (gamer, comic-book, high-contrast).
+   `site-*` tokens — breaks every theme at once.
+2. `rounded-lg`/`rounded-2xl` instead of `rounded-site*` — hardcodes a radius
+   that ignores each theme's `--site-radius` (18px) / `--site-radius-sm` (12px).
 3. Custom headers instead of `PageLayout`'s sticky header.
 4. Arbitrary column widths instead of `lib/layout-width.ts` constants.
 5. Hand-rolled modals/spinners/empty states/copy-buttons instead of the

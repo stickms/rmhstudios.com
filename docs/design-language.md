@@ -8,9 +8,10 @@
 The whole visual system rests on one idea: **a single CSS custom-property
 contract (`--site-*`) that every theme re-defines.** Components never hardcode
 colors, radii, fonts, or shadows — they consume the contract through Tailwind
-utilities. Because of that, all 31 themes (dark, light, high-contrast, gamer,
-anime, zodiac signs, seasons, …) restyle the entire site without a single
-component change.
+utilities. Because of that, every theme — the three base themes (Dark, Light,
+High Contrast), the curated set (Graphite, Sepia, Nocturne), and any accent
+preset layered on top — restyles the entire site without a single component
+change.
 
 ---
 
@@ -28,11 +29,11 @@ class):
 |---|---|
 | Backgrounds | `--site-bg`, `--site-bg-subtle` |
 | Surfaces | `--site-surface`, `--site-surface-hover`, `--site-surface-active` |
-| Borders | `--site-border`, `--site-border-bright`, `--site-border-width` (1px default; 2–4px in heavy themes) |
+| Borders | `--site-border`, `--site-border-bright`, `--site-border-width` (1px default; 2px in high-contrast) |
 | Text | `--site-text`, `--site-text-muted`, `--site-text-dim` |
 | Accent | `--site-accent`, `--site-accent-fg`, `--site-accent-hover`, `--site-accent-dim` |
 | Status | `--site-success`, `--site-danger`, `--site-warning` |
-| Elevation / shape | `--site-shadow`, `--site-radius` (12px default), `--site-radius-sm` (8px default) |
+| Elevation / shape | `--site-shadow` (prominent: modals/popovers/floating chrome), `--site-shadow-sm` (resting: cards/surfaces), `--site-radius` (18px default), `--site-radius-sm` (12px default) |
 | Typography | `--site-font-display`, `--site-font-body`, `--site-font-mono` |
 | Motion / flourish | `--site-transition-speed` (200ms default), `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform` |
 
@@ -46,7 +47,7 @@ class):
 | Accent | `bg-site-accent`, `text-site-accent`, `text-site-accent-fg`, `bg-site-accent-hover`, `bg-site-accent-dim` |
 | Status | `text-site-success`, `text-site-danger`, `text-site-warning` (and `bg-` variants) |
 | Radius | `rounded-site`, `rounded-site-sm` (theme-aware — do not use `rounded-lg`/`rounded-xl` for site chrome) |
-| Shadow | `shadow-site` |
+| Shadow | `shadow-site` (prominent), `shadow-site-sm` (resting) |
 | Fonts | `font-nunito` (body default), `font-sans` (Inter), `font-mono` (JetBrains Mono), `font-display` (Nunito), `font-serif` (Playfair), `font-comic` (Bangers) |
 | Theme display font | `font-(family-name:--site-font-display)` — used for page `<h1>`s so headings adopt each theme's display face |
 
@@ -60,41 +61,50 @@ theme mechanism.
 
 ---
 
-## 2. Themes (31 total)
+## 2. Themes (6) + accent presets
 
-Theme = a `.style-<id>` class on `<html>`. The catalog lives in
+The Apple-style overhaul retired the old novelty themes; the catalog is now a
+tight, tasteful set. Theme = a `.style-<id>` class on `<html>` (the Dark
+default is the bare `:root` — no class). The catalog lives in
 `stores/themeStore.ts` (`SITE_STYLES`, with id/label/icon/group); the CSS for
 each lives in `app/globals.css`.
 
 | Group | Themes |
 |---|---|
-| Base | `default` (dark, `:root`), `light`, `high-contrast` (WCAG AAA: pure black/white, yellow accent, 2px borders) |
-| Vibes | `gamer` (neon green, Orbitron), `anime` (pastel pink, pill shapes), `musical` (navy/gold, Playfair), `hyperpop`, `comic-book` (Bangers, thick black borders), `cinema` (Cinzel, letterbox) |
-| Culture | `gen-z`, `boomer` |
-| Zodiac | `aries`, `taurus`, `gemini`, `cancer`, `leo`, `virgo`, `libra`, `scorpio`, `sagittarius`, `capricorn`, `aquarius`, `pisces` |
-| Seasons | `spring`, `summer`, `autumn`, `winter` |
-| School | `elementary`, `middle-school`, `high-school`, `university` |
+| Base | `default` (Dark, `:root` — pure-black canvas, graphite surfaces, hairline borders, violet accent), `light` (clean white), `high-contrast` (WCAG AAA: pure black/white, yellow accent, 2px borders) |
+| Curated | `graphite` (Apple system-gray dim dark), `sepia` (warm paper à la Apple Books), `nocturne` (cool deep-navy dark, sky-blue accent) |
 
-Beyond tokens, themes can override component look via `[data-slot="..."]`
-selectors (cards, buttons, section headings, navbar) and add full-page
-background effects (scanlines, blobs, grain, halftone) via `body` pseudo
-elements. Those effects are disabled on mobile (≤767px) and under reduced
-motion. **This is why shared primitives set `data-slot` attributes — keep
-doing that in new primitives.**
+On top of any theme a user can pick an **accent preset** — a curated color
+(`lib/appearance.ts`, `ACCENT_PRESETS`, 14 options) that overrides just the
+`--site-accent*` tokens as inline styles on `<html>`, keeping everything else
+from the theme. `null` = the theme's own accent.
+
+Themes differ **only through the `--site-*` token contract** — there are no
+per-theme `[data-slot]` component overrides or full-page background effects on
+site chrome anymore (those belonged to the retired themes). Full-page effects
+(scanlines, grain, particle fields) still exist, but only inside individual
+games/apps, scoped to their own variable groups. **Shared primitives still set
+`data-slot` attributes** so future themes (or games) can hook them.
 
 ### Theme runtime (how switching works)
 
-- `stores/themeStore.ts` — Zustand `useThemeStore { style, setStyle }`.
-- `components/Providers.tsx` — an effect swaps the `style-*` class on
-  `<html>`, persists to `localStorage["rmh-style"]`, and updates
-  `<meta name="theme-color">` + body background from its `THEME_BG` map.
-  Games/app routes are excluded (`THEME_EXCLUDED_ROUTES`) — they own their
-  styling; an `app-route` class is toggled on `<html>` for them.
+Everything is data-driven from `SITE_STYLES`: the settings gallery, the runtime
+class-swap, the anti-FOUC inline script, and the account-sync API validation
+all derive from it — so **adding a theme is just a `.style-<id>` CSS block plus
+a `SITE_STYLES` entry** (with its `bg`); nothing else needs editing.
+
+- `stores/themeStore.ts` — Zustand `useThemeStore { style, setStyle, preview,
+  setPreview, accent, setAccent }`. `THEME_BG` is derived from `SITE_STYLES`.
+- `components/Providers.tsx` — an effect swaps the `style-*` class on `<html>`
+  (Dark/`default` needs none — it uses `:root`), applies the accent override,
+  persists to `localStorage`, and updates `<meta name="theme-color">` + body
+  background. It also **self-heals** any persisted-but-unknown style back to
+  `default`. Games/app routes are excluded (`THEME_EXCLUDED_ROUTES`) — they own
+  their styling; an `app-route` class is toggled on `<html>` for them.
 - **No-flash SSR:** an inline `themeScript` in `app/routes/__root.tsx` applies
-  the persisted class *before hydration*; a `bodyThemeScript` sets the body
-  background first thing in `<body>`. If you add a theme, update both the CSS,
-  `SITE_STYLES`, and the hardcoded theme→background map in `__root.tsx` /
-  `Providers.tsx`.
+  the persisted class + accent *before hydration*, deriving the background from
+  the `THEME_BG` map (also from `SITE_STYLES`), so there is no hand-copied
+  theme→background map to keep in sync.
 
 ---
 
@@ -137,7 +147,7 @@ Always reach for these before writing new markup. Helper: `cn()` from
 | `Badge` / `badgeVariants` | `components/ui/badge.tsx` | CVA pill. Variants: `default`, `accent`, `solid`, `success`, `warning`, `danger`, `outline`. |
 | `Card` + Header/Title/Description/Action/Content/Footer | `components/ui/card.tsx` | `bg-site-surface border border-site-border rounded-site shadow-site`. |
 | `Dialog` (Radix wrapper) | `components/ui/dialog.tsx` | Themed content, `bg-black/70 backdrop-blur-sm` overlay, built-in close X with translated `sr-only` label. |
-| `Input`, `Textarea` | `components/ui/input.tsx`, `textarea.tsx` | `bg-site-bg`, `rounded-site-sm`, accent focus ring. |
+| `Input`, `Textarea` | `components/ui/input.tsx`, `textarea.tsx` | `bg-site-surface`, `rounded-site-sm`, hairline border, accent focus ring. |
 | `Select` | `components/ui/select.tsx` | Styled **native** `<select>` + lucide chevron (not Radix Select). |
 | `Label` | `components/ui/label.tsx` | Radix Label. |
 | `EmptyState` | `components/ui/empty-state.tsx` | Canonical zero-state: `{icon, title, description, action}`. |
@@ -227,11 +237,23 @@ no shell.
 
 Global (in `globals.css`):
 
-- Keyboard focus: `:focus-visible { outline: 2px solid var(--site-accent); outline-offset: 2px }`.
-  Text inputs opt out (border + caret instead); `Button` draws its own
-  `focus-visible:ring-site-accent/40 ring-[3px]`.
-- Selection color uses the accent; native controls get
-  `accent-color: var(--site-accent)`; scrollbars are thin and themed.
+- Keyboard focus: `:focus-visible { outline: 2px solid var(--site-accent); outline-offset: 2px }`
+  covers every interactive element (links, buttons, `[role]`, `[tabindex]`).
+  Text inputs opt out (border + caret instead); `Button` opts out too (via its
+  `data-slot="button"`) and draws its own softer
+  `focus-visible:ring-site-accent/50 ring-2 ring-offset-2`. **Don't add another
+  `focus-visible:ring` to an element the global outline already covers — you'll
+  get a doubled indicator.** Reach for a self-drawn ring only when the element
+  is excluded from (or not matched by) the global rule.
+- Selection uses the accent with its `--site-accent-fg` text; native controls
+  get `accent-color: var(--site-accent)`; scrollbars are thin and themed.
+- **Cross-engine consistency:** the accent outline replaces every browser's
+  default focus ring; Firefox's `::-moz-focus-inner` dotted border and
+  `:-moz-ui-invalid` red validation glow are neutralized; `::placeholder` is
+  themed at `opacity: 1` (Gecko dims it otherwise); autofilled fields are
+  repainted to theme colors (WebKit/Blink); scrollbars are themed for both
+  `scrollbar-width`/`scrollbar-color` (Gecko) and `::-webkit-scrollbar`
+  (WebKit/Blink).
 - Tap highlight removed; active press feedback is `opacity: 0.6`.
 - Inputs hold a 16px font floor below 640px (prevents iOS zoom).
 

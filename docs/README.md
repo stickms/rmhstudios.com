@@ -16,7 +16,7 @@ writing, not necessarily the current code).
 |---|---|
 | [`codebase-overview.md`](./codebase-overview.md) | Canonical code-layout overview: stack, repo layout, conventions, where to look first |
 | [`architecture.md`](./architecture.md) | Runtime topology + deploy pipeline: what runs where in production, images, CI, ports, auth across tiers |
-| [`design-language.md`](./design-language.md) | The visual system: `--site-*` token contract, 31 themes, primitives, typography, motion, a11y |
+| [`design-language.md`](./design-language.md) | The visual system: `--site-*` token contract, themes + accent presets, primitives, typography, motion, a11y |
 | [`page-consistency.md`](./page-consistency.md) | Checklist + recipes for building pages that look native |
 | [`developer-api.md`](./developer-api.md) | Scoped public developer API summary (canonical spec is in-app at `/developer/docs`) |
 | [`albums-storage.md`](./albums-storage.md) | Albums storage architecture (DB + R2/S3) |

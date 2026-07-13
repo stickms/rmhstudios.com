@@ -14,7 +14,7 @@ interface SkeletonProps extends React.ComponentProps<"div"> {
 
 /**
  * Canonical loading placeholder. Uses the site surface colour so skeletons
- * match the design system across the app and all 31 themes. Defaults to a
+ * match the design system across the app and every theme. Defaults to a
  * gentle `animate-pulse`; pass `shimmer` for a moving highlight sweep.
  */
 function Skeleton({ className, shimmer = false, ...props }: SkeletonProps) {

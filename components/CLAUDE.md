@@ -29,7 +29,7 @@ feature lives in that feature's directory; genuinely shared primitives live in
 - **Styling:** only `--site-*` token utilities (`bg-site-surface`,
   `text-site-text-muted`, `rounded-site`, `shadow-site`, …). Merge classes
   with `cn()` from `@/lib/utils`. No hardcoded colors, radii, or fonts —
-  31 themes depend on it.
+  the theme system depends on it.
 - **Variants:** use `class-variance-authority` for components with variant
   APIs (see `ui/button.tsx`, `ui/badge.tsx`). Set a `data-slot="..."`
   attribute on new primitives — themes restyle components through
