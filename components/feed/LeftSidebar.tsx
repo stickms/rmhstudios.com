@@ -151,6 +151,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
+  // On mobile the rail lives inside MobileSidebarShell's scrollable drawer
+  // (`<aside>` with `overflow-y-auto`), so the whole column should scroll as one
+  // unit and the footer (profile/sign-in, Post) flows with it. On desktop the
+  // rail sits in a fixed, `overflow-hidden` aside, so the nav needs its own
+  // internal scroll and the footer stays pinned to the bottom of the viewport.
+  const rootSizeClass = expanded ? 'min-h-full' : 'h-full min-h-0';
+  const navScrollClass = expanded ? '' : 'flex-1 min-h-0 overflow-y-auto';
   const { t } = useTranslation('feed');
   const { pathname } = useLocation();
   const navigate = useNavigate();
@@ -312,7 +319,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   };
 
   return (
-    <div className={`flex flex-col gap-1 h-full min-h-0 ${paddingClass}`}>
+    <div className={`flex flex-col gap-1 ${rootSizeClass} ${paddingClass}`}>
       {/* Logo */}
       <Link to="/" className={`mb-6 flex items-center shrink-0 ${logoAlignClass}`}>
         <span
@@ -327,8 +334,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         </span>
       </Link>
 
-      {/* Nav Links — scrollable region */}
-      <nav className="flex flex-col gap-1 flex-1 min-h-0 overflow-y-auto pr-1.5">
+      {/* Nav Links — its own scroll region on desktop; part of the drawer's
+          scroll on mobile (see rootSizeClass/navScrollClass above). */}
+      <nav className={`flex flex-col gap-1 ${navScrollClass} pr-1.5`}>
         {NAV.map((item) => {
           if (!isGroup(item)) {
             if (item.requiresAuth && !session) return null;
@@ -404,7 +412,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           <NotificationsPopover
             count={notificationCount}
             refreshCount={refreshNotificationCount}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-site text-sm font-medium transition-colors w-full text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
+            className={`flex items-center gap-3 px-3.5 py-3 rounded-full text-sm font-medium transition-colors w-full text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
             labelClass={labelClass}
           />
         </div>
@@ -413,12 +421,12 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       {/* Auth Section — pinned to bottom */}
       <div className="border-t border-site-border pt-3 shrink-0">
         {isPending ? (
-          <div className="h-10 bg-site-surface rounded-site animate-pulse" />
+          <div className="h-10 bg-site-surface rounded-full animate-pulse" />
         ) : session ? (
           <div className="relative flex items-center gap-2" ref={userMenuRef}>
             <Link
               to={`/u/${(session.user as any).handle || session.user.id}` as string}
-              className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-site transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
+              className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-full transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
             >
               <UserAvatar
                 src={resolvedUser?.image || session.user.image}
