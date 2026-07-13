@@ -281,19 +281,21 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           isOpen ? 'overflow-y-hidden' : 'overflow-y-auto'
         }`}
       >
-        {/* Sidebar — sits fixed behind the page content. `overscroll-contain`
-            (plus `touch-pan-y`) means grabbing and swiping the sidebar scrolls
-            only the sidebar itself — never the page behind it, even when its
-            content is too short to scroll. */}
+        {/* Sidebar — sits fixed behind the page content, filling the viewport as
+            a flex column: LeftSidebar scrolls its nav internally while its footer
+            (profile/sign-in, Post) stays pinned to the bottom. `overscroll-contain`
+            (plus `touch-pan-y`) means grabbing and swiping the nav scrolls only
+            the sidebar itself — never the page behind it. The bottom padding
+            reserves room for the fixed mobile nav bar so the pinned footer sits
+            above it rather than tucking behind it. */}
         <aside
-          className={`fixed left-0 top-0 bottom-0 z-0 w-64 bg-site-bg border-r border-site-border overflow-y-auto overscroll-contain touch-pan-y ${
+          className={`fixed left-0 top-0 bottom-0 z-0 flex w-64 flex-col bg-site-bg border-r border-site-border overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
           }`}
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
           aria-hidden={!isOpen}
         >
           <LeftSidebar expanded />
-          {/* Clear the fixed bottom nav so the last items stay reachable */}
-          <div className="h-20 shrink-0" aria-hidden="true" />
         </aside>
 
         {/* Page content — slides right to reveal the sidebar */}

@@ -151,13 +151,16 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
-  // On mobile the rail lives inside MobileSidebarShell's scrollable drawer
-  // (`<aside>` with `overflow-y-auto`), so the whole column should scroll as one
-  // unit and the footer (profile/sign-in, Post) flows with it. On desktop the
-  // rail sits in a fixed, `overflow-hidden` aside, so the nav needs its own
-  // internal scroll and the footer stays pinned to the bottom of the viewport.
-  const rootSizeClass = expanded ? 'min-h-full' : 'h-full min-h-0';
-  const navScrollClass = expanded ? '' : 'flex-1 min-h-0 overflow-y-auto';
+  // Both the mobile drawer (MobileSidebarShell's fixed `<aside>`) and the desktop
+  // rail (fixed, `overflow-hidden` aside) fill the viewport height, so the nav
+  // gets its own internal scroll region while the footer (notification bell,
+  // profile/sign-in, Post) stays pinned to the bottom. On mobile the nav also
+  // needs `overscroll-contain`/`touch-pan-y` so swiping it scrolls only the nav,
+  // never the page behind the drawer, and never triggers a back-nav gesture.
+  const rootSizeClass = 'h-full min-h-0';
+  const navScrollClass = expanded
+    ? 'flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y'
+    : 'flex-1 min-h-0 overflow-y-auto';
   const { t } = useTranslation('feed');
   const { pathname } = useLocation();
   const navigate = useNavigate();
