@@ -62,17 +62,28 @@ function makeFakePrisma(): PrismaLike & {
   return {
     ladderJob: {
       async findUnique({ where }) {
-        const row = jobs.get(where.dedupeHash);
+        const identity = where.sourceId_externalId;
+        const row = jobs.get(`${identity.sourceId}:${identity.externalId}`);
         return row
           ? (row as { id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string })
           : null;
       },
+      async findFirst({ where }) {
+        const excluded = (where.NOT ?? {}) as AnyRow;
+        const row = [...jobs.values()].find((candidate) =>
+          candidate.dedupeHash === where.dedupeHash &&
+          !(candidate.sourceId === excluded.sourceId && candidate.externalId === excluded.externalId),
+        );
+        return row ? { id: row.id as string } : null;
+      },
       async upsert({ where, create, update }) {
-        const existing = jobs.get(where.dedupeHash);
+        const identity = where.sourceId_externalId;
+        const key = `${identity.sourceId}:${identity.externalId}`;
+        const existing = jobs.get(key);
         if (existing) {
           // Dumb spread — processSource itself computes alternateUrls merge before calling upsert.
           const updated: AnyRow = { ...existing, ...(update as AnyRow) };
-          jobs.set(where.dedupeHash, updated);
+          jobs.set(key, updated);
           return updated as ReturnType<PrismaLike['ladderJob']['upsert']> extends Promise<infer R>
             ? R
             : never;
@@ -82,7 +93,7 @@ function makeFakePrisma(): PrismaLike & {
           ...(create as AnyRow),
           alternateUrls: ((create as AnyRow).alternateUrls as string[] | undefined) ?? [],
         };
-        jobs.set(where.dedupeHash, row);
+        jobs.set(key, row);
         return row as ReturnType<PrismaLike['ladderJob']['upsert']> extends Promise<infer R>
           ? R
           : never;
@@ -170,7 +181,7 @@ describe('processSource', () => {
       expect(sharedPrisma._state.verifications).toHaveLength(2);
     });
 
-    it('stores 2 job rows keyed by dedupeHash', () => {
+    it('stores 2 job rows keyed by source and external ID', () => {
       expect(sharedPrisma._state.jobs.size).toBe(2);
     });
 
@@ -260,8 +271,8 @@ describe('processSource', () => {
     });
   });
 
-  describe('scenario 4 — prisma throws mid-loop (errored, partial stats)', () => {
-    it('catches the throw, returns errored with partial stats, no review tasks after throw point', async () => {
+  describe('scenario 4 — prisma throws for one record', () => {
+    it('records the bad row and continues without failing the whole source', async () => {
       const prisma = makeFakePrisma();
       let upsertCalls = 0;
 
@@ -278,8 +289,11 @@ describe('processSource', () => {
         SOURCE,
       );
 
-      expect(stats.errored).toBe(true);
-      expect(stats.errorMessage).toContain('DB connection lost');
+      expect(stats.errored).toBe(false);
+      expect(stats.recordErrors).toEqual([{
+        externalId: '4285367008',
+        message: 'DB connection lost',
+      }]);
       // First job fully processed.
       expect(stats.created).toBe(1);
       // One verification row for the first job.
@@ -287,8 +301,8 @@ describe('processSource', () => {
       // No verifications or review tasks were written for the second job.
       // (discovered is 2 because the throw happens after discoverJobs returns)
       expect(stats.discovered).toBe(2);
-      // Source lastSuccessAt NOT set (throw before ladderSource.update).
-      expect(prisma._state.lastSourceUpdate).toBeNull();
+      // The source still completes and records a success for the valid row.
+      expect(prisma._state.lastSourceUpdate?.lastSuccessAt).toEqual(NOW);
     });
   });
 
@@ -398,9 +412,9 @@ describe('processSource', () => {
     });
   });
 
-  describe('scenario 8 — re-run with changed externalId: update payload refreshes identity fields', () => {
-    // Same company + title + location → same dedupeHash; only the numeric job id changes.
-    // After the second run, the stored row must carry the NEW externalId (and sourceUrl, etc.).
+  describe('scenario 8 — changed externalId creates a separate requisition', () => {
+    // Same company + title + location → same fuzzy hash, but a new external ID
+    // is authoritative and must never overwrite the original requisition.
     const prisma8 = makeFakePrisma();
 
     const FIXTURE_V1 = JSON.stringify({
@@ -444,19 +458,26 @@ describe('processSource', () => {
       expect(job.externalId).toBe('4285367007');
     });
 
-    it('second run with new externalId: stored row refreshed to "9999999999"', async () => {
+    it('second run with new externalId creates a new row and duplicate review signal', async () => {
       const stats = await processSource({ prisma: prisma8, fetchImpl: makeFetchFor(FIXTURE_V2), now: new Date(NOW.getTime() + 60_000) }, SOURCE);
-      expect(stats.created).toBe(0);
-      expect(stats.updated).toBe(1);
-      const job = [...prisma8._state.jobs.values()][0] as { externalId: string; sourceUrl: string; canonicalApplyUrl: string | null; externalRequisitionId: string | null };
+      expect(stats.created).toBe(1);
+      expect(stats.updated).toBe(0);
+      expect(prisma8._state.jobs.size).toBe(2);
+      const job = [...prisma8._state.jobs.values()].find((row) => row.externalId === '9999999999') as { externalId: string; sourceUrl: string; canonicalApplyUrl: string | null; externalRequisitionId: string | null };
       expect(job.externalId).toBe('9999999999');
       expect(job.sourceUrl).toBe('https://boards.greenhouse.io/stripe/jobs/9999999999');
       expect(job.externalRequisitionId).toBe('R-5678');
+      expect(prisma8._state.reviewTasks).toContainEqual(expect.objectContaining({
+        jobId: expect.any(String),
+        sourceId: 'src-1',
+        reason: 'possible_duplicate',
+        status: 'open',
+      }));
     });
   });
 
   describe('scenario 7 — throwing fetchImpl yields zero discoveries, no success stamp', () => {
-    it('errored=false, discovered=0, errorMessage set, no lastSourceUpdate', async () => {
+    it('errored=false, discovered=0, errorMessage set, and failure health updated', async () => {
       const prisma = makeFakePrisma();
       // politeFetch swallows the throw → discoverJobs returns [] → discovered=0.
       // Zero discoveries carry no success evidence, so lastSuccessAt must NOT be set.
@@ -469,7 +490,8 @@ describe('processSource', () => {
       expect(stats.discovered).toBe(0);
       expect(stats.errored).toBe(false);
       expect(stats.errorMessage).toBe('no jobs discovered (empty board or fetch failure)');
-      expect(prisma._state.lastSourceUpdate).toBeNull();
+      expect(prisma._state.lastSourceUpdate?.lastSuccessAt).toBeUndefined();
+      expect(prisma._state.lastSourceUpdate?.consecutiveFailures).toEqual({ increment: 1 });
     });
   });
 });

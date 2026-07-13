@@ -76,6 +76,13 @@ function makeFakePrisma() {
             ? rows.filter((r) => (where.status.in as string[]).includes(r.status as string))
             : rows.filter((r) => r.status === where.status);
         }
+        if (where?.earlyCareerClassification?.in) {
+          rows = rows.filter((r) =>
+            (where.earlyCareerClassification.in as string[]).includes(
+              (r.earlyCareerClassification as string | undefined) ?? 'yes',
+            ),
+          );
+        }
 
         // Preset filters
         if (where?.discoveredAt?.gte) {
@@ -99,8 +106,14 @@ function makeFakePrisma() {
         if (where?.programType?.in) {
           rows = rows.filter((r) => (where.programType!.in as string[]).includes(r.programType));
         }
-        if ((where as any)?.title?.contains) {
-          rows = rows.filter((r) => (r.title as string).toLowerCase().includes((where as any).title.contains.toLowerCase()));
+        const searchOr = where?.AND?.[0]?.OR as AnyRow[] | undefined;
+        if (searchOr?.length) {
+          const query = String(searchOr[0]?.title?.contains ?? '').toLowerCase();
+          rows = rows.filter((r) => {
+            const company = companies.get(r.companyId as string);
+            return [r.title, r.roleCategory, r.locationRaw, r.descriptionSummary, company?.name]
+              .some((value) => typeof value === 'string' && value.toLowerCase().includes(query));
+          });
         }
 
         // Blocked keyword exclusion (for now, skip in fake)
@@ -126,16 +139,22 @@ function makeFakePrisma() {
         if (skip) rows = rows.slice(skip);
         if (take) rows = rows.slice(0, take);
 
-        return rows.map((j) => ({
+        return rows.map((j) => {
+          const jobVerifications = verifications
+            .filter((v) => v.jobId === j.id)
+            .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime())
+            .slice(0, 1);
+          return {
+          earlyCareerClassification: 'yes',
           ...j,
           company: include?.company ? companies.get(j.companyId as string) : undefined,
           verifications: include?.verifications
-            ? verifications
-                .filter((v) => v.jobId === j.id)
-                .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime())
-                .slice(0, 1)
+            ? jobVerifications.length
+              ? jobVerifications
+              : [{ id: `default-${j.id}`, jobId: j.id, status: 'verified_active', checkedAt: new Date() }]
             : undefined,
-        }));
+          };
+        });
       },
       async findUnique({ where, include }: FakeArgs) {
         const job = jobs.get(where.id);
@@ -144,6 +163,7 @@ function makeFakePrisma() {
           .filter((v) => v.jobId === job.id)
           .sort((a, b) => new Date(b.checkedAt).getTime() - new Date(a.checkedAt).getTime());
         return {
+          earlyCareerClassification: 'yes',
           ...job,
           company: include?.company ? companies.get(job.companyId as string) : undefined,
           verifications: include?.verifications ? latestVeri : undefined,
@@ -183,12 +203,17 @@ function makeFakePrisma() {
     ladderSource: {
       async findMany({ where, include }: FakeArgs) {
         let rows = sources;
-        if (where?.status) rows = rows.filter((s) => s.status === where.status);
+        if (where?.status) {
+          rows = (where.status as AnyRow).in
+            ? rows.filter((s) => ((where.status as AnyRow).in as string[]).includes(s.status as string))
+            : rows.filter((s) => s.status === where.status);
+        }
         if (where?.OR) {
           // Supports the real-prisma stale shape: OR [{lastSuccessAt: null}, {lastSuccessAt: {lt}}]
           const orClauses = where.OR as AnyRow[];
           rows = rows.filter((s) =>
             orClauses.some((clause) => {
+              if (clause.status) return s.status === clause.status;
               if (clause.lastSuccessAt === null) return s.lastSuccessAt == null;
               const lt = (clause.lastSuccessAt as AnyRow)?.lt;
               return lt != null && s.lastSuccessAt != null && new Date(s.lastSuccessAt as Date) < new Date(lt);
@@ -231,7 +256,7 @@ function makeFakePrisma() {
     },
     ladderUserPrefs: {
       async findUnique({ where }: FakeArgs) {
-        return prefs.get(where.userId) ?? null;
+        return prefs.get(where.userId) ?? { userId: where.userId, relevanceThreshold: 0 };
       },
       async upsert({ where, create, update }: FakeArgs) {
         let row = prefs.get(where.userId);
@@ -285,6 +310,13 @@ function makeFakePrisma() {
           .sort((a, b) => new Date(b.sentAt as Date).getTime() - new Date(a.sentAt as Date).getTime());
       },
     },
+    ladderAlertEvent: {
+      async findMany({ where }: FakeArgs) {
+        return alerts
+          .filter((a) => a.userId === where.userId)
+          .sort((a, b) => new Date(b.createdAt as Date).getTime() - new Date(a.createdAt as Date).getTime());
+      },
+    },
     _state: {
       companies,
       jobs,
@@ -308,7 +340,7 @@ describe('queries.ts', () => {
     it('filters by preset: new (7 days)', async () => {
       const prisma = makeFakePrisma();
       const c1 = (await prisma.ladderCompany.create({
-        data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank' },
+        data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank', enabled: true },
       })) as AnyRow;
       const now = new Date();
       const old = new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000);
@@ -320,6 +352,7 @@ describe('queries.ts', () => {
         title: 'Job',
         normalizedTitle: 'job',
         status: 'active',
+        earlyCareerClassification: 'yes',
         discoveredAt: old,
         remoteStatus: 'onsite',
         relevanceScoreBase: 50,
@@ -343,7 +376,7 @@ describe('queries.ts', () => {
     it('excludes non-US by default, includes with includeNonUS', async () => {
       const prisma = makeFakePrisma();
       const c1 = (await prisma.ladderCompany.create({
-        data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank' },
+        data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank', enabled: true },
       })) as AnyRow;
 
       const jobId1 = 'job-us', jobId2 = 'job-non-us';
@@ -405,6 +438,25 @@ describe('queries.ts', () => {
       expect(result.rows.map((r) => r.id)).toEqual(['finjob']);
     });
 
+    it('searches company, location, role family, and summary as well as title', async () => {
+      const prisma = makeFakePrisma();
+      const company = await prisma.ladderCompany.create({
+        data: { name: 'Acme Capital', normalizedName: 'acme capital', priorityLevel: 3 },
+      }) as AnyRow;
+      prisma._state.jobs.set('searchable', {
+        id: 'searchable', companyId: company.id, title: 'Analyst', status: 'active',
+        earlyCareerClassification: 'yes', discoveredAt: new Date(), remoteStatus: 'onsite',
+        relevanceScoreBase: 80, locationRaw: 'Boston, Massachusetts', roleCategory: 'Research',
+      });
+
+      await expect(listJobs(prisma, 'user1', { q: 'Capital' }))
+        .resolves.toMatchObject({ rows: [{ id: 'searchable' }] });
+      await expect(listJobs(prisma, 'user1', { q: 'Boston' }))
+        .resolves.toMatchObject({ rows: [{ id: 'searchable' }] });
+      await expect(listJobs(prisma, 'user1', { q: 'Research' }))
+        .resolves.toMatchObject({ rows: [{ id: 'searchable' }] });
+    });
+
     it('excludes rows matching a user block keyword', async () => {
       const prisma = makeFakePrisma();
       const c1 = (await prisma.ladderCompany.create({
@@ -444,7 +496,7 @@ describe('queries.ts', () => {
       expect(result.rows[0].finalRelevance).toBe(75);
     });
 
-    it('candidate findMany receives orderBy relevanceScoreBase desc; fake sorts and listJobs returns desc', async () => {
+    it('orders the complete eligible candidate set by final relevance', async () => {
       const prisma = makeFakePrisma();
       const c1 = (await prisma.ladderCompany.create({
         data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank' },
@@ -495,13 +547,90 @@ describe('queries.ts', () => {
       const result2 = await listJobs(prisma, 'user1', { take: 2, cursor: result1.nextCursor! });
       expect(result2.rows.length).toBe(2);
     });
+
+    it('supports public browsing without loading user actions', async () => {
+      const prisma = makeFakePrisma();
+      const company = await prisma.ladderCompany.create({
+        data: { name: 'Public Co', normalizedName: 'public co', priorityLevel: 3 },
+      }) as AnyRow;
+      prisma._state.jobs.set('public-job', {
+        id: 'public-job', companyId: company.id, title: 'New Grad Engineer',
+        status: 'active', earlyCareerClassification: 'yes', discoveredAt: new Date(),
+        remoteStatus: 'onsite', relevanceScoreBase: 80,
+      });
+
+      const result = await listJobs(prisma, null, {});
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0].userAction).toBeNull();
+    });
+
+    it('excludes non-early-career and unverified roles from the public feed', async () => {
+      const prisma = makeFakePrisma();
+      const company = await prisma.ladderCompany.create({
+        data: { name: 'Public Co', normalizedName: 'public co', priorityLevel: 3 },
+      }) as AnyRow;
+      prisma._state.jobs.set('senior', {
+        id: 'senior', companyId: company.id, title: 'Senior Engineer', status: 'active',
+        earlyCareerClassification: 'no', discoveredAt: new Date(), remoteStatus: 'onsite',
+        relevanceScoreBase: 90,
+      });
+      prisma._state.jobs.set('unverified', {
+        id: 'unverified', companyId: company.id, title: 'Analyst', status: 'active',
+        earlyCareerClassification: 'yes', discoveredAt: new Date(), remoteStatus: 'onsite',
+        relevanceScoreBase: 90,
+      });
+      prisma._state.verifications.push({
+        id: 'v-unverified', jobId: 'unverified', status: 'unverified', checkedAt: new Date(),
+      });
+
+      const result = await listJobs(prisma, null, {});
+      expect(result.rows).toEqual([]);
+    });
+
+    it('applies a signed-in user relevance threshold', async () => {
+      const prisma = makeFakePrisma();
+      const company = await prisma.ladderCompany.create({
+        data: { name: 'Threshold Co', normalizedName: 'threshold co', priorityLevel: 3 },
+      }) as AnyRow;
+      await prisma.ladderUserPrefs.upsert({
+        where: { userId: 'user1' },
+        create: { userId: 'user1', relevanceThreshold: 70 },
+        update: { relevanceThreshold: 70 },
+      });
+      prisma._state.jobs.set('low', {
+        id: 'low', companyId: company.id, title: 'Analyst', status: 'active',
+        earlyCareerClassification: 'yes', discoveredAt: new Date(), remoteStatus: 'onsite',
+        relevanceScoreBase: 60,
+      });
+
+      const result = await listJobs(prisma, 'user1', {});
+      expect(result.rows).toEqual([]);
+    });
+
+    it('keeps saved state separate from application status', async () => {
+      const prisma = makeFakePrisma();
+      const company = await prisma.ladderCompany.create({
+        data: { name: 'State Co', normalizedName: 'state co', priorityLevel: 3 },
+      }) as AnyRow;
+      prisma._state.jobs.set('job-state', {
+        id: 'job-state', companyId: company.id, title: 'Analyst', status: 'active',
+        earlyCareerClassification: 'yes', discoveredAt: new Date(), remoteStatus: 'onsite',
+        relevanceScoreBase: 80,
+      });
+      prisma._state.jobActions.push({ userId: 'user1', jobId: 'job-state', action: 'saved' });
+      prisma._state.applications.push({ userId: 'user1', jobId: 'job-state', status: 'applied' });
+
+      const result = await listJobs(prisma, 'user1', {});
+      expect(result.rows[0].userAction).toBe('saved');
+      expect(result.rows[0].applicationStatus).toBe('applied');
+    });
   });
 
   describe('getJobDetail', () => {
     it('returns job with all verifications sorted desc by checkedAt', async () => {
       const prisma = makeFakePrisma();
       const c1 = (await prisma.ladderCompany.create({
-        data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank' },
+        data: { name: 'TestCo', normalizedName: 'testco', industry: 'finance', firmType: 'bank', enabled: true },
       })) as AnyRow;
 
       const jobId = 'job1';
@@ -525,6 +654,24 @@ describe('queries.ts', () => {
       const result = await getJobDetail(prisma, 'user1', jobId);
       expect(result?.verifications).toHaveLength(2);
       expect(result?.verifications?.[0].id).toBe('v2'); // latest first
+    });
+
+    it('does not expose inactive or unverified jobs on public permalinks', async () => {
+      const prisma = makeFakePrisma();
+      const company = await prisma.ladderCompany.create({
+        data: { name: 'Private Co', normalizedName: 'private co' },
+      }) as AnyRow;
+      prisma._state.jobs.set('expired', {
+        id: 'expired', companyId: company.id, title: 'Old role', status: 'expired',
+        earlyCareerClassification: 'yes', discoveredAt: new Date(), relevanceScoreBase: 90,
+      });
+      prisma._state.jobs.set('unclear', {
+        id: 'unclear', companyId: company.id, title: 'Unclear role', status: 'active',
+        earlyCareerClassification: 'unclear', discoveredAt: new Date(), relevanceScoreBase: 90,
+      });
+
+      await expect(getJobDetail(prisma, null, 'expired')).resolves.toBeNull();
+      await expect(getJobDetail(prisma, null, 'unclear')).resolves.toBeNull();
     });
   });
 
@@ -586,8 +733,14 @@ describe('queries.ts', () => {
         jobId: 'j1',
         status: 'applied',
       });
+      prisma._state.applications.push({
+        id: 'ap2',
+        userId: 'user1',
+        jobId: 'j1',
+        status: 'planning',
+      });
 
-      const result = await getOverview(prisma, 'user1');
+      const result = await getOverview(prisma, 'user1', { includeAdminStats: true });
       expect(result.newThisWeek).toBe(1);
       expect(result.verifiedActive).toBe(1);
       expect(result.expiringSoon).toBe(1);
@@ -598,24 +751,24 @@ describe('queries.ts', () => {
   });
 
   describe('listStaleSources', () => {
-    it('includes sources where lastSuccessAt is null or > 48h old', async () => {
+    it('includes sources where lastSuccessAt is null or more than two scrape cycles old', async () => {
       const prisma = makeFakePrisma();
       const now = new Date();
-      const fortySevenHoursAgo = new Date(now.getTime() - 47 * 60 * 60 * 1000);
-      const fortyNineHoursAgo = new Date(now.getTime() - 49 * 60 * 60 * 1000);
+      const sevenHoursAgo = new Date(now.getTime() - 7 * 60 * 60 * 1000);
+      const nineHoursAgo = new Date(now.getTime() - 9 * 60 * 60 * 1000);
 
       await prisma.ladderSource.create({
         data: { companyId: 'c1', platform: 'greenhouse', status: 'active', lastSuccessAt: null },
       });
       await prisma.ladderSource.create({
-        data: { companyId: 'c1', platform: 'lever', status: 'active', lastSuccessAt: fortyNineHoursAgo },
+        data: { companyId: 'c1', platform: 'lever', status: 'active', lastSuccessAt: nineHoursAgo },
       });
       await prisma.ladderSource.create({
-        data: { companyId: 'c1', platform: 'ashby', status: 'active', lastSuccessAt: fortySevenHoursAgo },
+        data: { companyId: 'c1', platform: 'ashby', status: 'active', lastSuccessAt: sevenHoursAgo },
       });
 
       const result = await listStaleSources(prisma, now);
-      expect(result.length).toBe(2); // null + 49h, not 47h
+      expect(result.length).toBe(2); // null + 9h, not 7h
     });
 
     it('attaches company context for the health panel', async () => {
@@ -735,9 +888,9 @@ describe('queries.ts', () => {
       const prisma = makeFakePrisma();
       const now = Date.now();
       prisma._state.alerts.push(
-        { id: 'al1', userId: 'user1', jobId: 'j1', type: 'immediate', sentAt: new Date(now - 1000) },
-        { id: 'al2', userId: 'user1', jobId: 'j2', type: 'daily_digest', sentAt: new Date(now) },
-        { id: 'al3', userId: 'other', jobId: 'j3', type: 'immediate', sentAt: new Date(now) },
+        { id: 'al1', userId: 'user1', jobId: 'j1', type: 'immediate', createdAt: new Date(now - 1000) },
+        { id: 'al2', userId: 'user1', jobId: 'j2', type: 'daily_digest', createdAt: new Date(now) },
+        { id: 'al3', userId: 'other', jobId: 'j3', type: 'immediate', createdAt: new Date(now) },
       );
       const result = await listAlerts(prisma, 'user1');
       expect(result.map((a: AnyRow) => a.id)).toEqual(['al2', 'al1']);

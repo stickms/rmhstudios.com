@@ -148,7 +148,7 @@ const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 /** Routes where the site-wide theme must NOT be applied (apps/games own their styling). */
 const THEME_EXCLUDED_ROUTES = [
   ...games.map((g) => g.href),
-  ...apps.map((a) => a.href),
+  ...apps.filter((a) => !a.usesSiteTheme).map((a) => a.href),
 ].filter((href) => href.startsWith("/"));
 
 export function Providers({ children, initialUser = null, locale = "en", i18nResources = null }: ProvidersProps) {

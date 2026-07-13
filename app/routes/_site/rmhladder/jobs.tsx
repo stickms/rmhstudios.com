@@ -6,8 +6,8 @@
  * "Load more" appends rows client-side with an incrementing cursor.
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { createFileRoute, redirect, useNavigate, useRouter } from '@tanstack/react-router';
+import { useState, useEffect, useRef } from 'react';
+import { createFileRoute, Outlet, redirect, useNavigate, useRouter, useRouterState } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { z } from 'zod';
@@ -26,7 +26,11 @@ import {
 } from '@/lib/rmhladder/server/actions';
 import { FilterChips } from '@/components/rmhladder/FilterChips';
 import { JobsTable } from '@/components/rmhladder/JobsTable';
-import { JobDrawer } from '@/components/rmhladder/JobDrawer';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
+import { BriefcaseBusiness } from 'lucide-react';
+import { SaveSearchDialog } from '@/components/rmhladder/SaveSearchDialog';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 
 // ── Server functions ─────────────────────────────────────────────────────────
 
@@ -37,11 +41,10 @@ const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
 
 const fetchJobsSchema = z.object({
-  preset: z.enum(['new', 'finance', 'consulting', 'tech', 'expiring', 'remote']).optional(),
+  preset: z.enum(['new', 'finance', 'consulting', 'tech', 'expiring', 'remote', 'saved', 'ignored']).optional(),
   q: z.string().max(200).optional(),
   cities: z.array(z.string()).max(50).optional(),
   programTypes: z.array(z.string()).max(50).optional(),
-  includeNonUS: z.boolean().optional(),
   sort: z.enum(['relevance', 'posted', 'deadline']).optional(),
   cursor: z.string().regex(/^\d+$/).optional(),
   take: z.number().int().min(1).max(100).optional(),
@@ -57,8 +60,8 @@ const fetchJobs = createServerFn({ method: 'GET' })
   .handler(async ({ data: filters }) => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/jobs' } });
-    return listJobs(queriesPrisma, session.user.id, filters);
+    const result = await listJobs(queriesPrisma, session?.user?.id ?? null, filters);
+    return { ...result, isAuthenticated: Boolean(session?.user) };
   });
 
 const doSetJobAction = createServerFn({ method: 'POST' })
@@ -73,7 +76,7 @@ const doSetJobAction = createServerFn({ method: 'POST' })
 // ── Route definition ─────────────────────────────────────────────────────────
 
 const VALID_PRESETS: ReadonlyArray<string> = [
-  'new', 'finance', 'consulting', 'tech', 'expiring', 'remote',
+  'new', 'finance', 'consulting', 'tech', 'expiring', 'remote', 'saved', 'ignored',
 ];
 const VALID_SORTS: ReadonlyArray<string> = ['relevance', 'posted', 'deadline'];
 
@@ -94,13 +97,20 @@ function asStrings(v: unknown): string[] | undefined {
   return undefined;
 }
 
-export const Route = createFileRoute('/rmhladder/jobs')({
+export const Route = createFileRoute('/_site/rmhladder/jobs')({
+  head: () => ({
+    meta: buildMeta({
+      title: 'Browse Jobs | RMH Ladder',
+      description: 'Search verified internships, new-grad programs, and early-career roles from official sources.',
+      path: '/rmhladder/jobs',
+    }),
+    links: [buildCanonical('/rmhladder/jobs')],
+  }),
   validateSearch: (search: Record<string, unknown>): ListJobsFilters => ({
     preset:       asPreset(search.preset),
     q:            typeof search.q === 'string' && search.q ? search.q : undefined,
     cities:       asStrings(search.cities),
     programTypes: asStrings(search.programTypes),
-    includeNonUS: search.includeNonUS === true || search.includeNonUS === 'true' || undefined,
     sort:         asSort(search.sort),
   }),
   // Make the validated search params available to the loader as deps
@@ -112,6 +122,9 @@ export const Route = createFileRoute('/rmhladder/jobs')({
 // ── Page component ───────────────────────────────────────────────────────────
 
 function JobsPage() {
+  const showingJobDetail = useRouterState({
+    select: (state) => /^\/rmhladder\/jobs\/[^/]+\/?$/.test(state.location.pathname),
+  });
   const loaderData  = Route.useLoaderData();
   const search      = Route.useSearch();
   const navigate    = useNavigate({ from: '/rmhladder/jobs' });
@@ -132,13 +145,7 @@ function JobsPage() {
     }
   }, [loaderData]);
 
-  // Drawer state
-  const [drawerJob, setDrawerJob] = useState<JobRow | null>(null);
-
-  // ── Handlers ─────────────────────────────────────────────────────
-  const handleCloseDrawer = useCallback(() => {
-    setDrawerJob(null);
-  }, []);
+  if (showingJobDetail) return <Outlet />;
 
   function updateFilter(patch: Partial<ListJobsFilters>) {
     void navigate({
@@ -161,66 +168,63 @@ function JobsPage() {
 
   async function handleAction(jobId: string, action: JobActionValue) {
     await doSetJobAction({ data: { jobId, action } });
-    // Optimistic update — reflect new action in rows and drawer immediately
-    if (drawerJob && (drawerJob.id as string) === jobId) {
-      setDrawerJob({ ...drawerJob, userAction: action });
-    }
-    setRows((prev) =>
-      prev.map((r) => ((r.id as string) === jobId ? { ...r, userAction: action } : r)),
-    );
+    // Applying is a pipeline state; saved/ignored remain independent list actions.
+    setRows((prev) => {
+      if ((action === 'ignored' && search.preset !== 'ignored') || (action === null && search.preset === 'ignored')) {
+        return prev.filter((row) => (row.id as string) !== jobId);
+      }
+      return prev.map((r) => (r.id as string) === jobId
+        ? action === 'applied'
+          ? { ...r, applicationStatus: 'applied' }
+          : { ...r, userAction: action }
+        : r);
+    });
     // Revalidate so fresh loader data is ready on next filter change
     await router.invalidate();
   }
 
-  const includeNonUS = search.includeNonUS === true;
-
   return (
     <div>
-      {/* Page header */}
-      <div className="rl-page-header">
-        <p className="rl-eyebrow">RMHLADDER · JOBS</p>
-        <h1 className="rl-display">Jobs</h1>
-      </div>
-
       {/* Filters */}
-      <FilterChips search={search} onUpdate={updateFilter} />
+      <FilterChips search={search} onUpdate={updateFilter} showPersonalPresets={loaderData.isAuthenticated} />
+      {loaderData.isAuthenticated && (
+        <div className="mb-4 flex justify-end">
+          <SaveSearchDialog filters={search} />
+        </div>
+      )}
 
       {/* Table or empty state */}
       {rows.length === 0 ? (
-        <div className="rl-empty-state">
-          <p>
-            No postings match. Loosen a filter, or run the pipeline:{' '}
-            <code>pnpm ladder:run</code>
-          </p>
-        </div>
+        <EmptyState
+          icon={BriefcaseBusiness}
+          title="No verified jobs match"
+          description="Try removing a filter or choosing a broader program type."
+        />
       ) : (
         <>
           <JobsTable
             rows={rows}
-            includeNonUS={includeNonUS}
-            onRowClick={(row) => setDrawerJob(row)}
-            onAction={handleAction}
+            onRowClick={(row) => void navigate({
+              to: '/rmhladder/jobs/$jobId',
+              params: { jobId: row.id as string },
+            })}
+            onAction={loaderData.isAuthenticated ? handleAction : undefined}
           />
 
           {nextCursor && (
-            <button
+            <Button
               type="button"
-              className="rl-load-more"
-              disabled={loadingMore}
+              variant="outline"
+              className="mx-auto mt-6 flex"
+              loading={loadingMore}
+              loadingText="Loading…"
               onClick={() => void handleLoadMore()}
             >
-              {loadingMore ? 'Loading…' : 'Load more'}
-            </button>
+              Load more
+            </Button>
           )}
         </>
       )}
-
-      {/* Detail drawer */}
-      <JobDrawer
-        job={drawerJob}
-        onClose={handleCloseDrawer}
-        onAction={handleAction}
-      />
     </div>
   );
 }

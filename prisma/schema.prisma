@@ -10,64 +10,64 @@ datasource db {
 
 // User Model (Better Auth)
 model User {
-  id            String   @id @default(cuid())
-  name          String?
-  username        String?   @unique // Added for username login
-  handle          String?   @unique // Unique user handle for @mentions and URLs
-  handleChangedAt DateTime? // Last time the handle was changed (2-week cooldown)
-  email           String?   @unique
-  emailVerified   Boolean?
-  password        String?   // Added for password login
-  image           String?
-  stripeCustomerId String?  // Stripe customer id (set by @better-auth/stripe on signup)
-  isAdmin         Boolean   @default(false)
-  isVerified      Boolean   @default(false)
+  id               String    @id @default(cuid())
+  name             String?
+  username         String?   @unique // Added for username login
+  handle           String?   @unique // Unique user handle for @mentions and URLs
+  handleChangedAt  DateTime? // Last time the handle was changed (2-week cooldown)
+  email            String?   @unique
+  emailVerified    Boolean?
+  password         String? // Added for password login
+  image            String?
+  stripeCustomerId String? // Stripe customer id (set by @better-auth/stripe on signup)
+  isAdmin          Boolean   @default(false)
+  isVerified       Boolean   @default(false)
   // Moderation: temporary/permanent ban (null = not banned)
-  bannedUntil     DateTime?
-  banReason       String?   @db.VarChar(500)
+  bannedUntil      DateTime?
+  banReason        String?   @db.VarChar(500)
   // Presence: last heartbeat from an active client (for "online now")
-  lastSeenAt      DateTime?
+  lastSeenAt       DateTime?
   // Referral program: this user's shareable invite code (lazily generated)
-  referralCode    String?   @unique
+  referralCode     String?   @unique
   // ─── RMHark AI bot users (generated + driven by the bot-worker) ──
-  isBot           Boolean   @default(false) // synthetic account created by the bot-worker
-  botPersona      String?   @db.Text         // private prompt seed describing the bot's posting "theme"
-  botLastPostAt   DateTime?                   // last time the worker posted as this bot (pacing)
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  isBot            Boolean   @default(false) // synthetic account created by the bot-worker
+  botPersona       String?   @db.Text // private prompt seed describing the bot's posting "theme"
+  botLastPostAt    DateTime? // last time the worker posted as this bot (pacing)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   sessions Session[]
   accounts Account[]
 
   // Game Relations (Progression linked to User)
-  altairProfile       AltairPlayer?
-  altairMetaProgress  AltairMetaProgress?
-  altairCoopProfile   AltairCoopProfile?
-  altairMatchPlayers  AltairMatchPlayer[]
-  laundryProfile      LaundryPlayer?
-  sliceItProfile      Player?
-  vegaProfile         VegaPlayer?
-  signalForgeProfile  SignalForgePlayer?
-  templeOfJoyProfile  TempleOfJoySave?
-  neonDriftwayProfile NeonDriftwayPlayer?
-  synapseStormProfile SynapseStormPlayer?
-  rmhboxProfile       RMHboxProfile?
-  rmhtypeProfiles     RmhTypeProfile[]
-  libraryUploads      LibraryDocument[] @relation("LibraryUploader")
-  libraryCollections  LibraryCollection[] @relation("LibraryCollectionOwner")
+  altairProfile        AltairPlayer?
+  altairMetaProgress   AltairMetaProgress?
+  altairCoopProfile    AltairCoopProfile?
+  altairMatchPlayers   AltairMatchPlayer[]
+  laundryProfile       LaundryPlayer?
+  sliceItProfile       Player?
+  vegaProfile          VegaPlayer?
+  signalForgeProfile   SignalForgePlayer?
+  templeOfJoyProfile   TempleOfJoySave?
+  neonDriftwayProfile  NeonDriftwayPlayer?
+  synapseStormProfile  SynapseStormPlayer?
+  rmhboxProfile        RMHboxProfile?
+  rmhtypeProfiles      RmhTypeProfile[]
+  libraryUploads       LibraryDocument[]     @relation("LibraryUploader")
+  libraryCollections   LibraryCollection[]   @relation("LibraryCollectionOwner")
   /// Per-user library upload quota override (null → the default cap). Raised by
   /// an admin when approving a quota appeal.
-  libraryUploadQuota  Int?
+  libraryUploadQuota   Int?
   libraryQuotaRequests LibraryQuotaRequest[] @relation("LibraryQuotaRequests")
-  rmhstudyProfile     RmhStudyProfile?
-  voidBreakerProfile  VoidBreakerPlayer?
-  dailyPuzzleScores   DailyPuzzleScore[]
-  versecraftSave      VersecraftSave?
-  versecraftProgress  VersecraftProgress?
-  forestExplorerSave  ForestExplorerSave?
-  dreamRiftProfile    DreamRiftPlayer?
-  dreamRiftCoopRuns   DreamRiftCoopRun[]
-  farmingSimFarm      FarmingSimFarm?
+  rmhstudyProfile      RmhStudyProfile?
+  voidBreakerProfile   VoidBreakerPlayer?
+  dailyPuzzleScores    DailyPuzzleScore[]
+  versecraftSave       VersecraftSave?
+  versecraftProgress   VersecraftProgress?
+  forestExplorerSave   ForestExplorerSave?
+  dreamRiftProfile     DreamRiftPlayer?
+  dreamRiftCoopRuns    DreamRiftCoopRun[]
+  farmingSimFarm       FarmingSimFarm?
 
   // Slice-It Library Relations
   uploadedSongs Song[]            @relation("SongUploader")
@@ -94,16 +94,16 @@ model User {
   feedbacks Feedback[]
 
   // RMHark (Feed) Relations
-  rmharks              RMHark[]
-  rmharkLikes          RMHarkLike[]
-  rmharkComments       RMHarkComment[]
-  rmharkReposts        RMHarkRepost[]
-  rmharkViews          RMHarkView[]
-  rmharkCommentLikes   RMHarkCommentLike[]
-  rmharkCommentReposts RMHarkCommentRepost[]
-  rmharkCommentViews   RMHarkCommentView[]
-  rmharkPollVotes      RMHarkPollVote[]
-  announcementPollVotes FeedAnnouncementPollVote[]
+  rmharks                RMHark[]
+  rmharkLikes            RMHarkLike[]
+  rmharkComments         RMHarkComment[]
+  rmharkReposts          RMHarkRepost[]
+  rmharkViews            RMHarkView[]
+  rmharkCommentLikes     RMHarkCommentLike[]
+  rmharkCommentReposts   RMHarkCommentRepost[]
+  rmharkCommentViews     RMHarkCommentView[]
+  rmharkPollVotes        RMHarkPollVote[]
+  announcementPollVotes  FeedAnnouncementPollVote[]
   rmharkReactions        RMHarkReaction[]
   rmharkCommentReactions RMHarkCommentReaction[]
 
@@ -113,8 +113,8 @@ model User {
   following Follow[]     @relation("UserFollowers")
 
   // Notifications
-  notifications      Notification[] @relation("UserNotifications")
-  notificationsSent  Notification[] @relation("UserNotificationActor")
+  notifications     Notification[] @relation("UserNotifications")
+  notificationsSent Notification[] @relation("UserNotificationActor")
 
   // Engagement: bookmarks, achievements, daily streak
   bookmarks    RMHarkBookmark[]
@@ -123,8 +123,8 @@ model User {
   postUnlocks  PostUnlock[]
 
   // Communities created + memberships
-  communitiesCreated Community[]       @relation("CommunityCreator")
-  communityMembers   CommunityMember[]
+  communitiesCreated     Community[]             @relation("CommunityCreator")
+  communityMembers       CommunityMember[]
   communityAnnouncements CommunityAnnouncement[] @relation("CommunityAnnouncementAuthor")
 
   // Progression: quests + battle-pass season progress
@@ -140,7 +140,6 @@ model User {
   // Coin staking (interest-bearing vault)
   coinStake CoinStake?
 
-
   // Creator storefront
   storefrontProducts  StorefrontProduct[]  @relation("StorefrontCreator")
   storefrontPurchases StorefrontPurchase[] @relation("StorefrontBuyer")
@@ -153,19 +152,19 @@ model User {
   buildUnlocks BuildUnlock[]
 
   // Ranked play: ELO ratings + challenges
-  eloRatings            EloRating[]
-  challengesIssued      RankedChallenge[] @relation("ChallengeChallenger")
-  challengesReceived    RankedChallenge[] @relation("ChallengeOpponent")
+  eloRatings         EloRating[]
+  challengesIssued   RankedChallenge[] @relation("ChallengeChallenger")
+  challengesReceived RankedChallenge[] @relation("ChallengeOpponent")
 
   // Gifted (coin-funded) memberships
   giftMembershipsReceived GiftMembership[] @relation("GiftRecipient")
   giftMembershipsSent     GiftMembership[] @relation("GiftGifter")
 
   // Group DMs
-  groupChatsOwned   GroupChat[]       @relation("GroupOwner")
-  groupMemberships  GroupChatMember[]
-  groupMessages     GroupMessage[]
-  groupPollVotes    GroupPollVote[]
+  groupChatsOwned       GroupChat[]            @relation("GroupOwner")
+  groupMemberships      GroupChatMember[]
+  groupMessages         GroupMessage[]
+  groupPollVotes        GroupPollVote[]
   groupMessageReactions GroupMessageReaction[]
 
   // RMHStudy flashcards
@@ -186,9 +185,9 @@ model User {
   promoClaims      PromoClaim[]
 
   // Economy: shop inventory, coin ledger (tips/gifts)
-  inventory       UserInventory[]
-  coinsSent       CoinTransaction[] @relation("CoinSender")
-  coinsReceived   CoinTransaction[] @relation("CoinRecipient")
+  inventory     UserInventory[]
+  coinsSent     CoinTransaction[] @relation("CoinSender")
+  coinsReceived CoinTransaction[] @relation("CoinRecipient")
 
   // Prediction markets: created markets + open positions
   predictionsCreated  Prediction[]         @relation("PredictionCreator")
@@ -198,9 +197,9 @@ model User {
   feedAnnouncements FeedAnnouncement[]
 
   // Admin moderation: audit log entries authored, strikes received/issued
-  auditLogs      AdminAuditLog[] @relation("AuditAdmin")
-  strikes        UserStrike[]    @relation("StrikeUser")
-  strikesIssued  UserStrike[]    @relation("StrikeAdmin")
+  auditLogs     AdminAuditLog[] @relation("AuditAdmin")
+  strikes       UserStrike[]    @relation("StrikeUser")
+  strikesIssued UserStrike[]    @relation("StrikeAdmin")
 
   // Moderation (reports filed / received, blocks & mutes)
   reportsFiled    ContentReport[] @relation("ReportReporter")
@@ -211,9 +210,9 @@ model User {
   mutesReceived   UserMute[]      @relation("MuteMuted")
 
   // Direct Messages
-  conversationsAsOne Conversation[]  @relation("ConversationParticipantOne")
-  conversationsAsTwo Conversation[]  @relation("ConversationParticipantTwo")
-  directMessages     DirectMessage[]
+  conversationsAsOne     Conversation[]          @relation("ConversationParticipantOne")
+  conversationsAsTwo     Conversation[]          @relation("ConversationParticipantTwo")
+  directMessages         DirectMessage[]
   directMessageReactions DirectMessageReaction[]
 
   // rmhcode & User Builds
@@ -224,12 +223,12 @@ model User {
   buildViews    BuildView[]
 
   // ─── Doctrine Engine (RMH Strategies) ─────────────────────────
-  doctrineTier          String    @default("PUBLIC") // PUBLIC | INSIDER | OPERATOR
-  doctrineTierChangedAt DateTime?
-  doctrineTimezone      String    @default("America/New_York")
-  doctrineRecruitedById String?
-  doctrineRecruitedBy   User?                         @relation("DoctrineRecruitment", fields: [doctrineRecruitedById], references: [id])
-  doctrineRecruits      User[]                        @relation("DoctrineRecruitment")
+  doctrineTier                String                       @default("PUBLIC") // PUBLIC | INSIDER | OPERATOR
+  doctrineTierChangedAt       DateTime?
+  doctrineTimezone            String                       @default("America/New_York")
+  doctrineRecruitedById       String?
+  doctrineRecruitedBy         User?                        @relation("DoctrineRecruitment", fields: [doctrineRecruitedById], references: [id])
+  doctrineRecruits            User[]                       @relation("DoctrineRecruitment")
   doctrineReputation          DoctrineReputation?
   doctrinePuzzleSubmissions   DoctrinePuzzleSubmission[]
   doctrinePuzzleReplays       DoctrinePuzzleReplay[]
@@ -240,12 +239,21 @@ model User {
   doctrineSahurParticipations DoctrineSahurParticipation[]
 
   // RMH Ladder Relations
-  ladderPrefs        LadderUserPrefs?
-  ladderKeywords     LadderKeyword[]
-  ladderWatchlist    LadderWatchlistEntry[]
-  ladderJobActions   LadderJobAction[]
-  ladderApplications LadderApplication[]
-  ladderAlerts       LadderAlert[]
+  ladderPrefs             LadderUserPrefs?
+  ladderKeywords          LadderKeyword[]
+  ladderWatchlist         LadderWatchlistEntry[]
+  ladderJobActions        LadderJobAction[]
+  ladderApplications      LadderApplication[]
+  ladderAlerts            LadderAlert[]
+  ladderResumes           LadderResume[]
+  ladderResumeVersions    LadderResumeVersion[]
+  ladderResumeReviews     LadderResumeReview[]
+  ladderJobMatches        LadderJobMatch[]
+  ladderAiTasks           LadderAiTask[]
+  ladderSavedSearches     LadderSavedSearch[]
+  ladderApplicationEvents LadderApplicationEvent[]
+  ladderAlertEvents       LadderAlertEvent[]
+  ladderProductEvents     LadderProductEvent[]
 
   // ─── RMH Rideshare ────────────────────────────────────────────
   rideshareDriver       RideshareDriver?
@@ -260,7 +268,7 @@ model User {
   homeFavorites HomeFavorite[]
   homeWatches   HomeWatch[]
 
-  media         Media[]
+  media Media[]
 
   // WebAuthn passkeys (@better-auth/passkey)
   passkeys Passkey[]
@@ -269,8 +277,8 @@ model User {
   pushSubscriptions PushSubscription[]
 
   // Referral program
-  referralsMade     Referral[] @relation("Referrer")
-  referralReceived  Referral?  @relation("Referee")
+  referralsMade    Referral[] @relation("Referrer")
+  referralReceived Referral?  @relation("Referee")
 
   // Notification preferences (per-type opt-outs)
   notificationPreference NotificationPreference?
@@ -481,16 +489,16 @@ model LaundryPlayer {
 
 // Daily Puzzle Score — generic leaderboard for all daily puzzles including lights-out
 model DailyPuzzleScore {
-  id        String   @id @default(cuid())
-  userId    String
-  gameMode  String   // lights-out | alibi | spectrum | outcast | chainlink | impostor
-  dateKey   String   // YYYY-MM-DD
-  score     Int      @default(0)   // points (higher = better) for most games
-  moves     Int?                    // lights-out: move count (lower = better)
-  hintUsed  Boolean? @default(false) // lights-out: whether hints were used
+  id          String   @id @default(cuid())
+  userId      String
+  gameMode    String // lights-out | alibi | spectrum | outcast | chainlink | impostor
+  dateKey     String // YYYY-MM-DD
+  score       Int      @default(0) // points (higher = better) for most games
+  moves       Int? // lights-out: move count (lower = better)
+  hintUsed    Boolean? @default(false) // lights-out: whether hints were used
   dnf         Boolean? @default(false) // lights-out: did not finish
-  resultJson  Json?                    // game-specific result data
-  timeSeconds Int?                     // time taken (for timed games)
+  resultJson  Json? // game-specific result data
+  timeSeconds Int? // time taken (for timed games)
   createdAt   DateTime @default(now()) @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1159,13 +1167,13 @@ model VersecraftWorld {
 // (seed, index, path) happens at most once. `ledger` holds the scribe's
 // distillation of this chapter, persisted alongside the prose.
 model VersecraftGenChapter {
-  id            String @id @default(cuid())
-  seed          String
-  index         Int
+  id             String @id @default(cuid())
+  seed           String
+  index          Int
   choicePathHash String @default("")
-  source        String @default("fallback")
-  content       Json
-  ledger        Json?
+  source         String @default("fallback")
+  content        Json
+  ledger         Json?
 
   world VersecraftWorld @relation(fields: [seed], references: [seed], onDelete: Cascade)
 
@@ -1342,7 +1350,7 @@ model RMHark {
   repostCount  Int @default(0)
   viewCount    Int @default(0)
 
-  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   likes     RMHarkLike[]
   comments  RMHarkComment[]
   reposts   RMHarkRepost[]
@@ -1598,23 +1606,23 @@ model UserProfile {
   profileSongAlbumArt   String?   @db.VarChar(500)
 
   // RMH Coins
-  coins                 Int       @default(10)
-  hasProfilePet         Boolean   @default(false)
-  showProfilePet        Boolean   @default(true)
+  coins          Int     @default(10)
+  hasProfilePet  Boolean @default(false)
+  showProfilePet Boolean @default(true)
 
   // Progression: lifetime platform XP (level is derived from this)
-  xp                    Int       @default(0)
+  xp Int @default(0)
 
   // Creator tip goal (monthly coins target shown on the profile)
-  tipGoal               Int?
-  tipGoalLabel          String?   @db.VarChar(80)
+  tipGoal      Int?
+  tipGoalLabel String? @db.VarChar(80)
 
   // First-run onboarding checklist: when the completion reward was claimed
   // (null = not claimed; also acts as the atomic double-claim guard)
-  onboardingRewardedAt  DateTime?
+  onboardingRewardedAt DateTime?
 
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("user_profile")
 }
@@ -1860,8 +1868,8 @@ model DeveloperApiKey {
   revokedAt  DateTime?
   createdAt  DateTime  @default(now())
 
-  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  idempotencyKeys  ApiIdempotencyKey[]
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  idempotencyKeys ApiIdempotencyKey[]
 
   @@index([userId])
   @@map("developer_api_key")
@@ -1895,20 +1903,20 @@ model ApiIdempotencyKey {
 /// is shown once at creation and used to sign every delivery so receivers can
 /// verify authenticity.
 model WebhookEndpoint {
-  id           String   @id @default(cuid())
-  userId       String
-  url          String   @db.VarChar(2048)
+  id             String    @id @default(cuid())
+  userId         String
+  url            String    @db.VarChar(2048)
   /// Signing secret (whsec_…). Stored to compute the HMAC on each delivery.
-  secret       String   @db.VarChar(128)
+  secret         String    @db.VarChar(128)
   /// Subscribed event names. "*" matches every event.
-  events       String[] @default([])
-  description  String?  @db.VarChar(200)
-  enabled      Boolean  @default(true)
+  events         String[]  @default([])
+  description    String?   @db.VarChar(200)
+  enabled        Boolean   @default(true)
   /// Consecutive delivery failures; the endpoint auto-disables past a threshold.
-  failureCount Int      @default(0)
+  failureCount   Int       @default(0)
   lastDeliveryAt DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   user       User              @relation("UserWebhookEndpoints", fields: [userId], references: [id], onDelete: Cascade)
   deliveries WebhookDelivery[]
@@ -1921,16 +1929,16 @@ model WebhookEndpoint {
 /// a retry sweep with exponential backoff; terminal rows are kept for the
 /// recent-deliveries view in the dashboard.
 model WebhookDelivery {
-  id             String    @id @default(cuid())
+  id             String                @id @default(cuid())
   endpointId     String
-  event          String    @db.VarChar(64)
+  event          String                @db.VarChar(64)
   payload        Json
   status         WebhookDeliveryStatus @default(PENDING)
-  attempts       Int       @default(0)
+  attempts       Int                   @default(0)
   responseStatus Int?
-  error          String?   @db.VarChar(500)
-  nextAttemptAt  DateTime  @default(now())
-  createdAt      DateTime  @default(now())
+  error          String?               @db.VarChar(500)
+  nextAttemptAt  DateTime              @default(now())
+  createdAt      DateTime              @default(now())
   deliveredAt    DateTime?
 
   endpoint WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
@@ -2133,7 +2141,7 @@ model RankedChallenge {
   game         String    @db.VarChar(40)
   challengerId String
   opponentId   String
-  status       String    @db.VarChar(12) @default("pending") // pending|accepted|declined|done
+  status       String    @default("pending") @db.VarChar(12) // pending|accepted|declined|done
   winnerId     String? // null winner on a done challenge = draw
   createdAt    DateTime  @default(now())
   resolvedAt   DateTime?
@@ -2194,17 +2202,17 @@ model GroupChatMember {
 }
 
 model GroupMessage {
-  id        String   @id @default(cuid())
-  groupId   String
-  senderId  String
-  content   String   @db.VarChar(2000)
+  id           String   @id @default(cuid())
+  groupId      String
+  senderId     String
+  content      String   @db.VarChar(2000)
   // Optional rich media (mirrors DMs): a single GIF and/or up to 4 images.
-  gifUrl    String?  @db.Text
-  imageUrls String[] @default([])
+  gifUrl       String?  @db.Text
+  imageUrls    String[] @default([])
   // Optional inline poll: a question + 2–6 option labels (votes in GroupPollVote).
   pollQuestion String?  @db.VarChar(300)
   pollOptions  String[] @default([])
-  createdAt DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   group     GroupChat       @relation(fields: [groupId], references: [id], onDelete: Cascade)
   sender    User            @relation(fields: [senderId], references: [id], onDelete: Cascade)
@@ -2434,14 +2442,14 @@ model DreamRiftCoopRun {
 // shipped value) is stored as a JSON blob; `code` is the shareable join code
 // other players use to request access.
 model FarmingSimFarm {
-  id        String   @id @default(cuid())
-  ownerId   String   @unique
-  code      String   @unique
-  name      String
-  saveData  Json
-  shippedValue Int    @default(0) // surfaced column for future leaderboards
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  id           String   @id @default(cuid())
+  ownerId      String   @unique
+  code         String   @unique
+  name         String
+  saveData     Json
+  shippedValue Int      @default(0) // surfaced column for future leaderboards
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
 
   user User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
@@ -2451,14 +2459,14 @@ model FarmingSimFarm {
 // Tracks which Discord channel was last used for an activity per guild.
 // Used by the daily recap script to know where to post recaps.
 model DiscordActivityChannel {
-  id             String    @id @default(cuid())
-  guildId        String
-  channelId      String
-  activity       String    // e.g. "lights-out"
-  updatedAt      DateTime  @default(now()) @updatedAt
+  id           String    @id @default(cuid())
+  guildId      String
+  channelId    String
+  activity     String // e.g. "lights-out"
+  updatedAt    DateTime  @default(now()) @updatedAt
   // Scheduled recap: set when the first player starts the daily puzzle
-  recapDateKey   String?   // YYYY-MM-DD of the puzzle day to recap
-  recapDueAt     DateTime? // when to send the recap (24h after first activity)
+  recapDateKey String? // YYYY-MM-DD of the puzzle day to recap
+  recapDueAt   DateTime? // when to send the recap (24h after first activity)
 
   @@unique([guildId, activity])
   @@index([recapDueAt], map: "idx_discord_activity_recap_due")
@@ -2468,17 +2476,17 @@ model DiscordActivityChannel {
 // Tracks per-user, per-guild daily puzzle participation.
 // A user completing in one guild propagates to all guilds they opened the activity in.
 model DiscordDailyParticipant {
-  id           String   @id @default(cuid())
-  discordId    String   // Discord user ID
-  guildId      String
-  dateKey      String   // YYYY-MM-DD
-  username     String
-  status       String   @default("playing") // "playing" | "completed"
-  moves        Int?
-  ratingEmoji  String?
-  ratingLabel  String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @default(now()) @updatedAt
+  id          String   @id @default(cuid())
+  discordId   String // Discord user ID
+  guildId     String
+  dateKey     String // YYYY-MM-DD
+  username    String
+  status      String   @default("playing") // "playing" | "completed"
+  moves       Int?
+  ratingEmoji String?
+  ratingLabel String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 
   @@unique([discordId, guildId, dateKey])
   @@index([guildId, dateKey], map: "idx_discord_daily_participant_guild_date")
@@ -2490,8 +2498,8 @@ model DiscordDailyParticipant {
 model DiscordDailyProgress {
   id          String   @id @default(cuid())
   discordId   String
-  dateKey     String   // YYYY-MM-DD
-  gridJson    String   // JSON-encoded grid state
+  dateKey     String // YYYY-MM-DD
+  gridJson    String // JSON-encoded grid state
   moves       Int      @default(0)
   completed   Boolean  @default(false)
   ratingLabel String?
@@ -2559,16 +2567,16 @@ enum DoctrineReactionType {
 // ─── REPUTATION ─────────────────────────────────────────────────────────────
 
 model DoctrineReputation {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  totalXp       Int      @default(0)
-  currentStreak Int      @default(0)
-  longestStreak Int      @default(0)
-  lastActiveAt  DateTime @default(now())
-  coalitionScore Float   @default(1.0)
-  sahurCount    Int      @default(0)
-  ledger        DoctrineReputationLedger[]
+  id             String                     @id @default(cuid())
+  userId         String                     @unique
+  user           User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  totalXp        Int                        @default(0)
+  currentStreak  Int                        @default(0)
+  longestStreak  Int                        @default(0)
+  lastActiveAt   DateTime                   @default(now())
+  coalitionScore Float                      @default(1.0)
+  sahurCount     Int                        @default(0)
+  ledger         DoctrineReputationLedger[]
 
   @@index([totalXp(sort: Desc)])
   @@map("doctrine_reputation")
@@ -2682,20 +2690,20 @@ model DoctrineAccessLog {
 // ─── DISCLOSURES ────────────────────────────────────────────────────────────
 
 model DoctrineDisclosure {
-  id            String                    @id @default(cuid())
+  id            String                   @id @default(cuid())
   codename      String
   publicTitle   String
   content       String
   narrative     String
-  minTierTeaser String                    @default("OPERATOR")
-  status        DoctrineDisclosureStatus  @default(CLASSIFIED)
+  minTierTeaser String                   @default("OPERATOR")
+  status        DoctrineDisclosureStatus @default(CLASSIFIED)
   scheduledAt   DateTime?
   teasedAt      DateTime?
   disclosedAt   DateTime?
   mediaUrls     String[]
   reactions     DoctrineReaction[]
-  createdAt     DateTime                  @default(now())
-  updatedAt     DateTime                  @updatedAt
+  createdAt     DateTime                 @default(now())
+  updatedAt     DateTime                 @updatedAt
 
   @@index([status, scheduledAt])
   @@map("doctrine_disclosure")
@@ -2775,12 +2783,12 @@ model DoctrineReaction {
   user         User                      @relation(fields: [userId], references: [id])
   reaction     DoctrineReactionType
   safehouseId  String?
-  safehouse    DoctrineSafehouseContent?  @relation(fields: [safehouseId], references: [id])
+  safehouse    DoctrineSafehouseContent? @relation(fields: [safehouseId], references: [id])
   disclosureId String?
-  disclosure   DoctrineDisclosure?        @relation(fields: [disclosureId], references: [id])
+  disclosure   DoctrineDisclosure?       @relation(fields: [disclosureId], references: [id])
   incidentId   String?
-  incident     DoctrineIncident?          @relation(fields: [incidentId], references: [id])
-  createdAt    DateTime                   @default(now())
+  incident     DoctrineIncident?         @relation(fields: [incidentId], references: [id])
+  createdAt    DateTime                  @default(now())
 
   @@unique([userId, safehouseId])
   @@unique([userId, disclosureId])
@@ -2805,25 +2813,25 @@ model DoctrineSahurSession {
 }
 
 model DoctrineSahurParticipation {
-  id              String               @id @default(cuid())
-  sessionId       String
-  session         DoctrineSahurSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  userId          String
-  user            User                 @relation(fields: [userId], references: [id])
-  joinedAt        DateTime             @default(now())
-  puzzlesCompleted Int                 @default(0)
-  xpEarned        Int                  @default(0)
+  id               String               @id @default(cuid())
+  sessionId        String
+  session          DoctrineSahurSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User                 @relation(fields: [userId], references: [id])
+  joinedAt         DateTime             @default(now())
+  puzzlesCompleted Int                  @default(0)
+  xpEarned         Int                  @default(0)
 
   @@unique([sessionId, userId])
   @@map("doctrine_sahur_participation")
 }
 
 model DiscordChatSession {
-  discordUserId   String   @id
-  username        String
-  history         Json
-  lastMessageId   String?
-  updatedAt       DateTime @updatedAt
+  discordUserId String   @id
+  username      String
+  history       Json
+  lastMessageId String?
+  updatedAt     DateTime @updatedAt
 
   @@map("discord_chat_session")
 }
@@ -2852,40 +2860,40 @@ model DiscordAlexChannelMemory {
 // the discord-bot worker sends proactive care/ambient/life-event messages into
 // lastChannelId. See go-services/internal/discordbot/pet*.go.
 model DiscordAlexPet {
-  guildId           String    @id
-  name              String    @default("Alex")
-  generation        Int       @default(1)
-  bornAt            DateTime  @default(now())
+  guildId    String   @id
+  name       String   @default("Alex")
+  generation Int      @default(1)
+  bornAt     DateTime @default(now())
 
-  hunger            Float     @default(80)
-  happiness         Float     @default(80)
-  energy            Float     @default(90)
-  hygiene           Float     @default(90)
-  health            Float     @default(100)
-  intelligence      Float     @default(0)
+  hunger       Float @default(80)
+  happiness    Float @default(80)
+  energy       Float @default(90)
+  hygiene      Float @default(90)
+  health       Float @default(100)
+  intelligence Float @default(0)
 
-  alive             Boolean   @default(true)
-  lifeStage         String    @default("infant")
-  career            String?
+  alive     Boolean @default(true)
+  lifeStage String  @default("infant")
+  career    String?
 
-  statsUpdatedAt    DateTime  @default(now())
-  lastInteractionAt DateTime  @default(now())
+  statsUpdatedAt    DateTime @default(now())
+  lastInteractionAt DateTime @default(now())
   lastChannelId     String?
 
-  lastFedAt         DateTime?
-  lastPlayedAt      DateTime?
-  lastCleanedAt     DateTime?
-  lastSleptAt       DateTime?
-  lastStudiedAt     DateTime?
-  lastChatAt        DateTime?
+  lastFedAt     DateTime?
+  lastPlayedAt  DateTime?
+  lastCleanedAt DateTime?
+  lastSleptAt   DateTime?
+  lastStudiedAt DateTime?
+  lastChatAt    DateTime?
 
-  lastCareAlertAt   DateTime?
-  lastAmbientAt     DateTime?
-  diedAt            DateTime?
-  introSentAt       DateTime?
+  lastCareAlertAt DateTime?
+  lastAmbientAt   DateTime?
+  diedAt          DateTime?
+  introSentAt     DateTime?
 
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("discord_alex_pet")
 }
@@ -2938,18 +2946,18 @@ model DiscordAlexCaretaker {
 model VibePage {
   id                  String   @id @default(cuid())
   slug                String   @unique // short URL-safe identifier, e.g. "neon-city-3k"
-  prompt              String            // original user prompt
-  title               String?           // model-generated page title (tab + OG)
-  description         String?           // model-generated description (OG/social)
-  html                String            // full generated HTML — always mirrors the latest version
+  prompt              String // original user prompt
+  title               String? // model-generated page title (tab + OG)
+  description         String? // model-generated description (OG/social)
+  html                String // full generated HTML — always mirrors the latest version
   // Generation lifecycle: a brand-new page is created up front as "generating" (with
   // a reserved slug) so the client can navigate to it immediately and the generation
   // survives a dropped streaming connection; it flips to "ready" once the build is
   // persisted, or "error" if generation failed. Existing/legacy rows default "ready".
   status              String   @default("ready") // "generating" | "ready" | "error"
-  thumbnailUrl        String?           // "/api/vibe/thumb/<slug>?v=<ts>" once the screenshot is captured
+  thumbnailUrl        String? // "/api/vibe/thumb/<slug>?v=<ts>" once the screenshot is captured
   thumbnailStale      Boolean  @default(true) // true → the vibe-worker (re)renders the screenshot
-  conversationHistory Json              // array of { role, content } turns for "customize" follow-ups
+  conversationHistory Json // array of { role, content } turns for "customize" follow-ups
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -2966,11 +2974,11 @@ model VibePageVersion {
   id                  String   @id @default(cuid())
   pageId              String
   page                VibePage @relation(fields: [pageId], references: [id], onDelete: Cascade)
-  prompt              String            // the prompt that produced this version
-  title               String?           // page title at this version
-  description         String?           // description at this version
-  html                String            // full generated HTML for this version
-  conversationHistory Json              // cumulative { role, content } history up to & including this version
+  prompt              String // the prompt that produced this version
+  title               String? // page title at this version
+  description         String? // description at this version
+  html                String // full generated HTML for this version
+  conversationHistory Json // cumulative { role, content } history up to & including this version
   createdAt           DateTime @default(now())
 
   @@index([pageId, createdAt])
@@ -2980,10 +2988,10 @@ model VibePageVersion {
 // ─── LEDGER (Co-Scientist reproducibility substrate) ─────────────────────────
 
 model LedgerArtifact {
-  id          String   @id            // "sha256:<hex64>"
-  contentType String                  // "fastq" | "bam" | "count_matrix" | "umap_png" | ...
-  sizeBytes   BigInt                  // raw byte count
-  storagePath String                  // relative path inside artifact root: "<hex[:2]>/<hex64>"
+  id          String   @id // "sha256:<hex64>"
+  contentType String // "fastq" | "bam" | "count_matrix" | "umap_png" | ...
+  sizeBytes   BigInt // raw byte count
+  storagePath String // relative path inside artifact root: "<hex[:2]>/<hex64>"
   createdAt   DateTime @default(now())
 
   stepOutputs LedgerPlanStep[]  @relation("StepOutput")
@@ -2994,9 +3002,9 @@ model LedgerArtifact {
 
 model LedgerPlanRun {
   id          String    @id @default(cuid())
-  bundleId    String    @unique     // "run-YYYYMMDD-HHMMSS-xxxxxx"
+  bundleId    String    @unique // "run-YYYYMMDD-HHMMSS-xxxxxx"
   description String?
-  status      String    @default("pending")  // pending | running | completed | failed
+  status      String    @default("pending") // pending | running | completed | failed
   createdAt   DateTime  @default(now())
   completedAt DateTime?
 
@@ -3009,18 +3017,18 @@ model LedgerPlanStep {
   id               String    @id @default(cuid())
   runId            String
   stepIndex        Int
-  tool             String    // "fastqc" | "star" | "deseq2" | ...
-  toolVersion      String    // "0.11.9" | "2.7.11b" | "1.44.0"
-  imageDigest      String?   // "sha256:<container digest>"
-  params           Json      // {"--runThreadN": 8, ...}
-  status           String    @default("pending")  // pending | running | completed | failed | cached
+  tool             String // "fastqc" | "star" | "deseq2" | ...
+  toolVersion      String // "0.11.9" | "2.7.11b" | "1.44.0"
+  imageDigest      String? // "sha256:<container digest>"
+  params           Json // {"--runThreadN": 8, ...}
+  status           String    @default("pending") // pending | running | completed | failed | cached
   startedAt        DateTime?
   completedAt      DateTime?
   createdAt        DateTime  @default(now())
   outputArtifactId String?
 
-  run    LedgerPlanRun   @relation(fields: [runId], references: [id], onDelete: Cascade)
-  output LedgerArtifact? @relation("StepOutput", fields: [outputArtifactId], references: [id])
+  run    LedgerPlanRun     @relation(fields: [runId], references: [id], onDelete: Cascade)
+  output LedgerArtifact?   @relation("StepOutput", fields: [outputArtifactId], references: [id])
   inputs LedgerStepInput[]
 
   @@index([runId, stepIndex])
@@ -3030,7 +3038,7 @@ model LedgerPlanStep {
 model LedgerStepInput {
   stepId     String
   artifactId String
-  role       String  // semantic label: "fastq" | "genome_index" | "count_matrix"
+  role       String // semantic label: "fastq" | "genome_index" | "count_matrix"
 
   step     LedgerPlanStep @relation(fields: [stepId], references: [id], onDelete: Cascade)
   artifact LedgerArtifact @relation(fields: [artifactId], references: [id])
@@ -3046,6 +3054,7 @@ enum LadderPlatform {
   lever
   ashby
   smartrecruiters
+  workday
   manual
   generic
 }
@@ -3144,81 +3153,105 @@ model LadderCompany {
   enabled          Boolean  @default(true)
   createdAt        DateTime @default(now())
 
-  sources           LadderSource[]
-  jobs              LadderJob[]
-  watchlistEntries  LadderWatchlistEntry[]
+  sources          LadderSource[]
+  jobs             LadderJob[]
+  watchlistEntries LadderWatchlistEntry[]
 
   @@map("ladder_company")
 }
 
 model LadderSource {
-  id            String             @id @default(cuid())
-  companyId     String
-  company       LadderCompany      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  platform      LadderPlatform
-  slug          String?
-  url           String?
-  status        LadderSourceStatus @default(unconfigured)
-  lastSuccessAt DateTime?
-  createdAt     DateTime           @default(now())
+  id                  String             @id @default(cuid())
+  companyId           String
+  company             LadderCompany      @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  platform            LadderPlatform
+  slug                String?
+  url                 String?
+  status              LadderSourceStatus @default(unconfigured)
+  config              Json?
+  lastAttemptAt       DateTime?
+  lastSuccessAt       DateTime?
+  lastProbedAt        DateTime?
+  nextProbeAt         DateTime?
+  consecutiveFailures Int                @default(0)
+  createdAt           DateTime           @default(now())
 
   errors      LadderSourceError[]
   reviewTasks LadderReviewTask[]
+  jobs        LadderJob[]
 
   @@unique([companyId, platform, slug])
   @@map("ladder_source")
 }
 
 model LadderJob {
-  id                       String                @id @default(cuid())
-  companyId                String
-  company                  LadderCompany         @relation(fields: [companyId], references: [id])
-  title                    String
-  normalizedTitle          String
-  roleCategory             String?
-  programType              LadderProgramType     @default(other)
-  industry                 String?
-  locationRaw              String?
-  city                     String?
-  state                    String?
-  country                  String?
-  remoteStatus             LadderRemoteStatus    @default(onsite)
-  employmentType           LadderEmploymentType  @default(internship)
-  postingDate              DateTime?
-  applicationDeadline      DateTime?
-  startSeason              String?
-  graduationYearTarget     Int?
-  schoolYearTarget         String?
-  sourcePlatform           LadderPlatform
-  sourceUrl                String
-  originalPostingUrl       String
-  canonicalApplyUrl        String?
-  externalRequisitionId    String?
-  externalId               String?
-  descriptionSummary       String?
-  fullDescription          String?
-  dedupeHash               String                @unique
-  alternateUrls            String[]              @default([])
-  matchingKeywords         String[]              @default([])
-  status                   LadderJobStatus       @default(unknown)
-  failedCheckCount         Int                   @default(0)
-  earlyCareerScore         Int                   @default(0)
+  id                        String               @id @default(cuid())
+  companyId                 String
+  company                   LadderCompany        @relation(fields: [companyId], references: [id])
+  sourceId                  String?
+  source                    LadderSource?        @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  title                     String
+  normalizedTitle           String
+  roleCategory              String?
+  programType               LadderProgramType    @default(other)
+  industry                  String?
+  locationRaw               String?
+  city                      String?
+  state                     String?
+  country                   String?
+  remoteStatus              LadderRemoteStatus   @default(onsite)
+  employmentType            LadderEmploymentType @default(internship)
+  postingDate               DateTime?
+  applicationDeadline       DateTime?
+  startSeason               String?
+  graduationYearTarget      Int?
+  schoolYearTarget          String?
+  sourcePlatform            LadderPlatform
+  sourceUrl                 String
+  originalPostingUrl        String
+  canonicalApplyUrl         String?
+  externalRequisitionId     String?
+  externalId                String?
+  descriptionSummary        String?
+  descriptionText           String?
+  fullDescription           String?
+  contentHash               String?
+  skills                    String[]             @default([])
+  compensationMin           Int?
+  compensationMax           Int?
+  compensationCurrency      String?
+  compensationInterval      String?
+  sponsorshipStatus         String?
+  dedupeHash                String
+  alternateUrls             String[]             @default([])
+  matchingKeywords          String[]             @default([])
+  status                    LadderJobStatus      @default(unknown)
+  failedCheckCount          Int                  @default(0)
+  earlyCareerScore          Int                  @default(0)
   earlyCareerClassification LadderEarlyCareer    @default(unclear)
-  usLocationConfidence     Int                   @default(0)
-  relevanceScoreBase       Int                   @default(0)
-  urgencyFlag              Boolean               @default(false)
-  discoveredAt             DateTime              @default(now())
-  lastCheckedAt            DateTime?
-  lastVerifiedAt           DateTime?
+  usLocationConfidence      Int                  @default(0)
+  relevanceScoreBase        Int                  @default(0)
+  urgencyFlag               Boolean              @default(false)
+  discoveredAt              DateTime             @default(now())
+  lastSeenAt                DateTime?
+  lastCheckedAt             DateTime?
+  lastVerifiedAt            DateTime?
 
   verifications LadderVerification[]
   reviewTasks   LadderReviewTask[]
   actions       LadderJobAction[]
   applications  LadderApplication[]
   alerts        LadderAlert[]
+  profile       LadderJobProfile?
+  matches       LadderJobMatch[]
+  aiTasks       LadderAiTask[]
+  alertEvents   LadderAlertEvent[]
+  productEvents LadderProductEvent[]
 
+  @@unique([sourceId, externalId])
   @@index([status, earlyCareerClassification])
   @@index([companyId, status])
+  @@index([dedupeHash])
   @@map("ladder_job")
 }
 
@@ -3236,16 +3269,16 @@ model LadderVerification {
 }
 
 model LadderScrapeRun {
-  id             String           @id @default(cuid())
-  trigger        LadderRunTrigger
-  startedAt      DateTime         @default(now())
-  finishedAt     DateTime?
-  discoveredCount Int             @default(0)
-  newCount       Int              @default(0)
-  verifiedCount  Int              @default(0)
-  expiredCount   Int              @default(0)
-  errorCount     Int              @default(0)
-  stats          Json?
+  id              String           @id @default(cuid())
+  trigger         LadderRunTrigger
+  startedAt       DateTime         @default(now())
+  finishedAt      DateTime?
+  discoveredCount Int              @default(0)
+  newCount        Int              @default(0)
+  verifiedCount   Int              @default(0)
+  expiredCount    Int              @default(0)
+  errorCount      Int              @default(0)
+  stats           Json?
 
   errors LadderSourceError[]
 
@@ -3253,41 +3286,41 @@ model LadderScrapeRun {
 }
 
 model LadderSourceError {
-  id        String          @id @default(cuid())
-  runId     String
-  run       LadderScrapeRun @relation(fields: [runId], references: [id], onDelete: Cascade)
-  sourceId  String
-  source    LadderSource    @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  id         String          @id @default(cuid())
+  runId      String
+  run        LadderScrapeRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  sourceId   String
+  source     LadderSource    @relation(fields: [sourceId], references: [id], onDelete: Cascade)
   errorClass String
-  message   String
+  message    String
   httpStatus Int?
-  createdAt DateTime        @default(now())
+  createdAt  DateTime        @default(now())
 
   @@map("ladder_source_error")
 }
 
 model LadderReviewTask {
-  id         String             @id @default(cuid())
-  jobId      String?
-  job        LadderJob?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  sourceId   String?
-  source     LadderSource?      @relation(fields: [sourceId], references: [id], onDelete: SetNull)
-  reason     LadderReviewReason
-  status     LadderReviewStatus @default(open)
-  resolution String?
+  id           String             @id @default(cuid())
+  jobId        String?
+  job          LadderJob?         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  sourceId     String?
+  source       LadderSource?      @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  reason       LadderReviewReason
+  status       LadderReviewStatus @default(open)
+  resolution   String?
   resolvedById String?
-  createdAt  DateTime           @default(now())
-  resolvedAt DateTime?
+  createdAt    DateTime           @default(now())
+  resolvedAt   DateTime?
 
   @@map("ladder_review_task")
 }
 
 model LadderRelevanceRule {
-  id        String  @id @default(cuid())
-  key       String  @unique
-  label     String
-  weight    Int
-  enabled   Boolean @default(true)
+  id      String  @id @default(cuid())
+  key     String  @unique
+  label   String
+  weight  Int
+  enabled Boolean @default(true)
 
   @@map("ladder_relevance_rule")
 }
@@ -3321,6 +3354,7 @@ enum LadderAlertChannel {
   in_app
   email
   discord
+  web_push
 }
 
 enum LadderAlertType {
@@ -3331,6 +3365,9 @@ enum LadderAlertType {
   changed
   expired
   review_needed
+  saved_search
+  follow_up
+  interview
 }
 
 enum LadderDigestFrequency {
@@ -3340,17 +3377,21 @@ enum LadderDigestFrequency {
 }
 
 model LadderUserPrefs {
-  id                    String                  @id @default(cuid())
-  userId                String                  @unique
-  user                  User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  relevanceThreshold    Int                     @default(60)
-  preferredCities       String[]                @default([])
-  preferredProgramTypes LadderProgramType[]     @default([])
-  digestFrequency       LadderDigestFrequency   @default(daily)
-  channelInApp          Boolean                 @default(true)
-  channelEmail          Boolean                 @default(false)
-  channelDiscord        Boolean                 @default(false)
+  id                    String                @id @default(cuid())
+  userId                String                @unique
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  relevanceThreshold    Int                   @default(60)
+  preferredCities       String[]              @default([])
+  preferredProgramTypes LadderProgramType[]   @default([])
+  digestFrequency       LadderDigestFrequency @default(daily)
+  channelInApp          Boolean               @default(true)
+  channelEmail          Boolean               @default(false)
+  channelDiscord        Boolean               @default(false)
   discordUserId         String?
+  timezone              String                @default("America/New_York")
+  quietHoursStart       Int?
+  quietHoursEnd         Int?
+  resumeMatchThreshold  Int?
 
   @@map("ladder_user_prefs")
 }
@@ -3393,22 +3434,27 @@ model LadderJobAction {
 }
 
 model LadderApplication {
-  id            String                  @id @default(cuid())
-  userId        String
-  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  jobId         String
-  job           LadderJob               @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  status        LadderApplicationStatus @default(not_applied)
-  appliedDate   DateTime?
-  resumeVersion String?
-  coverLetter   String?
-  referralName  String?
-  contactEmail  String?
-  notes         String?
-  followUpDate  DateTime?
-  interviewDates DateTime[]             @default([])
-  outcome       String?
-  updatedAt     DateTime                @updatedAt
+  id                    String                  @id @default(cuid())
+  userId                String
+  user                  User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId                 String
+  job                   LadderJob               @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  status                LadderApplicationStatus @default(not_applied)
+  appliedDate           DateTime?
+  resumeVersion         String?
+  resumeVersionId       String?
+  selectedResumeVersion LadderResumeVersion?    @relation(fields: [resumeVersionId], references: [id], onDelete: SetNull)
+  coverLetter           String?
+  referralName          String?
+  contactEmail          String?
+  notes                 String?
+  followUpDate          DateTime?
+  interviewDates        DateTime[]              @default([])
+  outcome               String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+
+  events LadderApplicationEvent[]
 
   @@unique([userId, jobId])
   @@map("ladder_application")
@@ -3429,14 +3475,279 @@ model LadderAlert {
   @@map("ladder_alert")
 }
 
+enum LadderResumeParseStatus {
+  pending
+  processing
+  ready
+  needs_correction
+  failed
+}
+
+enum LadderResumeReviewStatus {
+  pending
+  processing
+  complete
+  failed
+}
+
+enum LadderAiTaskKind {
+  resume_parse
+  resume_review
+  job_profile
+  match_refresh
+}
+
+enum LadderAiTaskStatus {
+  queued
+  processing
+  complete
+  failed
+}
+
+enum LadderAlertDeliveryStatus {
+  pending
+  sent
+  skipped
+  failed
+}
+
+model LadderResume {
+  id              String               @id @default(cuid())
+  userId          String
+  user            User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  activeVersionId String?              @unique
+  activeVersion   LadderResumeVersion? @relation("LadderActiveResumeVersion", fields: [activeVersionId], references: [id], onDelete: SetNull)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  versions LadderResumeVersion[] @relation("LadderResumeVersions")
+
+  @@index([userId, updatedAt])
+  @@map("ladder_resume")
+}
+
+model LadderResumeVersion {
+  id                     String                  @id @default(cuid())
+  resumeId               String
+  resume                 LadderResume            @relation("LadderResumeVersions", fields: [resumeId], references: [id], onDelete: Cascade)
+  userId                 String
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  versionNumber          Int
+  storageKey             String
+  filename               String
+  mimeType               String
+  sizeBytes              Int
+  sha256                 String
+  parseStatus            LadderResumeParseStatus @default(pending)
+  parseConfidence        Int?
+  extractedTextEncrypted String?
+  redactedTextEncrypted  String?
+  confirmedProfile       Json?
+  confirmedAt            DateTime?
+  matchesRefreshedAt     DateTime?
+  createdAt              DateTime                @default(now())
+
+  activeFor    LadderResume?        @relation("LadderActiveResumeVersion")
+  reviews      LadderResumeReview[]
+  matches      LadderJobMatch[]
+  aiTasks      LadderAiTask[]
+  applications LadderApplication[]
+
+  @@unique([resumeId, versionNumber])
+  @@index([userId, createdAt])
+  @@index([sha256])
+  @@map("ladder_resume_version")
+}
+
+model LadderResumeReview {
+  id              String                   @id @default(cuid())
+  userId          String
+  user            User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumeVersionId String
+  resumeVersion   LadderResumeVersion      @relation(fields: [resumeVersionId], references: [id], onDelete: Cascade)
+  provider        String
+  model           String
+  status          LadderResumeReviewStatus @default(pending)
+  profile         Json?
+  review          Json?
+  promptVersion   String                   @default("1")
+  schemaVersion   String                   @default("1")
+  error           String?
+  createdAt       DateTime                 @default(now())
+  completedAt     DateTime?
+
+  @@index([userId, createdAt])
+  @@index([resumeVersionId, createdAt])
+  @@map("ladder_resume_review")
+}
+
+model LadderJobProfile {
+  id             String    @id @default(cuid())
+  jobId          String    @unique
+  job            LadderJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  profile        Json
+  profileVersion String    @default("1")
+  sourceHash     String
+  provider       String?
+  model          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([sourceHash])
+  @@map("ladder_job_profile")
+}
+
+model LadderJobMatch {
+  id              String              @id @default(cuid())
+  userId          String
+  user            User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId           String
+  job             LadderJob           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  resumeVersionId String
+  resumeVersion   LadderResumeVersion @relation(fields: [resumeVersionId], references: [id], onDelete: Cascade)
+  score           Int
+  confidence      Int
+  breakdown       Json
+  matchedSkills   String[]            @default([])
+  missingSkills   String[]            @default([])
+  explanation     String?
+  scoreVersion    String              @default("1")
+  feedback        String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@unique([resumeVersionId, jobId])
+  @@index([userId, score])
+  @@index([jobId, score])
+  @@map("ladder_job_match")
+}
+
+model LadderAiTask {
+  id              String               @id @default(cuid())
+  userId          String?
+  user            User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  kind            LadderAiTaskKind
+  status          LadderAiTaskStatus   @default(queued)
+  provider        String?
+  resumeVersionId String?
+  resumeVersion   LadderResumeVersion? @relation(fields: [resumeVersionId], references: [id], onDelete: Cascade)
+  jobId           String?
+  job             LadderJob?           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  inputRef        String?
+  outputRef       String?
+  dedupeKey       String?              @unique
+  attempts        Int                  @default(0)
+  error           String?
+  createdAt       DateTime             @default(now())
+  startedAt       DateTime?
+  finishedAt      DateTime?
+
+  @@index([status, createdAt])
+  @@index([userId, createdAt])
+  @@map("ladder_ai_task")
+}
+
+model LadderApplicationEvent {
+  id            String                   @id @default(cuid())
+  applicationId String
+  application   LadderApplication        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type          String
+  fromStatus    LadderApplicationStatus?
+  toStatus      LadderApplicationStatus?
+  data          Json?
+  createdAt     DateTime                 @default(now())
+
+  @@index([applicationId, createdAt])
+  @@index([userId, createdAt])
+  @@map("ladder_application_event")
+}
+
+model LadderSavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  filters   Json
+  alertsOn  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, updatedAt])
+  @@map("ladder_saved_search")
+}
+
+model LadderAlertEvent {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobId       String?
+  job         LadderJob?      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  type        LadderAlertType
+  fingerprint String
+  payload     Json?
+  readAt      DateTime?
+  createdAt   DateTime        @default(now())
+
+  deliveries LadderAlertDelivery[]
+
+  @@unique([userId, type, fingerprint])
+  @@index([userId, createdAt])
+  @@map("ladder_alert_event")
+}
+
+model LadderAlertDelivery {
+  id        String                    @id @default(cuid())
+  alertId   String
+  alert     LadderAlertEvent          @relation(fields: [alertId], references: [id], onDelete: Cascade)
+  channel   LadderAlertChannel
+  status    LadderAlertDeliveryStatus @default(pending)
+  attempts  Int                       @default(0)
+  lastError String?
+  sentAt    DateTime?
+  createdAt DateTime                  @default(now())
+  updatedAt DateTime                  @updatedAt
+
+  @@unique([alertId, channel])
+  @@index([status, createdAt])
+  @@map("ladder_alert_delivery")
+}
+
+model LadderProductEvent {
+  id        String     @id @default(cuid())
+  userId    String?
+  user      User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  jobId     String?
+  job       LadderJob? @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  type      String
+  metadata  Json?
+  createdAt DateTime   @default(now())
+
+  @@index([type, createdAt])
+  @@index([userId, createdAt])
+  @@map("ladder_product_event")
+}
+
+model LadderWorkerLease {
+  name        String   @id
+  ownerId     String
+  expiresAt   DateTime
+  heartbeatAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ladder_worker_lease")
+}
+
 // Stripe subscription state, synced by @better-auth/stripe via webhook.
 model Subscription {
   id                   String    @id @default(cuid())
-  plan                 String    // "starter" | "pro" | "enterprise"
-  referenceId          String    // the owning User.id
+  plan                 String // "starter" | "pro" | "enterprise"
+  referenceId          String // the owning User.id
   stripeCustomerId     String?
   stripeSubscriptionId String?
-  status               String?   // active | trialing | past_due | canceled | incomplete | ...
+  status               String? // active | trialing | past_due | canceled | incomplete | ...
   periodStart          DateTime?
   periodEnd            DateTime?
   cancelAtPeriodEnd    Boolean?
@@ -3505,22 +3816,22 @@ enum ReportReason {
 }
 
 model ContentReport {
-  id          String       @id @default(cuid())
-  reporterId  String
-  reason      ReportReason
-  details     String?      @db.VarChar(1000)
+  id           String       @id @default(cuid())
+  reporterId   String
+  reason       ReportReason
+  details      String?      @db.VarChar(1000)
   // What is being reported. entityType is "rmhark" | "comment" | "user" | "build" | "dm".
-  entityType  String       @db.VarChar(32)
-  entityId    String       @db.VarChar(64)
+  entityType   String       @db.VarChar(32)
+  entityId     String       @db.VarChar(64)
   // Convenience: the user who owns the reported content (for quick triage).
   targetUserId String?
 
-  status      ReportStatus @default(PENDING)
-  resolvedById String?
-  resolvedAt  DateTime?
-  moderatorNote String?    @db.VarChar(1000)
+  status        ReportStatus @default(PENDING)
+  resolvedById  String?
+  resolvedAt    DateTime?
+  moderatorNote String?      @db.VarChar(1000)
 
-  createdAt   DateTime     @default(now())
+  createdAt DateTime @default(now())
 
   reporter   User  @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Cascade)
   resolvedBy User? @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
@@ -3580,13 +3891,13 @@ model RMHarkBookmark {
 // persisted. `progress` supports incremental achievements (e.g. "win 50 games").
 
 model UserAchievement {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   userId        String
-  achievementId String   @db.VarChar(64) // matches a catalog key
-  progress      Int      @default(0)
+  achievementId String    @db.VarChar(64) // matches a catalog key
+  progress      Int       @default(0)
   unlockedAt    DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -3597,16 +3908,16 @@ model UserAchievement {
 
 // ─── Daily Streak ─────────────────────────────────────────────────────────
 model DailyStreak {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  current       Int      @default(0)
-  longest       Int      @default(0)
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  current       Int       @default(0)
+  longest       Int       @default(0)
   lastCheckIn   DateTime?
-  lastDateKey   String?  @db.VarChar(10) // YYYY-MM-DD in the user's tz
-  totalCheckIns Int      @default(0)
-  freezeTokens  Int      @default(0) // optional "streak freeze" inventory
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  lastDateKey   String?   @db.VarChar(10) // YYYY-MM-DD in the user's tz
+  totalCheckIns Int       @default(0)
+  freezeTokens  Int       @default(0) // optional "streak freeze" inventory
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -3628,12 +3939,12 @@ enum ShopItemKind {
 }
 
 model UserInventory {
-  id        String       @id @default(cuid())
-  userId    String
-  itemId    String       @db.VarChar(64) // catalog key
-  kind      ShopItemKind
-  equipped  Boolean      @default(false)
-  acquiredAt DateTime    @default(now())
+  id         String       @id @default(cuid())
+  userId     String
+  itemId     String       @db.VarChar(64) // catalog key
+  kind       ShopItemKind
+  equipped   Boolean      @default(false)
+  acquiredAt DateTime     @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -3653,7 +3964,7 @@ enum CoinTxnType {
 
 model CoinTransaction {
   id          String      @id @default(cuid())
-  senderId    String?     // null for system rewards
+  senderId    String? // null for system rewards
   recipientId String
   amount      Int
   type        CoinTxnType
@@ -3823,7 +4134,7 @@ model Community {
   name        String   @db.VarChar(60)
   description String?  @db.VarChar(500)
   color       String?  @db.VarChar(16) // accent color for the header
-  icon        String?  @db.VarChar(8)  // emoji
+  icon        String?  @db.VarChar(8) // emoji
   isPrivate   Boolean  @default(false)
   memberCount Int      @default(1)
   createdById String
@@ -3893,15 +4204,15 @@ model UserQuest {
 // Season + tier rewards defined in code (lib/battlepass/season.ts). Premium
 // track is unlocked by spending RMH coins. Claimed tiers stored as a Json array.
 model UserSeasonProgress {
-  id           String   @id @default(cuid())
-  userId       String
-  seasonId     String   @db.VarChar(32)
-  seasonXp     Int      @default(0)
-  premium      Boolean  @default(false)
-  claimedFree  Json     @default("[]") // tier numbers claimed on the free track
-  claimedPaid  Json     @default("[]") // tier numbers claimed on the premium track
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  userId      String
+  seasonId    String   @db.VarChar(32)
+  seasonXp    Int      @default(0)
+  premium     Boolean  @default(false)
+  claimedFree Json     @default("[]") // tier numbers claimed on the free track
+  claimedPaid Json     @default("[]") // tier numbers claimed on the premium track
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -4117,8 +4428,8 @@ model RideshareDriver {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reviewedBy User?  @relation("RideshareApplicationReviewer", fields: [reviewedById], references: [id])
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("RideshareApplicationReviewer", fields: [reviewedById], references: [id])
 
   @@index([status])
   @@map("rideshare_driver")
@@ -4143,9 +4454,9 @@ model Ride {
 
   // Trip fare. `estimatedFareCents` is the quote at booking and the amount the
   // rider pays for the trip; it also drives the driver payout split.
-  distanceMeters   Int?
-  durationSeconds  Int?
-  estimatedFareCents Int @default(0)
+  distanceMeters     Int?
+  durationSeconds    Int?
+  estimatedFareCents Int  @default(0)
 
   // Optional rider tip, added after a completed trip and paid to the driver
   // in full. Zero until the rider tips.
@@ -4295,9 +4606,9 @@ model HomeListing {
   /// used with `sourceRefId` to dedupe/upsert.
   externalId  String?
   /// Canonical URL of the original posting ("View original listing").
-  externalUrl String? @db.VarChar(1000)
+  externalUrl String?     @db.VarChar(1000)
   /// Human label for the source, snapshotted for display (e.g. "Craigslist — Rochester").
-  sourceName  String? @db.VarChar(120)
+  sourceName  String?     @db.VarChar(120)
   /// Last time a scrape run saw this posting still live. Drives expiry of
   /// external listings that have disappeared from their feed.
   lastSeenAt  DateTime?
@@ -4556,14 +4867,14 @@ model LibraryCollection {
 }
 
 model LibraryCollectionItem {
-  id           String   @id @default(cuid())
+  id           String            @id @default(cuid())
   collectionId String
   collection   LibraryCollection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
   /// The member book's slug (resolved to a LibraryBook at read time).
   bookSlug     String
   /// Order within the collection (lower first).
-  position     Int      @default(0)
-  createdAt    DateTime @default(now())
+  position     Int               @default(0)
+  createdAt    DateTime          @default(now())
 
   @@unique([collectionId, bookSlug])
   @@index([collectionId])
@@ -4596,15 +4907,15 @@ model LibraryQuotaRequest {
 /// object storage (R2/S3) keyed by slide id — not in the repo / build image —
 /// and is served via the CDN (prod) or the /api/albums/asset proxy (dev).
 model Album {
-  id          String       @id @default(cuid())
+  id          String   @id @default(cuid())
   /// URL slug, e.g. "alex-wu".
-  slug        String       @unique
+  slug        String   @unique
   title       String
-  description String       @default("") @db.Text
+  description String   @default("") @db.Text
   /// Manual ordering on the library page (ascending).
-  position    Int          @default(0)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   slides AlbumSlide[]
 
@@ -4617,23 +4928,23 @@ model Album {
 ///  - images: fullKey (full-res original), srcKey (web-optimized webp), thumbKey
 ///  - videos: srcKey (compressed mp4), thumbKey (poster frame); fullKey is null.
 model AlbumSlide {
-  id       String @id @default(cuid())
-  albumId  String
-  album    Album  @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  albumId   String
+  album     Album    @relation(fields: [albumId], references: [id], onDelete: Cascade)
   /// "image" | "video".
-  type     String
-  position Int    @default(0)
+  type      String
+  position  Int      @default(0)
   /// Full-resolution original object key (images only; null for video).
-  fullKey  String?
+  fullKey   String?
   /// Web-optimized image / compressed video object key.
-  srcKey   String
+  srcKey    String
   /// Thumbnail (image) or poster frame (video) object key.
-  thumbKey String
+  thumbKey  String
   /// Video MIME type (e.g. "video/mp4"); null for images.
-  mime     String?
-  alt      String @default("")
+  mime      String?
+  alt       String   @default("")
   /// Suggested filename on download.
-  download String @default("")
+  download  String   @default("")
   /// Client-supplied idempotency key, stable across upload retries. Lets a
   /// retried upload (e.g. after a lost response) resolve to the same slide
   /// instead of creating a duplicate. Null for migrated/legacy rows.

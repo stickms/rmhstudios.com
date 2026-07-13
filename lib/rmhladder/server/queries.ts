@@ -34,18 +34,24 @@ export interface QueriesPrisma {
   ladderJobAction: { findMany(args: AnyRow): Promise<AnyRow[]> };
   ladderApplication: { findMany(args: AnyRow): Promise<AnyRow[]> };
   ladderAlert: { findMany(args: AnyRow): Promise<AnyRow[]> };
+  ladderAlertEvent: { findMany(args: AnyRow): Promise<AnyRow[]> };
 }
 
 const NON_US_STATUSES = ['non_us_role', 'blocked_or_inaccessible'];
+const PUBLIC_VERIFICATION_STATUSES = ['verified_active', 'verified_probable'];
+const PUBLIC_EARLY_CAREER_CLASSES = ['yes', 'probable'];
+const DEFAULT_RELEVANCE_THRESHOLD = 60;
 const DAY = 86_400_000;
-/**
- * listJobs fetches at most this many candidates before JS-side scoring.
- * DB query orders by relevanceScoreBase desc so truncation deterministically
- * keeps the best base-score candidates. Tradeoff: a keyword-boosted job with a
- * low base score can be cut when total matching jobs > CANDIDATE_CAP.
- */
-const CANDIDATE_CAP = 500;
 const DEFAULT_TAKE = 50;
+const PUBLIC_COMPANY_SELECT = {
+  id: true,
+  name: true,
+  normalizedName: true,
+  industry: true,
+  firmType: true,
+  priorityLevel: true,
+  enabled: true,
+} as const;
 
 const FINANCE_INDUSTRIES = [
   'Investment Banking', 'Private Equity', 'Venture Capital', 'Asset Management',
@@ -55,7 +61,7 @@ const CONSULTING_INDUSTRIES = ['Management Consulting', 'consulting'];
 const TECH_INDUSTRIES = ['Technology', 'tech'];
 
 export interface ListJobsFilters {
-  preset?: 'new' | 'finance' | 'consulting' | 'tech' | 'expiring' | 'remote';
+  preset?: 'new' | 'finance' | 'consulting' | 'tech' | 'expiring' | 'remote' | 'saved' | 'ignored';
   q?: string;
   cities?: string[];
   programTypes?: string[];
@@ -68,6 +74,7 @@ export interface ListJobsFilters {
 export interface JobRow extends AnyRow {
   latestVerification: AnyRow | null;
   userAction: string | null;
+  applicationStatus: string | null;
   finalRelevance: number;
 }
 
@@ -75,7 +82,36 @@ function latestVerificationOf(job: AnyRow): AnyRow | null {
   return (job.verifications as AnyRow[] | undefined)?.[0] ?? null;
 }
 
-async function loadUserContext(prisma: QueriesPrisma, userId: string) {
+function toPublicJob(job: AnyRow): AnyRow {
+  const {
+    sourceId: _sourceId,
+    sourceUrl: _sourceUrl,
+    canonicalApplyUrl: _canonicalApplyUrl,
+    externalId: _externalId,
+    externalRequisitionId: _externalRequisitionId,
+    descriptionText: _descriptionText,
+    fullDescription: _fullDescription,
+    contentHash: _contentHash,
+    dedupeHash: _dedupeHash,
+    alternateUrls: _alternateUrls,
+    matchingKeywords: _matchingKeywords,
+    failedCheckCount: _failedCheckCount,
+    ...publicJob
+  } = job;
+  return publicJob;
+}
+
+async function loadUserContext(prisma: QueriesPrisma, userId: string | null) {
+  if (!userId) {
+    return {
+      prefs: null,
+      keywords: [],
+      watchlistCompanyIds: new Set<string>(),
+      preferredCities: [],
+      preferredProgramTypes: [] as string[],
+      relevanceThreshold: DEFAULT_RELEVANCE_THRESHOLD,
+    };
+  }
   const [prefs, keywords, watchlist] = await Promise.all([
     prisma.ladderUserPrefs.findUnique({ where: { userId } }),
     prisma.ladderKeyword.findMany({ where: { userId } }),
@@ -90,6 +126,9 @@ async function loadUserContext(prisma: QueriesPrisma, userId: string) {
     })),
     watchlistCompanyIds: new Set<string>(watchlist.map((w) => w.companyId as string)),
     preferredCities: (prefs?.preferredCities as string[] | undefined) ?? [],
+    preferredProgramTypes: (prefs?.preferredProgramTypes as string[] | undefined) ?? [],
+    relevanceThreshold:
+      (prefs?.relevanceThreshold as number | undefined) ?? DEFAULT_RELEVANCE_THRESHOLD,
   };
 }
 
@@ -112,15 +151,25 @@ function toScorable(job: AnyRow): ScorableJob {
 
 export async function listJobs(
   prisma: QueriesPrisma,
-  userId: string,
+  userId: string | null,
   filters: ListJobsFilters,
 ): Promise<{ rows: JobRow[]; nextCursor: string | null }> {
   const now = new Date();
   // non-US rows persist with status 'unknown' (see process-source mapJobStatus);
   // include them only when the toggle is on.
   const where: AnyRow = filters.includeNonUS
-    ? { status: { in: ['active', 'unknown'] } }
-    : { status: 'active' };
+    ? {
+        status: { in: ['active', 'unknown'] },
+        earlyCareerClassification: { in: PUBLIC_EARLY_CAREER_CLASSES },
+        company: { enabled: true },
+      }
+    : {
+        status: 'active',
+        earlyCareerClassification: { in: PUBLIC_EARLY_CAREER_CLASSES },
+        company: { enabled: true },
+      };
+
+  const ctx = await loadUserContext(prisma, userId);
 
   switch (filters.preset) {
     case 'new':
@@ -133,37 +182,67 @@ export async function listJobs(
       where.remoteStatus = 'remote_us';
       break;
     case 'finance':
-      where.company = { industry: { in: FINANCE_INDUSTRIES } };
+      where.company = { enabled: true, industry: { in: FINANCE_INDUSTRIES } };
       break;
     case 'consulting':
-      where.company = { industry: { in: CONSULTING_INDUSTRIES } };
+      where.company = { enabled: true, industry: { in: CONSULTING_INDUSTRIES } };
       break;
     case 'tech':
-      where.company = { industry: { in: TECH_INDUSTRIES } };
+      where.company = { enabled: true, industry: { in: TECH_INDUSTRIES } };
       break;
   }
-  if (filters.q) where.title = { contains: filters.q, mode: 'insensitive' };
+  if (filters.q) {
+    where.AND = [{
+      OR: [
+        { title: { contains: filters.q, mode: 'insensitive' } },
+        { roleCategory: { contains: filters.q, mode: 'insensitive' } },
+        { locationRaw: { contains: filters.q, mode: 'insensitive' } },
+        { descriptionSummary: { contains: filters.q, mode: 'insensitive' } },
+        { company: { name: { contains: filters.q, mode: 'insensitive' } } },
+      ],
+    }];
+  }
   if (filters.cities?.length) where.city = { in: filters.cities };
-  if (filters.programTypes?.length) where.programType = { in: filters.programTypes };
+  const programTypes = filters.programTypes?.length
+    ? filters.programTypes
+    : ctx.preferredProgramTypes;
+  if (programTypes.length) where.programType = { in: programTypes };
 
   const candidates = await prisma.ladderJob.findMany({
     where,
     include: {
-      company: true,
+      company: { select: PUBLIC_COMPANY_SELECT },
       verifications: { orderBy: { checkedAt: 'desc' }, take: 1 },
     },
     orderBy: [{ relevanceScoreBase: 'desc' }],
-    take: CANDIDATE_CAP,
   });
 
-  const ctx = await loadUserContext(prisma, userId);
-  const actions = await prisma.ladderJobAction.findMany({ where: { userId } });
+  const [actions, applications] = userId
+    ? await Promise.all([
+        prisma.ladderJobAction.findMany({ where: { userId } }),
+        prisma.ladderApplication.findMany({ where: { userId } }),
+      ])
+    : [[], []];
   const actionByJob = new Map(actions.map((a) => [a.jobId as string, a.action as string]));
+  const applicationByJob = new Map(
+    applications.map((application) => [application.jobId as string, application.status as string]),
+  );
 
   const rows: JobRow[] = [];
   for (const job of candidates) {
     const latest = latestVerificationOf(job);
+    const verificationStatus = latest?.status as string | undefined;
+    const eligibleVerification = verificationStatus
+      ? PUBLIC_VERIFICATION_STATUSES.includes(verificationStatus) ||
+        (filters.includeNonUS === true && verificationStatus === 'non_us_role')
+      : false;
+    if (!latest || !eligibleVerification) continue;
     if (!filters.includeNonUS && latest && NON_US_STATUSES.includes(latest.status as string)) continue;
+
+    const storedAction = actionByJob.get(job.id as string) ?? null;
+    if (filters.preset === 'saved' && storedAction !== 'saved') continue;
+    if (filters.preset === 'ignored' && storedAction !== 'ignored') continue;
+    if (filters.preset !== 'ignored' && storedAction === 'ignored') continue;
 
     const scorable = toScorable(job);
     const boost = computeUserBoost(scorable, {
@@ -174,11 +253,17 @@ export async function listJobs(
     });
     if (boost.blocked) continue;
 
+    const score = finalRelevance((job.relevanceScoreBase as number) ?? 0, boost.boost);
+    if (score < ctx.relevanceThreshold) continue;
+
     rows.push({
-      ...job,
+      ...toPublicJob(job),
       latestVerification: latest,
-      userAction: actionByJob.get(job.id as string) ?? null,
-      finalRelevance: finalRelevance((job.relevanceScoreBase as number) ?? 0, boost.boost),
+      userAction: ['saved', 'ignored'].includes(storedAction ?? '')
+        ? storedAction!
+        : null,
+      applicationStatus: applicationByJob.get(job.id as string) ?? null,
+      finalRelevance: score,
     });
   }
 
@@ -209,49 +294,109 @@ export async function listJobs(
 
 export async function getJobDetail(
   prisma: QueriesPrisma,
-  userId: string,
+  userId: string | null,
   jobId: string,
 ): Promise<AnyRow | null> {
   const job = await prisma.ladderJob.findUnique({
     where: { id: jobId },
     include: {
-      company: true,
+      company: { select: PUBLIC_COMPANY_SELECT },
       verifications: { orderBy: { checkedAt: 'desc' } },
-      actions: { where: { userId } },
-      applications: { where: { userId } },
+      ...(userId
+        ? {
+            actions: { where: { userId } },
+            applications: { where: { userId } },
+          }
+        : {}),
     },
   });
   if (!job) return null;
+  const latest = (job.verifications as AnyRow[] | undefined)?.[0];
+  if (
+    job.status !== 'active' ||
+    (job.company as AnyRow | undefined)?.enabled !== true ||
+    !PUBLIC_EARLY_CAREER_CLASSES.includes(job.earlyCareerClassification as string) ||
+    !latest ||
+    !PUBLIC_VERIFICATION_STATUSES.includes(latest.status as string)
+  ) {
+    return null;
+  }
+  const storedAction = (job.actions as AnyRow[] | undefined)?.[0]?.action as string | undefined;
   return {
-    ...job,
-    userAction: (job.actions as AnyRow[] | undefined)?.[0]?.action ?? null,
+    ...toPublicJob(job),
+    userAction: storedAction === 'saved' || storedAction === 'ignored' ? storedAction : null,
     application: (job.applications as AnyRow[] | undefined)?.[0] ?? null,
   };
 }
 
-export async function getOverview(prisma: QueriesPrisma, userId: string) {
+export async function getOverview(
+  prisma: QueriesPrisma,
+  userId: string | null,
+  options: { includeAdminStats?: boolean } = {},
+) {
   const now = new Date();
-  const [freshJobs, activeJobs, expiring, openTasks, runs, actions, applications] = await Promise.all([
-    prisma.ladderJob.findMany({ where: { status: 'active', discoveredAt: { gte: new Date(now.getTime() - 7 * DAY) } } }),
+  const [activeJobs, openTasks, runs, actions, applications] = await Promise.all([
     prisma.ladderJob.findMany({
-      where: { status: 'active' },
+      where: {
+        status: 'active',
+        earlyCareerClassification: { in: PUBLIC_EARLY_CAREER_CLASSES },
+        company: { enabled: true },
+      },
       include: { verifications: { orderBy: { checkedAt: 'desc' }, take: 1 } },
     }),
-    prisma.ladderJob.findMany({ where: { status: 'active', applicationDeadline: { lte: new Date(now.getTime() + 14 * DAY) } } }),
-    prisma.ladderReviewTask.findMany({ where: { status: 'open' } }),
-    prisma.ladderScrapeRun.findMany({ orderBy: [{ startedAt: 'desc' }], take: 1 }),
-    prisma.ladderJobAction.findMany({ where: { userId } }),
-    prisma.ladderApplication.findMany({ where: { userId } }),
+    options.includeAdminStats
+      ? prisma.ladderReviewTask.findMany({ where: { status: 'open' } })
+      : Promise.resolve([]),
+    prisma.ladderScrapeRun.findMany({
+      orderBy: [{ startedAt: 'desc' }],
+      take: 1,
+      select: {
+        id: true,
+        trigger: true,
+        startedAt: true,
+        finishedAt: true,
+        discoveredCount: true,
+        newCount: true,
+        verifiedCount: true,
+        expiredCount: true,
+        errorCount: true,
+      },
+    }),
+    userId ? prisma.ladderJobAction.findMany({ where: { userId } }) : Promise.resolve([]),
+    userId ? prisma.ladderApplication.findMany({ where: { userId } }) : Promise.resolve([]),
   ]);
 
+  const eligible = activeJobs.filter((job) => {
+    const latest = latestVerificationOf(job);
+    return latest && PUBLIC_VERIFICATION_STATUSES.includes(latest.status as string);
+  });
+  const freshThreshold = new Date(now.getTime() - 7 * DAY);
+  const deadlineThreshold = new Date(now.getTime() + 14 * DAY);
+
   return {
-    newThisWeek: freshJobs.length,
-    verifiedActive: activeJobs.filter((j) => latestVerificationOf(j)?.status === 'verified_active').length,
-    expiringSoon: expiring.length,
+    newThisWeek: eligible.filter((job) => new Date(job.discoveredAt as Date) >= freshThreshold).length,
+    verifiedActive: eligible.length,
+    expiringSoon: eligible.filter(
+      (job) => job.applicationDeadline && new Date(job.applicationDeadline as Date) <= deadlineThreshold,
+    ).length,
     openReviewTasks: openTasks.length,
-    lastRun: (runs[0] as AnyRow | undefined) ?? null,
+    lastRun: runs[0]
+      ? {
+          id: runs[0].id,
+          trigger: runs[0].trigger,
+          startedAt: runs[0].startedAt,
+          finishedAt: runs[0].finishedAt,
+          discoveredCount: runs[0].discoveredCount,
+          newCount: runs[0].newCount,
+          verifiedCount: runs[0].verifiedCount,
+          expiredCount: runs[0].expiredCount,
+          errorCount: runs[0].errorCount,
+        }
+      : null,
     savedCount: actions.filter((a) => a.action === 'saved').length,
-    appliedCount: applications.length,
+    appliedCount: applications.filter(
+      (application) => !['not_applied', 'planning'].includes(application.status as string),
+    ).length,
   };
 }
 
@@ -292,13 +437,17 @@ export async function listRuns(prisma: QueriesPrisma, take = 20) {
   });
 }
 
-/** Sources still 'active' but silent: lastSuccessAt null or older than 48h. */
+/** Sources still active but silent for two expected four-hour scrape cycles. */
 export async function listStaleSources(prisma: QueriesPrisma, now = new Date()) {
-  const threshold = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+  const threshold = new Date(now.getTime() - 8 * 60 * 60 * 1000);
   return prisma.ladderSource.findMany({
     where: {
-      status: 'active',
-      OR: [{ lastSuccessAt: null }, { lastSuccessAt: { lt: threshold } }],
+      status: { in: ['active', 'error'] },
+      OR: [
+        { status: 'error' },
+        { lastSuccessAt: null },
+        { lastSuccessAt: { lt: threshold } },
+      ],
     },
     include: { company: true },
   });
@@ -326,9 +475,12 @@ export async function listApplications(prisma: QueriesPrisma, userId: string) {
 }
 
 export async function listAlerts(prisma: QueriesPrisma, userId: string) {
-  return prisma.ladderAlert.findMany({
+  return prisma.ladderAlertEvent.findMany({
     where: { userId },
-    orderBy: [{ sentAt: 'desc' }],
-    include: { job: { include: { company: true } } },
+    orderBy: [{ createdAt: 'desc' }],
+    include: {
+      job: { include: { company: true } },
+      deliveries: true,
+    },
   });
 }

@@ -6,7 +6,11 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ListJobsFilters } from '@/lib/rmhladder/server/queries';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select } from '@/components/ui/select';
 
 const PRESETS: { value: NonNullable<ListJobsFilters['preset']>; label: string }[] = [
   { value: 'new',        label: 'New'        },
@@ -15,6 +19,8 @@ const PRESETS: { value: NonNullable<ListJobsFilters['preset']>; label: string }[
   { value: 'tech',       label: 'Tech'       },
   { value: 'expiring',   label: 'Expiring'   },
   { value: 'remote',     label: 'Remote'     },
+  { value: 'saved',      label: 'Saved'      },
+  { value: 'ignored',    label: 'Ignored'    },
 ];
 
 const PROGRAM_TYPES: { value: string; label: string }[] = [
@@ -32,9 +38,11 @@ const PROGRAM_TYPES: { value: string; label: string }[] = [
 interface FilterChipsProps {
   search: ListJobsFilters;
   onUpdate: (patch: Partial<ListJobsFilters>) => void;
+  showPersonalPresets?: boolean;
 }
 
-export function FilterChips({ search, onUpdate }: FilterChipsProps) {
+export function FilterChips({ search, onUpdate, showPersonalPresets = false }: FilterChipsProps) {
+  const { t } = useTranslation('site');
   // ── Search box (debounced) ────────────────────────────────────────
   const [inputValue, setInputValue] = useState(search.q ?? '');
   const isUserTypingRef = useRef(false);
@@ -95,89 +103,80 @@ export function FilterChips({ search, onUpdate }: FilterChipsProps) {
   }
 
   return (
-    <div className="rl-filter-bar" role="group" aria-label="Job filters">
+    <div className="mb-5 space-y-3 rounded-site border border-site-border bg-site-surface p-3" role="search" aria-label={t('ladder.jobFilters', { defaultValue: 'Job filters' })}>
       {/* Preset chips */}
-      {PRESETS.map(({ value, label }) => (
-        <button
-          key={value}
-          type="button"
-          className={`rl-chip ${search.preset === value ? 'rl-chip--active' : ''}`}
-          aria-pressed={search.preset === value}
-          onClick={() => togglePreset(value)}
-        >
-          {label}
-        </button>
-      ))}
-
-      <div className="rl-filter-divider" aria-hidden="true" />
+      <div className="flex flex-wrap gap-2">
+        {PRESETS.filter(({ value }) => showPersonalPresets || (value !== 'saved' && value !== 'ignored')).map(({ value, label }) => (
+          <Button
+            key={value}
+            type="button"
+            size="sm"
+            variant={search.preset === value ? 'accent' : 'outline'}
+            className="min-h-11"
+            aria-pressed={search.preset === value}
+            onClick={() => togglePreset(value)}
+          >
+            {label}
+          </Button>
+        ))}
+      </div>
 
       {/* Program type toggles */}
-      {PROGRAM_TYPES.map(({ value, label }) => (
-        <button
-          key={value}
-          type="button"
-          className={`rl-chip ${(search.programTypes ?? []).includes(value) ? 'rl-chip--active' : ''}`}
-          aria-pressed={(search.programTypes ?? []).includes(value)}
-          onClick={() => toggleProgramType(value)}
-        >
-          {label}
-        </button>
-      ))}
+      <div>
+        <p className="mb-2 text-xs font-medium uppercase tracking-wide text-site-text-muted">
+          {t('ladder.programTypes', { defaultValue: 'Program types' })}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {PROGRAM_TYPES.map(({ value, label }) => (
+            <Button
+              key={value}
+              type="button"
+              size="xs"
+              variant={(search.programTypes ?? []).includes(value) ? 'accent' : 'ghost'}
+              className="min-h-9"
+              aria-pressed={(search.programTypes ?? []).includes(value)}
+              onClick={() => toggleProgramType(value)}
+            >
+              {label}
+            </Button>
+          ))}
+        </div>
+      </div>
 
-      <div className="rl-filter-divider" aria-hidden="true" />
-
-      {/* City input */}
-      <input
-        type="text"
-        className="rl-city-input"
-        placeholder="Cities (comma-separated)"
-        value={cityInput}
-        aria-label="Filter by cities"
-        onChange={(e) => setCityInput(e.target.value)}
-        onBlur={(e) => commitCities(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') commitCities((e.target as HTMLInputElement).value);
-        }}
-      />
-
-      {/* Non-US toggle */}
-      <label className="rl-toggle">
-        <input
-          type="checkbox"
-          checked={search.includeNonUS === true}
-          onChange={(e) => onUpdate({ includeNonUS: e.target.checked || undefined })}
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_auto]">
+        <Input
+          type="text"
+          placeholder={t('ladder.citiesPlaceholder', { defaultValue: 'Cities (comma-separated)' })}
+          value={cityInput}
+          aria-label={t('ladder.filterCities', { defaultValue: 'Filter by cities' })}
+          onChange={(e) => setCityInput(e.target.value)}
+          onBlur={(e) => commitCities(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commitCities((e.target as HTMLInputElement).value);
+          }}
         />
-        Include non-US
-      </label>
 
-      <div className="rl-filter-divider" aria-hidden="true" />
+        <Input
+          type="search"
+          placeholder={t('ladder.searchJobs', { defaultValue: 'Search jobs or companies…' })}
+          value={inputValue}
+          aria-label={t('ladder.searchJobTitles', { defaultValue: 'Search jobs, companies, and locations' })}
+          onChange={(e) => {
+            isUserTypingRef.current = true;
+            setInputValue(e.target.value);
+          }}
+        />
 
-      {/* Search box */}
-      <input
-        type="search"
-        className="rl-search-box"
-        placeholder="Search titles…"
-        value={inputValue}
-        aria-label="Search job titles"
-        onChange={(e) => {
-          isUserTypingRef.current = true;
-          setInputValue(e.target.value);
-        }}
-      />
-
-      {/* Sort select */}
-      <select
-        className="rl-sort-select"
-        value={search.sort ?? 'relevance'}
-        aria-label="Sort jobs by"
-        onChange={(e) =>
-          onUpdate({ sort: e.target.value as ListJobsFilters['sort'] })
-        }
-      >
-        <option value="relevance">Relevance</option>
-        <option value="posted">Posted</option>
-        <option value="deadline">Deadline</option>
-      </select>
+        <Select
+          value={search.sort ?? 'relevance'}
+          aria-label={t('ladder.sortJobs', { defaultValue: 'Sort jobs by' })}
+          onChange={(e) => onUpdate({ sort: e.target.value as ListJobsFilters['sort'] })}
+        >
+          <option value="relevance">{t('ladder.relevance', { defaultValue: 'Relevance' })}</option>
+          <option value="posted">{t('ladder.posted', { defaultValue: 'Posted' })}</option>
+          <option value="deadline">{t('ladder.deadline', { defaultValue: 'Deadline' })}</option>
+        </Select>
+      </div>
     </div>
   );
 }

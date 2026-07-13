@@ -154,6 +154,17 @@ function makeFakePrisma() {
         return { count: targets.length };
       },
     },
+    ladderAlertEvent: {
+      async updateMany({ where, data }: FakeArgs) {
+        const targets = alerts.filter(
+          (a) => a.userId === where.userId &&
+            (!where.id || a.id === where.id) &&
+            (where.readAt !== null || a.readAt == null),
+        );
+        for (const a of targets) Object.assign(a, data);
+        return { count: targets.length };
+      },
+    },
     _state: { companies, jobs, jobActions, applications, reviewTasks, verifications, keywords, watchlist, prefs, alerts },
   } as any;
 }
@@ -231,12 +242,14 @@ describe('actions.ts', () => {
       expect(prisma._state.verifications.some((v: AnyRow) => v.jobId === 'job1' && v.status === 'non_us_role')).toBe(true);
     });
 
-    it('duplicate/ignore: resolves task only, no mutation', async () => {
+    it('duplicate: expires the duplicate job and records verification', async () => {
       const prisma = makeFakePrisma();
+      prisma._state.jobs.set('job1', { id: 'job1', status: 'active' });
       prisma._state.reviewTasks.push({ id: 't1', jobId: 'job1', status: 'open' });
 
       await resolveReviewTask(prisma, 'user1', 't1', 'duplicate');
-      expect(prisma._state.verifications.length).toBe(0);
+      expect(prisma._state.jobs.get('job1')?.status).toBe('expired');
+      expect(prisma._state.verifications.some((v: AnyRow) => v.jobId === 'job1' && v.status === 'expired')).toBe(true);
       expect(prisma._state.reviewTasks[0].status).toBe('resolved');
     });
 
@@ -357,6 +370,17 @@ describe('actions.ts', () => {
       expect(prisma._state.alerts[0].readAt).not.toBeNull();
       expect(prisma._state.alerts[1].readAt).toBe(alreadyRead); // untouched
       expect(prisma._state.alerts[2].readAt).toBeNull();
+    });
+
+    it('can mark one alert read without changing the rest', async () => {
+      const prisma = makeFakePrisma();
+      prisma._state.alerts.push(
+        { id: 'a1', userId: 'user1', readAt: null },
+        { id: 'a2', userId: 'user1', readAt: null },
+      );
+      await markAlertsRead(prisma, 'user1', 'a2');
+      expect(prisma._state.alerts[0].readAt).toBeNull();
+      expect(prisma._state.alerts[1].readAt).not.toBeNull();
     });
   });
 

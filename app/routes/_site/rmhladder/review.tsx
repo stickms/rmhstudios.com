@@ -40,6 +40,8 @@ const fetchTasks = createServerFn({ method: 'GET' })
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/review' } });
+    const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
+    if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
     const tasks = await listReviewTasks(queriesPrisma, { status: data.tab });
     return { tasks: data.tab === 'resolved' ? tasks.slice(0, 50) : tasks };
   });
@@ -50,6 +52,8 @@ const doResolve = createServerFn({ method: 'POST' })
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/review' } });
+    const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
+    if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
     return resolveReviewTask(actionsPrisma, session.user.id, data.taskId, data.resolution);
   });
 
@@ -58,7 +62,7 @@ interface ReviewSearch {
   tab?: 'open' | 'resolved';
 }
 
-export const Route = createFileRoute('/rmhladder/review')({
+export const Route = createFileRoute('/_site/rmhladder/review')({
   validateSearch: (search: Record<string, unknown>): ReviewSearch => ({
     tab: search.tab === 'resolved' ? 'resolved' : undefined,
   }),
@@ -158,11 +162,6 @@ function ReviewPage() {
 
   return (
     <div>
-      <div className="rl-page-header">
-        <p className="rl-eyebrow">RMHLADDER · REVIEW</p>
-        <h1 className="rl-display">Review Queue</h1>
-      </div>
-
       <div className="rl-filter-bar" role="tablist" aria-label="Review tabs">
         {(['open', 'resolved'] as const).map((t) => (
           <button

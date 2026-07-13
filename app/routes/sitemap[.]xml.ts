@@ -70,7 +70,7 @@ export const Route = createFileRoute('/sitemap.xml')({
 
         // DB-backed public content. Failures here shouldn't 500 the sitemap.
         try {
-          const [posts, news, builds] = await Promise.all([
+          const [posts, news, builds, ladderJobs] = await Promise.all([
             prisma.blogPost.findMany({ select: { slug: true, updatedAt: true }, take: 1000 }),
             prisma.newsArticle.findMany({
               where: { status: 'PUBLISHED' },
@@ -80,6 +80,26 @@ export const Route = createFileRoute('/sitemap.xml')({
             prisma.userBuild.findMany({
               where: { visibility: 'PUBLIC' },
               select: { slug: true, updatedAt: true },
+              take: 5000,
+            }),
+            prisma.ladderJob.findMany({
+              where: {
+                status: 'active',
+                earlyCareerClassification: { in: ['yes', 'probable'] },
+                company: { enabled: true },
+              },
+              select: {
+                id: true,
+                lastVerifiedAt: true,
+                lastCheckedAt: true,
+                discoveredAt: true,
+                verifications: {
+                  orderBy: { checkedAt: 'desc' },
+                  take: 1,
+                  select: { status: true },
+                },
+              },
+              orderBy: { lastVerifiedAt: 'desc' },
               take: 5000,
             }),
           ]);
@@ -92,6 +112,11 @@ export const Route = createFileRoute('/sitemap.xml')({
           }
           for (const b of builds) {
             urls.push({ loc: `/user-builds/${b.slug}`, lastmod: b.updatedAt.toISOString(), changefreq: 'weekly', priority: 0.5 });
+          }
+          for (const job of ladderJobs) {
+            if (!['verified_active', 'verified_probable'].includes(job.verifications[0]?.status ?? '')) continue;
+            const lastmod = job.lastVerifiedAt ?? job.lastCheckedAt ?? job.discoveredAt;
+            urls.push({ loc: `/rmhladder/jobs/${job.id}`, lastmod: lastmod.toISOString(), changefreq: 'daily', priority: 0.6 });
           }
         } catch (e) {
           console.error('[sitemap] DB query failed, serving static routes only:', e);
