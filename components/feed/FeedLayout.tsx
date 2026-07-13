@@ -1,7 +1,7 @@
 'use client';
 
 import { RightSidebar } from './RightSidebar';
-import { FeedColumn } from './FeedColumn';
+import { FeedColumn, type InitialFeed } from './FeedColumn';
 import { AnimatedMain } from './AnimatedMain';
 
 interface FeedLayoutProps {
@@ -41,6 +41,8 @@ interface FeedLayoutProps {
     title: string;
     date: string;
   }[];
+  /** Server-prefetched first feed page, forwarded to seed the timeline. */
+  initialFeed?: InitialFeed | null;
 }
 
 export function FeedLayout({
@@ -48,12 +50,13 @@ export function FeedLayout({
   userBuilds,
   recommendedUsers,
   blogPosts,
+  initialFeed,
 }: FeedLayoutProps) {
   return (
     <>
       {/* Center Feed – width animates when arriving from a wide page */}
       <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0">
-        <FeedColumn />
+        <FeedColumn initialFeed={initialFeed} />
       </AnimatedMain>
 
       {/* Right Sidebar - hidden below lg, scrolls with page */}

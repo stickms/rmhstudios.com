@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useFeedStore } from '@/stores/feedStore';
+import type { FeedItem as FeedItemType } from '@/lib/feed-types';
 import { FeedItem } from './FeedItem';
 import { ArrowUp } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
@@ -14,11 +15,16 @@ interface FeedListProps {
   following?: boolean;
   /** Cold-start CTA: switch the viewer to the For You surface. */
   onSwitchToForYou?: () => void;
+  /** Server-prefetched first page (For You / all) — rendered in the SSR HTML
+   *  and used to seed the store on mount so the feed needs no client fetch. */
+  initialItems?: FeedItemType[];
+  initialCursor?: string | null;
+  initialHasMore?: boolean;
 }
 
-export function FeedList({ following = false, onSwitchToForYou }: FeedListProps) {
+export function FeedList({ following = false, onSwitchToForYou, initialItems, initialCursor = null, initialHasMore = false }: FeedListProps) {
   const { t } = useTranslation('feed');
-  const { items, loading, initialized, error, hasMore, fetchNextPage, retry, pendingItems, flushPending } =
+  const { items, loading, initialized, error, hasMore, fetchNextPage, retry, hydrate, pendingItems, flushPending } =
     useFeedStore();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const initialFetched = useRef(false);
@@ -26,17 +32,34 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
   // than pop. Cleared after the animation window.
   const [enteringIds, setEnteringIds] = useState<Set<string>>(() => new Set());
 
-  // Initial fetch. The feed store is module-level, so items survive navigation —
+  // Before the store is seeded (SSR + first client render, when the module-level
+  // store is still pristine), render the server-prefetched first page so posts
+  // are in the initial HTML — no skeleton, no post-hydration fetch. Only for the
+  // default For You surface the prefetch corresponds to.
+  const usingInitial =
+    !initialized && items.length === 0 && !following && !!initialItems && initialItems.length > 0;
+  const displayItems = usingInitial ? initialItems : items;
+
+  // Initial load. The feed store is module-level, so items survive navigation —
   // returning to the feed (back-nav) shows the cached timeline instantly and,
   // paired with the router's scroll restoration, lands you where you were.
-  // Only fetch when there's nothing cached, so a remount never appends a
+  // Only act when there's nothing cached, so a remount never appends a
   // redundant extra page on top of what's already loaded.
   useEffect(() => {
     if (!initialFetched.current) {
       initialFetched.current = true;
-      if (items.length === 0) fetchNextPage();
+      if (items.length === 0) {
+        const s = useFeedStore.getState();
+        // Seed from the SSR prefetch when it matches the surface the store
+        // starts on (For You / all, no search) — otherwise fetch client-side.
+        if (initialItems && initialItems.length > 0 && s.filter === 'all' && !s.search) {
+          hydrate(initialItems, initialCursor, initialHasMore);
+        } else {
+          fetchNextPage();
+        }
+      }
     }
-  }, [fetchNextPage, items.length]);
+  }, [fetchNextPage, hydrate, items.length, initialItems, initialCursor, initialHasMore]);
 
   // Self-heal the feed when the environment recovers. Mobile browsers suspend
   // backgrounded tabs (killing an in-flight fetch), and networks drop — either
@@ -115,7 +138,7 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
         </div>
       )}
 
-      {items.map((item) => {
+      {displayItems.map((item) => {
         const entering = enteringIds.has(item.id);
         // `feed-card-cv` skips layout/paint for cards far from the viewport so
         // long timelines stay smooth. Pending (optimistic) and just-entered
@@ -132,7 +155,7 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
       {/* Initial load → layout-matched skeletons so the feed reads as
           "content arriving" rather than a bare spinner, and the empty state
           never flashes before the first page resolves. */}
-      {!initialized && items.length === 0 && <PostListSkeleton count={6} />}
+      {!initialized && items.length === 0 && !usingInitial && <PostListSkeleton count={6} />}
 
       {/* Pagination load (subsequent pages) keeps the compact spinner. */}
       {initialized && loading && (

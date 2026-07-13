@@ -15,6 +15,7 @@ import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { authClient } from '@/lib/auth-client';
 import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import type { FeedItem as FeedItemType } from '@/lib/feed-types';
 
 interface SearchUser {
   id: string;
@@ -26,7 +27,14 @@ interface SearchUser {
   isAdmin: boolean;
 }
 
-export function FeedColumn() {
+/** Server-prefetched first page (For You / all), passed down to seed the feed. */
+export interface InitialFeed {
+  items: FeedItemType[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export function FeedColumn({ initialFeed }: { initialFeed?: InitialFeed | null }) {
   const { t } = useTranslation('feed');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
@@ -258,6 +266,9 @@ export function FeedColumn() {
         <FeedList
           following={mode === 'friends'}
           onSwitchToForYou={() => handleModeChange('feed')}
+          initialItems={initialFeed?.items}
+          initialCursor={initialFeed?.nextCursor ?? null}
+          initialHasMore={initialFeed?.hasMore ?? false}
         />
       )}
     </div>
