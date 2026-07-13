@@ -9,10 +9,12 @@ import { UserAvatar } from './UserAvatar';
 import { HandleInput } from './HandleInput';
 import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
+import type { RankTier } from '@/lib/ranked/tiers';
 
 interface Rating {
   game: string;
   rating: number;
+  tier?: RankTier;
   wins: number;
   losses: number;
   draws: number;
@@ -30,6 +32,7 @@ interface GameDef {
 interface LbRow {
   rank: number;
   rating: number;
+  tier?: RankTier;
   wins: number;
   losses: number;
   draws: number;
@@ -37,6 +40,23 @@ interface LbRow {
 }
 
 const fmt = (n: number) => n.toLocaleString();
+
+/** Small colored pill for a ranked tier (Bronze → Master). */
+function TierBadge({ tier }: { tier?: RankTier }) {
+  if (!tier) return null;
+  return (
+    <span
+      className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide"
+      style={{
+        color: tier.color,
+        backgroundColor: `${tier.color}1a`,
+        border: `1px solid ${tier.color}40`,
+      }}
+    >
+      {tier.label}
+    </span>
+  );
+}
 
 export function RankedColumn({
   initialData,
@@ -268,9 +288,12 @@ export function RankedColumn({
                 <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-ratings', { defaultValue: 'Your ratings' })}</h2>
                 <div className="space-y-1">
                   {ratings.map((r) => (
-                    <div key={r.game} className={`flex items-center justify-between rounded-site border border-site-border bg-site-surface px-3 py-2.5 ${LIFT_CARD}`}>
-                      <span className="text-sm font-medium text-site-text">{nameOf(r.game)}</span>
-                      <span className="text-sm text-site-text-dim">
+                    <div key={r.game} className={`flex items-center justify-between gap-2 rounded-site border border-site-border bg-site-surface px-3 py-2.5 ${LIFT_CARD}`}>
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="truncate text-sm font-medium text-site-text">{nameOf(r.game)}</span>
+                        <TierBadge tier={r.tier} />
+                      </span>
+                      <span className="shrink-0 text-sm text-site-text-dim">
                         <strong className="text-site-text">{fmt(r.rating)}</strong> · {r.wins}W {r.losses}L {r.draws}D
                       </span>
                     </div>
@@ -313,7 +336,10 @@ export function RankedColumn({
                   <UserAvatar user={row.user} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-site-text">{row.user.name || row.user.handle || t('player-fallback', { defaultValue: 'Player' })}</p>
-                    <p className="text-[11px] text-site-text-dim">{row.wins}W {row.losses}L {row.draws}D</p>
+                    <p className="flex items-center gap-1.5 text-[11px] text-site-text-dim">
+                      <TierBadge tier={row.tier} />
+                      {row.wins}W {row.losses}L {row.draws}D
+                    </p>
                   </div>
                   <span className="text-sm font-bold text-site-text">{fmt(row.rating)}</span>
                 </div>

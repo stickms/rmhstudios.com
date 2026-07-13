@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { DURATION, EASE } from '@/lib/motion';
 
 interface TooltipProps {
   content: React.ReactNode;
@@ -101,7 +102,7 @@ export function Tooltip({ content, children, className, delay = 0.2 }: TooltipPr
                 initial={{ opacity: 0, scale: 0.9, y: 0, x: "-50%" }}
                 animate={{ opacity: 1, scale: 1, y: -8, x: "-50%" }}
                 exit={{ opacity: 0, scale: 0.9, y: 0, x: "-50%" }}
-                transition={{ duration: 0.15, ease: "easeOut" }}
+                transition={{ duration: DURATION.fast, ease: EASE.standard }}
                 style={{
                     position: "absolute",
                     bottom: 0,

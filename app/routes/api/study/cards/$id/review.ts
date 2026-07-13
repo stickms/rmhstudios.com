@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
 import { nextState, type Grade } from '@/lib/rmhstudy/srs';
+import { recordStudyReview } from '@/lib/quests/engine.server';
 
 const schema = z.object({ grade: z.number().int().min(0).max(3) });
 
@@ -46,6 +47,9 @@ export const Route = createFileRoute('/api/study/cards/$id/review')({
             create: { userId, cardId: params.id, easeFactor: next.easeFactor, intervalDays: next.intervalDays, repetitions: next.repetitions, dueAt: next.dueAt },
             update: { easeFactor: next.easeFactor, intervalDays: next.intervalDays, repetitions: next.repetitions, dueAt: next.dueAt },
           });
+
+          // Progress the daily "study" quest + award XP (best-effort, rate-limited).
+          await recordStudyReview(userId);
 
           return Response.json({ success: true, dueAt: next.dueAt, intervalDays: next.intervalDays });
         } catch (error) {

@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 
 import { cn } from '@/lib/utils';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
+import { DURATION, EASE } from '@/lib/motion';
 
 /**
  * Floating "back to top" button. Appears once the page is scrolled past
@@ -62,7 +63,7 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
           initial={{ opacity: 0, scale: 0.8, y: 8 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.8, y: 8 }}
-          transition={{ duration: 0.15, ease: 'easeOut' }}
+          transition={{ duration: DURATION.fast, ease: EASE.standard }}
           className={cn(
             'fixed right-4 bottom-20 z-40 md:right-6 md:bottom-6',
             'flex size-11 items-center justify-center rounded-full',

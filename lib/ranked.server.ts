@@ -11,6 +11,7 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { RANKED_GAMES } from '@/lib/ranked/elo';
+import { tierForRating, type RankTier } from '@/lib/ranked/tiers';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 
 export interface RankedRating {
@@ -18,6 +19,7 @@ export interface RankedRating {
   userId: string;
   game: string;
   rating: number;
+  tier: RankTier;
   wins: number;
   losses: number;
   draws: number;
@@ -66,6 +68,7 @@ export async function getRankedOverview(userId: string | null): Promise<RankedOv
       userId: r.userId,
       game: r.game,
       rating: r.rating,
+      tier: tierForRating(r.rating),
       wins: r.wins,
       losses: r.losses,
       draws: r.draws,

@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { gameName, isRankedGame } from '@/lib/ranked/elo';
+import { tierForRating } from '@/lib/ranked/tiers';
 
 /** GET /api/ranked/$game/leaderboard — top ELO ratings for a game. */
 export const Route = createFileRoute('/api/ranked/$game/leaderboard')({
@@ -23,6 +24,7 @@ export const Route = createFileRoute('/api/ranked/$game/leaderboard')({
           leaderboard: rows.map((r, i) => ({
             rank: i + 1,
             rating: r.rating,
+            tier: tierForRating(r.rating),
             wins: r.wins,
             losses: r.losses,
             draws: r.draws,
