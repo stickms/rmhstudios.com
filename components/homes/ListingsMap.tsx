@@ -107,7 +107,7 @@ export function ListingsMap({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-site border border-site-border bg-site-surface ${className ?? ''}`}
+      className={`homes-map relative overflow-hidden rounded-site border border-site-border bg-site-surface ${className ?? ''}`}
     >
       {mounted ? (
         <Map
@@ -138,7 +138,7 @@ export function ListingsMap({
                   className={`cursor-pointer rounded-full px-2.5 py-1 text-xs font-bold shadow-lg ring-1 transition ${
                     active
                       ? 'z-10 scale-110 bg-site-text text-site-bg ring-2 ring-site-accent'
-                      : 'bg-site-accent text-site-accent-fg ring-black/25 hover:scale-105 hover:ring-2 hover:ring-white/70'
+                      : 'bg-site-accent text-site-accent-fg ring-site-border-bright hover:scale-105 hover:ring-2 hover:ring-site-text/70'
                   }`}
                 >
                   {pinLabel(l)}
