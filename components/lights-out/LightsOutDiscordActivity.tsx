@@ -762,7 +762,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                 ...(completed ? { ratingLabel: label, ratingEmoji: emoji } : {}),
             }),
         }).catch(() => {});
-    }, [discord.accessToken, discord.user.id, todayKey]);
+    }, [discord.accessToken, todayKey]);
 
     // Sync score + notify embed on solve
     useEffect(() => {
