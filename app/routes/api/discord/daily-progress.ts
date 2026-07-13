@@ -5,18 +5,60 @@ import { rateLimit, getClientIp } from '@/lib/rate-limit';
 /**
  * Tracks per-user daily puzzle progress (grid state + moves).
  * Keyed by discordId + dateKey — persists across guilds and devices.
+ *
+ * The `discordId` is derived server-side from the caller's verified Discord
+ * access token — NEVER trusted from the request — so one player can't read or
+ * overwrite another's progress by supplying an arbitrary (public) snowflake.
  */
+
+// Short-TTL cache of verified access-token → Discord id. Progress is saved on
+// every move (up to the 120/min limit), so we can't hit Discord's /users/@me on
+// each write; a 5-minute cache keeps identity server-verified without flooding.
+const tokenCache = new Map<string, { discordId: string; at: number }>();
+const TOKEN_TTL_MS = 5 * 60 * 1000;
+
+async function resolveDiscordId(accessToken: string | null | undefined): Promise<string | null> {
+    if (!accessToken || typeof accessToken !== 'string') return null;
+    const cached = tokenCache.get(accessToken);
+    if (cached && Date.now() - cached.at < TOKEN_TTL_MS) return cached.discordId;
+    try {
+        const res = await fetch('https://discord.com/api/v10/users/@me', {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!res.ok) return null;
+        const user = await res.json();
+        if (typeof user?.id !== 'string') return null;
+        if (tokenCache.size > 5_000) tokenCache.clear();
+        tokenCache.set(accessToken, { discordId: user.id, at: Date.now() });
+        return user.id;
+    } catch {
+        return null;
+    }
+}
+
+/** Read the Discord access token from the Authorization header or a query/body field. */
+function tokenFromRequest(request: Request, url?: URL, bodyToken?: unknown): string | null {
+    const auth = request.headers.get('authorization');
+    if (auth?.toLowerCase().startsWith('bearer ')) return auth.slice(7).trim();
+    if (typeof bodyToken === 'string' && bodyToken) return bodyToken;
+    if (url) return url.searchParams.get('accessToken');
+    return null;
+}
+
 export const Route = createFileRoute('/api/discord/daily-progress')({
     server: {
         handlers: {
-            // GET — fetch current progress for a user+date
+            // GET — fetch current progress for the authenticated Discord user + date
             GET: async ({ request }) => {
                 const url = new URL(request.url);
-                const discordId = url.searchParams.get('discordId');
                 const dateKey = url.searchParams.get('dateKey');
 
-                if (!discordId || !dateKey) {
-                    return Response.json({ error: 'Missing discordId or dateKey' }, { status: 400 });
+                const discordId = await resolveDiscordId(tokenFromRequest(request, url));
+                if (!discordId) {
+                    return Response.json({ error: 'Invalid or missing Discord token' }, { status: 401 });
+                }
+                if (!dateKey) {
+                    return Response.json({ error: 'Missing dateKey' }, { status: 400 });
                 }
 
                 try {
@@ -59,9 +101,13 @@ export const Route = createFileRoute('/api/discord/daily-progress')({
 
                 try {
                     const body = await request.json();
-                    const { discordId, dateKey, gridJson, moves, completed, ratingLabel, ratingEmoji } = body;
+                    const { accessToken, dateKey, gridJson, moves, completed, ratingLabel, ratingEmoji } = body;
 
-                    if (!discordId || !dateKey || typeof moves !== 'number') {
+                    const discordId = await resolveDiscordId(tokenFromRequest(request, undefined, accessToken));
+                    if (!discordId) {
+                        return Response.json({ error: 'Invalid or missing Discord token' }, { status: 401 });
+                    }
+                    if (!dateKey || typeof moves !== 'number') {
                         return Response.json({ error: 'Missing required fields' }, { status: 400 });
                     }
 

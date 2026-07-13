@@ -41,6 +41,33 @@ database, Cloudflare policy, or deployed headers were accessed. Runtime-dependen
 (especially the concurrency races and DNS-rebinding TOCTOU) must be confirmed against the live
 environment. Secret *values* in `.env*` were not inspected.
 
+## Remediation applied — 2026-07-13
+
+The findings below were remediated in the same change set immediately after this assessment. The
+original findings/severities are retained above for audit traceability. Verification: repo-wide
+`tsc --noEmit` clean, all five server bundles compile, `--frozen-lockfile` consistent, SSRF/homes/
+ladder suites green (290 tests); the only failing tests are pre-existing i18n-catalog drift and
+RMHBox phase tests unrelated to these changes.
+
+| ID | Status | Notes |
+| -- | ------ | ----- |
+| H-1 | Remediated | Every spend converted to an atomic conditional `updateMany({ where:{ coins:{ gte } } })`; every claim-once made atomic (conditional flip / Serializable / `updateMany` guards) across tip, purchase, claim, bet, gift, storefront, shop, staking, battle-pass claim+unlock, quests, achievements, streak, prediction (#403), doctrine. Bet stake bounded. A `CHECK (coins >= 0)` DB backstop is still recommended (needs a data-cleanup pass first) and is intentionally deferred. |
+| H-2 | Remediated | `translate` + `summary` now resolve the session and gate on `canViewPost` + `isLocked` before reading or serving cached content. (#401, #406) |
+| H-3 | Remediated | New `lib/url-safety.ts` (`httpUrl()` zod helper + `safeHref()`); user-build `repoUrl`/`demoUrl`, profile `website`/song URLs are http(s)-only; every anchor sink wrapped in `safeHref`. (#402) |
+| H-4 | Remediated | VerseCraft chapter/outline/world now require a session and enforce the distributed per-user + global daily quota (fail-closed without Redis), mirroring `vibe/ai`. |
+| H-5 | Partially remediated | App: `image-proxy` rate-limited; per-user keying preferred where practical. Edge: Apache `mod_remoteip` + Cloudflare-range trust documented/scaffolded — the origin firewall restriction is an infra step that must be completed operationally. The ×4 multiplier and full Redis-backed shared limiter remain a follow-up. |
+| M-1 | Remediated | RMH Study + Synapse Storm socket handlers derive identity from `socket.data.userId` only; anonymous Synapse players get a per-connection guest id. (#404, #405) |
+| M-2 | Remediated | `safeFetch` pins undici's connection to the DNS-validated IP (per redirect hop); homes scraper routed through `safeFetch`; `isPrivateIp` IPv6/198.18 coverage widened; open image proxy rate-limited. (#407) |
+| M-3 | **Deferred (needs infra)** | Enabling `requireEmailVerification` without an email transport would break login/reset. Requires wiring an email provider + `sendVerificationEmail`/`sendResetPassword` + an account-linking policy — a product/infra decision, intentionally not auto-applied. (#408) |
+| M-4 | Remediated (Discord daily-progress, ranked) | Discord daily-progress now derives `discordId` from a verified access token (short-TTL cache; client updated to send the token); ranked report finalizes via an atomic status transition. `discord/race.ts` (ephemeral in-memory) remains a follow-up; true two-sided ranked confirmation is a noted product follow-up. |
+| M-5 | Partially remediated | Library upload rejects oversized bodies by declared length before buffering. A global Nitro/Apache body cap is deferred (needs an ops-chosen ceiling sized to the largest legitimate upload). |
+| M-6 | Remediated | rmhcode CLI tokens are stored/looked up as SHA-256 hashes (`hashRmhCodeToken`); existing plaintext tokens stop validating and must be re-issued. |
+| M-7 | Remediated (config) | MinIO fails closed without `S3_*` (required-variable syntax). The un-deployed `ledger` Go service still needs auth before integration (latent). |
+| M-8 | Partially remediated | Traefik CSP reconciled to match Apache; `Permissions-Policy` added to both vhosts + Traefik; webhook HMAC now constant-time; CI workflows given least-privilege `permissions`. Removing CSP `unsafe-inline` (needs nonce plumbing) is deferred. |
+| L-1 | Remediated | `vega/score` now uses a strict, bounded zod schema. |
+| L-2 | Remediated | `/api/v1/posts/{id}/comments` mirrors the post audience gate. (#409) |
+| L-3 | Partially remediated | Constant-time webhook HMAC, `Permissions-Policy`, and CI `permissions` applied. `discord/token.ts` returning the caller's own token is required by the Discord SDK (accepted); the `marked` dead-dependency removal and admin image-route relocation are deferred as non-security hygiene. |
+
 ## Methodology
 
 - Read the canonical repo guidance and the core security primitives directly (`lib/rate-limit.ts`,

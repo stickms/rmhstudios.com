@@ -8,6 +8,7 @@ import { randomBytes } from 'crypto';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { hashRmhCodeToken } from '@/lib/rmhcode-auth';
 import { z } from 'zod';
 
 const generateTokenSchema = z.object({
@@ -57,11 +58,11 @@ export const Route = createFileRoute('/api/rmhcode/auth/generate')({
     // Generate cryptographically secure token
     const token = randomBytes(32).toString('hex'); // 64 chars
 
-    // Store token
+    // Store only the token's hash; the plaintext is shown once below.
     const tokenRecord = await prisma.rmhCodeToken.create({
       data: {
         userId: session.user.id,
-        token,
+        token: hashRmhCodeToken(token),
         name: name || null,
         expiresAt: new Date(Date.now() + TOKEN_EXPIRY_MS),
       },

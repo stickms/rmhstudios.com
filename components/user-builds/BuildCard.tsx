@@ -8,6 +8,7 @@ import { BlurImage } from '@/components/ui/BlurImage';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useCardSheen } from '@/hooks/useCardSheen';
 import { formatCount } from '@/lib/utils';
+import { safeHref } from '@/lib/url-safety';
 import { useTranslation } from 'react-i18next';
 
 interface BuildCardProps {
@@ -127,7 +128,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
             <div className="flex items-center gap-3 text-site-text-dim">
               {build.repoUrl && (
                 <a
-                  href={build.repoUrl}
+                  href={safeHref(build.repoUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
@@ -139,7 +140,7 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
               )}
               {build.demoUrl && (
                 <a
-                  href={build.demoUrl}
+                  href={safeHref(build.demoUrl)}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}

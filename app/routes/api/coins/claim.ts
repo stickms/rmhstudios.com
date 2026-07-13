@@ -29,26 +29,24 @@ export const Route = createFileRoute('/api/coins/claim')({
 
     const userId = session.user.id;
 
-    const result = await prisma.$transaction(async (tx) => {
-      const profile = await tx.userProfile.upsert({
-        where: { userId },
-        create: { userId, coins: 10 },
-        update: {},
-        select: { coins: true },
-      });
-
-      if (profile.coins >= 10) {
-        throw new Error("COINS_TOO_HIGH");
-      }
-
-      return tx.userProfile.update({
-        where: { userId },
-        data: { coins: { increment: 10 } },
-        select: { coins: true },
-      });
+    // Ensure the profile row exists (new users start at 10, i.e. not claimable),
+    // then top up atomically. The `coins < 10` guard lives in the WHERE clause so
+    // two concurrent claims can't both read a stale sub-10 balance and each add 10.
+    await prisma.userProfile.upsert({
+      where: { userId },
+      create: { userId, coins: 10 },
+      update: {},
     });
+    const claim = await prisma.userProfile.updateMany({
+      where: { userId, coins: { lt: 10 } },
+      data: { coins: { increment: 10 } },
+    });
+    if (claim.count === 0) {
+      throw new Error("COINS_TOO_HIGH");
+    }
+    const result = await prisma.userProfile.findUnique({ where: { userId }, select: { coins: true } });
 
-    return Response.json({ newBalance: result.coins });
+    return Response.json({ newBalance: result?.coins ?? 0 });
   } catch (error) {
     if (error instanceof Error && error.message === "COINS_TOO_HIGH") {
       return Response.json(

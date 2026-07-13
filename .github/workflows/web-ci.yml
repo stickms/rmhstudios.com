@@ -27,6 +27,11 @@ concurrency:
   group: web-ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege: CI only reads the repo (checkout) to typecheck/lint/test/build.
+# No write scopes are needed.
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest

@@ -21,27 +21,31 @@ export const Route = createFileRoute('/api/battlepass/unlock')({
           const price = CURRENT_SEASON.premiumPrice;
 
           await prisma.$transaction(async (tx) => {
-            const sp = await tx.userSeasonProgress.upsert({
+            await tx.userSeasonProgress.upsert({
               where: { userId_seasonId: { userId, seasonId: CURRENT_SEASON.id } },
               create: { userId, seasonId: CURRENT_SEASON.id },
               update: {},
-              select: { premium: true },
             });
-            if (sp.premium) throw new Error('ALREADY_PREMIUM');
+            // Atomically claim the premium flag (false→true). Concurrent unlocks
+            // race here; only the one that actually flips it proceeds to charge,
+            // so premium can never be bought twice.
+            const flip = await tx.userSeasonProgress.updateMany({
+              where: { userId, seasonId: CURRENT_SEASON.id, premium: false },
+              data: { premium: true },
+            });
+            if (flip.count === 0) throw new Error('ALREADY_PREMIUM');
 
-            const profile = await tx.userProfile.upsert({
+            await tx.userProfile.upsert({
               where: { userId },
               create: { userId, coins: 10 },
               update: {},
-              select: { coins: true },
             });
-            if (profile.coins < price) throw new Error('INSUFFICIENT_COINS');
-
-            await tx.userProfile.update({ where: { userId }, data: { coins: { decrement: price } } });
-            await tx.userSeasonProgress.update({
-              where: { userId_seasonId: { userId, seasonId: CURRENT_SEASON.id } },
-              data: { premium: true },
+            // Atomic conditional debit; if it fails the premium flip above rolls back.
+            const debit = await tx.userProfile.updateMany({
+              where: { userId, coins: { gte: price } },
+              data: { coins: { decrement: price } },
             });
+            if (debit.count === 0) throw new Error('INSUFFICIENT_COINS');
             await tx.coinTransaction.create({
               data: { recipientId: userId, amount: -price, type: 'PURCHASE', entityType: 'battlepass', entityId: CURRENT_SEASON.id, note: 'Premium pass' },
             });

@@ -19,6 +19,11 @@ concurrency:
   group: go-microservices-${{ github.ref }}
   cancel-in-progress: true
 
+# Least privilege: build/test, the Postgres-backed e2e job, and helm lint only
+# read the repo (checkout). No write scopes are needed.
+permissions:
+  contents: read
+
 jobs:
   build-test:
     runs-on: ubuntu-latest

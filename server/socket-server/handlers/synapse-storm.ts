@@ -152,7 +152,13 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
 
   // ─── Create Lobby ───
   socket.on('ss:createLobby', async (payload: { userId?: string; displayName?: string }) => {
-    const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+    // Identity must come from the authenticated session, never a client-supplied
+    // payload.userId (which let an attacker forge match records under any victim's
+    // id). Anonymous players get a stable per-connection guest id so lobby play
+    // still works but can never impersonate a real account.
+    const userId = typeof socket.data.userId === 'string' && socket.data.userId
+      ? socket.data.userId
+      : `guest:${socket.id}`;
     const displayName = sanitizeUserName(payload?.displayName);
     if (!userId) { socket.emit('ss:error', { message: 'Missing userId' }); return; }
 
@@ -208,7 +214,13 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
   // ─── Join Lobby ───
   socket.on('ss:joinLobby', (payload: { code?: string; userId?: string; displayName?: string }) => {
     const code = (typeof payload?.code === 'string' ? payload.code : '').toUpperCase().trim();
-    const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+    // Identity must come from the authenticated session, never a client-supplied
+    // payload.userId (which let an attacker forge match records under any victim's
+    // id). Anonymous players get a stable per-connection guest id so lobby play
+    // still works but can never impersonate a real account.
+    const userId = typeof socket.data.userId === 'string' && socket.data.userId
+      ? socket.data.userId
+      : `guest:${socket.id}`;
     const displayName = sanitizeUserName(payload?.displayName);
     if (!code || !userId) { socket.emit('ss:error', { message: 'Missing code or userId' }); return; }
 
@@ -286,7 +298,13 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
   // ─── Toggle Ready ───
   socket.on('ss:toggleReady', (payload: { code?: string; userId?: string }) => {
     const code = (typeof payload?.code === 'string' ? payload.code : '').toUpperCase();
-    const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+    // Identity must come from the authenticated session, never a client-supplied
+    // payload.userId (which let an attacker forge match records under any victim's
+    // id). Anonymous players get a stable per-connection guest id so lobby play
+    // still works but can never impersonate a real account.
+    const userId = typeof socket.data.userId === 'string' && socket.data.userId
+      ? socket.data.userId
+      : `guest:${socket.id}`;
     const lobby = ssGetLobbyByCode(code);
     if (!lobby) return;
     const player = lobby.players.get(userId);
@@ -298,7 +316,13 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
   // ─── Start Match ───
   socket.on('ss:startMatch', (payload: { code?: string; userId?: string }) => {
     const code = (typeof payload?.code === 'string' ? payload.code : '').toUpperCase();
-    const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+    // Identity must come from the authenticated session, never a client-supplied
+    // payload.userId (which let an attacker forge match records under any victim's
+    // id). Anonymous players get a stable per-connection guest id so lobby play
+    // still works but can never impersonate a real account.
+    const userId = typeof socket.data.userId === 'string' && socket.data.userId
+      ? socket.data.userId
+      : `guest:${socket.id}`;
     const lobby = ssGetLobbyByCode(code);
     if (!lobby) { socket.emit('ss:error', { message: 'Lobby not found' }); return; }
     if (lobby.hostUserId !== userId) { socket.emit('ss:error', { message: 'Only host can start' }); return; }
@@ -374,7 +398,13 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
     matchId?: string; userId?: string; displayName?: string;
     score?: number; maxCombo?: number; puzzlesSolved?: number; puzzlesMissed?: number;
   }) => {
-    const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+    // Identity must come from the authenticated session, never a client-supplied
+    // payload.userId (which let an attacker forge match records under any victim's
+    // id). Anonymous players get a stable per-connection guest id so lobby play
+    // still works but can never impersonate a real account.
+    const userId = typeof socket.data.userId === 'string' && socket.data.userId
+      ? socket.data.userId
+      : `guest:${socket.id}`;
     const lobbyCode = ssSocketLobbyMap.get(socket.id);
     if (!lobbyCode) return;
     const lobby = ssGetLobbyByCode(lobbyCode);
@@ -437,7 +467,13 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
     matchId?: string; userId?: string;
     score?: number; maxCombo?: number; puzzlesSolved?: number; puzzlesMissed?: number;
   }) => {
-    const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+    // Identity must come from the authenticated session, never a client-supplied
+    // payload.userId (which let an attacker forge match records under any victim's
+    // id). Anonymous players get a stable per-connection guest id so lobby play
+    // still works but can never impersonate a real account.
+    const userId = typeof socket.data.userId === 'string' && socket.data.userId
+      ? socket.data.userId
+      : `guest:${socket.id}`;
     const lobbyCode = ssSocketLobbyMap.get(socket.id);
     if (!lobbyCode) return;
     const lobby = ssGetLobbyByCode(lobbyCode);
@@ -501,7 +537,13 @@ export function registerSynapseStormHandlers(io: Server, socket: Socket): void {
   // ─── Return to Lobby ───
   socket.on('ss:returnToLobby', (payload: { code?: string; userId?: string }) => {
     const code = (typeof payload?.code === 'string' ? payload.code : '').toUpperCase();
-    const userId = typeof payload?.userId === 'string' ? payload.userId : '';
+    // Identity must come from the authenticated session, never a client-supplied
+    // payload.userId (which let an attacker forge match records under any victim's
+    // id). Anonymous players get a stable per-connection guest id so lobby play
+    // still works but can never impersonate a real account.
+    const userId = typeof socket.data.userId === 'string' && socket.data.userId
+      ? socket.data.userId
+      : `guest:${socket.id}`;
     const lobby = ssGetLobbyByCode(code);
     if (!lobby) return;
     if (lobby.hostUserId !== userId) return;

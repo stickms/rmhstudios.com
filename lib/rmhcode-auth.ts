@@ -2,14 +2,27 @@
  * Authentication helpers for rmhcode CLI token validation
  */
 
+import { createHash } from 'node:crypto';
 import { prisma } from '@/lib/prisma.server';
+
+/**
+ * Hash a CLI token for at-rest storage / lookup. Tokens are stored only as their
+ * SHA-256 digest (mirroring the developer API keys) so a read of the token table
+ * (backup, replica, log leak, insider) can't yield live bearer credentials.
+ * SHA-256 hex is 64 chars, the same width as the plaintext token, so no schema
+ * change is required. Existing plaintext tokens stop validating and must be
+ * re-issued.
+ */
+export function hashRmhCodeToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 /**
  * Validate an rmhcode CLI token and return the user
  */
 export async function validateRmhCodeToken(token: string) {
   const tokenRecord = await prisma.rmhCodeToken.findUnique({
-    where: { token },
+    where: { token: hashRmhCodeToken(token) },
     include: {
       user: {
         select: {

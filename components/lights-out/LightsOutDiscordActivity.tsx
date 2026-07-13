@@ -680,7 +680,8 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
         async function load() {
             try {
                 const res = await fetch(
-                    `/api/discord/daily-progress?discordId=${encodeURIComponent(discord.user.id)}&dateKey=${encodeURIComponent(todayKey)}`,
+                    `/api/discord/daily-progress?dateKey=${encodeURIComponent(todayKey)}`,
+                    { headers: { Authorization: `Bearer ${discord.accessToken}` } },
                 );
                 if (!res.ok) throw new Error('fetch failed');
                 const data = await res.json();
@@ -753,7 +754,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                discordId: discord.user.id,
+                accessToken: discord.accessToken,
                 dateKey: todayKey,
                 gridJson: JSON.stringify(newGrid),
                 moves: newMoves,
@@ -761,7 +762,7 @@ function DailyGame({ discord, onBack }: { discord: DiscordContext; onBack: () =>
                 ...(completed ? { ratingLabel: label, ratingEmoji: emoji } : {}),
             }),
         }).catch(() => {});
-    }, [discord.user.id, todayKey]);
+    }, [discord.accessToken, discord.user.id, todayKey]);
 
     // Sync score + notify embed on solve
     useEffect(() => {

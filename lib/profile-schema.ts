@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { HANDLE_REGEX } from "@/lib/handle";
+import { httpUrl } from "@/lib/url-safety";
 
 export const dmPrivacyValues = ["EVERYONE", "FOLLOWERS", "NONE"] as const;
 
@@ -30,10 +31,7 @@ export const updateProfileSchema = z.object({
     .max(100, "Location must be at most 100 characters")
     .optional()
     .nullable(),
-  website: z
-    .string()
-    .max(200, "Website URL must be at most 200 characters")
-    .url("Must be a valid URL")
+  website: httpUrl(200)
     .optional()
     .nullable()
     .or(z.literal("")),
@@ -44,17 +42,11 @@ export const updateProfileSchema = z.object({
   profileSongSpotifyId: z.string().max(50).optional().nullable(),
   profileSongTitle: z.string().max(200).optional().nullable(),
   profileSongArtist: z.string().max(200).optional().nullable(),
-  profileSongPreviewUrl: z
-    .string()
-    .max(500)
-    .url()
+  profileSongPreviewUrl: httpUrl(500)
     .optional()
     .nullable()
     .or(z.literal("")),
-  profileSongAlbumArt: z
-    .string()
-    .max(500)
-    .url()
+  profileSongAlbumArt: httpUrl(500)
     .optional()
     .nullable()
     .or(z.literal("")),

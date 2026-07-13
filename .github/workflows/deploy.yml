@@ -24,6 +24,12 @@ concurrency:
   group: deploy-production
   cancel-in-progress: false
 
+# Least privilege: this workflow only SSHes out to the VPS (deploy.sh pulls the
+# repo on the host itself — there is no checkout here), so the GITHUB_TOKEN needs
+# no write scopes. No OIDC/id-token or packages access is used.
+permissions:
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest

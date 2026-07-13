@@ -46,15 +46,18 @@ export const Route = createFileRoute('/api/shop/purchase')({
             });
             if (existing) throw new Error('ALREADY_OWNED');
 
-            const profile = await tx.userProfile.upsert({
+            await tx.userProfile.upsert({
               where: { userId },
               create: { userId, coins: 10 },
               update: {},
-              select: { coins: true },
             });
-            if (profile.coins < item.price) throw new Error('INSUFFICIENT_COINS');
-
-            await tx.userProfile.update({ where: { userId }, data: { coins: { decrement: item.price } } });
+            // Atomic conditional debit — the `coins >= price` guard in the WHERE
+            // clause stops concurrent purchases overdrafting on a stale balance.
+            const debit = await tx.userProfile.updateMany({
+              where: { userId, coins: { gte: item.price } },
+              data: { coins: { decrement: item.price } },
+            });
+            if (debit.count === 0) throw new Error('INSUFFICIENT_COINS');
             await tx.userInventory.create({ data: { userId, itemId: item.id, kind: item.kind } });
             await tx.coinTransaction.create({
               data: { recipientId: userId, amount: -item.price, type: 'PURCHASE', entityType: 'shop', entityId: item.id, note: item.name },

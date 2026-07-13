@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma.server';
 import { putObject, deleteObject, objectExists, s3Configured } from '@/lib/storage/s3.server';
 import { validateImageBuffer } from '@/lib/slice-it/upload-validation';
 import { processLibraryUpload, type UploadDeps } from '@/lib/library/upload';
+import { libraryPdfMaxBytes } from '@/lib/library/upload-validation';
 import { uploadSlugExists } from '@/lib/library/library.server';
 import { effectiveQuota } from '@/lib/library/quota.server';
 import { libraryFileKey, libraryCoverKey, libraryPdfUrl } from '@/lib/library/keys';
@@ -56,6 +57,16 @@ export const Route = createFileRoute('/api/library/upload')({
                 { status: 429, headers: { 'Retry-After': String(retryAfter) } }
               );
             }
+          }
+
+          // Reject oversized uploads by their declared size BEFORE buffering the
+          // whole body into memory. The admin ceiling + cover + a little multipart
+          // overhead is the hard cap; per-account limits are re-checked precisely
+          // inside processLibraryUpload once the bytes are known.
+          const declaredLength = Number(request.headers.get('content-length') ?? 0);
+          const maxUploadBytes = libraryPdfMaxBytes(true) + COVER_MAX_BYTES + 2 * 1024 * 1024;
+          if (Number.isFinite(declaredLength) && declaredLength > maxUploadBytes) {
+            return Response.json({ error: 'File too large.' }, { status: 413 });
           }
 
           const form = await request.formData();

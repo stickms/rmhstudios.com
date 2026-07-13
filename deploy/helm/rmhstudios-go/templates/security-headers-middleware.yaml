@@ -19,10 +19,15 @@ spec:
     referrerPolicy: "strict-origin-when-cross-origin"
     stsSeconds: 31536000
     stsIncludeSubdomains: true
-    contentSecurityPolicy: "frame-ancestors 'self' https://discord.com https://*.discord.com https://*.discordsays.com"
+    # Single enforced Content-Security-Policy, byte-identical to the Apache vhost
+    # (deploy/apache/rmhstudios.conf). Traefik's native contentSecurityPolicy sets
+    # the enforcing `Content-Security-Policy` header, so do NOT also set that header
+    # under customResponseHeaders — two enforcing CSP headers conflict. (If a
+    # report-only tuning policy is ever wanted, add it under the separate
+    # `Content-Security-Policy-Report-Only` header, not this one.)
+    contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss:; media-src 'self' blob: https:; worker-src 'self' blob:; frame-src 'self' blob: https:; frame-ancestors 'self' https://discord.com https://*.discord.com https://*.discordsays.com; form-action 'self'; object-src 'none'; base-uri 'none'"
     customResponseHeaders:
       X-Permitted-Cross-Domain-Policies: "none"
-      # Report-Only sibling of the enforced CSP above — collect violations for a
-      # fuller policy without breaking anything. Mirror of the Apache vhost.
-      Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss:; media-src 'self' blob: https:; worker-src 'self' blob:; frame-src 'self' blob: https:; frame-ancestors 'self' https://discord.com https://*.discord.com https://*.discordsays.com; form-action 'self'; object-src 'none'; base-uri 'none'"
+      # Match the Apache vhost's Permissions-Policy.
+      Permissions-Policy: "geolocation=(), microphone=(), camera=(), payment=()"
 {{- end }}
