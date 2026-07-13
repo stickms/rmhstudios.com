@@ -6,8 +6,8 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 .vibe-screen {
-  background: #000;
-  color: #f5f5f7;
+  background: var(--site-bg);
+  color: var(--site-text);
   font-family:
     -apple-system,
     BlinkMacSystemFont,
@@ -25,7 +25,7 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #6e6e73;
+  color: var(--site-text-dim);
 }
 
 .vibe-title {
@@ -38,7 +38,7 @@
   font-weight: 700;
   line-height: 1.02;
   letter-spacing: -0.04em;
-  color: #f5f5f7;
+  color: var(--site-text);
   white-space: nowrap;
   max-width: 100%;
 }
@@ -55,7 +55,7 @@
   font-size: clamp(0.95rem, 1.5vw, 1.15rem);
   font-weight: 400;
   line-height: 1.5;
-  color: rgba(245, 245, 247, 0.6);
+  color: var(--site-text-muted);
 }
 
 /* thin "RMH Studios presents" lead-in above the title */
@@ -63,14 +63,14 @@
   font-size: clamp(0.82rem, 1.6vw, 1.05rem);
   font-weight: 300;
   letter-spacing: 0.02em;
-  color: rgba(245, 245, 247, 0.5);
+  color: var(--site-text-muted);
 }
 
 .vibe-hint {
   font-size: 0.78rem;
   font-weight: 500;
   letter-spacing: 0.04em;
-  color: #6e6e73;
+  color: var(--site-text-dim);
 }
 
 /* ─── Input dock (pill) ─────────────────────────────────────────────────────── */
@@ -81,12 +81,12 @@
   min-height: 56px;
   width: min(540px, calc(100vw - 48px));
   padding: 7px 7px 7px 22px;
-  background: rgba(28, 28, 30, 0.9);
+  background: var(--site-surface);
   backdrop-filter: saturate(180%) blur(48px);
   -webkit-backdrop-filter: saturate(180%) blur(48px);
   border-radius: 28px;
-  border: 0.5px solid rgba(255, 255, 255, 0.13);
-  border-top-color: rgba(255, 255, 255, 0.22);
+  border: 0.5px solid var(--site-border);
+  border-top-color: var(--site-border-bright);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.07) inset,
     0 24px 64px rgba(0, 0, 0, 0.55);
@@ -94,7 +94,7 @@
 }
 
 .vibe-dock:focus-within {
-  border-color: rgba(255, 255, 255, 0.24);
+  border-color: var(--site-border);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.1) inset,
     0 24px 64px rgba(0, 0, 0, 0.65);
@@ -106,13 +106,13 @@
   background: transparent;
   border: 0;
   outline: 0;
-  color: #f5f5f7;
+  color: var(--site-text);
   font: inherit;
   font-size: 1rem;
 }
 
 .vibe-dock__input::placeholder {
-  color: #515154;
+  color: var(--site-text-dim);
 }
 
 /* textarea variant — taller, lightly rounded, with a footer row (model toggle +
@@ -148,14 +148,14 @@
   background: transparent;
   border: 0;
   outline: 0;
-  color: #f5f5f7;
+  color: var(--site-text);
   font: inherit;
   font-size: 1.05rem;
   line-height: 1.55;
 }
 
 .vibe-dock__textarea::placeholder {
-  color: #515154;
+  color: var(--site-text-dim);
 }
 
 .vibe-dock__submit {
@@ -165,14 +165,14 @@
   height: 42px;
   border: 0;
   border-radius: 50%;
-  background: #f5f5f7;
-  color: #000;
+  background: var(--site-text);
+  color: var(--site-bg);
   cursor: pointer;
   transition: background 160ms ease, transform 160ms ease;
 }
 
 .vibe-dock__submit:hover {
-  background: #fff;
+  background: var(--site-text);
   transform: scale(1.06);
 }
 
@@ -183,7 +183,7 @@
 
 .vibe-dock__submit:disabled:hover {
   transform: none;
-  background: #f5f5f7;
+  background: var(--site-text);
 }
 
 /* ─── Viewer toolbar ────────────────────────────────────────────────────────── */
@@ -193,11 +193,11 @@
   gap: 6px;
   padding: 6px;
   border-radius: 9999px;
-  background: rgba(28, 28, 30, 0.72);
+  background: var(--site-surface);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
-  border: 0.5px solid rgba(255, 255, 255, 0.13);
-  border-top-color: rgba(255, 255, 255, 0.22);
+  border: 0.5px solid var(--site-border);
+  border-top-color: var(--site-border-bright);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
@@ -211,15 +211,15 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: rgba(245, 245, 247, 0.78);
+  color: var(--site-text);
   cursor: pointer;
   text-decoration: none;
   transition: background 160ms ease, color 160ms ease;
 }
 
 .vibe-toolbar__icon:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f5f5f7;
+  background: var(--site-surface-hover);
+  color: var(--site-text);
 }
 
 .vibe-toolbar__cta {
@@ -230,8 +230,8 @@
   padding: 0 16px;
   border: 0;
   border-radius: 9999px;
-  background: #f5f5f7;
-  color: #000;
+  background: var(--site-text);
+  color: var(--site-bg);
   font: inherit;
   font-size: 0.85rem;
   font-weight: 600;
@@ -240,7 +240,7 @@
 }
 
 .vibe-toolbar__cta:hover {
-  background: #fff;
+  background: var(--site-text);
   transform: scale(1.03);
 }
 
@@ -249,15 +249,15 @@
   width: min(680px, calc(100vw - 24px));
   padding: 16px;
   border-radius: 24px;
-  background: rgba(28, 28, 30, 0.9);
+  background: var(--site-surface);
   backdrop-filter: saturate(180%) blur(48px);
   -webkit-backdrop-filter: saturate(180%) blur(48px);
-  border: 0.5px solid rgba(255, 255, 255, 0.13);
-  border-top-color: rgba(255, 255, 255, 0.22);
+  border: 0.5px solid var(--site-border);
+  border-top-color: var(--site-border-bright);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.07) inset,
     0 24px 64px rgba(0, 0, 0, 0.6);
-  color: #f5f5f7;
+  color: var(--site-text);
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
 }
@@ -265,7 +265,7 @@
 .vibe-panel__title {
   font-size: 0.85rem;
   font-weight: 600;
-  color: rgba(245, 245, 247, 0.9);
+  color: var(--site-text);
 }
 
 .vibe-panel__close {
@@ -276,25 +276,25 @@
   border: 0;
   border-radius: 50%;
   background: transparent;
-  color: rgba(245, 245, 247, 0.6);
+  color: var(--site-text-muted);
   cursor: pointer;
   transition: background 160ms ease, color 160ms ease;
 }
 
 .vibe-panel__close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f5f5f7;
+  background: var(--site-surface-hover);
+  color: var(--site-text);
 }
 
 .vibe-panel__input {
   width: 100%;
   min-width: 0;
   resize: none;
-  background: rgba(255, 255, 255, 0.05);
-  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
   border-radius: 14px;
   padding: 11px 14px;
-  color: #f5f5f7;
+  color: var(--site-text);
   font: inherit;
   font-size: 0.92rem;
   outline: 0;
@@ -302,11 +302,11 @@
 }
 
 .vibe-panel__input::placeholder {
-  color: #515154;
+  color: var(--site-text-dim);
 }
 
 .vibe-panel__input:focus {
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: var(--site-border-bright);
 }
 
 .vibe-panel__input:disabled {
@@ -321,14 +321,14 @@
   flex-shrink: 0;
   border: 0;
   border-radius: 14px;
-  background: #f5f5f7;
-  color: #000;
+  background: var(--site-text);
+  color: var(--site-bg);
   cursor: pointer;
   transition: background 160ms ease, transform 160ms ease;
 }
 
 .vibe-panel__submit:hover {
-  background: #fff;
+  background: var(--site-text);
   transform: scale(1.04);
 }
 
@@ -339,17 +339,17 @@
 
 .vibe-panel__submit:disabled:hover {
   transform: none;
-  background: #f5f5f7;
+  background: var(--site-text);
 }
 
 .vibe-panel__hint {
   font-size: 0.74rem;
-  color: #6e6e73;
+  color: var(--site-text-dim);
 }
 
 .vibe-panel__error {
   font-size: 0.74rem;
-  color: #ff6b6b;
+  color: var(--site-danger);
 }
 
 /* ─── Customize panel dock (bottom-safe spacing) ────────────────────────────── */
@@ -364,9 +364,9 @@
   overflow-y: auto;
   padding: 12px 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
-  color: rgba(245, 245, 247, 0.55);
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
+  color: var(--site-text-muted);
   font-family:
     var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.78rem;
@@ -374,7 +374,7 @@
   white-space: pre-wrap;
   word-break: break-word;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  scrollbar-color: var(--site-border-bright) transparent;
   -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
   mask-image: linear-gradient(to bottom, transparent 0, #000 14px);
 }
@@ -383,7 +383,7 @@
   width: 6px;
 }
 .vibe-think::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--site-surface-hover);
   border-radius: 3px;
 }
 
@@ -408,8 +408,8 @@
   gap: 10px;
   padding: 14px 16px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
 }
@@ -426,13 +426,13 @@
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(245, 245, 247, 0.45);
+  color: var(--site-text-muted);
 }
 
 .vibe-progress__title {
   font-size: 0.86rem;
   font-weight: 600;
-  color: #f5f5f7;
+  color: var(--site-text);
 }
 
 .vibe-progress__deps {
@@ -444,9 +444,9 @@
 .vibe-progress__dep {
   padding: 2px 9px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
-  color: rgba(245, 245, 247, 0.7);
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
+  color: var(--site-text);
   font-family:
     var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.7rem;
@@ -459,14 +459,14 @@
   max-height: min(220px, 32vh);
   overflow-y: auto;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  scrollbar-color: var(--site-border-bright) transparent;
 }
 
 .vibe-progress__files::-webkit-scrollbar {
   width: 6px;
 }
 .vibe-progress__files::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.18);
+  background: var(--site-surface-hover);
   border-radius: 3px;
 }
 
@@ -478,12 +478,12 @@
   font-family:
     var(--font-jetbrains-mono), ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 0.78rem;
-  color: rgba(245, 245, 247, 0.55);
+  color: var(--site-text-muted);
   animation: vibe-rise-soft 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .vibe-progress__file.is-writing {
-  color: #f5f5f7;
+  color: var(--site-text);
 }
 
 .vibe-progress__file-icon {
@@ -495,16 +495,16 @@
 }
 
 .vibe-progress__file.is-done .vibe-progress__file-icon {
-  color: #34c759;
+  color: var(--site-success);
 }
 
 .vibe-progress__file.is-writing .vibe-progress__file-icon {
-  color: rgba(245, 245, 247, 0.7);
+  color: var(--site-text);
 }
 
 .vibe-progress__file-kind {
   flex: none;
-  color: rgba(245, 245, 247, 0.4);
+  color: var(--site-text-dim);
 }
 
 .vibe-progress__file-name {
@@ -517,7 +517,7 @@
   margin-left: auto;
   flex: none;
   font-size: 0.7rem;
-  color: rgba(245, 245, 247, 0.35);
+  color: var(--site-text-dim);
 }
 
 /* compact variant inside the customize panel */
@@ -620,13 +620,13 @@
   font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: 0.02em;
-  color: rgba(245, 245, 247, 0.42);
+  color: var(--site-text-dim);
   text-decoration: none;
   transition: color 160ms ease, transform 160ms ease;
 }
 
 .vibe-ghost-link:hover {
-  color: rgba(245, 245, 247, 0.82);
+  color: var(--site-text);
   transform: translateY(-1px);
 }
 
@@ -655,7 +655,7 @@
 }
 
 .vibe-account__trigger:hover {
-  color: rgba(245, 245, 247, 0.82);
+  color: var(--site-text);
 }
 
 .vibe-account__menu {
@@ -667,8 +667,8 @@
   min-width: 220px;
   padding: 6px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(20, 20, 22, 0.72);
+  border: 1px solid var(--site-border);
+  background: var(--site-surface);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
@@ -688,7 +688,7 @@
   height: 40px;
   border-radius: 9999px;
   object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--site-border);
   flex-shrink: 0;
 }
 
@@ -701,7 +701,7 @@
 .vibe-account__name {
   font-size: 0.88rem;
   font-weight: 600;
-  color: #f5f5f7;
+  color: var(--site-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -709,7 +709,7 @@
 
 .vibe-account__handle {
   font-size: 0.74rem;
-  color: #6e6e73;
+  color: var(--site-text-dim);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -718,7 +718,7 @@
 .vibe-account__sep {
   height: 1px;
   margin: 2px 6px 4px;
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--site-surface);
 }
 
 .vibe-account__item {
@@ -734,14 +734,14 @@
   font-size: 0.82rem;
   font-weight: 500;
   letter-spacing: 0.02em;
-  color: rgba(245, 245, 247, 0.7);
+  color: var(--site-text);
   text-decoration: none;
   transition: background 160ms ease, color 160ms ease;
 }
 
 .vibe-account__item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f5f5f7;
+  background: var(--site-surface);
+  color: var(--site-text);
 }
 
 /* ─── Gallery ───────────────────────────────────────────────────────────────── */
@@ -769,17 +769,17 @@
   align-items: center;
   gap: 16px;
   padding: 14px clamp(16px, 4vw, 40px);
-  background: rgba(0, 0, 0, 0.72);
+  background: color-mix(in srgb, var(--site-bg) 72%, transparent);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
-  border-bottom: 0.5px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 0.5px solid var(--site-border);
 }
 
 .vibe-gallery__title {
   font-size: 1.05rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  color: #f5f5f7;
+  color: var(--site-text);
 }
 
 .vibe-search {
@@ -793,7 +793,7 @@
 .vibe-search__icon {
   position: absolute;
   left: 12px;
-  color: #6e6e73;
+  color: var(--site-text-dim);
   pointer-events: none;
 }
 
@@ -801,10 +801,10 @@
   width: 100%;
   height: 38px;
   padding: 0 14px 0 36px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 0.5px solid rgba(255, 255, 255, 0.13);
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
   border-radius: 9999px;
-  color: #f5f5f7;
+  color: var(--site-text);
   font: inherit;
   font-size: 0.88rem;
   outline: 0;
@@ -812,11 +812,11 @@
 }
 
 .vibe-search__input::placeholder {
-  color: #515154;
+  color: var(--site-text-dim);
 }
 
 .vibe-search__input:focus {
-  border-color: rgba(255, 255, 255, 0.28);
+  border-color: var(--site-border-bright);
 }
 
 /* Admin-only: re-render every page thumbnail. Sits just right of the search. */
@@ -828,17 +828,17 @@
   width: 38px;
   height: 38px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 0.5px solid rgba(255, 255, 255, 0.13);
-  color: #d2d2d7;
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
+  color: var(--site-text-muted);
   cursor: pointer;
   transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
 }
 
 .vibe-backfill:hover:not(:disabled) {
-  color: #f5f5f7;
-  border-color: rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.08);
+  color: var(--site-text);
+  border-color: var(--site-border-bright);
+  background: var(--site-surface);
 }
 
 .vibe-backfill:disabled {
@@ -860,8 +860,8 @@
   flex-direction: column;
   border-radius: 16px;
   overflow: hidden;
-  background: rgba(28, 28, 30, 0.6);
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
   text-decoration: none;
   color: inherit;
   /* Hidden until revealed by .is-in (scroll-into-view). Hover only animates
@@ -887,7 +887,7 @@
 }
 
 .vibe-card:hover {
-  border-color: rgba(255, 255, 255, 0.24);
+  border-color: var(--site-border);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.55);
 }
 
@@ -942,7 +942,7 @@
 .vibe-card__title {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #f5f5f7;
+  color: var(--site-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -952,7 +952,7 @@
   margin-top: 4px;
   font-size: 0.78rem;
   line-height: 1.45;
-  color: #a1a1a6;
+  color: var(--site-text-muted);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -963,7 +963,7 @@
 .vibe-card__meta {
   margin-top: 8px;
   font-size: 0.7rem;
-  color: #6e6e73;
+  color: var(--site-text-dim);
 }
 
 .vibe-gallery__empty,
@@ -989,9 +989,9 @@
   height: 28px;
   padding: 0 10px 0 13px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 0.5px solid rgba(255, 255, 255, 0.13);
-  color: rgba(245, 245, 247, 0.85);
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
+  color: var(--site-text);
   font: inherit;
   font-size: 0.8rem;
   font-weight: 600;
@@ -1001,13 +1001,13 @@
 
 .vibe-model-select__button:hover:not(:disabled),
 .vibe-model-select__button[aria-expanded='true'] {
-  background: rgba(255, 255, 255, 0.09);
-  color: #f5f5f7;
+  background: var(--site-surface);
+  color: var(--site-text);
 }
 
 .vibe-model-select__button:focus-visible {
   outline: none;
-  border-color: rgba(245, 245, 247, 0.4);
+  border-color: var(--site-border-bright);
 }
 
 .vibe-model-select__button:disabled {
@@ -1016,7 +1016,7 @@
 }
 
 .vibe-model-select__chevron {
-  color: rgba(245, 245, 247, 0.55);
+  color: var(--site-text-muted);
   transition: transform 180ms ease;
 }
 
@@ -1033,8 +1033,8 @@
   min-width: 220px;
   padding: 6px;
   border-radius: 14px;
-  background: rgba(20, 20, 22, 0.92);
-  border: 0.5px solid rgba(255, 255, 255, 0.14);
+  background: var(--site-surface);
+  border: 0.5px solid var(--site-border);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -1055,7 +1055,7 @@
 .vibe-model-select__group + .vibe-model-select__group {
   margin-top: 4px;
   padding-top: 4px;
-  border-top: 0.5px solid rgba(255, 255, 255, 0.08);
+  border-top: 0.5px solid var(--site-border);
 }
 
 .vibe-model-select__group-label {
@@ -1064,7 +1064,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(245, 245, 247, 0.4);
+  color: var(--site-text-dim);
 }
 
 .vibe-model-select__option {
@@ -1076,7 +1076,7 @@
   border: 0;
   border-radius: 9px;
   background: transparent;
-  color: rgba(245, 245, 247, 0.85);
+  color: var(--site-text);
   font: inherit;
   font-size: 0.82rem;
   text-align: left;
@@ -1085,12 +1085,12 @@
 }
 
 .vibe-model-select__option:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f5f5f7;
+  background: var(--site-surface);
+  color: var(--site-text);
 }
 
 .vibe-model-select__option.is-active {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--site-surface);
 }
 
 .vibe-model-select__option-label {
@@ -1100,12 +1100,12 @@
 .vibe-model-select__option-hint {
   margin-left: auto;
   font-size: 0.72rem;
-  color: rgba(245, 245, 247, 0.45);
+  color: var(--site-text-muted);
 }
 
 .vibe-model-select__check {
   flex: none;
-  color: #f5f5f7;
+  color: var(--site-text);
 }
 
 /* ─── "Viewing an earlier version" banner ───────────────────────────────────── */
@@ -1116,13 +1116,13 @@
   height: 36px;
   padding: 0 8px 0 16px;
   border-radius: 9999px;
-  background: rgba(28, 28, 30, 0.72);
+  background: var(--site-surface);
   backdrop-filter: saturate(180%) blur(24px);
   -webkit-backdrop-filter: saturate(180%) blur(24px);
-  border: 0.5px solid rgba(255, 255, 255, 0.13);
-  border-top-color: rgba(255, 255, 255, 0.22);
+  border: 0.5px solid var(--site-border);
+  border-top-color: var(--site-border-bright);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-  color: rgba(245, 245, 247, 0.9);
+  color: var(--site-text);
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   font-size: 0.8rem;
@@ -1137,8 +1137,8 @@
   padding: 0 12px;
   border: 0;
   border-radius: 9999px;
-  background: #f5f5f7;
-  color: #000;
+  background: var(--site-text);
+  color: var(--site-bg);
   font: inherit;
   font-size: 0.76rem;
   font-weight: 600;
@@ -1147,7 +1147,7 @@
 }
 
 .vibe-version-banner__btn:hover {
-  background: #fff;
+  background: var(--site-text);
   transform: scale(1.03);
 }
 
@@ -1163,15 +1163,15 @@
   height: 100%;
   padding: 16px;
   border-radius: 24px;
-  background: rgba(28, 28, 30, 0.9);
+  background: var(--site-surface);
   backdrop-filter: saturate(180%) blur(48px);
   -webkit-backdrop-filter: saturate(180%) blur(48px);
-  border: 0.5px solid rgba(255, 255, 255, 0.13);
-  border-top-color: rgba(255, 255, 255, 0.22);
+  border: 0.5px solid var(--site-border);
+  border-top-color: var(--site-border-bright);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.07) inset,
     0 24px 64px rgba(0, 0, 0, 0.6);
-  color: #f5f5f7;
+  color: var(--site-text);
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
 }
@@ -1188,7 +1188,7 @@
   display: grid;
   place-items: center;
   padding: 32px 0;
-  color: #6e6e73;
+  color: var(--site-text-dim);
   font-size: 0.82rem;
 }
 
@@ -1197,17 +1197,17 @@
   width: 100%;
   text-align: left;
   padding: 11px 13px;
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  border: 0.5px solid var(--site-border);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--site-surface);
   color: inherit;
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease;
 }
 
 .vibe-history__item:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: var(--site-surface);
+  border-color: var(--site-border);
 }
 
 .vibe-history__item:disabled {
@@ -1216,8 +1216,8 @@
 }
 
 .vibe-history__item--active {
-  border-color: rgba(255, 255, 255, 0.4);
-  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--site-border-bright);
+  background: var(--site-surface-hover);
 }
 
 .vibe-history__item-head {
@@ -1234,14 +1234,14 @@
   gap: 6px;
   font-size: 0.8rem;
   font-weight: 600;
-  color: rgba(245, 245, 247, 0.92);
+  color: var(--site-text);
 }
 
 .vibe-history__badge {
   padding: 1px 7px;
   border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.16);
-  color: rgba(245, 245, 247, 0.9);
+  background: var(--site-surface-hover);
+  color: var(--site-text);
   font-size: 0.62rem;
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -1250,14 +1250,14 @@
 
 .vibe-history__time {
   font-size: 0.68rem;
-  color: #8e8e93;
+  color: var(--site-text-muted);
   white-space: nowrap;
 }
 
 .vibe-history__prompt {
   font-size: 0.8rem;
   line-height: 1.35;
-  color: rgba(245, 245, 247, 0.66);
+  color: var(--site-text-muted);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -1269,10 +1269,10 @@
   margin-top: 12px;
   font-size: 0.74rem;
   line-height: 1.4;
-  color: #8e8e93;
+  color: var(--site-text-muted);
 }
 
 .vibe-history__hint strong {
-  color: rgba(245, 245, 247, 0.85);
+  color: var(--site-text);
   font-weight: 600;
 }

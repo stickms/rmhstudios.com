@@ -197,12 +197,18 @@ async function applyFollow(args: { followerId: string; followingId: string; foll
 
   if (following) {
     await prisma.follow.create({ data: { followerId, followingId } });
+    // Keep the denormalized follower count in sync and reuse the new value for
+    // achievement progress (avoids a separate follow.count aggregate).
+    const { followerCount } = await prisma.user.update({
+      where: { id: followingId },
+      data: { followerCount: { increment: 1 } },
+      select: { followerCount: true },
+    });
     await createNotification({
       userId: followingId, actorId: followerId, type: 'FOLLOW', entityType: 'user', entityId: followerId,
       link: args.followerHandle ? `/u/${args.followerHandle}` : `/profile/${followerId}`, dedupeUnread: true,
     });
     try {
-      const followerCount = await prisma.follow.count({ where: { followingId } });
       await progressAchievement(followingId, 'social.first_follower', { setProgress: followerCount });
       await progressAchievement(followingId, 'social.followers_50', { setProgress: followerCount });
       await progressAchievement(followingId, 'social.followers_500', { setProgress: followerCount });
@@ -216,6 +222,11 @@ async function applyFollow(args: { followerId: string; followingId: string; foll
   }
 
   await prisma.follow.delete({ where: { followerId_followingId: { followerId, followingId } } });
+  // Keep the denormalized follower count in sync (never below zero).
+  await prisma.user.updateMany({
+    where: { id: followingId, followerCount: { gt: 0 } },
+    data: { followerCount: { decrement: 1 } },
+  });
   await removeNotification({ userId: followingId, actorId: followerId, type: 'FOLLOW', entityType: 'user', entityId: followerId });
   void emitWebhookEvent(followerId, 'follow.deleted', { followingId });
   return { ok: true, found: true, following: false };
