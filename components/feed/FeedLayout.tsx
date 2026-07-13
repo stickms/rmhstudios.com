@@ -41,8 +41,8 @@ interface FeedLayoutProps {
     title: string;
     date: string;
   }[];
-  /** Server-prefetched first feed page, forwarded to seed the timeline. */
-  initialFeed?: InitialFeed | null;
+  /** Server-streamed first feed page, forwarded to seed the timeline. */
+  initialFeed?: Promise<InitialFeed> | null;
 }
 
 export function FeedLayout({

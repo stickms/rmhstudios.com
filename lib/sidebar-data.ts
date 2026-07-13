@@ -216,18 +216,14 @@ async function getBlogPosts(): Promise<SidebarPost[]> {
   return posts;
 }
 
-export async function getSidebarData(viewerIdArg?: string | null) {
+export async function getSidebarData() {
   // Resolve the viewer so recommendations can exclude self / already-followed.
-  // Callers that already resolved the session (e.g. the home loader, which also
-  // prefetches the feed) can pass the id to avoid a second session lookup.
-  let viewerId: string | null = viewerIdArg ?? null;
-  if (viewerIdArg === undefined) {
-    try {
-      const session = await auth.api.getSession({ headers: getRequest().headers });
-      viewerId = session?.user?.id ?? null;
-    } catch {
-      viewerId = null;
-    }
+  let viewerId: string | null = null;
+  try {
+    const session = await auth.api.getSession({ headers: getRequest().headers });
+    viewerId = session?.user?.id ?? null;
+  } catch {
+    viewerId = null;
   }
 
   const [userBuilds, recommendedUsers, blogPosts] =
