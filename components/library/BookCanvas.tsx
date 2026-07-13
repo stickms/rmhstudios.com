@@ -15,7 +15,7 @@
  * mounted by BookReader after the PDF has loaded in the browser.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -45,12 +45,14 @@ export type BookCanvasProps = {
   /** Best-available, already-decoded texture for a 1-based page (or undefined). */
   getTex: (n: number) => THREE.Texture | undefined;
   ensurePage: (n: number) => void;
+  /** Scales the canvas surface; enlarged pages remain scrollable in the stage. */
+  zoom?: number;
   onPageChange?: (info: { label: string; page: number; k: number }) => void;
   /** Parent stashes a `goToPage(n)` fn here so the toolbar can jump to any page. */
   seek?: React.MutableRefObject<((page: number) => void) | null>;
 };
 
-export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPageChange, seek }: BookCanvasProps) {
+export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom = 1, onPageChange, seek }: BookCanvasProps) {
   const { t } = useTranslation("c-library");
   const wrapRef = useRef<HTMLDivElement>(null);
   const [k, setK] = useState(0);
@@ -61,7 +63,7 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPag
   // re-render to update the `k`/`turn` state they close over.
   const kRef = useRef(0);
   const turnRef = useRef<Turn | null>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     kRef.current = k;
   }, [k]);
 
@@ -75,6 +77,28 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPag
   const moved = useRef(false);
   // Vertical lean (-1..1) so the page follows the cursor up/down, not just across.
   const tilt = useRef(0);
+  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const holdDelay = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdFired = useRef(false);
+  const stopHold = useCallback(() => {
+    if (holdTimer.current) {
+      clearInterval(holdTimer.current);
+      holdTimer.current = null;
+    }
+    if (holdDelay.current) {
+      clearTimeout(holdDelay.current);
+      holdDelay.current = null;
+    }
+  }, []);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const apply = () => setReducedMotion(media.matches);
+    apply();
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, []);
 
   const maxK = single ? Math.max(0, numPages - 1) : Math.max(0, Math.floor(numPages / 2));
   const view = useCallback(
@@ -82,6 +106,29 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPag
       single ? { left: 0, right: idx + 1 } : { left: idx === 0 ? 0 : idx * 2, right: idx * 2 + 1 },
     [single],
   );
+
+  // `k` is a page index in single mode and a spread index in book mode. Preserve
+  // the actual leading page when a resize or device rotation changes the layout.
+  const previousSingle = useRef(single);
+  useLayoutEffect(() => {
+    if (previousSingle.current === single) return;
+    const logicalPage = previousSingle.current
+      ? kRef.current + 1
+      : (kRef.current === 0 ? 1 : kRef.current * 2);
+    const nextK = single ? logicalPage - 1 : Math.floor(logicalPage / 2);
+    const clamped = Math.max(0, Math.min(maxK, nextK));
+    kRef.current = clamped;
+    setK(clamped);
+    setTurn(null);
+    turnRef.current = null;
+    progress.current = 0;
+    anim.current = { active: false, target: 0 };
+    dragging.current = false;
+    moved.current = false;
+    tilt.current = 0;
+    stopHold();
+    previousSingle.current = single;
+  }, [maxK, single, stopHold]);
 
   // Prefetch a window of spreads around the current one so spam-clicking through the
   // book stays ahead of the rasteriser and never flashes a blank page. Forward-biased
@@ -201,11 +248,19 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPag
       }
       turnRef.current = t;
       progress.current = 0;
+      if (reducedMotion) {
+        kRef.current = target;
+        setK(target);
+        turnRef.current = null;
+        setTurn(null);
+        anim.current = { active: false, target: 0 };
+        return true;
+      }
       anim.current = viaDrag ? { active: false, target: 0 } : { active: true, target: 1 };
       setTurn(t);
       return true;
     },
-    [maxK, view, single, ensurePage],
+    [maxK, view, single, ensurePage, reducedMotion],
   );
 
   // Called by the scene when progress settles at 0 (cancelled) or 1 (completed).
@@ -249,6 +304,10 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPag
     if (!rect) return;
     const rightHalf = e.clientX - rect.left > rect.width / 2;
     const dir: Dir = rightHalf ? 'next' : 'prev';
+    if (reducedMotion) {
+      beginTurn(dir, false);
+      return;
+    }
     if (!beginTurn(dir, true)) return;
     dragging.current = true;
     moved.current = false;
@@ -289,8 +348,14 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPag
   // and because turns are interruptible the flips stay smooth at any repeat rate.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') beginTurn('next', false);
-      else if (e.key === 'ArrowLeft') beginTurn('prev', false);
+      const target = e.target as HTMLElement | null;
+      if (target?.isContentEditable || target?.closest('input, textarea, select, [role="menu"], [role="listbox"], [role="dialog"]')) return;
+      const turned = e.key === 'ArrowRight'
+        ? beginTurn('next', false)
+        : e.key === 'ArrowLeft'
+          ? beginTurn('prev', false)
+          : false;
+      if (turned) e.preventDefault();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -301,19 +366,6 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPag
   // can rip through pages without machine-gunning the button.
   const HOLD_DELAY = 500; // ms held before auto-repeat begins
   const HOLD_EVERY = 320; // ms between auto-repeated turns
-  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const holdDelay = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const holdFired = useRef(false);
-  const stopHold = useCallback(() => {
-    if (holdTimer.current) {
-      clearInterval(holdTimer.current);
-      holdTimer.current = null;
-    }
-    if (holdDelay.current) {
-      clearTimeout(holdDelay.current);
-      holdDelay.current = null;
-    }
-  }, []);
   // pointerdown only *arms* the repeat — the first turn comes from onClick, so a
   // tap never double-fires. The cooldown gives a deliberate pause before speed-up.
   const startHold = useCallback(
@@ -364,6 +416,7 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, onPag
     <div
       ref={wrapRef}
       className="lib-canvas-wrap"
+      style={{ width: `${zoom * 100}%`, height: `${zoom * 100}%` }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}

@@ -15,14 +15,13 @@ import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { Menu, Search, Upload, CloudUpload } from 'lucide-react';
+import { BookOpen, CloudUpload, FileText, Menu, Search, Upload, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
 import { listAllBooks } from '@/lib/library/library.server';
 import { listAlbums } from '@/lib/albums.server';
-import { type Album } from '@/lib/albums';
 import { listCollectionsView, type Viewer } from '@/lib/library/collections.server';
 import { auth } from '@/lib/auth';
 import { getAllPosts, type Post } from '@/lib/blog';
@@ -38,6 +37,7 @@ import { LibraryCollections } from '@/components/library/LibraryCollections';
 import { LibraryAlbums } from '@/components/library/LibraryAlbums';
 import { BlurImage } from '@/components/ui/BlurImage';
 import type { CollectionView } from '@/lib/library/collections';
+import '@/components/rmhvibe/vibe.css';
 import '@/components/library/library.css';
 
 const fetchBooks = createServerFn({ method: 'GET' }).handler(async () => ({
@@ -84,6 +84,13 @@ export const Route = createFileRoute('/_site/library/')({
   component: Library,
 });
 
+function formatCount(value: number): string {
+  return new Intl.NumberFormat(undefined, {
+    notation: value >= 10_000 ? 'compact' : 'standard',
+    maximumFractionDigits: 1,
+  }).format(value);
+}
+
 function Library() {
   const { t } = useTranslation('library');
   const { open: openSidebar } = useMobileSidebar();
@@ -98,6 +105,12 @@ function Library() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [editing, setEditing] = useState<LibraryBook | null>(null);
   const [migrating, setMigrating] = useState(false);
+
+  const publicBooks = useMemo(() => books.filter((book) => !book.hidden), [books]);
+  const totalPages = useMemo(
+    () => publicBooks.reduce((sum, book) => sum + Math.max(0, book.pages), 0),
+    [publicBooks],
+  );
 
   // Admins load the full list (including hidden books) so they can manage
   // everything via the per-item right-click menu; everyone else mirrors the
@@ -237,26 +250,16 @@ function Library() {
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <LibraryRevealProvider>
-        <header className="vibe-gallery__head">
+        <header className="lib-head">
           <span className="md:hidden">
             <button type="button" onClick={openSidebar} aria-label={t('open-menu', { defaultValue: 'Open menu' })} className="vibe-toolbar__icon">
               <Menu size={18} />
             </button>
           </span>
-          <div className="flex items-center gap-2 min-w-0">
+          <div className="lib-head__brand">
             <MobileBrandPrefix />
-            <h1 className="vibe-gallery__title">{t('library-heading', { defaultValue: 'Library' })}</h1>
-          </div>
-          <div className="vibe-search">
-            <Search size={16} className="vibe-search__icon" aria-hidden="true" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('search-placeholder', { defaultValue: 'Search the library...' })}
-              aria-label={t('search-label', { defaultValue: 'Search the library' })}
-              className="vibe-search__input"
-            />
+            <BookOpen size={17} aria-hidden="true" />
+            <span>{t('library-heading', { defaultValue: 'Library' })}</span>
           </div>
           {session.data && (
             <button
@@ -266,10 +269,39 @@ function Library() {
               aria-label={t('upload-label', { defaultValue: 'Upload a PDF' })}
             >
               <Upload size={15} aria-hidden="true" />
-              <span className="lib-upload__open-label">{t('upload-button', { defaultValue: 'Upload' })}</span>
+              <span className="lib-upload__open-label">{t('upload-button', { defaultValue: 'Add a book' })}</span>
             </button>
           )}
         </header>
+
+        <section className="lib-hero" aria-labelledby="library-title">
+          <div className="lib-hero__copy">
+            <p className="lib-hero__eyebrow">{t('archive-eyebrow', { defaultValue: 'RMH Studios archive' })}</p>
+            <h1 id="library-title">{t('archive-title', { defaultValue: 'A home for long-form thinking.' })}</h1>
+            <p className="lib-hero__lede">
+              {t('archive-description', { defaultValue: 'Stories, original research, technical field notes, operating plans, and strange ideas—collected in one quiet reading room.' })}
+            </p>
+          </div>
+          <dl className="lib-stats" aria-label={t('library-totals', { defaultValue: 'Library totals' })}>
+            <div><dt>{t('stat-volumes', { defaultValue: 'Volumes' })}</dt><dd>{publicBooks.length.toLocaleString()}</dd></div>
+            <div><dt>{t('stat-pages', { defaultValue: 'Pages' })}</dt><dd>{formatCount(totalPages)}</dd></div>
+            <div><dt>{t('stat-albums', { defaultValue: 'Albums' })}</dt><dd>{albums.length.toLocaleString()}</dd></div>
+            <div><dt>{t('stat-collections', { defaultValue: 'Collections' })}</dt><dd>{collections.length.toLocaleString()}</dd></div>
+          </dl>
+          <label className="lib-search">
+            <Search size={18} aria-hidden="true" />
+            <span className="sr-only">{t('search-label', { defaultValue: 'Search the library' })}</span>
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder={t('search-placeholder', { defaultValue: 'Search books and albums' })}
+            />
+            {query && (
+              <button type="button" onClick={() => setQuery('')} aria-label={t('clear-search', { defaultValue: 'Clear search' })}><X size={16} /></button>
+            )}
+          </label>
+        </section>
 
         <LibraryBlogRow posts={blogPosts} />
 
@@ -359,6 +391,7 @@ function Section({
   onChanged: () => void;
   showAttribution?: boolean;
 }) {
+  const { t } = useTranslation('library');
   const [dragId, setDragId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
@@ -389,11 +422,12 @@ function Section({
       : undefined;
 
   return (
-    <section className="lib__section">
+    <section className="lib__section lib__section--catalog">
       <div className="lib__section-head">
         <h2 className="lib__section-title">{title}</h2>
+        <span className="lib__section-count">{t('book-count', { count: books.length, defaultValue: '{{count}} books' })}</span>
       </div>
-      <div className="lib__shelf" role="list">
+      <div className="lib__shelf lib__shelf--catalog" role="list">
         {books.map((book) => {
           const managedIdx = managed.findIndex((b) => b.id === book.id);
           return (
@@ -451,6 +485,7 @@ function BookSpine({
 
   const wrapClass = [
     'lib-book__wrap',
+    'lib-volume',
     'lib-reveal',
     book.hidden ? 'is-hidden-book' : '',
     dnd?.draggable ? 'is-draggable' : '',
@@ -488,10 +523,10 @@ function BookSpine({
             {book.coverUrl ? (
               <BlurImage
                 src={book.coverUrl}
-                alt={book.title}
+                alt=""
                 fit="cover"
-                width={150}
-                sizes="150px"
+                width={380}
+                sizes="(max-width: 560px) 148px, 184px"
                 className="absolute inset-0 z-0 h-full w-full rounded-[3px_6px_6px_3px]"
                 imgClassName="h-full w-full object-top"
               />
@@ -502,10 +537,16 @@ function BookSpine({
             {!book.coverUrl && <span className="lib-book__mark">RMH</span>}
             {book.reported && isAdmin && <span className="lib-book__reported" title={t('reported', { defaultValue: 'Reported' })}>!</span>}
           </div>
-          {book.description && <span className="lib-book__desc-pop">{book.description}</span>}
         </div>
         <div className="lib-book__meta">
+          <div className="lib-book__facts">
+            <span><FileText size={12} aria-hidden="true" />{book.pages > 0 ? t('page-count', { count: book.pages, defaultValue: '{{count}} pages' }) : book.format.toUpperCase()}</span>
+            <span>{book.format.toUpperCase()}</span>
+          </div>
           <p className="lib-book__name">{book.title}</p>
+          <p className={`lib-book__description${book.description ? '' : ' is-muted'}`}>
+            {book.description || t('book-description-fallback', { defaultValue: 'Open this volume to explore the full document.' })}
+          </p>
           {showAttribution && (uploader || date) && (
             <p className="lib-book__by">
               {uploader && <span>{uploader}</span>}

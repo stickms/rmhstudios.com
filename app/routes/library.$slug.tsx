@@ -13,6 +13,7 @@ import { buildCanonical } from '@/lib/seo';
 import { bookSchema, jsonLdScript } from '@/lib/schema';
 import { BookReader } from '@/components/library/BookReader';
 import { EpubReader } from '@/components/library/EpubReader';
+import '@/components/rmhvibe/vibe.css';
 import '@/components/library/library.css';
 
 const fetchBook = createServerFn({ method: 'GET' })
