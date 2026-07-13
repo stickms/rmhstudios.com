@@ -334,7 +334,6 @@ CMD ["node", ".output/server/index.mjs"]
 #   - Chromium + fonts: the vibe-worker captures gallery thumbnails via Go
 #     chromedp, which drives the system Chromium (musl Alpine can't run
 #     Playwright's own download — point it at the OS Chromium below).
-#   - git: the discord-bot worker runs RMHBot git operations in worktrees.
 # Used ONLY by the `supervisor` and `status` compose services. Because Chromium
 # is the slow apk layer, isolating it here means a web/source change never
 # re-runs it, and a go-services change never touches the slim web image.
@@ -347,15 +346,12 @@ CMD ["node", ".output/server/index.mjs"]
 FROM ${WEB_IMAGE} AS runner-full
 
 USER root
-RUN apk add --no-cache git \
+RUN apk add --no-cache \
     chromium nss freetype harfbuzz ttf-freefont font-noto-emoji
 
 # Reuse the system Chromium for chromedp/Playwright instead of a (musl-incompatible) download.
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-
-# discord-bot worker writes RMHBot git worktrees here.
-RUN mkdir -p /app/.rmhbot-worktrees && chown app:nodejs /app/.rmhbot-worktrees
 
 # ─── Go binaries (supervisor, status, bot-worker, hubs, gateway) ────────
 # Compiled in the go-builder stage (CGO_ENABLED=0, fully static).

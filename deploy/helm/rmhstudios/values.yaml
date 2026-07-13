@@ -40,9 +40,6 @@ minio:
   size: 20Gi
   storageClass: local-path
 
-# discord-bot bind-mounts the repo for git-worktree ops (Compose: RMHBOT_REPO_PATH).
-rmhbotRepoPath: /home/rmhstudios/rmhstudios.com
-
 # Common resource floor; override per service as needed.
 defaultResources:
   requests:
@@ -95,7 +92,6 @@ services:
     command: ["node", "dist-server/server/discord-bot/index.cjs"]
     replicas: 1
     mountData: true
-    mountRepo: true
     stopGracePeriod: 90
 
   doctrine-worker:
