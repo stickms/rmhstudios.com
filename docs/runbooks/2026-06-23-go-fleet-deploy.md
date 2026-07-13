@@ -31,7 +31,7 @@ the only difference (`docker-compose.yml` → `x-build: &build-common`):
 | Image | Compose services | Contents | Rebuilt when |
 |---|---|---|---|
 | `${PROJECT}-app` (**slim** `runner`) | `web`, `socket`, `rmhbox`, `rmhtube` | Node + node_modules + Nitro `.output` + esbuild server bundles. **No** Chromium, git, or Go binaries. | Web/source/env changes only. **Invariant** to `go-services/` changes. |
-| `${PROJECT}-app-full` (**full** `runner-full`) | `supervisor`, `status` | Slim image **+** Go binaries (`/app/bin/*`) **+** Chromium + fonts (vibe-worker chromedp) **+** git (discord-bot worktrees). | Any `go-services/` change, plus everything that rebuilds slim. |
+| `${PROJECT}-app-full` (**full** `runner-full`) | `supervisor`, `status` | Slim image **+** Go binaries (`/app/bin/*`) **+** Chromium + fonts (vibe-worker chromedp). The active Go discord-bot performs no Git/worktree operations. | Any `go-services/` change, plus everything that rebuilds slim. |
 
 Why it matters operationally:
 

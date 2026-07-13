@@ -172,13 +172,13 @@ services:
   # ─── Go Supervisor (discord-bot + recap + doctrine-worker + vibe-worker + bot-worker) ─
   # Runs the five background workers as goroutines in a single Go process.
   # Env union: every variable the five old Node services needed is carried here.
-  # Volumes union: db/ (from *common) + RMHBOT_REPO_PATH (needed by discord-bot
-  #   for RMHBot git operations).
+  # The active Go discord-bot does not perform Git operations and needs no host
+  # repository access. The shared db/ mount from *common is sufficient.
   # stop_grace_period: 90s = max of discord-bot (90s) and vibe-worker (30s) so
   #   in-flight AI requests and Chromium captures both get time to finish.
   supervisor:
     <<: *common
-    # Full image: Go binaries + Chromium (vibe-worker chromedp) + git (discord-bot).
+    # Full image: Go binaries + Chromium (vibe-worker chromedp).
     # This service carries the `runner-full` build; `status` reuses the image it
     # produces. Overrides the slim image: from *common.
     image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app-full:latest
@@ -187,26 +187,13 @@ services:
       target: runner-full
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-supervisor
     env_file: ${ENV_FILE:-.env.production}
-    # Override volumes to add the repo mount required by the discord-bot worker
-    # (RMHBot git operations). The db/ mount comes from *common but must be
-    # repeated here because volumes: overrides the anchor.
-    volumes:
-      - ${STORAGE_PATH:-./db}:/app/db
-      - ${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}:/mnt/rmhbot-repo-source:ro
-      - rmhbot-repo:${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}
-      - rmhbot-worktrees:/app/.rmhbot-worktrees
     environment:
       # recap worker's internal HTTP port (doctrine / vibe-worker idles if absent)
       - RECAP_PORT=${PORT_RECAP:-7004}
       # Merged /metrics + /health endpoint for all five workers (httpx.ServeMetrics).
       # Templated so the healthcheck below stays in sync with the bind port.
       - METRICS_ADDR=:${PORT_SUPERVISOR_METRICS:-9090}
-    command:
-      - /bin/sh
-      - -c
-      - >-
-        cp -a /mnt/rmhbot-repo-source/. "$${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}/" &&
-        exec /app/bin/supervisor
+    command: ["/app/bin/supervisor"]
     restart: unless-stopped
     # discord-bot needs 90s for in-flight AI; vibe-worker needs 30s for Chromium
     stop_grace_period: 90s
@@ -348,8 +335,4 @@ services:
       echo 'bucket ready';
       "
     restart: "no"
-
-volumes:
-  rmhbot-repo:
-  rmhbot-worktrees:
 
