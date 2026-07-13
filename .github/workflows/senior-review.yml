@@ -39,7 +39,7 @@ jobs:
 
       - name: checkout
         if: steps.author.outputs.is_target == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           fetch-depth: 0
 
@@ -56,7 +56,7 @@ jobs:
       #   verdict.txt — a single token, exactly PASS or FAIL
       - name: senior SWE review
         if: steps.author.outputs.is_target == 'true'
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@71d3414a2ac47c29d9b7d0da6ca01963a9a6e5fc # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: "--model claude-opus-4-8 --allowedTools Read,Write,Glob,Grep,Bash"

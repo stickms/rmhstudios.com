@@ -72,7 +72,7 @@ export const REWARD_TIERS: RewardTier[] = [
   {
     severity: 'critical',
     label: 'Critical',
-    reward: 'Up to $2,500,000',
+    reward: '$500,000–$5,000,000',
     blurb: 'A break that could compromise the platform itself or its users at scale.',
     examples:
       'Remote code execution on production infrastructure · full authentication bypass · mass account takeover · extraction of the production database or platform secrets.',
@@ -80,7 +80,7 @@ export const REWARD_TIERS: RewardTier[] = [
   {
     severity: 'high',
     label: 'High',
-    reward: 'Up to $250,000',
+    reward: '$50,000–$500,000',
     blurb: "Serious access to data or systems you shouldn't be able to reach.",
     examples:
       "SQL/command injection · SSRF reaching internal services or cloud metadata · stored XSS in another user's session · IDOR exposing another user's private data · privilege escalation to admin · payment or entitlement manipulation.",
@@ -88,7 +88,7 @@ export const REWARD_TIERS: RewardTier[] = [
   {
     severity: 'medium',
     label: 'Medium',
-    reward: 'Up to $25,000',
+    reward: '$5,000–$50,000',
     blurb: 'A real flaw with a meaningful, but bounded, impact.',
     examples:
       'CSRF on sensitive actions · reflected XSS · authorization gaps with limited scope · open redirects usable for phishing · rate-limit bypasses that enable abuse.',
@@ -96,10 +96,18 @@ export const REWARD_TIERS: RewardTier[] = [
   {
     severity: 'low',
     label: 'Low',
-    reward: 'Up to $2,500',
+    reward: '$25–$5,000',
     blurb: 'A genuine issue with a realistic, if narrow, path to harm.',
     examples:
       'Self-XSS with a credible escalation · low-impact information disclosure · security misconfigurations with a demonstrated effect.',
+  },
+  {
+    severity: 'informational',
+    label: 'Informational',
+    reward: '$100–$1,000',
+    blurb: 'A useful, original hardening observation without a demonstrated exploit path.',
+    examples:
+      'A reproducible security hygiene improvement · a narrow information leak with no sensitive content · a defense-in-depth gap that helps prevent future vulnerabilities.',
   },
 ];
 
@@ -113,63 +121,69 @@ export interface CategoryBounty {
 export const CATEGORY_BOUNTIES: CategoryBounty[] = [
   {
     category: 'Remote code execution',
-    max: '$2,500,000',
+    max: '$5,000,000',
     requirement:
       'Run arbitrary code on RMH Studios production servers. Needs a working proof-of-concept that does not rely on already-compromised credentials.',
   },
   {
     category: 'Authentication bypass / account takeover',
-    max: '$2,500,000',
+    max: '$5,000,000',
     requirement:
       "Sign in as another user or defeat our passkey / OAuth / session checks without their help. Zero-click and reproducible at scale reaches the top of the range.",
   },
   {
     category: 'Broken access control / IDOR',
-    max: '$250,000',
+    max: '$500,000',
     requirement:
       "Read or change another user's private data or resources by manipulating identifiers. The reward scales with the sensitivity and volume of data reached.",
   },
   {
     category: 'Server-side request forgery (SSRF)',
-    max: '$250,000',
+    max: '$500,000',
     requirement:
       'Coerce our servers into requests to internal services or cloud metadata. You must demonstrate reaching a genuinely non-public target.',
   },
   {
     category: 'Injection (SQL / command)',
-    max: '$250,000',
+    max: '$500,000',
     requirement:
       "Inject into a database or shell through unsanitised input, with a PoC that reads or alters data you shouldn't be able to reach.",
   },
   {
     category: 'Stored cross-site scripting (XSS)',
-    max: '$250,000',
+    max: '$500,000',
     requirement:
       'Achieve persistent script execution in another user’s session. Provide the payload and the exact page it fires on.',
   },
   {
     category: 'Payment / entitlement manipulation',
-    max: '$250,000',
+    max: '$500,000',
     requirement:
       "Obtain paid features, coins, or subscriptions without paying, or change another user's balance or entitlements.",
   },
   {
     category: 'Sensitive data / secret exposure',
-    max: '$250,000',
+    max: '$500,000',
     requirement:
       'Expose secrets, tokens, or other users’ personal data. Report the exact endpoint and stop — never exfiltrate data at scale.',
   },
   {
     category: 'CSRF / reflected XSS',
-    max: '$25,000',
+    max: '$50,000',
     requirement:
       'Force a state-changing request cross-site, or reflect script execution from a request parameter. Include a working exploit page.',
   },
   {
     category: 'Open redirect & phishing vectors',
-    max: '$25,000',
+    max: '$50,000',
     requirement:
       'Redirect our users to an attacker-controlled destination from a trusted rmhstudios.com URL.',
+  },
+  {
+    category: 'Defense-in-depth / security hardening',
+    max: '$1,000',
+    requirement:
+      'Show an original, reproducible improvement that reduces real security risk but does not yet provide an exploit path. Eligible acknowledgements start at $100.',
   },
 ];
 

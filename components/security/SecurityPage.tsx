@@ -68,8 +68,8 @@ const PILLARS: Pillar[] = [
   {
     icon: ShieldCheck,
     title: 'Defense in depth',
-    body: 'A Content-Security-Policy, strict security headers, server-side SSRF guards on outbound fetches, and per-route rate limits mean a single mistake can never become a breach.',
-    tag: 'CSP · Rate limits',
+    body: 'An enforced Content-Security-Policy, strict security headers, server-side SSRF guards, distributed abuse limits, and schema-validated writes contain mistakes before they become breaches.',
+    tag: 'Enforced CSP · Distributed limits',
   },
   {
     icon: EyeOff,
@@ -80,8 +80,8 @@ const PILLARS: Pillar[] = [
   {
     icon: RadioTower,
     title: 'Watched around the clock',
-    body: 'Abuse detection, brute-force throttling, and tamper-evident audit logs run continuously, so unusual activity is caught early — not read about after the fact.',
-    tag: 'Monitoring · Audit logs',
+    body: 'Abuse detection, model-spend circuit breakers, brute-force throttling, dependency scanning, and security audit logs continuously surface unusual activity.',
+    tag: 'Monitoring · Supply chain',
   },
 ];
 
@@ -133,6 +133,39 @@ const FEATURES: Feature[] = [
     icon: LogOut,
     title: "You're always in control",
     body: 'Change your handle, export your data, or delete your account on your terms — and sign out of your sessions whenever you want.',
+  },
+];
+
+const SECURITY_ENGINEERING: Feature[] = [
+  {
+    icon: ShieldCheck,
+    title: 'Enforced browser isolation',
+    body: 'Our production Content Security Policy blocks eval, plug-in objects, untrusted form targets, and unauthorized framing while constraining scripts, connections, media, and workers.',
+  },
+  {
+    icon: RadioTower,
+    title: 'Distributed abuse controls',
+    body: 'Shared limits follow a user across application instances. Paid AI has per-client and global ceilings, a daily budget, request-size limits, and a production fail-closed circuit breaker.',
+  },
+  {
+    icon: Server,
+    title: 'Isolated workloads',
+    body: 'Production workloads run as non-root with read-only filesystems, dropped Linux capabilities, PID limits, no privilege escalation, seccomp, and narrowly scoped writable volumes.',
+  },
+  {
+    icon: Bug,
+    title: 'Continuously scanned supply chain',
+    body: 'CodeQL scans JavaScript, TypeScript, and Go. Every web change runs type, lint, test, build, and production dependency gates; release dependencies are held above known patched versions.',
+  },
+  {
+    icon: KeyRound,
+    title: 'Short-lived action links',
+    body: 'Sensitive editorial links are action-bound, expire after 24 hours, never mutate on GET, require a deliberate POST confirmation, and are delivered with no-store and no-referrer protections.',
+  },
+  {
+    icon: Scale,
+    title: 'Reward integrity controls',
+    body: 'Hardened game-result paths use strict schemas and distributed per-user limits, while quest and XP progression is independently throttled so replaying result submissions cannot rapidly farm rewards.',
   },
 ];
 
@@ -234,7 +267,7 @@ const REPORT_STEPS: Step[] = [
   },
   {
     title: 'Reward & credit',
-    body: 'Once it’s confirmed, we pay out based on severity and impact — up to $2,500,000 — and, with your permission, add you to our thanks.',
+    body: 'Once it’s confirmed, we pay based on severity and demonstrated impact — from $100 for eligible hardening reports to $5,000,000 for exceptional critical findings — and, with your permission, add you to our thanks.',
   },
   {
     title: 'Disclose together',
@@ -376,6 +409,33 @@ export function SecurityPage() {
             Scroll
             <ChevronDown size={16} aria-hidden="true" />
           </button>
+        </section>
+
+        <section className="sec-section sec-section--hair" aria-labelledby="sec-engineering-title">
+          <div className="sec-shell">
+            <div className="sec-section__head">
+              <p className="sec-eyebrow sec-reveal">Security engineering · 2026</p>
+              <h2 id="sec-engineering-title" className="sec-section__title sec-reveal">
+                New protections, live by default.
+              </h2>
+              <p className="sec-section__sub sec-reveal">
+                These controls are built into the website, service tier, delivery pipeline,
+                and production workload boundary—not left as optional operational steps.
+              </p>
+            </div>
+            <div className="sec-grid">
+              {SECURITY_ENGINEERING.map((feature, i) => {
+                const Icon = feature.icon;
+                return (
+                  <article key={feature.title} className="sec-card sec-reveal" style={{ '--sec-delay': `${(i % 3) * 80}ms` } as CSSProperties}>
+                    <span className="sec-card__icon"><Icon aria-hidden="true" /></span>
+                    <h3 className="sec-card__title">{feature.title}</h3>
+                    <p className="sec-card__body">{feature.body}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
         </section>
 
         {/* ─── Trust bar ────────────────────────────────────────────────── */}
@@ -575,7 +635,8 @@ export function SecurityPage() {
               <p className="sec-section__sub sec-reveal">
                 Security is a team sport, and researchers are on our team. Report
                 a real, original vulnerability and we&apos;ll reward it — up to{' '}
-                <strong>$2,500,000</strong> for the most serious findings.
+                <strong>$5,000,000</strong> for the most serious findings, with
+                eligible security-hardening reports starting at <strong>$100</strong>.
               </p>
             </div>
 

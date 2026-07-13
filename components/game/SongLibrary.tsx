@@ -12,7 +12,7 @@ import { authClient } from '@/lib/auth-client';
 import { NeumorphicModal } from './NeumorphicModal';
 import { useGameStore } from '@/lib/store/useGameStore';
 import { GameEngine } from '@/lib/game/GameEngine';
-import * as metadata from 'music-metadata-browser';
+import { parseBlob } from 'music-metadata';
 
 interface Song {
     id: string;
@@ -185,7 +185,7 @@ export function SongLibrary({ onSelect, onHighlight, selectedSongId, onStopPrevi
 
         // Attempt ID3 extraction
         try {
-            const tags = await metadata.parseBlob(file);
+            const tags = await parseBlob(file);
             if (tags.common.title) setUploadTitle(tags.common.title);
             if (tags.common.artist) setUploadArtist(tags.common.artist);
         } catch (error) {
