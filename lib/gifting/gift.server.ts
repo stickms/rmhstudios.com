@@ -51,15 +51,18 @@ export async function giftMembership(params: {
   const cost = GIFT_PRICES[tier] * months;
 
   return prisma.$transaction(async (tx) => {
-    const gifter = await tx.userProfile.upsert({
+    await tx.userProfile.upsert({
       where: { userId: gifterId },
       create: { userId: gifterId, coins: 10 },
       update: {},
-      select: { coins: true },
     });
-    if (gifter.coins < cost) throw new GiftError('INSUFFICIENT_COINS');
-
-    await tx.userProfile.update({ where: { userId: gifterId }, data: { coins: { decrement: cost } } });
+    // Atomic conditional debit — `coins >= cost` in the WHERE clause prevents
+    // concurrent gifts from overdrafting a stale balance.
+    const debit = await tx.userProfile.updateMany({
+      where: { userId: gifterId, coins: { gte: cost } },
+      data: { coins: { decrement: cost } },
+    });
+    if (debit.count === 0) throw new GiftError('INSUFFICIENT_COINS');
 
     // Extend an existing future grant of the same tier, else start from now.
     const existing = await tx.giftMembership.findFirst({

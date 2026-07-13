@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { optimizeImage, parseFormat, negotiateFormat } from '@/lib/image-optimize';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { safeFetch, SsrfError } from '@/lib/ssrf-guard.server';
 import { isDiscordAvatarUrl, refreshDiscordAvatarFromBrokenUrl } from '@/lib/discord-avatar-refresh.server';
 
@@ -10,6 +11,20 @@ export const Route = createFileRoute('/api/image-proxy')({
     handlers: {
   GET: async ({ request }) => {
     try {
+      // Per-IP rate limit: this endpoint fetches arbitrary upstream URLs, so cap
+      // request volume to blunt SSRF probing / bandwidth abuse (mirrors oembed).
+      const { allowed, retryAfter } = rateLimit(getClientIp(request), {
+        limit: 60,
+        windowMs: 60_000,
+        prefix: 'image-proxy',
+      });
+      if (!allowed) {
+        return Response.json(
+          { error: 'Too many requests' },
+          { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+        );
+      }
+
       const url = new URL(request.url);
       const src = url.searchParams.get('url');
 

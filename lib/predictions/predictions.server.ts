@@ -107,23 +107,30 @@ export async function placeTrade(
       throw new PredictionError('Trading has closed for this market', 'CLOSED');
     }
 
-    const profile = await tx.userProfile.upsert({
+    await tx.userProfile.upsert({
       where: { userId },
       create: { userId, coins: 10 },
       update: {},
-      select: { coins: true },
     });
-    if (profile.coins < amount) {
-      throw new PredictionError('Insufficient coins', 'INSUFFICIENT_COINS');
-    }
 
     const shares = sharesForBudget(market.qYes, market.qNo, market.b, side, amount);
     if (!Number.isFinite(shares) || shares <= 0) {
       throw new PredictionError('Trade too small', 'TRADE_TOO_SMALL');
     }
 
-    const newBalance = profile.coins - amount;
-    await tx.userProfile.update({ where: { userId }, data: { coins: newBalance } });
+    // Atomic conditional debit instead of writing an absolute precomputed balance:
+    // `coins >= amount` in the WHERE clause serializes concurrent trades so they
+    // cannot all deduct one stake yet each record a position (coin minting on
+    // resolution). Prisma returns the updated row so we read the fresh balance.
+    const debit = await tx.userProfile.updateMany({
+      where: { userId, coins: { gte: amount } },
+      data: { coins: { decrement: amount } },
+    });
+    if (debit.count === 0) {
+      throw new PredictionError('Insufficient coins', 'INSUFFICIENT_COINS');
+    }
+    const debited = await tx.userProfile.findUnique({ where: { userId }, select: { coins: true } });
+    const newBalance = debited?.coins ?? 0;
 
     await tx.prediction.update({
       where: { id: predictionId },

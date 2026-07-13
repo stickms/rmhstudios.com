@@ -7,6 +7,7 @@ import { createFileRoute } from '@tanstack/react-router';
 
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { hashRmhCodeToken } from '@/lib/rmhcode-auth';
 import { z } from 'zod';
 
 const validateTokenSchema = z.object({
@@ -41,9 +42,9 @@ export const Route = createFileRoute('/api/rmhcode/auth/validate')({
 
     const { token } = parsed.data;
 
-    // Find token
+    // Find token by its hash (only hashes are stored).
     const tokenRecord = await prisma.rmhCodeToken.findUnique({
-      where: { token },
+      where: { token: hashRmhCodeToken(token) },
       include: {
         user: {
           select: {

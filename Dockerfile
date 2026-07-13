@@ -108,6 +108,11 @@ COPY lib/dream-rift/net/events.ts ./lib/dream-rift/net/events.ts
 # changes to them don't bust this stage's cache.
 COPY lib/prisma.server.ts ./lib/prisma.server.ts
 COPY lib/url.ts ./lib/url.ts
+# The RMHLadder + RMHHomes scrape pipelines fetch external URLs through the
+# shared SSRF guard (lib/rmhladder/pipeline/memo-fetch.ts + adapters/http.ts and
+# lib/homes/scrape/http.ts each `import('../../ssrf-guard.server')`), so the
+# ladder-worker/homes-worker bundles need this file present at bundle time.
+COPY lib/ssrf-guard.server.ts ./lib/ssrf-guard.server.ts
 # ladder-worker (RMHLadder job-discovery cron) is the one Node worker not in
 # the Go supervisor — it needs lib/rmhladder for its pipeline/seed/probe code.
 COPY lib/rmhladder ./lib/rmhladder/

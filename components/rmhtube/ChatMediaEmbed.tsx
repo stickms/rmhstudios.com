@@ -9,6 +9,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { ImageOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { safeHref } from '@/lib/url-safety';
 
 // ─── URL extraction & classification ─────────────────────────────
 
@@ -191,7 +192,7 @@ function EmbedItem({ embed }: { embed: MediaEmbedInfo }) {
 
   return (
     <a
-      href={embed.originalUrl}
+      href={safeHref(embed.originalUrl)}
       target="_blank"
       rel="noopener noreferrer"
       className="mt-1 block max-w-xs"

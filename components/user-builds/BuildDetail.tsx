@@ -14,6 +14,7 @@ import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
 import { BuildComments } from './BuildComments';
 import { formatCount } from '@/lib/utils';
+import { safeHref } from '@/lib/url-safety';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 
@@ -227,7 +228,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
         <div className="flex items-center flex-wrap gap-3 mt-7">
           {build.repoUrl && (
             <a
-              href={build.repoUrl}
+              href={safeHref(build.repoUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-full bg-site-surface border border-site-border text-site-text hover:border-site-border-bright transition-colors"
@@ -238,7 +239,7 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
           )}
           {build.demoUrl && (
             <a
-              href={build.demoUrl}
+              href={safeHref(build.demoUrl)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 px-4 py-2 rounded-full bg-site-accent text-site-accent-fg font-medium hover:bg-site-accent-hover transition-colors"
