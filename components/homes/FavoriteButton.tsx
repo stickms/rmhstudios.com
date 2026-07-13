@@ -52,12 +52,12 @@ export function FavoriteButton({ listingId, favorited, onChange, compact }: Favo
         onClick={toggle}
         aria-pressed={isFav}
         aria-label={isFav ? 'Remove from saved' : 'Save listing'}
-        className="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/65 active:scale-90"
+        className="grid h-9 w-9 place-items-center rounded-full bg-black/45 text-white backdrop-blur transition hover:bg-black/65 active:scale-95"
       >
         {busy ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <Heart className={`h-4 w-4 ${isFav ? 'fill-rose-500 text-rose-500' : ''}`} />
+          <Heart className={`h-4 w-4 ${isFav ? 'fill-site-danger text-site-danger' : ''}`} />
         )}
       </button>
     );
@@ -69,9 +69,9 @@ export function FavoriteButton({ listingId, favorited, onChange, compact }: Favo
       variant={isFav ? 'accent-outline' : 'secondary'}
       onClick={toggle}
       loading={busy}
-      className={isFav ? 'border-rose-500/40 text-rose-400 hover:bg-rose-500/10' : ''}
+      className={isFav ? 'border-site-danger/40 text-site-danger hover:bg-site-danger/10' : ''}
     >
-      {!busy && <Heart className={`h-4 w-4 ${isFav ? 'fill-rose-500 text-rose-500' : ''}`} />}
+      {!busy && <Heart className={`h-4 w-4 ${isFav ? 'fill-site-danger text-site-danger' : ''}`} />}
       {isFav ? 'Saved' : 'Save'}
     </Button>
   );
