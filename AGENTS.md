@@ -15,7 +15,7 @@
   them from the client bundle. Never import them from client code.
 - **Design language:** all colors/radii/shadows/fonts via `--site-*` Tailwind
   utilities (`bg-site-surface`, `rounded-site`, …); use `components/ui/`
-  primitives and `components/feed/PageLayout.tsx`. 31 themes depend on this.
+  primitives and `components/feed/PageLayout.tsx`. The theme system depends on this.
   Reference: `docs/design-language.md` + checklist in
   `docs/page-consistency.md`.
 - **i18n:** every user-facing string through `t("key", { defaultValue })`,

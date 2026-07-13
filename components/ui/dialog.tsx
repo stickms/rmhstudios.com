@@ -25,7 +25,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     data-slot="dialog-overlay"
-    className={cn("fixed inset-0 z-50 bg-black/60 backdrop-blur-xl", className)}
+    className={cn("fixed inset-0 z-50 bg-black/50 backdrop-blur-md", className)}
     {...props}
   />
 ))
@@ -94,7 +94,7 @@ const DialogTitle = React.forwardRef<
   <DialogPrimitive.Title
     ref={ref}
     className={cn(
-      "text-lg font-semibold leading-none tracking-tight",
+      "text-lg font-semibold leading-none tracking-[-0.022em]",
       className
     )}
     {...props}

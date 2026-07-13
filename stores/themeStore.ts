@@ -9,6 +9,9 @@ export const SITE_STYLES = [
   { id: "default", label: "Dark", icon: "🌙", group: "Base", bg: "#000" },
   { id: "light", label: "Light", icon: "☀️", group: "Base", bg: "#f5f5f7" },
   { id: "high-contrast", label: "High Contrast", icon: "◐", group: "Base", bg: "#000" },
+  { id: "graphite", label: "Graphite", icon: "🪨", group: "Curated", bg: "#1c1c1e" },
+  { id: "sepia", label: "Sepia", icon: "📖", group: "Curated", bg: "#f3e9d6" },
+  { id: "nocturne", label: "Nocturne", icon: "🌌", group: "Curated", bg: "#0b0f1a" },
 ] as const;
 
 export type SiteStyle = (typeof SITE_STYLES)[number]["id"];

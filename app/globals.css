@@ -64,6 +64,9 @@
   --site-danger: #ff453a;
   --site-warning: #ffd60a;
   --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  /* Resting elevation for cards/surfaces (subtle) — distinct from --site-shadow,
+     which is the prominent elevation used by modals/popovers/floating chrome. */
+  --site-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.12);
   --site-radius: 18px;
   --site-radius-sm: 12px;
   --site-font-display: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
@@ -174,24 +177,24 @@
 .style-default {
   --site-bg: #000;
   --site-bg-subtle: #0b0b0c;
-  --site-surface: #27282c;
-  --site-surface-hover: #313238;
-  --site-surface-active: #3a3b42;
-  --site-border: #3a3b42;
-  --site-border-bright: #4a4b54;
-  --site-text: #e8e8ec;
-  --site-text-muted: #9a9ba4;
-  --site-text-dim: #6a6b74;
-  --site-accent: #9b7ad8;
-  --site-accent-fg: #000;
-  --site-accent-hover: #8a68c9;
-  --site-accent-dim: rgba(155, 122, 216, 0.12);
-  --site-success: #7bc88a;
-  --site-danger: #d98a8a;
-  --site-warning: #d9c36e;
-  --site-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-  --site-radius: 12px;
-  --site-radius-sm: 8px;
+  --site-surface: #161617;
+  --site-surface-hover: #1d1d1f;
+  --site-surface-active: #242426;
+  --site-border: rgba(255, 255, 255, 0.08);
+  --site-border-bright: rgba(255, 255, 255, 0.16);
+  --site-text: #f5f5f7;
+  --site-text-muted: #86868b;
+  --site-text-dim: #6e6e73;
+  --site-accent: #9d7bff;
+  --site-accent-fg: #fff;
+  --site-accent-hover: #ae8fff;
+  --site-accent-dim: rgba(157, 123, 255, 0.12);
+  --site-success: #30d158;
+  --site-danger: #ff453a;
+  --site-warning: #ffd60a;
+  --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  --site-radius: 18px;
+  --site-radius-sm: 12px;
 }
 
 /* Light — clean white surfaces */
@@ -214,6 +217,8 @@
   --site-danger: #d70015;
   --site-warning: #c48a00;
   --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.10);
+  --site-radius: 18px;
+  --site-radius-sm: 12px;
   --background: #f5f5f7;
   --foreground: #1d1d1f;
 }
@@ -240,8 +245,95 @@
   --site-warning: #ffd54a;
   --site-shadow: 0 0 0 1px #ffffff;
   --site-border-width: 2px;
+  --site-radius: 18px;
+  --site-radius-sm: 12px;
   --background: #000000;
   --foreground: #ffffff;
+}
+
+/* ── Curated themes (Apple-consistent) ──────────────────────────────────────
+   Same token contract as the base three; each is a self-contained palette so a
+   theme block can never silently drift. Kept tasteful/minimal on purpose. */
+
+/* Graphite — Apple system-gray dark: dim (not pure black), neutral, easy on
+   the eyes for long sessions and OLED-averse displays. */
+.style-graphite {
+  --site-bg: #1c1c1e;
+  --site-bg-subtle: #242426;
+  --site-surface: #2c2c2e;
+  --site-surface-hover: #363638;
+  --site-surface-active: #3f3f42;
+  --site-border: rgba(255, 255, 255, 0.10);
+  --site-border-bright: rgba(255, 255, 255, 0.20);
+  --site-text: #f5f5f7;
+  --site-text-muted: #98989d;
+  --site-text-dim: #7c7c80;
+  --site-accent: #9d7bff;
+  --site-accent-fg: #fff;
+  --site-accent-hover: #ae8fff;
+  --site-accent-dim: rgba(157, 123, 255, 0.14);
+  --site-success: #30d158;
+  --site-danger: #ff453a;
+  --site-warning: #ffd60a;
+  --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  --site-radius: 18px;
+  --site-radius-sm: 12px;
+  --background: #1c1c1e;
+  --foreground: #f5f5f7;
+}
+
+/* Sepia — warm paper (à la Apple Books): cream canvas, walnut ink, terracotta
+   accent tuned so white button labels clear WCAG AA (~4.7:1). */
+.style-sepia {
+  --site-bg: #f3e9d6;
+  --site-bg-subtle: #ece0c8;
+  --site-surface: #fbf4e5;
+  --site-surface-hover: #f4ead4;
+  --site-surface-active: #ece0c8;
+  --site-border: rgba(90, 62, 32, 0.16);
+  --site-border-bright: rgba(90, 62, 32, 0.28);
+  --site-text: #3a2e1e;
+  --site-text-muted: #7a6a52;
+  --site-text-dim: #9c8a6e;
+  --site-accent: #a2592e;
+  --site-accent-fg: #fff;
+  --site-accent-hover: #8e4c26;
+  --site-accent-dim: rgba(162, 89, 46, 0.14);
+  --site-success: #4f7d3a;
+  --site-danger: #b23a2f;
+  --site-warning: #b5851f;
+  --site-shadow: 0 24px 64px rgba(90, 62, 32, 0.16);
+  --site-radius: 18px;
+  --site-radius-sm: 12px;
+  --background: #f3e9d6;
+  --foreground: #3a2e1e;
+}
+
+/* Nocturne — cool deep-navy dark with a sky-blue accent; a calmer alternative
+   to the pure-black default. */
+.style-nocturne {
+  --site-bg: #0b0f1a;
+  --site-bg-subtle: #101524;
+  --site-surface: #161d2e;
+  --site-surface-hover: #1e2740;
+  --site-surface-active: #263050;
+  --site-border: rgba(255, 255, 255, 0.09);
+  --site-border-bright: rgba(255, 255, 255, 0.18);
+  --site-text: #eaeef7;
+  --site-text-muted: #8a93ab;
+  --site-text-dim: #626c86;
+  --site-accent: #5e9dff;
+  --site-accent-fg: #001227;
+  --site-accent-hover: #7db0ff;
+  --site-accent-dim: rgba(94, 157, 255, 0.15);
+  --site-success: #30d158;
+  --site-danger: #ff6961;
+  --site-warning: #ffd60a;
+  --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  --site-radius: 18px;
+  --site-radius-sm: 12px;
+  --background: #0b0f1a;
+  --foreground: #eaeef7;
 }
 
 /* Respect the OS "reduce motion" preference site-wide: neutralize enter
@@ -267,8 +359,11 @@
   }
 }
 
-/* Novelty themes retired (Apple-style overhaul) — only Dark (:root),
-   Light (.style-light) and High Contrast (.style-high-contrast) remain. */
+/* Novelty themes retired in the Apple-style overhaul. The catalog is now the
+   three base themes — Dark (:root), Light (.style-light), High Contrast
+   (.style-high-contrast) — plus the curated set above (Graphite / Sepia /
+   Nocturne) and the accent-preset overrides (see lib/appearance.ts). All are
+   registered in stores/themeStore.ts (SITE_STYLES). */
 
 @theme inline {
   /* Site design system tokens */
@@ -293,8 +388,9 @@
   /* Site radius scale → rounded-site / rounded-site-sm (theme-aware) */
   --radius-site: var(--site-radius);
   --radius-site-sm: var(--site-radius-sm);
-  /* Site elevation → shadow-site (theme-aware) */
+  /* Site elevation → shadow-site (prominent) / shadow-site-sm (resting) */
   --shadow-site: var(--site-shadow);
+  --shadow-site-sm: var(--site-shadow-sm);
 
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -712,10 +808,19 @@ body {
   }
 }
 
-/* Selection styling */
+/* Selection styling — accent fill with the accent's own foreground so text stays
+   legible on light-foreground accents (cyan/teal/lime/amber, Sepia, Nocturne). */
 ::selection {
   background: var(--site-accent);
-  color: #ffffff;
+  color: var(--site-accent-fg);
+}
+
+/* Placeholder text — themed and consistent across engines. Firefox applies a
+   ~0.54 default opacity to placeholders; pin it to 1 so the dim token reads the
+   same in Gecko, Blink and WebKit. */
+::placeholder {
+  color: var(--site-text-dim);
+  opacity: 1;
 }
 
 /* ==================== BROWSER AUTOFILL ====================
@@ -786,6 +891,22 @@ input[type="number"]:focus-visible,
 [contenteditable="true"]:focus-visible,
 [contenteditable=""]:focus-visible {
   outline: none;
+}
+
+/* Firefox-specific native chrome that ignores our theme:
+   - ::-moz-focus-inner draws a dotted inner border inside buttons/inputs on focus.
+   - :-moz-ui-invalid / :-moz-submit-invalid paint a red "glow" box-shadow on
+     invalid fields.
+   We convey focus with the accent ring (above) and validity via aria-invalid +
+   the site-danger ring, so both native cues are neutralised for one consistent
+   look across Gecko, Blink and WebKit. */
+::-moz-focus-inner {
+  border: 0;
+  padding: 0;
+}
+:-moz-ui-invalid,
+:-moz-submit-invalid {
+  box-shadow: none;
 }
 
 /* Drop the grey/blue mobile tap flash; we supply our own press cue below. */

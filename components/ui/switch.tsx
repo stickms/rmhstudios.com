@@ -34,7 +34,9 @@ export function Switch({ checked, onCheckedChange, disabled, className, ...rest 
       <span
         aria-hidden
         className={cn(
-          'block h-4 w-4 rounded-full shadow transition-transform',
+          // Subtle knob shadow (an iOS-style micro-detail, deliberately not the
+          // page-level shadow-site token) lifts the knob off the track on every theme.
+          'block h-4 w-4 rounded-full shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform',
           checked ? 'translate-x-[24px] bg-site-accent-fg' : 'translate-x-[3px] bg-site-text-dim'
         )}
       />

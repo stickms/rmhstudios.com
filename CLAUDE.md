@@ -25,7 +25,7 @@ locales, RTL for ar/ur/fa).
 
 | Path | What | Details |
 |---|---|---|
-| `app/` | TanStack Start routes: pages, API routes, `globals.css` (31 themes), router. `routeTree.gen.ts` is GENERATED — never edit. | [`app/CLAUDE.md`](app/CLAUDE.md) |
+| `app/` | TanStack Start routes: pages, API routes, `globals.css` (theme tokens: 3 base + 3 curated themes + accent presets), router. `routeTree.gen.ts` is GENERATED — never edit. | [`app/CLAUDE.md`](app/CLAUDE.md) |
 | `components/` | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper. | [`components/CLAUDE.md`](components/CLAUDE.md) |
 | `lib/` | Shared logic: auth, prisma, feed, economy, i18n, per-game logic, `.server.ts` server-only modules. | [`lib/CLAUDE.md`](lib/CLAUDE.md) |
 | `server/` | **Node** service tier: socket-server (7001), rmhbox (7676), rmhtube (7003), ladder-worker; plus fallback sources for workers now run in Go. | [`server/CLAUDE.md`](server/CLAUDE.md) |
@@ -75,7 +75,7 @@ status 7008 · assets 7007. Env: see `.env.example`; minimum is
    `rateLimit(getClientIp(request), …)` → zod `safeParse` →
    `Response.json(...)`. Admin = `(session.user as any).isAdmin`.
 4. **Design language:** every color/radius/shadow/font via `--site-*` token
-   utilities (`bg-site-surface`, `rounded-site`, …) so all 31 themes work.
+   utilities (`bg-site-surface`, `rounded-site`, …) so every theme works.
    Use `components/ui/` primitives, `PageLayout`, lucide icons, sonner
    toasts. See [`docs/design-language.md`](docs/design-language.md) and the
    checklist in [`docs/page-consistency.md`](docs/page-consistency.md).

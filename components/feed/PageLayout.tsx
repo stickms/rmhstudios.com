@@ -54,7 +54,7 @@ export function PageLayout({
     <>
       {/* Center Column – width animates between pages */}
       <AnimatedMain
-        className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
+        className="w-full min-w-0 border-r border-site-border pb-[calc(env(safe-area-inset-bottom,0px)+72px)] md:pb-0"
         targetWidth={targetWidth}
       >
         <div className="flex flex-col">

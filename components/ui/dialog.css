@@ -15,7 +15,7 @@
     animation: ui-dialog-overlay-out 0.2s ease-in forwards;
   }
   [data-slot="dialog-content"][data-state="open"] {
-    animation: ui-dialog-content-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: ui-dialog-content-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
   [data-slot="dialog-content"][data-state="closed"] {
     animation: ui-dialog-content-out 0.15s ease-in forwards;

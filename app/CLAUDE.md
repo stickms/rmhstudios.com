@@ -19,7 +19,7 @@ app/
     api/             server routes (~337 files)
     <game>.tsx       full-screen games/apps (top level, no shell)
     sitemap[.]xml.ts /sitemap.xml ([.]= escaped literal dot)
-  globals.css        theme tokens: 31 themes as .style-* classes (see design-language.md)
+  globals.css        theme tokens: base + curated themes as .style-* classes (see design-language.md)
   router.tsx         router config: intent preloading, pending component timings
   routeTree.gen.ts   GENERATED (~487 KB) — never edit by hand
   icon.svg
