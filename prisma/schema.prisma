@@ -33,6 +33,9 @@ model User {
   isBot            Boolean   @default(false) // synthetic account created by the bot-worker
   botPersona       String?   @db.Text // private prompt seed describing the bot's posting "theme"
   botLastPostAt    DateTime? // last time the worker posted as this bot (pacing)
+  // Denormalized follower count, kept in sync on follow/unfollow so hot paths
+  // (recommendations, profile cards) can sort/read without a relation aggregate.
+  followerCount    Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -287,6 +290,7 @@ model User {
   appearancePreference AppearancePreference?
 
   @@index([isBot])
+  @@index([followerCount])
   @@map("user")
 }
 

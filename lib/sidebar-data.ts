@@ -145,10 +145,10 @@ async function getRecommendCandidates(): Promise<SidebarUser[]> {
       OR: [{ handle: { not: null } }, { username: { not: null } }],
       isBot: false,
     },
+    // Sort by the denormalized, indexed follower count instead of aggregating
+    // the follow relation — fast even when the cache is cold.
     orderBy: {
-      followers: {
-        _count: 'desc',
-      },
+      followerCount: 'desc',
     },
     // A pool (not just 5) so the per-viewer exclusion below still yields
     // recommendations for viewers who already follow the very top accounts.
@@ -159,15 +159,11 @@ async function getRecommendCandidates(): Promise<SidebarUser[]> {
       username: true,
       handle: true,
       image: true,
+      followerCount: true,
       profile: {
         select: {
           displayName: true,
           customImage: true,
-        },
-      },
-      _count: {
-        select: {
-          followers: true,
         },
       },
     },
@@ -181,7 +177,7 @@ async function getRecommendCandidates(): Promise<SidebarUser[]> {
       username: user.username,
       name: resolved.name,
       image: resolved.image,
-      followerCount: user._count.followers,
+      followerCount: user.followerCount,
     };
   });
 
@@ -220,14 +216,18 @@ async function getBlogPosts(): Promise<SidebarPost[]> {
   return posts;
 }
 
-export async function getSidebarData() {
+export async function getSidebarData(viewerIdArg?: string | null) {
   // Resolve the viewer so recommendations can exclude self / already-followed.
-  let viewerId: string | null = null;
-  try {
-    const session = await auth.api.getSession({ headers: getRequest().headers });
-    viewerId = session?.user?.id ?? null;
-  } catch {
-    viewerId = null;
+  // Callers that already resolved the session (e.g. the home loader, which also
+  // prefetches the feed) can pass the id to avoid a second session lookup.
+  let viewerId: string | null = viewerIdArg ?? null;
+  if (viewerIdArg === undefined) {
+    try {
+      const session = await auth.api.getSession({ headers: getRequest().headers });
+      viewerId = session?.user?.id ?? null;
+    } catch {
+      viewerId = null;
+    }
   }
 
   const [userBuilds, recommendedUsers, blogPosts] =
