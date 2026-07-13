@@ -283,7 +283,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
       >
         {/* Sidebar — sits fixed behind the page content, filling the viewport as
             a flex column: LeftSidebar scrolls its nav internally while its footer
-            (profile/sign-in, Post) stays pinned to the bottom. `overscroll-contain`
+            (profile/sign-in) stays pinned to the bottom. `overscroll-contain`
             (plus `touch-pan-y`) means grabbing and swiping the nav scrolls only
             the sidebar itself — never the page behind it. The bottom padding
             reserves room for the fixed mobile nav bar so the pinned footer sits
@@ -292,7 +292,10 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           className={`fixed left-0 top-0 bottom-0 z-0 flex w-64 flex-col bg-site-bg border-r border-site-border overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
           }`}
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 72px)' }}
+          // Reserve just enough room for the fixed mobile nav bar (min-h-12 =
+          // 48px, plus its own safe-area pad) so the pinned footer clears it
+          // with a small gap — not the oversized gap the old 72px left behind.
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
           aria-hidden={!isOpen}
         >
           <LeftSidebar expanded />
