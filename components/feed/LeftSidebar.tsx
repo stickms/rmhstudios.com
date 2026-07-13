@@ -12,7 +12,6 @@ import {
   Brain,
   Wand2,
   LogOut,
-  PenSquare,
   User,
   ShieldCheck,
   MoreHorizontal,
@@ -35,7 +34,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { ComposeModal } from './ComposeModal';
 import { Button } from '@/components/ui/button';
 import { NotificationsPopover } from '@/components/site/NotificationsPopover';
 import { NotificationBadge } from '@/components/ui/notification-badge';
@@ -154,7 +152,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // Both the mobile drawer (MobileSidebarShell's fixed `<aside>`) and the desktop
   // rail (fixed, `overflow-hidden` aside) fill the viewport height, so the nav
   // gets its own internal scroll region while the footer (notification bell,
-  // profile/sign-in, Post) stays pinned to the bottom. On mobile the nav also
+  // profile/sign-in) stays pinned to the bottom. On mobile the nav also
   // needs `overscroll-contain`/`touch-pan-y` so swiping it scrolls only the nav,
   // never the page behind the drawer, and never triggers a back-nav gesture.
   const rootSizeClass = 'h-full min-h-0';
@@ -174,7 +172,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const toggleGroup = (g: string) => setOpenGroups((s) => ({ ...s, [g]: !s[g] }));
   const reduced = useReducedMotion();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [composeOpen, setComposeOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const userMenuBtnRef = useRef<HTMLButtonElement>(null);
   const [userMenuPos, setUserMenuPos] = useState({ bottom: 0, right: 0 });
@@ -534,40 +531,30 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             )}
           </div>
         ) : (
-          <Link to="/login" search={{ callbackURL: undefined }}>
-            <Button variant="accent" size="sm" className="w-full">
-              <User className={`w-4 h-4 ${iconMrClass}`} />
-              <span className={labelClass}>{t('sign-in', { defaultValue: 'Sign In' })}</span>
-            </Button>
-          </Link>
+          // Signed-out: sign-in CTA plus a Settings link so appearance and
+          // language (saved locally, and synced to the account on sign-in) are
+          // reachable without an account.
+          <div className="flex flex-col gap-2">
+            <Link to="/login" search={{ callbackURL: undefined }}>
+              <Button variant="accent" size="sm" className="w-full">
+                <User className={`w-4 h-4 ${iconMrClass}`} />
+                <span className={labelClass}>{t('sign-in', { defaultValue: 'Sign In' })}</span>
+              </Button>
+            </Link>
+            <Link
+              to="/settings"
+              className={`flex items-center gap-3 rounded-full px-3.5 py-2 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text ${itemJustifyClass}`}
+              title={t('settings', { defaultValue: 'Settings' })}
+            >
+              <Settings className="w-5 h-5 shrink-0" />
+              <span className={labelClass}>{t('settings', { defaultValue: 'Settings' })}</span>
+            </Link>
+          </div>
         )}
       </div>
 
-      {/* Post CTA */}
-      {session && (
-        <>
-          <Button
-            variant="accent"
-            className="mt-3 w-full shrink-0"
-            onClick={() => {
-              const el = document.getElementById('compose-box');
-              if (el && el.getBoundingClientRect().top < window.innerHeight) {
-                el.scrollIntoView({ behavior: 'smooth' });
-                el.focus();
-              } else {
-                setComposeOpen(true);
-              }
-            }}
-          >
-            <PenSquare className={`w-4 h-4 ${iconMrClass}`} />
-            <span className={labelClass}>{t('post', { defaultValue: 'Post' })}</span>
-          </Button>
-          <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
-        </>
-      )}
-
-      {/* Small breathing room below the last item (Post / Sign In) so it isn't
-          flush against the bottom of the scroll area. */}
+      {/* Small breathing room below the auth section so it isn't flush against
+          the bottom of the scroll area. */}
       <div className="h-1 shrink-0" aria-hidden="true" />
     </div>
   );
