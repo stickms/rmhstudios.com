@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** The every-6-hours pipeline: adapter hardening from the Plan-2 review backlog, then discover → dedupe → classify → score → verify → persist, recheck with 3-strike expiry and a mass-expiry circuit breaker, scrape-run logging, review-task creation, a `ladder:run` CLI, and the `ladder-worker` cron process.
+**Goal:** The every-4-hours pipeline: adapter hardening from the Plan-2 review backlog, then discover → dedupe → classify → score → verify → persist, recheck with 3-strike expiry and a mass-expiry circuit breaker, scrape-run logging, review-task creation, a `ladder:run` CLI, and the `ladder-worker` cron process.
 
 **Architecture:** Pure decision logic lives in `lib/rmhladder/pipeline/*` (unit-tested, no DB); thin prisma glue composes it; the worker (`server/ladder-worker/`) and `scripts/run-ladder-pipeline.ts` both call one `runPipeline()`. Board fetches are memoized per run via a caching `fetchImpl` wrapper so verify never refetches what discover just fetched. End-to-end correctness is proven by a live smoke run against the seeded dev DB in the final task.
 
@@ -162,7 +162,7 @@ async function runPipeline(deps: { prisma; fetchImpl?: typeof fetch }, opts: { t
 - Modify: `package.json` (add `node-cron` dep + `@types/node-cron`; scripts: `ladder-worker:dev` following the existing `*-worker:dev` pattern; append the worker to the `dev` concurrently list, the `build` esbuild entry list, and the `start` list — mirror `doctrine-worker` exactly in all three)
 
 **Requirements:**
-- Worker: `import 'dotenv/config'`; `cron.schedule(process.env.LADDER_CRON_SCHEDULE ?? '0 */6 * * *', ...)` calling `runPipeline({ prisma }, { trigger: 'cron' })`; overlap guard (skip tick if previous run still in flight — a simple boolean); startup log line; graceful SIGTERM (finish current run, stop cron, disconnect prisma). Structural mirror of the smallest existing worker in `server/` — read one before writing.
+- Worker: `import 'dotenv/config'`; `cron.schedule(process.env.LADDER_CRON_SCHEDULE ?? '0 */4 * * *', ...)` calling `runPipeline({ prisma }, { trigger: 'cron' })`; overlap guard (skip tick if previous run still in flight — a simple boolean); startup log line; graceful SIGTERM (finish current run, stop cron, disconnect prisma). Structural mirror of the smallest existing worker in `server/` — read one before writing.
 - Install: `pnpm add node-cron && pnpm add -D @types/node-cron` (lockfile change IS expected in this commit — the one place it's legitimate; commit package.json + pnpm-lock.yaml together).
 - **Live smoke (authorized network + dev-DB writes):** `pnpm ladder:run --limit 3 --platform greenhouse` against the real dev DB (6 active greenhouse sources exist). Capture full output; then query and report: `select count(*) from ladder_job`, `select status, count(*) from ladder_verification group by 1`, scrape-run row contents. Discovered jobs from real boards (Adyen/Affirm/Airbnb…) should appear with classifications and scores. Zero unhandled errors required; empty boards are fine.
 - Full wrap: `pnpm exec vitest run lib/rmhladder` all green; `pnpm exec eslint lib/rmhladder scripts server/ladder-worker` 0/0; `pnpm exec prisma validate`.

@@ -23,17 +23,19 @@ const queriesPrisma = prisma as unknown as QueriesPrisma;
 
 const fetchHealth = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/health' } });
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/health' } });
+    const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
+    if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
   const [stale, runs, overview] = await Promise.all([
     listStaleSources(queriesPrisma),
     listRuns(queriesPrisma, 20),
-    getOverview(queriesPrisma, session.user.id),
+    getOverview(queriesPrisma, session.user.id, { includeAdminStats: true }),
   ]);
   return { stale, runs, openReviewTasks: overview.openReviewTasks };
 });
 
-export const Route = createFileRoute('/rmhladder/health')({
+export const Route = createFileRoute('/_site/rmhladder/health')({
   loader: () => fetchHealth(),
   component: HealthPage,
 });
@@ -52,20 +54,15 @@ function HealthPage() {
 
   return (
     <div>
-      <div className="rl-page-header">
-        <p className="rl-eyebrow">RMHLADDER · HEALTH</p>
-        <h1 className="rl-display">System Health</h1>
-      </div>
-
       <Link to="/rmhladder/review" className="rl-chip rl-review-chip">
         Review queue · {openReviewTasks} open
       </Link>
 
       {/* Silent sources — the page's thesis */}
       <section className="rl-stale-panel">
-        <h2 className="rl-eyebrow">Silent ≥ 48h</h2>
+        <h2 className="rl-eyebrow">Silent for two scrape cycles (8h)</h2>
         {(stale as AnyRow[]).length === 0 ? (
-          <p className="rl-quicklist__empty">Every active source has reported within 48 hours.</p>
+          <p className="rl-quicklist__empty">Every active source has succeeded within the last eight hours.</p>
         ) : (
           <ul>
             {(stale as AnyRow[]).map((s) => (
@@ -76,6 +73,12 @@ function HealthPage() {
                 <span className="rl-program-chip">{s.platform as string}</span>
                 <span className="rl-mono">
                   {s.lastSuccessAt ? `last ok ${timeAgo(s.lastSuccessAt as Date)}` : 'never succeeded'}
+                </span>
+                <span className="rl-mono">
+                  {s.lastAttemptAt ? `last tried ${timeAgo(s.lastAttemptAt as Date)}` : 'never attempted'}
+                </span>
+                <span className="rl-mono">
+                  {Number(s.consecutiveFailures ?? 0)} consecutive failure{Number(s.consecutiveFailures ?? 0) === 1 ? '' : 's'}
                 </span>
               </li>
             ))}

@@ -152,7 +152,7 @@ services:
 
   # ─── Ladder Worker (RMHLadder job-discovery cron) ──────────────────────────
   # Node cron process: self-bootstraps an empty DB (seed → probe → run), then
-  # runs the pipeline on LADDER_CRON_SCHEDULE (default every 6h). No port.
+  # runs the pipeline on LADDER_CRON_SCHEDULE (default every 4h). No port.
   ladder-worker:
     <<: *common
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-ladder-worker
@@ -335,4 +335,3 @@ services:
       echo 'bucket ready';
       "
     restart: "no"
-

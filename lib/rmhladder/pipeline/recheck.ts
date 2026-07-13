@@ -95,6 +95,7 @@ export async function recheckSource(
     id: string;
     platform: string;
     slug: string | null;
+    url?: string | null;
     company: { name: string };
   },
   activeJobs: Array<{ id: string; externalId: string | null; failedCheckCount: number }>,
@@ -110,10 +111,15 @@ export async function recheckSource(
 
   // Resolve adapter. Unknown platform or missing slug → all skip, no DB writes.
   const adapter = getAdapter(source.platform);
-  if (!adapter || !source.slug) return ALL_SKIPPED;
+  if (!adapter || (!source.slug && !(source.platform === 'workday' && source.url))) return ALL_SKIPPED;
 
   const memoized = memoFetch(deps.fetchImpl);
-  const ctx = { slug: source.slug, companyName: source.company.name, fetchImpl: memoized };
+  const ctx = {
+    slug: source.slug ?? source.url!,
+    companyName: source.company.name,
+    sourceUrl: source.url,
+    fetchImpl: memoized,
+  };
 
   // One memoized board fetch. Errors are caught and treated as empty.
   let boardJobs: Awaited<ReturnType<typeof adapter.discoverJobs>>;
@@ -196,7 +202,7 @@ export async function recheckSource(
       case 'reset':
         await deps.prisma.ladderJob.update({
           where: { id: job.id },
-          data: { failedCheckCount: 0, lastCheckedAt: now },
+          data: { failedCheckCount: 0, lastSeenAt: now, lastCheckedAt: now },
         });
         reset++;
         break;

@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { ADAPTERS, getAdapter } from './index';
 
 describe('adapter registry', () => {
-  it('has exactly 4 adapters', () => {
-    expect(Object.keys(ADAPTERS)).toHaveLength(4);
+  it('has exactly 5 adapters', () => {
+    expect(Object.keys(ADAPTERS)).toHaveLength(5);
   });
 
   describe('ADAPTERS record', () => {
-    it('contains greenhouse, lever, ashby, smartrecruiters', () => {
+    it('contains greenhouse, lever, ashby, smartrecruiters, and workday', () => {
       const keys = Object.keys(ADAPTERS).sort();
-      expect(keys).toEqual(['ashby', 'greenhouse', 'lever', 'smartrecruiters']);
+      expect(keys).toEqual(['ashby', 'greenhouse', 'lever', 'smartrecruiters', 'workday']);
     });
   });
 
@@ -36,6 +36,12 @@ describe('adapter registry', () => {
       const adapter = getAdapter('smartrecruiters');
       expect(adapter).not.toBeNull();
       expect(adapter!.platform).toBe('smartrecruiters');
+    });
+
+    it('returns workday adapter for "workday"', () => {
+      const adapter = getAdapter('workday');
+      expect(adapter).not.toBeNull();
+      expect(adapter!.platform).toBe('workday');
     });
 
     it('returns null for "manual"', () => {

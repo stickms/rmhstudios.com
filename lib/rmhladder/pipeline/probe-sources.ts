@@ -1,6 +1,6 @@
 /**
- * probeUnconfiguredSources — try candidate board slugs for every unconfigured
- * API source and activate the first live one per company+platform.
+ * probeUnconfiguredSources — try candidate board slugs for due unconfigured
+ * and recoverable error sources, activating the first live one per platform.
  *
  * Extracted from scripts/probe-ladder-sources.ts so the ladder worker can
  * self-configure sources on startup; the CLI script is a thin wrapper.
@@ -35,21 +35,29 @@ export async function probeUnconfiguredSources(
     probe?: typeof probeSlug;
     /** Milliseconds between consecutive probe requests (politeness). Default 300; tests pass 0. */
     sleepMs?: number;
+    /** Injectable wall clock for retry scheduling. */
+    now?: Date;
+    /** Delay before retrying a source for the first time. Defaults to 24 hours. */
+    retryAfterMs?: number;
     log?: (line: string) => void;
   } = {},
 ): Promise<ProbeResult> {
   const probe = opts.probe ?? probeSlug;
   const sleepMs = opts.sleepMs ?? 300;
   const log = opts.log ?? (() => {});
+  const now = opts.now ?? new Date();
+  const retryAfterMs = opts.retryAfterMs ?? 24 * 60 * 60 * 1_000;
   const targetPlatforms: ProbePlatform[] = opts.platforms ?? [...PROBE_PLATFORMS];
 
   const sources = await prisma.ladderSource.findMany({
     where: {
-      status: 'unconfigured',
+      company: { enabled: true },
+      status: { in: ['unconfigured', 'error'] },
       platform: { in: targetPlatforms },
+      OR: [{ nextProbeAt: null }, { nextProbeAt: { lte: now } }],
     },
     include: { company: true },
-    orderBy: [{ company: { name: 'asc' } }, { platform: 'asc' }],
+    orderBy: [{ nextProbeAt: 'asc' }, { lastProbedAt: 'asc' }, { company: { name: 'asc' } }, { platform: 'asc' }],
   });
 
   // Group by companyId → platform → source
@@ -78,7 +86,8 @@ export async function probeUnconfiguredSources(
       const source = byPlatform.get(plt);
       if (!source) continue;
 
-      const slugs = candidateSlugs(name);
+      const configuredSlug = typeof source.slug === 'string' ? source.slug : null;
+      const slugs = [...new Set([configuredSlug, ...candidateSlugs(name)].filter((slug): slug is string => Boolean(slug)))];
       let activated = false;
 
       for (const slug of slugs) {
@@ -87,13 +96,27 @@ export async function probeUnconfiguredSources(
         }
         firstRequest = false;
 
-        const probed = await probe(plt, slug);
+        let probed: Awaited<ReturnType<typeof probe>>;
+        try {
+          probed = await probe(plt, slug);
+        } catch (error) {
+          log(`  ${plt}/${slug} → probe failed: ${error instanceof Error ? error.message : String(error)}`);
+          continue;
+        }
         log(`  ${plt}/${slug} → live=${probed.live} jobs=${probed.jobCount}`);
 
         if (probed.live) {
           await prisma.ladderSource.update({
             where: { id: source.id },
-            data: { slug, status: 'active', lastSuccessAt: new Date() },
+            data: {
+              slug,
+              status: 'active',
+              lastAttemptAt: now,
+              lastProbedAt: now,
+              lastSuccessAt: now,
+              nextProbeAt: null,
+              consecutiveFailures: 0,
+            },
           });
           log(`  ✓ activated ${plt} with slug "${slug}" (${probed.jobCount} jobs)`);
           result.sourcesActivated++;
@@ -105,6 +128,18 @@ export async function probeUnconfiguredSources(
 
       if (!activated) {
         log(`  - ${plt}: no live slug found`);
+        const previousFailures = typeof source.consecutiveFailures === 'number' ? source.consecutiveFailures : 0;
+        const failures = previousFailures + 1;
+        const backoff = Math.min(retryAfterMs * 2 ** Math.min(previousFailures, 4), 14 * 24 * 60 * 60 * 1_000);
+        await prisma.ladderSource.update({
+          where: { id: source.id },
+          data: {
+            lastAttemptAt: now,
+            lastProbedAt: now,
+            nextProbeAt: new Date(now.getTime() + backoff),
+            consecutiveFailures: failures,
+          },
+        });
       }
     }
   }

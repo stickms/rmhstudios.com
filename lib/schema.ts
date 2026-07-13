@@ -163,3 +163,70 @@ export function breadcrumbSchema(items: Breadcrumb[]): Json {
     })),
   };
 }
+
+interface JobPostingInput {
+  id: string;
+  title: string;
+  description: string;
+  companyName: string;
+  path: string;
+  sourceUrl?: string;
+  datePosted?: string;
+  validThrough?: string;
+  employmentType?: string;
+  city?: string;
+  region?: string;
+  remote?: boolean;
+}
+
+/** A verified, currently active role. Callers must not pass a full scraped description. */
+export function jobPostingSchema({
+  id,
+  title,
+  description,
+  companyName,
+  path,
+  sourceUrl,
+  datePosted,
+  validThrough,
+  employmentType,
+  city,
+  region,
+  remote,
+}: JobPostingInput): Json {
+  const url = path.startsWith('http') ? path : `${SITE_URL}${path}`;
+  const hasLocation = Boolean(city || region);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title,
+    description,
+    identifier: { '@type': 'PropertyValue', name: companyName, value: id },
+    hiringOrganization: { '@type': 'Organization', name: companyName },
+    ...(datePosted ? { datePosted } : {}),
+    ...(validThrough ? { validThrough } : {}),
+    ...(employmentType ? { employmentType } : {}),
+    ...(hasLocation
+      ? {
+          jobLocation: {
+            '@type': 'Place',
+            address: {
+              '@type': 'PostalAddress',
+              ...(city ? { addressLocality: city } : {}),
+              ...(region ? { addressRegion: region } : {}),
+              addressCountry: 'US',
+            },
+          },
+        }
+      : {}),
+    ...(remote
+      ? {
+          jobLocationType: 'TELECOMMUTE',
+          applicantLocationRequirements: { '@type': 'Country', name: 'United States' },
+        }
+      : {}),
+    url,
+    ...(sourceUrl ? { sameAs: sourceUrl } : {}),
+    directApply: false,
+  };
+}

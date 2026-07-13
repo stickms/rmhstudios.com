@@ -16,6 +16,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { deleteObject } from '@/lib/storage/s3.server';
 
 const schema = z.object({ confirm: z.string().min(1).max(120) });
 
@@ -72,13 +73,35 @@ export const Route = createFileRoute('/api/account/delete')({
             );
           }
 
+          // Resume files are private objects rather than public media. Remove
+          // every object before dropping its database ownership record so a
+          // transient storage failure can be retried safely.
+          const resumeObjects = await prisma.ladderResumeVersion.findMany({
+            where: { userId },
+            select: { storageKey: true },
+          });
+          await Promise.all(resumeObjects.map(({ storageKey }) => deleteObject(storageKey)));
+
           await prisma.$transaction([
             // 1. Destroy every way to authenticate as this account.
             prisma.session.deleteMany({ where: { userId } }),
             prisma.account.deleteMany({ where: { userId } }),
             prisma.passkey.deleteMany({ where: { userId } }),
             prisma.pushSubscription.deleteMany({ where: { userId } }),
-            // 2. Scrub PII from the profile.
+            // 2. Remove all private RMHLadder data. Child resume versions,
+            // reviews, matches, AI tasks, deliveries, and application events
+            // cascade from their owning rows.
+            prisma.ladderAlertEvent.deleteMany({ where: { userId } }),
+            prisma.ladderAlert.deleteMany({ where: { userId } }),
+            prisma.ladderProductEvent.deleteMany({ where: { userId } }),
+            prisma.ladderSavedSearch.deleteMany({ where: { userId } }),
+            prisma.ladderApplication.deleteMany({ where: { userId } }),
+            prisma.ladderJobAction.deleteMany({ where: { userId } }),
+            prisma.ladderWatchlistEntry.deleteMany({ where: { userId } }),
+            prisma.ladderKeyword.deleteMany({ where: { userId } }),
+            prisma.ladderUserPrefs.deleteMany({ where: { userId } }),
+            prisma.ladderResume.deleteMany({ where: { userId } }),
+            // 3. Scrub PII from the profile.
             prisma.userProfile.updateMany({
               where: { userId },
               data: {
@@ -94,7 +117,7 @@ export const Route = createFileRoute('/api/account/delete')({
                 profileSongAlbumArt: null,
               },
             }),
-            // 3. Anonymize + lock the user record.
+            // 4. Anonymize + lock the user record.
             prisma.user.update({
               where: { id: userId },
               data: {

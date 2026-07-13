@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
-import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, BellRing, BellOff, CheckCheck, Trophy, Sparkles, Zap, Gift, Car, MapPin, Settings2 } from 'lucide-react';
+import { Heart, MessageCircle, UserPlus, AtSign, Repeat2, Bell, BellRing, BellOff, CheckCheck, Trophy, Sparkles, Zap, Gift, Car, MapPin, Settings2, BriefcaseBusiness } from 'lucide-react';
 import { toast } from 'sonner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
@@ -61,6 +61,8 @@ function systemIdentity(entityType: string | null): { label: string; Icon: typeo
       return { label: 'New ride request', Icon: MapPin, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
     case 'ride_message':
       return { label: 'Ride message', Icon: MessageCircle, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
+    case 'ladder_job':
+      return { label: 'RMH Ladder', Icon: BriefcaseBusiness, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
     default:
       return { label: 'RMH Studios', Icon: Sparkles, tint: 'text-site-accent', bg: 'bg-site-accent/15' };
   }
@@ -300,6 +302,8 @@ export function NotificationsColumn({
         return '/rideshare/ride';
       case 'ride_request':
         return '/rideshare/drive';
+      case 'ladder_job':
+        return n.entityId ? `/rmhladder/jobs/${n.entityId}` : '/rmhladder/jobs';
       default:
         return null;
     }

@@ -79,12 +79,14 @@ export const auth = betterAuth({
             isAdmin: {
                 type: "boolean",
                 required: false,
-                defaultValue: false
+                defaultValue: false,
+                input: false
             },
             isVerified: {
                 type: "boolean",
                 required: false,
-                defaultValue: false
+                defaultValue: false,
+                input: false
             }
         }
     },
@@ -94,7 +96,7 @@ export const auth = betterAuth({
                 after: async (user) => {
                     // Auto-assign a handle to new users if they don't have one
                     if (!user.handle) {
-                        const handle = await generateHandle((user as any).username || user.name);
+                        const handle = await generateHandle((user as { username?: string }).username || user.name);
                         await prisma.user.update({
                             where: { id: user.id },
                             data: { handle },

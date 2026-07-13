@@ -77,13 +77,13 @@ getOverview(prisma, userId) → { newThisWeek, verifiedActive, expiringSoon, ope
 listReviewTasks(prisma, filters {status}) → tasks + job/source/company context
 listCompanies(prisma, { q?, enabledOnly? }) → companies + per-platform source status map + activeJobCount
 listRuns(prisma, take) → runs desc + their sourceErrors
-listStaleSources(prisma, now) → active sources whose lastSuccessAt is null or > 48h old (carry-forward: THE health signal for silently-failing boards)
+listStaleSources(prisma, now) → active/error sources whose lastSuccessAt is null or > 8h old (two scrape cycles; carry-forward: THE health signal for silently-failing boards)
 getSettings(prisma, userId) → prefs (create-default on miss), keywords, watchlist companyIds
 listAlerts(prisma, userId) → in-app alert rows desc (Plan 5 populates; empty state now)
 ```
 **actions.ts exports:** `setJobAction(prisma,userId,jobId,'saved'|'applied'|'ignored'|null)` (upsert/delete; 'applied' also upserts a LadderApplication at not_applied→applied w/ appliedDate), `updateApplication(prisma,userId,jobId,patch)` (validated with zod: status enum, dates, strings ≤ 2k), `resolveReviewTask(prisma,userId,taskId,resolution:'verify'|'expire'|'duplicate'|'non_us'|'ignore')` — verify→job status active + verification row (`verified_probable`, 75, 'Manually verified via review queue.'); expire→expired+row; non_us→verification row non_us_role; duplicate/ignore→task-only; ALL set task resolved/resolvedById/resolvedAt, `setCompanyEnabled`, `setCompanyPriority`, `upsertKeyword`/`deleteKeyword`, `updatePrefs` (zod), `toggleWatchlist`.
 
-**Tests:** extend the Plan-3 fake-prisma pattern (new fake supporting findMany w/ simple where subsets used here — keep the fake honest: implement only the query shapes the code uses, listed at top of the fake). Cover: preset filters, non-US exclusion default + includeNonUS, blocked-keyword row exclusion, finalRelevance ordering, cursor pagination (take+1 trick), resolveReviewTask verify-path dual-write, setJobAction applied-creates-application, stale-source 48h boundary.
+**Tests:** extend the Plan-3 fake-prisma pattern (new fake supporting findMany w/ simple where subsets used here — keep the fake honest: implement only the query shapes the code uses, listed at top of the fake). Cover: preset filters, non-US exclusion default + includeNonUS, blocked-keyword row exclusion, finalRelevance ordering, cursor pagination (take+1 trick), resolveReviewTask verify-path dual-write, setJobAction applied-creates-application, stale-source 8h boundary.
 
 - [ ] RED (full behavioral test file first) → implement → GREEN → full suite → commit `feat(rmhladder): dashboard query + action layer`.
 
@@ -129,7 +129,7 @@ listAlerts(prisma, userId) → in-app alert rows desc (Plan 5 populates; empty s
 
 - **PipelineLadder:** full-height two-rail ladder; stages as rungs bottom→top (not_applied, planning, applied, networking, interviewing, final_round; **offer is the top rung, set in `--ledger` with the only celebratory treatment in the app: small brass serif flourish `※ Offer`**); application cards sit ON their rung (company + title + mono date), click → application editor panel (right column: status select, dates, resume version, referral, contact, notes, follow-up date, interview dates list — updateApplication with zod errors inline); rejected/withdrawn cards rest in a quiet `--slate` side gutter labeled `off the ladder` (honest, not cute — sentence-case eyebrow). Keyboard: cards focusable, arrow-up/down moves status via updateApplication (announce via aria-live).
 - Settings: prefs form (relevance threshold slider w/ mono readout, digest frequency, channel toggles incl. discordUserId text, preferred cities multi, program types), keywords manager (boost/block lists, weight steppers, block chips in `--signal` tint), watchlist summary (links to Companies).
-- Alerts: list of in-app alert rows (type eyebrow, job link, sent ago) + empty state: "No alerts yet. The worker checks every 6 hours; alert delivery arrives with Plan 5." Mark-read on view (`readAt`).
+- Alerts: list of in-app alert rows (type eyebrow, job link, sent ago) + empty state: "No alerts yet. The worker checks every 4 hours; alert delivery arrives with Plan 5." Mark-read on view (`readAt`).
 - [ ] Implement → commit `feat(rmhladder): pipeline ladder, settings, alerts shell`.
 
 ---

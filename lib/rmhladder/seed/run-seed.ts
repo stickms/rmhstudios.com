@@ -28,6 +28,19 @@ export interface SeedPrisma {
 
 const API_PLATFORMS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters'] as const;
 
+/** Recorded, verified Workday tenant/site URLs. Add entries only after a live CXS fixture check. */
+export const WORKDAY_SOURCES: Record<string, { slug: string; url: string; config: Record<string, string> }> = {
+  Workday: {
+    slug: 'workday:Workday',
+    url: 'https://workday.wd5.myworkdayjobs.com/Workday',
+    config: {
+      origin: 'https://workday.wd5.myworkdayjobs.com',
+      tenant: 'workday',
+      site: 'Workday',
+    },
+  },
+};
+
 export async function seedLadder(
   prisma: SeedPrisma,
 ): Promise<{ companies: number; sources: number; rules: number }> {
@@ -50,6 +63,27 @@ export async function seedLadder(
         where: { companyId_platform_slug: { companyId: company.id, platform, slug: normalizedName.replace(/ /g, '') } },
         update: {},
         create: { companyId: company.id, platform, slug: normalizedName.replace(/ /g, ''), status: 'unconfigured' },
+      });
+    }
+    const workday = WORKDAY_SOURCES[c.name];
+    if (workday) {
+      await prisma.ladderSource.upsert({
+        where: {
+          companyId_platform_slug: {
+            companyId: company.id,
+            platform: 'workday',
+            slug: workday.slug,
+          },
+        },
+        update: { url: workday.url, config: workday.config, status: 'active' },
+        create: {
+          companyId: company.id,
+          platform: 'workday',
+          slug: workday.slug,
+          url: workday.url,
+          config: workday.config,
+          status: 'active',
+        },
       });
     }
     const manualUrl = MANUAL_EARLY_CAREER_URLS[c.name];

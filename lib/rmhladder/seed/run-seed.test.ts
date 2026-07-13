@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seedLadder, type SeedPrisma } from './run-seed';
+import { seedLadder, WORKDAY_SOURCES, type SeedPrisma } from './run-seed';
 import { SEED_COMPANIES, MANUAL_EARLY_CAREER_URLS } from './companies';
 import { DEFAULT_RELEVANCE_RULES } from '../scoring';
 
@@ -59,7 +59,7 @@ function makeFakePrisma() {
 }
 
 describe('seedLadder', () => {
-  it('seeds every company with 4 API sources plus manual sources for curated URLs', async () => {
+  it('seeds API sources, recorded Workday boards, and curated manual URLs', async () => {
     const { prisma, companies, sources, rules } = makeFakePrisma();
 
     const result = await seedLadder(prisma);
@@ -69,7 +69,10 @@ describe('seedLadder', () => {
     const manualCount = Object.keys(MANUAL_EARLY_CAREER_URLS).filter((name) =>
       SEED_COMPANIES.some((c) => c.name === name),
     ).length;
-    expect(sources.size).toBe(SEED_COMPANIES.length * 4 + manualCount);
+    const workdayCount = Object.keys(WORKDAY_SOURCES).filter((name) =>
+      SEED_COMPANIES.some((c) => c.name === name),
+    ).length;
+    expect(sources.size).toBe(SEED_COMPANIES.length * 4 + workdayCount + manualCount);
     expect(result.sources).toBe(sources.size);
     expect(rules.size).toBe(DEFAULT_RELEVANCE_RULES.length);
 
@@ -77,6 +80,12 @@ describe('seedLadder', () => {
     const statuses = new Set(Array.from(sources.values()).map((s) => s.status));
     expect(statuses.has('unconfigured')).toBe(true);
     if (manualCount > 0) expect(statuses.has('active')).toBe(true);
+    expect([...sources.values()]).toContainEqual(expect.objectContaining({
+      platform: 'workday',
+      slug: 'workday:Workday',
+      status: 'active',
+      url: 'https://workday.wd5.myworkdayjobs.com/Workday',
+    }));
   });
 
   it('is idempotent — re-running creates nothing new', async () => {

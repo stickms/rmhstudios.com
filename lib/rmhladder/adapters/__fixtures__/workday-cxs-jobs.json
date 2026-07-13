@@ -1,0 +1,21 @@
+{
+  "total": 2,
+  "jobPostings": [
+    {
+      "title": "Senior Engagement Manager, AI Solutions Delivery",
+      "externalPath": "/job/USA-NY-Remote/Senior-Engagement-Manager--AI-Solutions-Delivery_JR-0107750",
+      "locationsText": "USA, NY, Remote",
+      "postedOn": "Posted Yesterday",
+      "remoteType": "Remote",
+      "bulletFields": ["JR-0107750"]
+    },
+    {
+      "title": "Sr. Associate Software Development Engineer(P2)",
+      "externalPath": "/job/INDChennai/Sr-Associate-Software-Development-Engineer-P2-_JR-0108409",
+      "locationsText": "IND.Chennai",
+      "postedOn": "Posted Yesterday",
+      "remoteType": "Flex",
+      "bulletFields": ["JR-0108409"]
+    }
+  ]
+}

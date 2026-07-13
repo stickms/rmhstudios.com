@@ -55,6 +55,7 @@ export const Route = createFileRoute('/api/account/export')({
             blocks,
             mutes,
             sessions,
+            ladder,
           ] = await Promise.all([
             prisma.user.findUnique({
               where: { id: userId },
@@ -97,7 +98,57 @@ export const Route = createFileRoute('/api/account/export')({
                 expiresAt: true,
               },
             }),
+            Promise.all([
+              prisma.ladderUserPrefs.findUnique({ where: { userId } }),
+              prisma.ladderKeyword.findMany({ where: { userId }, take: CAP }),
+              prisma.ladderWatchlistEntry.findMany({ where: { userId }, take: CAP }),
+              prisma.ladderJobAction.findMany({ where: { userId }, take: CAP }),
+              prisma.ladderApplication.findMany({
+                where: { userId },
+                take: CAP,
+                include: { events: { orderBy: { createdAt: 'asc' }, take: CAP } },
+              }),
+              prisma.ladderSavedSearch.findMany({ where: { userId }, take: CAP }),
+              prisma.ladderResume.findMany({
+                where: { userId },
+                take: CAP,
+                include: {
+                  versions: {
+                    orderBy: { versionNumber: 'asc' },
+                    select: {
+                      id: true,
+                      versionNumber: true,
+                      filename: true,
+                      mimeType: true,
+                      sizeBytes: true,
+                      sha256: true,
+                      parseStatus: true,
+                      parseConfidence: true,
+                      confirmedProfile: true,
+                      confirmedAt: true,
+                      createdAt: true,
+                    },
+                  },
+                },
+              }),
+              prisma.ladderResumeReview.findMany({ where: { userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
+              prisma.ladderJobMatch.findMany({ where: { userId }, take: CAP, orderBy: { score: 'desc' } }),
+              prisma.ladderAlertEvent.findMany({ where: { userId }, take: CAP, orderBy: { createdAt: 'desc' } }),
+            ]),
           ]);
+
+          const [
+            ladderPrefs,
+            ladderKeywords,
+            ladderWatchlist,
+            ladderActions,
+            ladderApplications,
+            ladderSavedSearches,
+            ladderResumes,
+            ladderResumeReviews,
+            ladderMatches,
+            ladderAlerts,
+          ] = ladder;
 
           const payload = {
             exportedAt: new Date().toISOString(),
@@ -115,6 +166,19 @@ export const Route = createFileRoute('/api/account/export')({
             achievements,
             moderation: { blocks, mutes },
             sessions,
+            rmhLadder: {
+              preferences: ladderPrefs,
+              keywords: ladderKeywords,
+              watchlist: ladderWatchlist,
+              actions: ladderActions,
+              applications: ladderApplications,
+              savedSearches: ladderSavedSearches,
+              resumes: ladderResumes,
+              resumeReviews: ladderResumeReviews,
+              matches: ladderMatches,
+              alerts: ladderAlerts,
+              note: 'Private resume binaries are available through the authenticated RMHLadder download endpoint and are not embedded in this JSON export.',
+            },
           };
 
           const body = JSON.stringify(payload, null, 2);

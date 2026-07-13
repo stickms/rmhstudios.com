@@ -11,6 +11,7 @@ export interface SourceRunStats {
   updated: number;
   verified: number;
   reviewTasks: number;
+  recordErrors: Array<{ externalId: string; message: string }>;
   errored: boolean;
   errorMessage?: string;
 }
@@ -22,11 +23,15 @@ export interface SourceRunStats {
 export interface PrismaLike {
   ladderJob: {
     findUnique(args: {
-      where: { dedupeHash: string };
+      where: { sourceId_externalId: { sourceId: string; externalId: string } };
       select?: Record<string, unknown>;
     }): Promise<{ id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string } | null>;
+    findFirst(args: {
+      where: Record<string, unknown>;
+      select?: Record<string, unknown>;
+    }): Promise<{ id: string } | null>;
     upsert(args: {
-      where: { dedupeHash: string };
+      where: { sourceId_externalId: { sourceId: string; externalId: string } };
       create: Record<string, unknown>;
       update: Record<string, unknown>;
     }): Promise<{ id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string }>;
@@ -59,6 +64,7 @@ const ZERO_STATS: SourceRunStats = {
   updated: 0,
   verified: 0,
   reviewTasks: 0,
+  recordErrors: [],
   errored: false,
 };
 
@@ -75,6 +81,7 @@ export async function processSource(
     id: string;
     platform: string;
     slug: string | null;
+    url?: string | null;
     company: { id: string; name: string; priorityLevel: number };
   },
 ): Promise<SourceRunStats> {
@@ -87,7 +94,7 @@ export async function processSource(
       errorMessage: `No adapter registered for platform: ${source.platform}`,
     };
   }
-  if (!source.slug) {
+  if (!source.slug && !(source.platform === 'workday' && source.url)) {
     return {
       ...ZERO_STATS,
       errored: true,
@@ -97,14 +104,15 @@ export async function processSource(
 
   const now = deps.now ?? new Date();
   // Mutable stats object updated as we go; returned inside catch to reflect partial work.
-  const stats: SourceRunStats = { ...ZERO_STATS };
+  const stats: SourceRunStats = { ...ZERO_STATS, recordErrors: [] };
 
   try {
     // 2. One memoized fetch per processSource call — verify never re-hits the network.
     const memoized = memoFetch(deps.fetchImpl);
     const ctx = {
-      slug: source.slug,
+      slug: source.slug ?? source.url!,
       companyName: source.company.name,
+      sourceUrl: source.url,
       fetchImpl: memoized,
     };
 
@@ -114,11 +122,16 @@ export async function processSource(
 
     // Zero discoveries carry no success evidence (empty board or fetch failure); skip lastSuccessAt.
     if (stats.discovered === 0) {
+      await deps.prisma.ladderSource.update({
+        where: { id: source.id },
+        data: { lastAttemptAt: now, consecutiveFailures: { increment: 1 } },
+      });
       return { ...stats, errorMessage: 'no jobs discovered (empty board or fetch failure)' };
     }
 
     // 4. Per-job pipeline.
     for (const normalized of normalizedJobs) {
+      try {
       // 4a. Verify — re-uses the memoized fetch, no extra network round-trip.
       const evidence = await adapter.verifyJob(ctx, {
         externalId: normalized.externalId,
@@ -140,13 +153,24 @@ export async function processSource(
       const isVerified =
         f.verificationStatus === 'verified_active' || f.verificationStatus === 'verified_probable';
 
-      // 4c. Pre-read existing row to detect create-vs-update and compute alternateUrls merge.
-      //     This makes the merge logic explicit here rather than hiding it in the DB layer,
-      //     and is safe for real Prisma (plain array set in the update payload).
+      // 4c. Source + external ID is authoritative identity. The fuzzy dedupe
+      //     hash only flags possible duplicates and never merges requisitions.
+      if (!f.externalId) {
+        throw new Error(`Adapter ${source.platform} returned a job without an external ID`);
+      }
       const existing = await deps.prisma.ladderJob.findUnique({
-        where: { dedupeHash: assessment.dedupeHash },
+        where: { sourceId_externalId: { sourceId: source.id, externalId: f.externalId } },
       });
       const isNew = existing === null;
+      const possibleDuplicate = isNew
+        ? await deps.prisma.ladderJob.findFirst({
+            where: {
+              dedupeHash: assessment.dedupeHash,
+              NOT: { sourceId: source.id, externalId: f.externalId },
+            },
+            select: { id: true },
+          })
+        : null;
 
       // When the canonical URL has changed, push the OLD url into alternateUrls (deduped, cap 10).
       let mergedAlternates: string[] | undefined;
@@ -157,9 +181,10 @@ export async function processSource(
 
       // 4d. Upsert the job row.
       const upserted = await deps.prisma.ladderJob.upsert({
-        where: { dedupeHash: assessment.dedupeHash },
+        where: { sourceId_externalId: { sourceId: source.id, externalId: f.externalId } },
         create: {
           companyId: source.company.id,
+          sourceId: source.id,
           dedupeHash: assessment.dedupeHash,
           title: f.title,
           normalizedTitle: f.normalizedTitle,
@@ -171,6 +196,7 @@ export async function processSource(
           remoteStatus: f.remoteStatus,
           employmentType: f.employmentType,
           postingDate: f.postingDate,
+          applicationDeadline: f.applicationDeadline,
           sourcePlatform: source.platform,
           sourceUrl: f.sourceUrl,
           originalPostingUrl: f.originalPostingUrl,
@@ -178,7 +204,9 @@ export async function processSource(
           externalRequisitionId: f.externalRequisitionId,
           externalId: f.externalId,
           descriptionSummary: f.descriptionSummary,
+          descriptionText: f.descriptionText,
           fullDescription: f.fullDescription,
+          contentHash: f.contentHash,
           earlyCareerScore: f.earlyCareerScore,
           earlyCareerClassification: f.earlyCareerClassification,
           usLocationConfidence: f.usLocationConfidence,
@@ -190,22 +218,42 @@ export async function processSource(
           failedCheckCount: 0,
           alternateUrls: [],
           discoveredAt: now,
+          lastSeenAt: now,
           lastCheckedAt: now,
           lastVerifiedAt: isVerified ? now : null,
         },
         update: {
           lastCheckedAt: now,
+          lastSeenAt: now,
           failedCheckCount: 0,
+          sourceId: source.id,
+          dedupeHash: assessment.dedupeHash,
+          title: f.title,
+          normalizedTitle: f.normalizedTitle,
+          programType: f.programType,
+          locationRaw: f.locationRaw,
+          city: f.city,
+          state: f.state,
           relevanceScoreBase: f.relevanceScoreBase,
           earlyCareerScore: f.earlyCareerScore,
           earlyCareerClassification: f.earlyCareerClassification,
           urgencyFlag: f.urgencyFlag,
           status: jobStatus,
           country: f.country,
-          externalId: f.externalId,
+          remoteStatus: f.remoteStatus,
+          employmentType: f.employmentType,
+          postingDate: f.postingDate,
+          applicationDeadline: f.applicationDeadline,
           sourceUrl: f.sourceUrl,
           canonicalApplyUrl: f.canonicalApplyUrl,
           externalRequisitionId: f.externalRequisitionId,
+          descriptionSummary: f.descriptionSummary,
+          descriptionText: f.descriptionText,
+          fullDescription: f.fullDescription,
+          contentHash: f.contentHash,
+          usLocationConfidence: f.usLocationConfidence,
+          graduationYearTarget: f.graduationYearTarget,
+          schoolYearTarget: f.schoolYearTarget,
           ...(isVerified ? { lastVerifiedAt: now } : {}),
           originalPostingUrl: f.originalPostingUrl,
           ...(mergedAlternates !== undefined ? { alternateUrls: mergedAlternates } : {}),
@@ -219,6 +267,23 @@ export async function processSource(
         stats.updated++;
       }
       if (isVerified) stats.verified++;
+
+      if (possibleDuplicate) {
+        const existingTask = await deps.prisma.ladderReviewTask.findFirst({
+          where: { jobId: upserted.id, reason: 'possible_duplicate', status: 'open' },
+        });
+        if (!existingTask) {
+          await deps.prisma.ladderReviewTask.create({
+            data: {
+              jobId: upserted.id,
+              sourceId: source.id,
+              reason: 'possible_duplicate',
+              status: 'open',
+            },
+          });
+          stats.reviewTasks++;
+        }
+      }
 
       // 4e. Record verification row.
       await deps.prisma.ladderVerification.create({
@@ -247,17 +312,56 @@ export async function processSource(
           stats.reviewTasks++;
         }
       }
+      } catch (error) {
+        stats.recordErrors.push({
+          externalId: normalized.externalId || 'unknown',
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    if (stats.created + stats.updated === 0 && stats.recordErrors.length > 0) {
+      const message = `all ${stats.discovered} discovered records failed processing`;
+      await deps.prisma.ladderSource.update({
+        where: { id: source.id },
+        data: {
+          status: 'error',
+          lastAttemptAt: now,
+          nextProbeAt: new Date(now.getTime() + 4 * 60 * 60 * 1_000),
+          consecutiveFailures: { increment: 1 },
+        },
+      });
+      return { ...stats, errored: true, errorMessage: message };
     }
 
     // 5. Mark the source as successfully processed.
     await deps.prisma.ladderSource.update({
       where: { id: source.id },
-      data: { lastSuccessAt: now },
+      data: {
+        status: 'active',
+        lastAttemptAt: now,
+        lastSuccessAt: now,
+        nextProbeAt: null,
+        consecutiveFailures: 0,
+      },
     });
 
     return stats;
   } catch (err) {
     // Per-source try/catch: any throw returns partial stats + errored flag. Never rethrows.
+    try {
+      await deps.prisma.ladderSource.update({
+        where: { id: source.id },
+        data: {
+          status: 'error',
+          lastAttemptAt: now,
+          nextProbeAt: new Date(now.getTime() + 4 * 60 * 60 * 1_000),
+          consecutiveFailures: { increment: 1 },
+        },
+      });
+    } catch {
+      // Preserve the original source error when health bookkeeping also fails.
+    }
     return { ...stats, errored: true, errorMessage: err instanceof Error ? err.message : String(err) };
   }
 }

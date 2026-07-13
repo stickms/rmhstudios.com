@@ -10,6 +10,7 @@ import { createFileRoute, redirect, useRouter } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { z } from 'zod';
+import { CalendarDays, Download } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { listApplications, type QueriesPrisma } from '@/lib/rmhladder/server/queries';
@@ -25,6 +26,7 @@ import {
   OFF_LADDER,
   STAGE_LABELS,
 } from '@/components/rmhladder/PipelineLadder';
+import { Button } from '@/components/ui/button';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
@@ -35,7 +37,24 @@ const fetchApplications = createServerFn({ method: 'GET' }).handler(async () => 
   const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/pipeline' } });
-  return { applications: await listApplications(queriesPrisma, session.user.id) };
+  const [applications, resumes] = await Promise.all([
+    listApplications(queriesPrisma, session.user.id),
+    prisma.ladderResume.findMany({
+      where: { userId: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        activeVersion: { select: { id: true, filename: true, versionNumber: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+    }),
+  ]);
+  return {
+    applications,
+    resumeVersions: resumes.flatMap((resume) => resume.activeVersion
+      ? [{ ...resume.activeVersion, resumeName: resume.name }]
+      : []),
+  };
 });
 
 const doUpdateApplicationSchema = z.object({
@@ -59,7 +78,7 @@ const doUpdateApplication = createServerFn({ method: 'POST' })
     }
   });
 
-export const Route = createFileRoute('/rmhladder/pipeline')({
+export const Route = createFileRoute('/_site/rmhladder/pipeline')({
   loader: () => fetchApplications(),
   component: PipelinePage,
 });
@@ -67,7 +86,7 @@ export const Route = createFileRoute('/rmhladder/pipeline')({
 const ALL_STAGES = [...CLIMB_STAGES, ...OFF_LADDER];
 
 function PipelinePage() {
-  const { applications } = Route.useLoaderData();
+  const { applications, resumeVersions } = Route.useLoaderData();
   const router = useRouter();
 
   const [apps, setApps] = useState<AnyRow[]>(applications as AnyRow[]);
@@ -120,11 +139,18 @@ function PipelinePage() {
 
   return (
     <div>
-      <div className="rl-page-header">
-        <p className="rl-eyebrow">RMHLADDER · PIPELINE</p>
-        <h1 className="rl-display">Pipeline</h1>
+      <div className="mb-4 flex flex-wrap justify-end gap-2">
+        <Button asChild size="sm" variant="outline" className="min-h-11">
+          <a href="/api/rmhladder/export?kind=applications" download>
+            <Download aria-hidden /> Export applications
+          </a>
+        </Button>
+        <Button asChild size="sm" variant="outline" className="min-h-11">
+          <a href="/api/rmhladder/calendar" download>
+            <CalendarDays aria-hidden /> Export calendar
+          </a>
+        </Button>
       </div>
-
       <p ref={liveRef} aria-live="polite" className="rl-visually-hidden" />
       {saveError && <p className="rl-review-error rl-mono">{saveError}</p>}
 
@@ -148,6 +174,7 @@ function PipelinePage() {
             <ApplicationEditor
               key={selected.id as string}
               app={selected}
+              resumeVersions={resumeVersions}
               onPatch={(patch) => void applyPatch(selected, patch)}
               onClose={() => setSelectedId(null)}
             />
@@ -160,10 +187,12 @@ function PipelinePage() {
 
 function ApplicationEditor({
   app,
+  resumeVersions,
   onPatch,
   onClose,
 }: {
   app: AnyRow;
+  resumeVersions: Array<{ id: string; filename: string; versionNumber: number; resumeName: string }>;
   onPatch: (patch: ApplicationPatch) => void;
   onClose: () => void;
 }) {
@@ -176,6 +205,8 @@ function ApplicationEditor({
     contactEmail: (app.contactEmail as string) ?? '',
     notes: (app.notes as string) ?? '',
   });
+  const [interviewDraft, setInterviewDraft] = useState('');
+  const interviewDates = ((app.interviewDates as Array<Date | string> | undefined) ?? []).map((value) => new Date(value));
 
   function textField(
     label: string,
@@ -256,7 +287,68 @@ function ApplicationEditor({
         />
       </label>
 
-      {textField('Resume version', 'resumeVersion')}
+      <label className="rl-field" htmlFor="rl-app-resume-version-id">
+        <span className="rl-eyebrow">Submitted resume</span>
+        <select
+          id="rl-app-resume-version-id"
+          className="rl-sort-select"
+          value={(app.resumeVersionId as string | null) ?? ''}
+          onChange={(event) => {
+            const selected = resumeVersions.find((version) => version.id === event.target.value);
+            onPatch({
+              resumeVersionId: selected?.id ?? null,
+              resumeVersion: selected ? `${selected.resumeName} · v${selected.versionNumber}` : null,
+            });
+          }}
+        >
+          <option value="">None selected</option>
+          {resumeVersions.map((version) => (
+            <option key={version.id} value={version.id}>
+              {version.resumeName} · v{version.versionNumber} · {version.filename}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <div className="rl-field">
+        <span className="rl-eyebrow">Interviews</span>
+        <div className="flex flex-wrap gap-2">
+          <input
+            aria-label="Interview date and time"
+            type="datetime-local"
+            value={interviewDraft}
+            onChange={(event) => setInterviewDraft(event.target.value)}
+          />
+          <button
+            type="button"
+            className="rl-chip"
+            disabled={!interviewDraft || interviewDates.length >= 25}
+            onClick={() => {
+              const next = new Date(interviewDraft);
+              if (Number.isNaN(next.getTime())) return;
+              onPatch({ interviewDates: [...interviewDates, next] });
+              setInterviewDraft('');
+            }}
+          >
+            Add interview
+          </button>
+        </div>
+        <div className="rl-chip-row">
+          {interviewDates.map((date, index) => (
+            <span key={`${date.toISOString()}-${index}`} className="rl-keyword-chip">
+              {date.toLocaleString()}
+              <button
+                type="button"
+                aria-label={`Remove interview ${date.toLocaleString()}`}
+                onClick={() => onPatch({ interviewDates: interviewDates.filter((_, candidateIndex) => candidateIndex !== index) })}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+
       {textField('Referral', 'referralName')}
       {textField('Contact email', 'contactEmail')}
       {textField('Notes', 'notes', true)}

@@ -112,4 +112,35 @@ describe('memoFetch', () => {
     const result = memoFetch();
     expect(typeof result).toBe('function');
   });
+
+  it('caches Workday CXS listing POSTs by request body', async () => {
+    let calls = 0;
+    const impl = (async () => {
+      calls++;
+      return new Response('{"total":0,"jobPostings":[]}', { status: 200 });
+    }) as typeof fetch;
+    const fetch = memoFetch(impl);
+    const url = 'https://acme.wd5.myworkdayjobs.com/wday/cxs/acme/External/jobs';
+    const init = { method: 'POST', body: '{"offset":0}' };
+
+    await fetch(url, init);
+    await fetch(url, init);
+    await fetch(url, { ...init, body: '{"offset":20}' });
+
+    expect(calls).toBe(2);
+  });
+
+  it('does not cache arbitrary POST requests', async () => {
+    let calls = 0;
+    const impl = (async () => {
+      calls++;
+      return new Response('{}', { status: 200 });
+    }) as typeof fetch;
+    const fetch = memoFetch(impl);
+
+    await fetch('https://example.com/mutate', { method: 'POST', body: '{}' });
+    await fetch('https://example.com/mutate', { method: 'POST', body: '{}' });
+
+    expect(calls).toBe(2);
+  });
 });
