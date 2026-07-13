@@ -23,7 +23,18 @@ export const Route = createFileRoute('/api/v1/posts/$id/comments')({
       GET: ({ request, params }) =>
         withDeveloperApi(
           request,
-          async ({ json }) => {
+          async ({ json, error, userId }) => {
+            // Mirror the audience gate on GET /api/v1/posts/{id}: only the author
+            // may read comments on a non-public post. Without this, a read:feed key
+            // could enumerate comment threads + commenter identities on
+            // FOLLOWERS/PRIVATE posts.
+            const parent = await prisma.rMHark.findUnique({
+              where: { id: params.id },
+              select: { audience: true, userId: true },
+            });
+            if (!parent || (parent.audience !== 'PUBLIC' && parent.userId !== userId)) {
+              return error('not_found', 'Post not found.', 404);
+            }
             const { limit, cursor } = parsePage(new URL(request.url));
             const comments = await prisma.rMHarkComment.findMany({
               where: { rmheetId: params.id, parentId: null, deletedAt: null, ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}) },

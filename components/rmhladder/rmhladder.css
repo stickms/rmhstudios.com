@@ -7,13 +7,13 @@
 /* ─── Tokens & Base ─────────────────────────────────────────────── */
 
 .rmhladder {
-  --ink: #101B2D; --paper: #F4F6F2; --ledger: #1E6B4F;
-  --brass: #A9812F; --signal: #B3372B; --slate: #5A6672;
-  --hairline: color-mix(in srgb, var(--slate) 25%, transparent);
-  --font-display: 'Newsreader', ui-serif, Georgia, serif;
-  --font-ui: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-data: 'IBM Plex Mono', ui-monospace, monospace;
-  background: var(--paper); color: var(--ink); font-family: var(--font-ui);
+  --ink: var(--site-text); --paper: var(--site-bg); --ledger: var(--site-success);
+  --brass: var(--site-accent); --signal: var(--site-danger); --slate: var(--site-text-muted);
+  --hairline: var(--site-border);
+  --font-display: var(--site-font-display);
+  --font-ui: var(--site-font-body);
+  --font-data: var(--site-font-mono);
+  color: var(--site-text); font-family: var(--site-font-body);
 }
 .rmhladder :focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { .rmhladder * { animation: none !important; transition: none !important; } }
@@ -1183,7 +1183,7 @@
   align-items: flex-start;
   gap: 2px;
   padding: 10px 14px;
-  background: color-mix(in srgb, var(--paper) 60%, white);
+  background: var(--site-surface);
   border: 1px solid var(--hairline);
   border-left: 3px solid var(--brass);
   cursor: pointer;
@@ -1275,7 +1275,7 @@
   font-size: 13px;
   padding: 8px 10px;
   border: 1px solid var(--hairline);
-  background: color-mix(in srgb, var(--paper) 60%, white);
+  background: var(--site-surface);
   color: var(--ink);
 }
 
@@ -1322,7 +1322,7 @@
   font-size: 13px;
   padding: 8px 10px;
   border: 1px solid var(--hairline);
-  background: color-mix(in srgb, var(--paper) 60%, white);
+  background: var(--site-surface);
 }
 
 .rl-keyword-add input[type='number'] {
@@ -1360,4 +1360,40 @@
 
 .rl-alert--unread {
   background: color-mix(in srgb, var(--brass) 6%, transparent);
+}
+
+/* Site-shell responsive hardening for the remaining operational tables. */
+.rmhladder .rl-companies-table,
+.rmhladder .rl-runs-table {
+  display: block;
+  overflow-x: auto;
+  border: 1px solid var(--site-border);
+  border-radius: var(--site-radius);
+  background: var(--site-surface);
+}
+
+@media (max-width: 767px) {
+  .rmhladder .rl-chip,
+  .rmhladder .rl-toggle,
+  .rmhladder .rl-star,
+  .rmhladder .rl-action-btn,
+  .rmhladder .rl-drawer__action-btn {
+    min-height: 44px;
+  }
+
+  .rmhladder .rl-filter-bar {
+    align-items: stretch;
+  }
+
+  .rmhladder .rl-search-box,
+  .rmhladder .rl-city-input,
+  .rmhladder .rl-sort-select {
+    min-height: 44px;
+    min-width: min(100%, 240px);
+  }
+
+  .rmhladder .rl-settings-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
 }

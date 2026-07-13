@@ -19,7 +19,7 @@ Priorities, in order: (1) verified existence, (2) direct original links, (3) US-
 | Alert channels (MVP) | In-app + Email (Resend) + Discord DM (existing bot) |
 | Workday | **Deferred to phase 2.** Banks seeded as manual sources with preserved early-career page links |
 | Seed scope | **Full ~400-firm list**, best-effort slugs via automated slug prober; unverifiable sources marked `unconfigured` |
-| Pipeline runtime | **Approach A:** dedicated `ladder-worker` + node-cron (6h cadence), matching existing worker patterns. No Redis/BullMQ in MVP |
+| Pipeline runtime | **Approach A:** dedicated `ladder-worker` + node-cron (4h cadence), matching existing worker patterns. No Redis/BullMQ in MVP |
 | Implementation style | Subagent-driven development |
 
 ## Architecture
@@ -35,7 +35,7 @@ lib/rmhladder/
 prisma/schema.prisma           new Ladder* models
 ```
 
-Pipeline (every 6h + dashboard "Run now"):
+Pipeline (every 4h + dashboard "Run now"):
 `sources → discover → normalize → dedupe → verify → classify (US + early-career) → score → persist → alert → recheck active jobs → log run`
 
 - One `LadderScrapeRun` row per execution (counts: discovered/new/verified/expired/errors; trigger cron|manual).
@@ -123,7 +123,7 @@ Unit tests: dedupe hashing/merging, US-location classifier, early-career classif
 
 ## Env Vars
 
-`RESEND_API_KEY`, existing `DISCORD_BOT_TOKEN`, `LADDER_CRON_SCHEDULE` (default `0 */6 * * *`), `LADDER_USER_AGENT`. All secrets via env.
+`RESEND_API_KEY`, existing `DISCORD_BOT_TOKEN`, `LADDER_CRON_SCHEDULE` (default `0 */4 * * *`), `LADDER_USER_AGENT`. All secrets via env.
 
 ## Compliance
 

@@ -3,6 +3,7 @@
  */
 
 import { z } from 'zod';
+import { httpUrl } from '@/lib/url-safety';
 
 export const MAX_TITLE_LENGTH = 100;
 export const MAX_DESCRIPTION_LENGTH = 500;
@@ -11,7 +12,7 @@ export const MAX_TAGS = 10;
 export const MAX_TAG_LENGTH = 30;
 export const MIN_TAG_LENGTH = 3;
 
-const urlSchema = z.string().url().max(500).optional().or(z.literal(''));
+const urlSchema = httpUrl(500).optional().or(z.literal(''));
 const imageUrlSchema = z.string().max(500).refine(
   (val) => val === '' || val.startsWith('/') || val.startsWith('http://') || val.startsWith('https://'),
   { message: 'Invalid URL' }

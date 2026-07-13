@@ -107,13 +107,16 @@ export async function claimQuest(userId: string, questId: string): Promise<{ xp:
   if (!def) return null;
   const periodKey = periodKeyFor(def.period);
 
-  const row = await prisma.userQuest.findUnique({
-    where: { userId_questId_periodKey: { userId, questId, periodKey } },
-    select: { id: true, completed: true, claimed: true },
+  // Atomic claim: flip claimed false→true only if the quest is completed and not
+  // yet claimed. Doing the guard in the WHERE clause (rather than read-then-write)
+  // means concurrent claims cannot all observe `claimed:false` and each grant the
+  // reward — only the single request that actually flips the row proceeds.
+  const claim = await prisma.userQuest.updateMany({
+    where: { userId, questId, periodKey, completed: true, claimed: false },
+    data: { claimed: true },
   });
-  if (!row || !row.completed || row.claimed) return null;
+  if (claim.count === 0) return null;
 
-  await prisma.userQuest.update({ where: { id: row.id }, data: { claimed: true } });
   if (def.coins > 0) {
     await prisma.userProfile.upsert({
       where: { userId },

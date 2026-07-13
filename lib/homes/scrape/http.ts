@@ -24,16 +24,28 @@ export async function politeFetch(
   url: string,
   opts: { fetchImpl?: typeof fetch; timeoutMs?: number } = {},
 ): Promise<PoliteResponse> {
-  const { fetchImpl = fetch, timeoutMs = 12_000 } = opts;
+  const { fetchImpl, timeoutMs = 12_000 } = opts;
   try {
-    const res = await fetchImpl(url, {
-      headers: {
-        'user-agent': HOMES_SCRAPER_USER_AGENT,
-        accept: 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.5',
-      },
-      signal: AbortSignal.timeout(timeoutMs),
-      redirect: 'follow',
-    });
+    const headers = {
+      'user-agent': HOMES_SCRAPER_USER_AGENT,
+      accept: 'application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.5',
+    };
+
+    let res: Response;
+    if (fetchImpl) {
+      // Test seam: use the injected fetch verbatim (fixtures, no real network).
+      res = await fetchImpl(url, {
+        headers,
+        signal: AbortSignal.timeout(timeoutMs),
+        redirect: 'follow',
+      });
+    } else {
+      // Production: route through the shared SSRF guard, which resolves + pins
+      // the target IP and revalidates every redirect hop (so we drop the bare
+      // `redirect: 'follow'`). Feed sources are https only.
+      const { safeFetch } = await import('@/lib/ssrf-guard.server');
+      res = await safeFetch(url, { headers, timeoutMs, allowedProtocols: ['https:'] });
+    }
     return { ok: res.ok, status: res.status, body: await res.text() };
   } catch {
     return { ok: false, status: 0, body: '' };

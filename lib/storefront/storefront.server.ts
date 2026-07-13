@@ -29,21 +29,25 @@ export async function buyProduct(
     });
     if (already) throw new StorefrontError('ALREADY_OWNED');
 
-    const buyer = await tx.userProfile.upsert({
+    await tx.userProfile.upsert({
       where: { userId: buyerId },
       create: { userId: buyerId, coins: 10 },
       update: {},
-      select: { coins: true },
     });
-    if (buyer.coins < product.price) throw new StorefrontError('INSUFFICIENT_COINS');
 
     const fee = Math.floor(product.price * STOREFRONT_FEE_RATE);
     const payout = product.price - fee;
 
-    // Debit buyer, credit creator (minus fee), record sale.
-    const updatedBuyer = await tx.userProfile.update({
-      where: { userId: buyerId },
+    // Debit buyer atomically (the `coins >= price` guard in the WHERE clause
+    // blocks concurrent purchases from overdrafting a stale balance), then credit
+    // creator (minus fee) and record the sale.
+    const debit = await tx.userProfile.updateMany({
+      where: { userId: buyerId, coins: { gte: product.price } },
       data: { coins: { decrement: product.price } },
+    });
+    if (debit.count === 0) throw new StorefrontError('INSUFFICIENT_COINS');
+    const updatedBuyer = await tx.userProfile.findUnique({
+      where: { userId: buyerId },
       select: { coins: true },
     });
     await tx.userProfile.upsert({
@@ -68,6 +72,6 @@ export async function buyProduct(
       ],
     });
 
-    return { deliverable: product.deliverable, balance: updatedBuyer.coins, creatorId: product.creatorId };
+    return { deliverable: product.deliverable, balance: updatedBuyer?.coins ?? 0, creatorId: product.creatorId };
   });
 }

@@ -45,15 +45,23 @@ export const Route = createFileRoute('/api/coins/tip')({
           if (!recipient) return Response.json({ error: 'Recipient not found' }, { status: 404 });
 
           await prisma.$transaction(async (tx) => {
-            const sender = await tx.userProfile.upsert({
+            // Ensure the sender's profile row exists, then debit atomically.
+            await tx.userProfile.upsert({
               where: { userId: senderId },
               create: { userId: senderId, coins: 10 },
               update: {},
-              select: { coins: true },
             });
-            if (sender.coins < amount) throw new Error('INSUFFICIENT_COINS');
+            // Conditional atomic decrement: the `coins >= amount` guard lives in the
+            // WHERE clause so concurrent tips cannot both pass a stale balance read and
+            // overdraft the account (which would mint coins into the recipient). Under
+            // READ COMMITTED, Postgres re-evaluates the predicate against the freshly
+            // committed row, so only debits that still fit succeed.
+            const debit = await tx.userProfile.updateMany({
+              where: { userId: senderId, coins: { gte: amount } },
+              data: { coins: { decrement: amount } },
+            });
+            if (debit.count === 0) throw new Error('INSUFFICIENT_COINS');
 
-            await tx.userProfile.update({ where: { userId: senderId }, data: { coins: { decrement: amount } } });
             await tx.userProfile.upsert({
               where: { userId: recipientId },
               create: { userId: recipientId, coins: 10 + amount },

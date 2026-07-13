@@ -61,16 +61,25 @@ export const Route = createFileRoute('/api/ranked/challenge/$id')({
           else if (parsed.data.result === 'win') winnerId = userId;
           else winnerId = isChallenger ? challenge.opponentId : challenge.challengerId;
 
+          // Atomically claim the accepted→done transition. Without this, two
+          // concurrent reports both passed the status check and applied the ELO
+          // result twice. Only the request that actually flips the row proceeds.
+          // NOTE: this still trusts a single reporter ("first report wins"); true
+          // integrity requires two-sided confirmation or server-authoritative match
+          // results — tracked as a follow-up.
+          const claimed = await prisma.rankedChallenge.updateMany({
+            where: { id: challenge.id, status: 'accepted' },
+            data: { status: 'done', winnerId, resolvedAt: new Date() },
+          });
+          if (claimed.count === 0) {
+            return Response.json({ error: 'Challenge already resolved' }, { status: 409 });
+          }
+
           const result = await applyChallengeResult({
             game: challenge.game,
             challengerId: challenge.challengerId,
             opponentId: challenge.opponentId,
             winnerId,
-          });
-
-          await prisma.rankedChallenge.update({
-            where: { id: challenge.id },
-            data: { status: 'done', winnerId, resolvedAt: new Date() },
           });
 
           return Response.json({ success: true, ...result });

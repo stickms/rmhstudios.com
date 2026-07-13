@@ -55,22 +55,37 @@ export const Route = createFileRoute('/api/doctrine/recruitment/redeem')({
             return Response.json({ error: 'Already recruited by another operator' }, { status: 409 });
           }
 
-          // Apply recruitment
-          await prisma.$transaction([
-            prisma.user.update({
-              where: { id: session.user.id },
+          // Apply recruitment atomically. The guards above are fast-fail UX checks;
+          // the real once-only enforcement lives in the WHERE clauses so concurrent
+          // redemptions can't recruit the same user twice (double XP) or push a
+          // code past maxUses.
+          const outcome = await prisma.$transaction(async (tx) => {
+            const claimUser = await tx.user.updateMany({
+              where: { id: session.user.id, doctrineRecruitedById: null },
               data: { doctrineRecruitedById: recruitment.recruiterId },
-            }),
-            prisma.doctrineRecruitmentCode.update({
-              where: { id: recruitment.id },
-              data: {
-                uses: { increment: 1 },
-                convertedIds: { push: session.user.id },
-              },
-            }),
-          ]);
+            });
+            if (claimUser.count === 0) return 'ALREADY_RECRUITED' as const;
 
-          // Award XP to recruiter
+            const claimCode = await tx.doctrineRecruitmentCode.updateMany({
+              where: { id: recruitment.id, uses: { lt: recruitment.maxUses } },
+              data: { uses: { increment: 1 }, convertedIds: { push: session.user.id } },
+            });
+            // Rolls back the user claim above.
+            if (claimCode.count === 0) throw new Error('CODE_EXHAUSTED');
+            return 'OK' as const;
+          }).catch((err) => {
+            if (err instanceof Error && err.message === 'CODE_EXHAUSTED') return 'CODE_EXHAUSTED' as const;
+            throw err;
+          });
+
+          if (outcome === 'ALREADY_RECRUITED') {
+            return Response.json({ error: 'Already recruited by another operator' }, { status: 409 });
+          }
+          if (outcome === 'CODE_EXHAUSTED') {
+            return Response.json({ error: 'Recruitment code has reached maximum uses' }, { status: 410 });
+          }
+
+          // Award XP to recruiter (only after a successful, first-time recruitment).
           await awardXp(recruitment.recruiterId, 'RECRUIT_SIGNUP', {
             recruitedUserId: session.user.id,
           });

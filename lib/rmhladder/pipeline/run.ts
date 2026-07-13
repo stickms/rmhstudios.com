@@ -1,6 +1,12 @@
 import { processSource } from './process-source';
 import { recheckSource } from './recheck';
 import { checkRobots, politeFetch } from '../adapters/index';
+import {
+  discoverWorkdaySourceUrls,
+  parseWorkdaySource,
+  probeWorkdaySourceUrl,
+  workdaySourceSlug,
+} from '../adapters/workday';
 
 // ── Public types ─────────────────────────────────────────────────────────────
 
@@ -14,11 +20,15 @@ import { checkRobots, politeFetch } from '../adapters/index';
 export interface RunPrisma {
   ladderJob: {
     findUnique(args: {
-      where: { dedupeHash: string };
+      where: { sourceId_externalId: { sourceId: string; externalId: string } };
       select?: Record<string, unknown>;
     }): Promise<{ id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string } | null>;
+    findFirst(args: {
+      where: Record<string, unknown>;
+      select?: Record<string, unknown>;
+    }): Promise<{ id: string } | null>;
     upsert(args: {
-      where: { dedupeHash: string };
+      where: { sourceId_externalId: { sourceId: string; externalId: string } };
       create: Record<string, unknown>;
       update: Record<string, unknown>;
     }): Promise<{ id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string }>;
@@ -40,6 +50,12 @@ export interface RunPrisma {
     create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderSource: {
+    findFirst(args: { where: Record<string, unknown> }): Promise<{ id: string } | null>;
+    upsert(args: {
+      where: Record<string, unknown>;
+      create: Record<string, unknown>;
+      update: Record<string, unknown>;
+    }): Promise<{ id: string }>;
     update(args: {
       where: { id: string };
       data: Record<string, unknown>;
@@ -54,6 +70,8 @@ export interface RunPrisma {
         platform: string;
         slug: string | null;
         url: string | null;
+        status: string;
+        nextProbeAt?: Date | null;
         company: { id: string; name: string; priorityLevel: number };
       }>
     >;
@@ -116,7 +134,13 @@ export async function runPipeline(
 
   // Step 2: Load all active sources, filter, sort, slice.
   let allSources = await deps.prisma.ladderSource.findMany({
-    where: { status: 'active' },
+    where: {
+      company: { enabled: true },
+      OR: [
+        { status: 'active' },
+        { status: 'error', nextProbeAt: { lte: deps.now ?? new Date() } },
+      ],
+    },
     include: { company: true },
     orderBy: [{ platform: 'asc' }],
   });
@@ -179,6 +203,17 @@ export async function runPipeline(
         });
         totals.errors++;
       }
+      for (const recordError of stats.recordErrors) {
+        await deps.prisma.ladderSourceError.create({
+          data: {
+            runId,
+            sourceId: source.id,
+            errorClass: 'record_process',
+            message: `${recordError.externalId}: ${recordError.message}`,
+          },
+        });
+        totals.errors++;
+      }
       // Accumulate partial stats regardless of errored flag.
       totals.discovered += stats.discovered;
       totals.created += stats.created;
@@ -191,6 +226,7 @@ export async function runPipeline(
         discovered: stats.discovered,
         created: stats.created,
         errored: stats.errored,
+        recordErrorCount: stats.recordErrors.length,
         errorMessage: stats.errorMessage,
       });
     } catch (err) {
@@ -210,36 +246,12 @@ export async function runPipeline(
 
   // Step 4: Recheck — for each API source load its active jobs and run expiry logic.
 
-  // Item 4: Multi-board scope guard — skip recheck when multiple sources share (companyId, platform).
-  // Recheck presence logic is ambiguous across boards: job A may live on board B but not board A.
-  const scopeCount = new Map<string, number>();
   for (const source of apiSources) {
-    const key = `${source.company.id}::${source.platform}`;
-    scopeCount.set(key, (scopeCount.get(key) ?? 0) + 1);
-  }
-  const multiScopeKeys = new Set(
-    [...scopeCount.entries()].filter(([, n]) => n > 1).map(([k]) => k),
-  );
-
-  for (const source of apiSources) {
-    const scopeKey = `${source.company.id}::${source.platform}`;
-    if (multiScopeKeys.has(scopeKey)) {
-      // Ambiguous scope: skip recheck, append note to stats.
-      statsSummary.push({
-        sourceId: source.id,
-        platform: source.platform,
-        recheckSkipped: true,
-        reason: 'multi_source_scope_ambiguity',
-      });
-      continue;
-    }
-
     try {
       const activeJobs = await deps.prisma.ladderJob.findMany({
         where: {
-          companyId: source.company.id,
+          sourceId: source.id,
           status: 'active',
-          sourcePlatform: source.platform,
         },
       });
       if (activeJobs.length === 0) continue;
@@ -298,7 +310,12 @@ export async function runPipeline(
           // Fetch failed → error source + review task broken_link (deduplicated) + sourceError row.
           await deps.prisma.ladderSource.update({
             where: { id: source.id },
-            data: { status: 'error' },
+            data: {
+              status: 'error',
+              lastAttemptAt: deps.now ?? new Date(),
+              nextProbeAt: new Date((deps.now ?? new Date()).getTime() + 4 * 60 * 60 * 1_000),
+              consecutiveFailures: { increment: 1 },
+            },
           });
           const existingTask = await deps.prisma.ladderReviewTask.findFirst({
             where: { sourceId: source.id, reason: 'broken_link', status: 'open' },
@@ -322,8 +339,61 @@ export async function runPipeline(
           // Success → stamp lastSuccessAt.
           await deps.prisma.ladderSource.update({
             where: { id: source.id },
-            data: { lastSuccessAt: deps.now ?? new Date() },
+            data: {
+              status: 'active',
+              lastAttemptAt: deps.now ?? new Date(),
+              lastSuccessAt: deps.now ?? new Date(),
+              consecutiveFailures: 0,
+              nextProbeAt: null,
+            },
           });
+
+          // Manual landing pages often link to a Workday tenant. Validate the
+          // official CXS endpoint before activating it; it will be processed
+          // as a normal source on the next pipeline run.
+          for (const workdayUrl of discoverWorkdaySourceUrls(res.body, source.url).slice(0, 3)) {
+            const config = parseWorkdaySource(workdayUrl);
+            if (!config) continue;
+            const probed = await probeWorkdaySourceUrl(workdayUrl, deps.fetchImpl);
+            if (!probed.live) continue;
+            await deps.prisma.ladderSource.upsert({
+              where: {
+                companyId_platform_slug: {
+                  companyId: source.company.id,
+                  platform: 'workday',
+                  slug: workdaySourceSlug(config),
+                },
+              },
+              create: {
+                companyId: source.company.id,
+                platform: 'workday',
+                slug: workdaySourceSlug(config),
+                url: workdayUrl,
+                config,
+                status: 'active',
+                lastAttemptAt: deps.now ?? new Date(),
+                lastProbedAt: deps.now ?? new Date(),
+                lastSuccessAt: deps.now ?? new Date(),
+                consecutiveFailures: 0,
+              },
+              update: {
+                url: workdayUrl,
+                config,
+                status: 'active',
+                lastAttemptAt: deps.now ?? new Date(),
+                lastProbedAt: deps.now ?? new Date(),
+                lastSuccessAt: deps.now ?? new Date(),
+                nextProbeAt: null,
+                consecutiveFailures: 0,
+              },
+            });
+            statsSummary.push({
+              sourceId: source.id,
+              discoveredPlatform: 'workday',
+              workdayUrl,
+              liveJobs: probed.jobCount,
+            });
+          }
         }
       }
     } catch (err) {

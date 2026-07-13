@@ -32,21 +32,28 @@ export async function getStake(userId: string): Promise<StakeView> {
 
 /** Move `amount` coins from the wallet into the stake (rolls interest first). */
 export async function deposit(userId: string, amount: number): Promise<StakeView> {
+  // Defense-in-depth: a non-positive amount would turn the conditional decrement
+  // below into a credit (coin minting), so reject it here regardless of the route.
+  if (!Number.isInteger(amount) || amount <= 0) throw new Error('INVALID_AMOUNT');
   return prisma.$transaction(async (tx) => {
-    const profile = await tx.userProfile.upsert({
+    await tx.userProfile.upsert({
       where: { userId },
       create: { userId, coins: 10 },
       update: {},
-      select: { coins: true },
     });
-    if (profile.coins < amount) throw new Error('INSUFFICIENT_COINS');
+    // Atomic conditional debit — `coins >= amount` in the WHERE clause blocks
+    // concurrent deposits from overdrafting a stale balance.
+    const debit = await tx.userProfile.updateMany({
+      where: { userId, coins: { gte: amount } },
+      data: { coins: { decrement: amount } },
+    });
+    if (debit.count === 0) throw new Error('INSUFFICIENT_COINS');
 
     const existing = await tx.coinStake.findUnique({ where: { userId } });
     const now = new Date();
     const rolled = existing ? existing.accrued + pendingInterest(existing.principal, existing.lastAccrued.getTime(), now.getTime()) : 0;
     const principal = (existing?.principal ?? 0) + amount;
 
-    await tx.userProfile.update({ where: { userId }, data: { coins: { decrement: amount } } });
     const stake = await tx.coinStake.upsert({
       where: { userId },
       create: { userId, principal: amount, accrued: 0, lastAccrued: now },

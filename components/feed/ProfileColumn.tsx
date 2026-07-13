@@ -24,6 +24,7 @@ import { Reveal } from '@/components/motion';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
+import { safeHref } from '@/lib/url-safety';
 
 interface ProfileData {
   id: string;
@@ -667,7 +668,7 @@ export function ProfileColumn({
           )}
           {profile.website && (
             <a
-              href={profile.website}
+              href={safeHref(profile.website)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-site-accent hover:underline"

@@ -1392,6 +1392,6 @@ git commit -m "chore(rmhladder): lint fixes for foundation" # only if fixes were
 ## Roadmap (subsequent plans, written after this one lands)
 
 - **Plan 2 — Adapters:** Greenhouse/Lever/Ashby/SmartRecruiters API clients + fixture tests, slug prober (activates the `unconfigured` sources seeded here), manual-source + generic verifier (fetch + node-html-parser, Playwright fallback, robots.txt honor), producing `VerificationEvidence` consumed by `computeVerification`.
-- **Plan 3 — Pipeline + worker:** `server/ladder-worker/` with node-cron (`LADDER_CRON_SCHEDULE`, default `0 */6 * * *`), run orchestration writing `LadderScrapeRun`/`LadderSourceError`, dedupe merge via `dedupeHash`, recheck + 3-strike expiry, review-task creation.
+- **Plan 3 — Pipeline + worker:** `server/ladder-worker/` with node-cron (`LADDER_CRON_SCHEDULE`, default `0 */4 * * *`), run orchestration writing `LadderScrapeRun`/`LadderSourceError`, dedupe merge via `dedupeHash`, recheck + 3-strike expiry, review-task creation.
 - **Plan 4 — Dashboard:** 8 routes under `app/routes/rmhladder/` per spec §Dashboard.
 - **Plan 5 — Alerts + CSV + README:** dispatch through `passesAlertGate`, Resend email, Discord DM, digests, deadline reminders, CSV import/export, README.

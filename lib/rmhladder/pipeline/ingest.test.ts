@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { assessJob, summarizeDescription } from './ingest';
+import { assessJob, extractApplicationDeadline, summarizeDescription } from './ingest';
 import type { NormalizedJob } from '../adapters/types';
 import type { VerificationEvidence } from '../verification';
 
@@ -115,6 +115,8 @@ describe('assessJob — US intern verified_active', () => {
     expect(result.fields.canonicalApplyUrl).toBe('https://boards.greenhouse.io/acme/jobs/1#app');
     expect(result.fields.externalRequisitionId).toBe('REQ-100');
     expect(result.fields.fullDescription).toBe('<p>Join our summer intern program.</p>');
+    expect(result.fields.descriptionText).toBe('Join our summer intern program.');
+    expect(result.fields.contentHash).toMatch(/^[a-f0-9]{64}$/);
   });
 
   it('sets employmentType internship for intern programType', () => {
@@ -245,6 +247,15 @@ describe('assessJob — dedupeHash stability', () => {
   });
 });
 
+describe('assessJob — content hash', () => {
+  it('changes when source content changes without changing fuzzy identity', () => {
+    const first = assessJob(baseArgs({ descriptionHtml: '<p>Original description</p>' }));
+    const changed = assessJob(baseArgs({ descriptionHtml: '<p>Updated description</p>' }));
+    expect(first.dedupeHash).toBe(changed.dedupeHash);
+    expect(first.fields.contentHash).not.toBe(changed.fields.contentHash);
+  });
+});
+
 // ── assessJob: fields completeness ─────────────────────────────────────────
 
 describe('assessJob — fields completeness', () => {
@@ -350,5 +361,22 @@ describe('assessJob — unclear early career', () => {
     const result = assessJob(baseArgs({ title: 'Operations Specialist' }, {}));
     expect(result.fields.earlyCareerClassification).toBe('unclear');
     expect(result.reviewReasons).toContain('ambiguous_early_career');
+  });
+});
+
+describe('application deadline extraction', () => {
+  it('extracts explicit apply-by dates and carries them into assessment', () => {
+    const deadline = extractApplicationDeadline('Applications close July 31, 2026.');
+    expect(deadline?.getFullYear()).toBe(2026);
+    expect(deadline?.getMonth()).toBe(6);
+
+    const result = assessJob(baseArgs({
+      descriptionHtml: '<p>Apply by July 31, 2026 for consideration.</p>',
+    }));
+    expect(result.fields.applicationDeadline?.getDate()).toBe(31);
+  });
+
+  it('does not infer a deadline from an unrelated date', () => {
+    expect(extractApplicationDeadline('The program begins July 31, 2026.')).toBeNull();
   });
 });

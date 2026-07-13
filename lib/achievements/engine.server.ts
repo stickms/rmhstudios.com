@@ -44,17 +44,21 @@ export async function grantAchievement(userId: string, achievementId: string): P
   const def = getAchievement(achievementId);
   if (!def) return false;
   try {
-    const existing = await prisma.userAchievement.findUnique({
-      where: { userId_achievementId: { userId, achievementId } },
-      select: { unlockedAt: true },
-    });
-    if (existing?.unlockedAt) return false;
-
+    // Ensure the row exists (still locked), then atomically claim the unlock.
+    // Gating `rewardUnlock` on the count of the null→now transition means two
+    // concurrent grants can't both observe `unlockedAt: null` and each pay the
+    // coin reward — only the request that actually flips the row rewards.
     await prisma.userAchievement.upsert({
       where: { userId_achievementId: { userId, achievementId } },
-      create: { userId, achievementId, progress: def.target, unlockedAt: new Date() },
-      update: { progress: def.target, unlockedAt: new Date() },
+      create: { userId, achievementId, progress: def.target, unlockedAt: null },
+      update: {},
     });
+    const claim = await prisma.userAchievement.updateMany({
+      where: { userId, achievementId, unlockedAt: null },
+      data: { progress: def.target, unlockedAt: new Date() },
+    });
+    if (claim.count === 0) return false;
+
     await rewardUnlock(userId, achievementId, def.name, def.coinReward);
     return true;
   } catch (err) {
@@ -76,29 +80,36 @@ export async function progressAchievement(
   const def = getAchievement(achievementId);
   if (!def) return false;
   try {
-    const existing = await prisma.userAchievement.findUnique({
-      where: { userId_achievementId: { userId, achievementId } },
-      select: { progress: true, unlockedAt: true },
-    });
-    if (existing?.unlockedAt) return false;
-
-    const next =
-      opts.setProgress !== undefined
-        ? opts.setProgress
-        : (existing?.progress ?? 0) + (opts.by ?? 1);
-    const unlocked = next >= def.target;
-
+    // Ensure the row exists (still locked), then advance progress atomically.
     await prisma.userAchievement.upsert({
       where: { userId_achievementId: { userId, achievementId } },
-      create: { userId, achievementId, progress: next, unlockedAt: unlocked ? new Date() : null },
-      update: { progress: next, ...(unlocked ? { unlockedAt: new Date() } : {}) },
+      create: { userId, achievementId, progress: 0, unlockedAt: null },
+      update: {},
     });
 
-    if (unlocked) {
-      await rewardUnlock(userId, achievementId, def.name, def.coinReward);
-      return true;
-    }
-    return false;
+    // Apply the progress change only while still locked. `increment` avoids the
+    // read-modify-write race on the `by` path; `setProgress` is an absolute value.
+    const applied = await prisma.userAchievement.updateMany({
+      where: { userId, achievementId, unlockedAt: null },
+      data: opts.setProgress !== undefined ? { progress: opts.setProgress } : { progress: { increment: opts.by ?? 1 } },
+    });
+    if (applied.count === 0) return false; // already unlocked
+
+    const row = await prisma.userAchievement.findUnique({
+      where: { userId_achievementId: { userId, achievementId } },
+      select: { progress: true },
+    });
+    if ((row?.progress ?? 0) < def.target) return false;
+
+    // Atomically claim the unlock so the reward is paid exactly once.
+    const claim = await prisma.userAchievement.updateMany({
+      where: { userId, achievementId, unlockedAt: null },
+      data: { unlockedAt: new Date() },
+    });
+    if (claim.count === 0) return false;
+
+    await rewardUnlock(userId, achievementId, def.name, def.coinReward);
+    return true;
   } catch (err) {
     console.error('[achievements] progress failed:', err);
     return false;

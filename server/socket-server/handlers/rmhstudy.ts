@@ -551,9 +551,11 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
       return;
     }
 
-    const userId = typeof payload?.userId === 'string' && payload.userId.trim()
-      ? payload.userId.trim()
-      : (socket.data.userId as string) ?? '';
+    // Identity comes ONLY from the authenticated session (soft-auth attaches it on
+    // handshake). Trusting a client-supplied payload.userId let anyone write study
+    // stats to another user's profile. Anonymous connections have no id here and
+    // are rejected below, which is correct — RMH Study persists to a user profile.
+    const userId = typeof socket.data.userId === 'string' ? socket.data.userId : '';
     const userName = typeof payload?.userName === 'string' && payload.userName.trim()
       ? sanitizeUserName(payload.userName)
       : (socket.data.userName as string) || 'Player';
@@ -629,9 +631,11 @@ export function registerRmhStudyHandlers(io: Server, socket: Socket): void {
     }
 
     const roomCode = (typeof payload?.roomCode === 'string' ? payload.roomCode : '').toUpperCase().trim();
-    const userId = typeof payload?.userId === 'string' && payload.userId.trim()
-      ? payload.userId.trim()
-      : (socket.data.userId as string) ?? '';
+    // Identity comes ONLY from the authenticated session (soft-auth attaches it on
+    // handshake). Trusting a client-supplied payload.userId let anyone write study
+    // stats to another user's profile. Anonymous connections have no id here and
+    // are rejected below, which is correct — RMH Study persists to a user profile.
+    const userId = typeof socket.data.userId === 'string' ? socket.data.userId : '';
     const userName = typeof payload?.userName === 'string' && payload.userName.trim()
       ? sanitizeUserName(payload.userName)
       : (socket.data.userName as string) || 'Player';

@@ -77,6 +77,7 @@ type SourceRow = {
   slug: string | null;
   url: string | null;
   status: string;
+  nextProbeAt?: Date | null;
   company: { id: string; name: string; priorityLevel: number };
 };
 
@@ -88,9 +89,11 @@ function makeFakeRunPrisma(initialSources: SourceRow[]): RunPrisma & {
     sourceErrors: AnyRow[];
     scrapeRuns: Map<string, AnyRow>;
     sourceUpdates: Map<string, AnyRow>;
+    sources: SourceRow[];
   };
 } {
-  const jobsByHash = new Map<string, AnyRow>();
+  const sourceRows = initialSources.map((source) => ({ ...source, company: { ...source.company } }));
+  const jobsByIdentity = new Map<string, AnyRow>();
   const jobsById = new Map<string, AnyRow>();
   const verifications: AnyRow[] = [];
   const reviewTasks: AnyRow[] = [];
@@ -112,11 +115,13 @@ function makeFakeRunPrisma(initialSources: SourceRow[]): RunPrisma & {
       sourceErrors: AnyRow[];
       scrapeRuns: Map<string, AnyRow>;
       sourceUpdates: Map<string, AnyRow>;
+      sources: SourceRow[];
     };
   } = {
     ladderJob: {
       async findUnique({ where }) {
-        const row = jobsByHash.get(where.dedupeHash);
+        const identity = where.sourceId_externalId;
+        const row = jobsByIdentity.get(`${identity.sourceId}:${identity.externalId}`);
         return row
           ? (row as {
               id: string;
@@ -126,11 +131,21 @@ function makeFakeRunPrisma(initialSources: SourceRow[]): RunPrisma & {
             })
           : null;
       },
+      async findFirst({ where }) {
+        const excluded = (where.NOT ?? {}) as AnyRow;
+        const row = [...jobsByIdentity.values()].find((candidate) =>
+          candidate.dedupeHash === where.dedupeHash &&
+          !(candidate.sourceId === excluded.sourceId && candidate.externalId === excluded.externalId),
+        );
+        return row ? { id: row.id as string } : null;
+      },
       async upsert({ where, create, update }) {
-        const existing = jobsByHash.get(where.dedupeHash);
+        const identity = where.sourceId_externalId;
+        const key = `${identity.sourceId}:${identity.externalId}`;
+        const existing = jobsByIdentity.get(key);
         if (existing) {
           const updated: AnyRow = { ...existing, ...(update as AnyRow) };
-          jobsByHash.set(where.dedupeHash, updated);
+          jobsByIdentity.set(key, updated);
           jobsById.set(existing.id as string, updated);
           return updated as { id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string };
         }
@@ -141,7 +156,7 @@ function makeFakeRunPrisma(initialSources: SourceRow[]): RunPrisma & {
           alternateUrls: ((create as AnyRow).alternateUrls as string[] | undefined) ?? [],
           failedCheckCount: ((create as AnyRow).failedCheckCount as number) ?? 0,
         };
-        jobsByHash.set(where.dedupeHash, row);
+        jobsByIdentity.set(key, row);
         jobsById.set(id, row);
         return row as { id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string };
       },
@@ -150,18 +165,17 @@ function makeFakeRunPrisma(initialSources: SourceRow[]): RunPrisma & {
         if (row) {
           const updated: AnyRow = { ...row, ...(data as AnyRow) };
           jobsById.set(where.id, updated);
-          // Keep jobsByHash consistent if dedupeHash is known.
-          const hash = row.dedupeHash as string | undefined;
-          if (hash) jobsByHash.set(hash, updated);
+          const sourceId = row.sourceId as string | undefined;
+          const externalId = row.externalId as string | undefined;
+          if (sourceId && externalId) jobsByIdentity.set(`${sourceId}:${externalId}`, updated);
         }
         return { id: where.id };
       },
       async findMany({ where }) {
         return [...jobsById.values()]
           .filter((j) => {
-            if (where.companyId !== undefined && j.companyId !== where.companyId) return false;
+            if (where.sourceId !== undefined && j.sourceId !== where.sourceId) return false;
             if (where.status !== undefined && j.status !== where.status) return false;
-            if (where.sourcePlatform !== undefined && j.sourcePlatform !== where.sourcePlatform) return false;
             return true;
           })
           .map((j) => ({
@@ -195,13 +209,48 @@ function makeFakeRunPrisma(initialSources: SourceRow[]): RunPrisma & {
     },
 
     ladderSource: {
+      async findFirst({ where }) {
+        const hit = sourceRows.find((source) =>
+          Object.entries(where).every(([key, value]) => source[key as keyof SourceRow] === value),
+        );
+        return hit ? { id: hit.id } : null;
+      },
+      async upsert({ where, create, update }) {
+        const identity = where.companyId_platform_slug as AnyRow;
+        const hit = sourceRows.find((source) =>
+          source.company.id === identity.companyId &&
+          source.platform === identity.platform &&
+          source.slug === identity.slug,
+        );
+        if (hit) {
+          Object.assign(hit, update);
+          return { id: hit.id };
+        }
+        const company = sourceRows.find((source) => source.company.id === create.companyId)?.company ?? {
+          id: create.companyId as string,
+          name: 'Discovered',
+          priorityLevel: 3,
+        };
+        const added = { id: `source-${sourceRows.length + 1}`, company, ...create } as SourceRow;
+        sourceRows.push(added);
+        return { id: added.id };
+      },
       async update({ where, data }) {
         const prev = sourceUpdates.get(where.id) ?? {};
         sourceUpdates.set(where.id, { ...prev, ...(data as AnyRow) });
+        const source = sourceRows.find((candidate) => candidate.id === where.id);
+        if (source) Object.assign(source, data);
         return { id: where.id };
       },
       async findMany({ where }) {
-        return initialSources.filter((s) => {
+        return sourceRows.filter((s) => {
+          if (Array.isArray(where.OR)) {
+            return where.OR.some((clause: AnyRow) => {
+              if (s.status !== clause.status) return false;
+              const nextProbe = clause.nextProbeAt as AnyRow | undefined;
+              return !nextProbe?.lte || !s.nextProbeAt || s.nextProbeAt <= (nextProbe.lte as Date);
+            });
+          }
           if (where.status !== undefined && s.status !== where.status) return false;
           return true;
         });
@@ -230,12 +279,13 @@ function makeFakeRunPrisma(initialSources: SourceRow[]): RunPrisma & {
     },
 
     _state: {
-      jobs: jobsByHash,
+      jobs: jobsByIdentity,
       verifications,
       reviewTasks,
       sourceErrors,
       scrapeRuns,
       sourceUpdates,
+      sources: sourceRows,
     },
   };
 
@@ -364,6 +414,78 @@ describe('scenario B — manual source robots-disallowed → blocked + review ta
   });
 });
 
+describe('manual source discovers a live Workday CXS board', () => {
+  it('creates an active Workday source after validating the linked board', async () => {
+    const sources: SourceRow[] = [{
+      ...SRC_MANUAL,
+      url: 'https://careers.example.com/students',
+      company: { id: 'co-workday', name: 'Example Corp', priorityLevel: 2 },
+    }];
+    const prisma = makeFakeRunPrisma(sources);
+    const workdayUrl = 'https://example.wd5.myworkdayjobs.com/External';
+    const cxsUrl = 'https://example.wd5.myworkdayjobs.com/wday/cxs/example/External/jobs';
+    const fetchImpl = makeStubFetch({
+      robots: 'allow',
+      pages: {
+        'https://careers.example.com/students': {
+          status: 200,
+          body: `<a href="${workdayUrl}/jobs">Search open roles</a>`,
+        },
+        [cxsUrl]: {
+          status: 200,
+          body: JSON.stringify({ total: 1, jobPostings: [{ title: 'Analyst', externalPath: '/job/NY/Analyst_REQ-1' }] }),
+        },
+      },
+    });
+
+    await runPipeline({ prisma, fetchImpl, now: NOW, sleepMs: 0 }, { trigger: 'cron' });
+
+    expect(prisma._state.sources).toContainEqual(expect.objectContaining({
+      platform: 'workday',
+      slug: 'example:External',
+      url: workdayUrl,
+      status: 'active',
+    }));
+  });
+});
+
+describe('manual source retry recovery', () => {
+  it('schedules a broken page and restores it to active when the retry succeeds', async () => {
+    const source = { ...SRC_MANUAL, company: { ...SRC_MANUAL.company } };
+    const prisma = makeFakeRunPrisma([source]);
+    await runPipeline({
+      prisma,
+      fetchImpl: makeStubFetch({
+        robots: 'allow',
+        pages: { [source.url!]: { status: 500, body: 'error' } },
+      }),
+      now: NOW,
+      sleepMs: 0,
+    }, { trigger: 'cron' });
+
+    expect(prisma._state.sources[0]).toMatchObject({
+      status: 'error',
+      nextProbeAt: new Date(NOW.getTime() + 4 * 60 * 60 * 1_000),
+    });
+
+    await runPipeline({
+      prisma,
+      fetchImpl: makeStubFetch({
+        robots: 'allow',
+        pages: { [source.url!]: { status: 200, body: '<html>Careers</html>' } },
+      }),
+      now: new Date(NOW.getTime() + 4 * 60 * 60 * 1_000),
+      sleepMs: 0,
+    }, { trigger: 'cron' });
+
+    expect(prisma._state.sources[0]).toMatchObject({
+      status: 'active',
+      nextProbeAt: null,
+      consecutiveFailures: 0,
+    });
+  });
+});
+
 // ── Scenario C: platforms filter + limitSources ───────────────────────────────
 
 describe('scenario C — platforms filter and limitSources honored', () => {
@@ -465,11 +587,9 @@ describe('scenario E — externalId persistence: recheck strikes job absent from
   });
 });
 
-// ── Scenario F: multi-board recheck scope guard (item 4) ─────────────────────
+// ── Scenario F: multi-board source isolation ──────────────────────────────────
 
-describe('scenario F — two greenhouse sources for one company: recheck skipped for scope conflict', () => {
-  // Two sources for the same company on the same platform = ambiguous recheck scope.
-  // runPipeline must skip recheck for both and append a stats note.
+describe('scenario F — two greenhouse sources for one company remain source-scoped', () => {
   const SRC_GH_CO1_A: SourceRow = {
     id: 'src-gh-co1-a',
     platform: 'greenhouse',
@@ -487,7 +607,7 @@ describe('scenario F — two greenhouse sources for one company: recheck skipped
     company: { id: 'co-1', name: 'SharedCo', priorityLevel: 2 },
   };
 
-  it('struck = 0, expired = 0 when two greenhouse sources share a companyId (recheck ambiguity)', async () => {
+  it('struck = 0, expired = 0 when both source-scoped boards still contain their jobs', async () => {
     const prisma = makeFakeRunPrisma([SRC_GH_CO1_A, SRC_GH_CO1_B]);
     const fetchImpl = makeStubFetch({
       greenhouse: { 'co1slug-a': 'fixture', 'co1slug-b': 'fixture' },
@@ -496,14 +616,14 @@ describe('scenario F — two greenhouse sources for one company: recheck skipped
     // First run: create some active jobs
     await runPipeline({ prisma, fetchImpl, now: NOW, sleepMs: 0 }, { trigger: 'cron' });
 
-    // Second run: active jobs exist but recheck should be skipped for both sources
+    // Second run: each source rechecks only the jobs attributed to that source.
     const result = await runPipeline({ prisma, fetchImpl, now: new Date(NOW.getTime() + 60_000), sleepMs: 0 }, { trigger: 'cron' });
 
     expect(result.struck).toBe(0);
     expect(result.expired).toBe(0);
   });
 
-  it('stats for the run include a recheckSkipped note for the conflicting sources', async () => {
+  it('does not emit the former ambiguity skip note', async () => {
     const prisma = makeFakeRunPrisma([SRC_GH_CO1_A, SRC_GH_CO1_B]);
     const fetchImpl = makeStubFetch({
       greenhouse: { 'co1slug-a': 'fixture', 'co1slug-b': 'fixture' },
@@ -512,12 +632,11 @@ describe('scenario F — two greenhouse sources for one company: recheck skipped
     await runPipeline({ prisma, fetchImpl, now: NOW, sleepMs: 0 }, { trigger: 'cron' });
     await runPipeline({ prisma, fetchImpl, now: new Date(NOW.getTime() + 60_000), sleepMs: 0 }, { trigger: 'cron' });
 
-    // The second run's scrapeRun stats should contain recheck-skipped entries
+    expect(prisma._state.jobs.size).toBe(4);
     const runs = [...prisma._state.scrapeRuns.values()];
     const secondRun = runs[runs.length - 1];
     const stats = secondRun.stats as Array<Record<string, unknown>>;
-    const skippedEntry = stats.find((s) => s.recheckSkipped === true);
-    expect(skippedEntry).toBeDefined();
+    expect(stats.some((entry) => entry.recheckSkipped === true)).toBe(false);
   });
 });
 
@@ -546,10 +665,11 @@ describe('scenario G — tripped recheck creates sourceError row', () => {
     for (const jid of jobIds) {
       // Insert directly into the in-memory store via upsert
       await prisma.ladderJob.upsert({
-        where: { dedupeHash: `hash-${jid}` },
+        where: { sourceId_externalId: { sourceId: SRC_GH_GOOD.id, externalId: jid } },
         create: {
           id: jid,
           companyId: co1Id,
+          sourceId: SRC_GH_GOOD.id,
           dedupeHash: `hash-${jid}`,
           sourcePlatform: 'greenhouse',
           status: 'active',
@@ -594,8 +714,8 @@ describe('scenario G — tripped recheck creates sourceError row', () => {
 
 // ── Scenario D: processSource throwing → sourceError row + run finishes ───────
 
-describe('scenario D — processSource inner throw → sourceError row, run completes', () => {
-  it('upsert throws → errored stats → sourceError row created, run finalized', async () => {
+describe('scenario D — one record throws → sourceError row, remaining records continue', () => {
+  it('upsert throws once → record sourceError created and run finalized', async () => {
     const prisma = makeFakeRunPrisma([SRC_GH_GOOD]);
     const fetchImpl = makeStubFetch({ greenhouse: { goodco: 'fixture' } });
 
@@ -613,12 +733,11 @@ describe('scenario D — processSource inner throw → sourceError row, run comp
       { trigger: 'cron' },
     );
 
-    // processSource catches the throw and returns errored=true.
-    // runPipeline then creates a sourceError row.
+    // processSource isolates the record failure and runPipeline records it.
     expect(result.errors).toBe(1);
     expect(prisma._state.sourceErrors).toHaveLength(1);
     expect(prisma._state.sourceErrors[0].sourceId).toBe('src-gh-good');
-    expect(prisma._state.sourceErrors[0].errorClass).toBe('process');
+    expect(prisma._state.sourceErrors[0].errorClass).toBe('record_process');
     expect(prisma._state.sourceErrors[0].message).toContain('DB unavailable');
 
     // Run row still finalized.

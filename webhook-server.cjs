@@ -38,7 +38,13 @@ http.createServer((req, res) => {
           const sig = req.headers['x-hub-signature-256'];
           const expected = 'sha256=' + crypto.createHmac('sha256', SECRET).update(body).digest('hex');
 
-          if (sig !== expected) {
+          // Constant-time signature comparison. `timingSafeEqual` throws on a
+          // length mismatch, so guard on presence + equal length first: a
+          // missing header or a wrong-length signature is treated as invalid
+          // without throwing.
+          const sigBuf = Buffer.from(sig || '', 'utf8');
+          const expBuf = Buffer.from(expected, 'utf8');
+          if (!sig || sigBuf.length !== expBuf.length || !crypto.timingSafeEqual(sigBuf, expBuf)) {
                   // Never log the server-computed `expected` HMAC or the secret length —
                   // doing so would weaken the signature gate. Only log non-sensitive context.
                   logMsg(`WARN: Invalid signature — rejected. bodyLen=${body.length} hasSig=${!!sig}`);

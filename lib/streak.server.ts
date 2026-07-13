@@ -99,18 +99,20 @@ export async function checkIn(userId: string): Promise<StreakState> {
   const longest = Math.max(existing?.longest ?? 0, current);
   const reward = rewardFor(current);
 
-  await prisma.$transaction([
-    prisma.dailyStreak.upsert({
+  const claimed = await prisma.$transaction(async (tx) => {
+    // Ensure a row exists WITHOUT recording today's check-in (neutral lastDateKey),
+    // so the atomic claim below is what actually books the day and its reward.
+    await tx.dailyStreak.upsert({
       where: { userId },
-      create: {
-        userId,
-        current,
-        longest,
-        totalCheckIns: 1,
-        lastCheckIn: new Date(),
-        lastDateKey: today,
-      },
-      update: {
+      create: { userId, current: 0, longest: 0, totalCheckIns: 0, lastCheckIn: new Date(), lastDateKey: '' },
+      update: {},
+    });
+    // Atomic once-per-day claim: apply the check-in only if today isn't already
+    // recorded. Concurrent check-ins race on this row; the loser gets count 0 and
+    // no coin reward, closing the streak double-claim.
+    const applied = await tx.dailyStreak.updateMany({
+      where: { userId, NOT: { lastDateKey: today } },
+      data: {
         current,
         longest,
         totalCheckIns: { increment: 1 },
@@ -118,13 +120,30 @@ export async function checkIn(userId: string): Promise<StreakState> {
         lastDateKey: today,
         ...(freezeUsed > 0 ? { freezeTokens: { decrement: freezeUsed } } : {}),
       },
-    }),
-    prisma.userProfile.upsert({
+    });
+    if (applied.count === 0) return false;
+    await tx.userProfile.upsert({
       where: { userId },
       create: { userId, coins: 10 + reward },
       update: { coins: { increment: reward } },
-    }),
-  ]);
+    });
+    return true;
+  });
+
+  if (!claimed) {
+    // A concurrent request already booked today's check-in — return current state
+    // with no additional reward.
+    const s = await prisma.dailyStreak.findUnique({ where: { userId } });
+    return {
+      current: s?.current ?? current,
+      longest: s?.longest ?? longest,
+      totalCheckIns: s?.totalCheckIns ?? (existing?.totalCheckIns ?? 0) + 1,
+      checkedInToday: true,
+      reward: 0,
+      freezeTokens: s?.freezeTokens ?? 0,
+      freezeUsed: 0,
+    };
+  }
 
   // Streak milestone achievements (best-effort).
   if (current >= 7) await grantAchievement(userId, 'special.streak_7');

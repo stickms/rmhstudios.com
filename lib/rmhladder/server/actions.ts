@@ -19,6 +19,12 @@ export interface ActionsPrisma {
     findUnique(args: AnyRow): Promise<AnyRow | null>;
     upsert(args: AnyRow): Promise<AnyRow>;
   };
+  ladderApplicationEvent?: {
+    create(args: AnyRow): Promise<AnyRow>;
+  };
+  ladderResumeVersion?: {
+    findFirst(args: AnyRow): Promise<AnyRow | null>;
+  };
   ladderReviewTask: {
     findUnique(args: AnyRow): Promise<AnyRow | null>;
     update(args: AnyRow): Promise<AnyRow | undefined>;
@@ -49,6 +55,37 @@ export async function setJobAction(
   jobId: string,
   action: JobActionValue,
 ) {
+  if (action === 'applied') {
+    await prisma.ladderUserPrefs.upsert({
+      where: { userId },
+      create: { userId },
+      update: {},
+    });
+    const existing = await prisma.ladderApplication.findUnique({
+      where: { userId_jobId: { userId, jobId } },
+    });
+    const application = await prisma.ladderApplication.upsert({
+      where: { userId_jobId: { userId, jobId } },
+      create: { userId, jobId, status: 'applied', appliedDate: new Date() },
+      update: existing?.status === 'not_applied'
+        ? { status: 'applied', appliedDate: existing.appliedDate ?? new Date() }
+        : {},
+    });
+    if (prisma.ladderApplicationEvent && existing?.status !== 'applied') {
+      await prisma.ladderApplicationEvent.create({
+        data: {
+          applicationId: application.id,
+          userId,
+          type: 'status_changed',
+          fromStatus: existing?.status ?? null,
+          toStatus: 'applied',
+        },
+      });
+    }
+    // Application state is intentionally separate from saved/ignored state.
+    return { userAction: 'applied' as const };
+  }
+
   if (action === null) {
     try {
       await prisma.ladderJobAction.delete({ where: { userId_jobId: { userId, jobId } } });
@@ -62,14 +99,6 @@ export async function setJobAction(
     create: { userId, jobId, action },
     update: { action },
   });
-  if (action === 'applied') {
-    // Upsert with empty update: creates on miss, never downgrades an existing status.
-    await prisma.ladderApplication.upsert({
-      where: { userId_jobId: { userId, jobId } },
-      create: { userId, jobId, status: 'applied', appliedDate: new Date() },
-      update: {},
-    });
-  }
   return { userAction: action };
 }
 
@@ -84,12 +113,13 @@ const applicationPatchSchema = z.object({
   status: z.enum(APPLICATION_STATUSES).optional(),
   appliedDate: z.coerce.date().nullable().optional(),
   resumeVersion: z.string().max(2000, MAX_TEXT).nullable().optional(),
+  resumeVersionId: z.string().min(1).max(100).nullable().optional(),
   coverLetter: z.string().max(2000, MAX_TEXT).nullable().optional(),
   referralName: z.string().max(2000, MAX_TEXT).nullable().optional(),
   contactEmail: z.string().max(2000, MAX_TEXT).nullable().optional(),
   notes: z.string().max(2000, MAX_TEXT).nullable().optional(),
   followUpDate: z.coerce.date().nullable().optional(),
-  interviewDates: z.array(z.coerce.date()).optional(),
+  interviewDates: z.array(z.coerce.date()).max(25, 'Maximum 25 interview dates').optional(),
   outcome: z.string().max(2000, MAX_TEXT).nullable().optional(),
 });
 
@@ -102,18 +132,50 @@ export async function updateApplication(
   patch: ApplicationPatch,
 ) {
   const validated = applicationPatchSchema.parse(patch);
-  return prisma.ladderApplication.upsert({
+  if (validated.resumeVersionId) {
+    if (!prisma.ladderResumeVersion) throw new Error('Resume ownership validation is unavailable');
+    const ownedVersion = await prisma.ladderResumeVersion.findFirst({
+      where: { id: validated.resumeVersionId, userId },
+      select: { id: true },
+    });
+    if (!ownedVersion) throw new Error('Resume version not found');
+  }
+  await prisma.ladderUserPrefs.upsert({
+    where: { userId },
+    create: { userId },
+    update: {},
+  });
+  const existing = await prisma.ladderApplication.findUnique({
+    where: { userId_jobId: { userId, jobId } },
+  });
+  const application = await prisma.ladderApplication.upsert({
     where: { userId_jobId: { userId, jobId } },
     // spread first so the status default cannot be clobbered by an undefined key
     create: { userId, jobId, ...validated, status: validated.status ?? 'not_applied' },
     update: validated,
   });
+  if (prisma.ladderApplicationEvent) {
+    const statusChanged = validated.status !== undefined && validated.status !== existing?.status;
+    await prisma.ladderApplicationEvent.create({
+      data: {
+        applicationId: application.id,
+        userId,
+        type: statusChanged ? 'status_changed' : 'application_updated',
+        fromStatus: statusChanged ? existing?.status ?? null : null,
+        toStatus: statusChanged ? validated.status : null,
+        data: {
+          fields: Object.keys(validated),
+        },
+      },
+    });
+  }
+  return application;
 }
 
 export type ReviewResolution = 'verify' | 'expire' | 'duplicate' | 'non_us' | 'ignore';
 
 const RESOLUTION_EFFECTS: Record<
-  Exclude<ReviewResolution, 'duplicate' | 'ignore'>,
+  Exclude<ReviewResolution, 'ignore'>,
   { jobStatus?: string; verification: { status: string; confidence: number; evidence: string } }
 > = {
   verify: {
@@ -127,6 +189,10 @@ const RESOLUTION_EFFECTS: Record<
   non_us: {
     verification: { status: 'non_us_role', confidence: 90, evidence: 'Manually classified non-US via review queue.' },
   },
+  duplicate: {
+    jobStatus: 'expired',
+    verification: { status: 'expired', confidence: 100, evidence: 'Manually removed as a duplicate posting.' },
+  },
 };
 
 export async function resolveReviewTask(
@@ -138,7 +204,7 @@ export async function resolveReviewTask(
   const task = await prisma.ladderReviewTask.findUnique({ where: { id: taskId } });
   if (!task) return { ok: false, error: 'task not found' };
 
-  if (resolution !== 'duplicate' && resolution !== 'ignore') {
+  if (resolution !== 'ignore') {
     if (!task.jobId) return { ok: false, error: 'task has no job' };
     const effect = RESOLUTION_EFFECTS[resolution];
     if (effect.jobStatus) {
@@ -198,16 +264,28 @@ const PROGRAM_TYPES = [
   'internship', 'summer_analyst', 'summer_associate', 'analyst_program', 'rotational_program',
   'new_grad', 'leadership_development', 'entry_level', 'mba', 'other',
 ] as const;
+const timezoneSchema = z.string().min(1).max(100).refine((value) => {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
+}, 'Invalid IANA timezone');
 
 const prefsPatchSchema = z.object({
   relevanceThreshold: z.number().int().min(0, 'Minimum 0').max(100, 'Maximum is 100').optional(),
-  preferredCities: z.array(z.string().max(100)).optional(),
-  preferredProgramTypes: z.array(z.enum(PROGRAM_TYPES)).optional(),
+  preferredCities: z.array(z.string().max(100)).max(50).optional(),
+  preferredProgramTypes: z.array(z.enum(PROGRAM_TYPES)).max(PROGRAM_TYPES.length).optional(),
   digestFrequency: z.enum(DIGEST_FREQUENCIES).optional(),
   channelInApp: z.boolean().optional(),
   channelEmail: z.boolean().optional(),
   channelDiscord: z.boolean().optional(),
   discordUserId: z.string().max(100).nullable().optional(),
+  timezone: timezoneSchema.optional(),
+  quietHoursStart: z.number().int().min(0).max(23).nullable().optional(),
+  quietHoursEnd: z.number().int().min(0).max(23).nullable().optional(),
+  resumeMatchThreshold: z.number().int().min(0).max(100).nullable().optional(),
 });
 
 export type PrefsPatch = z.infer<typeof prefsPatchSchema>;
@@ -222,11 +300,12 @@ export async function updatePrefs(prisma: ActionsPrisma, userId: string, patch: 
 }
 
 export async function markAlertsRead(
-  prisma: ActionsPrisma & { ladderAlert: { updateMany(args: AnyRow): Promise<unknown> } },
+  prisma: ActionsPrisma & { ladderAlertEvent: { updateMany(args: AnyRow): Promise<unknown> } },
   userId: string,
+  alertId?: string,
 ) {
-  await prisma.ladderAlert.updateMany({
-    where: { userId, readAt: null },
+  await prisma.ladderAlertEvent.updateMany({
+    where: { userId, readAt: null, ...(alertId ? { id: alertId } : {}) },
     data: { readAt: new Date() },
   });
   return { ok: true };

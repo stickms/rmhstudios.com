@@ -44,34 +44,41 @@ export const Route = createFileRoute('/api/coins/purchase')({
     const userId = session.user.id;
 
     const result = await prisma.$transaction(async (tx) => {
-      const profile = await tx.userProfile.upsert({
+      await tx.userProfile.upsert({
         where: { userId },
         create: { userId, coins: 10 },
         update: {},
-        select: { coins: true, hasProfilePet: true },
       });
 
-      if (profile.coins < price) {
-        throw new Error("INSUFFICIENT_COINS");
-      }
-
-      if (item === "profile-pet" && profile.hasProfilePet) {
+      const owned = await tx.userProfile.findUnique({ where: { userId }, select: { hasProfilePet: true } });
+      if (item === "profile-pet" && owned?.hasProfilePet) {
         throw new Error("ALREADY_OWNED");
       }
 
-      return tx.userProfile.update({
-        where: { userId },
+      // Atomic conditional debit + grant: the `coins >= price` (and, for the pet,
+      // `hasProfilePet: false`) guards live in the WHERE clause so concurrent
+      // purchases can't overdraft a stale balance or grant the item twice.
+      const purchase = await tx.userProfile.updateMany({
+        where: {
+          userId,
+          coins: { gte: price },
+          ...(item === "profile-pet" ? { hasProfilePet: false } : {}),
+        },
         data: {
           coins: { decrement: price },
           ...(item === "profile-pet" ? { hasProfilePet: true } : {}),
         },
-        select: { coins: true },
       });
+      if (purchase.count === 0) {
+        throw new Error("INSUFFICIENT_COINS");
+      }
+
+      return tx.userProfile.findUnique({ where: { userId }, select: { coins: true } });
     });
 
     return Response.json({
       success: true,
-      newBalance: result.coins,
+      newBalance: result?.coins ?? 0,
     });
   } catch (error) {
     if (error instanceof Error) {

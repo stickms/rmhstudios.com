@@ -1,8 +1,18 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
 import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { recordGamePlay } from '@/lib/quests/engine.server';
+
+// Bounded, strict schema — the old `typeof number` check let a client submit
+// Number.MAX_SAFE_INTEGER as a permanent top leaderboard entry.
+const scoreSchema = z
+  .object({
+    highestLoop: z.number().int().min(0).max(100_000),
+    highestLevel: z.number().int().min(0).max(100_000),
+  })
+  .strict();
 
 export const Route = createFileRoute('/api/vega/score')({
   server: {
@@ -26,12 +36,11 @@ export const Route = createFileRoute('/api/vega/score')({
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
         }
         
-        const body = await request.json();
-        const { highestLoop, highestLevel } = body;
-        
-        if (typeof highestLoop !== 'number' || typeof highestLevel !== 'number') {
+        const parsed = scoreSchema.safeParse(await request.json().catch(() => null));
+        if (!parsed.success) {
              return Response.json({ error: 'Invalid data' }, { status: 400 });
         }
+        const { highestLoop, highestLevel } = parsed.data;
         
         // Find existing profile
         const existingProfile = await prisma.vegaPlayer.findUnique({

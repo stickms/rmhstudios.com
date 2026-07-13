@@ -1,4 +1,5 @@
 import { parse } from 'node-html-parser';
+import { createHash } from 'node:crypto';
 import { classifyUSLocation } from '../classifiers/us-location';
 import { classifyEarlyCareer } from '../classifiers/early-career';
 import type { ProgramType } from '../classifiers/early-career';
@@ -20,6 +21,17 @@ export function summarizeDescription(html: string | null): { summary: string | n
   return { summary, text };
 }
 
+export function extractApplicationDeadline(text: string): Date | null {
+  const match = text.match(
+    /\b(?:application\s+deadline|apply\s+by|applications?\s+(?:close|due))\s*[:\-–]?\s*([A-Z][a-z]+\s+\d{1,2},?\s+20\d{2}|\d{1,2}[/-]\d{1,2}[/-]20\d{2}|20\d{2}-\d{2}-\d{2})\b/i,
+  );
+  if (!match) return null;
+  const parsed = new Date(`${match[1]}${/^\d{4}-/.test(match[1]) ? 'T23:59:59' : ' 23:59:59'}`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  const year = parsed.getFullYear();
+  return year >= 2000 && year <= 2100 ? parsed : null;
+}
+
 // ── Types ───────────────────────────────────────────────────────────────────
 
 type ReviewReason = 'ambiguous_us_location' | 'ambiguous_early_career' | 'low_confidence';
@@ -39,6 +51,7 @@ export interface JobAssessmentFields {
   remoteStatus: 'onsite' | 'hybrid' | 'remote_us';
   employmentType: 'internship' | 'full_time';
   postingDate: Date | null;
+  applicationDeadline: Date | null;
   sourcePlatform: string;
   sourceUrl: string;
   originalPostingUrl: string;
@@ -46,7 +59,9 @@ export interface JobAssessmentFields {
   externalRequisitionId: string | null;
   externalId: string | null;
   descriptionSummary: string | null;
+  descriptionText: string;
   fullDescription: string | null;
+  contentHash: string;
   earlyCareerScore: number;
   earlyCareerClassification: 'yes' | 'probable' | 'no' | 'unclear';
   usLocationConfidence: number;
@@ -82,6 +97,7 @@ export function assessJob(args: {
 
   // 1. Parse description
   const { summary: descriptionSummary, text } = summarizeDescription(normalized.descriptionHtml);
+  const applicationDeadline = normalized.applicationDeadline ?? extractApplicationDeadline(text);
 
   // 2. Classify US location
   const locationResult = classifyUSLocation({
@@ -139,6 +155,7 @@ export function assessJob(args: {
     remoteStatus: effectiveRemoteStatus,
     city: locationResult.city,
     postingDate: normalized.postedAt,
+    applicationDeadline,
     companyPriority,
     companyIsTarget,
     title: normalized.title,
@@ -167,6 +184,16 @@ export function assessJob(args: {
     ? `Location classified non-US (${locationLabel}) — excluded from US pipeline.`
     : outcome.evidence;
 
+  const contentHash = createHash('sha256')
+    .update(JSON.stringify({
+      title: normalized.title,
+      location: normalized.locationRaw,
+      description: text,
+      applyUrl: normalized.applyUrl,
+      requisitionId: normalized.requisitionId,
+    }))
+    .digest('hex');
+
   const fields: JobAssessmentFields = {
     title: normalized.title,
     normalizedTitle: normalizeTitle(normalized.title),
@@ -178,6 +205,7 @@ export function assessJob(args: {
     remoteStatus: effectiveRemoteStatus,
     employmentType,
     postingDate: normalized.postedAt,
+    applicationDeadline,
     sourcePlatform: platform,
     sourceUrl: normalized.absoluteUrl,
     originalPostingUrl: normalized.absoluteUrl,
@@ -185,7 +213,9 @@ export function assessJob(args: {
     externalRequisitionId: normalized.requisitionId,
     externalId: normalized.externalId,
     descriptionSummary,
+    descriptionText: text,
     fullDescription: normalized.descriptionHtml,
+    contentHash,
     earlyCareerScore: ecResult.score,
     earlyCareerClassification: ecResult.classification,
     usLocationConfidence: locationResult.confidence,

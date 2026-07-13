@@ -46,28 +46,27 @@ export const Route = createFileRoute('/api/coins/bet')({
     const won = plinkoResult.landedBin === bin;
 
     const result = await prisma.$transaction(async (tx) => {
-      const profile = await tx.userProfile.upsert({
+      // Ensure the profile row exists, then settle the bet with an atomic
+      // conditional update instead of writing an absolute balance. Requiring
+      // `coins >= amount` in the WHERE clause enforces "must hold the full stake"
+      // and prevents both the overdraft and the lost-update that an absolute
+      // `coins: newBalance` write allowed against any concurrent balance change.
+      await tx.userProfile.upsert({
         where: { userId },
         create: { userId, coins: 10 },
         update: {},
-        select: { coins: true },
       });
 
-      if (profile.coins < amount) {
+      const settle = await tx.userProfile.updateMany({
+        where: { userId, coins: { gte: amount } },
+        data: won ? { coins: { increment: amount } } : { coins: { decrement: amount } },
+      });
+      if (settle.count === 0) {
         throw new Error("INSUFFICIENT_COINS");
       }
 
-      const newBalance = won
-        ? profile.coins + amount
-        : profile.coins - amount;
-
-      const updated = await tx.userProfile.update({
-        where: { userId },
-        data: { coins: newBalance },
-        select: { coins: true },
-      });
-
-      return { newBalance: updated.coins };
+      const updated = await tx.userProfile.findUnique({ where: { userId }, select: { coins: true } });
+      return { newBalance: updated?.coins ?? 0 };
     });
 
     return Response.json({

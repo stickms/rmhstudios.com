@@ -20,6 +20,7 @@ import {
   type ActionsPrisma,
 } from '@/lib/rmhladder/server/actions';
 import { timeAgo } from '@/components/rmhladder/time';
+import { Badge } from '@/components/ui/badge';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 const actionsPrisma = prisma as unknown as ActionsPrisma;
@@ -42,6 +43,8 @@ const fetchCompanies = createServerFn({ method: 'GET' })
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/companies' } });
+    const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
+    if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
     const [companies, settings] = await Promise.all([
       listCompanies(queriesPrisma, { q: data.q }),
       getSettings(queriesPrisma, session.user.id),
@@ -55,6 +58,8 @@ const doCompanyAction = createServerFn({ method: 'POST' })
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/companies' } });
+    const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
+    if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
     if (data.kind === 'enabled') return setCompanyEnabled(actionsPrisma, data.companyId, data.enabled);
     if (data.kind === 'priority') return setCompanyPriority(actionsPrisma, data.companyId, data.priorityLevel);
     return toggleWatchlist(actionsPrisma, session.user.id, data.companyId, data.on);
@@ -64,7 +69,7 @@ interface CompaniesSearch {
   q?: string;
 }
 
-export const Route = createFileRoute('/rmhladder/companies')({
+export const Route = createFileRoute('/_site/rmhladder/companies')({
   validateSearch: (search: Record<string, unknown>): CompaniesSearch => ({
     q: typeof search.q === 'string' && search.q ? search.q : undefined,
   }),
@@ -73,14 +78,7 @@ export const Route = createFileRoute('/rmhladder/companies')({
   component: CompaniesPage,
 });
 
-const API_PLATFORMS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'manual'] as const;
-
-function dotTone(platform: string, status: string | undefined): string {
-  if (!status) return 'rl-dot--absent';
-  if (status === 'active') return platform === 'manual' ? 'rl-dot--brass' : 'rl-dot--ledger';
-  if (status === 'error' || status === 'blocked') return 'rl-dot--signal';
-  return 'rl-dot--slate';
-}
+const API_PLATFORMS = ['greenhouse', 'lever', 'ashby', 'smartrecruiters', 'workday', 'manual'] as const;
 
 function CompaniesPage() {
   const { companies, watchlistCompanyIds } = Route.useLoaderData();
@@ -165,11 +163,6 @@ function CompaniesPage() {
 
   return (
     <div>
-      <div className="rl-page-header">
-        <p className="rl-eyebrow">RMHLADDER · COMPANIES</p>
-        <h1 className="rl-display">Companies</h1>
-      </div>
-
       {errorLine && <p className="rl-review-error rl-mono">{errorLine}</p>}
 
       <div className="rl-filter-bar">
@@ -242,13 +235,16 @@ function CompaniesPage() {
                     {API_PLATFORMS.map((p) => {
                       const src = byPlatform.get(p);
                       const status = src?.status as string | undefined;
+                      const label = `${p}: ${status ?? 'none'}`;
                       return (
-                        <span
+                        <Badge
                           key={p}
-                          className={`rl-dot ${dotTone(p, status)}`}
-                          title={`${p}: ${status ?? 'none'}`}
-                          aria-label={`${p}: ${status ?? 'no source'}`}
-                        />
+                          size="sm"
+                          variant={status === 'active' ? 'success' : status === 'error' || status === 'blocked' ? 'danger' : 'outline'}
+                          title={label}
+                        >
+                          {label}
+                        </Badge>
                       );
                     })}
                   </div>

@@ -5,7 +5,7 @@
  * (top matches by relevance, expiring soon). No charts by design.
  */
 
-import { createFileRoute, Link, redirect } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
@@ -19,29 +19,47 @@ import {
 import { RungMeter } from '@/components/rmhladder/RungMeter';
 import { StatBlock } from '@/components/rmhladder/StatBlock';
 import { timeAgo } from '@/components/rmhladder/time';
+import { buildCanonical, buildMeta } from '@/lib/seo';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 
 const fetchOverview = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers });
-  if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder' } });
-  const userId = session.user.id;
+  const userId = session?.user?.id ?? null;
+  const adminRow = userId
+    ? await prisma.user.findUnique({ where: { id: userId }, select: { isAdmin: true } })
+    : null;
+  const isAdmin = adminRow?.isAdmin === true;
   const [overview, top, expiring] = await Promise.all([
-    getOverview(queriesPrisma, userId),
+    getOverview(queriesPrisma, userId, { includeAdminStats: isAdmin }),
     listJobs(queriesPrisma, userId, { sort: 'relevance', take: 8 }),
     listJobs(queriesPrisma, userId, { preset: 'expiring', sort: 'deadline', take: 8 }),
   ]);
-  return { overview, topRows: top.rows, expiringRows: expiring.rows };
+  return {
+    overview,
+    topRows: top.rows,
+    expiringRows: expiring.rows,
+    isAdmin,
+    isAuthenticated: Boolean(userId),
+  };
 });
 
-export const Route = createFileRoute('/rmhladder/')({
+export const Route = createFileRoute('/_site/rmhladder/')({
+  head: () => ({
+    meta: buildMeta({
+      title: 'RMH Ladder | Verified Early-Career Jobs',
+      description: 'Browse verified internships, new-grad programs, and early-career roles from official company sources.',
+      path: '/rmhladder',
+    }),
+    links: [buildCanonical('/rmhladder')],
+  }),
   loader: () => fetchOverview(),
   component: OverviewPage,
 });
 
 function lastRunLine(lastRun: Record<string, unknown> | null): string {
-  if (!lastRun) return 'NO RUNS YET — pnpm ladder:run';
+  if (!lastRun) return 'AWAITING THE FIRST AUTOMATED UPDATE';
   const ago = timeAgo(lastRun.startedAt as Date).toUpperCase();
   return `LAST RUN · ${ago} · ${lastRun.discoveredCount ?? 0} FOUND · ${lastRun.errorCount ?? 0} ERRORS`;
 }
@@ -60,7 +78,11 @@ function QuickList({ title, rows, renderMeta }: {
         <ul>
           {rows.map((row) => (
             <li key={row.id as string} className="rl-quicklist__row rl-hairline">
-              <Link to="/rmhladder/jobs" className="rl-quicklist__link">
+              <Link
+                to="/rmhladder/jobs/$jobId"
+                params={{ jobId: row.id as string }}
+                className="rl-quicklist__link"
+              >
                 <span className="rl-quicklist__title">
                   {row.title as string}
                   <span className="rl-quicklist__company">
@@ -78,29 +100,28 @@ function QuickList({ title, rows, renderMeta }: {
 }
 
 function OverviewPage() {
-  const { overview, topRows, expiringRows } = Route.useLoaderData();
+  const { overview, topRows, expiringRows, isAdmin, isAuthenticated } = Route.useLoaderData();
 
   return (
     <div>
-      <div className="rl-page-header">
-        <p className="rl-eyebrow">RMHLADDER · OVERVIEW</p>
-        <h1 className="rl-display">Overview</h1>
-      </div>
-
       <div className="rl-stats-grid">
         <StatBlock label="New this week" value={overview.newThisWeek} />
         <StatBlock label="Verified active" value={overview.verifiedActive} />
         <StatBlock label="Expiring soon" value={overview.expiringSoon} />
-        <Link to="/rmhladder/review" className="rl-stat-link" aria-label="Open review queue">
-          <StatBlock label="Open review" value={overview.openReviewTasks} />
-        </Link>
+        {isAdmin ? (
+          <Link to="/rmhladder/review" className="rl-stat-link" aria-label="Open review queue">
+            <StatBlock label="Open review" value={overview.openReviewTasks} />
+          </Link>
+        ) : isAuthenticated ? (
+          <StatBlock label="Saved jobs" value={overview.savedCount} />
+        ) : null}
       </div>
 
       <p className="rl-lastrun rl-mono">{lastRunLine(overview.lastRun)}</p>
 
       <div className="rl-quicklists">
         <QuickList
-          title="Top matches"
+          title={isAuthenticated ? 'Top matches' : 'Top opportunities'}
           rows={topRows}
           renderMeta={(row) => (
             <span className="rl-quicklist__meta">
