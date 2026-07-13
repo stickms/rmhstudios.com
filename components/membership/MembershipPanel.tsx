@@ -315,7 +315,11 @@ export function MembershipPanel({
                       className="pricing-btn flex h-11 w-full items-center justify-center gap-2 rounded-full text-sm font-bold transition-all disabled:cursor-not-allowed disabled:opacity-50"
                       style={{
                         background: plan.featured ? 'var(--site-warning)' : 'var(--site-accent)',
-                        color: plan.featured || plan.tier === 'starter' ? '#1a1505' : '#ffffff',
+                        // Dark ink on the gold (warning) tiers; the theme's own
+                        // accent foreground on accent buttons so the label stays
+                        // legible on every theme (e.g. high-contrast/nocturne
+                        // where accent-fg is dark, not white).
+                        color: plan.featured || plan.tier === 'starter' ? '#1a1505' : 'var(--site-accent-fg)',
                       }}
                     >
                       {busy === plan.tier ? (

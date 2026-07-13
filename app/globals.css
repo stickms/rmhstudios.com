@@ -79,6 +79,10 @@
   --site-glow: none;
   --site-text-shadow: none;
   --site-letter-spacing: -0.022em;
+  /* Raster-map tint (RMHHomes / rideshare maps). Dark themes invert the light
+     OSM tiles into a dark map so the map tracks the theme; light themes reset
+     this to `none`. Applied only to the tile canvas, never the DOM pins. */
+  --site-map-filter: invert(1) hue-rotate(180deg) brightness(0.92) contrast(0.9);
 
   /* Legacy neon palette — kept for game-specific pages */
   --neon-pink: #ff00ff;
@@ -219,6 +223,8 @@
   --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.10);
   --site-radius: 18px;
   --site-radius-sm: 12px;
+  /* Light theme: leave the OSM map tiles as-is (already light). */
+  --site-map-filter: none;
   --background: #f5f5f7;
   --foreground: #1d1d1f;
 }
@@ -305,6 +311,8 @@
   --site-shadow: 0 24px 64px rgba(90, 62, 32, 0.16);
   --site-radius: 18px;
   --site-radius-sm: 12px;
+  /* Sepia is a light theme — keep the light OSM map tiles. */
+  --site-map-filter: none;
   --background: #f3e9d6;
   --foreground: #3a2e1e;
 }
@@ -334,6 +342,14 @@
   --site-radius-sm: 12px;
   --background: #0b0f1a;
   --foreground: #eaeef7;
+}
+
+/* Theme-aware raster maps (RMHHomes). The tint is applied to the tile canvas
+   only — the coloured price pins live in a separate MapLibre marker overlay
+   above the canvas, so they stay vivid. Dark themes invert the light OSM tiles
+   into a dark map; light themes (which set --site-map-filter: none) keep them. */
+.homes-map .maplibregl-canvas {
+  filter: var(--site-map-filter, none);
 }
 
 /* Respect the OS "reduce motion" preference site-wide: neutralize enter
