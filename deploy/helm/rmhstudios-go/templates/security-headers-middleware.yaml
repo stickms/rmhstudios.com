@@ -24,5 +24,5 @@ spec:
       X-Permitted-Cross-Domain-Policies: "none"
       # Report-Only sibling of the enforced CSP above — collect violations for a
       # fuller policy without breaking anything. Mirror of the Apache vhost.
-      Content-Security-Policy-Report-Only: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss:; media-src 'self' blob: https:; worker-src 'self' blob:; frame-ancestors 'self' https://discord.com https://*.discord.com https://*.discordsays.com; object-src 'none'; base-uri 'self'"
+      Content-Security-Policy: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss:; media-src 'self' blob: https:; worker-src 'self' blob:; frame-src 'self' blob: https:; frame-ancestors 'self' https://discord.com https://*.discord.com https://*.discordsays.com; form-action 'self'; object-src 'none'; base-uri 'none'"
 {{- end }}

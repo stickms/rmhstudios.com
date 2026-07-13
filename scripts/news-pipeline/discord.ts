@@ -1,10 +1,5 @@
-import crypto from "crypto";
 import { stripTrailingSlash } from "../../lib/url";
-
-export function generateToken(slug: string): string {
-  const secret = process.env.NEWS_APPROVAL_SECRET ?? "";
-  return crypto.createHmac("sha256", secret).update(slug).digest("hex");
-}
+import { createNewsApprovalToken } from "../../lib/news-approval.server";
 
 function getWebhookUrl(): string | null {
   return process.env.NEWS_DISCORD_WEBHOOK_URL ?? null;
@@ -34,10 +29,11 @@ export async function postToDiscord(opts: {
     return null;
   }
 
-  const token = generateToken(opts.slug);
+  const approveToken = createNewsApprovalToken('approve', opts.slug);
+  const rejectToken = createNewsApprovalToken('reject', opts.slug);
   const siteUrl = getSiteUrl();
-  const approveUrl = `${siteUrl}/api/news/approve?slug=${encodeURIComponent(opts.slug)}&token=${token}`;
-  const rejectUrl = `${siteUrl}/api/news/reject?slug=${encodeURIComponent(opts.slug)}&token=${token}`;
+  const approveUrl = `${siteUrl}/api/news/approve?slug=${encodeURIComponent(opts.slug)}&token=${approveToken}`;
+  const rejectUrl = `${siteUrl}/api/news/reject?slug=${encodeURIComponent(opts.slug)}&token=${rejectToken}`;
 
   const payload = {
     embeds: [
@@ -71,7 +67,6 @@ export async function postToDiscord(opts: {
     }
 
     const data = await res.json();
-    console.log(`[discord] Notification sent for: ${opts.slug} (messageId: ${data.id})`);
     return data.id as string;
   } catch (err) {
     console.error("[discord] Failed to reach webhook:", err);
@@ -120,8 +115,6 @@ export async function updateDiscordMessage(opts: {
 
     if (!res.ok) {
       console.error("[discord] Message update failed:", res.status, await res.text());
-    } else {
-      console.log(`[discord] Message updated (${opts.action}): ${opts.slug}`);
     }
   } catch (err) {
     console.error("[discord] Failed to update message:", err);

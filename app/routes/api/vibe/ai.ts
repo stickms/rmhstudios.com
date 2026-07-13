@@ -24,6 +24,7 @@ import {
   VibeAIError,
 } from '@/lib/rmhvibe/vibe-ai.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { redisRateLimit } from '@/lib/redis.server';
 
 const CORS_HEADERS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -39,14 +40,29 @@ export const Route = createFileRoute('/api/vibe/ai')({
       OPTIONS: () => new Response(null, { status: 204, headers: CORS_HEADERS }),
 
       POST: async ({ request }) => {
+        const contentLength = Number(request.headers.get('content-length') ?? 0);
+        if (contentLength > 64 * 1024) {
+          return Response.json({ error: 'Request too large' }, { status: 413, headers: CORS_HEADERS });
+        }
+
         // Public-facing paid API: cap how often any one client can call it.
         const ip = getClientIp(request);
-        const { allowed, retryAfter } = rateLimit(ip, {
-          limit: 30,
+        const distributed = await redisRateLimit(`vibe-ai:ip:${ip}`, 30, 60_000);
+        if (!distributed && process.env.NODE_ENV === 'production') {
+          return Response.json(
+            { error: 'AI service is temporarily unavailable.' },
+            { status: 503, headers: { ...CORS_HEADERS, 'Retry-After': '60' } },
+          );
+        }
+        const local = distributed ?? rateLimit(ip, {
+          limit: 8,
           windowMs: 60_000,
           prefix: 'vibe-ai',
         });
-        if (!allowed) {
+        const globalMinute = await redisRateLimit('vibe-ai:global:minute', 300, 60_000);
+        const globalDay = await redisRateLimit('vibe-ai:global:day', Number(process.env.VIBE_AI_DAILY_CAP ?? 5_000), 86_400_000);
+        if (!local.allowed || globalMinute?.allowed === false || globalDay?.allowed === false) {
+          const retryAfter = Math.max(local.retryAfter, globalMinute?.retryAfter ?? 0, globalDay?.retryAfter ?? 0);
           return Response.json(
             { error: 'Too many requests. Please slow down.' },
             { status: 429, headers: { ...CORS_HEADERS, 'Retry-After': String(retryAfter) } },

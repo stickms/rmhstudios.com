@@ -18,6 +18,10 @@ spec:
       labels:
         {{- include "rmhstudios.componentSelectorLabels" (dict "Chart" $root.Chart "Release" $root.Release "Values" $root.Values "component" $name) | nindent 8 }}
     spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
       {{- with $root.Values.image.pullSecrets }}
       imagePullSecrets:
         {{- range . }}
@@ -32,6 +36,11 @@ spec:
           image: "{{ $root.Values.image.repository }}:{{ $root.Values.image.tag }}"
           imagePullPolicy: {{ $root.Values.image.pullPolicy }}
           command: {{ toJson $svc.command }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           envFrom:
             - secretRef:
                 name: {{ $root.Values.secretName }}
@@ -70,8 +79,9 @@ spec:
           {{- end }}
           resources:
             {{- toYaml ($svc.resources | default $root.Values.defaultResources) | nindent 12 }}
-          {{- if or $svc.mountData $svc.mountRepo }}
           volumeMounts:
+            - name: tmp
+              mountPath: /tmp
             {{- if $svc.mountData }}
             - name: data
               mountPath: {{ $root.Values.data.mountPath }}
@@ -79,10 +89,12 @@ spec:
             {{- if $svc.mountRepo }}
             - name: repo
               mountPath: {{ $root.Values.rmhbotRepoPath }}
+              readOnly: true
             {{- end }}
-          {{- end }}
-      {{- if or $svc.mountData $svc.mountRepo }}
       volumes:
+        - name: tmp
+          emptyDir:
+            sizeLimit: 256Mi
         {{- if $svc.mountData }}
         - name: data
           persistentVolumeClaim:
@@ -95,5 +107,4 @@ spec:
             path: {{ $root.Values.rmhbotRepoPath }}
             type: Directory
         {{- end }}
-      {{- end }}
 {{- end }}

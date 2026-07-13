@@ -24,6 +24,15 @@
 x-common: &common
   image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app:latest
   restart: unless-stopped
+  init: true
+  read_only: true
+  cap_drop:
+    - ALL
+  security_opt:
+    - no-new-privileges:true
+  pids_limit: 512
+  tmpfs:
+    - /tmp:size=256m,mode=1777
   extra_hosts:
     - "host.docker.internal:host-gateway"
   volumes:
@@ -82,6 +91,7 @@ services:
     environment:
       - PORT=${PORT_WEB:-7005}
       - HOSTNAME=0.0.0.0
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_WEB:-7005}/"]
       interval: 30s
@@ -182,14 +192,21 @@ services:
     # repeated here because volumes: overrides the anchor.
     volumes:
       - ${STORAGE_PATH:-./db}:/app/db
-      - ${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}:${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}
+      - ${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}:/mnt/rmhbot-repo-source:ro
+      - rmhbot-repo:${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}
+      - rmhbot-worktrees:/app/.rmhbot-worktrees
     environment:
       # recap worker's internal HTTP port (doctrine / vibe-worker idles if absent)
       - RECAP_PORT=${PORT_RECAP:-7004}
       # Merged /metrics + /health endpoint for all five workers (httpx.ServeMetrics).
       # Templated so the healthcheck below stays in sync with the bind port.
       - METRICS_ADDR=:${PORT_SUPERVISOR_METRICS:-9090}
-    command: ["/app/bin/supervisor"]
+    command:
+      - /bin/sh
+      - -c
+      - >-
+        cp -a /mnt/rmhbot-repo-source/. "$${RMHBOT_REPO_PATH:-/home/rmhstudios/rmhstudios.com}/" &&
+        exec /app/bin/supervisor
     restart: unless-stopped
     # discord-bot needs 90s for in-flight AI; vibe-worker needs 30s for Chromium
     stop_grace_period: 90s
@@ -277,9 +294,28 @@ services:
       retries: 3
       start_period: 10s
 
+  # ─── Redis (distributed limits, cache, and realtime fan-out) ───────────────
+  redis:
+    image: redis:7.4-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-redis
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    tmpfs:
+      - /data:size=256m,mode=0700
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   # ─── MinIO (S3-compatible object storage) ──────────────────────────────────
   minio:
-    image: minio/minio:latest
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-minio
     restart: unless-stopped
     command: ["server", "/data", "--console-address", ":9001"]
@@ -300,7 +336,7 @@ services:
 
   # ─── MinIO bucket bootstrap (creates the bucket, then exits) ────────────────
   minio-init:
-    image: minio/mc:latest
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-minio-init
     depends_on:
       minio:
@@ -312,4 +348,8 @@ services:
       echo 'bucket ready';
       "
     restart: "no"
+
+volumes:
+  rmhbot-repo:
+  rmhbot-worktrees:
 

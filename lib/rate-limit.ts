@@ -1,5 +1,5 @@
 /**
- * In-memory IP rate limiter for Next.js API routes.
+ * In-memory fallback rate limiter for TanStack Start API routes.
  *
  * Bounded Map with periodic GC prevents unbounded memory growth.
  * Max store size caps memory at ~100 KB even under heavy abuse.
@@ -89,16 +89,27 @@ export function rateLimit(ip: string, opts: RateLimitOptions): RateLimitResult {
 }
 
 /**
- * Extract real client IP from Next.js request.
- * IMPORTANT: This trusts X-Forwarded-For, which is only safe behind a trusted
- * reverse proxy (nginx, Cloudflare) that sets/overwrites this header.
- * Without a trusted proxy, clients can spoof this header to bypass rate limits.
+ * Extract the client IP at a trusted reverse-proxy boundary.
+ *
+ * Production prefers Cloudflare's canonical header. For non-Cloudflare proxy
+ * deployments, TRUST_PROXY_HOPS selects from the RIGHT side of X-Forwarded-For
+ * (the side appended by trusted proxies), never the attacker-controlled leftmost
+ * value. The origin firewall must still reject direct public traffic.
  */
 export function getClientIp(req: Request): string {
     const headers = req.headers;
-    return (
-        headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-        headers.get('x-real-ip') ??
-        '127.0.0.1'
-    );
+    const cf = headers.get('cf-connecting-ip')?.trim();
+    if (cf) return cf;
+
+    const forwarded = headers.get('x-forwarded-for')
+        ?.split(',')
+        .map((part) => part.trim())
+        .filter(Boolean) ?? [];
+    const configuredHops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? '1', 10);
+    const trustedHops = Number.isFinite(configuredHops) ? Math.max(1, configuredHops) : 1;
+    if (forwarded.length > 0) {
+        return forwarded[Math.max(0, forwarded.length - trustedHops)] ?? '127.0.0.1';
+    }
+
+    return headers.get('x-real-ip')?.trim() || '127.0.0.1';
 }

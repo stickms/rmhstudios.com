@@ -32,13 +32,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
         with:
           version: 10
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
           cache: pnpm
@@ -55,6 +55,9 @@ jobs:
 
       - name: Test
         run: pnpm exec vitest run
+
+      - name: Production dependency audit
+        run: pnpm audit --prod --audit-level=high
 
       # Full frontend build (vibe packages → vite). Catches build-time breakage
       # that typecheck alone misses. No runtime env is read at build time.

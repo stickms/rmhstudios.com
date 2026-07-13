@@ -105,9 +105,10 @@ the five background workers (as one `supervisor` process), `status`, and
 production request path. Deploys: push to `main` → GitHub Actions SSHes to
 the VPS → `./deploy.sh production` → two images built from one Dockerfile →
 prisma migrate → blue/green web hotswap (port 7005/7015 flip). CI:
-`go-microservices.yml` (Bazel + e2e + helm) and `senior-review.yml` (LLM
-review gate). There is currently no frontend typecheck/lint CI gate — run the
-checks locally.
+`go-microservices.yml` (Bazel + e2e + helm), `web-ci.yml` (typecheck, lint,
+tests, build, and production dependency audit), `codeql.yml` (JS/TS + Go SAST),
+and `senior-review.yml` (LLM review gate). Run the same checks locally before
+opening a pull request.
 
 ## Trust order for conflicting information
 

@@ -10,6 +10,8 @@ import { prisma } from '@/lib/prisma.server';
 import { QUESTS, getQuest, periodKeyFor, type QuestType } from '@/lib/quests/catalog';
 import { awardXp } from '@/lib/xp/engine.server';
 import { grantAchievement, progressAchievement } from '@/lib/achievements/engine.server';
+import { redisRateLimit } from '@/lib/redis.server';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function progressQuests(userId: string, type: QuestType, by = 1): Promise<void> {
   try {
@@ -40,6 +42,15 @@ export async function progressQuests(userId: string, type: QuestType, by = 1): P
  */
 export async function recordGamePlay(userId: string): Promise<void> {
   try {
+    // A browser-reported score is not proof of a distinct play. Bound reward
+    // progression independently of score submission volume across instances.
+    const distributed = await redisRateLimit(`quest-game-play:${userId}`, 1, 60_000);
+    const limiter = distributed ?? rateLimit(userId, {
+      limit: 1,
+      windowMs: 60_000,
+      prefix: 'quest-game-play',
+    });
+    if (!limiter.allowed) return;
     await awardXp(userId, 8);
     await progressQuests(userId, 'game_play');
   } catch (err) {
