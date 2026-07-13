@@ -18,7 +18,7 @@ interface FeedListProps {
 
 export function FeedList({ following = false, onSwitchToForYou }: FeedListProps) {
   const { t } = useTranslation('feed');
-  const { items, loading, initialized, hasMore, fetchNextPage, pendingItems, flushPending } =
+  const { items, loading, initialized, error, hasMore, fetchNextPage, retry, pendingItems, flushPending } =
     useFeedStore();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const initialFetched = useRef(false);
@@ -38,14 +38,40 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
     }
   }, [fetchNextPage, items.length]);
 
+  // Self-heal the feed when the environment recovers. Mobile browsers suspend
+  // backgrounded tabs (killing an in-flight fetch), and networks drop — either
+  // can leave the feed sitting on skeletons or an error. When the tab becomes
+  // visible again or connectivity returns, re-drive the current surface if it's
+  // in a recoverable stuck state, so it "just works" without a hard refresh.
+  useEffect(() => {
+    const recover = () => {
+      const s = useFeedStore.getState();
+      if (s.loading) return;
+      const stuckOnSkeletons = !s.initialized && s.items.length === 0;
+      if (s.error || stuckOnSkeletons) s.retry();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') recover();
+    };
+    window.addEventListener('online', recover);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener('online', recover);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+
   // Infinite scroll via IntersectionObserver
   const observerCallback = useCallback(
     (entries: IntersectionObserverEntry[]) => {
-      if (entries[0].isIntersecting && hasMore && !loading) {
+      // Don't auto-refetch while an error is unresolved — that would spin into a
+      // tight retry loop against a failing endpoint. The retry button (or a
+      // visibility/online recovery) is the way back.
+      if (entries[0].isIntersecting && hasMore && !loading && !error) {
         fetchNextPage();
       }
     },
-    [hasMore, loading, fetchNextPage]
+    [hasMore, loading, error, fetchNextPage]
   );
 
   useEffect(() => {
@@ -115,8 +141,25 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
         </div>
       )}
 
+      {/* Load failure with nothing to show → offer a retry instead of leaving
+          the reader stranded on skeletons or a misleading "empty" state. */}
+      {error && items.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+          <p className="text-lg font-medium text-site-text mb-1">{t('load-error-title', { defaultValue: "Couldn't load your feed" })}</p>
+          <p className="text-sm text-site-text-muted mb-6">
+            {t('load-error-subtitle', { defaultValue: 'Something went wrong. Check your connection and try again.' })}
+          </p>
+          <button
+            onClick={retry}
+            className="px-5 py-2 rounded-site-sm bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
+          >
+            {t('retry', { defaultValue: 'Retry' })}
+          </button>
+        </div>
+      )}
+
       {/* Empty state — only after the first fetch has actually completed */}
-      {initialized && !loading && items.length === 0 && (
+      {initialized && !loading && !error && items.length === 0 && (
         following ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <p className="text-lg font-medium text-site-text mb-1">{t('following-empty-title', { defaultValue: 'Your Following feed is quiet' })}</p>
@@ -142,8 +185,24 @@ export function FeedList({ following = false, onSwitchToForYou }: FeedListProps)
         )
       )}
 
+      {/* Pagination failed but we already have posts — let the reader pull the
+          next page again rather than silently stalling the infinite scroll. */}
+      {error && items.length > 0 && (
+        <div className="flex flex-col items-center gap-3 py-8">
+          <p className="text-sm text-site-text-muted">
+            {t('load-more-error', { defaultValue: "Couldn't load more posts." })}
+          </p>
+          <button
+            onClick={retry}
+            className="px-4 py-1.5 rounded-site-sm border border-site-border bg-site-surface text-site-text text-sm font-medium hover:bg-site-surface-hover transition-colors"
+          >
+            {t('retry', { defaultValue: 'Retry' })}
+          </button>
+        </div>
+      )}
+
       {/* No more items */}
-      {!hasMore && items.length > 0 && (
+      {!hasMore && !error && items.length > 0 && (
         <div className="py-8 text-center text-sm text-site-text-dim">
           {t('reached-end', { defaultValue: "You've reached the end" })}
         </div>

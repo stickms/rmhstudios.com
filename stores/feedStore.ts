@@ -16,6 +16,10 @@ interface FeedState {
   /** True once the first page fetch has completed — gates the empty state so
    *  "Nothing here yet" never flashes before the initial load resolves. */
   initialized: boolean;
+  /** Set when the most recent fetch failed (network drop, timeout, HTTP error)
+   *  with nothing to show. Drives a "tap to retry" affordance so a transient
+   *  failure never leaves the feed stuck on skeletons. */
+  error: boolean;
   filter: FeedFilter;
   search: string | null;
   /** Buffered new posts for the "For You" surface — surfaced as an "N new" pill. */
@@ -24,6 +28,8 @@ interface FeedState {
   setFilter: (filter: FeedFilter) => void;
   setSearch: (query: string | null) => void;
   fetchNextPage: () => Promise<void>;
+  /** Re-attempt the current surface after an error (clears the error flag). */
+  retry: () => void;
   prependItem: (item: FeedItem) => void;
   updateItem: (id: string, updates: Partial<FeedItem>) => void;
   removeItem: (id: string) => void;
@@ -47,24 +53,76 @@ function cacheItemUsers(items: FeedItem[]) {
   if (users.length > 0) useUserDisplayStore.getState().setUsers(users);
 }
 
+/** Abort a fetch that hangs this long so `loading` can never be pinned forever
+ *  (suspended mobile tab, dropped socket, proxy/CDN black hole). */
+const FEED_FETCH_TIMEOUT_MS = 20_000;
+
+// Request coordination lives outside the store — it drives no UI, only guards
+// against stale/hung requests. `requestGeneration` is bumped whenever a fetch
+// starts or the surface changes; a response whose generation is no longer
+// current is discarded so a late resolver can neither pin `loading` nor clobber
+// a newer surface. `activeController` lets a surface switch cancel the in-flight
+// request outright.
+let requestGeneration = 0;
+let activeController: AbortController | null = null;
+
+/** Invalidate any in-flight fetch and abort it (used on surface changes/reset). */
+function cancelActiveFetch() {
+  requestGeneration += 1;
+  activeController?.abort();
+  activeController = null;
+}
+
 export const useFeedStore = create<FeedState>((set, get) => ({
   items: [],
   cursor: null,
   hasMore: true,
   loading: false,
   initialized: false,
+  error: false,
   filter: "all",
   search: null,
   pendingItems: [],
 
   setFilter: (filter) => {
-    set({ filter, search: null, items: [], cursor: null, hasMore: true, pendingItems: [] });
+    // Abandon any in-flight request for the old surface so its late resolver
+    // can't repopulate the new one — and, critically, reset `loading` so the
+    // fetch below is never swallowed by a stuck lock from the previous surface.
+    cancelActiveFetch();
+    set({
+      filter,
+      search: null,
+      items: [],
+      cursor: null,
+      hasMore: true,
+      pendingItems: [],
+      loading: false,
+      initialized: false,
+      error: false,
+    });
     // Fetch first page with new filter
     get().fetchNextPage();
   },
 
   setSearch: (query) => {
-    set({ search: query, items: [], cursor: null, hasMore: true, pendingItems: [] });
+    cancelActiveFetch();
+    set({
+      search: query,
+      items: [],
+      cursor: null,
+      hasMore: true,
+      pendingItems: [],
+      loading: false,
+      initialized: false,
+      error: false,
+    });
+    get().fetchNextPage();
+  },
+
+  retry: () => {
+    // Clear the error and re-drive the current surface. `loading` is already
+    // false after any failure, so the guard in fetchNextPage lets this through.
+    set({ error: false });
     get().fetchNextPage();
   },
 
@@ -72,7 +130,17 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     const { loading, hasMore, cursor, filter, search } = get();
     if (loading || !hasMore) return;
 
-    set({ loading: true });
+    // Claim a fresh generation and its own AbortController so this request can
+    // be superseded (surface switch) or timed out without ever pinning the
+    // shared `loading` flag.
+    requestGeneration += 1;
+    const generation = requestGeneration;
+    activeController?.abort();
+    const controller = new AbortController();
+    activeController = controller;
+    const timeout = setTimeout(() => controller.abort(), FEED_FETCH_TIMEOUT_MS);
+
+    set({ loading: true, error: false });
     try {
       const params = new URLSearchParams({ limit: "20", filter });
       // Twitter-shaped surface naming: the "friends" tab is the Following feed.
@@ -80,10 +148,15 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       if (cursor) params.set("cursor", cursor);
       if (search) params.set("search", search);
 
-      const res = await fetch(`/api/rmharks?${params}`);
+      const res = await fetch(`/api/rmharks?${params}`, { signal: controller.signal });
       if (!res.ok) throw new Error("Failed to fetch feed");
 
       const data = await res.json();
+
+      // A newer fetch (or a surface switch) superseded this one — drop the
+      // result so it can't clobber the current surface.
+      if (generation !== requestGeneration) return;
+
       cacheItemUsers(data.items as FeedItem[]);
 
       set((state) => {
@@ -95,11 +168,23 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           hasMore: data.hasMore,
           loading: false,
           initialized: true,
+          error: false,
         };
       });
     } catch (error) {
-      console.error("Feed fetch error:", error);
-      set({ loading: false, hasMore: false, initialized: true });
+      // Superseded/cancelled by a newer request — that request now owns the
+      // shared state, so this one must touch nothing.
+      if (generation !== requestGeneration) return;
+
+      // Timeout or genuine network/HTTP error. Clear the lock and mark the feed
+      // initialized so the UI shows a retry affordance instead of skeletons
+      // forever, and preserve `hasMore` so one transient drop never permanently
+      // kills pagination.
+      if (!controller.signal.aborted) console.error("Feed fetch error:", error);
+      set({ loading: false, initialized: true, error: true });
+    } finally {
+      clearTimeout(timeout);
+      if (activeController === controller) activeController = null;
     }
   },
 
@@ -188,6 +273,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   reset: () => {
-    set({ items: [], cursor: null, hasMore: true, loading: false, initialized: false, pendingItems: [] });
+    cancelActiveFetch();
+    set({ items: [], cursor: null, hasMore: true, loading: false, initialized: false, error: false, pendingItems: [] });
   },
 }));
