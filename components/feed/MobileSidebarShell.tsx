@@ -304,6 +304,11 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
         {/* Page content — slides right to reveal the sidebar */}
         <div
           ref={panelRef}
+          // Styling hook for translucent themes (liquid-glass): while the
+          // drawer is revealed the panel must paint opaque so the sidebar
+          // can't ghost through it mid-slide. Set for the same window the
+          // aside is painted (drag + open + the 420ms close settle).
+          data-drawer-active={asideRevealed ? '' : undefined}
           // `touch-pan-y` must live on this panel too — not just the scroll
           // container — because this is the element the touches actually land
           // on. Without it the panel defaults to `touch-action: auto`, letting

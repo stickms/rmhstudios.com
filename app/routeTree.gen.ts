@@ -36,6 +36,7 @@ import { Route as OptimizationRouteImport } from './routes/optimization'
 import { Route as OfflineRouteImport } from './routes/offline'
 import { Route as NeonDriftwayRouteImport } from './routes/neon-driftway'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LiquidGlassRouteImport } from './routes/liquid-glass'
 import { Route as LightsOutRouteImport } from './routes/lights-out'
 import { Route as LaundrySortRouteImport } from './routes/laundry-sort'
 import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
@@ -732,6 +733,11 @@ const NeonDriftwayRoute = NeonDriftwayRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiquidGlassRoute = LiquidGlassRouteImport.update({
+  id: '/liquid-glass',
+  path: '/liquid-glass',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LightsOutRoute = LightsOutRouteImport.update({
@@ -3648,6 +3654,7 @@ export interface FileRoutesByFullPath {
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
+  '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
@@ -4233,6 +4240,7 @@ export interface FileRoutesByTo {
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
+  '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
@@ -4804,6 +4812,7 @@ export interface FileRoutesById {
   '/kowloon-knockout': typeof KowloonKnockoutRouteWithChildren
   '/laundry-sort': typeof LaundrySortRoute
   '/lights-out': typeof LightsOutRoute
+  '/liquid-glass': typeof LiquidGlassRoute
   '/login': typeof LoginRoute
   '/neon-driftway': typeof NeonDriftwayRoute
   '/offline': typeof OfflineRoute
@@ -5397,6 +5406,7 @@ export interface FileRouteTypes {
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
+    | '/liquid-glass'
     | '/login'
     | '/neon-driftway'
     | '/offline'
@@ -5982,6 +5992,7 @@ export interface FileRouteTypes {
     | '/house-always-wins'
     | '/laundry-sort'
     | '/lights-out'
+    | '/liquid-glass'
     | '/login'
     | '/neon-driftway'
     | '/offline'
@@ -6552,6 +6563,7 @@ export interface FileRouteTypes {
     | '/kowloon-knockout'
     | '/laundry-sort'
     | '/lights-out'
+    | '/liquid-glass'
     | '/login'
     | '/neon-driftway'
     | '/offline'
@@ -7144,6 +7156,7 @@ export interface RootRouteChildren {
   KowloonKnockoutRoute: typeof KowloonKnockoutRouteWithChildren
   LaundrySortRoute: typeof LaundrySortRoute
   LightsOutRoute: typeof LightsOutRoute
+  LiquidGlassRoute: typeof LiquidGlassRoute
   LoginRoute: typeof LoginRoute
   NeonDriftwayRoute: typeof NeonDriftwayRoute
   OfflineRoute: typeof OfflineRoute
@@ -7642,6 +7655,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/liquid-glass': {
+      id: '/liquid-glass'
+      path: '/liquid-glass'
+      fullPath: '/liquid-glass'
+      preLoaderRoute: typeof LiquidGlassRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lights-out': {
@@ -12836,6 +12856,7 @@ const rootRouteChildren: RootRouteChildren = {
   KowloonKnockoutRoute: KowloonKnockoutRouteWithChildren,
   LaundrySortRoute: LaundrySortRoute,
   LightsOutRoute: LightsOutRoute,
+  LiquidGlassRoute: LiquidGlassRoute,
   LoginRoute: LoginRoute,
   NeonDriftwayRoute: NeonDriftwayRoute,
   OfflineRoute: OfflineRoute,
