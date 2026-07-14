@@ -111,7 +111,7 @@ export async function renderProfileOgImage(data: ProfileOgData): Promise<Buffer>
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 32 }}>
         {avatar ? (
-          <img src={avatar} width={160} height={160} style={{ borderRadius: 80 }} />
+          <img src={avatar} alt="" width={160} height={160} style={{ borderRadius: 80 }} />
         ) : (
           <div
             style={{
