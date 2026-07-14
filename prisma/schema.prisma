@@ -1603,6 +1603,9 @@ model UserProfile {
   website               String?   @db.VarChar(200)
   showLikes             Boolean   @default(false)
   dmPrivacy             DmPrivacy @default(EVERYONE)
+  // Reader content control: feed posts whose text contains any of these words
+  // are hidden from this user (case-insensitive substring match). Opt-in.
+  mutedWords            String[]  @default([])
   profileSongSpotifyId  String?   @db.VarChar(50)
   profileSongTitle      String?   @db.VarChar(200)
   profileSongArtist     String?   @db.VarChar(200)

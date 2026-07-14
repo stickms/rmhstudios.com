@@ -510,11 +510,53 @@ function compareKeysetDesc(a: FeedItem, b: FeedItem): number {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Reader-level muted words (per-viewer content control)               */
+/* ------------------------------------------------------------------ */
+
+/** The viewer's muted words (already lowercased on write). Empty when none. */
+async function getMutedWords(userId: string): Promise<string[]> {
+  const profile = await prisma.userProfile.findUnique({
+    where: { userId },
+    select: { mutedWords: true },
+  });
+  return profile?.mutedWords ?? [];
+}
+
+/** True when `text` contains any muted word (case-insensitive substring). */
+function contentIsMuted(text: string | undefined, muted: string[]): boolean {
+  if (!text) return false;
+  const lower = text.toLowerCase();
+  return muted.some((w) => w.length > 0 && lower.includes(w));
+}
+
+/**
+ * Drop RMHark items whose text (or quoted original) matches a muted word.
+ * Post-filter only — the keyset cursor is anchored independently, so a slightly
+ * shorter page just streams the rest on the next fetch (no gap/overlap).
+ */
+function applyMutedWords(items: FeedItem[], muted: string[]): FeedItem[] {
+  if (!muted.length) return items;
+  return items.filter(
+    (it) =>
+      it.type !== "rmhark" ||
+      !(contentIsMuted(it.content, muted) || contentIsMuted(it.original?.content, muted))
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /*  Public entry point                                                 */
 /* ------------------------------------------------------------------ */
 
 export async function getTimeline(params: GetTimelineParams): Promise<TimelineResult> {
-  return params.surface === "following"
-    ? getFollowingTimeline(params)
-    : getForYouTimeline(params);
+  const result =
+    params.surface === "following"
+      ? await getFollowingTimeline(params)
+      : await getForYouTimeline(params);
+
+  // Apply the viewer's muted words (reader-level content control). Cheap indexed
+  // read; skipped entirely for signed-out viewers.
+  if (!params.userId) return result;
+  const muted = await getMutedWords(params.userId);
+  if (!muted.length) return result;
+  return { ...result, items: applyMutedWords(result.items, muted) };
 }

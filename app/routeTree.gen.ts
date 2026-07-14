@@ -277,6 +277,7 @@ import { Route as ApiProfileIdRouteImport } from './routes/api/profile/$id'
 import { Route as ApiPresenceOnlineCountRouteImport } from './routes/api/presence/online-count'
 import { Route as ApiPresenceHeartbeatRouteImport } from './routes/api/presence/heartbeat'
 import { Route as ApiPresenceFriendsRouteImport } from './routes/api/presence/friends'
+import { Route as ApiPreferencesMutedWordsRouteImport } from './routes/api/preferences/muted-words'
 import { Route as ApiPreferencesAppearanceRouteImport } from './routes/api/preferences/appearance'
 import { Route as ApiPredictionsIdRouteImport } from './routes/api/predictions/$id'
 import { Route as ApiNotificationsUnreadCountRouteImport } from './routes/api/notifications/unread-count'
@@ -1921,6 +1922,12 @@ const ApiPresenceFriendsRoute = ApiPresenceFriendsRouteImport.update({
   path: '/api/presence/friends',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPreferencesMutedWordsRoute =
+  ApiPreferencesMutedWordsRouteImport.update({
+    id: '/api/preferences/muted-words',
+    path: '/api/preferences/muted-words',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPreferencesAppearanceRoute =
   ApiPreferencesAppearanceRouteImport.update({
     id: '/api/preferences/appearance',
@@ -3732,6 +3739,7 @@ export interface FileRoutesByFullPath {
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
+  '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
@@ -4271,6 +4279,7 @@ export interface FileRoutesByTo {
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
+  '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
@@ -4837,6 +4846,7 @@ export interface FileRoutesById {
   '/api/notifications/unread-count': typeof ApiNotificationsUnreadCountRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
+  '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
@@ -5403,6 +5413,7 @@ export interface FileRouteTypes {
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
+    | '/api/preferences/muted-words'
     | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
@@ -5942,6 +5953,7 @@ export interface FileRouteTypes {
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
+    | '/api/preferences/muted-words'
     | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
@@ -6507,6 +6519,7 @@ export interface FileRouteTypes {
     | '/api/notifications/unread-count'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
+    | '/api/preferences/muted-words'
     | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
@@ -6952,6 +6965,7 @@ export interface RootRouteChildren {
   ApiNotificationsUnreadCountRoute: typeof ApiNotificationsUnreadCountRoute
   ApiPredictionsIdRoute: typeof ApiPredictionsIdRouteWithChildren
   ApiPreferencesAppearanceRoute: typeof ApiPreferencesAppearanceRoute
+  ApiPreferencesMutedWordsRoute: typeof ApiPreferencesMutedWordsRoute
   ApiPresenceFriendsRoute: typeof ApiPresenceFriendsRoute
   ApiPresenceHeartbeatRoute: typeof ApiPresenceHeartbeatRoute
   ApiPresenceOnlineCountRoute: typeof ApiPresenceOnlineCountRoute
@@ -8996,6 +9010,13 @@ declare module '@tanstack/react-router' {
       path: '/api/presence/friends'
       fullPath: '/api/presence/friends'
       preLoaderRoute: typeof ApiPresenceFriendsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/preferences/muted-words': {
+      id: '/api/preferences/muted-words'
+      path: '/api/preferences/muted-words'
+      fullPath: '/api/preferences/muted-words'
+      preLoaderRoute: typeof ApiPreferencesMutedWordsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/preferences/appearance': {
@@ -12406,6 +12427,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiNotificationsUnreadCountRoute: ApiNotificationsUnreadCountRoute,
   ApiPredictionsIdRoute: ApiPredictionsIdRouteWithChildren,
   ApiPreferencesAppearanceRoute: ApiPreferencesAppearanceRoute,
+  ApiPreferencesMutedWordsRoute: ApiPreferencesMutedWordsRoute,
   ApiPresenceFriendsRoute: ApiPresenceFriendsRoute,
   ApiPresenceHeartbeatRoute: ApiPresenceHeartbeatRoute,
   ApiPresenceOnlineCountRoute: ApiPresenceOnlineCountRoute,
