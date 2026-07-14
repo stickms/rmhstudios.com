@@ -309,6 +309,7 @@ import { Route as ApiLibrarySlugRouteImport } from './routes/api/library/$slug'
 import { Route as ApiLeaderboardsPlayersRouteImport } from './routes/api/leaderboards/players'
 import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-sort/score'
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
+import { Route as ApiInternalStreakPushRouteImport } from './routes/api/internal/streak-push'
 import { Route as ApiInternalNotifyTypingRouteImport } from './routes/api/internal/notify-typing'
 import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/internal/notify-message'
 import { Route as ApiHomesWatchesRouteImport } from './routes/api/homes/watches'
@@ -2101,6 +2102,11 @@ const ApiLaundrySortLeaderboardRoute =
     path: '/api/laundry-sort/leaderboard',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalStreakPushRoute = ApiInternalStreakPushRouteImport.update({
+  id: '/api/internal/streak-push',
+  path: '/api/internal/streak-push',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiInternalNotifyTypingRoute = ApiInternalNotifyTypingRouteImport.update({
   id: '/api/internal/notify-typing',
   path: '/api/internal/notify-typing',
@@ -3792,6 +3798,7 @@ export interface FileRoutesByFullPath {
   '/api/homes/watches': typeof ApiHomesWatchesRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
+  '/api/internal/streak-push': typeof ApiInternalStreakPushRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/leaderboards/players': typeof ApiLeaderboardsPlayersRoute
@@ -4344,6 +4351,7 @@ export interface FileRoutesByTo {
   '/api/homes/watches': typeof ApiHomesWatchesRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
+  '/api/internal/streak-push': typeof ApiInternalStreakPushRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/leaderboards/players': typeof ApiLeaderboardsPlayersRoute
@@ -4923,6 +4931,7 @@ export interface FileRoutesById {
   '/api/homes/watches': typeof ApiHomesWatchesRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
+  '/api/internal/streak-push': typeof ApiInternalStreakPushRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
   '/api/leaderboards/players': typeof ApiLeaderboardsPlayersRoute
@@ -5502,6 +5511,7 @@ export interface FileRouteTypes {
     | '/api/homes/watches'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
+    | '/api/internal/streak-push'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/leaderboards/players'
@@ -6054,6 +6064,7 @@ export interface FileRouteTypes {
     | '/api/homes/watches'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
+    | '/api/internal/streak-push'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/leaderboards/players'
@@ -6632,6 +6643,7 @@ export interface FileRouteTypes {
     | '/api/homes/watches'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
+    | '/api/internal/streak-push'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
     | '/api/leaderboards/players'
@@ -7092,6 +7104,7 @@ export interface RootRouteChildren {
   ApiHomesWatchesRoute: typeof ApiHomesWatchesRoute
   ApiInternalNotifyMessageRoute: typeof ApiInternalNotifyMessageRoute
   ApiInternalNotifyTypingRoute: typeof ApiInternalNotifyTypingRoute
+  ApiInternalStreakPushRoute: typeof ApiInternalStreakPushRoute
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
   ApiLaundrySortScoreRoute: typeof ApiLaundrySortScoreRoute
   ApiLeaderboardsPlayersRoute: typeof ApiLeaderboardsPlayersRoute
@@ -9387,6 +9400,13 @@ declare module '@tanstack/react-router' {
       path: '/api/laundry-sort/leaderboard'
       fullPath: '/api/laundry-sort/leaderboard'
       preLoaderRoute: typeof ApiLaundrySortLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/streak-push': {
+      id: '/api/internal/streak-push'
+      path: '/api/internal/streak-push'
+      fullPath: '/api/internal/streak-push'
+      preLoaderRoute: typeof ApiInternalStreakPushRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/internal/notify-typing': {
@@ -12655,6 +12675,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHomesWatchesRoute: ApiHomesWatchesRoute,
   ApiInternalNotifyMessageRoute: ApiInternalNotifyMessageRoute,
   ApiInternalNotifyTypingRoute: ApiInternalNotifyTypingRoute,
+  ApiInternalStreakPushRoute: ApiInternalStreakPushRoute,
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,
   ApiLaundrySortScoreRoute: ApiLaundrySortScoreRoute,
   ApiLeaderboardsPlayersRoute: ApiLeaderboardsPlayersRoute,

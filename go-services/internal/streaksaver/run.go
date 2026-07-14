@@ -118,17 +118,20 @@ func sweep(ctx context.Context, d worker.Deps) {
 		return
 	}
 
-	sent := 0
+	var reminders []reminder
 	for _, t := range targets {
 		preview := fmt.Sprintf("Your %d-day streak is about to end — check in to keep it alive!", t.current)
 		if _, err := d.DB.Pool.Exec(ctx, insertReminder, newCUID(), t.userID, strconv.Itoa(t.current), preview); err != nil {
 			d.Logger.Error("streak-saver: insert reminder failed", "userId", t.userID, "error", err)
 			continue
 		}
-		sent++
+		reminders = append(reminders, reminder{UserID: t.userID, Current: t.current})
 	}
-	if sent > 0 {
-		d.Logger.Info("streak-saver: reminders sent", "count", sent, "candidates", len(targets))
+	if len(reminders) > 0 {
+		d.Logger.Info("streak-saver: reminders sent", "count", len(reminders), "candidates", len(targets))
+		// Mirror the in-app reminders to web push (best-effort, no-op without
+		// the internal secret / VAPID configured).
+		pushReminders(ctx, d.Logger, reminders)
 	}
 }
 
