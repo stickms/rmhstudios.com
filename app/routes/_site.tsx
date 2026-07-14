@@ -48,11 +48,13 @@ function SiteLayout() {
       {/* Desktop/tablet: fixed left sidebar + centered content */}
       <div className="hidden md:flex min-w-0 w-full justify-center">
         <div className="md:w-16 xl:w-64 shrink-0 relative">
-          {/* L3 chrome — the blur lives on ::before (glass-chrome--aside) so the
-              aside itself never gains backdrop-filter, keeping the viewport as
-              the containing block for LeftSidebar's non-portaled fixed user menu
-              (§3.3.1). */}
-          <aside className="glass-chrome--aside fixed top-0 md:w-16 xl:w-64 h-screen border-r border-site-border overflow-hidden z-30 flex flex-col">
+          {/* On desktop the sidebar is INLINE (not an overlay), so it stays
+              transparent and shares the body aurora with the content — just a
+              hairline border divides them. (The mobile drawer, which slides OVER
+              the page, keeps the frosted glass-chrome--aside treatment.) The aside
+              itself carries no backdrop-filter, so LeftSidebar's non-portaled
+              fixed user menu keeps the viewport as its containing block (§3.3.1). */}
+          <aside className="fixed top-0 md:w-16 xl:w-64 h-screen border-r border-site-border overflow-hidden z-30 flex flex-col">
             <LeftSidebar />
           </aside>
         </div>

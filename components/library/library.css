@@ -71,6 +71,16 @@
   height: var(--row-h);
 }
 
+/* A hovered book lifts off the ledge and spins, extending past its grid cell —
+   raise it above its neighbours (and the shelf ledges) so the 3D turn draws over
+   everything instead of being clipped by later-DOM siblings. */
+.lib-book:hover,
+.lib-book:focus-within,
+.lib-coll-tile:hover,
+.lib-coll-tile:focus-within {
+  z-index: 20;
+}
+
 /* Coordinated entrance: an item is hidden until the shared reveal observer
    (LibraryReveal.tsx) sets `data-revealed`, so blog → collections → books always
    cascade in document order regardless of which data loaded first. The stagger
@@ -203,7 +213,10 @@
   /* Charcoal cover with a faint per-book hue, kept low-sat for the monochrome feel. */
   background:
     linear-gradient(150deg, hsl(var(--book-hue, 220) 16% 17%), hsl(var(--book-hue, 220) 14% 9%));
-  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  /* No framing outline — the cover reads as a solid object via its gradient,
+     3D side face, and soft depth shadow (removed the 0.5px rim that cropped the
+     cover art). */
+  border: none;
   /* Soft, straight-down glass depth (no harsh offset blob). */
   box-shadow:
     0 8px 20px rgba(2, 10, 28, 0.38),
@@ -373,6 +386,11 @@
   font-weight: 600;
   color: var(--site-text);
   line-height: 1.3;
+  /* Stay legible when a neighbouring book spins over the caption: a soft dark
+     halo keeps the light title readable on any cover colour behind it. */
+  text-shadow: 0 1px 3px rgba(2, 10, 28, 0.6), 0 0 1px rgba(2, 10, 28, 0.5);
+  position: relative;
+  z-index: 21;
   /* Up to three lines of the title before truncating. */
   display: -webkit-box;
   -webkit-line-clamp: 3;
@@ -965,9 +983,16 @@
   transform: translateX(-50%) rotate(-4deg);
   transform-origin: bottom center;
   border-radius: 3px 6px 6px 3px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0.28));
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(2, 10, 28, 0.22));
+  /* Soft, straight-down glass depth to match the book covers (was a harsh
+     0 6px 14px rgba(0,0,0,0.35) blob). */
+  box-shadow: 0 10px 22px rgba(2, 10, 28, 0.26);
   z-index: 0;
+  transition: box-shadow 420ms ease;
+}
+/* When the volume lifts + spins on hover, keep the stack's shadow soft. */
+.lib-coll-tile__btn:hover .lib-coll-tile__stack {
+  box-shadow: 0 14px 28px rgba(2, 10, 28, 0.3);
 }
 .lib-coll-tile .lib-book__cover {
   position: relative;
