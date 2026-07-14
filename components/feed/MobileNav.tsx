@@ -45,7 +45,7 @@ export function MobileNav() {
         <button
           onClick={() => setComposeOpen(true)}
           className="md:hidden fixed right-4 z-50 w-14 h-14 rounded-full bg-site-accent/90 hover:bg-site-accent-hover text-site-accent-fg shadow-site shadow-[inset_0_1px_0_var(--site-glass-rim-soft)] flex items-center justify-center transition-colors active:scale-95"
-          style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 92px)' }}
+          style={{ bottom: 'calc(var(--safe-bottom) + 92px)' }}
           aria-label={t("new-post", { defaultValue: "New post" })}
         >
           <PenSquare className="w-6 h-6" />
@@ -53,10 +53,11 @@ export function MobileNav() {
       )}
 
       {/* Floating glass dock (iOS-26 style): an inset capsule that hovers above
-          the home-indicator instead of a full-bleed bottom bar. */}
+          the home-indicator — and above iOS Safari's floating tab bar, via
+          --safe-bottom — instead of a full-bleed bottom bar. */}
       <nav
         className="md:hidden fixed inset-x-3 z-50 glass-chrome rounded-full border border-site-border shadow-site"
-        style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 12px)' }}
+        style={{ bottom: 'calc(var(--safe-bottom) + 12px)' }}
       >
         <div className="flex items-center justify-around px-2 py-1.5">
           <Link to="/" className={tabClass(isHome)} aria-label={t("home", { defaultValue: "Home" })} aria-current={isHome ? 'page' : undefined}>

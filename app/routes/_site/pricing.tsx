@@ -43,7 +43,7 @@ function Pricing() {
   return (
     <>
       <AnimatedMain
-        className="relative isolate min-h-screen w-full min-w-0 border-r border-site-border pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0"
+        className="relative isolate min-h-screen w-full min-w-0 border-r border-site-border pb-dock"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         {/* Mobile: hamburger + brand (this page leads with an editorial hero) */}

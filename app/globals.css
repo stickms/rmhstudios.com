@@ -928,6 +928,21 @@ html.perf-lite .glass-interactive::after {
   --shadow-neon: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple);
 }
 
+/* Bottom insets for floating mobile UI.
+   --browser-bottom-bar is published by <ViewportBottomInset> from the visual
+   viewport: the height of the browser's OWN dynamic bottom chrome — chiefly
+   iOS 26 Safari's floating tab bar, which floats over the page and is NOT part
+   of env(safe-area-inset-*). It stays 0 on desktop, standalone PWAs, and
+   top-bar browsers (Android Chrome), so it never adds spurious spacing there.
+   --safe-bottom is the total inset needed to clear system UI at the bottom: the
+   home-indicator safe area OR that browser bar, whichever is larger. Both are
+   measured from the physical bottom edge, so max() — not a sum — is correct and
+   avoids double-counting. Collapses to plain env() everywhere the bar is 0. */
+:root {
+  --browser-bottom-bar: 0px;
+  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--browser-bottom-bar, 0px));
+}
+
 @layer utilities {
   .min-h-screen {
     min-height: 100vh;
@@ -945,6 +960,30 @@ html.perf-lite .glass-interactive::after {
 
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Center-column bottom padding: lets feed/library/app content flow
+     edge-to-edge UNDER the floating mobile dock (iOS-26 style) while reserving
+     enough space that the last item can still be scrolled clear of the dock —
+     and of the home indicator / browser bottom bar beneath it (--safe-bottom).
+     0 at md+, where the dock gives way to the sidebar. Single source of truth;
+     replaces the old inline pb-[calc(env(safe-area-inset-bottom,0px)+92px)]. */
+  .pb-dock {
+    padding-bottom: calc(var(--safe-bottom) + 92px);
+  }
+  @media (min-width: 768px) {
+    .pb-dock {
+      padding-bottom: 0;
+    }
+  }
+
+  /* Fixed floating UI that must sit just above the dock (mini-player,
+     back-to-top). Mobile only — desktop keeps its own md:bottom-* class, so we
+     stop just below Tailwind's md breakpoint (768px) with no sub-pixel gap. */
+  @media (max-width: 767.98px) {
+    .bottom-above-dock {
+      bottom: calc(var(--safe-bottom) + 92px);
+    }
   }
 
   /* 3D card flip utilities */
@@ -1248,10 +1287,10 @@ body {
   overflow-x: hidden;
   min-height: 100%;
   /* With viewport-fit=cover the page renders edge-to-edge behind the
-     home-indicator bar (content scrolls under the floating dock). Reachability
-     is handled per-column — PageLayout / feed columns carry
-     pb-[calc(env(safe-area-inset-bottom,0px)+92px)] so the last content clears
-     the dock + indicator. */
+     home-indicator bar and iOS Safari's floating tab bar (content scrolls under
+     the floating dock). Reachability is handled per-column — PageLayout / feed
+     columns carry the .pb-dock utility so the last content clears the dock, the
+     home indicator, and the browser bottom bar (--safe-bottom). */
 }
 
 /* Prevent iOS Safari from auto-zooming the page when a form control is focused.

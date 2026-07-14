@@ -190,8 +190,10 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    `components/ui/` primitives, or native `window.confirm` instead of
    `useConfirm`.
 6. Untranslated strings (missing `t()`), or `t()` without `defaultValue`.
-7. Forgetting the bottom padding (`pb-[calc(env(safe-area-inset-bottom,0px)+92px)]
-   md:pb-0`) on custom columns → content hidden behind the floating mobile dock.
+7. Forgetting the bottom padding (`pb-dock`) on custom columns → content hidden
+   behind the floating mobile dock. `.pb-dock` clears the dock, the home
+   indicator, and iOS Safari's floating tab bar (via `--safe-bottom`) on mobile
+   and collapses to 0 at md+.
    Also: putting a backdrop tier (`.glass-pane/chrome/overlay`) on repeated list
    items (blur cost) or on an ancestor of a `position:fixed` element (containing
    block) — see design-language.md §5.1.
