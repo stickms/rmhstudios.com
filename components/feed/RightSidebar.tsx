@@ -95,7 +95,7 @@ function OnlineNowPill() {
 
   if (!count) return null;
   return (
-    <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-3 py-1.5 text-sm text-site-text-muted">
+    <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-glass-tint px-3 py-1.5 text-sm text-site-text-muted shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]">
       <span className="relative flex h-2 w-2" aria-hidden>
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-site-success opacity-60 motion-reduce:animate-none" />
         <span className="relative inline-flex h-2 w-2 rounded-full bg-site-success" />
@@ -127,7 +127,7 @@ function InviteFriendsCard() {
   };
 
   return (
-    <section className="bg-site-surface rounded-site p-4 border border-site-border">
+    <section className="glass-fill p-4">
       <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-1.5">
         <Gift className="w-5 h-5 text-site-accent" />
         {t('invite-friends', { defaultValue: 'Invite friends' })}
@@ -173,7 +173,7 @@ export function RightSidebar({
       <InviteFriendsCard />
 
       {/* Official Builds */}
-      <section className="bg-site-surface rounded-site p-4 border border-site-border">
+      <section className="glass-fill p-4">
         <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
           <Package className="w-5 h-5 text-site-accent" />
           {t('official-builds', { defaultValue: 'Official Builds' })}
@@ -236,7 +236,7 @@ export function RightSidebar({
       </section>
 
       {/* User Builds */}
-      <section className="bg-site-surface rounded-site p-4 border border-site-border">
+      <section className="glass-fill p-4">
         <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
           <Hammer className="w-5 h-5 text-site-accent" />
           {t('user-builds', { defaultValue: 'User Builds' })}
@@ -279,7 +279,7 @@ export function RightSidebar({
       </section>
 
       {/* Recommended Users */}
-      <section className="bg-site-surface rounded-site p-4 border border-site-border">
+      <section className="glass-fill p-4">
         <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
           <UserPlus className="w-5 h-5 text-site-accent" />
           {t('recommended-users', { defaultValue: 'Recommended Users' })}
@@ -308,7 +308,7 @@ export function RightSidebar({
       </section>
 
       {/* Blog */}
-      <section className="bg-site-surface rounded-site p-4 border border-site-border">
+      <section className="glass-fill p-4">
         <h2 className="font-(family-name:--site-font-display) font-semibold tracking-[-0.022em] text-lg text-site-text flex items-center gap-2 mb-3">
           <BookOpen className="w-5 h-5 text-site-accent" />
           {t('blog', { defaultValue: 'Blog' })}

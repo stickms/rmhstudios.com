@@ -27,6 +27,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { SITE_STYLES, useThemeStore, type SiteStyle } from '@/stores/themeStore';
 import { useSession } from '@/components/Providers';
 import { authClient } from '@/lib/auth-client';
+import { cn } from '@/lib/utils';
 
 // Loaded on demand so the palette (mounted on every route, including games)
 // doesn't pull the compose stack into the initial bundle.
@@ -417,15 +418,15 @@ export function CommandPalette() {
     )}
     <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
       <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[90] glass-scrim data-[state=open]:animate-in data-[state=open]:fade-in-0" />
         <DialogPrimitive.Content
-          className="fixed left-1/2 top-[12dvh] z-[91] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden rounded-site border border-site-border bg-site-surface shadow-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+          className="glass-overlay fixed left-1/2 top-[12dvh] z-[91] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
           aria-describedby={undefined}
         >
           <DialogPrimitive.Title className="sr-only">
             {t('palette-title', { defaultValue: 'Command palette' })}
           </DialogPrimitive.Title>
-          <div className="flex items-center gap-2 border-b border-site-border px-4">
+          <div className="glass-inset m-2 flex items-center gap-2 px-3">
             <Search className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
             <input
               ref={inputRef}
@@ -476,13 +477,15 @@ export function CommandPalette() {
                       data-index={index}
                       role="option"
                       aria-selected={active}
+                      data-glass-light=""
                       onMouseMove={() => setActiveIndex(index)}
                       onClick={() => runCommand(cmd)}
-                      className={`flex w-full items-center gap-3 rounded-site-sm px-3 py-2 text-left text-sm transition-colors ${
+                      className={cn(
+                        'glass-interactive flex w-full items-center gap-3 rounded-site-sm px-3 py-2 text-left text-sm',
                         active
-                          ? 'bg-site-accent/15 text-site-text'
-                          : 'text-site-text-muted hover:bg-site-surface-hover'
-                      }`}
+                          ? 'bg-site-accent-dim text-site-accent'
+                          : 'text-site-text-muted'
+                      )}
                     >
                       {cmd.section === 'people' ? (
                         <UserAvatar
