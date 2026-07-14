@@ -25,7 +25,7 @@ locales, RTL for ar/ur/fa).
 
 | Path | What | Details |
 |---|---|---|
-| `app/` | TanStack Start routes: pages, API routes, `globals.css` (theme tokens: 3 base + 3 curated themes + accent presets), router. `routeTree.gen.ts` is GENERATED — never edit. | [`app/CLAUDE.md`](app/CLAUDE.md) |
+| `app/` | TanStack Start routes: pages, API routes, `globals.css` (theme tokens: 3 base + 4 curated themes + accent presets; `liquid-glass` is the default), router. `routeTree.gen.ts` is GENERATED — never edit. | [`app/CLAUDE.md`](app/CLAUDE.md) |
 | `components/` | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper. | [`components/CLAUDE.md`](components/CLAUDE.md) |
 | `lib/` | Shared logic: auth, prisma, feed, economy, i18n, per-game logic, `.server.ts` server-only modules. | [`lib/CLAUDE.md`](lib/CLAUDE.md) |
 | `server/` | **Node** service tier: socket-server (7001), rmhbox (7676), rmhtube (7003), ladder-worker; plus fallback sources for workers now run in Go. | [`server/CLAUDE.md`](server/CLAUDE.md) |

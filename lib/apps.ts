@@ -210,5 +210,9 @@ export const apps: AppInfo[] = [
         color: 'from-teal-500/20 to-green-600/20 hover:border-teal-500/50',
         tags: ['Housing', 'Search', 'Maps', 'Beta'],
         authGate: true,
+        // All /homes routes render under the _site sidebar shell (app/routes/
+        // _site/homes/*), so the site theme applies — without this flag the
+        // theme class is stripped there (THEME_EXCLUDED_ROUTES).
+        usesSiteTheme: true,
     },
 ];

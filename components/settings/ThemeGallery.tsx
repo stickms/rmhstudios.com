@@ -20,7 +20,9 @@ function ThemePreviewSwatch({ styleId }: { styleId: string }) {
       aria-hidden
       className={cn(`style-${styleId}`, 'pointer-events-none border-b border-site-border')}
     >
-      <div className="p-2.5" style={{ background: 'var(--site-bg)' }}>
+      {/* --site-canvas lets gradient themes (liquid-glass) preview their real
+          backdrop; plain themes fall back to their solid --site-bg. */}
+      <div className="p-2.5" style={{ background: 'var(--site-canvas, var(--site-bg))' }}>
         <div
           className="border p-2"
           style={{

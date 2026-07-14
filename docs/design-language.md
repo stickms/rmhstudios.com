@@ -9,9 +9,9 @@ The whole visual system rests on one idea: **a single CSS custom-property
 contract (`--site-*`) that every theme re-defines.** Components never hardcode
 colors, radii, fonts, or shadows — they consume the contract through Tailwind
 utilities. Because of that, every theme — the three base themes (Dark, Light,
-High Contrast), the curated set (Graphite, Sepia, Nocturne), and any accent
-preset layered on top — restyles the entire site without a single component
-change.
+High Contrast), the curated set (Graphite, Sepia, Nocturne, Liquid Glass), and
+any accent preset layered on top — restyles the entire site without a single
+component change.
 
 ---
 
@@ -61,18 +61,19 @@ theme mechanism.
 
 ---
 
-## 2. Themes (6) + accent presets
+## 2. Themes (7) + accent presets
 
 The Apple-style overhaul retired the old novelty themes; the catalog is now a
-tight, tasteful set. Theme = a `.style-<id>` class on `<html>` (the Dark
-default is the bare `:root` — no class). The catalog lives in
+tight, tasteful set. Theme = a `.style-<id>` class on `<html>` (the Dark theme
+`default` is the bare `:root` — no class). The catalog lives in
 `stores/themeStore.ts` (`SITE_STYLES`, with id/label/icon/group); the CSS for
-each lives in `app/globals.css`.
+each lives in `app/globals.css`. Visitors with no saved preference get
+`DEFAULT_STYLE` (`liquid-glass`).
 
 | Group | Themes |
 |---|---|
 | Base | `default` (Dark, `:root` — pure-black canvas, graphite surfaces, hairline borders, violet accent), `light` (clean white), `high-contrast` (WCAG AAA: pure black/white, yellow accent, 2px borders) |
-| Curated | `graphite` (Apple system-gray dim dark), `sepia` (warm paper à la Apple Books), `nocturne` (cool deep-navy dark, sky-blue accent) |
+| Curated | `graphite` (Apple system-gray dim dark), `sepia` (warm paper à la Apple Books), `nocturne` (cool deep-navy dark, sky-blue accent), `liquid-glass` (**site default** — iOS-26-style frosted glass: aurora-lit deep-ocean canvas, translucent backdrop-blurred surfaces, specular rim highlights; the only theme with scoped element rules in addition to tokens, plus one-off primitives in `components/ui/liquid-glass.tsx` and a showcase at `/liquid-glass`) |
 
 On top of any theme a user can pick an **accent preset** — a curated color
 (`lib/appearance.ts`, `ACCENT_PRESETS`, 14 options) that overrides just the
@@ -99,8 +100,8 @@ a `SITE_STYLES` entry** (with its `bg`); nothing else needs editing.
   (Dark/`default` needs none — it uses `:root`), applies the accent override,
   persists to `localStorage`, and updates `<meta name="theme-color">` + body
   background. It also **self-heals** any persisted-but-unknown style back to
-  `default`. Games/app routes are excluded (`THEME_EXCLUDED_ROUTES`) — they own
-  their styling; an `app-route` class is toggled on `<html>` for them.
+  `DEFAULT_STYLE`. Games/app routes are excluded (`THEME_EXCLUDED_ROUTES`) —
+  they own their styling; an `app-route` class is toggled on `<html>` for them.
 - **No-flash SSR:** an inline `themeScript` in `app/routes/__root.tsx` applies
   the persisted class + accent *before hydration*, deriving the background from
   the `THEME_BG` map (also from `SITE_STYLES`), so there is no hand-copied
