@@ -66,7 +66,7 @@ export function LanguageFirstRunModal() {
         <div
           role="listbox"
           aria-label={t('language', { defaultValue: 'Language' })}
-          className="mt-5 grid max-h-64 grid-cols-2 gap-1 overflow-y-auto overscroll-contain pr-1 sm:grid-cols-3"
+          className="mt-5 grid max-h-64 grid-cols-2 gap-1 overflow-y-auto overscroll-contain p-1.5 sm:grid-cols-3"
         >
           {LOCALES.map((l) => {
             const active = l === locale;
