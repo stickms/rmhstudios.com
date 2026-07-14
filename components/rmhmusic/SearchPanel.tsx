@@ -8,6 +8,7 @@ import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { emit } from '@/lib/rmhmusic/socket';
 import { C2S } from '@/lib/rmhmusic/events';
 import TrackCard from './TrackCard';
+import { AddToPlaylistDialog, type PlaylistItemInput } from '@/components/feed/AddToPlaylistDialog';
 
 interface SearchPanelProps {
   onPlay: (track: any) => void;
@@ -20,6 +21,24 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
   const [notConfigured, setNotConfigured] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [playlistItem, setPlaylistItem] = useState<PlaylistItemInput | null>(null);
+
+  const openPlaylist = (track: any) => {
+    const uri: string = track.uri ?? '';
+    const parts = uri.split(':');
+    const url =
+      parts.length === 3 && parts[0] === 'spotify'
+        ? `https://open.spotify.com/${parts[1]}/${parts[2]}`
+        : null;
+    setPlaylistItem({
+      externalId: uri,
+      title: track.title,
+      subtitle: track.artist,
+      thumbnail: track.albumArt ?? null,
+      url,
+      durationMs: track.durationMs ?? null,
+    });
+  };
 
   useEffect(() => {
     if (isSearchOpen && inputRef.current) {
@@ -63,6 +82,7 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
   }
 
   return (
+    <>
     <AnimatePresence>
       {isSearchOpen && (
         <motion.div
@@ -118,6 +138,7 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
                     album={track.album}
                     onPlay={() => onPlay(track)}
                     onAddToQueue={room ? () => handleAddToQueue(track) : undefined}
+                    onAddToPlaylist={() => openPlaylist(track)}
                   />
                 ))}
               </>
@@ -153,5 +174,12 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
         </motion.div>
       )}
     </AnimatePresence>
+    <AddToPlaylistDialog
+      item={playlistItem}
+      open={!!playlistItem}
+      onOpenChange={(o) => { if (!o) setPlaylistItem(null); }}
+      kind="music"
+    />
+    </>
   );
 }
