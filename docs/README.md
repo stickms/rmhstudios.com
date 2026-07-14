@@ -35,6 +35,7 @@ writing, not necessarily the current code).
 
 | Location | Contents |
 |---|---|
+| [`plans/2026-07-14-liquid-glass-ui-redesign.md`](./plans/2026-07-14-liquid-glass-ui-redesign.md) | **Sitewide Liquid Glass redesign** design doc (2026-07-14): glass as the material system — tokens, elevation tiers, realism/reactivity/performance specs, per-page coverage incl. library/studio/shop/admin, phased rollout |
 | [`superpowers/`](./superpowers/) | The main archive of dated design specs + implementation plans (~75 files, `plans/` + `specs/`), plus the reusable [`i18n-extraction-guide.md`](./superpowers/i18n-extraction-guide.md) |
 | [`plans/`](./plans/) | Older dated plan/design pairs (dream-rift, rmhmusic, rmhcode CLI, terraform/helm migration, farming sim) |
 | [`website-improvement-plan.md`](./website-improvement-plan.md) | Cross-cutting audit + phased roadmap (2026-06-30) |
