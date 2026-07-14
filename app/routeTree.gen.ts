@@ -148,6 +148,7 @@ import { Route as SitePricingRouteImport } from './routes/_site/pricing'
 import { Route as SitePredictionsRouteImport } from './routes/_site/predictions'
 import { Route as SiteNotificationsRouteImport } from './routes/_site/notifications'
 import { Route as SiteMusicTriviaRouteImport } from './routes/_site/music-trivia'
+import { Route as SiteLeaderboardRouteImport } from './routes/_site/leaderboard'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
@@ -301,6 +302,7 @@ import { Route as ApiLibraryQuotaRouteImport } from './routes/api/library/quota'
 import { Route as ApiLibraryDraftRouteImport } from './routes/api/library/draft'
 import { Route as ApiLibraryCollectionsRouteImport } from './routes/api/library/collections'
 import { Route as ApiLibrarySlugRouteImport } from './routes/api/library/$slug'
+import { Route as ApiLeaderboardsPlayersRouteImport } from './routes/api/leaderboards/players'
 import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-sort/score'
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
 import { Route as ApiInternalNotifyTypingRouteImport } from './routes/api/internal/notify-typing'
@@ -1268,6 +1270,11 @@ const SiteMusicTriviaRoute = SiteMusicTriviaRouteImport.update({
   path: '/music-trivia',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteLeaderboardRoute = SiteLeaderboardRouteImport.update({
+  id: '/leaderboard',
+  path: '/leaderboard',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteExploreRoute = SiteExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
@@ -2046,6 +2053,11 @@ const ApiLibraryCollectionsRoute = ApiLibraryCollectionsRouteImport.update({
 const ApiLibrarySlugRoute = ApiLibrarySlugRouteImport.update({
   id: '/api/library/$slug',
   path: '/api/library/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiLeaderboardsPlayersRoute = ApiLeaderboardsPlayersRouteImport.update({
+  id: '/api/leaderboards/players',
+  path: '/api/leaderboards/players',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiLaundrySortScoreRoute = ApiLaundrySortScoreRouteImport.update({
@@ -3527,6 +3539,7 @@ export interface FileRoutesByFullPath {
   '/communities': typeof SiteCommunitiesRoute
   '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
+  '/leaderboard': typeof SiteLeaderboardRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
   '/notifications': typeof SiteNotificationsRoute
   '/predictions': typeof SitePredictionsRoute
@@ -3716,6 +3729,7 @@ export interface FileRoutesByFullPath {
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
+  '/api/leaderboards/players': typeof ApiLeaderboardsPlayersRoute
   '/api/library/$slug': typeof ApiLibrarySlugRoute
   '/api/library/collections': typeof ApiLibraryCollectionsRoute
   '/api/library/draft': typeof ApiLibraryDraftRoute
@@ -4070,6 +4084,7 @@ export interface FileRoutesByTo {
   '/communities': typeof SiteCommunitiesRoute
   '/drafts': typeof SiteDraftsRoute
   '/explore': typeof SiteExploreRoute
+  '/leaderboard': typeof SiteLeaderboardRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
   '/notifications': typeof SiteNotificationsRoute
   '/predictions': typeof SitePredictionsRoute
@@ -4256,6 +4271,7 @@ export interface FileRoutesByTo {
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
+  '/api/leaderboards/players': typeof ApiLeaderboardsPlayersRoute
   '/api/library/$slug': typeof ApiLibrarySlugRoute
   '/api/library/collections': typeof ApiLibraryCollectionsRoute
   '/api/library/draft': typeof ApiLibraryDraftRoute
@@ -4633,6 +4649,7 @@ export interface FileRoutesById {
   '/_site/communities': typeof SiteCommunitiesRoute
   '/_site/drafts': typeof SiteDraftsRoute
   '/_site/explore': typeof SiteExploreRoute
+  '/_site/leaderboard': typeof SiteLeaderboardRoute
   '/_site/music-trivia': typeof SiteMusicTriviaRoute
   '/_site/notifications': typeof SiteNotificationsRoute
   '/_site/predictions': typeof SitePredictionsRoute
@@ -4823,6 +4840,7 @@ export interface FileRoutesById {
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
+  '/api/leaderboards/players': typeof ApiLeaderboardsPlayersRoute
   '/api/library/$slug': typeof ApiLibrarySlugRoute
   '/api/library/collections': typeof ApiLibraryCollectionsRoute
   '/api/library/draft': typeof ApiLibraryDraftRoute
@@ -5201,6 +5219,7 @@ export interface FileRouteTypes {
     | '/communities'
     | '/drafts'
     | '/explore'
+    | '/leaderboard'
     | '/music-trivia'
     | '/notifications'
     | '/predictions'
@@ -5390,6 +5409,7 @@ export interface FileRouteTypes {
     | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
+    | '/api/leaderboards/players'
     | '/api/library/$slug'
     | '/api/library/collections'
     | '/api/library/draft'
@@ -5744,6 +5764,7 @@ export interface FileRouteTypes {
     | '/communities'
     | '/drafts'
     | '/explore'
+    | '/leaderboard'
     | '/music-trivia'
     | '/notifications'
     | '/predictions'
@@ -5930,6 +5951,7 @@ export interface FileRouteTypes {
     | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
+    | '/api/leaderboards/players'
     | '/api/library/$slug'
     | '/api/library/collections'
     | '/api/library/draft'
@@ -6306,6 +6328,7 @@ export interface FileRouteTypes {
     | '/_site/communities'
     | '/_site/drafts'
     | '/_site/explore'
+    | '/_site/leaderboard'
     | '/_site/music-trivia'
     | '/_site/notifications'
     | '/_site/predictions'
@@ -6496,6 +6519,7 @@ export interface FileRouteTypes {
     | '/api/internal/notify-typing'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
+    | '/api/leaderboards/players'
     | '/api/library/$slug'
     | '/api/library/collections'
     | '/api/library/draft'
@@ -6948,6 +6972,7 @@ export interface RootRouteChildren {
   ApiInternalNotifyTypingRoute: typeof ApiInternalNotifyTypingRoute
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
   ApiLaundrySortScoreRoute: typeof ApiLaundrySortScoreRoute
+  ApiLeaderboardsPlayersRoute: typeof ApiLeaderboardsPlayersRoute
   ApiLibrarySlugRoute: typeof ApiLibrarySlugRoute
   ApiLibraryCollectionsRoute: typeof ApiLibraryCollectionsRoute
   ApiLibraryDraftRoute: typeof ApiLibraryDraftRoute
@@ -8109,6 +8134,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteMusicTriviaRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/leaderboard': {
+      id: '/_site/leaderboard'
+      path: '/leaderboard'
+      fullPath: '/leaderboard'
+      preLoaderRoute: typeof SiteLeaderboardRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/explore': {
       id: '/_site/explore'
       path: '/explore'
@@ -9178,6 +9210,13 @@ declare module '@tanstack/react-router' {
       path: '/api/library/$slug'
       fullPath: '/api/library/$slug'
       preLoaderRoute: typeof ApiLibrarySlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/leaderboards/players': {
+      id: '/api/leaderboards/players'
+      path: '/api/leaderboards/players'
+      fullPath: '/api/leaderboards/players'
+      preLoaderRoute: typeof ApiLeaderboardsPlayersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/laundry-sort/score': {
@@ -11207,6 +11246,7 @@ interface SiteRouteChildren {
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
   SiteExploreRoute: typeof SiteExploreRoute
+  SiteLeaderboardRoute: typeof SiteLeaderboardRoute
   SiteMusicTriviaRoute: typeof SiteMusicTriviaRoute
   SiteNotificationsRoute: typeof SiteNotificationsRoute
   SitePredictionsRoute: typeof SitePredictionsRoute
@@ -11269,6 +11309,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteCommunitiesRoute: SiteCommunitiesRoute,
   SiteDraftsRoute: SiteDraftsRoute,
   SiteExploreRoute: SiteExploreRoute,
+  SiteLeaderboardRoute: SiteLeaderboardRoute,
   SiteMusicTriviaRoute: SiteMusicTriviaRoute,
   SiteNotificationsRoute: SiteNotificationsRoute,
   SitePredictionsRoute: SitePredictionsRoute,
@@ -12410,6 +12451,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiInternalNotifyTypingRoute: ApiInternalNotifyTypingRoute,
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,
   ApiLaundrySortScoreRoute: ApiLaundrySortScoreRoute,
+  ApiLeaderboardsPlayersRoute: ApiLeaderboardsPlayersRoute,
   ApiLibrarySlugRoute: ApiLibrarySlugRoute,
   ApiLibraryCollectionsRoute: ApiLibraryCollectionsRoute,
   ApiLibraryDraftRoute: ApiLibraryDraftRoute,
