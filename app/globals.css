@@ -768,6 +768,22 @@ html.perf-lite .glass-interactive::after {
   filter: var(--site-map-filter, none);
 }
 
+/* Route-CSS FOUC guard for /library. library.css is imported from the library
+   route chunk, so on client-side navigation the shelf paints a frame before that
+   stylesheet arrives — and unstyled, each book cover has no width cap and flashes
+   at full column width (a "really wide" book) before collapsing into the grid.
+   Bound the critical dimensions here in the always-loaded sheet; library.css
+   then layers on the full 3D shelf (it loads later, so it wins). */
+.lib__shelf {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  column-gap: clamp(18px, 3vw, 44px);
+  row-gap: 40px;
+}
+.lib-book__cover {
+  width: min(100%, 150px);
+}
+
 /* Respect the OS "reduce motion" preference site-wide: neutralize enter
    animations, transitions and smooth scrolling that can trigger vestibular
    discomfort, while preserving essential loading feedback (spinners, skeleton

@@ -28,7 +28,7 @@ function NotificationsPage() {
   return (
     <>
       <AnimatedMain
-        className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
+        className="w-full min-w-0 border-r border-site-border pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <NotificationsColumn initialData={notifications} />
