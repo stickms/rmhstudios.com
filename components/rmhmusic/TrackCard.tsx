@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus, Play } from 'lucide-react';
+import { Plus, Play, ListPlus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { formatDuration } from '@/lib/rmhmusic/utils';
 
@@ -13,9 +13,10 @@ interface TrackCardProps {
   album?: string;
   onPlay?: () => void;
   onAddToQueue?: () => void;
+  onAddToPlaylist?: () => void;
 }
 
-export default function TrackCard({ uri, title, artist, albumArt, durationMs, album, onPlay, onAddToQueue }: TrackCardProps) {
+export default function TrackCard({ uri, title, artist, albumArt, durationMs, album, onPlay, onAddToQueue, onAddToPlaylist }: TrackCardProps) {
   const { t } = useTranslation("c-rmhmusic");
   return (
     <div
@@ -46,6 +47,17 @@ export default function TrackCard({ uri, title, artist, albumArt, durationMs, al
       <span className="text-xs tabular-nums shrink-0" style={{ color: 'var(--site-text-dim)' }}>
         {formatDuration(durationMs)}
       </span>
+
+      {onAddToPlaylist && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onAddToPlaylist(); }}
+          className="p-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+          style={{ color: 'var(--site-text-muted)' }}
+          title={t("add-to-playlist", { defaultValue: "Add to playlist" })}
+        >
+          <ListPlus className="w-4 h-4" />
+        </button>
+      )}
 
       {onAddToQueue && (
         <button

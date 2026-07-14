@@ -69,6 +69,9 @@ export interface FeedItem {
   repostedBy?: FeedItemUser;
   actualId?: string;
 
+  /** Authored threads: number of follow-up posts (set on the root, 0 otherwise). */
+  threadReplyCount?: number;
+
   // Soft deletions
   deletedAt?: string | null;
   deletedByAdmin?: boolean;

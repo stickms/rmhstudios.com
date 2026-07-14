@@ -4,7 +4,7 @@
  */
 'use client';
 
-import { X, GripVertical, Play, ThumbsUp } from 'lucide-react';
+import { X, GripVertical, Play, ThumbsUp, ListPlus } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import { formatDuration } from '@/lib/rmhtube/utils';
 import type { ClientQueueItem } from '@/lib/rmhtube/types';
@@ -18,9 +18,10 @@ interface QueueItemProps {
   onRemove: () => void;
   onPlay: () => void;
   onVote: () => void;
+  onAddToPlaylist?: () => void;
 }
 
-export default function QueueItem({ item, isActive, isHost, canRemove, queueVoting, onRemove, onPlay, onVote }: QueueItemProps) {
+export default function QueueItem({ item, isActive, isHost, canRemove, queueVoting, onRemove, onPlay, onVote, onAddToPlaylist }: QueueItemProps) {
   const { t } = useTranslation("c-rmhtube");
   return (
     <div
@@ -73,6 +74,17 @@ export default function QueueItem({ item, isActive, isHost, canRemove, queueVoti
         >
           <ThumbsUp className="h-3.5 w-3.5" />
           {item.votes > 0 && <span>{item.votes}</span>}
+        </button>
+      )}
+
+      {/* Add to playlist */}
+      {onAddToPlaylist && (
+        <button
+          onClick={onAddToPlaylist}
+          className="shrink-0 rounded p-1 transition-colors text-(--rmhtube-text-dim) hover:text-(--rmhtube-accent) hover:bg-(--rmhtube-accent-dim)"
+          title={t("add-to-playlist", { defaultValue: "Add to playlist" })}
+        >
+          <ListPlus className="h-3.5 w-3.5" />
         </button>
       )}
 

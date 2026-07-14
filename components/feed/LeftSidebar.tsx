@@ -31,6 +31,8 @@ import {
   Car,
   Building2,
   Briefcase,
+  Trophy,
+  ListMusic,
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -107,6 +109,8 @@ const NAV: NavItem[] = [
     label: 'More',
     icon: MoreHorizontal,
     children: [
+      { href: '/leaderboard', tKey: 'nav-leaderboard', label: 'Leaderboard', icon: Trophy },
+      { href: '/playlists', tKey: 'nav-playlists', label: 'Playlists', icon: ListMusic },
       { href: '/homes', tKey: 'nav-homes', label: 'RMHHomes', icon: Building2 },
       { href: '/rmhladder', tKey: 'nav-rmhladder', label: 'RMHLadder', icon: Briefcase },
       { href: '/rideshare', tKey: 'nav-rideshare', label: 'Rideshare', icon: Car },

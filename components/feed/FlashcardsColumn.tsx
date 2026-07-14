@@ -122,8 +122,14 @@ export function FlashcardsColumn({
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
         <BookOpen className="h-5 w-5 text-site-accent" />
         <h1 className="text-lg font-bold text-site-text">{t('flashcards-title', { defaultValue: 'Flashcards' })}</h1>
+        <Link
+          to="/study/browse"
+          className="ml-auto inline-flex items-center gap-1 rounded-site-sm px-2.5 py-1.5 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text"
+        >
+          <Layers className="h-3.5 w-3.5" /> {t('deck-browse', { defaultValue: 'Browse' })}
+        </Link>
         {signedIn && (
-          <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
+          <Button size="sm" variant="accent" className="gap-1" onClick={() => setShowForm((v) => !v)}>
             <Plus className="h-3.5 w-3.5" /> {t('new-deck', { defaultValue: 'New deck' })}
           </Button>
         )}

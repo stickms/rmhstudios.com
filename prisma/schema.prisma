@@ -174,6 +174,9 @@ model User {
   flashcardDecks   FlashcardDeck[]
   flashcardReviews FlashcardReview[]
 
+  // Saved media playlists (music/video)
+  playlists Playlist[]
+
   // RMHTube channel subscriptions
   rmhtubeSubscriptions RmhTubeSubscription[] @relation("TubeSubscriber")
   rmhtubeSubscribers   RmhTubeSubscription[] @relation("TubeChannel")
@@ -1391,11 +1394,19 @@ model RMHark {
 
   reactions RMHarkReaction[]
 
+  // Authored threads (chain-your-own-posts). Follow-up segments carry the root
+  // post's id in `threadRootId` (null on the root and on standalone posts) so
+  // the feed can show only the root; the root carries `threadReplyCount` (number
+  // of follow-ups) to render a "show this thread" affordance.
+  threadRootId     String?
+  threadReplyCount Int     @default(0)
+
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   // Composite index backing keyset pagination on (createdAt desc, id desc)
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@index([userId, pinnedAt])
+  @@index([threadRootId])
   @@map("rmheet")
 }
 
@@ -1603,6 +1614,9 @@ model UserProfile {
   website               String?   @db.VarChar(200)
   showLikes             Boolean   @default(false)
   dmPrivacy             DmPrivacy @default(EVERYONE)
+  // Reader content control: feed posts whose text contains any of these words
+  // are hidden from this user (case-insensitive substring match). Opt-in.
+  mutedWords            String[]  @default([])
   profileSongSpotifyId  String?   @db.VarChar(50)
   profileSongTitle      String?   @db.VarChar(200)
   profileSongArtist     String?   @db.VarChar(200)
@@ -2266,6 +2280,10 @@ model FlashcardDeck {
   description String?  @db.VarChar(500)
   isPublic    Boolean  @default(false)
   cardCount   Int      @default(0)
+  // Set when this deck was cloned from a public deck (marketplace). Provenance +
+  // the "you already added this deck" guard. Not a relation (the source may be
+  // deleted); it just records the source deck id.
+  clonedFromId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -2274,6 +2292,7 @@ model FlashcardDeck {
 
   @@index([userId])
   @@index([isPublic, updatedAt(sort: Desc)])
+  @@index([userId, clonedFromId])
   @@map("flashcard_deck")
 }
 
@@ -2310,6 +2329,42 @@ model FlashcardReview {
   @@unique([userId, cardId])
   @@index([userId, dueAt])
   @@map("flashcard_review")
+}
+
+/// A user's saved, persistent playlist of media (music tracks or videos). The
+/// apps build ephemeral room queues; this is the durable personal library.
+model Playlist {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(100)
+  kind      String   @default("music") @db.VarChar(16) // "music" | "video"
+  itemCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items PlaylistItem[]
+
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("playlist")
+}
+
+model PlaylistItem {
+  id         String   @id @default(cuid())
+  playlistId String
+  position   Int      @default(0)
+  externalId String   @db.VarChar(255) // e.g. Spotify uri / video id or url
+  title      String   @db.VarChar(300)
+  subtitle   String?  @db.VarChar(300) // artist / channel
+  thumbnail  String?  @db.VarChar(500)
+  url        String?  @db.VarChar(1000)
+  durationMs Int?
+  createdAt  DateTime @default(now())
+
+  playlist Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+
+  @@index([playlistId, position])
+  @@map("playlist_item")
 }
 
 model BuildVersion {

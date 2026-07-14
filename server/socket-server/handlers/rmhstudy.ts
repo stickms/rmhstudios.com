@@ -11,6 +11,7 @@ import { getPrismaClient } from '../prisma-client';
 import { logger } from '../logger';
 import { checkRateLimit } from '../rate-limit';
 import { config } from '../config';
+import { awardAppProgress } from '../economy';
 
 // ─── Interfaces ───
 
@@ -384,6 +385,9 @@ function persistWorkSession(room: StudyRoom): void {
     try {
       const db = getPrismaClient() as any;
       const userId = member.userId;
+
+      // Progression: XP for completing a focus (Pomodoro) work session.
+      awardAppProgress(userId, { xp: 15 });
 
       // Upsert profile and create session
       db.rmhStudyProfile.upsert({

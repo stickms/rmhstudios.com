@@ -49,8 +49,8 @@ interface PendingState extends ConfirmOptions {
  * ```
  *
  * Built on the shared `Dialog` primitive, so it inherits focus-trapping,
- * Escape-to-dismiss, the 31-theme token styling, and i18n — none of which the
- * native `confirm()` dialog provides.
+ * Escape-to-dismiss, the `--site-*` token styling (works across every theme),
+ * and i18n — none of which the native `confirm()` dialog provides.
  */
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation('c-ui');

@@ -40,29 +40,33 @@ export default tseslint.config(
   },
 
   // ── Accessibility (jsx-a11y) ──────────────────────────────────────────────
-  // A curated set kept at "warn" so it surfaces real a11y regressions in PRs
-  // without blocking the build while the existing backlog is worked down.
-  // Tighten to "error" rule-by-rule as each is driven to zero.
+  // Rules that are already at zero violations are enforced as "error" so
+  // regressions can't land. Rules with an existing backlog stay at "warn" so
+  // they surface in PRs without blocking the build; promote each to "error" as
+  // it is driven to zero.
   {
     files: ["**/*.{jsx,tsx}"],
     plugins: { "jsx-a11y": jsxA11y },
     rules: {
+      // Enforced (zero violations — keep them at zero).
+      "jsx-a11y/aria-props": "error",
+      "jsx-a11y/aria-proptypes": "error",
+      "jsx-a11y/aria-unsupported-elements": "error",
+      "jsx-a11y/iframe-has-title": "error",
+      "jsx-a11y/img-redundant-alt": "error",
+      "jsx-a11y/no-redundant-roles": "error",
+      "jsx-a11y/role-has-required-aria-props": "error",
+      "jsx-a11y/role-supports-aria-props": "error",
+
+      // Backlog (existing violations — surface as warnings, promote when clean).
       "jsx-a11y/alt-text": "warn",
       "jsx-a11y/anchor-has-content": "warn",
       "jsx-a11y/anchor-is-valid": "warn",
-      "jsx-a11y/aria-props": "warn",
-      "jsx-a11y/aria-proptypes": "warn",
       "jsx-a11y/aria-role": "warn",
-      "jsx-a11y/aria-unsupported-elements": "warn",
       "jsx-a11y/click-events-have-key-events": "warn",
       "jsx-a11y/heading-has-content": "warn",
-      "jsx-a11y/iframe-has-title": "warn",
-      "jsx-a11y/img-redundant-alt": "warn",
       "jsx-a11y/label-has-associated-control": "warn",
-      "jsx-a11y/no-redundant-roles": "warn",
       "jsx-a11y/no-static-element-interactions": "warn",
-      "jsx-a11y/role-has-required-aria-props": "warn",
-      "jsx-a11y/role-supports-aria-props": "warn",
     },
   },
 

@@ -58,6 +58,28 @@ export async function recordGamePlay(userId: string): Promise<void> {
   }
 }
 
+/**
+ * Convenience for the flashcard-review endpoint: progress the daily "study"
+ * quest and award a small amount of XP, best-effort. Quest progress advances
+ * per review (its reward is capped by the once-a-day claim), while the XP grant
+ * is rate-limited per user so review-spam can't farm it — SRS reviews are
+ * naturally paced. Mirrors {@link recordGamePlay}.
+ */
+export async function recordStudyReview(userId: string): Promise<void> {
+  try {
+    await progressQuests(userId, 'study');
+    const distributed = await redisRateLimit(`study-review-xp:${userId}`, 1, 20_000);
+    const limiter = distributed ?? rateLimit(userId, {
+      limit: 1,
+      windowMs: 20_000,
+      prefix: 'study-review-xp',
+    });
+    if (limiter.allowed) await awardXp(userId, 4);
+  } catch (err) {
+    console.error('[quests] recordStudyReview failed:', err);
+  }
+}
+
 export interface QuestView {
   id: string;
   period: 'daily' | 'weekly';

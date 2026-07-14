@@ -45,13 +45,12 @@ export const Route = createFileRoute('/_site/')({
     const q = typeof search.q === 'string' ? search.q.trim() : '';
     return q ? { q } : {};
   },
-  // Await the sidebar so the shell renders immediately; return the feed as a
-  // deferred promise so it streams in (React Suspense) without blocking the
-  // first byte — the "fast shell, content streams" pattern social feeds use.
-  loader: async () => {
-    const sidebar = await fetchSidebarData();
-    return { ...sidebar, initialFeed: fetchInitialFeed() };
-  },
+  // Return BOTH the sidebar and the feed as deferred promises so neither DB
+  // read blocks the first byte: the feed column + composer + skeleton paint
+  // immediately and each region streams into its own <Suspense> slot. This is
+  // the "fast shell, content streams" pattern social feeds use — previously the
+  // awaited sidebar gated even the feed skeleton from painting.
+  loader: () => ({ sidebar: fetchSidebarData(), initialFeed: fetchInitialFeed() }),
   head: () => ({
     meta: [
       { title: 'RMH Studios' },
@@ -62,15 +61,7 @@ export const Route = createFileRoute('/_site/')({
 });
 
 function Home() {
-  const { officialBuilds, userBuilds, recommendedUsers, blogPosts, initialFeed } = Route.useLoaderData();
+  const { sidebar, initialFeed } = Route.useLoaderData();
 
-  return (
-    <FeedLayout
-      officialBuilds={officialBuilds}
-      userBuilds={userBuilds}
-      recommendedUsers={recommendedUsers}
-      blogPosts={blogPosts}
-      initialFeed={initialFeed}
-    />
-  );
+  return <FeedLayout sidebar={sidebar} initialFeed={initialFeed} />;
 }

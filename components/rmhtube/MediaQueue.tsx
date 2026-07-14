@@ -14,11 +14,13 @@ import { useRmhTubeStore } from '@/lib/rmhtube/store';
 import { formatTotalDuration } from '@/lib/rmhtube/utils';
 import QueueItem from './QueueItem';
 import AddMediaModal from './AddMediaModal';
+import { AddToPlaylistDialog, type PlaylistItemInput } from '@/components/feed/AddToPlaylistDialog';
 
 export default function MediaQueue() {
   const room = useRmhTubeStore((s) => s.room);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [playlistItem, setPlaylistItem] = useState<PlaylistItemInput | null>(null);
 
   // Total queue duration (sum of all item durations)
   const totalDuration = useMemo(() => {
@@ -136,6 +138,16 @@ export default function MediaQueue() {
                 onRemove={() => handleRemove(item.id)}
                 onPlay={() => handlePlayItem(item.id)}
                 onVote={() => handleVote(item.id)}
+                onAddToPlaylist={() =>
+                  setPlaylistItem({
+                    externalId: item.url,
+                    title: item.title,
+                    subtitle: item.addedByName ?? null,
+                    thumbnail: item.thumbnailUrl,
+                    url: item.url,
+                    durationMs: item.duration ?? null,
+                  })
+                }
               />
             );
           })
@@ -198,6 +210,13 @@ export default function MediaQueue() {
           }}
         />
       )}
+
+      <AddToPlaylistDialog
+        item={playlistItem}
+        open={!!playlistItem}
+        onOpenChange={(o) => { if (!o) setPlaylistItem(null); }}
+        kind="video"
+      />
     </div>
   );
 }

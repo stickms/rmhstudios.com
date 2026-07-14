@@ -10,6 +10,7 @@ import { generateRoomCode, sanitizeString } from '../utils';
 import { checkRateLimit } from '../rate-limit';
 import { getPrismaClient } from '../prisma-client';
 import { logger } from '../logger';
+import { awardAppProgress } from '../economy';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -837,6 +838,12 @@ async function persistMatchResults(room: TypeRoom, finalResults: any): Promise<v
           wasWinner: standing.finalRank === 1,
         },
       });
+
+      // Progression: XP + daily "play a game" quest for finishing a race.
+      awardAppProgress(standing.userId, {
+        xp: standing.finalRank === 1 ? 20 : 10,
+        quest: { type: 'game_play' },
+      });
     }
 
     logger.info({ event: 'rmhtype_match_persisted', matchId: match.id, roomId: room.roomId });
@@ -941,6 +948,9 @@ async function persistSoloResult(
         wasWinner: true,
       },
     });
+
+    // Progression: XP + daily "play a game" quest for finishing a solo run.
+    awardAppProgress(userId, { xp: 10, quest: { type: 'game_play' } });
 
     logger.info({ event: 'rmhtype_solo_persisted', matchId: match.id, userId, scorePosted: qualifies });
     return qualifies;

@@ -1,0 +1,16 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "streaksaver",
+    srcs = [
+        "push.go",
+        "run.go",
+    ],
+    importpath = "github.com/rmhstudios/rmh-go/internal/streaksaver",
+    visibility = ["//go-services:__subpackages__"],
+    deps = [
+        "//go-services/pkg/config",
+        "//go-services/pkg/log",
+        "//go-services/pkg/worker",
+    ],
+)

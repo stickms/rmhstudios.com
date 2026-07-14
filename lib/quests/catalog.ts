@@ -11,7 +11,8 @@ export type QuestType =
   | 'game_play'
   | 'checkin'
   | 'bookmark'
-  | 'follow';
+  | 'follow'
+  | 'study';
 
 export type QuestPeriod = 'daily' | 'weekly';
 
@@ -32,6 +33,7 @@ export const QUESTS: QuestDef[] = [
   { id: 'd.like', period: 'daily', type: 'like_given', name: 'Show love', description: 'Like 3 posts', target: 3, xp: 30, coins: 5 },
   { id: 'd.comment', period: 'daily', type: 'comment', name: 'Join in', description: 'Leave 2 comments', target: 2, xp: 40, coins: 10 },
   { id: 'd.game', period: 'daily', type: 'game_play', name: 'Game on', description: 'Play a game', target: 1, xp: 40, coins: 10 },
+  { id: 'd.study', period: 'daily', type: 'study', name: 'Study up', description: 'Review 10 flashcards', target: 10, xp: 40, coins: 10 },
   { id: 'd.checkin', period: 'daily', type: 'checkin', name: 'Clock in', description: 'Check in today', target: 1, xp: 20, coins: 5 },
 
   // ─── Weekly ───
