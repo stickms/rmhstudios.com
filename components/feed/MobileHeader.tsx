@@ -25,7 +25,7 @@ export function MobileBrandPrefix() {
  */
 export function MobileTopBar({ title }: { title: string }) {
   return (
-    <div className="vibe-glass md:hidden border-b border-site-border">
+    <div className="glass-chrome md:hidden border-b border-site-border">
       <div className="flex items-center gap-2 px-4 py-3">
         <MobileMenuButton />
         <h1 className="flex items-center gap-2 font-(family-name:--site-font-display) font-semibold text-2xl tracking-[-0.022em] text-site-text min-w-0">

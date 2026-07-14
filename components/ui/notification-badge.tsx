@@ -18,7 +18,8 @@ export function NotificationBadge({ count, max = 99, className }: NotificationBa
   return (
     <span
       className={cn(
-        "inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-site-danger px-1 text-[10px] font-bold leading-none text-white",
+        // Danger glass capsule — solid danger core for legibility, plus a top rim.
+        "inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-site-danger px-1 text-[10px] font-bold leading-none text-white shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
         className
       )}
     >

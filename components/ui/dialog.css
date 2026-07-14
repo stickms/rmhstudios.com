@@ -32,15 +32,17 @@
     opacity: 0;
   }
 }
+/* The pre-blurred glass pane scales up from 0.96 while the scrim fades in —
+ * transitioning backdrop-filter itself is janky, so we never animate the blur. */
 @keyframes ui-dialog-content-in {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.98);
+    transform: translateY(12px) scale(0.96);
   }
 }
 @keyframes ui-dialog-content-out {
   to {
     opacity: 0;
-    transform: translateY(8px) scale(0.98);
+    transform: translateY(8px) scale(0.96);
   }
 }

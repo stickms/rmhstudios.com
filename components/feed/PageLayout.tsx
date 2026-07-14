@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { AnimatedMain } from './AnimatedMain';
@@ -50,17 +51,45 @@ export function PageLayout({
       : WIDE_NO_RIGHT_SIDEBAR_WIDTH
     : DEFAULT_WIDTH;
 
+  // Scroll-reactive chrome (§5.3): a 1px sentinel above the content toggles
+  // `data-scrolled` on the sticky header, which condenses (more opaque, shorter)
+  // as content scrolls under it. Works for both scroll roots (window on desktop,
+  // the mobile shell's inner scroller) since both fill the viewport.
+  const headerRef = useRef<HTMLDivElement>(null);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    const header = headerRef.current;
+    if (!sentinel || !header) return;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) header.removeAttribute('data-scrolled');
+        else header.setAttribute('data-scrolled', '');
+      },
+      { threshold: 0 },
+    );
+    io.observe(sentinel);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <>
-      {/* Center Column – width animates between pages */}
+      {/* Center Column – width animates between pages. Bottom padding clears the
+          floating mobile dock (§8.3). */}
       <AnimatedMain
-        className="w-full min-w-0 border-r border-site-border pb-[calc(env(safe-area-inset-bottom,0px)+72px)] md:pb-0"
+        className="w-full min-w-0 border-r border-site-border pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0"
         targetWidth={targetWidth}
       >
         <div className="flex flex-col">
-          {/* Sticky Header — frosted glass chrome, unified on .vibe-glass so it
-              matches the mobile top bar and nav across all themes. */}
-          <div className="vibe-glass sticky top-0 z-10 h-18 border-b border-site-border">
+          {/* Scroll sentinel — sits at the very top so the header knows when the
+              page has scrolled beneath it. */}
+          <div ref={sentinelRef} aria-hidden className="h-px" />
+          {/* Sticky Header — L3 glass-chrome; condenses on scroll. */}
+          <div
+            ref={headerRef}
+            data-slot="page-header"
+            className="glass-chrome sticky top-0 z-10 h-18 data-[scrolled]:h-16 border-b border-site-border transition-[height]"
+          >
             <div className="h-full flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3 min-w-0">
                 {/* Mobile: always show the sidebar button in the top-left */}

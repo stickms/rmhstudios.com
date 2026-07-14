@@ -25,7 +25,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     data-slot="dialog-overlay"
-    className={cn("fixed inset-0 z-50 bg-black/50 backdrop-blur-md", className)}
+    className={cn("fixed inset-0 z-50 glass-scrim", className)}
     {...props}
   />
 ))
@@ -43,7 +43,9 @@ const DialogContent = React.forwardRef<
         ref={ref}
         data-slot="dialog-content"
         className={cn(
-          "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg max-h-[85dvh] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 border border-site-border bg-site-surface text-site-text p-6 shadow-site rounded-site",
+          // L4 glass-overlay: more opaque + strong blur so content never ghosts
+          // through the dialog over a bright aurora corner (§7.2).
+          "glass-overlay fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg max-h-[85dvh] overflow-y-auto translate-x-[-50%] translate-y-[-50%] gap-4 text-site-text p-6",
           className
         )}
         {...props}

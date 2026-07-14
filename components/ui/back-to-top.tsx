@@ -65,11 +65,13 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
           exit={{ opacity: 0, scale: 0.8, y: 8 }}
           transition={{ duration: DURATION.fast, ease: EASE.standard }}
           className={cn(
-            'fixed right-4 bottom-20 z-40 md:right-6 md:bottom-6',
+            // Floats above the mobile dock (now taller — bottom-24).
+            'fixed right-4 bottom-24 z-40 md:right-6 md:bottom-6',
             'flex size-11 items-center justify-center rounded-full',
-            'bg-site-surface text-site-text shadow-site',
-            'border border-site-border hover:border-site-accent hover:bg-site-surface-hover',
-            'active:scale-95 transition-colors',
+            // Floating L4 glass disc.
+            'glass-overlay text-site-text',
+            'hover:border-site-accent',
+            'active:scale-95',
           )}
         >
           <ArrowUp className="h-5 w-5" aria-hidden />
