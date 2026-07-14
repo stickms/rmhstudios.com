@@ -120,7 +120,7 @@ export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer>
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 28 }}>
           {avatar ? (
-            <img src={avatar} width={120} height={120} style={{ borderRadius: 60 }} />
+            <img src={avatar} alt="" width={120} height={120} style={{ borderRadius: 60 }} />
           ) : (
             <div
               style={{
