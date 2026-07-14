@@ -103,6 +103,12 @@ COPY lib/roulette ./lib/roulette/
 # Dream Rift's socket relay handler only needs the shared, import-free netcode
 # protocol — copy just that file (the rest of lib/dream-rift is browser code).
 COPY lib/dream-rift/net/events.ts ./lib/dream-rift/net/events.ts
+# The socket-server's app-progression helper (server/socket-server/economy.ts)
+# awards XP + quest progress to RMHType/RMHStudy players, reusing the pure,
+# import-free season + quest-catalog definitions so thresholds never drift from
+# the web tier — so those two files must be present when the bundle is built.
+COPY lib/battlepass/season.ts ./lib/battlepass/season.ts
+COPY lib/quests/catalog.ts ./lib/quests/catalog.ts
 # lights-out, doctrine, rmhvibe, rmhark-ai, media and storage were only imported
 # by the Node workers now running in the Go supervisor — no longer copied here so
 # changes to them don't bust this stage's cache.
