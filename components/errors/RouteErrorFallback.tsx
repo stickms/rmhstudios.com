@@ -27,9 +27,10 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
   return (
     <div
       role="alert"
-      className="flex min-h-dvh w-full flex-col items-center justify-center gap-7 bg-site-bg px-6 py-16 text-center"
+      className="flex min-h-dvh w-full flex-col items-center justify-center bg-site-bg px-6 py-16 text-center"
     >
-      <div className="flex size-16 items-center justify-center rounded-site border border-site-border bg-site-surface text-site-text">
+      <div className="glass-pane flex w-full max-w-lg flex-col items-center gap-7 p-8 sm:p-10">
+      <div className="glass-inset flex h-16 w-16 items-center justify-center rounded-full text-site-text">
         <AlertTriangle className="size-8" aria-hidden="true" />
       </div>
 
@@ -39,7 +40,7 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
           An unexpected error stopped this page from loading. You can try again, or head back home.
         </p>
         {message ? (
-          <p className="mt-3 break-words rounded-site-sm border border-site-border bg-site-surface px-3 py-2 text-left font-mono text-xs text-site-text-dim">
+          <p className="glass-inset mt-3 break-words px-3 py-2 text-left font-mono text-xs text-site-text-dim">
             {message.slice(0, 300)}
           </p>
         ) : null}
@@ -63,6 +64,7 @@ export function RouteErrorFallback({ error, reset, info }: RouteErrorFallbackPro
           <Home className="size-4" aria-hidden="true" />
           Go home
         </Link>
+      </div>
       </div>
     </div>
   );

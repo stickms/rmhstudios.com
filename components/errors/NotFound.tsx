@@ -14,7 +14,8 @@ export function NotFound() {
   const { t } = useTranslation('common');
 
   return (
-    <div className="flex min-h-dvh w-full flex-col items-center justify-center gap-9 bg-site-bg px-6 py-16 text-center">
+    <div className="flex min-h-dvh w-full flex-col items-center justify-center bg-site-bg px-6 py-16 text-center">
+      <div className="glass-pane flex w-full max-w-2xl flex-col items-center gap-9 p-8 sm:p-12">
       <div className="space-y-4">
         <p
           aria-hidden="true"
@@ -56,6 +57,7 @@ export function NotFound() {
           <Search className="size-4" aria-hidden="true" />
           {t('notFound.search', { defaultValue: 'Search' })}
         </Link>
+      </div>
       </div>
     </div>
   );

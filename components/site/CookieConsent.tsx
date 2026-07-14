@@ -64,7 +64,7 @@ export function CookieConsent() {
     <div
       role="dialog"
       aria-label={t('cookie-consent-label', { defaultValue: 'Cookie notice' })}
-      className="fixed inset-x-2 bottom-16 z-40 mx-auto max-w-2xl rounded-site border border-site-border bg-site-surface/95 p-4 shadow-site backdrop-blur md:bottom-4"
+      className="glass-chrome fixed inset-x-2 bottom-16 z-40 mx-auto max-w-2xl rounded-site border border-site-border p-4 shadow-site md:bottom-4"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <Cookie className="hidden h-5 w-5 shrink-0 text-site-accent sm:block" aria-hidden />

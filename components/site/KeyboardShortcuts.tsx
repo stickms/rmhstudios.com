@@ -51,7 +51,7 @@ function isTypingTarget(target: EventTarget | null): boolean {
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex min-w-6 items-center justify-center rounded border border-site-border bg-site-bg-subtle px-1.5 py-0.5 text-[11px] font-medium text-site-text-muted">
+    <kbd className="inline-flex min-w-6 items-center justify-center rounded-md border border-site-border bg-site-glass-tint px-1.5 py-0.5 text-[11px] font-medium text-site-text-muted shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]">
       {children}
     </kbd>
   );
@@ -142,10 +142,10 @@ export function KeyboardShortcuts() {
       )}
       <DialogPrimitive.Root open={helpOpen} onOpenChange={setHelpOpen}>
         <DialogPrimitive.Portal>
-          <DialogPrimitive.Overlay className="fixed inset-0 z-[90] bg-black/60 backdrop-blur-sm data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+          <DialogPrimitive.Overlay className="fixed inset-0 z-[90] glass-scrim data-[state=open]:animate-in data-[state=open]:fade-in-0" />
           <DialogPrimitive.Content
             aria-describedby={undefined}
-            className="fixed left-1/2 top-1/2 z-[91] max-h-[80dvh] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-site border border-site-border bg-site-surface p-4 shadow-2xl data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+            className="glass-overlay fixed left-1/2 top-1/2 z-[91] max-h-[80dvh] w-[calc(100vw-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 overflow-y-auto p-4 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
           >
             <DialogPrimitive.Title className="text-base font-bold text-site-text">
               {t('kbd-title', { defaultValue: 'Keyboard shortcuts' })}
