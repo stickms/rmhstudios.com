@@ -247,11 +247,18 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     });
   };
 
-  const inboxCount = unreadCount + notificationCount;
+  // The Inbox nav badge tracks unread *messages* only, so opening a conversation
+  // actually clears it. Site notifications (likes/follows/…) are surfaced by
+  // their own affordances — the notification bell just below on desktop, and the
+  // Notifications tab inside the inbox — so folding them in here would mean
+  // reading your messages could never fully clear the badge (the exact confusion
+  // users hit). The OS app-icon badge below still reflects the combined total.
+  const inboxCount = unreadCount;
+  const totalUnread = unreadCount + notificationCount;
   // Mirror the unread total onto the installed-app icon (Badging API). This
   // sidebar is always mounted (display:none on mobile, not unmounted), so it's a
   // single stable place to drive the badge without a second SSE/poll subscriber.
-  useAppBadge(session ? inboxCount : 0);
+  useAppBadge(session ? totalUnread : 0);
 
   const renderLeaf = (link: NavLeaf, nested = false) => {
     const Icon = link.icon;

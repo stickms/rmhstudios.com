@@ -6,7 +6,6 @@ import { Home, Wand2, Compass, Inbox, User, PenSquare } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { ComposeModal } from './ComposeModal';
 import { useUnreadCount } from '@/lib/useUnreadCount';
-import { useNotificationCount } from '@/lib/useNotificationCount';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useTranslation } from "react-i18next";
 
@@ -15,7 +14,6 @@ export function MobileNav() {
   const { data: session } = useSession();
   const [composeOpen, setComposeOpen] = useState(false);
   const unreadCount = useUnreadCount(!!session);
-  const { count: notificationCount } = useNotificationCount(!!session);
 
   const profileHref = session?.user?.id
     ? `/u/${(session.user as any).handle || session.user.id}`
@@ -26,7 +24,9 @@ export function MobileNav() {
   const isStudio = pathname?.startsWith('/create') || pathname?.startsWith('/builds') || pathname?.startsWith('/user-builds') || pathname?.startsWith('/v') || pathname?.startsWith('/personas');
   const isInbox = pathname?.startsWith('/messages') || pathname?.startsWith('/notifications') || pathname?.startsWith('/groups');
   const isProfile = pathname?.startsWith('/profile') || pathname?.startsWith('/u/');
-  const inboxCount = unreadCount + notificationCount;
+  // Messages-only badge (mirrors the desktop rail): opening a conversation
+  // clears it. Notifications live on the Notifications tab inside the inbox.
+  const inboxCount = unreadCount;
   const { t } = useTranslation("feed");
 
   // Active tab = an accent glass capsule behind the icon; idle tabs are muted.
