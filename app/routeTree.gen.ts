@@ -99,6 +99,7 @@ import { Route as RmhCapitalContactRouteImport } from './routes/rmh-capital/cont
 import { Route as RmhCapitalCareersRouteImport } from './routes/rmh-capital/careers'
 import { Route as RmhCapitalBusinessesRouteImport } from './routes/rmh-capital/businesses'
 import { Route as RefCodeRouteImport } from './routes/ref.$code'
+import { Route as NewsRssDotxmlRouteImport } from './routes/news.rss[.]xml'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
@@ -113,6 +114,7 @@ import { Route as DailyImpostorRouteImport } from './routes/daily/impostor'
 import { Route as DailyChainlinkRouteImport } from './routes/daily/chainlink'
 import { Route as DailyAlibiRouteImport } from './routes/daily/alibi'
 import { Route as BuildsSlugRouteImport } from './routes/builds_.$slug'
+import { Route as BlogRssDotxmlRouteImport } from './routes/blog.rss[.]xml'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as ApiWrappedRouteImport } from './routes/api/wrapped'
 import { Route as ApiUserBuildsRouteImport } from './routes/api/user-builds'
@@ -155,7 +157,10 @@ import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
+import { Route as SiteAnalyticsRouteImport } from './routes/_site/analytics'
 import { Route as SiteAchievementsRouteImport } from './routes/_site/achievements'
+import { Route as DotwellKnownAssetlinksDotjsonRouteImport } from './routes/[.]well-known.assetlinks[.]json'
+import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known.apple-app-site-association'
 import { Route as SiteDeveloperRouteRouteImport } from './routes/_site/developer/route'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
@@ -278,7 +283,9 @@ import { Route as ApiPushSubscribeRouteImport } from './routes/api/push/subscrib
 import { Route as ApiPushPublicKeyRouteImport } from './routes/api/push/public-key'
 import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-month'
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
+import { Route as ApiProfileBannerRouteImport } from './routes/api/profile/banner'
 import { Route as ApiProfileAvatarRouteImport } from './routes/api/profile/avatar'
+import { Route as ApiProfileAnalyticsRouteImport } from './routes/api/profile/analytics'
 import { Route as ApiProfileIdRouteImport } from './routes/api/profile/$id'
 import { Route as ApiPresenceOnlineCountRouteImport } from './routes/api/presence/online-count'
 import { Route as ApiPresenceHeartbeatRouteImport } from './routes/api/presence/heartbeat'
@@ -323,6 +330,7 @@ import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-e
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
 import { Route as ApiFeedMentionSearchRouteImport } from './routes/api/feed/mention-search'
 import { Route as ApiFeedHashtagSearchRouteImport } from './routes/api/feed/hashtag-search'
+import { Route as ApiEmbedOembedRouteImport } from './routes/api/embed/oembed'
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
 import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-rift/leaderboard'
 import { Route as ApiDreamRiftCoopRouteImport } from './routes/api/dream-rift/coop'
@@ -469,8 +477,10 @@ import { Route as ApiRidesharePlacesIdRouteImport } from './routes/api/rideshare
 import { Route as ApiRankedChallengeIdRouteImport } from './routes/api/ranked/challenge/$id'
 import { Route as ApiRankedGameLeaderboardRouteImport } from './routes/api/ranked/$game/leaderboard'
 import { Route as ApiQuestsIdClaimRouteImport } from './routes/api/quests/$id/claim'
+import { Route as ApiProfileBannerFilenameRouteImport } from './routes/api/profile/banner/$filename'
 import { Route as ApiProfileAvatarFilenameRouteImport } from './routes/api/profile/avatar/$filename'
 import { Route as ApiProfileIdRmharksRouteImport } from './routes/api/profile/$id/rmharks'
+import { Route as ApiProfileIdMembershipRouteImport } from './routes/api/profile/$id/membership'
 import { Route as ApiProfileIdLikesRouteImport } from './routes/api/profile/$id/likes'
 import { Route as ApiProfileIdFollowingRouteImport } from './routes/api/profile/$id/following'
 import { Route as ApiProfileIdFollowersRouteImport } from './routes/api/profile/$id/followers'
@@ -478,6 +488,7 @@ import { Route as ApiProfileIdFollowRouteImport } from './routes/api/profile/$id
 import { Route as ApiPredictionsIdTradeRouteImport } from './routes/api/predictions/$id/trade'
 import { Route as ApiPersonasAvatarFilenameRouteImport } from './routes/api/personas/avatar/$filename'
 import { Route as ApiPersonasIdChatRouteImport } from './routes/api/personas/$id/chat'
+import { Route as ApiOgProfileIdRouteImport } from './routes/api/og/profile/$id'
 import { Route as ApiOgPostIdRouteImport } from './routes/api/og/post/$id'
 import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/api/messages/$conversationId/typing'
 import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/messages/$conversationId/read'
@@ -565,6 +576,7 @@ import { Route as ApiRideshareRidesIdSyncRouteImport } from './routes/api/ridesh
 import { Route as ApiRideshareRidesIdRateRouteImport } from './routes/api/rideshare/rides/$id/rate'
 import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/rideshare/rides/$id/messages'
 import { Route as ApiPlaylistsIdItemsItemIdRouteImport } from './routes/api/playlists/$id/items/$itemId'
+import { Route as ApiOgPostIdStoryRouteImport } from './routes/api/og/post/$id/story'
 import { Route as ApiLibraryCollectionIdItemsRouteImport } from './routes/api/library/collection/$id/items'
 import { Route as ApiLibraryCollectionIdCoverRouteImport } from './routes/api/library/collection/$id/cover'
 import { Route as ApiHomesListingsIdFavoriteRouteImport } from './routes/api/homes/listings.$id.favorite'
@@ -1037,6 +1049,11 @@ const RefCodeRoute = RefCodeRouteImport.update({
   path: '/ref/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NewsRssDotxmlRoute = NewsRssDotxmlRouteImport.update({
+  id: '/news/rss.xml',
+  path: '/news/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NewsSlugRoute = NewsSlugRouteImport.update({
   id: '/news/$slug',
   path: '/news/$slug',
@@ -1105,6 +1122,11 @@ const DailyAlibiRoute = DailyAlibiRouteImport.update({
 const BuildsSlugRoute = BuildsSlugRouteImport.update({
   id: '/builds_/$slug',
   path: '/builds/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRssDotxmlRoute = BlogRssDotxmlRouteImport.update({
+  id: '/blog/rss.xml',
+  path: '/blog/rss.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
@@ -1317,11 +1339,28 @@ const SiteBookmarksRoute = SiteBookmarksRouteImport.update({
   path: '/bookmarks',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteAnalyticsRoute = SiteAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteAchievementsRoute = SiteAchievementsRouteImport.update({
   id: '/achievements',
   path: '/achievements',
   getParentRoute: () => SiteRoute,
 } as any)
+const DotwellKnownAssetlinksDotjsonRoute =
+  DotwellKnownAssetlinksDotjsonRouteImport.update({
+    id: '/.well-known/assetlinks.json',
+    path: '/.well-known/assetlinks.json',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DotwellKnownAppleAppSiteAssociationRoute =
+  DotwellKnownAppleAppSiteAssociationRouteImport.update({
+    id: '/.well-known/apple-app-site-association',
+    path: '/.well-known/apple-app-site-association',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const SiteDeveloperRouteRoute = SiteDeveloperRouteRouteImport.update({
   id: '/developer',
   path: '/developer',
@@ -1941,9 +1980,19 @@ const ApiProfileMeRoute = ApiProfileMeRouteImport.update({
   path: '/me',
   getParentRoute: () => ApiProfileRoute,
 } as any)
+const ApiProfileBannerRoute = ApiProfileBannerRouteImport.update({
+  id: '/banner',
+  path: '/banner',
+  getParentRoute: () => ApiProfileRoute,
+} as any)
 const ApiProfileAvatarRoute = ApiProfileAvatarRouteImport.update({
   id: '/avatar',
   path: '/avatar',
+  getParentRoute: () => ApiProfileRoute,
+} as any)
+const ApiProfileAnalyticsRoute = ApiProfileAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => ApiProfileRoute,
 } as any)
 const ApiProfileIdRoute = ApiProfileIdRouteImport.update({
@@ -2172,6 +2221,11 @@ const ApiFeedMentionSearchRoute = ApiFeedMentionSearchRouteImport.update({
 const ApiFeedHashtagSearchRoute = ApiFeedHashtagSearchRouteImport.update({
   id: '/api/feed/hashtag-search',
   path: '/api/feed/hashtag-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiEmbedOembedRoute = ApiEmbedOembedRouteImport.update({
+  id: '/api/embed/oembed',
+  path: '/api/embed/oembed',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDreamRiftScoreRoute = ApiDreamRiftScoreRouteImport.update({
@@ -2917,6 +2971,12 @@ const ApiQuestsIdClaimRoute = ApiQuestsIdClaimRouteImport.update({
   path: '/api/quests/$id/claim',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiProfileBannerFilenameRoute =
+  ApiProfileBannerFilenameRouteImport.update({
+    id: '/$filename',
+    path: '/$filename',
+    getParentRoute: () => ApiProfileBannerRoute,
+  } as any)
 const ApiProfileAvatarFilenameRoute =
   ApiProfileAvatarFilenameRouteImport.update({
     id: '/$filename',
@@ -2926,6 +2986,11 @@ const ApiProfileAvatarFilenameRoute =
 const ApiProfileIdRmharksRoute = ApiProfileIdRmharksRouteImport.update({
   id: '/rmharks',
   path: '/rmharks',
+  getParentRoute: () => ApiProfileIdRoute,
+} as any)
+const ApiProfileIdMembershipRoute = ApiProfileIdMembershipRouteImport.update({
+  id: '/membership',
+  path: '/membership',
   getParentRoute: () => ApiProfileIdRoute,
 } as any)
 const ApiProfileIdLikesRoute = ApiProfileIdLikesRouteImport.update({
@@ -2962,6 +3027,11 @@ const ApiPersonasAvatarFilenameRoute =
 const ApiPersonasIdChatRoute = ApiPersonasIdChatRouteImport.update({
   id: '/api/personas/$id/chat',
   path: '/api/personas/$id/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiOgProfileIdRoute = ApiOgProfileIdRouteImport.update({
+  id: '/api/og/profile/$id',
+  path: '/api/og/profile/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiOgPostIdRoute = ApiOgPostIdRouteImport.update({
@@ -3438,6 +3508,11 @@ const ApiPlaylistsIdItemsItemIdRoute =
     path: '/api/playlists/$id/items/$itemId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiOgPostIdStoryRoute = ApiOgPostIdStoryRouteImport.update({
+  id: '/story',
+  path: '/story',
+  getParentRoute: () => ApiOgPostIdRoute,
+} as any)
 const ApiLibraryCollectionIdItemsRoute =
   ApiLibraryCollectionIdItemsRouteImport.update({
     id: '/items',
@@ -3609,7 +3684,10 @@ export interface FileRoutesByFullPath {
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
   '/developer': typeof SiteDeveloperRouteRouteWithChildren
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
+  '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/achievements': typeof SiteAchievementsRoute
+  '/analytics': typeof SiteAnalyticsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/communities': typeof SiteCommunitiesRoute
   '/drafts': typeof SiteDraftsRoute
@@ -3652,6 +3730,7 @@ export interface FileRoutesByFullPath {
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/builds/$slug': typeof BuildsSlugRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
@@ -3666,6 +3745,7 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/news/rss.xml': typeof NewsRssDotxmlRoute
   '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -3793,6 +3873,7 @@ export interface FileRoutesByFullPath {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -3837,7 +3918,9 @@ export interface FileRoutesByFullPath {
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
+  '/api/profile/analytics': typeof ApiProfileAnalyticsRoute
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
+  '/api/profile/banner': typeof ApiProfileBannerRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
@@ -4015,7 +4098,8 @@ export interface FileRoutesByFullPath {
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
-  '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
+  '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -4023,8 +4107,10 @@ export interface FileRoutesByFullPath {
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
+  '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
+  '/api/profile/banner/$filename': typeof ApiProfileBannerFilenameRoute
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
   '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
@@ -4108,6 +4194,7 @@ export interface FileRoutesByFullPath {
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
+  '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -4166,7 +4253,10 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
+  '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/achievements': typeof SiteAchievementsRoute
+  '/analytics': typeof SiteAnalyticsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/communities': typeof SiteCommunitiesRoute
   '/drafts': typeof SiteDraftsRoute
@@ -4207,6 +4297,7 @@ export interface FileRoutesByTo {
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/builds/$slug': typeof BuildsSlugRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
@@ -4221,6 +4312,7 @@ export interface FileRoutesByTo {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/news/rss.xml': typeof NewsRssDotxmlRoute
   '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -4347,6 +4439,7 @@ export interface FileRoutesByTo {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -4391,7 +4484,9 @@ export interface FileRoutesByTo {
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
+  '/api/profile/analytics': typeof ApiProfileAnalyticsRoute
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
+  '/api/profile/banner': typeof ApiProfileBannerRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
@@ -4569,7 +4664,8 @@ export interface FileRoutesByTo {
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
-  '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
+  '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -4577,8 +4673,10 @@ export interface FileRoutesByTo {
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
+  '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
+  '/api/profile/banner/$filename': typeof ApiProfileBannerFilenameRoute
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
   '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
@@ -4662,6 +4760,7 @@ export interface FileRoutesByTo {
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
+  '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -4743,7 +4842,10 @@ export interface FileRoutesById {
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
   '/_site/developer': typeof SiteDeveloperRouteRouteWithChildren
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
+  '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/_site/achievements': typeof SiteAchievementsRoute
+  '/_site/analytics': typeof SiteAnalyticsRoute
   '/_site/bookmarks': typeof SiteBookmarksRoute
   '/_site/communities': typeof SiteCommunitiesRoute
   '/_site/drafts': typeof SiteDraftsRoute
@@ -4786,6 +4888,7 @@ export interface FileRoutesById {
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/builds_/$slug': typeof BuildsSlugRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
@@ -4800,6 +4903,7 @@ export interface FileRoutesById {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/news/rss.xml': typeof NewsRssDotxmlRoute
   '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -4928,6 +5032,7 @@ export interface FileRoutesById {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -4972,7 +5077,9 @@ export interface FileRoutesById {
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
   '/api/profile/$id': typeof ApiProfileIdRouteWithChildren
+  '/api/profile/analytics': typeof ApiProfileAnalyticsRoute
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
+  '/api/profile/banner': typeof ApiProfileBannerRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
@@ -5150,7 +5257,8 @@ export interface FileRoutesById {
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
-  '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
+  '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -5158,8 +5266,10 @@ export interface FileRoutesById {
   '/api/profile/$id/followers': typeof ApiProfileIdFollowersRoute
   '/api/profile/$id/following': typeof ApiProfileIdFollowingRoute
   '/api/profile/$id/likes': typeof ApiProfileIdLikesRoute
+  '/api/profile/$id/membership': typeof ApiProfileIdMembershipRoute
   '/api/profile/$id/rmharks': typeof ApiProfileIdRmharksRoute
   '/api/profile/avatar/$filename': typeof ApiProfileAvatarFilenameRoute
+  '/api/profile/banner/$filename': typeof ApiProfileBannerFilenameRoute
   '/api/quests/$id/claim': typeof ApiQuestsIdClaimRoute
   '/api/ranked/$game/leaderboard': typeof ApiRankedGameLeaderboardRoute
   '/api/ranked/challenge/$id': typeof ApiRankedChallengeIdRoute
@@ -5243,6 +5353,7 @@ export interface FileRoutesById {
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
+  '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -5325,7 +5436,10 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/admin'
     | '/developer'
+    | '/.well-known/apple-app-site-association'
+    | '/.well-known/assetlinks.json'
     | '/achievements'
+    | '/analytics'
     | '/bookmarks'
     | '/communities'
     | '/drafts'
@@ -5368,6 +5482,7 @@ export interface FileRouteTypes {
     | '/api/user-builds'
     | '/api/wrapped'
     | '/blog/$slug'
+    | '/blog/rss.xml'
     | '/builds/$slug'
     | '/daily/alibi'
     | '/daily/chainlink'
@@ -5382,6 +5497,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/news/rss.xml'
     | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -5509,6 +5625,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/embed/oembed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
     | '/api/feed/stream'
@@ -5553,7 +5670,9 @@ export interface FileRouteTypes {
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
     | '/api/profile/$id'
+    | '/api/profile/analytics'
     | '/api/profile/avatar'
+    | '/api/profile/banner'
     | '/api/profile/me'
     | '/api/promo/free-month'
     | '/api/push/public-key'
@@ -5732,6 +5851,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
+    | '/api/og/profile/$id'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
     | '/api/predictions/$id/trade'
@@ -5739,8 +5859,10 @@ export interface FileRouteTypes {
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
     | '/api/profile/$id/likes'
+    | '/api/profile/$id/membership'
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
+    | '/api/profile/banner/$filename'
     | '/api/quests/$id/claim'
     | '/api/ranked/$game/leaderboard'
     | '/api/ranked/challenge/$id'
@@ -5824,6 +5946,7 @@ export interface FileRouteTypes {
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
+    | '/api/og/post/$id/story'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -5882,7 +6005,10 @@ export interface FileRouteTypes {
     | '/terms'
     | '/velum2099'
     | '/void-breaker'
+    | '/.well-known/apple-app-site-association'
+    | '/.well-known/assetlinks.json'
     | '/achievements'
+    | '/analytics'
     | '/bookmarks'
     | '/communities'
     | '/drafts'
@@ -5923,6 +6049,7 @@ export interface FileRouteTypes {
     | '/api/user-builds'
     | '/api/wrapped'
     | '/blog/$slug'
+    | '/blog/rss.xml'
     | '/builds/$slug'
     | '/daily/alibi'
     | '/daily/chainlink'
@@ -5937,6 +6064,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/news/rss.xml'
     | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -6063,6 +6191,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/embed/oembed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
     | '/api/feed/stream'
@@ -6107,7 +6236,9 @@ export interface FileRouteTypes {
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
     | '/api/profile/$id'
+    | '/api/profile/analytics'
     | '/api/profile/avatar'
+    | '/api/profile/banner'
     | '/api/profile/me'
     | '/api/promo/free-month'
     | '/api/push/public-key'
@@ -6286,6 +6417,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
+    | '/api/og/profile/$id'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
     | '/api/predictions/$id/trade'
@@ -6293,8 +6425,10 @@ export interface FileRouteTypes {
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
     | '/api/profile/$id/likes'
+    | '/api/profile/$id/membership'
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
+    | '/api/profile/banner/$filename'
     | '/api/quests/$id/claim'
     | '/api/ranked/$game/leaderboard'
     | '/api/ranked/challenge/$id'
@@ -6378,6 +6512,7 @@ export interface FileRouteTypes {
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
+    | '/api/og/post/$id/story'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -6458,7 +6593,10 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/_site/admin'
     | '/_site/developer'
+    | '/.well-known/apple-app-site-association'
+    | '/.well-known/assetlinks.json'
     | '/_site/achievements'
+    | '/_site/analytics'
     | '/_site/bookmarks'
     | '/_site/communities'
     | '/_site/drafts'
@@ -6501,6 +6639,7 @@ export interface FileRouteTypes {
     | '/api/user-builds'
     | '/api/wrapped'
     | '/blog/$slug'
+    | '/blog/rss.xml'
     | '/builds_/$slug'
     | '/daily/alibi'
     | '/daily/chainlink'
@@ -6515,6 +6654,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/news/rss.xml'
     | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -6643,6 +6783,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/embed/oembed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
     | '/api/feed/stream'
@@ -6687,7 +6828,9 @@ export interface FileRouteTypes {
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
     | '/api/profile/$id'
+    | '/api/profile/analytics'
     | '/api/profile/avatar'
+    | '/api/profile/banner'
     | '/api/profile/me'
     | '/api/promo/free-month'
     | '/api/push/public-key'
@@ -6866,6 +7009,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
+    | '/api/og/profile/$id'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
     | '/api/predictions/$id/trade'
@@ -6873,8 +7017,10 @@ export interface FileRouteTypes {
     | '/api/profile/$id/followers'
     | '/api/profile/$id/following'
     | '/api/profile/$id/likes'
+    | '/api/profile/$id/membership'
     | '/api/profile/$id/rmharks'
     | '/api/profile/avatar/$filename'
+    | '/api/profile/banner/$filename'
     | '/api/quests/$id/claim'
     | '/api/ranked/$game/leaderboard'
     | '/api/ranked/challenge/$id'
@@ -6958,6 +7104,7 @@ export interface FileRouteTypes {
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
+    | '/api/og/post/$id/story'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -7037,6 +7184,8 @@ export interface RootRouteChildren {
   Velum2099Route: typeof Velum2099Route
   VersecraftRoute: typeof VersecraftRouteWithChildren
   VoidBreakerRoute: typeof VoidBreakerRoute
+  DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
+  DotwellKnownAssetlinksDotjsonRoute: typeof DotwellKnownAssetlinksDotjsonRoute
   ApiAnnouncementsRoute: typeof ApiAnnouncementsRouteWithChildren
   ApiBookmarksRoute: typeof ApiBookmarksRoute
   ApiClientErrorRoute: typeof ApiClientErrorRoute
@@ -7057,11 +7206,13 @@ export interface RootRouteChildren {
   ApiUserBuildsRoute: typeof ApiUserBuildsRouteWithChildren
   ApiWrappedRoute: typeof ApiWrappedRoute
   BlogSlugRoute: typeof BlogSlugRoute
+  BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
   BuildsSlugRoute: typeof BuildsSlugRoute
   DiscordLightsOutRoute: typeof DiscordLightsOutRoute
   DiscordRmhboxRoute: typeof DiscordRmhboxRoute
   LibrarySlugRoute: typeof LibrarySlugRoute
   NewsSlugRoute: typeof NewsSlugRoute
+  NewsRssDotxmlRoute: typeof NewsRssDotxmlRoute
   RefCodeRoute: typeof RefCodeRoute
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
@@ -7105,6 +7256,7 @@ export interface RootRouteChildren {
   ApiDreamRiftCoopRoute: typeof ApiDreamRiftCoopRoute
   ApiDreamRiftLeaderboardRoute: typeof ApiDreamRiftLeaderboardRoute
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
+  ApiEmbedOembedRoute: typeof ApiEmbedOembedRoute
   ApiFeedHashtagSearchRoute: typeof ApiFeedHashtagSearchRoute
   ApiFeedMentionSearchRoute: typeof ApiFeedMentionSearchRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
@@ -7266,7 +7418,8 @@ export interface RootRouteChildren {
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
-  ApiOgPostIdRoute: typeof ApiOgPostIdRoute
+  ApiOgPostIdRoute: typeof ApiOgPostIdRouteWithChildren
+  ApiOgProfileIdRoute: typeof ApiOgProfileIdRoute
   ApiPersonasIdChatRoute: typeof ApiPersonasIdChatRoute
   ApiPersonasAvatarFilenameRoute: typeof ApiPersonasAvatarFilenameRoute
   ApiQuestsIdClaimRoute: typeof ApiQuestsIdClaimRoute
@@ -7945,6 +8098,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RefCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/news/rss.xml': {
+      id: '/news/rss.xml'
+      path: '/news/rss.xml'
+      fullPath: '/news/rss.xml'
+      preLoaderRoute: typeof NewsRssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/news/$slug': {
       id: '/news/$slug'
       path: '/news/$slug'
@@ -8041,6 +8201,13 @@ declare module '@tanstack/react-router' {
       path: '/builds/$slug'
       fullPath: '/builds/$slug'
       preLoaderRoute: typeof BuildsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/rss.xml': {
+      id: '/blog/rss.xml'
+      path: '/blog/rss.xml'
+      fullPath: '/blog/rss.xml'
+      preLoaderRoute: typeof BlogRssDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog/$slug': {
@@ -8337,12 +8504,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteBookmarksRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/analytics': {
+      id: '/_site/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof SiteAnalyticsRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/achievements': {
       id: '/_site/achievements'
       path: '/achievements'
       fullPath: '/achievements'
       preLoaderRoute: typeof SiteAchievementsRouteImport
       parentRoute: typeof SiteRoute
+    }
+    '/.well-known/assetlinks.json': {
+      id: '/.well-known/assetlinks.json'
+      path: '/.well-known/assetlinks.json'
+      fullPath: '/.well-known/assetlinks.json'
+      preLoaderRoute: typeof DotwellKnownAssetlinksDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/apple-app-site-association': {
+      id: '/.well-known/apple-app-site-association'
+      path: '/.well-known/apple-app-site-association'
+      fullPath: '/.well-known/apple-app-site-association'
+      preLoaderRoute: typeof DotwellKnownAppleAppSiteAssociationRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_site/developer': {
       id: '/_site/developer'
@@ -9198,11 +9386,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiProfileMeRouteImport
       parentRoute: typeof ApiProfileRoute
     }
+    '/api/profile/banner': {
+      id: '/api/profile/banner'
+      path: '/banner'
+      fullPath: '/api/profile/banner'
+      preLoaderRoute: typeof ApiProfileBannerRouteImport
+      parentRoute: typeof ApiProfileRoute
+    }
     '/api/profile/avatar': {
       id: '/api/profile/avatar'
       path: '/avatar'
       fullPath: '/api/profile/avatar'
       preLoaderRoute: typeof ApiProfileAvatarRouteImport
+      parentRoute: typeof ApiProfileRoute
+    }
+    '/api/profile/analytics': {
+      id: '/api/profile/analytics'
+      path: '/analytics'
+      fullPath: '/api/profile/analytics'
+      preLoaderRoute: typeof ApiProfileAnalyticsRouteImport
       parentRoute: typeof ApiProfileRoute
     }
     '/api/profile/$id': {
@@ -9511,6 +9713,13 @@ declare module '@tanstack/react-router' {
       path: '/api/feed/hashtag-search'
       fullPath: '/api/feed/hashtag-search'
       preLoaderRoute: typeof ApiFeedHashtagSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/embed/oembed': {
+      id: '/api/embed/oembed'
+      path: '/api/embed/oembed'
+      fullPath: '/api/embed/oembed'
+      preLoaderRoute: typeof ApiEmbedOembedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/dream-rift/score': {
@@ -10535,6 +10744,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiQuestsIdClaimRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/profile/banner/$filename': {
+      id: '/api/profile/banner/$filename'
+      path: '/$filename'
+      fullPath: '/api/profile/banner/$filename'
+      preLoaderRoute: typeof ApiProfileBannerFilenameRouteImport
+      parentRoute: typeof ApiProfileBannerRoute
+    }
     '/api/profile/avatar/$filename': {
       id: '/api/profile/avatar/$filename'
       path: '/$filename'
@@ -10547,6 +10763,13 @@ declare module '@tanstack/react-router' {
       path: '/rmharks'
       fullPath: '/api/profile/$id/rmharks'
       preLoaderRoute: typeof ApiProfileIdRmharksRouteImport
+      parentRoute: typeof ApiProfileIdRoute
+    }
+    '/api/profile/$id/membership': {
+      id: '/api/profile/$id/membership'
+      path: '/membership'
+      fullPath: '/api/profile/$id/membership'
+      preLoaderRoute: typeof ApiProfileIdMembershipRouteImport
       parentRoute: typeof ApiProfileIdRoute
     }
     '/api/profile/$id/likes': {
@@ -10596,6 +10819,13 @@ declare module '@tanstack/react-router' {
       path: '/api/personas/$id/chat'
       fullPath: '/api/personas/$id/chat'
       preLoaderRoute: typeof ApiPersonasIdChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/og/profile/$id': {
+      id: '/api/og/profile/$id'
+      path: '/api/og/profile/$id'
+      fullPath: '/api/og/profile/$id'
+      preLoaderRoute: typeof ApiOgProfileIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/og/post/$id': {
@@ -11207,6 +11437,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPlaylistsIdItemsItemIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/og/post/$id/story': {
+      id: '/api/og/post/$id/story'
+      path: '/story'
+      fullPath: '/api/og/post/$id/story'
+      preLoaderRoute: typeof ApiOgPostIdStoryRouteImport
+      parentRoute: typeof ApiOgPostIdRoute
+    }
     '/api/library/collection/$id/items': {
       id: '/api/library/collection/$id/items'
       path: '/items'
@@ -11480,6 +11717,7 @@ interface SiteRouteChildren {
   SiteAdminRouteRoute: typeof SiteAdminRouteRouteWithChildren
   SiteDeveloperRouteRoute: typeof SiteDeveloperRouteRouteWithChildren
   SiteAchievementsRoute: typeof SiteAchievementsRoute
+  SiteAnalyticsRoute: typeof SiteAnalyticsRoute
   SiteBookmarksRoute: typeof SiteBookmarksRoute
   SiteCommunitiesRoute: typeof SiteCommunitiesRoute
   SiteDraftsRoute: typeof SiteDraftsRoute
@@ -11546,6 +11784,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteAdminRouteRoute: SiteAdminRouteRouteWithChildren,
   SiteDeveloperRouteRoute: SiteDeveloperRouteRouteWithChildren,
   SiteAchievementsRoute: SiteAchievementsRoute,
+  SiteAnalyticsRoute: SiteAnalyticsRoute,
   SiteBookmarksRoute: SiteBookmarksRoute,
   SiteCommunitiesRoute: SiteCommunitiesRoute,
   SiteDraftsRoute: SiteDraftsRoute,
@@ -12009,6 +12248,7 @@ interface ApiProfileIdRouteChildren {
   ApiProfileIdFollowersRoute: typeof ApiProfileIdFollowersRoute
   ApiProfileIdFollowingRoute: typeof ApiProfileIdFollowingRoute
   ApiProfileIdLikesRoute: typeof ApiProfileIdLikesRoute
+  ApiProfileIdMembershipRoute: typeof ApiProfileIdMembershipRoute
   ApiProfileIdRmharksRoute: typeof ApiProfileIdRmharksRoute
 }
 
@@ -12017,6 +12257,7 @@ const ApiProfileIdRouteChildren: ApiProfileIdRouteChildren = {
   ApiProfileIdFollowersRoute: ApiProfileIdFollowersRoute,
   ApiProfileIdFollowingRoute: ApiProfileIdFollowingRoute,
   ApiProfileIdLikesRoute: ApiProfileIdLikesRoute,
+  ApiProfileIdMembershipRoute: ApiProfileIdMembershipRoute,
   ApiProfileIdRmharksRoute: ApiProfileIdRmharksRoute,
 }
 
@@ -12035,15 +12276,30 @@ const ApiProfileAvatarRouteChildren: ApiProfileAvatarRouteChildren = {
 const ApiProfileAvatarRouteWithChildren =
   ApiProfileAvatarRoute._addFileChildren(ApiProfileAvatarRouteChildren)
 
+interface ApiProfileBannerRouteChildren {
+  ApiProfileBannerFilenameRoute: typeof ApiProfileBannerFilenameRoute
+}
+
+const ApiProfileBannerRouteChildren: ApiProfileBannerRouteChildren = {
+  ApiProfileBannerFilenameRoute: ApiProfileBannerFilenameRoute,
+}
+
+const ApiProfileBannerRouteWithChildren =
+  ApiProfileBannerRoute._addFileChildren(ApiProfileBannerRouteChildren)
+
 interface ApiProfileRouteChildren {
   ApiProfileIdRoute: typeof ApiProfileIdRouteWithChildren
+  ApiProfileAnalyticsRoute: typeof ApiProfileAnalyticsRoute
   ApiProfileAvatarRoute: typeof ApiProfileAvatarRouteWithChildren
+  ApiProfileBannerRoute: typeof ApiProfileBannerRouteWithChildren
   ApiProfileMeRoute: typeof ApiProfileMeRoute
 }
 
 const ApiProfileRouteChildren: ApiProfileRouteChildren = {
   ApiProfileIdRoute: ApiProfileIdRouteWithChildren,
+  ApiProfileAnalyticsRoute: ApiProfileAnalyticsRoute,
   ApiProfileAvatarRoute: ApiProfileAvatarRouteWithChildren,
+  ApiProfileBannerRoute: ApiProfileBannerRouteWithChildren,
   ApiProfileMeRoute: ApiProfileMeRoute,
 }
 
@@ -12543,6 +12799,18 @@ const ApiLibraryCollectionIdRouteWithChildren =
     ApiLibraryCollectionIdRouteChildren,
   )
 
+interface ApiOgPostIdRouteChildren {
+  ApiOgPostIdStoryRoute: typeof ApiOgPostIdStoryRoute
+}
+
+const ApiOgPostIdRouteChildren: ApiOgPostIdRouteChildren = {
+  ApiOgPostIdStoryRoute: ApiOgPostIdStoryRoute,
+}
+
+const ApiOgPostIdRouteWithChildren = ApiOgPostIdRoute._addFileChildren(
+  ApiOgPostIdRouteChildren,
+)
+
 interface ApiRmhladderResumeIdRouteChildren {
   ApiRmhladderResumeIdAnalyzeRoute: typeof ApiRmhladderResumeIdAnalyzeRoute
   ApiRmhladderResumeIdConfirmRoute: typeof ApiRmhladderResumeIdConfirmRoute
@@ -12616,6 +12884,9 @@ const rootRouteChildren: RootRouteChildren = {
   Velum2099Route: Velum2099Route,
   VersecraftRoute: VersecraftRouteWithChildren,
   VoidBreakerRoute: VoidBreakerRoute,
+  DotwellKnownAppleAppSiteAssociationRoute:
+    DotwellKnownAppleAppSiteAssociationRoute,
+  DotwellKnownAssetlinksDotjsonRoute: DotwellKnownAssetlinksDotjsonRoute,
   ApiAnnouncementsRoute: ApiAnnouncementsRouteWithChildren,
   ApiBookmarksRoute: ApiBookmarksRoute,
   ApiClientErrorRoute: ApiClientErrorRoute,
@@ -12636,11 +12907,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiUserBuildsRoute: ApiUserBuildsRouteWithChildren,
   ApiWrappedRoute: ApiWrappedRoute,
   BlogSlugRoute: BlogSlugRoute,
+  BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   BuildsSlugRoute: BuildsSlugRoute,
   DiscordLightsOutRoute: DiscordLightsOutRoute,
   DiscordRmhboxRoute: DiscordRmhboxRoute,
   LibrarySlugRoute: LibrarySlugRoute,
   NewsSlugRoute: NewsSlugRoute,
+  NewsRssDotxmlRoute: NewsRssDotxmlRoute,
   RefCodeRoute: RefCodeRoute,
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
@@ -12684,6 +12957,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDreamRiftCoopRoute: ApiDreamRiftCoopRoute,
   ApiDreamRiftLeaderboardRoute: ApiDreamRiftLeaderboardRoute,
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
+  ApiEmbedOembedRoute: ApiEmbedOembedRoute,
   ApiFeedHashtagSearchRoute: ApiFeedHashtagSearchRoute,
   ApiFeedMentionSearchRoute: ApiFeedMentionSearchRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
@@ -12846,7 +13120,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
-  ApiOgPostIdRoute: ApiOgPostIdRoute,
+  ApiOgPostIdRoute: ApiOgPostIdRouteWithChildren,
+  ApiOgProfileIdRoute: ApiOgProfileIdRoute,
   ApiPersonasIdChatRoute: ApiPersonasIdChatRoute,
   ApiPersonasAvatarFilenameRoute: ApiPersonasAvatarFilenameRoute,
   ApiQuestsIdClaimRoute: ApiQuestsIdClaimRoute,

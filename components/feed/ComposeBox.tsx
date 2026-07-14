@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, History, ImagePlay, X, ImagePlus, Globe, Users, Lock, Coins, Type, FileText, CalendarClock, Check, ChevronDown } from 'lucide-react';
+import { Plus, BarChart3, History, ImagePlay, X, ImagePlus, Globe, Users, Lock, Coins, Type, FileText, CalendarClock, Check, ChevronDown, MessageCircle, AtSign, AlertTriangle } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { GifPicker } from './GifPicker';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -19,6 +19,7 @@ import {
   MAX_POLL_OPTION_LENGTH,
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
+  MAX_IMAGE_ALT_LENGTH,
 } from '@/lib/rmhark-schema';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -48,6 +49,9 @@ export function ComposeBox({
 }: { communityId?: string; onPosted?: (item: any) => void } = {}) {
   const [content, setContent] = useState('');
   const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE'>('PUBLIC');
+  const [replyControl, setReplyControl] = useState<'EVERYONE' | 'FOLLOWING' | 'MENTIONED'>('EVERYONE');
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [isSensitive, setIsSensitive] = useState(false);
   const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
   const [unlockPrice, setUnlockPrice] = useState(''); // coins to unlock; '' = free
   const [submitting, setSubmitting] = useState(false);
@@ -61,6 +65,10 @@ export function ComposeBox({
   });
   const [gifUrl, setGifUrl] = useState('');
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  // Per-image alt text, aligned by index with imageUrls. A missing/empty entry
+  // means "no description"; the ALT pill on each preview opens the editor.
+  const [imageAlts, setImageAlts] = useState<string[]>([]);
+  const [altEditIndex, setAltEditIndex] = useState<number | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleAt, setScheduleAt] = useState(''); // datetime-local value
@@ -71,6 +79,7 @@ export function ComposeBox({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const audienceRef = useRef<HTMLDivElement>(null);
+  const replyRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
 
@@ -115,6 +124,18 @@ export function ComposeBox({
     return () => document.removeEventListener('mousedown', handleClick);
   }, [audienceOpen]);
 
+  // Close reply-control dropdown on outside click
+  useEffect(() => {
+    if (!replyOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (replyRef.current && !replyRef.current.contains(e.target as Node)) {
+        setReplyOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [replyOpen]);
+
   const hasPoll = attachment === 'poll' && poll.question.trim() &&
     poll.options.filter((o) => o.trim()).length >= MIN_POLL_OPTIONS;
   const hasGif = attachment === 'gif' && gifUrl.trim().length > 0;
@@ -154,8 +175,17 @@ export function ComposeBox({
       };
     }
     if (hasGif) body.gifUrl = gifUrl.trim();
-    if (hasImages) body.imageUrls = imageUrls;
+    if (hasImages) {
+      body.imageUrls = imageUrls;
+      // Only send alts when the author described at least one image; send the
+      // full index-aligned array so the server can pair them by position.
+      if (imageAlts.some((a) => a?.trim())) {
+        body.imageAlts = imageUrls.map((_, i) => imageAlts[i]?.trim() ?? '');
+      }
+    }
     if (audience !== 'PUBLIC') body.audience = audience;
+    if (isSensitive) body.isSensitive = true;
+    if (replyControl !== 'EVERYONE') body.replyControl = replyControl;
     const price = parseInt(unlockPrice, 10);
     if (price > 0) body.unlockPrice = price;
     if (communityId) body.communityId = communityId;
@@ -166,11 +196,16 @@ export function ComposeBox({
     clearComposeDraft();
     setContent('');
     setAudience('PUBLIC');
+    setReplyControl('EVERYONE');
+    setReplyOpen(false);
+    setIsSensitive(false);
     setUnlockPrice('');
     setAttachment(null);
     setPoll({ question: '', options: ['', ''], multiSelect: false });
     setGifUrl('');
     setImageUrls([]);
+    setImageAlts([]);
+    setAltEditIndex(null);
     setImageError(null);
     setShowSchedule(false);
     setScheduleAt('');
@@ -183,20 +218,26 @@ export function ComposeBox({
   const snapshotDraft = () => ({
     content,
     audience,
+    replyControl,
+    isSensitive,
     unlockPrice,
     attachment,
     poll,
     gifUrl,
     imageUrls,
+    imageAlts,
   });
   const restoreDraft = (d: ReturnType<typeof snapshotDraft>) => {
     setContent(d.content);
     setAudience(d.audience);
+    setReplyControl(d.replyControl);
+    setIsSensitive(d.isSensitive);
     setUnlockPrice(d.unlockPrice);
     setAttachment(d.attachment);
     setPoll(d.poll);
     setGifUrl(d.gifUrl);
     setImageUrls(d.imageUrls);
+    setImageAlts(d.imageAlts);
   };
 
   // Build the post the user *would* see, so it can appear at the top of the
@@ -228,6 +269,9 @@ export function ComposeBox({
         isAdmin: sessionUser.isAdmin,
       },
       imageUrls: hasImages ? imageUrls : undefined,
+      imageAlts: hasImages ? imageUrls.map((_, i) => imageAlts[i]?.trim() ?? '') : undefined,
+      isSensitive,
+      replyControl,
       gifUrl: hasGif ? gifUrl.trim() : undefined,
       poll: hasPoll
         ? {
@@ -362,6 +406,14 @@ export function ComposeBox({
   ] as const;
   const currentAudience = audienceOptions.find((o) => o.value === audience) ?? audienceOptions[0];
   const CurrentAudienceIcon = currentAudience.icon;
+
+  const replyOptions = [
+    { value: 'EVERYONE', label: t("reply-everyone", { defaultValue: "Everyone can reply" }), short: t("reply-everyone-short", { defaultValue: "Everyone" }), icon: Globe },
+    { value: 'FOLLOWING', label: t("reply-following", { defaultValue: "Accounts you follow" }), short: t("reply-following-short", { defaultValue: "Following" }), icon: Users },
+    { value: 'MENTIONED', label: t("reply-mentioned", { defaultValue: "Only accounts you mention" }), short: t("reply-mentioned-short", { defaultValue: "Mentioned" }), icon: AtSign },
+  ] as const;
+  const currentReply = replyOptions.find((o) => o.value === replyControl) ?? replyOptions[0];
+  const CurrentReplyIcon = currentReply.icon;
 
   return (
     // focus-within lifts the composer to a faint surface + brighter hairline
@@ -580,24 +632,45 @@ export function ComposeBox({
           {/* Uploaded image preview strip */}
           {imageUrls.length > 0 && (
             <div className={`mt-2 grid gap-1 ${imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-              {imageUrls.map((url) => (
-                <div key={url} className="relative group">
-                  <img
-                    src={url}
-                    alt=""
-                    loading="lazy"
-                    className="w-full rounded-site-sm object-cover max-h-48"
-                  />
-                  <button
-                    type="button"
-                    aria-label={t("remove-image-aria", { defaultValue: "Remove image" })}
-                    onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
-                    className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
+              {imageUrls.map((url, i) => {
+                const hasAlt = !!imageAlts[i]?.trim();
+                return (
+                  <div key={url} className="relative group">
+                    <img
+                      src={url}
+                      alt={imageAlts[i]?.trim() || ''}
+                      loading="lazy"
+                      className="w-full rounded-site-sm object-cover max-h-48"
+                    />
+                    {/* ALT pill — accent when described, so authors can see at a
+                        glance which images still need a description. */}
+                    <button
+                      type="button"
+                      onClick={() => setAltEditIndex(i)}
+                      aria-label={hasAlt
+                        ? t("edit-alt-text-aria", { defaultValue: "Edit image description" })
+                        : t("add-alt-text-aria", { defaultValue: "Add image description" })}
+                      title={imageAlts[i]?.trim() || t("alt-text-title", { defaultValue: "Describe this image for screen readers" })}
+                      className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide transition-colors ${
+                        hasAlt ? 'bg-site-accent text-white' : 'bg-black/60 text-white/90 hover:bg-black/80'
+                      }`}
+                    >
+                      {t("alt-badge", { defaultValue: "Alt" })}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t("remove-image-aria", { defaultValue: "Remove image" })}
+                      onClick={() => {
+                        setImageUrls((prev) => prev.filter((_, j) => j !== i));
+                        setImageAlts((prev) => prev.filter((_, j) => j !== i));
+                      }}
+                      className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
           {imageError && (
@@ -697,6 +770,65 @@ export function ComposeBox({
                   </div>
                 )}
               </div>
+
+              {/* Who can reply dropdown */}
+              <div className="relative" ref={replyRef}>
+                <button
+                  type="button"
+                  onClick={() => setReplyOpen((v) => !v)}
+                  aria-haspopup="listbox"
+                  aria-expanded={replyOpen}
+                  title={t("reply-control-label", { defaultValue: "Who can reply" })}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-site-border bg-site-surface px-2.5 py-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-text hover:border-site-accent/50"
+                >
+                  <CurrentReplyIcon className="h-3.5 w-3.5" />
+                  <span>{currentReply.short}</span>
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${replyOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {replyOpen && (
+                  <div role="listbox" className="absolute bottom-full left-0 mb-1 w-52 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30 animate-in fade-in slide-in-from-bottom-1 duration-150">
+                    <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-site-text-dim">
+                      {t("reply-control-heading", { defaultValue: "Who can reply?" })}
+                    </div>
+                    {replyOptions.map(({ value, label, icon: Icon }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="option"
+                        aria-selected={replyControl === value}
+                        onClick={() => {
+                          setReplyControl(value);
+                          setReplyOpen(false);
+                        }}
+                        className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors hover:bg-site-surface ${
+                          replyControl === value ? 'text-site-accent' : 'text-site-text'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 text-site-text-dim" />
+                        <span className="flex-1 text-left">{label}</span>
+                        {replyControl === value && <Check className="w-4 h-4" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Sensitive-content toggle */}
+              <button
+                type="button"
+                onClick={() => setIsSensitive((v) => !v)}
+                aria-pressed={isSensitive}
+                title={t("mark-sensitive-title", { defaultValue: "Mark media as sensitive (content warning)" })}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  isSensitive
+                    ? 'border-site-warning/50 bg-site-warning/10 text-site-warning'
+                    : 'border-site-border bg-site-surface text-site-text-muted hover:text-site-text hover:border-site-accent/50'
+                }`}
+              >
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span>{t("mark-sensitive-short", { defaultValue: "CW" })}</span>
+              </button>
 
               {/* Character counter */}
               <span
@@ -946,6 +1078,67 @@ export function ComposeBox({
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Image alt-text editor — opened from the ALT pill on a preview image */}
+      {altEditIndex !== null && imageUrls[altEditIndex] && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setAltEditIndex(null)} />
+          <div className="relative w-full max-w-md rounded-site border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-site-text">
+                {t("alt-text-heading", { defaultValue: "Describe this image" })}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setAltEditIndex(null)}
+                aria-label={t("close", { defaultValue: "Close" })}
+                className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mb-3 text-xs text-site-text-muted">
+              {t("alt-text-help", { defaultValue: "Alt text lets people who use screen readers understand your image. Describe what's in it." })}
+            </p>
+            <img
+              src={imageUrls[altEditIndex]}
+              alt={imageAlts[altEditIndex]?.trim() || ''}
+              className="mb-3 max-h-40 w-full rounded-site-sm object-contain bg-site-surface"
+            />
+            <label htmlFor="alt-text-input" className="sr-only">
+              {t("alt-text-heading", { defaultValue: "Describe this image" })}
+            </label>
+            <textarea
+              id="alt-text-input"
+              autoFocus
+              rows={3}
+              maxLength={MAX_IMAGE_ALT_LENGTH}
+              value={imageAlts[altEditIndex] ?? ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                setImageAlts((prev) => {
+                  const next = [...prev];
+                  // Pad so the edited index is addressable even if earlier
+                  // images have no description yet.
+                  while (next.length <= altEditIndex) next.push('');
+                  next[altEditIndex] = value;
+                  return next;
+                });
+              }}
+              placeholder={t("alt-text-placeholder", { defaultValue: "e.g. A golden retriever running on a beach at sunset" })}
+              className="w-full resize-none rounded-site-sm border border-site-border bg-site-surface p-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
+            />
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-xs font-mono text-site-text-dim">
+                {MAX_IMAGE_ALT_LENGTH - (imageAlts[altEditIndex]?.length ?? 0)}
+              </span>
+              <Button variant="accent" size="sm" onClick={() => setAltEditIndex(null)}>
+                {t("done", { defaultValue: "Done" })}
+              </Button>
+            </div>
           </div>
         </div>
       )}

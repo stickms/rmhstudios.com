@@ -30,6 +30,7 @@ const fetchEmbed = createServerFn({ method: 'GET' })
         commentCount: true,
         repostCount: true,
         imageUrls: true,
+        imageAlts: true,
         user: { select: userDisplaySelect },
       },
     });
@@ -46,6 +47,7 @@ const fetchEmbed = createServerFn({ method: 'GET' })
       commentCount: post.commentCount,
       repostCount: post.repostCount,
       imageUrl: post.imageUrls?.[0] ?? null,
+      imageAlt: post.imageAlts?.[0]?.trim() || null,
       user: { name: user.name, handle: user.handle, image: user.image, id: user.id },
     };
   });
@@ -93,7 +95,7 @@ function EmbedPost() {
           <p className="mt-3 whitespace-pre-wrap break-words text-[15px] text-site-text">{post.content}</p>
         )}
         {post.imageUrl && (
-          <img src={post.imageUrl} alt="" className="mt-3 max-h-80 w-full rounded-xl object-cover" />
+          <img src={post.imageUrl} alt={post.imageAlt ?? ''} className="mt-3 max-h-80 w-full rounded-xl object-cover" />
         )}
 
         <div className="mt-3 flex items-center gap-5 text-xs text-site-text-dim">

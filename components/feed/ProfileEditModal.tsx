@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, X, Check, RotateCcw } from 'lucide-react';
+import { Camera, X, Check, RotateCcw, Plus } from 'lucide-react';
+import { MAX_PROFILE_LINKS } from '@/lib/profile-schema';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { ImageCropModal } from './ImageCropModal';
@@ -30,6 +31,9 @@ interface ProfileEditModalProps {
     bio: string | null;
     location: string | null;
     website: string | null;
+    links?: { label: string; url: string }[];
+    bannerUrl?: string | null;
+    membershipPriceCoins?: number | null;
     showLikes: boolean;
     dmPrivacy: string;
   } & ProfileSongData) => void;
@@ -39,13 +43,16 @@ interface ProfileEditModalProps {
     name: string | null;
     image: string | null;
     hasCustomAvatar?: boolean;
+    bannerUrl?: string | null;
     bio: string | null;
     location: string | null;
     website: string | null;
+    links?: { label: string; url: string }[];
     showLikes: boolean;
     dmPrivacy: string;
     tipGoal?: number | null;
     tipGoalLabel?: string | null;
+    membershipPriceCoins?: number | null;
   } & ProfileSongData;
 }
 
@@ -54,6 +61,7 @@ const MAX_BIO = 160;
 const MAX_LOCATION = 100;
 const MAX_WEBSITE = 200;
 const MAX_AVATAR_MB = 5;
+const MAX_BANNER_MB = 8;
 const MAX_HANDLE = 20;
 
 function formatCooldown(ms: number, t: TFunction<"feed">): string {
@@ -71,13 +79,19 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [bio, setBio] = useState(initial.bio ?? '');
   const [location, setLocation] = useState(initial.location ?? '');
   const [website, setWebsite] = useState(initial.website ?? '');
+  const [links, setLinks] = useState<{ label: string; url: string }[]>(initial.links ?? []);
   const [showLikes, setShowLikes] = useState(initial.showLikes);
   const [dmPrivacy, setDmPrivacy] = useState(initial.dmPrivacy ?? 'EVERYONE');
   const [tipGoal, setTipGoal] = useState<string>(initial.tipGoal ? String(initial.tipGoal) : '');
   const [tipGoalLabel, setTipGoalLabel] = useState(initial.tipGoalLabel ?? '');
+  const [membershipPrice, setMembershipPrice] = useState<string>(initial.membershipPriceCoins ? String(initial.membershipPriceCoins) : '');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initial.image);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(initial.bannerUrl ?? null);
+  const [bannerRemoved, setBannerRemoved] = useState(false);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [resettingAvatar, setResettingAvatar] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -156,8 +170,33 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
       if (cropSrc && cropSrc.startsWith('blob:')) {
         URL.revokeObjectURL(cropSrc);
       }
+      if (bannerPreview && bannerPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(bannerPreview);
+      }
     };
-  }, [avatarPreview, cropSrc]);
+  }, [avatarPreview, cropSrc, bannerPreview]);
+
+  const handleBannerSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_BANNER_MB * 1024 * 1024) {
+      setError(t("banner-size-error", { maxMb: MAX_BANNER_MB, defaultValue: `Banner must be under ${MAX_BANNER_MB} MB` }));
+      return;
+    }
+    setError(null);
+    if (bannerPreview && bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+    setBannerRemoved(false);
+    if (bannerInputRef.current) bannerInputRef.current.value = '';
+  };
+
+  const handleRemoveBanner = () => {
+    if (bannerPreview && bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
+    setBannerFile(null);
+    setBannerPreview(null);
+    setBannerRemoved(true);
+  };
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -253,6 +292,11 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
     setSubmitting(true);
     setError(null);
 
+    // Drop blank rows; the server re-validates and caps the count.
+    const cleanedLinks = links
+      .map((l) => ({ label: l.label.trim(), url: l.url.trim() }))
+      .filter((l) => l.label && l.url);
+
     try {
       let newImageUrl: string | undefined;
 
@@ -273,6 +317,24 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         newImageUrl = avatarData.image;
       }
 
+      // Banner: upload a new one, or delete when the user cleared it.
+      let newBannerUrl: string | null | undefined;
+      if (bannerFile) {
+        const bannerForm = new FormData();
+        bannerForm.append('banner', bannerFile);
+        const bannerRes = await fetch('/api/profile/banner', { method: 'POST', body: bannerForm });
+        if (!bannerRes.ok) {
+          const data = await bannerRes.json().catch(() => ({}));
+          setError(data.error || t("failed-upload-banner", { defaultValue: "Failed to upload banner" }));
+          setSubmitting(false);
+          return;
+        }
+        newBannerUrl = (await bannerRes.json()).bannerUrl;
+      } else if (bannerRemoved && initial.bannerUrl) {
+        await fetch('/api/profile/banner', { method: 'DELETE' }).catch(() => {});
+        newBannerUrl = null;
+      }
+
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -282,8 +344,10 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           bio: bio.trim() || null,
           location: location.trim() || null,
           website: website.trim() || null,
+          links: cleanedLinks,
           tipGoal: tipGoal.trim() ? Math.max(0, parseInt(tipGoal, 10) || 0) : null,
           tipGoalLabel: tipGoalLabel.trim() || null,
+          membershipPriceCoins: membershipPrice.trim() ? Math.max(0, parseInt(membershipPrice, 10) || 0) : null,
           showLikes,
           dmPrivacy,
           profileSongSpotifyId: selectedSong?.id ?? null,
@@ -309,6 +373,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           : avatarWasReset
             ? { image: avatarPreview }
             : {}),
+        ...(newBannerUrl !== undefined ? { bannerUrl: newBannerUrl } : {}),
       });
       onClose();
     } catch {
@@ -343,6 +408,46 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
           {/* Form */}
           <div className="px-4 py-4 space-y-4 overflow-y-auto">
+            {/* Banner / cover */}
+            <div>
+              <button
+                type="button"
+                onClick={() => bannerInputRef.current?.click()}
+                aria-label={t("banner-change-hint", { maxMb: MAX_BANNER_MB, defaultValue: "Click to change banner (max {{maxMb}} MB)" })}
+                className="group relative block h-28 w-full overflow-hidden rounded-site border border-site-border bg-site-surface"
+              >
+                {bannerPreview ? (
+                  <img src={bannerPreview} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-site-surface to-site-bg-subtle" />
+                )}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+              </button>
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={handleBannerSelect}
+              />
+              <div className="mt-1.5 flex items-center justify-between">
+                <p className="text-xs text-site-text-dim">
+                  {t("banner-change-hint", { maxMb: MAX_BANNER_MB, defaultValue: "Click to change banner (max {{maxMb}} MB)" })}
+                </p>
+                {bannerPreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveBanner}
+                    className="text-xs font-medium text-site-text-muted hover:text-site-danger transition-colors"
+                  >
+                    {t("remove-banner", { defaultValue: "Remove" })}
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Avatar */}
             <div className="flex flex-col items-center gap-2">
               <button
@@ -492,6 +597,60 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
               />
             </div>
 
+            {/* Link-in-bio */}
+            <div>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">
+                {t("links-label", { defaultValue: "Links" })}
+                <span className="ml-1 text-site-text-dim/70">({links.length}/{MAX_PROFILE_LINKS})</span>
+              </label>
+              <div className="space-y-2">
+                {links.map((link, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={link.label}
+                      onChange={(e) =>
+                        setLinks((prev) => prev.map((l, j) => (j === i ? { ...l, label: e.target.value } : l)))
+                      }
+                      placeholder={t("link-label-placeholder", { defaultValue: "Label" })}
+                      maxLength={30}
+                      aria-label={t("link-label-aria", { count: i + 1, defaultValue: "Link {{count}} label" })}
+                      className="w-28 shrink-0 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-2.5 border border-site-border outline-none focus:border-site-accent transition-colors"
+                    />
+                    <input
+                      type="url"
+                      value={link.url}
+                      onChange={(e) =>
+                        setLinks((prev) => prev.map((l, j) => (j === i ? { ...l, url: e.target.value } : l)))
+                      }
+                      placeholder="https://example.com"
+                      maxLength={200}
+                      aria-label={t("link-url-aria", { count: i + 1, defaultValue: "Link {{count}} URL" })}
+                      className="min-w-0 flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-2.5 border border-site-border outline-none focus:border-site-accent transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setLinks((prev) => prev.filter((_, j) => j !== i))}
+                      aria-label={t("remove-link-aria", { count: i + 1, defaultValue: "Remove link {{count}}" })}
+                      className="shrink-0 p-1.5 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {links.length < MAX_PROFILE_LINKS && (
+                <button
+                  type="button"
+                  onClick={() => setLinks((prev) => [...prev, { label: '', url: '' }])}
+                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-site-accent hover:underline"
+                >
+                  <Plus className="w-4 h-4" />
+                  {t("add-link", { defaultValue: "Add link" })}
+                </button>
+              )}
+            </div>
+
             {/* Tip goal (creator) */}
             <div>
               <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("tip-goal-label", { defaultValue: "Monthly tip goal (coins) — optional" })}</label>
@@ -513,6 +672,24 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                   className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
                 />
               </div>
+            </div>
+
+            {/* Per-creator membership price */}
+            <div>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">
+                {t("membership-price-label", { defaultValue: "Membership price (coins/month) — optional" })}
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={membershipPrice}
+                onChange={(e) => setMembershipPrice(e.target.value)}
+                placeholder="e.g. 500"
+                className="w-32 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
+              />
+              <p className="mt-1 text-xs text-site-text-dim">
+                {t("membership-price-help", { defaultValue: "Let supporters pay coins monthly to become a member. Leave empty to turn off." })}
+              </p>
             </div>
 
             {/* Show Likes toggle */}

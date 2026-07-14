@@ -67,7 +67,7 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
     ]);
     return { meta, sidebar };
   },
-  head: ({ loaderData }) => {
+  head: ({ loaderData, params }) => {
     const meta = loaderData?.meta;
     if (!meta) return { meta: [{ title: 'Post Not Found | RMH' }] };
     const rawImage = meta.ogImage ?? meta.userImage;
@@ -77,6 +77,9 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
         : `${SITE_URL}${rawImage}`
       : undefined;
     const isCard = !!meta.ogImage && meta.ogImage.startsWith('/api/og/');
+    // Only free, public posts are embeddable — advertise oEmbed for those so
+    // Discord/Slack/WordPress unfurl them richly via /api/embed/oembed.
+    const postUrl = `${SITE_URL}/u/${params.userid}/post/${params.postid}`;
     return {
       meta: [
         { title: meta.title },
@@ -91,6 +94,16 @@ export const Route = createFileRoute('/_site/u/$userid/post/$postid')({
         { name: 'twitter:description', content: meta.description },
         ...(ogImage ? [{ name: 'twitter:image', content: ogImage }] : []),
       ],
+      links: isCard
+        ? [
+            {
+              rel: 'alternate',
+              type: 'application/json+oembed',
+              href: `${SITE_URL}/api/embed/oembed?url=${encodeURIComponent(postUrl)}&format=json`,
+              title: meta.title,
+            },
+          ]
+        : [],
     };
   },
   component: PostPage,

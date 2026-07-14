@@ -115,6 +115,10 @@ model User {
   followers Follow[]     @relation("UserFollowing")
   following Follow[]     @relation("UserFollowers")
 
+  // Per-creator memberships: who supports this creator, and who this user supports.
+  creatorMemberships CreatorMembership[] @relation("CreatorMemberships")
+  supportedCreators  CreatorMembership[] @relation("SupportedCreators")
+
   // Notifications
   notifications     Notification[] @relation("UserNotifications")
   notificationsSent Notification[] @relation("UserNotificationActor")
@@ -1345,6 +1349,9 @@ model RMHark {
   content   String   @db.Text
   gifUrl    String?  @db.Text
   imageUrls String[] @default([])
+  // Per-image alt text (accessibility), aligned by index with imageUrls.
+  // May be shorter than imageUrls; a missing/empty entry means "no description".
+  imageAlts String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1384,6 +1391,12 @@ model RMHark {
 
   // Audience: who can see this post.
   audience RMHarkAudience @default(PUBLIC)
+
+  // Content warning: media/text hidden behind a click-to-reveal overlay.
+  isSensitive Boolean @default(false)
+
+  // Who is allowed to reply to this post (anti-harassment control).
+  replyControl RMHarkReplyControl @default(EVERYONE)
 
   // Author-pinned to the top of their profile (one per user, enforced in code).
   pinnedAt DateTime?
@@ -1612,6 +1625,11 @@ model UserProfile {
   bio                   String?   @db.VarChar(160)
   location              String?   @db.VarChar(100)
   website               String?   @db.VarChar(200)
+  // Link-in-bio: an ordered list of { label, url } (max 5), stored as JSON.
+  links                 Json?
+  // Profile banner/cover image (WebP in object storage). Size tracked for quota.
+  bannerUrl             String?   @db.VarChar(300)
+  bannerSizeBytes       Int?
   showLikes             Boolean   @default(false)
   dmPrivacy             DmPrivacy @default(EVERYONE)
   // Reader content control: feed posts whose text contains any of these words
@@ -1634,6 +1652,10 @@ model UserProfile {
   // Creator tip goal (monthly coins target shown on the profile)
   tipGoal      Int?
   tipGoalLabel String? @db.VarChar(80)
+
+  // Per-creator memberships: monthly price in coins to become a member of this
+  // creator (null/0 = memberships disabled). Paid from the supporter's coins.
+  membershipPriceCoins Int?
 
   // First-run onboarding checklist: when the completion reward was claimed
   // (null = not claimed; also acts as the atomic double-claim guard)
@@ -1755,6 +1777,26 @@ model Follow {
   @@index([followerId])
   @@index([followingId])
   @@map("follow")
+}
+
+/// A coin-funded membership: `supporter` supports `creator` for a 30-day period.
+/// Renewing extends `expiresAt`; membership is "active" while expiresAt > now.
+model CreatorMembership {
+  id          String   @id @default(cuid())
+  creatorId   String
+  supporterId String
+  priceCoins  Int
+  startedAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  creator   User @relation("CreatorMemberships", fields: [creatorId], references: [id], onDelete: Cascade)
+  supporter User @relation("SupportedCreators", fields: [supporterId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, supporterId])
+  @@index([creatorId])
+  @@index([supporterId])
+  @@index([expiresAt])
+  @@map("creator_membership")
 }
 
 // ─── RMHMusic ────────────────────────────────────────────────────
@@ -4019,6 +4061,7 @@ enum CoinTxnType {
   PURCHASE
   REWARD
   ADMIN
+  MEMBERSHIP
 }
 
 model CoinTransaction {
@@ -4164,6 +4207,12 @@ enum RMHarkAudience {
   PRIVATE // only the author
 }
 
+enum RMHarkReplyControl {
+  EVERYONE // anyone can reply (default)
+  FOLLOWING // only accounts the author follows
+  MENTIONED // only accounts @mentioned in the post (plus the author)
+}
+
 // ─── Paid post unlocks ────────────────────────────────────────────────────
 model PostUnlock {
   id        String   @id @default(cuid())
@@ -4288,7 +4337,11 @@ model ScheduledPost {
   content     String         @db.Text
   gifUrl      String?        @db.Text
   imageUrls   String[]       @default([])
+  // Per-image alt text (accessibility), aligned by index with imageUrls.
+  imageAlts   String[]       @default([])
   audience    RMHarkAudience @default(PUBLIC)
+  isSensitive  Boolean            @default(false)
+  replyControl RMHarkReplyControl @default(EVERYONE)
   unlockPrice Int?
   communityId String?
   poll        Json? // { question, options[], multiSelect, durationHours }

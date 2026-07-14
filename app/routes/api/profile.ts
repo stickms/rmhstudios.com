@@ -43,6 +43,7 @@ export const Route = createFileRoute('/api/profile')({
       bio,
       location,
       website,
+      links,
       showLikes,
       dmPrivacy,
       profileSongSpotifyId,
@@ -52,6 +53,7 @@ export const Route = createFileRoute('/api/profile')({
       profileSongAlbumArt,
       tipGoal,
       tipGoalLabel,
+      membershipPriceCoins,
     } = parsed.data;
 
     // Handle change logic
@@ -114,6 +116,9 @@ export const Route = createFileRoute('/api/profile')({
         }
       : {};
 
+    // Link-in-bio: `undefined` leaves it unchanged; an empty array clears it.
+    const linksField = links !== undefined ? { links: links ?? [] } : {};
+
     const profile = await prisma.userProfile.upsert({
       where: { userId: session.user.id },
       create: {
@@ -123,9 +128,11 @@ export const Route = createFileRoute('/api/profile')({
         location: location ?? null,
         website: website || null,
         showLikes: showLikes ?? false,
+        ...linksField,
         ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
         ...(tipGoal !== undefined ? { tipGoal } : {}),
         ...(tipGoalLabel !== undefined ? { tipGoalLabel: tipGoalLabel || null } : {}),
+        ...(membershipPriceCoins !== undefined ? { membershipPriceCoins: membershipPriceCoins || null } : {}),
         ...songFields,
       },
       update: {
@@ -133,10 +140,12 @@ export const Route = createFileRoute('/api/profile')({
         bio: bio ?? null,
         location: location ?? null,
         website: website || null,
+        ...linksField,
         ...(showLikes !== undefined ? { showLikes } : {}),
         ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
         ...(tipGoal !== undefined ? { tipGoal } : {}),
         ...(tipGoalLabel !== undefined ? { tipGoalLabel: tipGoalLabel || null } : {}),
+        ...(membershipPriceCoins !== undefined ? { membershipPriceCoins: membershipPriceCoins || null } : {}),
         ...songFields,
       },
     });
@@ -147,6 +156,8 @@ export const Route = createFileRoute('/api/profile')({
       bio: profile.bio,
       location: profile.location,
       website: profile.website,
+      links: profile.links ?? [],
+      membershipPriceCoins: profile.membershipPriceCoins,
       showLikes: profile.showLikes,
       dmPrivacy: profile.dmPrivacy,
       profileSongSpotifyId: profile.profileSongSpotifyId,

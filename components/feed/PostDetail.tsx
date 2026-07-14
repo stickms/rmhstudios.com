@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,7 @@ import { RMHarkContent, extractFirstUrl } from './RMHarkContent';
 import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
 import { PostImageGrid } from './PostImageGrid';
+import { SensitiveMedia } from './SensitiveMedia';
 import { postMediaVTName } from '@/lib/view-transition';
 import { LinkPreview } from './LinkPreview';
 import { UserAvatar } from './UserAvatar';
@@ -158,6 +159,10 @@ export function PostDetail({ postId }: PostDetailProps) {
         setCommentContent('');
         setPost((prev) => prev ? { ...prev, commentCount: (prev.commentCount ?? 0) + 1 } : prev);
         bumpFeedComment(1);
+      } else {
+        // Surfaces the reply-control 403 ("The author limited who can reply…").
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || t('comment-failed', { defaultValue: 'Could not post your reply' }));
       }
     } catch (error) {
       console.error('Comment error:', error);
@@ -294,12 +299,14 @@ export function PostDetail({ postId }: PostDetailProps) {
           </div>
         )}
 
-        {/* Image / GIF */}
-        {post.gifUrl && <GifEmbed url={post.gifUrl} className="mb-3" />}
-
-        {/* Uploaded images grid */}
-        {post.imageUrls && post.imageUrls.length > 0 && (
-          <PostImageGrid urls={post.imageUrls} className="mb-3" heroName={postMediaVTName(postId)} />
+        {/* Image / GIF — hidden behind a content warning when marked sensitive */}
+        {(post.gifUrl || (post.imageUrls && post.imageUrls.length > 0)) && (
+          <SensitiveMedia sensitive={post.isSensitive} className="mb-3">
+            {post.gifUrl && <GifEmbed url={post.gifUrl} className="mb-1" />}
+            {post.imageUrls && post.imageUrls.length > 0 && (
+              <PostImageGrid urls={post.imageUrls} alts={post.imageAlts} heroName={postMediaVTName(postId)} />
+            )}
+          </SensitiveMedia>
         )}
 
         {/* Link preview — only when no poll, gif, or image */}
@@ -371,6 +378,14 @@ export function PostDetail({ postId }: PostDetailProps) {
       {/* Comment compose */}
       {!post.deletedAt && session ? (
         <div className="px-4 py-3 border-b border-site-border">
+          {post.replyControl && post.replyControl !== 'EVERYONE' && (
+            <p className="mb-2 flex items-center gap-1.5 text-xs text-site-text-muted">
+              <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              {post.replyControl === 'FOLLOWING'
+                ? t('reply-limited-following', { defaultValue: 'Accounts the author follows can reply' })
+                : t('reply-limited-mentioned', { defaultValue: 'Only accounts the author mentioned can reply' })}
+            </p>
+          )}
           <div className="flex gap-3">
             {/* User avatar */}
             <UserAvatar

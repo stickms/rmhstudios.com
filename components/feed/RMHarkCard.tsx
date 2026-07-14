@@ -15,6 +15,7 @@ import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
 import { LinkPreview } from './LinkPreview';
 import { PostImageGrid } from './PostImageGrid';
+import { SensitiveMedia } from './SensitiveMedia';
 import { runViewTransition, postMediaVTName } from '@/lib/view-transition';
 import { UserAvatar } from './UserAvatar';
 import { Spinner } from '@/components/ui/spinner';
@@ -317,12 +318,14 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             />
           )}
 
-          {/* Image / GIF */}
-          {item.gifUrl && <GifEmbed url={item.gifUrl} className="mt-3" />}
-
-          {/* Uploaded images grid */}
-          {item.imageUrls && item.imageUrls.length > 0 && (
-            <PostImageGrid urls={item.imageUrls} className="mt-2" heroName={postMediaVTName(actualId)} />
+          {/* Image / GIF — hidden behind a content warning when marked sensitive */}
+          {(item.gifUrl || (item.imageUrls && item.imageUrls.length > 0)) && (
+            <SensitiveMedia sensitive={item.isSensitive} className="mt-2">
+              {item.gifUrl && <GifEmbed url={item.gifUrl} className="mt-1" />}
+              {item.imageUrls && item.imageUrls.length > 0 && (
+                <PostImageGrid urls={item.imageUrls} alts={item.imageAlts} heroName={postMediaVTName(actualId)} />
+              )}
+            </SensitiveMedia>
           )}
 
           {/* Link preview — only when no poll, gif, or image */}
@@ -382,7 +385,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               {/* Original's media (server omits these for paid/non-public posts) */}
               {item.original.gifUrl && <GifEmbed url={item.original.gifUrl} className="mt-2" />}
               {!item.original.gifUrl && item.original.imageUrls && item.original.imageUrls.length > 0 && (
-                <PostImageGrid urls={item.original.imageUrls} className="mt-2" />
+                <PostImageGrid urls={item.original.imageUrls} alts={item.original.imageAlts} className="mt-2" />
               )}
             </div>
           )}

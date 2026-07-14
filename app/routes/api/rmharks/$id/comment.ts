@@ -7,6 +7,7 @@ import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { getActiveBan } from "@/lib/admin-audit.server";
 import { createComment } from "@/lib/social/engagement.server";
 import { groupReactions } from "@/lib/social/reactions";
+import { canReplyToPost, type ReplyControl } from "@/lib/feed/reply-control.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/comment')({
   server: {
@@ -134,6 +135,26 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       return Response.json(
         { error: parsed.error.issues[0]?.message ?? "Invalid input" },
         { status: 400 }
+      );
+    }
+
+    // Enforce the author's reply control (anti-harassment). The author can
+    // always reply to their own post.
+    const target = await prisma.rMHark.findUnique({
+      where: { id },
+      select: { userId: true, replyControl: true, content: true },
+    });
+    if (!target) {
+      return Response.json({ error: "Post not found" }, { status: 404 });
+    }
+    const mayReply = await canReplyToPost(
+      { userId: target.userId, replyControl: target.replyControl as ReplyControl, content: target.content },
+      session.user.id,
+    );
+    if (!mayReply) {
+      return Response.json(
+        { error: "The author limited who can reply to this post" },
+        { status: 403 }
       );
     }
 

@@ -103,11 +103,17 @@ export const Route = createFileRoute('/api/rmharks')({
       );
     }
 
-    const { content, poll, gifUrl, imageUrls, originalId, audience, unlockPrice, communityId } = parsed.data;
+    const { content, poll, gifUrl, imageUrls, imageAlts, originalId, audience, isSensitive, replyControl, unlockPrice, communityId } = parsed.data;
 
     if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
       return Response.json({ error: "Invalid image reference" }, { status: 400 });
     }
+
+    // Trim alt text and clamp to the number of images so the two arrays stay
+    // index-aligned even if the client sends a longer/whitespace-only list.
+    const cleanImageAlts = (imageAlts ?? [])
+      .slice(0, imageUrls?.length ?? 0)
+      .map((a) => a.trim());
 
     // Posting into a community requires membership.
     if (communityId) {
@@ -139,9 +145,12 @@ export const Route = createFileRoute('/api/rmharks')({
           content: content.trim(),
           gifUrl: gifUrl ?? null,
           imageUrls: imageUrls ?? [],
+          imageAlts: cleanImageAlts,
           userId: session.user.id,
           originalId: quotedOriginalId,
           audience: audience ?? "PUBLIC",
+          isSensitive: isSensitive ?? false,
+          replyControl: replyControl ?? "EVERYONE",
           unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
           communityId: communityId ?? null,
         },
@@ -231,6 +240,9 @@ export const Route = createFileRoute('/api/rmharks')({
       poll: pollData,
       gifUrl: rmhark.gifUrl ?? undefined,
       imageUrls: rmhark.imageUrls,
+      imageAlts: rmhark.imageAlts,
+      isSensitive: rmhark.isSensitive,
+      replyControl: rmhark.replyControl,
       reactions: [],
     };
 
@@ -282,7 +294,7 @@ export const Route = createFileRoute('/api/rmharks')({
     // since the SSE payload reaches the author's followers.
     const broadcastItem =
       unlockPrice && unlockPrice > 0
-        ? { ...item, content: "", imageUrls: undefined, gifUrl: undefined, poll: undefined, locked: true, unlockPrice }
+        ? { ...item, content: "", imageUrls: undefined, imageAlts: undefined, gifUrl: undefined, poll: undefined, locked: true, unlockPrice }
         : item;
     feedEventBus.publish({
       type: "rmhark.created",

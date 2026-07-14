@@ -32,6 +32,7 @@ export function applyLock(item: FeedItem, raw: any, viewerId: string | null): Fe
     ...item,
     content: '',
     imageUrls: undefined,
+    imageAlts: undefined,
     gifUrl: undefined,
     poll: undefined,
     locked: true,
@@ -111,6 +112,9 @@ export function mapRmharkToFeedItem(r: any, viewerId: string | null): FeedItem {
     poll: mapPoll(r.poll),
     gifUrl: r.gifUrl ?? undefined,
     imageUrls: r.imageUrls ?? undefined,
+    imageAlts: r.imageAlts ?? undefined,
+    isSensitive: r.isSensitive ?? false,
+    replyControl: r.replyControl ?? 'EVERYONE',
     reactions: groupReactions(r.reactions ?? [], viewerId),
     threadReplyCount: r.threadReplyCount ?? 0,
   };

@@ -36,6 +36,51 @@ describe("createRMHarkSchema imageUrls", () => {
   });
 });
 
+describe("createRMHarkSchema imageAlts (accessibility)", () => {
+  it("accepts alt text aligned with images", () => {
+    const r = createRMHarkSchema.safeParse({
+      imageUrls: ["/api/feed/image/a.png", "/api/feed/image/b.png"],
+      imageAlts: ["a cat", "a dog"],
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("accepts fewer alts than images (partial descriptions)", () => {
+    const r = createRMHarkSchema.safeParse({
+      imageUrls: ["/api/feed/image/a.png", "/api/feed/image/b.png"],
+      imageAlts: ["a cat"],
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects more alts than images", () => {
+    const r = createRMHarkSchema.safeParse({
+      imageUrls: ["/api/feed/image/a.png"],
+      imageAlts: ["a cat", "a dog"],
+    });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("createRMHarkSchema safety controls", () => {
+  it("accepts isSensitive + a reply control", () => {
+    const r = createRMHarkSchema.safeParse({
+      content: "hi",
+      isSensitive: true,
+      replyControl: "FOLLOWING",
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects an unknown reply control value", () => {
+    const r = createRMHarkSchema.safeParse({
+      content: "hi",
+      replyControl: "NOBODY",
+    });
+    expect(r.success).toBe(false);
+  });
+});
+
 describe("editRMHarkSchema", () => {
   it("accepts content with a tenor gifUrl", () => {
     const r = editRMHarkSchema.safeParse({ content: "hi", gifUrl: "https://media.tenor.com/x/full.gif" });

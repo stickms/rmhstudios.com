@@ -9,6 +9,8 @@ import { knownSize, rememberSize } from '@/lib/image-aspect';
 
 interface PostImageGridProps {
   urls: string[];
+  /** Per-image alt text, aligned by index with `urls` (may be shorter/empty). */
+  alts?: string[];
   className?: string;
   /** When set, tags the first image with this `view-transition-name` so it can
    *  morph between the feed card and the post detail (see lib/view-transition). */
@@ -20,7 +22,7 @@ interface PostImageGridProps {
 // dominate the column.
 const SINGLE_MAX_VH = 80;
 
-export function PostImageGrid({ urls, className = '', heroName }: PostImageGridProps) {
+export function PostImageGrid({ urls, alts, className = '', heroName }: PostImageGridProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (!urls || urls.length === 0) return null;
@@ -34,6 +36,7 @@ export function PostImageGrid({ urls, className = '', heroName }: PostImageGridP
           <GridImage
             key={url}
             url={url}
+            alt={alts?.[i]?.trim() || undefined}
             single={single}
             heroName={i === 0 ? heroName : undefined}
             onOpen={() => setLightboxIndex(i)}
@@ -44,6 +47,7 @@ export function PostImageGrid({ urls, className = '', heroName }: PostImageGridP
       {lightboxIndex !== null && (
         <Lightbox
           urls={urls}
+          alts={alts}
           index={lightboxIndex}
           onIndexChange={setLightboxIndex}
           onClose={() => setLightboxIndex(null)}
@@ -55,16 +59,23 @@ export function PostImageGrid({ urls, className = '', heroName }: PostImageGridP
 
 function GridImage({
   url,
+  alt,
   single,
   heroName,
   onOpen,
 }: {
   url: string;
+  alt?: string;
   single: boolean;
   heroName?: string;
   onOpen: () => void;
 }) {
   const { t } = useTranslation('feed');
+  // When the author described the image, use that as both the image alt and the
+  // button's accessible name; otherwise fall back to a generic "Open image".
+  const openLabel = alt
+    ? t('open-image-described', { alt, defaultValue: 'Open image: {{alt}}' })
+    : t('open-image', { defaultValue: 'Open image' });
   // Start from any size we already know (URL-tagged or measured earlier), and
   // learn it on load for legacy images so later renders reserve space too.
   const [size, setSize] = useState(() => knownSize(url));
@@ -89,11 +100,11 @@ function GridImage({
         }}
         style={vt}
         className="group relative block aspect-square overflow-hidden rounded-site-sm"
-        aria-label={t('open-image', { defaultValue: 'Open image' })}
+        aria-label={openLabel}
       >
         <BlurImage
           src={url}
-          alt=""
+          alt={alt ?? ''}
           fit="cover"
           width={640}
           aspectRatio={1}
@@ -118,11 +129,11 @@ function GridImage({
         }}
         style={{ ...vt, maxWidth: `min(100%, ${size.width}px, calc(${SINGLE_MAX_VH}vh * ${ratio}))` }}
         className="group relative mx-auto block w-full overflow-hidden rounded-site-sm"
-        aria-label={t('open-image', { defaultValue: 'Open image' })}
+        aria-label={openLabel}
       >
         <BlurImage
           src={url}
-          alt=""
+          alt={alt ?? ''}
           fit="cover"
           width={1024}
           aspectRatio={ratio}
@@ -148,7 +159,7 @@ function GridImage({
     >
       <BlurImage
         src={url}
-        alt=""
+        alt={alt ?? ''}
         fit="contain"
         width={1024}
         sizes="(max-width: 640px) 100vw, 600px"
@@ -162,12 +173,13 @@ function GridImage({
 
 interface LightboxProps {
   urls: string[];
+  alts?: string[];
   index: number;
   onIndexChange: (i: number) => void;
   onClose: () => void;
 }
 
-function Lightbox({ urls, index, onIndexChange, onClose }: LightboxProps) {
+function Lightbox({ urls, alts, index, onIndexChange, onClose }: LightboxProps) {
   const { t } = useTranslation('feed');
   const hasMultiple = urls.length > 1;
 
@@ -242,7 +254,7 @@ function Lightbox({ urls, index, onIndexChange, onClose }: LightboxProps) {
       <BlurImage
         key={urls[index]}
         src={urls[index]}
-        alt=""
+        alt={alts?.[index]?.trim() || ''}
         fit="contain"
         width={1600}
         quality={85}

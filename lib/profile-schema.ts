@@ -4,6 +4,15 @@ import { httpUrl } from "@/lib/url-safety";
 
 export const dmPrivacyValues = ["EVERYONE", "FOLLOWERS", "NONE"] as const;
 
+export const MAX_PROFILE_LINKS = 5;
+
+// A single link-in-bio entry. Labels are short; URLs must be http(s).
+export const profileLinkSchema = z.object({
+  label: z.string().trim().min(1, "Label cannot be empty").max(30, "Label must be at most 30 characters"),
+  url: httpUrl(200),
+});
+export type ProfileLink = z.infer<typeof profileLinkSchema>;
+
 export const updateProfileSchema = z.object({
   handle: z
     .string()
@@ -35,10 +44,13 @@ export const updateProfileSchema = z.object({
     .optional()
     .nullable()
     .or(z.literal("")),
+  links: z.array(profileLinkSchema).max(MAX_PROFILE_LINKS, `At most ${MAX_PROFILE_LINKS} links allowed`).optional().nullable(),
   showLikes: z.boolean().optional(),
   dmPrivacy: z.enum(["EVERYONE", "FOLLOWERS", "NONE"]).optional(),
   tipGoal: z.number().int().min(0).max(10_000_000).optional().nullable(),
   tipGoalLabel: z.string().max(80).optional().nullable(),
+  // Per-creator membership price in coins/month (0/null = memberships off).
+  membershipPriceCoins: z.number().int().min(0).max(1_000_000).optional().nullable(),
   profileSongSpotifyId: z.string().max(50).optional().nullable(),
   profileSongTitle: z.string().max(200).optional().nullable(),
   profileSongArtist: z.string().max(200).optional().nullable(),

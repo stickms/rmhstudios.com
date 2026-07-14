@@ -5,7 +5,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getPostBySlug } from '@/lib/blog';
-import { buildCanonical } from '@/lib/seo';
+import { buildCanonical, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
 import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
@@ -53,7 +53,10 @@ export const Route = createFileRoute('/blog/$slug')({
       { title: `${loaderData?.title ?? 'Post'} | RMH Studios Devlog` },
       { name: 'description', content: (loaderData?.description as string) ?? '' },
     ],
-    links: [buildCanonical(`/blog/${params.slug}`)],
+    links: [
+      buildCanonical(`/blog/${params.slug}`),
+      { rel: 'alternate', type: 'application/rss+xml', title: 'RMH Studios — Blog', href: `${SITE_URL}/blog/rss.xml` },
+    ],
     scripts: loaderData
       ? [
           jsonLdScript(

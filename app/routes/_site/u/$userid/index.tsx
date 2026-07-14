@@ -12,6 +12,7 @@ import { getSidebarData } from '@/lib/sidebar-data';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 import { personSchema, jsonLdScript } from '@/lib/schema';
+import { SITE_URL } from '@/lib/seo';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
@@ -52,6 +53,7 @@ const fetchProfileData = createServerFn({ method: 'GET' })
       ogType: 'profile' as const,
       ogUrl: '',
       ogImage: '',
+      avatarImage: '',
       name: '',
       handle: null as string | null,
     };
@@ -65,8 +67,10 @@ const fetchProfileData = createServerFn({ method: 'GET' })
         title,
         description,
         ogType: 'profile',
-        ogUrl: `https://rmhstudios.com/u/${handle || id}`,
-        ogImage: resolved.image || '',
+        ogUrl: `${SITE_URL}/u/${handle || id}`,
+        // Dynamic branded share card (1200×630) instead of a bare avatar.
+        ogImage: `${SITE_URL}/api/og/profile/${handle || id}`,
+        avatarImage: resolved.image || '',
         name,
         handle: handle ?? null,
       };
@@ -87,7 +91,7 @@ export const Route = createFileRoute('/_site/u/$userid/')({
       { property: 'og:site_name', content: 'RMH' },
       { property: 'og:url', content: loaderData?.meta.ogUrl ?? '' },
       ...(loaderData?.meta.ogImage ? [{ property: 'og:image', content: loaderData.meta.ogImage }] : []),
-      { name: 'twitter:card', content: 'summary' },
+      { name: 'twitter:card', content: loaderData?.meta.ogImage ? 'summary_large_image' : 'summary' },
       { name: 'twitter:title', content: loaderData?.meta.title ?? '' },
       { name: 'twitter:description', content: loaderData?.meta.description ?? '' },
       ...(loaderData?.meta.ogImage ? [{ name: 'twitter:image', content: loaderData.meta.ogImage }] : []),
@@ -101,7 +105,7 @@ export const Route = createFileRoute('/_site/u/$userid/')({
               handle: loaderData.meta.handle,
               description: loaderData.meta.description,
               path: loaderData.meta.ogUrl,
-              image: loaderData.meta.ogImage || undefined,
+              image: loaderData.meta.avatarImage || undefined,
             }),
           ),
         ]

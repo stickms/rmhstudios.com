@@ -2,6 +2,21 @@ import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 import { handleCooldownRemaining } from '@/lib/handle';
 import { getEquippedCosmetics } from '@/lib/shop/equipped.server';
+import { profileLinkSchema, type ProfileLink } from '@/lib/profile-schema';
+import { getMembershipStatus } from '@/lib/memberships.server';
+
+/**
+ * Coerce the JSON `links` column into a validated ProfileLink[]. Defends the
+ * read path against malformed/legacy rows — anything that doesn't match the
+ * schema is dropped rather than trusted.
+ */
+function parseProfileLinks(value: unknown): ProfileLink[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    const parsed = profileLinkSchema.safeParse(entry);
+    return parsed.success ? [parsed.data] : [];
+  });
+}
 
 const profileSelect = {
   id: true,
@@ -18,9 +33,11 @@ const profileSelect = {
     select: {
       displayName: true,
       customImage: true,
+      bannerUrl: true,
       bio: true,
       location: true,
       website: true,
+      links: true,
       showLikes: true,
       dmPrivacy: true,
       profileSongSpotifyId: true,
@@ -30,6 +47,7 @@ const profileSelect = {
       profileSongAlbumArt: true,
       tipGoal: true,
       tipGoalLabel: true,
+      membershipPriceCoins: true,
       coins: true,
     },
   },
@@ -44,6 +62,9 @@ export interface ProfilePayload {
   tipGoal: number | null;
   tipGoalLabel: string | null;
   tipsThisMonth: number;
+  membershipPriceCoins: number | null;
+  memberCount: number;
+  isMember: boolean;
   id: string;
   name: string | null;
   username: string | null;
@@ -55,6 +76,8 @@ export interface ProfilePayload {
   bio: string | null;
   location: string | null;
   website: string | null;
+  links: ProfileLink[];
+  bannerUrl: string | null;
   showLikes: boolean;
   dmPrivacy: string;
   profileSongSpotifyId: string | null;
@@ -110,7 +133,7 @@ export async function getProfile(
   monthStart.setUTCDate(1);
   monthStart.setUTCHours(0, 0, 0, 0);
   const wantsTipGoal = !!user.profile?.tipGoal && user.profile.tipGoal > 0;
-  const [cosmetics, tipAgg] = await Promise.all([
+  const [cosmetics, tipAgg, membership] = await Promise.all([
     getEquippedCosmetics(user.id),
     wantsTipGoal
       ? prisma.coinTransaction.aggregate({
@@ -118,6 +141,7 @@ export async function getProfile(
           _sum: { amount: true },
         })
       : Promise.resolve(null),
+    getMembershipStatus(user.id, user.profile?.membershipPriceCoins ?? null, viewerId),
   ]);
   const tipsThisMonth = tipAgg?._sum.amount ?? 0;
 
@@ -129,6 +153,9 @@ export async function getProfile(
     tipGoal: user.profile?.tipGoal ?? null,
     tipGoalLabel: user.profile?.tipGoalLabel ?? null,
     tipsThisMonth,
+    membershipPriceCoins: membership.priceCoins,
+    memberCount: membership.memberCount,
+    isMember: membership.isMember,
     id: user.id,
     name: resolved.name,
     username: user.username,
@@ -140,6 +167,8 @@ export async function getProfile(
     bio: user.profile?.bio ?? null,
     location: user.profile?.location ?? null,
     website: user.profile?.website ?? null,
+    links: parseProfileLinks(user.profile?.links),
+    bannerUrl: user.profile?.bannerUrl ?? null,
     showLikes: user.profile?.showLikes ?? false,
     dmPrivacy: user.profile?.dmPrivacy ?? 'EVERYONE',
     profileSongSpotifyId: user.profile?.profileSongSpotifyId ?? null,

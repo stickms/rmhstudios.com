@@ -1,16 +1,19 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link2, Check, Code2 } from 'lucide-react';
+import { Link2, Check, Code2, QrCode as QrIcon, ImageDown } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useClipboard } from '@/hooks/useClipboard';
+import { QrCode } from './QrCode';
 
 interface ShareModalProps {
   open: boolean;
   onClose: () => void;
   url: string;
   text?: string;
-  /** When set, offers an "Embed" option with an iframe snippet for this post. */
+  /** When set, offers an "Embed" option with an iframe snippet for this post,
+   *  plus a downloadable 9:16 "share to Stories" image. */
   embedId?: string;
 }
 
@@ -18,6 +21,7 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
   const { t } = useTranslation('feed');
   const { copied, copy } = useClipboard();
   const { copied: embedCopied, copy: copyEmbed } = useClipboard();
+  const [showQr, setShowQr] = useState(false);
 
   const embedCode = embedId
     ? `<iframe src="https://rmhstudios.com/embed/post/${embedId}" width="100%" height="320" frameborder="0" style="border:1px solid #2a2a2a;border-radius:16px;max-width:560px" title="RMH Studios post"></iframe>`
@@ -93,6 +97,37 @@ export function ShareModal({ open, onClose, url, text, embedId }: ShareModalProp
               </svg>
               {t('share-via-email', { defaultValue: 'Share via Email' })}
             </button>
+
+            {/* Downloadable 9:16 "share to Stories" image (posts only) */}
+            {embedId && (
+              <a
+                href={`/api/og/post/${embedId}/story`}
+                download={`rmh-story-${embedId}.png`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 w-full px-3 py-2.5 rounded-site text-sm text-site-text hover:bg-site-surface transition-colors"
+              >
+                <ImageDown className="w-5 h-5 text-site-text-dim" />
+                {t('share-to-stories', { defaultValue: 'Download story image' })}
+              </a>
+            )}
+
+            {/* QR code (cross-device / IRL sharing) */}
+            <button
+              onClick={() => setShowQr((v) => !v)}
+              aria-expanded={showQr}
+              className="flex items-center gap-3 w-full px-3 py-2.5 rounded-site text-sm text-site-text hover:bg-site-surface transition-colors"
+            >
+              <QrIcon className="w-5 h-5 text-site-text-dim" />
+              {showQr ? t('hide-qr-code', { defaultValue: 'Hide QR code' }) : t('show-qr-code', { defaultValue: 'Show QR code' })}
+            </button>
+            {showQr && (
+              <div className="flex justify-center py-2">
+                <div className="rounded-site bg-white p-3">
+                  <QrCode value={url} size={168} />
+                </div>
+              </div>
+            )}
           </div>
 
           {embedCode && (
