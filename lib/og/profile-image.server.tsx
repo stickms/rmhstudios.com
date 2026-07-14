@@ -74,8 +74,14 @@ export interface ProfileOgData {
   postCount: number;
 }
 
+// Inter (used by satori) has no emoji glyphs; strip them so they don't render
+// as "tofu" boxes in the card.
+function stripEmoji(s: string): string {
+  return s.replace(/[\p{Extended_Pictographic}\u{FE00}-\u{FE0F}\u{200D}]/gu, '').replace(/\s{2,}/g, ' ');
+}
+
 function truncate(s: string, n: number): string {
-  const t = s.trim();
+  const t = stripEmoji(s).trim();
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 }
 

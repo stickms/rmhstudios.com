@@ -157,6 +157,8 @@ import { Route as SiteDraftsRouteImport } from './routes/_site/drafts'
 import { Route as SiteCommunitiesRouteImport } from './routes/_site/communities'
 import { Route as SiteBookmarksRouteImport } from './routes/_site/bookmarks'
 import { Route as SiteAchievementsRouteImport } from './routes/_site/achievements'
+import { Route as DotwellKnownAssetlinksDotjsonRouteImport } from './routes/[.]well-known.assetlinks[.]json'
+import { Route as DotwellKnownAppleAppSiteAssociationRouteImport } from './routes/[.]well-known.apple-app-site-association'
 import { Route as SiteDeveloperRouteRouteImport } from './routes/_site/developer/route'
 import { Route as SiteAdminRouteRouteImport } from './routes/_site/admin/route'
 import { Route as StrategiesSafehouseIndexRouteImport } from './routes/strategies/safehouse/index'
@@ -568,6 +570,7 @@ import { Route as ApiRideshareRidesIdSyncRouteImport } from './routes/api/ridesh
 import { Route as ApiRideshareRidesIdRateRouteImport } from './routes/api/rideshare/rides/$id/rate'
 import { Route as ApiRideshareRidesIdMessagesRouteImport } from './routes/api/rideshare/rides/$id/messages'
 import { Route as ApiPlaylistsIdItemsItemIdRouteImport } from './routes/api/playlists/$id/items/$itemId'
+import { Route as ApiOgPostIdStoryRouteImport } from './routes/api/og/post/$id/story'
 import { Route as ApiLibraryCollectionIdItemsRouteImport } from './routes/api/library/collection/$id/items'
 import { Route as ApiLibraryCollectionIdCoverRouteImport } from './routes/api/library/collection/$id/cover'
 import { Route as ApiHomesListingsIdFavoriteRouteImport } from './routes/api/homes/listings.$id.favorite'
@@ -1330,6 +1333,18 @@ const SiteAchievementsRoute = SiteAchievementsRouteImport.update({
   path: '/achievements',
   getParentRoute: () => SiteRoute,
 } as any)
+const DotwellKnownAssetlinksDotjsonRoute =
+  DotwellKnownAssetlinksDotjsonRouteImport.update({
+    id: '/.well-known/assetlinks.json',
+    path: '/.well-known/assetlinks.json',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DotwellKnownAppleAppSiteAssociationRoute =
+  DotwellKnownAppleAppSiteAssociationRouteImport.update({
+    id: '/.well-known/apple-app-site-association',
+    path: '/.well-known/apple-app-site-association',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const SiteDeveloperRouteRoute = SiteDeveloperRouteRouteImport.update({
   id: '/developer',
   path: '/developer',
@@ -3456,6 +3471,11 @@ const ApiPlaylistsIdItemsItemIdRoute =
     path: '/api/playlists/$id/items/$itemId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiOgPostIdStoryRoute = ApiOgPostIdStoryRouteImport.update({
+  id: '/story',
+  path: '/story',
+  getParentRoute: () => ApiOgPostIdRoute,
+} as any)
 const ApiLibraryCollectionIdItemsRoute =
   ApiLibraryCollectionIdItemsRouteImport.update({
     id: '/items',
@@ -3626,6 +3646,8 @@ export interface FileRoutesByFullPath {
   '/void-breaker': typeof VoidBreakerRoute
   '/admin': typeof SiteAdminRouteRouteWithChildren
   '/developer': typeof SiteDeveloperRouteRouteWithChildren
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
+  '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/communities': typeof SiteCommunitiesRoute
@@ -4035,7 +4057,7 @@ export interface FileRoutesByFullPath {
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
-  '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
   '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
@@ -4129,6 +4151,7 @@ export interface FileRoutesByFullPath {
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
+  '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -4186,6 +4209,8 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/velum2099': typeof Velum2099Route
   '/void-breaker': typeof VoidBreakerRoute
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
+  '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/achievements': typeof SiteAchievementsRoute
   '/bookmarks': typeof SiteBookmarksRoute
   '/communities': typeof SiteCommunitiesRoute
@@ -4592,7 +4617,7 @@ export interface FileRoutesByTo {
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
-  '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
   '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
@@ -4686,6 +4711,7 @@ export interface FileRoutesByTo {
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
+  '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -4766,6 +4792,8 @@ export interface FileRoutesById {
   '/void-breaker': typeof VoidBreakerRoute
   '/_site/admin': typeof SiteAdminRouteRouteWithChildren
   '/_site/developer': typeof SiteDeveloperRouteRouteWithChildren
+  '/.well-known/apple-app-site-association': typeof DotwellKnownAppleAppSiteAssociationRoute
+  '/.well-known/assetlinks.json': typeof DotwellKnownAssetlinksDotjsonRoute
   '/_site/achievements': typeof SiteAchievementsRoute
   '/_site/bookmarks': typeof SiteBookmarksRoute
   '/_site/communities': typeof SiteCommunitiesRoute
@@ -5176,7 +5204,7 @@ export interface FileRoutesById {
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
-  '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/og/post/$id': typeof ApiOgPostIdRouteWithChildren
   '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
@@ -5270,6 +5298,7 @@ export interface FileRoutesById {
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
   '/api/library/collection/$id/cover': typeof ApiLibraryCollectionIdCoverRoute
   '/api/library/collection/$id/items': typeof ApiLibraryCollectionIdItemsRoute
+  '/api/og/post/$id/story': typeof ApiOgPostIdStoryRoute
   '/api/playlists/$id/items/$itemId': typeof ApiPlaylistsIdItemsItemIdRoute
   '/api/rideshare/rides/$id/messages': typeof ApiRideshareRidesIdMessagesRoute
   '/api/rideshare/rides/$id/rate': typeof ApiRideshareRidesIdRateRoute
@@ -5351,6 +5380,8 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/admin'
     | '/developer'
+    | '/.well-known/apple-app-site-association'
+    | '/.well-known/assetlinks.json'
     | '/achievements'
     | '/bookmarks'
     | '/communities'
@@ -5854,6 +5885,7 @@ export interface FileRouteTypes {
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
+    | '/api/og/post/$id/story'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -5911,6 +5943,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/velum2099'
     | '/void-breaker'
+    | '/.well-known/apple-app-site-association'
+    | '/.well-known/assetlinks.json'
     | '/achievements'
     | '/bookmarks'
     | '/communities'
@@ -6411,6 +6445,7 @@ export interface FileRouteTypes {
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
+    | '/api/og/post/$id/story'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -6490,6 +6525,8 @@ export interface FileRouteTypes {
     | '/void-breaker'
     | '/_site/admin'
     | '/_site/developer'
+    | '/.well-known/apple-app-site-association'
+    | '/.well-known/assetlinks.json'
     | '/_site/achievements'
     | '/_site/bookmarks'
     | '/_site/communities'
@@ -6994,6 +7031,7 @@ export interface FileRouteTypes {
     | '/api/homes/listings/$id/favorite'
     | '/api/library/collection/$id/cover'
     | '/api/library/collection/$id/items'
+    | '/api/og/post/$id/story'
     | '/api/playlists/$id/items/$itemId'
     | '/api/rideshare/rides/$id/messages'
     | '/api/rideshare/rides/$id/rate'
@@ -7072,6 +7110,8 @@ export interface RootRouteChildren {
   Velum2099Route: typeof Velum2099Route
   VersecraftRoute: typeof VersecraftRouteWithChildren
   VoidBreakerRoute: typeof VoidBreakerRoute
+  DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
+  DotwellKnownAssetlinksDotjsonRoute: typeof DotwellKnownAssetlinksDotjsonRoute
   ApiAnnouncementsRoute: typeof ApiAnnouncementsRouteWithChildren
   ApiBookmarksRoute: typeof ApiBookmarksRoute
   ApiClientErrorRoute: typeof ApiClientErrorRoute
@@ -7304,7 +7344,7 @@ export interface RootRouteChildren {
   ApiLibraryCollectionIdRoute: typeof ApiLibraryCollectionIdRouteWithChildren
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
-  ApiOgPostIdRoute: typeof ApiOgPostIdRoute
+  ApiOgPostIdRoute: typeof ApiOgPostIdRouteWithChildren
   ApiOgProfileIdRoute: typeof ApiOgProfileIdRoute
   ApiPersonasIdChatRoute: typeof ApiPersonasIdChatRoute
   ApiPersonasAvatarFilenameRoute: typeof ApiPersonasAvatarFilenameRoute
@@ -8389,6 +8429,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/achievements'
       preLoaderRoute: typeof SiteAchievementsRouteImport
       parentRoute: typeof SiteRoute
+    }
+    '/.well-known/assetlinks.json': {
+      id: '/.well-known/assetlinks.json'
+      path: '/.well-known/assetlinks.json'
+      fullPath: '/.well-known/assetlinks.json'
+      preLoaderRoute: typeof DotwellKnownAssetlinksDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/apple-app-site-association': {
+      id: '/.well-known/apple-app-site-association'
+      path: '/.well-known/apple-app-site-association'
+      fullPath: '/.well-known/apple-app-site-association'
+      preLoaderRoute: typeof DotwellKnownAppleAppSiteAssociationRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_site/developer': {
       id: '/_site/developer'
@@ -11267,6 +11321,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPlaylistsIdItemsItemIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/og/post/$id/story': {
+      id: '/api/og/post/$id/story'
+      path: '/story'
+      fullPath: '/api/og/post/$id/story'
+      preLoaderRoute: typeof ApiOgPostIdStoryRouteImport
+      parentRoute: typeof ApiOgPostIdRoute
+    }
     '/api/library/collection/$id/items': {
       id: '/api/library/collection/$id/items'
       path: '/items'
@@ -12603,6 +12664,18 @@ const ApiLibraryCollectionIdRouteWithChildren =
     ApiLibraryCollectionIdRouteChildren,
   )
 
+interface ApiOgPostIdRouteChildren {
+  ApiOgPostIdStoryRoute: typeof ApiOgPostIdStoryRoute
+}
+
+const ApiOgPostIdRouteChildren: ApiOgPostIdRouteChildren = {
+  ApiOgPostIdStoryRoute: ApiOgPostIdStoryRoute,
+}
+
+const ApiOgPostIdRouteWithChildren = ApiOgPostIdRoute._addFileChildren(
+  ApiOgPostIdRouteChildren,
+)
+
 interface ApiRmhladderResumeIdRouteChildren {
   ApiRmhladderResumeIdAnalyzeRoute: typeof ApiRmhladderResumeIdAnalyzeRoute
   ApiRmhladderResumeIdConfirmRoute: typeof ApiRmhladderResumeIdConfirmRoute
@@ -12675,6 +12748,9 @@ const rootRouteChildren: RootRouteChildren = {
   Velum2099Route: Velum2099Route,
   VersecraftRoute: VersecraftRouteWithChildren,
   VoidBreakerRoute: VoidBreakerRoute,
+  DotwellKnownAppleAppSiteAssociationRoute:
+    DotwellKnownAppleAppSiteAssociationRoute,
+  DotwellKnownAssetlinksDotjsonRoute: DotwellKnownAssetlinksDotjsonRoute,
   ApiAnnouncementsRoute: ApiAnnouncementsRouteWithChildren,
   ApiBookmarksRoute: ApiBookmarksRoute,
   ApiClientErrorRoute: ApiClientErrorRoute,
@@ -12908,7 +12984,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryCollectionIdRoute: ApiLibraryCollectionIdRouteWithChildren,
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
-  ApiOgPostIdRoute: ApiOgPostIdRoute,
+  ApiOgPostIdRoute: ApiOgPostIdRouteWithChildren,
   ApiOgProfileIdRoute: ApiOgProfileIdRoute,
   ApiPersonasIdChatRoute: ApiPersonasIdChatRoute,
   ApiPersonasAvatarFilenameRoute: ApiPersonasAvatarFilenameRoute,
