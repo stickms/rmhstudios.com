@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, ListMusic } from 'lucide-react';
+import { Search, X, ListMusic, ListPlus } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { emit } from '@/lib/rmhmusic/socket';
 import { C2S } from '@/lib/rmhmusic/events';
@@ -38,6 +39,51 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
       url,
       durationMs: track.durationMs ?? null,
     });
+  };
+
+  // "Your playlists" — load a saved playlist's tracks into the room queue.
+  const [showPlaylists, setShowPlaylists] = useState(false);
+  const [myPlaylists, setMyPlaylists] = useState<{ id: string; name: string; itemCount: number }[]>([]);
+  const [plLoading, setPlLoading] = useState(false);
+
+  const togglePlaylists = async () => {
+    const next = !showPlaylists;
+    setShowPlaylists(next);
+    if (next && myPlaylists.length === 0) {
+      setPlLoading(true);
+      try {
+        const res = await fetch('/api/playlists?kind=music', { credentials: 'include' });
+        if (res.ok) setMyPlaylists((await res.json()).playlists ?? []);
+      } finally {
+        setPlLoading(false);
+      }
+    }
+  };
+
+  const queuePlaylist = async (id: string) => {
+    const res = await fetch(`/api/playlists/${id}`, { credentials: 'include' });
+    if (!res.ok) return;
+    const data = await res.json();
+    const items = (data.items ?? []) as {
+      externalId: string;
+      title: string;
+      subtitle: string | null;
+      thumbnail: string | null;
+      durationMs: number | null;
+    }[];
+    let n = 0;
+    for (const it of items) {
+      if (!it.externalId) continue;
+      emit(C2S.QUEUE_ADD, {
+        spotifyUri: it.externalId,
+        title: it.title,
+        artist: it.subtitle ?? '',
+        albumArt: it.thumbnail ?? '',
+        durationMs: it.durationMs ?? 0,
+      });
+      n++;
+    }
+    toast.success(t('playlist-queued', { defaultValue: 'Added {{n}} to the queue', n }));
   };
 
   useEffect(() => {
@@ -144,6 +190,43 @@ export default function SearchPanel({ onPlay }: SearchPanelProps) {
               </>
             ) : (
               <>
+                {/* Your playlists — load a saved playlist into the queue */}
+                <div className="mb-2">
+                  <button
+                    onClick={togglePlaylists}
+                    className="flex w-full items-center gap-2 px-2 py-1 rounded-lg"
+                    style={{ color: 'var(--site-text-muted)' }}
+                  >
+                    <ListPlus className="w-4 h-4" style={{ color: 'var(--site-accent)' }} />
+                    <span className="text-xs font-semibold uppercase tracking-wider">{t("your-playlists", { defaultValue: "Your playlists" })}</span>
+                  </button>
+                  {showPlaylists && (
+                    <div className="mt-1 space-y-1">
+                      {plLoading ? (
+                        <p className="px-2 py-2 text-xs" style={{ color: 'var(--site-text-dim)' }}>{t("loading", { defaultValue: "Loading…" })}</p>
+                      ) : myPlaylists.length === 0 ? (
+                        <p className="px-2 py-2 text-xs" style={{ color: 'var(--site-text-dim)' }}>{t("no-playlists", { defaultValue: "No playlists yet." })}</p>
+                      ) : (
+                        myPlaylists.map((pl) => (
+                          <div key={pl.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg" style={{ background: 'var(--site-surface)' }}>
+                            <span className="min-w-0 flex-1 truncate text-sm" style={{ color: 'var(--site-text)' }}>{pl.name}</span>
+                            <span className="text-xs shrink-0" style={{ color: 'var(--site-text-dim)' }}>{pl.itemCount}</span>
+                            <button
+                              disabled={!room}
+                              onClick={() => queuePlaylist(pl.id)}
+                              className="px-2 py-1 rounded-md text-xs font-semibold disabled:opacity-40"
+                              style={{ color: 'var(--site-accent)', background: 'var(--site-accent-dim)' }}
+                              title={room ? t("queue-action", { defaultValue: "Queue" }) : t("join-room-to-queue", { defaultValue: "Join a room to queue" })}
+                            >
+                              {t("queue-action", { defaultValue: "Queue" })}
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+
                 {room && room.queue.length > 0 && (
                   <>
                     <div className="flex items-center gap-2 px-2 py-1 mb-1">

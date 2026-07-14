@@ -520,7 +520,7 @@ function compareKeysetDesc(a: FeedItem, b: FeedItem): number {
 /* ------------------------------------------------------------------ */
 
 /** The viewer's muted words (already lowercased on write). Empty when none. */
-async function getMutedWords(userId: string): Promise<string[]> {
+export async function getMutedWords(userId: string): Promise<string[]> {
   const profile = await prisma.userProfile.findUnique({
     where: { userId },
     select: { mutedWords: true },
@@ -540,7 +540,7 @@ function contentIsMuted(text: string | undefined, muted: string[]): boolean {
  * Post-filter only — the keyset cursor is anchored independently, so a slightly
  * shorter page just streams the rest on the next fetch (no gap/overlap).
  */
-function applyMutedWords(items: FeedItem[], muted: string[]): FeedItem[] {
+export function applyMutedWords(items: FeedItem[], muted: string[]): FeedItem[] {
   if (!muted.length) return items;
   return items.filter(
     (it) =>

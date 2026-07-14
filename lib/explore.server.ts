@@ -3,6 +3,7 @@ import { rmharkInclude, mapRmharkToFeedItem } from '@/lib/feed/map-feed-item.ser
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { audienceWhere } from '@/lib/feed/audience.server';
+import { getMutedWords, applyMutedWords } from '@/lib/feed/timeline';
 import type { FeedItem } from '@/lib/feed-types';
 
 const HASHTAG_REGEX = /#(\w{1,64})/g;
@@ -90,9 +91,13 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
     .slice(0, 12)
     .map(({ tag, count }) => ({ tag, count }));
 
-  const hotPosts = hotRows
-    .filter((r) => (r.likeCount ?? 0) > 0)
-    .map((r) => mapRmharkToFeedItem(r, viewerId));
+  // Apply the viewer's muted words to hot posts too (the timeline already does;
+  // explore would otherwise be a mute-filter bypass).
+  const muted = viewerId ? await getMutedWords(viewerId) : [];
+  const hotPosts = applyMutedWords(
+    hotRows.filter((r) => (r.likeCount ?? 0) > 0).map((r) => mapRmharkToFeedItem(r, viewerId)),
+    muted,
+  );
 
   // People to follow: top by followers, excluding self/followed/hidden.
   const excludeIds = new Set<string>([
