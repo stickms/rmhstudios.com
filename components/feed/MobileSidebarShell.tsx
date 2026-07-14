@@ -322,7 +322,10 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             isOpen ? 'overflow-y-hidden' : 'overflow-y-auto'
           }`}
         >
-          <div ref={panelRef} className="relative min-h-dvh bg-site-bg touch-pan-y">
+          {/* Transparent so the body aurora is the single backdrop and draws
+              edge-to-edge (incl. under the floating dock) — no opaque band. The
+              glass sidebar overlay blurs this content when the drawer is open. */}
+          <div ref={panelRef} className="relative min-h-dvh touch-pan-y">
             {children}
           </div>
         </div>

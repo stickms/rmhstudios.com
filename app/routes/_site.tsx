@@ -33,7 +33,7 @@ export const Route = createFileRoute('/_site')({
 function SiteLayout() {
   const { t } = useTranslation('common');
   return (
-    <div className="vibe-app min-h-dvh bg-site-bg flex flex-col md:flex-row">
+    <div className="vibe-app min-h-dvh flex flex-col md:flex-row">
       {/* Keyboard skip link — visually hidden until focused. */}
       <a
         href="#main-content"
