@@ -90,6 +90,11 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  // Outer wrapper the gesture listeners attach to (so touches on the page, the
+  // scrim, and the sidebar all reach them) and a ref to the sidebar panel (so a
+  // vertical swipe on its nav scrolls the nav instead of dragging the drawer).
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const asideRef = useRef<HTMLElement>(null);
   const drag = useRef({
     startX: 0,
     startY: 0,
@@ -124,11 +129,13 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen]);
 
-  // Swipe handling, via non-passive native listeners on the page panel so we can
-  // cancel the browser's own scroll/back gestures when we take over a drag.
+  // Swipe handling, via non-passive native listeners on the OUTER wrapper so a
+  // touch anywhere — the page (to open), the scrim, or the glass sidebar itself
+  // (to close) — reaches them, and we can cancel the browser's own scroll/back
+  // gestures when we take over a horizontal drag.
   useEffect(() => {
-    const panel = panelRef.current;
-    if (!panel) return;
+    const wrap = wrapRef.current;
+    if (!wrap) return;
 
     function onTouchStart(e: TouchEvent) {
       if (window.innerWidth >= 768) return; // mobile only (md breakpoint)
@@ -169,27 +176,26 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
 
       if (!d.decided) {
         if (Math.abs(dx) < DEAD_ZONE && Math.abs(dy) < DEAD_ZONE) return;
-        // Horizontal intent becomes a drag. A vertical gesture is a scroll —
-        // but while the drawer is open the page is locked, so treat it as a
-        // (no-op) drag to keep the page from scrolling underneath.
         d.decided = true;
         const horizontal = Math.abs(dx) > Math.abs(dy);
-        if (
-          !isOpenRef.current &&
-          horizontal &&
-          panel &&
-          canScrollX(e.target, dx, panel)
-        ) {
+        const overSidebar = !!(
+          asideRef.current && e.target instanceof Node && asideRef.current.contains(e.target)
+        );
+        if (overSidebar && !horizontal) {
+          // A vertical swipe on the open sidebar scrolls its nav, not the drawer.
+          d.mode = 'scroll';
+        } else if (!isOpenRef.current && horizontal && wrap && canScrollX(e.target, dx, wrap)) {
           // The swipe began inside a horizontally-scrollable element that can
-          // still scroll this way — let the browser scroll it instead of
-          // hijacking the gesture to open the drawer.
+          // still scroll this way — let it scroll instead of opening the drawer.
           d.mode = 'scroll';
         } else {
+          // Horizontal intent is a drag; while open, any other gesture is a
+          // (no-op) drag so the page beneath the scrim never scrolls.
           d.mode = horizontal || isOpenRef.current ? 'drag' : 'scroll';
         }
       }
 
-      if (d.mode !== 'drag') return; // let the page scroll vertically
+      if (d.mode !== 'drag') return; // let the page / nav scroll vertically
 
       if (e.cancelable) e.preventDefault();
       d.x = Math.max(0, Math.min(DRAWER_WIDTH, d.base + dx));
@@ -206,7 +212,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
         return;
       }
 
-      // Tap (no real movement) on the pushed-aside content closes the drawer.
+      // Tap (no real movement) closes the drawer when it's open.
       if (d.x === d.base) {
         if (isOpenRef.current) setIsOpen(false);
         setDragX(null);
@@ -223,23 +229,24 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
       setDragX(null);
     }
 
-    panel.addEventListener('touchstart', onTouchStart, { passive: true });
-    panel.addEventListener('touchmove', onTouchMove, { passive: false });
-    panel.addEventListener('touchend', onTouchEnd, { passive: true });
-    panel.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    wrap.addEventListener('touchstart', onTouchStart, { passive: true });
+    wrap.addEventListener('touchmove', onTouchMove, { passive: false });
+    wrap.addEventListener('touchend', onTouchEnd, { passive: true });
+    wrap.addEventListener('touchcancel', onTouchEnd, { passive: true });
     return () => {
-      panel.removeEventListener('touchstart', onTouchStart);
-      panel.removeEventListener('touchmove', onTouchMove);
-      panel.removeEventListener('touchend', onTouchEnd);
-      panel.removeEventListener('touchcancel', onTouchEnd);
+      wrap.removeEventListener('touchstart', onTouchStart);
+      wrap.removeEventListener('touchmove', onTouchMove);
+      wrap.removeEventListener('touchend', onTouchEnd);
+      wrap.removeEventListener('touchcancel', onTouchEnd);
     };
   }, []);
 
   const dragging = dragX !== null;
   const offset = dragging ? (dragX as number) : isOpen ? DRAWER_WIDTH : 0;
-  // Keep `transform: none` when fully closed and idle so position:fixed
-  // descendants (modals, FABs) inside the page aren't re-anchored to the panel.
-  const transform = offset === 0 ? undefined : `translateX(${offset}px)`;
+  // Overlay drawer: the glass sidebar slides in OVER the page from the left.
+  // offset 0 = fully off-screen (translateX(-DRAWER_WIDTH)); DRAWER_WIDTH = in.
+  // The page itself never moves.
+  const sidebarTransform = `translateX(${offset - DRAWER_WIDTH}px)`;
   const scrimProgress = offset / DRAWER_WIDTH;
 
   // Paint the fixed sidebar only while it's actually being revealed. It must
@@ -260,83 +267,65 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
 
   return (
     <MobileSidebarContext.Provider value={{ isOpen, open, close, toggle }}>
-      <div
-        ref={scrollRef}
-        // Marks this element as the live scroll container on mobile so
-        // useScrollRestoration can save/restore it (the router only tracks the
-        // window, which doesn't scroll on mobile).
-        data-scroll-root
-        // `touch-pan-y` reserves horizontal gestures for our own drawer drag so the
-        // browser never treats a sideways swipe as a back/forward navigation, while
-        // still allowing native vertical scrolling. `overscroll-contain` keeps any
-        // scroll from chaining out to the document.
-        //
-        // `h-dvh` (not `flex-1`) is important: this element is the page's scroll
-        // container, but its parent only sets `min-h-dvh`, so `flex-1` would leave
-        // it unbounded — it would grow to fit its content and never become
-        // scrollable, and because `overscroll-contain` stops scroll from chaining
-        // to the document, vertical scrolling would be dead until a reflow. A
-        // fixed viewport height makes it a real scroller.
-        className={`md:hidden min-w-0 w-full h-dvh min-h-0 overflow-x-hidden touch-pan-y overscroll-contain ${
-          isOpen ? 'overflow-y-hidden' : 'overflow-y-auto'
-        }`}
-      >
-        {/* Sidebar — sits fixed behind the page content, filling the viewport as
-            a flex column: LeftSidebar scrolls its nav internally while its footer
-            (profile/sign-in) stays pinned to the bottom. `overscroll-contain`
-            (plus `touch-pan-y`) means grabbing and swiping the nav scrolls only
-            the sidebar itself — never the page behind it. The bottom padding
-            reserves room for the fixed mobile nav bar so the pinned footer sits
-            above it rather than tucking behind it. */}
-        <aside
-          className={`glass-chrome--aside fixed left-0 top-0 bottom-0 z-0 flex w-64 flex-col border-r border-site-border overscroll-contain touch-pan-y ${
-            asideRevealed ? '' : 'invisible'
-          }`}
-          // Reserve just enough room for the fixed mobile nav bar (min-h-12 =
-          // 48px, plus its own safe-area pad) so the pinned footer clears it
-          // with a small gap — not the oversized gap the old 72px left behind.
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 56px)' }}
-          aria-hidden={!isOpen}
-        >
-          <LeftSidebar expanded />
-        </aside>
-
-        {/* Page content — slides right to reveal the sidebar */}
+      {/* Outer wrapper — the gesture listeners attach here so touches on the
+          page, the scrim, and the glass sidebar all reach them. */}
+      <div ref={wrapRef} className="md:hidden w-full min-w-0">
+        {/* Page scroll container. It never moves; when the drawer is open it is
+            scroll-locked (`overflow-y-hidden`) so the page can't scroll behind
+            the overlay. `touch-pan-y` reserves horizontal gestures for the drawer
+            drag; `overscroll-contain` keeps scroll from chaining to the document.
+            `data-scroll-root` marks it for useScrollRestoration. `h-dvh` makes it
+            a real scroller (its parent only sets min-h-dvh). */}
         <div
-          ref={panelRef}
-          // Styling hook for translucent themes (liquid-glass): while the
-          // drawer is revealed the panel must paint opaque so the sidebar
-          // can't ghost through it mid-slide. Set for the same window the
-          // aside is painted (drag + open + the 420ms close settle).
-          data-drawer-active={asideRevealed ? '' : undefined}
-          // `touch-pan-y` must live on this panel too — not just the scroll
-          // container — because this is the element the touches actually land
-          // on. Without it the panel defaults to `touch-action: auto`, letting
-          // the browser claim an edge swipe as back/forward navigation before
-          // our non-passive listener can preventDefault.
-          className={`relative z-10 min-h-dvh bg-site-bg touch-pan-y ${
+          ref={scrollRef}
+          data-scroll-root
+          className={`min-w-0 w-full h-dvh min-h-0 overflow-x-hidden touch-pan-y overscroll-contain ${
+            isOpen ? 'overflow-y-hidden' : 'overflow-y-auto'
+          }`}
+        >
+          <div ref={panelRef} className="relative min-h-dvh bg-site-bg touch-pan-y">
+            {children}
+          </div>
+        </div>
+
+        {/* Scrim — dims the page and captures taps/keys to close. Above the page,
+            below the sidebar. A real <button> so it's keyboard-operable (Esc also
+            closes). No backdrop blur here (the sidebar already frosts the page —
+            stacking a second backdrop-filter is wasteful). */}
+        {asideRevealed && (
+          <button
+            type="button"
+            onClick={close}
+            aria-label={t('close-menu', { defaultValue: 'Close menu' })}
+            className={`fixed inset-0 z-[55] bg-black/40 ${
+              dragging
+                ? ''
+                : 'transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
+            }`}
+            style={{ opacity: scrimProgress }}
+          />
+        )}
+
+        {/* Sidebar — a Liquid Glass overlay that slides in OVER the page (blurring
+            the content + aurora behind it) instead of sitting underneath it. The
+            blur lives on glass-chrome--aside's ::before, so the aside itself never
+            gains backdrop-filter and stays a valid containing block for
+            LeftSidebar's non-portaled fixed user menu (§3.3.1). */}
+        <aside
+          ref={asideRef}
+          className={`glass-chrome--aside fixed left-0 top-0 bottom-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
+            asideRevealed ? '' : 'invisible'
+          } ${
             dragging
               ? ''
               : 'transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0'
           }`}
-          style={{ transform }}
+          // Reserve room for the floating mobile dock so the pinned footer clears it.
+          style={{ transform: sidebarTransform, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)' }}
+          aria-hidden={!isOpen}
         >
-          {children}
-
-          {/* Scrim over the pushed content: dims it and captures taps to close */}
-          {offset > 0 && (
-            <div
-              className={`absolute inset-0 z-50 bg-black/30 ${
-                dragging
-                  ? ''
-                  : 'transition-opacity duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
-              }`}
-              style={{ opacity: scrimProgress }}
-              onClick={close}
-              aria-label={t("close-menu", { defaultValue: "Close menu" })}
-            />
-          )}
-        </div>
+          <LeftSidebar expanded />
+        </aside>
       </div>
     </MobileSidebarContext.Provider>
   );
