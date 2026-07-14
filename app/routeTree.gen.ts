@@ -98,6 +98,7 @@ import { Route as RmhCapitalContactRouteImport } from './routes/rmh-capital/cont
 import { Route as RmhCapitalCareersRouteImport } from './routes/rmh-capital/careers'
 import { Route as RmhCapitalBusinessesRouteImport } from './routes/rmh-capital/businesses'
 import { Route as RefCodeRouteImport } from './routes/ref.$code'
+import { Route as NewsRssDotxmlRouteImport } from './routes/news.rss[.]xml'
 import { Route as NewsSlugRouteImport } from './routes/news.$slug'
 import { Route as LibrarySlugRouteImport } from './routes/library.$slug'
 import { Route as ForestExplorerStoryRouteImport } from './routes/forest-explorer/story'
@@ -112,6 +113,7 @@ import { Route as DailyImpostorRouteImport } from './routes/daily/impostor'
 import { Route as DailyChainlinkRouteImport } from './routes/daily/chainlink'
 import { Route as DailyAlibiRouteImport } from './routes/daily/alibi'
 import { Route as BuildsSlugRouteImport } from './routes/builds_.$slug'
+import { Route as BlogRssDotxmlRouteImport } from './routes/blog.rss[.]xml'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as ApiWrappedRouteImport } from './routes/api/wrapped'
 import { Route as ApiUserBuildsRouteImport } from './routes/api/user-builds'
@@ -322,6 +324,7 @@ import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-e
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
 import { Route as ApiFeedMentionSearchRouteImport } from './routes/api/feed/mention-search'
 import { Route as ApiFeedHashtagSearchRouteImport } from './routes/api/feed/hashtag-search'
+import { Route as ApiEmbedOembedRouteImport } from './routes/api/embed/oembed'
 import { Route as ApiDreamRiftScoreRouteImport } from './routes/api/dream-rift/score'
 import { Route as ApiDreamRiftLeaderboardRouteImport } from './routes/api/dream-rift/leaderboard'
 import { Route as ApiDreamRiftCoopRouteImport } from './routes/api/dream-rift/coop'
@@ -477,6 +480,7 @@ import { Route as ApiProfileIdFollowRouteImport } from './routes/api/profile/$id
 import { Route as ApiPredictionsIdTradeRouteImport } from './routes/api/predictions/$id/trade'
 import { Route as ApiPersonasAvatarFilenameRouteImport } from './routes/api/personas/avatar/$filename'
 import { Route as ApiPersonasIdChatRouteImport } from './routes/api/personas/$id/chat'
+import { Route as ApiOgProfileIdRouteImport } from './routes/api/og/profile/$id'
 import { Route as ApiOgPostIdRouteImport } from './routes/api/og/post/$id'
 import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/api/messages/$conversationId/typing'
 import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/messages/$conversationId/read'
@@ -1031,6 +1035,11 @@ const RefCodeRoute = RefCodeRouteImport.update({
   path: '/ref/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NewsRssDotxmlRoute = NewsRssDotxmlRouteImport.update({
+  id: '/news/rss.xml',
+  path: '/news/rss.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NewsSlugRoute = NewsSlugRouteImport.update({
   id: '/news/$slug',
   path: '/news/$slug',
@@ -1099,6 +1108,11 @@ const DailyAlibiRoute = DailyAlibiRouteImport.update({
 const BuildsSlugRoute = BuildsSlugRouteImport.update({
   id: '/builds_/$slug',
   path: '/builds/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogRssDotxmlRoute = BlogRssDotxmlRouteImport.update({
+  id: '/blog/rss.xml',
+  path: '/blog/rss.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BlogSlugRoute = BlogSlugRouteImport.update({
@@ -2168,6 +2182,11 @@ const ApiFeedHashtagSearchRoute = ApiFeedHashtagSearchRouteImport.update({
   path: '/api/feed/hashtag-search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiEmbedOembedRoute = ApiEmbedOembedRouteImport.update({
+  id: '/api/embed/oembed',
+  path: '/api/embed/oembed',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDreamRiftScoreRoute = ApiDreamRiftScoreRouteImport.update({
   id: '/api/dream-rift/score',
   path: '/api/dream-rift/score',
@@ -2958,6 +2977,11 @@ const ApiPersonasIdChatRoute = ApiPersonasIdChatRouteImport.update({
   path: '/api/personas/$id/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiOgProfileIdRoute = ApiOgProfileIdRouteImport.update({
+  id: '/api/og/profile/$id',
+  path: '/api/og/profile/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOgPostIdRoute = ApiOgPostIdRouteImport.update({
   id: '/api/og/post/$id',
   path: '/api/og/post/$id',
@@ -3645,6 +3669,7 @@ export interface FileRoutesByFullPath {
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/builds/$slug': typeof BuildsSlugRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
@@ -3659,6 +3684,7 @@ export interface FileRoutesByFullPath {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/news/rss.xml': typeof NewsRssDotxmlRoute
   '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -3786,6 +3812,7 @@ export interface FileRoutesByFullPath {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -4009,6 +4036,7 @@ export interface FileRoutesByFullPath {
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -4199,6 +4227,7 @@ export interface FileRoutesByTo {
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/builds/$slug': typeof BuildsSlugRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
@@ -4213,6 +4242,7 @@ export interface FileRoutesByTo {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/news/rss.xml': typeof NewsRssDotxmlRoute
   '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -4339,6 +4369,7 @@ export interface FileRoutesByTo {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -4562,6 +4593,7 @@ export interface FileRoutesByTo {
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -4777,6 +4809,7 @@ export interface FileRoutesById {
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
   '/api/wrapped': typeof ApiWrappedRoute
   '/blog/$slug': typeof BlogSlugRoute
+  '/blog/rss.xml': typeof BlogRssDotxmlRoute
   '/builds_/$slug': typeof BuildsSlugRoute
   '/daily/alibi': typeof DailyAlibiRoute
   '/daily/chainlink': typeof DailyChainlinkRoute
@@ -4791,6 +4824,7 @@ export interface FileRoutesById {
   '/forest-explorer/story': typeof ForestExplorerStoryRoute
   '/library/$slug': typeof LibrarySlugRoute
   '/news/$slug': typeof NewsSlugRoute
+  '/news/rss.xml': typeof NewsRssDotxmlRoute
   '/ref/$code': typeof RefCodeRoute
   '/rmh-capital/businesses': typeof RmhCapitalBusinessesRoute
   '/rmh-capital/careers': typeof RmhCapitalCareersRoute
@@ -4919,6 +4953,7 @@ export interface FileRoutesById {
   '/api/dream-rift/coop': typeof ApiDreamRiftCoopRoute
   '/api/dream-rift/leaderboard': typeof ApiDreamRiftLeaderboardRoute
   '/api/dream-rift/score': typeof ApiDreamRiftScoreRoute
+  '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
@@ -5142,6 +5177,7 @@ export interface FileRoutesById {
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
   '/api/og/post/$id': typeof ApiOgPostIdRoute
+  '/api/og/profile/$id': typeof ApiOgProfileIdRoute
   '/api/personas/$id/chat': typeof ApiPersonasIdChatRoute
   '/api/personas/avatar/$filename': typeof ApiPersonasAvatarFilenameRoute
   '/api/predictions/$id/trade': typeof ApiPredictionsIdTradeRoute
@@ -5358,6 +5394,7 @@ export interface FileRouteTypes {
     | '/api/user-builds'
     | '/api/wrapped'
     | '/blog/$slug'
+    | '/blog/rss.xml'
     | '/builds/$slug'
     | '/daily/alibi'
     | '/daily/chainlink'
@@ -5372,6 +5409,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/news/rss.xml'
     | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -5499,6 +5537,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/embed/oembed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
     | '/api/feed/stream'
@@ -5722,6 +5761,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
+    | '/api/og/profile/$id'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
     | '/api/predictions/$id/trade'
@@ -5912,6 +5952,7 @@ export interface FileRouteTypes {
     | '/api/user-builds'
     | '/api/wrapped'
     | '/blog/$slug'
+    | '/blog/rss.xml'
     | '/builds/$slug'
     | '/daily/alibi'
     | '/daily/chainlink'
@@ -5926,6 +5967,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/news/rss.xml'
     | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -6052,6 +6094,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/embed/oembed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
     | '/api/feed/stream'
@@ -6275,6 +6318,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
+    | '/api/og/profile/$id'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
     | '/api/predictions/$id/trade'
@@ -6489,6 +6533,7 @@ export interface FileRouteTypes {
     | '/api/user-builds'
     | '/api/wrapped'
     | '/blog/$slug'
+    | '/blog/rss.xml'
     | '/builds_/$slug'
     | '/daily/alibi'
     | '/daily/chainlink'
@@ -6503,6 +6548,7 @@ export interface FileRouteTypes {
     | '/forest-explorer/story'
     | '/library/$slug'
     | '/news/$slug'
+    | '/news/rss.xml'
     | '/ref/$code'
     | '/rmh-capital/businesses'
     | '/rmh-capital/careers'
@@ -6631,6 +6677,7 @@ export interface FileRouteTypes {
     | '/api/dream-rift/coop'
     | '/api/dream-rift/leaderboard'
     | '/api/dream-rift/score'
+    | '/api/embed/oembed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
     | '/api/feed/stream'
@@ -6854,6 +6901,7 @@ export interface FileRouteTypes {
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
     | '/api/og/post/$id'
+    | '/api/og/profile/$id'
     | '/api/personas/$id/chat'
     | '/api/personas/avatar/$filename'
     | '/api/predictions/$id/trade'
@@ -7044,11 +7092,13 @@ export interface RootRouteChildren {
   ApiUserBuildsRoute: typeof ApiUserBuildsRouteWithChildren
   ApiWrappedRoute: typeof ApiWrappedRoute
   BlogSlugRoute: typeof BlogSlugRoute
+  BlogRssDotxmlRoute: typeof BlogRssDotxmlRoute
   BuildsSlugRoute: typeof BuildsSlugRoute
   DiscordLightsOutRoute: typeof DiscordLightsOutRoute
   DiscordRmhboxRoute: typeof DiscordRmhboxRoute
   LibrarySlugRoute: typeof LibrarySlugRoute
   NewsSlugRoute: typeof NewsSlugRoute
+  NewsRssDotxmlRoute: typeof NewsRssDotxmlRoute
   RefCodeRoute: typeof RefCodeRoute
   UserBuildsSlugRoute: typeof UserBuildsSlugRoute
   VSlugRoute: typeof VSlugRoute
@@ -7092,6 +7142,7 @@ export interface RootRouteChildren {
   ApiDreamRiftCoopRoute: typeof ApiDreamRiftCoopRoute
   ApiDreamRiftLeaderboardRoute: typeof ApiDreamRiftLeaderboardRoute
   ApiDreamRiftScoreRoute: typeof ApiDreamRiftScoreRoute
+  ApiEmbedOembedRoute: typeof ApiEmbedOembedRoute
   ApiFeedHashtagSearchRoute: typeof ApiFeedHashtagSearchRoute
   ApiFeedMentionSearchRoute: typeof ApiFeedMentionSearchRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
@@ -7254,6 +7305,7 @@ export interface RootRouteChildren {
   ApiLibraryCoverIdRoute: typeof ApiLibraryCoverIdRoute
   ApiLibraryFileIdRoute: typeof ApiLibraryFileIdRoute
   ApiOgPostIdRoute: typeof ApiOgPostIdRoute
+  ApiOgProfileIdRoute: typeof ApiOgProfileIdRoute
   ApiPersonasIdChatRoute: typeof ApiPersonasIdChatRoute
   ApiPersonasAvatarFilenameRoute: typeof ApiPersonasAvatarFilenameRoute
   ApiQuestsIdClaimRoute: typeof ApiQuestsIdClaimRoute
@@ -7925,6 +7977,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RefCodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/news/rss.xml': {
+      id: '/news/rss.xml'
+      path: '/news/rss.xml'
+      fullPath: '/news/rss.xml'
+      preLoaderRoute: typeof NewsRssDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/news/$slug': {
       id: '/news/$slug'
       path: '/news/$slug'
@@ -8021,6 +8080,13 @@ declare module '@tanstack/react-router' {
       path: '/builds/$slug'
       fullPath: '/builds/$slug'
       preLoaderRoute: typeof BuildsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/rss.xml': {
+      id: '/blog/rss.xml'
+      path: '/blog/rss.xml'
+      fullPath: '/blog/rss.xml'
+      preLoaderRoute: typeof BlogRssDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/blog/$slug': {
@@ -9493,6 +9559,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiFeedHashtagSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/embed/oembed': {
+      id: '/api/embed/oembed'
+      path: '/api/embed/oembed'
+      fullPath: '/api/embed/oembed'
+      preLoaderRoute: typeof ApiEmbedOembedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/dream-rift/score': {
       id: '/api/dream-rift/score'
       path: '/api/dream-rift/score'
@@ -10576,6 +10649,13 @@ declare module '@tanstack/react-router' {
       path: '/api/personas/$id/chat'
       fullPath: '/api/personas/$id/chat'
       preLoaderRoute: typeof ApiPersonasIdChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/og/profile/$id': {
+      id: '/api/og/profile/$id'
+      path: '/api/og/profile/$id'
+      fullPath: '/api/og/profile/$id'
+      preLoaderRoute: typeof ApiOgProfileIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/og/post/$id': {
@@ -12615,11 +12695,13 @@ const rootRouteChildren: RootRouteChildren = {
   ApiUserBuildsRoute: ApiUserBuildsRouteWithChildren,
   ApiWrappedRoute: ApiWrappedRoute,
   BlogSlugRoute: BlogSlugRoute,
+  BlogRssDotxmlRoute: BlogRssDotxmlRoute,
   BuildsSlugRoute: BuildsSlugRoute,
   DiscordLightsOutRoute: DiscordLightsOutRoute,
   DiscordRmhboxRoute: DiscordRmhboxRoute,
   LibrarySlugRoute: LibrarySlugRoute,
   NewsSlugRoute: NewsSlugRoute,
+  NewsRssDotxmlRoute: NewsRssDotxmlRoute,
   RefCodeRoute: RefCodeRoute,
   UserBuildsSlugRoute: UserBuildsSlugRoute,
   VSlugRoute: VSlugRoute,
@@ -12663,6 +12745,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiDreamRiftCoopRoute: ApiDreamRiftCoopRoute,
   ApiDreamRiftLeaderboardRoute: ApiDreamRiftLeaderboardRoute,
   ApiDreamRiftScoreRoute: ApiDreamRiftScoreRoute,
+  ApiEmbedOembedRoute: ApiEmbedOembedRoute,
   ApiFeedHashtagSearchRoute: ApiFeedHashtagSearchRoute,
   ApiFeedMentionSearchRoute: ApiFeedMentionSearchRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
@@ -12826,6 +12909,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryCoverIdRoute: ApiLibraryCoverIdRoute,
   ApiLibraryFileIdRoute: ApiLibraryFileIdRoute,
   ApiOgPostIdRoute: ApiOgPostIdRoute,
+  ApiOgProfileIdRoute: ApiOgProfileIdRoute,
   ApiPersonasIdChatRoute: ApiPersonasIdChatRoute,
   ApiPersonasAvatarFilenameRoute: ApiPersonasAvatarFilenameRoute,
   ApiQuestsIdClaimRoute: ApiQuestsIdClaimRoute,

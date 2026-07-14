@@ -6,6 +6,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getAllNewsArticles, getFeaturedNewsArticles } from '@/lib/news';
 import { NewsPageContent } from '@/components/news/NewsPageContent';
+import { SITE_URL } from '@/lib/seo';
 
 const fetchNews = createServerFn({ method: 'GET' }).handler(async () => {
   const articles = await getAllNewsArticles();
@@ -18,6 +19,9 @@ export const Route = createFileRoute('/_site/news/')({
     meta: [
       { title: 'News | RMH Studios' },
       { name: 'description', content: 'Curated news and commentary on AI, gaming, neuroscience, tech, science, and culture from RMH Studios.' },
+    ],
+    links: [
+      { rel: 'alternate', type: 'application/rss+xml', title: 'RMH Studios — News', href: `${SITE_URL}/news/rss.xml` },
     ],
   }),
   loader: () => fetchNews(),

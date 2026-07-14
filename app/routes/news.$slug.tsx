@@ -5,7 +5,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getNewsArticleBySlug } from '@/lib/news';
-import { buildCanonical } from '@/lib/seo';
+import { buildCanonical, SITE_URL } from '@/lib/seo';
 import { articleSchema, jsonLdScript } from '@/lib/schema';
 import ReactMarkdown from 'react-markdown';
 import { Link } from '@tanstack/react-router';
@@ -41,7 +41,10 @@ export const Route = createFileRoute('/news/$slug')({
           { name: 'description', content: loaderData.description },
         ]
       : [{ title: 'Article Not Found | RMH Studios' }],
-    links: [buildCanonical(`/news/${params.slug}`)],
+    links: [
+      buildCanonical(`/news/${params.slug}`),
+      { rel: 'alternate', type: 'application/rss+xml', title: 'RMH Studios — News', href: `${SITE_URL}/news/rss.xml` },
+    ],
     scripts: loaderData
       ? [
           jsonLdScript(
