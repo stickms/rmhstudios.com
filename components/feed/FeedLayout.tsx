@@ -73,7 +73,7 @@ export function FeedLayout({ sidebar, initialFeed }: FeedLayoutProps) {
   return (
     <>
       {/* Center Feed – width animates when arriving from a wide page */}
-      <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0">
+      <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0">
         <FeedColumn initialFeed={initialFeed} />
       </AnimatedMain>
 
