@@ -77,7 +77,7 @@ export function PageLayout({
       {/* Center Column – width animates between pages. Bottom padding clears the
           floating mobile dock (§8.3). */}
       <AnimatedMain
-        className="w-full min-w-0 border-r border-site-border pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0"
+        className="w-full min-w-0 border-r border-site-border pb-dock"
         targetWidth={targetWidth}
       >
         <div className="flex flex-col">

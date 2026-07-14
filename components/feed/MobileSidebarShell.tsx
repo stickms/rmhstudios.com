@@ -363,8 +363,9 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
               : 'transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0'
           }`}
           // The overlay covers the floating dock (it's behind the scrim), so the
-          // pinned footer only needs a small gap above the home-indicator.
-          style={{ transform: sidebarTransform, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
+          // pinned footer only needs a small gap above the home-indicator /
+          // browser bottom bar (--safe-bottom).
+          style={{ transform: sidebarTransform, paddingBottom: 'calc(var(--safe-bottom) + 16px)' }}
           aria-hidden={!isOpen}
         >
           <LeftSidebar expanded />

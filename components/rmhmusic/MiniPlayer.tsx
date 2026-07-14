@@ -59,7 +59,7 @@ function MiniPlayerInner() {
 
   return (
     <div
-      className="glass-overlay fixed bottom-16 left-2 right-2 z-40 mx-auto max-w-sm overflow-hidden md:bottom-4 md:left-auto md:right-4"
+      className="glass-overlay fixed bottom-above-dock left-2 right-2 z-40 mx-auto max-w-sm overflow-hidden md:bottom-4 md:left-auto md:right-4"
       role="region"
       aria-label={t('mini-player', { defaultValue: 'Music mini-player' })}
     >
