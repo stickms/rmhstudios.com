@@ -24,9 +24,14 @@ interface FeedState {
   search: string | null;
   /** Buffered new posts for the "For You" surface — surfaced as an "N new" pill. */
   pendingItems: FeedItem[];
+  /** The viewer's muted words (lowercased). Live SSE posts matching them are
+   *  dropped so the mute is honored in real time, not just on the next read. */
+  mutedWords: string[];
 
   setFilter: (filter: FeedFilter) => void;
   setSearch: (query: string | null) => void;
+  /** Set the viewer's muted words (fetched once on feed mount). */
+  setMutedWords: (words: string[]) => void;
   fetchNextPage: () => Promise<void>;
   /** Re-attempt the current surface after an error (clears the error flag). */
   retry: () => void;
@@ -44,6 +49,17 @@ interface FeedState {
   /** Flush buffered pending posts to the top of the feed (pill click). */
   flushPending: () => void;
   reset: () => void;
+}
+
+/** True when the item's text (or its quoted original) contains a muted word. */
+function isMutedItem(item: FeedItem, muted: string[]): boolean {
+  if (muted.length === 0) return false;
+  const check = (text: string | undefined) => {
+    if (!text) return false;
+    const lower = text.toLowerCase();
+    return muted.some((w) => w && lower.includes(w));
+  };
+  return check(item.content) || check(item.original?.content);
 }
 
 /** Cache display data for every user referenced by a feed item. */
@@ -87,6 +103,9 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   filter: "all",
   search: null,
   pendingItems: [],
+  mutedWords: [],
+
+  setMutedWords: (words) => set({ mutedWords: words }),
 
   setFilter: (filter) => {
     // Abandon any in-flight request for the old surface so its late resolver
@@ -242,13 +261,18 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   receiveCreated: (item, delivery) => {
-    const { filter, items, pendingItems } = get();
+    const { filter, items, pendingItems, mutedWords } = get();
 
     // Created events are always RMHarks — ignore them on content-type tabs
     // that don't show RMHarks (Games/Apps/Blog).
     const contentShowsRmharks =
       filter === "all" || filter === "rmhark" || filter === "friends";
     if (!contentShowsRmharks) return;
+
+    // Honor the viewer's muted words in real time (the timeline read already
+    // filters these; without this a muted live post shows until refresh). Never
+    // suppress the viewer's own post.
+    if (!delivery.own && isMutedItem(item, mutedWords)) return;
 
     // De-dupe against what's already on screen or buffered.
     if (items.some((i) => i.id === item.id) || pendingItems.some((i) => i.id === item.id)) {

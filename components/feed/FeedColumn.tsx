@@ -41,7 +41,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
   const { open: openSidebar } = useMobileSidebar();
-  const { setFilter, search, setSearch } = useFeedStore();
+  const { setFilter, search, setSearch, setMutedWords } = useFeedStore();
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   // `?q=` is the shareable source of truth; the store search mirrors it.
@@ -54,6 +54,23 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
 
   // Connect to real-time feed SSE stream
   useFeedSSE();
+
+  // Load the viewer's muted words so live SSE posts are filtered in real time
+  // (the timeline read already applies them server-side).
+  const viewerId = session?.user?.id;
+  useEffect(() => {
+    if (!viewerId) return;
+    let active = true;
+    fetch('/api/preferences/muted-words', { credentials: 'include' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (active && Array.isArray(d?.words)) setMutedWords(d.words);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [viewerId, setMutedWords]);
 
   const handleSearchChange = (value: string) => {
     setSearchInput(value);
