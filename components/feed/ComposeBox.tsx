@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, History, ImagePlay, X, ImagePlus, Globe, Users, Lock, Coins, Type, FileText, CalendarClock, Check, ChevronDown } from 'lucide-react';
+import { Plus, BarChart3, History, ImagePlay, X, ImagePlus, Globe, Users, Lock, Coins, Type, FileText, CalendarClock, Check, ChevronDown, MessageCircle, AtSign, AlertTriangle } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { GifPicker } from './GifPicker';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -49,6 +49,9 @@ export function ComposeBox({
 }: { communityId?: string; onPosted?: (item: any) => void } = {}) {
   const [content, setContent] = useState('');
   const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE'>('PUBLIC');
+  const [replyControl, setReplyControl] = useState<'EVERYONE' | 'FOLLOWING' | 'MENTIONED'>('EVERYONE');
+  const [replyOpen, setReplyOpen] = useState(false);
+  const [isSensitive, setIsSensitive] = useState(false);
   const [pollDuration, setPollDuration] = useState(0); // hours; 0 = no limit
   const [unlockPrice, setUnlockPrice] = useState(''); // coins to unlock; '' = free
   const [submitting, setSubmitting] = useState(false);
@@ -76,6 +79,7 @@ export function ComposeBox({
   const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const audienceRef = useRef<HTMLDivElement>(null);
+  const replyRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
 
@@ -119,6 +123,18 @@ export function ComposeBox({
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [audienceOpen]);
+
+  // Close reply-control dropdown on outside click
+  useEffect(() => {
+    if (!replyOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (replyRef.current && !replyRef.current.contains(e.target as Node)) {
+        setReplyOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [replyOpen]);
 
   const hasPoll = attachment === 'poll' && poll.question.trim() &&
     poll.options.filter((o) => o.trim()).length >= MIN_POLL_OPTIONS;
@@ -168,6 +184,8 @@ export function ComposeBox({
       }
     }
     if (audience !== 'PUBLIC') body.audience = audience;
+    if (isSensitive) body.isSensitive = true;
+    if (replyControl !== 'EVERYONE') body.replyControl = replyControl;
     const price = parseInt(unlockPrice, 10);
     if (price > 0) body.unlockPrice = price;
     if (communityId) body.communityId = communityId;
@@ -178,6 +196,9 @@ export function ComposeBox({
     clearComposeDraft();
     setContent('');
     setAudience('PUBLIC');
+    setReplyControl('EVERYONE');
+    setReplyOpen(false);
+    setIsSensitive(false);
     setUnlockPrice('');
     setAttachment(null);
     setPoll({ question: '', options: ['', ''], multiSelect: false });
@@ -197,6 +218,8 @@ export function ComposeBox({
   const snapshotDraft = () => ({
     content,
     audience,
+    replyControl,
+    isSensitive,
     unlockPrice,
     attachment,
     poll,
@@ -207,6 +230,8 @@ export function ComposeBox({
   const restoreDraft = (d: ReturnType<typeof snapshotDraft>) => {
     setContent(d.content);
     setAudience(d.audience);
+    setReplyControl(d.replyControl);
+    setIsSensitive(d.isSensitive);
     setUnlockPrice(d.unlockPrice);
     setAttachment(d.attachment);
     setPoll(d.poll);
@@ -245,6 +270,8 @@ export function ComposeBox({
       },
       imageUrls: hasImages ? imageUrls : undefined,
       imageAlts: hasImages ? imageUrls.map((_, i) => imageAlts[i]?.trim() ?? '') : undefined,
+      isSensitive,
+      replyControl,
       gifUrl: hasGif ? gifUrl.trim() : undefined,
       poll: hasPoll
         ? {
@@ -379,6 +406,14 @@ export function ComposeBox({
   ] as const;
   const currentAudience = audienceOptions.find((o) => o.value === audience) ?? audienceOptions[0];
   const CurrentAudienceIcon = currentAudience.icon;
+
+  const replyOptions = [
+    { value: 'EVERYONE', label: t("reply-everyone", { defaultValue: "Everyone can reply" }), short: t("reply-everyone-short", { defaultValue: "Everyone" }), icon: Globe },
+    { value: 'FOLLOWING', label: t("reply-following", { defaultValue: "Accounts you follow" }), short: t("reply-following-short", { defaultValue: "Following" }), icon: Users },
+    { value: 'MENTIONED', label: t("reply-mentioned", { defaultValue: "Only accounts you mention" }), short: t("reply-mentioned-short", { defaultValue: "Mentioned" }), icon: AtSign },
+  ] as const;
+  const currentReply = replyOptions.find((o) => o.value === replyControl) ?? replyOptions[0];
+  const CurrentReplyIcon = currentReply.icon;
 
   return (
     // focus-within lifts the composer to a faint surface + brighter hairline
@@ -735,6 +770,65 @@ export function ComposeBox({
                   </div>
                 )}
               </div>
+
+              {/* Who can reply dropdown */}
+              <div className="relative" ref={replyRef}>
+                <button
+                  type="button"
+                  onClick={() => setReplyOpen((v) => !v)}
+                  aria-haspopup="listbox"
+                  aria-expanded={replyOpen}
+                  title={t("reply-control-label", { defaultValue: "Who can reply" })}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-site-border bg-site-surface px-2.5 py-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-text hover:border-site-accent/50"
+                >
+                  <CurrentReplyIcon className="h-3.5 w-3.5" />
+                  <span>{currentReply.short}</span>
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${replyOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {replyOpen && (
+                  <div role="listbox" className="absolute bottom-full left-0 mb-1 w-52 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30 animate-in fade-in slide-in-from-bottom-1 duration-150">
+                    <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-site-text-dim">
+                      {t("reply-control-heading", { defaultValue: "Who can reply?" })}
+                    </div>
+                    {replyOptions.map(({ value, label, icon: Icon }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        role="option"
+                        aria-selected={replyControl === value}
+                        onClick={() => {
+                          setReplyControl(value);
+                          setReplyOpen(false);
+                        }}
+                        className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors hover:bg-site-surface ${
+                          replyControl === value ? 'text-site-accent' : 'text-site-text'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 text-site-text-dim" />
+                        <span className="flex-1 text-left">{label}</span>
+                        {replyControl === value && <Check className="w-4 h-4" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Sensitive-content toggle */}
+              <button
+                type="button"
+                onClick={() => setIsSensitive((v) => !v)}
+                aria-pressed={isSensitive}
+                title={t("mark-sensitive-title", { defaultValue: "Mark media as sensitive (content warning)" })}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  isSensitive
+                    ? 'border-site-warning/50 bg-site-warning/10 text-site-warning'
+                    : 'border-site-border bg-site-surface text-site-text-muted hover:text-site-text hover:border-site-accent/50'
+                }`}
+              >
+                <AlertTriangle className="h-3.5 w-3.5" />
+                <span>{t("mark-sensitive-short", { defaultValue: "CW" })}</span>
+              </button>
 
               {/* Character counter */}
               <span

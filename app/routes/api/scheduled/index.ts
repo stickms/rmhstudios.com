@@ -21,6 +21,8 @@ const createSchema = z.object({
   imageUrls: z.array(z.string()).max(4).optional(),
   imageAlts: z.array(z.string().max(MAX_IMAGE_ALT_LENGTH)).max(4).optional(),
   audience: z.enum(['PUBLIC', 'FOLLOWERS', 'PRIVATE']).optional(),
+  isSensitive: z.boolean().optional(),
+  replyControl: z.enum(['EVERYONE', 'FOLLOWING', 'MENTIONED']).optional(),
   unlockPrice: z.number().int().min(0).max(1_000_000).optional(),
   communityId: z.string().max(64).optional(),
   // ISO date; omit/null = plain draft. Must be in the future when set.
@@ -93,6 +95,8 @@ export const Route = createFileRoute('/api/scheduled/')({
               imageUrls: d.imageUrls ?? [],
               imageAlts: (d.imageAlts ?? []).slice(0, d.imageUrls?.length ?? 0).map((a) => a.trim()),
               audience: d.audience ?? 'PUBLIC',
+              isSensitive: d.isSensitive ?? false,
+              replyControl: d.replyControl ?? 'EVERYONE',
               unlockPrice: d.unlockPrice && d.unlockPrice > 0 ? d.unlockPrice : null,
               communityId: d.communityId ?? null,
               poll: d.poll ?? undefined,

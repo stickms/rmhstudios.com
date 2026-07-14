@@ -36,6 +36,8 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
         imageAlts: sp.imageAlts ?? [],
         userId: sp.userId,
         audience: sp.audience,
+        isSensitive: sp.isSensitive,
+        replyControl: sp.replyControl,
         unlockPrice: sp.unlockPrice && sp.unlockPrice > 0 ? sp.unlockPrice : null,
         communityId: sp.communityId ?? null,
       },

@@ -103,7 +103,7 @@ export const Route = createFileRoute('/api/rmharks')({
       );
     }
 
-    const { content, poll, gifUrl, imageUrls, imageAlts, originalId, audience, unlockPrice, communityId } = parsed.data;
+    const { content, poll, gifUrl, imageUrls, imageAlts, originalId, audience, isSensitive, replyControl, unlockPrice, communityId } = parsed.data;
 
     if (imageUrls?.length && !imageUrls.every((u) => ownsFeedImageUrl(u, session.user.id))) {
       return Response.json({ error: "Invalid image reference" }, { status: 400 });
@@ -149,6 +149,8 @@ export const Route = createFileRoute('/api/rmharks')({
           userId: session.user.id,
           originalId: quotedOriginalId,
           audience: audience ?? "PUBLIC",
+          isSensitive: isSensitive ?? false,
+          replyControl: replyControl ?? "EVERYONE",
           unlockPrice: unlockPrice && unlockPrice > 0 ? unlockPrice : null,
           communityId: communityId ?? null,
         },
@@ -239,6 +241,8 @@ export const Route = createFileRoute('/api/rmharks')({
       gifUrl: rmhark.gifUrl ?? undefined,
       imageUrls: rmhark.imageUrls,
       imageAlts: rmhark.imageAlts,
+      isSensitive: rmhark.isSensitive,
+      replyControl: rmhark.replyControl,
       reactions: [],
     };
 

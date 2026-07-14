@@ -78,6 +78,10 @@ export const createRMHarkSchema = z
     originalId: z.string().max(64).optional(),
     // Audience visibility.
     audience: z.enum(["PUBLIC", "FOLLOWERS", "PRIVATE"]).optional(),
+    // Content warning: hide media/text behind a click-to-reveal overlay.
+    isSensitive: z.boolean().optional(),
+    // Who is allowed to reply.
+    replyControl: z.enum(["EVERYONE", "FOLLOWING", "MENTIONED"]).optional(),
     // Paid post: coins required to unlock (0/undefined = free).
     unlockPrice: z.number().int().min(0).max(1_000_000).optional(),
     // Optional community to post into (viewer must be a member).

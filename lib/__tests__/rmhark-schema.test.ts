@@ -62,6 +62,25 @@ describe("createRMHarkSchema imageAlts (accessibility)", () => {
   });
 });
 
+describe("createRMHarkSchema safety controls", () => {
+  it("accepts isSensitive + a reply control", () => {
+    const r = createRMHarkSchema.safeParse({
+      content: "hi",
+      isSensitive: true,
+      replyControl: "FOLLOWING",
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects an unknown reply control value", () => {
+    const r = createRMHarkSchema.safeParse({
+      content: "hi",
+      replyControl: "NOBODY",
+    });
+    expect(r.success).toBe(false);
+  });
+});
+
 describe("editRMHarkSchema", () => {
   it("accepts content with a tenor gifUrl", () => {
     const r = editRMHarkSchema.safeParse({ content: "hi", gifUrl: "https://media.tenor.com/x/full.gif" });

@@ -113,6 +113,8 @@ export function mapRmharkToFeedItem(r: any, viewerId: string | null): FeedItem {
     gifUrl: r.gifUrl ?? undefined,
     imageUrls: r.imageUrls ?? undefined,
     imageAlts: r.imageAlts ?? undefined,
+    isSensitive: r.isSensitive ?? false,
+    replyControl: r.replyControl ?? 'EVERYONE',
     reactions: groupReactions(r.reactions ?? [], viewerId),
     threadReplyCount: r.threadReplyCount ?? 0,
   };

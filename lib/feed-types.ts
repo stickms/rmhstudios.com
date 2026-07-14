@@ -89,6 +89,10 @@ export interface FeedItem {
   imageUrls?: string[];
   /** Per-image alt text, aligned by index with `imageUrls` (may be shorter). */
   imageAlts?: string[];
+  /** Content warning: render media/text behind a click-to-reveal overlay. */
+  isSensitive?: boolean;
+  /** Who can reply to this post. */
+  replyControl?: "EVERYONE" | "FOLLOWING" | "MENTIONED";
 
   /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
   reactions?: ReactionSummary[];
