@@ -321,7 +321,7 @@ model NotificationPreference {
 // columns without a data backfill. A missing row = all defaults.
 model AppearancePreference {
   userId String @id
-  style  String? // site theme id (see SITE_STYLES); null → default (dark)
+  style  String? // site theme id (see SITE_STYLES); null → DEFAULT_STYLE (liquid-glass)
   accent String? // accent preset id (see ACCENT_PRESETS); null → theme's own accent
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)

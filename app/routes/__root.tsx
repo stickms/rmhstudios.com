@@ -11,7 +11,7 @@ import { type ReactNode, useEffect } from "react";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { isDiscordActivity } from "@/lib/discord-sdk";
-import { Providers } from "@/components/Providers";
+import { Providers, THEME_EXCLUDED_ROUTES } from "@/components/Providers";
 import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
 import { NavigationProgress } from "@/components/ui/NavigationProgress";
 import { BackNavAnimation } from "@/components/ui/BackNavAnimation";
@@ -22,8 +22,9 @@ import { installGlobalErrorHandlers } from "@/lib/client-errors";
 import { initWebVitals } from "@/lib/rum";
 import { registerServiceWorker } from "@/lib/sw-register";
 import { organizationSchema, websiteSchema, jsonLdScript } from "@/lib/schema";
+import { GlassFilter } from "@/components/ui/liquid-glass";
 import { auth } from "@/lib/auth";
-import { THEME_BG } from "@/stores/themeStore";
+import { THEME_BG, DEFAULT_STYLE } from "@/stores/themeStore";
 import { ACCENT_MAP } from "@/lib/appearance";
 import appCss from "@/app/globals.css?url";
 import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
@@ -63,7 +64,7 @@ const getInitialUser = createServerFn({ method: "GET" }).handler(async () => {
  * single source (stores/themeStore.ts, lib/appearance.ts) so this script never
  * drifts from the runtime that mirrors it.
  */
-const themeScript = `(function(){try{var m=${JSON.stringify(THEME_BG)};var s=localStorage.getItem("rmh-style");if(!s||!m.hasOwnProperty(s)){if(s)localStorage.setItem("rmh-style","default");s="default"}if(s!=="default"){document.documentElement.classList.add("style-"+s)}var bg=m[s];window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}var A=${JSON.stringify(ACCENT_MAP)};var ac=localStorage.getItem("rmh-accent");if(ac&&A[ac]){var d=document.documentElement.style;d.setProperty("--site-accent",A[ac].value);d.setProperty("--site-accent-fg",A[ac].fg);d.setProperty("--site-accent-hover","color-mix(in oklab,"+A[ac].value+" 82%, #000)");d.setProperty("--site-accent-dim","color-mix(in oklab,"+A[ac].value+" 15%, transparent)")}}catch(e){}})()`;
+const themeScript = `(function(){try{var m=${JSON.stringify(THEME_BG)};var D=${JSON.stringify(DEFAULT_STYLE)};var EX=${JSON.stringify(THEME_EXCLUDED_ROUTES)};var s=localStorage.getItem("rmh-style");if(!s||!m.hasOwnProperty(s)){if(s)localStorage.setItem("rmh-style",D);s=D}var app=false;var p=location.pathname;for(var i=0;i<EX.length;i++){if(p.indexOf(EX[i])===0){app=true;break}}if(s!=="default"&&!app){document.documentElement.classList.add("style-"+s)}var bg=app?m["default"]:m[s];window.__themeBg=bg;document.documentElement.style.backgroundColor=bg;var t=document.querySelector('meta[name="theme-color"]');if(t)t.content=bg;else{t=document.createElement("meta");t.name="theme-color";t.content=bg;document.head.appendChild(t)}var A=${JSON.stringify(ACCENT_MAP)};var ac=localStorage.getItem("rmh-accent");if(ac&&A[ac]&&!app){var d=document.documentElement.style;d.setProperty("--site-accent",A[ac].value);d.setProperty("--site-accent-fg",A[ac].fg);d.setProperty("--site-accent-hover","color-mix(in oklab,"+A[ac].value+" 82%, #000)");d.setProperty("--site-accent-dim","color-mix(in oklab,"+A[ac].value+" 15%, transparent)")}}catch(e){}})()`;
 
 /**
  * Inline guard that reads the locale cookie and sets lang/dir on <html> before
@@ -186,6 +187,10 @@ function RootDocument({ children }: { children: ReactNode }) {
         suppressHydrationWarning
       >
         <script dangerouslySetInnerHTML={{ __html: bodyThemeScript }} />
+        {/* SVG displacement filter sampled by the liquid-glass primitives
+            (components/ui/liquid-glass.tsx) via url(#glass-distortion).
+            Mounted once here so glass surfaces work on every route. */}
+        <GlassFilter />
         {children}
         <Scripts />
       </body>

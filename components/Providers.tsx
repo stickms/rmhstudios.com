@@ -4,7 +4,7 @@ import { useLocation } from "@tanstack/react-router";
 import { MotionConfig } from "framer-motion";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { useThemeStore, SITE_STYLES, THEME_BG, SiteStyle } from "@/stores/themeStore";
+import { useThemeStore, SITE_STYLES, THEME_BG, DEFAULT_STYLE, SiteStyle } from "@/stores/themeStore";
 import { applyAccent, isAccentId, ACCENT_STORAGE_KEY } from "@/lib/appearance";
 import { useLocaleStore, writeLocaleCookie } from "@/stores/localeStore";
 import { applyHtmlLangDir } from "@/lib/i18n/dom";
@@ -141,12 +141,18 @@ const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 
 // THEME_BG (theme → document background color) lives in stores/themeStore.ts,
 // derived from SITE_STYLES, so the runtime and the no-flash inline script share
-// one source. The default is pure black — matching the :root `--site-bg` token
-// and the `.vibe-app`/`.vibe-screen` shells (a grey value here made the document
-// background flip to grey after hydration while the app chrome stayed black).
+// one source. Excluded app/game routes always paint THEME_BG.default (pure
+// black) — matching their :root tokens and the `.vibe-app`/`.vibe-screen`
+// shells (a non-black document background there makes the browser bar tint and
+// overscroll diverge from the app chrome, a bug we have shipped before).
 
-/** Routes where the site-wide theme must NOT be applied (apps/games own their styling). */
-const THEME_EXCLUDED_ROUTES = [
+/**
+ * Routes where the site-wide theme must NOT be applied (apps/games own their
+ * styling). Exported so the no-flash inline themeScript in app/routes/__root.tsx
+ * can apply the same gate before hydration — necessary now that the default
+ * style is a non-":root" theme (liquid-glass), which is applied as a class.
+ */
+export const THEME_EXCLUDED_ROUTES = [
   ...games.map((g) => g.href),
   ...apps.filter((a) => !a.usesSiteTheme).map((a) => a.href),
 ].filter((href) => href.startsWith("/"));
@@ -274,16 +280,16 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     document.documentElement.classList.toggle("app-route", isAppRoute);
   }, [isAppRoute]);
 
-  // Hydrate style from localStorage on mount. Self-heal legacy values: the
-  // theme set was reduced to Dark / Light / High Contrast, so any retired
-  // novelty style still persisted from before falls back to "default" and is
-  // rewritten so it doesn't linger.
+  // Hydrate style from localStorage on mount. Self-heal legacy values: any
+  // retired novelty style still persisted from before the Apple-style overhaul
+  // falls back to the site default (DEFAULT_STYLE) and is rewritten so it
+  // doesn't linger.
   useEffect(() => {
     const stored = localStorage.getItem("rmh-style");
     if (stored && SITE_STYLES.some((s) => s.id === stored)) {
       useThemeStore.getState().setStyle(stored as SiteStyle);
     } else if (stored) {
-      localStorage.setItem("rmh-style", "default");
+      localStorage.setItem("rmh-style", DEFAULT_STYLE);
     }
     const storedAccent = localStorage.getItem(ACCENT_STORAGE_KEY);
     if (isAccentId(storedAccent)) {
@@ -324,7 +330,10 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     if (isAccentId(accent)) localStorage.setItem(ACCENT_STORAGE_KEY, accent);
     else localStorage.removeItem(ACCENT_STORAGE_KEY);
 
-    const bg = THEME_BG[activeStyle] ?? THEME_BG.default;
+    // Excluded app/game routes keep the base (dark) document background so the
+    // browser bar tint and overscroll match their :root-token chrome — same
+    // gate as the inline themeScript in app/routes/__root.tsx.
+    const bg = isAppRoute ? THEME_BG.default : (THEME_BG[activeStyle] ?? THEME_BG.default);
     html.style.backgroundColor = bg;
     document.body.style.backgroundColor = bg;
 

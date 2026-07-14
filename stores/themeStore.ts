@@ -12,7 +12,15 @@ export const SITE_STYLES = [
   { id: "graphite", label: "Graphite", icon: "🪨", group: "Curated", bg: "#1c1c1e" },
   { id: "sepia", label: "Sepia", icon: "📖", group: "Curated", bg: "#f3e9d6" },
   { id: "nocturne", label: "Nocturne", icon: "🌌", group: "Curated", bg: "#0b0f1a" },
+  { id: "liquid-glass", label: "Liquid Glass", icon: "🫧", group: "Curated", bg: "#0d1b2e" },
 ] as const;
+
+/**
+ * Theme applied when the visitor has no stored/saved preference. Must stay in
+ * sync with the fallback in app/routes/__root.tsx's inline themeScript and the
+ * self-heal rewrite in components/Providers.tsx.
+ */
+export const DEFAULT_STYLE: SiteStyle = "liquid-glass";
 
 export type SiteStyle = (typeof SITE_STYLES)[number]["id"];
 
@@ -45,7 +53,7 @@ interface ThemeStore {
 }
 
 export const useThemeStore = create<ThemeStore>((set) => ({
-  style: "default",
+  style: DEFAULT_STYLE,
   setStyle: (style) => set({ style, preview: null }),
   preview: null,
   setPreview: (preview) => set({ preview }),

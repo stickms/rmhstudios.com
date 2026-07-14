@@ -344,6 +344,231 @@
   --foreground: #eaeef7;
 }
 
+/* Liquid Glass — iOS-26-style frosted glass: an aurora-lit deep-ocean canvas
+   with translucent, backdrop-blurred surfaces and specular rim highlights.
+   The rim lives in the shadow tokens, so cards/modals pick it up with no new
+   selectors. Unlike the other curated themes this one also needs the scoped
+   element rules below — backdrop-filter can't be expressed as a token. One-off
+   glass primitives live in components/ui/liquid-glass.tsx; demo at /liquid-glass. */
+.style-liquid-glass {
+  --site-bg: #0d1b2e;
+  --site-bg-subtle: rgba(148, 184, 255, 0.08);
+  --site-surface: rgba(255, 255, 255, 0.1);
+  --site-surface-hover: rgba(255, 255, 255, 0.17);
+  --site-surface-active: rgba(255, 255, 255, 0.24);
+  --site-border: rgba(255, 255, 255, 0.16);
+  --site-border-bright: rgba(255, 255, 255, 0.32);
+  /* Muted alpha 0.82 (not the usual ~0.74) so secondary text clears WCAG AA
+     even on frosted cards over the brightest aurora corner. */
+  --site-text: #f4f8ff;
+  --site-text-muted: rgba(228, 238, 255, 0.82);
+  --site-text-dim: rgba(226, 237, 255, 0.56);
+  --site-accent: #6cc9ff;
+  --site-accent-fg: #042a41;
+  --site-accent-hover: #8fd7ff;
+  --site-accent-dim: rgba(108, 201, 255, 0.16);
+  --site-success: #30d158;
+  --site-danger: #ff6961;
+  --site-warning: #ffd60a;
+  --site-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.1),
+    0 24px 64px rgba(2, 10, 28, 0.6);
+  --site-shadow-sm:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.07),
+    0 4px 16px rgba(2, 10, 28, 0.28);
+  --site-radius: 22px;
+  --site-radius-sm: 14px;
+  /* The aurora canvas, shared by the body backdrop below and the theme
+     gallery's preview swatch (which reads var(--site-canvas, var(--site-bg))). */
+  --site-canvas:
+    radial-gradient(110% 85% at 10% -5%, rgba(86, 140, 255, 0.3), transparent 62%),
+    radial-gradient(95% 75% at 94% 4%, rgba(170, 108, 255, 0.27), transparent 60%),
+    radial-gradient(110% 95% at 86% 102%, rgba(52, 208, 188, 0.22), transparent 64%),
+    radial-gradient(80% 70% at 8% 98%, rgba(255, 120, 196, 0.16), transparent 60%),
+    linear-gradient(180deg, #0d1b2e 0%, #13253e 48%, #0b1930 100%);
+  --background: #0d1b2e;
+  --foreground: #f4f8ff;
+}
+
+/* The aurora the glass refracts. THEME_BG still paints the opaque #0d1b2e base
+   onto html/body inline (no-flash script + Providers), so this only layers
+   colour on top — overscroll and pre-paint frames stay solid.
+   background-attachment: fixed degrades to scroll on iOS (the gradient
+   stretches over the document instead of pinning to the viewport), which stays
+   smooth because the stops are soft. */
+.style-liquid-glass body {
+  background-image: var(--site-canvas);
+  background-attachment: fixed;
+}
+
+/* Let the aurora show through the page canvas. Utility class names are literal
+   in the DOM (see @theme inline below), so these descendant overrides match. */
+.style-liquid-glass .bg-site-bg {
+  background-color: color-mix(in srgb, var(--site-bg) 52%, transparent);
+}
+
+/* Full-screen fixed takeovers (e.g. the admin MDX editor) rely on an opaque
+   bg-site-bg to hide the page beneath — keep them solid. The frosted sidebar
+   asides and elevated chrome below override this by specificity/order. */
+.style-liquid-glass .fixed.bg-site-bg {
+  background-color: var(--site-bg);
+}
+
+/* Floating chrome that uses bg-site-bg as an opaque backdrop — hand-rolled
+   menus, hover cards, toasts, cutout hubs/badges, identified by their
+   elevation/positioning classes — reads as frosted glass instead: a more
+   opaque mix plus blur, so content never ghosts through menu labels. These
+   are leaf elements (no fixed/absolute descendants), so the containing block
+   backdrop-filter creates is harmless. */
+.style-liquid-glass :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg {
+  background-color: color-mix(in srgb, var(--site-bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+}
+
+/* The mobile push-drawer's sliding page panel must be opaque while the drawer
+   is revealed behind it (MobileSidebarShell sets data-drawer-active during
+   drag/open/settle) — otherwise the sidebar ghosts through the translucent
+   panel for the whole transition. Idle panels stay translucent (aurora). */
+.style-liquid-glass [data-drawer-active].bg-site-bg {
+  background-color: var(--site-bg);
+}
+
+/* The /membership pricing panel paints the raw token (scoped <style> in
+   MembershipPanel.tsx), which would render as a solid slab amid the
+   translucent canvas — keep it in step with .bg-site-bg above. */
+.style-liquid-glass .pricing-root {
+  background: color-mix(in srgb, var(--site-bg) 52%, transparent);
+}
+
+/* Library shelf tiles mix from --site-surface assuming it is opaque
+   (components/library/library.css); with the translucent glass surface the
+   result is ~4% alpha and the card vanishes. Give them a real glass pane. */
+.style-liquid-glass .lib-volume .lib-book__3d {
+  background: rgba(255, 255, 255, 0.08);
+}
+.style-liquid-glass .lib-volume:hover .lib-book__3d {
+  background: rgba(255, 255, 255, 0.13);
+}
+
+/* Frost every design-system surface. The blur is applied only to the
+   *-classed element itself — never to an ancestor of a position:fixed element
+   (backdrop-filter creates a containing block that would re-anchor it; the one
+   non-portaled fixed element, LeftSidebar's user menu, has no surface-classed
+   ancestor). */
+.style-liquid-glass :is(.bg-site-surface, .bg-site-surface-hover, .bg-site-surface-active) {
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+}
+
+/* The fixed sidebar asides (_site.tsx desktop rail, MobileSidebarShell drawer)
+   become true frosted panes (out-specifying the opaque .fixed takeover rule
+   above). The blur lives on a pseudo-element so the aside itself never gains
+   backdrop-filter — its non-portaled fixed user menu keeps the viewport as
+   its containing block. */
+.style-liquid-glass aside.fixed.bg-site-bg {
+  background-color: color-mix(in srgb, var(--site-bg) 52%, transparent);
+}
+.style-liquid-glass aside.fixed.bg-site-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  backdrop-filter: blur(24px) saturate(170%);
+}
+
+/* Sticky page headers / mobile bottom nav (feed.css .vibe-glass) — let more of
+   the aurora through than the default 72% mix, with a stronger blur to keep
+   text legible over scrolling content. */
+.style-liquid-glass .vibe-glass {
+  background: color-mix(in srgb, var(--site-bg) 32%, transparent);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  backdrop-filter: blur(24px) saturate(170%);
+}
+.style-liquid-glass .vibe-glass.vibe-mobile-nav {
+  background: color-mix(in srgb, var(--site-bg) 68%, transparent);
+}
+
+/* Autofill: --site-surface is translucent here, and the site-wide autofill fix
+   (below) paints a 1000px inset shadow of it over the UA's near-white autofill
+   background — which looks broken when translucent. Pin an opaque glass-toned
+   surface instead. */
+.style-liquid-glass input:-webkit-autofill,
+.style-liquid-glass input:-webkit-autofill:hover,
+.style-liquid-glass input:-webkit-autofill:focus,
+.style-liquid-glass input:-webkit-autofill:active,
+.style-liquid-glass textarea:-webkit-autofill,
+.style-liquid-glass textarea:-webkit-autofill:hover,
+.style-liquid-glass textarea:-webkit-autofill:focus,
+.style-liquid-glass select:-webkit-autofill,
+.style-liquid-glass select:-webkit-autofill:hover,
+.style-liquid-glass select:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #1a2e47 inset;
+  box-shadow: 0 0 0 1000px #1a2e47 inset;
+}
+
+/* OS "reduce transparency": fall back to opaque surfaces and drop every blur —
+   the palette keeps the same hues so the theme still reads as Liquid Glass. */
+@media (prefers-reduced-transparency: reduce) {
+  .style-liquid-glass {
+    --site-bg-subtle: #142639;
+    --site-surface: #182c44;
+    --site-surface-hover: #203854;
+    --site-surface-active: #284264;
+  }
+  .style-liquid-glass .bg-site-bg,
+  .style-liquid-glass aside.fixed.bg-site-bg,
+  .style-liquid-glass :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg {
+    background-color: var(--site-bg);
+  }
+  .style-liquid-glass .pricing-root {
+    background: var(--site-bg);
+  }
+  .style-liquid-glass :is(.bg-site-surface, .bg-site-surface-hover, .bg-site-surface-active),
+  .style-liquid-glass :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg,
+  .style-liquid-glass aside.fixed.bg-site-bg::before,
+  .style-liquid-glass .vibe-glass {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  /* :is() takes the max inner specificity, so this also out-specifies the
+     always-on .vibe-glass.vibe-mobile-nav (0,3,0) rule above. */
+  .style-liquid-glass :is(.vibe-glass, .vibe-glass.vibe-mobile-nav) {
+    background: var(--site-bg);
+  }
+}
+
+/* Refraction layer for components/ui/liquid-glass.tsx. The SVG displacement
+   filter (#glass-distortion, mounted in __root.tsx) can only act on the
+   BACKDROP from inside backdrop-filter — as a plain `filter` on the empty
+   layer div it renders nothing. url() inside backdrop-filter is
+   Chromium-only, so other engines keep the plain frosted blur. */
+.liquid-glass-refract {
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+}
+@supports (backdrop-filter: url(#glass-distortion)) {
+  .liquid-glass-refract {
+    -webkit-backdrop-filter: url(#glass-distortion) blur(3px);
+    backdrop-filter: url(#glass-distortion) blur(3px);
+  }
+}
+
+/* Scrolling backdrop for the /liquid-glass demo (and any GlassEffect showcase
+   that tiles a background image). */
+@keyframes moveBackground {
+  from {
+    background-position: 0% 0%;
+  }
+  to {
+    background-position: 0% -1000%;
+  }
+}
+
 /* Theme-aware raster maps (RMHHomes). The tint is applied to the tile canvas
    only — the coloured price pins live in a separate MapLibre marker overlay
    above the canvas, so they stay vivid. Dark themes invert the light OSM tiles
@@ -378,8 +603,9 @@
 /* Novelty themes retired in the Apple-style overhaul. The catalog is now the
    three base themes — Dark (:root), Light (.style-light), High Contrast
    (.style-high-contrast) — plus the curated set above (Graphite / Sepia /
-   Nocturne) and the accent-preset overrides (see lib/appearance.ts). All are
-   registered in stores/themeStore.ts (SITE_STYLES). */
+   Nocturne / Liquid Glass) and the accent-preset overrides (see
+   lib/appearance.ts). All are registered in stores/themeStore.ts (SITE_STYLES);
+   Liquid Glass is the site default for visitors with no saved preference. */
 
 @theme inline {
   /* Site design system tokens */
