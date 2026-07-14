@@ -13,6 +13,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
+import { GLASS_EASE_CSS } from '@/lib/motion';
 
 interface GlassEffectProps {
   children: React.ReactNode;
@@ -28,8 +29,8 @@ interface DockIcon {
   onClick?: () => void;
 }
 
-// The springy overshoot curve every glass element eases with.
-const GLASS_EASE = 'cubic-bezier(0.175, 0.885, 0.32, 2.2)';
+// The springy overshoot curve every glass element eases with (see EASE.glass).
+const GLASS_EASE = GLASS_EASE_CSS;
 
 // Glass Effect Wrapper Component
 const GlassEffect: React.FC<GlassEffectProps> = ({
@@ -63,15 +64,17 @@ const GlassEffect: React.FC<GlassEffectProps> = ({
         className="liquid-glass-refract absolute inset-0 z-0 overflow-hidden rounded-[inherit]"
         style={{ isolation: 'isolate' }}
       />
+      {/* Tint plate + specular rim, re-based on the glass tokens so GlassEffect
+          obeys themes / high-contrast / reduced-transparency (§7.1). */}
       <div
         className="absolute inset-0 z-10 rounded-[inherit]"
-        style={{ background: 'rgba(255, 255, 255, 0.25)' }}
+        style={{ background: 'var(--site-glass-tint-strong)' }}
       />
       <div
         className="absolute inset-0 z-20 overflow-hidden rounded-[inherit]"
         style={{
           boxShadow:
-            'inset 2px 2px 1px 0 rgba(255, 255, 255, 0.5), inset -1px -1px 1px 1px rgba(255, 255, 255, 0.5)',
+            'inset 2px 2px 1px 0 var(--site-glass-rim), inset -1px -1px 1px 1px var(--site-glass-rim-soft)',
         }}
       />
 
@@ -179,7 +182,7 @@ const GlassFilter: React.FC = () => (
       <feDisplacementMap
         in="SourceGraphic"
         in2="softMap"
-        scale="200"
+        scale="80"
         xChannelSelector="R"
         yChannelSelector="G"
       />
@@ -187,5 +190,39 @@ const GlassFilter: React.FC = () => (
   </svg>
 );
 
-export { GlassEffect, GlassDock, GlassButton, GlassFilter };
-export type { DockIcon, GlassEffectProps };
+/**
+ * GlassPane — a thin wrapper over the L2 `.glass-pane` elevation class with the
+ * optional interactive pointer-light, for pages that need a one-off pane without
+ * hand-writing the class trio. Renders a plain `<div>` by default.
+ */
+interface GlassPaneProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Add hover tint-raise, press flex, and the pointer specular highlight. */
+  interactive?: boolean;
+  /** Add edge-weighted refraction (hero/chrome only — ration to ≤2 per page). */
+  refract?: boolean;
+}
+
+const GlassPane: React.FC<GlassPaneProps> = ({
+  interactive = false,
+  refract = false,
+  className,
+  children,
+  ...props
+}) => (
+  <div
+    data-slot="glass-pane"
+    data-glass-light={interactive ? '' : undefined}
+    className={cn(
+      'glass-pane',
+      interactive && 'glass-interactive',
+      refract && 'glass-refract',
+      className,
+    )}
+    {...props}
+  >
+    {children}
+  </div>
+);
+
+export { GlassEffect, GlassDock, GlassButton, GlassFilter, GlassPane };
+export type { DockIcon, GlassEffectProps, GlassPaneProps };

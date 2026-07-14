@@ -30,6 +30,7 @@ const schema = z.object({
     .nullable()
     .optional()
     .refine((v) => v == null || ACCENT_IDS.has(v), { message: 'Unknown accent' }),
+  reduceTransparency: z.boolean().optional(),
 });
 
 export const Route = createFileRoute('/api/preferences/appearance')({
@@ -44,7 +45,11 @@ export const Route = createFileRoute('/api/preferences/appearance')({
           const row = await prisma.appearancePreference.findUnique({
             where: { userId: session.user.id },
           });
-          return Response.json({ style: row?.style ?? null, accent: row?.accent ?? null });
+          return Response.json({
+            style: row?.style ?? null,
+            accent: row?.accent ?? null,
+            reduceTransparency: row?.reduceTransparency ?? false,
+          });
         } catch (error) {
           console.error('Appearance prefs fetch error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -75,13 +80,17 @@ export const Route = createFileRoute('/api/preferences/appearance')({
 
           // Undefined fields are omitted by Prisma (left unchanged); explicit null
           // clears the column back to the default.
-          const { style, accent } = parsed.data;
+          const { style, accent, reduceTransparency } = parsed.data;
           const row = await prisma.appearancePreference.upsert({
             where: { userId: session.user.id },
-            create: { userId: session.user.id, style, accent },
-            update: { style, accent },
+            create: { userId: session.user.id, style, accent, reduceTransparency: reduceTransparency ?? false },
+            update: { style, accent, reduceTransparency },
           });
-          return Response.json({ style: row.style ?? null, accent: row.accent ?? null });
+          return Response.json({
+            style: row.style ?? null,
+            accent: row.accent ?? null,
+            reduceTransparency: row.reduceTransparency ?? false,
+          });
         } catch (error) {
           console.error('Appearance prefs save error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });
