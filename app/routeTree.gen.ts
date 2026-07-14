@@ -256,6 +256,7 @@ import { Route as ApiRmhladderCalendarRouteImport } from './routes/api/rmhladder
 import { Route as ApiRmhboxStatsRouteImport } from './routes/api/rmhbox/stats'
 import { Route as ApiRmhboxLeaderboardRouteImport } from './routes/api/rmhbox/leaderboard'
 import { Route as ApiRmhboxHistoryRouteImport } from './routes/api/rmhbox/history'
+import { Route as ApiRmharksThreadRouteImport } from './routes/api/rmharks/thread'
 import { Route as ApiRmharksImageRouteImport } from './routes/api/rmharks/image'
 import { Route as ApiRmharksAiImageRouteImport } from './routes/api/rmharks/ai-image'
 import { Route as ApiRmharksAiGenerateRouteImport } from './routes/api/rmharks/ai-generate'
@@ -360,6 +361,7 @@ import { Route as ApiAccountDeleteRouteImport } from './routes/api/account/delet
 import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/multiplayer/$lobbyId'
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
 import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-builds/manage'
+import { Route as SiteThreadRootIdRouteImport } from './routes/_site/thread/$rootId'
 import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteStudyBrowseRouteImport } from './routes/_site/study/browse'
 import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
@@ -1822,6 +1824,11 @@ const ApiRmhboxHistoryRoute = ApiRmhboxHistoryRouteImport.update({
   path: '/api/rmhbox/history',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRmharksThreadRoute = ApiRmharksThreadRouteImport.update({
+  id: '/thread',
+  path: '/thread',
+  getParentRoute: () => ApiRmharksRoute,
+} as any)
 const ApiRmharksImageRoute = ApiRmharksImageRouteImport.update({
   id: '/image',
   path: '/image',
@@ -2350,6 +2357,11 @@ const SiteUserBuildsSubmitRoute = SiteUserBuildsSubmitRouteImport.update({
 const SiteUserBuildsManageRoute = SiteUserBuildsManageRouteImport.update({
   id: '/user-builds/manage',
   path: '/user-builds/manage',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteThreadRootIdRoute = SiteThreadRootIdRouteImport.update({
+  id: '/thread/$rootId',
+  path: '/thread/$rootId',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteTagTagRoute = SiteTagTagRouteImport.update({
@@ -3692,6 +3704,7 @@ export interface FileRoutesByFullPath {
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
+  '/thread/$rootId': typeof SiteThreadRootIdRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
@@ -3796,6 +3809,7 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
   '/api/rmharks/ai-image': typeof ApiRmharksAiImageRoute
   '/api/rmharks/image': typeof ApiRmharksImageRoute
+  '/api/rmharks/thread': typeof ApiRmharksThreadRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -4237,6 +4251,7 @@ export interface FileRoutesByTo {
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
+  '/thread/$rootId': typeof SiteThreadRootIdRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
@@ -4341,6 +4356,7 @@ export interface FileRoutesByTo {
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
   '/api/rmharks/ai-image': typeof ApiRmharksAiImageRoute
   '/api/rmharks/image': typeof ApiRmharksImageRoute
+  '/api/rmharks/thread': typeof ApiRmharksThreadRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -4809,6 +4825,7 @@ export interface FileRoutesById {
   '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
   '/_site/study/browse': typeof SiteStudyBrowseRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
+  '/_site/thread/$rootId': typeof SiteThreadRootIdRoute
   '/_site/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
@@ -4913,6 +4930,7 @@ export interface FileRoutesById {
   '/api/rmharks/ai-generate': typeof ApiRmharksAiGenerateRoute
   '/api/rmharks/ai-image': typeof ApiRmharksAiImageRoute
   '/api/rmharks/image': typeof ApiRmharksImageRoute
+  '/api/rmharks/thread': typeof ApiRmharksThreadRoute
   '/api/rmhbox/history': typeof ApiRmhboxHistoryRoute
   '/api/rmhbox/leaderboard': typeof ApiRmhboxLeaderboardRoute
   '/api/rmhbox/stats': typeof ApiRmhboxStatsRoute
@@ -5381,6 +5399,7 @@ export interface FileRouteTypes {
     | '/study/$deckId'
     | '/study/browse'
     | '/tag/$tag'
+    | '/thread/$rootId'
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
@@ -5485,6 +5504,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/ai-generate'
     | '/api/rmharks/ai-image'
     | '/api/rmharks/image'
+    | '/api/rmharks/thread'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -5926,6 +5946,7 @@ export interface FileRouteTypes {
     | '/study/$deckId'
     | '/study/browse'
     | '/tag/$tag'
+    | '/thread/$rootId'
     | '/user-builds/manage'
     | '/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
@@ -6030,6 +6051,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/ai-generate'
     | '/api/rmharks/ai-image'
     | '/api/rmharks/image'
+    | '/api/rmharks/thread'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -6497,6 +6519,7 @@ export interface FileRouteTypes {
     | '/_site/study/$deckId'
     | '/_site/study/browse'
     | '/_site/tag/$tag'
+    | '/_site/thread/$rootId'
     | '/_site/user-builds/manage'
     | '/_site/user-builds/submit'
     | '/altair/multiplayer/$lobbyId'
@@ -6601,6 +6624,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/ai-generate'
     | '/api/rmharks/ai-image'
     | '/api/rmharks/image'
+    | '/api/rmharks/thread'
     | '/api/rmhbox/history'
     | '/api/rmhbox/leaderboard'
     | '/api/rmhbox/stats'
@@ -8928,6 +8952,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiRmhboxHistoryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/rmharks/thread': {
+      id: '/api/rmharks/thread'
+      path: '/thread'
+      fullPath: '/api/rmharks/thread'
+      preLoaderRoute: typeof ApiRmharksThreadRouteImport
+      parentRoute: typeof ApiRmharksRoute
+    }
     '/api/rmharks/image': {
       id: '/api/rmharks/image'
       path: '/image'
@@ -9654,6 +9685,13 @@ declare module '@tanstack/react-router' {
       path: '/user-builds/manage'
       fullPath: '/user-builds/manage'
       preLoaderRoute: typeof SiteUserBuildsManageRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/thread/$rootId': {
+      id: '/_site/thread/$rootId'
+      path: '/thread/$rootId'
+      fullPath: '/thread/$rootId'
+      preLoaderRoute: typeof SiteThreadRootIdRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/tag/$tag': {
@@ -11339,6 +11377,7 @@ interface SiteRouteChildren {
   SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
   SiteStudyBrowseRoute: typeof SiteStudyBrowseRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
+  SiteThreadRootIdRoute: typeof SiteThreadRootIdRoute
   SiteUserBuildsManageRoute: typeof SiteUserBuildsManageRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
@@ -11403,6 +11442,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,
   SiteStudyBrowseRoute: SiteStudyBrowseRoute,
   SiteTagTagRoute: SiteTagTagRoute,
+  SiteThreadRootIdRoute: SiteThreadRootIdRoute,
   SiteUserBuildsManageRoute: SiteUserBuildsManageRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
   SiteBlogIndexRoute: SiteBlogIndexRoute,
@@ -11942,6 +11982,7 @@ interface ApiRmharksRouteChildren {
   ApiRmharksAiGenerateRoute: typeof ApiRmharksAiGenerateRoute
   ApiRmharksAiImageRoute: typeof ApiRmharksAiImageRoute
   ApiRmharksImageRoute: typeof ApiRmharksImageRoute
+  ApiRmharksThreadRoute: typeof ApiRmharksThreadRoute
 }
 
 const ApiRmharksRouteChildren: ApiRmharksRouteChildren = {
@@ -11949,6 +11990,7 @@ const ApiRmharksRouteChildren: ApiRmharksRouteChildren = {
   ApiRmharksAiGenerateRoute: ApiRmharksAiGenerateRoute,
   ApiRmharksAiImageRoute: ApiRmharksAiImageRoute,
   ApiRmharksImageRoute: ApiRmharksImageRoute,
+  ApiRmharksThreadRoute: ApiRmharksThreadRoute,
 }
 
 const ApiRmharksRouteWithChildren = ApiRmharksRoute._addFileChildren(

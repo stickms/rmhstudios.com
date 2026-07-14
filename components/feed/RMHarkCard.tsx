@@ -293,6 +293,21 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             </p>
           )}
 
+          {/* Authored thread: this post is the root of a multi-post thread. */}
+          {item.threadReplyCount ? (
+            <Link
+              to="/thread/$rootId"
+              params={{ rootId: item.id }}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-site-accent hover:underline"
+            >
+              {t('show-thread', { defaultValue: 'Show this thread' })}
+              <span className="text-site-text-dim">
+                · {t('thread-more', { defaultValue: '{{n}} more', n: item.threadReplyCount })}
+              </span>
+            </Link>
+          ) : null}
+
           {/* Poll */}
           {item.poll && (
             <PollDisplay

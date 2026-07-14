@@ -1391,11 +1391,19 @@ model RMHark {
 
   reactions RMHarkReaction[]
 
+  // Authored threads (chain-your-own-posts). Follow-up segments carry the root
+  // post's id in `threadRootId` (null on the root and on standalone posts) so
+  // the feed can show only the root; the root carries `threadReplyCount` (number
+  // of follow-ups) to render a "show this thread" affordance.
+  threadRootId     String?
+  threadReplyCount Int     @default(0)
+
   @@index([userId])
   @@index([createdAt(sort: Desc)])
   // Composite index backing keyset pagination on (createdAt desc, id desc)
   @@index([createdAt(sort: Desc), id(sort: Desc)])
   @@index([userId, pinnedAt])
+  @@index([threadRootId])
   @@map("rmheet")
 }
 

@@ -5,6 +5,7 @@ import { SlidersHorizontal, Search, X, BadgeCheck, ShieldCheck, Menu } from 'luc
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { FeedTabs } from './FeedTabs';
 import { ComposeBox } from './ComposeBox';
+import { ThreadComposer } from './ThreadComposer';
 import { FeedList } from './FeedList';
 import { FeedAnnouncements } from './FeedAnnouncements';
 import { OnboardingChecklist } from './OnboardingChecklist';
@@ -249,6 +250,9 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
 
       {/* Compose */}
       {!search && <ComposeBox />}
+
+      {/* Authored-thread composer (chain several of your own posts) */}
+      {!search && session && <ThreadComposer />}
 
       {/* Feed */}
       {mode === 'friends' && !session ? (

@@ -184,6 +184,7 @@ function mapOwn(r: any, userId: string | null): FeedItem {
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
     reactions: groupReactions(r.reactions ?? [], userId),
+    threadReplyCount: r.threadReplyCount ?? 0,
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
   };
@@ -335,6 +336,9 @@ async function getFollowingTimeline(
         deletedAt: null,
         audience: { not: "PRIVATE" },
         communityId: null,
+        // Only thread roots + standalone posts in the feed; follow-up segments
+        // (threadRootId set) are read on the thread page.
+        threadRootId: null,
         ...contentWhere,
         ...keyset,
       },
@@ -420,7 +424,9 @@ async function getForYouTimeline(
   if (shouldFetchRmharks) {
     const [rmharks, repostRecords] = await Promise.all([
       prisma.rMHark.findMany({
-        where: { deletedAt: null, communityId: null, ...contentWhere, ...authorWhere, ...audWhere, ...keyset },
+        // threadRootId:null keeps only thread roots + standalone posts in the
+        // feed; follow-up segments are read on the thread page.
+        where: { deletedAt: null, communityId: null, threadRootId: null, ...contentWhere, ...authorWhere, ...audWhere, ...keyset },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: limit,
         include,
