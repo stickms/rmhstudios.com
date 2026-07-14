@@ -38,6 +38,7 @@ interface ProfileData {
   bio: string | null;
   location: string | null;
   website: string | null;
+  links?: { label: string; url: string }[];
   showLikes: boolean;
   dmPrivacy: string;
   profileSongSpotifyId: string | null;
@@ -683,6 +684,25 @@ export function ProfileColumn({
           </span>
         </div>
 
+        {/* Link-in-bio: author-curated links rendered as chips. */}
+        {profile.links && profile.links.length > 0 && (
+          <div className="mb-3 flex flex-wrap gap-2">
+            {profile.links.map((link, i) => (
+              <a
+                key={`${link.url}-${i}`}
+                href={safeHref(link.url)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title={link.url}
+                className="inline-flex items-center gap-1.5 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm font-medium text-site-text transition-colors hover:border-site-accent hover:text-site-accent"
+              >
+                <LinkIcon className="w-3.5 h-3.5 shrink-0" />
+                <span className="max-w-[12rem] truncate">{link.label}</span>
+              </a>
+            ))}
+          </div>
+        )}
+
         {/* Best unlocked badges — links to the Achievements tab */}
         <AchievementBadgeStrip userId={profile.id} onShowAll={() => handleTabChange('achievements')} />
 
@@ -883,6 +903,7 @@ export function ProfileColumn({
             bio: profile.bio,
             location: profile.location,
             website: profile.website,
+            links: profile.links,
             showLikes: profile.showLikes,
             dmPrivacy: profile.dmPrivacy,
             tipGoal: profile.tipGoal,
@@ -904,6 +925,7 @@ export function ProfileColumn({
                 bio: data.bio,
                 location: data.location,
                 website: data.website,
+                ...(data.links !== undefined ? { links: data.links } : {}),
                 showLikes: data.showLikes,
                 dmPrivacy: data.dmPrivacy,
                 profileSongSpotifyId: data.profileSongSpotifyId,

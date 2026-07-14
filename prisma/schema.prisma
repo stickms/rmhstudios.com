@@ -1615,6 +1615,8 @@ model UserProfile {
   bio                   String?   @db.VarChar(160)
   location              String?   @db.VarChar(100)
   website               String?   @db.VarChar(200)
+  // Link-in-bio: an ordered list of { label, url } (max 5), stored as JSON.
+  links                 Json?
   showLikes             Boolean   @default(false)
   dmPrivacy             DmPrivacy @default(EVERYONE)
   // Reader content control: feed posts whose text contains any of these words

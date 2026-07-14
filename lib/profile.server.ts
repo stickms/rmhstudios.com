@@ -2,6 +2,20 @@ import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 import { handleCooldownRemaining } from '@/lib/handle';
 import { getEquippedCosmetics } from '@/lib/shop/equipped.server';
+import { profileLinkSchema, type ProfileLink } from '@/lib/profile-schema';
+
+/**
+ * Coerce the JSON `links` column into a validated ProfileLink[]. Defends the
+ * read path against malformed/legacy rows — anything that doesn't match the
+ * schema is dropped rather than trusted.
+ */
+function parseProfileLinks(value: unknown): ProfileLink[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    const parsed = profileLinkSchema.safeParse(entry);
+    return parsed.success ? [parsed.data] : [];
+  });
+}
 
 const profileSelect = {
   id: true,
@@ -21,6 +35,7 @@ const profileSelect = {
       bio: true,
       location: true,
       website: true,
+      links: true,
       showLikes: true,
       dmPrivacy: true,
       profileSongSpotifyId: true,
@@ -55,6 +70,7 @@ export interface ProfilePayload {
   bio: string | null;
   location: string | null;
   website: string | null;
+  links: ProfileLink[];
   showLikes: boolean;
   dmPrivacy: string;
   profileSongSpotifyId: string | null;
@@ -140,6 +156,7 @@ export async function getProfile(
     bio: user.profile?.bio ?? null,
     location: user.profile?.location ?? null,
     website: user.profile?.website ?? null,
+    links: parseProfileLinks(user.profile?.links),
     showLikes: user.profile?.showLikes ?? false,
     dmPrivacy: user.profile?.dmPrivacy ?? 'EVERYONE',
     profileSongSpotifyId: user.profile?.profileSongSpotifyId ?? null,

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { Camera, X, Check, RotateCcw } from 'lucide-react';
+import { Camera, X, Check, RotateCcw, Plus } from 'lucide-react';
+import { MAX_PROFILE_LINKS } from '@/lib/profile-schema';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { ImageCropModal } from './ImageCropModal';
@@ -30,6 +31,7 @@ interface ProfileEditModalProps {
     bio: string | null;
     location: string | null;
     website: string | null;
+    links?: { label: string; url: string }[];
     showLikes: boolean;
     dmPrivacy: string;
   } & ProfileSongData) => void;
@@ -42,6 +44,7 @@ interface ProfileEditModalProps {
     bio: string | null;
     location: string | null;
     website: string | null;
+    links?: { label: string; url: string }[];
     showLikes: boolean;
     dmPrivacy: string;
     tipGoal?: number | null;
@@ -71,6 +74,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [bio, setBio] = useState(initial.bio ?? '');
   const [location, setLocation] = useState(initial.location ?? '');
   const [website, setWebsite] = useState(initial.website ?? '');
+  const [links, setLinks] = useState<{ label: string; url: string }[]>(initial.links ?? []);
   const [showLikes, setShowLikes] = useState(initial.showLikes);
   const [dmPrivacy, setDmPrivacy] = useState(initial.dmPrivacy ?? 'EVERYONE');
   const [tipGoal, setTipGoal] = useState<string>(initial.tipGoal ? String(initial.tipGoal) : '');
@@ -253,6 +257,11 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
     setSubmitting(true);
     setError(null);
 
+    // Drop blank rows; the server re-validates and caps the count.
+    const cleanedLinks = links
+      .map((l) => ({ label: l.label.trim(), url: l.url.trim() }))
+      .filter((l) => l.label && l.url);
+
     try {
       let newImageUrl: string | undefined;
 
@@ -282,6 +291,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           bio: bio.trim() || null,
           location: location.trim() || null,
           website: website.trim() || null,
+          links: cleanedLinks,
           tipGoal: tipGoal.trim() ? Math.max(0, parseInt(tipGoal, 10) || 0) : null,
           tipGoalLabel: tipGoalLabel.trim() || null,
           showLikes,
@@ -490,6 +500,60 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                 maxLength={MAX_WEBSITE}
                 className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
               />
+            </div>
+
+            {/* Link-in-bio */}
+            <div>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">
+                {t("links-label", { defaultValue: "Links" })}
+                <span className="ml-1 text-site-text-dim/70">({links.length}/{MAX_PROFILE_LINKS})</span>
+              </label>
+              <div className="space-y-2">
+                {links.map((link, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={link.label}
+                      onChange={(e) =>
+                        setLinks((prev) => prev.map((l, j) => (j === i ? { ...l, label: e.target.value } : l)))
+                      }
+                      placeholder={t("link-label-placeholder", { defaultValue: "Label" })}
+                      maxLength={30}
+                      aria-label={t("link-label-aria", { count: i + 1, defaultValue: "Link {{count}} label" })}
+                      className="w-28 shrink-0 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-2.5 border border-site-border outline-none focus:border-site-accent transition-colors"
+                    />
+                    <input
+                      type="url"
+                      value={link.url}
+                      onChange={(e) =>
+                        setLinks((prev) => prev.map((l, j) => (j === i ? { ...l, url: e.target.value } : l)))
+                      }
+                      placeholder="https://example.com"
+                      maxLength={200}
+                      aria-label={t("link-url-aria", { count: i + 1, defaultValue: "Link {{count}} URL" })}
+                      className="min-w-0 flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-2.5 border border-site-border outline-none focus:border-site-accent transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setLinks((prev) => prev.filter((_, j) => j !== i))}
+                      aria-label={t("remove-link-aria", { count: i + 1, defaultValue: "Remove link {{count}}" })}
+                      className="shrink-0 p-1.5 rounded-full text-site-text-dim hover:text-site-danger hover:bg-site-danger/10 transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {links.length < MAX_PROFILE_LINKS && (
+                <button
+                  type="button"
+                  onClick={() => setLinks((prev) => [...prev, { label: '', url: '' }])}
+                  className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-site-accent hover:underline"
+                >
+                  <Plus className="w-4 h-4" />
+                  {t("add-link", { defaultValue: "Add link" })}
+                </button>
+              )}
             </div>
 
             {/* Tip goal (creator) */}
