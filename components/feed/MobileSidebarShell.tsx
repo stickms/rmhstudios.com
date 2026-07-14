@@ -44,6 +44,31 @@ function canScrollX(el: EventTarget | null, dir: number, stop: Element): boolean
   return false;
 }
 
+/**
+ * Vertical analogue of {@link canScrollX}: true if `el` or an ancestor (up to but
+ * excluding `stop`) is a vertically-scrollable element that can still scroll in
+ * the swipe's direction. Used inside the open sidebar to decide whether a
+ * vertical drag should scroll its nav (yes → let it) or be swallowed so it can't
+ * chain out and scroll the page behind the overlay (no → we preventDefault).
+ *
+ * `dir` is the finger delta-y: dir > 0 (finger moving down) reveals content above,
+ * possible unless already at the top; dir < 0 reveals content below, possible
+ * unless at the bottom.
+ */
+function canScrollY(el: EventTarget | null, dir: number, stop: Element | null): boolean {
+  let n = el instanceof Element ? el : null;
+  for (; n && n !== stop; n = n.parentElement) {
+    if (!(n instanceof HTMLElement)) continue;
+    const oy = getComputedStyle(n).overflowY;
+    if ((oy === 'auto' || oy === 'scroll') && n.scrollHeight > n.clientHeight + 1) {
+      const atTop = n.scrollTop <= 0;
+      const atBottom = n.scrollTop >= n.scrollHeight - n.clientHeight - 1;
+      if (dir > 0 ? !atTop : !atBottom) return true;
+    }
+  }
+  return false;
+}
+
 interface MobileSidebarApi {
   isOpen: boolean;
   open: () => void;
@@ -102,7 +127,10 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     x: 0, // live offset
     active: false,
     decided: false,
-    mode: 'none' as 'none' | 'drag' | 'scroll',
+    // 'drag' moves the drawer; 'scroll' lets a native scroller (page or sidebar
+    // nav) handle it; 'lock' swallows the gesture so it can't chain out and
+    // scroll the page behind the open overlay.
+    mode: 'none' as 'none' | 'drag' | 'scroll' | 'lock',
   });
 
   const open = useCallback(() => setIsOpen(true), []);
@@ -182,20 +210,31 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           asideRef.current && e.target instanceof Node && asideRef.current.contains(e.target)
         );
         if (overSidebar && !horizontal) {
-          // A vertical swipe on the open sidebar scrolls its nav, not the drawer.
-          d.mode = 'scroll';
+          // Vertical swipe on the open sidebar: let it scroll the nav ONLY if an
+          // inner scroller can move that way; otherwise LOCK it so a drag on the
+          // non-scrolling parts (logo, footer, or the nav at its edge) can't chain
+          // out and scroll the page behind the overlay.
+          d.mode = canScrollY(e.target, dy, asideRef.current) ? 'scroll' : 'lock';
         } else if (!isOpenRef.current && horizontal && wrap && canScrollX(e.target, dx, wrap)) {
           // The swipe began inside a horizontally-scrollable element that can
           // still scroll this way — let it scroll instead of opening the drawer.
           d.mode = 'scroll';
+        } else if (isOpenRef.current && !horizontal) {
+          // Open + a vertical swipe anywhere else (the scrim) → lock, never scroll
+          // the page.
+          d.mode = 'lock';
         } else {
-          // Horizontal intent is a drag; while open, any other gesture is a
-          // (no-op) drag so the page beneath the scrim never scrolls.
+          // Horizontal intent is a drag (open when closed, close when open).
           d.mode = horizontal || isOpenRef.current ? 'drag' : 'scroll';
         }
       }
 
-      if (d.mode !== 'drag') return; // let the page / nav scroll vertically
+      // 'lock' swallows the gesture (no page scroll) without moving the drawer.
+      if (d.mode === 'lock') {
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+      if (d.mode !== 'drag') return; // 'scroll' → let the page / nav scroll natively
 
       if (e.cancelable) e.preventDefault();
       d.x = Math.max(0, Math.min(DRAWER_WIDTH, d.base + dx));
@@ -320,8 +359,9 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
               ? ''
               : 'transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0'
           }`}
-          // Reserve room for the floating mobile dock so the pinned footer clears it.
-          style={{ transform: sidebarTransform, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 88px)' }}
+          // The overlay covers the floating dock (it's behind the scrim), so the
+          // pinned footer only needs a small gap above the home-indicator.
+          style={{ transform: sidebarTransform, paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)' }}
           aria-hidden={!isOpen}
         >
           <LeftSidebar expanded />
