@@ -49,11 +49,13 @@ function ExamplePage() {
 }
 ```
 
-`PageLayout` (`components/feed/PageLayout.tsx`) supplies the sticky
-translucent header (`sticky top-0 z-10 h-15 bg-site-bg/85 backdrop-blur-md
-border-b border-site-border`), the h1 in the theme display font, mobile menu
+`PageLayout` (`components/feed/PageLayout.tsx`) supplies the sticky L3
+glass-chrome header (`.glass-chrome sticky top-0 z-10` — it condenses on scroll
+via a sentinel + `data-scrolled`), the h1 in the theme display font, mobile menu
 button, optional back arrow (`backTo`/`backLabel`), optional right sidebar,
-and the width-constrained bordered center column.
+and the width-constrained bordered center column. The center column carries
+`pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0` to clear the floating
+mobile dock.
 
 Props: `title`, `children`, `rightSidebar?`, `headerExtra?`, `headerRight?`,
 `wide?`, `backTo?`, `backLabel?`.
@@ -68,7 +70,7 @@ import { AnimatedMain } from "@/components/feed/AnimatedMain";
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from "@/lib/layout-width";
 
 <AnimatedMain
-  className="w-full min-w-0 border-r border-site-border pb-16 md:pb-0"
+  className="w-full min-w-0 border-r border-site-border pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0"
   targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
 >
   {/* column content */}
@@ -94,7 +96,11 @@ Work through this for every new or edited page:
 ### Visual tokens (see design-language.md §1)
 - [ ] Colors/borders/text only via `site-*` utilities; radii via
       `rounded-site`/`rounded-site-sm`; shadows via `shadow-site`.
-- [ ] Surfaces via `Card` or `bg-site-surface border border-site-border rounded-site`.
+- [ ] Surfaces via `Card` (L1 `.glass-fill` by default; `pane` for L2,
+      `interactive` for the pointer light) or the glass elevation classes
+      (design-language.md §5.1) — repeated rows/tiles use `.glass-fill` (no
+      blur), singular panels `.glass-pane`, floating UI `.glass-overlay`. Raw
+      `bg-site-surface` still works (degrades to a translucent L1 tint).
 - [ ] Buttons via `<Button variant size>`; pills via `<Badge>`; icons from
       `lucide-react`.
 
@@ -138,10 +144,11 @@ Work through this for every new or edited page:
       `aria-hidden`.
 - [ ] Keyboard path works (focus-visible rings are global; don't suppress
       outlines).
-- [ ] Check `.style-light` and `.style-high-contrast`, not just default dark.
-- [ ] Mobile: bottom padding clears the mobile nav (`pb-16 md:pb-0` on the
-      column — PageLayout does this); tap targets comfortable at 480px
-      (`xs` breakpoint).
+- [ ] Check `.style-light` (Glass Light) and `.style-high-contrast` (glass off),
+      plus reduced-transparency, not just default Glass Dark.
+- [ ] Mobile: bottom padding clears the floating dock
+      (`pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0` on the column —
+      PageLayout does this); tap targets comfortable at 480px (`xs` breakpoint).
 
 ### Before pushing
 - [ ] `pnpm exec tsc --noEmit` and `pnpm lint` introduce no *new* warnings.
@@ -176,13 +183,16 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
 1. Hardcoded colors (`bg-zinc-900`, `text-white`, hex values) instead of
    `site-*` tokens — breaks every theme at once.
 2. `rounded-lg`/`rounded-2xl` instead of `rounded-site*` — hardcodes a radius
-   that ignores each theme's `--site-radius` (18px) / `--site-radius-sm` (12px).
+   that ignores each theme's `--site-radius` (22px) / `--site-radius-sm` (14px).
 3. Custom headers instead of `PageLayout`'s sticky header.
 4. Arbitrary column widths instead of `lib/layout-width.ts` constants.
 5. Hand-rolled modals/spinners/empty states/copy-buttons instead of the
    `components/ui/` primitives, or native `window.confirm` instead of
    `useConfirm`.
 6. Untranslated strings (missing `t()`), or `t()` without `defaultValue`.
-7. Forgetting `pb-16 md:pb-0` on custom columns → content hidden behind the
-   mobile bottom nav.
+7. Forgetting the bottom padding (`pb-[calc(env(safe-area-inset-bottom,0px)+92px)]
+   md:pb-0`) on custom columns → content hidden behind the floating mobile dock.
+   Also: putting a backdrop tier (`.glass-pane/chrome/overlay`) on repeated list
+   items (blur cost) or on an ancestor of a `position:fixed` element (containing
+   block) — see design-language.md §5.1.
 8. Adding `react-icons`, new font imports, or one-off animation systems.

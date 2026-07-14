@@ -10,21 +10,25 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // Solid variants read as *colored glass*: a near-opaque accent/danger
+        // body with a top specular rim, so they sit in the same material system
+        // as the surfaces around them (§7.2). The rim brightens toward the light
+        // on hover as the body goes fully opaque.
         default:
-          "bg-site-accent text-site-accent-fg hover:bg-site-accent-hover",
+          "bg-site-accent/90 text-site-accent-fg hover:bg-site-accent-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
         destructive:
-          "bg-site-danger text-white hover:bg-site-danger/90 focus-visible:ring-site-danger/40",
+          "bg-site-danger/90 text-white hover:bg-site-danger shadow-[inset_0_1px_0_var(--site-glass-rim-soft)] focus-visible:ring-site-danger/40",
         danger:
-          "bg-site-danger text-white hover:bg-site-danger/90 focus-visible:ring-site-danger/40",
+          "bg-site-danger/90 text-white hover:bg-site-danger shadow-[inset_0_1px_0_var(--site-glass-rim-soft)] focus-visible:ring-site-danger/40",
         outline:
           "border border-site-border bg-transparent text-site-text hover:bg-site-surface-hover hover:border-site-border-bright",
         secondary:
-          "border border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover",
+          "border border-site-border bg-site-surface text-site-text hover:bg-site-surface-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
         ghost:
           "text-site-text hover:bg-site-surface-hover",
         link: "text-site-accent underline-offset-4 hover:underline",
         accent:
-          "bg-site-accent text-site-accent-fg hover:bg-site-accent-hover",
+          "bg-site-accent/90 text-site-accent-fg hover:bg-site-accent-hover shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
         "accent-outline":
           "border border-site-accent text-site-accent hover:bg-site-accent-dim",
         "accent-ghost":

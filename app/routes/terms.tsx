@@ -15,6 +15,8 @@ function TermsPage() {
       eyebrow={t('terms-eyebrow', { defaultValue: 'Legal' })}
       updatedDate={t('terms-updated-date', { defaultValue: 'June 11, 2025' })}
     >
+      {/* Document under glass: the whole article body sits on one wide pane. */}
+      <div className="glass-pane rounded-site px-6 py-8 sm:px-10 sm:py-10">
       <h2>{t('terms-h-acceptance', { defaultValue: '1. Acceptance of Terms' })}</h2>
       <p>
         {t('terms-p-acceptance', { defaultValue: 'By accessing or using any RMHStudios website, product, or service (collectively, the “Services”), you agree to be bound by these Terms of Use (“Terms”). If you do not agree to these Terms, you may not use the Services. These Terms apply to all visitors, users, and others who access the Services.' })}
@@ -83,6 +85,7 @@ function TermsPage() {
         {t('terms-p-contact-before', { defaultValue: 'If you have questions about these Terms, please contact us at' })}{' '}
         <strong>legal@rmhstudios.com</strong>.
       </p>
+      </div>
     </LegalLayout>
   );
 }

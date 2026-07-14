@@ -8,10 +8,20 @@
 The whole visual system rests on one idea: **a single CSS custom-property
 contract (`--site-*`) that every theme re-defines.** Components never hardcode
 colors, radii, fonts, or shadows — they consume the contract through Tailwind
-utilities. Because of that, every theme — the three base themes (Dark, Light,
-High Contrast), the curated set (Graphite, Sepia, Nocturne, Liquid Glass), and
+utilities. Because of that, every theme — the base themes (Glass Dark, Glass
+Light, High Contrast), the curated set (Graphite / Sepia / Nocturne Glass), and
 any accent preset layered on top — restyles the entire site without a single
 component change.
+
+**Liquid Glass is the material system, not a theme.** The site's default look is
+physically-plausible layered glass: translucent surfaces over a per-theme aurora
+canvas, specular rim highlights, depth-graded blur, and a pointer-tracked light.
+It is expressed as an **elevation system of explicit CSS classes**
+(`.glass-fill` / `.glass-pane` / `.glass-chrome` / `.glass-overlay` /
+`.glass-inset`, plus `.glass-interactive` and `.glass-refract`) placed *on*
+components — see §5.1 below. Every theme is a *tint* of that glass; `high-contrast`
+turns the glass off (opaque, blur-free). Full spec:
+[`docs/plans/2026-07-14-liquid-glass-ui-redesign.md`](./plans/2026-07-14-liquid-glass-ui-redesign.md).
 
 ---
 
@@ -27,8 +37,9 @@ class):
 
 | Group | Tokens |
 |---|---|
-| Backgrounds | `--site-bg`, `--site-bg-subtle` |
-| Surfaces | `--site-surface`, `--site-surface-hover`, `--site-surface-active` |
+| Backgrounds | `--site-bg`, `--site-bg-subtle`, `--site-canvas` (the aurora painted on `<body>`) |
+| Surfaces | `--site-surface`, `--site-surface-hover`, `--site-surface-active`, `--site-surface-opaque` (autofill / reduced-transparency fallback) |
+| Glass material | `--site-glass-tint`, `--site-glass-tint-strong`, `--site-glass-ink`, `--site-glass-rim`, `--site-glass-rim-soft`, `--site-glass-light`, `--site-glass-blur-{pane,chrome,overlay}`, `--site-glass-saturate`, `--site-glass-depth(-sm)`, `--site-glass-noise` |
 | Borders | `--site-border`, `--site-border-bright`, `--site-border-width` (1px default; 2px in high-contrast) |
 | Text | `--site-text`, `--site-text-muted`, `--site-text-dim` |
 | Accent | `--site-accent`, `--site-accent-fg`, `--site-accent-hover`, `--site-accent-dim` |
@@ -61,19 +72,26 @@ theme mechanism.
 
 ---
 
-## 2. Themes (7) + accent presets
+## 2. Themes (6, all glass tints) + accent presets
 
-The Apple-style overhaul retired the old novelty themes; the catalog is now a
-tight, tasteful set. Theme = a `.style-<id>` class on `<html>` (the Dark theme
-`default` is the bare `:root` — no class). The catalog lives in
+The catalog is a tight, tasteful set — every theme is a **tint of the glass**
+over its own `--site-canvas` aurora. Theme = a `.style-<id>` class on `<html>`
+(the default `Glass Dark` is the bare `:root` — no class). The catalog lives in
 `stores/themeStore.ts` (`SITE_STYLES`, with id/label/icon/group); the CSS for
 each lives in `app/globals.css`. Visitors with no saved preference get
-`DEFAULT_STYLE` (`liquid-glass`).
+`DEFAULT_STYLE` (`default`). The old `liquid-glass` id is retired — it *became*
+the default; persisted prefs self-heal in `Providers.tsx`.
 
 | Group | Themes |
 |---|---|
-| Base | `default` (Dark, `:root` — pure-black canvas, graphite surfaces, hairline borders, violet accent), `light` (clean white), `high-contrast` (WCAG AAA: pure black/white, yellow accent, 2px borders) |
-| Curated | `graphite` (Apple system-gray dim dark), `sepia` (warm paper à la Apple Books), `nocturne` (cool deep-navy dark, sky-blue accent), `liquid-glass` (**site default** — iOS-26-style frosted glass: aurora-lit deep-ocean canvas, translucent backdrop-blurred surfaces, specular rim highlights; the only theme with scoped element rules in addition to tokens, plus one-off primitives in `components/ui/liquid-glass.tsx` and a showcase at `/liquid-glass`) |
+| Base | `default` (**Glass Dark** — the site default: aurora-lit deep-ocean canvas, translucent surfaces, specular rims), `light` (**Glass Light** — daylight canvas, brighter white frost, dark ink), `high-contrast` (WCAG AAA, **no glass**: opaque black/white, yellow accent, 2px borders) |
+| Curated | `graphite` (Graphite Glass — monochrome smoke, desaturated), `sepia` (Sepia Glass — warm parchment, amber accent), `nocturne` (Nocturne Glass — deep-navy nightscape, sky-blue aurora) |
+
+The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassEffect`,
+`GlassDock`, `GlassPane`, `GlassFilter`) with a design-lab reference at
+`/liquid-glass`. A user "Reduce transparency" toggle (Settings → Appearance)
+collapses the glass to opaque surfaces — the manual equivalent of the OS
+`prefers-reduced-transparency`.
 
 On top of any theme a user can pick an **accent preset** — a curated color
 (`lib/appearance.ts`, `ACCENT_PRESETS`, 14 options) that overrides just the
@@ -138,6 +156,36 @@ a `SITE_STYLES` entry** (with its `bg`); nothing else needs editing.
 ---
 
 ## 5. Shared primitives (`components/ui/`)
+
+### 5.1 The glass elevation classes (use these for surfaces)
+
+Glass is opt-in per element via these classes (in `app/globals.css`). Pick by
+role, not by looks — the tier decides blur cost (see the redesign doc §6 budget:
+≤8 backdrop-filters per viewport, **0** on repeated list items).
+
+| Class | Tier | Use for |
+|---|---|---|
+| `.glass-fill` | L1 (no blur) | Repeated content: cards, list rows, table rows, grid tiles. Cheap, unlimited. |
+| `.glass-pane` | L2 (blur+noise) | Singular panels: heroes, composers, settings sections, tier cards. Budgeted. |
+| `.glass-chrome` (`--aside` variant) | L3 | Persistent chrome: sidebar, sticky headers, mobile dock. Condenses on scroll via `[data-scrolled]`. |
+| `.glass-overlay` | L4 | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips. |
+| `.glass-inset` | — | Recessed wells: inputs, search fields. |
+| `.glass-scrim` | — | Dialog/drawer backdrops. |
+| `.glass-interactive` + `data-glass-light=""` | modifier | Hover tint-raise, press flex, pointer-tracked specular highlight. |
+| `.glass-refract` (`--prism`) | modifier | Edge refraction — hero/chrome only, **≤2 per page**, never in scroll containers. |
+| `.glass-opaque` | — | Escape hatch for full-screen fixed takeovers that must hide the page. |
+
+Rules: never put a backdrop tier (`.glass-pane/chrome/overlay`) on an ancestor of
+a `position:fixed` element (`backdrop-filter` creates a containing block — use
+`.glass-chrome--aside`, which blurs on `::before`). `high-contrast`,
+`prefers-reduced-transparency`, `html.reduce-transparency`, and `html.perf-lite`
+all degrade these classes automatically — no per-component branching.
+
+The `Card` primitive is L1 `.glass-fill` by default; pass `pane` for L2 and
+`interactive` for the pointer light. Inputs/Textarea/Select are `.glass-inset`;
+Dialog is `.glass-overlay` + `.glass-scrim`; the shell chrome is `.glass-chrome`.
+
+### 5.2 Primitive catalog
 
 Always reach for these before writing new markup. Helper: `cn()` from
 `@/lib/utils` (= `twMerge(clsx(...))`).

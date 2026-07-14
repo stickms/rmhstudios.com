@@ -75,10 +75,14 @@ export function accentCssVars(value: string, fg: string): Record<string, string>
     // matching how the built-in themes define these tokens.
     '--site-accent-hover': `color-mix(in oklab, ${value} 82%, #000)`,
     '--site-accent-dim': `color-mix(in oklab, ${value} 15%, transparent)`,
+    // The glass pointer light multiplies with the accent so an accent choice
+    // subtly warms the specular highlight (§3.4). Mixed against a neutral white
+    // base rather than var(--site-glass-light) to avoid a self-referential cycle.
+    '--site-glass-light': `color-mix(in srgb, ${value} 20%, rgba(255, 255, 255, 0.14))`,
   };
 }
 
-const ACCENT_VAR_NAMES = ['--site-accent', '--site-accent-fg', '--site-accent-hover', '--site-accent-dim'];
+const ACCENT_VAR_NAMES = ['--site-accent', '--site-accent-fg', '--site-accent-hover', '--site-accent-dim', '--site-glass-light'];
 
 /** Apply an accent id's tokens to an element (usually <html>), or clear them. */
 export function applyAccent(el: HTMLElement, id: string | null | undefined): void {

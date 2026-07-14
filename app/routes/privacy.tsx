@@ -14,6 +14,8 @@ function PrivacyPage() {
       eyebrow={t("privacy-eyebrow", { defaultValue: "Legal" })}
       updatedDate={t("privacy-updated-date", { defaultValue: "June 11, 2025" })}
     >
+      {/* Document under glass: the whole article body sits on one wide pane. */}
+      <div className="glass-pane rounded-site px-6 py-8 sm:px-10 sm:py-10">
       <h2>{t("privacy-s1-heading", { defaultValue: "1. Overview" })}</h2>
       <p>
         {t("privacy-s1-body", { defaultValue: 'RMHStudios (“we”, “us”, or “our”) is committed to protecting your personal information. This Privacy Policy explains what data we collect, how we use it, and your rights regarding that data when you use our Services.' })}
@@ -102,6 +104,7 @@ function PrivacyPage() {
       <p>
         {t("privacy-s12-body", { defaultValue: "For privacy-related enquiries, please contact" })} <strong>privacy@rmhstudios.com</strong>.
       </p>
+      </div>
     </LegalLayout>
   );
 }

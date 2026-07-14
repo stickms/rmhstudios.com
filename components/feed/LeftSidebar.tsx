@@ -269,9 +269,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ? 'pl-10'
         : 'md:justify-center xl:justify-start xl:pl-10'
       : itemJustifyClass;
-    const leafClass = `flex items-center gap-3 px-3.5 ${nested ? 'py-2' : 'py-3'} rounded-full text-sm font-medium transition-colors ${indent} ${
+    const leafClass = `glass-interactive flex items-center gap-3 px-3.5 ${nested ? 'py-2' : 'py-3'} rounded-full text-sm font-medium transition-colors ${indent} ${
       isActive
-        ? 'text-site-accent bg-site-accent-dim'
+        ? 'text-site-accent bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]'
         : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
     }`;
     const leafInner = (
@@ -302,6 +302,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         <a
           key={link.href}
           href={link.href}
+          data-glass-light=""
           className={leafClass}
           title={label}
           aria-current={isActive ? 'page' : undefined}
@@ -314,6 +315,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       <Link
         key={link.href}
         to={link.href}
+        data-glass-light=""
         className={leafClass}
         title={label}
         aria-current={isActive ? 'page' : undefined}
@@ -507,7 +509,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </button>
             {showUserMenu && (
               <div
-                className="fixed w-48 border border-site-border rounded-site bg-site-surface shadow-site py-1 z-50"
+                className="glass-overlay fixed w-48 py-1 z-50"
                 style={{
                   bottom: `${userMenuPos.bottom}px`,
                   right: `${userMenuPos.right}px`,

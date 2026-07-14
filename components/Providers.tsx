@@ -4,8 +4,9 @@ import { useLocation } from "@tanstack/react-router";
 import { MotionConfig } from "framer-motion";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { useThemeStore, SITE_STYLES, THEME_BG, DEFAULT_STYLE, SiteStyle } from "@/stores/themeStore";
+import { useThemeStore, SITE_STYLES, THEME_BG, DEFAULT_STYLE, SiteStyle, REDUCE_TRANSPARENCY_KEY } from "@/stores/themeStore";
 import { applyAccent, isAccentId, ACCENT_STORAGE_KEY } from "@/lib/appearance";
+import { useGlassLight } from "@/hooks/useGlassLight";
 import { useLocaleStore, writeLocaleCookie } from "@/stores/localeStore";
 import { applyHtmlLangDir } from "@/lib/i18n/dom";
 import { games } from "@/lib/games";
@@ -162,8 +163,23 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   const style = useThemeStore((s) => s.style);
   const preview = useThemeStore((s) => s.preview);
   const accent = useThemeStore((s) => s.accent);
+  const reduceTransparency = useThemeStore((s) => s.reduceTransparency);
   const { pathname } = useLocation();
   const isFirstRun = useRef(true);
+
+  // The pointer-tracked specular highlight for interactive glass — one
+  // document-level rAF-throttled listener, mounted once here (§5.1).
+  useGlassLight();
+
+  // Device tiering (§6.4): a one-time heuristic demotes the glass on low-end
+  // devices (drops refraction + pointer light, flattens L2 panes to L1 fills)
+  // via CSS only — no component branches. Chrome keeps its blur (few elements,
+  // carry the identity).
+  useEffect(() => {
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    const lite = (nav.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4;
+    document.documentElement.classList.toggle("perf-lite", lite);
+  }, []);
 
   // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
   // so a user whose locale was resolved via Accept-Language (no cookie yet) gets
@@ -281,7 +297,8 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   }, [isAppRoute]);
 
   // Hydrate style from localStorage on mount. Self-heal legacy values: any
-  // retired novelty style still persisted from before the Apple-style overhaul
+  // retired style still persisted from before a catalog change (e.g. the old
+  // `liquid-glass` id, now folded into `default`, or the retired novelty themes)
   // falls back to the site default (DEFAULT_STYLE) and is rewritten so it
   // doesn't linger.
   useEffect(() => {
@@ -290,10 +307,14 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
       useThemeStore.getState().setStyle(stored as SiteStyle);
     } else if (stored) {
       localStorage.setItem("rmh-style", DEFAULT_STYLE);
+      useThemeStore.getState().setStyle(DEFAULT_STYLE);
     }
     const storedAccent = localStorage.getItem(ACCENT_STORAGE_KEY);
     if (isAccentId(storedAccent)) {
       useThemeStore.getState().setAccent(storedAccent);
+    }
+    if (localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === "1") {
+      useThemeStore.getState().setReduceTransparency(true);
     }
   }, []);
 
@@ -323,6 +344,12 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     // Persist the COMMITTED style (not a transient preview).
     localStorage.setItem("rmh-style", style);
 
+    // Reduce-transparency: the user setting toggles a class the glass
+    // degradations key off (§10). Persisted for the no-flash script to re-apply.
+    html.classList.toggle("reduce-transparency", reduceTransparency);
+    if (reduceTransparency) localStorage.setItem(REDUCE_TRANSPARENCY_KEY, "1");
+    else localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
+
     // Accent override: apply on content pages; clear on app/game routes (they own
     // their palette) and when no accent is chosen. applyAccent no-ops safely for a
     // null/unknown id by clearing the tokens.
@@ -347,18 +374,18 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
       meta.content = bg;
       document.head.appendChild(meta);
     }
-  }, [style, preview, accent, isAppRoute]);
+  }, [style, preview, accent, isAppRoute, reduceTransparency]);
 
   // ── Account sync ─────────────────────────────────────────────────────────
   // Appearance follows the signed-in user across devices. On sign-in we pull the
   // saved theme/accent; the account wins when it has a value, otherwise the
   // current device value is kept (and seeded up so the account isn't left empty).
   const appearanceSyncedRef = useRef(false);
-  const lastSavedAppearanceRef = useRef<{ style: string; accent: string | null } | null>(null);
+  const lastSavedAppearanceRef = useRef<{ style: string; accent: string | null; reduceTransparency: boolean } | null>(null);
 
   // Fire-and-forget PUT of the appearance to the account, recording it as the
   // last-saved value so the change-watcher below never echoes it straight back.
-  const saveAppearance = useCallback((next: { style: string; accent: string | null }) => {
+  const saveAppearance = useCallback((next: { style: string; accent: string | null; reduceTransparency: boolean }) => {
     lastSavedAppearanceRef.current = next;
     fetch("/api/preferences/appearance", {
       method: "PUT",
@@ -377,7 +404,7 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     let cancelled = false;
     fetch("/api/preferences/appearance", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
-      .then((remote: { style: string | null; accent: string | null } | null) => {
+      .then((remote: { style: string | null; accent: string | null; reduceTransparency?: boolean | null } | null) => {
         if (cancelled || !remote) return;
         const store = useThemeStore.getState();
         // The account wins where it has a saved value; otherwise this device's
@@ -387,15 +414,18 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
             ? (remote.style as SiteStyle)
             : store.style;
         const nextAccent = isAccentId(remote.accent) ? remote.accent : store.accent;
-        if (remote.style !== nextStyle || remote.accent !== nextAccent) {
+        const nextReduce =
+          typeof remote.reduceTransparency === "boolean" ? remote.reduceTransparency : store.reduceTransparency;
+        if (remote.style !== nextStyle || remote.accent !== nextAccent || remote.reduceTransparency !== nextReduce) {
           // Server was missing a value this device has → seed the account with the
           // merged result (also records it as last-saved).
-          saveAppearance({ style: nextStyle, accent: nextAccent });
+          saveAppearance({ style: nextStyle, accent: nextAccent, reduceTransparency: nextReduce });
         } else {
-          lastSavedAppearanceRef.current = { style: nextStyle, accent: nextAccent };
+          lastSavedAppearanceRef.current = { style: nextStyle, accent: nextAccent, reduceTransparency: nextReduce };
         }
         store.setStyle(nextStyle);
         store.setAccent(nextAccent);
+        store.setReduceTransparency(nextReduce);
         appearanceSyncedRef.current = true;
       })
       .catch(() => {});
@@ -410,9 +440,9 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   useEffect(() => {
     if (!userId || !appearanceSyncedRef.current) return;
     const last = lastSavedAppearanceRef.current;
-    if (last && last.style === style && last.accent === accent) return;
-    saveAppearance({ style, accent });
-  }, [style, accent, userId, saveAppearance]);
+    if (last && last.style === style && last.accent === accent && last.reduceTransparency === reduceTransparency) return;
+    saveAppearance({ style, accent, reduceTransparency });
+  }, [style, accent, reduceTransparency, userId, saveAppearance]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -428,12 +458,18 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
         </ConfirmProvider>
         </ResolvedUserCtx.Provider>
         <Toaster
-          theme={style === "light" ? "light" : "dark"}
+          theme={style === "light" || style === "sepia" ? "light" : "dark"}
           position="bottom-left"
           toastOptions={{
             style: {
-              background: "var(--site-surface)",
+              // L4 glass — floating UI, more opaque so content never ghosts
+              // through toast text over a bright aurora corner (§7.3).
+              background: "color-mix(in srgb, var(--site-bg) 62%, transparent)",
+              backdropFilter: "blur(28px) saturate(180%)",
+              WebkitBackdropFilter: "blur(28px) saturate(180%)",
               border: "1px solid var(--site-border)",
+              borderRadius: "var(--site-radius-sm)",
+              boxShadow: "var(--site-shadow)",
               color: "var(--site-text)",
             },
           }}

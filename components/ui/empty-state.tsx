@@ -31,7 +31,13 @@ export function EmptyState({
         className
       )}
     >
-      {Icon ? <Icon className="h-10 w-10 text-site-text-dim" aria-hidden /> : null}
+      {Icon ? (
+        // Etched glass medallion — the icon sits "sandblasted into" a recessed
+        // glass-inset disc (§7.2).
+        <div className="glass-inset flex h-16 w-16 items-center justify-center rounded-full">
+          <Icon className="h-7 w-7 text-site-text-dim" aria-hidden />
+        </div>
+      ) : null}
       {title ? (
         <p className="text-sm font-medium text-site-text">{title}</p>
       ) : null}

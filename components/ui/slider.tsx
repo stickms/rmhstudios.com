@@ -39,7 +39,8 @@ function Slider({
       <SliderPrimitive.Track
         data-slot="slider-track"
         className={cn(
-          "bg-site-surface-active relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5"
+          // Track = a recessed glass tube; range = accent liquid filling it.
+          "bg-site-glass-ink shadow-[inset_0_1px_2px_rgba(0,0,0,0.3)] relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5"
         )}
       >
         <SliderPrimitive.Range
@@ -53,7 +54,7 @@ function Slider({
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
-          className="block size-4 shrink-0 rounded-full border border-site-border bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-[box-shadow] disabled:pointer-events-none disabled:opacity-50"
+          className="block size-4 shrink-0 rounded-full border border-site-border bg-[radial-gradient(circle_at_50%_32%,rgba(255,255,255,0.98),rgba(214,222,236,0.78))] shadow-[0_1px_3px_rgba(0,0,0,0.35)] transition-[box-shadow] disabled:pointer-events-none disabled:opacity-50"
         />
       ))}
     </SliderPrimitive.Root>

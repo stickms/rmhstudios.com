@@ -15,6 +15,8 @@ function CopyrightPage() {
       eyebrow={t("copyright-eyebrow", { defaultValue: "Legal" })}
       updatedDate={t("copyright-updated-date", { defaultValue: "June 11, 2025" })}
     >
+      {/* Document under glass: the whole article body sits on one wide pane. */}
+      <div className="glass-pane rounded-site px-6 py-8 sm:px-10 sm:py-10">
       <h2>{t("copyright-ownership-heading", { defaultValue: "Ownership" })}</h2>
       <p>
         {t("copyright-ownership-body", { defaultValue: "Copyright © {{year}} RMHStudios. All rights reserved. The name “RMHStudios”, the name “RMHLink”, the RMHStudios logo, and all associated branding are trademarks or registered trademarks of RMHStudios.", year })}
@@ -81,6 +83,7 @@ function CopyrightPage() {
         {t("copyright-contact-body", { defaultValue: "For all copyright-related enquiries, please contact" })}{' '}
         <strong>legal@rmhstudios.com</strong>.
       </p>
+      </div>
     </LegalLayout>
   );
 }

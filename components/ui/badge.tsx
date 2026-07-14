@@ -14,13 +14,15 @@ const badgeVariants = cva(
   "inline-flex items-center gap-1 rounded-full font-medium whitespace-nowrap shrink-0 transition-colors [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-3",
   {
     variants: {
+      // Tinted micro-glass capsules: a translucent fill + a hairline top rim so
+      // the pill reads as a small slab of glass. No blur (repeated element).
       variant: {
-        default: "border border-site-border bg-site-surface text-site-text-muted",
-        accent: "bg-site-accent-dim text-site-accent",
-        solid: "bg-site-accent text-site-accent-fg",
-        success: "bg-site-success/15 text-site-success",
-        warning: "bg-site-warning/15 text-site-warning",
-        danger: "bg-site-danger/15 text-site-danger",
+        default: "border border-site-border bg-site-glass-tint text-site-text-muted shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
+        accent: "bg-site-accent-dim text-site-accent shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
+        solid: "bg-site-accent/90 text-site-accent-fg shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]",
+        success: "bg-site-success/15 text-site-success shadow-[inset_0_1px_0_color-mix(in_srgb,var(--site-success)_35%,transparent)]",
+        warning: "bg-site-warning/15 text-site-warning shadow-[inset_0_1px_0_color-mix(in_srgb,var(--site-warning)_35%,transparent)]",
+        danger: "bg-site-danger/15 text-site-danger shadow-[inset_0_1px_0_color-mix(in_srgb,var(--site-danger)_35%,transparent)]",
         outline: "border border-site-border text-site-text-muted",
       },
       size: {

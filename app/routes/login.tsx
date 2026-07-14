@@ -9,6 +9,8 @@ import { useState, useRef, useEffect } from 'react';
 import { FaDiscord, FaGoogle, FaGithub } from 'react-icons/fa';
 import { MdEmail, MdLock, MdPerson, MdCameraAlt, MdFingerprint } from 'react-icons/md';
 import { ImageCropModal } from '@/components/feed/ImageCropModal';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import '@/components/rmhvibe/vibe.css';
 
 export const Route = createFileRoute('/login')({
@@ -31,10 +33,14 @@ export const Route = createFileRoute('/login')({
  */
 function safeInternalPath(raw?: string): string {
   if (!raw) return '/';
-  // Detecting control characters is the point here (browsers strip them before
-  // navigating), so the control-regex lint rule is intentionally disabled.
-  // eslint-disable-next-line no-control-regex
-  if (/[\u0000-\u001f\u007f]/.test(raw)) return '/';
+  // Reject any control character (U+0000–U+001F or U+007F): browsers strip them
+  // before navigating, which would otherwise let "/\t//evil.com" slip past the
+  // leading-slash guard below. A char-code scan avoids embedding raw control
+  // bytes (or a control-char regex) in source.
+  for (let i = 0; i < raw.length; i += 1) {
+    const code = raw.charCodeAt(i);
+    if (code <= 0x1f || code === 0x7f) return '/';
+  }
   return /^\/(?![/\\])/.test(raw) ? raw : '/';
 }
 
@@ -223,30 +229,27 @@ function LoginPage() {
 
   if (isPending || session?.user) {
     return (
-      <div className="vibe-screen min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <p className="vibe-hint">{t("loading", { defaultValue: "Loading…" })}</p>
       </div>
     );
   }
 
-  const socialBtn =
-    'w-full flex items-center justify-center gap-3 h-12 rounded-full bg-white/[0.05] border border-white/12 text-[#f5f5f7] font-medium transition-all hover:bg-white/[0.09] hover:border-white/25 disabled:opacity-50';
-  // Promoted primary CTA — filled, brighter than the social buttons.
-  const passkeyBtn =
-    'w-full flex items-center justify-center gap-3 h-12 rounded-full bg-[#f5f5f7] text-[#0a0a0a] font-semibold transition-all hover:bg-white disabled:opacity-50';
-  const field =
-    'w-full h-12 rounded-2xl bg-white/[0.05] border border-white/12 pl-11 pr-4 text-[#f5f5f7] placeholder-[#6e6e73] outline-none focus:border-white/30 transition-colors';
-  const fieldIcon = 'absolute left-3.5 top-1/2 -translate-y-1/2 text-[#6e6e73]';
+  // Field glyph shared by the email/password/display-name wells.
+  const fieldIcon = 'absolute left-3.5 top-1/2 -translate-y-1/2 text-site-text-dim z-10';
 
   return (
-    <div className="vibe-screen min-h-screen flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-white/[0.04] backdrop-blur-2xl p-7 sm:p-9 shadow-[0_24px_64px_rgba(0,0,0,0.55)]">
+    // No opaque full-viewport fill — the body paints the theme aurora and the
+    // card floats on it as glass.
+    <div className="min-h-screen flex items-center justify-center px-4 py-10">
+      {/* Flagship: a singular L2 pane with hero edge-refraction (1 of ≤2/page). */}
+      <div className="glass-pane glass-refract relative w-full max-w-md p-7 sm:p-9">
         <div className="text-center mb-7">
           <p className="vibe-presents mb-2">RMH Studios</p>
-          <h1 className="text-2xl font-bold tracking-tight text-[#f5f5f7]">
+          <h1 className="text-2xl font-bold tracking-tight text-site-text">
             {isSignUp ? t("create-account-heading", { defaultValue: "Create your account" }) : t("welcome-back", { defaultValue: "Welcome back" })}
           </h1>
-          <p className="text-sm text-[#a1a1a6] mt-1.5">
+          <p className="text-sm text-site-text-muted mt-1.5">
             {isSignUp ? t("signup-subheading", { defaultValue: "Make an identity to access the platform." }) : t("signin-subheading", { defaultValue: "Sign in to access your profile." })}
           </p>
         </div>
@@ -255,60 +258,66 @@ function LoginPage() {
           {/* Passkey is the promoted primary path: fastest + phishing-resistant.
               (Conditional-UI autofill also offers it directly in the email field.) */}
           {!isSignUp && (
-            <button onClick={handlePasskeySignIn} disabled={loading} className={passkeyBtn}>
+            <Button
+              type="button"
+              variant="accent"
+              size="lg"
+              onClick={handlePasskeySignIn}
+              disabled={loading}
+              className="w-full"
+            >
               {loading ? (
-                <span className="animate-pulse text-[#0a0a0a]/70">{t("connecting", { defaultValue: "Connecting…" })}</span>
+                <span className="animate-pulse">{t("connecting", { defaultValue: "Connecting…" })}</span>
               ) : (
                 <>
-                  <MdFingerprint className="text-xl" />
+                  <MdFingerprint className="size-5" />
                   <span>{t("continue-with-passkey", { defaultValue: "Sign in with a passkey" })}</span>
                 </>
               )}
-            </button>
+            </Button>
           )}
 
-          <button onClick={handleDiscordSignIn} disabled={loading} className={socialBtn}>
+          {/* Provider buttons: neutral glass chips; brand glyphs keep full colour
+              (they are content, not chrome). */}
+          <Button type="button" variant="secondary" size="lg" onClick={handleDiscordSignIn} disabled={loading} className="w-full">
             {loading ? (
-              <span className="animate-pulse text-[#a1a1a6]">{t("connecting", { defaultValue: "Connecting…" })}</span>
+              <span className="animate-pulse text-site-text-muted">{t("connecting", { defaultValue: "Connecting…" })}</span>
             ) : (
               <>
-                <FaDiscord className="text-xl text-[#5865F2]" />
+                <FaDiscord className="size-5 text-[#5865F2]" />
                 <span>{t("continue-with-discord", { defaultValue: "Continue with Discord" })}</span>
               </>
             )}
-          </button>
+          </Button>
 
-          <button onClick={handleGoogleSignIn} disabled={loading} className={socialBtn}>
+          <Button type="button" variant="secondary" size="lg" onClick={handleGoogleSignIn} disabled={loading} className="w-full">
             {loading ? (
-              <span className="animate-pulse text-[#a1a1a6]">{t("connecting", { defaultValue: "Connecting…" })}</span>
+              <span className="animate-pulse text-site-text-muted">{t("connecting", { defaultValue: "Connecting…" })}</span>
             ) : (
               <>
-                <FaGoogle className="text-xl text-[#ea4335]" />
+                <FaGoogle className="size-5 text-[#ea4335]" />
                 <span>{t("continue-with-google", { defaultValue: "Continue with Google" })}</span>
               </>
             )}
-          </button>
+          </Button>
 
-          <button onClick={handleGitHubSignIn} disabled={loading} className={socialBtn}>
+          <Button type="button" variant="secondary" size="lg" onClick={handleGitHubSignIn} disabled={loading} className="w-full">
             {loading ? (
-              <span className="animate-pulse text-[#a1a1a6]">{t("connecting", { defaultValue: "Connecting…" })}</span>
+              <span className="animate-pulse text-site-text-muted">{t("connecting", { defaultValue: "Connecting…" })}</span>
             ) : (
               <>
-                <FaGithub className="text-xl" />
+                <FaGithub className="size-5" />
                 <span>{t("continue-with-github", { defaultValue: "Continue with GitHub" })}</span>
               </>
             )}
-          </button>
+          </Button>
 
-          <div className="relative py-1">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10" />
-            </div>
-            <div className="relative flex justify-center">
-              <span className="px-3 text-[0.68rem] uppercase tracking-[0.14em] text-[#6e6e73] bg-[#0c0c0d]">
-                {t("or-with-email", { defaultValue: "or with email" })}
-              </span>
-            </div>
+          <div className="flex items-center gap-3 py-1">
+            <div className="h-px flex-1 bg-site-border" />
+            <span className="text-[0.68rem] uppercase tracking-[0.14em] text-site-text-dim">
+              {t("or-with-email", { defaultValue: "or with email" })}
+            </span>
+            <div className="h-px flex-1 bg-site-border" />
           </div>
 
           <form onSubmit={handleCredentialsSubmit} className="space-y-3">
@@ -318,7 +327,7 @@ function LoginPage() {
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
-                    className="relative w-20 h-20 rounded-full bg-white/[0.04] border-2 border-dashed border-white/15 hover:border-white/35 flex items-center justify-center transition-colors"
+                    className="relative w-20 h-20 rounded-full bg-site-glass-tint border-2 border-dashed border-site-border hover:border-site-border-bright flex items-center justify-center transition-colors"
                   >
                     <img
                       src={avatarPreview || '/images/social/default_avatar.png'}
@@ -326,8 +335,8 @@ function LoginPage() {
                       className="w-full h-full rounded-full object-cover"
                       onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                     />
-                    <div className="absolute -bottom-0.5 -right-0.5 w-7 h-7 bg-[#f5f5f7] rounded-full flex items-center justify-center border-2 border-[#0c0c0d]">
-                      <MdCameraAlt className="w-3.5 h-3.5 text-[#0a0a0a]" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-7 h-7 bg-site-text rounded-full flex items-center justify-center border-2 border-site-bg">
+                      <MdCameraAlt className="w-3.5 h-3.5 text-site-bg" />
                     </div>
                   </button>
                   <input
@@ -337,18 +346,18 @@ function LoginPage() {
                     className="hidden"
                     onChange={handleAvatarSelect}
                   />
-                  <p className="text-xs text-[#6e6e73]">{t("optional-profile-picture", { defaultValue: "Optional profile picture" })}</p>
+                  <p className="text-xs text-site-text-dim">{t("optional-profile-picture", { defaultValue: "Optional profile picture" })}</p>
                 </div>
 
                 <div className="relative">
                   <MdPerson className={fieldIcon} />
-                  <input
+                  <Input
                     type="text"
                     placeholder={t("display-name-placeholder", { defaultValue: "Display name" })}
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     required
-                    className={field}
+                    className="h-12 pl-11 pr-4"
                   />
                 </div>
               </div>
@@ -356,7 +365,7 @@ function LoginPage() {
 
             <div className="relative">
               <MdEmail className={fieldIcon} />
-              <input
+              <Input
                 type="email"
                 placeholder={t("email-placeholder", { defaultValue: "Email address" })}
                 value={email}
@@ -365,45 +374,45 @@ function LoginPage() {
                 // "webauthn" lets the browser offer saved passkeys in the
                 // autofill dropdown (conditional UI, wired above).
                 autoComplete={isSignUp ? 'email' : 'username webauthn'}
-                className={field}
+                className="h-12 pl-11 pr-4"
               />
             </div>
 
             <div className="relative">
               <MdLock className={fieldIcon} />
-              <input
+              <Input
                 type="password"
                 placeholder={t("password-placeholder", { defaultValue: "Password" })}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 minLength={8}
-                className={field}
+                className="h-12 pl-11 pr-4"
               />
             </div>
 
             {error && (
-              <div className="text-red-400 text-xs text-center bg-red-500/10 py-2 rounded-lg border border-red-500/25">
+              <div
+                role="alert"
+                className="rounded-site-sm border border-site-danger/40 bg-site-danger/10 px-3 py-2 text-center text-xs text-site-danger"
+              >
                 {error}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full h-12 rounded-full bg-[#f5f5f7] text-[#0a0a0a] font-semibold transition-all hover:bg-white disabled:opacity-50"
-            >
+            <Button type="submit" variant="accent" size="lg" disabled={loading} className="w-full">
               {loading ? t("processing", { defaultValue: "Processing…" }) : isSignUp ? t("create-account-btn", { defaultValue: "Create account" }) : t("sign-in-btn", { defaultValue: "Sign in" })}
-            </button>
+            </Button>
           </form>
 
           <div className="text-center pt-1">
             <button
+              type="button"
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setError(null);
               }}
-              className="text-[#6e6e73] hover:text-[#f5f5f7] text-sm transition-colors"
+              className="text-site-text-dim hover:text-site-text text-sm transition-colors"
             >
               {isSignUp ? t("already-have-account", { defaultValue: "Already have an account? Sign in" }) : t("no-account", { defaultValue: "Don't have an account? Sign up" })}
             </button>

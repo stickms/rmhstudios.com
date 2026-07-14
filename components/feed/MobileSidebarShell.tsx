@@ -289,7 +289,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             reserves room for the fixed mobile nav bar so the pinned footer sits
             above it rather than tucking behind it. */}
         <aside
-          className={`fixed left-0 top-0 bottom-0 z-0 flex w-64 flex-col bg-site-bg border-r border-site-border overscroll-contain touch-pan-y ${
+          className={`glass-chrome--aside fixed left-0 top-0 bottom-0 z-0 flex w-64 flex-col border-r border-site-border overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
           }`}
           // Reserve just enough room for the fixed mobile nav bar (min-h-12 =

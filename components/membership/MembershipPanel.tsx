@@ -372,10 +372,15 @@ function PricingStyles() {
       .pricing-display { font-family: var(--font-playfair); font-weight: 700; letter-spacing: -0.02em; }
       .pricing-price { font-family: var(--font-jetbrains-mono); font-weight: 600; letter-spacing: -0.04em; }
 
-      .pricing-root { background: var(--site-bg); }
+      /* The pricing panel sits directly on the aurora canvas — no opaque slab
+         (the old .pricing-root background was deleted with the glass redesign). */
 
-      /* Cards */
-      .pricing-card { transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease; }
+      /* Cards — L2 frosted glass panes over the aurora (§9.4). */
+      .pricing-card {
+        transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+        -webkit-backdrop-filter: blur(16px) saturate(160%);
+        backdrop-filter: blur(16px) saturate(160%);
+      }
       .pricing-card:hover { transform: translateY(-4px); border-color: var(--site-border-bright); }
       .pricing-card--featured {
         box-shadow:

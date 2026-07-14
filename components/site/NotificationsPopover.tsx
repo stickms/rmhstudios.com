@@ -198,7 +198,7 @@ export function NotificationsPopover({
             role="dialog"
             aria-label={label}
             style={{ position: 'fixed', left: pos.left, top: pos.top, width: PANEL_WIDTH }}
-            className="z-[80] overflow-hidden rounded-site border border-site-border bg-site-surface shadow-[var(--site-shadow)]"
+            className="glass-overlay z-[80] overflow-hidden"
           >
             <div className="flex items-center justify-between border-b border-site-border px-3 py-2">
               <p className="text-sm font-bold text-site-text">{label}</p>
@@ -235,8 +235,9 @@ export function NotificationsPopover({
                       <li key={n.id}>
                         <button
                           type="button"
+                          data-glass-light=""
                           onClick={() => onItemClick(n)}
-                          className="flex w-full items-start gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-site-surface-hover"
+                          className="glass-interactive flex w-full items-start gap-2.5 px-3 py-2.5 text-left"
                         >
                           <UserAvatar
                             src={n.actor?.image}

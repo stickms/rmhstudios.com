@@ -153,7 +153,7 @@ export function ShopColumn({
           scrollCue={t("shop-scroll-cue", { defaultValue: "Browse the shop" })}
         />
       )}
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
+      <header className="glass-chrome sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-site-border px-4 py-3">
         <div className="flex items-center gap-2">
           <ShoppingBag className="h-5 w-5 text-site-accent" />
           <h1 className="text-lg font-bold text-site-text">{t("shop-title", { defaultValue: "Shop" })}</h1>
@@ -194,8 +194,14 @@ export function ShopColumn({
           {visible.map((item) => (
             <div
               key={item.id}
-              className="flex items-center gap-3 rounded-site border bg-site-surface p-3"
-              style={{ borderColor: `${RARITY_COLORS[item.rarity]}55` }}
+              data-glass-light=""
+              className="glass-interactive flex items-center gap-3 rounded-site border bg-site-glass-tint p-3"
+              // Rarity communicates value through the rim colour (§9.4): a tinted
+              // border + a matching inner specular hairline over the base rim.
+              style={{
+                borderColor: `${RARITY_COLORS[item.rarity]}55`,
+                boxShadow: `inset 0 1px 0 ${RARITY_COLORS[item.rarity]}55, var(--site-shadow-sm)`,
+              }}
             >
               <Preview item={item} />
               <div className="min-w-0 flex-1">

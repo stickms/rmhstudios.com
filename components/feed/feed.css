@@ -22,33 +22,27 @@
   letter-spacing: -0.02em;
 }
 
-/* Frosted-glass treatment for the app chrome + sticky headers, matching the
-   homepage's vibe-dock. Applied to elements tagged with .vibe-glass. Theme-aware:
-   derived from --site-bg so it tints correctly in light/high-contrast. */
+/* Legacy alias — `.vibe-glass` now maps onto the L3 `.glass-chrome` elevation
+   (see app/globals.css) so the few remaining non-shell consumers (FeedLayout,
+   MembershipPanel, ListingDetailView) inherit the redesign. New code should use
+   `.glass-chrome` directly. */
 .vibe-glass {
-  background: color-mix(in srgb, var(--site-bg) 72%, transparent);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: color-mix(in srgb, var(--site-bg) 32%, transparent);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
 }
 
-/* The bottom mobile nav floats over scrolling content, so it needs a more
-   opaque backing than the standard frosted glass to stay legible. Theme-aware:
-   derived from --site-bg so it tints correctly in light/high-contrast instead
-   of staying stuck dark. */
-.vibe-glass.vibe-mobile-nav {
-  background: color-mix(in srgb, var(--site-bg) 96%, transparent);
-}
-
-/* Cards: subtle translucent surface with a hairline border that brightens on
-   hover, echoing the builds/library grid. */
+/* Cards: L1 glass-fill echo — subtle translucent tint + rim that brightens on
+   hover, matching the builds/library grid. Kept as an alias for existing markup. */
 .vibe-card {
-  background: var(--site-surface);
+  background: var(--site-glass-tint);
   border: 1px solid var(--site-border);
   border-radius: var(--site-radius);
+  box-shadow: var(--site-shadow-sm);
   transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
 }
 
 .vibe-card:hover {
   border-color: var(--site-border-bright);
-  background: var(--site-surface-hover);
+  background: var(--site-glass-tint-strong);
 }

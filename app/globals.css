@@ -40,35 +40,69 @@
 
 :root {
   /* Base colors — mapped to site design system */
-  --background: #000;
-  --foreground: #e8e8ec;
+  --background: #0d1b2e;
+  --foreground: #f4f8ff;
 
   /* ==================== SITE DESIGN SYSTEM ==================== */
-  /* Dark theme (default) — Apple-style: pure black canvas, elevated
-     graphite surfaces, hairline borders, violet accent. */
-  --site-bg: #000;
-  --site-bg-subtle: #0b0b0c;
-  --site-surface: #161617;
-  --site-surface-hover: #1d1d1f;
-  --site-surface-active: #242426;
-  --site-border: rgba(255, 255, 255, 0.08);
-  --site-border-bright: rgba(255, 255, 255, 0.16);
-  --site-text: #f5f5f7;
-  --site-text-muted: #86868b;
-  --site-text-dim: #6e6e73;
-  --site-accent: #9d7bff;
-  --site-accent-fg: #fff;
-  --site-accent-hover: #ae8fff;
-  --site-accent-dim: rgba(157, 123, 255, 0.12);
+  /* Glass Dark (default) — the Liquid Glass material system, promoted from the
+     old .style-liquid-glass theme into :root so glass is the site's default
+     look, not a theme patch. An aurora-lit deep-ocean canvas with translucent
+     surfaces, specular rim highlights (via the shadow tokens) and depth-graded
+     blur (via the .glass-* elevation classes below). Every other theme re-tints
+     this same contract. See docs/plans/2026-07-14-liquid-glass-ui-redesign.md. */
+  --site-bg: #0d1b2e;
+  --site-bg-subtle: rgba(148, 184, 255, 0.08);
+  --site-surface: rgba(255, 255, 255, 0.1);
+  --site-surface-hover: rgba(255, 255, 255, 0.17);
+  --site-surface-active: rgba(255, 255, 255, 0.24);
+  /* Opaque equivalent of --site-surface — used for autofill and the
+     reduced-transparency / high-contrast fallbacks (where translucency is off). */
+  --site-surface-opaque: #182c44;
+  --site-border: rgba(255, 255, 255, 0.16);
+  --site-border-bright: rgba(255, 255, 255, 0.32);
+  /* Muted alpha 0.82 (not the usual ~0.74) so secondary text clears WCAG AA
+     even on frosted panes over the brightest aurora corner. */
+  --site-text: #f4f8ff;
+  --site-text-muted: rgba(228, 238, 255, 0.82);
+  --site-text-dim: rgba(226, 237, 255, 0.56);
+  --site-accent: #6cc9ff;
+  --site-accent-fg: #042a41;
+  --site-accent-hover: #8fd7ff;
+  --site-accent-dim: rgba(108, 201, 255, 0.16);
   --site-success: #30d158;
-  --site-danger: #ff453a;
+  --site-danger: #ff6961;
   --site-warning: #ffd60a;
-  --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
-  /* Resting elevation for cards/surfaces (subtle) — distinct from --site-shadow,
-     which is the prominent elevation used by modals/popovers/floating chrome. */
-  --site-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.12);
-  --site-radius: 18px;
-  --site-radius-sm: 12px;
+
+  /* ── Glass material contract (§3.2) — every theme re-tints these ────────── */
+  /* Tint plates */
+  --site-glass-tint: rgba(255, 255, 255, 0.1);        /* L1/L2 resting fill */
+  --site-glass-tint-strong: rgba(255, 255, 255, 0.17); /* hover / raised */
+  --site-glass-ink: color-mix(in srgb, var(--site-bg) 45%, transparent); /* recessed wells */
+  /* Backdrop treatment, by elevation tier */
+  --site-glass-blur-pane: 16px;
+  --site-glass-blur-chrome: 24px;
+  --site-glass-blur-overlay: 28px;
+  --site-glass-saturate: 160%;
+  /* Lighting — one sun, top-slightly-left (§4.2) */
+  --site-glass-rim: rgba(255, 255, 255, 0.28);      /* top specular edge */
+  --site-glass-rim-soft: rgba(255, 255, 255, 0.1);  /* hairline all-round */
+  --site-glass-light: rgba(255, 255, 255, 0.14);    /* pointer highlight */
+  /* Depth shadows — blur radius & tint grow together with elevation (§4.1.5) */
+  --site-glass-depth: 0 24px 64px rgba(2, 10, 28, 0.6);
+  --site-glass-depth-sm: 0 4px 16px rgba(2, 10, 28, 0.28);
+
+  /* Elevation tokens — the rim lives in the shadow so Card/Dialog/etc. pick it
+     up through shadow-site / shadow-site-sm with zero component changes. */
+  --site-shadow:
+    inset 0 1px 0 var(--site-glass-rim),
+    inset 0 0 0 0.5px var(--site-glass-rim-soft),
+    var(--site-glass-depth);
+  --site-shadow-sm:
+    inset 0 1px 0 var(--site-glass-rim-soft),
+    inset 0 0 0 0.5px var(--site-glass-rim-soft),
+    var(--site-glass-depth-sm);
+  --site-radius: 22px;
+  --site-radius-sm: 14px;
   --site-font-display: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
   --site-font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
   --site-font-mono: var(--font-jetbrains-mono), 'Cascadia Code', monospace;
@@ -79,6 +113,18 @@
   --site-glow: none;
   --site-text-shadow: none;
   --site-letter-spacing: -0.022em;
+  /* The aurora canvas painted on <body> (background-attachment: fixed). Every
+     theme defines one; glass over a flat colour reads as gray plastic. The
+     ThemeGallery preview swatch reads var(--site-canvas, var(--site-bg)). */
+  --site-canvas:
+    radial-gradient(110% 85% at 10% -5%, rgba(86, 140, 255, 0.3), transparent 62%),
+    radial-gradient(95% 75% at 94% 4%, rgba(170, 108, 255, 0.27), transparent 60%),
+    radial-gradient(110% 95% at 86% 102%, rgba(52, 208, 188, 0.22), transparent 64%),
+    radial-gradient(80% 70% at 8% 98%, rgba(255, 120, 196, 0.16), transparent 60%),
+    linear-gradient(180deg, #0d1b2e 0%, #13253e 48%, #0b1930 100%);
+  /* Tiled micro-noise (64×64 data URI) layered on L2+ panes to kill gradient
+     banding and read as material texture. One shared image, zero runtime cost. */
+  --site-glass-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='64' height='64' filter='url(%23n)' opacity='0.25'/%3E%3C/svg%3E");
   /* Raster-map tint (RMHHomes / rideshare maps). Dark themes invert the light
      OSM tiles into a dark map so the map tracks the theme; light themes reset
      this to `none`. Applied only to the tile canvas, never the DOM pins. */
@@ -175,58 +221,81 @@
 
 /* ==================== SITE STYLE THEMES ==================== */
 
-/* Default (dark) — restated as a class so scoped previews (the settings theme
-   gallery renders each theme's tokens inside a card) can show the default
+/* Glass Dark (default) — restated as a class so scoped previews (the settings
+   theme gallery renders each theme's tokens inside a card) can show the default
    palette while another theme is active. Keep in sync with the :root block. */
 .style-default {
-  --site-bg: #000;
-  --site-bg-subtle: #0b0b0c;
-  --site-surface: #161617;
-  --site-surface-hover: #1d1d1f;
-  --site-surface-active: #242426;
-  --site-border: rgba(255, 255, 255, 0.08);
-  --site-border-bright: rgba(255, 255, 255, 0.16);
-  --site-text: #f5f5f7;
-  --site-text-muted: #86868b;
-  --site-text-dim: #6e6e73;
-  --site-accent: #9d7bff;
-  --site-accent-fg: #fff;
-  --site-accent-hover: #ae8fff;
-  --site-accent-dim: rgba(157, 123, 255, 0.12);
+  --site-bg: #0d1b2e;
+  --site-bg-subtle: rgba(148, 184, 255, 0.08);
+  --site-surface: rgba(255, 255, 255, 0.1);
+  --site-surface-hover: rgba(255, 255, 255, 0.17);
+  --site-surface-active: rgba(255, 255, 255, 0.24);
+  --site-surface-opaque: #182c44;
+  --site-border: rgba(255, 255, 255, 0.16);
+  --site-border-bright: rgba(255, 255, 255, 0.32);
+  --site-text: #f4f8ff;
+  --site-text-muted: rgba(228, 238, 255, 0.82);
+  --site-text-dim: rgba(226, 237, 255, 0.56);
+  --site-accent: #6cc9ff;
+  --site-accent-fg: #042a41;
+  --site-accent-hover: #8fd7ff;
+  --site-accent-dim: rgba(108, 201, 255, 0.16);
   --site-success: #30d158;
-  --site-danger: #ff453a;
+  --site-danger: #ff6961;
   --site-warning: #ffd60a;
-  --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
-  --site-radius: 18px;
-  --site-radius-sm: 12px;
+  --site-radius: 22px;
+  --site-radius-sm: 14px;
+  --site-canvas:
+    radial-gradient(110% 85% at 10% -5%, rgba(86, 140, 255, 0.3), transparent 62%),
+    radial-gradient(95% 75% at 94% 4%, rgba(170, 108, 255, 0.27), transparent 60%),
+    radial-gradient(110% 95% at 86% 102%, rgba(52, 208, 188, 0.22), transparent 64%),
+    radial-gradient(80% 70% at 8% 98%, rgba(255, 120, 196, 0.16), transparent 60%),
+    linear-gradient(180deg, #0d1b2e 0%, #13253e 48%, #0b1930 100%);
 }
 
-/* Light — clean white surfaces */
+/* Glass Light — daylight canvas: near-white base with soft pastel sky radials;
+   white frost at higher opacity, dark ink, cooler/lighter depth shadows. */
 .style-light {
-  --site-bg: #f5f5f7;
-  --site-bg-subtle: #ebebed;
-  --site-surface: #fff;
-  --site-surface-hover: #f5f5f7;
-  --site-surface-active: #ebebed;
-  --site-border: rgba(0, 0, 0, 0.08);
-  --site-border-bright: rgba(0, 0, 0, 0.16);
-  --site-text: #1d1d1f;
-  --site-text-muted: #6e6e73;
-  --site-text-dim: #86868b;
-  --site-accent: #7d56d8;
-  --site-accent-fg: #fff;
-  --site-accent-hover: #8f6ce0;
-  --site-accent-dim: rgba(125, 86, 216, 0.10);
-  --site-success: #248a3d;
+  --site-bg: #e9edf6;
+  --site-bg-subtle: rgba(120, 145, 195, 0.09);
+  --site-surface: rgba(255, 255, 255, 0.55);
+  --site-surface-hover: rgba(255, 255, 255, 0.72);
+  --site-surface-active: rgba(255, 255, 255, 0.85);
+  --site-surface-opaque: #ffffff;
+  --site-border: rgba(18, 30, 66, 0.1);
+  --site-border-bright: rgba(18, 30, 66, 0.2);
+  --site-text: #17203a;
+  --site-text-muted: rgba(38, 50, 82, 0.74);
+  --site-text-dim: rgba(38, 50, 82, 0.52);
+  --site-accent: #6a4fd0;
+  --site-accent-fg: #ffffff;
+  --site-accent-hover: #7a61da;
+  --site-accent-dim: rgba(106, 79, 208, 0.12);
+  --site-success: #1f9d40;
   --site-danger: #d70015;
-  --site-warning: #c48a00;
-  --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.10);
-  --site-radius: 18px;
-  --site-radius-sm: 12px;
+  --site-warning: #a8730a;
+  /* Light glass: brighter frost, white rims, cool low-alpha depth. */
+  --site-glass-tint: rgba(255, 255, 255, 0.55);
+  --site-glass-tint-strong: rgba(255, 255, 255, 0.72);
+  --site-glass-ink: rgba(244, 247, 253, 0.55);
+  --site-glass-rim: rgba(255, 255, 255, 0.9);
+  --site-glass-rim-soft: rgba(255, 255, 255, 0.55);
+  --site-glass-light: rgba(255, 255, 255, 0.6);
+  --site-glass-depth: 0 24px 64px rgba(60, 74, 120, 0.16);
+  --site-glass-depth-sm: 0 4px 16px rgba(60, 74, 120, 0.1);
+  --site-glass-saturate: 150%;
+  --site-radius: 22px;
+  --site-radius-sm: 14px;
+  --site-canvas:
+    radial-gradient(110% 85% at 8% -5%, rgba(120, 165, 255, 0.28), transparent 60%),
+    radial-gradient(95% 75% at 95% 2%, rgba(185, 150, 255, 0.24), transparent 60%),
+    radial-gradient(110% 95% at 88% 102%, rgba(120, 226, 205, 0.2), transparent 62%),
+    radial-gradient(80% 70% at 5% 100%, rgba(255, 175, 215, 0.16), transparent 60%),
+    linear-gradient(180deg, #eef1f9 0%, #e6ebf5 50%, #edf0f8 100%);
   /* Light theme: leave the OSM map tiles as-is (already light). */
   --site-map-filter: none;
-  --background: #f5f5f7;
-  --foreground: #1d1d1f;
+  --background: #e9edf6;
+  --foreground: #17203a;
 }
 
 /* High Contrast — maximal legibility (WCAG AAA): pure black, pure white text,
@@ -237,6 +306,7 @@
   --site-surface: #000000;
   --site-surface-hover: #1a1a1a;
   --site-surface-active: #2a2a2a;
+  --site-surface-opaque: #000000;
   --site-border: #ffffff;
   --site-border-bright: #ffffff;
   --site-text: #ffffff;
@@ -249,7 +319,20 @@
   --site-success: #00e676;
   --site-danger: #ff8080;
   --site-warning: #ffd54a;
+  /* No glass: flat, opaque, hard-edged. The .glass-* classes are neutralised
+     to opaque surfaces by a global rule (§10); these tokens just make sure any
+     stray reference resolves to something sane rather than inheriting glass. */
   --site-shadow: 0 0 0 1px #ffffff;
+  --site-shadow-sm: 0 0 0 1px #ffffff;
+  --site-glass-tint: #000000;
+  --site-glass-tint-strong: #1a1a1a;
+  --site-glass-ink: #000000;
+  --site-glass-rim: transparent;
+  --site-glass-rim-soft: transparent;
+  --site-glass-light: transparent;
+  --site-glass-depth: none;
+  --site-glass-depth-sm: none;
+  --site-canvas: none;
   --site-border-width: 2px;
   --site-radius: 18px;
   --site-radius-sm: 12px;
@@ -261,292 +344,327 @@
    Same token contract as the base three; each is a self-contained palette so a
    theme block can never silently drift. Kept tasteful/minimal on purpose. */
 
-/* Graphite — Apple system-gray dark: dim (not pure black), neutral, easy on
-   the eyes for long sessions and OLED-averse displays. */
+/* Graphite Glass — monochrome smoke over near-black; neutral gray tint, silver
+   rims, desaturated (glass saturate 120%). Easy on the eyes for long sessions. */
 .style-graphite {
-  --site-bg: #1c1c1e;
-  --site-bg-subtle: #242426;
-  --site-surface: #2c2c2e;
-  --site-surface-hover: #363638;
-  --site-surface-active: #3f3f42;
-  --site-border: rgba(255, 255, 255, 0.10);
-  --site-border-bright: rgba(255, 255, 255, 0.20);
-  --site-text: #f5f5f7;
-  --site-text-muted: #98989d;
-  --site-text-dim: #7c7c80;
-  --site-accent: #9d7bff;
-  --site-accent-fg: #fff;
-  --site-accent-hover: #ae8fff;
-  --site-accent-dim: rgba(157, 123, 255, 0.14);
+  --site-bg: #17171a;
+  --site-bg-subtle: rgba(255, 255, 255, 0.05);
+  --site-surface: rgba(255, 255, 255, 0.07);
+  --site-surface-hover: rgba(255, 255, 255, 0.12);
+  --site-surface-active: rgba(255, 255, 255, 0.17);
+  --site-surface-opaque: #2a2a2e;
+  --site-border: rgba(255, 255, 255, 0.12);
+  --site-border-bright: rgba(255, 255, 255, 0.22);
+  --site-text: #f3f3f5;
+  --site-text-muted: rgba(236, 236, 240, 0.78);
+  --site-text-dim: rgba(236, 236, 240, 0.5);
+  --site-accent: #b6a0ff;
+  --site-accent-fg: #17111f;
+  --site-accent-hover: #c7b6ff;
+  --site-accent-dim: rgba(182, 160, 255, 0.16);
   --site-success: #30d158;
-  --site-danger: #ff453a;
+  --site-danger: #ff6961;
   --site-warning: #ffd60a;
-  --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
-  --site-radius: 18px;
-  --site-radius-sm: 12px;
-  --background: #1c1c1e;
-  --foreground: #f5f5f7;
+  --site-glass-tint: rgba(255, 255, 255, 0.07);
+  --site-glass-tint-strong: rgba(255, 255, 255, 0.12);
+  --site-glass-rim: rgba(255, 255, 255, 0.22);
+  --site-glass-rim-soft: rgba(255, 255, 255, 0.08);
+  --site-glass-light: rgba(255, 255, 255, 0.1);
+  --site-glass-depth: 0 24px 64px rgba(0, 0, 0, 0.5);
+  --site-glass-depth-sm: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --site-glass-saturate: 120%;
+  --site-radius: 22px;
+  --site-radius-sm: 14px;
+  --site-canvas:
+    radial-gradient(110% 85% at 12% -8%, rgba(255, 255, 255, 0.08), transparent 60%),
+    radial-gradient(95% 80% at 92% 6%, rgba(200, 205, 215, 0.06), transparent 60%),
+    radial-gradient(120% 95% at 84% 104%, rgba(120, 125, 140, 0.1), transparent 64%),
+    linear-gradient(180deg, #17171a 0%, #202024 50%, #131316 100%);
+  --background: #17171a;
+  --foreground: #f3f3f5;
 }
 
-/* Sepia — warm paper (à la Apple Books): cream canvas, walnut ink, terracotta
-   accent tuned so white button labels clear WCAG AA (~4.7:1). */
+/* Sepia Glass — warm parchment gradients, warm-white frost, amber accent,
+   golden rim. Book-like reading warmth with the glass material on top. */
 .style-sepia {
-  --site-bg: #f3e9d6;
-  --site-bg-subtle: #ece0c8;
-  --site-surface: #fbf4e5;
-  --site-surface-hover: #f4ead4;
-  --site-surface-active: #ece0c8;
-  --site-border: rgba(90, 62, 32, 0.16);
-  --site-border-bright: rgba(90, 62, 32, 0.28);
+  --site-bg: #efe4cf;
+  --site-bg-subtle: rgba(120, 90, 50, 0.08);
+  --site-surface: rgba(255, 250, 238, 0.6);
+  --site-surface-hover: rgba(255, 250, 238, 0.78);
+  --site-surface-active: rgba(255, 250, 238, 0.9);
+  --site-surface-opaque: #fbf4e5;
+  --site-border: rgba(90, 62, 32, 0.18);
+  --site-border-bright: rgba(90, 62, 32, 0.3);
   --site-text: #3a2e1e;
-  --site-text-muted: #7a6a52;
-  --site-text-dim: #9c8a6e;
+  --site-text-muted: rgba(70, 54, 34, 0.74);
+  --site-text-dim: rgba(70, 54, 34, 0.52);
   --site-accent: #a2592e;
   --site-accent-fg: #fff;
   --site-accent-hover: #8e4c26;
   --site-accent-dim: rgba(162, 89, 46, 0.14);
   --site-success: #4f7d3a;
   --site-danger: #b23a2f;
-  --site-warning: #b5851f;
-  --site-shadow: 0 24px 64px rgba(90, 62, 32, 0.16);
-  --site-radius: 18px;
-  --site-radius-sm: 12px;
+  --site-warning: #a8730a;
+  --site-glass-tint: rgba(255, 250, 238, 0.6);
+  --site-glass-tint-strong: rgba(255, 250, 238, 0.78);
+  --site-glass-ink: rgba(240, 232, 214, 0.6);
+  --site-glass-rim: rgba(255, 248, 230, 0.85);
+  --site-glass-rim-soft: rgba(255, 248, 230, 0.45);
+  --site-glass-light: rgba(255, 240, 210, 0.5);
+  --site-glass-depth: 0 24px 64px rgba(90, 62, 32, 0.18);
+  --site-glass-depth-sm: 0 4px 16px rgba(90, 62, 32, 0.12);
+  --site-glass-saturate: 150%;
+  --site-radius: 22px;
+  --site-radius-sm: 14px;
+  --site-canvas:
+    radial-gradient(110% 85% at 10% -5%, rgba(220, 180, 120, 0.32), transparent 60%),
+    radial-gradient(95% 78% at 94% 4%, rgba(210, 160, 90, 0.22), transparent 60%),
+    radial-gradient(115% 95% at 86% 104%, rgba(235, 205, 150, 0.24), transparent 64%),
+    linear-gradient(180deg, #f4ead6 0%, #efe4cf 50%, #ece0c8 100%);
   /* Sepia is a light theme — keep the light OSM map tiles. */
   --site-map-filter: none;
-  --background: #f3e9d6;
+  --background: #efe4cf;
   --foreground: #3a2e1e;
 }
 
-/* Nocturne — cool deep-navy dark with a sky-blue accent; a calmer alternative
-   to the pure-black default. */
+/* Nocturne Glass — deep-navy nightscape with a sky-blue aurora; cool
+   blue-shifted tint and rims. A calmer alternative to Glass Dark. */
 .style-nocturne {
-  --site-bg: #0b0f1a;
-  --site-bg-subtle: #101524;
-  --site-surface: #161d2e;
-  --site-surface-hover: #1e2740;
-  --site-surface-active: #263050;
-  --site-border: rgba(255, 255, 255, 0.09);
-  --site-border-bright: rgba(255, 255, 255, 0.18);
+  --site-bg: #0a1424;
+  --site-bg-subtle: rgba(150, 185, 255, 0.08);
+  --site-surface: rgba(150, 185, 255, 0.09);
+  --site-surface-hover: rgba(150, 185, 255, 0.15);
+  --site-surface-active: rgba(150, 185, 255, 0.21);
+  --site-surface-opaque: #16233e;
+  --site-border: rgba(180, 205, 255, 0.14);
+  --site-border-bright: rgba(180, 205, 255, 0.26);
   --site-text: #eaeef7;
-  --site-text-muted: #8a93ab;
-  --site-text-dim: #626c86;
+  --site-text-muted: rgba(202, 216, 245, 0.8);
+  --site-text-dim: rgba(202, 216, 245, 0.52);
   --site-accent: #5e9dff;
   --site-accent-fg: #001227;
   --site-accent-hover: #7db0ff;
-  --site-accent-dim: rgba(94, 157, 255, 0.15);
+  --site-accent-dim: rgba(94, 157, 255, 0.16);
   --site-success: #30d158;
   --site-danger: #ff6961;
   --site-warning: #ffd60a;
-  --site-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
-  --site-radius: 18px;
-  --site-radius-sm: 12px;
-  --background: #0b0f1a;
+  --site-glass-tint: rgba(150, 185, 255, 0.09);
+  --site-glass-tint-strong: rgba(150, 185, 255, 0.15);
+  --site-glass-rim: rgba(200, 220, 255, 0.28);
+  --site-glass-rim-soft: rgba(200, 220, 255, 0.1);
+  --site-glass-light: rgba(180, 210, 255, 0.14);
+  --site-glass-depth: 0 24px 64px rgba(0, 0, 0, 0.55);
+  --site-glass-depth-sm: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --site-radius: 22px;
+  --site-radius-sm: 14px;
+  --site-canvas:
+    radial-gradient(110% 85% at 12% -6%, rgba(70, 120, 220, 0.32), transparent 62%),
+    radial-gradient(95% 78% at 94% 2%, rgba(90, 150, 255, 0.24), transparent 60%),
+    radial-gradient(120% 95% at 84% 104%, rgba(60, 190, 210, 0.18), transparent 64%),
+    linear-gradient(180deg, #0a1424 0%, #0e1c34 50%, #081120 100%);
+  --background: #0a1424;
   --foreground: #eaeef7;
 }
 
-/* Liquid Glass — iOS-26-style frosted glass: an aurora-lit deep-ocean canvas
-   with translucent, backdrop-blurred surfaces and specular rim highlights.
-   The rim lives in the shadow tokens, so cards/modals pick it up with no new
-   selectors. Unlike the other curated themes this one also needs the scoped
-   element rules below — backdrop-filter can't be expressed as a token. One-off
-   glass primitives live in components/ui/liquid-glass.tsx; demo at /liquid-glass. */
-.style-liquid-glass {
-  --site-bg: #0d1b2e;
-  --site-bg-subtle: rgba(148, 184, 255, 0.08);
-  --site-surface: rgba(255, 255, 255, 0.1);
-  --site-surface-hover: rgba(255, 255, 255, 0.17);
-  --site-surface-active: rgba(255, 255, 255, 0.24);
-  --site-border: rgba(255, 255, 255, 0.16);
-  --site-border-bright: rgba(255, 255, 255, 0.32);
-  /* Muted alpha 0.82 (not the usual ~0.74) so secondary text clears WCAG AA
-     even on frosted cards over the brightest aurora corner. */
-  --site-text: #f4f8ff;
-  --site-text-muted: rgba(228, 238, 255, 0.82);
-  --site-text-dim: rgba(226, 237, 255, 0.56);
-  --site-accent: #6cc9ff;
-  --site-accent-fg: #042a41;
-  --site-accent-hover: #8fd7ff;
-  --site-accent-dim: rgba(108, 201, 255, 0.16);
-  --site-success: #30d158;
-  --site-danger: #ff6961;
-  --site-warning: #ffd60a;
-  --site-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 0 0 0 0.5px rgba(255, 255, 255, 0.1),
-    0 24px 64px rgba(2, 10, 28, 0.6);
-  --site-shadow-sm:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 0 0 0.5px rgba(255, 255, 255, 0.07),
-    0 4px 16px rgba(2, 10, 28, 0.28);
-  --site-radius: 22px;
-  --site-radius-sm: 14px;
-  /* The aurora canvas, shared by the body backdrop below and the theme
-     gallery's preview swatch (which reads var(--site-canvas, var(--site-bg))). */
-  --site-canvas:
-    radial-gradient(110% 85% at 10% -5%, rgba(86, 140, 255, 0.3), transparent 62%),
-    radial-gradient(95% 75% at 94% 4%, rgba(170, 108, 255, 0.27), transparent 60%),
-    radial-gradient(110% 95% at 86% 102%, rgba(52, 208, 188, 0.22), transparent 64%),
-    radial-gradient(80% 70% at 8% 98%, rgba(255, 120, 196, 0.16), transparent 60%),
-    linear-gradient(180deg, #0d1b2e 0%, #13253e 48%, #0b1930 100%);
-  --background: #0d1b2e;
-  --foreground: #f4f8ff;
-}
+/* ══════════════════════════════════════════════════════════════════════════
+   LIQUID GLASS MATERIAL SYSTEM
+   The former `.style-liquid-glass` theme is now the site default (:root above).
+   Glass is expressed as explicit, opt-in elevation classes placed ON components
+   (never descendant-matched), so blur cost is a per-component decision. See
+   docs/plans/2026-07-14-liquid-glass-ui-redesign.md §3–6.
+   ══════════════════════════════════════════════════════════════════════════ */
 
-/* The aurora the glass refracts. THEME_BG still paints the opaque #0d1b2e base
-   onto html/body inline (no-flash script + Providers), so this only layers
-   colour on top — overscroll and pre-paint frames stay solid.
-   background-attachment: fixed degrades to scroll on iOS (the gradient
-   stretches over the document instead of pinning to the viewport), which stays
-   smooth because the stops are soft. */
-.style-liquid-glass body {
+/* The aurora canvas — every theme defines --site-canvas; painted on <body> with
+   fixed attachment so every blur samples one shared backdrop. Gated to non-app
+   routes (games/apps own their background). THEME_BG still paints the opaque
+   base inline (no-flash script + Providers) so overscroll/pre-paint frames stay
+   solid; this only layers colour on top. background-attachment: fixed degrades
+   to scroll on iOS (accepted — the stops are soft, so it stays smooth). */
+html:not(.app-route) body {
   background-image: var(--site-canvas);
   background-attachment: fixed;
 }
 
-/* Let the aurora show through the page canvas. Utility class names are literal
-   in the DOM (see @theme inline below), so these descendant overrides match. */
-.style-liquid-glass .bg-site-bg {
+/* Page canvas show-through: elements that use bg-site-bg as the page ground let
+   the aurora read through (cheap — no blur). Full-screen fixed takeovers (admin
+   MDX editor) and the mobile drawer's sliding panel stay opaque. High-contrast
+   keeps #000 (canvas is `none` there, so the mix reads as solid black anyway). */
+html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active]) {
   background-color: color-mix(in srgb, var(--site-bg) 52%, transparent);
 }
 
-/* Full-screen fixed takeovers (e.g. the admin MDX editor) rely on an opaque
-   bg-site-bg to hide the page beneath — keep them solid. The frosted sidebar
-   asides and elevated chrome below override this by specificity/order. */
-.style-liquid-glass .fixed.bg-site-bg {
-  background-color: var(--site-bg);
-}
-
-/* Floating chrome that uses bg-site-bg as an opaque backdrop — hand-rolled
-   menus, hover cards, toasts, cutout hubs/badges, identified by their
-   elevation/positioning classes — reads as frosted glass instead: a more
-   opaque mix plus blur, so content never ghosts through menu labels. These
-   are leaf elements (no fixed/absolute descendants), so the containing block
-   backdrop-filter creates is harmless. */
-.style-liquid-glass :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg {
+/* Floating chrome that still paints an opaque bg-site-bg (hand-rolled menus /
+   hover cards not yet migrated to .glass-overlay) reads as frosted glass so
+   content never ghosts through. Leaf elements → the containing block that
+   backdrop-filter creates is harmless. Removed as consumers adopt .glass-overlay. */
+html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg:not(.fixed):not([data-drawer-active]) {
   background-color: color-mix(in srgb, var(--site-bg) 80%, transparent);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   backdrop-filter: blur(20px) saturate(160%);
 }
 
-/* The mobile push-drawer's sliding page panel must be opaque while the drawer
-   is revealed behind it (MobileSidebarShell sets data-drawer-active during
-   drag/open/settle) — otherwise the sidebar ghosts through the translucent
-   panel for the whole transition. Idle panels stay translucent (aurora). */
-.style-liquid-glass [data-drawer-active].bg-site-bg {
-  background-color: var(--site-bg);
-}
-
-/* The /membership pricing panel paints the raw token (scoped <style> in
-   MembershipPanel.tsx), which would render as a solid slab amid the
-   translucent canvas — keep it in step with .bg-site-bg above. */
-.style-liquid-glass .pricing-root {
-  background: color-mix(in srgb, var(--site-bg) 52%, transparent);
-}
-
-/* Library shelf tiles mix from --site-surface assuming it is opaque
-   (components/library/library.css); with the translucent glass surface the
-   result is ~4% alpha and the card vanishes. Give them a real glass pane. */
-.style-liquid-glass .lib-volume .lib-book__3d {
-  background: rgba(255, 255, 255, 0.08);
-}
-.style-liquid-glass .lib-volume:hover .lib-book__3d {
-  background: rgba(255, 255, 255, 0.13);
-}
-
-/* Frost every design-system surface. The blur is applied only to the
-   *-classed element itself — never to an ancestor of a position:fixed element
-   (backdrop-filter creates a containing block that would re-anchor it; the one
-   non-portaled fixed element, LeftSidebar's user menu, has no surface-classed
-   ancestor). */
-.style-liquid-glass :is(.bg-site-surface, .bg-site-surface-hover, .bg-site-surface-active) {
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
-  backdrop-filter: blur(16px) saturate(160%);
-}
-
-/* The fixed sidebar asides (_site.tsx desktop rail, MobileSidebarShell drawer)
-   become true frosted panes (out-specifying the opaque .fixed takeover rule
-   above). The blur lives on a pseudo-element so the aside itself never gains
-   backdrop-filter — its non-portaled fixed user menu keeps the viewport as
-   its containing block. */
-.style-liquid-glass aside.fixed.bg-site-bg {
-  background-color: color-mix(in srgb, var(--site-bg) 52%, transparent);
-}
-.style-liquid-glass aside.fixed.bg-site-bg::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  -webkit-backdrop-filter: blur(24px) saturate(170%);
-  backdrop-filter: blur(24px) saturate(170%);
-}
-
-/* Sticky page headers / mobile bottom nav (feed.css .vibe-glass) — let more of
-   the aurora through than the default 72% mix, with a stronger blur to keep
-   text legible over scrolling content. */
-.style-liquid-glass .vibe-glass {
-  background: color-mix(in srgb, var(--site-bg) 32%, transparent);
-  -webkit-backdrop-filter: blur(24px) saturate(170%);
-  backdrop-filter: blur(24px) saturate(170%);
-}
-.style-liquid-glass .vibe-glass.vibe-mobile-nav {
-  background: color-mix(in srgb, var(--site-bg) 68%, transparent);
-}
-
-/* Autofill: --site-surface is translucent here, and the site-wide autofill fix
-   (below) paints a 1000px inset shadow of it over the UA's near-white autofill
-   background — which looks broken when translucent. Pin an opaque glass-toned
-   surface instead. */
-.style-liquid-glass input:-webkit-autofill,
-.style-liquid-glass input:-webkit-autofill:hover,
-.style-liquid-glass input:-webkit-autofill:focus,
-.style-liquid-glass input:-webkit-autofill:active,
-.style-liquid-glass textarea:-webkit-autofill,
-.style-liquid-glass textarea:-webkit-autofill:hover,
-.style-liquid-glass textarea:-webkit-autofill:focus,
-.style-liquid-glass select:-webkit-autofill,
-.style-liquid-glass select:-webkit-autofill:hover,
-.style-liquid-glass select:-webkit-autofill:focus {
-  -webkit-box-shadow: 0 0 0 1000px #1a2e47 inset;
-  box-shadow: 0 0 0 1000px #1a2e47 inset;
-}
-
-/* OS "reduce transparency": fall back to opaque surfaces and drop every blur —
-   the palette keeps the same hues so the theme still reads as Liquid Glass. */
-@media (prefers-reduced-transparency: reduce) {
-  .style-liquid-glass {
-    --site-bg-subtle: #142639;
-    --site-surface: #182c44;
-    --site-surface-hover: #203854;
-    --site-surface-active: #284264;
+@layer components {
+  /* ── L1 · glass-fill ── repeated content (feed cards, rows, tiles). Tint + rim
+     via shadow-site-sm. NO blur — cheap, unlimited per page; the canvas provides
+     the colour variance underneath so the tint reads as glass (§4.4). */
+  .glass-fill {
+    background: var(--site-glass-tint);
+    box-shadow: var(--site-shadow-sm);
+    border: var(--site-border-width) solid var(--site-border);
+    border-radius: var(--site-radius);
   }
-  .style-liquid-glass .bg-site-bg,
-  .style-liquid-glass aside.fixed.bg-site-bg,
-  .style-liquid-glass :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg {
-    background-color: var(--site-bg);
+
+  /* ── L2 · glass-pane ── singular panels (heroes, composer, settings sections,
+     tier cards). Blur + saturate + micro-noise. Budgeted (§6.1). */
+  .glass-pane {
+    background-color: var(--site-glass-tint);
+    background-image: var(--site-glass-noise);
+    box-shadow: var(--site-shadow-sm);
+    border: var(--site-border-width) solid var(--site-border);
+    border-radius: var(--site-radius);
+    -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
+    backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
   }
-  .style-liquid-glass .pricing-root {
-    background: var(--site-bg);
+
+  /* ── L3 · glass-chrome ── persistent chrome (sidebar, sticky headers, dock).
+     More of the aurora shows through; condenses on scroll via [data-scrolled]. */
+  .glass-chrome {
+    background: color-mix(in srgb, var(--site-bg) 32%, transparent);
+    -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(170%);
+    backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(170%);
   }
-  .style-liquid-glass :is(.bg-site-surface, .bg-site-surface-hover, .bg-site-surface-active),
-  .style-liquid-glass :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg,
-  .style-liquid-glass aside.fixed.bg-site-bg::before,
-  .style-liquid-glass .vibe-glass {
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
+  .glass-chrome[data-scrolled] {
+    background: color-mix(in srgb, var(--site-bg) 55%, transparent);
   }
-  /* :is() takes the max inner specificity, so this also out-specifies the
-     always-on .vibe-glass.vibe-mobile-nav (0,3,0) rule above. */
-  .style-liquid-glass :is(.vibe-glass, .vibe-glass.vibe-mobile-nav) {
-    background: var(--site-bg);
+  /* Fixed asides: blur lives on ::before so fixed descendants (LeftSidebar's
+     non-portaled user menu) keep the VIEWPORT as their containing block. NEVER
+     put backdrop-filter on the aside itself (§3.3.1). */
+  .glass-chrome--aside {
+    background: color-mix(in srgb, var(--site-bg) 40%, transparent);
+  }
+  .glass-chrome--aside::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(170%);
+    backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(170%);
+  }
+
+  /* ── L4 · glass-overlay ── floating UI (dialogs, popovers, menus, palette,
+     toasts, tooltips). More opaque so text never ghosts through. */
+  .glass-overlay {
+    background: color-mix(in srgb, var(--site-bg) 62%, transparent);
+    box-shadow: var(--site-shadow);
+    border: var(--site-border-width) solid var(--site-border);
+    border-radius: var(--site-radius);
+    -webkit-backdrop-filter: blur(var(--site-glass-blur-overlay)) saturate(180%);
+    backdrop-filter: blur(var(--site-glass-blur-overlay)) saturate(180%);
+  }
+
+  /* Dialog / drawer backdrops. Blur stays low + constant (cheap; never
+     transitioned during a drag). */
+  .glass-scrim {
+    background: rgb(0 0 0 / 0.5);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
+
+  /* Recessed wells (inputs, search fields) — a hole in the glass: dark top inner
+     shadow, faint light bottom inner edge (§4.2). No backdrop blur (legibility). */
+  .glass-inset {
+    background: var(--site-glass-ink);
+    border: var(--site-border-width) solid var(--site-border);
+    border-radius: var(--site-radius-sm);
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.35), inset 0 -1px 0 var(--site-glass-rim-soft);
+  }
+
+  /* Full-screen fixed takeovers that must hide the page beneath (§3.3.2). */
+  .glass-opaque {
+    background: var(--site-bg) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  /* ── Reactivity (§5.1–5.2): hover tint-raise, press flex, pointer specular. ── */
+  .glass-interactive {
+    position: relative;
+    transition:
+      background-color var(--site-transition-speed),
+      box-shadow var(--site-transition-speed),
+      transform var(--site-transition-speed);
+  }
+  .glass-interactive:hover {
+    background-color: var(--site-glass-tint-strong);
+  }
+  .glass-interactive:active {
+    transform: scale(0.985);
+  }
+  /* The pointer light is your light, not the sun's — hover only, fine-pointer
+     only, so touch devices never pay for it (§5.1). The hook writes
+     --glass-px/--glass-py on the hovered [data-glass-light] element. */
+  @media (hover: hover) and (pointer: fine) {
+    .glass-interactive::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      border-radius: inherit;
+      pointer-events: none;
+      background: radial-gradient(
+        140px circle at var(--glass-px, 50%) var(--glass-py, -30%),
+        var(--site-glass-light),
+        transparent 70%
+      );
+      opacity: 0;
+      transition: opacity 0.18s ease;
+    }
+    .glass-interactive:hover::after {
+      opacity: 1;
+    }
+  }
+
+  /* ── Edge-weighted refraction (§4.3) — hero/chrome only, ≤2 per page. The rim
+     band displaces; the pane centre stays optically clean. Chromium upgrades to
+     the SVG displacement map; other engines keep the plain edge blur. ── */
+  .glass-refract {
+    position: relative;
+  }
+  .glass-refract::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    padding: 14px;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  }
+  @supports (backdrop-filter: url(#glass-distortion)) {
+    .glass-refract::before {
+      -webkit-backdrop-filter: url(#glass-distortion) blur(2px);
+      backdrop-filter: url(#glass-distortion) blur(2px);
+    }
+  }
+  /* Optional chromatic fringe on the rim — featured tier + design lab only. */
+  .glass-refract--prism::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: inset 0 0 0 1px rgba(255, 80, 120, 0.14), inset 0 0 0 2px rgba(80, 160, 255, 0.12);
   }
 }
 
-/* Refraction layer for components/ui/liquid-glass.tsx. The SVG displacement
-   filter (#glass-distortion, mounted in __root.tsx) can only act on the
-   BACKDROP from inside backdrop-filter — as a plain `filter` on the empty
-   layer div it renders nothing. url() inside backdrop-filter is
-   Chromium-only, so other engines keep the plain frosted blur. */
+/* Refraction layer for the GlassEffect primitive (components/ui/liquid-glass.tsx).
+   Kept as an alias of the old class so GlassEffect markup keeps working; the
+   SVG displacement can only act on the backdrop from inside backdrop-filter. */
 .liquid-glass-refract {
   -webkit-backdrop-filter: blur(3px);
   backdrop-filter: blur(3px);
@@ -555,6 +673,79 @@
   .liquid-glass-refract {
     -webkit-backdrop-filter: url(#glass-distortion) blur(3px);
     backdrop-filter: url(#glass-distortion) blur(3px);
+  }
+}
+
+/* ── Global degradations ──────────────────────────────────────────────────── */
+
+/* High Contrast: no glass at all. Neutralise every glass class to an opaque
+   surface with no blur (§10); 2px borders and the yellow accent come from the
+   theme tokens. */
+.style-high-contrast :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
+  background: var(--site-surface) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+.style-high-contrast .glass-chrome--aside::before,
+.style-high-contrast .glass-refract::before,
+.style-high-contrast .glass-interactive::after {
+  display: none;
+}
+
+/* Reduce transparency — three triggers, one behaviour (§10): the OS media
+   query, the user setting (html.reduce-transparency, synced like the theme),
+   and Firefox (no media-query support → the setting covers it). Opaque surfaces
+   in the same hues, zero blur. */
+@media (prefers-reduced-transparency: reduce) {
+  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
+    background: var(--site-surface-opaque, var(--site-surface));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  html:not(.style-high-contrast) .bg-site-bg,
+  html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg {
+    background-color: var(--site-surface-opaque, var(--site-bg));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .glass-chrome--aside::before,
+  .glass-refract::before {
+    display: none;
+  }
+}
+html.reduce-transparency :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
+  background: var(--site-surface-opaque, var(--site-surface));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html.reduce-transparency .bg-site-bg,
+html.reduce-transparency :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg {
+  background-color: var(--site-surface-opaque, var(--site-bg));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html.reduce-transparency .glass-chrome--aside::before,
+html.reduce-transparency .glass-refract::before {
+  display: none;
+}
+
+/* Device tiering (§6.4): low-end devices keep chrome/overlay blur (few, carry
+   the identity) but demote L2 panes to flat tint and drop refraction + the
+   pointer light. CSS-only demotion — no component branches. */
+html.perf-lite .glass-pane {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html.perf-lite .glass-refract::before,
+html.perf-lite .glass-interactive::after {
+  display: none;
+}
+
+/* Forced colors / Windows High Contrast strips backgrounds — keep structural
+   borders so panes retain their shape. */
+@media (forced-colors: active) {
+  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset) {
+    border: 1px solid;
   }
 }
 
@@ -626,6 +817,14 @@
   --color-site-success: var(--site-success);
   --color-site-danger: var(--site-danger);
   --color-site-warning: var(--site-warning);
+
+  /* Glass material tokens → bg-site-glass-tint, ring-site-glass-rim-soft, … */
+  --color-site-glass-tint: var(--site-glass-tint);
+  --color-site-glass-tint-strong: var(--site-glass-tint-strong);
+  --color-site-glass-ink: var(--site-glass-ink);
+  --color-site-glass-rim: var(--site-glass-rim);
+  --color-site-glass-rim-soft: var(--site-glass-rim-soft);
+  --color-site-glass-light: var(--site-glass-light);
 
   /* Site radius scale → rounded-site / rounded-site-sm (theme-aware) */
   --radius-site: var(--site-radius);
@@ -1086,8 +1285,11 @@ select:-webkit-autofill:hover,
 select:-webkit-autofill:focus {
   -webkit-text-fill-color: var(--site-text);
   caret-color: var(--site-text);
-  -webkit-box-shadow: 0 0 0 1000px var(--site-surface) inset;
-  box-shadow: 0 0 0 1000px var(--site-surface) inset;
+  /* --site-surface is translucent under the glass system, so paint the opaque
+     surface token instead — a translucent inset-shadow over the UA's near-white
+     autofill background looks broken. */
+  -webkit-box-shadow: 0 0 0 1000px var(--site-surface-opaque, var(--site-surface)) inset;
+  box-shadow: 0 0 0 1000px var(--site-surface-opaque, var(--site-surface)) inset;
   transition: background-color 100000s ease-in-out 0s;
 }
 

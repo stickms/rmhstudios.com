@@ -22,7 +22,9 @@ function Skeleton({ className, shimmer = false, ...props }: SkeletonProps) {
     <div
       data-slot="skeleton"
       className={cn(
-        "rounded-site-sm bg-site-surface",
+        // Glass tint fill — reads as light moving through frosted glass; the
+        // shimmer highlight (globals.css) rides on top.
+        "rounded-site-sm bg-site-glass-tint",
         shimmer ? "animate-shimmer" : "animate-pulse",
         className,
       )}

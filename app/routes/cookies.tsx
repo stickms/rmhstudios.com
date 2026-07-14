@@ -14,6 +14,8 @@ function CookiesPage() {
       eyebrow={t('cookie-policy-eyebrow', { defaultValue: 'Legal' })}
       updatedDate="June 11, 2025"
     >
+      {/* Document under glass: the whole article body sits on one wide pane. */}
+      <div className="glass-pane rounded-site px-6 py-8 sm:px-10 sm:py-10">
       <h2>{t('cookie-what-heading', { defaultValue: '1. What Are Cookies' })}</h2>
       <p>
         {t('cookie-what-body', { defaultValue: 'Cookies are small text files placed on your device by websites you visit. They are widely used to make websites work, or to work more efficiently, as well as to provide information to site owners. Similar technologies — including local storage, session storage, and pixel tags — may be used for comparable purposes and are covered by this policy.' })}
@@ -74,6 +76,7 @@ function CookiesPage() {
         {t('cookie-contact-body', { defaultValue: 'If you have questions about how we use cookies, please contact us at' })}{' '}
         <strong>privacy@rmhstudios.com</strong>.
       </p>
+      </div>
     </LegalLayout>
   );
 }

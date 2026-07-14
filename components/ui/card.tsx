@@ -2,12 +2,33 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+/**
+ * Card — the repeated content surface. Defaults to the L1 `.glass-fill`
+ * elevation (translucent tint + specular rim via shadow-site-sm, no blur — cheap
+ * and unlimited per page). Pass `pane` for a singular L2 `.glass-pane` (blur +
+ * micro-noise) on hero/section panels, and `interactive` to add the hover
+ * tint-raise, press flex, and pointer-tracked specular highlight (for cards that
+ * are link/button targets). See the redesign doc §7.2.
+ */
+function Card({
+  className,
+  pane = false,
+  interactive = false,
+  ...props
+}: React.ComponentProps<"div"> & {
+  /** Use the L2 `.glass-pane` (blur + noise) instead of the default L1 fill. */
+  pane?: boolean
+  /** Add hover tint-raise + press flex + pointer specular highlight. */
+  interactive?: boolean
+}) {
   return (
     <div
       data-slot="card"
+      data-glass-light={interactive ? "" : undefined}
       className={cn(
-        "bg-site-surface text-site-text border border-site-border flex flex-col gap-6 rounded-site py-6 shadow-site-sm transition-[box-shadow,border-color,transform]",
+        pane ? "glass-pane" : "glass-fill",
+        "text-site-text flex flex-col gap-6 py-6 transition-[box-shadow,border-color,transform,background-color]",
+        interactive && "glass-interactive hover:-translate-y-px",
         className
       )}
       {...props}

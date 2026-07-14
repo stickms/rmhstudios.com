@@ -839,6 +839,8 @@
   "settings-notifications-hint": "Choose which activity creates a notification.",
   "settings-premium-themes": "Looking for more? Premium profile themes are in the shop.",
   "settings-premium-themes-link": "Browse the shop",
+  "settings-reduce-transparency": "Reduce transparency",
+  "settings-reduce-transparency-hint": "Turn off the frosted-glass blur for solid, higher-contrast surfaces.",
   "settings-sign-in": "Sign in",
   "settings-sign-in-rest": "to manage this section.",
   "settings-subtitle": "Appearance, language, notifications, and your account.",
