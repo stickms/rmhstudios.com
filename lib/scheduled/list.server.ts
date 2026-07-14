@@ -6,6 +6,7 @@ export interface ScheduledRow {
   content: string;
   gifUrl: string | null;
   imageUrls: string[];
+  imageAlts: string[];
   audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE';
   unlockPrice: number | null;
   poll: { question?: string } | null;
@@ -33,6 +34,7 @@ export async function listScheduled(
     content: r.content,
     gifUrl: r.gifUrl,
     imageUrls: r.imageUrls,
+    imageAlts: r.imageAlts,
     audience: r.audience as ScheduledRow['audience'],
     unlockPrice: r.unlockPrice,
     poll: (r.poll as { question?: string } | null) ?? null,

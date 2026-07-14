@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { z } from 'zod';
-import { MAX_RMHARK_LENGTH, MAX_POLL_QUESTION_LENGTH, MAX_POLL_OPTION_LENGTH, MIN_POLL_OPTIONS, MAX_POLL_OPTIONS } from '@/lib/rmhark-schema';
+import { MAX_RMHARK_LENGTH, MAX_POLL_QUESTION_LENGTH, MAX_POLL_OPTION_LENGTH, MIN_POLL_OPTIONS, MAX_POLL_OPTIONS, MAX_IMAGE_ALT_LENGTH } from '@/lib/rmhark-schema';
 import { ownsFeedImageUrl } from '@/lib/storage/keys';
 import { listScheduled } from '@/lib/scheduled/list.server';
 
@@ -19,6 +19,7 @@ const createSchema = z.object({
   poll: pollSchema.optional(),
   gifUrl: z.string().url().optional(),
   imageUrls: z.array(z.string()).max(4).optional(),
+  imageAlts: z.array(z.string().max(MAX_IMAGE_ALT_LENGTH)).max(4).optional(),
   audience: z.enum(['PUBLIC', 'FOLLOWERS', 'PRIVATE']).optional(),
   unlockPrice: z.number().int().min(0).max(1_000_000).optional(),
   communityId: z.string().max(64).optional(),
@@ -90,6 +91,7 @@ export const Route = createFileRoute('/api/scheduled/')({
               content: d.content.trim(),
               gifUrl: d.gifUrl ?? null,
               imageUrls: d.imageUrls ?? [],
+              imageAlts: (d.imageAlts ?? []).slice(0, d.imageUrls?.length ?? 0).map((a) => a.trim()),
               audience: d.audience ?? 'PUBLIC',
               unlockPrice: d.unlockPrice && d.unlockPrice > 0 ? d.unlockPrice : null,
               communityId: d.communityId ?? null,

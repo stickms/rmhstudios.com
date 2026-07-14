@@ -299,7 +299,7 @@ export function PostDetail({ postId }: PostDetailProps) {
 
         {/* Uploaded images grid */}
         {post.imageUrls && post.imageUrls.length > 0 && (
-          <PostImageGrid urls={post.imageUrls} className="mb-3" heroName={postMediaVTName(postId)} />
+          <PostImageGrid urls={post.imageUrls} alts={post.imageAlts} className="mb-3" heroName={postMediaVTName(postId)} />
         )}
 
         {/* Link preview — only when no poll, gif, or image */}

@@ -33,6 +33,7 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
         content: sp.content.trim(),
         gifUrl: sp.gifUrl ?? null,
         imageUrls: sp.imageUrls ?? [],
+        imageAlts: sp.imageAlts ?? [],
         userId: sp.userId,
         audience: sp.audience,
         unlockPrice: sp.unlockPrice && sp.unlockPrice > 0 ? sp.unlockPrice : null,

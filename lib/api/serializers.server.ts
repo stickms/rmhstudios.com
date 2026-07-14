@@ -58,6 +58,7 @@ interface PostRow {
   repostCount: number;
   viewCount: number;
   imageUrls?: string[];
+  imageAlts?: string[];
 }
 
 /** A post owned by the caller (includes audience). */
@@ -67,6 +68,7 @@ export function serializeOwnPost(p: PostRow & { audience: string }) {
     content: p.content,
     audience: p.audience,
     imageUrls: p.imageUrls ?? [],
+    imageAlts: p.imageAlts ?? [],
     createdAt: p.createdAt,
     metrics: metrics(p),
   };
@@ -78,6 +80,7 @@ export function serializePublicPost(p: PostRow & { user: ResolvableUser }) {
     id: p.id,
     content: p.content,
     imageUrls: p.imageUrls ?? [],
+    imageAlts: p.imageAlts ?? [],
     createdAt: p.createdAt,
     author: serializeAuthor(p.user),
     metrics: metrics(p),

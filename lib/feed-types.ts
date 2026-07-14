@@ -87,6 +87,8 @@ export interface FeedItem {
   poll?: FeedPoll;
   gifUrl?: string;
   imageUrls?: string[];
+  /** Per-image alt text, aligned by index with `imageUrls` (may be shorter). */
+  imageAlts?: string[];
 
   /** Grouped-by-emoji reaction summary (server-side via `groupReactions`). */
   reactions?: ReactionSummary[];

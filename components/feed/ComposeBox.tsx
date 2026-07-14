@@ -19,6 +19,7 @@ import {
   MAX_POLL_OPTION_LENGTH,
   MIN_POLL_OPTIONS,
   MAX_POLL_OPTIONS,
+  MAX_IMAGE_ALT_LENGTH,
 } from '@/lib/rmhark-schema';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
@@ -61,6 +62,10 @@ export function ComposeBox({
   });
   const [gifUrl, setGifUrl] = useState('');
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  // Per-image alt text, aligned by index with imageUrls. A missing/empty entry
+  // means "no description"; the ALT pill on each preview opens the editor.
+  const [imageAlts, setImageAlts] = useState<string[]>([]);
+  const [altEditIndex, setAltEditIndex] = useState<number | null>(null);
   const [imageError, setImageError] = useState<string | null>(null);
   const [showSchedule, setShowSchedule] = useState(false);
   const [scheduleAt, setScheduleAt] = useState(''); // datetime-local value
@@ -154,7 +159,14 @@ export function ComposeBox({
       };
     }
     if (hasGif) body.gifUrl = gifUrl.trim();
-    if (hasImages) body.imageUrls = imageUrls;
+    if (hasImages) {
+      body.imageUrls = imageUrls;
+      // Only send alts when the author described at least one image; send the
+      // full index-aligned array so the server can pair them by position.
+      if (imageAlts.some((a) => a?.trim())) {
+        body.imageAlts = imageUrls.map((_, i) => imageAlts[i]?.trim() ?? '');
+      }
+    }
     if (audience !== 'PUBLIC') body.audience = audience;
     const price = parseInt(unlockPrice, 10);
     if (price > 0) body.unlockPrice = price;
@@ -171,6 +183,8 @@ export function ComposeBox({
     setPoll({ question: '', options: ['', ''], multiSelect: false });
     setGifUrl('');
     setImageUrls([]);
+    setImageAlts([]);
+    setAltEditIndex(null);
     setImageError(null);
     setShowSchedule(false);
     setScheduleAt('');
@@ -188,6 +202,7 @@ export function ComposeBox({
     poll,
     gifUrl,
     imageUrls,
+    imageAlts,
   });
   const restoreDraft = (d: ReturnType<typeof snapshotDraft>) => {
     setContent(d.content);
@@ -197,6 +212,7 @@ export function ComposeBox({
     setPoll(d.poll);
     setGifUrl(d.gifUrl);
     setImageUrls(d.imageUrls);
+    setImageAlts(d.imageAlts);
   };
 
   // Build the post the user *would* see, so it can appear at the top of the
@@ -228,6 +244,7 @@ export function ComposeBox({
         isAdmin: sessionUser.isAdmin,
       },
       imageUrls: hasImages ? imageUrls : undefined,
+      imageAlts: hasImages ? imageUrls.map((_, i) => imageAlts[i]?.trim() ?? '') : undefined,
       gifUrl: hasGif ? gifUrl.trim() : undefined,
       poll: hasPoll
         ? {
@@ -580,24 +597,45 @@ export function ComposeBox({
           {/* Uploaded image preview strip */}
           {imageUrls.length > 0 && (
             <div className={`mt-2 grid gap-1 ${imageUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-              {imageUrls.map((url) => (
-                <div key={url} className="relative group">
-                  <img
-                    src={url}
-                    alt=""
-                    loading="lazy"
-                    className="w-full rounded-site-sm object-cover max-h-48"
-                  />
-                  <button
-                    type="button"
-                    aria-label={t("remove-image-aria", { defaultValue: "Remove image" })}
-                    onClick={() => setImageUrls((prev) => prev.filter((u) => u !== url))}
-                    className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
+              {imageUrls.map((url, i) => {
+                const hasAlt = !!imageAlts[i]?.trim();
+                return (
+                  <div key={url} className="relative group">
+                    <img
+                      src={url}
+                      alt={imageAlts[i]?.trim() || ''}
+                      loading="lazy"
+                      className="w-full rounded-site-sm object-cover max-h-48"
+                    />
+                    {/* ALT pill — accent when described, so authors can see at a
+                        glance which images still need a description. */}
+                    <button
+                      type="button"
+                      onClick={() => setAltEditIndex(i)}
+                      aria-label={hasAlt
+                        ? t("edit-alt-text-aria", { defaultValue: "Edit image description" })
+                        : t("add-alt-text-aria", { defaultValue: "Add image description" })}
+                      title={imageAlts[i]?.trim() || t("alt-text-title", { defaultValue: "Describe this image for screen readers" })}
+                      className={`absolute bottom-1 left-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none tracking-wide transition-colors ${
+                        hasAlt ? 'bg-site-accent text-white' : 'bg-black/60 text-white/90 hover:bg-black/80'
+                      }`}
+                    >
+                      {t("alt-badge", { defaultValue: "Alt" })}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={t("remove-image-aria", { defaultValue: "Remove image" })}
+                      onClick={() => {
+                        setImageUrls((prev) => prev.filter((_, j) => j !== i));
+                        setImageAlts((prev) => prev.filter((_, j) => j !== i));
+                      }}
+                      className="absolute top-1 right-1 p-0.5 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
           {imageError && (
@@ -946,6 +984,67 @@ export function ComposeBox({
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Image alt-text editor — opened from the ALT pill on a preview image */}
+      {altEditIndex !== null && imageUrls[altEditIndex] && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setAltEditIndex(null)} />
+          <div className="relative w-full max-w-md rounded-site border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+            <div className="mb-2 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-site-text">
+                {t("alt-text-heading", { defaultValue: "Describe this image" })}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setAltEditIndex(null)}
+                aria-label={t("close", { defaultValue: "Close" })}
+                className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mb-3 text-xs text-site-text-muted">
+              {t("alt-text-help", { defaultValue: "Alt text lets people who use screen readers understand your image. Describe what's in it." })}
+            </p>
+            <img
+              src={imageUrls[altEditIndex]}
+              alt={imageAlts[altEditIndex]?.trim() || ''}
+              className="mb-3 max-h-40 w-full rounded-site-sm object-contain bg-site-surface"
+            />
+            <label htmlFor="alt-text-input" className="sr-only">
+              {t("alt-text-heading", { defaultValue: "Describe this image" })}
+            </label>
+            <textarea
+              id="alt-text-input"
+              autoFocus
+              rows={3}
+              maxLength={MAX_IMAGE_ALT_LENGTH}
+              value={imageAlts[altEditIndex] ?? ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                setImageAlts((prev) => {
+                  const next = [...prev];
+                  // Pad so the edited index is addressable even if earlier
+                  // images have no description yet.
+                  while (next.length <= altEditIndex) next.push('');
+                  next[altEditIndex] = value;
+                  return next;
+                });
+              }}
+              placeholder={t("alt-text-placeholder", { defaultValue: "e.g. A golden retriever running on a beach at sunset" })}
+              className="w-full resize-none rounded-site-sm border border-site-border bg-site-surface p-2 text-sm text-site-text placeholder:text-site-text-dim outline-none focus:border-site-accent transition-colors"
+            />
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-xs font-mono text-site-text-dim">
+                {MAX_IMAGE_ALT_LENGTH - (imageAlts[altEditIndex]?.length ?? 0)}
+              </span>
+              <Button variant="accent" size="sm" onClick={() => setAltEditIndex(null)}>
+                {t("done", { defaultValue: "Done" })}
+              </Button>
+            </div>
           </div>
         </div>
       )}

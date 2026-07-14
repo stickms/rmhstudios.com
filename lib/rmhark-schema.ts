@@ -3,6 +3,9 @@ import { isFeedImageUrl } from "@/lib/storage/keys";
 
 export const MAX_RMHARK_LENGTH = 280;
 export const MAX_RMHARK_IMAGES = 4;
+// Per-image alt text (accessibility). Kept generous so screen-reader users get
+// a full description; empty string = "no description provided".
+export const MAX_IMAGE_ALT_LENGTH = 1000;
 // Accepts the local proxy path or the public CDN URL (see isFeedImageUrl).
 export const feedImageUrlSchema = z
   .string()
@@ -65,6 +68,12 @@ export const createRMHarkSchema = z
       .array(feedImageUrlSchema)
       .max(MAX_RMHARK_IMAGES, `At most ${MAX_RMHARK_IMAGES} images allowed`)
       .optional(),
+    // Per-image alt text, aligned by index with imageUrls. Optional and may be
+    // shorter than imageUrls; entries are trimmed and capped server-side.
+    imageAlts: z
+      .array(z.string().max(MAX_IMAGE_ALT_LENGTH, `Alt text must be at most ${MAX_IMAGE_ALT_LENGTH} characters`))
+      .max(MAX_RMHARK_IMAGES)
+      .optional(),
     // Quote-repost: id of the post being quoted.
     originalId: z.string().max(64).optional(),
     // Audience visibility.
@@ -82,6 +91,10 @@ export const createRMHarkSchema = z
       (data.imageUrls?.length ?? 0) > 0 ||
       !!data.originalId,
     { message: "Post must have text, a poll, an image/GIF, or be a quote" }
+  )
+  .refine(
+    (data) => (data.imageAlts?.length ?? 0) <= (data.imageUrls?.length ?? 0),
+    { message: "Cannot provide more alt-text entries than images", path: ["imageAlts"] }
   );
 
 export const editRMHarkSchema = z.object({

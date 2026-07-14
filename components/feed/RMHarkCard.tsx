@@ -322,7 +322,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
           {/* Uploaded images grid */}
           {item.imageUrls && item.imageUrls.length > 0 && (
-            <PostImageGrid urls={item.imageUrls} className="mt-2" heroName={postMediaVTName(actualId)} />
+            <PostImageGrid urls={item.imageUrls} alts={item.imageAlts} className="mt-2" heroName={postMediaVTName(actualId)} />
           )}
 
           {/* Link preview — only when no poll, gif, or image */}
@@ -382,7 +382,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               {/* Original's media (server omits these for paid/non-public posts) */}
               {item.original.gifUrl && <GifEmbed url={item.original.gifUrl} className="mt-2" />}
               {!item.original.gifUrl && item.original.imageUrls && item.original.imageUrls.length > 0 && (
-                <PostImageGrid urls={item.original.imageUrls} className="mt-2" />
+                <PostImageGrid urls={item.original.imageUrls} alts={item.original.imageAlts} className="mt-2" />
               )}
             </div>
           )}

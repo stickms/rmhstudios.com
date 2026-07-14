@@ -15,6 +15,7 @@ interface ScheduledRow {
   content: string;
   gifUrl: string | null;
   imageUrls: string[];
+  imageAlts: string[];
   audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE';
   unlockPrice: number | null;
   poll: { question?: string } | null;

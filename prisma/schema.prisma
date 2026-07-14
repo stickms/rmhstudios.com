@@ -1345,6 +1345,9 @@ model RMHark {
   content   String   @db.Text
   gifUrl    String?  @db.Text
   imageUrls String[] @default([])
+  // Per-image alt text (accessibility), aligned by index with imageUrls.
+  // May be shorter than imageUrls; a missing/empty entry means "no description".
+  imageAlts String[] @default([])
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -4288,6 +4291,8 @@ model ScheduledPost {
   content     String         @db.Text
   gifUrl      String?        @db.Text
   imageUrls   String[]       @default([])
+  // Per-image alt text (accessibility), aligned by index with imageUrls.
+  imageAlts   String[]       @default([])
   audience    RMHarkAudience @default(PUBLIC)
   unlockPrice Int?
   communityId String?

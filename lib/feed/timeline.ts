@@ -158,6 +158,7 @@ function mapOriginal(o: any): FeedItem | undefined {
     viewCount: o.viewCount,
     gifUrl: showMedia ? (o.gifUrl ?? undefined) : undefined,
     imageUrls: showMedia ? o.imageUrls : undefined,
+    imageAlts: showMedia ? o.imageAlts : undefined,
     deletedAt: o.deletedAt?.toISOString() || null,
     deletedByAdmin: o.deletedByAdmin,
   };
@@ -183,6 +184,7 @@ function mapOwn(r: any, userId: string | null): FeedItem {
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
+    imageAlts: isDeleted ? undefined : r.imageAlts,
     reactions: groupReactions(r.reactions ?? [], userId),
     threadReplyCount: r.threadReplyCount ?? 0,
     deletedAt: r.deletedAt?.toISOString() || null,
@@ -213,6 +215,7 @@ function mapRepost(rp: any, userId: string | null): FeedItem {
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
+    imageAlts: isDeleted ? undefined : r.imageAlts,
     reactions: groupReactions(r.reactions ?? [], userId),
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
