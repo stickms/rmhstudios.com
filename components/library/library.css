@@ -8,6 +8,10 @@
 .lib {
   width: 100%;
   padding-bottom: 64px;
+  /* Override .vibe-screen's opaque var(--site-bg): the library sits on the glass
+     aurora like every other page (museum-vitrine treatment), so content + canvas
+     draw edge-to-edge, including under the floating mobile dock. */
+  background: transparent;
 }
 
 .lib__empty {
