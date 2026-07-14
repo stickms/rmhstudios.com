@@ -95,7 +95,9 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Cover area — fixed height so its base meets the shelf ledge. */
+/* Cover area — fixed height so its base meets the shelf ledge. A subtle glass
+   tint keeps a coverless book reading as a slab of glass on every theme
+   (formerly the .style-liquid-glass .lib-volume patch, now token-based). */
 .lib-book__3d {
   position: relative;
   height: var(--cover-h);
@@ -103,6 +105,10 @@
   align-items: flex-end;
   justify-content: center;
   perspective: 1100px;
+  background: var(--site-glass-tint);
+}
+.lib-volume:hover .lib-book__3d {
+  background: var(--site-glass-tint-strong);
 }
 
 /* Description shown on hover — a book-jacket blurb that fades + slides up over the
