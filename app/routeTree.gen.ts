@@ -231,6 +231,7 @@ import { Route as ApiTipsLeaderboardRouteImport } from './routes/api/tips/leader
 import { Route as ApiTempleOfJoySaveRouteImport } from './routes/api/temple-of-joy/save'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
 import { Route as ApiStudyTutorRouteImport } from './routes/api/study/tutor'
+import { Route as ApiStudyMarketplaceRouteImport } from './routes/api/study/marketplace'
 import { Route as ApiStreakFreezeRouteImport } from './routes/api/streak.freeze'
 import { Route as ApiStakingWithdrawRouteImport } from './routes/api/staking/withdraw'
 import { Route as ApiStakingDepositRouteImport } from './routes/api/staking/deposit'
@@ -360,6 +361,7 @@ import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/mu
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
 import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-builds/manage'
 import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
+import { Route as SiteStudyBrowseRouteImport } from './routes/_site/study/browse'
 import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
 import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
 import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
@@ -538,6 +540,7 @@ import { Route as ApiV1PostsIdLikeRouteImport } from './routes/api/v1/posts/$id/
 import { Route as ApiV1PostsIdCommentsRouteImport } from './routes/api/v1/posts/$id/comments'
 import { Route as ApiV1PostsIdBookmarkRouteImport } from './routes/api/v1/posts/$id/bookmark'
 import { Route as ApiStudyDecksIdReviewRouteImport } from './routes/api/study/decks/$id/review'
+import { Route as ApiStudyDecksIdCloneRouteImport } from './routes/api/study/decks/$id/clone'
 import { Route as ApiStudyCardsIdReviewRouteImport } from './routes/api/study/cards/$id/review'
 import { Route as ApiStorefrontProductsIdBuyRouteImport } from './routes/api/storefront/products/$id/buy'
 import { Route as ApiSliceItSongsStreamIdRouteImport } from './routes/api/slice-it/songs/stream/$id'
@@ -1693,6 +1696,11 @@ const ApiStudyTutorRoute = ApiStudyTutorRouteImport.update({
   path: '/api/study/tutor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStudyMarketplaceRoute = ApiStudyMarketplaceRouteImport.update({
+  id: '/api/study/marketplace',
+  path: '/api/study/marketplace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStreakFreezeRoute = ApiStreakFreezeRouteImport.update({
   id: '/freeze',
   path: '/freeze',
@@ -2347,6 +2355,11 @@ const SiteUserBuildsManageRoute = SiteUserBuildsManageRouteImport.update({
 const SiteTagTagRoute = SiteTagTagRouteImport.update({
   id: '/tag/$tag',
   path: '/tag/$tag',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteStudyBrowseRoute = SiteStudyBrowseRouteImport.update({
+  id: '/study/browse',
+  path: '/study/browse',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteStudyDeckIdRoute = SiteStudyDeckIdRouteImport.update({
@@ -3280,6 +3293,11 @@ const ApiStudyDecksIdReviewRoute = ApiStudyDecksIdReviewRouteImport.update({
   path: '/api/study/decks/$id/review',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiStudyDecksIdCloneRoute = ApiStudyDecksIdCloneRouteImport.update({
+  id: '/api/study/decks/$id/clone',
+  path: '/api/study/decks/$id/clone',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStudyCardsIdReviewRoute = ApiStudyCardsIdReviewRouteImport.update({
   id: '/api/study/cards/$id/review',
   path: '/api/study/cards/$id/review',
@@ -3672,6 +3690,7 @@ export interface FileRoutesByFullPath {
   '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
+  '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -3801,6 +3820,7 @@ export interface FileRoutesByFullPath {
   '/api/staking/deposit': typeof ApiStakingDepositRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/streak/freeze': typeof ApiStreakFreezeRoute
+  '/api/study/marketplace': typeof ApiStudyMarketplaceRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
@@ -4040,6 +4060,7 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
+  '/api/study/decks/$id/clone': typeof ApiStudyDecksIdCloneRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
@@ -4214,6 +4235,7 @@ export interface FileRoutesByTo {
   '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
+  '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -4343,6 +4365,7 @@ export interface FileRoutesByTo {
   '/api/staking/deposit': typeof ApiStakingDepositRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/streak/freeze': typeof ApiStreakFreezeRoute
+  '/api/study/marketplace': typeof ApiStudyMarketplaceRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
@@ -4582,6 +4605,7 @@ export interface FileRoutesByTo {
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
+  '/api/study/decks/$id/clone': typeof ApiStudyDecksIdCloneRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
@@ -4783,6 +4807,7 @@ export interface FileRoutesById {
   '/_site/settings/security': typeof SiteSettingsSecurityRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
   '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
+  '/_site/study/browse': typeof SiteStudyBrowseRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
   '/_site/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
@@ -4912,6 +4937,7 @@ export interface FileRoutesById {
   '/api/staking/deposit': typeof ApiStakingDepositRoute
   '/api/staking/withdraw': typeof ApiStakingWithdrawRoute
   '/api/streak/freeze': typeof ApiStreakFreezeRoute
+  '/api/study/marketplace': typeof ApiStudyMarketplaceRoute
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
@@ -5151,6 +5177,7 @@ export interface FileRoutesById {
   '/api/slice-it/songs/stream/$id': typeof ApiSliceItSongsStreamIdRoute
   '/api/storefront/products/$id/buy': typeof ApiStorefrontProductsIdBuyRoute
   '/api/study/cards/$id/review': typeof ApiStudyCardsIdReviewRoute
+  '/api/study/decks/$id/clone': typeof ApiStudyDecksIdCloneRoute
   '/api/study/decks/$id/review': typeof ApiStudyDecksIdReviewRoute
   '/api/v1/posts/$id/bookmark': typeof ApiV1PostsIdBookmarkRoute
   '/api/v1/posts/$id/comments': typeof ApiV1PostsIdCommentsRoute
@@ -5352,6 +5379,7 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
+    | '/study/browse'
     | '/tag/$tag'
     | '/user-builds/manage'
     | '/user-builds/submit'
@@ -5481,6 +5509,7 @@ export interface FileRouteTypes {
     | '/api/staking/deposit'
     | '/api/staking/withdraw'
     | '/api/streak/freeze'
+    | '/api/study/marketplace'
     | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
@@ -5720,6 +5749,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
+    | '/api/study/decks/$id/clone'
     | '/api/study/decks/$id/review'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
@@ -5894,6 +5924,7 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
+    | '/study/browse'
     | '/tag/$tag'
     | '/user-builds/manage'
     | '/user-builds/submit'
@@ -6023,6 +6054,7 @@ export interface FileRouteTypes {
     | '/api/staking/deposit'
     | '/api/staking/withdraw'
     | '/api/streak/freeze'
+    | '/api/study/marketplace'
     | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
@@ -6262,6 +6294,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
+    | '/api/study/decks/$id/clone'
     | '/api/study/decks/$id/review'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
@@ -6462,6 +6495,7 @@ export interface FileRouteTypes {
     | '/_site/settings/security'
     | '/_site/store/$userid'
     | '/_site/study/$deckId'
+    | '/_site/study/browse'
     | '/_site/tag/$tag'
     | '/_site/user-builds/manage'
     | '/_site/user-builds/submit'
@@ -6591,6 +6625,7 @@ export interface FileRouteTypes {
     | '/api/staking/deposit'
     | '/api/staking/withdraw'
     | '/api/streak/freeze'
+    | '/api/study/marketplace'
     | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
@@ -6830,6 +6865,7 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/stream/$id'
     | '/api/storefront/products/$id/buy'
     | '/api/study/cards/$id/review'
+    | '/api/study/decks/$id/clone'
     | '/api/study/decks/$id/review'
     | '/api/v1/posts/$id/bookmark'
     | '/api/v1/posts/$id/comments'
@@ -7030,6 +7066,7 @@ export interface RootRouteChildren {
   ApiSpotifySearchRoute: typeof ApiSpotifySearchRoute
   ApiStakingDepositRoute: typeof ApiStakingDepositRoute
   ApiStakingWithdrawRoute: typeof ApiStakingWithdrawRoute
+  ApiStudyMarketplaceRoute: typeof ApiStudyMarketplaceRoute
   ApiStudyTutorRoute: typeof ApiStudyTutorRoute
   ApiTagsTagRoute: typeof ApiTagsTagRoute
   ApiTempleOfJoySaveRoute: typeof ApiTempleOfJoySaveRoute
@@ -7153,6 +7190,7 @@ export interface RootRouteChildren {
   ApiRmhmusicGuessIdAttemptRoute: typeof ApiRmhmusicGuessIdAttemptRoute
   ApiStorefrontProductsIdBuyRoute: typeof ApiStorefrontProductsIdBuyRoute
   ApiStudyCardsIdReviewRoute: typeof ApiStudyCardsIdReviewRoute
+  ApiStudyDecksIdCloneRoute: typeof ApiStudyDecksIdCloneRoute
   ApiStudyDecksIdReviewRoute: typeof ApiStudyDecksIdReviewRoute
   ApiRmhmusicGuessIdIndexRoute: typeof ApiRmhmusicGuessIdIndexRoute
   ApiStorefrontProductsIdIndexRoute: typeof ApiStorefrontProductsIdIndexRoute
@@ -8715,6 +8753,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStudyTutorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/study/marketplace': {
+      id: '/api/study/marketplace'
+      path: '/api/study/marketplace'
+      fullPath: '/api/study/marketplace'
+      preLoaderRoute: typeof ApiStudyMarketplaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/streak/freeze': {
       id: '/api/streak/freeze'
       path: '/freeze'
@@ -9616,6 +9661,13 @@ declare module '@tanstack/react-router' {
       path: '/tag/$tag'
       fullPath: '/tag/$tag'
       preLoaderRoute: typeof SiteTagTagRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/study/browse': {
+      id: '/_site/study/browse'
+      path: '/study/browse'
+      fullPath: '/study/browse'
+      preLoaderRoute: typeof SiteStudyBrowseRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/study/$deckId': {
@@ -10864,6 +10916,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiStudyDecksIdReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/study/decks/$id/clone': {
+      id: '/api/study/decks/$id/clone'
+      path: '/api/study/decks/$id/clone'
+      fullPath: '/api/study/decks/$id/clone'
+      preLoaderRoute: typeof ApiStudyDecksIdCloneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/study/cards/$id/review': {
       id: '/api/study/cards/$id/review'
       path: '/api/study/cards/$id/review'
@@ -11278,6 +11337,7 @@ interface SiteRouteChildren {
   SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
   SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
+  SiteStudyBrowseRoute: typeof SiteStudyBrowseRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
   SiteUserBuildsManageRoute: typeof SiteUserBuildsManageRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
@@ -11341,6 +11401,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
   SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,
+  SiteStudyBrowseRoute: SiteStudyBrowseRoute,
   SiteTagTagRoute: SiteTagTagRoute,
   SiteUserBuildsManageRoute: SiteUserBuildsManageRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
@@ -12509,6 +12570,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpotifySearchRoute: ApiSpotifySearchRoute,
   ApiStakingDepositRoute: ApiStakingDepositRoute,
   ApiStakingWithdrawRoute: ApiStakingWithdrawRoute,
+  ApiStudyMarketplaceRoute: ApiStudyMarketplaceRoute,
   ApiStudyTutorRoute: ApiStudyTutorRoute,
   ApiTagsTagRoute: ApiTagsTagRoute,
   ApiTempleOfJoySaveRoute: ApiTempleOfJoySaveRoute,
@@ -12633,6 +12695,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhmusicGuessIdAttemptRoute: ApiRmhmusicGuessIdAttemptRoute,
   ApiStorefrontProductsIdBuyRoute: ApiStorefrontProductsIdBuyRoute,
   ApiStudyCardsIdReviewRoute: ApiStudyCardsIdReviewRoute,
+  ApiStudyDecksIdCloneRoute: ApiStudyDecksIdCloneRoute,
   ApiStudyDecksIdReviewRoute: ApiStudyDecksIdReviewRoute,
   ApiRmhmusicGuessIdIndexRoute: ApiRmhmusicGuessIdIndexRoute,
   ApiStorefrontProductsIdIndexRoute: ApiStorefrontProductsIdIndexRoute,

@@ -2269,6 +2269,10 @@ model FlashcardDeck {
   description String?  @db.VarChar(500)
   isPublic    Boolean  @default(false)
   cardCount   Int      @default(0)
+  // Set when this deck was cloned from a public deck (marketplace). Provenance +
+  // the "you already added this deck" guard. Not a relation (the source may be
+  // deleted); it just records the source deck id.
+  clonedFromId String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -2277,6 +2281,7 @@ model FlashcardDeck {
 
   @@index([userId])
   @@index([isPublic, updatedAt(sort: Desc)])
+  @@index([userId, clonedFromId])
   @@map("flashcard_deck")
 }
 
