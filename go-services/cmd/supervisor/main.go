@@ -1,4 +1,4 @@
-// Command supervisor runs the five background workers as goroutines in one
+// Command supervisor runs the background workers as goroutines in one
 // process: it opens a single shared db pool, builds a per-worker metrics
 // registry merged behind one /metrics endpoint, and launches each worker's Run
 // under an errgroup. Any worker's unrecoverable error cancels the group and
@@ -15,6 +15,7 @@ import (
 	"github.com/rmhstudios/rmh-go/internal/discordbot"
 	"github.com/rmhstudios/rmh-go/internal/doctrine"
 	"github.com/rmhstudios/rmh-go/internal/recap"
+	"github.com/rmhstudios/rmh-go/internal/streaksaver"
 	"github.com/rmhstudios/rmh-go/internal/vibeworker"
 	"github.com/rmhstudios/rmh-go/pkg/config"
 	"github.com/rmhstudios/rmh-go/pkg/db"
@@ -46,6 +47,7 @@ func main() {
 		"recap":           recap.Run,
 		"discord-bot":     discordbot.Run,
 		"bot-worker":      botworker.Run,
+		"streak-saver":    streaksaver.Run,
 	}
 
 	// One metrics registry per worker so the merged /metrics keeps per-worker

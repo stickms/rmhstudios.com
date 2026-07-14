@@ -13,6 +13,7 @@ go_library(
         "//go-services/internal/discordbot",
         "//go-services/internal/doctrine",
         "//go-services/internal/recap",
+        "//go-services/internal/streaksaver",
         "//go-services/internal/vibeworker",
         "//go-services/pkg/config",
         "//go-services/pkg/db",
