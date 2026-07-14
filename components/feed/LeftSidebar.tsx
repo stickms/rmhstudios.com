@@ -181,6 +181,32 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const userMenuRef = useRef<HTMLDivElement>(null);
   const userMenuBtnRef = useRef<HTMLButtonElement>(null);
   const [userMenuPos, setUserMenuPos] = useState({ bottom: 0, right: 0 });
+  const rootRef = useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLElement>(null);
+
+  // Stop a wheel/trackpad scroll over the sidebar from scrolling the main page
+  // behind it. `overscroll-contain` only prevents *chaining* once the nav is a
+  // scroll container that reaches its edge — when the nav content fits (nothing
+  // to scroll) the browser scrolls the document instead. So when the nav can't
+  // absorb the delta (not scrollable, or already at that edge) we preventDefault.
+  useEffect(() => {
+    const rootEl = rootRef.current;
+    if (!rootEl) return;
+    function onWheel(e: WheelEvent) {
+      const nav = navRef.current;
+      if (!nav) return;
+      const overNav = e.target instanceof Node && nav.contains(e.target);
+      const canScroll = nav.scrollHeight > nav.clientHeight + 1;
+      const atTop = nav.scrollTop <= 0;
+      const atBottom = nav.scrollTop >= nav.scrollHeight - nav.clientHeight - 1;
+      // Let the wheel through only when it's over the nav and the nav can still
+      // scroll that way; otherwise it would fall through to the page, so cancel it.
+      const navAbsorbs = overNav && canScroll && !(e.deltaY > 0 ? atBottom : e.deltaY < 0 ? atTop : true);
+      if (!navAbsorbs && e.cancelable) e.preventDefault();
+    }
+    rootEl.addEventListener('wheel', onWheel, { passive: false });
+    return () => rootEl.removeEventListener('wheel', onWheel);
+  }, []);
 
   // Pinned "More" destinations (persisted per device). Hydrated after mount so
   // the SSR markup — which can't know this device's pins — never mismatches.
@@ -325,7 +351,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   };
 
   return (
-    <div className={`flex flex-col gap-1 ${rootSizeClass} ${paddingClass}`}>
+    <div ref={rootRef} className={`flex flex-col gap-1 ${rootSizeClass} ${paddingClass}`}>
       {/* Logo */}
       <Link to="/" className={`mb-6 flex items-center shrink-0 ${logoAlignClass}`}>
         <span
@@ -342,7 +368,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
 
       {/* Nav Links — its own scroll region on desktop; part of the drawer's
           scroll on mobile (see rootSizeClass/navScrollClass above). */}
-      <nav className={`flex flex-col gap-1 ${navScrollClass} pr-1.5`}>
+      <nav ref={navRef} className={`flex flex-col gap-1 ${navScrollClass} pr-1.5`}>
         {NAV.map((item) => {
           if (!isGroup(item)) {
             if (item.requiresAuth && !session) return null;
@@ -537,11 +563,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             )}
           </div>
         ) : (
-          // Signed-out: sign-in CTA plus a Settings link so appearance and
-          // language (saved locally, and synced to the account on sign-in) are
-          // reachable without an account.
-          <div className="flex flex-col gap-2">
-            <Link to="/login" search={{ callbackURL: undefined }}>
+          // Signed-out: a sign-in CTA with a compact Settings gear beside it, so
+          // appearance and language (saved locally, synced on sign-in) stay
+          // reachable without an account. The gear sits next to the button when
+          // there's room (mobile drawer / xl rail) and stacks under it in the
+          // narrow icon rail.
+          <div className={`flex gap-2 ${expanded ? 'items-center' : 'flex-col xl:flex-row xl:items-center'}`}>
+            <Link to="/login" search={{ callbackURL: undefined }} className={expanded ? 'min-w-0 flex-1' : 'xl:min-w-0 xl:flex-1'}>
               <Button variant="accent" size="sm" className="w-full">
                 <User className={`w-4 h-4 ${iconMrClass}`} />
                 <span className={labelClass}>{t('sign-in', { defaultValue: 'Sign In' })}</span>
@@ -549,11 +577,11 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </Link>
             <Link
               to="/settings"
-              className={`flex items-center gap-3 rounded-full px-3.5 py-2 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text ${itemJustifyClass}`}
+              className="flex shrink-0 items-center justify-center rounded-full p-2.5 text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text"
               title={t('settings', { defaultValue: 'Settings' })}
+              aria-label={t('settings', { defaultValue: 'Settings' })}
             >
               <Settings className="w-5 h-5 shrink-0" />
-              <span className={labelClass}>{t('settings', { defaultValue: 'Settings' })}</span>
             </Link>
           </div>
         )}
