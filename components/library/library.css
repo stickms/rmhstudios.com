@@ -187,6 +187,7 @@
 
 .lib-book__cover {
   --pad: 14px;
+  --thick: 22px; /* physical page-block thickness (the book's depth) */
   position: relative;
   width: min(100%, 150px);
   height: calc(var(--cover-h) - 14px);
@@ -199,11 +200,15 @@
   background:
     linear-gradient(150deg, hsl(var(--book-hue, 220) 16% 17%), hsl(var(--book-hue, 220) 14% 9%));
   border: 0.5px solid rgba(255, 255, 255, 0.1);
+  /* Soft, straight-down glass depth (no harsh offset blob). */
   box-shadow:
-    0 10px 22px rgba(0, 0, 0, 0.55),
-    0 2px 6px rgba(0, 0, 0, 0.45);
+    0 8px 20px rgba(2, 10, 28, 0.38),
+    0 2px 5px rgba(2, 10, 28, 0.26);
+  /* A real 3D volume: the fore-edge (::after) is an actual side face that the
+     cover swings to reveal when it spins on hover. */
+  transform-style: preserve-3d;
   transform-origin: left center;
-  transition: transform 360ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 360ms ease;
+  transition: transform 420ms cubic-bezier(0.34, 1.2, 0.4, 1), box-shadow 420ms ease;
   will-change: transform;
 }
 
@@ -223,37 +228,58 @@
   );
 }
 
-/* Stacked page edges on the right (the "fore-edge" of the book). */
+/* The fore-edge: a REAL right-hand side face (a block of stacked pages) standing
+   perpendicular to the cover. Edge-on and invisible at rest; the spin on hover
+   swings the cover so this page-block reads as the book's physical thickness. */
 .lib-book__cover::after {
   content: "";
   position: absolute;
-  top: 4px;
-  bottom: 4px;
-  right: -3px;
-  width: 4px;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: var(--thick);
+  transform-origin: right center;
+  transform: rotateY(90deg);
   border-radius: 0 2px 2px 0;
-  background: repeating-linear-gradient(
-    to bottom,
-    rgba(245, 245, 247, 0.85) 0,
-    rgba(245, 245, 247, 0.85) 1px,
-    rgba(120, 120, 125, 0.7) 1px,
-    rgba(120, 120, 125, 0.7) 2px
-  );
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.28), transparent 40%),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(245, 245, 247, 0.92) 0,
+      rgba(245, 245, 247, 0.92) 1px,
+      rgba(120, 120, 125, 0.55) 1px,
+      rgba(120, 120, 125, 0.55) 3px
+    );
 }
 
+/* Spin on hover: the book lifts off the ledge and turns on its Y axis (pivoting
+   at the spine) to show its full three-dimensional form, then eases back. */
 .lib-book:hover .lib-book__cover,
-.lib-book:focus-visible .lib-book__cover {
-  transform: translateY(-10px) rotateY(-22deg) scale(1.015);
+.lib-book:focus-visible .lib-book__cover,
+.lib-coll-tile__btn:hover .lib-book__cover,
+.lib-coll-tile__btn:focus-visible .lib-book__cover {
+  transform: translateY(-12px) rotateY(-38deg) scale(1.02);
+  /* Soft, straight-down depth that grows with the lift — no harsh diagonal blob. */
   box-shadow:
-    26px 22px 48px rgba(0, 0, 0, 0.6),
-    0 4px 10px rgba(0, 0, 0, 0.5);
+    0 24px 46px rgba(2, 10, 28, 0.45),
+    0 8px 16px rgba(2, 10, 28, 0.34);
 }
 
 /* Tactile press feedback: a clicked book/collection tile settles back slightly. */
 .lib-book:active .lib-book__cover,
 .lib-coll-tile__btn:active .lib-book__cover {
-  transform: translateY(-4px) rotateY(-22deg) scale(0.985);
-  transition-duration: 120ms;
+  transform: translateY(-6px) rotateY(-38deg) scale(0.99);
+  transition-duration: 140ms;
+}
+
+/* Respect reduced motion: keep the 3D thickness but don't spin. */
+@media (prefers-reduced-motion: reduce) {
+  .lib-book:hover .lib-book__cover,
+  .lib-book:focus-visible .lib-book__cover,
+  .lib-coll-tile__btn:hover .lib-book__cover,
+  .lib-coll-tile__btn:focus-visible .lib-book__cover {
+    transform: translateY(-6px) scale(1.01);
+  }
 }
 
 /* Cover image (rendered first page). Fills the cover, clipped to its rounded
