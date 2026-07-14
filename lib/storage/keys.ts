@@ -103,6 +103,38 @@ export function userAvatarUrl(filename: string): string {
     : `/api/profile/avatar/${filename}`;
 }
 
+// User-uploaded profile banners/covers. Same object-storage model as avatars.
+export const USER_BANNER_PREFIX = "user-banners/";
+
+export function userBannerKey(filename: string): string {
+  return `${USER_BANNER_PREFIX}${filename}`;
+}
+
+export function userBannerUrl(filename: string): string {
+  // Proxy route app/routes/api/profile/banner/$filename.ts streams from storage
+  // in dev / no-CDN; prod points straight at the CDN.
+  return CDN_BASE
+    ? `${CDN_BASE}/${userBannerKey(filename)}`
+    : `/api/profile/banner/${filename}`;
+}
+
+/** Extract the safe filename from a stored banner URL (proxy path or CDN), or null. */
+export function userBannerFilename(url: string): string | null {
+  const localPrefix = "/api/profile/banner/";
+  if (url.startsWith(localPrefix)) {
+    const f = url.slice(localPrefix.length);
+    return isSafeFilename(f) ? f : null;
+  }
+  if (CDN_BASE) {
+    const cdnPrefix = `${CDN_BASE}/${USER_BANNER_PREFIX}`;
+    if (url.startsWith(cdnPrefix)) {
+      const f = url.slice(cdnPrefix.length);
+      return isSafeFilename(f) ? f : null;
+    }
+  }
+  return null;
+}
+
 // Vibe-page gallery thumbnails. Rendered by the vibe-worker (Go) / the Node
 // screenshot fallback, stored as WebP in object storage so the db/ volume can be
 // reclaimed; served from the CDN in prod.

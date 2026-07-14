@@ -53,6 +53,7 @@ export const Route = createFileRoute('/api/profile')({
       profileSongAlbumArt,
       tipGoal,
       tipGoalLabel,
+      membershipPriceCoins,
     } = parsed.data;
 
     // Handle change logic
@@ -131,6 +132,7 @@ export const Route = createFileRoute('/api/profile')({
         ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
         ...(tipGoal !== undefined ? { tipGoal } : {}),
         ...(tipGoalLabel !== undefined ? { tipGoalLabel: tipGoalLabel || null } : {}),
+        ...(membershipPriceCoins !== undefined ? { membershipPriceCoins: membershipPriceCoins || null } : {}),
         ...songFields,
       },
       update: {
@@ -143,6 +145,7 @@ export const Route = createFileRoute('/api/profile')({
         ...(dmPrivacy !== undefined ? { dmPrivacy } : {}),
         ...(tipGoal !== undefined ? { tipGoal } : {}),
         ...(tipGoalLabel !== undefined ? { tipGoalLabel: tipGoalLabel || null } : {}),
+        ...(membershipPriceCoins !== undefined ? { membershipPriceCoins: membershipPriceCoins || null } : {}),
         ...songFields,
       },
     });
@@ -154,6 +157,7 @@ export const Route = createFileRoute('/api/profile')({
       location: profile.location,
       website: profile.website,
       links: profile.links ?? [],
+      membershipPriceCoins: profile.membershipPriceCoins,
       showLikes: profile.showLikes,
       dmPrivacy: profile.dmPrivacy,
       profileSongSpotifyId: profile.profileSongSpotifyId,

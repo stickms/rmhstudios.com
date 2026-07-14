@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Link as LinkIcon, Calendar, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift } from 'lucide-react';
+import { toast } from 'sonner';
+import { MapPin, Link as LinkIcon, Calendar, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift, BarChart3, Star } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { TipDialog } from '@/components/economy/TipDialog';
 import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
@@ -39,6 +40,7 @@ interface ProfileData {
   location: string | null;
   website: string | null;
   links?: { label: string; url: string }[];
+  bannerUrl?: string | null;
   showLikes: boolean;
   dmPrivacy: string;
   profileSongSpotifyId: string | null;
@@ -58,6 +60,9 @@ interface ProfileData {
   tipGoal?: number | null;
   tipGoalLabel?: string | null;
   tipsThisMonth?: number;
+  membershipPriceCoins?: number | null;
+  memberCount?: number;
+  isMember?: boolean;
   cosmetics?: {
     nameColor?: { color?: string; gradient?: string };
     avatarFrame?: { color?: string; gradient?: string };
@@ -109,6 +114,7 @@ export function ProfileColumn({
   const [showEdit, setShowEdit] = useState(false);
   const [tipOpen, setTipOpen] = useState(false);
   const [giftOpen, setGiftOpen] = useState(false);
+  const [membershipBusy, setMembershipBusy] = useState(false);
   const [tab, setTab] = useState<ProfileTab>('rmharks');
   const [socialModal, setSocialModal] = useState<'followers' | 'following' | null>(null);
   const { refresh: refreshResolvedUser } = useResolvedUser();
@@ -379,6 +385,27 @@ export function ProfileColumn({
     });
   };
 
+  const handleJoinMembership = async () => {
+    if (!profile || !session || membershipBusy) return;
+    setMembershipBusy(true);
+    try {
+      const res = await fetch(`/api/profile/${profile.id}/membership`, { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || t('membership-failed', { defaultValue: 'Could not join' }));
+        return;
+      }
+      setProfile((prev) =>
+        prev ? { ...prev, isMember: true, memberCount: (prev.memberCount ?? 0) + (prev.isMember ? 0 : 1) } : prev,
+      );
+      toast.success(t('membership-joined', { defaultValue: "You're now a member! 🎉" }));
+    } catch {
+      toast.error(t('membership-failed', { defaultValue: 'Could not join' }));
+    } finally {
+      setMembershipBusy(false);
+    }
+  };
+
   const handleMessage = async () => {
     if (!profile || !session || messageSending) return;
     setMessageSending(true);
@@ -486,13 +513,22 @@ export function ProfileColumn({
             full profile width (full-bleed past the header padding) — filling the
             area the old profile pet used to occupy. */}
         <div className="relative mb-12">
-          {headerBackdrop && (
+          {profile.bannerUrl ? (
+            <div className="absolute inset-x-[-16px] top-[-24px] bottom-[-24px] overflow-hidden" aria-hidden>
+              <div
+                className="h-full w-full bg-cover bg-center"
+                style={{ backgroundImage: `url(${profile.bannerUrl})` }}
+              />
+              {/* Scrim keeps the name/handle legible over a photo banner. */}
+              <div className="absolute inset-0 bg-gradient-to-t from-site-bg/70 via-site-bg/10 to-transparent" />
+            </div>
+          ) : headerBackdrop ? (
             <div
               className="absolute inset-x-[-16px] top-[-24px] bottom-[-24px]"
               style={{ background: headerBackdrop }}
               aria-hidden
             />
-          )}
+          ) : null}
           <div className="relative flex items-start justify-between">
             <div className="relative shrink-0">
               {profile.cosmetics?.avatarFrame ? (
@@ -579,14 +615,26 @@ export function ProfileColumn({
               </Button>
             </Link>
             {profile.isOwnProfile ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowEdit(true)}
-                className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
-              >
-                {t('edit-profile', { defaultValue: 'Edit Profile' })}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Link to="/analytics">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
+                    title={t('creator-analytics', { defaultValue: 'Creator Analytics' })}
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowEdit(true)}
+                  className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
+                >
+                  {t('edit-profile', { defaultValue: 'Edit Profile' })}
+                </Button>
+              </div>
             ) : session ? (
               <>
                 <Button
@@ -638,6 +686,40 @@ export function ProfileColumn({
           <p className="text-site-text text-[15px] whitespace-pre-wrap break-words mb-3">
             {profile.bio}
           </p>
+        )}
+
+        {/* Per-creator membership CTA (coin-funded). Own profile just sees the count. */}
+        {!profile.isOwnProfile && profile.membershipPriceCoins && profile.membershipPriceCoins > 0 && (
+          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-site border border-site-accent/30 bg-site-accent/5 p-3">
+            <Star className="h-4 w-4 shrink-0 text-site-accent" aria-hidden="true" />
+            {profile.isMember ? (
+              <span className="text-sm font-medium text-site-text">
+                {t('you-are-a-member', { defaultValue: "You're a member" })}
+              </span>
+            ) : (
+              <>
+                <span className="flex-1 text-sm text-site-text">
+                  {t('membership-pitch', { price: profile.membershipPriceCoins, defaultValue: 'Support this creator — {{price}} coins/month' })}
+                </span>
+                <Button
+                  size="sm"
+                  variant="accent"
+                  loading={membershipBusy}
+                  disabled={!session}
+                  onClick={handleJoinMembership}
+                  className="rounded-site-sm active:scale-95"
+                >
+                  {t('become-a-member', { defaultValue: 'Become a member' })}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+        {profile.isOwnProfile && profile.membershipPriceCoins && profile.membershipPriceCoins > 0 && (
+          <div className="mb-3 flex items-center gap-2 rounded-site border border-site-border bg-site-surface/40 p-3 text-sm text-site-text-muted">
+            <Star className="h-4 w-4 shrink-0 text-site-accent" aria-hidden="true" />
+            {t('creator-member-summary', { count: profile.memberCount ?? 0, defaultValue: '{{count}} members · {{price}} coins/month', price: profile.membershipPriceCoins })}
+          </div>
         )}
 
         {/* Creator tip goal */}
@@ -904,6 +986,7 @@ export function ProfileColumn({
             location: profile.location,
             website: profile.website,
             links: profile.links,
+            bannerUrl: profile.bannerUrl,
             showLikes: profile.showLikes,
             dmPrivacy: profile.dmPrivacy,
             tipGoal: profile.tipGoal,
@@ -926,6 +1009,8 @@ export function ProfileColumn({
                 location: data.location,
                 website: data.website,
                 ...(data.links !== undefined ? { links: data.links } : {}),
+                ...(data.bannerUrl !== undefined ? { bannerUrl: data.bannerUrl } : {}),
+                ...(data.membershipPriceCoins !== undefined ? { membershipPriceCoins: data.membershipPriceCoins } : {}),
                 showLikes: data.showLikes,
                 dmPrivacy: data.dmPrivacy,
                 profileSongSpotifyId: data.profileSongSpotifyId,

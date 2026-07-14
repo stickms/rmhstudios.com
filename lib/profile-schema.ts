@@ -49,6 +49,8 @@ export const updateProfileSchema = z.object({
   dmPrivacy: z.enum(["EVERYONE", "FOLLOWERS", "NONE"]).optional(),
   tipGoal: z.number().int().min(0).max(10_000_000).optional().nullable(),
   tipGoalLabel: z.string().max(80).optional().nullable(),
+  // Per-creator membership price in coins/month (0/null = memberships off).
+  membershipPriceCoins: z.number().int().min(0).max(1_000_000).optional().nullable(),
   profileSongSpotifyId: z.string().max(50).optional().nullable(),
   profileSongTitle: z.string().max(200).optional().nullable(),
   profileSongArtist: z.string().max(200).optional().nullable(),

@@ -32,6 +32,8 @@ interface ProfileEditModalProps {
     location: string | null;
     website: string | null;
     links?: { label: string; url: string }[];
+    bannerUrl?: string | null;
+    membershipPriceCoins?: number | null;
     showLikes: boolean;
     dmPrivacy: string;
   } & ProfileSongData) => void;
@@ -41,6 +43,7 @@ interface ProfileEditModalProps {
     name: string | null;
     image: string | null;
     hasCustomAvatar?: boolean;
+    bannerUrl?: string | null;
     bio: string | null;
     location: string | null;
     website: string | null;
@@ -49,6 +52,7 @@ interface ProfileEditModalProps {
     dmPrivacy: string;
     tipGoal?: number | null;
     tipGoalLabel?: string | null;
+    membershipPriceCoins?: number | null;
   } & ProfileSongData;
 }
 
@@ -57,6 +61,7 @@ const MAX_BIO = 160;
 const MAX_LOCATION = 100;
 const MAX_WEBSITE = 200;
 const MAX_AVATAR_MB = 5;
+const MAX_BANNER_MB = 8;
 const MAX_HANDLE = 20;
 
 function formatCooldown(ms: number, t: TFunction<"feed">): string {
@@ -79,9 +84,14 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
   const [dmPrivacy, setDmPrivacy] = useState(initial.dmPrivacy ?? 'EVERYONE');
   const [tipGoal, setTipGoal] = useState<string>(initial.tipGoal ? String(initial.tipGoal) : '');
   const [tipGoalLabel, setTipGoalLabel] = useState(initial.tipGoalLabel ?? '');
+  const [membershipPrice, setMembershipPrice] = useState<string>(initial.membershipPriceCoins ? String(initial.membershipPriceCoins) : '');
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(initial.image);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(initial.bannerUrl ?? null);
+  const [bannerRemoved, setBannerRemoved] = useState(false);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
   const [submitting, setSubmitting] = useState(false);
   const [resettingAvatar, setResettingAvatar] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -160,8 +170,33 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
       if (cropSrc && cropSrc.startsWith('blob:')) {
         URL.revokeObjectURL(cropSrc);
       }
+      if (bannerPreview && bannerPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(bannerPreview);
+      }
     };
-  }, [avatarPreview, cropSrc]);
+  }, [avatarPreview, cropSrc, bannerPreview]);
+
+  const handleBannerSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > MAX_BANNER_MB * 1024 * 1024) {
+      setError(t("banner-size-error", { maxMb: MAX_BANNER_MB, defaultValue: `Banner must be under ${MAX_BANNER_MB} MB` }));
+      return;
+    }
+    setError(null);
+    if (bannerPreview && bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+    setBannerRemoved(false);
+    if (bannerInputRef.current) bannerInputRef.current.value = '';
+  };
+
+  const handleRemoveBanner = () => {
+    if (bannerPreview && bannerPreview.startsWith('blob:')) URL.revokeObjectURL(bannerPreview);
+    setBannerFile(null);
+    setBannerPreview(null);
+    setBannerRemoved(true);
+  };
 
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -282,6 +317,24 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         newImageUrl = avatarData.image;
       }
 
+      // Banner: upload a new one, or delete when the user cleared it.
+      let newBannerUrl: string | null | undefined;
+      if (bannerFile) {
+        const bannerForm = new FormData();
+        bannerForm.append('banner', bannerFile);
+        const bannerRes = await fetch('/api/profile/banner', { method: 'POST', body: bannerForm });
+        if (!bannerRes.ok) {
+          const data = await bannerRes.json().catch(() => ({}));
+          setError(data.error || t("failed-upload-banner", { defaultValue: "Failed to upload banner" }));
+          setSubmitting(false);
+          return;
+        }
+        newBannerUrl = (await bannerRes.json()).bannerUrl;
+      } else if (bannerRemoved && initial.bannerUrl) {
+        await fetch('/api/profile/banner', { method: 'DELETE' }).catch(() => {});
+        newBannerUrl = null;
+      }
+
       const res = await fetch('/api/profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -294,6 +347,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           links: cleanedLinks,
           tipGoal: tipGoal.trim() ? Math.max(0, parseInt(tipGoal, 10) || 0) : null,
           tipGoalLabel: tipGoalLabel.trim() || null,
+          membershipPriceCoins: membershipPrice.trim() ? Math.max(0, parseInt(membershipPrice, 10) || 0) : null,
           showLikes,
           dmPrivacy,
           profileSongSpotifyId: selectedSong?.id ?? null,
@@ -319,6 +373,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           : avatarWasReset
             ? { image: avatarPreview }
             : {}),
+        ...(newBannerUrl !== undefined ? { bannerUrl: newBannerUrl } : {}),
       });
       onClose();
     } catch {
@@ -353,6 +408,46 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
           {/* Form */}
           <div className="px-4 py-4 space-y-4 overflow-y-auto">
+            {/* Banner / cover */}
+            <div>
+              <button
+                type="button"
+                onClick={() => bannerInputRef.current?.click()}
+                aria-label={t("banner-change-hint", { maxMb: MAX_BANNER_MB, defaultValue: "Click to change banner (max {{maxMb}} MB)" })}
+                className="group relative block h-28 w-full overflow-hidden rounded-site border border-site-border bg-site-surface"
+              >
+                {bannerPreview ? (
+                  <img src={bannerPreview} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-r from-site-surface to-site-bg-subtle" />
+                )}
+                <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition-opacity group-hover:opacity-100">
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+              </button>
+              <input
+                ref={bannerInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={handleBannerSelect}
+              />
+              <div className="mt-1.5 flex items-center justify-between">
+                <p className="text-xs text-site-text-dim">
+                  {t("banner-change-hint", { maxMb: MAX_BANNER_MB, defaultValue: "Click to change banner (max {{maxMb}} MB)" })}
+                </p>
+                {bannerPreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveBanner}
+                    className="text-xs font-medium text-site-text-muted hover:text-site-danger transition-colors"
+                  >
+                    {t("remove-banner", { defaultValue: "Remove" })}
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Avatar */}
             <div className="flex flex-col items-center gap-2">
               <button
@@ -577,6 +672,24 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
                   className="flex-1 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
                 />
               </div>
+            </div>
+
+            {/* Per-creator membership price */}
+            <div>
+              <label className="block text-xs font-medium text-site-text-dim mb-1.5">
+                {t("membership-price-label", { defaultValue: "Membership price (coins/month) — optional" })}
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={membershipPrice}
+                onChange={(e) => setMembershipPrice(e.target.value)}
+                placeholder="e.g. 500"
+                className="w-32 bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors"
+              />
+              <p className="mt-1 text-xs text-site-text-dim">
+                {t("membership-price-help", { defaultValue: "Let supporters pay coins monthly to become a member. Leave empty to turn off." })}
+              </p>
             </div>
 
             {/* Show Likes toggle */}

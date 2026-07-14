@@ -115,6 +115,10 @@ model User {
   followers Follow[]     @relation("UserFollowing")
   following Follow[]     @relation("UserFollowers")
 
+  // Per-creator memberships: who supports this creator, and who this user supports.
+  creatorMemberships CreatorMembership[] @relation("CreatorMemberships")
+  supportedCreators  CreatorMembership[] @relation("SupportedCreators")
+
   // Notifications
   notifications     Notification[] @relation("UserNotifications")
   notificationsSent Notification[] @relation("UserNotificationActor")
@@ -1649,6 +1653,10 @@ model UserProfile {
   tipGoal      Int?
   tipGoalLabel String? @db.VarChar(80)
 
+  // Per-creator memberships: monthly price in coins to become a member of this
+  // creator (null/0 = memberships disabled). Paid from the supporter's coins.
+  membershipPriceCoins Int?
+
   // First-run onboarding checklist: when the completion reward was claimed
   // (null = not claimed; also acts as the atomic double-claim guard)
   onboardingRewardedAt DateTime?
@@ -1769,6 +1777,26 @@ model Follow {
   @@index([followerId])
   @@index([followingId])
   @@map("follow")
+}
+
+/// A coin-funded membership: `supporter` supports `creator` for a 30-day period.
+/// Renewing extends `expiresAt`; membership is "active" while expiresAt > now.
+model CreatorMembership {
+  id          String   @id @default(cuid())
+  creatorId   String
+  supporterId String
+  priceCoins  Int
+  startedAt   DateTime @default(now())
+  expiresAt   DateTime
+
+  creator   User @relation("CreatorMemberships", fields: [creatorId], references: [id], onDelete: Cascade)
+  supporter User @relation("SupportedCreators", fields: [supporterId], references: [id], onDelete: Cascade)
+
+  @@unique([creatorId, supporterId])
+  @@index([creatorId])
+  @@index([supporterId])
+  @@index([expiresAt])
+  @@map("creator_membership")
 }
 
 // ─── RMHMusic ────────────────────────────────────────────────────
@@ -4033,6 +4061,7 @@ enum CoinTxnType {
   PURCHASE
   REWARD
   ADMIN
+  MEMBERSHIP
 }
 
 model CoinTransaction {
