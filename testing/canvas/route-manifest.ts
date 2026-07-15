@@ -200,7 +200,7 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
   { file: "slice-it.tsx", converted: false },
   { file: "slice-it/index.tsx", converted: false },
   { file: "strategies.tsx", converted: false },
-  { file: "strategies/incidents.tsx", converted: false },
+  { file: "strategies/incidents.tsx", converted: true },
   { file: "strategies/index.tsx", converted: false },
   { file: "strategies/profile/index.tsx", converted: false },
   { file: "strategies/profile/reputation.tsx", converted: true },
