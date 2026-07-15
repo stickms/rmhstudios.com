@@ -10,6 +10,8 @@ import type { RouterHistory } from "@tanstack/react-router";
 export interface CanvasEnv {
   navigate: (to: string) => void;
   history: RouterHistory;
+  /** Current location pathname (reactive) — for active-nav state in scenes. */
+  pathname: string;
 }
 
 export const CanvasEnvContext = createContext<CanvasEnv | null>(null);

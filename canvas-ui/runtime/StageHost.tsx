@@ -127,8 +127,9 @@ function StageHostInner() {
     () => ({
       navigate: (to) => router.navigate({ to }),
       history: router.history,
+      pathname,
     }),
-    [router]
+    [router, pathname]
   );
 
   if (!active || width === 0) return null;
