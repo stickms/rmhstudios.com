@@ -103,7 +103,7 @@ export function AchievementsColumn({
       {hideHeader ? (
         <div className="px-4 pt-4">{Stats}</div>
       ) : (
-        <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b border-site-border glass-chrome px-4 py-3">
           <div className="flex items-center gap-2">
             <Trophy className="h-5 w-5 text-site-accent" />
             <h1 className="text-lg font-bold text-site-text">{t("achievements-header", { defaultValue: "Achievements" })}</h1>

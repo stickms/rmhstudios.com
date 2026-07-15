@@ -487,7 +487,7 @@ export function ProfileColumn({
   return (
     <div className="flex flex-col" style={themeStyle}>
       {/* Header bar */}
-      <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border">
+      <div className="sticky top-0 z-10 glass-chrome border-b border-site-border">
         <div className="flex items-center gap-3 px-4 py-3">
           <MobileMenuButton />
           <div>

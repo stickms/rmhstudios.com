@@ -8,10 +8,9 @@
 .lib {
   width: 100%;
   padding-bottom: 64px;
-  /* Override .vibe-screen's opaque var(--site-bg): the library sits on the glass
-     aurora like every other page (museum-vitrine treatment), so content + canvas
-     draw edge-to-edge, including under the floating mobile dock. */
-  background: transparent;
+  /* Background lives on .vibe-screen.lib in the editorial-shell section below —
+     one declaration, so the "sits on the glass aurora" override can't silently
+     lose the cascade again. */
 }
 
 .lib__empty {
@@ -2021,10 +2020,15 @@
      tokens so they restyle with every theme (light/sepia/high-contrast/…). */
   min-width: 0;
   padding-bottom: clamp(72px, 10vw, 132px);
-  background:
-    radial-gradient(circle at 76% 5%, color-mix(in srgb, var(--site-accent, #9b7ad8) 17%, transparent), transparent 31rem),
-    var(--site-bg, #000);
   color: var(--site-text, #f5f5f7);
+}
+
+/* The library sits on the glass aurora like every other _site page
+   (museum-vitrine treatment): only the accent glow paints here — no opaque
+   var(--site-bg) base. Double class so this outranks .vibe-screen's opaque
+   fill regardless of which stylesheet the bundler emits first. */
+.vibe-screen.lib {
+  background: radial-gradient(circle at 76% 5%, color-mix(in srgb, var(--site-accent, #9b7ad8) 17%, transparent), transparent 31rem);
 }
 
 .lib-head {
@@ -2036,10 +2040,11 @@
   min-height: 58px;
   gap: 12px;
   padding: max(8px, env(safe-area-inset-top)) clamp(16px, 4vw, 44px) 8px;
-  background: color-mix(in srgb, var(--site-bg, #000) 76%, transparent);
+  /* L3 glass-chrome — matches the site's other sticky headers. */
+  background: color-mix(in srgb, var(--site-bg, #000) 32%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--site-text, #fff) 9%, transparent);
-  backdrop-filter: saturate(160%) blur(24px);
-  -webkit-backdrop-filter: saturate(160%) blur(24px);
+  backdrop-filter: saturate(170%) blur(var(--site-glass-blur-chrome, 24px));
+  -webkit-backdrop-filter: saturate(170%) blur(var(--site-glass-blur-chrome, 24px));
 }
 
 .lib-head__brand {

@@ -286,7 +286,7 @@ export function MessagesColumn({
   return (
     <div className="flex flex-col">
       {/* Header */}
-      <div className={embedded ? 'border-b border-site-border' : 'sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border'}>
+      <div className={embedded ? 'border-b border-site-border' : 'sticky top-0 z-10 glass-chrome border-b border-site-border'}>
         {!embedded && (
           <div className="flex items-center gap-3 px-4 pt-3">
             <MobileMenuButton />

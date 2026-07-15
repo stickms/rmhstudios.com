@@ -56,7 +56,7 @@ export function JourneyColumn({
     <div className="min-h-screen">
       {/* Reveal header — stat-grid dashboard, lighter treatment than marquee pages. */}
       <Reveal>
-        <header className="sticky top-0 z-10 border-b border-site-border bg-site-bg/80 backdrop-blur">
+        <header className="sticky top-0 z-10 border-b border-site-border glass-chrome">
           <nav className="flex" role="tablist" aria-label={t("journey-sections-label", { defaultValue: "Journey sections" })}>
             {TABS.map(({ id, labelKey, defaultLabel, icon: Icon }) => {
               const active = tab === id;
