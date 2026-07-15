@@ -137,7 +137,7 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
   { file: "login.tsx", converted: false },
   { file: "neon-driftway.tsx", converted: false },
   { file: "news.$slug.tsx", converted: false },
-  { file: "offline.tsx", converted: false },
+  { file: "offline.tsx", converted: true },
   { file: "optimization.tsx", converted: false },
   { file: "privacy.tsx", converted: true },
   { file: "ref.$code.tsx", converted: false },
