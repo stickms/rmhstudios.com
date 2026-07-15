@@ -25,7 +25,12 @@
   font-family: var(--site-font-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
-  overflow-x: hidden;
+  /* `clip`, NOT `hidden`: overflow-x:hidden forces the computed overflow-y to
+     `auto`, which makes .sec-page a scroll container and breaks the PinnedHero's
+     position:sticky pin (it scrolls instead of pinning, leaving a dead gap).
+     `clip` still clips horizontal overflow without establishing a scroll
+     container, so the window stays the sticky scroll root. */
+  overflow-x: clip;
 }
 
 /* ─── Skip link ─────────────────────────────────────────────────────────────  */
