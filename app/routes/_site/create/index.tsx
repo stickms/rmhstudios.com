@@ -14,7 +14,7 @@
 import { useCallback, useMemo } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { type LucideIcon, FileText, Gamepad2, AppWindow, Boxes, Bot } from 'lucide-react';
+import { type LucideIcon, FileText, Gamepad2, AppWindow, Boxes, Bot, Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { MobileTopBar } from '@/components/feed/MobileHeader';
@@ -25,13 +25,14 @@ import { PagesTab, type VibeGallery } from '@/components/creator-studio/PagesTab
 import { CuratedBuildsTab, UserBuildsTab } from '@/components/creator-studio/BuildsTab';
 import { RankedSummary } from '@/components/creator-studio/RankedSummary';
 import { PersonasTab } from '@/components/creator-studio/PersonasTab';
+import { EarningsTab } from '@/components/creator-studio/EarningsTab';
 import '@/components/rmhvibe/vibe.css';
 import '@/components/library/library.css';
 import '@/components/builds/builds.css';
 import '@/components/creator-studio/creator-studio.css';
 import '@/components/creator-studio/storefront.css';
 
-const STUDIO_TABS = ['pages', 'games', 'apps', 'user-builds', 'personas'] as const;
+const STUDIO_TABS = ['pages', 'games', 'apps', 'user-builds', 'personas', 'earnings'] as const;
 type StudioTab = (typeof STUDIO_TABS)[number];
 
 const fetchGallery = createServerFn({ method: 'GET' })
@@ -103,6 +104,7 @@ function CreatorStudio() {
     { id: 'apps', label: t('studio-tab-apps', { defaultValue: 'Apps' }), icon: AppWindow },
     { id: 'user-builds', label: t('studio-tab-user-builds', { defaultValue: 'User Builds' }), icon: Boxes },
     { id: 'personas', label: t('studio-tab-personas', { defaultValue: 'AI Personas' }), icon: Bot },
+    { id: 'earnings', label: t('studio-tab-earnings', { defaultValue: 'Earnings' }), icon: Coins },
   ];
 
   return (
@@ -188,6 +190,11 @@ function CreatorStudio() {
         {tab === 'personas' && (
           <div className="cstudio-body" role="tabpanel" id="cstudio-panel-personas" aria-labelledby="cstudio-tab-personas">
             <PersonasTab seed={seed + 4} />
+          </div>
+        )}
+        {tab === 'earnings' && (
+          <div className="cstudio-body" role="tabpanel" id="cstudio-panel-earnings" aria-labelledby="cstudio-tab-earnings">
+            <EarningsTab />
           </div>
         )}
       </AnimatedMain>

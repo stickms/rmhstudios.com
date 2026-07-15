@@ -36,6 +36,10 @@ export interface SerializedMarket {
   description: string | null;
   status: PredictionStatus;
   isAiGenerated: boolean;
+  /** True for self-referential markets that resolve from the platform's own data. */
+  isAuto: boolean;
+  /** In-app deep link to what an auto market is about (build, tournament, …). */
+  subjectUrl: string | null;
   yesPercent: number; // 1..99 implied probability
   volume: number;
   closesAt: string | null;
@@ -64,6 +68,8 @@ export function serializeMarket(
     description: p.description,
     status: p.status,
     isAiGenerated: p.isAiGenerated,
+    isAuto: p.resolverKey != null,
+    subjectUrl: p.subjectUrl ?? null,
     yesPercent: Math.min(99, Math.max(1, Math.round(priceYes(p.qYes, p.qNo, p.b) * 100))),
     volume: p.volume,
     closesAt: p.closesAt?.toISOString() ?? null,

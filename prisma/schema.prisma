@@ -203,6 +203,19 @@ model User {
   predictionsCreated  Prediction[]         @relation("PredictionCreator")
   predictionPositions PredictionPosition[] @relation("PredictionPositions")
 
+  // Wager matches: coin-staked 1v1 challenges on skill games
+  wagerMatchesChallenged WagerMatch[] @relation("WagerChallenger")
+  wagerMatchesOpposed    WagerMatch[] @relation("WagerOpponent")
+  wagerMatchesWon        WagerMatch[] @relation("WagerWinner")
+
+  // Tournaments: created events + entries
+  tournamentsCreated Tournament[]        @relation("TournamentCreator")
+  tournamentEntries  TournamentEntrant[]
+
+  // Creator coin -> value bridge: redemption requests authored / reviewed
+  redemptionRequests  RedemptionRequest[] @relation("RedemptionCreator")
+  redemptionsReviewed RedemptionRequest[] @relation("RedemptionReviewer")
+
   // Admin-authored feed announcements
   feedAnnouncements FeedAnnouncement[]
 
@@ -1701,10 +1714,22 @@ model Prediction {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
+  // ─── Self-referential (auto) markets ────────────────────────────────
+  // When `resolverKey` is set the market resolves itself from the platform's
+  // own ground truth (a leaderboard, a build's like count, a tournament
+  // result …) via a resolver in `lib/predictions/resolvers/`. No admin or AI
+  // judge is involved. `resolverParams` carries the resolver's inputs, and
+  // `subjectUrl` deep-links the card to whatever the market is about.
+  resolverKey    String?   @db.VarChar(120) // e.g. "build.likes" — null for ordinary markets
+  resolverParams Json? // resolver inputs, e.g. { buildId, threshold }
+  subjectUrl     String?   @db.VarChar(200) // in-app deep link to the subject
+  autoResolveAt  DateTime? // when the resolver becomes eligible to settle this market
+
   creator   User?                @relation("PredictionCreator", fields: [creatorId], references: [id], onDelete: SetNull)
   positions PredictionPosition[]
 
   @@index([status, createdAt(sort: Desc)])
+  @@index([resolverKey, status]) // resolver settlement sweeps
   @@map("prediction")
 }
 
@@ -4063,6 +4088,7 @@ enum CoinTxnType {
   REWARD
   ADMIN
   MEMBERSHIP
+  WAGER // coin-staked match / tournament entry, escrow, and payout
 }
 
 model CoinTransaction {
@@ -5067,4 +5093,229 @@ model AlbumSlide {
   @@unique([albumId, uploadKey])
   @@index([albumId, position])
   @@map("album_slide")
+}
+
+// ─── Wager Matches (§2) ───────────────────────────────────────────────────
+// Coin-staked 1v1 challenges on any wager-eligible skill game. Both players'
+// stakes are escrowed in the match row (potCoins) on acceptance and paid to the
+// winner (minus rake) on settlement. Settlement is authoritative for
+// server-validated games (the hub reports via /api/internal/match-result), and
+// falls back to dual-confirmation (both players agree) or admin adjudication.
+// Every coin movement is mirrored to CoinTransaction (type WAGER).
+
+enum WagerMatchStatus {
+  OPEN // created; awaiting acceptance (open challenge or a named opponent)
+  ACCEPTED // both players in, stakes escrowed, awaiting play + result
+  LIVE // gameplay in progress
+  SETTLED // resolved, pot paid out
+  DISPUTED // conflicting self-reports; awaiting admin adjudication
+  CANCELLED // declined / cancelled before acceptance — stakes refunded
+  EXPIRED // no acceptance before expiresAt — stakes refunded
+}
+
+model WagerMatch {
+  id         String           @id @default(cuid())
+  gameId     String           @db.VarChar(64) // GameInfo.id / app id; must be wager-eligible
+  challengerId String
+  opponentId String? // null = open challenge anyone may accept
+  stakeCoins Int // per-player stake
+  potCoins   Int              @default(0) // escrowed total (2 × stake once accepted)
+  rakeBps    Int              @default(0) // rake in basis points, taken from the pot on settle
+  status     WagerMatchStatus @default(OPEN)
+
+  // Result reporting
+  winnerId                   String?
+  challengerReportedWinnerId String?
+  opponentReportedWinnerId   String?
+  resultSource               String? @db.VarChar(24) // "authoritative" | "agreement" | "admin" | "forfeit"
+  gameSessionRef             String? @db.VarChar(96) // hub room/match id, for authoritative settle
+  adminNote                  String? @db.VarChar(500)
+
+  acceptedAt DateTime?
+  settledAt  DateTime?
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  challenger User  @relation("WagerChallenger", fields: [challengerId], references: [id], onDelete: Cascade)
+  opponent   User? @relation("WagerOpponent", fields: [opponentId], references: [id], onDelete: SetNull)
+  winner     User? @relation("WagerWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([challengerId, status])
+  @@index([opponentId, status])
+  @@index([gameId, status])
+  @@index([gameSessionRef])
+  @@map("wager_match")
+}
+
+// ─── Tournaments (§1) ─────────────────────────────────────────────────────
+// A bracket/round-robin over any wager-eligible game. Entry fees are escrowed
+// into prizePoolCoins on registration; the pool (plus any creator seed, minus
+// rake) is paid out to finishers on completion. Matches advance event-driven
+// as results arrive; no background worker is required.
+
+enum TournamentFormat {
+  SINGLE_ELIM
+  ROUND_ROBIN
+  DOUBLE_ELIM // reserved — not yet implemented by the bracket engine
+}
+
+enum TournamentStatus {
+  REGISTRATION
+  LIVE
+  COMPLETE
+  CANCELLED
+}
+
+enum TournamentMatchState {
+  PENDING // waiting on entrants from prior rounds
+  READY // both slots filled, awaiting play + result
+  LIVE
+  COMPLETE
+  BYE // auto-advanced (odd bracket)
+}
+
+model Tournament {
+  id             String           @id @default(cuid())
+  name           String           @db.VarChar(120)
+  gameId         String           @db.VarChar(64)
+  format         TournamentFormat @default(SINGLE_ELIM)
+  status         TournamentStatus @default(REGISTRATION)
+  entryFeeCoins  Int              @default(0)
+  prizePoolCoins Int              @default(0) // escrowed pool (entry fees + seed)
+  seedPoolCoins  Int              @default(0) // creator/house guaranteed prize added up front
+  rakeBps        Int              @default(0)
+  maxPlayers     Int              @default(8)
+  minPlayers     Int              @default(2)
+  visibility     String           @default("public") @db.VarChar(16)
+  createdById    String
+  seasonId       String?          @db.VarChar(64) // optional live-ops season link
+  startsAt       DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  createdBy User                @relation("TournamentCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  entrants  TournamentEntrant[]
+  matches   TournamentMatch[]
+  payouts   TournamentPayout[]
+
+  @@index([status, startsAt])
+  @@index([gameId, status])
+  @@map("tournament")
+}
+
+model TournamentEntrant {
+  id           String    @id @default(cuid())
+  tournamentId String
+  userId       String
+  seed         Int?
+  placement    Int? // final placement (1 = champion)
+  wins         Int       @default(0)
+  losses       Int       @default(0)
+  eliminatedAt DateTime?
+  joinedAt     DateTime  @default(now())
+
+  tournament  Tournament        @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchesAsA  TournamentMatch[] @relation("MatchEntrantA")
+  matchesAsB  TournamentMatch[] @relation("MatchEntrantB")
+  matchesWon  TournamentMatch[] @relation("MatchWinner")
+
+  @@unique([tournamentId, userId])
+  @@index([tournamentId, seed])
+  @@map("tournament_entrant")
+}
+
+model TournamentMatch {
+  id              String               @id @default(cuid())
+  tournamentId    String
+  round           Int
+  slot            Int // position within the round
+  entrantAId      String?
+  entrantBId      String?
+  winnerEntrantId String?
+  state           TournamentMatchState @default(PENDING)
+  // Where the winner of THIS match flows (single-elim). Plain refs, not a
+  // Prisma self-relation, to keep the bracket-linking simple.
+  nextMatchId     String?
+  nextSlot        Int?
+  gameSessionRef  String?              @db.VarChar(96)
+  resultSource    String?              @db.VarChar(24)
+  scheduledAt     DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  tournament Tournament         @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  entrantA   TournamentEntrant? @relation("MatchEntrantA", fields: [entrantAId], references: [id], onDelete: SetNull)
+  entrantB   TournamentEntrant? @relation("MatchEntrantB", fields: [entrantBId], references: [id], onDelete: SetNull)
+  winner     TournamentEntrant? @relation("MatchWinner", fields: [winnerEntrantId], references: [id], onDelete: SetNull)
+
+  @@unique([tournamentId, round, slot])
+  @@index([tournamentId, state])
+  @@index([gameSessionRef])
+  @@map("tournament_match")
+}
+
+model TournamentPayout {
+  id           String   @id @default(cuid())
+  tournamentId String
+  userId       String // plain ref — historical record, no cascade needed
+  placement    Int
+  amountCoins  Int
+  createdAt    DateTime @default(now())
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([tournamentId, userId])
+  @@index([userId])
+  @@map("tournament_payout")
+}
+
+// ─── Creator coin → value bridge (§4) ─────────────────────────────────────
+// Creators convert coins provably EARNED from creator activity (tips,
+// memberships, storefront/unlock sales) into real value: subscription credit
+// (granted internally via GiftMembership, no Stripe), merch, or a gated cash
+// payout. Requests are admin-reviewed. "Earned" is derived from the ledger, so
+// there is no stored earned-balance column — see lib/creator/earnings.server.ts.
+
+enum RedemptionKind {
+  SUB_CREDIT // burn coins → subscription time (GiftMembership)
+  MERCH // burn coins → merch reward, fulfilled manually
+  PAYOUT // burn coins → cash payout (gated: verified creator + admin/KYC)
+}
+
+enum RedemptionStatus {
+  PENDING
+  APPROVED
+  FULFILLED
+  REJECTED
+}
+
+model RedemptionRequest {
+  id             String           @id @default(cuid())
+  userId         String
+  kind           RedemptionKind
+  amountCoins    Int // coins to burn on fulfilment
+  tierGranted    String?          @db.VarChar(16) // SUB_CREDIT: 'starter' | 'pro'
+  monthsGranted  Int? // SUB_CREDIT
+  fiatValueCents Int? // MERCH/PAYOUT accounting/display
+  note           String?          @db.VarChar(500) // requester note / fulfilment reference id
+  status         RedemptionStatus @default(PENDING)
+  reviewedById   String?
+  reviewNote     String?          @db.VarChar(500)
+  externalRef    String?          @db.VarChar(120) // Stripe transfer id / shipment tracking
+  createdAt      DateTime         @default(now())
+  reviewedAt     DateTime?
+  fulfilledAt    DateTime?
+
+  user       User  @relation("RedemptionCreator", fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("RedemptionReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("redemption_request")
 }

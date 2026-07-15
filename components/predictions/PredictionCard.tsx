@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, Zap, ArrowUpRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import type { Market } from './types';
@@ -74,16 +74,36 @@ export function PredictionCard({ market, coins, setCoins, onUpdated }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-semibold text-site-text leading-snug">{market.title}</h3>
             {market.isAiGenerated && (
               <span title={t('ai-seeded', { defaultValue: 'AI-seeded market' })}>
                 <Sparkles className="w-3.5 h-3.5 text-site-accent shrink-0" />
               </span>
             )}
+            {market.isAuto && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-site-accent-dim px-2 py-0.5 text-[10px] font-semibold text-site-accent shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]"
+                title={t('auto-market-hint', {
+                  defaultValue: 'Settles automatically from RMH data — no admin or AI judge',
+                })}
+              >
+                <Zap className="w-3 h-3" aria-hidden />
+                {t('auto-market', { defaultValue: 'Auto' })}
+              </span>
+            )}
           </div>
           {market.description && (
             <p className="text-sm text-site-text-dim mt-1 line-clamp-3">{market.description}</p>
+          )}
+          {market.subjectUrl && (
+            <a
+              href={market.subjectUrl}
+              className="inline-flex items-center gap-0.5 text-xs text-site-accent hover:underline mt-1"
+            >
+              {t('view-subject', { defaultValue: 'View the subject' })}
+              <ArrowUpRight className="w-3 h-3" aria-hidden />
+            </a>
           )}
         </div>
         {/* Big probability */}
