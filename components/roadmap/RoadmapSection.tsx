@@ -5,18 +5,18 @@ import { useTranslation } from "react-i18next";
 import { Reveal } from "@/components/motion";
 import { LIFT_CARD } from "@/components/feed/motionHelpers";
 
-type Milestone = {
+export type Milestone = {
   title: string;
   body: string;
 };
 
-type YearSection = {
+export type YearSection = {
   year: string;
   tagline: string;
   milestones: Milestone[];
 };
 
-const roadmap: YearSection[] = [
+export const roadmap: YearSection[] = [
   {
     year: "Year 1",
     tagline: "Foundation",

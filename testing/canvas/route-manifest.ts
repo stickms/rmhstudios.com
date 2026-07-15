@@ -80,7 +80,7 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
   { file: "_site/rideshare/drive.tsx", converted: false },
   { file: "_site/rideshare/index.tsx", converted: false },
   { file: "_site/rideshare/ride.tsx", converted: false },
-  { file: "_site/roadmap.tsx", converted: false },
+  { file: "_site/roadmap.tsx", converted: true },
   { file: "_site/search.tsx", converted: false },
   { file: "_site/settings/index.tsx", converted: false },
   { file: "_site/settings/privacy.tsx", converted: false },
