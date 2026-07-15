@@ -351,7 +351,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             here. No `data-scroll-root` → useScrollRestoration and BackToTop use
             the window; the custom PullToRefresh (which needs an inner scroller)
             goes inert, so iOS's native document pull-to-refresh takes over. */}
-        <div ref={panelRef} className="relative min-h-dvh touch-pan-y">
+        <div ref={panelRef} className="relative min-h-[100lvh] touch-pan-y">
           {children}
         </div>
 
@@ -364,7 +364,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             type="button"
             onClick={close}
             aria-label={t('close-menu', { defaultValue: 'Close menu' })}
-            className={`fixed inset-0 z-[55] bg-black/40 ${
+            className={`fixed inset-x-0 top-0 h-[100lvh] z-[55] bg-black/40 ${
               dragging
                 ? ''
                 : 'transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
@@ -380,7 +380,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             LeftSidebar's non-portaled fixed user menu (§3.3.1). */}
         <aside
           ref={asideRef}
-          className={`glass-chrome--aside fixed left-0 top-0 bottom-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
+          className={`glass-chrome--aside fixed left-0 top-0 h-[100lvh] z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
           } ${
             dragging
