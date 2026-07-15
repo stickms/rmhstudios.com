@@ -52,6 +52,21 @@ function collectPageRouteFiles(dir: string): string[] {
   return out.sort();
 }
 
+
+/**
+ * A route that emits NO visible DOM is inherently canvas-compliant: pure
+ * redirect routes (throw redirect() in beforeLoad, no component) and layout
+ * passthrough routes (component renders only <Outlet/>) draw nothing, so they
+ * satisfy the purity rule without a CanvasPage.
+ */
+function isNoVisualRoute(src: string): boolean {
+  const hasComponent = /\bcomponent\s*:/.test(src);
+  const throwsRedirect = src.includes("throw redirect(");
+  const outletOnly =
+    /component:\s*\(\)\s*=>\s*<Outlet\s*\/>/.test(src) || /return\s*<Outlet\s*\/>;?/.test(src);
+  return (throwsRedirect && !hasComponent) || outletOnly;
+}
+
 describe("canvas route-conversion guard", () => {
   const onDisk = collectPageRouteFiles(ROUTES_DIR);
   const manifest = new Map(ROUTE_MANIFEST.map((r) => [r.file, r]));
@@ -75,8 +90,8 @@ describe("canvas route-conversion guard", () => {
     for (const entry of ROUTE_MANIFEST) {
       if (!entry.converted) continue;
       const source = readFileSync(join(ROUTES_DIR, entry.file), "utf8");
-      if (!/CanvasPage/.test(source)) {
-        problems.push(`${entry.file}: marked converted but does not render a CanvasPage`);
+      if (!/CanvasPage/.test(source) && !isNoVisualRoute(source)) {
+        problems.push(`${entry.file}: marked converted but neither renders a CanvasPage nor is a no-visual (redirect/Outlet) route`);
       }
       for (const banned of BANNED_IMPORTS) {
         if (banned.pattern.test(source)) {
