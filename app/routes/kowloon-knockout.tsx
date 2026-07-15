@@ -1,17 +1,12 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 
-function KowloonKnockoutLayout() {
-  return (
-    <div style={{ fontFamily: '"Press Start 2P", cursive', width: '100%', height: '100dvh' }}>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
-      />
-      <Outlet />
-    </div>
-  )
-}
-
+/** Kowloon Knockout layout — the game canvas uses "Press Start 2P"; the font
+ *  link now lives in head() and the layout is a pure Outlet passthrough. */
 export const Route = createFileRoute('/kowloon-knockout')({
-  component: KowloonKnockoutLayout,
-})
+  head: () => ({
+    links: [
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap' },
+    ],
+  }),
+  component: () => <Outlet />,
+});

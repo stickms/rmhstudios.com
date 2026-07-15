@@ -1,17 +1,12 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from '@tanstack/react-router';
 
-function RmhFarmingSimLayout() {
-  return (
-    <div style={{ width: '100%', height: '100dvh' }}>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
-      />
-      <Outlet />
-    </div>
-  )
-}
-
+/** RMH Farming Sim layout — game canvas uses "Press Start 2P"; font link moved
+ *  to head(), layout is a pure Outlet passthrough. */
 export const Route = createFileRoute('/rmh-farming-sim')({
-  component: RmhFarmingSimLayout,
-})
+  head: () => ({
+    links: [
+      { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap' },
+    ],
+  }),
+  component: () => <Outlet />,
+});
