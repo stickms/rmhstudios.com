@@ -19,7 +19,7 @@ import { WhatsNewModal } from '@/components/feed/WhatsNewModal';
 import { FreeMonthModal } from '@/components/feed/FreeMonthModal';
 import { CookieConsent } from '@/components/site/CookieConsent';
 import { KeyboardShortcuts } from '@/components/site/KeyboardShortcuts';
-import { ViewportBottomInset } from '@/components/site/ViewportBottomInset';
+import { MobileSafeArea } from '@/components/site/MobileSafeArea';
 import { BackToTop } from '@/components/ui/back-to-top';
 import { MiniPlayer } from '@/components/rmhmusic/MiniPlayer';
 import '@/components/feed/feed.css';
@@ -35,9 +35,9 @@ function SiteLayout() {
   const { t } = useTranslation('common');
   return (
     <div className="vibe-app min-h-dvh flex flex-col md:flex-row">
-      {/* Measures the browser's own bottom bar (iOS 26 Safari's floating tab
-          bar) into --browser-bottom-bar so the dock + content clear it. */}
-      <ViewportBottomInset />
+      {/* Flags iOS so the dock + content clear iOS Safari's floating tab bar
+          (via --safe-bottom); adds a viewport-metrics readout at ?safedebug. */}
+      <MobileSafeArea />
       {/* Keyboard skip link — visually hidden until focused. */}
       <a
         href="#main-content"
