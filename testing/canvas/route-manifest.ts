@@ -215,7 +215,7 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
   { file: "strategies/sahur.tsx", converted: true },
   { file: "studio.tsx", converted: true },
   { file: "studio/index.tsx", converted: false },
-  { file: "synapse-storm.tsx", converted: true, overlayAllow: ["game-2d"] },
+  { file: "synapse-storm.tsx", converted: false },
   { file: "temple-of-joy.tsx", converted: false },
   { file: "temple-of-joy/index.tsx", converted: true, overlayAllow: ["game-2d"] },
   { file: "terms.tsx", converted: true },
