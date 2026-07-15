@@ -928,24 +928,19 @@ html.perf-lite .glass-interactive::after {
   --shadow-neon: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple);
 }
 
-/* Bottom insets for floating mobile UI.
-   iOS Safari's bottom toolbar — chiefly the iOS 26 floating tab bar — sits over
-   the page, covers position:fixed bottom UI, and is NOT reported by
-   env(safe-area-inset-*). The amount it currently occupies equals 100lvh−100dvh:
-   dvh (the dynamic viewport) already excludes the toolbar that's on screen,
-   while lvh (the large viewport) never does, so their difference is exactly the
-   shown toolbar. We cap it (the on-screen keyboard also shrinks dvh, by far
-   more) and gate it to html.is-ios (set by <MobileSafeArea>) so Android's TOP
-   url bar — which also shrinks dvh — never wrongly lifts the bottom dock.
-   --safe-bottom sums the home-indicator safe area and that toolbar so fixed UI
-   and content clear BOTH; it collapses to plain env() off iOS / when no toolbar
-   is shown, leaving desktop, PWAs, and Android untouched. */
+/* Bottom inset shared by floating mobile UI (dock, FAB, mini-player,
+   back-to-top) and content columns (.pb-dock).
+
+   Just env(safe-area-inset-bottom) — deliberately. On iOS Safari, including
+   iOS 26's floating tab bar, position:fixed is anchored to the VISUAL viewport,
+   which already sits ABOVE the browser's bottom bar; and env(safe-area-inset-
+   bottom) reports 0 while that bar is shown, then the home-indicator inset once
+   it collapses on scroll. So env() alone lands fixed UI just above whatever is
+   at the bottom (browser bar or home indicator) in every state. Do NOT add the
+   toolbar height (100lvh − 100dvh) on top — verified on-device that it stacks a
+   second bar's worth of space and floats the dock ~100px too high. */
 :root {
-  --browser-bottom-bar: 0px;
-  --safe-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--browser-bottom-bar, 0px));
-}
-html.is-ios {
-  --browser-bottom-bar: min(96px, max(0px, 100lvh - 100dvh));
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @layer utilities {
