@@ -7,6 +7,7 @@ import { FeedTabs } from './FeedTabs';
 import { ComposeBox } from './ComposeBox';
 import { ThreadComposer } from './ThreadComposer';
 import { FeedList } from './FeedList';
+import { PullToRefresh } from './PullToRefresh';
 import { FeedAnnouncements } from './FeedAnnouncements';
 import { OnboardingChecklist } from './OnboardingChecklist';
 import { JumpBackIn } from './JumpBackIn';
@@ -42,6 +43,8 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
   const { open: openSidebar } = useMobileSidebar();
   const { setFilter, search, setSearch, setMutedWords } = useFeedStore();
+  // Stable store action — drives swipe-down-to-refresh on the mobile feed.
+  const refreshFeed = useFeedStore((s) => s.refresh);
   const { data: session } = authClient.useSession();
   const navigate = useNavigate();
   // `?q=` is the shareable source of truth; the store search mirrors it.
@@ -129,6 +132,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   };
 
   return (
+    <PullToRefresh onRefresh={refreshFeed}>
     <div className="flex flex-col">
       {/* Header */}
       <div className="sticky top-0 z-10 glass-chrome border-b border-site-border">
@@ -305,5 +309,6 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
         <FeedList onSwitchToForYou={() => handleModeChange('feed')} />
       )}
     </div>
+    </PullToRefresh>
   );
 }

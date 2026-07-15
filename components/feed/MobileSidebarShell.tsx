@@ -312,13 +312,16 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
         {/* Page scroll container. It never moves; when the drawer is open it is
             scroll-locked (`overflow-y-hidden`) so the page can't scroll behind
             the overlay. `touch-pan-y` reserves horizontal gestures for the drawer
-            drag; `overscroll-contain` keeps scroll from chaining to the document.
+            drag; `overscroll-none` keeps scroll from chaining to the document AND
+            suppresses the native rubber-band bounce at the top/bottom — the
+            latter is what lets the feed's swipe-down-to-refresh (PullToRefresh)
+            reliably take over the boundary pull (its touchmove stays cancelable).
             `data-scroll-root` marks it for useScrollRestoration. `h-dvh` makes it
             a real scroller (its parent only sets min-h-dvh). */}
         <div
           ref={scrollRef}
           data-scroll-root
-          className={`min-w-0 w-full h-dvh min-h-0 overflow-x-hidden touch-pan-y overscroll-contain ${
+          className={`min-w-0 w-full h-dvh min-h-0 overflow-x-hidden touch-pan-y overscroll-none ${
             isOpen ? 'overflow-y-hidden' : 'overflow-y-auto'
           }`}
         >
