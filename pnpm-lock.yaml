@@ -8,7 +8,7 @@ overrides:
   shell-quote: '>=1.8.4'
   '@xmldom/xmldom': '>=0.8.13'
   music-metadata: '>=11.12.3'
-  undici: '>=7.28.0'
+  undici: ^7.28.0
   ws: '>=8.21.0'
   srvx: '>=0.11.13'
   '@hono/node-server': '>=1.19.13'
@@ -366,8 +366,8 @@ importers:
         specifier: ^14.0.0
         version: 14.0.0
       undici:
-        specifier: '>=7.28.0'
-        version: 8.7.0
+        specifier: ^7.28.0
+        version: 7.28.0
       uuid:
         specifier: ^14.0.0
         version: 14.0.0
@@ -7117,9 +7117,9 @@ packages:
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
-  undici@8.7.0:
-    resolution: {integrity: sha512-N7iQtfyLhIMOFgQubvmLV26svHpO0bqKnAiWotTQCVKCmWrcGbBotPuW1x+xwYZ2VHdSTVUfPQQnlEt1/LouTQ==}
-    engines: {node: '>=22.19.0'}
+  undici@7.28.0:
+    resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
+    engines: {node: '>=20.18.1'}
 
   unenv@2.0.0-rc.24:
     resolution: {integrity: sha512-i7qRCmY42zmCwnYlh9H2SvLEypEFGye5iRmEMKjcGi7zk9UquigRjFtTLz0TYqr0ZGLZhaMHl/foy1bZR+Cwlw==}
@@ -8078,7 +8078,7 @@ snapshots:
       discord-api-types: 0.38.48
       magic-bytes.js: 1.13.0
       tslib: 2.8.1
-      undici: 8.7.0
+      undici: 7.28.0
 
   '@discordjs/util@1.2.0':
     dependencies:
@@ -11033,7 +11033,7 @@ snapshots:
       parse5: 7.3.0
       parse5-htmlparser2-tree-adapter: 7.1.0
       parse5-parser-stream: 7.1.2
-      undici: 8.7.0
+      undici: 7.28.0
       whatwg-mimetype: 4.0.0
 
   chokidar@5.0.0:
@@ -11419,7 +11419,7 @@ snapshots:
       lodash.snakecase: 4.1.1
       magic-bytes.js: 1.13.0
       tslib: 2.8.1
-      undici: 8.7.0
+      undici: 7.28.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -13167,7 +13167,7 @@ snapshots:
       oxc-minify: 0.110.0(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.0)
       oxc-transform: 0.110.0(@emnapi/core@1.10.0)(@emnapi/runtime@1.11.0)
       srvx: 0.11.16
-      undici: 8.7.0
+      undici: 7.28.0
       unenv: 2.0.0-rc.24
       unstorage: 2.0.0-alpha.7(chokidar@5.0.0)(db0@0.3.4(@electric-sql/pglite@0.4.1)(mysql2@3.15.3))(ioredis@5.11.1)(lru-cache@11.5.1)(ofetch@2.0.0-alpha.3)
     optionalDependencies:
@@ -14628,7 +14628,7 @@ snapshots:
 
   undici-types@6.21.0: {}
 
-  undici@8.7.0: {}
+  undici@7.28.0: {}
 
   unenv@2.0.0-rc.24:
     dependencies:

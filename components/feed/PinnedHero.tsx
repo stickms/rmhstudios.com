@@ -130,19 +130,25 @@ function AnimatedStage({
   progress,
   ...content
 }: { progress: MotionValue<number> } & Omit<PinnedHeroProps, 'screens'>) {
+  // Every map must cover the full [0, 1] progress range with an explicit
+  // terminal keyframe. framer-motion 12 compiles scroll-linked opacity maps
+  // into native scroll-timeline (WAAPI) keyframes, and a map ending before
+  // offset 1 gets its missing end keyframe synthesized from the element's
+  // underlying inline style (opacity: 0) — which made the composed text fade
+  // back OUT over the rest of the pinned scene instead of holding.
   const glowScale = useTransform(progress, [0, 1], [1.22, 1]);
   const glowOpacity = useTransform(progress, [0, 1], [0.35, 0.9]);
-  const eyebrowOpacity = useTransform(progress, [0, 0.3], [0, 1]);
-  const eyebrowY = useTransform(progress, [0, 0.3], [14, 0]);
+  const eyebrowOpacity = useTransform(progress, [0, 0.3, 1], [0, 1, 1]);
+  const eyebrowY = useTransform(progress, [0, 0.3, 1], [14, 0, 0]);
   // Title stays fully visible from the first frame (the pinned screen is never
   // blank); it only settles in scale/position as you scrub.
   const titleScale = useTransform(progress, [0, 1], [1.06, 1]);
   const titleY = useTransform(progress, [0, 1], [26, 0]);
-  const subOpacity = useTransform(progress, [0.2, 0.58], [0, 1]);
-  const subY = useTransform(progress, [0.2, 0.58], [26, 0]);
-  const actOpacity = useTransform(progress, [0.42, 0.78], [0, 1]);
-  const actY = useTransform(progress, [0.42, 0.78], [22, 0]);
-  const cueOpacity = useTransform(progress, [0, 0.08, 0.72, 0.9], [0, 1, 1, 0]);
+  const subOpacity = useTransform(progress, [0.2, 0.58, 1], [0, 1, 1]);
+  const subY = useTransform(progress, [0.2, 0.58, 1], [26, 0, 0]);
+  const actOpacity = useTransform(progress, [0.42, 0.78, 1], [0, 1, 1]);
+  const actY = useTransform(progress, [0.42, 0.78, 1], [22, 0, 0]);
+  const cueOpacity = useTransform(progress, [0, 0.08, 0.72, 0.9, 1], [0, 1, 1, 0, 0]);
 
   return (
     <HeroFrame
