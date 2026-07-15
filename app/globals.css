@@ -489,7 +489,18 @@
 html:not(.app-route) body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Overshoot the visual-viewport bottom so the aurora paints BEHIND iOS
+     Safari's floating bar and the home indicator instead of ceding that strip to
+     the flat --site-bg — which otherwise read as a themed band under the mobile
+     tab bar. A fixed layer is anchored to the visual-viewport top and capped at
+     100lvh tall, which still stops ~a toolbar's height short of the physical
+     bottom; the extra 25vh generously clears whatever sits at the bottom in every
+     state (Safari's bar expanded or minimized, home indicator). The overshoot is
+     off-screen, and z-index:-1 + pointer-events:none keep it invisible and inert. */
+  height: calc(100lvh + 25vh);
   z-index: -1;
   background-image: var(--site-canvas);
   pointer-events: none;
