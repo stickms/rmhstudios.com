@@ -364,12 +364,17 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             type="button"
             onClick={close}
             aria-label={t('close-menu', { defaultValue: 'Close menu' })}
-            className={`fixed inset-x-0 top-0 h-[100lvh] z-[55] bg-black/40 ${
+            className={`fixed inset-x-0 top-0 z-[55] bg-black/40 ${
               dragging
                 ? ''
                 : 'transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
             }`}
-            style={{ opacity: scrimProgress }}
+            // Bleed past the visual-viewport bottom so the scrim dims BEHIND iOS
+            // Safari's floating bar and the home indicator too, instead of leaving
+            // an undimmed band there. Anchored top:0 + a negative bottom (rather
+            // than h-[100lvh], which stops a toolbar's height short of the physical
+            // bottom).
+            style={{ opacity: scrimProgress, bottom: 'calc((var(--safe-bottom) + (100lvh - 100dvh) + 40px) * -1)' }}
           />
         )}
 
@@ -380,17 +385,25 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             LeftSidebar's non-portaled fixed user menu (§3.3.1). */}
         <aside
           ref={asideRef}
-          className={`glass-chrome--aside fixed left-0 top-0 h-[100lvh] z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
+          className={`glass-chrome--aside fixed left-0 top-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
           } ${
             dragging
               ? ''
               : 'transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0'
           }`}
-          // The overlay covers the floating dock (it's behind the scrim), so the
-          // pinned footer only needs a small gap above the home-indicator /
-          // browser bottom bar (--safe-bottom).
-          style={{ transform: sidebarTransform, paddingBottom: 'calc(var(--safe-bottom) + 16px)' }}
+          // Full-bleed glass: anchored top:0 + a negative bottom so the panel
+          // reaches the PHYSICAL bottom (behind Safari's floating bar / the home
+          // indicator), not just 100lvh — which stopped a toolbar's height short
+          // and left the "not full height" dark gap. The bottom offset is pinned
+          // to the visual-viewport bottom, so paddingBottom = (that same bleed) +
+          // 16px lands the pinned footer 16px above whatever sits at the bottom,
+          // regardless of the exact bar/indicator heights.
+          style={{
+            transform: sidebarTransform,
+            bottom: 'calc((var(--safe-bottom) + (100lvh - 100dvh) + 40px) * -1)',
+            paddingBottom: 'calc(var(--safe-bottom) + (100lvh - 100dvh) + 56px)',
+          }}
           aria-hidden={!isOpen}
         >
           <LeftSidebar expanded />

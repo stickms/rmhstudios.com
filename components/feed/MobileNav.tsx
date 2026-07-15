@@ -112,22 +112,16 @@ export function MobileNav() {
         className={`md:hidden fixed inset-x-0 bottom-0 z-50 glass-chrome border-t border-site-border shadow-site ${slide}`}
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          transform: hidden ? 'translateY(100%)' : 'translateY(0)',
+          // Hide fully: translateY(100%) alone only clears the bar's own height,
+          // leaving it behind iOS Safari's translucent floating bar (where it
+          // stays faintly visible). Add the home-indicator inset plus a cushion so
+          // it slides entirely below the physical bottom and truly disappears.
+          transform: hidden
+            ? 'translateY(calc(100% + env(safe-area-inset-bottom, 0px) + 24px))'
+            : 'translateY(0)',
         }}
         aria-hidden={hidden}
       >
-        {/* Continue the liquid glass BEHIND iOS Safari's floating bar so the
-            strip beneath the tab row reads as the same glass while the bar is
-            visible. It's a child of the nav, so the hide transform slides it away
-            too — scroll down and the aurora shows through instead of a themed
-            band. (100lvh − 100dvh) is Safari's expanded-bar height; it collapses
-            to 0 once the bar minimizes, where the nav's own env() padding already
-            covers the home indicator. */}
-        <div
-          aria-hidden
-          className="absolute inset-x-0 top-full glass-chrome pointer-events-none"
-          style={{ height: 'calc(100lvh - 100dvh)' }}
-        />
         <div className="flex items-center justify-around px-2 py-1.5">
           <Link to="/" className={tabClass(isHome)} aria-label={t("home", { defaultValue: "Home" })} aria-current={isHome ? 'page' : undefined} tabIndex={hidden ? -1 : undefined}>
             <Home className="w-6 h-6" />
