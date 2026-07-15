@@ -1284,7 +1284,11 @@ body {
   background: var(--site-bg);
   color: var(--site-text);
   font-family: var(--site-font-body, var(--font-sans)), Arial, Helvetica, sans-serif;
-  overflow-x: hidden;
+  /* `clip` (not `hidden`): hidden forces overflow-y to compute to `auto`,
+     making <body> the containing scrollport for every position:sticky element
+     on the page — and since the html element is what actually scrolls, sticky
+     pinning never engages. `clip` clips without creating a scroll box. */
+  overflow-x: clip;
   min-height: 100%;
   /* With viewport-fit=cover the page renders edge-to-edge behind the
      home-indicator bar and iOS Safari's floating tab bar (content scrolls under
