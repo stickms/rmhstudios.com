@@ -15,13 +15,13 @@ import {
   Activity,
   CheckCircle2,
   ChevronLeft,
-  ChevronDown,
   ArrowRight,
   type LucideIcon,
 } from 'lucide-react';
-// Reuse the security page's black & white, Apple-style design system verbatim
+// Reuse the security page's liquid-glass "store style" design system verbatim
 // so the two standalone pages are visually identical (same `sec-*` classes).
 import '@/components/security/security.css';
+import { PinnedHero } from '@/components/feed/PinnedHero';
 
 /**
  * /optimization — a standalone page describing how RMH Studios makes the app
@@ -329,7 +329,6 @@ const LEGAL_LINKS: { href: string; label: string }[] = [
 
 export function OptimizationPage() {
   const pageRef = useRef<HTMLDivElement>(null);
-  const startRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const page = pageRef.current;
@@ -359,10 +358,6 @@ export function OptimizationPage() {
     return () => observer.disconnect();
   }, []);
 
-  const scrollToStart = () => {
-    startRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   return (
     <div className="sec-page" ref={pageRef}>
       <a className="sec-skip" href="#opt-main">
@@ -389,24 +384,18 @@ export function OptimizationPage() {
       </header>
 
       <main id="opt-main">
-        {/* ─── Hero ─────────────────────────────────────────────────────── */}
-        <section className="sec-hero" aria-labelledby="opt-hero-title">
-          <div className="sec-hero__grid" aria-hidden="true" />
-          <div className="sec-hero__aura" aria-hidden="true" />
-          <div className="sec-hero__ring sec-hero__ring--1" aria-hidden="true" />
-          <div className="sec-hero__ring sec-hero__ring--2" aria-hidden="true" />
-          <div className="sec-hero__ring sec-hero__ring--3" aria-hidden="true" />
-
-          <div className="sec-shell sec-hero__content">
-            <h1 id="opt-hero-title" className="sec-hero__title">
-              Speed you can <em>feel.</em>
-            </h1>
-            <p className="sec-hero__lede">
-              Fast isn’t a setting we flipped on — it’s hundreds of small
-              decisions, from the first byte the server sends to the last second
-              of a deploy. Here’s how we keep RMH Studios quick.
-            </p>
-            <div className="sec-hero__actions">
+        {/* ─── Hero — the signature pinned scroll-narrative ──────────────── */}
+        <PinnedHero
+          eyebrow="Speed & optimization"
+          title={
+            <>
+              Speed you can <span className="text-site-accent">feel.</span>
+            </>
+          }
+          subtitle="Fast isn’t a setting we flipped on — it’s hundreds of small decisions, from the first byte the server sends to the last second of a deploy. Here’s how we keep RMH Studios quick."
+          scrollCue="The runtime"
+          actions={
+            <>
               <a className="sec-btn sec-btn--primary" href="#opt-runtime">
                 How it stays fast
                 <ArrowRight aria-hidden="true" />
@@ -414,19 +403,9 @@ export function OptimizationPage() {
               <a className="sec-btn sec-btn--ghost" href="#opt-milestones">
                 The measured wins
               </a>
-            </div>
-          </div>
-
-          <button
-            className="sec-hero__cue"
-            type="button"
-            onClick={scrollToStart}
-            aria-label="Scroll to the runtime section"
-          >
-            Scroll
-            <ChevronDown size={16} aria-hidden="true" />
-          </button>
-        </section>
+            </>
+          }
+        />
 
         {/* ─── Trust bar ────────────────────────────────────────────────── */}
         <section className="sec-stats" aria-label="Performance at a glance">
@@ -455,7 +434,6 @@ export function OptimizationPage() {
         {/* ─── Runtime ──────────────────────────────────────────────────── */}
         <section
           id="opt-runtime"
-          ref={startRef}
           className="sec-section sec-section--hair"
           aria-labelledby="opt-runtime-title"
         >

@@ -11,7 +11,6 @@ import {
   LogOut,
   Server,
   ChevronLeft,
-  ChevronDown,
   ArrowRight,
   Bug,
   CheckCircle2,
@@ -24,6 +23,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import './security.css';
+import { PinnedHero } from '@/components/feed/PinnedHero';
 import { BugBountyForm } from './BugBountyForm';
 import { REWARD_TIERS, CATEGORY_BOUNTIES } from '@/lib/security-report-schema';
 
@@ -305,7 +305,6 @@ const SECURITY_FAQ: Faq[] = [
 
 export function SecurityPage() {
   const pageRef = useRef<HTMLDivElement>(null);
-  const pillarsRef = useRef<HTMLElement>(null);
 
   // Enable scroll-reveal only as an enhancement, and only when the visitor has
   // not requested reduced motion. Without this, `.sec-reveal` stays fully
@@ -341,10 +340,6 @@ export function SecurityPage() {
     return () => observer.disconnect();
   }, []);
 
-  const scrollToPillars = () => {
-    pillarsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   return (
     <div className="sec-page" ref={pageRef}>
       <a className="sec-skip" href="#sec-main">
@@ -371,24 +366,18 @@ export function SecurityPage() {
       </header>
 
       <main id="sec-main">
-        {/* ─── Hero ─────────────────────────────────────────────────────── */}
-        <section className="sec-hero" aria-labelledby="sec-hero-title">
-          <div className="sec-hero__grid" aria-hidden="true" />
-          <div className="sec-hero__aura" aria-hidden="true" />
-          <div className="sec-hero__ring sec-hero__ring--1" aria-hidden="true" />
-          <div className="sec-hero__ring sec-hero__ring--2" aria-hidden="true" />
-          <div className="sec-hero__ring sec-hero__ring--3" aria-hidden="true" />
-
-          <div className="sec-shell sec-hero__content">
-            <h1 id="sec-hero-title" className="sec-hero__title">
-              Security you can <em>feel.</em>
-            </h1>
-            <p className="sec-hero__lede">
-              You trust us with your account, your work, and sometimes your
-              payment details. We treat that trust as the product itself — and
-              engineer for it on every request, in every layer.
-            </p>
-            <div className="sec-hero__actions">
+        {/* ─── Hero — the signature pinned scroll-narrative ──────────────── */}
+        <PinnedHero
+          eyebrow="Security"
+          title={
+            <>
+              Security you can <span className="text-site-accent">feel.</span>
+            </>
+          }
+          subtitle="You trust us with your account, your work, and sometimes your payment details. We treat that trust as the product itself — and engineer for it on every request, in every layer."
+          scrollCue="How we protect you"
+          actions={
+            <>
               <a className="sec-btn sec-btn--primary" href="#sec-pillars">
                 See how we protect you
                 <ArrowRight aria-hidden="true" />
@@ -397,19 +386,9 @@ export function SecurityPage() {
                 <Bug aria-hidden="true" />
                 Report a vulnerability
               </a>
-            </div>
-          </div>
-
-          <button
-            className="sec-hero__cue"
-            type="button"
-            onClick={scrollToPillars}
-            aria-label="Scroll to security overview"
-          >
-            Scroll
-            <ChevronDown size={16} aria-hidden="true" />
-          </button>
-        </section>
+            </>
+          }
+        />
 
         <section className="sec-section sec-section--hair" aria-labelledby="sec-engineering-title">
           <div className="sec-shell">
@@ -465,7 +444,6 @@ export function SecurityPage() {
         {/* ─── Pillars ──────────────────────────────────────────────────── */}
         <section
           id="sec-pillars"
-          ref={pillarsRef}
           className="sec-section sec-section--hair"
           aria-labelledby="sec-pillars-title"
         >

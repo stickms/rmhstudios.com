@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Reveal } from "@/components/motion";
-import { LIFT_CARD } from "@/components/feed/motionHelpers";
+import { PinnedHero } from "@/components/feed/PinnedHero";
+import { Reveal, RevealGroup, RevealItem } from "@/components/motion";
 
 type Milestone = {
   title: string;
@@ -837,16 +836,16 @@ const roadmap: YearSection[] = [
   },
 ];
 
+/** Near-term committed eras (Year 1–3) get the gold spine/node; everything
+ *  further out is aspirational and gets the sky-blue accent. Encodes
+ *  "committed vs aspirational," which is true about the content. */
+const COMMITTED_YEARS = new Set(["Year 1", "Year 2", "Year 3"]);
+
+/** One milestone → an L2 glass pane (`.glass-pane`). Accent-tinted title,
+ *  muted body, a subtle reduced-motion-safe lift on hover. */
 function MilestoneCard({ title, body }: { title: string; body: string }) {
   return (
-    <div
-      data-slot="card"
-      className={`roadmap-card border border-site-border bg-site-surface p-5 ${LIFT_CARD}`}
-      style={{
-        borderRadius: "var(--site-radius)",
-        borderWidth: "var(--site-border-width)",
-      }}
-    >
+    <div data-slot="card" className="roadmap-card glass-pane p-5">
       <h3 className="mb-2 text-xs font-bold uppercase tracking-wider text-site-accent">
         {title}
       </h3>
@@ -855,93 +854,174 @@ function MilestoneCard({ title, body }: { title: string; body: string }) {
   );
 }
 
-export function RoadmapSection() {
-  const { t } = useTranslation("c-roadmap");
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("roadmap-visible");
-            observer.unobserve(entry.target);
-          }
-        }
-      },
-      { rootMargin: "0px 0px -40px 0px", threshold: 0.05 }
-    );
-
-    const elements = container.querySelectorAll(".roadmap-animate");
-    elements.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, []);
+/** One chronological era: a timeline node on the spine, big display year,
+ *  mono tagline, and a staggered grid of milestone panes. */
+function EraSection({ section }: { section: YearSection }) {
+  const committed = COMMITTED_YEARS.has(section.year);
+  // The spine + node use the era's accent so the whole column reads as one
+  // continuous, colour-coded chronology.
+  const eraColor = committed ? "var(--site-warning)" : "var(--site-accent)";
 
   return (
-    <div className="px-4 py-4" ref={containerRef}>
-      <style>{`
-        .roadmap-animate {
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 0.4s ease-out, transform 0.4s ease-out;
-        }
-        .roadmap-visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        .roadmap-section {
-          content-visibility: auto;
-          contain-intrinsic-size: auto 300px;
-        }
-      `}</style>
+    <section
+      className="roadmap-era relative pl-8 sm:pl-10"
+      style={{ "--era-color": eraColor } as React.CSSProperties}
+    >
+      {/* Timeline spine — a hairline accent rail running the full height of the
+          era, with the node sitting on it. */}
+      <span aria-hidden className="roadmap-spine" />
+      <span aria-hidden className="roadmap-node" />
 
-      {/* Intro */}
-      <Reveal>
-        <div className="mb-6 rounded-site border border-site-border bg-site-surface p-4 backdrop-blur-sm">
-          <p className="text-sm leading-relaxed text-site-text-muted">
-            {t("intro-body", { defaultValue: "We're an indie studio building rhythm games, deckbuilders, narrative horror, and more. Our roadmap isn't tied to one title—we're growing the catalog, Discord, and new worlds in parallel. Timelines are guides, not promises." })}
-          </p>
-        </div>
-      </Reveal>
-
-      {/* Year sections */}
-      <div className="space-y-10">
-        {roadmap.map((section) => (
-          <section
-            key={section.year}
-            className="roadmap-section roadmap-animate relative"
+      {/* Era header — big display year + mono tagline eyebrow. */}
+      <header className="mb-5">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span
+            className="roadmap-year text-3xl sm:text-4xl"
+            style={{ color: "var(--era-color)" }}
           >
-            {/* Year label */}
-            <div className="flex flex-wrap items-baseline gap-2 mb-4 pl-3 border-l-2 border-site-accent">
-              <span className="text-xl font-black text-site-accent">
-                {section.year}
-              </span>
-              <span className="text-site-text-dim font-mono text-xs uppercase tracking-wider">
-                {section.tagline}
-              </span>
-            </div>
+            {section.year}
+          </span>
+          <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-site-text-dim">
+            {section.tagline}
+          </span>
+        </div>
+      </header>
 
-            {/* Milestone grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {section.milestones.map((milestone, i) => (
-                <MilestoneCard
-                  key={`${section.year}-${i}`}
-                  title={milestone.title}
-                  body={milestone.body}
-                />
-              ))}
-            </div>
-          </section>
+      {/* Milestone grid — staggered into view via the shared motion primitives. */}
+      <RevealGroup className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {section.milestones.map((milestone, i) => (
+          <RevealItem key={`${section.year}-${i}`} className="flex">
+            <MilestoneCard title={milestone.title} body={milestone.body} />
+          </RevealItem>
         ))}
-      </div>
+      </RevealGroup>
+    </section>
+  );
+}
 
-      <p className="roadmap-animate text-center text-site-text-dim text-xs mt-10 pb-4">
-        {t("update-note", { defaultValue: "We'll update this as we ship." })}
-      </p>
+export function RoadmapSection() {
+  const { t } = useTranslation("c-roadmap");
+
+  return (
+    <div className="relative isolate">
+      <RoadmapStyles />
+
+      {/* ── Signature pinned hero ─────────────────────────────
+          No overflow-hidden wrapper around the hero (it clips its own glow),
+          so its position:sticky pinning survives inside AnimatedMain. The old
+          intro card's copy is folded into the subtitle. */}
+      <PinnedHero
+        eyebrow={t("hero-eyebrow", { defaultValue: "Roadmap" })}
+        title={
+          <>
+            {t("hero-heading-line1", { defaultValue: "The road" })}{" "}
+            <span className="text-site-accent">
+              {t("hero-heading-line2", { defaultValue: "ahead." })}
+            </span>
+          </>
+        }
+        subtitle={t("intro-body", {
+          defaultValue:
+            "We're an indie studio building rhythm games, deckbuilders, narrative horror, and more. Our roadmap isn't tied to one title—we're growing the catalog, Discord, and new worlds in parallel. Timelines are guides, not promises.",
+        })}
+        scrollCue={t("hero-scroll-cue", { defaultValue: "Where we're going" })}
+      />
+
+      {/* ── Timeline ──────────────────────────────────────────
+          The years are a real chronology, so a vertical spine + per-era nodes
+          is content-true. `content-visibility:auto` on each era keeps ~30
+          sections cheap to render. */}
+      <div className="relative border-t border-site-border px-5 pb-16 pt-12 sm:px-8 sm:pt-16">
+        <div className="space-y-12">
+          {roadmap.map((section) => (
+            <EraSection key={section.year} section={section} />
+          ))}
+        </div>
+
+        <Reveal
+          as="p"
+          className="mt-14 text-center font-mono text-xs text-site-text-dim"
+        >
+          {t("update-note", { defaultValue: "We'll update this as we ship." })}
+        </Reveal>
+      </div>
     </div>
+  );
+}
+
+/** Scoped styles for the timeline spine, nodes, and display type. Every colour
+ *  is a `--site-*` token (via `--era-color`), so all themes work. */
+function RoadmapStyles() {
+  return (
+    <style>{`
+      .roadmap-year {
+        font-family: var(--site-font-display);
+        font-weight: 700;
+        letter-spacing: -0.03em;
+        line-height: 1.05;
+      }
+
+      /* Each era is a self-contained render unit: ~30 of them, so skip layout
+         + paint for off-screen eras. The reserved size keeps the scrollbar
+         honest before an era is measured. */
+      .roadmap-era {
+        content-visibility: auto;
+        contain-intrinsic-size: auto 320px;
+      }
+
+      /* Vertical accent rail down the left of each era, fading out at the tail
+         so consecutive eras read as one continuous spine. */
+      .roadmap-spine {
+        position: absolute;
+        left: 6px;
+        top: 4px;
+        bottom: -48px;
+        width: 2px;
+        border-radius: 9999px;
+        background: linear-gradient(
+          to bottom,
+          var(--era-color) 0%,
+          color-mix(in srgb, var(--era-color) 32%, transparent) 88%,
+          transparent 100%
+        );
+        opacity: 0.55;
+      }
+      @media (min-width: 640px) {
+        .roadmap-spine { left: 9px; }
+      }
+
+      /* The era node sitting on the spine, aligned to the display year. */
+      .roadmap-node {
+        position: absolute;
+        left: 0;
+        top: 6px;
+        height: 14px;
+        width: 14px;
+        border-radius: 9999px;
+        background: var(--era-color);
+        box-shadow:
+          0 0 0 4px color-mix(in srgb, var(--era-color) 18%, transparent),
+          var(--site-shadow-sm);
+      }
+      @media (min-width: 640px) {
+        .roadmap-node { left: 3px; }
+      }
+
+      /* Milestone panes — L2 glass (.glass-pane) with a subtle hover lift. */
+      .roadmap-card {
+        width: 100%;
+        transition:
+          transform var(--site-transition-speed) ease,
+          border-color var(--site-transition-speed) ease;
+      }
+      .roadmap-card:hover {
+        transform: translateY(-4px);
+        border-color: var(--site-border-bright);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .roadmap-card:hover { transform: none; }
+      }
+    `}</style>
   );
 }
