@@ -39,7 +39,9 @@
     "i18n:resources": "pnpm exec tsx scripts/gen-i18n-resources.ts",
     "i18n:translate:local": "bash scripts/translate-i18n-local.sh",
     "i18n:coverage": "pnpm exec tsx scripts/check-i18n-coverage.ts",
-    "emoji:shortcodes": "node scripts/generate-emoji-shortcodes.mjs"
+    "emoji:shortcodes": "node scripts/generate-emoji-shortcodes.mjs",
+    "e2e": "playwright test",
+    "e2e:install": "playwright install chromium"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

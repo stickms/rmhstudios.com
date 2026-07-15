@@ -80,3 +80,8 @@ MODULE.bazel.lock
 # deploy.sh content-addressed build-skip hashes (host-local)
 .deploy/
 .prisma-engines/
+
+# Playwright e2e artifacts
+e2e/__screenshots__/
+test-results/
+playwright-report/

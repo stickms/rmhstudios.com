@@ -62,3 +62,57 @@ jobs:
         run: pnpm run build:frontend
         env:
           NODE_OPTIONS: --max-old-space-size=8192
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Canvas e2e census (Phase 7 of the Konva overhaul). Boots the built app
+  # against a throwaway Postgres and asserts the single-visible-canvas purity
+  # rule for every converted route. Runs on PRs touching the canvas surface.
+  # ───────────────────────────────────────────────────────────────────────────
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: rmh
+          POSTGRES_PASSWORD: rmh
+          POSTGRES_DB: rmh
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rmh"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://rmh:rmh@localhost:5432/rmh
+      BETTER_AUTH_SECRET: ci-e2e-secret-not-used-in-prod
+      BETTER_AUTH_URL: http://localhost:7005
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply schema
+        run: pnpm db:push
+      - name: Build frontend
+        run: pnpm run build
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Canvas census
+        run: pnpm run e2e
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: canvas-census-screenshots
+          path: e2e/__screenshots__/
+          if-no-files-found: ignore
