@@ -207,7 +207,7 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
   { file: "strategies/profile/settings.tsx", converted: false },
   { file: "strategies/puzzles/$mode.tsx", converted: false },
   { file: "strategies/puzzles/archive.tsx", converted: true },
-  { file: "strategies/puzzles/index.tsx", converted: false },
+  { file: "strategies/puzzles/index.tsx", converted: true },
   { file: "strategies/puzzles/leaderboard.tsx", converted: true },
   { file: "strategies/safehouse/drops.tsx", converted: true },
   { file: "strategies/safehouse/index.tsx", converted: true },
