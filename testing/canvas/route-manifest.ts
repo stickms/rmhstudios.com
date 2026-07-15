@@ -198,7 +198,7 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
   { file: "secret/vega.tsx", converted: true, overlayAllow: ["game-2d"] },
   { file: "security.tsx", converted: false },
   { file: "slice-it.tsx", converted: false },
-  { file: "slice-it/index.tsx", converted: false },
+  { file: "slice-it/index.tsx", converted: true, overlayAllow: ["game-2d"] },
   { file: "strategies.tsx", converted: false },
   { file: "strategies/incidents.tsx", converted: true },
   { file: "strategies/index.tsx", converted: true },
