@@ -309,26 +309,33 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
       {/* Outer wrapper — the gesture listeners attach here so touches on the
           page, the scrim, and the glass sidebar all reach them. */}
       <div ref={wrapRef} className="md:hidden w-full min-w-0">
-        {/* Page scroll container. It never moves; when the drawer is open it is
-            scroll-locked (`overflow-y-hidden`) so the page can't scroll behind
-            the overlay. `touch-pan-y` reserves horizontal gestures for the drawer
-            drag; `overscroll-none` keeps scroll from chaining to the document AND
-            suppresses the native rubber-band bounce at the top/bottom — the
-            latter is what lets the feed's swipe-down-to-refresh (PullToRefresh)
-            reliably take over the boundary pull (its touchmove stays cancelable).
-            `data-scroll-root` marks it for useScrollRestoration. `h-dvh` makes it
-            a real scroller (its parent only sets min-h-dvh). */}
+        {/* Page scroll container — every _site page scrolls through this. Fixed
+            + top-anchored + `h-[100lvh]` (the LARGE viewport height), NOT an
+            in-flow box or `fixed inset-0`. On iOS 26, fixed `inset-0` / dvh only
+            reach the VISUAL viewport, which stops at Safari's floating bottom bar;
+            sizing to `100lvh` extends the scroller past it to the physical bottom,
+            so page content draws edge-to-edge BEHIND the dock, the browser bar,
+            and the home indicator. The .pb-dock inset keeps the last item
+            scrollable clear of them. Being fixed, it can't induce a second (body)
+            scroll the way an oversized in-flow box would. It never moves; when the
+            drawer is open it's scroll-locked (`overflow-y-hidden`). `touch-pan-y`
+            reserves horizontal gestures for the drawer drag; `overscroll-none`
+            stops scroll chaining AND the native rubber-band bounce (so the feed's
+            PullToRefresh can take over the boundary pull — its touchmove stays
+            cancelable). `data-scroll-root` marks it for useScrollRestoration. */}
         <div
           ref={scrollRef}
           data-scroll-root
-          className={`min-w-0 w-full h-dvh min-h-0 overflow-x-hidden touch-pan-y overscroll-none ${
+          className={`fixed inset-x-0 top-0 h-[100lvh] overflow-x-hidden touch-pan-y overscroll-none ${
             isOpen ? 'overflow-y-hidden' : 'overflow-y-auto'
           }`}
         >
           {/* Transparent so the body aurora is the single backdrop and draws
-              edge-to-edge (incl. under the floating dock) — no opaque band. The
-              glass sidebar overlay blurs this content when the drawer is open. */}
-          <div ref={panelRef} className="relative min-h-dvh touch-pan-y">
+              edge-to-edge (incl. behind the floating dock + browser bar) — no
+              opaque band. The glass sidebar overlay blurs this when the drawer is
+              open. `min-h-full` fills the fixed scroller so short pages still
+              cover the viewport. */}
+          <div ref={panelRef} className="relative min-h-full touch-pan-y">
             {children}
           </div>
         </div>
