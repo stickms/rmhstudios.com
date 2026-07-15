@@ -15,7 +15,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Stage, Layer } from "react-konva";
 import type Konva from "konva";
 import { I18nextProvider, useTranslation } from "react-i18next";
-import { useRouter } from "@tanstack/react-router";
+import { useRouter, useRouterState } from "@tanstack/react-router";
 import { useSceneRegistry } from "../scene/registry";
 import { ensureYoga } from "./layout/yoga";
 import {
@@ -30,6 +30,8 @@ import { watchFonts } from "../text/fonts";
 import { CanvasEnvContext, type CanvasEnv } from "./env";
 import { HelperRoot } from "../helpers/HelperRoot";
 import { OverlayRoot } from "../overlay/OverlayManager";
+import { ShellScene, type ShellSession } from "@/components/shell/ShellScene";
+import { useSession } from "@/components/Providers";
 
 declare global {
   interface Window {
@@ -87,6 +89,16 @@ function StageHostInner() {
   const { width, height } = useViewportSize();
   const router = useRouter();
   const { i18n } = useTranslation();
+  const pathname = useRouterState({ select: (st) => st.location.pathname });
+  const { data: session } = useSession();
+  const su = session?.user as { id?: string; name?: string | null; handle?: string | null; isAdmin?: boolean } | undefined;
+  const shellSession: ShellSession = {
+    authed: !!session,
+    isAdmin: !!su?.isAdmin,
+    name: su?.name ?? null,
+    handle: su?.handle ?? null,
+    userId: su?.id ?? null,
+  };
   const layerRef = useRef<Konva.Layer | null>(null);
   const rootBoxRef = useRef<BoxRef | null>(null);
 
@@ -122,6 +134,14 @@ function StageHostInner() {
   if (!active || width === 0) return null;
 
   const Scene = active.scene;
+  const sceneTree =
+    active.shell === "site" ? (
+      <ShellScene session={shellSession} pathname={pathname}>
+        <Scene {...active.props} />
+      </ShellScene>
+    ) : (
+      <Scene {...active.props} />
+    );
 
   return (
     <>
@@ -140,7 +160,7 @@ function StageHostInner() {
                 name="scene-root"
                 style={tw("flex flex-col w-full h-full")}
               >
-                <Scene {...active.props} />
+                {sceneTree}
               </Box>
             </Layer>
           </BridgedProviders>

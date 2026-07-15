@@ -7,6 +7,7 @@
 // runtime
 export { StageHost } from "./runtime/StageHost";
 export { CanvasPage, type CanvasPageProps } from "./runtime/CanvasPage";
+export { CanvasSitePage, type CanvasSitePageProps } from "./runtime/CanvasSitePage";
 export { tw, resolveResponsive, type TwStyle, type TwDecl } from "./runtime/tw";
 export {
   Box,
