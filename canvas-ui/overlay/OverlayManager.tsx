@@ -96,7 +96,7 @@ export function OverlayRoot() {
   const entries = useOverlayStore((s) => s.entries);
   if (entries.size === 0) return null;
   return (
-    <div id="overlay-root" style={{ position: "fixed", inset: 0, pointerEvents: "none" }}>
+    <div id="overlay-root" style={{ position: "fixed", inset: 0, pointerEvents: "none", zIndex: 41 }}>
       {[...entries.values()].map((e) => (
         <div
           key={e.id}

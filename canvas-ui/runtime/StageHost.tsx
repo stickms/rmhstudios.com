@@ -147,7 +147,7 @@ function StageHostInner() {
     <>
       <div
         data-canvas-stage-container
-        style={{ position: "fixed", inset: 0, background: tokens.bg, zIndex: 0 }}
+        style={{ position: "fixed", inset: 0, background: tokens.bg, zIndex: 40 }}
       >
         <Stage width={width} height={height} id="konva-stage">
           <BridgedProviders i18n={i18n} env={env} scheduler={scheduler}>
