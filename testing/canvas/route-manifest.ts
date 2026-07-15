@@ -74,7 +74,7 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
   { file: "_site/pricing.tsx", converted: false },
   { file: "_site/profile/$id.tsx", converted: false },
   { file: "_site/progress.tsx", converted: false },
-  { file: "_site/quotes.tsx", converted: false },
+  { file: "_site/quotes.tsx", converted: true },
   { file: "_site/ranked.tsx", converted: false },
   { file: "_site/recap.tsx", converted: false },
   { file: "_site/rideshare/drive.tsx", converted: false },

@@ -4,8 +4,13 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
-import { PageLayout } from '@/components/feed/PageLayout';
-import { Reveal } from '@/components/motion';
+import { useMemo } from 'react';
+import { CanvasPage } from '@/canvas-ui/runtime/CanvasPage';
+import { CanvasSitePage } from '@/canvas-ui/runtime/CanvasSitePage';
+import { Box } from '@/canvas-ui/runtime/layout/LayoutTree';
+import { tw } from '@/canvas-ui/runtime/tw';
+import { CanvasText } from '@/canvas-ui/text/Text';
+import { Badge } from '@/canvas-ui/widgets/primitives';
 
 export const Route = createFileRoute('/_site/quotes')({
   head: () => ({
@@ -147,97 +152,103 @@ const quotes = [
 
 const categories = [...new Set(quotes.map((q) => q.category))];
 
-function QuoteCard({ quote, index }: { quote: typeof quotes[number]; index: number }) {
+type Quote = (typeof quotes)[number];
+
+interface QuotesSceneProps extends Record<string, unknown> {
+  title: string;
+  hero: string;
+  countLabel: string;
+  footer: string;
+  cats: string[];
+  items: Quote[];
+}
+
+function QuotesScene({ title, hero, countLabel, footer, cats, items }: QuotesSceneProps) {
   return (
-    <div className="group relative pl-8 border-l-2 border-site-border hover:border-site-accent transition-colors duration-300 py-6">
-      {/* Quote number badge */}
-      <div className="absolute -left-3 top-6 w-6 h-6 rounded-full bg-site-surface border border-site-border flex items-center justify-center group-hover:bg-site-accent/10 group-hover:border-site-accent transition-colors duration-300">
-        <span className="text-xs font-mono text-site-text-muted group-hover:text-site-accent transition-colors duration-300">
-          {index + 1}
-        </span>
-      </div>
+    <CanvasSitePage title={title} wide>
+      <Box name="quotes" style={tw('flex flex-col w-full items-center px-4 pt-4 pb-12')}>
+        <Box style={tw('flex flex-col w-full max-w-[672px] gap-8')}>
+          {/* Hero */}
+          <Box style={tw('flex flex-col items-center gap-6')}>
+            <Box style={tw('w-full')}>
+              <CanvasText style="text-sm text-site-text-muted text-center">{hero}</CanvasText>
+            </Box>
+          </Box>
 
-      {/* Quote text */}
-      <blockquote className="mb-3">
-        <p className="text-site-text text-lg leading-relaxed font-(family-name:--site-font-display) italic">
-          &ldquo;{quote.text}&rdquo;
-        </p>
-      </blockquote>
+          {/* Category chips */}
+          <Box style={tw('flex flex-row flex-wrap justify-center gap-2')}>
+            {cats.map((c) => (
+              <Badge key={c}>{c}</Badge>
+            ))}
+          </Box>
 
-      {/* Context and category */}
-      <div className="flex flex-wrap items-center gap-2 text-sm text-site-text-muted">
-        <span className="inline-flex items-center gap-1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="opacity-60"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          {quote.context}
-        </span>
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-site-surface border border-site-border text-xs font-medium text-site-text-muted">
-          {quote.category}
-        </span>
-      </div>
+          {/* Count divider */}
+          <Box style={tw('flex flex-row justify-center w-full')}>
+            <CanvasText style="text-xs font-mono uppercase tracking-widest text-site-text-muted">{countLabel}</CanvasText>
+          </Box>
+
+          {/* Quote list */}
+          <Box style={tw('flex flex-col w-full')}>
+            {items.map((q, i) => (
+              <Box
+                key={i}
+                name={`quote-${i}`}
+                style={tw('flex flex-col w-full gap-3 pl-8 py-6 border-l-2 border-site-border')}
+              >
+                <CanvasText style="text-lg font-display italic text-site-text">{`\u201C${q.text}\u201D`}</CanvasText>
+                <Box style={tw('flex flex-row flex-wrap items-center gap-2')}>
+                  <CanvasText style="text-sm text-site-text-muted">{q.context}</CanvasText>
+                  <Badge>{q.category}</Badge>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+
+          {/* Footer */}
+          <Box style={tw('flex flex-col w-full items-center mt-6 pt-8 border-t border-site-border')}>
+            <CanvasText style="text-xs text-site-text-muted text-center">{footer}</CanvasText>
+          </Box>
+        </Box>
+      </Box>
+    </CanvasSitePage>
+  );
+}
+
+function QuotesMirror({ title, hero, footer, items }: QuotesSceneProps) {
+  return (
+    <div>
+      <h1>{title}</h1>
+      <p>{hero}</p>
+      {items.map((q, i) => (
+        <blockquote key={i}>
+          <p>{q.text}</p>
+          <cite>{q.context} {"\u2014"} {q.category}</cite>
+        </blockquote>
+      ))}
+      <p>{footer}</p>
     </div>
   );
 }
 
 function QuotesPage() {
   const { t } = useTranslation("site");
+  const sceneProps: QuotesSceneProps = useMemo(() => ({
+    title: t("steve-jobs-quotes-title", { defaultValue: "Steve Jobs Quotes" }),
+    hero: t("quotes-hero-description", { defaultValue: "A curated collection of the most memorable words from Steve Jobs \u2014 co-founder of Apple, visionary, and one of the most influential thinkers of the modern era." }),
+    countLabel: t("quotes-count", { count: quotes.length, defaultValue: "{{count}} Quotes" }),
+    footer: t("quotes-footer-note", { defaultValue: "\u201CYour work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work. And the only way to do great work is to love what you do.\u201D" }),
+    cats: categories,
+    items: quotes,
+  }), [t]);
+
   return (
-    <PageLayout title={t("steve-jobs-quotes-title", { defaultValue: "Steve Jobs Quotes" })} wide>
-      <div className="px-4 pt-4 pb-12 max-w-2xl mx-auto">
-        {/* Hero section */}
-        <Reveal className="text-center mb-12">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-site bg-site-surface border border-site-border flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-site-accent">
-              <path d="M3 21c3 0 7-1 7-8" />
-              <path d="M13 21c3 0 7-1 7-8" />
-              <path d="M10 12c.5-3 1.5-5 5-5" />
-              <path d="M20 12c.5-3 1.5-5 5-5" />
-            </svg>
-          </div>
-          <p className="text-site-text-muted text-sm leading-relaxed max-w-lg mx-auto">
-            {t("quotes-hero-description", { defaultValue: "A curated collection of the most memorable words from Steve Jobs — co-founder of Apple, visionary, and one of the most influential thinkers of the modern era." })}
-          </p>
-        </Reveal>
-
-        {/* Category filter chips */}
-        <div className="flex flex-wrap gap-2 mb-8 justify-center">
-          {categories.map((cat) => (
-            <span
-              key={cat}
-              className="inline-flex items-center px-3 py-1 rounded-full bg-site-surface border border-site-border text-xs font-medium text-site-text-muted hover:text-site-accent hover:border-site-accent/50 transition-colors duration-200 cursor-default"
-            >
-              {cat}
-            </span>
-          ))}
-        </div>
-
-        {/* Divider */}
-        <div className="relative mb-4">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-site-border" />
-          </div>
-          <div className="relative flex justify-center">
-            <span className="bg-site-bg px-3 text-xs font-mono text-site-text-muted uppercase tracking-widest">
-              {t("quotes-count", { count: quotes.length, defaultValue: "{{count}} Quotes" })}
-            </span>
-          </div>
-        </div>
-
-        {/* Quote list — each entry reveals once as it scrolls into view. */}
-        <div className="space-y-0 divide-y divide-site-border">
-          {quotes.map((quote, index) => (
-            <Reveal key={index} y={12}>
-              <QuoteCard quote={quote} index={index} />
-            </Reveal>
-          ))}
-        </div>
-
-        {/* Footer note */}
-        <div className="mt-12 pt-8 border-t border-site-border text-center">
-          <p className="text-xs text-site-text-muted">
-            {t("quotes-footer-note", { defaultValue: "“Your work is going to fill a large part of your life, and the only way to be truly satisfied is to do what you believe is great work. And the only way to do great work is to love what you do.”" })}
-          </p>
-        </div>
-      </div>
-    </PageLayout>
+    <CanvasPage
+      routeId="/_site/quotes"
+      scene={QuotesScene}
+      sceneProps={sceneProps}
+      mirror={<QuotesMirror {...sceneProps} />}
+      shell="site"
+      title={sceneProps.title}
+    />
   );
 }
