@@ -22,7 +22,7 @@ function AnalyticsPage() {
         className="w-full min-w-0 border-r border-site-border pb-dock"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
-        <div className="sticky top-0 z-10 border-b border-site-border bg-site-bg/85 px-4 py-3 backdrop-blur-md">
+        <div className="sticky top-0 z-10 border-b border-site-border glass-chrome px-4 py-3">
           <h1 className="font-(family-name:--site-font-display) text-lg font-bold text-site-text">
             {t('creator-analytics', { defaultValue: 'Creator Analytics' })}
           </h1>

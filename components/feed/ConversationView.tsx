@@ -555,7 +555,7 @@ export function ConversationView({
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-site-bg/85 backdrop-blur-md border-b border-site-border shrink-0">
+      <div className="sticky top-0 z-10 glass-chrome border-b border-site-border shrink-0">
         <div className="flex items-center gap-3 px-4 py-3">
           <Link to="/messages" className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface transition-colors">
             <ArrowLeft className="w-5 h-5 text-site-text" />

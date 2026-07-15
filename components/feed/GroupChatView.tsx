@@ -389,7 +389,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
 
   return (
     <div className="flex h-screen flex-col">
-      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-site-border glass-chrome px-4 py-3">
         <Link to="/messages" search={{ tab: 'groups' }} className="text-site-text-dim hover:text-site-text">
           <ArrowLeft className="h-5 w-5" />
         </Link>

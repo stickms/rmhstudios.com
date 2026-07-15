@@ -8,6 +8,14 @@
   --studio-gutter: clamp(16px, 4vw, 40px);
 }
 
+/* Sit on the glass aurora like every other _site page — .vibe-screen's opaque
+   var(--site-bg) is for the full-screen vibe routes that render no canvas.
+   Double class so the override outranks .vibe-screen regardless of which
+   stylesheet the bundler emits first. */
+.vibe-screen.cstudio-screen {
+  background: transparent;
+}
+
 /* ── Header / hero ───────────────────────────────────────────────────────── */
 .cstudio-head {
   padding: clamp(28px, 6vw, 64px) var(--studio-gutter) 0;

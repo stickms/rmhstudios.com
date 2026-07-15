@@ -325,7 +325,7 @@ export function NotificationsColumn({
 
   return (
     <div className="min-h-screen">
-      <header className={`flex items-center gap-3 border-b border-site-border px-4 py-3 ${embedded ? 'justify-end' : 'sticky top-0 z-10 justify-between bg-site-bg/80 backdrop-blur'}`}>
+      <header className={`flex items-center gap-3 border-b border-site-border px-4 py-3 ${embedded ? 'justify-end' : 'sticky top-0 z-10 justify-between glass-chrome'}`}>
         {!embedded && <h1 className="text-lg font-bold text-site-text">{t('notifications-heading', { defaultValue: 'Notifications' })}</h1>}
         <div className="flex items-center gap-1.5">
           {push.supported && (

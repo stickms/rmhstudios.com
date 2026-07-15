@@ -39,7 +39,7 @@ export function CommunityListSkeleton({ count = 6 }: { count?: number }) {
 export function CommunitiesSkeleton() {
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-site-border glass-chrome px-4 py-3">
         <div className="flex items-center gap-2">
           <Skeleton className="h-5 w-5 rounded" />
           <Skeleton className="h-6 w-32" />

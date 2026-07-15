@@ -113,7 +113,7 @@ export function GroupChatsColumn({
 
   return (
     <div className="min-h-screen">
-      <header className={`flex items-center gap-2 border-b border-site-border px-4 py-3 ${embedded ? '' : 'sticky top-0 z-10 bg-site-bg/80 backdrop-blur'}`}>
+      <header className={`flex items-center gap-2 border-b border-site-border px-4 py-3 ${embedded ? '' : 'sticky top-0 z-10 glass-chrome'}`}>
         {!embedded && <Users className="h-5 w-5 shrink-0 text-site-accent" />}
         {!embedded && <h1 className="shrink-0 text-lg font-bold text-site-text">{t("group-chats", { defaultValue: "Group chats" })}</h1>}
         {/* Search + new-group action share a single row; the action is icon-only. */}

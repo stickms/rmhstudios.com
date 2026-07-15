@@ -85,7 +85,7 @@ export function DeckMarketplaceColumn({ initialData }: { initialData: Marketplac
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border bg-site-bg/80 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
         <Link
           to="/study"
           className="rounded-site-sm p-1 text-site-text-muted hover:text-site-text hover:bg-site-surface"
