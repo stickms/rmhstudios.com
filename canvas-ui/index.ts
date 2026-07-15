@@ -36,6 +36,7 @@ export { Card, Badge, Divider, Spinner, Skeleton } from "./widgets/primitives";
 export { Icon, type IconNode, type IconProps } from "./widgets/Icon";
 export { icons, type IconName } from "./widgets/icons";
 export { Input, Textarea, type InputProps } from "./widgets/Input";
+export { Select, type SelectProps, type SelectOption } from "./widgets/Select";
 
 // mirror / a11y
 export { useMirrorControl, MirrorOutlet } from "./mirror/MirrorControls";

@@ -1,70 +1,109 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocaleStore } from '@/stores/localeStore';
 import { LOCALES, LOCALE_LABELS, type Locale } from '@/lib/i18n/config';
+import { CanvasPage } from '@/canvas-ui/runtime/CanvasPage';
+import { Box } from '@/canvas-ui/runtime/layout/LayoutTree';
+import { tw } from '@/canvas-ui/runtime/tw';
+import { CanvasText } from '@/canvas-ui/text/Text';
+import { ScrollView } from '@/canvas-ui/widgets/ScrollView';
+import { Icon } from '@/canvas-ui/widgets/Icon';
+import { icons } from '@/canvas-ui/widgets/icons';
+import { Select, type SelectOption } from '@/canvas-ui/widgets/Select';
+import { DoctrineShell, DOCTRINE } from '@/components/doctrine/canvas/DoctrineShell';
 
 export const Route = createFileRoute('/strategies/profile/settings')({
   component: SettingsPage,
 });
 
+const TIMEZONES: string[] =
+  typeof Intl.supportedValuesOf === 'function' ? Intl.supportedValuesOf('timeZone') : ['UTC'];
+
+interface SettingsSceneProps extends Record<string, unknown> {
+  title: string; languageLabel: string; timezoneLabel: string; sahurNote: string;
+  tierTitle: string; tierBody: string;
+  locale: string; localeOptions: SelectOption[]; onLocaleChange: (v: string) => void;
+  timezone: string; timezoneOptions: SelectOption[]; onTimezoneChange: (v: string) => void;
+}
+
+function FieldLabel({ children }: { children: string }) {
+  return <CanvasText style="text-xs font-mono uppercase tracking-wide text-[rgba(255,255,255,0.4)]">{children}</CanvasText>;
+}
+
+function SettingsScene(p: SettingsSceneProps) {
+  return (
+    <DoctrineShell>
+      <ScrollView style={tw('flex flex-col flex-1 w-full overflow-hidden')} contentStyle={tw('flex flex-col w-full items-center')}>
+        <Box style={tw('flex flex-col w-full max-w-[672px] px-4 py-6 gap-6')}>
+          <Box style={tw('flex flex-row items-center gap-2')}>
+            <Icon node={icons.settings} size={20} color={DOCTRINE.accent} />
+            <CanvasText style={`text-xl font-bold text-[${DOCTRINE.text}]`}>{p.title}</CanvasText>
+          </Box>
+
+          <Box style={tw('flex flex-col w-full gap-4 p-4 rounded-site bg-[#141416] border border-[rgba(255,255,255,0.06)]')}>
+            <Box style={tw('flex flex-col w-full gap-2')}>
+              <FieldLabel>{p.languageLabel}</FieldLabel>
+              <Select value={p.locale} options={p.localeOptions} onChange={p.onLocaleChange} label={p.languageLabel} />
+            </Box>
+            <Box style={tw('flex flex-col w-full gap-2')}>
+              <FieldLabel>{p.timezoneLabel}</FieldLabel>
+              <Select value={p.timezone} options={p.timezoneOptions} onChange={p.onTimezoneChange} label={p.timezoneLabel} />
+              <CanvasText style="text-xs text-[rgba(255,255,255,0.3)]">{p.sahurNote}</CanvasText>
+            </Box>
+          </Box>
+
+          <Box style={tw('flex flex-col w-full gap-2 p-4 rounded-site bg-[#141416] border border-[rgba(255,255,255,0.06)]')}>
+            <FieldLabel>{p.tierTitle}</FieldLabel>
+            <CanvasText style="text-sm text-[rgba(255,255,255,0.6)]">{p.tierBody}</CanvasText>
+          </Box>
+        </Box>
+      </ScrollView>
+    </DoctrineShell>
+  );
+}
+
+function SettingsMirror(p: SettingsSceneProps) {
+  return (
+    <div>
+      <h1>{p.title}</h1>
+      <label>{p.languageLabel}
+        <select value={p.locale} onChange={(e) => p.onLocaleChange(e.target.value)}>
+          {p.localeOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </label>
+      <label>{p.timezoneLabel}
+        <select value={p.timezone} onChange={(e) => p.onTimezoneChange(e.target.value)}>
+          {p.timezoneOptions.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </label>
+      <h2>{p.tierTitle}</h2><p>{p.tierBody}</p>
+    </div>
+  );
+}
+
 function SettingsPage() {
-  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const { t } = useTranslation('nav');
   const locale = useLocaleStore((s) => s.locale);
   const setLocale = useLocaleStore((s) => s.setLocale);
+  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+
+  const sceneProps: SettingsSceneProps = useMemo(() => ({
+    title: 'Settings',
+    languageLabel: t('language', { defaultValue: 'Language' }),
+    timezoneLabel: 'Timezone (for Sahur Mode)',
+    sahurNote: 'Sahur Mode activates at 3:00 AM in your selected timezone.',
+    tierTitle: 'Account Tier',
+    tierBody: 'Tier changes are managed by RMH administrators. Contact the team for upgrade requests.',
+    locale,
+    localeOptions: LOCALES.map((l) => ({ value: l, label: LOCALE_LABELS[l] })),
+    onLocaleChange: (v) => setLocale(v as Locale),
+    timezone,
+    timezoneOptions: TIMEZONES.map((tz) => ({ value: tz, label: tz })),
+    onTimezoneChange: setTimezone,
+  }), [t, locale, setLocale, timezone]);
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6 pb-20 md:pb-6">
-      <div className="flex items-center gap-2">
-        <Settings size={20} style={{ color: 'var(--doctrine-accent)' }} />
-        <h1 className="text-xl font-bold" style={{ color: 'var(--doctrine-text-primary)' }}>
-          Settings
-        </h1>
-      </div>
-
-      <div className="rounded-lg p-4 space-y-4" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <div className="space-y-2">
-          <label className="text-xs font-mono uppercase tracking-wider text-white/40">
-            {t('language', { defaultValue: 'Language' })}
-          </label>
-          <select
-            value={locale}
-            onChange={(e) => setLocale(e.target.value as Locale)}
-            className="w-full text-sm bg-white/5 border border-white/10 rounded-lg p-2.5 text-white/80 focus:outline-none focus:border-white/20"
-          >
-            {LOCALES.map((l) => (
-              <option key={l} value={l}>{LOCALE_LABELS[l]}</option>
-            ))}
-          </select>
-        </div>
-        <div className="space-y-2">
-          <label className="text-xs font-mono uppercase tracking-wider text-white/40">
-            Timezone (for Sahur Mode)
-          </label>
-          <select
-            value={timezone}
-            onChange={e => setTimezone(e.target.value)}
-            className="w-full text-sm bg-white/5 border border-white/10 rounded-lg p-2.5 text-white/80 focus:outline-none focus:border-white/20"
-          >
-            {Intl.supportedValuesOf('timeZone').map(tz => (
-              <option key={tz} value={tz}>{tz}</option>
-            ))}
-          </select>
-          <p className="text-[10px] text-white/30">
-            Sahur Mode activates at 3:00 AM in your selected timezone.
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-lg p-4 space-y-2" style={{ background: 'var(--doctrine-bg-secondary)', border: '1px solid rgba(255,255,255,0.06)' }}>
-        <h3 className="text-xs font-mono uppercase tracking-wider text-white/40">Account Tier</h3>
-        <p className="text-sm text-white/60">
-          Tier changes are managed by RMH administrators.
-          Contact the team for upgrade requests.
-        </p>
-      </div>
-    </div>
+    <CanvasPage routeId="/strategies/profile/settings" scene={SettingsScene} sceneProps={sceneProps} mirror={<SettingsMirror {...sceneProps} />} shell="fullscreen" title="Settings" />
   );
 }
