@@ -169,6 +169,8 @@ import { Route as StrategiesProfileIndexRouteImport } from './routes/strategies/
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
 import { Route as ApiWheelIndexRouteImport } from './routes/api/wheel/index'
+import { Route as ApiWagerIndexRouteImport } from './routes/api/wager/index'
+import { Route as ApiTournamentsIndexRouteImport } from './routes/api/tournaments/index'
 import { Route as ApiStakingIndexRouteImport } from './routes/api/staking/index'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/index'
@@ -183,8 +185,10 @@ import { Route as ApiCommunitiesIndexRouteImport } from './routes/api/communitie
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as ApiBattlepassIndexRouteImport } from './routes/api/battlepass/index'
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
+import { Route as SiteWagerIndexRouteImport } from './routes/_site/wager.index'
 import { Route as SiteVIndexRouteImport } from './routes/_site/v/index'
 import { Route as SiteUserBuildsIndexRouteImport } from './routes/_site/user-builds/index'
+import { Route as SiteTournamentsIndexRouteImport } from './routes/_site/tournaments.index'
 import { Route as SiteStudyIndexRouteImport } from './routes/_site/study/index'
 import { Route as SiteStoreIndexRouteImport } from './routes/_site/store/index'
 import { Route as SiteSettingsIndexRouteImport } from './routes/_site/settings/index'
@@ -211,6 +215,7 @@ import { Route as StrategiesProfileReputationRouteImport } from './routes/strate
 import { Route as LibraryAlbumsAlbumIdRouteImport } from './routes/library.albums.$albumId'
 import { Route as EmbedPostIdRouteImport } from './routes/embed.post.$id'
 import { Route as ApiWheelSpinRouteImport } from './routes/api/wheel/spin'
+import { Route as ApiWagerIdRouteImport } from './routes/api/wager/$id'
 import { Route as ApiVoidBreakerScoreRouteImport } from './routes/api/void-breaker/score'
 import { Route as ApiVoidBreakerLeaderboardRouteImport } from './routes/api/void-breaker/leaderboard'
 import { Route as ApiVibeStreamRouteImport } from './routes/api/vibe/stream'
@@ -235,6 +240,7 @@ import { Route as ApiUsersSearchRouteImport } from './routes/api/users/search'
 import { Route as ApiUserBuildsFeaturedRouteImport } from './routes/api/user-builds/featured'
 import { Route as ApiUserBuildsCategoriesRouteImport } from './routes/api/user-builds/categories'
 import { Route as ApiUserBuildsIdRouteImport } from './routes/api/user-builds/$id'
+import { Route as ApiTournamentsIdRouteImport } from './routes/api/tournaments/$id'
 import { Route as ApiTipsLeaderboardRouteImport } from './routes/api/tips/leaderboard'
 import { Route as ApiTempleOfJoySaveRouteImport } from './routes/api/temple-of-joy/save'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
@@ -318,8 +324,10 @@ import { Route as ApiLeaderboardsPlayersRouteImport } from './routes/api/leaderb
 import { Route as ApiLaundrySortScoreRouteImport } from './routes/api/laundry-sort/score'
 import { Route as ApiLaundrySortLeaderboardRouteImport } from './routes/api/laundry-sort/leaderboard'
 import { Route as ApiInternalStreakPushRouteImport } from './routes/api/internal/streak-push'
+import { Route as ApiInternalPredictionsTickRouteImport } from './routes/api/internal/predictions-tick'
 import { Route as ApiInternalNotifyTypingRouteImport } from './routes/api/internal/notify-typing'
 import { Route as ApiInternalNotifyMessageRouteImport } from './routes/api/internal/notify-message'
+import { Route as ApiInternalMatchResultRouteImport } from './routes/api/internal/match-result'
 import { Route as ApiHomesWatchesRouteImport } from './routes/api/homes/watches'
 import { Route as ApiHomesListingsRouteImport } from './routes/api/homes/listings'
 import { Route as ApiHomesGeocodeRouteImport } from './routes/api/homes/geocode'
@@ -371,8 +379,10 @@ import { Route as ApiAchievementsUserIdRouteImport } from './routes/api/achievem
 import { Route as ApiAccountExportRouteImport } from './routes/api/account/export'
 import { Route as ApiAccountDeleteRouteImport } from './routes/api/account/delete'
 import { Route as AltairMultiplayerLobbyIdRouteImport } from './routes/altair/multiplayer/$lobbyId'
+import { Route as SiteWagerIdRouteImport } from './routes/_site/wager.$id'
 import { Route as SiteUserBuildsSubmitRouteImport } from './routes/_site/user-builds/submit'
 import { Route as SiteUserBuildsManageRouteImport } from './routes/_site/user-builds/manage'
+import { Route as SiteTournamentsIdRouteImport } from './routes/_site/tournaments.$id'
 import { Route as SiteThreadRootIdRouteImport } from './routes/_site/thread/$rootId'
 import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteStudyBrowseRouteImport } from './routes/_site/study/browse'
@@ -404,6 +414,7 @@ import { Route as SiteAdminUserBuildsRouteImport } from './routes/_site/admin/us
 import { Route as SiteAdminSecurityReportsRouteImport } from './routes/_site/admin/security-reports'
 import { Route as SiteAdminRideshareRouteImport } from './routes/_site/admin/rideshare'
 import { Route as SiteAdminReportsRouteImport } from './routes/_site/admin/reports'
+import { Route as SiteAdminRedemptionsRouteImport } from './routes/_site/admin/redemptions'
 import { Route as SiteAdminPredictionsRouteImport } from './routes/_site/admin/predictions'
 import { Route as SiteAdminLibraryStorageRouteImport } from './routes/_site/admin/library-storage'
 import { Route as SiteAdminLibraryQuotaRouteImport } from './routes/_site/admin/library-quota'
@@ -421,7 +432,9 @@ import { Route as ApiGroupChatsIdIndexRouteImport } from './routes/api/group-cha
 import { Route as ApiDoctrineReputationIndexRouteImport } from './routes/api/doctrine/reputation/index'
 import { Route as ApiDoctrineIncidentsIndexRouteImport } from './routes/api/doctrine/incidents/index'
 import { Route as ApiDeveloperKeysIndexRouteImport } from './routes/api/developer/keys/index'
+import { Route as ApiCreatorRedeemIndexRouteImport } from './routes/api/creator/redeem/index'
 import { Route as ApiCommunitiesSlugIndexRouteImport } from './routes/api/communities/$slug/index'
+import { Route as ApiAdminRedemptionsIndexRouteImport } from './routes/api/admin/redemptions/index'
 import { Route as ApiAdminPredictionsIndexRouteImport } from './routes/api/admin/predictions/index'
 import { Route as ApiAdminLibraryIndexRouteImport } from './routes/api/admin/library/index'
 import { Route as ApiAdminAlbumsIndexRouteImport } from './routes/api/admin/albums/index'
@@ -430,6 +443,9 @@ import { Route as SiteDeveloperDocsIndexRouteImport } from './routes/_site/devel
 import { Route as SiteAdminBlogIndexRouteImport } from './routes/_site/admin/blog/index'
 import { Route as SiteAdminAlbumsIndexRouteImport } from './routes/_site/admin/albums/index'
 import { Route as RmhboxMinigamesMinigameIdHistoryRouteImport } from './routes/rmhbox/minigames/$minigameId/history'
+import { Route as ApiWagerIdReportRouteImport } from './routes/api/wager/$id/report'
+import { Route as ApiWagerIdCancelRouteImport } from './routes/api/wager/$id/cancel'
+import { Route as ApiWagerIdAcceptRouteImport } from './routes/api/wager/$id/accept'
 import { Route as ApiVibeThumbSlugRouteImport } from './routes/api/vibe/thumb/$slug'
 import { Route as ApiVibePkgFileRouteImport } from './routes/api/vibe/pkg/$file'
 import { Route as ApiV1WebhooksIdRouteImport } from './routes/api/v1/webhooks/$id'
@@ -447,6 +463,10 @@ import { Route as ApiUserBuildsIdViewRouteImport } from './routes/api/user-build
 import { Route as ApiUserBuildsIdUnlockRouteImport } from './routes/api/user-builds/$id/unlock'
 import { Route as ApiUserBuildsIdLikeRouteImport } from './routes/api/user-builds/$id/like'
 import { Route as ApiUserBuildsIdCommentsRouteImport } from './routes/api/user-builds/$id/comments'
+import { Route as ApiTournamentsIdWithdrawRouteImport } from './routes/api/tournaments/$id/withdraw'
+import { Route as ApiTournamentsIdStartRouteImport } from './routes/api/tournaments/$id/start'
+import { Route as ApiTournamentsIdRegisterRouteImport } from './routes/api/tournaments/$id/register'
+import { Route as ApiTournamentsIdCancelRouteImport } from './routes/api/tournaments/$id/cancel'
 import { Route as ApiStorefrontCreatorUseridRouteImport } from './routes/api/storefront/creator/$userid'
 import { Route as ApiSliceItSongsUploadRouteImport } from './routes/api/slice-it/songs/upload'
 import { Route as ApiSliceItSongsIdRouteImport } from './routes/api/slice-it/songs/$id'
@@ -533,6 +553,7 @@ import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/adm
 import { Route as ApiAdminRideshareRidesRouteImport } from './routes/api/admin/rideshare/rides'
 import { Route as ApiAdminRideshareApplicationsRouteImport } from './routes/api/admin/rideshare/applications'
 import { Route as ApiAdminReportsIdRouteImport } from './routes/api/admin/reports/$id'
+import { Route as ApiAdminRedemptionsIdRouteImport } from './routes/api/admin/redemptions/$id'
 import { Route as ApiAdminLibraryStorageHealthRouteImport } from './routes/api/admin/library/storage-health'
 import { Route as ApiAdminLibraryReorderRouteImport } from './routes/api/admin/library/reorder'
 import { Route as ApiAdminLibraryQuotaRequestsRouteImport } from './routes/api/admin/library/quota-requests'
@@ -582,6 +603,7 @@ import { Route as ApiLibraryCollectionIdCoverRouteImport } from './routes/api/li
 import { Route as ApiHomesListingsIdFavoriteRouteImport } from './routes/api/homes/listings.$id.favorite'
 import { Route as ApiCommunitiesSlugMembersUserIdRouteImport } from './routes/api/communities/$slug/members/$userId'
 import { Route as ApiCommunitiesSlugAnnouncementsIdRouteImport } from './routes/api/communities/$slug/announcements/$id'
+import { Route as ApiAdminWagerIdResolveRouteImport } from './routes/api/admin/wager/$id/resolve'
 import { Route as ApiAdminUsersIdStrikeRouteImport } from './routes/api/admin/users/$id/strike'
 import { Route as ApiAdminUsersIdSetCoinsRouteImport } from './routes/api/admin/users/$id/set-coins'
 import { Route as ApiAdminUsersIdGrantMembershipRouteImport } from './routes/api/admin/users/$id/grant-membership'
@@ -594,6 +616,7 @@ import { Route as ApiAdminAlbumsIdSlidesRouteImport } from './routes/api/admin/a
 import { Route as ApiAdminAlbumsIdReorderRouteImport } from './routes/api/admin/albums/$id/reorder'
 import { Route as SiteUUseridPostPostidRouteImport } from './routes/_site/u/$userid/post/$postid'
 import { Route as SiteAdminBlogSlugEditRouteImport } from './routes/_site/admin/blog/$slug/edit'
+import { Route as ApiTournamentsIdMatchesMatchIdReportRouteImport } from './routes/api/tournaments/$id/matches/$matchId/report'
 import { Route as ApiRmharksIdCommentCommentIdViewRouteImport } from './routes/api/rmharks/$id/comment/$commentId/view'
 import { Route as ApiRmharksIdCommentCommentIdRepostRouteImport } from './routes/api/rmharks/$id/comment/$commentId/repost'
 import { Route as ApiRmharksIdCommentCommentIdLikeRouteImport } from './routes/api/rmharks/$id/comment/$commentId/like'
@@ -1402,6 +1425,16 @@ const ApiWheelIndexRoute = ApiWheelIndexRouteImport.update({
   path: '/api/wheel/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWagerIndexRoute = ApiWagerIndexRouteImport.update({
+  id: '/api/wager/',
+  path: '/api/wager/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiTournamentsIndexRoute = ApiTournamentsIndexRouteImport.update({
+  id: '/api/tournaments/',
+  path: '/api/tournaments/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStakingIndexRoute = ApiStakingIndexRouteImport.update({
   id: '/api/staking/',
   path: '/api/staking/',
@@ -1472,6 +1505,11 @@ const AltairMultiplayerIndexRoute = AltairMultiplayerIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AltairMultiplayerRoute,
 } as any)
+const SiteWagerIndexRoute = SiteWagerIndexRouteImport.update({
+  id: '/wager/',
+  path: '/wager/',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteVIndexRoute = SiteVIndexRouteImport.update({
   id: '/v/',
   path: '/v/',
@@ -1480,6 +1518,11 @@ const SiteVIndexRoute = SiteVIndexRouteImport.update({
 const SiteUserBuildsIndexRoute = SiteUserBuildsIndexRouteImport.update({
   id: '/user-builds/',
   path: '/user-builds/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteTournamentsIndexRoute = SiteTournamentsIndexRouteImport.update({
+  id: '/tournaments/',
+  path: '/tournaments/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteStudyIndexRoute = SiteStudyIndexRouteImport.update({
@@ -1618,6 +1661,11 @@ const ApiWheelSpinRoute = ApiWheelSpinRouteImport.update({
   path: '/api/wheel/spin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWagerIdRoute = ApiWagerIdRouteImport.update({
+  id: '/api/wager/$id',
+  path: '/api/wager/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiVoidBreakerScoreRoute = ApiVoidBreakerScoreRouteImport.update({
   id: '/api/void-breaker/score',
   path: '/api/void-breaker/score',
@@ -1738,6 +1786,11 @@ const ApiUserBuildsIdRoute = ApiUserBuildsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
   getParentRoute: () => ApiUserBuildsRoute,
+} as any)
+const ApiTournamentsIdRoute = ApiTournamentsIdRouteImport.update({
+  id: '/api/tournaments/$id',
+  path: '/api/tournaments/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTipsLeaderboardRoute = ApiTipsLeaderboardRouteImport.update({
   id: '/api/tips/leaderboard',
@@ -2162,6 +2215,12 @@ const ApiInternalStreakPushRoute = ApiInternalStreakPushRouteImport.update({
   path: '/api/internal/streak-push',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInternalPredictionsTickRoute =
+  ApiInternalPredictionsTickRouteImport.update({
+    id: '/api/internal/predictions-tick',
+    path: '/api/internal/predictions-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiInternalNotifyTypingRoute = ApiInternalNotifyTypingRouteImport.update({
   id: '/api/internal/notify-typing',
   path: '/api/internal/notify-typing',
@@ -2173,6 +2232,11 @@ const ApiInternalNotifyMessageRoute =
     path: '/api/internal/notify-message',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiInternalMatchResultRoute = ApiInternalMatchResultRouteImport.update({
+  id: '/api/internal/match-result',
+  path: '/api/internal/match-result',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHomesWatchesRoute = ApiHomesWatchesRouteImport.update({
   id: '/api/homes/watches',
   path: '/api/homes/watches',
@@ -2430,6 +2494,11 @@ const AltairMultiplayerLobbyIdRoute =
     path: '/$lobbyId',
     getParentRoute: () => AltairMultiplayerRoute,
   } as any)
+const SiteWagerIdRoute = SiteWagerIdRouteImport.update({
+  id: '/wager/$id',
+  path: '/wager/$id',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteUserBuildsSubmitRoute = SiteUserBuildsSubmitRouteImport.update({
   id: '/user-builds/submit',
   path: '/user-builds/submit',
@@ -2438,6 +2507,11 @@ const SiteUserBuildsSubmitRoute = SiteUserBuildsSubmitRouteImport.update({
 const SiteUserBuildsManageRoute = SiteUserBuildsManageRouteImport.update({
   id: '/user-builds/manage',
   path: '/user-builds/manage',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteTournamentsIdRoute = SiteTournamentsIdRouteImport.update({
+  id: '/tournaments/$id',
+  path: '/tournaments/$id',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteThreadRootIdRoute = SiteThreadRootIdRouteImport.update({
@@ -2597,6 +2671,11 @@ const SiteAdminReportsRoute = SiteAdminReportsRouteImport.update({
   path: '/reports',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const SiteAdminRedemptionsRoute = SiteAdminRedemptionsRouteImport.update({
+  id: '/redemptions',
+  path: '/redemptions',
+  getParentRoute: () => SiteAdminRouteRoute,
+} as any)
 const SiteAdminPredictionsRoute = SiteAdminPredictionsRouteImport.update({
   id: '/predictions',
   path: '/predictions',
@@ -2685,11 +2764,22 @@ const ApiDeveloperKeysIndexRoute = ApiDeveloperKeysIndexRouteImport.update({
   path: '/api/developer/keys/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCreatorRedeemIndexRoute = ApiCreatorRedeemIndexRouteImport.update({
+  id: '/api/creator/redeem/',
+  path: '/api/creator/redeem/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiCommunitiesSlugIndexRoute = ApiCommunitiesSlugIndexRouteImport.update({
   id: '/api/communities/$slug/',
   path: '/api/communities/$slug/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAdminRedemptionsIndexRoute =
+  ApiAdminRedemptionsIndexRouteImport.update({
+    id: '/api/admin/redemptions/',
+    path: '/api/admin/redemptions/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiAdminPredictionsIndexRoute =
   ApiAdminPredictionsIndexRouteImport.update({
     id: '/api/admin/predictions/',
@@ -2732,6 +2822,21 @@ const RmhboxMinigamesMinigameIdHistoryRoute =
     path: '/minigames/$minigameId/history',
     getParentRoute: () => RmhboxRoute,
   } as any)
+const ApiWagerIdReportRoute = ApiWagerIdReportRouteImport.update({
+  id: '/report',
+  path: '/report',
+  getParentRoute: () => ApiWagerIdRoute,
+} as any)
+const ApiWagerIdCancelRoute = ApiWagerIdCancelRouteImport.update({
+  id: '/cancel',
+  path: '/cancel',
+  getParentRoute: () => ApiWagerIdRoute,
+} as any)
+const ApiWagerIdAcceptRoute = ApiWagerIdAcceptRouteImport.update({
+  id: '/accept',
+  path: '/accept',
+  getParentRoute: () => ApiWagerIdRoute,
+} as any)
 const ApiVibeThumbSlugRoute = ApiVibeThumbSlugRouteImport.update({
   id: '/api/vibe/thumb/$slug',
   path: '/api/vibe/thumb/$slug',
@@ -2816,6 +2921,28 @@ const ApiUserBuildsIdCommentsRoute = ApiUserBuildsIdCommentsRouteImport.update({
   id: '/comments',
   path: '/comments',
   getParentRoute: () => ApiUserBuildsIdRoute,
+} as any)
+const ApiTournamentsIdWithdrawRoute =
+  ApiTournamentsIdWithdrawRouteImport.update({
+    id: '/withdraw',
+    path: '/withdraw',
+    getParentRoute: () => ApiTournamentsIdRoute,
+  } as any)
+const ApiTournamentsIdStartRoute = ApiTournamentsIdStartRouteImport.update({
+  id: '/start',
+  path: '/start',
+  getParentRoute: () => ApiTournamentsIdRoute,
+} as any)
+const ApiTournamentsIdRegisterRoute =
+  ApiTournamentsIdRegisterRouteImport.update({
+    id: '/register',
+    path: '/register',
+    getParentRoute: () => ApiTournamentsIdRoute,
+  } as any)
+const ApiTournamentsIdCancelRoute = ApiTournamentsIdCancelRouteImport.update({
+  id: '/cancel',
+  path: '/cancel',
+  getParentRoute: () => ApiTournamentsIdRoute,
 } as any)
 const ApiStorefrontCreatorUseridRoute =
   ApiStorefrontCreatorUseridRouteImport.update({
@@ -3276,6 +3403,11 @@ const ApiAdminReportsIdRoute = ApiAdminReportsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiAdminReportsRoute,
 } as any)
+const ApiAdminRedemptionsIdRoute = ApiAdminRedemptionsIdRouteImport.update({
+  id: '/api/admin/redemptions/$id',
+  path: '/api/admin/redemptions/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminLibraryStorageHealthRoute =
   ApiAdminLibraryStorageHealthRouteImport.update({
     id: '/api/admin/library/storage-health',
@@ -3543,6 +3675,11 @@ const ApiCommunitiesSlugAnnouncementsIdRoute =
     path: '/$id',
     getParentRoute: () => ApiCommunitiesSlugAnnouncementsRoute,
   } as any)
+const ApiAdminWagerIdResolveRoute = ApiAdminWagerIdResolveRouteImport.update({
+  id: '/api/admin/wager/$id/resolve',
+  path: '/api/admin/wager/$id/resolve',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminUsersIdStrikeRoute = ApiAdminUsersIdStrikeRouteImport.update({
   id: '/$id/strike',
   path: '/$id/strike',
@@ -3608,6 +3745,12 @@ const SiteAdminBlogSlugEditRoute = SiteAdminBlogSlugEditRouteImport.update({
   path: '/blog/$slug/edit',
   getParentRoute: () => SiteAdminRouteRoute,
 } as any)
+const ApiTournamentsIdMatchesMatchIdReportRoute =
+  ApiTournamentsIdMatchesMatchIdReportRouteImport.update({
+    id: '/matches/$matchId/report',
+    path: '/matches/$matchId/report',
+    getParentRoute: () => ApiTournamentsIdRoute,
+  } as any)
 const ApiRmharksIdCommentCommentIdViewRoute =
   ApiRmharksIdCommentCommentIdViewRouteImport.update({
     id: '/view',
@@ -3800,6 +3943,7 @@ export interface FileRoutesByFullPath {
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
+  '/admin/redemptions': typeof SiteAdminRedemptionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
   '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
@@ -3831,8 +3975,10 @@ export interface FileRoutesByFullPath {
   '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/thread/$rootId': typeof SiteThreadRootIdRoute
+  '/tournaments/$id': typeof SiteTournamentsIdRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
+  '/wager/$id': typeof SiteWagerIdRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/account/delete': typeof ApiAccountDeleteRoute
   '/api/account/export': typeof ApiAccountExportRoute
@@ -3884,8 +4030,10 @@ export interface FileRoutesByFullPath {
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
   '/api/homes/watches': typeof ApiHomesWatchesRoute
+  '/api/internal/match-result': typeof ApiInternalMatchResultRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
+  '/api/internal/predictions-tick': typeof ApiInternalPredictionsTickRoute
   '/api/internal/streak-push': typeof ApiInternalStreakPushRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
@@ -3969,6 +4117,7 @@ export interface FileRoutesByFullPath {
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
+  '/api/tournaments/$id': typeof ApiTournamentsIdRouteWithChildren
   '/api/user-builds/$id': typeof ApiUserBuildsIdRouteWithChildren
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
@@ -3993,6 +4142,7 @@ export interface FileRoutesByFullPath {
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
+  '/api/wager/$id': typeof ApiWagerIdRouteWithChildren
   '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
@@ -4019,8 +4169,10 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof SiteSettingsIndexRoute
   '/store/': typeof SiteStoreIndexRoute
   '/study/': typeof SiteStudyIndexRoute
+  '/tournaments/': typeof SiteTournamentsIndexRoute
   '/user-builds/': typeof SiteUserBuildsIndexRoute
   '/v/': typeof SiteVIndexRoute
+  '/wager/': typeof SiteWagerIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
@@ -4035,6 +4187,8 @@ export interface FileRoutesByFullPath {
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
+  '/api/tournaments/': typeof ApiTournamentsIndexRoute
+  '/api/wager/': typeof ApiWagerIndexRoute
   '/api/wheel/': typeof ApiWheelIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
@@ -4055,6 +4209,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
+  '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -4141,6 +4296,10 @@ export interface FileRoutesByFullPath {
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
+  '/api/tournaments/$id/register': typeof ApiTournamentsIdRegisterRoute
+  '/api/tournaments/$id/start': typeof ApiTournamentsIdStartRoute
+  '/api/tournaments/$id/withdraw': typeof ApiTournamentsIdWithdrawRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
@@ -4158,6 +4317,9 @@ export interface FileRoutesByFullPath {
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
+  '/api/wager/$id/accept': typeof ApiWagerIdAcceptRoute
+  '/api/wager/$id/cancel': typeof ApiWagerIdCancelRoute
+  '/api/wager/$id/report': typeof ApiWagerIdReportRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog/': typeof SiteAdminBlogIndexRoute
@@ -4166,7 +4328,9 @@ export interface FileRoutesByFullPath {
   '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
+  '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
+  '/api/creator/redeem/': typeof ApiCreatorRedeemIndexRoute
   '/api/developer/keys/': typeof ApiDeveloperKeysIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
@@ -4189,6 +4353,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/admin/wager/$id/resolve': typeof ApiAdminWagerIdResolveRoute
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
@@ -4229,6 +4394,7 @@ export interface FileRoutesByFullPath {
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
+  '/api/tournaments/$id/matches/$matchId/report': typeof ApiTournamentsIdMatchesMatchIdReportRoute
 }
 export interface FileRoutesByTo {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
@@ -4366,6 +4532,7 @@ export interface FileRoutesByTo {
   '/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/admin/predictions': typeof SiteAdminPredictionsRoute
+  '/admin/redemptions': typeof SiteAdminRedemptionsRoute
   '/admin/reports': typeof SiteAdminReportsRoute
   '/admin/rideshare': typeof SiteAdminRideshareRoute
   '/admin/security-reports': typeof SiteAdminSecurityReportsRoute
@@ -4397,8 +4564,10 @@ export interface FileRoutesByTo {
   '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
   '/thread/$rootId': typeof SiteThreadRootIdRoute
+  '/tournaments/$id': typeof SiteTournamentsIdRoute
   '/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/user-builds/submit': typeof SiteUserBuildsSubmitRoute
+  '/wager/$id': typeof SiteWagerIdRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/account/delete': typeof ApiAccountDeleteRoute
   '/api/account/export': typeof ApiAccountExportRoute
@@ -4450,8 +4619,10 @@ export interface FileRoutesByTo {
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
   '/api/homes/watches': typeof ApiHomesWatchesRoute
+  '/api/internal/match-result': typeof ApiInternalMatchResultRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
+  '/api/internal/predictions-tick': typeof ApiInternalPredictionsTickRoute
   '/api/internal/streak-push': typeof ApiInternalStreakPushRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
@@ -4535,6 +4706,7 @@ export interface FileRoutesByTo {
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
+  '/api/tournaments/$id': typeof ApiTournamentsIdRouteWithChildren
   '/api/user-builds/$id': typeof ApiUserBuildsIdRouteWithChildren
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
@@ -4559,6 +4731,7 @@ export interface FileRoutesByTo {
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
+  '/api/wager/$id': typeof ApiWagerIdRouteWithChildren
   '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
@@ -4585,8 +4758,10 @@ export interface FileRoutesByTo {
   '/settings': typeof SiteSettingsIndexRoute
   '/store': typeof SiteStoreIndexRoute
   '/study': typeof SiteStudyIndexRoute
+  '/tournaments': typeof SiteTournamentsIndexRoute
   '/user-builds': typeof SiteUserBuildsIndexRoute
   '/v': typeof SiteVIndexRoute
+  '/wager': typeof SiteWagerIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/api/battlepass': typeof ApiBattlepassIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
@@ -4601,6 +4776,8 @@ export interface FileRoutesByTo {
   '/api/scheduled': typeof ApiScheduledIndexRoute
   '/api/shop': typeof ApiShopIndexRoute
   '/api/staking': typeof ApiStakingIndexRoute
+  '/api/tournaments': typeof ApiTournamentsIndexRoute
+  '/api/wager': typeof ApiWagerIndexRoute
   '/api/wheel': typeof ApiWheelIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
@@ -4621,6 +4798,7 @@ export interface FileRoutesByTo {
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
+  '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -4707,6 +4885,10 @@ export interface FileRoutesByTo {
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
+  '/api/tournaments/$id/register': typeof ApiTournamentsIdRegisterRoute
+  '/api/tournaments/$id/start': typeof ApiTournamentsIdStartRoute
+  '/api/tournaments/$id/withdraw': typeof ApiTournamentsIdWithdrawRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
@@ -4724,6 +4906,9 @@ export interface FileRoutesByTo {
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
+  '/api/wager/$id/accept': typeof ApiWagerIdAcceptRoute
+  '/api/wager/$id/cancel': typeof ApiWagerIdCancelRoute
+  '/api/wager/$id/report': typeof ApiWagerIdReportRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/admin/albums': typeof SiteAdminAlbumsIndexRoute
   '/admin/blog': typeof SiteAdminBlogIndexRoute
@@ -4732,7 +4917,9 @@ export interface FileRoutesByTo {
   '/api/admin/albums': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions': typeof ApiAdminPredictionsIndexRoute
+  '/api/admin/redemptions': typeof ApiAdminRedemptionsIndexRoute
   '/api/communities/$slug': typeof ApiCommunitiesSlugIndexRoute
+  '/api/creator/redeem': typeof ApiCreatorRedeemIndexRoute
   '/api/developer/keys': typeof ApiDeveloperKeysIndexRoute
   '/api/doctrine/incidents': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation': typeof ApiDoctrineReputationIndexRoute
@@ -4755,6 +4942,7 @@ export interface FileRoutesByTo {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/admin/wager/$id/resolve': typeof ApiAdminWagerIdResolveRoute
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
@@ -4795,6 +4983,7 @@ export interface FileRoutesByTo {
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
+  '/api/tournaments/$id/matches/$matchId/report': typeof ApiTournamentsIdMatchesMatchIdReportRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -4959,6 +5148,7 @@ export interface FileRoutesById {
   '/_site/admin/library-quota': typeof SiteAdminLibraryQuotaRoute
   '/_site/admin/library-storage': typeof SiteAdminLibraryStorageRoute
   '/_site/admin/predictions': typeof SiteAdminPredictionsRoute
+  '/_site/admin/redemptions': typeof SiteAdminRedemptionsRoute
   '/_site/admin/reports': typeof SiteAdminReportsRoute
   '/_site/admin/rideshare': typeof SiteAdminRideshareRoute
   '/_site/admin/security-reports': typeof SiteAdminSecurityReportsRoute
@@ -4990,8 +5180,10 @@ export interface FileRoutesById {
   '/_site/study/browse': typeof SiteStudyBrowseRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
   '/_site/thread/$rootId': typeof SiteThreadRootIdRoute
+  '/_site/tournaments/$id': typeof SiteTournamentsIdRoute
   '/_site/user-builds/manage': typeof SiteUserBuildsManageRoute
   '/_site/user-builds/submit': typeof SiteUserBuildsSubmitRoute
+  '/_site/wager/$id': typeof SiteWagerIdRoute
   '/altair/multiplayer/$lobbyId': typeof AltairMultiplayerLobbyIdRoute
   '/api/account/delete': typeof ApiAccountDeleteRoute
   '/api/account/export': typeof ApiAccountExportRoute
@@ -5043,8 +5235,10 @@ export interface FileRoutesById {
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
   '/api/homes/watches': typeof ApiHomesWatchesRoute
+  '/api/internal/match-result': typeof ApiInternalMatchResultRoute
   '/api/internal/notify-message': typeof ApiInternalNotifyMessageRoute
   '/api/internal/notify-typing': typeof ApiInternalNotifyTypingRoute
+  '/api/internal/predictions-tick': typeof ApiInternalPredictionsTickRoute
   '/api/internal/streak-push': typeof ApiInternalStreakPushRoute
   '/api/laundry-sort/leaderboard': typeof ApiLaundrySortLeaderboardRoute
   '/api/laundry-sort/score': typeof ApiLaundrySortScoreRoute
@@ -5128,6 +5322,7 @@ export interface FileRoutesById {
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
+  '/api/tournaments/$id': typeof ApiTournamentsIdRouteWithChildren
   '/api/user-builds/$id': typeof ApiUserBuildsIdRouteWithChildren
   '/api/user-builds/categories': typeof ApiUserBuildsCategoriesRoute
   '/api/user-builds/featured': typeof ApiUserBuildsFeaturedRoute
@@ -5152,6 +5347,7 @@ export interface FileRoutesById {
   '/api/vibe/stream': typeof ApiVibeStreamRoute
   '/api/void-breaker/leaderboard': typeof ApiVoidBreakerLeaderboardRoute
   '/api/void-breaker/score': typeof ApiVoidBreakerScoreRoute
+  '/api/wager/$id': typeof ApiWagerIdRouteWithChildren
   '/api/wheel/spin': typeof ApiWheelSpinRoute
   '/embed/post/$id': typeof EmbedPostIdRoute
   '/library/albums/$albumId': typeof LibraryAlbumsAlbumIdRoute
@@ -5178,8 +5374,10 @@ export interface FileRoutesById {
   '/_site/settings/': typeof SiteSettingsIndexRoute
   '/_site/store/': typeof SiteStoreIndexRoute
   '/_site/study/': typeof SiteStudyIndexRoute
+  '/_site/tournaments/': typeof SiteTournamentsIndexRoute
   '/_site/user-builds/': typeof SiteUserBuildsIndexRoute
   '/_site/v/': typeof SiteVIndexRoute
+  '/_site/wager/': typeof SiteWagerIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
@@ -5194,6 +5392,8 @@ export interface FileRoutesById {
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
+  '/api/tournaments/': typeof ApiTournamentsIndexRoute
+  '/api/wager/': typeof ApiWagerIndexRoute
   '/api/wheel/': typeof ApiWheelIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
@@ -5214,6 +5414,7 @@ export interface FileRoutesById {
   '/api/admin/library/quota-requests': typeof ApiAdminLibraryQuotaRequestsRoute
   '/api/admin/library/reorder': typeof ApiAdminLibraryReorderRoute
   '/api/admin/library/storage-health': typeof ApiAdminLibraryStorageHealthRoute
+  '/api/admin/redemptions/$id': typeof ApiAdminRedemptionsIdRoute
   '/api/admin/reports/$id': typeof ApiAdminReportsIdRoute
   '/api/admin/rideshare/applications': typeof ApiAdminRideshareApplicationsRoute
   '/api/admin/rideshare/rides': typeof ApiAdminRideshareRidesRoute
@@ -5300,6 +5501,10 @@ export interface FileRoutesById {
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
+  '/api/tournaments/$id/register': typeof ApiTournamentsIdRegisterRoute
+  '/api/tournaments/$id/start': typeof ApiTournamentsIdStartRoute
+  '/api/tournaments/$id/withdraw': typeof ApiTournamentsIdWithdrawRoute
   '/api/user-builds/$id/comments': typeof ApiUserBuildsIdCommentsRoute
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
@@ -5317,6 +5522,9 @@ export interface FileRoutesById {
   '/api/v1/webhooks/$id': typeof ApiV1WebhooksIdRoute
   '/api/vibe/pkg/$file': typeof ApiVibePkgFileRoute
   '/api/vibe/thumb/$slug': typeof ApiVibeThumbSlugRoute
+  '/api/wager/$id/accept': typeof ApiWagerIdAcceptRoute
+  '/api/wager/$id/cancel': typeof ApiWagerIdCancelRoute
+  '/api/wager/$id/report': typeof ApiWagerIdReportRoute
   '/rmhbox/minigames/$minigameId/history': typeof RmhboxMinigamesMinigameIdHistoryRoute
   '/_site/admin/albums/': typeof SiteAdminAlbumsIndexRoute
   '/_site/admin/blog/': typeof SiteAdminBlogIndexRoute
@@ -5325,7 +5533,9 @@ export interface FileRoutesById {
   '/api/admin/albums/': typeof ApiAdminAlbumsIndexRoute
   '/api/admin/library/': typeof ApiAdminLibraryIndexRoute
   '/api/admin/predictions/': typeof ApiAdminPredictionsIndexRoute
+  '/api/admin/redemptions/': typeof ApiAdminRedemptionsIndexRoute
   '/api/communities/$slug/': typeof ApiCommunitiesSlugIndexRoute
+  '/api/creator/redeem/': typeof ApiCreatorRedeemIndexRoute
   '/api/developer/keys/': typeof ApiDeveloperKeysIndexRoute
   '/api/doctrine/incidents/': typeof ApiDoctrineIncidentsIndexRoute
   '/api/doctrine/reputation/': typeof ApiDoctrineReputationIndexRoute
@@ -5348,6 +5558,7 @@ export interface FileRoutesById {
   '/api/admin/users/$id/grant-membership': typeof ApiAdminUsersIdGrantMembershipRoute
   '/api/admin/users/$id/set-coins': typeof ApiAdminUsersIdSetCoinsRoute
   '/api/admin/users/$id/strike': typeof ApiAdminUsersIdStrikeRoute
+  '/api/admin/wager/$id/resolve': typeof ApiAdminWagerIdResolveRoute
   '/api/communities/$slug/announcements/$id': typeof ApiCommunitiesSlugAnnouncementsIdRoute
   '/api/communities/$slug/members/$userId': typeof ApiCommunitiesSlugMembersUserIdRoute
   '/api/homes/listings/$id/favorite': typeof ApiHomesListingsIdFavoriteRoute
@@ -5388,6 +5599,7 @@ export interface FileRoutesById {
   '/api/rmharks/$id/comment/$commentId/like': typeof ApiRmharksIdCommentCommentIdLikeRoute
   '/api/rmharks/$id/comment/$commentId/repost': typeof ApiRmharksIdCommentCommentIdRepostRoute
   '/api/rmharks/$id/comment/$commentId/view': typeof ApiRmharksIdCommentCommentIdViewRoute
+  '/api/tournaments/$id/matches/$matchId/report': typeof ApiTournamentsIdMatchesMatchIdReportRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -5552,6 +5764,7 @@ export interface FileRouteTypes {
     | '/admin/library-quota'
     | '/admin/library-storage'
     | '/admin/predictions'
+    | '/admin/redemptions'
     | '/admin/reports'
     | '/admin/rideshare'
     | '/admin/security-reports'
@@ -5583,8 +5796,10 @@ export interface FileRouteTypes {
     | '/study/browse'
     | '/tag/$tag'
     | '/thread/$rootId'
+    | '/tournaments/$id'
     | '/user-builds/manage'
     | '/user-builds/submit'
+    | '/wager/$id'
     | '/altair/multiplayer/$lobbyId'
     | '/api/account/delete'
     | '/api/account/export'
@@ -5636,8 +5851,10 @@ export interface FileRouteTypes {
     | '/api/homes/geocode'
     | '/api/homes/listings'
     | '/api/homes/watches'
+    | '/api/internal/match-result'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
+    | '/api/internal/predictions-tick'
     | '/api/internal/streak-push'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
@@ -5721,6 +5938,7 @@ export interface FileRouteTypes {
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
     | '/api/tips/leaderboard'
+    | '/api/tournaments/$id'
     | '/api/user-builds/$id'
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
@@ -5745,6 +5963,7 @@ export interface FileRouteTypes {
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
+    | '/api/wager/$id'
     | '/api/wheel/spin'
     | '/embed/post/$id'
     | '/library/albums/$albumId'
@@ -5771,8 +5990,10 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/store/'
     | '/study/'
+    | '/tournaments/'
     | '/user-builds/'
     | '/v/'
+    | '/wager/'
     | '/altair/multiplayer/'
     | '/api/battlepass/'
     | '/api/coins/'
@@ -5787,6 +6008,8 @@ export interface FileRouteTypes {
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/staking/'
+    | '/api/tournaments/'
+    | '/api/wager/'
     | '/api/wheel/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
@@ -5807,6 +6030,7 @@ export interface FileRouteTypes {
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
+    | '/api/admin/redemptions/$id'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -5893,6 +6117,10 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/storefront/creator/$userid'
+    | '/api/tournaments/$id/cancel'
+    | '/api/tournaments/$id/register'
+    | '/api/tournaments/$id/start'
+    | '/api/tournaments/$id/withdraw'
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
@@ -5910,6 +6138,9 @@ export interface FileRouteTypes {
     | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
+    | '/api/wager/$id/accept'
+    | '/api/wager/$id/cancel'
+    | '/api/wager/$id/report'
     | '/rmhbox/minigames/$minigameId/history'
     | '/admin/albums/'
     | '/admin/blog/'
@@ -5918,7 +6149,9 @@ export interface FileRouteTypes {
     | '/api/admin/albums/'
     | '/api/admin/library/'
     | '/api/admin/predictions/'
+    | '/api/admin/redemptions/'
     | '/api/communities/$slug/'
+    | '/api/creator/redeem/'
     | '/api/developer/keys/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
@@ -5941,6 +6174,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/admin/wager/$id/resolve'
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/homes/listings/$id/favorite'
@@ -5981,6 +6215,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
+    | '/api/tournaments/$id/matches/$matchId/report'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/adaptive-intelligence'
@@ -6118,6 +6353,7 @@ export interface FileRouteTypes {
     | '/admin/library-quota'
     | '/admin/library-storage'
     | '/admin/predictions'
+    | '/admin/redemptions'
     | '/admin/reports'
     | '/admin/rideshare'
     | '/admin/security-reports'
@@ -6149,8 +6385,10 @@ export interface FileRouteTypes {
     | '/study/browse'
     | '/tag/$tag'
     | '/thread/$rootId'
+    | '/tournaments/$id'
     | '/user-builds/manage'
     | '/user-builds/submit'
+    | '/wager/$id'
     | '/altair/multiplayer/$lobbyId'
     | '/api/account/delete'
     | '/api/account/export'
@@ -6202,8 +6440,10 @@ export interface FileRouteTypes {
     | '/api/homes/geocode'
     | '/api/homes/listings'
     | '/api/homes/watches'
+    | '/api/internal/match-result'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
+    | '/api/internal/predictions-tick'
     | '/api/internal/streak-push'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
@@ -6287,6 +6527,7 @@ export interface FileRouteTypes {
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
     | '/api/tips/leaderboard'
+    | '/api/tournaments/$id'
     | '/api/user-builds/$id'
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
@@ -6311,6 +6552,7 @@ export interface FileRouteTypes {
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
+    | '/api/wager/$id'
     | '/api/wheel/spin'
     | '/embed/post/$id'
     | '/library/albums/$albumId'
@@ -6337,8 +6579,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/store'
     | '/study'
+    | '/tournaments'
     | '/user-builds'
     | '/v'
+    | '/wager'
     | '/altair/multiplayer'
     | '/api/battlepass'
     | '/api/coins'
@@ -6353,6 +6597,8 @@ export interface FileRouteTypes {
     | '/api/scheduled'
     | '/api/shop'
     | '/api/staking'
+    | '/api/tournaments'
+    | '/api/wager'
     | '/api/wheel'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
@@ -6373,6 +6619,7 @@ export interface FileRouteTypes {
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
+    | '/api/admin/redemptions/$id'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -6459,6 +6706,10 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/storefront/creator/$userid'
+    | '/api/tournaments/$id/cancel'
+    | '/api/tournaments/$id/register'
+    | '/api/tournaments/$id/start'
+    | '/api/tournaments/$id/withdraw'
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
@@ -6476,6 +6727,9 @@ export interface FileRouteTypes {
     | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
+    | '/api/wager/$id/accept'
+    | '/api/wager/$id/cancel'
+    | '/api/wager/$id/report'
     | '/rmhbox/minigames/$minigameId/history'
     | '/admin/albums'
     | '/admin/blog'
@@ -6484,7 +6738,9 @@ export interface FileRouteTypes {
     | '/api/admin/albums'
     | '/api/admin/library'
     | '/api/admin/predictions'
+    | '/api/admin/redemptions'
     | '/api/communities/$slug'
+    | '/api/creator/redeem'
     | '/api/developer/keys'
     | '/api/doctrine/incidents'
     | '/api/doctrine/reputation'
@@ -6507,6 +6763,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/admin/wager/$id/resolve'
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/homes/listings/$id/favorite'
@@ -6547,6 +6804,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
+    | '/api/tournaments/$id/matches/$matchId/report'
   id:
     | '__root__'
     | '/_site'
@@ -6710,6 +6968,7 @@ export interface FileRouteTypes {
     | '/_site/admin/library-quota'
     | '/_site/admin/library-storage'
     | '/_site/admin/predictions'
+    | '/_site/admin/redemptions'
     | '/_site/admin/reports'
     | '/_site/admin/rideshare'
     | '/_site/admin/security-reports'
@@ -6741,8 +7000,10 @@ export interface FileRouteTypes {
     | '/_site/study/browse'
     | '/_site/tag/$tag'
     | '/_site/thread/$rootId'
+    | '/_site/tournaments/$id'
     | '/_site/user-builds/manage'
     | '/_site/user-builds/submit'
+    | '/_site/wager/$id'
     | '/altair/multiplayer/$lobbyId'
     | '/api/account/delete'
     | '/api/account/export'
@@ -6794,8 +7055,10 @@ export interface FileRouteTypes {
     | '/api/homes/geocode'
     | '/api/homes/listings'
     | '/api/homes/watches'
+    | '/api/internal/match-result'
     | '/api/internal/notify-message'
     | '/api/internal/notify-typing'
+    | '/api/internal/predictions-tick'
     | '/api/internal/streak-push'
     | '/api/laundry-sort/leaderboard'
     | '/api/laundry-sort/score'
@@ -6879,6 +7142,7 @@ export interface FileRouteTypes {
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
     | '/api/tips/leaderboard'
+    | '/api/tournaments/$id'
     | '/api/user-builds/$id'
     | '/api/user-builds/categories'
     | '/api/user-builds/featured'
@@ -6903,6 +7167,7 @@ export interface FileRouteTypes {
     | '/api/vibe/stream'
     | '/api/void-breaker/leaderboard'
     | '/api/void-breaker/score'
+    | '/api/wager/$id'
     | '/api/wheel/spin'
     | '/embed/post/$id'
     | '/library/albums/$albumId'
@@ -6929,8 +7194,10 @@ export interface FileRouteTypes {
     | '/_site/settings/'
     | '/_site/store/'
     | '/_site/study/'
+    | '/_site/tournaments/'
     | '/_site/user-builds/'
     | '/_site/v/'
+    | '/_site/wager/'
     | '/altair/multiplayer/'
     | '/api/battlepass/'
     | '/api/coins/'
@@ -6945,6 +7212,8 @@ export interface FileRouteTypes {
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/staking/'
+    | '/api/tournaments/'
+    | '/api/wager/'
     | '/api/wheel/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
@@ -6965,6 +7234,7 @@ export interface FileRouteTypes {
     | '/api/admin/library/quota-requests'
     | '/api/admin/library/reorder'
     | '/api/admin/library/storage-health'
+    | '/api/admin/redemptions/$id'
     | '/api/admin/reports/$id'
     | '/api/admin/rideshare/applications'
     | '/api/admin/rideshare/rides'
@@ -7051,6 +7321,10 @@ export interface FileRouteTypes {
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/storefront/creator/$userid'
+    | '/api/tournaments/$id/cancel'
+    | '/api/tournaments/$id/register'
+    | '/api/tournaments/$id/start'
+    | '/api/tournaments/$id/withdraw'
     | '/api/user-builds/$id/comments'
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
@@ -7068,6 +7342,9 @@ export interface FileRouteTypes {
     | '/api/v1/webhooks/$id'
     | '/api/vibe/pkg/$file'
     | '/api/vibe/thumb/$slug'
+    | '/api/wager/$id/accept'
+    | '/api/wager/$id/cancel'
+    | '/api/wager/$id/report'
     | '/rmhbox/minigames/$minigameId/history'
     | '/_site/admin/albums/'
     | '/_site/admin/blog/'
@@ -7076,7 +7353,9 @@ export interface FileRouteTypes {
     | '/api/admin/albums/'
     | '/api/admin/library/'
     | '/api/admin/predictions/'
+    | '/api/admin/redemptions/'
     | '/api/communities/$slug/'
+    | '/api/creator/redeem/'
     | '/api/developer/keys/'
     | '/api/doctrine/incidents/'
     | '/api/doctrine/reputation/'
@@ -7099,6 +7378,7 @@ export interface FileRouteTypes {
     | '/api/admin/users/$id/grant-membership'
     | '/api/admin/users/$id/set-coins'
     | '/api/admin/users/$id/strike'
+    | '/api/admin/wager/$id/resolve'
     | '/api/communities/$slug/announcements/$id'
     | '/api/communities/$slug/members/$userId'
     | '/api/homes/listings/$id/favorite'
@@ -7139,6 +7419,7 @@ export interface FileRouteTypes {
     | '/api/rmharks/$id/comment/$commentId/like'
     | '/api/rmharks/$id/comment/$commentId/repost'
     | '/api/rmharks/$id/comment/$commentId/view'
+    | '/api/tournaments/$id/matches/$matchId/report'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -7267,8 +7548,10 @@ export interface RootRouteChildren {
   ApiHomesGeocodeRoute: typeof ApiHomesGeocodeRoute
   ApiHomesListingsRoute: typeof ApiHomesListingsRouteWithChildren
   ApiHomesWatchesRoute: typeof ApiHomesWatchesRoute
+  ApiInternalMatchResultRoute: typeof ApiInternalMatchResultRoute
   ApiInternalNotifyMessageRoute: typeof ApiInternalNotifyMessageRoute
   ApiInternalNotifyTypingRoute: typeof ApiInternalNotifyTypingRoute
+  ApiInternalPredictionsTickRoute: typeof ApiInternalPredictionsTickRoute
   ApiInternalStreakPushRoute: typeof ApiInternalStreakPushRoute
   ApiLaundrySortLeaderboardRoute: typeof ApiLaundrySortLeaderboardRoute
   ApiLaundrySortScoreRoute: typeof ApiLaundrySortScoreRoute
@@ -7335,6 +7618,7 @@ export interface RootRouteChildren {
   ApiTagsTagRoute: typeof ApiTagsTagRoute
   ApiTempleOfJoySaveRoute: typeof ApiTempleOfJoySaveRoute
   ApiTipsLeaderboardRoute: typeof ApiTipsLeaderboardRoute
+  ApiTournamentsIdRoute: typeof ApiTournamentsIdRouteWithChildren
   ApiUsersSearchRoute: typeof ApiUsersSearchRoute
   ApiV1BlogRoute: typeof ApiV1BlogRouteWithChildren
   ApiV1BuildsRoute: typeof ApiV1BuildsRouteWithChildren
@@ -7356,6 +7640,7 @@ export interface RootRouteChildren {
   ApiVibeStreamRoute: typeof ApiVibeStreamRoute
   ApiVoidBreakerLeaderboardRoute: typeof ApiVoidBreakerLeaderboardRoute
   ApiVoidBreakerScoreRoute: typeof ApiVoidBreakerScoreRoute
+  ApiWagerIdRoute: typeof ApiWagerIdRouteWithChildren
   ApiWheelSpinRoute: typeof ApiWheelSpinRoute
   EmbedPostIdRoute: typeof EmbedPostIdRoute
   LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
@@ -7372,6 +7657,8 @@ export interface RootRouteChildren {
   ApiScheduledIndexRoute: typeof ApiScheduledIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiStakingIndexRoute: typeof ApiStakingIndexRoute
+  ApiTournamentsIndexRoute: typeof ApiTournamentsIndexRoute
+  ApiWagerIndexRoute: typeof ApiWagerIndexRoute
   ApiWheelIndexRoute: typeof ApiWheelIndexRoute
   ApiAdminAlbumsIdRoute: typeof ApiAdminAlbumsIdRouteWithChildren
   ApiAdminAlbumsReorderRoute: typeof ApiAdminAlbumsReorderRoute
@@ -7381,6 +7668,7 @@ export interface RootRouteChildren {
   ApiAdminLibraryQuotaRequestsRoute: typeof ApiAdminLibraryQuotaRequestsRoute
   ApiAdminLibraryReorderRoute: typeof ApiAdminLibraryReorderRoute
   ApiAdminLibraryStorageHealthRoute: typeof ApiAdminLibraryStorageHealthRoute
+  ApiAdminRedemptionsIdRoute: typeof ApiAdminRedemptionsIdRoute
   ApiAdminRideshareApplicationsRoute: typeof ApiAdminRideshareApplicationsRoute
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
   ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
@@ -7441,7 +7729,9 @@ export interface RootRouteChildren {
   ApiAdminAlbumsIndexRoute: typeof ApiAdminAlbumsIndexRoute
   ApiAdminLibraryIndexRoute: typeof ApiAdminLibraryIndexRoute
   ApiAdminPredictionsIndexRoute: typeof ApiAdminPredictionsIndexRoute
+  ApiAdminRedemptionsIndexRoute: typeof ApiAdminRedemptionsIndexRoute
   ApiCommunitiesSlugIndexRoute: typeof ApiCommunitiesSlugIndexRoute
+  ApiCreatorRedeemIndexRoute: typeof ApiCreatorRedeemIndexRoute
   ApiDeveloperKeysIndexRoute: typeof ApiDeveloperKeysIndexRoute
   ApiDoctrineIncidentsIndexRoute: typeof ApiDoctrineIncidentsIndexRoute
   ApiDoctrineReputationIndexRoute: typeof ApiDoctrineReputationIndexRoute
@@ -7454,6 +7744,7 @@ export interface RootRouteChildren {
   ApiStudyDecksIndexRoute: typeof ApiStudyDecksIndexRoute
   ApiAdminPredictionsIdModerateRoute: typeof ApiAdminPredictionsIdModerateRoute
   ApiAdminPredictionsIdResolveRoute: typeof ApiAdminPredictionsIdResolveRoute
+  ApiAdminWagerIdResolveRoute: typeof ApiAdminWagerIdResolveRoute
   ApiPlaylistsIdItemsItemIdRoute: typeof ApiPlaylistsIdItemsItemIdRoute
   ApiRmhmusicGuessIdAttemptRoute: typeof ApiRmhmusicGuessIdAttemptRoute
   ApiStorefrontProductsIdBuyRoute: typeof ApiStorefrontProductsIdBuyRoute
@@ -8588,6 +8879,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWheelIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/wager/': {
+      id: '/api/wager/'
+      path: '/api/wager'
+      fullPath: '/api/wager/'
+      preLoaderRoute: typeof ApiWagerIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/tournaments/': {
+      id: '/api/tournaments/'
+      path: '/api/tournaments'
+      fullPath: '/api/tournaments/'
+      preLoaderRoute: typeof ApiTournamentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/staking/': {
       id: '/api/staking/'
       path: '/api/staking'
@@ -8686,6 +8991,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AltairMultiplayerIndexRouteImport
       parentRoute: typeof AltairMultiplayerRoute
     }
+    '/_site/wager/': {
+      id: '/_site/wager/'
+      path: '/wager'
+      fullPath: '/wager/'
+      preLoaderRoute: typeof SiteWagerIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/v/': {
       id: '/_site/v/'
       path: '/v'
@@ -8698,6 +9010,13 @@ declare module '@tanstack/react-router' {
       path: '/user-builds'
       fullPath: '/user-builds/'
       preLoaderRoute: typeof SiteUserBuildsIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tournaments/': {
+      id: '/_site/tournaments/'
+      path: '/tournaments'
+      fullPath: '/tournaments/'
+      preLoaderRoute: typeof SiteTournamentsIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/study/': {
@@ -8882,6 +9201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiWheelSpinRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/wager/$id': {
+      id: '/api/wager/$id'
+      path: '/api/wager/$id'
+      fullPath: '/api/wager/$id'
+      preLoaderRoute: typeof ApiWagerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/void-breaker/score': {
       id: '/api/void-breaker/score'
       path: '/api/void-breaker/score'
@@ -9049,6 +9375,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/user-builds/$id'
       preLoaderRoute: typeof ApiUserBuildsIdRouteImport
       parentRoute: typeof ApiUserBuildsRoute
+    }
+    '/api/tournaments/$id': {
+      id: '/api/tournaments/$id'
+      path: '/api/tournaments/$id'
+      fullPath: '/api/tournaments/$id'
+      preLoaderRoute: typeof ApiTournamentsIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/tips/leaderboard': {
       id: '/api/tips/leaderboard'
@@ -9631,6 +9964,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiInternalStreakPushRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/internal/predictions-tick': {
+      id: '/api/internal/predictions-tick'
+      path: '/api/internal/predictions-tick'
+      fullPath: '/api/internal/predictions-tick'
+      preLoaderRoute: typeof ApiInternalPredictionsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/internal/notify-typing': {
       id: '/api/internal/notify-typing'
       path: '/api/internal/notify-typing'
@@ -9643,6 +9983,13 @@ declare module '@tanstack/react-router' {
       path: '/api/internal/notify-message'
       fullPath: '/api/internal/notify-message'
       preLoaderRoute: typeof ApiInternalNotifyMessageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/internal/match-result': {
+      id: '/api/internal/match-result'
+      path: '/api/internal/match-result'
+      fullPath: '/api/internal/match-result'
+      preLoaderRoute: typeof ApiInternalMatchResultRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/homes/watches': {
@@ -10002,6 +10349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AltairMultiplayerLobbyIdRouteImport
       parentRoute: typeof AltairMultiplayerRoute
     }
+    '/_site/wager/$id': {
+      id: '/_site/wager/$id'
+      path: '/wager/$id'
+      fullPath: '/wager/$id'
+      preLoaderRoute: typeof SiteWagerIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/user-builds/submit': {
       id: '/_site/user-builds/submit'
       path: '/user-builds/submit'
@@ -10014,6 +10368,13 @@ declare module '@tanstack/react-router' {
       path: '/user-builds/manage'
       fullPath: '/user-builds/manage'
       preLoaderRoute: typeof SiteUserBuildsManageRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/tournaments/$id': {
+      id: '/_site/tournaments/$id'
+      path: '/tournaments/$id'
+      fullPath: '/tournaments/$id'
+      preLoaderRoute: typeof SiteTournamentsIdRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/thread/$rootId': {
@@ -10233,6 +10594,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminReportsRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/_site/admin/redemptions': {
+      id: '/_site/admin/redemptions'
+      path: '/redemptions'
+      fullPath: '/admin/redemptions'
+      preLoaderRoute: typeof SiteAdminRedemptionsRouteImport
+      parentRoute: typeof SiteAdminRouteRoute
+    }
     '/_site/admin/predictions': {
       id: '/_site/admin/predictions'
       path: '/predictions'
@@ -10352,11 +10720,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiDeveloperKeysIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/creator/redeem/': {
+      id: '/api/creator/redeem/'
+      path: '/api/creator/redeem'
+      fullPath: '/api/creator/redeem/'
+      preLoaderRoute: typeof ApiCreatorRedeemIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/communities/$slug/': {
       id: '/api/communities/$slug/'
       path: '/api/communities/$slug'
       fullPath: '/api/communities/$slug/'
       preLoaderRoute: typeof ApiCommunitiesSlugIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/redemptions/': {
+      id: '/api/admin/redemptions/'
+      path: '/api/admin/redemptions'
+      fullPath: '/api/admin/redemptions/'
+      preLoaderRoute: typeof ApiAdminRedemptionsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/predictions/': {
@@ -10414,6 +10796,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhbox/minigames/$minigameId/history'
       preLoaderRoute: typeof RmhboxMinigamesMinigameIdHistoryRouteImport
       parentRoute: typeof RmhboxRoute
+    }
+    '/api/wager/$id/report': {
+      id: '/api/wager/$id/report'
+      path: '/report'
+      fullPath: '/api/wager/$id/report'
+      preLoaderRoute: typeof ApiWagerIdReportRouteImport
+      parentRoute: typeof ApiWagerIdRoute
+    }
+    '/api/wager/$id/cancel': {
+      id: '/api/wager/$id/cancel'
+      path: '/cancel'
+      fullPath: '/api/wager/$id/cancel'
+      preLoaderRoute: typeof ApiWagerIdCancelRouteImport
+      parentRoute: typeof ApiWagerIdRoute
+    }
+    '/api/wager/$id/accept': {
+      id: '/api/wager/$id/accept'
+      path: '/accept'
+      fullPath: '/api/wager/$id/accept'
+      preLoaderRoute: typeof ApiWagerIdAcceptRouteImport
+      parentRoute: typeof ApiWagerIdRoute
     }
     '/api/vibe/thumb/$slug': {
       id: '/api/vibe/thumb/$slug'
@@ -10533,6 +10936,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/user-builds/$id/comments'
       preLoaderRoute: typeof ApiUserBuildsIdCommentsRouteImport
       parentRoute: typeof ApiUserBuildsIdRoute
+    }
+    '/api/tournaments/$id/withdraw': {
+      id: '/api/tournaments/$id/withdraw'
+      path: '/withdraw'
+      fullPath: '/api/tournaments/$id/withdraw'
+      preLoaderRoute: typeof ApiTournamentsIdWithdrawRouteImport
+      parentRoute: typeof ApiTournamentsIdRoute
+    }
+    '/api/tournaments/$id/start': {
+      id: '/api/tournaments/$id/start'
+      path: '/start'
+      fullPath: '/api/tournaments/$id/start'
+      preLoaderRoute: typeof ApiTournamentsIdStartRouteImport
+      parentRoute: typeof ApiTournamentsIdRoute
+    }
+    '/api/tournaments/$id/register': {
+      id: '/api/tournaments/$id/register'
+      path: '/register'
+      fullPath: '/api/tournaments/$id/register'
+      preLoaderRoute: typeof ApiTournamentsIdRegisterRouteImport
+      parentRoute: typeof ApiTournamentsIdRoute
+    }
+    '/api/tournaments/$id/cancel': {
+      id: '/api/tournaments/$id/cancel'
+      path: '/cancel'
+      fullPath: '/api/tournaments/$id/cancel'
+      preLoaderRoute: typeof ApiTournamentsIdCancelRouteImport
+      parentRoute: typeof ApiTournamentsIdRoute
     }
     '/api/storefront/creator/$userid': {
       id: '/api/storefront/creator/$userid'
@@ -11136,6 +11567,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminReportsIdRouteImport
       parentRoute: typeof ApiAdminReportsRoute
     }
+    '/api/admin/redemptions/$id': {
+      id: '/api/admin/redemptions/$id'
+      path: '/api/admin/redemptions/$id'
+      fullPath: '/api/admin/redemptions/$id'
+      preLoaderRoute: typeof ApiAdminRedemptionsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/library/storage-health': {
       id: '/api/admin/library/storage-health'
       path: '/api/admin/library/storage-health'
@@ -11479,6 +11917,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiCommunitiesSlugAnnouncementsIdRouteImport
       parentRoute: typeof ApiCommunitiesSlugAnnouncementsRoute
     }
+    '/api/admin/wager/$id/resolve': {
+      id: '/api/admin/wager/$id/resolve'
+      path: '/api/admin/wager/$id/resolve'
+      fullPath: '/api/admin/wager/$id/resolve'
+      preLoaderRoute: typeof ApiAdminWagerIdResolveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/users/$id/strike': {
       id: '/api/admin/users/$id/strike'
       path: '/$id/strike'
@@ -11563,6 +12008,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteAdminBlogSlugEditRouteImport
       parentRoute: typeof SiteAdminRouteRoute
     }
+    '/api/tournaments/$id/matches/$matchId/report': {
+      id: '/api/tournaments/$id/matches/$matchId/report'
+      path: '/matches/$matchId/report'
+      fullPath: '/api/tournaments/$id/matches/$matchId/report'
+      preLoaderRoute: typeof ApiTournamentsIdMatchesMatchIdReportRouteImport
+      parentRoute: typeof ApiTournamentsIdRoute
+    }
     '/api/rmharks/$id/comment/$commentId/view': {
       id: '/api/rmharks/$id/comment/$commentId/view'
       path: '/view'
@@ -11608,6 +12060,7 @@ interface SiteAdminRouteRouteChildren {
   SiteAdminLibraryQuotaRoute: typeof SiteAdminLibraryQuotaRoute
   SiteAdminLibraryStorageRoute: typeof SiteAdminLibraryStorageRoute
   SiteAdminPredictionsRoute: typeof SiteAdminPredictionsRoute
+  SiteAdminRedemptionsRoute: typeof SiteAdminRedemptionsRoute
   SiteAdminReportsRoute: typeof SiteAdminReportsRoute
   SiteAdminRideshareRoute: typeof SiteAdminRideshareRoute
   SiteAdminSecurityReportsRoute: typeof SiteAdminSecurityReportsRoute
@@ -11628,6 +12081,7 @@ const SiteAdminRouteRouteChildren: SiteAdminRouteRouteChildren = {
   SiteAdminLibraryQuotaRoute: SiteAdminLibraryQuotaRoute,
   SiteAdminLibraryStorageRoute: SiteAdminLibraryStorageRoute,
   SiteAdminPredictionsRoute: SiteAdminPredictionsRoute,
+  SiteAdminRedemptionsRoute: SiteAdminRedemptionsRoute,
   SiteAdminReportsRoute: SiteAdminReportsRoute,
   SiteAdminRideshareRoute: SiteAdminRideshareRoute,
   SiteAdminSecurityReportsRoute: SiteAdminSecurityReportsRoute,
@@ -11758,8 +12212,10 @@ interface SiteRouteChildren {
   SiteStudyBrowseRoute: typeof SiteStudyBrowseRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
   SiteThreadRootIdRoute: typeof SiteThreadRootIdRoute
+  SiteTournamentsIdRoute: typeof SiteTournamentsIdRoute
   SiteUserBuildsManageRoute: typeof SiteUserBuildsManageRoute
   SiteUserBuildsSubmitRoute: typeof SiteUserBuildsSubmitRoute
+  SiteWagerIdRoute: typeof SiteWagerIdRoute
   SiteBlogIndexRoute: typeof SiteBlogIndexRoute
   SiteBuildsIndexRoute: typeof SiteBuildsIndexRoute
   SiteCreateIndexRoute: typeof SiteCreateIndexRoute
@@ -11773,8 +12229,10 @@ interface SiteRouteChildren {
   SiteSettingsIndexRoute: typeof SiteSettingsIndexRoute
   SiteStoreIndexRoute: typeof SiteStoreIndexRoute
   SiteStudyIndexRoute: typeof SiteStudyIndexRoute
+  SiteTournamentsIndexRoute: typeof SiteTournamentsIndexRoute
   SiteUserBuildsIndexRoute: typeof SiteUserBuildsIndexRoute
   SiteVIndexRoute: typeof SiteVIndexRoute
+  SiteWagerIndexRoute: typeof SiteWagerIndexRoute
   SiteHomesListingIdRoute: typeof SiteHomesListingIdRoute
   SiteUUseridIndexRoute: typeof SiteUUseridIndexRoute
   SiteUUseridPostPostidRoute: typeof SiteUUseridPostPostidRoute
@@ -11825,8 +12283,10 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteStudyBrowseRoute: SiteStudyBrowseRoute,
   SiteTagTagRoute: SiteTagTagRoute,
   SiteThreadRootIdRoute: SiteThreadRootIdRoute,
+  SiteTournamentsIdRoute: SiteTournamentsIdRoute,
   SiteUserBuildsManageRoute: SiteUserBuildsManageRoute,
   SiteUserBuildsSubmitRoute: SiteUserBuildsSubmitRoute,
+  SiteWagerIdRoute: SiteWagerIdRoute,
   SiteBlogIndexRoute: SiteBlogIndexRoute,
   SiteBuildsIndexRoute: SiteBuildsIndexRoute,
   SiteCreateIndexRoute: SiteCreateIndexRoute,
@@ -11840,8 +12300,10 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSettingsIndexRoute: SiteSettingsIndexRoute,
   SiteStoreIndexRoute: SiteStoreIndexRoute,
   SiteStudyIndexRoute: SiteStudyIndexRoute,
+  SiteTournamentsIndexRoute: SiteTournamentsIndexRoute,
   SiteUserBuildsIndexRoute: SiteUserBuildsIndexRoute,
   SiteVIndexRoute: SiteVIndexRoute,
+  SiteWagerIndexRoute: SiteWagerIndexRoute,
   SiteHomesListingIdRoute: SiteHomesListingIdRoute,
   SiteUUseridIndexRoute: SiteUUseridIndexRoute,
   SiteUUseridPostPostidRoute: SiteUUseridPostPostidRoute,
@@ -12602,6 +13064,26 @@ const ApiSliceItSongsRouteWithChildren = ApiSliceItSongsRoute._addFileChildren(
   ApiSliceItSongsRouteChildren,
 )
 
+interface ApiTournamentsIdRouteChildren {
+  ApiTournamentsIdCancelRoute: typeof ApiTournamentsIdCancelRoute
+  ApiTournamentsIdRegisterRoute: typeof ApiTournamentsIdRegisterRoute
+  ApiTournamentsIdStartRoute: typeof ApiTournamentsIdStartRoute
+  ApiTournamentsIdWithdrawRoute: typeof ApiTournamentsIdWithdrawRoute
+  ApiTournamentsIdMatchesMatchIdReportRoute: typeof ApiTournamentsIdMatchesMatchIdReportRoute
+}
+
+const ApiTournamentsIdRouteChildren: ApiTournamentsIdRouteChildren = {
+  ApiTournamentsIdCancelRoute: ApiTournamentsIdCancelRoute,
+  ApiTournamentsIdRegisterRoute: ApiTournamentsIdRegisterRoute,
+  ApiTournamentsIdStartRoute: ApiTournamentsIdStartRoute,
+  ApiTournamentsIdWithdrawRoute: ApiTournamentsIdWithdrawRoute,
+  ApiTournamentsIdMatchesMatchIdReportRoute:
+    ApiTournamentsIdMatchesMatchIdReportRoute,
+}
+
+const ApiTournamentsIdRouteWithChildren =
+  ApiTournamentsIdRoute._addFileChildren(ApiTournamentsIdRouteChildren)
+
 interface ApiV1BlogRouteChildren {
   ApiV1BlogSlugRoute: typeof ApiV1BlogSlugRoute
 }
@@ -12693,6 +13175,22 @@ const ApiV1WebhooksRouteChildren: ApiV1WebhooksRouteChildren = {
 
 const ApiV1WebhooksRouteWithChildren = ApiV1WebhooksRoute._addFileChildren(
   ApiV1WebhooksRouteChildren,
+)
+
+interface ApiWagerIdRouteChildren {
+  ApiWagerIdAcceptRoute: typeof ApiWagerIdAcceptRoute
+  ApiWagerIdCancelRoute: typeof ApiWagerIdCancelRoute
+  ApiWagerIdReportRoute: typeof ApiWagerIdReportRoute
+}
+
+const ApiWagerIdRouteChildren: ApiWagerIdRouteChildren = {
+  ApiWagerIdAcceptRoute: ApiWagerIdAcceptRoute,
+  ApiWagerIdCancelRoute: ApiWagerIdCancelRoute,
+  ApiWagerIdReportRoute: ApiWagerIdReportRoute,
+}
+
+const ApiWagerIdRouteWithChildren = ApiWagerIdRoute._addFileChildren(
+  ApiWagerIdRouteChildren,
 )
 
 interface ApiAdminAlbumsIdSlidesRouteChildren {
@@ -12968,8 +13466,10 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHomesGeocodeRoute: ApiHomesGeocodeRoute,
   ApiHomesListingsRoute: ApiHomesListingsRouteWithChildren,
   ApiHomesWatchesRoute: ApiHomesWatchesRoute,
+  ApiInternalMatchResultRoute: ApiInternalMatchResultRoute,
   ApiInternalNotifyMessageRoute: ApiInternalNotifyMessageRoute,
   ApiInternalNotifyTypingRoute: ApiInternalNotifyTypingRoute,
+  ApiInternalPredictionsTickRoute: ApiInternalPredictionsTickRoute,
   ApiInternalStreakPushRoute: ApiInternalStreakPushRoute,
   ApiLaundrySortLeaderboardRoute: ApiLaundrySortLeaderboardRoute,
   ApiLaundrySortScoreRoute: ApiLaundrySortScoreRoute,
@@ -13036,6 +13536,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTagsTagRoute: ApiTagsTagRoute,
   ApiTempleOfJoySaveRoute: ApiTempleOfJoySaveRoute,
   ApiTipsLeaderboardRoute: ApiTipsLeaderboardRoute,
+  ApiTournamentsIdRoute: ApiTournamentsIdRouteWithChildren,
   ApiUsersSearchRoute: ApiUsersSearchRoute,
   ApiV1BlogRoute: ApiV1BlogRouteWithChildren,
   ApiV1BuildsRoute: ApiV1BuildsRouteWithChildren,
@@ -13057,6 +13558,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiVibeStreamRoute: ApiVibeStreamRoute,
   ApiVoidBreakerLeaderboardRoute: ApiVoidBreakerLeaderboardRoute,
   ApiVoidBreakerScoreRoute: ApiVoidBreakerScoreRoute,
+  ApiWagerIdRoute: ApiWagerIdRouteWithChildren,
   ApiWheelSpinRoute: ApiWheelSpinRoute,
   EmbedPostIdRoute: EmbedPostIdRoute,
   LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
@@ -13073,6 +13575,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiScheduledIndexRoute: ApiScheduledIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiStakingIndexRoute: ApiStakingIndexRoute,
+  ApiTournamentsIndexRoute: ApiTournamentsIndexRoute,
+  ApiWagerIndexRoute: ApiWagerIndexRoute,
   ApiWheelIndexRoute: ApiWheelIndexRoute,
   ApiAdminAlbumsIdRoute: ApiAdminAlbumsIdRouteWithChildren,
   ApiAdminAlbumsReorderRoute: ApiAdminAlbumsReorderRoute,
@@ -13082,6 +13586,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminLibraryQuotaRequestsRoute: ApiAdminLibraryQuotaRequestsRoute,
   ApiAdminLibraryReorderRoute: ApiAdminLibraryReorderRoute,
   ApiAdminLibraryStorageHealthRoute: ApiAdminLibraryStorageHealthRoute,
+  ApiAdminRedemptionsIdRoute: ApiAdminRedemptionsIdRoute,
   ApiAdminRideshareApplicationsRoute: ApiAdminRideshareApplicationsRoute,
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
   ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
@@ -13143,7 +13648,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminAlbumsIndexRoute: ApiAdminAlbumsIndexRoute,
   ApiAdminLibraryIndexRoute: ApiAdminLibraryIndexRoute,
   ApiAdminPredictionsIndexRoute: ApiAdminPredictionsIndexRoute,
+  ApiAdminRedemptionsIndexRoute: ApiAdminRedemptionsIndexRoute,
   ApiCommunitiesSlugIndexRoute: ApiCommunitiesSlugIndexRoute,
+  ApiCreatorRedeemIndexRoute: ApiCreatorRedeemIndexRoute,
   ApiDeveloperKeysIndexRoute: ApiDeveloperKeysIndexRoute,
   ApiDoctrineIncidentsIndexRoute: ApiDoctrineIncidentsIndexRoute,
   ApiDoctrineReputationIndexRoute: ApiDoctrineReputationIndexRoute,
@@ -13156,6 +13663,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudyDecksIndexRoute: ApiStudyDecksIndexRoute,
   ApiAdminPredictionsIdModerateRoute: ApiAdminPredictionsIdModerateRoute,
   ApiAdminPredictionsIdResolveRoute: ApiAdminPredictionsIdResolveRoute,
+  ApiAdminWagerIdResolveRoute: ApiAdminWagerIdResolveRoute,
   ApiPlaylistsIdItemsItemIdRoute: ApiPlaylistsIdItemsItemIdRoute,
   ApiRmhmusicGuessIdAttemptRoute: ApiRmhmusicGuessIdAttemptRoute,
   ApiStorefrontProductsIdBuyRoute: ApiStorefrontProductsIdBuyRoute,

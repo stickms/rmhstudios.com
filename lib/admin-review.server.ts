@@ -4,6 +4,8 @@ import { createNotification } from '@/lib/notifications.server';
 export interface AdminReviewCounts {
   /** Open moderation reports awaiting a decision. */
   reports: number;
+  /** Creator redemption requests awaiting review. */
+  redemptions: number;
   /** Total items needing admin attention (sum of the categories above). */
   total: number;
 }
@@ -14,8 +16,11 @@ export interface AdminReviewCounts {
  * object as more review queues are added (build submissions, appeals, etc.).
  */
 export async function getAdminReviewCounts(): Promise<AdminReviewCounts> {
-  const reports = await prisma.contentReport.count({ where: { status: 'PENDING' } });
-  return { reports, total: reports };
+  const [reports, redemptions] = await Promise.all([
+    prisma.contentReport.count({ where: { status: 'PENDING' } }),
+    prisma.redemptionRequest.count({ where: { status: 'PENDING' } }),
+  ]);
+  return { reports, redemptions, total: reports + redemptions };
 }
 
 /**

@@ -5,6 +5,20 @@ import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { createPredictionSchema } from '@/lib/predictions/predictions-schema';
 import { listMarkets, serializeMarket } from '@/lib/predictions/predictions.server';
+import { runAutoMarketTick } from '@/lib/predictions/auto-markets.server';
+
+// Opportunistic settlement of self-referential markets — the repo's "no cron in
+// the web tier" lazy pattern (cf. scheduled/publish.server.ts). Throttled to at
+// most once every few minutes per web process; a dedicated Go/worker or the
+// internal tick endpoint can also drive it. Fire-and-forget; never blocks reads.
+let lastAutoTick = 0;
+const AUTO_TICK_INTERVAL_MS = 3 * 60 * 1000;
+function maybeRunAutoTick() {
+  const now = Date.now();
+  if (now - lastAutoTick < AUTO_TICK_INTERVAL_MS) return;
+  lastAutoTick = now;
+  void runAutoMarketTick().catch(() => {});
+}
 
 /**
  * GET  /api/predictions?filter=open|resolved|mine — list prediction markets.
@@ -20,6 +34,8 @@ export const Route = createFileRoute('/api/predictions/')({
           const viewerId = session?.user?.id;
           const url = new URL(request.url);
           const filter = url.searchParams.get('filter') ?? 'open';
+
+          maybeRunAutoTick();
 
           if (filter === 'mine') {
             if (!viewerId) return Response.json({ markets: [] });

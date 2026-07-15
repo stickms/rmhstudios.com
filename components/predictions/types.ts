@@ -5,6 +5,10 @@ export interface Market {
   description: string | null;
   status: 'PENDING' | 'OPEN' | 'RESOLVED_YES' | 'RESOLVED_NO' | 'DENIED';
   isAiGenerated: boolean;
+  /** Self-referential market that settles from the platform's own data. */
+  isAuto: boolean;
+  /** In-app deep link to the subject of an auto market. */
+  subjectUrl: string | null;
   yesPercent: number;
   volume: number;
   closesAt: string | null;

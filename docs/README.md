@@ -35,6 +35,7 @@ writing, not necessarily the current code).
 
 | Location | Contents |
 |---|---|
+| [`plans/2026-07-15-cross-system-feature-ideas.md`](./plans/2026-07-15-cross-system-feature-ideas.md) | **Cross-system feature ideas** design doc (2026-07-15): six features that compose existing systems — Tournaments Hub, Wager Matches, self-referential prediction markets, creator coin→value bridge, AI personas as residents, unified live-ops season + spectating/"Guess the ___". Data models, economy loops, prioritization (RMHLadder "Career Mode" excluded — owned separately) |
 | [`plans/2026-07-14-liquid-glass-ui-redesign.md`](./plans/2026-07-14-liquid-glass-ui-redesign.md) | **Sitewide Liquid Glass redesign** design doc (2026-07-14): glass as the material system — tokens, elevation tiers, realism/reactivity/performance specs, per-page coverage incl. library/studio/shop/admin, phased rollout |
 | [`superpowers/`](./superpowers/) | The main archive of dated design specs + implementation plans (~75 files, `plans/` + `specs/`), plus the reusable [`i18n-extraction-guide.md`](./superpowers/i18n-extraction-guide.md) |
 | [`plans/`](./plans/) | Older dated plan/design pairs (dream-rift, rmhmusic, rmhcode CLI, terraform/helm migration, farming sim) |
