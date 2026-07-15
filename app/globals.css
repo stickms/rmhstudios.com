@@ -972,14 +972,19 @@ html.perf-lite .glass-interactive::after {
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* Center-column bottom padding: lets feed/library/app content flow
-     edge-to-edge UNDER the floating mobile dock (iOS-26 style) while reserving
-     enough space that the last item can still be scrolled clear of the dock —
-     and of the home indicator / browser bottom bar beneath it (--safe-bottom).
-     0 at md+, where the dock gives way to the sidebar. Single source of truth;
-     replaces the old inline pb-[calc(env(safe-area-inset-bottom,0px)+92px)]. */
+  /* Center-column bottom padding. The mobile scroll root is a fixed, full-
+     viewport scroller (MobileSidebarShell), so page content now flows edge-to-
+     edge BEHIND the floating dock, iOS Safari's translucent bottom bar, and the
+     home indicator. This inset reserves enough room that the last item can still
+     be scrolled clear of ALL of them:
+       • (100lvh − 100dvh) — the browser's shown bottom bar. dvh excludes it,
+         lvh doesn't, so their difference is its height (0 when none is shown).
+       • --safe-bottom (env safe-area) — the home indicator, exposed once that
+         bar retracts on scroll.
+       • +92px — the floating dock's own height plus a breathing gap.
+     0 at md+, where the dock gives way to the sidebar and there are no bars. */
   .pb-dock {
-    padding-bottom: calc(var(--safe-bottom) + 92px);
+    padding-bottom: calc((100lvh - 100dvh) + var(--safe-bottom) + 92px);
   }
   @media (min-width: 768px) {
     .pb-dock {
