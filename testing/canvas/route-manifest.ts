@@ -121,13 +121,13 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
   { file: "daily/spectrum.tsx", converted: false },
   { file: "discord/lights-out.tsx", converted: false },
   { file: "discord/rmhbox.tsx", converted: false },
-  { file: "dream-rift.tsx", converted: false },
+  { file: "dream-rift.tsx", converted: true, overlayAllow: ["game-2d"] },
   { file: "embed.post.$id.tsx", converted: false },
   { file: "forest-explorer.tsx", converted: true },
   { file: "forest-explorer/explore.tsx", converted: false },
   { file: "forest-explorer/index.tsx", converted: false },
   { file: "forest-explorer/story.tsx", converted: false },
-  { file: "house-always-wins.tsx", converted: false },
+  { file: "house-always-wins.tsx", converted: true, overlayAllow: ["game-2d"] },
   { file: "kowloon-knockout.tsx", converted: false },
   { file: "kowloon-knockout/index.tsx", converted: false },
   { file: "laundry-sort.tsx", converted: true, overlayAllow: ["game-2d"] },
@@ -135,7 +135,7 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
   { file: "library.albums.$albumId.tsx", converted: false },
   { file: "lights-out.tsx", converted: true },
   { file: "login.tsx", converted: false },
-  { file: "neon-driftway.tsx", converted: false },
+  { file: "neon-driftway.tsx", converted: true, overlayAllow: ["game-2d"] },
   { file: "news.$slug.tsx", converted: false },
   { file: "offline.tsx", converted: true },
   { file: "optimization.tsx", converted: false },
@@ -225,7 +225,7 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
   { file: "velum2099.tsx", converted: false },
   { file: "versecraft.tsx", converted: false },
   { file: "versecraft/index.tsx", converted: false },
-  { file: "void-breaker.tsx", converted: false },
+  { file: "void-breaker.tsx", converted: true, overlayAllow: ["game-2d"] },
 ];
 
 export const CONVERTED_COUNT = ROUTE_MANIFEST.filter((r) => r.converted).length;
