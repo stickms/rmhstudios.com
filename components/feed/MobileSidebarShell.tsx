@@ -113,7 +113,6 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
   // otherwise peek out behind it.
   const [asidePainted, setAsidePainted] = useState(false);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   // Outer wrapper the gesture listeners attach to (so touches on the page, the
   // scrim, and the sidebar all reach them) and a ref to the sidebar panel (so a
@@ -155,6 +154,36 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen]);
+
+  // Lock body scroll while the drawer is open. Since the page now scrolls the
+  // document (not an inner container), we can't just set overflow:hidden on a
+  // scroller — use the iOS-robust position:fixed + top:-scrollY technique, which
+  // freezes the page without losing the scroll position (restored on close).
+  useEffect(() => {
+    if (!isOpen) return;
+    const body = document.body;
+    const y = window.scrollY;
+    const prev = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+    };
+    body.style.position = 'fixed';
+    body.style.top = `-${y}px`;
+    body.style.left = '0';
+    body.style.right = '0';
+    body.style.width = '100%';
+    return () => {
+      body.style.position = prev.position;
+      body.style.top = prev.top;
+      body.style.left = prev.left;
+      body.style.right = prev.right;
+      body.style.width = prev.width;
+      window.scrollTo(0, y);
+    };
   }, [isOpen]);
 
   // Swipe handling, via non-passive native listeners on the OUTER wrapper so a
@@ -309,35 +338,21 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
       {/* Outer wrapper — the gesture listeners attach here so touches on the
           page, the scrim, and the glass sidebar all reach them. */}
       <div ref={wrapRef} className="md:hidden w-full min-w-0">
-        {/* Page scroll container — every _site page scrolls through this. Fixed
-            + top-anchored + `h-[100lvh]` (the LARGE viewport height), NOT an
-            in-flow box or `fixed inset-0`. On iOS 26, fixed `inset-0` / dvh only
-            reach the VISUAL viewport, which stops at Safari's floating bottom bar;
-            sizing to `100lvh` extends the scroller past it to the physical bottom,
-            so page content draws edge-to-edge BEHIND the dock, the browser bar,
-            and the home indicator. The .pb-dock inset keeps the last item
-            scrollable clear of them. Being fixed, it can't induce a second (body)
-            scroll the way an oversized in-flow box would. It never moves; when the
-            drawer is open it's scroll-locked (`overflow-y-hidden`). `touch-pan-y`
-            reserves horizontal gestures for the drawer drag; `overscroll-none`
-            stops scroll chaining AND the native rubber-band bounce (so the feed's
-            PullToRefresh can take over the boundary pull — its touchmove stays
-            cancelable). `data-scroll-root` marks it for useScrollRestoration. */}
-        <div
-          ref={scrollRef}
-          data-scroll-root
-          className={`fixed inset-x-0 top-0 h-[100lvh] overflow-x-hidden touch-pan-y overscroll-none ${
-            isOpen ? 'overflow-y-hidden' : 'overflow-y-auto'
-          }`}
-        >
-          {/* Transparent so the body aurora is the single backdrop and draws
-              edge-to-edge (incl. behind the floating dock + browser bar) — no
-              opaque band. The glass sidebar overlay blurs this when the drawer is
-              open. `min-h-full` fills the fixed scroller so short pages still
-              cover the viewport. */}
-          <div ref={panelRef} className="relative min-h-full touch-pan-y">
-            {children}
-          </div>
+        {/* Page content — every _site page flows here and scrolls the DOCUMENT
+            (the window), NOT an inner overflow container. That's deliberate: iOS
+            Safari only shrinks its floating bottom bar when the *document*
+            scrolls, and document scroll isn't capped at 100lvh, so content draws
+            all the way to the physical bottom behind the (then-minimized) bar. An
+            inner scroller can do neither. Transparent, so the body aurora is the
+            single backdrop and draws edge-to-edge. `min-h-dvh` fills the viewport
+            on short pages. `touch-pan-y` reserves horizontal gestures for the
+            drawer drag (vertical stays native document scroll). The drawer's
+            scroll-lock is handled by the body-lock effect above, not overflow
+            here. No `data-scroll-root` → useScrollRestoration and BackToTop use
+            the window; the custom PullToRefresh (which needs an inner scroller)
+            goes inert, so iOS's native document pull-to-refresh takes over. */}
+        <div ref={panelRef} className="relative min-h-dvh touch-pan-y">
+          {children}
         </div>
 
         {/* Scrim — dims the page and captures taps/keys to close. Above the page,

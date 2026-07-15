@@ -19,7 +19,7 @@ import { WhatsNewModal } from '@/components/feed/WhatsNewModal';
 import { FreeMonthModal } from '@/components/feed/FreeMonthModal';
 import { CookieConsent } from '@/components/site/CookieConsent';
 import { KeyboardShortcuts } from '@/components/site/KeyboardShortcuts';
-import { ViewportDebug } from '@/components/site/ViewportDebug';
+import { MobileViewport } from '@/components/site/MobileViewport';
 import { BackToTop } from '@/components/ui/back-to-top';
 import { MiniPlayer } from '@/components/rmhmusic/MiniPlayer';
 import '@/components/feed/feed.css';
@@ -35,9 +35,9 @@ function SiteLayout() {
   const { t } = useTranslation('common');
   return (
     <div className="vibe-app min-h-dvh flex flex-col md:flex-row">
-      {/* Temporary: ?safedebug renders a viewport-metrics readout for the mobile
-          bottom-bar work. Inert without the query param. */}
-      <ViewportDebug />
+      {/* ?safedebug viewport-metrics readout for the mobile scroll work. Inert
+          without the query param. */}
+      <MobileViewport />
       {/* Keyboard skip link — visually hidden until focused. */}
       <a
         href="#main-content"
