@@ -43,6 +43,7 @@ export { useMirrorControl, MirrorOutlet } from "./mirror/MirrorControls";
 
 // overlay
 export { OverlaySlot, OverlayRoot } from "./overlay/OverlayManager";
+export { LayeredCanvasHost, type LayeredCanvasHostProps } from "./overlay/LayeredCanvasHost";
 
 // helpers
 export { pickFiles } from "./helpers/filePicker";

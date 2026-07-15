@@ -130,7 +130,7 @@ export const ROUTE_MANIFEST: RouteManifestEntry[] = [
   { file: "house-always-wins.tsx", converted: false },
   { file: "kowloon-knockout.tsx", converted: false },
   { file: "kowloon-knockout/index.tsx", converted: false },
-  { file: "laundry-sort.tsx", converted: false },
+  { file: "laundry-sort.tsx", converted: true, overlayAllow: ["game-2d"] },
   { file: "library.$slug.tsx", converted: false },
   { file: "library.albums.$albumId.tsx", converted: false },
   { file: "lights-out.tsx", converted: true },
