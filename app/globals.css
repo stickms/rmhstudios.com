@@ -474,15 +474,25 @@
    docs/plans/2026-07-14-liquid-glass-ui-redesign.md §3–6.
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* The aurora canvas — every theme defines --site-canvas; painted on <body> with
-   fixed attachment so every blur samples one shared backdrop. Gated to non-app
-   routes (games/apps own their background). THEME_BG still paints the opaque
-   base inline (no-flash script + Providers) so overscroll/pre-paint frames stay
-   solid; this only layers colour on top. background-attachment: fixed degrades
-   to scroll on iOS (accepted — the stops are soft, so it stays smooth). */
-html:not(.app-route) body {
+/* The aurora canvas — every theme defines --site-canvas. Painted as a
+   position:fixed pseudo-element pinned to the viewport, NOT via
+   background-attachment: fixed — iOS silently degrades that to `scroll`, which
+   left the aurora scrolling with the tall feed so that behind the floating dock
+   and Safari's bottom bar the viewport showed a dark mid-slice of the gradient
+   instead of the aurora. A real fixed layer works on iOS too, so the canvas
+   draws edge-to-edge to the physical bottom — under the dock and behind the
+   translucent browser bar. z-index:-1 keeps it behind the (transparent) app
+   content while every glass blur still samples it as the one shared backdrop.
+   Gated to non-app routes (games/apps own their background); THEME_BG still
+   paints the opaque base inline (no-flash script + Providers) so overscroll /
+   pre-paint frames stay solid — this only layers colour on top. */
+html:not(.app-route) body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
   background-image: var(--site-canvas);
-  background-attachment: fixed;
+  pointer-events: none;
 }
 
 /* Page canvas show-through: elements that use bg-site-bg as the page ground let
