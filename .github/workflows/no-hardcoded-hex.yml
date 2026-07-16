@@ -1,0 +1,44 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Design-language heuristic: UI colors should flow through the --site-* theme
+# tokens (so every theme works), not raw hex literals. Reports raw hex found in
+# components/ · app/ TypeScript so drift is visible. Heuristic + report-only
+# (globals.css defines the tokens themselves and is excluded).
+# ─────────────────────────────────────────────────────────────────────────────
+name: no-hardcoded-hex
+
+on:
+  pull_request:
+    paths:
+      - "components/**"
+      - "app/**"
+      - ".github/workflows/no-hardcoded-hex.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: no-hardcoded-hex-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Scan for hardcoded hex colors
+        run: |
+          set -uo pipefail
+          matches="$(grep -rniE '#[0-9a-f]{3}([0-9a-f]{3})?\b' components app \
+            --include='*.tsx' --include='*.ts' 2>/dev/null || true)"
+          count="$(printf '%s\n' "${matches}" | grep -c . || true)"
+          echo "Hardcoded hex occurrences: ${count}"
+          {
+            echo "### Hardcoded hex colors: ${count}"
+            echo ''
+            echo '```'
+            printf '%s\n' "${matches}" | head -100
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,51 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Test coverage report. Runs the main Vitest suite with V8 coverage and publishes
+# the summary to the run. Report-only (the coverage provider is installed
+# ad-hoc, without touching the committed lockfile); web-ci owns the pass/fail gate.
+# ─────────────────────────────────────────────────────────────────────────────
+name: vitest-coverage
+
+on:
+  pull_request:
+    paths-ignore:
+      - "go-services/**"
+      - "deploy/**"
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch: {}
+
+concurrency:
+  group: vitest-coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Add coverage provider (not persisted)
+        run: npm install --no-save @vitest/coverage-v8@4 2>/dev/null || true
+      - name: Run tests with coverage
+        run: |
+          set -uo pipefail
+          {
+            echo '### Test coverage (V8)'
+            echo ''
+            echo '```'
+            pnpm exec vitest run --coverage --coverage.provider=v8 \
+              --coverage.reporter=text 2>&1 | tail -100
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

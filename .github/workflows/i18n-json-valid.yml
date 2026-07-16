@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Validates that every locale namespace file under locales/ is well-formed JSON.
+# A single malformed translation file breaks i18next loading for that namespace.
+# ─────────────────────────────────────────────────────────────────────────────
+name: i18n-json-valid
+
+on:
+  pull_request:
+    paths:
+      - "locales/**"
+      - ".github/workflows/i18n-json-valid.yml"
+  push:
+    branches: [main]
+    paths:
+      - "locales/**"
+  workflow_dispatch: {}
+
+concurrency:
+  group: i18n-json-valid-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+      - name: Validate locale JSON
+        run: |
+          # shellcheck disable=SC2016  # ${...} below is JavaScript, not shell
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const root = "locales";
+            let checked = 0;
+            let bad = 0;
+            for (const lang of fs.readdirSync(root)) {
+              const dir = path.join(root, lang);
+              if (!fs.statSync(dir).isDirectory()) continue;
+              for (const file of fs.readdirSync(dir)) {
+                if (!file.endsWith(".json")) continue;
+                checked++;
+                try {
+                  JSON.parse(fs.readFileSync(path.join(dir, file), "utf8"));
+                } catch (e) {
+                  console.error(`Invalid JSON: ${lang}/${file}: ${e.message}`);
+                  bad++;
+                }
+              }
+            }
+            console.log(`Checked ${checked} locale files; ${bad} invalid.`);
+            process.exit(bad ? 1 : 0);
+          '

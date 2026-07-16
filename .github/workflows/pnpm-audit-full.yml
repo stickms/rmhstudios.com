@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Full dependency audit (dev + prod, moderate and up) published to the run
+# summary. Report-only companion to web-ci's blocking production `pnpm audit`.
+# ─────────────────────────────────────────────────────────────────────────────
+name: pnpm-audit-full
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/pnpm-audit-full.yml"
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch: {}
+
+concurrency:
+  group: pnpm-audit-full-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+      - name: Full dependency audit
+        run: |
+          set -uo pipefail
+          {
+            echo '### pnpm audit (dev + prod, moderate+)'
+            echo ''
+            echo '```'
+            pnpm audit --audit-level=moderate 2>&1 | head -300 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

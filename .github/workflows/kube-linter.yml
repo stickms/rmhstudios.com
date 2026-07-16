@@ -1,0 +1,54 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# KubeLinter — lints the Helm charts for Kubernetes production-readiness and
+# security issues (missing resource limits, running as root, no readiness probe,
+# …). Uploads SARIF to Security → Code scanning. Non-blocking.
+# ─────────────────────────────────────────────────────────────────────────────
+name: kube-linter
+
+on:
+  pull_request:
+    paths:
+      - "deploy/helm/**"
+      - ".github/workflows/kube-linter.yml"
+  push:
+    branches: [main]
+    paths:
+      - "deploy/helm/**"
+  workflow_dispatch: {}
+
+concurrency:
+  group: kube-linter-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  kube-linter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: "1.23"
+          cache: false
+      - name: Install KubeLinter
+        run: go install golang.stackrox.io/kube-linter/cmd/kube-linter@latest
+      - name: Run KubeLinter
+        run: |
+          set -uo pipefail
+          "$(go env GOPATH)/bin/kube-linter" lint deploy/helm/rmhstudios-go \
+            --format sarif > kube-linter.sarif 2> kube-linter.err || true
+          head -20 kube-linter.err || true
+      - name: Upload SARIF
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@641a925cfafe92d0fdf8b239ba4053e3f8d99d6d # v3
+        with:
+          sarif_file: kube-linter.sarif
+          category: kube-linter

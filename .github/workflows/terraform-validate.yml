@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Initializes (backend-less) and validates the Terraform configuration under
+# deploy/terraform — checks provider/resource references and variable typing
+# without touching real state or credentials. Report-only (provider downloads can
+# vary); terraform-fmt is the hard gate.
+# ─────────────────────────────────────────────────────────────────────────────
+name: terraform-validate
+
+on:
+  pull_request:
+    paths:
+      - "deploy/terraform/**"
+      - ".github/workflows/terraform-validate.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: terraform-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: deploy/terraform
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_wrapper: false
+      - name: terraform init + validate
+        run: |
+          set -uo pipefail
+          {
+            echo '### terraform validate'
+            echo ''
+            echo '```'
+            terraform init -backend=false -input=false 2>&1 | tail -20 || true
+            terraform validate 2>&1 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
