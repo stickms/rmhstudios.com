@@ -102,9 +102,11 @@ Production is Docker Compose on a VPS behind Apache/Cloudflare — **hybrid
 runtime**: Node runs web SSR + all realtime hubs + ladder-worker; **Go** runs
 the five background workers (as one `supervisor` process), `status`, and
 `assets`. The Go gateway/hub topology exists (Helm/k3s) but is not the
-production request path. Deploys: push to `main` → GitHub Actions SSHes to
-the VPS → `./deploy.sh production` → two images built from one Dockerfile →
-prisma migrate → blue/green web hotswap (port 7005/7015 flip). CI:
+production request path. Deploys: push to `main` → GitHub Actions builds the
+two images (native ARM64) from one Dockerfile + pushes them to GHCR → an
+HMAC-signed request wakes the VPS webhook listener (`webhook-server.cjs`) →
+`./deploy.sh production <sha>` pulls those images → prisma migrate →
+blue/green web hotswap (port 7005/7015 flip). CI:
 `go-microservices.yml` (Bazel + e2e + helm), `web-ci.yml` (typecheck, lint,
 tests, build, and production dependency audit), `codeql.yml` (JS/TS + Go SAST),
 and `senior-review.yml` (LLM review gate). Run the same checks locally before
