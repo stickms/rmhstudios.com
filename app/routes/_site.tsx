@@ -34,7 +34,7 @@ function SiteLayout() {
   const { t } = useTranslation('common');
   return (
     <ShellLayoutContext.Provider value={true}>
-      <div className="vibe-app min-h-dvh flex flex-col md:flex-row">
+      <div className="vibe-app min-h-dvh flex flex-col md:flex-row md:justify-center">
         {/* Keyboard skip link — visually hidden until focused. */}
         <a
           href="#main-content"
@@ -46,33 +46,31 @@ function SiteLayout() {
         <WelcomeModal />
         <WhatsNewModal />
         <FreeMonthModal />
-        {/* Desktop/tablet: fixed left sidebar + centered content */}
-        <div className="hidden md:flex min-w-0 w-full justify-center">
-          <div className="md:w-16 xl:w-64 shrink-0 relative">
-            {/* On desktop the sidebar is INLINE (not an overlay), so it stays
-              transparent and shares the body aurora with the content — just a
-              hairline border divides them. (The mobile drawer, which slides OVER
-              the page, keeps the frosted glass-chrome--aside treatment.) The aside
-              itself carries no backdrop-filter, so LeftSidebar's non-portaled
-              fixed user menu keeps the viewport as its containing block (§3.3.1). */}
-            <aside className="fixed top-0 md:w-16 xl:w-64 h-screen border-r border-site-border overflow-hidden z-30 flex flex-col">
-              <LeftSidebar />
-            </aside>
-          </div>
-          {/* `display:contents` keeps the flex layout identical while exposing a
-            real <main> landmark and giving the skip link a focus target.
-            `page-root` drives the per-page enter animation on the content
-            column(s) only — the left sidebar sits outside <main>, so it never
-            animates (see the `.page-root > *` rule in globals.css). */}
-          <main id="main-content" tabIndex={-1} className="contents page-root">
-            <Outlet />
-          </main>
+        {/* Desktop/tablet: a spacer reserves the sidebar's width so the content
+            centers beside it; the aside itself is fixed within that width. Hidden
+            on mobile (the mobile drawer, below, owns the sidebar there).
+            On desktop the sidebar is INLINE (not an overlay), so it stays
+            transparent and shares the body aurora with the content — just a
+            hairline border divides them. The aside carries no backdrop-filter, so
+            LeftSidebar's non-portaled fixed user menu keeps the viewport as its
+            containing block (§3.3.1). */}
+        <div className="hidden md:block md:w-16 xl:w-64 shrink-0 relative">
+          <aside className="fixed top-0 md:w-16 xl:w-64 h-screen border-r border-site-border overflow-hidden z-30 flex flex-col">
+            <LeftSidebar />
+          </aside>
         </div>
 
-        {/* Mobile: page content slides right to reveal the left sidebar. There's no
-          mobile bottom bar — navigation is the swipe/hamburger sidebar. */}
+        {/* The page renders exactly ONCE (previously it was rendered twice — a
+            desktop copy and a mobile copy — which doubled the feed's hydration
+            cost and fired every mount effect twice). MobileSidebarShell is
+            display:contents on desktop, so the page's columns still become direct
+            children of the outer flex and center exactly as before; on mobile it's
+            the full-width gesture column + slide-in drawer overlay. `display:contents`
+            on <main> keeps the layout identical while exposing a real landmark and
+            the skip-link focus target; `page-root` drives the per-page enter
+            animation on the content column(s) only. */}
         <MobileSidebarShell>
-          <main className="contents page-root">
+          <main id="main-content" tabIndex={-1} className="contents page-root">
             <Outlet />
           </main>
         </MobileSidebarShell>
