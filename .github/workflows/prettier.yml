@@ -1,0 +1,63 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Prettier formatting check. Scoped to the files a change actually touches so it
+# enforces the repo's stated bar ("don't add NEW formatting drift") without
+# red-gating on the pre-existing backlog. Uses `pnpm dlx` so no full install is
+# needed for a pure format check. Respects .prettierrc.json / .prettierignore.
+# ─────────────────────────────────────────────────────────────────────────────
+name: prettier
+
+on:
+  pull_request:
+    paths-ignore:
+      - "go-services/**"
+      - "deploy/**"
+  push:
+    branches: [main]
+    paths-ignore:
+      - "go-services/**"
+      - "deploy/**"
+  workflow_dispatch: {}
+
+concurrency:
+  group: prettier-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+
+      - name: Prettier check (changed files)
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          if [ -n "${BASE_SHA:-}" ]; then
+            range="${BASE_SHA}...HEAD"
+          else
+            range="HEAD^...HEAD"
+          fi
+          echo "Comparing range: ${range}"
+          mapfile -t files < <(git diff --name-only --diff-filter=ACMR "${range}" \
+            | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|css|scss|md)$' || true)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No formattable files changed."
+            exit 0
+          fi
+          printf '%s\n' "${files[@]}"
+          pnpm dlx prettier@3.9.4 --check "${files[@]}"

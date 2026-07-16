@@ -1,0 +1,50 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Stale issue/PR housekeeping — marks inactive issues and PRs stale after 60 days
+# and closes them 14 days later unless someone responds. Security, pinned, and
+# dependency items are exempt. Runs daily.
+# ─────────────────────────────────────────────────────────────────────────────
+name: stale
+
+on:
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch: {}
+
+concurrency:
+  group: stale
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@5bef64f19d7facfb25b37b414482c7164d639639 # v9
+        with:
+          days-before-stale: 60
+          days-before-close: 14
+          stale-issue-label: stale
+          stale-pr-label: stale
+          exempt-issue-labels: "pinned,security,keep"
+          exempt-pr-labels: "pinned,security,keep,dependencies"
+          operations-per-run: 60
+          stale-issue-message: >-
+            This issue has had no activity for 60 days and is now marked stale.
+            Comment or remove the stale label to keep it open; otherwise it will be
+            closed in 14 days.
+          stale-pr-message: >-
+            This pull request has had no activity for 60 days and is now marked
+            stale. Push a commit or comment to keep it open; otherwise it will be
+            closed in 14 days.
+          close-issue-message: >-
+            Closing after 14 further days of inactivity. Reopen if this is still
+            relevant.
+          close-pr-message: >-
+            Closing after 14 further days of inactivity. Reopen when you're ready to
+            continue.

@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# hadolint — lints the Dockerfile for best-practice and correctness issues
+# (unpinned base tags, missing `--no-install-recommends`, shell pitfalls, …).
+# Fails only on error-level findings; style/info are advisory.
+# ─────────────────────────────────────────────────────────────────────────────
+name: hadolint
+
+on:
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/hadolint.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+  workflow_dispatch: {}
+
+concurrency:
+  group: hadolint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  hadolint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
+        with:
+          dockerfile: Dockerfile
+          failure-threshold: error
