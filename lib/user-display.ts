@@ -50,12 +50,8 @@ type UserWithProfileAndId = UserWithProfile & {
   inventory?: { itemId: string }[] | null;
 };
 
-/**
- * Returns { id, name, image, username, handle, isVerified, isAdmin, cosmetics }
- * with custom fields resolved. `cosmetics` is the equipped shop styling (name
- * color, avatar frame, badge, …) when the row joined in `inventory`.
- */
-export function resolveUser(user: UserWithProfileAndId): {
+/** The viewer-independent display shape returned by {@link resolveUser}. */
+export interface ResolvedUser {
   id: string;
   name: string | null;
   image: string | null;
@@ -64,7 +60,14 @@ export function resolveUser(user: UserWithProfileAndId): {
   isVerified: boolean;
   isAdmin: boolean;
   cosmetics?: EquippedCosmetics;
-} {
+}
+
+/**
+ * Returns { id, name, image, username, handle, isVerified, isAdmin, cosmetics }
+ * with custom fields resolved. `cosmetics` is the equipped shop styling (name
+ * color, avatar frame, badge, …) when the row joined in `inventory`.
+ */
+export function resolveUser(user: UserWithProfileAndId): ResolvedUser {
   const cosmetics = user.inventory
     ? resolveEquippedCosmetics(user.inventory.map((i) => i.itemId))
     : undefined;

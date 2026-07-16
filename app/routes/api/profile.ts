@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { updateProfileSchema } from "@/lib/profile-schema";
 import { handleSchema, canChangeHandle } from "@/lib/handle";
+import { invalidateUserDisplay } from "@/lib/user-display.server";
 
 export const Route = createFileRoute('/api/profile')({
   server: {
@@ -149,6 +150,10 @@ export const Route = createFileRoute('/api/profile')({
         ...songFields,
       },
     });
+
+    // handle / displayName feed the cached feed author display — refresh it so
+    // the user's own next feed read shows the new name/handle immediately.
+    invalidateUserDisplay(session.user.id);
 
     return Response.json({
       ...(newHandle ? { handle: newHandle } : {}),
