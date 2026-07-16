@@ -324,8 +324,14 @@ COPY --from=vite-builder --chown=app:nodejs /app/.output ./.output
 COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server
 
 # ─── Supporting files (from build context, not a builder stage) ─────────
+# NOTE: content/ is intentionally NOT copied. It's untracked, host-only seed
+# material (content/blog/*.mdx, content/news/*.mdx) that fed one-off seed/migrate
+# scripts (scripts/seed-news.ts, scripts/migrate-blogs.ts). Blog + news are served
+# from the database at runtime (prisma.blogPost / news tables), so nothing in the
+# image reads content/. Since the build moved to CI (where content/ isn't in the
+# checkout), baking it would fail; to run a seed script against it, bind-mount the
+# host content/ into a one-shot container (like deploy.sh does for public/).
 COPY --chown=app:nodejs scripts ./scripts
-COPY --chown=app:nodejs content ./content
 COPY --chown=app:nodejs data ./data
 COPY --chown=app:nodejs prisma ./prisma
 COPY --chown=app:nodejs prisma.config.ts ./prisma.config.ts

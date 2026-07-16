@@ -74,6 +74,15 @@ public/library/*.pdf
 public/music
 public/sprites
 
+# ─── Host-only content seed material (not in the image) ─────────────────────
+# content/blog/*.mdx + content/news/*.mdx are untracked, host-only inputs to the
+# one-off seed/migrate scripts (scripts/seed-news.ts, scripts/migrate-blogs.ts).
+# Blog + news are served from the database at runtime, so nothing in the image
+# reads content/ — and it isn't in the CI checkout, so baking it would fail the
+# build. Bind-mount the host content/ into a one-shot container to run a seed
+# script (the same pattern deploy.sh uses for public/).
+content
+
 # ── Assets/CDN cutover — Phase 4 (see docs/runbooks/go-backend-and-bazel.md) ──
 # Uncomment these ONLY after /library and /models are served from the bucket by
 # the Go assets service. Activating them drops ~500 MB from the build context.
