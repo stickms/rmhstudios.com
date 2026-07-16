@@ -3,14 +3,24 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { apiCache } from '@/lib/cache';
+
+const HIDDEN_TTL_MS = 30_000;
+const hiddenKey = (userId: string) => `hidden-authors:${userId}`;
 
 /**
  * Author ids whose content should be hidden from `userId`'s feed: people they
  * blocked, people they muted, and people who blocked them (so a blocker also
  * disappears from the blocked user's timeline). Returns [] for anonymous users.
+ *
+ * Runs three queries (blocks, mutes, blocked-by) on every feed read, so the
+ * result is cached ~30s and invalidated on block/mute mutations. The acting user
+ * always sees fresh state on their next read via `invalidateHiddenAuthors`.
  */
 export async function getHiddenAuthorIds(userId: string | null): Promise<string[]> {
   if (!userId) return [];
+  const cached = apiCache.get<string[]>(hiddenKey(userId));
+  if (cached) return cached;
   try {
     const [blocked, muted, blockedBy] = await Promise.all([
       prisma.userBlock.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
@@ -21,9 +31,19 @@ export async function getHiddenAuthorIds(userId: string | null): Promise<string[
     for (const b of blocked) ids.add(b.blockedId);
     for (const m of muted) ids.add(m.mutedId);
     for (const b of blockedBy) ids.add(b.blockerId);
-    return [...ids];
+    const result = [...ids];
+    apiCache.set(hiddenKey(userId), result, HIDDEN_TTL_MS);
+    return result;
   } catch (err) {
     console.error('[moderation] getHiddenAuthorIds failed:', err);
     return [];
   }
+}
+
+/**
+ * Drop the cached hidden-author set for a user (call after they block/mute or
+ * are blocked). A block affects BOTH users' hidden sets, so invalidate both.
+ */
+export function invalidateHiddenAuthors(...userIds: string[]): void {
+  for (const id of userIds) apiCache.invalidate(hiddenKey(id));
 }

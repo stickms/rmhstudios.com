@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ExternalLink } from 'lucide-react';
+import { useNearViewport } from '@/hooks/useNearViewport';
 
 interface OgData {
   title: string | null;
@@ -18,11 +19,17 @@ interface LinkPreviewProps {
 }
 
 export function LinkPreview({ url, className = '' }: LinkPreviewProps) {
+  // Don't fetch the OG data until the card nears the viewport — a first feed
+  // page with many links would otherwise fan out N `/api/oembed` requests during
+  // hydration (each one a server-side external fetch). Already-cached URLs skip
+  // the observer entirely.
+  const { ref, visible } = useNearViewport<HTMLDivElement>('400px 0px', ogCache.has(url));
   const [data, setData] = useState<OgData | null>(() => ogCache.get(url) ?? null);
   const [loading, setLoading] = useState(() => !ogCache.has(url));
   const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
+    if (!visible) return;
     if (ogCache.has(url)) {
       setData(ogCache.get(url) ?? null);
       setLoading(false);
@@ -51,11 +58,13 @@ export function LinkPreview({ url, className = '' }: LinkPreviewProps) {
     return () => {
       cancelled = true;
     };
-  }, [url]);
+  }, [visible, url]);
 
   if (loading) {
+    // The ref lives on the skeleton so the observer has a target to watch while
+    // the preview is still deferred; the skeleton also reserves layout (no CLS).
     return (
-      <div className={`rounded-site overflow-hidden border border-site-border ${className}`}>
+      <div ref={ref} className={`rounded-site overflow-hidden border border-site-border ${className}`}>
         <div className="w-full h-24 bg-site-surface animate-pulse" />
       </div>
     );

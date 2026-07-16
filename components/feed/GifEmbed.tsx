@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ImageOff } from 'lucide-react';
+import { useNearViewport } from '@/hooks/useNearViewport';
 
 // ─── URL resolution ──────────────────────────────────────────────
 
@@ -119,17 +120,24 @@ interface GifEmbedProps {
 export function GifEmbed({ url, className = '' }: GifEmbedProps) {
   const { t } = useTranslation("feed");
   const info = parseGifUrl(url);
-  const tenor = useTenorResolve(info?.needsResolve ? info.originalUrl : null);
+  const needsResolve = !!info?.needsResolve;
+  // Only Tenor share URLs need an `/api/oembed` resolution; defer that fetch
+  // until the card nears the viewport so a first feed page doesn't resolve every
+  // off-screen GIF at hydration. Direct/cached URLs never observe.
+  const skipObserve = !needsResolve || (!!info && tenorCache.has(info.originalUrl));
+  const { ref, visible } = useNearViewport<HTMLDivElement>('400px 0px', skipObserve);
+  const tenor = useTenorResolve(needsResolve && visible && info ? info.originalUrl : null);
   const [error, setError] = useState(false);
 
   if (!info) return null;
 
   const src = info.needsResolve ? tenor.src : info.directUrl;
 
-  // Loading skeleton for Tenor resolution
-  if (info.needsResolve && tenor.loading) {
+  // Skeleton while a Tenor URL is still deferred (not yet near the viewport) or
+  // its resolution is in flight. The ref lives here so the observer has a target.
+  if (info.needsResolve && !src && !error) {
     return (
-      <div className={`rounded-site overflow-hidden border border-site-border ${className}`}>
+      <div ref={ref} className={`rounded-site overflow-hidden border border-site-border ${className}`}>
         <div className="w-full h-48 bg-site-surface animate-pulse" />
       </div>
     );

@@ -1432,6 +1432,10 @@ model RMHark {
   @@index([createdAt(sort: Desc)])
   // Composite index backing keyset pagination on (createdAt desc, id desc)
   @@index([createdAt(sort: Desc), id(sort: Desc)])
+  // Per-author keyset scan for the Following feed (userId IN (...) ORDER BY
+  // createdAt desc, id desc). Also backs a partial index added in the migration
+  // (rmheet_feed_scan_idx) for the For-You WHERE deleted/community/thread filters.
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([userId, pinnedAt])
   @@index([threadRootId])
   @@map("rmheet")
@@ -1462,6 +1466,9 @@ model RMHarkLike {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([rmheetId, userId])
+  // The interest-profile builder samples a viewer's most recent likes
+  // (where userId, order by createdAt desc, take 80) — this backs that scan.
+  @@index([userId, createdAt(sort: Desc)])
   @@map("rmheet_like")
 }
 
@@ -1567,6 +1574,8 @@ model RMHarkRepost {
   @@index([userId])
   // Composite index backing keyset pagination on (createdAt desc, id desc)
   @@index([createdAt(sort: Desc), id(sort: Desc)])
+  // Per-author keyset scan for the Following feed's repost branch.
+  @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
   @@map("rmheet_repost")
 }
 

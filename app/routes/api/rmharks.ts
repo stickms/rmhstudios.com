@@ -40,9 +40,11 @@ export const Route = createFileRoute('/api/rmharks')({
 
     // Lazily publish any of the viewer's scheduled posts whose time has come,
     // so they appear in the feed without the author visiting the drafts page.
-    // Best-effort and only on the first page (no cursor) to bound overhead.
+    // Fire-and-forget (not awaited) so it never adds a serial DB round-trip to
+    // the hot path: a just-due post surfaces on the next read/SSE tick instead.
+    // Only on the first page (no cursor) to bound overhead.
     if (userId && !cursor) {
-      await publishDueForUser(userId).catch(() => {});
+      void publishDueForUser(userId).catch(() => {});
     }
 
     // Surface resolution. The Twitter-shaped name is `feed=following|foryou`;

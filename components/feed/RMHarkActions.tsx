@@ -2,11 +2,14 @@
 
 import { MessageCircle, Repeat2, Heart, Eye, Repeat, PenSquare } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
-import { useState, useRef, useEffect } from 'react';
+import { lazy, Suspense, useState, useRef, useEffect } from 'react';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
-import { ComposeModal } from './ComposeModal';
 import type { FeedItem } from '@/lib/feed-types';
+
+// Quote-compose modal — only opens on the "quote" repost action, so it's
+// code-split out of the initial feed chunk and imported on first open.
+const ComposeModal = lazy(() => import('./ComposeModal').then((m) => ({ default: m.ComposeModal })));
 import { useTranslation } from 'react-i18next';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
@@ -32,6 +35,9 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
   const { data: session } = authClient.useSession();
   const [repostMenu, setRepostMenu] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  // Latch so the quote modal stays mounted after first open (close animation).
+  const quoteMounted = useRef(false);
+  quoteMounted.current ||= quoteOpen;
   const repostRef = useRef<HTMLDivElement>(null);
   const { run: runLike } = useOptimisticAction();
   const { run: runRepost } = useOptimisticAction();
@@ -133,11 +139,15 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
         )}
       </div>
 
-      <ComposeModal
-        open={quoteOpen}
-        onClose={() => setQuoteOpen(false)}
-        quoteItem={{ id: item.actualId ?? item.id, content: item.content, user: item.user }}
-      />
+      {quoteMounted.current && (
+        <Suspense fallback={null}>
+          <ComposeModal
+            open={quoteOpen}
+            onClose={() => setQuoteOpen(false)}
+            quoteItem={{ id: item.actualId ?? item.id, content: item.content, user: item.user }}
+          />
+        </Suspense>
+      )}
 
       {/* Like */}
       <button

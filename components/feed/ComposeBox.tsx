@@ -456,6 +456,8 @@ export function ComposeBox({
             <img
               src={resolvedUser?.image || session.user.image!}
               alt={resolvedUser?.name || session.user.name || t("user-alt", { defaultValue: "User" })}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full rounded-full object-cover"
               onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
             />

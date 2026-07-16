@@ -2,6 +2,8 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { invalidateHiddenAuthors } from '@/lib/moderation.server';
+import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
 import { z } from 'zod';
 
 /**
@@ -49,6 +51,8 @@ export const Route = createFileRoute('/api/moderation/block')({
 
           if (existing) {
             await prisma.userBlock.delete({ where: { id: existing.id } });
+            // Both users' hidden-author sets change when a block is lifted.
+            invalidateHiddenAuthors(blockerId, blockedId);
             return Response.json({ success: true, blocked: false });
           }
 
@@ -64,6 +68,12 @@ export const Route = createFileRoute('/api/moderation/block')({
               },
             }),
           ]);
+
+          // A block mutates both users' hidden-author sets and can drop follows
+          // in both directions — invalidate both caches so neither feed is stale.
+          invalidateHiddenAuthors(blockerId, blockedId);
+          invalidateFollowingIds(blockerId);
+          invalidateFollowingIds(blockedId);
 
           return Response.json({ success: true, blocked: true });
         } catch (error) {

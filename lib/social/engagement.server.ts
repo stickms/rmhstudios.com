@@ -19,6 +19,7 @@ import { progressQuests } from '@/lib/quests/engine.server';
 import { resolveMediaForPost } from '@/lib/media/attach.server';
 import { userDisplaySelect } from '@/lib/user-display';
 import { emitWebhookEvent } from '@/lib/webhooks/emit.server';
+import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
 import type { RMHarkAudience } from '@prisma/client';
 
 function postLink(handle: string | null | undefined, userId: string, postId: string): string {
@@ -204,6 +205,9 @@ async function applyFollow(args: { followerId: string; followingId: string; foll
 
   if (following) {
     await prisma.follow.create({ data: { followerId, followingId } });
+    // The follower's cached follow graph is now stale — drop it so their next
+    // feed/sidebar read reflects the new follow immediately.
+    invalidateFollowingIds(followerId);
     // Keep the denormalized follower count in sync and reuse the new value for
     // achievement progress (avoids a separate follow.count aggregate).
     const { followerCount } = await prisma.user.update({
@@ -229,6 +233,7 @@ async function applyFollow(args: { followerId: string; followingId: string; foll
   }
 
   await prisma.follow.delete({ where: { followerId_followingId: { followerId, followingId } } });
+  invalidateFollowingIds(followerId);
   // Keep the denormalized follower count in sync (never below zero).
   await prisma.user.updateMany({
     where: { id: followingId, followerCount: { gt: 0 } },

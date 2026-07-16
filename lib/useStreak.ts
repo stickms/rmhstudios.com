@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useIdleReady } from '@/hooks/useIdleReady';
 
 interface StreakState {
   current: number;
@@ -81,6 +82,7 @@ async function runCheckIn() {
 
 export function useStreak(isLoggedIn: boolean) {
   const [streak, setStreak] = useState<StreakState | null>(current);
+  const idleReady = useIdleReady();
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -89,7 +91,9 @@ export function useStreak(isLoggedIn: boolean) {
     }
     subscribers.add(setStreak);
     setStreak(current);
-    void runCheckIn();
+    // Defer the daily auto check-in until idle so its POST doesn't compete with
+    // the feed/images during hydration.
+    if (idleReady) void runCheckIn();
     return () => {
       subscribers.delete(setStreak);
       // Reset when the last consumer leaves (e.g. sign-out) so a later sign-in
@@ -99,7 +103,7 @@ export function useStreak(isLoggedIn: boolean) {
         current = null;
       }
     };
-  }, [isLoggedIn]);
+  }, [isLoggedIn, idleReady]);
 
   return isLoggedIn ? streak : null;
 }

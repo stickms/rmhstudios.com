@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useIdleReady } from '@/hooks/useIdleReady';
 
 /**
  * Sends a presence heartbeat while the tab is visible, so the user shows as
@@ -41,8 +42,11 @@ function stop() {
 }
 
 export function usePresenceHeartbeat(isLoggedIn: boolean) {
+  const idleReady = useIdleReady();
   useEffect(() => {
-    if (!isLoggedIn) return;
+    // Defer the first heartbeat until idle so it doesn't compete with the feed
+    // at hydration; the 60s interval + visibility ping behave as before.
+    if (!isLoggedIn || !idleReady) return;
     subscribers++;
     start();
     return () => {
@@ -52,5 +56,5 @@ export function usePresenceHeartbeat(isLoggedIn: boolean) {
         stop();
       }
     };
-  }, [isLoggedIn]);
+  }, [isLoggedIn, idleReady]);
 }

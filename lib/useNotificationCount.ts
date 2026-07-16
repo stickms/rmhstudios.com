@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useIdleReady } from '@/hooks/useIdleReady';
 
 /**
  * Fired (on `window`) when notifications are marked read somewhere in the app so
@@ -71,6 +72,7 @@ function stop() {
 
 export function useNotificationCount(isLoggedIn: boolean, intervalMs = 45_000) {
   const [value, setValue] = useState(count);
+  const idleReady = useIdleReady();
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -79,12 +81,14 @@ export function useNotificationCount(isLoggedIn: boolean, intervalMs = 45_000) {
     }
     subscribers.add(setValue);
     setValue(count);
-    start(intervalMs);
+    // Defer the first fetch + polling until the browser is idle so the badge
+    // count doesn't contend for the network during hydration/TTI.
+    if (idleReady) start(intervalMs);
     return () => {
       subscribers.delete(setValue);
       if (subscribers.size === 0) stop();
     };
-  }, [isLoggedIn, intervalMs]);
+  }, [isLoggedIn, intervalMs, idleReady]);
 
   return { count: isLoggedIn ? value : 0, refresh: fetchCount, setCount: broadcast };
 }

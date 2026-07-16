@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { invalidateHiddenAuthors } from '@/lib/moderation.server';
 import { z } from 'zod';
 
 /**
@@ -49,10 +50,14 @@ export const Route = createFileRoute('/api/moderation/mute')({
 
           if (existing) {
             await prisma.userMute.delete({ where: { id: existing.id } });
+            invalidateHiddenAuthors(muterId);
             return Response.json({ success: true, muted: false });
           }
 
           await prisma.userMute.create({ data: { muterId, mutedId } });
+          // The muter's hidden-author set changed — drop it so the mute takes
+          // effect on their next feed read instead of after the TTL.
+          invalidateHiddenAuthors(muterId);
           return Response.json({ success: true, muted: true });
         } catch (error) {
           console.error('Toggle mute error:', error);
