@@ -343,7 +343,11 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             type="button"
             onClick={close}
             aria-label={t('close-menu', { defaultValue: 'Close menu' })}
-            className={`fixed inset-0 z-[55] touch-none bg-black/40 ${
+            // bottom-0 + h-[100dvh] (not inset-0): a stretched top+bottom fixed
+            // element reaches the PHYSICAL bottom on iOS, so its dim extended
+            // behind Safari's bar as a dimmed band. Bottom-anchored with the
+            // visual-viewport height stops the shade exactly at the bar.
+            className={`fixed inset-x-0 bottom-0 h-[100dvh] z-[55] touch-none bg-black/40 ${
               dragging
                 ? ''
                 : 'transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
@@ -360,7 +364,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             transform keeps LeftSidebar's non-portaled fixed user menu inside it. */}
         <aside
           ref={asideRef}
-          className={`glass-chrome--aside fixed inset-y-0 left-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
+          className={`glass-chrome--aside fixed bottom-0 left-0 h-[100dvh] z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
           } ${
             dragging
