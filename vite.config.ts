@@ -146,59 +146,30 @@ const ssrOnlyExternals = [
   "esbuild",
 ];
 
-const manualChunksMap: Record<string, string[]> = {
-  "vendor-three": ["three", "@react-three/fiber", "@react-three/drei", "@react-three/rapier"],
-  "vendor-monaco-react": ["@monaco-editor/react"],
-  "vendor-tiptap": [
-    "@tiptap/react",
-    "@tiptap/starter-kit",
-    "@tiptap/extension-character-count",
-    "@tiptap/extension-code-block-lowlight",
-    "@tiptap/extension-color",
-    "@tiptap/extension-highlight",
-    "@tiptap/extension-image",
-    "@tiptap/extension-link",
-    "@tiptap/extension-placeholder",
-    "@tiptap/extension-table",
-    "@tiptap/extension-table-cell",
-    "@tiptap/extension-table-header",
-    "@tiptap/extension-table-row",
-    "@tiptap/extension-task-item",
-    "@tiptap/extension-task-list",
-    "@tiptap/extension-text-align",
-    "@tiptap/extension-text-style",
-    "@tiptap/extension-underline",
-  ],
-  "vendor-tonejs": ["tone"],
-  "vendor-motion": ["framer-motion"],
-  "vendor-pixi": ["pixi.js"],
-  "vendor-recharts": ["recharts"],
-};
-
-// Build a reverse lookup: module id → chunk name
-const moduleToChunk = new Map<string, string>();
-for (const [chunk, modules] of Object.entries(manualChunksMap)) {
-  for (const mod of modules) {
-    moduleToChunk.set(mod, chunk);
-  }
-}
-
 function manualChunks(id: string) {
-  // Split monaco-editor into sub-chunks by area
-  if (id.includes("node_modules/monaco-editor/") || id.includes("node_modules\\monaco-editor\\")) {
-    if (id.includes("/esm/vs/language/")) return "vendor-monaco-languages";
-    if (id.includes("/esm/vs/basic-languages/")) return "vendor-monaco-basic-languages";
-    if (id.includes("/esm/vs/editor/")) return "vendor-monaco-editor";
-    if (id.includes("/esm/vs/base/")) return "vendor-monaco-base";
-    if (id.includes("/esm/vs/platform/")) return "vendor-monaco-platform";
-    if (id.includes("/esm/vs/common/")) return "vendor-monaco-common";
-    return "vendor-monaco-misc";
+  // React core first — it MUST be one shared chunk. Everything the app renders
+  // imports React, so isolating it keeps the heavy route-only vendors
+  // (three/monaco/tone/…) from bridging into the entry via shared React runtime.
+  // (When React had no chunk of its own, rolldown co-located it inside vendor-three;
+  // the entry then imported that 1.3 MB chunk on every page just to get React.)
+  if (
+    id.includes("node_modules/react/") ||
+    id.includes("node_modules/react-dom/") ||
+    id.includes("node_modules/scheduler/") ||
+    id.includes("node_modules/react-is/") ||
+    id.includes("node_modules/use-sync-external-store/")
+  ) {
+    return "vendor-react";
   }
-  for (const [mod, chunk] of moduleToChunk) {
-    if (id.includes(`node_modules/${mod}/`) || id.includes(`node_modules\\${mod}\\`)) {
-      return chunk;
-    }
-  }
+  // Everything else (three, monaco, tone, pixi, recharts, tiptap, framer-motion,
+  // …) is intentionally left to rolldown's automatic chunking. Every heavy library
+  // is reached only through a React.lazy(() => import(...)) route boundary, so
+  // rolldown emits it as an async chunk that loads on its own route — NOT in the
+  // entry graph. Force-chunking them into named vendor chunks (the previous
+  // approach) made rolldown scatter shared runtime into those chunks and drag the
+  // whole 1.3 MB three + 1 MB monaco payload onto every page, including the
+  // homepage. Only React is pinned above, because it is genuinely shared by the
+  // entry and must not be duplicated.
 }
 
 export default defineConfig({
@@ -217,6 +188,23 @@ export default defineConfig({
     }),
     react(),
     nitro({
+      // Pre-compress static assets at build time so the origin serves brotli/gzip
+      // directly (Nitro negotiates via Accept-Encoding). Cloudflare compresses at
+      // the edge for most users, but pre-compression covers the CF→origin hop,
+      // non-Cloudflare paths (preview/direct/dev-preview), and gives a better
+      // ratio than on-the-fly — a straight win for slow connections. Images are
+      // already compressed and are skipped automatically.
+      compressPublicAssets: { gzip: true, brotli: true },
+      // Cache headers for static files served out of public/. Nitro already marks
+      // the content-hashed /assets/** build output immutable (1y), but /images/**
+      // (game art, icons, social images — not content-hashed) had no rule, so the
+      // origin sent no Cache-Control and Cloudflare fell back to its 4h browser
+      // default. Lighthouse flagged that as an inefficient cache lifetime. 30 days
+      // (no `immutable`, so a redeploy that changes an image still revalidates)
+      // eliminates the repeat downloads without risking long-lived staleness.
+      routeRules: {
+        "/images/**": { headers: { "cache-control": "public, max-age=2592000" } },
+      },
       // traceDeps externalizes packages from Nitro's Rolldown server bundle and
       // traces them into .output/node_modules for runtime resolution.
       // NOTE: Vite's ssr.external is ignored by Nitro — this is the only way

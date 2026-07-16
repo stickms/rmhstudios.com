@@ -282,7 +282,9 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                 </span>
               )}
             </Link>
-            <span className="text-site-text-dim shrink-0">
+            {/* Relative time drifts by a tick between SSR and hydration; suppress
+                the expected mismatch so it isn't reported as a hydration error. */}
+            <span className="text-site-text-dim shrink-0" suppressHydrationWarning>
               · {timeAgoShort(comment.createdAt)}
             </span>
 

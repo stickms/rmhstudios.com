@@ -90,9 +90,11 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
       {/* Comment */}
       <button
         onClick={handleCommentClick}
+        title={t('comment', { defaultValue: 'Comment' })}
+        aria-label={t('comment', { defaultValue: 'Comment' })}
         className="flex items-center gap-1.5 px-2 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-[color,background-color,transform] duration-150 group active:scale-95"
       >
-        <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+        <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" aria-hidden />
         <AnimatedCount value={item.commentCount} format={formatCount} hideZero className="text-xs" />
       </button>
 
@@ -106,8 +108,9 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
               : 'text-site-text-dim hover:text-site-success hover:bg-site-success/10'
           }`}
           title="reRMHark"
+          aria-label="reRMHark"
         >
-          <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+          <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" aria-hidden />
           <AnimatedCount value={item.repostCount} format={formatCount} hideZero className="text-xs" />
         </button>
         {repostMenu && (
@@ -145,8 +148,9 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
             : 'text-site-text-dim hover:text-site-danger hover:bg-site-danger/10'
         }`}
         title={t('like', { defaultValue: 'Like' })}
+        aria-label={t('like', { defaultValue: 'Like' })}
       >
-        <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`} />
+        <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`} aria-hidden />
         <AnimatedCount value={item.likeCount} format={formatCount} hideZero className="text-xs" />
       </button>
 

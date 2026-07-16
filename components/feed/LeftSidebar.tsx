@@ -578,9 +578,14 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           // there's room (mobile drawer / xl rail) and stacks under it in the
           // narrow icon rail.
           <div className={`flex gap-2 ${expanded ? 'items-center' : 'flex-col xl:flex-row xl:items-center'}`}>
-            <Link to="/login" search={{ callbackURL: undefined }} className={expanded ? 'min-w-0 flex-1' : 'xl:min-w-0 xl:flex-1'}>
-              <Button variant="accent" size="sm" className="w-full">
-                <User className={`w-4 h-4 ${iconMrClass}`} />
+            <Link
+              to="/login"
+              search={{ callbackURL: undefined }}
+              aria-label={t('sign-in', { defaultValue: 'Sign In' })}
+              className={expanded ? 'min-w-0 flex-1' : 'xl:min-w-0 xl:flex-1'}
+            >
+              <Button variant="accent" size="sm" className="w-full" aria-label={t('sign-in', { defaultValue: 'Sign In' })}>
+                <User className={`w-4 h-4 ${iconMrClass}`} aria-hidden />
                 <span className={labelClass}>{t('sign-in', { defaultValue: 'Sign In' })}</span>
               </Button>
             </Link>

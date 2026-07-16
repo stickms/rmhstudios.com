@@ -8,13 +8,26 @@
 
 import { createFileRoute, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
+import { lazy, Suspense } from 'react';
 import { getBook } from '@/lib/library/library.server';
 import { buildCanonical } from '@/lib/seo';
 import { bookSchema, jsonLdScript } from '@/lib/schema';
-import { BookReader } from '@/components/library/BookReader';
-import { EpubReader } from '@/components/library/EpubReader';
 import '@/components/rmhvibe/vibe.css';
 import '@/components/library/library.css';
+
+// The reader components pull in three.js / @react-three/fiber (the 3D book-flip
+// canvas + the epub rasteriser) — ~1.3 MB of vendor JS. They MUST stay lazy:
+// the route tree is eagerly imported (autoCodeSplitting is off), so a top-level
+// static import here shipped the three vendor chunk on EVERY page — including the
+// homepage, where Lighthouse measured it as the single largest unused-JS offender
+// (it also threw a hydration error from the eagerly-mounted canvas). Every other
+// 3D/game route already lazy-wraps its heavy component; this route had not.
+const BookReader = lazy(() =>
+  import('@/components/library/BookReader').then((m) => ({ default: m.BookReader })),
+);
+const EpubReader = lazy(() =>
+  import('@/components/library/EpubReader').then((m) => ({ default: m.EpubReader })),
+);
 
 const fetchBook = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
@@ -59,7 +72,19 @@ export const Route = createFileRoute('/library/$slug')({
   component: Reader,
 });
 
+function ReaderFallback() {
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-site-bg">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-site-border border-t-site-accent" />
+    </div>
+  );
+}
+
 function Reader() {
   const { book } = Route.useLoaderData();
-  return book.format === 'epub' ? <EpubReader book={book} /> : <BookReader book={book} />;
+  return (
+    <Suspense fallback={<ReaderFallback />}>
+      {book.format === 'epub' ? <EpubReader book={book} /> : <BookReader book={book} />}
+    </Suspense>
+  );
 }

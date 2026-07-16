@@ -83,7 +83,12 @@ export const Route = createFileRoute('/api/image-proxy')({
         status: 200,
         headers: {
           'Content-Type': result.contentType,
-          'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+          // Proxied images are keyed by the (url, w, h, q, f) tuple and the
+          // upstreams we proxy (Discord/gstatic/cloudinary) carry the version in
+          // the URL, so a changed image is a changed key — cache aggressively.
+          // 30d fresh + 30d stale-while-revalidate (was 1d + 7d, which Lighthouse
+          // flagged as an inefficient cache lifetime).
+          'Cache-Control': 'public, max-age=2592000, stale-while-revalidate=2592000',
           'Access-Control-Allow-Origin': '*',
           'Vary': 'Accept',
         },
