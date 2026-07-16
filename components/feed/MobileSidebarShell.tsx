@@ -348,15 +348,14 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           />
         )}
 
-        {/* Sidebar — Liquid Glass overlay filling the visual viewport (up to
-            Safari's bar). It doesn't extend behind the bar on purpose: the glass
-            frosts through the translucent bar into a solid blue block, which reads
-            as a stray colored section. Blur lives on glass-chrome--aside's ::before
-            so the aside itself isn't a backdrop-filter containing block; the
-            transform keeps LeftSidebar's non-portaled fixed user menu inside it. */}
+        {/* Sidebar — Liquid Glass overlay. inset-y-0 fills top-to-bottom (full
+            height); bottom-0 + a height would anchor to the physical bottom on iOS
+            and push the panel down. Blur lives on glass-chrome--aside's ::before so
+            the aside isn't a backdrop-filter containing block; the transform keeps
+            LeftSidebar's non-portaled fixed user menu inside it. */}
         <aside
           ref={asideRef}
-          className={`glass-chrome--aside fixed bottom-0 left-0 h-[100dvh] z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
+          className={`glass-chrome--aside fixed inset-y-0 left-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
           } ${
             dragging
