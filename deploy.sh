@@ -94,7 +94,11 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$ENVIRONMENT] $1"
 }
 
-DEPLOY_MSG_ID=""
+# Discord message id for the single push → build → deploy embed. When GitHub
+# Actions posted the build-phase message, its id arrives via DEPLOY_DISCORD_MSG_ID
+# (set by the webhook listener) and we EDIT that message instead of posting a new
+# one. Empty on manual runs / when Actions didn't post — then we post our own.
+DEPLOY_MSG_ID="${DEPLOY_DISCORD_MSG_ID:-}"
 
 # ── Discord/GitHub curl with retries ─────────────────────────────────────────
 # Wraps curl with retry logic + exponential backoff. Handles Discord 429
@@ -179,16 +183,23 @@ send_deploy_started() {
     get_commit_info
     local env_label
     env_label=$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
+    # Purple "picked up on the VPS" state (color 0x9B59B6).
     local payload
     payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"footer":{"text":"%s"}}]}' \
-        "[$env_label] Commit $DEPLOY_SHORT_HASH - deploy started" "$DEPLOY_COMMIT_MSG" 16776960 "$DEPLOY_AUTHOR")
+        "[$env_label] Commit $DEPLOY_SHORT_HASH - deploying on VPS (pulling images)…" "$DEPLOY_COMMIT_MSG" 10181046 "$DEPLOY_AUTHOR")
 
-    local response
-    response=$(curl_retry -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true")
-    DEPLOY_MSG_ID=$(printf '%s' "$response" | grep -o '"id": *"[^"]*"' | head -1 | cut -d'"' -f4)
-
-    if [ -z "$DEPLOY_MSG_ID" ]; then
-        log "WARNING: Failed to send or parse Discord webhook notification after retries."
+    if [ -n "$DEPLOY_MSG_ID" ]; then
+        # GitHub Actions already posted the build-phase message and handed us its
+        # id — EDIT it so push → build → deploy stays a single evolving embed.
+        curl_retry -X PATCH -H "Content-Type: application/json" \
+            -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null || \
+            log "WARNING: Failed to edit Discord deploy-started message after retries."
+    else
+        # No upstream message (manual run, or Actions' post failed) — post fresh.
+        local response
+        response=$(curl_retry -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true")
+        DEPLOY_MSG_ID=$(printf '%s' "$response" | grep -o '"id": *"[^"]*"' | head -1 | cut -d'"' -f4)
+        [ -z "$DEPLOY_MSG_ID" ] && log "WARNING: Failed to send or parse Discord webhook notification after retries."
     fi
 
     set_github_status "pending" "Deploy started ($DEPLOY_SHORT_HASH)"
