@@ -15,6 +15,7 @@ import { CheckCircle2, Circle, Flame, Palette, PenSquare, Sparkles, UserPlus, X 
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import { useCelebration } from '@/hooks/useCelebration';
+import { useIdleReady } from '@/hooks/useIdleReady';
 import { useThemeStore } from '@/stores/themeStore';
 
 const DISMISS_KEY = 'rmh-onboarding-dismissed';
@@ -32,6 +33,7 @@ export function OnboardingChecklist() {
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
   const celebrate = useCelebration();
+  const idle = useIdleReady();
   const themeStyle = useThemeStore((s) => s.style);
   const [status, setStatus] = useState<Status | null>(null);
   const [dismissed, setDismissed] = useState(true);
@@ -54,10 +56,12 @@ export function OnboardingChecklist() {
     }
   }, []);
 
+  // Defer the initial status fetch until idle — the checklist is supplementary,
+  // so it shouldn't compete for the network during hydration.
   useEffect(() => {
-    if (!session?.user || dismissed) return;
+    if (!session?.user || dismissed || !idle) return;
     void refresh();
-  }, [session?.user, dismissed, refresh]);
+  }, [session?.user, dismissed, idle, refresh]);
 
   // Refresh progress when the tab regains focus (user followed people /
   // checked in on another screen and came back).

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Play, Pause, SkipForward, Volume2, VolumeX, Search, Users, Music, Music2 } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { usePreviewPlayer } from '@/lib/rmhmusic/spotify-player';

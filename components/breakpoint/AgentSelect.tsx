@@ -1,7 +1,7 @@
 'use client';
 
 import { Canvas, useFrame } from '@react-three/fiber';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { useRef } from 'react';
 import { useBreakpointStore } from '@/lib/breakpoint/store';
 import { AGENTS, getAgent, ROLE_LABEL } from '@/lib/breakpoint/agents';

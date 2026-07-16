@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { useBreakpointStore, type MatchConfig } from '@/lib/breakpoint/store';
 import { roomClient, type RoomState, type StartPayload } from '@/lib/breakpoint/net/room';
 import { getAgent, ROLE_LABEL } from '@/lib/breakpoint/agents';

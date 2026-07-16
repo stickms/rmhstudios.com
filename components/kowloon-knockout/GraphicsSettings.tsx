@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { useGraphicsStore, type TierPreference } from '@/lib/kowloon-knockout/render/graphicsStore';
 

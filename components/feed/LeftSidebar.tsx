@@ -46,7 +46,7 @@ import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
 import { useAppBadge } from '@/lib/useAppBadge';
 import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 // Dropdown motion for collapsible nav groups (e.g. "More"): the panel expands

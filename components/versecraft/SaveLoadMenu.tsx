@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { getAllSaves, formatPlaytime, formatTimestamp, deleteSave } from '@/lib/versecraft/persistence';
 import type { SaveFile } from '@/lib/versecraft/types';

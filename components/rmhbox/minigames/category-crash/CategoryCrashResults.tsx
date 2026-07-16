@@ -20,7 +20,7 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Trophy, Star, TrendingUp } from 'lucide-react';
 import type { CCRoundResults } from './CategoryCrashGame';
 import AnswerCard from './AnswerCard';

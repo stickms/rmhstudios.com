@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Zap, Trophy } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import type { MatchupData } from './WitWarGame';

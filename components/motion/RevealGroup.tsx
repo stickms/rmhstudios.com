@@ -8,7 +8,7 @@
  * Transform/opacity only; degrades to plain elements under reduced motion.
  */
 import type { ElementType, ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { STAGGER, fadeRise } from './motionTokens';

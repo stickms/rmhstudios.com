@@ -17,7 +17,7 @@
  */
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Sparkles, Zap, Star } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 

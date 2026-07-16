@@ -13,6 +13,8 @@ import { Flame, Puzzle, CircleDot, Target, Snowflake, Check } from 'lucide-react
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useSession } from '@/components/Providers';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useIdleReady } from '@/hooks/useIdleReady';
 
 interface TodaySummary {
   streak: { current: number; checkedInToday: boolean; freezeTokens: number };
@@ -68,6 +70,8 @@ function TaskRow({
 export function TodayWidget() {
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
+  const isDesktop = useIsDesktop();
+  const idle = useIdleReady();
   const [data, setData] = useState<TodaySummary | null>(null);
   const [buying, setBuying] = useState(false);
 
@@ -80,9 +84,11 @@ export function TodayWidget() {
     }
   }, []);
 
+  // Desktop-only (this lives in the `hidden lg:block` right sidebar) and deferred
+  // to idle so it doesn't fetch on mobile or contend during hydration.
   useEffect(() => {
-    if (session?.user) void load();
-  }, [session?.user, load]);
+    if (session?.user && isDesktop && idle) void load();
+  }, [session?.user, isDesktop, idle, load]);
 
   if (!session?.user || !data) return null;
 

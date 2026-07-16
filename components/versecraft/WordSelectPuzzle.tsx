@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
 import { scoreWordSelectPoem } from '@/lib/versecraft/scoring';

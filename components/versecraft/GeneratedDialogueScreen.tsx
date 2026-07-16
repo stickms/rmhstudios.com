@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { Sprite } from './Sprite';
 import { ShareSeed } from './ShareSeed';

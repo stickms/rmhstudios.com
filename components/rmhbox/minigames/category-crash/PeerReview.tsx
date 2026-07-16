@@ -26,7 +26,7 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Flame, Shield, User, Copy, ChevronRight } from 'lucide-react';
 import type { Category, AnonymizedAnswerSet } from './CategoryCrashGame';
 

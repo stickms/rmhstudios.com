@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Link } from '@tanstack/react-router';
 import { lazy, Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import {
   Terminal, Copy, Check, Key, ExternalLink, Boxes, Zap, Shield, GitBranch, ArrowLeft,
   Monitor, Download, ChevronDown, ChevronUp, Globe, Layers, Layout, FileText, Trash2, Package,

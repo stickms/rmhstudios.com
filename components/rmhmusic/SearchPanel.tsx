@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ListMusic, ListPlus } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { emit } from '@/lib/rmhmusic/socket';

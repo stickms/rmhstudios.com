@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
-import { LayoutGroup, motion } from 'framer-motion';
+import { LayoutGroup, m as motion } from 'framer-motion';
 import { BuildCard } from './BuildCard';
 import type { Build, BuildSortOption } from '@/lib/user-builds-types';
 import { Reveal } from '@/components/motion';

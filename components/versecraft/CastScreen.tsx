@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { spriteUrl } from '@/lib/versecraft/sprites/registry';
 import { makePersonalizer } from '@/lib/versecraft/gen/personalize';
