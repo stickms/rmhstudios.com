@@ -1,16 +1,34 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Continuous deployment — every push to main SSHes into the VPS and runs the
-# battle-tested ./deploy.sh production (which self-serializes via flock, pulls
-# origin/main, builds, migrates, and rolls the compose stack blue/green).
+# Continuous deployment — build the two Docker images in CI and hand off to the
+# VPS for the release.
 #
-# One-time setup (see deploy/README.md "Automated deploys"):
-#   1. On the VPS:  ssh-keygen -t ed25519 -f ~/.ssh/gh-deploy -N "" -C gh-deploy
-#                   cat ~/.ssh/gh-deploy.pub >> ~/.ssh/authorized_keys
-#   2. Repo secrets: DEPLOY_HOST (IP or hostname), DEPLOY_USER (rmhstudios),
-#                    DEPLOY_SSH_KEY (contents of ~/.ssh/gh-deploy private key),
-#                    optional DEPLOY_PORT (default 22),
-#                    optional DEPLOY_KNOWN_HOSTS (ssh-keyscan output; pins the
-#                    host key — otherwise first connection uses accept-new).
+# Flow (every push to main):
+#   1. Build the slim web image (target `runner`) natively on an ARM64 runner
+#      (matches the Oracle ARM VPS) and push it to GHCR tagged with the commit SHA.
+#   2. Build the full supervisor/status image (target `runner-full`) FROM that
+#      just-pushed web image (so the Vite build runs exactly ONCE) and push it too.
+#   3. POST an HMAC-signed request to the VPS webhook listener (webhook-server.cjs)
+#      with the built SHA. The listener runs `deploy.sh production <sha>`, which
+#      PULLS these images, migrates, and blue/green-swaps — see deploy.sh.
+#
+# The heavy build (vibe-packages → vite build → esbuild → Go → Chromium) now runs
+# here instead of on the VPS; deploy.sh no longer builds anything.
+#
+# One-time setup (see deploy/README.md "Automated deploys — CI build → GHCR"):
+#   • Repo VARIABLES (Settings → Secrets and variables → Actions → Variables) —
+#     these are baked into the client bundle by `vite build`, so they must be the
+#     PRODUCTION values (they are public, not secrets):
+#       PROD_BETTER_AUTH_URL, PROD_VITE_BETTER_AUTH_URL, PROD_VITE_SOCKET_URL,
+#       PROD_VITE_RMHBOX_SOCKET_URL, PROD_VITE_RMHTUBE_SOCKET_URL,
+#       PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID, PROD_VITE_CDN_BASE_URL
+#   • Repo SECRETS:
+#       DEPLOY_WEBHOOK_URL — public URL that proxies to the listener (127.0.0.1:7002)
+#       WEBHOOK_SECRET     — same value as the listener's WEBHOOK_SECRET env
+#       DEEPSEEK_API_KEY   — optional (library cover titles); may be unset
+#   • On the VPS: give deploy.sh a token that can pull the GHCR packages
+#     (GHCR_TOKEN / GITHUB_TOKEN with read:packages) OR make the two packages
+#     public. Remove GitHub's old push webhook so only THIS workflow drives the
+#     listener (a raw push webhook would fire before the image exists).
 # ─────────────────────────────────────────────────────────────────────────────
 name: deploy
 
@@ -24,59 +42,120 @@ concurrency:
   group: deploy-production
   cancel-in-progress: false
 
-# Least privilege: this workflow only SSHes out to the VPS (deploy.sh pulls the
-# repo on the host itself — there is no checkout here), so the GITHUB_TOKEN needs
-# no write scopes. No OIDC/id-token or packages access is used.
+# GITHUB_TOKEN needs packages:write to push the images to GHCR; nothing else.
 permissions:
   contents: read
+  packages: write
+
+env:
+  IMAGE_WEB: ghcr.io/stickms/rmhstudios-app
+  IMAGE_FULL: ghcr.io/stickms/rmhstudios-app-full
 
 jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
+  build-and-deploy:
+    # Native ARM64 hosted runner (free on public repos) — builds arm64 images for
+    # the Oracle ARM VPS without slow QEMU emulation.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
     steps:
-      - name: Verify deploy secrets are configured
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Verify required deploy variables + secrets
         env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          PROD_BETTER_AUTH_URL: ${{ vars.PROD_BETTER_AUTH_URL }}
+          PROD_VITE_BETTER_AUTH_URL: ${{ vars.PROD_VITE_BETTER_AUTH_URL }}
+          PROD_VITE_SOCKET_URL: ${{ vars.PROD_VITE_SOCKET_URL }}
+          PROD_VITE_RMHBOX_SOCKET_URL: ${{ vars.PROD_VITE_RMHBOX_SOCKET_URL }}
+          PROD_VITE_RMHTUBE_SOCKET_URL: ${{ vars.PROD_VITE_RMHTUBE_SOCKET_URL }}
+          PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID: ${{ vars.PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID }}
+          PROD_VITE_CDN_BASE_URL: ${{ vars.PROD_VITE_CDN_BASE_URL }}
         run: |
+          set -uo pipefail
           missing=""
-          [ -n "$DEPLOY_HOST" ]    || missing="$missing DEPLOY_HOST"
-          [ -n "$DEPLOY_USER" ]    || missing="$missing DEPLOY_USER"
-          [ -n "$DEPLOY_SSH_KEY" ] || missing="$missing DEPLOY_SSH_KEY"
+          for name in DEPLOY_WEBHOOK_URL WEBHOOK_SECRET \
+                      PROD_BETTER_AUTH_URL PROD_VITE_BETTER_AUTH_URL \
+                      PROD_VITE_SOCKET_URL PROD_VITE_RMHBOX_SOCKET_URL \
+                      PROD_VITE_RMHTUBE_SOCKET_URL PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID \
+                      PROD_VITE_CDN_BASE_URL; do
+            if [ -z "${!name:-}" ]; then
+              missing="$missing $name"
+            fi
+          done
           if [ -n "$missing" ]; then
-            echo "::error::Deploy secrets not configured:$missing — see deploy/README.md 'Automated deploys'." >&2
+            echo "::error::Missing required deploy config:$missing — see deploy/README.md 'Automated deploys — CI build → GHCR'." >&2
             exit 1
           fi
 
-      - name: Set up SSH
-        env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
-        run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
-            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
-            chmod 644 ~/.ssh/known_hosts
-            echo "STRICT_HOST_KEY=yes" >> "$GITHUB_ENV"
-          else
-            echo "STRICT_HOST_KEY=accept-new" >> "$GITHUB_ENV"
-          fi
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
-      - name: Deploy to production
+      - name: Log in to GHCR
         env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # deploy.sh pulls origin/main itself, so no checkout is needed here.
-          # ServerAlive keeps the connection open through the long image build.
-          ssh -i ~/.ssh/deploy_key \
-              -p "${DEPLOY_PORT:-22}" \
-              -o StrictHostKeyChecking="$STRICT_HOST_KEY" \
-              -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
-              "$DEPLOY_USER@$DEPLOY_HOST" \
-              'cd "$HOME/rmhstudios.com" && ./deploy.sh production'
+          set -euo pipefail
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build + push slim web image (runner)
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: runner
+          platforms: linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.IMAGE_WEB }}:${{ github.sha }}
+            ${{ env.IMAGE_WEB }}:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+          build-args: |
+            COMPOSE_PROJECT_NAME=rmhstudios-prod
+            DATABASE_URL=postgresql://ci-build:ci-build@localhost:5432/ci-build
+            BETTER_AUTH_SECRET=ci-build-not-a-runtime-secret-000000000000
+            BETTER_AUTH_URL=${{ vars.PROD_BETTER_AUTH_URL }}
+            VITE_BETTER_AUTH_URL=${{ vars.PROD_VITE_BETTER_AUTH_URL }}
+            VITE_SOCKET_URL=${{ vars.PROD_VITE_SOCKET_URL }}
+            VITE_RMHBOX_SOCKET_URL=${{ vars.PROD_VITE_RMHBOX_SOCKET_URL }}
+            VITE_RMHTUBE_SOCKET_URL=${{ vars.PROD_VITE_RMHTUBE_SOCKET_URL }}
+            VITE_DISCORD_ACTIVITY_CLIENT_ID=${{ vars.PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID }}
+            VITE_CDN_BASE_URL=${{ vars.PROD_VITE_CDN_BASE_URL }}
+            DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
+
+      - name: Build + push full image (runner-full, FROM the pushed web image)
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: runner-full
+          platforms: linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.IMAGE_FULL }}:${{ github.sha }}
+            ${{ env.IMAGE_FULL }}:latest
+          cache-from: type=gha,scope=full
+          cache-to: type=gha,mode=max,scope=full
+          build-args: |
+            WEB_IMAGE=${{ env.IMAGE_WEB }}:${{ github.sha }}
+
+      - name: Trigger VPS deploy (webhook listener)
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          COMMIT_REF: ${{ github.ref }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # Body mirrors a GitHub push payload's fields the listener reads. The
+          # HMAC is computed exactly like webhook-server.cjs (crypto.createHmac
+          # 'sha256' over the raw body, hex) with the secret read from the
+          # environment (never placed on argv). deploy.sh then pulls this SHA.
+          body="$(printf '{"ref":"%s","after":"%s"}' "$COMMIT_REF" "$COMMIT_SHA")"
+          sig="sha256=$(printf '%s' "$body" | node -e 'const c=require("crypto");let d="";process.stdin.on("data",x=>d+=x).on("end",()=>process.stdout.write(c.createHmac("sha256",process.env.WEBHOOK_SECRET).update(d).digest("hex")))')"
+          echo "Triggering deploy for ${COMMIT_SHA}"
+          curl -fsS --max-time 30 -X POST "$DEPLOY_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: $sig" \
+            --data-raw "$body"
+          echo

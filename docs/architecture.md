@@ -53,22 +53,25 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
 
 ## 3. Deploy pipeline (push → production)
 
-1. **Trigger:** push to `main` → `.github/workflows/deploy.yml` SSHes into the
-   VPS and runs `./deploy.sh production`. (Serialized via a concurrency
-   group; deploys queue rather than cancel. A legacy HMAC webhook receiver,
-   `webhook-server.cjs`, can invoke the same script.)
-2. **`deploy.sh production`** (flock-serialized; reports to Discord + GitHub
+1. **Trigger:** push to `main` → `.github/workflows/deploy.yml` builds the two
+   images on a native ARM64 runner, pushes them to GHCR tagged with the commit
+   SHA, then POSTs an HMAC-signed request to the VPS webhook receiver
+   (`webhook-server.cjs`), which runs `./deploy.sh production <sha>`. (Serialized
+   via a concurrency group; deploys queue rather than cancel. The listener is
+   driven by CI — not a raw push webhook — so the deploy runs after the image
+   exists.)
+2. **`deploy.sh production <sha>`** (flock-serialized; reports to Discord + GitHub
    commit status):
-   - `git pull origin main` (self-restarts if deploy.sh itself changed)
-   - build the two images (content-addressed **build-skip** when inputs are
-     unchanged; both tagged with the git SHA for rollback)
+   - `git fetch` + `reset --hard <sha>` (self-restarts if deploy.sh itself changed)
+   - **pull** the two GHCR images for `<sha>` and retag them to the local names
+     compose expects (both also tagged with the git SHA for rollback)
    - background: sync static assets + avatars to R2
    - `prisma migrate deploy` in a throwaway container (skips when current)
    - `docker compose up -d --scale web=0` — everything **except** web
    - **blue/green web hotswap** (`deploy/hotswap-web.sh`): start the new web
      container on the spare port (7005 ⇄ 7015), health-gate it, flip Apache's
      active-port include with a graceful reload, stop the old container
-   - parallel health checks; prune stale rollback images; cap BuildKit cache
+   - parallel health checks; prune stale + rollback images
 3. **Rollback:** previous SHA-tagged images are kept (one per env); replaced
    Node workers can be revived by restoring their compose command blocks (see
    `docs/runbooks/2026-06-22-go-runtime-cutover.md`).
@@ -77,7 +80,7 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
 
 | Workflow | Gates |
 |---|---|
-| `deploy.yml` | CD — push to `main` → SSH deploy (above) |
+| `deploy.yml` | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above) |
 | `go-microservices.yml` | Go fleet: `bazelisk test //go-services/...`, Postgres-backed e2e (`go-services/scripts/e2e/run.sh --no-docker`), `helm lint`/`template`. Path-filtered to `go-services/**` + the Helm chart. |
 | `senior-review.yml` | LLM review gate on PRs (Claude Opus over the diff; fails the check on a FAIL verdict; short-circuits green for non-owner authors) |
 | `dependabot.yml` | weekly: npm (root), gomod (`go-services/`), github-actions |

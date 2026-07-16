@@ -65,12 +65,24 @@ http.createServer((req, res) => {
                   return res.end('Ignored');
                 }
 
-          logMsg(`Push to ${payload.ref} detected (${payload.after?.slice(0, 7)}) — triggering ${environment} deploy`);
+          /* The exact commit whose images GitHub Actions built + pushed to GHCR.
+             deploy.sh pulls this SHA's images and checks out this SHA, so the
+             running code and the image always match. This request is now sent by
+             the CI build workflow AFTER the push+build (not by GitHub's raw push
+             webhook), which is what sequences the deploy after the image exists.
+             Validate it looks like a git SHA; otherwise omit it and let deploy.sh
+             fall back to the branch tip. (The body is already HMAC-authenticated;
+             this is just hygiene before it becomes a process argument.) */
+          const rawSha = typeof payload.after === 'string' ? payload.after : '';
+          const sha = /^[0-9a-f]{7,40}$/i.test(rawSha) ? rawSha : '';
+          const deployArgs = sha ? [DEPLOY_SCRIPT, environment, sha] : [DEPLOY_SCRIPT, environment];
+
+          logMsg(`Deploy request for ${payload.ref} (${sha ? sha.slice(0, 7) : 'tip'}) — triggering ${environment} deploy`);
           res.writeHead(200);
           res.end(`Deploying ${environment}`);
 
           /* Run deploy script detached so it outlives the request */
-          const child = spawn('bash', [DEPLOY_SCRIPT, environment], {
+          const child = spawn('bash', deployArgs, {
                   detached: true,
                   stdio: ['ignore', fs.openSync(LOG_FILE, 'a'), fs.openSync(LOG_FILE, 'a')],
                   cwd: PROJECT_DIR,
