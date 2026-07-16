@@ -14,7 +14,7 @@
 - **Resume storage stays object-storage-required (PII).** Do NOT add a local-FS fallback for resumes in production. The Phase 0 fix is fail-loud provisioning guardrails, not loosening storage.
 - **The web tier never scrapes.** The manual "run now" trigger in Phase 0 is the existing `pnpm ladder:run` CLI. Do NOT add a web/API route that runs the pipeline. (A worker-polled dashboard button is deferred to Phase 3.)
 - **User-facing error responses must not name internal env vars.** Detailed, capability-naming messages go to server logs and the admin-only health page; end users get a generic "temporarily unavailable" 503.
-- **No new type or lint warnings** relative to the branch base: `pnpm exec tsc --noEmit` and `pnpm lint` must stay clean.
+- **No new type or lint warnings** relative to the branch base: `NODE_OPTIONS=--max-old-space-size=8192 pnpm exec tsc --noEmit` and `pnpm lint` must stay clean. (The repo is large — the default Node heap OOMs on a full typecheck; the 8 GB flag is what the repo's own `vite build` uses. Always include it when running `tsc`.)
 - **Tests are colocated `.test.ts`** and run under `pnpm exec vitest run`. Follow TDD: failing test first.
 - **Ladder enums (exact values):** `LadderJobStatus = active | expired | unknown`. `LadderSourceStatus = active | unconfigured | blocked | error | disabled`. `LadderRunTrigger = cron | manual`.
 - **Resume env var names (exact):** object storage = `S3_BUCKET`, `S3_ENDPOINT`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`; encryption = `LADDER_RESUME_ENCRYPTION_KEY` (dev-only fallback: `BETTER_AUTH_SECRET` when `NODE_ENV !== 'production'`).
