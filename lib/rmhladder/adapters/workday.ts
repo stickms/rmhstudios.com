@@ -2,7 +2,7 @@ import { classifyUSLocation } from '../classifiers/us-location';
 import type { VerificationEvidence } from '../verification';
 import { parse as parseHtml } from 'node-html-parser';
 import { politeFetch } from './http';
-import type { AdapterContext, NormalizedJob, SourceAdapter } from './types';
+import type { AdapterContext, DiscoverResult, NormalizedJob, SourceAdapter } from './types';
 
 const PAGE_SIZE = 20; // Workday CXS rejects larger page sizes.
 const HARD_CAP = 2_000;
@@ -207,11 +207,11 @@ function normalize(raw: WorkdayPosting & { title: string; externalPath: string }
 export const workdayAdapter: SourceAdapter = {
   platform: 'workday',
 
-  async discoverJobs(ctx) {
+  async discoverJobs(ctx): Promise<DiscoverResult> {
     const config = resolveConfig(ctx);
-    if (!config) return [];
+    if (!config) return { jobs: [], fetchSucceeded: false };
     const { jobs } = await fetchBoard(ctx);
-    return (jobs ?? []).filter(validPosting).map((job) => normalize(job, config));
+    return { jobs: (jobs ?? []).filter(validPosting).map((job) => normalize(job, config)), fetchSucceeded: jobs !== null };
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {

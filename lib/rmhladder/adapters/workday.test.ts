@@ -73,9 +73,10 @@ describe('Workday source discovery', () => {
 
 describe('workdayAdapter.discoverJobs', () => {
   it('normalizes a recorded CXS response', async () => {
-    const jobs = await workdayAdapter.discoverJobs(ctx);
-    expect(jobs).toHaveLength(2);
-    expect(jobs[0]).toEqual({
+    const result = await workdayAdapter.discoverJobs(ctx);
+    expect(result.jobs).toHaveLength(2);
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs[0]).toEqual({
       externalId: '/job/USA-NY-Remote/Senior-Engagement-Manager--AI-Solutions-Delivery_JR-0107750',
       title: 'Senior Engagement Manager, AI Solutions Delivery',
       locationRaw: 'USA, NY, Remote',
@@ -87,7 +88,7 @@ describe('workdayAdapter.discoverJobs', () => {
       descriptionHtml: 'JR-0107750',
       requisitionId: 'JR-0107750',
     });
-    expect(jobs[1]).toMatchObject({ country: null, remoteHint: false });
+    expect(result.jobs[1]).toMatchObject({ country: null, remoteHint: false });
   });
 
   it('sends the Workday-required POST payload', async () => {
@@ -106,11 +107,31 @@ describe('workdayAdapter.discoverJobs', () => {
     });
   });
 
-  it('returns no jobs for malformed source configuration or API data', async () => {
-    await expect(workdayAdapter.discoverJobs({ ...ctx, sourceUrl: 'https://example.com/jobs', slug: 'bad' }))
-      .resolves.toEqual([]);
-    await expect(workdayAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{}') })).resolves.toEqual([]);
-    await expect(workdayAdapter.discoverJobs({ ...ctx, fetchImpl: stub(429, 'limited') })).resolves.toEqual([]);
+  it('returns fetchSucceeded=false and no jobs for malformed source configuration or API data', async () => {
+    const r1 = await workdayAdapter.discoverJobs({ ...ctx, sourceUrl: 'https://example.com/jobs', slug: 'bad' });
+    expect(r1.jobs).toEqual([]);
+    expect(r1.fetchSucceeded).toBe(false);
+    const r2 = await workdayAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{}') });
+    expect(r2.jobs).toEqual([]);
+    expect(r2.fetchSucceeded).toBe(false);
+    const r3 = await workdayAdapter.discoverJobs({ ...ctx, fetchImpl: stub(429, 'limited') });
+    expect(r3.jobs).toEqual([]);
+    expect(r3.fetchSucceeded).toBe(false);
+  });
+
+  it('successful empty board: fetchSucceeded=true, jobs=[]', async () => {
+    const result = await workdayAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(200, JSON.stringify({ total: 0, jobPostings: [] })),
+    });
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs).toEqual([]);
+  });
+
+  it('fetch failure (500): fetchSucceeded=false, jobs=[]', async () => {
+    const result = await workdayAdapter.discoverJobs({ ...ctx, fetchImpl: stub(500, 'server error') });
+    expect(result.fetchSucceeded).toBe(false);
+    expect(result.jobs).toEqual([]);
   });
 });
 
@@ -158,8 +179,9 @@ describe('workdayAdapter pagination', () => {
       return new Response(JSON.stringify({ total: 21, jobPostings: page }), { status: 200 });
     }) as typeof fetch;
 
-    const jobs = await workdayAdapter.discoverJobs({ ...ctx, fetchImpl });
-    expect(jobs).toHaveLength(21);
+    const result = await workdayAdapter.discoverJobs({ ...ctx, fetchImpl });
+    expect(result.jobs).toHaveLength(21);
+    expect(result.fetchSucceeded).toBe(true);
     expect(offsets).toEqual([0, 20]);
   });
 
@@ -177,6 +199,8 @@ describe('workdayAdapter pagination', () => {
       }), { status: 200 });
     }) as typeof fetch;
 
-    await expect(workdayAdapter.discoverJobs({ ...ctx, fetchImpl })).resolves.toEqual([]);
+    const result = await workdayAdapter.discoverJobs({ ...ctx, fetchImpl });
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
   });
 });

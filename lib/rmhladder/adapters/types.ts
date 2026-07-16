@@ -11,6 +11,11 @@ export interface NormalizedJob {
   descriptionHtml: string | null;
   requisitionId: string | null;
 }
+export interface DiscoverResult {
+  jobs: NormalizedJob[];
+  /** True iff the board was fetched AND parsed successfully — including a successful empty board. False on HTTP/network/parse failure or a partial fetch. */
+  fetchSucceeded: boolean;
+}
 export interface AdapterContext {
   slug: string;
   companyName: string;
@@ -20,7 +25,7 @@ export interface AdapterContext {
 }
 export interface SourceAdapter {
   platform: 'greenhouse' | 'lever' | 'ashby' | 'smartrecruiters' | 'workday';
-  discoverJobs(ctx: AdapterContext): Promise<NormalizedJob[]>;
+  discoverJobs(ctx: AdapterContext): Promise<DiscoverResult>;
   verifyJob(ctx: AdapterContext, job: { externalId: string; title: string }): Promise<import('../verification').VerificationEvidence>;
   detectExpired(ctx: AdapterContext, externalId: string): Promise<boolean>;
 }

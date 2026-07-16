@@ -1,7 +1,7 @@
 import { classifyUSLocation } from '../classifiers/us-location';
 import type { VerificationEvidence } from '../verification';
 import { politeFetch } from './http';
-import type { AdapterContext, NormalizedJob, SourceAdapter } from './types';
+import type { AdapterContext, DiscoverResult, NormalizedJob, SourceAdapter } from './types';
 
 export const leverPostingsUrl = (slug: string) =>
   `https://api.lever.co/v0/postings/${slug}?mode=json`;
@@ -48,9 +48,9 @@ function normalize(raw: LeverJob): NormalizedJob {
 export const leverAdapter: SourceAdapter = {
   platform: 'lever',
 
-  async discoverJobs(ctx) {
+  async discoverJobs(ctx): Promise<DiscoverResult> {
     const { jobs } = await fetchBoard(ctx);
-    return (jobs ?? []).map(normalize);
+    return { jobs: (jobs ?? []).map(normalize), fetchSucceeded: jobs !== null };
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {

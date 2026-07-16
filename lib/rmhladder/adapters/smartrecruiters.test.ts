@@ -10,9 +10,10 @@ const ctx = { slug: 'honeywell', companyName: 'Honeywell', fetchImpl: stub(200, 
 
 describe('smartRecruitersAdapter.discoverJobs', () => {
   it('normalizes postings', async () => {
-    const jobs = await smartRecruitersAdapter.discoverJobs(ctx);
-    expect(jobs).toHaveLength(2);
-    expect(jobs[0]).toEqual({
+    const result = await smartRecruitersAdapter.discoverJobs(ctx);
+    expect(result.jobs).toHaveLength(2);
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs[0]).toEqual({
       externalId: '744000012345',
       title: 'Finance Analyst Program 2027',
       locationRaw: 'Charlotte, NC',
@@ -27,24 +28,41 @@ describe('smartRecruitersAdapter.discoverJobs', () => {
   });
 
   it('uppercases country to US', async () => {
-    const jobs = await smartRecruitersAdapter.discoverJobs(ctx);
-    expect(jobs[0].country).toBe('US');
+    const result = await smartRecruitersAdapter.discoverJobs(ctx);
+    expect(result.jobs[0].country).toBe('US');
   });
 
   it('handles location without region', async () => {
-    const jobs = await smartRecruitersAdapter.discoverJobs(ctx);
-    expect(jobs[1].locationRaw).toBe('London');
-    expect(jobs[1].country).toBe('GB');
+    const result = await smartRecruitersAdapter.discoverJobs(ctx);
+    expect(result.jobs[1].locationRaw).toBe('London');
+    expect(result.jobs[1].country).toBe('GB');
   });
 
-  it('returns [] on non-200 without throwing', async () => {
-    const jobs = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: stub(404, 'not found') });
-    expect(jobs).toEqual([]);
+  it('returns fetchSucceeded=false and [] on non-200 without throwing', async () => {
+    const result = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: stub(404, 'not found') });
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
   });
 
-  it('returns [] on non-content-shape 200 (bare array)', async () => {
-    const jobs = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '[]') });
-    expect(jobs).toEqual([]);
+  it('returns fetchSucceeded=false and [] on non-content-shape 200 (bare array)', async () => {
+    const result = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '[]') });
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
+  });
+
+  it('successful empty board (HTTP 200, content=[]): fetchSucceeded=true, jobs=[]', async () => {
+    const result = await smartRecruitersAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(200, JSON.stringify({ totalFound: 0, content: [] })),
+    });
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs).toEqual([]);
+  });
+
+  it('fetch failure (500): fetchSucceeded=false, jobs=[]', async () => {
+    const result = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: stub(500, 'server error') });
+    expect(result.fetchSucceeded).toBe(false);
+    expect(result.jobs).toEqual([]);
   });
 });
 
@@ -116,9 +134,10 @@ describe('smartRecruitersAdapter.detectExpired', () => {
     expect(await smartRecruitersAdapter.detectExpired(failCtx, '744000012345')).toBe(false);
   });
 
-  it('non-200 → []', async () => {
-    const jobs = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: stub(500, 'error') });
-    expect(jobs).toEqual([]);
+  it('non-200 → jobs=[]', async () => {
+    const result = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: stub(500, 'error') });
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
   });
 });
 
@@ -170,12 +189,13 @@ describe('smartRecruitersAdapter pagination', () => {
       return Promise.resolve(new Response(JSON.stringify({ totalFound: 150, content: [] }), { status: 200 }));
     };
 
-    const jobs = await smartRecruitersAdapter.discoverJobs({
+    const result = await smartRecruitersAdapter.discoverJobs({
       ...ctx,
       fetchImpl: paginatedStub as typeof fetch,
     });
 
-    expect(jobs).toHaveLength(150);
+    expect(result.jobs).toHaveLength(150);
+    expect(result.fetchSucceeded).toBe(true);
     expect(callCount).toBe(2);
   });
 
@@ -195,12 +215,12 @@ describe('smartRecruitersAdapter pagination', () => {
       );
     };
 
-    const jobs = await smartRecruitersAdapter.discoverJobs({
+    const result = await smartRecruitersAdapter.discoverJobs({
       ...ctx,
       fetchImpl: largeTotalStub as typeof fetch,
     });
 
-    expect(jobs.length).toBeLessThanOrEqual(500);
+    expect(result.jobs.length).toBeLessThanOrEqual(500);
   });
 
   it('under-filled pages advance offset by item count, not page size', async () => {
@@ -216,8 +236,9 @@ describe('smartRecruitersAdapter pagination', () => {
       if (offset === 75) return new Response(make(75, 75), { status: 200 });
       return new Response(JSON.stringify({ totalFound: 150, content: [] }), { status: 200 });
     }) as typeof fetch;
-    const jobs = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: f });
-    expect(jobs).toHaveLength(150);
+    const result = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: f });
+    expect(result.jobs).toHaveLength(150);
+    expect(result.fetchSucceeded).toBe(true);
     expect(calls).toHaveLength(2); // offset 0 then offset 75 — never offset 100
   });
 
@@ -227,8 +248,10 @@ describe('smartRecruitersAdapter pagination', () => {
       calls++;
       return new Response(JSON.stringify({ totalFound: 5000, content: [] }), { status: 200 });
     }) as typeof fetch;
-    const jobs = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: f });
-    expect(jobs).toEqual([]);
+    const result = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: f });
+    expect(result.jobs).toEqual([]);
+    // Empty page → fetchSucceeded=true (HTTP 200, board is empty, not a failure)
+    expect(result.fetchSucceeded).toBe(true);
     expect(calls).toBe(1);
   });
 });
@@ -249,7 +272,7 @@ describe('smartRecruitersAdapter detectExpired with empty board', () => {
 });
 
 describe('smartRecruitersAdapter — truncated board is not absence evidence (item 3)', () => {
-  it('discoverJobs returns [] when totalFound > hardCap (500) — cap hit', async () => {
+  it('discoverJobs returns [] and fetchSucceeded=false when totalFound > hardCap (500) — cap hit', async () => {
     // 600 total found, pages of 100 → we'd cap at 500 but still < 600 → jobs null → []
     const capHitStub = (url: string): Promise<Response> => {
       const offsetNum = parseInt(new URL(url).searchParams.get('offset') ?? '0', 10);
@@ -263,11 +286,12 @@ describe('smartRecruitersAdapter — truncated board is not absence evidence (it
       );
     };
 
-    const jobs = await smartRecruitersAdapter.discoverJobs({
+    const result = await smartRecruitersAdapter.discoverJobs({
       ...ctx,
       fetchImpl: capHitStub as typeof fetch,
     });
-    expect(jobs).toEqual([]);
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
   });
 
   it('detectExpired returns false when board is truncated (totalFound > fetched count)', async () => {
@@ -290,7 +314,7 @@ describe('smartRecruitersAdapter — truncated board is not absence evidence (it
     expect(result).toBe(false);
   });
 
-  it('later-page 500 → discoverJobs returns [] (truncated, not absence evidence)', async () => {
+  it('later-page 500 → discoverJobs returns [] and fetchSucceeded=false (truncated, not absence evidence)', async () => {
     let callCount = 0;
     const laterPageFailStub = (url: string): Promise<Response> => {
       callCount++;
@@ -309,11 +333,12 @@ describe('smartRecruitersAdapter — truncated board is not absence evidence (it
       return Promise.resolve(new Response('Internal Server Error', { status: 500 }));
     };
 
-    const jobs = await smartRecruitersAdapter.discoverJobs({
+    const result = await smartRecruitersAdapter.discoverJobs({
       ...ctx,
       fetchImpl: laterPageFailStub as typeof fetch,
     });
-    expect(jobs).toEqual([]);
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
     expect(callCount).toBe(2);
   });
 });

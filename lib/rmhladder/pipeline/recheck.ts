@@ -6,10 +6,10 @@
  * ambiguity of detectExpired's boolean return, which cannot distinguish
  * "present" from "fetch failed".
  *
- * IMPORTANT: discoverJobs returning [] is treated as fetchSucceeded=false
- * (ambiguous: empty board vs. fetch failure). No strikes are issued on
- * ambiguous evidence. A genuinely-emptied board will not auto-expire via
- * recheck — accepted MVP tradeoff; manual review can handle it.
+ * discoverJobs now returns DiscoverResult with an explicit fetchSucceeded flag:
+ * - fetchSucceeded=false → fetch/parse failure; skip all jobs, no strikes.
+ * - fetchSucceeded=true  → board fetched successfully (including empty boards);
+ *   absent jobs are struck or expired per the 3-strike rule.
  */
 
 import { getAdapter } from '../adapters/index';
@@ -121,16 +121,17 @@ export async function recheckSource(
     fetchImpl: memoized,
   };
 
-  // One memoized board fetch. Errors are caught and treated as empty.
-  let boardJobs: Awaited<ReturnType<typeof adapter.discoverJobs>>;
+  // One memoized board fetch. Errors are caught and treated as fetch failure.
+  let boardJobs: import('../adapters/types').NormalizedJob[] = [];
+  let fetchSucceeded = false;
   try {
-    boardJobs = await adapter.discoverJobs(ctx);
+    const result = await adapter.discoverJobs(ctx);
+    boardJobs = result.jobs;
+    fetchSucceeded = result.fetchSucceeded;
   } catch {
-    boardJobs = [];
+    // fetchSucceeded stays false, boardJobs stays []
   }
 
-  // [] is ambiguous (empty board vs. fetch failure) → skip all, no strikes.
-  const fetchSucceeded = boardJobs.length > 0;
   const presentIds = new Set(boardJobs.map((j) => j.externalId));
 
   // ── Step 1: compute all decisions before writing anything ─────────────────

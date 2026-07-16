@@ -1,7 +1,7 @@
 import { classifyUSLocation } from '../classifiers/us-location';
 import type { VerificationEvidence } from '../verification';
 import { politeFetch } from './http';
-import type { AdapterContext, NormalizedJob, SourceAdapter } from './types';
+import type { AdapterContext, DiscoverResult, NormalizedJob, SourceAdapter } from './types';
 
 export const ashbyBoardUrl = (slug: string) =>
   `https://api.ashbyhq.com/posting-api/job-board/${slug}?includeCompensation=false`;
@@ -62,9 +62,9 @@ function normalize(raw: AshbyJob): NormalizedJob {
 export const ashbyAdapter: SourceAdapter = {
   platform: 'ashby',
 
-  async discoverJobs(ctx) {
+  async discoverJobs(ctx): Promise<DiscoverResult> {
     const { jobs } = await fetchBoard(ctx);
-    return (jobs ?? []).filter((j) => j.isListed).map(normalize);
+    return { jobs: (jobs ?? []).filter((j) => j.isListed).map(normalize), fetchSucceeded: jobs !== null };
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {

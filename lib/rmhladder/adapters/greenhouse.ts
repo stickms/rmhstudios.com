@@ -1,7 +1,7 @@
 import { classifyUSLocation } from '../classifiers/us-location';
 import type { VerificationEvidence } from '../verification';
 import { politeFetch } from './http';
-import type { AdapterContext, NormalizedJob, SourceAdapter } from './types';
+import type { AdapterContext, DiscoverResult, NormalizedJob, SourceAdapter } from './types';
 
 export const greenhouseBoardUrl = (slug: string) =>
   `https://boards-api.greenhouse.io/v1/boards/${slug}/jobs?content=true`;
@@ -63,9 +63,9 @@ function normalize(raw: GhJob): NormalizedJob {
 export const greenhouseAdapter: SourceAdapter = {
   platform: 'greenhouse',
 
-  async discoverJobs(ctx) {
+  async discoverJobs(ctx): Promise<DiscoverResult> {
     const { jobs } = await fetchBoard(ctx);
-    return (jobs ?? []).map(normalize);
+    return { jobs: (jobs ?? []).map(normalize), fetchSucceeded: jobs !== null };
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {

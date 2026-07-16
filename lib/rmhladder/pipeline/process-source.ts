@@ -117,7 +117,7 @@ export async function processSource(
     };
 
     // 3. Discover jobs.
-    const normalizedJobs = await adapter.discoverJobs(ctx);
+    const { jobs: normalizedJobs } = await adapter.discoverJobs(ctx);
     stats.discovered = normalizedJobs.length;
 
     // Zero discoveries carry no success evidence (empty board or fetch failure); skip lastSuccessAt.

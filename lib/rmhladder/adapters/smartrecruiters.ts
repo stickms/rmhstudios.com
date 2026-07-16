@@ -1,7 +1,7 @@
 import { classifyUSLocation } from '../classifiers/us-location';
 import type { VerificationEvidence } from '../verification';
 import { politeFetch } from './http';
-import type { AdapterContext, NormalizedJob, SourceAdapter } from './types';
+import type { AdapterContext, DiscoverResult, NormalizedJob, SourceAdapter } from './types';
 
 export const smartRecruitersPostingsUrl = (slug: string, offset = 0) =>
   `https://api.smartrecruiters.com/v1/companies/${slug}/postings?limit=100&offset=${offset}`;
@@ -32,7 +32,7 @@ interface SrPostingsResponse {
   content?: unknown;
 }
 
-async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; status: number; totalFound: number }> {
+async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; status: number; totalFound: number; ok: boolean }> {
   const aggregated: SrJob[] = [];
   let totalFound = 0;
   let status = 200;
@@ -45,7 +45,7 @@ async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; 
     if (!res.ok) {
       // If the first page fails, return null; otherwise return what we have so far
       if (offset === 0) {
-        return { jobs: null, status: res.status, totalFound: 0 };
+        return { jobs: null, status: res.status, totalFound: 0, ok: false };
       }
       break;
     }
@@ -70,19 +70,19 @@ async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; 
         } else {
           // If content is not an array on first page, return null
           if (offset === 0) {
-            return { jobs: null, status: res.status, totalFound: 0 };
+            return { jobs: null, status: res.status, totalFound: 0, ok: false };
           }
           break;
         }
       } else {
         if (offset === 0) {
-          return { jobs: null, status: res.status, totalFound: 0 };
+          return { jobs: null, status: res.status, totalFound: 0, ok: false };
         }
         break;
       }
     } catch {
       if (offset === 0) {
-        return { jobs: null, status: res.status, totalFound: 0 };
+        return { jobs: null, status: res.status, totalFound: 0, ok: false };
       }
       break;
     }
@@ -100,10 +100,11 @@ async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; 
   // A board with more jobs than fetched cannot be used to assert absence.
   // discoverJobs consequently returns [] for >cap boards; detectExpired returns false.
   if (aggregated.length > 0 && aggregated.length < totalFound) {
-    return { jobs: null, status, totalFound };
+    return { jobs: null, status, totalFound, ok: false };
   }
 
-  return { jobs: aggregated.length > 0 ? aggregated : null, status, totalFound };
+  // Return aggregated as-is (may be empty for a genuinely empty board) with ok: true.
+  return { jobs: aggregated, status, totalFound, ok: true };
 }
 
 function normalize(raw: SrJob, ctx: AdapterContext): NormalizedJob {
@@ -130,9 +131,9 @@ function normalize(raw: SrJob, ctx: AdapterContext): NormalizedJob {
 export const smartRecruitersAdapter: SourceAdapter = {
   platform: 'smartrecruiters',
 
-  async discoverJobs(ctx) {
-    const { jobs } = await fetchBoard(ctx);
-    return (jobs ?? []).map((job) => normalize(job, ctx));
+  async discoverJobs(ctx): Promise<DiscoverResult> {
+    const { jobs, ok } = await fetchBoard(ctx);
+    return { jobs: (jobs ?? []).map((job) => normalize(job, ctx)), fetchSucceeded: ok };
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {
