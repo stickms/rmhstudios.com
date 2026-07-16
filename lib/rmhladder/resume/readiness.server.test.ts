@@ -44,6 +44,16 @@ describe('resumeSubsystemReadiness', () => {
     expect(r.ready).toBe(false);
     expect(r.missing.some((m) => m.includes('LADDER_RESUME_ENCRYPTION_KEY'))).toBe(true);
   });
+
+  it('is ready via the BETTER_AUTH_SECRET fallback in development', () => {
+    setS3();
+    vi.stubEnv('LADDER_RESUME_ENCRYPTION_KEY', '');
+    vi.stubEnv('BETTER_AUTH_SECRET', 'x'.repeat(32));
+    vi.stubEnv('NODE_ENV', 'development');
+    const r = resumeSubsystemReadiness();
+    expect(r.encryptionKeyConfigured).toBe(true);
+    expect(r.ready).toBe(true);
+  });
 });
 
 describe('resumeReadinessError', () => {
