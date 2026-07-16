@@ -314,8 +314,12 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
   return (
     <MobileSidebarContext.Provider value={{ isOpen, open, close, toggle }}>
       {/* Outer wrapper — the gesture listeners attach here so touches on the
-          page, the scrim, and the glass sidebar all reach them. */}
-      <div ref={wrapRef} className="md:hidden w-full min-w-0 relative">
+          page, the scrim, and the glass sidebar all reach them.
+          On desktop this is `display:contents` (transparent): the page renders
+          once, and its columns flow up to the site layout's centering flex
+          exactly as the old desktop-only copy did. On mobile it's the full-width
+          gesture column that owns the swipe-to-open drawer. */}
+      <div ref={wrapRef} className="relative w-full min-w-0 md:contents">
         {/* Page content — every _site page flows here and scrolls the DOCUMENT
             (the window), NOT an inner overflow container. That's deliberate: iOS
             Safari only shrinks its floating bottom bar when the *document*
@@ -329,7 +333,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             `data-scroll-root` → useScrollRestoration and BackToTop use
             the window; the custom PullToRefresh (which needs an inner scroller)
             goes inert, so iOS's native document pull-to-refresh takes over. */}
-        <div ref={panelRef} className="relative min-h-[100lvh] touch-pan-y">
+        <div ref={panelRef} className="relative min-h-[100lvh] touch-pan-y md:contents">
           {children}
         </div>
 
@@ -344,7 +348,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             type="button"
             onClick={close}
             aria-label={t('close-menu', { defaultValue: 'Close menu' })}
-            className="fixed inset-0 z-[55] touch-none"
+            className="fixed inset-0 z-[55] touch-none md:hidden"
           />
         )}
 
@@ -355,7 +359,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             LeftSidebar's non-portaled fixed user menu inside it. */}
         <aside
           ref={asideRef}
-          className={`glass-chrome--aside fixed inset-y-0 left-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
+          className={`glass-chrome--aside md:hidden fixed inset-y-0 left-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
           } ${
             dragging
