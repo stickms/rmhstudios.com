@@ -114,9 +114,25 @@ export class PageStore {
     this.onChange = opts.onChange ?? (() => {});
   }
 
-  /** Change the full-quality raster width (quality menu). Pages re-render on next ensure. */
-  setFullWidth(width: number): void {
+  /**
+   * Retune the full-quality tier: the raster width every page targets and how many
+   * full-res pages stay resident. The reader calls this as the on-screen page size
+   * changes (viewport resize, zoom, quality menu) so textures track the display's
+   * device-pixel resolution — sharp without over-spending GPU memory. A wider target
+   * marks resident pages stale (they re-render on the next `ensure`); a smaller cap
+   * evicts the least-recently-used full pages right away instead of on next insert.
+   */
+  setFull(width: number, cap: number): void {
     this.fullWidth = width;
+    this.fullCap = Math.max(1, Math.floor(cap));
+    while (this.full.size > this.fullCap) {
+      const oldest = this.full.keys().next().value as number | undefined;
+      if (oldest === undefined) break;
+      const old = this.full.get(oldest)!;
+      this.full.delete(oldest);
+      this.trash.push(old);
+    }
+    this.scheduleTrash();
   }
 
   /** Tell the scheduler which page is in view so it prioritises/prunes correctly. */
