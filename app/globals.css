@@ -1296,26 +1296,6 @@ html:not(.app-route) {
   scrollbar-gutter: stable;
 }
 
-/* Mobile: iOS 26 clips position:fixed to the visual viewport, so the fixed
-   aurora (body::before) can't paint behind the notch or Safari's floating bar —
-   those safe-area strips fell back to the flat --site-bg (#0d1b2e, no glow) and
-   read as dull "non-glass" bands at the top and bottom of the screen. The ROOT
-   element's background is the ONE layer that DOES paint the whole canvas incl.
-   behind the browser chrome, so paint the aurora there too. background-attachment:
-   fixed pins it to the viewport so it lines up with the fixed pseudo; where iOS
-   degrades that to scroll it still reads as aurora tone behind the frosted chrome
-   — either way an improvement over the flat band. Non-app routes only (games and
-   full-screen apps own their own background). */
-@media (max-width: 767.98px) {
-  html:not(.app-route) {
-    background-image: var(--site-canvas);
-    background-size: cover;
-    background-position: center top;
-    background-attachment: fixed;
-  }
-
-}
-
 body {
   background: var(--site-bg);
   color: var(--site-text);
