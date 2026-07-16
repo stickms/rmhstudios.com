@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Plus, BarChart3, History, ImagePlay, X, ImagePlus, Globe, Users, Lock, Coins, Type, FileText, CalendarClock, Check, ChevronDown, MessageCircle, AtSign, AlertTriangle } from 'lucide-react';
+import { Plus, BarChart3, History, ImagePlay, X, ImagePlus, Globe, Users, Lock, Coins, Type, FileText, CalendarClock, Check, MessageCircle, AtSign, AlertTriangle } from 'lucide-react';
 import { GifEmbed } from './GifEmbed';
 import { GifPicker } from './GifPicker';
 import { AIGenerateButton } from './AIGenerateButton';
@@ -79,18 +79,12 @@ export function ComposeBox({
   const [showCheatSheet, setShowCheatSheet] = useState(false); // markdown cheat sheet
   const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const audienceRef = useRef<HTMLDivElement>(null);
-  const replyRef = useRef<HTMLDivElement>(null);
-  // Popover elements themselves (not their trigger wrappers) — the viewport-fit
-  // hook clamps these so the edge-anchored menus can't spill off a small screen.
+  // Popover element itself (not its trigger wrapper) — the viewport-fit hook
+  // clamps this so the edge-anchored (+) menu can't spill off a small screen.
   const menuPopRef = useRef<HTMLDivElement>(null);
-  const audiencePopRef = useRef<HTMLDivElement>(null);
-  const replyPopRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
   useMenuViewportFit(menuOpen, menuPopRef);
-  useMenuViewportFit(audienceOpen, audiencePopRef);
-  useMenuViewportFit(replyOpen, replyPopRef);
 
   // Autosave the draft text so a refresh/navigation can't eat an unsent post;
   // offer any stored draft back once on mount.
@@ -120,30 +114,6 @@ export function ComposeBox({
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [menuOpen]);
-
-  // Close audience dropdown on outside click
-  useEffect(() => {
-    if (!audienceOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      if (audienceRef.current && !audienceRef.current.contains(e.target as Node)) {
-        setAudienceOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [audienceOpen]);
-
-  // Close reply-control dropdown on outside click
-  useEffect(() => {
-    if (!replyOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      if (replyRef.current && !replyRef.current.contains(e.target as Node)) {
-        setReplyOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [replyOpen]);
 
   const hasPoll = attachment === 'poll' && poll.question.trim() &&
     poll.options.filter((o) => o.trim()).length >= MIN_POLL_OPTIONS;
@@ -742,89 +712,6 @@ export function ComposeBox({
 
           <div className="flex items-center justify-between mt-2">
             <div className="flex items-center gap-2">
-              {/* Audience (visibility) dropdown */}
-              <div className="relative" ref={audienceRef}>
-                <button
-                  type="button"
-                  onClick={() => setAudienceOpen((v) => !v)}
-                  aria-haspopup="listbox"
-                  aria-expanded={audienceOpen}
-                  title={t("audience-group-label", { defaultValue: "Who can see this post" })}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-site-border bg-site-surface px-2.5 py-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-text hover:border-site-accent/50"
-                >
-                  <CurrentAudienceIcon className="h-3.5 w-3.5" />
-                  <span>{currentAudience.label}</span>
-                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${audienceOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {audienceOpen && (
-                  <div ref={audiencePopRef} role="listbox" className="absolute bottom-full left-0 mb-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30 animate-in fade-in slide-in-from-bottom-1 duration-150">
-                    {audienceOptions.map(({ value, label, icon: Icon }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        role="option"
-                        aria-selected={audience === value}
-                        onClick={() => {
-                          setAudience(value);
-                          setAudienceOpen(false);
-                        }}
-                        className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors hover:bg-site-surface ${
-                          audience === value ? 'text-site-accent' : 'text-site-text'
-                        }`}
-                      >
-                        <Icon className="w-4 h-4 text-site-text-dim" />
-                        <span className="flex-1 text-left">{label}</span>
-                        {audience === value && <Check className="w-4 h-4" />}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Who can reply dropdown */}
-              <div className="relative" ref={replyRef}>
-                <button
-                  type="button"
-                  onClick={() => setReplyOpen((v) => !v)}
-                  aria-haspopup="listbox"
-                  aria-expanded={replyOpen}
-                  title={t("reply-control-label", { defaultValue: "Who can reply" })}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-site-border bg-site-surface px-2.5 py-1 text-xs font-medium text-site-text-muted transition-colors hover:text-site-text hover:border-site-accent/50"
-                >
-                  <CurrentReplyIcon className="h-3.5 w-3.5" />
-                  <span>{currentReply.short}</span>
-                  <ChevronDown className={`h-3.5 w-3.5 transition-transform ${replyOpen ? 'rotate-180' : ''}`} />
-                </button>
-
-                {replyOpen && (
-                  <div ref={replyPopRef} role="listbox" className="absolute bottom-full left-0 mb-1 w-52 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30 animate-in fade-in slide-in-from-bottom-1 duration-150">
-                    <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-site-text-dim">
-                      {t("reply-control-heading", { defaultValue: "Who can reply?" })}
-                    </div>
-                    {replyOptions.map(({ value, label, icon: Icon }) => (
-                      <button
-                        key={value}
-                        type="button"
-                        role="option"
-                        aria-selected={replyControl === value}
-                        onClick={() => {
-                          setReplyControl(value);
-                          setReplyOpen(false);
-                        }}
-                        className={`flex items-center gap-2 w-full px-3 py-2 text-sm transition-colors hover:bg-site-surface ${
-                          replyControl === value ? 'text-site-accent' : 'text-site-text'
-                        }`}
-                      >
-                        <Icon className="w-4 h-4 text-site-text-dim" />
-                        <span className="flex-1 text-left">{label}</span>
-                        {replyControl === value && <Check className="w-4 h-4" />}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
               {/* Sensitive-content toggle */}
               <button
                 type="button"
@@ -887,7 +774,34 @@ export function ComposeBox({
                 </button>
 
                 {menuOpen && (
-                  <div ref={menuPopRef} className="absolute bottom-full right-0 mb-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
+                  <div ref={menuPopRef} className="absolute bottom-full right-0 mb-1 w-56 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
+                    {/* Post visibility (audience) — opens a picker modal */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAudienceOpen(true);
+                        setMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                    >
+                      <CurrentAudienceIcon className="w-4 h-4 text-site-text-dim" />
+                      <span className="flex-1 text-left">{t("menu-audience", { defaultValue: "Who can see this" })}</span>
+                      <span className="text-xs text-site-text-dim">{currentAudience.label}</span>
+                    </button>
+                    {/* Who can reply — opens a picker modal */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setReplyOpen(true);
+                        setMenuOpen(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
+                    >
+                      <CurrentReplyIcon className="w-4 h-4 text-site-text-dim" />
+                      <span className="flex-1 text-left">{t("menu-reply-control", { defaultValue: "Who can reply" })}</span>
+                      <span className="text-xs text-site-text-dim">{currentReply.short}</span>
+                    </button>
+                    <div className="my-1 border-t border-site-border" />
                     <button
                       type="button"
                       disabled={imageUrls.length >= MAX_IMAGES}
@@ -993,6 +907,106 @@ export function ComposeBox({
           </div>
         </div>
       </div>
+
+      {/* Post visibility (audience) picker — opened from the (+) menu */}
+      {audienceOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label={t("close", { defaultValue: "Close" })}
+            tabIndex={-1}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setAudienceOpen(false)}
+          />
+          <div className="relative w-full max-w-xs rounded-site border border-site-border bg-site-bg p-2 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+            <div className="mb-1 flex items-center justify-between px-1 pt-1">
+              <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
+                <CurrentAudienceIcon className="h-4 w-4 text-site-text-muted" />
+                {t("audience-group-label", { defaultValue: "Who can see this post" })}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setAudienceOpen(false)}
+                aria-label={t("close", { defaultValue: "Close" })}
+                className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div role="listbox" className="py-1">
+              {audienceOptions.map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="option"
+                  aria-selected={audience === value}
+                  onClick={() => {
+                    setAudience(value);
+                    setAudienceOpen(false);
+                  }}
+                  className={`flex items-center gap-2 w-full rounded-site-sm px-3 py-2 text-sm transition-colors hover:bg-site-surface ${
+                    audience === value ? 'text-site-accent' : 'text-site-text'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 text-site-text-dim" />
+                  <span className="flex-1 text-left">{label}</span>
+                  {audience === value && <Check className="w-4 h-4" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Who-can-reply picker — opened from the (+) menu */}
+      {replyOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <button
+            type="button"
+            aria-label={t("close", { defaultValue: "Close" })}
+            tabIndex={-1}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setReplyOpen(false)}
+          />
+          <div className="relative w-full max-w-xs rounded-site border border-site-border bg-site-bg p-2 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+            <div className="mb-1 flex items-center justify-between px-1 pt-1">
+              <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
+                <CurrentReplyIcon className="h-4 w-4 text-site-text-muted" />
+                {t("reply-control-heading", { defaultValue: "Who can reply?" })}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setReplyOpen(false)}
+                aria-label={t("close", { defaultValue: "Close" })}
+                className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div role="listbox" className="py-1">
+              {replyOptions.map(({ value, label, icon: Icon }) => (
+                <button
+                  key={value}
+                  type="button"
+                  role="option"
+                  aria-selected={replyControl === value}
+                  onClick={() => {
+                    setReplyControl(value);
+                    setReplyOpen(false);
+                  }}
+                  className={`flex items-center gap-2 w-full rounded-site-sm px-3 py-2 text-sm transition-colors hover:bg-site-surface ${
+                    replyControl === value ? 'text-site-accent' : 'text-site-text'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 text-site-text-dim" />
+                  <span className="flex-1 text-left">{label}</span>
+                  {replyControl === value && <Check className="w-4 h-4" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Unlock-price popover — opened from the (+) menu */}
       {showPriceModal && (
