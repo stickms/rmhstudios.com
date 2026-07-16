@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { getShopItem } from '@/lib/shop/catalog';
+import { invalidateUserDisplay } from '@/lib/user-display.server';
 
 /**
  * POST /api/shop/equip — equip or unequip an owned cosmetic.
@@ -50,6 +51,10 @@ export const Route = createFileRoute('/api/shop/equip')({
               data: { equipped: false },
             });
           }
+
+          // The equipped-cosmetics set feeds the cached feed author display —
+          // drop it so the user's own next feed read reflects the change now.
+          invalidateUserDisplay(userId);
 
           return Response.json({ success: true, equipped: parsed.data.equipped });
         } catch (error) {

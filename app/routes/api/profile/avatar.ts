@@ -7,6 +7,7 @@ import { optimizeImage } from "@/lib/image-optimize";
 import { putObject, deleteObject, s3Configured } from "@/lib/storage/s3.server";
 import { userAvatarKey, userAvatarUrl, userAvatarFilename } from "@/lib/storage/keys";
 import { purgeFromCdn } from "@/lib/storage/cdn.server";
+import { invalidateUserDisplay } from "@/lib/user-display.server";
 
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 MB per image
 const TOTAL_AVATAR_STORAGE_LIMIT_BYTES = 10 * 1024 * 1024 * 1024; // 10 GB
@@ -131,6 +132,9 @@ export const Route = createFileRoute('/api/profile/avatar')({
       },
     });
 
+    // Refresh the cached feed author display so the new avatar shows immediately.
+    invalidateUserDisplay(session.user.id);
+
     return Response.json({ image: imageUrl });
   } catch (error) {
     console.error("Avatar upload error:", error);
@@ -164,6 +168,9 @@ export const Route = createFileRoute('/api/profile/avatar')({
       where: { userId: session.user.id },
       data: { customImage: null, customImageSizeBytes: null },
     });
+
+    // Refresh the cached feed author display so the reverted avatar shows now.
+    invalidateUserDisplay(session.user.id);
 
     // If User.image was corrupted by old code (overwritten with custom avatar URL),
     // clear it so it doesn't 404

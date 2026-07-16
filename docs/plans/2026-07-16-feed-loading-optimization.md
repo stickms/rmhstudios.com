@@ -876,6 +876,12 @@ below-fold content don't fire at load.
 
 #### Fix 4.1 — Cached batched author-display loader (removes the per-row joins, F4)
 
+**Status: implemented.** `lib/user-display.server.ts#getUserDisplayMap` resolves
+authors in one batched, per-id-cached (60s) read; `lib/feed/timeline.ts` selects
+only the scalar `userId` (the `user`/`original.user` joins are gone) and looks
+authors up through the map. Invalidated on profile edit, avatar change, and
+cosmetic equip/unequip (`invalidateUserDisplay`).
+
 **Files:** `lib/user-display.ts` (new server variant), `lib/feed/timeline.ts`
 
 **Sketch:** split the feed query from author resolution:
