@@ -489,18 +489,13 @@
 html:not(.app-route) body::before {
   content: "";
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  /* Overshoot the visual-viewport bottom so the aurora paints BEHIND iOS
-     Safari's floating bar and the home indicator instead of ceding that strip to
-     the flat --site-bg — which otherwise read as a themed band under the mobile
-     tab bar. A fixed layer is anchored to the visual-viewport top and capped at
-     100lvh tall, which still stops ~a toolbar's height short of the physical
-     bottom; the extra 25vh generously clears whatever sits at the bottom in every
-     state (Safari's bar expanded or minimized, home indicator). The overshoot is
-     off-screen, and z-index:-1 + pointer-events:none keep it invisible and inert. */
-  height: calc(100lvh + 25vh);
+  /* iOS 26 clips position:fixed to the VISUAL viewport (verified on-device: a
+     fixed inset:0 box, and a fixed 100lvh+25vh box, both render only between the
+     notch and Safari's floating bar). So this pseudo can only cover that region —
+     which is fine, it's the crisp in-viewport aurora. Painting the aurora BEHIND
+     the browser chrome is handled by the root canvas background (see the mobile
+     html:not(.app-route) rule), the one layer iOS lets reach those strips. */
+  inset: 0;
   z-index: -1;
   background-image: var(--site-canvas);
   pointer-events: none;
@@ -1299,6 +1294,25 @@ html {
 /* Reserve scrollbar space on main UI pages to prevent layout shift */
 html:not(.app-route) {
   scrollbar-gutter: stable;
+}
+
+/* Mobile: iOS 26 clips position:fixed to the visual viewport, so the fixed
+   aurora (body::before) can't paint behind the notch or Safari's floating bar —
+   those safe-area strips fell back to the flat --site-bg (#0d1b2e, no glow) and
+   read as dull "non-glass" bands at the top and bottom of the screen. The ROOT
+   element's background is the ONE layer that DOES paint the whole canvas incl.
+   behind the browser chrome, so paint the aurora there too. background-attachment:
+   fixed pins it to the viewport so it lines up with the fixed pseudo; where iOS
+   degrades that to scroll it still reads as aurora tone behind the frosted chrome
+   — either way an improvement over the flat band. Non-app routes only (games and
+   full-screen apps own their own background). */
+@media (max-width: 767.98px) {
+  html:not(.app-route) {
+    background-image: var(--site-canvas);
+    background-size: cover;
+    background-position: center top;
+    background-attachment: fixed;
+  }
 }
 
 body {
