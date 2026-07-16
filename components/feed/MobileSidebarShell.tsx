@@ -294,7 +294,6 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
   // offset 0 = fully off-screen (translateX(-DRAWER_WIDTH)); DRAWER_WIDTH = in.
   // The page itself never moves.
   const sidebarTransform = `translateX(${offset - DRAWER_WIDTH}px)`;
-  const scrimProgress = offset / DRAWER_WIDTH;
 
   // Paint the fixed sidebar only while it's actually being revealed. It must
   // stay painted through the whole close animation (React snaps `offset` to 0 at
@@ -334,25 +333,18 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           {children}
         </div>
 
-        {/* Scrim — dims the page and captures taps/keys to close. Fixed to the
-            visual viewport (it stops at Safari's bar — going behind the bar frosts
-            into a solid block, which reads as a stray overlay). A real <button> so
-            it's keyboard-operable (Esc also closes). */}
+        {/* Tap-catcher — TRANSPARENT (no dim). A dimming scrim can't be reliably
+            kept from bleeding behind Safari's floating bar on iOS (inset-0 and
+            bottom-0+h-[100dvh] both reach the physical bottom there), where it
+            read as a dimmed band. So the drawer slides over undimmed content; this
+            layer only captures taps/keys to close. A real <button> so it's
+            keyboard-operable (Esc also closes); touch-none blocks page scroll. */}
         {asideRevealed && (
           <button
             type="button"
             onClick={close}
             aria-label={t('close-menu', { defaultValue: 'Close menu' })}
-            // bottom-0 + h-[100dvh] (not inset-0): a stretched top+bottom fixed
-            // element reaches the PHYSICAL bottom on iOS, so its dim extended
-            // behind Safari's bar as a dimmed band. Bottom-anchored with the
-            // visual-viewport height stops the shade exactly at the bar.
-            className={`fixed inset-x-0 bottom-0 h-[100dvh] z-[55] touch-none bg-black/40 ${
-              dragging
-                ? ''
-                : 'transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
-            }`}
-            style={{ opacity: scrimProgress }}
+            className="fixed inset-0 z-[55] touch-none"
           />
         )}
 
