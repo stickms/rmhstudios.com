@@ -25,6 +25,7 @@ import { getHiddenAuthorIds } from "../moderation.server";
 import { audienceWhere } from "./audience.server";
 import { applyLock } from "./map-feed-item.server";
 import { groupReactions } from "../social/reactions";
+import { apiCache } from "../cache";
 
 export type FeedSurface = "following" | "foryou";
 
@@ -241,6 +242,14 @@ function keysetOf(item: FeedItem): { createdAt: string; id: string } {
 /* ------------------------------------------------------------------ */
 
 async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
+  // Announcements are static (games/apps catalogs) or slow-moving (blog posts),
+  // yet this runs on every feed read *and* every pagination. Cache per-filter for
+  // a minute so the feed's hot path stops re-querying blog posts each time; a
+  // freshly published blog post surfaces within the TTL.
+  const cacheKey = `feed:announcements:${filter}`;
+  const cached = apiCache.get<FeedItem[]>(cacheKey);
+  if (cached) return cached;
+
   const { games } = await import("../games");
   const { apps } = await import("../apps");
   const items: FeedItem[] = [];
@@ -297,6 +306,7 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
     }
   }
 
+  apiCache.set(cacheKey, items, 60_000);
   return items;
 }
 
@@ -405,20 +415,27 @@ async function getForYouTimeline(
     : {};
   const include = rmharkInclude(userId);
 
-  // Hide blocked/muted authors (and authors who blocked the viewer).
-  const hiddenIds = await getHiddenAuthorIds(userId);
+  // These reads only depend on the viewer id / filter — not on each other — so
+  // fan them out together instead of a serial waterfall. On the feed's hot path
+  // this collapses several sequential DB round-trips into one batch:
+  //   - hidden authors (blocked/muted, and authors who blocked the viewer)
+  //   - the viewer's follow graph (audience visibility + ranking)
+  //   - the interest profile (only on the first page, since ranking reorders
+  //     within a page window)
+  //   - announcements (static/slow-moving; skipped while searching)
+  const [hiddenIds, viewerFollowingIds, interest, announcements] = await Promise.all([
+    getHiddenAuthorIds(userId),
+    userId
+      ? prisma.follow
+          .findMany({ where: { followerId: userId }, select: { followingId: true } })
+          .then((rows) => rows.map((f) => f.followingId))
+      : Promise.resolve([] as string[]),
+    userId && !cursor ? buildInterestProfile(userId) : Promise.resolve(null),
+    search ? Promise.resolve([] as FeedItem[]) : getAnnouncementItems(filter),
+  ]);
+
   const authorWhere = hiddenIds.length ? { userId: { notIn: hiddenIds } } : {};
-
-  // Audience visibility (PUBLIC, own, or FOLLOWERS-of-followed).
-  const viewerFollowingIds = userId
-    ? (await prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })).map((f) => f.followingId)
-    : [];
   const audWhere = audienceWhere(userId, viewerFollowingIds);
-
-  // Personalized ranking context (#11): the viewer's follow graph plus an
-  // interest profile from their recent engagement. Only built on the first
-  // page, since ranking reorders within a page window.
-  const interest = userId && !cursor ? await buildInterestProfile(userId) : null;
   const rankCtx: RankContext = {
     followingIds: new Set(viewerFollowingIds),
     authorAffinity: interest?.authorAffinity,
@@ -464,8 +481,8 @@ async function getForYouTimeline(
     dbItems = rankCandidates(dbItems, rankCtx);
   }
 
-  // Announcements (skip when searching — only RMHarks have content).
-  const announcements = search ? [] : await getAnnouncementItems(filter);
+  // Announcements were fetched above (skipped when searching — only RMHarks
+  // have content).
   const cursorDate = decoded?.createdAt;
   const filteredAnnouncements = cursorDate
     ? announcements.filter((a) => new Date(a.createdAt) < cursorDate)
@@ -475,7 +492,8 @@ async function getForYouTimeline(
 
   if (filter === "all") {
     // Interleave: 3 RMHarks per 1 announcement to prioritize user content.
-    const sortedAnnouncements = filteredAnnouncements.sort(
+    // Copy before sorting — `announcements` may be a shared cached array.
+    const sortedAnnouncements = [...filteredAnnouncements].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
     const result: FeedItem[] = [];
@@ -561,15 +579,16 @@ export function applyMutedWords(items: FeedItem[], muted: string[]): FeedItem[] 
 /* ------------------------------------------------------------------ */
 
 export async function getTimeline(params: GetTimelineParams): Promise<TimelineResult> {
-  const result =
+  // The muted-words read (reader-level content control) only needs the viewer
+  // id, so run it alongside the timeline assembly rather than after it — one
+  // fewer serial round-trip on the hot path. Skipped for signed-out viewers.
+  const [result, muted] = await Promise.all([
     params.surface === "following"
-      ? await getFollowingTimeline(params)
-      : await getForYouTimeline(params);
+      ? getFollowingTimeline(params)
+      : getForYouTimeline(params),
+    params.userId ? getMutedWords(params.userId) : Promise.resolve([] as string[]),
+  ]);
 
-  // Apply the viewer's muted words (reader-level content control). Cheap indexed
-  // read; skipped entirely for signed-out viewers.
-  if (!params.userId) return result;
-  const muted = await getMutedWords(params.userId);
   if (!muted.length) return result;
   return { ...result, items: applyMutedWords(result.items, muted) };
 }

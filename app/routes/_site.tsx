@@ -12,6 +12,7 @@ import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { LeftSidebar } from '@/components/feed/LeftSidebar';
 import { MobileSidebarShell } from '@/components/feed/MobileSidebarShell';
+import { ShellLayoutContext } from '@/components/feed/shell-context';
 import { WelcomeModal } from '@/components/feed/WelcomeModal';
 import { LanguageFirstRunModal } from '@/components/site/LanguageFirstRunModal';
 import { WhatsNewModal } from '@/components/feed/WhatsNewModal';
@@ -32,60 +33,62 @@ export const Route = createFileRoute('/_site')({
 function SiteLayout() {
   const { t } = useTranslation('common');
   return (
-    <div className="vibe-app min-h-dvh flex flex-col md:flex-row">
-      {/* Keyboard skip link — visually hidden until focused. */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-site-sm focus:bg-site-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-site-accent-fg"
-      >
-        {t('skipToContent', { defaultValue: 'Skip to content' })}
-      </a>
-      <LanguageFirstRunModal />
-      <WelcomeModal />
-      <WhatsNewModal />
-      <FreeMonthModal />
-      {/* Desktop/tablet: fixed left sidebar + centered content */}
-      <div className="hidden md:flex min-w-0 w-full justify-center">
-        <div className="md:w-16 xl:w-64 shrink-0 relative">
-          {/* On desktop the sidebar is INLINE (not an overlay), so it stays
+    <ShellLayoutContext.Provider value={true}>
+      <div className="vibe-app min-h-dvh flex flex-col md:flex-row">
+        {/* Keyboard skip link — visually hidden until focused. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-site-sm focus:bg-site-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-site-accent-fg"
+        >
+          {t('skipToContent', { defaultValue: 'Skip to content' })}
+        </a>
+        <LanguageFirstRunModal />
+        <WelcomeModal />
+        <WhatsNewModal />
+        <FreeMonthModal />
+        {/* Desktop/tablet: fixed left sidebar + centered content */}
+        <div className="hidden md:flex min-w-0 w-full justify-center">
+          <div className="md:w-16 xl:w-64 shrink-0 relative">
+            {/* On desktop the sidebar is INLINE (not an overlay), so it stays
               transparent and shares the body aurora with the content — just a
               hairline border divides them. (The mobile drawer, which slides OVER
               the page, keeps the frosted glass-chrome--aside treatment.) The aside
               itself carries no backdrop-filter, so LeftSidebar's non-portaled
               fixed user menu keeps the viewport as its containing block (§3.3.1). */}
-          <aside className="fixed top-0 md:w-16 xl:w-64 h-screen border-r border-site-border overflow-hidden z-30 flex flex-col">
-            <LeftSidebar />
-          </aside>
-        </div>
-        {/* `display:contents` keeps the flex layout identical while exposing a
+            <aside className="fixed top-0 md:w-16 xl:w-64 h-screen border-r border-site-border overflow-hidden z-30 flex flex-col">
+              <LeftSidebar />
+            </aside>
+          </div>
+          {/* `display:contents` keeps the flex layout identical while exposing a
             real <main> landmark and giving the skip link a focus target.
             `page-root` drives the per-page enter animation on the content
             column(s) only — the left sidebar sits outside <main>, so it never
             animates (see the `.page-root > *` rule in globals.css). */}
-        <main id="main-content" tabIndex={-1} className="contents page-root">
-          <Outlet />
-        </main>
-      </div>
+          <main id="main-content" tabIndex={-1} className="contents page-root">
+            <Outlet />
+          </main>
+        </div>
 
-      {/* Mobile: page content slides right to reveal the left sidebar. There's no
+        {/* Mobile: page content slides right to reveal the left sidebar. There's no
           mobile bottom bar — navigation is the swipe/hamburger sidebar. */}
-      <MobileSidebarShell>
-        <main className="contents page-root">
-          <Outlet />
-        </main>
-      </MobileSidebarShell>
+        <MobileSidebarShell>
+          <main className="contents page-root">
+            <Outlet />
+          </main>
+        </MobileSidebarShell>
 
-      {/* One-time, non-blocking cookie notice (site pages only). */}
-      <CookieConsent />
+        {/* One-time, non-blocking cookie notice (site pages only). */}
+        <CookieConsent />
 
-      {/* Site-wide shortcuts (c compose, g+<x> navigation, ? help overlay). */}
-      <KeyboardShortcuts />
+        {/* Site-wide shortcuts (c compose, g+<x> navigation, ? help overlay). */}
+        <KeyboardShortcuts />
 
-      {/* Music keeps playing when you leave RMHMusic — surface controls here. */}
-      <MiniPlayer />
+        {/* Music keeps playing when you leave RMHMusic — surface controls here. */}
+        <MiniPlayer />
 
-      {/* Floating scroll-to-top affordance for long pages. */}
-      <BackToTop />
-    </div>
+        {/* Floating scroll-to-top affordance for long pages. */}
+        <BackToTop />
+      </div>
+    </ShellLayoutContext.Provider>
   );
 }
