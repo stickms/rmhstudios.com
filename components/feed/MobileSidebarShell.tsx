@@ -13,11 +13,6 @@ import { useTranslation } from 'react-i18next';
 import { LeftSidebar } from './LeftSidebar';
 
 const DRAWER_WIDTH = 256; // w-64 — must match the aside width below
-// Height of the absolute overlay layers (glass + scrim). Deliberately taller than
-// the viewport: an in-document absolute element (unlike position:fixed, which iOS
-// clips to the visual viewport) flows behind Safari's floating bar, so this reaches
-// the physical bottom — the sidebar renders full height.
-const OVERLAY_HEIGHT = 'calc(100lvh + 40vh)';
 // How far a closed-drawer drag must travel (on release) to commit to opening,
 // and how far an open-drawer drag must travel back to commit to closing.
 const OPEN_COMMIT = 64;
@@ -137,16 +132,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     mode: 'none' as 'none' | 'drag' | 'scroll' | 'lock',
   });
 
-  // Document-space top for the absolute overlay layers, captured when the drawer
-  // starts to reveal so they pin to the current viewport top. Read in render (a
-  // ref, so setting it doesn't cause extra re-renders on every touch).
-  const overlayTopRef = useRef(0);
-
-  const open = useCallback(() => {
-    const wrap = wrapRef.current;
-    overlayTopRef.current = wrap ? -wrap.getBoundingClientRect().top : window.scrollY;
-    setIsOpen(true);
-  }, []);
+  const open = useCallback(() => setIsOpen(true), []);
   const close = useCallback(() => setIsOpen(false), []);
   const toggle = useCallback(() => setIsOpen((v) => !v), []);
 
@@ -179,13 +165,9 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     const body = document.body;
     const html = document.documentElement;
     const prev = { htmlOverflow: html.style.overflow, bodyOverflow: body.style.overflow };
-    // Lock the document scroll with overflow:hidden — NOT the position:fixed on
-    // <body> technique. position:fixed would make the drawer's absolute overlay
-    // layers descendants of a fixed element, which iOS clips to the visual
-    // viewport — defeating the whole point (they must flow behind Safari's bar).
-    // overflow:hidden keeps the scroll position and coordinate space intact; the
-    // touch handlers already preventDefault to stop the page scrolling behind the
-    // open drawer.
+    // Lock the document scroll with overflow:hidden. It keeps the scroll position
+    // and coordinate space intact (no position:fixed shift), and the touch handlers
+    // already preventDefault to stop the page scrolling behind the open drawer.
     html.style.overflow = 'hidden';
     body.style.overflow = 'hidden';
     return () => {
@@ -221,10 +203,6 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
         decided: false,
         mode: 'none',
       };
-      // Pin the absolute overlay layers to the current viewport top (document
-      // space) in case this touch turns into a drawer drag.
-      const w = wrapRef.current;
-      if (w) overlayTopRef.current = -w.getBoundingClientRect().top;
     }
 
     function onTouchMove(e: TouchEvent) {
@@ -359,8 +337,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             single backdrop and draws edge-to-edge. `min-h-dvh` fills the viewport
             on short pages. `touch-pan-y` reserves horizontal gestures for the
             drawer drag (vertical stays native document scroll). The drawer's
-            scroll-lock is the overflow:hidden effect above (kept off position:
-            fixed so the absolute drawer layers can flow behind Safari's bar). No
+            scroll-lock is the overflow:hidden effect above. No
             `data-scroll-root` → useScrollRestoration and BackToTop use
             the window; the custom PullToRefresh (which needs an inner scroller)
             goes inert, so iOS's native document pull-to-refresh takes over. */}
@@ -368,50 +345,33 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           {children}
         </div>
 
-        {/* Scrim — dims the page and captures taps/keys to close. ABSOLUTE + tall
-            (not fixed), so it dims behind Safari's floating bar too instead of
-            stopping at the visual viewport. A real <button> so it's keyboard-
-            operable (Esc also closes). top pins it to the viewport in document
-            space (see overlayTopRef). */}
+        {/* Scrim — dims the page and captures taps/keys to close. Fixed to the
+            visual viewport (it stops at Safari's bar — going behind the bar frosts
+            into a solid block, which reads as a stray overlay). A real <button> so
+            it's keyboard-operable (Esc also closes). */}
         {asideRevealed && (
           <button
             type="button"
             onClick={close}
             aria-label={t('close-menu', { defaultValue: 'Close menu' })}
-            className={`absolute left-0 right-0 z-[55] bg-black/40 ${
+            className={`fixed inset-0 z-[55] bg-black/40 ${
               dragging
                 ? ''
                 : 'transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
             }`}
-            style={{ top: overlayTopRef.current, height: OVERLAY_HEIGHT, opacity: scrimProgress }}
+            style={{ opacity: scrimProgress }}
           />
         )}
 
-        {/* Sidebar GLASS — a deliberately tall ABSOLUTE panel. Being an in-document
-            absolute element (not position:fixed), it flows behind Safari's floating
-            bar the way the page content does, so the sidebar reaches the physical
-            bottom instead of being clipped to the visual viewport. Blur lives on
-            glass-chrome--aside's ::before; no interactive content here. */}
-        {asideRevealed && (
-          <div
-            aria-hidden
-            className={`glass-chrome--aside absolute left-0 z-[59] w-64 border-r border-site-border shadow-site ${
-              dragging
-                ? ''
-                : 'transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0'
-            }`}
-            style={{ top: overlayTopRef.current, height: OVERLAY_HEIGHT, transform: sidebarTransform }}
-          />
-        )}
-
-        {/* Sidebar CONTENT — kept FIXED so its top clears the notch and its footer
-            clears the home indicator / browser bar automatically (fixed tracks the
-            visual viewport, where those insets resolve). Transparent: the visible
-            glass is the tall panel behind it. The transform keeps LeftSidebar's
-            non-portaled fixed user menu positioned within the panel (§3.3.1). */}
+        {/* Sidebar — Liquid Glass overlay filling the visual viewport (up to
+            Safari's bar). It doesn't extend behind the bar on purpose: the glass
+            frosts through the translucent bar into a solid blue block, which reads
+            as a stray colored section. Blur lives on glass-chrome--aside's ::before
+            so the aside itself isn't a backdrop-filter containing block; the
+            transform keeps LeftSidebar's non-portaled fixed user menu inside it. */}
         <aside
           ref={asideRef}
-          className={`fixed inset-y-0 left-0 z-[60] flex w-64 flex-col overscroll-contain touch-pan-y ${
+          className={`glass-chrome--aside fixed inset-y-0 left-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
           } ${
             dragging
