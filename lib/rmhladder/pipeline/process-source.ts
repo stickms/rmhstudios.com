@@ -120,7 +120,7 @@ export async function processSource(
     const { jobs: normalizedJobs } = await adapter.discoverJobs(ctx);
     stats.discovered = normalizedJobs.length;
 
-    // Zero discoveries carry no success evidence (empty board or fetch failure); skip lastSuccessAt.
+    // Zero discoveries: a successful fetch means the board is genuinely empty; a failed fetch means nothing conclusive. Task 3 acts on fetchSucceeded here.
     if (stats.discovered === 0) {
       await deps.prisma.ladderSource.update({
         where: { id: source.id },

@@ -221,6 +221,7 @@ describe('smartRecruitersAdapter pagination', () => {
     });
 
     expect(result.jobs.length).toBeLessThanOrEqual(500);
+    expect(result.fetchSucceeded).toBe(false);
   });
 
   it('under-filled pages advance offset by item count, not page size', async () => {

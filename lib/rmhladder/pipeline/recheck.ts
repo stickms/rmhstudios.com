@@ -14,6 +14,7 @@
 
 import { getAdapter } from '../adapters/index';
 import { memoFetch } from './memo-fetch';
+import type { NormalizedJob } from '../adapters/types';
 
 // ── Pure decision core ────────────────────────────────────────────────────────
 
@@ -122,7 +123,7 @@ export async function recheckSource(
   };
 
   // One memoized board fetch. Errors are caught and treated as fetch failure.
-  let boardJobs: import('../adapters/types').NormalizedJob[] = [];
+  let boardJobs: NormalizedJob[] = [];
   let fetchSucceeded = false;
   try {
     const result = await adapter.discoverJobs(ctx);

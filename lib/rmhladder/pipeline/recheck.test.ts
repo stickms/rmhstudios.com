@@ -298,6 +298,44 @@ describe('recheckSource', () => {
     expect(result.tripped).toBe(false);
   });
 
+  it('successful empty board + circuit breaker: >= 4 active jobs all absent → breaker trips, no jobs expired', async () => {
+    const prisma = makeFakePrisma();
+    // 4 active jobs, all absent from an empty board (HTTP 200, jobs=[])
+    // activeCount=4, wouldStrikeOrExpire=4 → 4/4=100% > 50% AND 4>=4 → trip
+    const activeJobs = [
+      { id: 'j1', externalId: '1', failedCheckCount: 0 }, // absent → strike
+      { id: 'j2', externalId: '2', failedCheckCount: 0 }, // absent → strike
+      { id: 'j3', externalId: '3', failedCheckCount: 0 }, // absent → strike
+      { id: 'j4', externalId: '4', failedCheckCount: 0 }, // absent → strike
+    ];
+
+    // Empty board (HTTP 200, jobs=[]) — fetchSucceeded=true, but all jobs absent
+    const result = await recheckSource(
+      { prisma, fetchImpl: makeGreenhouseFetch([]), now: new Date('2026-07-01') },
+      BASE_SOURCE,
+      activeJobs,
+    );
+
+    // Breaker must trip
+    expect(result.tripped).toBe(true);
+
+    // Source must be marked as error
+    expect(prisma._state.sourceUpdate).toMatchObject({ id: 's1', status: 'error' });
+
+    // A mass_expiry_suspected review task must be created
+    expect(prisma._state.reviewTasks).toHaveLength(1);
+    expect(prisma._state.reviewTasks[0]).toMatchObject({
+      sourceId: 's1',
+      reason: 'mass_expiry_suspected',
+      status: 'open',
+      jobId: null,
+    });
+
+    // No job rows must be expired (breaker blocks mass expiry even though fetch succeeded)
+    expect(prisma._state.jobUpdates).toHaveLength(0);
+    expect(prisma._state.verifications).toHaveLength(0);
+  });
+
   it('unknown platform → all skipped, no DB writes', async () => {
     const prisma = makeFakePrisma();
     const activeJobs = [{ id: 'j1', externalId: '111', failedCheckCount: 0 }];
