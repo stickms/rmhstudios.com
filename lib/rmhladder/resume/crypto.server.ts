@@ -56,3 +56,17 @@ export function decryptResumeFile(payload: Buffer, opts: { secret?: string; aad?
   decipher.setAuthTag(payload.subarray(tagStart, dataStart));
   return Buffer.concat([decipher.update(payload.subarray(dataStart)), decipher.final()]);
 }
+
+/**
+ * True when a usable resume-encryption secret is configured — the dedicated
+ * LADDER_RESUME_ENCRYPTION_KEY, or (dev only) the BETTER_AUTH_SECRET fallback.
+ * Never throws; mirrors the resolution order in configuredSecret()/encryptionKey().
+ */
+export function resumeEncryptionConfigured(): boolean {
+  try {
+    encryptionKey();
+    return true;
+  } catch {
+    return false;
+  }
+}
