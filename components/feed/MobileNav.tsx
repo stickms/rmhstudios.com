@@ -84,7 +84,7 @@ export function MobileNav() {
   // Slide the bar (and FAB) off the bottom when hidden. `100%` clears the bar's
   // full height incl. its safe-area padding; the FAB gets a bit extra so its
   // shadow doesn't peek. Both share the same spring easing.
-  const slide = 'transition-transform duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none';
+  const slide = 'transition-[transform,opacity] duration-[320ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none';
 
   return (
     <>
@@ -112,13 +112,12 @@ export function MobileNav() {
         className={`md:hidden fixed inset-x-0 bottom-0 z-50 glass-chrome border-t border-site-border shadow-site ${slide}`}
         style={{
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          // Hide fully: translateY(100%) alone only clears the bar's own height,
-          // leaving it behind iOS Safari's translucent floating bar (where it
-          // stays faintly visible). Add the home-indicator inset plus a cushion so
-          // it slides entirely below the physical bottom and truly disappears.
-          transform: hidden
-            ? 'translateY(calc(100% + env(safe-area-inset-bottom, 0px) + 24px))'
-            : 'translateY(0)',
+          // iOS 26 clips fixed elements to the visual viewport, so translateY(100%)
+          // alone leaves a sliver at the viewport's bottom edge (behind Safari's
+          // translucent bar) — the bar "didn't disappear completely." Fade it out
+          // too so it's guaranteed gone; the slide still carries the motion.
+          transform: hidden ? 'translateY(100%)' : 'translateY(0)',
+          opacity: hidden ? 0 : 1,
         }}
         aria-hidden={hidden}
       >
