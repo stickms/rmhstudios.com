@@ -73,7 +73,11 @@ export function CookieConsent() {
             defaultValue:
               'We use essential cookies to run the site and privacy-friendly analytics to improve it.',
           })}{' '}
-          <a href="/cookies" className="text-site-accent hover:underline">
+          <a
+            href="/cookies"
+            aria-label={t('cookie-consent-learn-aria', { defaultValue: 'Learn more about our cookie policy' })}
+            className="text-site-accent hover:underline"
+          >
             {t('cookie-consent-learn', { defaultValue: 'Learn more' })}
           </a>
         </p>

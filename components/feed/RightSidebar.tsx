@@ -230,7 +230,7 @@ export function RightSidebar({
             );
           })}
         </div>
-        <Link to="/builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+        <Link to="/builds" aria-label={t('show-more-builds', { defaultValue: 'Show more official builds' })} className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
           {t('show-more', { defaultValue: 'Show more' })}
         </Link>
       </section>
@@ -273,8 +273,8 @@ export function RightSidebar({
             </Link>
           ))}
         </div>
-        <Link to="/user-builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
-          Show more
+        <Link to="/user-builds" aria-label={t('show-more-user-builds', { defaultValue: 'Show more community builds' })} className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+          {t('show-more', { defaultValue: 'Show more' })}
         </Link>
       </section>
 
@@ -323,8 +323,8 @@ export function RightSidebar({
             </Link>
           ))}
         </div>
-        <Link to="/blog" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
-          Show more
+        <Link to="/blog" aria-label={t('show-more-blog', { defaultValue: 'Show more blog posts' })} className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+          {t('show-more', { defaultValue: 'Show more' })}
         </Link>
       </section>
 

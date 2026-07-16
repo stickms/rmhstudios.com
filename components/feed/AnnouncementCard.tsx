@@ -74,6 +74,8 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
               <img
                 src={item.imagePath}
                 alt={item.title || ''}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-40 object-cover"
               />
             </div>
@@ -108,10 +110,11 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
           {item.href && (
             <Link
               to={item.href}
+              aria-label={`${variant === 'product' ? 'Check it out' : 'Read more'}: ${item.title}`}
               className="inline-flex items-center gap-1 text-sm text-site-accent hover:text-site-accent-hover mt-2 transition-colors"
             >
               {variant === 'product' ? 'Check it out' : 'Read more'}
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5" aria-hidden />
             </Link>
           )}
         </div>

@@ -266,7 +266,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 {t('unknown-user', { defaultValue: 'Unknown' })}
               </span>
             )}
-            <span className="text-site-text-dim shrink-0">
+            {/* Relative time is computed from Date.now(), so the value the server
+                renders and the value the client hydrates with can differ by a tick
+                (e.g. "5s" → "7s"). suppressHydrationWarning keeps React from
+                treating that expected drift as a hydration error (React #418). */}
+            <span className="text-site-text-dim shrink-0" suppressHydrationWarning>
               · {timeAgoShort(item.createdAt)}
             </span>
             {item.edited && (
