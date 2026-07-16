@@ -31,7 +31,20 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      # hadolint (2.12.0, last released 2022) can't parse the dockerfile:1.7-labs
+      # `COPY --exclude=… . .` on line ~174 and aborts with a hard parse error
+      # before linting anything. Produce a lint-only copy with just that labs COPY
+      # collapsed to `COPY . .` so hadolint can still check the rest of the file.
+      # The real Dockerfile is unchanged; the exclude list only affects build cache.
+      - name: Generate lint-only Dockerfile (strip 1.7-labs COPY --exclude flags)
+        run: |
+          awk '
+            skip { if ($0 !~ /\\[[:space:]]*$/) skip = 0; next }
+            /^COPY --exclude=/ { print "COPY . ."; if ($0 ~ /\\[[:space:]]*$/) skip = 1; next }
+            { print }
+          ' Dockerfile > Dockerfile.hadolint
+
       - uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
         with:
-          dockerfile: Dockerfile
+          dockerfile: Dockerfile.hadolint
           failure-threshold: error
