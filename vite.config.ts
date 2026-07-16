@@ -188,6 +188,13 @@ export default defineConfig({
     }),
     react(),
     nitro({
+      // Pre-compress static assets at build time so the origin serves brotli/gzip
+      // directly (Nitro negotiates via Accept-Encoding). Cloudflare compresses at
+      // the edge for most users, but pre-compression covers the CF→origin hop,
+      // non-Cloudflare paths (preview/direct/dev-preview), and gives a better
+      // ratio than on-the-fly — a straight win for slow connections. Images are
+      // already compressed and are skipped automatically.
+      compressPublicAssets: { gzip: true, brotli: true },
       // Cache headers for static files served out of public/. Nitro already marks
       // the content-hashed /assets/** build output immutable (1y), but /images/**
       // (game art, icons, social images — not content-hashed) had no rule, so the
