@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# gocyclo — reports Go functions whose cyclomatic complexity exceeds a threshold,
+# highlighting candidates for refactoring. Report-only.
+# ─────────────────────────────────────────────────────────────────────────────
+name: go-cyclo
+
+on:
+  pull_request:
+    paths:
+      - "go-services/**"
+      - ".github/workflows/go-cyclo.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: go-cyclo-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  gocyclo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: go-services
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: "1.23"
+          cache: false
+      - name: Install gocyclo
+        run: go install github.com/fzipp/gocyclo/cmd/gocyclo@latest
+      - name: Report high-complexity functions
+        run: |
+          set -uo pipefail
+          {
+            echo '### gocyclo — functions with complexity > 15'
+            echo ''
+            echo '```'
+            "$(go env GOPATH)/bin/gocyclo" -over 15 . 2>&1 | head -200 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

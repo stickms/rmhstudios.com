@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Validates docker-compose.yml with `docker compose config` — catches YAML errors,
+# bad interpolation, and invalid service definitions before a deploy relies on
+# them. A placeholder .env is provided so variable interpolation resolves.
+# ─────────────────────────────────────────────────────────────────────────────
+name: compose-validate
+
+on:
+  pull_request:
+    paths:
+      - "docker-compose*.yml"
+      - ".github/workflows/compose-validate.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docker-compose*.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: compose-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Provide placeholder env
+        run: |
+          set -uo pipefail
+          if [ ! -f .env ]; then
+            cp .env.example .env 2>/dev/null || touch .env
+          fi
+      - name: Validate docker-compose.yml
+        run: docker compose -f docker-compose.yml config --quiet
+      - name: Validate docker-compose.cache.yml
+        run: docker compose -f docker-compose.cache.yml config --quiet || echo "::warning::docker-compose.cache.yml did not validate standalone"

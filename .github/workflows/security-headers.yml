@@ -1,0 +1,52 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Enforces the repo invariant that a Content-Security-Policy is defined in BOTH
+# serving paths — the Apache vhost and the Helm/Traefik middleware — so a change
+# to one can't silently drift from the other. Static check (no app boot).
+# ─────────────────────────────────────────────────────────────────────────────
+name: security-headers
+
+on:
+  pull_request:
+    paths:
+      - "deploy/apache/**"
+      - "deploy/helm/**"
+      - ".github/workflows/security-headers.yml"
+  push:
+    branches: [main]
+    paths:
+      - "deploy/apache/**"
+      - "deploy/helm/**"
+  workflow_dispatch: {}
+
+concurrency:
+  group: security-headers-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  assert:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Assert CSP present in both serving paths
+        run: |
+          set -uo pipefail
+          apache='deploy/apache/rmhstudios.conf'
+          helm='deploy/helm/rmhstudios-go/templates/security-headers-middleware.yaml'
+          fail=0
+          for f in "${apache}" "${helm}"; do
+            if [ ! -f "${f}" ]; then
+              echo "::error::expected file missing: ${f}"; fail=1; continue
+            fi
+            # Matches "Content-Security-Policy" (Apache header) and the Traefik
+            # middleware's camelCase "contentSecurityPolicy".
+            if ! grep -qiE 'content-?security-?policy' "${f}"; then
+              echo "::error::no Content-Security-Policy directive in ${f}"; fail=1
+            fi
+          done
+          if [ "${fail}" -ne 0 ]; then exit 1; fi
+          echo "Content-Security-Policy present in both serving paths."

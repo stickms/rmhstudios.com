@@ -1,0 +1,40 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Reports tracked files larger than 5 MB — candidates for external storage / LFS
+# that would otherwise bloat clones. Report-only.
+# ─────────────────────────────────────────────────────────────────────────────
+name: large-file-guard
+
+on:
+  pull_request: {}
+  workflow_dispatch: {}
+
+concurrency:
+  group: large-file-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Report tracked files over 5 MB
+        run: |
+          set -uo pipefail
+          big="$(git ls-files -z | xargs -0 -r du -b 2>/dev/null \
+            | awk '$1 > 5242880' | sort -rn || true)"
+          if [ -n "${big}" ]; then
+            {
+              echo '### Tracked files over 5 MB'
+              echo ''
+              echo '```'
+              echo "${big}"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "No tracked files over 5 MB."
+          fi

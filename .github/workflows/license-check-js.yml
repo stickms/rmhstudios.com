@@ -1,0 +1,48 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Inventories the licenses of the production npm dependency tree so copyleft or
+# unexpected licenses are visible before they ship. Report-only.
+# ─────────────────────────────────────────────────────────────────────────────
+name: license-check-js
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/license-check-js.yml"
+  schedule:
+    - cron: "0 5 * * 5"
+  workflow_dispatch: {}
+
+concurrency:
+  group: license-check-js-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  licenses:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Report dependency licenses
+        run: |
+          set -uo pipefail
+          {
+            echo '### npm production dependency licenses'
+            echo ''
+            echo '```'
+            pnpm dlx license-checker-rseidelsohn@4 --production --summary 2>&1 | head -200 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

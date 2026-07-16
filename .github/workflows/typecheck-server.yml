@@ -1,0 +1,47 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Type-checks the Node service tier under its own tsconfig (tsconfig.server.json).
+# The server bundles are built with esbuild, which does NOT type-check — so type
+# errors in server/ can otherwise reach production. Complements web-ci's app-side
+# `tsc --noEmit`.
+# ─────────────────────────────────────────────────────────────────────────────
+name: typecheck-server
+
+on:
+  pull_request:
+    paths:
+      - "server/**"
+      - "lib/**"
+      - "tsconfig.server.json"
+      - ".github/workflows/typecheck-server.yml"
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+      - "lib/**"
+      - "tsconfig.server.json"
+  workflow_dispatch: {}
+
+concurrency:
+  group: typecheck-server-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck server tier
+        run: pnpm exec tsc -p tsconfig.server.json --noEmit

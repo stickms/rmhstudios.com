@@ -1,0 +1,35 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Checks the Terraform under deploy/terraform is canonically formatted
+# (`terraform fmt -check -recursive`).
+# ─────────────────────────────────────────────────────────────────────────────
+name: terraform-fmt
+
+on:
+  pull_request:
+    paths:
+      - "deploy/terraform/**"
+      - ".github/workflows/terraform-fmt.yml"
+  push:
+    branches: [main]
+    paths:
+      - "deploy/terraform/**"
+  workflow_dispatch: {}
+
+concurrency:
+  group: terraform-fmt-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  fmt:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3
+        with:
+          terraform_wrapper: false
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive -diff deploy/terraform

@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Full-tree Prettier report — runs `prettier --check` across the whole repo and
+# publishes the list of files that would be reformatted. Report-only companion to
+# the per-PR `prettier` gate (which scopes to changed files). Runs on a schedule.
+# ─────────────────────────────────────────────────────────────────────────────
+name: prettier-full
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch: {}
+
+concurrency:
+  group: prettier-full-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+      - name: Prettier check (whole repo)
+        run: |
+          set -uo pipefail
+          {
+            echo '### Prettier — files needing formatting'
+            echo ''
+            echo '```'
+            pnpm dlx prettier@3.9.4 --check . 2>&1 | head -400 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

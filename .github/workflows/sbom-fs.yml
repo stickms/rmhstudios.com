@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Generates a source-tree SBOM (SPDX) with Syft from the repository — the npm and
+# Go dependency inventory — without building an image. Uploaded as an artifact for
+# supply-chain records. (docker-build.yml produces the built-image SBOM.)
+# ─────────────────────────────────────────────────────────────────────────────
+name: sbom-fs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "go-services/go.mod"
+      - "go-services/go.sum"
+  schedule:
+    - cron: "0 5 * * 6"
+  workflow_dispatch: {}
+
+concurrency:
+  group: sbom-fs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sbom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Generate filesystem SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom-source.spdx.json
+          artifact-name: sbom-source.spdx.json
