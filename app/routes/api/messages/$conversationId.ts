@@ -79,16 +79,21 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
     const hasMore = messages.length > limit;
     const items = hasMore ? messages.slice(0, limit) : messages;
 
-    // Mark unread messages from the other person as read
-    await prisma.directMessage.updateMany({
-      where: {
-        conversationId,
-        senderId: { not: userId },
-        read: false,
-        id: { in: items.map((m) => m.id) },
-      },
-      data: { read: true },
-    });
+    // Mark unread messages from the other person as read — fire-and-forget.
+    // The response returns each message's pre-update `read` value from `items`
+    // (fetched above), so the write's result is never used; awaiting it only
+    // added a write round-trip to every conversation open / scroll-back.
+    void prisma.directMessage
+      .updateMany({
+        where: {
+          conversationId,
+          senderId: { not: userId },
+          read: false,
+          id: { in: items.map((m) => m.id) },
+        },
+        data: { read: true },
+      })
+      .catch((e) => console.error("mark-as-read failed:", e));
 
     return Response.json({
       messages: items.reverse().map((m) => ({

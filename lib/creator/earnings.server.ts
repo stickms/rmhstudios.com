@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma.server';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
 import { createNotification } from '@/lib/notifications.server';
+import { invalidateUserTier } from '@/lib/entitlements';
 import {
   MIN_PAYOUT_COINS,
   MIN_REDEMPTION_COINS,
@@ -268,6 +269,11 @@ export async function reviewRedemption(
   });
   // Tell the creator.
   const req = await db.redemptionRequest.findUnique({ where: { id: opts.id } });
+  // A fulfilled SUB_CREDIT redemption just granted membership months — drop the
+  // creator's cached tier so it takes effect immediately.
+  if (req && req.kind === 'SUB_CREDIT' && finalStatus === 'FULFILLED') {
+    invalidateUserTier(req.userId);
+  }
   if (req) {
     void createNotification({
       userId: req.userId,

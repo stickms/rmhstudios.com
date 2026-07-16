@@ -42,16 +42,38 @@ export interface ExploreResult {
  * `mapRmharkToFeedItem`.
  */
 export async function listExplore(viewerId: string | null): Promise<ExploreResult> {
-  const hidden = await getHiddenAuthorIds(viewerId);
-  const notHidden = hidden.length ? { userId: { notIn: hidden } } : {};
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  const following = viewerId
-    ? await prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } })
-    : [];
-  const aud = audienceWhere(viewerId, following.map((f) => f.followingId));
+  // Wave 1 — everything that depends only on the viewer id (or nothing). These
+  // were previously four separate serial awaits scattered through the function.
+  const [hidden, following, muted, communities] = await Promise.all([
+    getHiddenAuthorIds(viewerId),
+    viewerId
+      ? prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } })
+      : Promise.resolve([] as { followingId: string }[]),
+    viewerId ? getMutedWords(viewerId) : Promise.resolve([] as string[]),
+    // Communities to discover: most members first, public only. Independent of
+    // the viewer's graph, so it rides wave 1 instead of trailing at the end.
+    prisma.community.findMany({
+      where: { isPrivate: false },
+      orderBy: { memberCount: 'desc' },
+      take: 6,
+      select: { id: true, slug: true, name: true, description: true, icon: true, color: true, memberCount: true },
+    }),
+  ]);
 
-  const [recent, hotRows] = await Promise.all([
+  const notHidden = hidden.length ? { userId: { notIn: hidden } } : {};
+  const followingIds = following.map((f) => f.followingId);
+  const aud = audienceWhere(viewerId, followingIds);
+  // People to follow: top by followers, excluding self/followed/hidden.
+  const excludeIds = new Set<string>([
+    ...(viewerId ? [viewerId] : []),
+    ...followingIds,
+    ...hidden,
+  ]);
+
+  // Wave 2 — the three reads that need hidden/following, run together.
+  const [recent, hotRows, candidates] = await Promise.all([
     prisma.rMHark.findMany({
       where: { deletedAt: null, content: { contains: '#' }, ...notHidden, ...aud },
       select: { content: true, createdAt: true },
@@ -63,6 +85,12 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
       orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
       take: 15,
       include: rmharkInclude(viewerId),
+    }),
+    prisma.user.findMany({
+      where: { isBot: false, id: { notIn: [...excludeIds] } },
+      select: { ...userDisplaySelect, _count: { select: { followers: true } } },
+      orderBy: { followers: { _count: 'desc' } },
+      take: 8,
     }),
   ]);
 
@@ -92,37 +120,16 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
     .map(({ tag, count }) => ({ tag, count }));
 
   // Apply the viewer's muted words to hot posts too (the timeline already does;
-  // explore would otherwise be a mute-filter bypass).
-  const muted = viewerId ? await getMutedWords(viewerId) : [];
+  // explore would otherwise be a mute-filter bypass). `muted` came from wave 1.
   const hotPosts = applyMutedWords(
     hotRows.filter((r) => (r.likeCount ?? 0) > 0).map((r) => mapRmharkToFeedItem(r, viewerId)),
     muted,
   );
 
-  // People to follow: top by followers, excluding self/followed/hidden.
-  const excludeIds = new Set<string>([
-    ...(viewerId ? [viewerId] : []),
-    ...following.map((f) => f.followingId),
-    ...hidden,
-  ]);
-  const candidates = await prisma.user.findMany({
-    where: { isBot: false, id: { notIn: [...excludeIds] } },
-    select: { ...userDisplaySelect, _count: { select: { followers: true } } },
-    orderBy: { followers: { _count: 'desc' } },
-    take: 8,
-  });
   const suggestedUsers = candidates.map((u) => ({
     ...resolveUser(u),
     followerCount: u._count.followers,
   }));
-
-  // Communities to discover: most members first, public only.
-  const communities = await prisma.community.findMany({
-    where: { isPrivate: false },
-    orderBy: { memberCount: 'desc' },
-    take: 6,
-    select: { id: true, slug: true, name: true, description: true, icon: true, color: true, memberCount: true },
-  });
 
   return { trendingTags, hotPosts, suggestedUsers, communities };
 }

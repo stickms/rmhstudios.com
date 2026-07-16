@@ -23,7 +23,7 @@ import { initWebVitals } from "@/lib/rum";
 import { registerServiceWorker } from "@/lib/sw-register";
 import { organizationSchema, websiteSchema, jsonLdScript } from "@/lib/schema";
 import { GlassFilter } from "@/components/ui/liquid-glass";
-import { auth } from "@/lib/auth";
+import { getRequestSession } from "@/lib/auth-session.server";
 import { THEME_BG, DEFAULT_STYLE } from "@/stores/themeStore";
 import { ACCENT_MAP } from "@/lib/appearance";
 import appCss from "@/app/globals.css?url";
@@ -38,8 +38,9 @@ import { localeResources } from "@/lib/i18n/resources.server";
  */
 const getInitialUser = createServerFn({ method: "GET" }).handler(async () => {
   try {
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers });
+    // Request-scoped so this shares one session resolution with the page loader
+    // and getSidebarData instead of each re-querying Better Auth + entitlements.
+    const session = await getRequestSession();
     const u = session?.user;
     if (!u) return null;
     return {

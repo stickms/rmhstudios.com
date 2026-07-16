@@ -52,6 +52,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const { t } = useTranslation('feed');
   const locale = useLocaleStore((s) => s.locale);
   const viewTracked = useRef(false);
+  const cardRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const actualId = item.actualId ?? item.id;
   const { data: session } = authClient.useSession();
@@ -129,12 +130,45 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     return extractFirstUrl(item.content);
   }, [item.poll, item.gifUrl, item.imageUrls, item.content]);
 
-  // Track view when card becomes visible. Skip optimistic (pending) posts —
-  // their temp id isn't a real post yet.
+  // Track view when the card actually scrolls into (near) the viewport. Skip
+  // optimistic (pending) posts — their temp id isn't a real post yet.
+  //
+  // Previously this fired on mount for every rendered card, so the 20-item first
+  // feed page issued 20 `POST /view` requests at once during hydration — all
+  // contending for the connection pool and main thread exactly at TTI, and
+  // over-counting views for cards below the fold that were never seen. Gating on
+  // IntersectionObserver fires only for cards the viewer reaches (a few at first
+  // paint), which both frees up TTI and makes the view count accurate.
   useEffect(() => {
     if (item.pending || viewTracked.current) return;
-    viewTracked.current = true;
-    fetch(`/api/rmharks/${actualId}/view`, { method: 'POST' }).catch(() => {});
+    const el = cardRef.current;
+    if (!el) return;
+
+    const track = () => {
+      if (viewTracked.current) return;
+      viewTracked.current = true;
+      fetch(`/api/rmharks/${actualId}/view`, { method: 'POST' }).catch(() => {});
+    };
+
+    // Fallback for environments without IntersectionObserver: keep the old
+    // fire-on-mount behavior so views are never silently dropped.
+    if (typeof IntersectionObserver === 'undefined') {
+      track();
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          track();
+          io.disconnect();
+        }
+      },
+      // Count a card as viewed just before it fully enters the viewport.
+      { rootMargin: '200px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
   }, [actualId, item.pending]);
 
   const handleCardClick = (e: React.MouseEvent) => {
@@ -159,6 +193,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
 
   return (
     <div
+      ref={cardRef}
       {...(item.pending || item.deletedAt ? {} : reactionTrigger)}
       className={`relative px-4 py-3 border-b border-site-border transition-colors duration-200 ${
         item.pending

@@ -244,8 +244,16 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     return session;
   }, [session, cachedUser]);
 
-  // Resolved user display data (custom image/name)
-  const [resolvedUser, setResolvedUser] = useState<ResolvedUserDisplay | null>(null);
+  // Resolved user display data (custom image/name). Seed from the SSR-resolved
+  // user so the current user's own avatar/name paint immediately from the loader
+  // payload instead of flashing empty until /api/profile/me resolves; the fetch
+  // below still runs to layer on any custom displayName/customImage overrides.
+  // Same seed on server and client, so no hydration mismatch.
+  const [resolvedUser, setResolvedUser] = useState<ResolvedUserDisplay | null>(
+    initialUser
+      ? { name: initialUser.name ?? null, image: initialUser.image ?? null, handle: initialUser.handle ?? null }
+      : null,
+  );
   const fetchResolvedUser = useCallback(() => {
     fetch("/api/profile/me")
       .then((r) => (r.ok ? r.json() : null))

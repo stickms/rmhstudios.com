@@ -40,13 +40,16 @@ export interface LikeResult {
  * already in the requested state. Returns the resulting like state + count.
  */
 export async function setPostLike(userId: string, postId: string, liked: boolean): Promise<LikeResult> {
-  const post = await prisma.rMHark.findUnique({
-    where: { id: postId },
-    select: { userId: true, content: true, likeCount: true, user: { select: { handle: true } } },
-  });
+  // The post row and the viewer's existing like are independent lookups — fetch
+  // them together instead of serially on the highest-traffic write path.
+  const [post, existing] = await Promise.all([
+    prisma.rMHark.findUnique({
+      where: { id: postId },
+      select: { userId: true, content: true, likeCount: true, user: { select: { handle: true } } },
+    }),
+    prisma.rMHarkLike.findUnique({ where: { rmheetId_userId: { rmheetId: postId, userId } } }),
+  ]);
   if (!post) return { ok: false, found: false, liked: false, likeCount: 0 };
-
-  const existing = await prisma.rMHarkLike.findUnique({ where: { rmheetId_userId: { rmheetId: postId, userId } } });
 
   // Already in the requested state — no-op.
   if (liked && existing) return { ok: true, found: true, liked: true, likeCount: post.likeCount };
@@ -103,21 +106,27 @@ export async function createComment(args: { userId: string; postId: string; cont
   const { userId, postId } = args;
   const content = args.content.trim();
 
-  const exists = await prisma.rMHark.findUnique({ where: { id: postId }, select: { id: true } });
-  if (!exists) return { ok: false, found: false };
+  // One read up front for both the existence guard AND the notification target
+  // (author id + handle). Previously the same row was read three times per
+  // comment: an existence check, a redundant count re-read, and this author read.
+  const post = await prisma.rMHark.findUnique({
+    where: { id: postId },
+    select: { id: true, userId: true, user: { select: { handle: true } } },
+  });
+  if (!post) return { ok: false, found: false };
 
-  const [comment] = await prisma.$transaction([
+  // The transaction's update already returns the incremented count — capture it
+  // instead of issuing a separate findUnique afterward.
+  const [comment, updated] = await prisma.$transaction([
     createCommentRow({ content, rmheetId: postId, userId, parentId: args.parentId ?? null }),
     prisma.rMHark.update({ where: { id: postId }, data: { commentCount: { increment: 1 } }, select: { commentCount: true } }),
   ]);
 
-  const updatedCount = await prisma.rMHark.findUnique({ where: { id: postId }, select: { commentCount: true } });
-  feedEventBus.publish({ type: 'rmhark.commented', rmharkId: postId, payload: { id: postId, commentCount: updatedCount?.commentCount ?? 0 }, timestamp: new Date().toISOString() });
+  feedEventBus.publish({ type: 'rmhark.commented', rmharkId: postId, payload: { id: postId, commentCount: updated.commentCount }, timestamp: new Date().toISOString() });
 
   // Notifications (best-effort).
   try {
-    const post = await prisma.rMHark.findUnique({ where: { id: postId }, select: { userId: true, user: { select: { handle: true } } } });
-    const link = post ? postLink(post.user?.handle, post.userId, postId) : undefined;
+    const link = postLink(post.user?.handle, post.userId, postId);
     let parentAuthorId: string | null = null;
     if (args.parentId) {
       const parent = await prisma.rMHarkComment.findUnique({ where: { id: args.parentId }, select: { userId: true } });
@@ -126,16 +135,14 @@ export async function createComment(args: { userId: string; postId: string; cont
         await createNotification({ userId: parent.userId, actorId: userId, type: 'REPLY', entityType: 'comment', entityId: comment.id, preview: content, link });
       }
     }
-    if (post && post.userId !== parentAuthorId) {
+    if (post.userId !== parentAuthorId) {
       await createNotification({ userId: post.userId, actorId: userId, type: 'COMMENT', entityType: 'rmhark', entityId: postId, preview: content, link });
     }
-    if (post && link) {
-      await notifyMentions({
-        content: comment.content,
-        author: { id: comment.user.id, name: comment.user.name ?? null, image: comment.user.image ?? null, handle: comment.user.handle ?? null },
-        postId, entityType: 'comment', entityId: comment.id, link, timestamp: comment.createdAt.toISOString(),
-      });
-    }
+    await notifyMentions({
+      content: comment.content,
+      author: { id: comment.user.id, name: comment.user.name ?? null, image: comment.user.image ?? null, handle: comment.user.handle ?? null },
+      postId, entityType: 'comment', entityId: comment.id, link, timestamp: comment.createdAt.toISOString(),
+    });
   } catch (e) {
     console.error('comment notification error:', e);
   }

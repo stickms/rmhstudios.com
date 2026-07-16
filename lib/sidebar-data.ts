@@ -1,7 +1,6 @@
-import { getRequest } from '@tanstack/react-start/server';
 import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { apiCache } from '@/lib/cache';
 import { games } from './games';
 import { apps } from './apps';
@@ -218,13 +217,10 @@ async function getBlogPosts(): Promise<SidebarPost[]> {
 
 export async function getSidebarData() {
   // Resolve the viewer so recommendations can exclude self / already-followed.
-  let viewerId: string | null = null;
-  try {
-    const session = await auth.api.getSession({ headers: getRequest().headers });
-    viewerId = session?.user?.id ?? null;
-  } catch {
-    viewerId = null;
-  }
+  // Request-scoped: reuses the session already resolved by the root/page loader
+  // on the same render instead of issuing another Better Auth + entitlement read.
+  const session = await getRequestSession();
+  const viewerId: string | null = session?.user?.id ?? null;
 
   const [userBuilds, recommendedUsers, blogPosts] =
     await Promise.all([

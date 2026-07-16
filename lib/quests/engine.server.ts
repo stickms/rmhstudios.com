@@ -16,21 +16,33 @@ import { rateLimit } from '@/lib/rate-limit';
 export async function progressQuests(userId: string, type: QuestType, by = 1): Promise<void> {
   try {
     const matching = QUESTS.filter((q) => q.type === type);
-    for (const q of matching) {
-      const periodKey = periodKeyFor(q.period);
-      const existing = await prisma.userQuest.findUnique({
-        where: { userId_questId_periodKey: { userId, questId: q.id, periodKey } },
-        select: { progress: true, completed: true },
-      });
-      if (existing?.completed) continue;
-      const next = Math.min((existing?.progress ?? 0) + by, q.target);
-      const completed = next >= q.target;
-      await prisma.userQuest.upsert({
-        where: { userId_questId_periodKey: { userId, questId: q.id, periodKey } },
-        create: { userId, questId: q.id, periodKey, progress: next, completed },
-        update: { progress: next, completed },
-      });
-    }
+    if (matching.length === 0) return;
+
+    // Previously this looped one quest at a time with a serial findUnique + upsert
+    // each (2N round-trips) — and this runs on every like/comment/follow/post/
+    // check-in/game-play. Load every relevant row in ONE query, then fan the
+    // upserts out in parallel (they target distinct rows, so no contention).
+    const targets = matching.map((q) => ({ questId: q.id, periodKey: periodKeyFor(q.period) }));
+    const existingRows = await prisma.userQuest.findMany({
+      where: { userId, OR: targets },
+      select: { questId: true, periodKey: true, progress: true, completed: true },
+    });
+    const byKey = new Map(existingRows.map((r) => [`${r.questId}:${r.periodKey}`, r]));
+
+    await Promise.all(
+      matching.map((q) => {
+        const periodKey = periodKeyFor(q.period);
+        const existing = byKey.get(`${q.id}:${periodKey}`);
+        if (existing?.completed) return null;
+        const next = Math.min((existing?.progress ?? 0) + by, q.target);
+        const completed = next >= q.target;
+        return prisma.userQuest.upsert({
+          where: { userId_questId_periodKey: { userId, questId: q.id, periodKey } },
+          create: { userId, questId: q.id, periodKey, progress: next, completed },
+          update: { progress: next, completed },
+        });
+      }),
+    );
   } catch (err) {
     console.error('[quests] progress failed:', err);
   }

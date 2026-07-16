@@ -14,24 +14,27 @@ import { grantAchievement } from '@/lib/achievements/engine.server';
 export async function awardXp(userId: string, amount: number): Promise<number | null> {
   if (amount <= 0) return null;
   try {
-    const before = await prisma.userProfile.findUnique({ where: { userId }, select: { xp: true } });
-    const beforeXp = before?.xp ?? 0;
-    const beforeLevel = levelFromXp(beforeXp);
+    // The lifetime-XP upsert and the season-XP upsert touch different rows in
+    // different tables with no data dependency, so run them together. The upsert
+    // returns the post-increment xp; since it always increments by exactly
+    // `amount` (and the create path sets xp: amount), the pre-increment xp is
+    // `profile.xp - amount` — so the level-up check needs no separate pre-read.
+    const [profile] = await Promise.all([
+      prisma.userProfile.upsert({
+        where: { userId },
+        create: { userId, coins: 10, xp: amount },
+        update: { xp: { increment: amount } },
+        select: { xp: true },
+      }),
+      // Mirror into the current season's progress for the battle pass.
+      prisma.userSeasonProgress.upsert({
+        where: { userId_seasonId: { userId, seasonId: CURRENT_SEASON.id } },
+        create: { userId, seasonId: CURRENT_SEASON.id, seasonXp: amount },
+        update: { seasonXp: { increment: amount } },
+      }),
+    ]);
 
-    const profile = await prisma.userProfile.upsert({
-      where: { userId },
-      create: { userId, coins: 10, xp: amount },
-      update: { xp: { increment: amount } },
-      select: { xp: true },
-    });
-
-    // Mirror into the current season's progress for the battle pass.
-    await prisma.userSeasonProgress.upsert({
-      where: { userId_seasonId: { userId, seasonId: CURRENT_SEASON.id } },
-      create: { userId, seasonId: CURRENT_SEASON.id, seasonXp: amount },
-      update: { seasonXp: { increment: amount } },
-    });
-
+    const beforeLevel = levelFromXp(profile.xp - amount);
     const afterLevel = levelFromXp(profile.xp);
     if (afterLevel > beforeLevel) {
       await createNotification({

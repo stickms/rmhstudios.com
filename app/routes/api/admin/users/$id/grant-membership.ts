@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma.server';
 import { z } from 'zod';
 import { logAdminAction } from '@/lib/admin-audit.server';
 import { createNotification } from '@/lib/notifications.server';
+import { invalidateUserTier } from '@/lib/entitlements';
 
 /**
  * POST /api/admin/users/$id/grant-membership — admin grants (or revokes) a
@@ -37,6 +38,7 @@ export const Route = createFileRoute('/api/admin/users/$id/grant-membership')({
             const { count } = await prisma.giftMembership.deleteMany({
               where: { userId: params.id, expiresAt: { gt: new Date() } },
             });
+            invalidateUserTier(params.id);
             await logAdminAction(session.user.id, 'membership.revoke', { targetType: 'user', targetId: params.id, detail: `removed ${count} active grant(s)` });
             return Response.json({ success: true, revoked: count });
           }
@@ -56,6 +58,7 @@ export const Route = createFileRoute('/api/admin/users/$id/grant-membership')({
             await prisma.giftMembership.create({ data: { userId: params.id, gifterId: session.user.id, tier, expiresAt } });
           }
 
+          invalidateUserTier(params.id);
           await logAdminAction(session.user.id, 'membership.grant', { targetType: 'user', targetId: params.id, detail: `${tier} for ${months}mo` });
           await createNotification({
             userId: params.id,
