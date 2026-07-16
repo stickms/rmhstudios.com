@@ -42,8 +42,9 @@ interface FeedState {
   retry: () => void;
   /** Seed the first page from the server (streamed SSR prefetch) — no-ops unless
    *  the store is still pristine, so it never clobbers a live or navigated-back
-   *  timeline. */
-  hydrate: (items: FeedItem[], cursor: string | null, hasMore: boolean) => void;
+   *  timeline. `mutedWords` (when provided) primes the live-SSE filter so the
+   *  client needs no separate muted-words request. */
+  hydrate: (items: FeedItem[], cursor: string | null, hasMore: boolean, mutedWords?: string[]) => void;
   prependItem: (item: FeedItem) => void;
   updateItem: (id: string, updates: Partial<FeedItem>) => void;
   removeItem: (id: string) => void;
@@ -174,7 +175,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       if (generation !== requestGeneration) return;
 
       cacheItemUsers(data.items as FeedItem[]);
-      set({
+      set((state) => ({
         items: data.items as FeedItem[],
         cursor: data.nextCursor,
         hasMore: data.hasMore,
@@ -183,7 +184,9 @@ export const useFeedStore = create<FeedState>((set, get) => ({
         error: false,
         // The fresh page already includes anything that was buffered.
         pendingItems: [],
-      });
+        // Keep the live-SSE muted-words filter in sync with the server.
+        mutedWords: (data.mutedWords as string[] | undefined) ?? state.mutedWords,
+      }));
     } catch (error) {
       if (generation !== requestGeneration) return;
       // Keep the existing timeline on a failed refresh — only surface the error.
@@ -202,13 +205,20 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     get().fetchNextPage();
   },
 
-  hydrate: (items, cursor, hasMore) => {
+  hydrate: (items, cursor, hasMore, mutedWords) => {
     const s = get();
     // Only seed a pristine store — never overwrite an in-flight load or a
     // timeline the reader already scrolled/navigated back to.
     if (s.initialized || s.loading || s.items.length > 0) return;
     cacheItemUsers(items);
-    set({ items, cursor, hasMore, initialized: true, error: false });
+    set({
+      items,
+      cursor,
+      hasMore,
+      initialized: true,
+      error: false,
+      ...(mutedWords ? { mutedWords } : {}),
+    });
   },
 
   fetchNextPage: async () => {
@@ -254,6 +264,8 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           loading: false,
           initialized: true,
           error: false,
+          // Keep the live-SSE muted-words filter in sync with the server.
+          mutedWords: (data.mutedWords as string[] | undefined) ?? state.mutedWords,
         };
       });
     } catch (error) {

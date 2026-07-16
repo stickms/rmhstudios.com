@@ -117,6 +117,11 @@ export function BlurImage({
           alt=""
           aria-hidden="true"
           draggable={false}
+          // Match the main image's loading mode so a below-fold card's tiny blur
+          // placeholder doesn't fire an eager request during hydration (it stayed
+          // eager while the full image was already lazy).
+          loading={loading}
+          decoding="async"
           className={cn(
             'pointer-events-none absolute inset-0 h-full w-full scale-110 blur-xl',
             fitClass

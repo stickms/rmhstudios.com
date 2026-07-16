@@ -7,6 +7,7 @@ import { authClient } from "@/lib/auth-client";
 import { useThemeStore, SITE_STYLES, THEME_BG, DEFAULT_STYLE, SiteStyle, REDUCE_TRANSPARENCY_KEY } from "@/stores/themeStore";
 import { applyAccent, isAccentId, ACCENT_STORAGE_KEY } from "@/lib/appearance";
 import { useGlassLight } from "@/hooks/useGlassLight";
+import { useIdleReady } from "@/hooks/useIdleReady";
 import { useLocaleStore, writeLocaleCookie } from "@/stores/localeStore";
 import { applyHtmlLangDir } from "@/lib/i18n/dom";
 import { games } from "@/lib/games";
@@ -267,13 +268,17 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   }, []);
 
   const userId = effectiveSession.data?.user?.id;
+  // These two reads only *overlay* data the SSR shell already seeded (display
+  // name/avatar, account theme), so defer them to idle — the feed and its images
+  // own the hydration window.
+  const idleReady = useIdleReady();
   useEffect(() => {
     if (userId) {
-      fetchResolvedUser();
+      if (idleReady) fetchResolvedUser();
     } else {
       setResolvedUser(null);
     }
-  }, [userId, fetchResolvedUser]);
+  }, [userId, idleReady, fetchResolvedUser]);
 
   // Referral attribution: /ref/$code stashes an invite code before sign-up;
   // claim it once a session exists (works for email and OAuth flows alike).
@@ -414,6 +419,9 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
       lastSavedAppearanceRef.current = null;
       return;
     }
+    // The inline FOUC script already applied this device's saved theme pre-paint;
+    // the account sync only reconciles across devices, so it can wait for idle.
+    if (!idleReady) return;
     let cancelled = false;
     fetch("/api/preferences/appearance", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
@@ -445,7 +453,7 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     return () => {
       cancelled = true;
     };
-  }, [userId, saveAppearance]);
+  }, [userId, idleReady, saveAppearance]);
 
   // Persist later appearance changes (theme gallery, accent picker, command
   // palette) for signed-in users. Guarded so it never fires before the initial

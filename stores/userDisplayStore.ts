@@ -17,23 +17,51 @@ export const useUserDisplayStore = create<UserDisplayState>((set, get) => ({
 
   setUsers: (users) => {
     set((state) => {
+      let changed = false;
       const next = { ...state.cache };
       for (const u of users) {
         if (!u.id) continue;
         const existing = next[u.id];
         if (!existing) {
           next[u.id] = u;
-        } else {
-          // Merge: prefer non-null values so a stale null doesn't clobber a valid image/name
-          next[u.id] = {
-            ...existing,
-            ...u,
-            image: u.image ?? existing.image,
-            name: u.name ?? existing.name,
-          };
+          changed = true;
+          continue;
+        }
+        // Merge: prefer non-null values so a stale null doesn't clobber a valid image/name
+        const merged = {
+          ...existing,
+          ...u,
+          image: u.image ?? existing.image,
+          name: u.name ?? existing.name,
+        };
+        // Only replace the entry when a field actually changed. `setUsers` runs
+        // on every page append / SSE event with the same authors — keeping the
+        // reference stable stops useFreshUser subscribers (3 per visible card)
+        // from re-rendering the whole timeline each time.
+        const a = merged as unknown as Record<string, unknown>;
+        const b = existing as unknown as Record<string, unknown>;
+        let dirty = false;
+        for (const k in a) {
+          if (a[k] !== b[k]) {
+            dirty = true;
+            break;
+          }
+        }
+        // Catch keys present on `existing` but dropped from `merged` (rare).
+        if (!dirty) {
+          for (const k in b) {
+            if (!(k in a)) {
+              dirty = true;
+              break;
+            }
+          }
+        }
+        if (dirty) {
+          next[u.id] = merged;
+          changed = true;
         }
       }
-      return { cache: next };
+      return changed ? { cache: next } : state;
     });
   },
 

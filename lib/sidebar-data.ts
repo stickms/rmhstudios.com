@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma.server';
 import { resolveUserDisplay } from '@/lib/user-display';
 import { getRequestSession } from '@/lib/auth-session.server';
+import { getFollowingIds } from '@/lib/social/follow-graph.server';
 import { apiCache } from '@/lib/cache';
 import { games } from './games';
 import { apps } from './apps';
@@ -189,11 +190,9 @@ async function getRecommendedUsers(viewerId: string | null): Promise<SidebarUser
   // Never recommend the viewer themselves or people they already follow.
   if (!viewerId) return pool.slice(0, 5);
 
-  const following = await prisma.follow.findMany({
-    where: { followerId: viewerId },
-    select: { followingId: true },
-  });
-  const exclude = new Set<string>([viewerId, ...following.map((f) => f.followingId)]);
+  // Shared cached follow graph — the feed read on the same page already warmed it.
+  const followingIds = await getFollowingIds(viewerId);
+  const exclude = new Set<string>([viewerId, ...followingIds]);
   return pool.filter((u) => !exclude.has(u.id)).slice(0, 5);
 }
 

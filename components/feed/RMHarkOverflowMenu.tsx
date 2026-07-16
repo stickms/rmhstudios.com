@@ -11,7 +11,7 @@
  * parent owns that state and passes a `translate` control for the menu item.
  */
 
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
   MoreHorizontal, Heart, Repeat, Trash2, Share2, Flag, Ban, VolumeX,
   Bookmark, Coins, Pin, Pencil, Languages, TrendingUp,
@@ -23,12 +23,16 @@ import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
-import { ReportDialog } from '@/components/moderation/ReportDialog';
-import { TipDialog } from '@/components/economy/TipDialog';
-import { EditPostModal } from './EditPostModal';
-import { EngagementListModal } from './EngagementListModal';
-import { InsightsModal } from './InsightsModal';
-import { ShareModal } from './ShareModal';
+
+// These dialogs render only after a menu action — code-split so they stay out of
+// the initial feed chunk and their (per-post) code isn't evaluated during
+// hydration. Mounted lazily on first open (see the `mounted` latch below).
+const ReportDialog = lazy(() => import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })));
+const TipDialog = lazy(() => import('@/components/economy/TipDialog').then((m) => ({ default: m.TipDialog })));
+const EditPostModal = lazy(() => import('./EditPostModal').then((m) => ({ default: m.EditPostModal })));
+const EngagementListModal = lazy(() => import('./EngagementListModal').then((m) => ({ default: m.EngagementListModal })));
+const InsightsModal = lazy(() => import('./InsightsModal').then((m) => ({ default: m.InsightsModal })));
+const ShareModal = lazy(() => import('./ShareModal').then((m) => ({ default: m.ShareModal })));
 
 export interface RMHarkTranslateControl {
   translating: boolean;
@@ -83,6 +87,15 @@ export function RMHarkOverflowMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   const { run: runBookmark } = useOptimisticAction();
   const { run: runPin } = useOptimisticAction();
+
+  // Latch: mount a lazy modal the first time it opens, then keep it mounted so
+  // its close animation still runs (a bare `open && <Modal/>` would unmount
+  // mid-animation). The lazy import fires on first open, not at hydration.
+  const mounted = useRef({ share: false, report: false, tip: false, edit: false });
+  mounted.current.share ||= shareModalOpen;
+  mounted.current.report ||= reportOpen;
+  mounted.current.tip ||= tipOpen;
+  mounted.current.edit ||= editOpen;
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -320,48 +333,64 @@ export function RMHarkOverflowMenu({
       )}
 
       {engagementModal && (
-        <EngagementListModal
-          open={engagementModal !== null}
-          onClose={() => setEngagementModal(null)}
-          postId={actualId}
-          type={engagementModal}
-        />
+        <Suspense fallback={null}>
+          <EngagementListModal
+            open={engagementModal !== null}
+            onClose={() => setEngagementModal(null)}
+            postId={actualId}
+            type={engagementModal}
+          />
+        </Suspense>
       )}
 
-      <ShareModal
-        open={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        url={shareUrl}
-        embedId={actualId}
-        text={`Check out what ${item.user?.name || item.user?.handle || 'someone'} RMHark'd on RMH Studios!`}
-      />
-
-      <ReportDialog open={reportOpen} onOpenChange={setReportOpen} entityType="rmhark" entityId={actualId} />
-
-      {targetUserId && (
-        <TipDialog
-          open={tipOpen}
-          onOpenChange={setTipOpen}
-          recipientId={targetUserId}
-          recipientName={item.user?.name ?? item.user?.handle}
-          entityType="rmhark"
-          entityId={actualId}
-        />
+      {mounted.current.share && (
+        <Suspense fallback={null}>
+          <ShareModal
+            open={shareModalOpen}
+            onClose={() => setShareModalOpen(false)}
+            url={shareUrl}
+            embedId={actualId}
+            text={`Check out what ${item.user?.name || item.user?.handle || 'someone'} RMHark'd on RMH Studios!`}
+          />
+        </Suspense>
       )}
 
-      {isAuthor && (
-        <EditPostModal
-          open={editOpen}
-          onOpenChange={setEditOpen}
-          postId={actualId}
-          initialContent={item.content ?? ''}
-          initialGifUrl={item.gifUrl ?? ''}
-          onSaved={(content, gifUrl) => onUpdate?.({ content, gifUrl: gifUrl ?? undefined, edited: true })}
-        />
+      {mounted.current.report && (
+        <Suspense fallback={null}>
+          <ReportDialog open={reportOpen} onOpenChange={setReportOpen} entityType="rmhark" entityId={actualId} />
+        </Suspense>
+      )}
+
+      {targetUserId && mounted.current.tip && (
+        <Suspense fallback={null}>
+          <TipDialog
+            open={tipOpen}
+            onOpenChange={setTipOpen}
+            recipientId={targetUserId}
+            recipientName={item.user?.name ?? item.user?.handle}
+            entityType="rmhark"
+            entityId={actualId}
+          />
+        </Suspense>
+      )}
+
+      {isAuthor && mounted.current.edit && (
+        <Suspense fallback={null}>
+          <EditPostModal
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            postId={actualId}
+            initialContent={item.content ?? ''}
+            initialGifUrl={item.gifUrl ?? ''}
+            onSaved={(content, gifUrl) => onUpdate?.({ content, gifUrl: gifUrl ?? undefined, edited: true })}
+          />
+        </Suspense>
       )}
 
       {isAuthor && insightsOpen && (
-        <InsightsModal open={insightsOpen} onClose={() => setInsightsOpen(false)} postId={actualId} />
+        <Suspense fallback={null}>
+          <InsightsModal open={insightsOpen} onClose={() => setInsightsOpen(false)} postId={actualId} />
+        </Suspense>
       )}
     </div>
   );

@@ -20,9 +20,11 @@ interface FeedListProps {
   initialItems?: FeedItemType[];
   initialCursor?: string | null;
   initialHasMore?: boolean;
+  /** Viewer's muted words from the same payload — primes the live-SSE filter. */
+  initialMutedWords?: string[];
 }
 
-export function FeedList({ following = false, onSwitchToForYou, initialItems, initialCursor = null, initialHasMore = false }: FeedListProps) {
+export function FeedList({ following = false, onSwitchToForYou, initialItems, initialCursor = null, initialHasMore = false, initialMutedWords }: FeedListProps) {
   const { t } = useTranslation('feed');
   const { items, loading, initialized, error, hasMore, fetchNextPage, retry, hydrate, pendingItems, flushPending } =
     useFeedStore();
@@ -53,13 +55,13 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
         // Seed from the streamed prefetch when it matches the surface the store
         // starts on (For You / all, no search) — otherwise fetch client-side.
         if (initialItems && initialItems.length > 0 && s.filter === 'all' && !s.search) {
-          hydrate(initialItems, initialCursor, initialHasMore);
+          hydrate(initialItems, initialCursor, initialHasMore, initialMutedWords);
         } else {
           fetchNextPage();
         }
       }
     }
-  }, [fetchNextPage, hydrate, items.length, initialItems, initialCursor, initialHasMore]);
+  }, [fetchNextPage, hydrate, items.length, initialItems, initialCursor, initialHasMore, initialMutedWords]);
 
   // Self-heal the feed when the environment recovers. Mobile browsers suspend
   // backgrounded tabs (killing an in-flight fetch), and networks drop — either

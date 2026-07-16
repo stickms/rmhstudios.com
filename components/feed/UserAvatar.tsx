@@ -3,6 +3,7 @@
 import { memo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
+import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import type { FeedItemUser } from '@/lib/feed-types';
 
 const DEFAULT_AVATAR = '/images/social/default_avatar.png';
@@ -32,8 +33,13 @@ function UserAvatarImpl({ user, size = 'md', linkToProfile = true }: UserAvatarP
 
   if (!user) return null;
 
-  const imgSrc = imgError ? DEFAULT_AVATAR : user.image;
-  const showImg = !!imgSrc;
+  const rawSrc = imgError ? DEFAULT_AVATAR : user.image;
+  const showImg = !!rawSrc;
+  // Route the avatar through the optimizer at ~2x its display size instead of
+  // pulling the full-resolution external CDN original — 20 feed cards would each
+  // fetch a raw Discord/Google avatar otherwise. Local paths (the fallback) pass
+  // through untouched.
+  const imgSrc = showImg ? buildOptimizedUrl(rawSrc as string, sizePx[size] * 2, 80) : undefined;
   const frame = user.cosmetics?.avatarFrame;
 
   const inner = (
@@ -43,6 +49,7 @@ function UserAvatarImpl({ user, size = 'md', linkToProfile = true }: UserAvatarP
           src={imgSrc}
           alt={user.name || t('user-avatar-alt', { defaultValue: 'User' })}
           loading="lazy"
+          decoding="async"
           width={sizePx[size]}
           height={sizePx[size]}
           className="w-full h-full rounded-full object-cover"

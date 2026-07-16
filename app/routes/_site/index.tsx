@@ -32,7 +32,14 @@ const fetchInitialFeed = createServerFn({ method: 'GET' }).handler(async () => {
     limit: 20,
     search: null,
   });
-  return { items: feed.items, nextCursor: feed.nextCursor, hasMore: feed.hasMore };
+  return {
+    items: feed.items,
+    nextCursor: feed.nextCursor,
+    hasMore: feed.hasMore,
+    // Carry the viewer's muted words so the client filters live SSE posts without
+    // a separate /api/preferences/muted-words request at hydration.
+    mutedWords: feed.mutedWords ?? [],
+  };
 });
 
 export const Route = createFileRoute('/_site/')({
@@ -41,6 +48,12 @@ export const Route = createFileRoute('/_site/')({
     const q = typeof search.q === 'string' ? search.q.trim() : '';
     return q ? { q } : {};
   },
+  // Back-nav / repeat visits within 60s reuse the cached loader payload instead
+  // of re-running both server fns (each a full session resolution + timeline
+  // query). The module-level feed store is the live source of truth after
+  // hydration — the loader result is only consumed by a pristine store, so
+  // re-running it sooner is pure waste.
+  staleTime: 60_000,
   // Return BOTH the sidebar and the feed as deferred promises so neither DB
   // read blocks the first byte: the feed column + composer + skeleton paint
   // immediately and each region streams into its own <Suspense> slot. This is

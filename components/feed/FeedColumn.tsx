@@ -35,6 +35,9 @@ export interface InitialFeed {
   items: FeedItemType[];
   nextCursor: string | null;
   hasMore: boolean;
+  /** Viewer's muted words, so the client primes its live-SSE filter with no
+   *  separate /api/preferences/muted-words request. */
+  mutedWords?: string[];
 }
 
 export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed> | null }) {
@@ -42,7 +45,12 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
   const { open: openSidebar } = useMobileSidebar();
-  const { setFilter, search, setSearch, setMutedWords } = useFeedStore();
+  // Select individually (stable action refs; `search` is the only reactive value)
+  // so an unrelated store mutation — every SSE like/comment/repost count tick —
+  // doesn't re-render the header/search/composer subtree.
+  const setFilter = useFeedStore((s) => s.setFilter);
+  const search = useFeedStore((s) => s.search);
+  const setSearch = useFeedStore((s) => s.setSearch);
   // Stable store action — drives swipe-down-to-refresh on the mobile feed.
   const refreshFeed = useFeedStore((s) => s.refresh);
   const { data: session } = authClient.useSession();
@@ -58,22 +66,8 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   // Connect to real-time feed SSE stream
   useFeedSSE();
 
-  // Load the viewer's muted words so live SSE posts are filtered in real time
-  // (the timeline read already applies them server-side).
-  const viewerId = session?.user?.id;
-  useEffect(() => {
-    if (!viewerId) return;
-    let active = true;
-    fetch('/api/preferences/muted-words', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (active && Array.isArray(d?.words)) setMutedWords(d.words);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [viewerId, setMutedWords]);
+  // The viewer's muted words arrive with the timeline payload (see getTimeline /
+  // feedStore) and prime the live-SSE filter — no separate fetch on mount.
 
   const handleSearchChange = (value: string) => {
     setSearchInput(value);
@@ -301,6 +295,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
                 initialItems={feed.items}
                 initialCursor={feed.nextCursor}
                 initialHasMore={feed.hasMore}
+                initialMutedWords={feed.mutedWords}
               />
             )}
           </Await>

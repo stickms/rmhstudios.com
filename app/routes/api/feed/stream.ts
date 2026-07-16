@@ -10,7 +10,7 @@ import { createFileRoute } from '@tanstack/react-router';
  */
 
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma.server";
+import { getFollowingIds } from "@/lib/social/follow-graph.server";
 import { feedEventBus, type FeedSSEEvent } from "@/lib/feed-sse";
 
 export const Route = createFileRoute('/api/feed/stream')({
@@ -33,11 +33,9 @@ export const Route = createFileRoute('/api/feed/stream')({
   let followingIds = new Set<string>();
   if (viewerId) {
     try {
-      const follows = await prisma.follow.findMany({
-        where: { followerId: viewerId },
-        select: { followingId: true },
-      });
-      followingIds = new Set(follows.map((f) => f.followingId));
+      // Shared cached follow graph (30s TTL). The connection captures the set
+      // once, as before — a new follow is reflected on reconnect.
+      followingIds = new Set(await getFollowingIds(viewerId));
     } catch {
       // Best-effort; fall back to no targeting boost.
     }
