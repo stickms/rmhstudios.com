@@ -1,0 +1,56 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# OpenSSF Scorecard — audits the repository's supply-chain security posture
+# (branch protection, pinned dependencies, token permissions, dangerous workflow
+# patterns, …) and publishes a score. Results upload as SARIF to Security → Code
+# scanning; `publish_results` also enables the public Scorecard badge.
+# ─────────────────────────────────────────────────────────────────────────────
+name: scorecard
+
+on:
+  branch_protection_rule: {}
+  schedule:
+    - cron: "0 6 * * 2"
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+concurrency:
+  group: scorecard-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analysis:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      security-events: write
+      id-token: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Run analysis
+        uses: ossf/scorecard-action@4eaacf0543bb3f2c246792bd56e8cdeffafb205a # v2.4.3
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: scorecard-results
+          path: results.sarif
+          retention-days: 5
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@641a925cfafe92d0fdf8b239ba4053e3f8d99d6d # v3
+        with:
+          sarif_file: results.sarif
+          category: scorecard
