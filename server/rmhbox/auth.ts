@@ -27,7 +27,9 @@ interface ValidatedIdentity {
   avatarUrl: string | null;
 }
 
-async function validateSessionToken(token: string): Promise<ValidatedIdentity | null> {
+// Distinct outcomes so the middleware can surface an expired session as
+// SESSION_EXPIRED (a valid row past its expiry) vs AUTH_FAILED (no such token).
+async function validateSessionToken(token: string): Promise<ValidatedIdentity | 'expired' | null> {
   const db = getPool();
   const result = await db.query(
     `SELECT s."userId", s."expiresAt", u."name", u."image"
@@ -41,7 +43,7 @@ async function validateSessionToken(token: string): Promise<ValidatedIdentity | 
   if (result.rows.length === 0) return null;
 
   const row = result.rows[0];
-  if (new Date(row.expiresAt) < new Date()) return null;
+  if (new Date(row.expiresAt) < new Date()) return 'expired';
 
   return {
     userId: row.userId,
@@ -126,6 +128,7 @@ export async function authMiddleware(
     }
 
     const identity = await validateSessionToken(token);
+    if (identity === 'expired') return next(new Error('SESSION_EXPIRED'));
     if (!identity) return next(new Error('AUTH_FAILED'));
 
     socket.data.userId = identity.userId;

@@ -21,7 +21,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { ArrowLeft, Circle, Infinity, Pause, Play } from 'lucide-react';
+import { ArrowLeft, Circle, Infinity as InfinityIcon, Pause, Play } from 'lucide-react';
 import { useRMHboxStore } from '@/lib/rmhbox/store';
 import { emit } from '@/lib/rmhbox/socket';
 import { C2S } from '@/lib/rmhbox/events';
@@ -112,7 +112,7 @@ function TimerRing({
             ? <Play className="h-3.5 w-3.5 text-(--rmhbox-warning)" />
             : <Pause className="h-3.5 w-3.5 text-(--rmhbox-warning)" />
         ) : infinite ? (
-          <Infinity className="h-4 w-4" />
+          <InfinityIcon className="h-4 w-4" />
         ) : (
           Math.max(0, Math.ceil(seconds))
         )}

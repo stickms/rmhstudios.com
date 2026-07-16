@@ -216,7 +216,7 @@ export function GameCanvas() {
                         if (store.isMultiplayer) {
                             setShowSettings(p => !p);
                         } else {
-                            store.isPaused ? engine?.resume() : engine?.pause();
+                            if (store.isPaused) engine?.resume(); else engine?.pause();
                         }
                         return;
                     }
@@ -430,7 +430,7 @@ export function GameCanvas() {
                     } else {
                         // Singleplayer: toggle pause
                         const store = useGameStore.getState();
-                        store.isPaused ? engine?.resume() : engine?.pause();
+                        if (store.isPaused) engine?.resume(); else engine?.pause();
                     }
                 }
                 return;
@@ -1162,7 +1162,7 @@ export function GameCanvas() {
                                 } else {
                                     const store = useGameStore.getState();
                                     // Never pause in multiplayer — only toggle settings panel
-                                    store.isPaused ? engine?.resume() : engine?.pause();
+                                    if (store.isPaused) engine?.resume(); else engine?.pause();
                                 }
                             }}
                         >

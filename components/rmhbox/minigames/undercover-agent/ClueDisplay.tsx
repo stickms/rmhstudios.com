@@ -18,7 +18,7 @@
 'use client';
 
 import { m as motion } from 'framer-motion';
-import { Infinity, MessageSquare } from 'lucide-react';
+import { Infinity as InfinityIcon, MessageSquare } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import type { ActiveClue, Team } from './UndercoverAgentGame';
 
@@ -50,7 +50,7 @@ export default function ClueDisplay({ clue, guessesRemaining, isWaiting, spymast
 
   if (!clue) return null;
 
-  const displayNumber = clue.number === 'unlimited' ? <Infinity className="h-5 w-5 inline-block" /> : clue.number;
+  const displayNumber = clue.number === 'unlimited' ? <InfinityIcon className="h-5 w-5 inline-block" /> : clue.number;
 
   return (
     <motion.div

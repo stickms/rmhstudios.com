@@ -47,7 +47,7 @@ describe('Game Settings Integration (§6.6)', () => {
     it('should produce valid default settings', () => {
       const defaults = getDefaultSettings(FACT_OR_FRICTION_SETTINGS);
       expect(defaults.totalQuestions).toBe(8);
-      expect(defaults.answerDuration).toBe(15);
+      expect(defaults.answerDuration).toBe(20);
       expect(defaults.potStartValue).toBe(1000);
       expect(defaults.enableScoreFloor).toBe(true);
       expect(defaults.difficulty).toBe('mixed');

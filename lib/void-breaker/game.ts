@@ -1592,7 +1592,7 @@ export class VoidBreakerEngine {
         p.x += p.vx * dt; p.y += p.vy * dt;
         p.vx *= 0.95; p.vy *= 0.95;
         p.fuse -= dt;
-        if (p.fuse <= 0) { p.isPlayer ? this.explodePlayerBomb(p) : this.explodeBomb(p); p.active = false; }
+        if (p.fuse <= 0) { if (p.isPlayer) this.explodePlayerBomb(p); else this.explodeBomb(p); p.active = false; }
         continue;
       }
       // Homing: steer player bullets toward the nearest live enemy.

@@ -36,11 +36,26 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
   const [codeCopied, setCodeCopied] = useState(false);
   const [editingSettings, setEditingSettings] = useState(false);
 
+  // Adapt lobby chat messages to shared ChatPanel format. Computed before the
+  // early return below so the hooks run in a stable order (rules-of-hooks).
+  const chat = lobby?.chat ?? [];
+  const chatMessages: ChatPanelMessage[] = useMemo(
+    () =>
+      chat.map((msg) => ({
+        id: msg.id,
+        userId: msg.userId,
+        userName: msg.isSystem ? 'System' : msg.userName,
+        message: msg.text,
+        timestamp: msg.timestamp,
+        reactions: {},
+      })),
+    [chat],
+  );
+
   if (!lobby) return null;
 
   const isHost = lobby.hostUserId === lobby.myUserId;
   const players = lobby.players;
-  const chat = lobby.chat ?? [];
 
   const handleCopyCode = () => {
     const url = `${window.location.origin}/altair/multiplayer?join=${lobbyId}`;
@@ -72,20 +87,6 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
   const handleSelectClass = (classId: string) => {
     emit(C2S.CLASS_SELECT, { lobbyId, classId });
   };
-
-  // Adapt lobby chat messages to shared ChatPanel format
-  const chatMessages: ChatPanelMessage[] = useMemo(
-    () =>
-      chat.map((msg) => ({
-        id: msg.id,
-        userId: msg.userId,
-        userName: msg.isSystem ? 'System' : msg.userName,
-        message: msg.text,
-        timestamp: msg.timestamp,
-        reactions: {},
-      })),
-    [chat],
-  );
 
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
