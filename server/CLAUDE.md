@@ -81,7 +81,7 @@ Consequences:
   (port 7001) via `socket-server/handlers/rmhmusic.ts`. Auth required.
   (The standalone rmhmusic:7002 is the Go hub, k3s-only.)
 - **`ladder-worker/`** — RMHLadder job-discovery cron. No port. `node-cron`
-  schedule `LADDER_CRON_SCHEDULE` (default every 4h) around
+  schedule `LADDER_CRON_SCHEDULE` (default every 12h) around
   `lib/rmhladder/pipeline`. Self-bootstraps an empty DB on startup
   (seed → probe sources → run pipeline). Manual triggers:
   `pnpm ladder:seed | ladder:probe | ladder:run`.

@@ -7,9 +7,9 @@ import {
 } from './scheduler';
 
 describe('resolveLadderCron', () => {
-  it('defaults to every four hours', () => {
-    expect(resolveLadderCron(undefined)).toBe('0 */4 * * *');
-    expect(DEFAULT_LADDER_CRON).toBe('0 */4 * * *');
+  it('defaults to every twelve hours', () => {
+    expect(resolveLadderCron(undefined)).toBe('0 */12 * * *');
+    expect(DEFAULT_LADDER_CRON).toBe('0 */12 * * *');
   });
 
   it('accepts a valid deployment override', () => {
@@ -28,9 +28,9 @@ describe('isScrapeStale', () => {
     expect(isScrapeStale(null, now)).toBe(true);
   });
 
-  it('becomes stale at the four-hour boundary', () => {
-    expect(isScrapeStale(new Date('2026-07-12T08:00:00.001Z'), now)).toBe(false);
-    expect(isScrapeStale(new Date('2026-07-12T08:00:00.000Z'), now)).toBe(true);
-    expect(DEFAULT_STALE_AFTER_MS).toBe(14_400_000);
+  it('becomes stale at the twelve-hour boundary', () => {
+    expect(isScrapeStale(new Date('2026-07-12T00:00:00.001Z'), now)).toBe(false);
+    expect(isScrapeStale(new Date('2026-07-12T00:00:00.000Z'), now)).toBe(true);
+    expect(DEFAULT_STALE_AFTER_MS).toBe(43_200_000);
   });
 });
