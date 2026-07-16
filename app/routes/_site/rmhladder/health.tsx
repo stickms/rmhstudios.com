@@ -17,6 +17,7 @@ import {
   listStaleSources,
   type QueriesPrisma,
 } from '@/lib/rmhladder/server/queries';
+import { resumeSubsystemReadiness } from '@/lib/rmhladder/resume/readiness.server';
 import { timeAgo } from '@/components/rmhladder/time';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
@@ -32,7 +33,7 @@ const fetchHealth = createServerFn({ method: 'GET' }).handler(async () => {
     listRuns(queriesPrisma, 20),
     getOverview(queriesPrisma, session.user.id, { includeAdminStats: true }),
   ]);
-  return { stale, runs, openReviewTasks: overview.openReviewTasks };
+  return { stale, runs, openReviewTasks: overview.openReviewTasks, resumeReadiness: resumeSubsystemReadiness() };
 });
 
 export const Route = createFileRoute('/_site/rmhladder/health')({
@@ -49,7 +50,7 @@ function durationLabel(run: AnyRow): string {
 }
 
 function HealthPage() {
-  const { stale, runs, openReviewTasks } = Route.useLoaderData();
+  const { stale, runs, openReviewTasks, resumeReadiness } = Route.useLoaderData();
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
 
   return (
@@ -57,6 +58,21 @@ function HealthPage() {
       <Link to="/rmhladder/review" className="rl-chip rl-review-chip">
         Review queue · {openReviewTasks} open
       </Link>
+
+      <section className="rl-stale-panel">
+        <h2 className="rl-eyebrow">Resume subsystem</h2>
+        {resumeReadiness.ready ? (
+          <p className="rl-quicklist__empty">Object storage and encryption key are configured.</p>
+        ) : (
+          <ul>
+            {resumeReadiness.missing.map((item) => (
+              <li key={item} className="rl-stale-row">
+                <span className="rl-mono">missing: {item}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {/* Silent sources — the page's thesis */}
       <section className="rl-stale-panel">

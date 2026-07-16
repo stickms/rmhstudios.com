@@ -27,6 +27,10 @@ import {
   type ResumePrisma,
 } from '../../lib/rmhladder/resume/service.server';
 import type { CandidateProfile } from '../../lib/rmhladder/resume/schemas';
+import {
+  resumeSubsystemReadiness,
+  resumeReadinessError,
+} from '../../lib/rmhladder/resume/readiness.server';
 import { runLadderAlertCycle } from '../../lib/rmhladder/alerts/dispatch.server';
 import {
   acquireWorkerLease,
@@ -242,6 +246,12 @@ const task: ScheduledTask = schedule(cronSchedule, tick, {
 console.log(
   `[ladder-worker] Started — schedule="${cronSchedule}" timezone="UTC" probeBatchSize=${probeBatchSize} aiEnrichmentBatchSize=${aiEnrichmentBatchSize} matchRefreshBatchSize=${matchRefreshBatchSize} leaseTtlMs=${leaseTtlMs}`,
 );
+const resumeReady = resumeSubsystemReadiness();
+if (resumeReady.ready) {
+  console.log('[ladder-worker] Resume subsystem ready — object storage + encryption key configured');
+} else {
+  console.error(`[ladder-worker] ${resumeReadinessError(resumeReady)}`);
+}
 
 void bootstrap();
 

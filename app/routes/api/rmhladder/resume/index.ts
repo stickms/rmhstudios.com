@@ -2,9 +2,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { getClientIp, rateLimit } from '@/lib/rate-limit';
-import { s3Configured } from '@/lib/storage/s3.server';
 import { listUserResumes, uploadResume, type ResumePrisma } from '@/lib/rmhladder/resume/service.server';
 import { RESUME_MAX_BYTES } from '@/lib/rmhladder/resume/schemas';
+import { resumeSubsystemReadiness } from '@/lib/rmhladder/resume/readiness.server';
 import { readRequestBodyLimited, RequestBodyTooLargeError } from '@/lib/http-body.server';
 
 const resumePrisma = prisma as unknown as ResumePrisma;
@@ -31,9 +31,19 @@ export const Route = createFileRoute('/api/rmhladder/resume/')({
             limit: 4, windowMs: 60 * 60_000, prefix: 'rmhladder-resume-upload',
           });
           if (!allowed) return Response.json({ error: 'Too many resume uploads. Try again later.' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
-          if (process.env.NODE_ENV === 'production' && !s3Configured()) {
-            console.error('[rmhladder-resume] upload blocked: private object storage is not configured');
-            return Response.json({ error: 'Resume storage is unavailable.' }, { status: 503 });
+          if (process.env.NODE_ENV === 'production') {
+            const readiness = resumeSubsystemReadiness();
+            if (!readiness.ready) {
+              // Operators get the actionable detail in logs / on /rmhladder/health;
+              // end users get a generic message (never leak internal env var names).
+              console.error(
+                `[rmhladder-resume] upload blocked — resume subsystem not ready: missing ${readiness.missing.join('; ')}`,
+              );
+              return Response.json(
+                { error: 'Resume uploads are temporarily unavailable. Please try again later.' },
+                { status: 503 },
+              );
+            }
           }
 
           let multipartBody: Uint8Array;
