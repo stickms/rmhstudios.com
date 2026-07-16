@@ -339,7 +339,7 @@ if (resumeReady.ready) {
 
 - [ ] **Step 4: Typecheck and lint**
 
-Run: `pnpm exec tsc --noEmit`
+Run: `NODE_OPTIONS=--max-old-space-size=8192 pnpm exec tsc --noEmit` (default heap OOMs on this repo)
 Expected: no errors (in particular, no "s3Configured is declared but never read").
 
 Run: `pnpm lint`
@@ -668,7 +668,7 @@ In `package.json`, beside the other ladder scripts (`ladder:seed`, `ladder:probe
 
 - [ ] **Step 7: Typecheck**
 
-Run: `pnpm exec tsc --noEmit`
+Run: `NODE_OPTIONS=--max-old-space-size=8192 pnpm exec tsc --noEmit` (default heap OOMs on this repo)
 Expected: no errors. (If the Prisma types reject `groupBy` field names, confirm the model is `ladderSource` with a `status` scalar — it is per the schema; the `_count: { _all: true }` shape is standard Prisma groupBy.)
 
 - [ ] **Step 8: Commit**
