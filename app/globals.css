@@ -1313,6 +1313,22 @@ html:not(.app-route) {
     background-position: center top;
     background-attachment: fixed;
   }
+
+  /* Mobile drawer open: the glass sidebar fills the visual viewport but iOS
+     clips it there — it can't paint behind Safari's floating bar, so the strip
+     below it read as bare aurora and the sidebar looked like it stopped short.
+     Tint the root canvas to the sidebar's own glass tone (color-mix --site-bg
+     over the aurora, matching glass-chrome--aside) while the drawer is open, so
+     that strip continues the sidebar down to the physical bottom and it reads as
+     full height. Reverts to the plain aurora on close. */
+  html.drawer-open:not(.app-route) {
+    background-image:
+      linear-gradient(
+        color-mix(in srgb, var(--site-bg) 48%, transparent),
+        color-mix(in srgb, var(--site-bg) 48%, transparent)
+      ),
+      var(--site-canvas);
+  }
 }
 
 body {

@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { LeftSidebar } from '@/components/feed/LeftSidebar';
-import { MobileNav } from '@/components/feed/MobileNav';
 import { MobileSidebarShell } from '@/components/feed/MobileSidebarShell';
 import { WelcomeModal } from '@/components/feed/WelcomeModal';
 import { LanguageFirstRunModal } from '@/components/site/LanguageFirstRunModal';
@@ -72,15 +71,13 @@ function SiteLayout() {
         </main>
       </div>
 
-      {/* Mobile: page content slides right to reveal the left sidebar */}
+      {/* Mobile: page content slides right to reveal the left sidebar. There's no
+          mobile bottom bar — navigation is the swipe/hamburger sidebar. */}
       <MobileSidebarShell>
         <main className="contents page-root">
           <Outlet />
         </main>
       </MobileSidebarShell>
-
-      {/* Mobile bottom nav */}
-      <MobileNav />
 
       {/* One-time, non-blocking cookie notice (site pages only). */}
       <CookieConsent />

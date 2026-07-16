@@ -163,6 +163,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
   useEffect(() => {
     if (!isOpen) return;
     const body = document.body;
+    const html = document.documentElement;
     const y = window.scrollY;
     const prev = {
       position: body.style.position,
@@ -176,12 +177,17 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     body.style.left = '0';
     body.style.right = '0';
     body.style.width = '100%';
+    // Tint the root canvas behind Safari's bar to the sidebar's glass tone (see
+    // the html.drawer-open rule) so the sidebar reads as full height even though
+    // iOS clips the fixed panel to the visual viewport.
+    html.classList.add('drawer-open');
     return () => {
       body.style.position = prev.position;
       body.style.top = prev.top;
       body.style.left = prev.left;
       body.style.right = prev.right;
       body.style.width = prev.width;
+      html.classList.remove('drawer-open');
       window.scrollTo(0, y);
     };
   }, [isOpen]);
