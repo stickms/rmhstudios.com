@@ -8,7 +8,7 @@ import MainMenu from '@/components/kowloon-knockout/MainMenu';
 import CharacterSelect from '@/components/kowloon-knockout/CharacterSelect';
 import MultiplayerLobby from '@/components/kowloon-knockout/MultiplayerLobby';
 import ResultScreen from '@/components/kowloon-knockout/ResultScreen';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import './kowloon-knockout.css';
 
 const GameView = lazy(() => import('@/components/kowloon-knockout/arena/GameView'));

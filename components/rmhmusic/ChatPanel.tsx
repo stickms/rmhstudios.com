@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Send, MessageCircle } from 'lucide-react';
 import { useRmhMusicStore, getChatEntries } from '@/lib/rmhmusic/store';
 import { emit } from '@/lib/rmhmusic/socket';

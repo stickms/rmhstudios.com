@@ -15,15 +15,16 @@ export async function togglePostReaction(
   postId: string,
   emoji: string,
 ): Promise<ToggleResult> {
-  const post = await prisma.rMHark.findUnique({
-    where: { id: postId },
-    select: { id: true, deletedAt: true },
-  });
+  const [post, existing] = await Promise.all([
+    prisma.rMHark.findUnique({
+      where: { id: postId },
+      select: { id: true, deletedAt: true },
+    }),
+    prisma.rMHarkReaction.findUnique({
+      where: { rmheetId_userId_emoji: { rmheetId: postId, userId, emoji } },
+    }),
+  ]);
   if (!post || post.deletedAt) return { found: false, reacted: false, rows: [] };
-
-  const existing = await prisma.rMHarkReaction.findUnique({
-    where: { rmheetId_userId_emoji: { rmheetId: postId, userId, emoji } },
-  });
   if (existing) {
     await prisma.rMHarkReaction.delete({ where: { id: existing.id } });
   } else {
@@ -41,15 +42,16 @@ export async function toggleCommentReaction(
   commentId: string,
   emoji: string,
 ): Promise<ToggleResult> {
-  const comment = await prisma.rMHarkComment.findUnique({
-    where: { id: commentId },
-    select: { id: true, deletedAt: true },
-  });
+  const [comment, existing] = await Promise.all([
+    prisma.rMHarkComment.findUnique({
+      where: { id: commentId },
+      select: { id: true, deletedAt: true },
+    }),
+    prisma.rMHarkCommentReaction.findUnique({
+      where: { commentId_userId_emoji: { commentId, userId, emoji } },
+    }),
+  ]);
   if (!comment || comment.deletedAt) return { found: false, reacted: false, rows: [] };
-
-  const existing = await prisma.rMHarkCommentReaction.findUnique({
-    where: { commentId_userId_emoji: { commentId, userId, emoji } },
-  });
   if (existing) {
     await prisma.rMHarkCommentReaction.delete({ where: { id: existing.id } });
   } else {
@@ -68,15 +70,16 @@ export async function toggleDmReaction(
   messageId: string,
   emoji: string,
 ): Promise<ToggleResult & { conversationId?: string; senderId?: string }> {
-  const message = await prisma.directMessage.findFirst({
-    where: { id: messageId, conversationId },
-    select: { id: true, conversationId: true, senderId: true },
-  });
+  const [message, existing] = await Promise.all([
+    prisma.directMessage.findFirst({
+      where: { id: messageId, conversationId },
+      select: { id: true, conversationId: true, senderId: true },
+    }),
+    prisma.directMessageReaction.findUnique({
+      where: { messageId_userId_emoji: { messageId, userId, emoji } },
+    }),
+  ]);
   if (!message) return { found: false, reacted: false, rows: [] };
-
-  const existing = await prisma.directMessageReaction.findUnique({
-    where: { messageId_userId_emoji: { messageId, userId, emoji } },
-  });
   if (existing) {
     await prisma.directMessageReaction.delete({ where: { id: existing.id } });
   } else {
@@ -101,15 +104,16 @@ export async function toggleGroupMessageReaction(
   messageId: string,
   emoji: string,
 ): Promise<ToggleResult & { groupId?: string }> {
-  const message = await prisma.groupMessage.findFirst({
-    where: { id: messageId, groupId },
-    select: { id: true, groupId: true },
-  });
+  const [message, existing] = await Promise.all([
+    prisma.groupMessage.findFirst({
+      where: { id: messageId, groupId },
+      select: { id: true, groupId: true },
+    }),
+    prisma.groupMessageReaction.findUnique({
+      where: { messageId_userId_emoji: { messageId, userId, emoji } },
+    }),
+  ]);
   if (!message) return { found: false, reacted: false, rows: [] };
-
-  const existing = await prisma.groupMessageReaction.findUnique({
-    where: { messageId_userId_emoji: { messageId, userId, emoji } },
-  });
   if (existing) {
     await prisma.groupMessageReaction.delete({ where: { id: existing.id } });
   } else {

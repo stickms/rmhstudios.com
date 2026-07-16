@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import {
   Loader2,
   Navigation,

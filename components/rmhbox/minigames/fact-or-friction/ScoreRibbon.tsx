@@ -6,7 +6,7 @@
  */
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { SkipForward, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 

@@ -19,7 +19,7 @@
 
 import { useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { useCelebration } from '@/hooks/useCelebration';
 import { Trophy, Medal, Award as AwardIcon, ChevronRight } from 'lucide-react';
 import LucideAwardIcon from './LucideAwardIcon';

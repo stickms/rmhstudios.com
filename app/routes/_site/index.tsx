@@ -7,10 +7,9 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { FeedLayout } from '@/components/feed/FeedLayout';
 import { getSidebarData } from '@/lib/sidebar-data';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getTimeline } from '@/lib/feed/timeline';
 
 const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
@@ -21,13 +20,10 @@ const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
 // it UNAWAITED (deferred) — it streams into the page after the shell instead of
 // blocking the initial response.
 const fetchInitialFeed = createServerFn({ method: 'GET' }).handler(async () => {
-  let viewerId: string | null = null;
-  try {
-    const session = await auth.api.getSession({ headers: getRequest().headers });
-    viewerId = session?.user?.id ?? null;
-  } catch {
-    viewerId = null;
-  }
+  // Shares the request-scoped session resolution with the root loader and the
+  // sidebar server fn, so the homepage resolves the viewer once, not three times.
+  const session = await getRequestSession();
+  const viewerId: string | null = session?.user?.id ?? null;
   const feed = await getTimeline({
     userId: viewerId,
     surface: 'foryou',

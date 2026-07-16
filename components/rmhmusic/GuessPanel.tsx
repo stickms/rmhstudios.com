@@ -10,7 +10,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { Music2, Loader2, ArrowLeft, ExternalLink, Lightbulb, Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';

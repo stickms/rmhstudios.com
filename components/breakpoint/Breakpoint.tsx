@@ -1,7 +1,7 @@
 'use client';
 
 import { lazy, Suspense, useEffect } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, m as motion } from 'framer-motion';
 import { useBreakpointStore } from '@/lib/breakpoint/store';
 import { MainMenu } from './MainMenu';
 import { AgentSelect } from './AgentSelect';

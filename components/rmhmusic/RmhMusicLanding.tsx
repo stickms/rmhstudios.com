@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Music, Plus, ArrowRight, Headphones, Brain } from 'lucide-react';
 import { useRmhMusicStore } from '@/lib/rmhmusic/store';
 import { connectToRmhMusic, emit } from '@/lib/rmhmusic/socket';

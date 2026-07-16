@@ -18,34 +18,25 @@ const fetchProfileData = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
   .handler(async ({ data: rawId }) => {
     const id = rawId.replace(/^@/, '');
-    const sidebar = await getSidebarData();
-
-    let user = await prisma.user.findUnique({
-      where: { handle: id },
-      select: {
-        name: true,
-        username: true,
-        handle: true,
-        image: true,
-        profile: {
-          select: { displayName: true, customImage: true, bio: true },
-        },
+    const userSelect = {
+      name: true,
+      username: true,
+      handle: true,
+      image: true,
+      profile: {
+        select: { displayName: true, customImage: true, bio: true },
       },
-    });
-    if (!user) {
-      user = await prisma.user.findUnique({
-        where: { id },
-        select: {
-          name: true,
-          username: true,
-          handle: true,
-          image: true,
-          profile: {
-            select: { displayName: true, customImage: true, bio: true },
-          },
-        },
-      });
-    }
+    } as const;
+
+    // The sidebar and the profile lookup share no data, so run them together
+    // instead of one-after-another. The lookup keeps its handle→id fallback
+    // (handle is the common case; the id read only fires on a handle miss).
+    const [sidebar, user] = await Promise.all([
+      getSidebarData(),
+      prisma.user
+        .findUnique({ where: { handle: id }, select: userSelect })
+        .then((u) => u ?? prisma.user.findUnique({ where: { id }, select: userSelect })),
+    ]);
 
     let meta = {
       title: 'User Not Found | RMH',

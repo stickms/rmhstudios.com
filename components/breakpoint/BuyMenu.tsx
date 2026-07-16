@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import type { World } from '@/lib/breakpoint/engine/world';
 import { BUY_GROUPS, ARMOR_OPTIONS, getWeapon } from '@/lib/breakpoint/weapons';
 import { getAgent } from '@/lib/breakpoint/agents';

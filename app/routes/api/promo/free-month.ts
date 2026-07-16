@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { getUserTier } from '@/lib/entitlements';
+import { getUserTier, invalidateUserTier } from '@/lib/entitlements';
 
 const PROMO = 'free_month_pro_2026';
 const TIER = 'pro';
@@ -49,6 +49,9 @@ export const Route = createFileRoute('/api/promo/free-month')({
               prisma.promoClaim.create({ data: { userId, promo: PROMO } }),
               prisma.giftMembership.create({ data: { userId, gifterId: null, tier: TIER, expiresAt } }),
             ]);
+            // Line 40 cached the pre-claim 'free' tier — drop it so the granted
+            // month is reflected on the very next entitlement check.
+            invalidateUserTier(userId);
             return Response.json({ success: true, tier: TIER, months: MONTHS });
           } catch (e) {
             if (e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'P2002') {

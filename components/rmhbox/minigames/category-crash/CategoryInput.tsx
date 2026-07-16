@@ -20,7 +20,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Clock } from 'lucide-react';
 import type { Category } from './CategoryCrashGame';
 

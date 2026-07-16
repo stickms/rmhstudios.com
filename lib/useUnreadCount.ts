@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useIdleReady } from '@/hooks/useIdleReady';
 
 /**
  * Shared SSE-based hook for real-time unread message count.
@@ -9,12 +10,16 @@ import { useEffect, useRef, useState } from 'react';
 export function useUnreadCount(isLoggedIn: boolean) {
   const [count, setCount] = useState(0);
   const retryCount = useRef(0);
+  // Defer opening this second persistent connection until the browser is idle so
+  // it doesn't compete with the feed SSE + hydration for sockets and main thread.
+  const idle = useIdleReady();
 
   useEffect(() => {
     if (!isLoggedIn) {
       setCount(0);
       return;
     }
+    if (!idle) return;
 
     let eventSource: EventSource | null = null;
     let fallbackInterval: ReturnType<typeof setInterval> | null = null;
@@ -86,7 +91,7 @@ export function useUnreadCount(isLoggedIn: boolean) {
       if (fallbackInterval) clearInterval(fallbackInterval);
       window.removeEventListener('beforeunload', onBeforeUnload);
     };
-  }, [isLoggedIn]);
+  }, [isLoggedIn, idle]);
 
   return count;
 }

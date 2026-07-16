@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import type { MatchSnapshot, Actor, Team } from '@/lib/breakpoint/types';
 import { getAgent } from '@/lib/breakpoint/agents';
 

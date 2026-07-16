@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Lock, Trophy, Copy, Check, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
 import { generateSpectrumPuzzle, computeSpectrumScore, type SpectrumItem } from '@/lib/daily-puzzles/spectrum';
 import { formatDateKey, getTodayEST, getPuzzleNumber } from '@/lib/daily-puzzles/seed';

@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getCategoryColor } from '@/lib/news-categories';

@@ -1,7 +1,7 @@
 import { ReactNode, createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
-import { MotionConfig } from "framer-motion";
+import { MotionConfig, LazyMotion } from "framer-motion";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useThemeStore, SITE_STYLES, THEME_BG, DEFAULT_STYLE, SiteStyle, REDUCE_TRANSPARENCY_KEY } from "@/stores/themeStore";
@@ -140,6 +140,11 @@ interface ProvidersProps {
 
 const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 
+// framer-motion feature bundle, loaded on demand so the animation/gesture/layout
+// drivers stay out of the initial bundle. Every component ships the lightweight
+// `m` component (aliased as `motion`) and picks these up from LazyMotion context.
+const loadMotionFeatures = () => import("@/lib/motion-features").then((mod) => mod.default);
+
 // THEME_BG (theme → document background color) lives in stores/themeStore.ts,
 // derived from SITE_STYLES, so the runtime and the no-flash inline script share
 // one source. Excluded app/game routes always paint THEME_BG.default (pure
@@ -244,8 +249,16 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     return session;
   }, [session, cachedUser]);
 
-  // Resolved user display data (custom image/name)
-  const [resolvedUser, setResolvedUser] = useState<ResolvedUserDisplay | null>(null);
+  // Resolved user display data (custom image/name). Seed from the SSR-resolved
+  // user so the current user's own avatar/name paint immediately from the loader
+  // payload instead of flashing empty until /api/profile/me resolves; the fetch
+  // below still runs to layer on any custom displayName/customImage overrides.
+  // Same seed on server and client, so no hydration mismatch.
+  const [resolvedUser, setResolvedUser] = useState<ResolvedUserDisplay | null>(
+    initialUser
+      ? { name: initialUser.name ?? null, image: initialUser.image ?? null, handle: initialUser.handle ?? null }
+      : null,
+  );
   const fetchResolvedUser = useCallback(() => {
     fetch("/api/profile/me")
       .then((r) => (r.ok ? r.json() : null))
@@ -447,6 +460,8 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   return (
     <QueryClientProvider client={queryClient}>
       <AppI18nProvider locale={locale} resources={i18nResources}>
+      {/* Load framer-motion features lazily so they're off the initial bundle. */}
+      <LazyMotion features={loadMotionFeatures}>
       {/* Honor the OS "reduce motion" setting across all framer-motion animations. */}
       <MotionConfig reducedMotion="user">
       <SessionCtx.Provider value={effectiveSession}>
@@ -476,6 +491,7 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
         />
       </SessionCtx.Provider>
       </MotionConfig>
+      </LazyMotion>
       </AppI18nProvider>
     </QueryClientProvider>
   );

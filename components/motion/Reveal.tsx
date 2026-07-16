@@ -22,7 +22,7 @@
  *   benign, and it introduces no hydration mismatch.
  */
 import type { ElementType, ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { DUR_BASE, EASE_OUT_EXPO } from './motionTokens';
 

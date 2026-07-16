@@ -6,7 +6,7 @@
  */
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Trophy, Crown, Zap } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { ClientPlayerInfo } from '@/lib/rmhbox/types';

@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { useClipboard } from '@/hooks/useClipboard';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useIdleReady } from '@/hooks/useIdleReady';
 import { TodayWidget } from '@/components/feed/TodayWidget';
 import { FriendsOnlineWidget } from '@/components/feed/FriendsOnlineWidget';
 
@@ -71,9 +73,14 @@ interface RightSidebarProps {
 /** Live "N people online" pill. Polls the cached count once a minute. */
 function OnlineNowPill() {
   const { t } = useTranslation('feed');
+  const isDesktop = useIsDesktop();
+  const idle = useIdleReady();
   const [count, setCount] = useState<number | null>(null);
 
+  // Desktop-only + idle-deferred: this pill sits in the `hidden lg:block`
+  // sidebar, so mobile clients skip the fetch/poll entirely.
   useEffect(() => {
+    if (!isDesktop || !idle) return;
     let cancelled = false;
     const load = async () => {
       try {
@@ -91,7 +98,7 @@ function OnlineNowPill() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [isDesktop, idle]);
 
   if (!count) return null;
   return (

@@ -15,26 +15,20 @@ export const Route = createFileRoute('/api/messages/unread-count')({
 
     const userId = session.user.id;
 
-    // Get all conversation IDs where user is a participant
-    const conversations = await prisma.conversation.findMany({
-      where: {
-        OR: [
-          { participantOneId: userId },
-          { participantTwoId: userId },
-        ],
-      },
-      select: { id: true },
-    });
-
-    if (conversations.length === 0) {
-      return Response.json({ count: 0 });
-    }
-
+    // Single round-trip: let Postgres join through the conversation relation
+    // instead of fetching every conversation id and shipping it back in an
+    // IN (...) list. This endpoint is polled every 15s per active client
+    // (lib/useUnreadCount.ts), so halving its query count matters at scale.
     const count = await prisma.directMessage.count({
       where: {
-        conversationId: { in: conversations.map((c) => c.id) },
         senderId: { not: userId },
         read: false,
+        conversation: {
+          OR: [
+            { participantOneId: userId },
+            { participantTwoId: userId },
+          ],
+        },
       },
     });
 

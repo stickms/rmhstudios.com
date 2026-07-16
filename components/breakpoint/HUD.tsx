@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import type { MatchSnapshot, Actor } from '@/lib/breakpoint/types';
 import { getAgent } from '@/lib/breakpoint/agents';
 import { getWeapon } from '@/lib/breakpoint/weapons';

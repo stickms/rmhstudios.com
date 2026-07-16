@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* Scope Tailwind's content scanning to code that actually renders in the browser.
+   Without this, auto-detection also scans build/test/infra/docs directories and
+   emits utility classes that only appear in those non-shipped files into the
+   render-blocking globals stylesheet. Excluding them trims dead utilities off the
+   critical path with zero risk to any rendered route (nothing here paints in the
+   app). Directories under components/app/lib/hooks/stores are intentionally kept. */
+@source not "../scripts";
+@source not "../testing";
+@source not "../specs";
+@source not "../cli";
+@source not "../server";
+@source not "../go-services";
+@source not "../docs";
+@source not "../deploy";
+
 /* Theme stylesheets moved to their respective route files for code splitting */
 
 /* ── Font family variables (loaded via Google Fonts CSS link) ── */
