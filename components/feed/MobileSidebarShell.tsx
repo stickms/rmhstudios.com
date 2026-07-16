@@ -156,25 +156,14 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen]);
 
-  // Lock body scroll while the drawer is open. Since the page now scrolls the
-  // document (not an inner container), we can't just set overflow:hidden on a
-  // scroller — use the iOS-robust position:fixed + top:-scrollY technique, which
-  // freezes the page without losing the scroll position (restored on close).
-  useEffect(() => {
-    if (!isOpen) return;
-    const body = document.body;
-    const html = document.documentElement;
-    const prev = { htmlOverflow: html.style.overflow, bodyOverflow: body.style.overflow };
-    // Lock the document scroll with overflow:hidden. It keeps the scroll position
-    // and coordinate space intact (no position:fixed shift), and the touch handlers
-    // already preventDefault to stop the page scrolling behind the open drawer.
-    html.style.overflow = 'hidden';
-    body.style.overflow = 'hidden';
-    return () => {
-      html.style.overflow = prev.htmlOverflow;
-      body.style.overflow = prev.bodyOverflow;
-    };
-  }, [isOpen]);
+  // NO CSS scroll-lock while the drawer is open — deliberately. Both
+  // overflow:hidden and the position:fixed body technique CLIP the document to
+  // the visual viewport, which on iOS reveals the bare page background (--site-bg)
+  // behind Safari's floating bar as a stray colored band (the content that
+  // normally scrolls under the bar gets clipped away). Instead the page keeps
+  // flowing behind the bar exactly like when the drawer is closed, and background
+  // scroll is blocked by the scrim: it covers the page with touch-action:none, and
+  // the touch handlers below preventDefault vertical drags on it (mode 'lock').
 
   // Swipe handling, via non-passive native listeners on the OUTER wrapper so a
   // touch anywhere — the page (to open), the scrim, or the glass sidebar itself
@@ -354,7 +343,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             type="button"
             onClick={close}
             aria-label={t('close-menu', { defaultValue: 'Close menu' })}
-            className={`fixed inset-0 z-[55] bg-black/40 ${
+            className={`fixed inset-0 z-[55] touch-none bg-black/40 ${
               dragging
                 ? ''
                 : 'transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
