@@ -356,7 +356,11 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             height); bottom-0 + a height would anchor to the physical bottom on iOS
             and push the panel down. Blur lives on glass-chrome--aside's ::before so
             the aside isn't a backdrop-filter containing block; the transform keeps
-            LeftSidebar's non-portaled fixed user menu inside it. */}
+            LeftSidebar's non-portaled fixed user menu inside it. The bottom
+            safe-area inset lives INSIDE LeftSidebar (its footer padding), not as
+            aside paddingBottom — a trailing pad here left an empty tinted strip
+            below the last item that read as a stray colored band above the bottom
+            bar. */}
         <aside
           ref={asideRef}
           className={`glass-chrome--aside md:hidden fixed inset-y-0 left-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
@@ -366,7 +370,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
               ? ''
               : 'transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0'
           }`}
-          style={{ transform: sidebarTransform, paddingBottom: 'calc(var(--safe-bottom) + 16px)' }}
+          style={{ transform: sidebarTransform }}
           aria-hidden={!isOpen}
         >
           <LeftSidebar expanded />

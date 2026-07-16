@@ -31,6 +31,7 @@ import {
   useComposeDraftAutosave,
   type ComposeDraft,
 } from '@/hooks/useComposeDraft';
+import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 
 const MAX_IMAGES = 4;
 
@@ -80,8 +81,16 @@ export function ComposeBox({
   const menuRef = useRef<HTMLDivElement>(null);
   const audienceRef = useRef<HTMLDivElement>(null);
   const replyRef = useRef<HTMLDivElement>(null);
+  // Popover elements themselves (not their trigger wrappers) — the viewport-fit
+  // hook clamps these so the edge-anchored menus can't spill off a small screen.
+  const menuPopRef = useRef<HTMLDivElement>(null);
+  const audiencePopRef = useRef<HTMLDivElement>(null);
+  const replyPopRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
+  useMenuViewportFit(menuOpen, menuPopRef);
+  useMenuViewportFit(audienceOpen, audiencePopRef);
+  useMenuViewportFit(replyOpen, replyPopRef);
 
   // Autosave the draft text so a refresh/navigation can't eat an unsent post;
   // offer any stored draft back once on mount.
@@ -749,7 +758,7 @@ export function ComposeBox({
                 </button>
 
                 {audienceOpen && (
-                  <div role="listbox" className="absolute bottom-full left-0 mb-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30 animate-in fade-in slide-in-from-bottom-1 duration-150">
+                  <div ref={audiencePopRef} role="listbox" className="absolute bottom-full left-0 mb-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30 animate-in fade-in slide-in-from-bottom-1 duration-150">
                     {audienceOptions.map(({ value, label, icon: Icon }) => (
                       <button
                         key={value}
@@ -789,7 +798,7 @@ export function ComposeBox({
                 </button>
 
                 {replyOpen && (
-                  <div role="listbox" className="absolute bottom-full left-0 mb-1 w-52 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30 animate-in fade-in slide-in-from-bottom-1 duration-150">
+                  <div ref={replyPopRef} role="listbox" className="absolute bottom-full left-0 mb-1 w-52 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30 animate-in fade-in slide-in-from-bottom-1 duration-150">
                     <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-site-text-dim">
                       {t("reply-control-heading", { defaultValue: "Who can reply?" })}
                     </div>
@@ -878,7 +887,7 @@ export function ComposeBox({
                 </button>
 
                 {menuOpen && (
-                  <div className="absolute bottom-full right-0 mb-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
+                  <div ref={menuPopRef} className="absolute bottom-full right-0 mb-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
                     <button
                       type="button"
                       disabled={imageUrls.length >= MAX_IMAGES}

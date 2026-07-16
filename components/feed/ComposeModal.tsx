@@ -22,6 +22,7 @@ import {
   MAX_IMAGE_ALT_LENGTH,
 } from '@/lib/rmhark-schema';
 import { clearComposeDraft, useComposeDraftAutosave } from '@/hooks/useComposeDraft';
+import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 
 const MAX_IMAGES = 4;
 
@@ -62,8 +63,10 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
   const [imageError, setImageError] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuPopRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
+  useMenuViewportFit(menuOpen, menuPopRef);
   const { prependItem } = useFeedStore();
   const { data: session } = authClient.useSession();
   const { resolved: resolvedUser } = useResolvedUser();
@@ -237,7 +240,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
               </button>
 
               {menuOpen && (
-                <div className="absolute top-full right-0 mt-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
+                <div ref={menuPopRef} className="absolute top-full right-0 mt-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
                   <button
                     onClick={() => {
                       setAttachment('poll');

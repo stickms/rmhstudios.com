@@ -48,6 +48,7 @@ import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 
 // Dropdown motion for collapsible nav groups (e.g. "More"): the panel expands
 // its height while its items fade/slide in with a slight stagger.
@@ -149,7 +150,12 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const labelClass = expanded ? '' : 'hidden xl:block';
   const logoFullClass = expanded ? '' : 'hidden xl:block';
   const logoShortClass = expanded ? 'hidden' : 'xl:hidden';
-  const paddingClass = expanded ? 'p-4' : 'p-3 xl:p-4';
+  // Mobile drawer (`expanded`): pad x/top uniformly; the bottom inset is applied
+  // inline (see the root div) as 1rem + the OS safe-area, so the sidebar body
+  // fills the drawer to the bottom with no empty tinted band while the footer
+  // still clears the home indicator once Safari's bottom bar collapses (env() is
+  // 0 while that bar is shown).
+  const paddingClass = expanded ? 'px-4 pt-4' : 'p-3 xl:p-4';
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
@@ -180,7 +186,12 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const userMenuBtnRef = useRef<HTMLButtonElement>(null);
+  const userMenuPopRef = useRef<HTMLDivElement>(null);
   const [userMenuPos, setUserMenuPos] = useState({ bottom: 0, right: 0 });
+  // The click handler positions the menu from a hardcoded size estimate; this
+  // clamps the actually-rendered element so a taller/narrower menu (or a small
+  // viewport) can't still push it off-screen. Re-fit when the anchor moves.
+  useMenuViewportFit(showUserMenu, userMenuPopRef, [userMenuPos.bottom, userMenuPos.right]);
   const rootRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLElement>(null);
 
@@ -360,7 +371,11 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   };
 
   return (
-    <div ref={rootRef} className={`flex flex-col gap-1 ${rootSizeClass} ${paddingClass}`}>
+    <div
+      ref={rootRef}
+      className={`flex flex-col gap-1 ${rootSizeClass} ${paddingClass}`}
+      style={expanded ? { paddingBottom: 'calc(1rem + var(--safe-bottom))' } : undefined}
+    >
       {/* Logo */}
       <Link to="/" className={`mb-6 flex items-center shrink-0 ${logoAlignClass}`}>
         <span
@@ -497,13 +512,19 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   // or on-screen keyboard has shrunk the viewport.
                   const vw = window.visualViewport?.width ?? window.innerWidth;
                   const vh = window.visualViewport?.height ?? window.innerHeight;
+                  // In the mobile drawer (`expanded`) the menu is a fixed child of
+                  // the transformed <aside>, so its containing block is that 256px
+                  // (w-64) panel — measure `right` from the panel's edge, not the
+                  // viewport's, or it lands off to the left. On desktop the aside
+                  // isn't transformed and the containing block is the viewport.
+                  const cbRight = expanded ? 256 : vw;
                   const right = Math.min(
-                    Math.max(vw - rect.right, margin),
-                    vw - menuWidth - margin,
+                    Math.max(cbRight - rect.right, margin),
+                    Math.max(cbRight - menuWidth - margin, margin),
                   );
                   const bottom = Math.min(
                     Math.max(vh - rect.top + 8, margin),
-                    vh - menuHeight - margin,
+                    Math.max(vh - menuHeight - margin, margin),
                   );
                   setUserMenuPos({ bottom, right });
                 }
@@ -516,6 +537,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             </button>
             {showUserMenu && (
               <div
+                ref={userMenuPopRef}
                 className="glass-overlay fixed w-48 py-1 z-50"
                 style={{
                   bottom: `${userMenuPos.bottom}px`,
