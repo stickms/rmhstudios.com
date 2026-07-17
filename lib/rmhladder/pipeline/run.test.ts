@@ -182,6 +182,8 @@ function makeFakeRunPrisma(initialSources: SourceRow[]): RunPrisma & {
             id: j.id as string,
             externalId: (j.externalId as string | null) ?? null,
             failedCheckCount: (j.failedCheckCount as number) ?? 0,
+            lastSeenAt: (j.lastSeenAt as Date | null) ?? null,
+            discoveredAt: (j.discoveredAt as Date) ?? new Date(0),
           }));
       },
     },
@@ -745,5 +747,57 @@ describe('scenario D — one record throws → sourceError row, remaining record
     const run = [...prisma._state.scrapeRuns.values()][0];
     expect(run.finishedAt).toBeDefined();
     expect(run.errorCount).toBe(1);
+  });
+});
+
+// ── Scenario H: age backstop expires long-unseen active jobs ─────────────────
+
+describe('scenario H — age backstop expires an active job last seen 40 days ago', () => {
+  it('expired count includes age-backstop expiry and job status becomes expired', async () => {
+    const prisma = makeFakeRunPrisma([]);
+    const staleNow = new Date('2026-07-15T12:00:00.000Z');
+    const dayMs = 24 * 60 * 60 * 1_000;
+
+    // Seed an active job with lastSeenAt 40 days before the injected now.
+    // Insert via upsert using a synthetic sourceId/externalId.
+    await prisma.ladderJob.upsert({
+      where: { sourceId_externalId: { sourceId: 'src-stale', externalId: 'ext-stale' } },
+      create: {
+        companyId: 'co-stale',
+        sourceId: 'src-stale',
+        dedupeHash: 'hash-stale',
+        sourcePlatform: 'greenhouse',
+        status: 'active',
+        externalId: 'ext-stale',
+        failedCheckCount: 0,
+        alternateUrls: [],
+        discoveredAt: new Date(staleNow.getTime() - 40 * dayMs),
+        lastSeenAt: new Date(staleNow.getTime() - 40 * dayMs),
+        title: 'Stale Job',
+        normalizedTitle: 'stale job',
+        originalPostingUrl: 'https://example.com/stale-job',
+      },
+      update: {},
+    });
+
+    const fetchImpl = makeStubFetch({});
+    const result = await runPipeline(
+      { prisma, fetchImpl, now: staleNow, sleepMs: 0 },
+      { trigger: 'cron' },
+    );
+
+    // Age backstop should have expired the stale job.
+    expect(result.expired).toBeGreaterThanOrEqual(1);
+
+    // The job's status should now be 'expired'.
+    const jobsById = prisma._state.jobs;
+    const staleJob = [...jobsById.values()].find((j) => j.externalId === 'ext-stale');
+    expect(staleJob?.status).toBe('expired');
+
+    // A verification row should have been written.
+    const verification = prisma._state.verifications.find(
+      (v) => v.jobId === staleJob?.id && v.status === 'expired',
+    );
+    expect(verification).toBeDefined();
   });
 });

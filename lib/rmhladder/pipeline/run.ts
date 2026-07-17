@@ -1,5 +1,7 @@
 import { processSource } from './process-source';
 import { recheckSource } from './recheck';
+import { expireStaleJobs, resolveJobMaxAgeMs } from './expire-stale';
+import type { ExpireStalePrisma } from './expire-stale';
 import { checkRobots, politeFetch } from '../adapters/index';
 import {
   discoverWorkdaySourceUrls,
@@ -38,7 +40,8 @@ export interface RunPrisma {
     }): Promise<{ id: string }>;
     findMany(args: {
       where: Record<string, unknown>;
-    }): Promise<Array<{ id: string; externalId: string | null; failedCheckCount: number }>>;
+      select?: Record<string, unknown>;
+    }): Promise<Array<{ id: string; externalId: string | null; failedCheckCount: number } | { id: string; lastSeenAt: Date | null; discoveredAt: Date }>>;
   };
   ladderVerification: {
     create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
@@ -259,7 +262,7 @@ export async function runPipeline(
       const recheckStats = await recheckSource(
         { prisma: deps.prisma, fetchImpl: deps.fetchImpl, now: deps.now },
         source,
-        activeJobs,
+        activeJobs as Array<{ id: string; externalId: string | null; failedCheckCount: number }>,
       );
 
       if (recheckStats.tripped) {
@@ -279,6 +282,19 @@ export async function runPipeline(
     } catch {
       totals.errors++;
     }
+  }
+
+  // Step 4.5: Age backstop — expire jobs unseen for the max-age window,
+  // independent of per-source recheck. Bounded, long horizon (default 30d).
+  try {
+    const ageResult = await expireStaleJobs(deps.prisma as unknown as ExpireStalePrisma, {
+      now: deps.now ?? new Date(),
+      maxAgeMs: resolveJobMaxAgeMs(),
+    });
+    totals.expired += ageResult.expired;
+  } catch (err) {
+    totals.errors++;
+    statsSummary.push({ step: 'age_backstop', errored: true, errorMessage: err instanceof Error ? err.message : String(err) });
   }
 
   // Step 5: Manual sources — aliveness only (checkRobots → politeFetch).
