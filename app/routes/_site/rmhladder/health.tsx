@@ -17,22 +17,50 @@ import {
   listStaleSources,
   type QueriesPrisma,
 } from '@/lib/rmhladder/server/queries';
+import { resumeSubsystemReadiness } from '@/lib/rmhladder/resume/readiness.server';
+import { detectLadderHealthAlerts, resolveAlertThresholds } from '@/lib/rmhladder/health-alerts';
 import { timeAgo } from '@/components/rmhladder/time';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
 
 const fetchHealth = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/health' } });
-    const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
-    if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
-  const [stale, runs, overview] = await Promise.all([
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session?.user)
+    throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/health' } });
+  const admin = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isAdmin: true },
+  });
+  if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
+  const resumeReadiness = resumeSubsystemReadiness();
+  const [stale, runs, overview, openMassExpiryTasks] = await Promise.all([
     listStaleSources(queriesPrisma),
     listRuns(queriesPrisma, 20),
     getOverview(queriesPrisma, session.user.id, { includeAdminStats: true }),
+    prisma.ladderReviewTask.count({ where: { reason: 'mass_expiry_suspected', status: 'open' } }),
   ]);
-  return { stale, runs, openReviewTasks: overview.openReviewTasks };
+
+  // Derive last-completed-run signals from the already-fetched runs (sorted by startedAt desc).
+  const lastCompletedRun = (runs as AnyRow[]).find((r) => r.finishedAt != null) ?? null;
+  const lastCompletedRunAt = lastCompletedRun ? (lastCompletedRun.finishedAt as Date) : null;
+  const latestRun = lastCompletedRun
+    ? {
+        errorCount: lastCompletedRun.errorCount as number,
+        discoveredCount: lastCompletedRun.discoveredCount as number,
+      }
+    : null;
+
+  const alerts = detectLadderHealthAlerts({
+    now: new Date(),
+    lastCompletedRunAt,
+    latestRun,
+    openMassExpiryTasks,
+    resumeReady: resumeReadiness.ready,
+    thresholds: resolveAlertThresholds(),
+  });
+
+  return { stale, runs, openReviewTasks: overview.openReviewTasks, resumeReadiness, alerts };
 });
 
 export const Route = createFileRoute('/_site/rmhladder/health')({
@@ -49,7 +77,7 @@ function durationLabel(run: AnyRow): string {
 }
 
 function HealthPage() {
-  const { stale, runs, openReviewTasks } = Route.useLoaderData();
+  const { stale, runs, openReviewTasks, resumeReadiness, alerts } = Route.useLoaderData();
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
 
   return (
@@ -58,11 +86,45 @@ function HealthPage() {
         Review queue · {openReviewTasks} open
       </Link>
 
+      <section className="rl-stale-panel">
+        <h2 className="rl-eyebrow">Health alerts</h2>
+        {alerts.length === 0 ? (
+          <p className="rl-quicklist__empty">No active alerts — the pipeline is healthy.</p>
+        ) : (
+          <ul>
+            {alerts.map((a) => (
+              <li key={a.code} className="rl-stale-row">
+                <span className="rl-program-chip">{a.severity}</span>
+                <span className="rl-mono">{a.code}</span>
+                <span>{a.message}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rl-stale-panel">
+        <h2 className="rl-eyebrow">Resume subsystem</h2>
+        {resumeReadiness.ready ? (
+          <p className="rl-quicklist__empty">Object storage and encryption key are configured.</p>
+        ) : (
+          <ul>
+            {resumeReadiness.missing.map((item) => (
+              <li key={item} className="rl-stale-row">
+                <span className="rl-mono">missing: {item}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
       {/* Silent sources — the page's thesis */}
       <section className="rl-stale-panel">
         <h2 className="rl-eyebrow">Silent for two scrape cycles (8h)</h2>
         {(stale as AnyRow[]).length === 0 ? (
-          <p className="rl-quicklist__empty">Every active source has succeeded within the last eight hours.</p>
+          <p className="rl-quicklist__empty">
+            Every active source has succeeded within the last eight hours.
+          </p>
         ) : (
           <ul>
             {(stale as AnyRow[]).map((s) => (
@@ -72,13 +134,18 @@ function HealthPage() {
                 </span>
                 <span className="rl-program-chip">{s.platform as string}</span>
                 <span className="rl-mono">
-                  {s.lastSuccessAt ? `last ok ${timeAgo(s.lastSuccessAt as Date)}` : 'never succeeded'}
+                  {s.lastSuccessAt
+                    ? `last ok ${timeAgo(s.lastSuccessAt as Date)}`
+                    : 'never succeeded'}
                 </span>
                 <span className="rl-mono">
-                  {s.lastAttemptAt ? `last tried ${timeAgo(s.lastAttemptAt as Date)}` : 'never attempted'}
+                  {s.lastAttemptAt
+                    ? `last tried ${timeAgo(s.lastAttemptAt as Date)}`
+                    : 'never attempted'}
                 </span>
                 <span className="rl-mono">
-                  {Number(s.consecutiveFailures ?? 0)} consecutive failure{Number(s.consecutiveFailures ?? 0) === 1 ? '' : 's'}
+                  {Number(s.consecutiveFailures ?? 0)} consecutive failure
+                  {Number(s.consecutiveFailures ?? 0) === 1 ? '' : 's'}
                 </span>
               </li>
             ))}
@@ -100,7 +167,9 @@ function HealthPage() {
               <th scope="col">Expired</th>
               <th scope="col">Errors</th>
               <th scope="col">Trigger</th>
-              <th scope="col"><span className="rl-visually-hidden">Details</span></th>
+              <th scope="col">
+                <span className="rl-visually-hidden">Details</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -116,7 +185,9 @@ function HealthPage() {
                   <td className="rl-mono">{run.verifiedCount as number}</td>
                   <td className="rl-mono">{run.expiredCount as number}</td>
                   <td className="rl-mono">{run.errorCount as number}</td>
-                  <td><span className="rl-program-chip">{run.trigger as string}</span></td>
+                  <td>
+                    <span className="rl-program-chip">{run.trigger as string}</span>
+                  </td>
                   <td>
                     {errors.length > 0 && (
                       <button
@@ -125,7 +196,9 @@ function HealthPage() {
                         aria-expanded={expanded}
                         onClick={() => setExpandedRun(expanded ? null : (run.id as string))}
                       >
-                        {expanded ? 'Hide errors' : `${errors.length} error${errors.length > 1 ? 's' : ''}`}
+                        {expanded
+                          ? 'Hide errors'
+                          : `${errors.length} error${errors.length > 1 ? 's' : ''}`}
                       </button>
                     )}
                   </td>
@@ -148,7 +221,9 @@ function HealthPage() {
           </tbody>
         </table>
         {(runs as AnyRow[]).length === 0 && (
-          <p className="rl-quicklist__empty">No runs recorded. Start one: <code>pnpm ladder:run</code></p>
+          <p className="rl-quicklist__empty">
+            No runs recorded. Start one: <code>pnpm ladder:run</code>
+          </p>
         )}
       </section>
     </div>

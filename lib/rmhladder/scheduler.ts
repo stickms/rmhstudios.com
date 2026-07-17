@@ -1,7 +1,7 @@
 import { validate as validateCron } from 'node-cron';
 
-export const DEFAULT_LADDER_CRON = '0 */4 * * *';
-export const DEFAULT_STALE_AFTER_MS = 4 * 60 * 60 * 1_000;
+export const DEFAULT_LADDER_CRON = '0 */12 * * *';
+export const DEFAULT_STALE_AFTER_MS = 12 * 60 * 60 * 1_000;
 
 export function resolveLadderCron(value: string | undefined): string {
   const schedule = value?.trim() || DEFAULT_LADDER_CRON;

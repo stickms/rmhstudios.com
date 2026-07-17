@@ -6,14 +6,15 @@
  * ambiguity of detectExpired's boolean return, which cannot distinguish
  * "present" from "fetch failed".
  *
- * IMPORTANT: discoverJobs returning [] is treated as fetchSucceeded=false
- * (ambiguous: empty board vs. fetch failure). No strikes are issued on
- * ambiguous evidence. A genuinely-emptied board will not auto-expire via
- * recheck — accepted MVP tradeoff; manual review can handle it.
+ * discoverJobs now returns DiscoverResult with an explicit fetchSucceeded flag:
+ * - fetchSucceeded=false → fetch/parse failure; skip all jobs, no strikes.
+ * - fetchSucceeded=true  → board fetched successfully (including empty boards);
+ *   absent jobs are struck or expired per the 3-strike rule.
  */
 
 import { getAdapter } from '../adapters/index';
 import { memoFetch } from './memo-fetch';
+import type { NormalizedJob } from '../adapters/types';
 
 // ── Pure decision core ────────────────────────────────────────────────────────
 
@@ -60,25 +61,17 @@ export function circuitBreaker(args: {
 
 export interface RecheckPrismaLike {
   ladderJob: {
-    update(args: {
-      where: { id: string };
-      data: Record<string, unknown>;
-    }): Promise<{ id: string }>;
+    update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderVerification: {
     create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderReviewTask: {
-    findFirst(args: {
-      where: Record<string, unknown>;
-    }): Promise<{ id: string } | null>;
+    findFirst(args: { where: Record<string, unknown> }): Promise<{ id: string } | null>;
     create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderSource: {
-    update(args: {
-      where: { id: string };
-      data: Record<string, unknown>;
-    }): Promise<{ id: string }>;
+    update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }>;
   };
 }
 
@@ -111,7 +104,8 @@ export async function recheckSource(
 
   // Resolve adapter. Unknown platform or missing slug → all skip, no DB writes.
   const adapter = getAdapter(source.platform);
-  if (!adapter || (!source.slug && !(source.platform === 'workday' && source.url))) return ALL_SKIPPED;
+  if (!adapter || (!source.slug && !(source.platform === 'workday' && source.url)))
+    return ALL_SKIPPED;
 
   const memoized = memoFetch(deps.fetchImpl);
   const ctx = {
@@ -121,16 +115,17 @@ export async function recheckSource(
     fetchImpl: memoized,
   };
 
-  // One memoized board fetch. Errors are caught and treated as empty.
-  let boardJobs: Awaited<ReturnType<typeof adapter.discoverJobs>>;
+  // One memoized board fetch. Errors are caught and treated as fetch failure.
+  let boardJobs: NormalizedJob[] = [];
+  let fetchSucceeded = false;
   try {
-    boardJobs = await adapter.discoverJobs(ctx);
+    const result = await adapter.discoverJobs(ctx);
+    boardJobs = result.jobs;
+    fetchSucceeded = result.fetchSucceeded;
   } catch {
-    boardJobs = [];
+    // fetchSucceeded stays false, boardJobs stays []
   }
 
-  // [] is ambiguous (empty board vs. fetch failure) → skip all, no strikes.
-  const fetchSucceeded = boardJobs.length > 0;
   const presentIds = new Set(boardJobs.map((j) => j.externalId));
 
   // ── Step 1: compute all decisions before writing anything ─────────────────

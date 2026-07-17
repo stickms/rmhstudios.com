@@ -2,7 +2,7 @@ import { classifyUSLocation } from '../classifiers/us-location';
 import type { VerificationEvidence } from '../verification';
 import { parse as parseHtml } from 'node-html-parser';
 import { politeFetch } from './http';
-import type { AdapterContext, NormalizedJob, SourceAdapter } from './types';
+import type { AdapterContext, DiscoverResult, NormalizedJob, SourceAdapter } from './types';
 
 const PAGE_SIZE = 20; // Workday CXS rejects larger page sizes.
 const HARD_CAP = 2_000;
@@ -72,19 +72,32 @@ export function workdaySourceSlug(config: WorkdaySourceConfig): string {
 
 export function discoverWorkdaySourceUrls(html: string, pageUrl: string): string[] {
   const urls = new Set<string>();
+
+  const add = (candidate: string): void => {
+    const config = parseWorkdaySource(candidate);
+    if (config) urls.add(`${config.origin}/${encodeURIComponent(config.site)}`);
+  };
+
+  // 1. Anchor hrefs (resolves relative URLs against the page).
   const root = parseHtml(html);
   for (const anchor of root.querySelectorAll('a')) {
     const href = anchor.getAttribute('href');
     if (!href) continue;
-    let absolute: string;
     try {
-      absolute = new URL(href, pageUrl).toString();
+      add(new URL(href, pageUrl).toString());
     } catch {
-      continue;
+      // ignore unparseable href
     }
-    const config = parseWorkdaySource(absolute);
-    if (config) urls.add(`${config.origin}/${encodeURIComponent(config.site)}`);
   }
+
+  // 2. Absolute *.myworkdayjobs.com URLs embedded anywhere in the HTML
+  //    (scripts, JSON config, iframes, meta-refresh). parseWorkdaySource is the
+  //    trust boundary — junk and lookalike hosts are rejected there.
+  const EMBEDDED = /https?:\/\/[a-z0-9.-]+\.myworkdayjobs\.com\/[A-Za-z0-9/_-]+/gi;
+  for (const match of html.match(EMBEDDED) ?? []) {
+    add(match);
+  }
+
   return [...urls];
 }
 
@@ -105,7 +118,11 @@ export async function probeWorkdaySourceUrl(
   if (!res.ok) return { live: false, jobCount: 0 };
   try {
     const body = JSON.parse(res.body) as WorkdayBoardResponse;
-    if (!Number.isInteger(body.total) || (body.total as number) < 0 || !Array.isArray(body.jobPostings)) {
+    if (
+      !Number.isInteger(body.total) ||
+      (body.total as number) < 0 ||
+      !Array.isArray(body.jobPostings)
+    ) {
       return { live: false, jobCount: 0 };
     }
     return { live: true, jobCount: body.total as number };
@@ -148,7 +165,12 @@ async function fetchBoard(ctx: AdapterContext): Promise<WorkdayBoardResult> {
       init: {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ appliedFacets: {}, limit: PAGE_SIZE, offset: jobs.length, searchText: '' }),
+        body: JSON.stringify({
+          appliedFacets: {},
+          limit: PAGE_SIZE,
+          offset: jobs.length,
+          searchText: '',
+        }),
       },
     });
     status = res.status;
@@ -161,7 +183,11 @@ async function fetchBoard(ctx: AdapterContext): Promise<WorkdayBoardResult> {
       return { jobs: null, status, total };
     }
 
-    if (!Number.isInteger(data.total) || (data.total as number) < 0 || !Array.isArray(data.jobPostings)) {
+    if (
+      !Number.isInteger(data.total) ||
+      (data.total as number) < 0 ||
+      !Array.isArray(data.jobPostings)
+    ) {
       return { jobs: null, status, total };
     }
 
@@ -176,7 +202,10 @@ async function fetchBoard(ctx: AdapterContext): Promise<WorkdayBoardResult> {
   return { jobs, status, total };
 }
 
-function normalize(raw: WorkdayPosting & { title: string; externalPath: string }, config: WorkdaySourceConfig): NormalizedJob {
+function normalize(
+  raw: WorkdayPosting & { title: string; externalPath: string },
+  config: WorkdaySourceConfig,
+): NormalizedJob {
   const locationRaw = typeof raw.locationsText === 'string' ? raw.locationsText : '';
   const remoteType = typeof raw.remoteType === 'string' ? raw.remoteType : '';
   const bullets = Array.isArray(raw.bulletFields)
@@ -207,17 +236,22 @@ function normalize(raw: WorkdayPosting & { title: string; externalPath: string }
 export const workdayAdapter: SourceAdapter = {
   platform: 'workday',
 
-  async discoverJobs(ctx) {
+  async discoverJobs(ctx): Promise<DiscoverResult> {
     const config = resolveConfig(ctx);
-    if (!config) return [];
+    if (!config) return { jobs: [], fetchSucceeded: false };
     const { jobs } = await fetchBoard(ctx);
-    return (jobs ?? []).filter(validPosting).map((job) => normalize(job, config));
+    return {
+      jobs: (jobs ?? []).filter(validPosting).map((job) => normalize(job, config)),
+      fetchSucceeded: jobs !== null,
+    };
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {
     const config = resolveConfig(ctx);
     const { jobs, status } = config ? await fetchBoard(ctx) : { jobs: null, status: 0 };
-    const hit = jobs?.filter(validPosting).find((candidate) => candidate.externalPath === job.externalId) ?? null;
+    const hit =
+      jobs?.filter(validPosting).find((candidate) => candidate.externalPath === job.externalId) ??
+      null;
     const normalized = hit && config ? normalize(hit, config) : null;
     const location = normalized
       ? classifyUSLocation({ locationRaw: normalized.locationRaw, country: normalized.country })

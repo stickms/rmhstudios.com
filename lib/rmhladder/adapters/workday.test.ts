@@ -64,7 +64,9 @@ describe('Workday source discovery', () => {
       live: false,
       jobCount: 0,
     });
-    await expect(probeWorkdaySourceUrl('https://example.com/jobs', stub(200, fixture))).resolves.toEqual({
+    await expect(
+      probeWorkdaySourceUrl('https://example.com/jobs', stub(200, fixture)),
+    ).resolves.toEqual({
       live: false,
       jobCount: 0,
     });
@@ -73,21 +75,24 @@ describe('Workday source discovery', () => {
 
 describe('workdayAdapter.discoverJobs', () => {
   it('normalizes a recorded CXS response', async () => {
-    const jobs = await workdayAdapter.discoverJobs(ctx);
-    expect(jobs).toHaveLength(2);
-    expect(jobs[0]).toEqual({
+    const result = await workdayAdapter.discoverJobs(ctx);
+    expect(result.jobs).toHaveLength(2);
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs[0]).toEqual({
       externalId: '/job/USA-NY-Remote/Senior-Engagement-Manager--AI-Solutions-Delivery_JR-0107750',
       title: 'Senior Engagement Manager, AI Solutions Delivery',
       locationRaw: 'USA, NY, Remote',
       country: 'US',
       remoteHint: true,
       postedAt: null,
-      absoluteUrl: 'https://workday.wd5.myworkdayjobs.com/Workday/job/USA-NY-Remote/Senior-Engagement-Manager--AI-Solutions-Delivery_JR-0107750',
-      applyUrl: 'https://workday.wd5.myworkdayjobs.com/Workday/job/USA-NY-Remote/Senior-Engagement-Manager--AI-Solutions-Delivery_JR-0107750',
+      absoluteUrl:
+        'https://workday.wd5.myworkdayjobs.com/Workday/job/USA-NY-Remote/Senior-Engagement-Manager--AI-Solutions-Delivery_JR-0107750',
+      applyUrl:
+        'https://workday.wd5.myworkdayjobs.com/Workday/job/USA-NY-Remote/Senior-Engagement-Manager--AI-Solutions-Delivery_JR-0107750',
       descriptionHtml: 'JR-0107750',
       requisitionId: 'JR-0107750',
     });
-    expect(jobs[1]).toMatchObject({ country: null, remoteHint: false });
+    expect(result.jobs[1]).toMatchObject({ country: null, remoteHint: false });
   });
 
   it('sends the Workday-required POST payload', async () => {
@@ -99,18 +104,50 @@ describe('workdayAdapter.discoverJobs', () => {
 
     await workdayAdapter.discoverJobs({ ...ctx, fetchImpl });
 
-    expect(captured?.url).toBe('https://workday.wd5.myworkdayjobs.com/wday/cxs/workday/Workday/jobs');
+    expect(captured?.url).toBe(
+      'https://workday.wd5.myworkdayjobs.com/wday/cxs/workday/Workday/jobs',
+    );
     expect(captured?.init?.method).toBe('POST');
     expect(JSON.parse(String(captured?.init?.body))).toEqual({
-      appliedFacets: {}, limit: 20, offset: 0, searchText: '',
+      appliedFacets: {},
+      limit: 20,
+      offset: 0,
+      searchText: '',
     });
   });
 
-  it('returns no jobs for malformed source configuration or API data', async () => {
-    await expect(workdayAdapter.discoverJobs({ ...ctx, sourceUrl: 'https://example.com/jobs', slug: 'bad' }))
-      .resolves.toEqual([]);
-    await expect(workdayAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{}') })).resolves.toEqual([]);
-    await expect(workdayAdapter.discoverJobs({ ...ctx, fetchImpl: stub(429, 'limited') })).resolves.toEqual([]);
+  it('returns fetchSucceeded=false and no jobs for malformed source configuration or API data', async () => {
+    const r1 = await workdayAdapter.discoverJobs({
+      ...ctx,
+      sourceUrl: 'https://example.com/jobs',
+      slug: 'bad',
+    });
+    expect(r1.jobs).toEqual([]);
+    expect(r1.fetchSucceeded).toBe(false);
+    const r2 = await workdayAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{}') });
+    expect(r2.jobs).toEqual([]);
+    expect(r2.fetchSucceeded).toBe(false);
+    const r3 = await workdayAdapter.discoverJobs({ ...ctx, fetchImpl: stub(429, 'limited') });
+    expect(r3.jobs).toEqual([]);
+    expect(r3.fetchSucceeded).toBe(false);
+  });
+
+  it('successful empty board: fetchSucceeded=true, jobs=[]', async () => {
+    const result = await workdayAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(200, JSON.stringify({ total: 0, jobPostings: [] })),
+    });
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs).toEqual([]);
+  });
+
+  it('fetch failure (500): fetchSucceeded=false, jobs=[]', async () => {
+    const result = await workdayAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(500, 'server error'),
+    });
+    expect(result.fetchSucceeded).toBe(false);
+    expect(result.jobs).toEqual([]);
   });
 });
 
@@ -135,10 +172,46 @@ describe('workdayAdapter verification and expiry', () => {
 
   it('only treats a missing posting as expired after a complete non-empty board fetch', async () => {
     await expect(workdayAdapter.detectExpired(ctx, '/job/missing')).resolves.toBe(true);
-    await expect(workdayAdapter.detectExpired(ctx, '/job/USA-NY-Remote/Senior-Engagement-Manager--AI-Solutions-Delivery_JR-0107750'))
-      .resolves.toBe(false);
-    await expect(workdayAdapter.detectExpired({ ...ctx, fetchImpl: stub(500, 'error') }, '/job/missing'))
-      .resolves.toBe(false);
+    await expect(
+      workdayAdapter.detectExpired(
+        ctx,
+        '/job/USA-NY-Remote/Senior-Engagement-Manager--AI-Solutions-Delivery_JR-0107750',
+      ),
+    ).resolves.toBe(false);
+    await expect(
+      workdayAdapter.detectExpired({ ...ctx, fetchImpl: stub(500, 'error') }, '/job/missing'),
+    ).resolves.toBe(false);
+  });
+});
+
+describe('discoverWorkdaySourceUrls — full HTML', () => {
+  it('discovers a Workday URL embedded only in a <script>/JSON blob (no anchor)', () => {
+    const html = `<!doctype html><html><head>
+    <script>window.__CFG = {"careersUrl":"https://acme.wd1.myworkdayjobs.com/en-US/AcmeCareers"};</script>
+    </head><body><p>Careers</p></body></html>`;
+    const urls = discoverWorkdaySourceUrls(html, 'https://acme.com/careers');
+    expect(urls).toContain('https://acme.wd1.myworkdayjobs.com/AcmeCareers');
+  });
+
+  it('still discovers anchor-based Workday URLs (regression)', () => {
+    const html = `<a href="https://acme.wd1.myworkdayjobs.com/en-US/AcmeCareers">Jobs</a>`;
+    expect(discoverWorkdaySourceUrls(html, 'https://acme.com/careers')).toContain(
+      'https://acme.wd1.myworkdayjobs.com/AcmeCareers',
+    );
+  });
+
+  it('dedupes anchor + embedded occurrences of the same site', () => {
+    const html = `<a href="https://acme.wd1.myworkdayjobs.com/en-US/AcmeCareers">a</a>
+    <script>var u="https://acme.wd1.myworkdayjobs.com/AcmeCareers";</script>`;
+    const urls = discoverWorkdaySourceUrls(html, 'https://acme.com/careers');
+    expect(urls.filter((u) => u.includes('AcmeCareers'))).toHaveLength(1);
+  });
+
+  it('rejects non-Workday and malformed lookalikes', () => {
+    const html = `<script>var a="https://evil.myworkdayjobs.com.attacker.com/x";
+    var b="https://acme.myworkdayjobs.com";
+    var c="http://acme.wd1.myworkdayjobs.com/AcmeCareers";</script>`; // second has no site segment, third is http:// not https://
+    expect(discoverWorkdaySourceUrls(html, 'https://acme.com')).toEqual([]);
   });
 });
 
@@ -158,8 +231,9 @@ describe('workdayAdapter pagination', () => {
       return new Response(JSON.stringify({ total: 21, jobPostings: page }), { status: 200 });
     }) as typeof fetch;
 
-    const jobs = await workdayAdapter.discoverJobs({ ...ctx, fetchImpl });
-    expect(jobs).toHaveLength(21);
+    const result = await workdayAdapter.discoverJobs({ ...ctx, fetchImpl });
+    expect(result.jobs).toHaveLength(21);
+    expect(result.fetchSucceeded).toBe(true);
     expect(offsets).toEqual([0, 20]);
   });
 
@@ -168,15 +242,20 @@ describe('workdayAdapter pagination', () => {
     const fetchImpl = (async () => {
       calls++;
       if (calls === 2) return new Response('error', { status: 500 });
-      return new Response(JSON.stringify({
-        total: 21,
-        jobPostings: Array.from({ length: 20 }, (_, index) => ({
-          title: `Job ${index}`,
-          externalPath: `/job/location/job-${index}`,
-        })),
-      }), { status: 200 });
+      return new Response(
+        JSON.stringify({
+          total: 21,
+          jobPostings: Array.from({ length: 20 }, (_, index) => ({
+            title: `Job ${index}`,
+            externalPath: `/job/location/job-${index}`,
+          })),
+        }),
+        { status: 200 },
+      );
     }) as typeof fetch;
 
-    await expect(workdayAdapter.discoverJobs({ ...ctx, fetchImpl })).resolves.toEqual([]);
+    const result = await workdayAdapter.discoverJobs({ ...ctx, fetchImpl });
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
   });
 });

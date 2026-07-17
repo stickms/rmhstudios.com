@@ -27,6 +27,7 @@
     "ladder:seed": "pnpm exec tsx scripts/seed-ladder.ts",
     "ladder:probe": "pnpm exec tsx scripts/probe-ladder-sources.ts",
     "ladder:run": "pnpm exec tsx scripts/run-ladder-pipeline.ts",
+    "ladder:status": "pnpm exec tsx scripts/ladder-status.ts",
     "feed:reconcile-counts": "pnpm exec tsx scripts/reconcile-feed-counts.ts",
     "social:reconcile-counts": "pnpm exec tsx scripts/reconcile-social-counts.ts",
     "backfill-vibe-thumbs": "pnpm exec tsx scripts/backfill-vibe-thumbs.ts",

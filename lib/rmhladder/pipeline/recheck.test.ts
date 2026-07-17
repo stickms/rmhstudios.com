@@ -6,24 +6,42 @@ import type { RecheckPrismaLike } from './recheck';
 
 describe('decideRecheck', () => {
   it('returns skip when fetchSucceeded is false, regardless of other params', () => {
-    expect(decideRecheck({ fetchSucceeded: false, presentOnBoard: false, failedCheckCount: 0 }).action).toBe('skip');
-    expect(decideRecheck({ fetchSucceeded: false, presentOnBoard: true, failedCheckCount: 5 }).action).toBe('skip');
-    expect(decideRecheck({ fetchSucceeded: false, presentOnBoard: false, failedCheckCount: 2 }).action).toBe('skip');
+    expect(
+      decideRecheck({ fetchSucceeded: false, presentOnBoard: false, failedCheckCount: 0 }).action,
+    ).toBe('skip');
+    expect(
+      decideRecheck({ fetchSucceeded: false, presentOnBoard: true, failedCheckCount: 5 }).action,
+    ).toBe('skip');
+    expect(
+      decideRecheck({ fetchSucceeded: false, presentOnBoard: false, failedCheckCount: 2 }).action,
+    ).toBe('skip');
   });
 
   it('returns reset when job is present on board (fetch succeeded)', () => {
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: true, failedCheckCount: 0 }).action).toBe('reset');
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: true, failedCheckCount: 5 }).action).toBe('reset');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: true, failedCheckCount: 0 }).action,
+    ).toBe('reset');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: true, failedCheckCount: 5 }).action,
+    ).toBe('reset');
   });
 
   it('returns strike when absent and failedCheckCount+1 < 3', () => {
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 0 }).action).toBe('strike');
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 1 }).action).toBe('strike');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 0 }).action,
+    ).toBe('strike');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 1 }).action,
+    ).toBe('strike');
   });
 
   it('returns expire when absent and failedCheckCount+1 >= 3 (boundary: failedCheckCount 2)', () => {
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 2 }).action).toBe('expire');
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 5 }).action).toBe('expire');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 2 }).action,
+    ).toBe('expire');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 5 }).action,
+    ).toBe('expire');
   });
 });
 
@@ -81,9 +99,7 @@ function makeFakePrisma(): RecheckPrismaLike & {
     },
     ladderReviewTask: {
       async findFirst({ where }) {
-        const found = reviewTasks.find((t) =>
-          Object.entries(where).every(([k, v]) => t[k] === v),
-        );
+        const found = reviewTasks.find((t) => Object.entries(where).every(([k, v]) => t[k] === v));
         return found ? { id: found['id'] as string } : null;
       },
       async create({ data }) {
@@ -148,11 +164,11 @@ describe('recheckSource', () => {
   it('normal mix: resets present jobs, strikes / expires absent jobs, skips null-externalId', async () => {
     const prisma = makeFakePrisma();
     const activeJobs = [
-      { id: 'j1', externalId: '111', failedCheckCount: 0 },  // present → reset
-      { id: 'j2', externalId: '222', failedCheckCount: 2 },  // absent → expire (2+1=3)
-      { id: 'j3', externalId: '333', failedCheckCount: 1 },  // present → reset
-      { id: 'j4', externalId: '444', failedCheckCount: 0 },  // absent → strike (0+1=1)
-      { id: 'j5', externalId: null, failedCheckCount: 0 },   // null → skip
+      { id: 'j1', externalId: '111', failedCheckCount: 0 }, // present → reset
+      { id: 'j2', externalId: '222', failedCheckCount: 2 }, // absent → expire (2+1=3)
+      { id: 'j3', externalId: '333', failedCheckCount: 1 }, // present → reset
+      { id: 'j4', externalId: '444', failedCheckCount: 0 }, // absent → strike (0+1=1)
+      { id: 'j5', externalId: null, failedCheckCount: 0 }, // null → skip
     ];
 
     // Board returns 111 and 333; 222 and 444 are absent
@@ -259,22 +275,81 @@ describe('recheckSource', () => {
     expect(prisma._state.jobUpdates).toHaveLength(0);
   });
 
-  it('empty discoverJobs response → all skipped (fetchSucceeded=false, no strikes)', async () => {
+  it('fetch failure (HTTP 500) → fetchSucceeded=false → all skipped, no strikes', async () => {
     const prisma = makeFakePrisma();
     const activeJobs = [
       { id: 'j1', externalId: '111', failedCheckCount: 2 }, // would expire if fetchSucceeded
       { id: 'j2', externalId: '222', failedCheckCount: 0 },
     ];
 
-    // Board returns [] → ambiguous, treat as fetchSucceeded=false
+    // HTTP 500 → fetchSucceeded=false → all skipped
+    const failFetch: typeof fetch = async () => new Response('error', { status: 500 });
     const result = await recheckSource(
-      { prisma, fetchImpl: makeGreenhouseFetch([]), now: new Date('2026-07-01') },
+      { prisma, fetchImpl: failFetch, now: new Date('2026-07-01') },
       BASE_SOURCE,
       activeJobs,
     );
 
     expect(result).toEqual({ reset: 0, struck: 0, expired: 0, skipped: 2, tripped: false });
     expect(prisma._state.jobUpdates).toHaveLength(0);
+  });
+
+  it('successful empty board (HTTP 200, jobs=[]) → fetchSucceeded=true → absent jobs get struck/expired', async () => {
+    const prisma = makeFakePrisma();
+    const activeJobs = [
+      { id: 'j1', externalId: '111', failedCheckCount: 2 }, // absent → expire (2+1=3)
+      { id: 'j2', externalId: '222', failedCheckCount: 0 }, // absent → strike
+    ];
+
+    // Empty board → fetchSucceeded=true, jobs genuinely absent
+    const result = await recheckSource(
+      { prisma, fetchImpl: makeGreenhouseFetch([]), now: new Date('2026-07-01') },
+      BASE_SOURCE,
+      activeJobs,
+    );
+
+    expect(result.struck).toBe(1);
+    expect(result.expired).toBe(1);
+    expect(result.skipped).toBe(0);
+    expect(result.tripped).toBe(false);
+  });
+
+  it('successful empty board + circuit breaker: >= 4 active jobs all absent → breaker trips, no jobs expired', async () => {
+    const prisma = makeFakePrisma();
+    // 4 active jobs, all absent from an empty board (HTTP 200, jobs=[])
+    // activeCount=4, wouldStrikeOrExpire=4 → 4/4=100% > 50% AND 4>=4 → trip
+    const activeJobs = [
+      { id: 'j1', externalId: '1', failedCheckCount: 0 }, // absent → strike
+      { id: 'j2', externalId: '2', failedCheckCount: 0 }, // absent → strike
+      { id: 'j3', externalId: '3', failedCheckCount: 0 }, // absent → strike
+      { id: 'j4', externalId: '4', failedCheckCount: 0 }, // absent → strike
+    ];
+
+    // Empty board (HTTP 200, jobs=[]) — fetchSucceeded=true, but all jobs absent
+    const result = await recheckSource(
+      { prisma, fetchImpl: makeGreenhouseFetch([]), now: new Date('2026-07-01') },
+      BASE_SOURCE,
+      activeJobs,
+    );
+
+    // Breaker must trip
+    expect(result.tripped).toBe(true);
+
+    // Source must be marked as error
+    expect(prisma._state.sourceUpdate).toMatchObject({ id: 's1', status: 'error' });
+
+    // A mass_expiry_suspected review task must be created
+    expect(prisma._state.reviewTasks).toHaveLength(1);
+    expect(prisma._state.reviewTasks[0]).toMatchObject({
+      sourceId: 's1',
+      reason: 'mass_expiry_suspected',
+      status: 'open',
+      jobId: null,
+    });
+
+    // No job rows must be expired (breaker blocks mass expiry even though fetch succeeded)
+    expect(prisma._state.jobUpdates).toHaveLength(0);
+    expect(prisma._state.verifications).toHaveLength(0);
   });
 
   it('unknown platform → all skipped, no DB writes', async () => {

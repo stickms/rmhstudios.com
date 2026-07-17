@@ -10,9 +10,10 @@ const ctx = { slug: 'stripe', companyName: 'Stripe', fetchImpl: stub(200, fixtur
 
 describe('greenhouseAdapter.discoverJobs', () => {
   it('normalizes board jobs', async () => {
-    const jobs = await greenhouseAdapter.discoverJobs(ctx);
-    expect(jobs).toHaveLength(2);
-    expect(jobs[0]).toEqual({
+    const result = await greenhouseAdapter.discoverJobs(ctx);
+    expect(result.jobs).toHaveLength(2);
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs[0]).toEqual({
       externalId: '4285367007',
       title: 'Product Management Intern',
       locationRaw: 'New York, NY',
@@ -24,26 +25,69 @@ describe('greenhouseAdapter.discoverJobs', () => {
       descriptionHtml: '<p>Join our payments team as a PM intern.</p>',
       requisitionId: 'R-1234',
     });
-    expect(jobs[1].remoteHint).toBe(true); // "Remote" in location name
+    expect(result.jobs[1].remoteHint).toBe(true); // "Remote" in location name
   });
-  it('returns [] on non-200 without throwing', async () => {
-    const jobs = await greenhouseAdapter.discoverJobs({ ...ctx, fetchImpl: stub(404, 'not found') });
-    expect(jobs).toEqual([]);
+  it('returns fetchSucceeded=false and [] on non-200 without throwing', async () => {
+    const result = await greenhouseAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(404, 'not found'),
+    });
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
   });
-  it('returns [] when jobs is not an array', async () => {
-    expect(await greenhouseAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{"jobs":"maintenance"}') })).toEqual([]);
-    expect(await greenhouseAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{"error":"x"}') })).toEqual([]);
+  it('returns fetchSucceeded=false and [] when jobs is not an array', async () => {
+    const r1 = await greenhouseAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(200, '{"jobs":"maintenance"}'),
+    });
+    expect(r1.jobs).toEqual([]);
+    expect(r1.fetchSucceeded).toBe(false);
+    const r2 = await greenhouseAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(200, '{"error":"x"}'),
+    });
+    expect(r2.jobs).toEqual([]);
+    expect(r2.fetchSucceeded).toBe(false);
+  });
+  it('successful empty board: fetchSucceeded=true, jobs=[]', async () => {
+    const result = await greenhouseAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(200, '{"jobs":[]}'),
+    });
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs).toEqual([]);
+  });
+  it('fetch failure (500): fetchSucceeded=false, jobs=[]', async () => {
+    const result = await greenhouseAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(500, 'server error'),
+    });
+    expect(result.fetchSucceeded).toBe(false);
+    expect(result.jobs).toEqual([]);
   });
 });
 
 describe('greenhouseAdapter.verifyJob', () => {
   it('produces API-source evidence when the job is on the board', async () => {
-    const e = await greenhouseAdapter.verifyJob(ctx, { externalId: '4285367007', title: 'Product Management Intern' });
+    const e = await greenhouseAdapter.verifyJob(ctx, {
+      externalId: '4285367007',
+      title: 'Product Management Intern',
+    });
     expect(e).toMatchObject({
-      fetched: true, httpStatus: 200, apiSource: true, titleMatch: true, companyMatch: true,
-      usConfirmed: true, applyPresent: true, reqIdPresent: true,
-      closedLanguage: false, blocked: false, isSearchResultsPage: false,
-      companyName: 'Stripe', jobTitle: 'Product Management Intern', platform: 'greenhouse',
+      fetched: true,
+      httpStatus: 200,
+      apiSource: true,
+      titleMatch: true,
+      companyMatch: true,
+      usConfirmed: true,
+      applyPresent: true,
+      reqIdPresent: true,
+      closedLanguage: false,
+      blocked: false,
+      isSearchResultsPage: false,
+      companyName: 'Stripe',
+      jobTitle: 'Product Management Intern',
+      platform: 'greenhouse',
     });
   });
   it('reports fetched-but-absent as closedLanguage=false, apiSource=true, titleMatch=false', async () => {
@@ -82,7 +126,12 @@ describe('greenhouseAdapter.detectExpired', () => {
     expect(await greenhouseAdapter.detectExpired(ctx, '4285367007')).toBe(false);
   });
   it('wrong-shape 200 is NOT expiry evidence', async () => {
-    expect(await greenhouseAdapter.detectExpired({ ...ctx, fetchImpl: stub(200, '{"error":"x"}') }, '4285367007')).toBe(false);
+    expect(
+      await greenhouseAdapter.detectExpired(
+        { ...ctx, fetchImpl: stub(200, '{"error":"x"}') },
+        '4285367007',
+      ),
+    ).toBe(false);
   });
 });
 
@@ -91,17 +140,19 @@ describe('greenhouse entity decoding', () => {
     const numericFixture = JSON.stringify({
       jobs: [{ id: 1, title: 'Test', absolute_url: 'http://test', content: '&#8217;s team' }],
     });
-    const jobs = await greenhouseAdapter.discoverJobs({
+    const result = await greenhouseAdapter.discoverJobs({
       ...ctx,
       fetchImpl: stub(200, numericFixture),
     });
     // &#8217; is the Unicode character U+2019 (RIGHT SINGLE QUOTATION MARK)
-    expect(jobs[0].descriptionHtml).toBe('’s team');
+    expect(result.jobs[0].descriptionHtml).toBe('’s team');
   });
 });
 
 describe('greenhouseBoardUrl', () => {
   it('builds the boards-api URL', () => {
-    expect(greenhouseBoardUrl('stripe')).toBe('https://boards-api.greenhouse.io/v1/boards/stripe/jobs?content=true');
+    expect(greenhouseBoardUrl('stripe')).toBe(
+      'https://boards-api.greenhouse.io/v1/boards/stripe/jobs?content=true',
+    );
   });
 });

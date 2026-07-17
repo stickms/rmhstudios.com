@@ -10,9 +10,10 @@ const ctx = { slug: 'plaid', companyName: 'Plaid', fetchImpl: stub(200, fixture)
 
 describe('leverAdapter.discoverJobs', () => {
   it('normalizes postings jobs', async () => {
-    const jobs = await leverAdapter.discoverJobs(ctx);
-    expect(jobs).toHaveLength(2);
-    expect(jobs[0]).toEqual({
+    const result = await leverAdapter.discoverJobs(ctx);
+    expect(result.jobs).toHaveLength(2);
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs[0]).toEqual({
       externalId: 'a1b2c3d4-uuid',
       title: 'Data Science Intern',
       locationRaw: 'San Francisco, CA',
@@ -24,23 +25,42 @@ describe('leverAdapter.discoverJobs', () => {
       descriptionHtml: '<div>Work on ML.</div>',
       requisitionId: null,
     });
-    expect(jobs[1].remoteHint).toBe(true);
+    expect(result.jobs[1].remoteHint).toBe(true);
   });
-  it('returns [] on non-200 without throwing', async () => {
-    const jobs = await leverAdapter.discoverJobs({ ...ctx, fetchImpl: stub(404, 'not found') });
-    expect(jobs).toEqual([]);
+  it('returns fetchSucceeded=false and [] on non-200 without throwing', async () => {
+    const result = await leverAdapter.discoverJobs({ ...ctx, fetchImpl: stub(404, 'not found') });
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
   });
-  it('returns [] when the response is JSON but not an array', async () => {
-    const jobs = await leverAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{"jobs":[]}') });
-    expect(jobs).toEqual([]);
+  it('returns fetchSucceeded=false and [] when the response is JSON but not an array', async () => {
+    const result = await leverAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{"jobs":[]}') });
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
+  });
+  it('successful empty board: fetchSucceeded=true, jobs=[]', async () => {
+    const result = await leverAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '[]') });
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs).toEqual([]);
+  });
+  it('fetch failure (500): fetchSucceeded=false, jobs=[]', async () => {
+    const result = await leverAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(500, 'server error'),
+    });
+    expect(result.fetchSucceeded).toBe(false);
+    expect(result.jobs).toEqual([]);
   });
 });
 
 describe('leverAdapter.verifyJob', () => {
   it('produces API-source evidence when the job is on the board', async () => {
-    const e = await leverAdapter.verifyJob(ctx, { externalId: 'a1b2c3d4-uuid', title: 'Data Science Intern' });
+    const e = await leverAdapter.verifyJob(ctx, {
+      externalId: 'a1b2c3d4-uuid',
+      title: 'Data Science Intern',
+    });
     expect(e).toMatchObject({
-      fetched: true, httpStatus: 200,
+      fetched: true,
+      httpStatus: 200,
       apiSource: true,
       titleMatch: true,
       usConfirmed: true,
@@ -86,7 +106,9 @@ describe('leverAdapter.detectExpired', () => {
     expect(await leverAdapter.detectExpired(ctx, 'a1b2c3d4-uuid')).toBe(false);
   });
   it('fetch failure → not expired (false)', async () => {
-    expect(await leverAdapter.detectExpired({ ...ctx, fetchImpl: stub(500, '') }, 'a1b2c3d4-uuid')).toBe(false);
+    expect(
+      await leverAdapter.detectExpired({ ...ctx, fetchImpl: stub(500, '') }, 'a1b2c3d4-uuid'),
+    ).toBe(false);
   });
 });
 

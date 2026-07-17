@@ -1,7 +1,7 @@
 import { classifyUSLocation } from '../classifiers/us-location';
 import type { VerificationEvidence } from '../verification';
 import { politeFetch } from './http';
-import type { AdapterContext, NormalizedJob, SourceAdapter } from './types';
+import type { AdapterContext, DiscoverResult, NormalizedJob, SourceAdapter } from './types';
 
 export const leverPostingsUrl = (slug: string) =>
   `https://api.lever.co/v0/postings/${slug}?mode=json`;
@@ -18,7 +18,9 @@ interface LeverJob {
   description?: string;
 }
 
-async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: LeverJob[] | null; status: number }> {
+async function fetchBoard(
+  ctx: AdapterContext,
+): Promise<{ jobs: LeverJob[] | null; status: number }> {
   const res = await politeFetch(leverPostingsUrl(ctx.slug), { fetchImpl: ctx.fetchImpl });
   if (!res.ok) return { jobs: null, status: res.status };
   try {
@@ -48,15 +50,20 @@ function normalize(raw: LeverJob): NormalizedJob {
 export const leverAdapter: SourceAdapter = {
   platform: 'lever',
 
-  async discoverJobs(ctx) {
+  async discoverJobs(ctx): Promise<DiscoverResult> {
     const { jobs } = await fetchBoard(ctx);
-    return (jobs ?? []).map(normalize);
+    return { jobs: (jobs ?? []).map(normalize), fetchSucceeded: jobs !== null };
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {
     const { jobs, status } = await fetchBoard(ctx);
     const hit = jobs?.find((j) => j.id === job.externalId) ?? null;
-    const loc = hit ? classifyUSLocation({ locationRaw: hit.categories?.location ?? '', country: hit.country ?? null }) : null;
+    const loc = hit
+      ? classifyUSLocation({
+          locationRaw: hit.categories?.location ?? '',
+          country: hit.country ?? null,
+        })
+      : null;
     return {
       fetched: jobs !== null,
       httpStatus: status,

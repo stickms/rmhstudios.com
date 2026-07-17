@@ -10,14 +10,15 @@ const ctx = { slug: 'ramp', companyName: 'Ramp', fetchImpl: stub(200, fixture) }
 
 describe('ashbyAdapter.discoverJobs', () => {
   it('returns 1 job (unlisted filtered out)', async () => {
-    const jobs = await ashbyAdapter.discoverJobs(ctx);
-    expect(jobs).toHaveLength(1);
-    expect(jobs[0].externalId).toBe('uuid-1');
+    const result = await ashbyAdapter.discoverJobs(ctx);
+    expect(result.jobs).toHaveLength(1);
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs[0].externalId).toBe('uuid-1');
   });
 
   it('normalizes board jobs correctly', async () => {
-    const jobs = await ashbyAdapter.discoverJobs(ctx);
-    expect(jobs[0]).toEqual({
+    const result = await ashbyAdapter.discoverJobs(ctx);
+    expect(result.jobs[0]).toEqual({
       externalId: 'uuid-1',
       title: 'Software Engineering Intern',
       locationRaw: 'New York',
@@ -31,24 +32,50 @@ describe('ashbyAdapter.discoverJobs', () => {
     });
   });
 
-  it('returns [] on non-200 without throwing', async () => {
-    const jobs = await ashbyAdapter.discoverJobs({ ...ctx, fetchImpl: stub(404, 'not found') });
-    expect(jobs).toEqual([]);
+  it('returns fetchSucceeded=false and [] on non-200 without throwing', async () => {
+    const result = await ashbyAdapter.discoverJobs({ ...ctx, fetchImpl: stub(404, 'not found') });
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
   });
 
-  it('returns [] on non-object-shape 200', async () => {
-    const jobs = await ashbyAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '[]') });
-    expect(jobs).toEqual([]);
+  it('returns fetchSucceeded=false and [] on non-object-shape 200', async () => {
+    const result = await ashbyAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '[]') });
+    expect(result.jobs).toEqual([]);
+    expect(result.fetchSucceeded).toBe(false);
+  });
+
+  it('successful empty board: fetchSucceeded=true, jobs=[]', async () => {
+    const result = await ashbyAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '{"jobs":[]}') });
+    expect(result.fetchSucceeded).toBe(true);
+    expect(result.jobs).toEqual([]);
+  });
+
+  it('fetch failure (500): fetchSucceeded=false, jobs=[]', async () => {
+    const result = await ashbyAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(500, 'server error'),
+    });
+    expect(result.fetchSucceeded).toBe(false);
+    expect(result.jobs).toEqual([]);
   });
 });
 
 describe('ashbyAdapter.verifyJob', () => {
   it('produces API-source evidence when the job is on the board', async () => {
-    const e = await ashbyAdapter.verifyJob(ctx, { externalId: 'uuid-1', title: 'Software Engineering Intern' });
+    const e = await ashbyAdapter.verifyJob(ctx, {
+      externalId: 'uuid-1',
+      title: 'Software Engineering Intern',
+    });
     expect(e).toMatchObject({
-      fetched: true, httpStatus: 200,
-      apiSource: true, titleMatch: true, usConfirmed: true, applyPresent: true,
-      reqIdPresent: false, blocked: false, platform: 'ashby',
+      fetched: true,
+      httpStatus: 200,
+      apiSource: true,
+      titleMatch: true,
+      usConfirmed: true,
+      applyPresent: true,
+      reqIdPresent: false,
+      blocked: false,
+      platform: 'ashby',
     });
   });
 
@@ -106,6 +133,8 @@ describe('ashbyAdapter.detectExpired', () => {
 
 describe('ashbyBoardUrl', () => {
   it('builds the correct API URL', () => {
-    expect(ashbyBoardUrl('ramp')).toBe('https://api.ashbyhq.com/posting-api/job-board/ramp?includeCompensation=false');
+    expect(ashbyBoardUrl('ramp')).toBe(
+      'https://api.ashbyhq.com/posting-api/job-board/ramp?includeCompensation=false',
+    );
   });
 });

@@ -1,5 +1,7 @@
 import { processSource } from './process-source';
 import { recheckSource } from './recheck';
+import { expireStaleJobs, resolveJobMaxAgeMs } from './expire-stale';
+import type { ExpireStalePrisma } from './expire-stale';
 import { checkRobots, politeFetch } from '../adapters/index';
 import {
   discoverWorkdaySourceUrls,
@@ -22,7 +24,12 @@ export interface RunPrisma {
     findUnique(args: {
       where: { sourceId_externalId: { sourceId: string; externalId: string } };
       select?: Record<string, unknown>;
-    }): Promise<{ id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string } | null>;
+    }): Promise<{
+      id: string;
+      discoveredAt: Date;
+      alternateUrls: string[];
+      originalPostingUrl: string;
+    } | null>;
     findFirst(args: {
       where: Record<string, unknown>;
       select?: Record<string, unknown>;
@@ -31,22 +38,28 @@ export interface RunPrisma {
       where: { sourceId_externalId: { sourceId: string; externalId: string } };
       create: Record<string, unknown>;
       update: Record<string, unknown>;
-    }): Promise<{ id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string }>;
-    update(args: {
-      where: { id: string };
-      data: Record<string, unknown>;
-    }): Promise<{ id: string }>;
+    }): Promise<{
+      id: string;
+      discoveredAt: Date;
+      alternateUrls: string[];
+      originalPostingUrl: string;
+    }>;
+    update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }>;
     findMany(args: {
       where: Record<string, unknown>;
-    }): Promise<Array<{ id: string; externalId: string | null; failedCheckCount: number }>>;
+      select?: Record<string, unknown>;
+    }): Promise<
+      Array<
+        | { id: string; externalId: string | null; failedCheckCount: number }
+        | { id: string; lastSeenAt: Date | null; discoveredAt: Date }
+      >
+    >;
   };
   ladderVerification: {
     create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderReviewTask: {
-    findFirst(args: {
-      where: Record<string, unknown>;
-    }): Promise<{ id: string } | null>;
+    findFirst(args: { where: Record<string, unknown> }): Promise<{ id: string } | null>;
     create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderSource: {
@@ -56,10 +69,7 @@ export interface RunPrisma {
       create: Record<string, unknown>;
       update: Record<string, unknown>;
     }): Promise<{ id: string }>;
-    update(args: {
-      where: { id: string };
-      data: Record<string, unknown>;
-    }): Promise<{ id: string }>;
+    update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }>;
     findMany(args: {
       where: Record<string, unknown>;
       include?: Record<string, unknown>;
@@ -78,10 +88,7 @@ export interface RunPrisma {
   };
   ladderScrapeRun: {
     create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
-    update(args: {
-      where: { id: string };
-      data: Record<string, unknown>;
-    }): Promise<{ id: string }>;
+    update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderSourceError: {
     create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
@@ -105,6 +112,13 @@ export interface RunResult {
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function resolveWorkdayDiscoveryCap(
+  env: { LADDER_WORKDAY_DISCOVERY_CAP?: string } = process.env,
+): number {
+  const parsed = Number(env.LADDER_WORKDAY_DISCOVERY_CAP);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 5;
 }
 
 // ── runPipeline ───────────────────────────────────────────────────────────────
@@ -136,10 +150,7 @@ export async function runPipeline(
   let allSources = await deps.prisma.ladderSource.findMany({
     where: {
       company: { enabled: true },
-      OR: [
-        { status: 'active' },
-        { status: 'error', nextProbeAt: { lte: deps.now ?? new Date() } },
-      ],
+      OR: [{ status: 'active' }, { status: 'error', nextProbeAt: { lte: deps.now ?? new Date() } }],
     },
     include: { company: true },
     orderBy: [{ platform: 'asc' }],
@@ -240,7 +251,12 @@ export async function runPipeline(
         // ignore secondary error
       }
       totals.errors++;
-      statsSummary.push({ sourceId: source.id, platform: source.platform, errored: true, errorMessage: message });
+      statsSummary.push({
+        sourceId: source.id,
+        platform: source.platform,
+        errored: true,
+        errorMessage: message,
+      });
     }
   }
 
@@ -259,7 +275,7 @@ export async function runPipeline(
       const recheckStats = await recheckSource(
         { prisma: deps.prisma, fetchImpl: deps.fetchImpl, now: deps.now },
         source,
-        activeJobs,
+        activeJobs as Array<{ id: string; externalId: string | null; failedCheckCount: number }>,
       );
 
       if (recheckStats.tripped) {
@@ -279,6 +295,23 @@ export async function runPipeline(
     } catch {
       totals.errors++;
     }
+  }
+
+  // Step 4.5: Age backstop — expire jobs unseen for the max-age window,
+  // independent of per-source recheck. Bounded, long horizon (default 30d).
+  try {
+    const ageResult = await expireStaleJobs(deps.prisma as unknown as ExpireStalePrisma, {
+      now: deps.now ?? new Date(),
+      maxAgeMs: resolveJobMaxAgeMs(),
+    });
+    totals.expired += ageResult.expired;
+  } catch (err) {
+    totals.errors++;
+    statsSummary.push({
+      step: 'age_backstop',
+      errored: true,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
   }
 
   // Step 5: Manual sources — aliveness only (checkRobots → politeFetch).
@@ -351,7 +384,10 @@ export async function runPipeline(
           // Manual landing pages often link to a Workday tenant. Validate the
           // official CXS endpoint before activating it; it will be processed
           // as a normal source on the next pipeline run.
-          for (const workdayUrl of discoverWorkdaySourceUrls(res.body, source.url).slice(0, 3)) {
+          for (const workdayUrl of discoverWorkdaySourceUrls(res.body, source.url).slice(
+            0,
+            resolveWorkdayDiscoveryCap(),
+          )) {
             const config = parseWorkdaySource(workdayUrl);
             if (!config) continue;
             const probed = await probeWorkdaySourceUrl(workdayUrl, deps.fetchImpl);
