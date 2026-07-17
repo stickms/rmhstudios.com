@@ -187,7 +187,8 @@ describe('discoverWorkdaySourceUrls — full HTML', () => {
 
   it('rejects non-Workday and malformed lookalikes', () => {
     const html = `<script>var a="https://evil.myworkdayjobs.com.attacker.com/x";
-    var b="https://acme.myworkdayjobs.com";</script>`; // second has no site segment
+    var b="https://acme.myworkdayjobs.com";
+    var c="http://acme.wd1.myworkdayjobs.com/AcmeCareers";</script>`; // second has no site segment, third is http:// not https://
     expect(discoverWorkdaySourceUrls(html, 'https://acme.com')).toEqual([]);
   });
 });

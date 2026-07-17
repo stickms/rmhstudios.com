@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { runPipeline } from './run';
+import { resolveWorkdayDiscoveryCap, runPipeline } from './run';
 import type { RunPrisma } from './run';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
@@ -799,5 +799,29 @@ describe('scenario H — age backstop expires an active job last seen 40 days ag
       (v) => v.jobId === staleJob?.id && v.status === 'expired',
     );
     expect(verification).toBeDefined();
+  });
+});
+
+// ── resolveWorkdayDiscoveryCap ────────────────────────────────────────────
+
+describe('resolveWorkdayDiscoveryCap', () => {
+  it('returns 5 when env is empty', () => {
+    expect(resolveWorkdayDiscoveryCap({})).toBe(5);
+  });
+
+  it('returns parsed value when LADDER_WORKDAY_DISCOVERY_CAP is a valid positive integer', () => {
+    expect(resolveWorkdayDiscoveryCap({ LADDER_WORKDAY_DISCOVERY_CAP: '10' })).toBe(10);
+  });
+
+  it('returns 5 when LADDER_WORKDAY_DISCOVERY_CAP is 0', () => {
+    expect(resolveWorkdayDiscoveryCap({ LADDER_WORKDAY_DISCOVERY_CAP: '0' })).toBe(5);
+  });
+
+  it('returns 5 when LADDER_WORKDAY_DISCOVERY_CAP is not a number', () => {
+    expect(resolveWorkdayDiscoveryCap({ LADDER_WORKDAY_DISCOVERY_CAP: 'abc' })).toBe(5);
+  });
+
+  it('returns 5 when LADDER_WORKDAY_DISCOVERY_CAP is negative', () => {
+    expect(resolveWorkdayDiscoveryCap({ LADDER_WORKDAY_DISCOVERY_CAP: '-1' })).toBe(5);
   });
 });
