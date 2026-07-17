@@ -39,6 +39,9 @@ jobs:
             echo "### Hardcoded hex colors: ${count}"
             echo ''
             echo '```'
-            printf '%s\n' "${matches}" | head -100
+            # `head` closes the pipe after 100 lines; under pipefail (GitHub's
+            # bash runs with `-eo pipefail`) that SIGPIPEs `printf` and would fail
+            # this report-only step whenever there are >100 matches. Tolerate it.
+            printf '%s\n' "${matches}" | head -100 || true
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
