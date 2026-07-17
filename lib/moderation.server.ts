@@ -3,7 +3,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 
 const HIDDEN_TTL_MS = 30_000;
 const hiddenKey = (userId: string) => `hidden-authors:${userId}`;
@@ -19,21 +19,19 @@ const hiddenKey = (userId: string) => `hidden-authors:${userId}`;
  */
 export async function getHiddenAuthorIds(userId: string | null): Promise<string[]> {
   if (!userId) return [];
-  const cached = apiCache.get<string[]>(hiddenKey(userId));
-  if (cached) return cached;
   try {
-    const [blocked, muted, blockedBy] = await Promise.all([
-      prisma.userBlock.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
-      prisma.userMute.findMany({ where: { muterId: userId }, select: { mutedId: true } }),
-      prisma.userBlock.findMany({ where: { blockedId: userId }, select: { blockerId: true } }),
-    ]);
-    const ids = new Set<string>();
-    for (const b of blocked) ids.add(b.blockedId);
-    for (const m of muted) ids.add(m.mutedId);
-    for (const b of blockedBy) ids.add(b.blockerId);
-    const result = [...ids];
-    apiCache.set(hiddenKey(userId), result, HIDDEN_TTL_MS);
-    return result;
+    return await cached<string[]>(hiddenKey(userId), HIDDEN_TTL_MS, async () => {
+      const [blocked, muted, blockedBy] = await Promise.all([
+        prisma.userBlock.findMany({ where: { blockerId: userId }, select: { blockedId: true } }),
+        prisma.userMute.findMany({ where: { muterId: userId }, select: { mutedId: true } }),
+        prisma.userBlock.findMany({ where: { blockedId: userId }, select: { blockerId: true } }),
+      ]);
+      const ids = new Set<string>();
+      for (const b of blocked) ids.add(b.blockedId);
+      for (const m of muted) ids.add(m.mutedId);
+      for (const b of blockedBy) ids.add(b.blockerId);
+      return [...ids];
+    });
   } catch (err) {
     console.error('[moderation] getHiddenAuthorIds failed:', err);
     return [];
@@ -45,5 +43,8 @@ export async function getHiddenAuthorIds(userId: string | null): Promise<string[
  * are blocked). A block affects BOTH users' hidden sets, so invalidate both.
  */
 export function invalidateHiddenAuthors(...userIds: string[]): void {
-  for (const id of userIds) apiCache.invalidate(hiddenKey(id));
+  // Fire-and-forget per id: drops each local L1 copy synchronously and
+  // broadcasts the drop to every instance over Redis pub/sub so a block hides
+  // content cross-instance immediately. Signature stays `void`.
+  for (const id of userIds) void invalidateCached(hiddenKey(id));
 }

@@ -1,31 +1,46 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
+import { redisEnabled, redisGetJSON, redisSetJSON } from "@/lib/redis.server";
 import {
   subscribeUser,
   type MessageNotification,
 } from "@/lib/message-events";
 
-async function getUnreadCount(userId: string): Promise<number> {
-  const conversations = await prisma.conversation.findMany({
-    where: {
-      OR: [
-        { participantOneId: userId },
-        { participantTwoId: userId },
-      ],
-    },
-    select: { id: true },
-  });
+/** Keep in sync with the writer in api/messages/$conversationId.ts. */
+const DM_UNREAD_TTL_MS = 60_000;
 
-  if (conversations.length === 0) return 0;
-
+/** Single-query unread count (Postgres joins through the conversation relation
+ * instead of shipping every conversation id back in an IN(...) list). */
+function countUnreadFromDb(userId: string): Promise<number> {
   return prisma.directMessage.count({
     where: {
-      conversationId: { in: conversations.map((c) => c.id) },
       senderId: { not: userId },
       read: false,
+      conversation: {
+        OR: [{ participantOneId: userId }, { participantTwoId: userId }],
+      },
     },
   });
+}
+
+/**
+ * Denormalized DM-unread read path. The stream previously ran this COUNT on
+ * EVERY delivered event (O(conversations) per message). Now it reads a Redis
+ * counter kept warm by message-send/mark-read, lazily backfilling from a real
+ * COUNT (with a short TTL) on a miss. Falls back to the direct COUNT whenever
+ * Redis is unavailable.
+ */
+async function getUnreadCount(userId: string): Promise<number> {
+  if (redisEnabled()) {
+    const key = `dm:unread:${userId}`;
+    const cached = await redisGetJSON<number>(key);
+    if (typeof cached === "number" && cached >= 0) return cached;
+    const count = await countUnreadFromDb(userId);
+    await redisSetJSON(key, count, DM_UNREAD_TTL_MS);
+    return count;
+  }
+  return countUnreadFromDb(userId);
 }
 
 /** GET /api/messages/stream — SSE stream for real-time messages & unread count */

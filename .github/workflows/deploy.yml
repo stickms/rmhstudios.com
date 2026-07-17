@@ -63,7 +63,62 @@ env:
   IMAGE_FULL: ghcr.io/stickms/rmhstudios-app-full
 
 jobs:
+  # ── CI gate (audit §5.4) ────────────────────────────────────────────────────
+  # Deploys were previously NOT gated on CI: a push to main built + pushed the
+  # two images and triggered the VPS deploy even if typecheck/lint/tests were
+  # red. This job runs the same fast, high-signal web checks as web-ci.yml, and
+  # build-and-deploy `needs:` it — so a red build can no longer ship.
+  #
+  # Why an in-workflow `needs:` gate rather than a `workflow_run:` trigger keyed
+  # on web-ci: web-ci.yml has `paths-ignore` (go-services/**, deploy/**, docs/**,
+  # **/*.md), so a go-only, deploy-config-only, or docs-only push to main does
+  # NOT run web-ci. A `workflow_run` gate on it would then never fire for those
+  # pushes, and legitimate changes could never deploy — and deploy.sh itself
+  # lives under deploy/**. A same-workflow gate runs on EVERY push to main
+  # regardless of paths and leaves all the SHA/webhook/HMAC/ARM logic below
+  # untouched. Note: build-TIME breakage (web or Go) is ALREADY blocking, because
+  # the image build in build-and-deploy fails before anything is pushed to GHCR;
+  # this job adds the typecheck/lint/test coverage the image build doesn't give.
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    # tsc/vitest on this codebase exceed Node's default ~4 GB heap (matches
+    # web-ci.yml); set the larger heap for every step.
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+
+      # Node 24 to match the production Dockerfile (node:24-alpine).
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # postinstall runs `prisma generate` (schema-only, no DB needed).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test
+        run: pnpm exec vitest run
+
   build-and-deploy:
+    # Gate: do not build/push images or trigger the VPS deploy unless CI is green
+    # (audit §5.4). A skipped `ci` (never happens here — it has no path filter)
+    # or a failed `ci` skips this job, so nothing ships.
+    needs: ci
     # Native ARM64 hosted runner (free on public repos) — builds arm64 images for
     # the Oracle ARM VPS without slow QEMU emulation.
     runs-on: ubuntu-24.04-arm

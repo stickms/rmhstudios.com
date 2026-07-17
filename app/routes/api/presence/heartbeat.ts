@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { markPresence } from '@/lib/hot-counters.server';
 
 /**
  * POST /api/presence/heartbeat — mark the current user as online now.
@@ -19,9 +19,10 @@ export const Route = createFileRoute('/api/presence/heartbeat')({
         const { allowed } = rateLimit(ip, { limit: 3, windowMs: 30_000, prefix: 'presence' });
         if (!allowed) return Response.json({ ok: true, throttled: true });
 
-        await prisma.user
-          .update({ where: { id: session.user.id }, data: { lastSeenAt: new Date() } })
-          .catch(() => {});
+        // Marks presence in the Redis "online now" set and throttles the
+        // Postgres lastSeenAt write to ~once/5min per user (falls back to a
+        // direct write when Redis is unavailable).
+        await markPresence(session.user.id);
         return Response.json({ ok: true });
       },
     },

@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
+import { adjustNotifUnread } from '@/lib/notifications.server';
 import { z } from 'zod';
 
 /**
@@ -34,16 +35,21 @@ export const Route = createFileRoute('/api/notifications/read')({
               where: { userId, read: false },
               data: { read: true },
             });
+            // Keep the Redis unread badge counter in step (it self-heals on the
+            // next read via COUNT backfill, but decrementing keeps it instant).
+            if (res.count > 0) void adjustNotifUnread(userId, -res.count);
             return Response.json({ success: true, updated: res.count });
           }
 
           if (parsed.data.ids && parsed.data.ids.length > 0) {
             // Scope to the caller's own notifications — never let one user mark
-            // another user's notifications read.
+            // another user's notifications read. Only count rows that were
+            // actually unread so the counter isn't over-decremented on re-marks.
             const res = await prisma.notification.updateMany({
-              where: { userId, id: { in: parsed.data.ids } },
+              where: { userId, id: { in: parsed.data.ids }, read: false },
               data: { read: true },
             });
+            if (res.count > 0) void adjustNotifUnread(userId, -res.count);
             return Response.json({ success: true, updated: res.count });
           }
 

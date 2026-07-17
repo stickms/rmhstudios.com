@@ -89,7 +89,9 @@ export const Route = createFileRoute("/api/v1/images")({
               return error("invalid_request", err instanceof Error ? err.message : "Invalid image.", 400);
             }
           },
-          { scope: "write:media" }
+          // Image upload is heavy (decode + WebP re-encode + object store), so
+          // it draws down the per-key daily quota faster than a cheap read.
+          { scope: "write:media", cost: 8 }
         ),
     },
   },

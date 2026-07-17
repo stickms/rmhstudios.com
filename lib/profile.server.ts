@@ -51,9 +51,12 @@ const profileSelect = {
       coins: true,
     },
   },
-  _count: {
-    select: { followers: true, following: true, rmharks: true },
-  },
+  // Denormalized counters (maintained on follow/unfollow + post create/delete,
+  // reconciled by scripts/reconcile-social-counts.ts) instead of three COUNT(*)
+  // aggregates per profile view.
+  followerCount: true,
+  followingCount: true,
+  postCount: true,
 } as const;
 
 export interface ProfilePayload {
@@ -177,9 +180,9 @@ export async function getProfile(
     profileSongPreviewUrl: user.profile?.profileSongPreviewUrl ?? null,
     profileSongAlbumArt: user.profile?.profileSongAlbumArt ?? null,
     coins: user.profile?.coins ?? 10,
-    followerCount: user._count.followers,
-    followingCount: user._count.following,
-    rmharkCount: user._count.rmharks,
+    followerCount: user.followerCount,
+    followingCount: user.followingCount,
+    rmharkCount: user.postCount,
     isFollowing: viewerId
       ? Boolean((user as Record<string, unknown>).followers) &&
         ((user as Record<string, unknown>).followers as unknown[]).length > 0

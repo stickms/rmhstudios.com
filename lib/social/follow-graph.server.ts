@@ -10,25 +10,25 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 
 const TTL_MS = 30_000;
 const key = (userId: string) => `following-ids:${userId}`;
 
 /** The ids `userId` follows. Cached ~30s; invalidated on follow/unfollow/block. */
 export async function getFollowingIds(userId: string): Promise<string[]> {
-  const cached = apiCache.get<string[]>(key(userId));
-  if (cached) return cached;
-  const rows = await prisma.follow.findMany({
-    where: { followerId: userId },
-    select: { followingId: true },
+  return cached<string[]>(key(userId), TTL_MS, async () => {
+    const rows = await prisma.follow.findMany({
+      where: { followerId: userId },
+      select: { followingId: true },
+    });
+    return rows.map((f) => f.followingId);
   });
-  const ids = rows.map((f) => f.followingId);
-  apiCache.set(key(userId), ids, TTL_MS);
-  return ids;
 }
 
 /** Drop the cached follow list for `userId` (call after they follow/unfollow). */
 export function invalidateFollowingIds(userId: string): void {
-  apiCache.invalidate(key(userId));
+  // Fire-and-forget: drops the local L1 copy synchronously and broadcasts the
+  // drop to every instance over Redis pub/sub. Signature stays `void`.
+  void invalidateCached(key(userId));
 }

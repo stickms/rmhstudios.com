@@ -27,6 +27,17 @@ export const auth = betterAuth({
     advanced: {
         useSecureCookies: process.env.BETTER_AUTH_URL?.startsWith("https"),
     },
+    session: {
+        // Signed session snapshot cached in the cookie so the common case
+        // (validate the current session) does NOT hit the session/user table on
+        // every request — the single biggest per-request DB read at scale.
+        // TTL is deliberately short (60s) so a ban/sign-out still propagates
+        // within a minute; longer would trade revocation latency for fewer reads.
+        cookieCache: {
+            enabled: true,
+            maxAge: 60, // seconds
+        },
+    },
     // Throttle auth endpoints to blunt credential stuffing / account enumeration.
     // Defaults cover all auth routes; the stricter custom rules target the
     // sign-in/sign-up/forgot-password paths. Storage is in-memory per process;

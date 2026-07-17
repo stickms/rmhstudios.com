@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 
 export type Tier = 'free' | 'starter' | 'pro' | 'enterprise';
 
@@ -67,31 +67,28 @@ const tierCacheKey = (userId: string) => `entitlements:tier:${userId}`;
  * call {@link invalidateUserTier} after a change that must reflect immediately.
  */
 export async function getUserTier(userId: string): Promise<Tier> {
-  const cached = apiCache.get<Tier>(tierCacheKey(userId));
-  if (cached) return cached;
-
-  const [subs, giftGrants] = await Promise.all([
-    prisma.subscription.findMany({
-      where: { referenceId: userId },
-      select: { plan: true, status: true },
-    }),
-    prisma.giftMembership.findMany({
-      where: { userId, expiresAt: { gt: new Date() } },
-      select: { tier: true },
-    }),
-  ]);
-  let best: Tier = 'free';
-  for (const sub of subs) {
-    const tier = tierFromSubscription(sub);
-    if (TIER_RANK[tier] > TIER_RANK[best]) best = tier;
-  }
-  for (const g of giftGrants) {
-    const tier = mapPlanToTier(g.tier);
-    if (TIER_RANK[tier] > TIER_RANK[best]) best = tier;
-  }
-
-  apiCache.set(tierCacheKey(userId), best, TIER_TTL_MS);
-  return best;
+  return cached<Tier>(tierCacheKey(userId), TIER_TTL_MS, async () => {
+    const [subs, giftGrants] = await Promise.all([
+      prisma.subscription.findMany({
+        where: { referenceId: userId },
+        select: { plan: true, status: true },
+      }),
+      prisma.giftMembership.findMany({
+        where: { userId, expiresAt: { gt: new Date() } },
+        select: { tier: true },
+      }),
+    ]);
+    let best: Tier = 'free';
+    for (const sub of subs) {
+      const tier = tierFromSubscription(sub);
+      if (TIER_RANK[tier] > TIER_RANK[best]) best = tier;
+    }
+    for (const g of giftGrants) {
+      const tier = mapPlanToTier(g.tier);
+      if (TIER_RANK[tier] > TIER_RANK[best]) best = tier;
+    }
+    return best;
+  });
 }
 
 /**
@@ -100,5 +97,8 @@ export async function getUserTier(userId: string): Promise<Tier> {
  * user's entitlement so paid features unlock without waiting out the TTL.
  */
 export function invalidateUserTier(userId: string): void {
-  apiCache.invalidate(tierCacheKey(userId));
+  // Fire-and-forget: drops the local L1 copy synchronously and broadcasts the
+  // drop to every instance over Redis pub/sub. Callers are all fire-and-forget,
+  // so the signature stays `void`.
+  void invalidateCached(tierCacheKey(userId));
 }
