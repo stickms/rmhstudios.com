@@ -26,10 +26,10 @@ function AffinityBar({ characterId, score, affinityChange, reaction, delay }: {
   const char = CHARACTERS[characterId];
   const settings = useGameStore(s => s.settings);
   const affinity = useGameStore(s => s.affinity[characterId]);
+  const { t } = useTranslation("c-versecraft");
 
   if (!char || !affinity) return null;
 
-  const { t } = useTranslation("c-versecraft");
   const name = getCharacterFirstName(characterId, settings.characterPresentations);
   const grade = score >= 90 ? 'S' : score >= 75 ? 'A' : score >= 60 ? 'B' : score >= 45 ? 'C' : score >= 30 ? 'D' : 'F';
   const gs = GRADE_STYLES[grade];

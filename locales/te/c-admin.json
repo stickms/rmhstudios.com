@@ -9,6 +9,7 @@
   "delete-failed": "పోస్ట్ తొలగించడంలో విఫలమైంది",
   "delete-post": "పోస్ట్ తొలగించు",
   "delete-success": "బ్లాగ్ పోస్ట్ తొలగించబడింది: {{slug}}.",
+  "delete-title": "ఈ పోస్ట్‌ను తొలగించాలా?",
   "description-label": "వివరణ",
   "description-placeholder": "పోస్ట్ యొక్క సంక్షిప్త సారాంశం...",
   "editing-title": "సవరిస్తోంది: {{title}}",

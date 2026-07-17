@@ -36,6 +36,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    # tsc/vite on this codebase exceed Node's default ~4 GB heap. Set the larger
+    # heap for EVERY step (typecheck was OOM-killing before this was job-wide).
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
@@ -43,9 +47,12 @@ jobs:
         with:
           version: 10
 
+      # Node 24 to match the production Dockerfile (node:24-alpine). Node < 21
+      # lacks the global `navigator`, which build-vibe-packages needs to import
+      # browser-only libs (pixi.js, p5) for their export names.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       # postinstall runs `prisma generate` (schema-only, no DB needed).
@@ -68,5 +75,3 @@ jobs:
       # that typecheck alone misses. No runtime env is read at build time.
       - name: Build
         run: pnpm run build:frontend
-        env:
-          NODE_OPTIONS: --max-old-space-size=8192

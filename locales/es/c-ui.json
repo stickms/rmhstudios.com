@@ -1,3 +1,9 @@
 {
-  "close": "Cerrar"
+  "back-to-top": "Volver arriba",
+  "breadcrumb": "Ruta de navegación",
+  "cancel": "Cancelar",
+  "close": "Cerrar",
+  "confirm": "Confirmar",
+  "copied": "Copiado",
+  "copy": "Copiar"
 }

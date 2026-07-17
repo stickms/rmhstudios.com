@@ -153,6 +153,31 @@ interface Props {
   coins: number;
 }
 
+function ChipOverlay({ type, numbers, getChipAmount }: { type: BetType; numbers: number[]; getChipAmount: (type: BetType, numbers: number[]) => number }) {
+  const amount = getChipAmount(type, numbers);
+  if (amount <= 0) return null;
+  return (
+    <div className="absolute -top-1 -right-1 z-30 flex items-center gap-0.5 bg-site-accent text-site-accent-fg text-[8px] font-bold rounded-full px-1 py-0.5 shadow-lg border border-site-accent/60">
+      <CoinIcon className="w-2 h-2" />
+      {amount}
+    </div>
+  );
+}
+
+// Chip overlay positioned at a specific edge/corner (for split/corner bets on the board)
+function EdgeChip({ type, numbers, style, getChipAmount }: { type: BetType; numbers: number[]; style: React.CSSProperties; getChipAmount: (type: BetType, numbers: number[]) => number }) {
+  const amount = getChipAmount(type, numbers);
+  if (amount <= 0) return null;
+  return (
+    <div
+      className="absolute z-30 flex items-center justify-center bg-site-accent text-site-accent-fg text-[7px] font-bold rounded-full shadow-lg border border-site-accent/60"
+      style={{ width: 18, height: 18, ...style }}
+    >
+      {amount}
+    </div>
+  );
+}
+
 export function RouletteTable({ coins }: Props) {
   const {
     tablePhase,
@@ -209,31 +234,6 @@ export function RouletteTable({ coins }: Props) {
     }
   }, [isBetting, coins, addStagedBet]);
 
-  function ChipOverlay({ type, numbers }: { type: BetType; numbers: number[] }) {
-    const amount = getChipAmount(type, numbers);
-    if (amount <= 0) return null;
-    return (
-      <div className="absolute -top-1 -right-1 z-30 flex items-center gap-0.5 bg-site-accent text-site-accent-fg text-[8px] font-bold rounded-full px-1 py-0.5 shadow-lg border border-site-accent/60">
-        <CoinIcon className="w-2 h-2" />
-        {amount}
-      </div>
-    );
-  }
-
-  // Chip overlay positioned at a specific edge/corner (for split/corner bets on the board)
-  function EdgeChip({ type, numbers, style }: { type: BetType; numbers: number[]; style: React.CSSProperties }) {
-    const amount = getChipAmount(type, numbers);
-    if (amount <= 0) return null;
-    return (
-      <div
-        className="absolute z-30 flex items-center justify-center bg-site-accent text-site-accent-fg text-[7px] font-bold rounded-full shadow-lg border border-site-accent/60"
-        style={{ width: 18, height: 18, ...style }}
-      >
-        {amount}
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col items-center gap-2">
       {/* Spinning animation */}
@@ -261,7 +261,7 @@ export function RouletteTable({ coins }: Props) {
                 } ${isBetting ? 'cursor-pointer' : 'cursor-default'}`}
               >
                 {numberLabel(n)}
-                <ChipOverlay type="straight" numbers={[n]} />
+                <ChipOverlay type="straight" numbers={[n]} getChipAmount={getChipAmount} />
               </button>
             ))}
           </div>
@@ -273,7 +273,7 @@ export function RouletteTable({ coins }: Props) {
               className="w-full min-h-7 bg-site-surface border border-site-border text-site-text text-[10px] font-bold rounded transition-all hover:bg-site-surface-hover active:scale-[0.98] relative"
             >
               {t("top-line-bet", { defaultValue: "Top Line (0, 00, 1-3) 6:1" })}
-              <ChipOverlay type="topline" numbers={[0, DOUBLE_ZERO, 1, 2, 3]} />
+              <ChipOverlay type="topline" numbers={[0, DOUBLE_ZERO, 1, 2, 3]} getChipAmount={getChipAmount} />
             </button>
           )}
 
@@ -297,7 +297,7 @@ export function RouletteTable({ coins }: Props) {
                       } ${isBetting ? 'cursor-pointer' : 'cursor-default'}`}
                     >
                       {n}
-                      <ChipOverlay type="straight" numbers={[n]} />
+                      <ChipOverlay type="straight" numbers={[n]} getChipAmount={getChipAmount} />
                     </button>
 
                     {/* Right edge dot — vertical split (n, n+1) */}
@@ -309,7 +309,7 @@ export function RouletteTable({ coins }: Props) {
                           style={{ top: '50%', right: -3, transform: 'translate(50%, -50%)' }}
                           title={`Split ${n}/${n + 1}`}
                         />
-                        <EdgeChip type="split" numbers={[n, n + 1]} style={{ top: '50%', right: -3, transform: 'translate(50%, -50%)' }} />
+                        <EdgeChip type="split" numbers={[n, n + 1]} style={{ top: '50%', right: -3, transform: 'translate(50%, -50%)' }} getChipAmount={getChipAmount} />
                       </>
                     )}
 
@@ -322,7 +322,7 @@ export function RouletteTable({ coins }: Props) {
                           style={{ bottom: -3, left: '50%', transform: 'translate(-50%, 50%)' }}
                           title={`Split ${n}/${n + 3}`}
                         />
-                        <EdgeChip type="split" numbers={[n, n + 3]} style={{ bottom: -3, left: '50%', transform: 'translate(-50%, 50%)' }} />
+                        <EdgeChip type="split" numbers={[n, n + 3]} style={{ bottom: -3, left: '50%', transform: 'translate(-50%, 50%)' }} getChipAmount={getChipAmount} />
                       </>
                     )}
 
@@ -335,7 +335,7 @@ export function RouletteTable({ coins }: Props) {
                           style={{ bottom: -3, right: -3, transform: 'translate(50%, 50%)' }}
                           title={`Corner ${n}/${n + 1}/${n + 3}/${n + 4}`}
                         />
-                        <EdgeChip type="corner" numbers={[n, n + 1, n + 3, n + 4]} style={{ bottom: -3, right: -3, transform: 'translate(50%, 50%)' }} />
+                        <EdgeChip type="corner" numbers={[n, n + 1, n + 3, n + 4]} style={{ bottom: -3, right: -3, transform: 'translate(50%, 50%)' }} getChipAmount={getChipAmount} />
                       </>
                     )}
 
@@ -348,7 +348,7 @@ export function RouletteTable({ coins }: Props) {
                           style={{ top: '50%', left: -3, transform: 'translate(-50%, -50%)' }}
                           title={`Street ${n}-${n + 2}`}
                         />
-                        <EdgeChip type="street" numbers={[n, n + 1, n + 2]} style={{ top: '50%', left: -3, transform: 'translate(-50%, -50%)' }} />
+                        <EdgeChip type="street" numbers={[n, n + 1, n + 2]} style={{ top: '50%', left: -3, transform: 'translate(-50%, -50%)' }} getChipAmount={getChipAmount} />
                       </>
                     )}
 
@@ -361,7 +361,7 @@ export function RouletteTable({ coins }: Props) {
                           style={{ bottom: -3, left: -3, transform: 'translate(-50%, 50%)' }}
                           title={`Line ${n}-${n + 5}`}
                         />
-                        <EdgeChip type="line" numbers={[n, n + 1, n + 2, n + 3, n + 4, n + 5]} style={{ bottom: -3, left: -3, transform: 'translate(-50%, 50%)' }} />
+                        <EdgeChip type="line" numbers={[n, n + 1, n + 2, n + 3, n + 4, n + 5]} style={{ bottom: -3, left: -3, transform: 'translate(-50%, 50%)' }} getChipAmount={getChipAmount} />
                       </>
                     )}
                   </div>
@@ -382,7 +382,7 @@ export function RouletteTable({ coins }: Props) {
                 }`}
               >
                 {t("col-n", { defaultValue: "Col {{col}}", col: i + 1 })}
-                <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} />
+                <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} getChipAmount={getChipAmount} />
               </button>
             ))}
           </div>
@@ -399,7 +399,7 @@ export function RouletteTable({ coins }: Props) {
                 }`}
               >
                 {i === 0 ? t("dozen-1st", { defaultValue: "1st 12" }) : i === 1 ? t("dozen-2nd", { defaultValue: "2nd 12" }) : t("dozen-3rd", { defaultValue: "3rd 12" })}
-                <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} />
+                <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} getChipAmount={getChipAmount} />
               </button>
             ))}
           </div>
@@ -429,7 +429,7 @@ export function RouletteTable({ coins }: Props) {
                 }`}
               >
                 {t(`outside-${key}`, { defaultValue: label })}
-                <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} />
+                <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} getChipAmount={getChipAmount} />
               </button>
             ))}
           </div>

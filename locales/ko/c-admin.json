@@ -9,6 +9,7 @@
   "delete-failed": "게시물 삭제 실패",
   "delete-post": "게시물 삭제",
   "delete-success": "블로그 게시물이 삭제되었습니다: {{slug}}.",
+  "delete-title": "이 게시물을 삭제하시겠습니까?",
   "description-label": "설명",
   "description-placeholder": "게시물의 간단한 요약...",
   "editing-title": "편집 중: {{title}}",

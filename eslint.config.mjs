@@ -24,6 +24,45 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
+  // ── Node scripts & build tooling (plain .mjs, not in the TS program) ──────
+  // typescript-eslint disables no-undef for .ts files (tsc already checks it),
+  // but plain JS/MJS still needs its globals declared. These run under Node and
+  // some drive a browser via Playwright `page.evaluate()`, so they legitimately
+  // reference both Node and DOM globals.
+  {
+    files: ["**/*.mjs"],
+    languageOptions: {
+      globals: {
+        process: "readonly", console: "readonly", Buffer: "readonly",
+        URL: "readonly", URLSearchParams: "readonly", fetch: "readonly",
+        Request: "readonly", Response: "readonly", Headers: "readonly",
+        TextEncoder: "readonly", TextDecoder: "readonly", structuredClone: "readonly",
+        AbortController: "readonly", queueMicrotask: "readonly", globalThis: "readonly",
+        setTimeout: "readonly", clearTimeout: "readonly",
+        setInterval: "readonly", clearInterval: "readonly",
+        // DOM globals referenced inside Playwright page.evaluate() callbacks.
+        document: "readonly", window: "readonly", self: "readonly",
+        navigator: "readonly", location: "readonly",
+      },
+    },
+  },
+
+  // ── Service worker (browser ServiceWorkerGlobalScope) ─────────────────────
+  {
+    files: ["public/sw.js"],
+    languageOptions: {
+      globals: {
+        self: "readonly", caches: "readonly", clients: "readonly",
+        skipWaiting: "readonly", registration: "readonly", importScripts: "readonly",
+        addEventListener: "readonly", location: "readonly",
+        fetch: "readonly", Request: "readonly", Response: "readonly",
+        Headers: "readonly", URL: "readonly", console: "readonly",
+        setTimeout: "readonly", clearTimeout: "readonly",
+        setInterval: "readonly", clearInterval: "readonly",
+      },
+    },
+  },
+
   // ── React Hooks ───────────────────────────────────────────────────────────
   {
     plugins: { "react-hooks": reactHooks },

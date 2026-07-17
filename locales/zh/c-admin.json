@@ -9,6 +9,7 @@
   "delete-failed": "删除帖子失败",
   "delete-post": "删除帖子",
   "delete-success": "已删除的博客文章：{{slug}}。",
+  "delete-title": "删除此帖子？",
   "description-label": "描述",
   "description-placeholder": "帖子的简短摘要……",
   "editing-title": "编辑：{{title}}",

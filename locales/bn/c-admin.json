@@ -9,6 +9,7 @@
   "delete-failed": "পোস্ট মুছে ফেলতে ব্যর্থ হয়েছে",
   "delete-post": "পোস্ট মুছুন",
   "delete-success": "ব্লগ পোস্ট মুছে ফেলা হয়েছে: {{slug}}।",
+  "delete-title": "এই পোস্ট মুছে ফেলবেন?",
   "description-label": "বিবরণ",
   "description-placeholder": "পোস্টের একটি সংক্ষিপ্ত সারাংশ...",
   "editing-title": "সম্পাদনা করা হচ্ছে: {{title}}",

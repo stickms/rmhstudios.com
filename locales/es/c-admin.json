@@ -9,6 +9,7 @@
   "delete-failed": "Error al eliminar la publicación",
   "delete-post": "Eliminar Publicación",
   "delete-success": "Publicación de blog eliminada: {{slug}}.",
+  "delete-title": "¿Eliminar esta publicación?",
   "description-label": "Descripción",
   "description-placeholder": "Un breve resumen de la publicación...",
   "editing-title": "Editando: {{title}}",

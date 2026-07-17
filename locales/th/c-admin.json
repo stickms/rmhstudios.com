@@ -9,6 +9,7 @@
   "delete-failed": "ลบโพสต์ไม่สำเร็จ",
   "delete-post": "ลบโพสต์",
   "delete-success": "ลบบล็อกโพสต์แล้ว: {{slug}}.",
+  "delete-title": "ลบโพสต์นี้หรือไม่?",
   "description-label": "คำอธิบาย",
   "description-placeholder": "สรุปสั้นๆ ของโพสต์...",
   "editing-title": "กำลังแก้ไข: {{title}}",

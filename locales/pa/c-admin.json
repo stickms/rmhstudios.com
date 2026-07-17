@@ -9,6 +9,7 @@
   "delete-failed": "ਪੋਸਟ ਮਿਟਾਉਣ ਵਿੱਚ ਅਸਫਲ",
   "delete-post": "ਪੋਸਟ ਮਿਟਾਓ",
   "delete-success": "ਬਲੌਗ ਪੋਸਟ ਮਿਟਾਇਆ: {{slug}}।",
+  "delete-title": "ਕੀ ਇਹ ਪੋਸਟ ਹਟਾਉਣੀ ਹੈ?",
   "description-label": "ਵਰਣਨ",
   "description-placeholder": "ਪੋਸਟ ਦਾ ਇੱਕ ਛੋਟਾ ਸਾਰ...",
   "editing-title": "ਸੰਪਾਦਨ: {{title}}",

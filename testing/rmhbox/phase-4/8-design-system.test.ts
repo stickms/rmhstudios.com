@@ -9,7 +9,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const cssPath = resolve(__dirname, '../../../app/rmhbox/rmhbox.css');
+const cssPath = resolve(__dirname, '../../../components/rmhbox/rmhbox.css');
 const cssContent = readFileSync(cssPath, 'utf-8');
 
 describe('UI Design System (§8)', () => {

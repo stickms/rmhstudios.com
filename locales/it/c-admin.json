@@ -9,6 +9,7 @@
   "delete-failed": "Eliminazione del post fallita",
   "delete-post": "Elimina Post",
   "delete-success": "Post del blog eliminato: {{slug}}.",
+  "delete-title": "Eliminare questo post?",
   "description-label": "Descrizione",
   "description-placeholder": "Un breve riassunto del post...",
   "editing-title": "Modifica: {{title}}",

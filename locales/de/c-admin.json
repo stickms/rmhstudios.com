@@ -9,6 +9,7 @@
   "delete-failed": "Fehler beim Löschen des Beitrags",
   "delete-post": "Beitrag löschen",
   "delete-success": "Blogbeitrag gelöscht: {{slug}}.",
+  "delete-title": "Diesen Beitrag löschen?",
   "description-label": "Beschreibung",
   "description-placeholder": "Eine kurze Zusammenfassung des Beitrags...",
   "editing-title": "Bearbeiten: {{title}}",

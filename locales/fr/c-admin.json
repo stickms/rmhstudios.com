@@ -9,6 +9,7 @@
   "delete-failed": "Échec de la suppression de l'article",
   "delete-post": "Supprimer l'article",
   "delete-success": "Article de blog supprimé : {{slug}}.",
+  "delete-title": "Supprimer cette publication ?",
   "description-label": "Description",
   "description-placeholder": "Un bref résumé de l'article...",
   "editing-title": "Modification : {{title}}",

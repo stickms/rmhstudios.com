@@ -42,6 +42,20 @@ interface MatchEntry {
 type SortKey = 'date' | 'score' | 'rank' | 'duration';
 type SortDir = 'asc' | 'desc';
 
+function SortButton({ label, field, active, onSort }: { label: string; field: SortKey; active: boolean; onSort: (field: SortKey) => void }) {
+  return (
+    <button
+      onClick={() => onSort(field)}
+      className={`flex items-center gap-1 text-xs font-medium transition-colors ${
+        active ? 'text-(--rmhbox-accent)' : 'text-(--rmhbox-text-muted) hover:text-(--rmhbox-text)'
+      }`}
+    >
+      {label}
+      <ArrowUpDown className="h-3 w-3" />
+    </button>
+  );
+}
+
 function MinigameHistoryPage() {
   const { minigameId } = Route.useParams();
   const { t } = useTranslation("r-rmhbox");
@@ -208,18 +222,6 @@ function MinigameHistoryPage() {
     return m > 0 ? `${m}m ${s % 60}s` : `${s}s`;
   };
 
-  const SortButton = ({ label, field }: { label: string; field: SortKey }) => (
-    <button
-      onClick={() => handleSort(field)}
-      className={`flex items-center gap-1 text-xs font-medium transition-colors ${
-        sortKey === field ? 'text-(--rmhbox-accent)' : 'text-(--rmhbox-text-muted) hover:text-(--rmhbox-text)'
-      }`}
-    >
-      {label}
-      <ArrowUpDown className="h-3 w-3" />
-    </button>
-  );
-
   const DetailComponent = historyConfig?.DetailComponent;
 
   return (
@@ -253,10 +255,10 @@ function MinigameHistoryPage() {
           {/* Sort controls */}
           <div className="flex items-center gap-4 mb-4 px-1">
             <span className="text-xs text-(--rmhbox-text-muted)">{t("sort-by", { defaultValue: "Sort by:" })}</span>
-            <SortButton label={t("sort-date", { defaultValue: "Date" })} field="date" />
-            <SortButton label={t("sort-score", { defaultValue: "Score" })} field="score" />
-            <SortButton label={t("sort-rank", { defaultValue: "Rank" })} field="rank" />
-            <SortButton label={t("sort-duration", { defaultValue: "Duration" })} field="duration" />
+            <SortButton label={t("sort-date", { defaultValue: "Date" })} field="date" active={sortKey === 'date'} onSort={handleSort} />
+            <SortButton label={t("sort-score", { defaultValue: "Score" })} field="score" active={sortKey === 'score'} onSort={handleSort} />
+            <SortButton label={t("sort-rank", { defaultValue: "Rank" })} field="rank" active={sortKey === 'rank'} onSort={handleSort} />
+            <SortButton label={t("sort-duration", { defaultValue: "Duration" })} field="duration" active={sortKey === 'duration'} onSort={handleSort} />
           </div>
 
           {/* Filter controls */}

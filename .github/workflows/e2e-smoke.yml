@@ -76,9 +76,12 @@ jobs:
         with:
           version: 10
 
+      # Node 24 to match the production Dockerfile (node:24-alpine). Node < 21
+      # lacks the global `navigator`, which build-vibe-packages needs to import
+      # browser-only libs (pixi.js, p5) for their export names.
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: 20
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies

@@ -9,6 +9,7 @@
   "delete-failed": "Αποτυχία διαγραφής ανάρτησης",
   "delete-post": "Διαγραφή Ανάρτησης",
   "delete-success": "Διαγράφηκε η ανάρτηση ιστολογίου: {{slug}}.",
+  "delete-title": "Διαγραφή αυτής της δημοσίευσης;",
   "description-label": "Περιγραφή",
   "description-placeholder": "Μια σύντομη περίληψη της ανάρτησης...",
   "editing-title": "Επεξεργασία: {{title}}",
