@@ -122,6 +122,10 @@ COPY lib/ssrf-guard.server.ts ./lib/ssrf-guard.server.ts
 # ladder-worker (RMHLadder job-discovery cron) is the one Node worker not in
 # the Go supervisor — it needs lib/rmhladder for its pipeline/seed/probe code.
 COPY lib/rmhladder ./lib/rmhladder/
+# ladder-worker also hosts the data-lifecycle cleanup cron, which imports the
+# batched purge queries from this module (relative import, so it must be present
+# in this bundle context).
+COPY lib/cleanup.server.ts ./lib/cleanup.server.ts
 # homes-worker (RMHHomes external-listing scraper cron) needs lib/homes for its
 # scrape pipeline/seed and the dependency-light watch notifier. Its bundle only
 # reaches lib/homes/scrape + types/distance/watch-match, so the heavier
