@@ -61,29 +61,54 @@ export const Route = createFileRoute('/api/rmharks/$id/vote')({
 
     let castVote = false;
     if (existingVote) {
-      // Toggle off — remove the vote
-      await prisma.rMHarkPollVote.delete({ where: { id: existingVote.id } });
+      // Toggle off — remove the vote and drop the option's denormalized tally in
+      // the same transaction (guarded so it never goes below zero).
+      await prisma.$transaction([
+        prisma.rMHarkPollVote.delete({ where: { id: existingVote.id } }),
+        prisma.rMHarkPollOption.updateMany({
+          where: { id: optionId, voteCount: { gt: 0 } },
+          data: { voteCount: { decrement: 1 } },
+        }),
+      ]);
     } else if (isMultiSelect) {
       castVote = true;
-      // Multi-select: just add the vote
-      await prisma.rMHarkPollVote.create({
-        data: { optionId, userId },
-      });
+      // Multi-select: add the vote and bump the option's tally atomically.
+      await prisma.$transaction([
+        prisma.rMHarkPollVote.create({ data: { optionId, userId } }),
+        prisma.rMHarkPollOption.update({
+          where: { id: optionId },
+          data: { voteCount: { increment: 1 } },
+        }),
+      ]);
     } else {
       castVote = true;
-      // Single-select: remove any existing votes on this poll, then add new one
+      // Single-select: remove any existing votes on this poll (decrementing the
+      // tally of each option the user had chosen), then add the new vote and
+      // bump its tally — all in one transaction so counts stay consistent.
       const allOptions = await prisma.rMHarkPollOption.findMany({
         where: { pollId },
         select: { id: true },
       });
       const optionIds = allOptions.map((o) => o.id);
+      const priorVotes = await prisma.rMHarkPollVote.findMany({
+        where: { optionId: { in: optionIds }, userId },
+        select: { optionId: true },
+      });
 
       await prisma.$transaction([
         prisma.rMHarkPollVote.deleteMany({
           where: { optionId: { in: optionIds }, userId },
         }),
-        prisma.rMHarkPollVote.create({
-          data: { optionId, userId },
+        ...priorVotes.map((pv) =>
+          prisma.rMHarkPollOption.updateMany({
+            where: { id: pv.optionId, voteCount: { gt: 0 } },
+            data: { voteCount: { decrement: 1 } },
+          })
+        ),
+        prisma.rMHarkPollVote.create({ data: { optionId, userId } }),
+        prisma.rMHarkPollOption.update({
+          where: { id: optionId },
+          data: { voteCount: { increment: 1 } },
         }),
       ]);
     }
@@ -99,14 +124,15 @@ export const Route = createFileRoute('/api/rmharks/$id/vote')({
       select: { optionId: true },
     });
 
-    // Fetch updated vote counts
+    // Read the updated tallies straight from the denormalized column — no
+    // per-option `_count.votes` aggregate.
     const updatedOptions = await prisma.rMHarkPollOption.findMany({
       where: { pollId },
       orderBy: { position: "asc" },
-      include: { _count: { select: { votes: true } } },
+      select: { id: true, voteCount: true },
     });
 
-    const totalVotes = updatedOptions.reduce((sum, o) => sum + o._count.votes, 0);
+    const totalVotes = updatedOptions.reduce((sum, o) => sum + o.voteCount, 0);
 
     // Progression: XP + quests only when a vote was actually cast (not toggled off).
     if (castVote) {
@@ -120,7 +146,7 @@ export const Route = createFileRoute('/api/rmharks/$id/vote')({
       totalVotes,
       options: updatedOptions.map((o) => ({
         id: o.id,
-        voteCount: o._count.votes,
+        voteCount: o.voteCount,
       })),
     });
   } catch (error) {

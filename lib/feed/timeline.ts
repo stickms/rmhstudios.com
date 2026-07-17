@@ -28,6 +28,7 @@ import { audienceWhere } from "./audience.server";
 import { applyLock } from "./map-feed-item.server";
 import type { ReactionSummary } from "../social/reactions";
 import { apiCache } from "../cache";
+import { cached } from "../cached.server";
 
 export type FeedSurface = "following" | "foryou";
 
@@ -66,12 +67,14 @@ function pollInclude(userId: string | null) {
     include: {
       options: {
         orderBy: { position: "asc" as const },
-        include: {
-          _count: { select: { votes: true } },
-          ...(userId
-            ? { votes: { where: { userId }, select: { id: true, optionId: true } } }
-            : {}),
-        },
+        // `voteCount` is the denormalized per-option tally column (maintained
+        // atomically by the vote route), so the feed read no longer aggregates
+        // `_count.votes` per option on every render. The scalar column is
+        // returned by default; only the viewer's own vote still needs a bounded
+        // relation include.
+        ...(userId
+          ? { include: { votes: { where: { userId }, select: { id: true, optionId: true } } } }
+          : {}),
       },
     },
   };
@@ -80,7 +83,7 @@ function pollInclude(userId: string | null) {
 function mapPoll(poll: any): FeedPoll | undefined {
   if (!poll) return undefined;
   const totalVotes = poll.options.reduce(
-    (sum: number, o: any) => sum + (o._count?.votes ?? 0),
+    (sum: number, o: any) => sum + (o.voteCount ?? 0),
     0
   );
   return {
@@ -92,7 +95,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
     options: poll.options.map((o: any) => ({
       id: o.id,
       text: o.text,
-      voteCount: o._count?.votes ?? 0,
+      voteCount: o.voteCount ?? 0,
     })),
     myVotes: poll.options
       .filter((o: any) => o.votes?.length > 0)
@@ -716,23 +719,17 @@ const ANON_FIRST_PAGE_TTL_MS = 30_000;
  *  requests with a non-default `limit` don't collide with the 20-item page. */
 const anonFirstPageKey = (limit: number) => `timeline:anon:first:${limit}`;
 
-export async function getTimeline(params: GetTimelineParams): Promise<TimelineResult> {
-  // The signed-out For-You first page is identical for every visitor, so serve
-  // it from a short cache — landing/logged-out traffic never runs full timeline
-  // assembly. 30s staleness is invisible (the SSE stream still delivers new
-  // posts live), and signed-in reads are never cached here.
-  const anonCacheable =
-    !params.userId &&
-    params.surface === "foryou" &&
-    params.filter === "all" &&
-    !params.cursor &&
-    !params.search;
-  const anonKey = anonFirstPageKey(params.limit);
-  if (anonCacheable) {
-    const cached = apiCache.get<TimelineResult>(anonKey);
-    if (cached) return cached;
-  }
+/** Short TTL for the signed-in first-page cache (Phase 2). Deliberately tiny so
+ *  viewer-specific state (liked/reposted/bookmarked/myVotes) is at most this
+ *  stale; the SSE stream + optimistic client updates cover the gap in between. */
+const SIGNED_IN_FIRST_PAGE_TTL_MS = 15_000;
 
+/**
+ * Assemble a timeline page (surface dispatch + reader-level muted-word filter).
+ * Pulled out of `getTimeline` so both the cache paths and the uncached path
+ * share one implementation and the FeedItem shape stays identical everywhere.
+ */
+async function assembleTimeline(params: GetTimelineParams): Promise<TimelineResult> {
   // The muted-words read (reader-level content control) only needs the viewer
   // id, so run it alongside the timeline assembly rather than after it — one
   // fewer serial round-trip on the hot path. Skipped for signed-out viewers.
@@ -745,10 +742,50 @@ export async function getTimeline(params: GetTimelineParams): Promise<TimelineRe
 
   // Return the muted words with the page so the client can filter live SSE posts
   // without separately hitting /api/preferences/muted-words at hydration.
-  const finalResult: TimelineResult = muted.length
+  return muted.length
     ? { ...result, items: applyMutedWords(result.items, muted), mutedWords: muted }
     : { ...result, mutedWords: muted };
+}
 
-  if (anonCacheable) apiCache.set(anonKey, finalResult, ANON_FIRST_PAGE_TTL_MS);
-  return finalResult;
+export async function getTimeline(params: GetTimelineParams): Promise<TimelineResult> {
+  // The signed-out For-You first page is identical for every visitor, so serve
+  // it from a short cache — landing/logged-out traffic never runs full timeline
+  // assembly. 30s staleness is invisible (the SSE stream still delivers new
+  // posts live).
+  const anonCacheable =
+    !params.userId &&
+    params.surface === "foryou" &&
+    params.filter === "all" &&
+    !params.cursor &&
+    !params.search;
+  if (anonCacheable) {
+    const anonKey = anonFirstPageKey(params.limit);
+    const hit = apiCache.get<TimelineResult>(anonKey);
+    if (hit) return hit;
+    const result = await assembleTimeline(params);
+    apiCache.set(anonKey, result, ANON_FIRST_PAGE_TTL_MS);
+    return result;
+  }
+
+  // Signed-in first page (no cursor / no search): a short Redis-backed cache
+  // per (surface, filter, viewer) so the common "open the app" request is a
+  // cache hit instead of two `findMany`s + an in-memory merge. The whole result
+  // — including this viewer's liked/reposted/bookmarked/myVotes bits — is safe
+  // to cache under a viewer-keyed key because it is computed for exactly this
+  // viewer. Subsequent (cursored) pages are never cached. `cached()` degrades to
+  // pure in-process caching when Redis is unset, so local/single-instance dev is
+  // unaffected. NOTE: there is no write-through invalidation here (the post /
+  // follow write paths live in modules outside this change's scope), so the TTL
+  // is the sole freshness bound — the client's optimistic updates + SSE cover
+  // the viewer's own actions within the window.
+  const signedInFirstPage = !!params.userId && !params.cursor && !params.search;
+  if (signedInFirstPage) {
+    return cached(
+      `feed:v1:${params.surface}:${params.filter}:${params.userId}:${params.limit}`,
+      SIGNED_IN_FIRST_PAGE_TTL_MS,
+      () => assembleTimeline(params),
+    );
+  }
+
+  return assembleTimeline(params);
 }

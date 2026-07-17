@@ -8,6 +8,30 @@ import { getActiveBan } from "@/lib/admin-audit.server";
 import { createComment } from "@/lib/social/engagement.server";
 import { groupReactions } from "@/lib/social/reactions";
 import { canReplyToPost, type ReplyControl } from "@/lib/feed/reply-control.server";
+import { decodeCursor, encodeCursor, keysetWhere, type FeedCursor } from "@/lib/feed/cursor";
+
+/** Top-level comments returned per page (keyset-paginated, newest-first). */
+const TOP_LEVEL_PAGE = 20;
+/** Direct replies eagerly hydrated per parent; the rest load via `?parentId=`. */
+const REPLY_CAP_PER_PARENT = 3;
+/** Max reply-tree depth walked in one request (deeper via `?parentId=`). */
+const MAX_TREE_DEPTH = 6;
+/** Hard ceiling on parents expanded per request — bounds total reply queries. */
+const MAX_EXPANDED_PARENTS = 80;
+/** Page size for the lazy per-parent reply feed (`?parentId=&cursor=`). */
+const REPLY_PAGE = 20;
+
+/** Prisma `where` fragment for an ascending `(createdAt, id)` keyset — the order
+ *  replies are shown in (oldest-first), used by the `?parentId=` reply feed. */
+function ascKeysetWhere(cursor: FeedCursor | null): Record<string, unknown> {
+  if (!cursor) return {};
+  return {
+    OR: [
+      { createdAt: { gt: cursor.createdAt } },
+      { createdAt: cursor.createdAt, id: { gt: cursor.id } },
+    ],
+  };
+}
 
 export const Route = createFileRoute('/api/rmharks/$id/comment')({
   server: {
@@ -15,6 +39,9 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
   GET: async ({ request, params }) => {
   try {
     const { id } = params;
+    const url = new URL(request.url);
+    const cursorParam = url.searchParams.get("cursor");
+    const parentIdParam = url.searchParams.get("parentId");
 
     // Get current user for liked/reposted status
     let userId: string | null = null;
@@ -25,9 +52,14 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       // Not logged in
     }
 
+    // Per-comment counts: `likeCount`/`replyCount` come from the denormalized
+    // columns (maintained by the like/reply routes) so they never aggregate.
+    // reposts/views have no denormalized column yet, but the query is now bounded
+    // to one page of comments (+ capped replies), so their `_count` is bounded
+    // too — the old handler ran these aggregates over EVERY comment on the post.
     const commentInclude = {
       user: { select: userDisplaySelect },
-      _count: { select: { likes: true, reposts: true, views: true } },
+      _count: { select: { reposts: true, views: true } },
       reactions: { select: { emoji: true, userId: true } },
       ...(userId
         ? {
@@ -37,22 +69,25 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
         : {}),
     } as const;
 
-    // Fetch every comment for this post (flat), then build the full reply
-    // tree in memory. Prisma can only nest a fixed number of `replies`
-    // levels, so deep chains (reply-to-a-reply-to-a-reply…) must be
-    // assembled here or they'd never reach the client.
-    const comments = await prisma.rMHarkComment.findMany({
-      where: { rmheetId: id },
-      orderBy: { createdAt: "asc" },
-      include: commentInclude,
-    });
+    type CommentRow = Awaited<ReturnType<typeof fetchComments>>[number];
+    function fetchComments(where: Record<string, unknown>, take: number, desc: boolean) {
+      return prisma.rMHarkComment.findMany({
+        where: { rmheetId: id, ...where },
+        orderBy: [
+          { createdAt: desc ? ("desc" as const) : ("asc" as const) },
+          { id: desc ? ("desc" as const) : ("asc" as const) },
+        ],
+        take,
+        include: commentInclude,
+      });
+    }
 
-    const resolveComment = (c: typeof comments[number]) => {
+    const resolveComment = (c: CommentRow) => {
       const isDeleted = !!c.deletedAt;
-      const deletedMessage = c.deletedByAdmin 
-        ? "[This reply was deleted by an admin]" 
+      const deletedMessage = c.deletedByAdmin
+        ? "[This reply was deleted by an admin]"
         : "[This reply was deleted by the user]";
-        
+
       return {
         id: c.id,
         content: isDeleted ? deletedMessage : c.content,
@@ -62,9 +97,12 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
         parentId: c.parentId,
         userId: c.userId,
         user: resolveUser(c.user),
-        likeCount: c._count.likes,
+        likeCount: c.likeCount,
         repostCount: c._count.reposts,
         viewCount: c._count.views,
+        // Denormalized direct-reply count — lets the client tell when a parent
+        // has more replies than the (capped) set eagerly returned below.
+        replyCount: c.replyCount,
         liked: userId ? ("likes" in c ? (c.likes as { id: string }[]).length > 0 : false) : false,
         reposted: userId ? ("reposts" in c ? (c.reposts as { id: string }[]).length > 0 : false) : false,
         deletedAt: c.deletedAt?.toISOString() || null,
@@ -73,28 +111,69 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       };
     };
 
-    // Build the nested tree. Comments were fetched oldest-first, so each
-    // parent's `replies` ends up in ascending chronological order.
     type ResolvedComment = ReturnType<typeof resolveComment> & { replies: ResolvedComment[] };
-    const byId = new Map<string, ResolvedComment>();
-    for (const c of comments) {
-      byId.set(c.id, { ...resolveComment(c), replies: [] });
+
+    // ── Lazy per-parent reply feed (`?parentId=&cursor=`) ────────────────────
+    // A flat, keyset-paginated (oldest-first) page of one parent's direct
+    // replies — the "load more replies" seam. Returns the same array-of-comments
+    // shape; `X-Next-Cursor` carries the next page token.
+    if (parentIdParam) {
+      const replies = await fetchComments(
+        { parentId: parentIdParam, ...ascKeysetWhere(decodeCursor(cursorParam)) },
+        REPLY_PAGE,
+        false,
+      );
+      const nodes: ResolvedComment[] = replies.map((c) => ({ ...resolveComment(c), replies: [] }));
+      const last = replies[replies.length - 1];
+      const nextCursor =
+        replies.length === REPLY_PAGE && last ? encodeCursor(last.createdAt, last.id) : null;
+      return Response.json(nodes, { headers: nextCursor ? { "X-Next-Cursor": nextCursor } : {} });
     }
 
-    const roots: ResolvedComment[] = [];
-    for (const node of byId.values()) {
-      const parent = node.parentId ? byId.get(node.parentId) : null;
-      if (parent) {
-        parent.replies.push(node);
-      } else {
-        roots.push(node);
-      }
+    // ── Top-level page (keyset, newest-first) ────────────────────────────────
+    const roots = await fetchComments(
+      { parentId: null, ...keysetWhere(decodeCursor(cursorParam)) },
+      TOP_LEVEL_PAGE,
+      true,
+    );
+    const rootNodes: ResolvedComment[] = roots.map((c) => ({ ...resolveComment(c), replies: [] }));
+
+    // Bounded breadth-first hydration of nested replies: each parent gets at most
+    // REPLY_CAP_PER_PARENT direct replies (a DB-level `take`, so no single parent
+    // can hog the budget), and the whole walk is capped by depth and total
+    // parents expanded. A 100k-comment thread can therefore never fetch more than
+    // a small bounded slice; truncated/deeper replies load via `?parentId=`.
+    let frontier = rootNodes;
+    let depth = 0;
+    let expanded = 0;
+    while (frontier.length > 0 && depth < MAX_TREE_DEPTH && expanded < MAX_EXPANDED_PARENTS) {
+      const batch = frontier.slice(0, MAX_EXPANDED_PARENTS - expanded);
+      expanded += batch.length;
+      const replyLists = await Promise.all(
+        batch.map((parent) => fetchComments({ parentId: parent.id }, REPLY_CAP_PER_PARENT, false)),
+      );
+      const next: ResolvedComment[] = [];
+      batch.forEach((parent, i) => {
+        for (const rep of replyLists[i]) {
+          const node: ResolvedComment = { ...resolveComment(rep), replies: [] };
+          parent.replies.push(node);
+          next.push(node);
+        }
+      });
+      frontier = next;
+      depth++;
     }
 
-    // Top-level comments are shown newest-first.
-    roots.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const lastRoot = roots[roots.length - 1];
+    const nextCursor =
+      roots.length === TOP_LEVEL_PAGE && lastRoot
+        ? encodeCursor(lastRoot.createdAt, lastRoot.id)
+        : null;
 
-    return Response.json(roots);
+    // Body stays a bare array of top-level comments (unchanged client contract);
+    // the cursor is additive via a response header so existing consumers that
+    // read the array still work.
+    return Response.json(rootNodes, { headers: nextCursor ? { "X-Next-Cursor": nextCursor } : {} });
   } catch (error) {
     console.error("Fetch comments error:", error);
     return Response.json({ error: "Internal Server Error" }, { status: 500 });
@@ -170,6 +249,15 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
       return Response.json({ error: "Post not found" }, { status: 404 });
     }
     const comment = result.comment;
+
+    // Maintain the parent comment's denormalized reply tally when this is a
+    // reply. Atomic column increment (best-effort — the counter is reconciled
+    // out-of-band, so a rare failure here must not fail the reply itself).
+    if (parsed.data.parentId) {
+      await prisma.rMHarkComment
+        .update({ where: { id: parsed.data.parentId }, data: { replyCount: { increment: 1 } } })
+        .catch(() => {});
+    }
 
     return Response.json({
       ...comment,
