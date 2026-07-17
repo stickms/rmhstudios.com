@@ -45,11 +45,7 @@ import {
   releaseWorkerLease,
   type WorkerLeasePrisma,
 } from '../../lib/rmhladder/worker-lease';
-import {
-  runCleanup,
-  cleanupOptionsFromEnv,
-  type CleanupPrisma,
-} from '../../lib/cleanup.server';
+import { runCleanup, cleanupOptionsFromEnv, type CleanupPrisma } from '../../lib/cleanup.server';
 
 // ─── Prisma Client (standalone for worker process) ──────────────
 
@@ -125,8 +121,9 @@ async function cleanupTick() {
     console.error('[ladder-worker] Cleanup run failed:', error);
   } finally {
     if (leaseAcquired) {
-      await releaseWorkerLease(leasePrisma, cleanupLease)
-        .catch((error) => console.error('[ladder-worker] Cleanup lease release failed:', error));
+      await releaseWorkerLease(leasePrisma, cleanupLease).catch((error) =>
+        console.error('[ladder-worker] Cleanup lease release failed:', error),
+      );
     }
     cleanupRunning = false;
   }
