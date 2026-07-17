@@ -35,6 +35,12 @@ jobs:
           if [ ! -f .env ]; then
             cp .env.example .env 2>/dev/null || touch .env
           fi
+          # The web/socket/rmhbox/rmhtube services set `env_file:
+          # ${ENV_FILE:-.env.production}`, so `docker compose config` fails if
+          # that file is absent. Provide a placeholder for validation only.
+          if [ ! -f .env.production ]; then
+            cp .env.example .env.production 2>/dev/null || touch .env.production
+          fi
       - name: Validate docker-compose.yml
         run: docker compose -f docker-compose.yml config --quiet
       - name: Validate docker-compose.cache.yml
