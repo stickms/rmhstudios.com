@@ -4,18 +4,8 @@ import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { audienceWhere } from '@/lib/feed/audience.server';
 import { getMutedWords, applyMutedWords } from '@/lib/feed/timeline';
+import { cached } from '@/lib/cached.server';
 import type { FeedItem } from '@/lib/feed-types';
-
-const HASHTAG_REGEX = /#(\w{1,64})/g;
-const SCAN_LIMIT = 400;
-
-/**
- * Half-life (hours) for trending recency decay. A tag used 24h ago counts half
- * as much as one used now, so "trending" reflects current velocity rather than
- * a raw tally over the whole scan window (which gets stuck on evergreen tags).
- * Mirrors the decay approach in `lib/feed/ranking.ts`.
- */
-const TREND_HALF_LIFE_HOURS = 24;
 
 export interface ExploreResult {
   trendingTags: { tag: string; count: number }[];
@@ -32,6 +22,59 @@ export interface ExploreResult {
   }>;
 }
 
+/** The viewer-independent, shareable slice of the explore payload. */
+type ExploreBase = {
+  trendingTags: ExploreResult['trendingTags'];
+  communities: ExploreResult['communities'];
+  /** A pool of top candidates; per-viewer excludes are applied after. */
+  userPool: ExploreResult['suggestedUsers'];
+};
+
+/** How many hot posts to show, and how big the suggested-user candidate pool is. */
+const HOT_POSTS_TAKE = 15;
+const SUGGESTED_TAKE = 8;
+const USER_POOL_TAKE = 50;
+
+/**
+ * The parts of explore that don't depend on the viewer: trending tags (from the
+ * denormalized `hashtag` table), public communities, and a pool of popular users
+ * to suggest. Shared across all viewers and cached ~120s so it isn't recomputed
+ * per request. Per-viewer work (hot posts, exclude-self/followed) is applied by
+ * the caller on top of this.
+ */
+async function loadExploreBase(): Promise<ExploreBase> {
+  const [trending, communities, userPool] = await Promise.all([
+    // Trending: indexed order by the denormalized post count — no content scan.
+    prisma.hashtag.findMany({
+      orderBy: { postCount: 'desc' },
+      take: 12,
+      select: { tag: true, postCount: true },
+    }),
+    // Communities to discover: most members first, public only.
+    prisma.community.findMany({
+      where: { isPrivate: false },
+      orderBy: { memberCount: 'desc' },
+      take: 6,
+      select: { id: true, slug: true, name: true, description: true, icon: true, color: true, memberCount: true },
+    }),
+    // Popular real users; the per-viewer exclude (self/followed/hidden) is a
+    // small filter applied after, so we cache a slightly larger pool than we
+    // ultimately show.
+    prisma.user.findMany({
+      where: { isBot: false },
+      select: { ...userDisplaySelect, followerCount: true },
+      orderBy: { followerCount: 'desc' },
+      take: USER_POOL_TAKE,
+    }),
+  ]);
+
+  return {
+    trendingTags: trending.map((t) => ({ tag: t.tag, count: t.postCount })),
+    communities,
+    userPool: userPool.map((u) => ({ ...resolveUser(u), followerCount: u.followerCount })),
+  };
+}
+
 /**
  * Explore payload: trending tags, hot posts, people to follow, and communities
  * to discover — scoped to `viewerId` (excludes self/followed/hidden).
@@ -44,92 +87,53 @@ export interface ExploreResult {
 export async function listExplore(viewerId: string | null): Promise<ExploreResult> {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-  // Wave 1 — everything that depends only on the viewer id (or nothing). These
-  // were previously four separate serial awaits scattered through the function.
-  const [hidden, following, muted, communities] = await Promise.all([
+  // Viewer-independent slice — cached and shared across all viewers.
+  const base = await cached('explore:list', 120_000, loadExploreBase);
+
+  // Per-viewer inputs for hot posts (audience/mute) and the suggested-user
+  // exclude set. These are cheap indexed reads.
+  const [hidden, following, muted] = await Promise.all([
     getHiddenAuthorIds(viewerId),
     viewerId
       ? prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } })
       : Promise.resolve([] as { followingId: string }[]),
     viewerId ? getMutedWords(viewerId) : Promise.resolve([] as string[]),
-    // Communities to discover: most members first, public only. Independent of
-    // the viewer's graph, so it rides wave 1 instead of trailing at the end.
-    prisma.community.findMany({
-      where: { isPrivate: false },
-      orderBy: { memberCount: 'desc' },
-      take: 6,
-      select: { id: true, slug: true, name: true, description: true, icon: true, color: true, memberCount: true },
-    }),
   ]);
 
   const notHidden = hidden.length ? { userId: { notIn: hidden } } : {};
   const followingIds = following.map((f) => f.followingId);
   const aud = audienceWhere(viewerId, followingIds);
-  // People to follow: top by followers, excluding self/followed/hidden.
-  const excludeIds = new Set<string>([
-    ...(viewerId ? [viewerId] : []),
-    ...followingIds,
-    ...hidden,
-  ]);
 
-  // Wave 2 — the three reads that need hidden/following, run together.
-  const [recent, hotRows, candidates] = await Promise.all([
-    prisma.rMHark.findMany({
-      where: { deletedAt: null, content: { contains: '#' }, ...notHidden, ...aud },
-      select: { content: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
-      take: SCAN_LIMIT,
-    }),
-    prisma.rMHark.findMany({
-      where: { deletedAt: null, createdAt: { gte: since }, ...notHidden, ...aud },
-      orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
-      take: 15,
-      include: rmharkInclude(viewerId),
-    }),
-    prisma.user.findMany({
-      where: { isBot: false, id: { notIn: [...excludeIds] } },
-      select: { ...userDisplaySelect, _count: { select: { followers: true } } },
-      orderBy: { followers: { _count: 'desc' } },
-      take: 8,
-    }),
-  ]);
-
-  // Trending tags — weighted by recency so the list reflects what's hot *now*,
-  // not whatever tag has accumulated the most all-time uses in the scan window.
-  // `count` stays the raw occurrence count (for display); `score` is the
-  // recency-decayed weight used only for ordering.
-  const now = Date.now();
-  const counts = new Map<string, { tag: string; count: number; score: number }>();
-  for (const p of recent) {
-    const ageHours = Math.max(0, (now - p.createdAt.getTime()) / 3_600_000);
-    const weight = Math.pow(0.5, ageHours / TREND_HALF_LIFE_HOURS);
-    for (const m of p.content.matchAll(HASHTAG_REGEX)) {
-      const key = m[1].toLowerCase();
-      const e = counts.get(key);
-      if (e) {
-        e.count += 1;
-        e.score += weight;
-      } else {
-        counts.set(key, { tag: m[1], count: 1, score: weight });
-      }
-    }
-  }
-  const trendingTags = [...counts.values()]
-    .sort((a, b) => b.score - a.score || a.tag.localeCompare(b.tag))
-    .slice(0, 12)
-    .map(({ tag, count }) => ({ tag, count }));
+  // Hot posts are viewer-dependent (audience visibility + muted words), so they
+  // stay per-request rather than in the shared cache.
+  const hotRows = await prisma.rMHark.findMany({
+    where: { deletedAt: null, createdAt: { gte: since }, ...notHidden, ...aud },
+    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+    take: HOT_POSTS_TAKE,
+    include: rmharkInclude(viewerId),
+  });
 
   // Apply the viewer's muted words to hot posts too (the timeline already does;
-  // explore would otherwise be a mute-filter bypass). `muted` came from wave 1.
+  // explore would otherwise be a mute-filter bypass).
   const hotPosts = applyMutedWords(
     hotRows.filter((r) => (r.likeCount ?? 0) > 0).map((r) => mapRmharkToFeedItem(r, viewerId)),
     muted,
   );
 
-  const suggestedUsers = candidates.map((u) => ({
-    ...resolveUser(u),
-    followerCount: u._count.followers,
-  }));
+  // People to follow: the cached pool minus self/followed/hidden.
+  const excludeIds = new Set<string>([
+    ...(viewerId ? [viewerId] : []),
+    ...followingIds,
+    ...hidden,
+  ]);
+  const suggestedUsers = base.userPool
+    .filter((u) => !excludeIds.has(u.id))
+    .slice(0, SUGGESTED_TAKE);
 
-  return { trendingTags, hotPosts, suggestedUsers, communities };
+  return {
+    trendingTags: base.trendingTags,
+    hotPosts,
+    suggestedUsers,
+    communities: base.communities,
+  };
 }

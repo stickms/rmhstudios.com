@@ -22,7 +22,13 @@ export async function listTagFeed(
   rawTag: string,
   opts: { viewerId?: string | null; cursor?: string | null; limit?: number } = {}
 ): Promise<TagFeedResult> {
-  const tag = rawTag.replace(/[^\w]/g, '').slice(0, 64);
+  // Normalize to how tags are stored (see lib/tags-extract.server.ts): strip a
+  // leading '#', lowercase, and keep only tag-legal (Unicode) word chars.
+  const tag = rawTag
+    .replace(/^#+/, '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}_]/gu, '')
+    .slice(0, 64);
   if (!tag) return { tag: '', items: [], nextCursor: null, hasMore: false };
 
   const viewerId = opts.viewerId ?? null;
@@ -34,10 +40,13 @@ export async function listTagFeed(
     ? (await prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } })).map((f) => f.followingId)
     : [];
 
+  // Read the normalized hashtag links (post_hashtag → hashtag) instead of
+  // scanning rmheet.content with ILIKE '%#tag%'. The join is exact, so no
+  // word-boundary post-filter is needed. Keyset paginated on rmheet.createdAt.
   const rows = await prisma.rMHark.findMany({
     where: {
       deletedAt: null,
-      content: { contains: `#${tag}`, mode: 'insensitive' },
+      hashtags: { some: { hashtag: { tag } } },
       ...(hidden.length ? { userId: { notIn: hidden } } : {}),
       ...audienceWhere(viewerId, followingIds),
     },
@@ -49,11 +58,7 @@ export async function listTagFeed(
 
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;
-  // Guard against substring matches (#tag matching #tagged) — require a word boundary.
-  const re = new RegExp(`#${tag}(?![\\w])`, 'i');
-  const items = page
-    .filter((r) => re.test(r.content))
-    .map((r) => mapRmharkToFeedItem(r, viewerId));
+  const items = page.map((r) => mapRmharkToFeedItem(r, viewerId));
 
   return {
     tag,

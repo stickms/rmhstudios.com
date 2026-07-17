@@ -1,22 +1,117 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
-import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
+
+/** Cap on results per category (was 30 for the focused tab). */
+const MAX = 25;
+
+/**
+ * People search via the pg_trgm GIN indexes on lower(name)/lower(username)/
+ * lower(handle). `%` gives typo tolerance; the prefix LIKE keeps short/exact
+ * prefixes matching. Returns display-resolved users in similarity order.
+ * Fully parameterised — no user input is concatenated into SQL.
+ */
+async function searchPeople(q: string, take: number) {
+  const qLower = q.toLowerCase();
+  const prefix = qLower.replace(/[\\%_]/g, '\\$&') + '%';
+  const matches = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT id
+    FROM "user"
+    WHERE (
+      lower(name) % ${qLower} OR lower(name) LIKE ${prefix}
+      OR lower(username) % ${qLower} OR lower(username) LIKE ${prefix}
+      OR lower(handle) % ${qLower} OR lower(handle) LIKE ${prefix}
+    )
+    ORDER BY GREATEST(
+      COALESCE(similarity(lower(name), ${qLower}), 0),
+      COALESCE(similarity(lower(username), ${qLower}), 0),
+      COALESCE(similarity(lower(handle), ${qLower}), 0)
+    ) DESC
+    LIMIT ${take}
+  `);
+  if (matches.length === 0) return [];
+  const ids = matches.map((m) => m.id);
+  const rows = await prisma.user.findMany({ where: { id: { in: ids } }, select: userDisplaySelect });
+  const byId = new Map(rows.map((u) => [u.id, u]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((u): u is (typeof rows)[number] => Boolean(u))
+    .map((u) => resolveUser(u));
+}
+
+/**
+ * Post search via the `content_tsv` full-text column (rmheet_content_tsv_idx),
+ * matched with `websearch_to_tsquery('simple', q)`. The raw query returns ids
+ * (ordered by engagement) that are then hydrated through Prisma with the normal
+ * select. `content_tsv` isn't in schema.prisma (raw-SQL migration), hence
+ * $queryRaw. Fully parameterised.
+ */
+async function searchPosts(q: string, hiddenIds: string[], take: number) {
+  const hiddenClause = hiddenIds.length
+    ? Prisma.sql`AND "userId" NOT IN (${Prisma.join(hiddenIds)})`
+    : Prisma.empty;
+  const matches = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT id
+    FROM rmheet
+    WHERE "deletedAt" IS NULL
+      AND content_tsv @@ websearch_to_tsquery('simple', ${q})
+      AND audience = 'PUBLIC'
+      AND "unlockPrice" IS NULL
+      ${hiddenClause}
+    ORDER BY "likeCount" DESC, "createdAt" DESC
+    LIMIT ${take}
+  `);
+  if (matches.length === 0) return [];
+  const ids = matches.map((m) => m.id);
+  const rows = await prisma.rMHark.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      content: true,
+      createdAt: true,
+      likeCount: true,
+      user: { select: userDisplaySelect },
+    },
+  });
+  const byId = new Map(rows.map((r) => [r.id, r]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((r): r is (typeof rows)[number] => Boolean(r))
+    .map((p) => ({
+      id: p.id,
+      content: p.content,
+      createdAt: p.createdAt.toISOString(),
+      likeCount: p.likeCount,
+      user: resolveUser(p.user),
+    }));
+}
 
 /**
  * GET /api/search?q=...&type=all|people|posts|builds|blog
  *
  * Unified search across people, posts, user builds, and blog posts. Returns a
  * grouped payload so the search page can render tabs without extra round-trips.
+ * Requires a session and is rate-limited — search runs several DB scans and
+ * bypasses the anonymous page cache, so it must not be an anon DoS surface.
  */
 export const Route = createFileRoute('/api/search')({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, { limit: 60, windowMs: 60_000, prefix: 'search' });
+        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+        if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
+        // Generous limit so normal use is never throttled: base 60 ×
+        // RATE_LIMIT_MULTIPLIER (default 4) → ~240 req/min per IP.
+        const { allowed } = await checkRateLimit(getClientIp(request), {
+          limit: 60,
+          windowMs: 60_000,
+          prefix: 'search',
+        });
         if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
         const url = new URL(request.url);
@@ -26,8 +121,7 @@ export const Route = createFileRoute('/api/search')({
           return Response.json({ people: [], posts: [], builds: [], blog: [] });
         }
 
-        const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
-        const viewerId = session?.user?.id ?? null;
+        const viewerId = session.user.id;
         const contains = { contains: q, mode: 'insensitive' as const };
 
         const wantPeople = type === 'all' || type === 'people';
@@ -39,35 +133,8 @@ export const Route = createFileRoute('/api/search')({
           const hiddenIds = wantPosts ? await getHiddenAuthorIds(viewerId) : [];
 
           const [people, posts, builds, blog] = await Promise.all([
-            wantPeople
-              ? prisma.user.findMany({
-                  where: {
-                    OR: [{ name: contains }, { username: contains }, { handle: contains }],
-                  },
-                  select: userDisplaySelect,
-                  take: type === 'people' ? 30 : 6,
-                })
-              : Promise.resolve([]),
-            wantPosts
-              ? prisma.rMHark.findMany({
-                  where: {
-                    deletedAt: null,
-                    content: contains,
-                    audience: 'PUBLIC',
-                    unlockPrice: null, // don't surface paid/locked posts in search
-                    ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
-                  },
-                  orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
-                  take: type === 'posts' ? 30 : 6,
-                  select: {
-                    id: true,
-                    content: true,
-                    createdAt: true,
-                    likeCount: true,
-                    user: { select: userDisplaySelect },
-                  },
-                })
-              : Promise.resolve([]),
+            wantPeople ? searchPeople(q, type === 'people' ? MAX : 6) : Promise.resolve([]),
+            wantPosts ? searchPosts(q, hiddenIds, type === 'posts' ? MAX : 6) : Promise.resolve([]),
             wantBuilds
               ? prisma.userBuild.findMany({
                   where: {
@@ -75,7 +142,7 @@ export const Route = createFileRoute('/api/search')({
                     OR: [{ title: contains }, { description: contains }],
                   },
                   orderBy: { publishedAt: 'desc' },
-                  take: type === 'builds' ? 30 : 6,
+                  take: type === 'builds' ? MAX : 6,
                   select: { slug: true, title: true, description: true },
                 })
               : Promise.resolve([]),
@@ -83,24 +150,13 @@ export const Route = createFileRoute('/api/search')({
               ? prisma.blogPost.findMany({
                   where: { OR: [{ title: contains }, { description: contains }] },
                   orderBy: { createdAt: 'desc' },
-                  take: type === 'blog' ? 30 : 5,
+                  take: type === 'blog' ? MAX : 5,
                   select: { slug: true, title: true, description: true },
                 })
               : Promise.resolve([]),
           ]);
 
-          return Response.json({
-            people: people.map((u) => resolveUser(u)),
-            posts: posts.map((p) => ({
-              id: p.id,
-              content: p.content,
-              createdAt: p.createdAt.toISOString(),
-              likeCount: p.likeCount,
-              user: resolveUser(p.user),
-            })),
-            builds,
-            blog,
-          });
+          return Response.json({ people, posts, builds, blog });
         } catch (error) {
           console.error('Search error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });
