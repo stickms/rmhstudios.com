@@ -9,6 +9,7 @@
   "delete-failed": "பதிவை நீக்க முடியவில்லை",
   "delete-post": "பதிவை நீக்கு",
   "delete-success": "வலைப்பதிவு பதிவு நீக்கப்பட்டது: {{slug}}.",
+  "delete-title": "இந்த இடுகையை நீக்கவா?",
   "description-label": "விளக்கம்",
   "description-placeholder": "பதிவின் சுருக்கமான விளக்கம்...",
   "editing-title": "திருத்துகிறது: {{title}}",

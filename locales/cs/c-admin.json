@@ -9,6 +9,7 @@
   "delete-failed": "Smazání příspěvku se nezdařilo",
   "delete-post": "Smazat příspěvek",
   "delete-success": "Blogový příspěvek smazán: {{slug}}.",
+  "delete-title": "Smazat tento příspěvek?",
   "description-label": "Popis",
   "description-placeholder": "Krátké shrnutí příspěvku...",
   "editing-title": "Úprava: {{title}}",

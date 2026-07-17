@@ -9,6 +9,7 @@
   "delete-failed": "Не вдалося видалити допис",
   "delete-post": "Видалити допис",
   "delete-success": "Допис у блозі видалено: {{slug}}.",
+  "delete-title": "Видалити цю публікацію?",
   "description-label": "Опис",
   "description-placeholder": "Короткий опис допису...",
   "editing-title": "Редагування: {{title}}",

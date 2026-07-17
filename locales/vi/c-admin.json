@@ -9,6 +9,7 @@
   "delete-failed": "Xóa bài viết thất bại",
   "delete-post": "Xóa bài viết",
   "delete-success": "Đã xóa bài viết blog: {{slug}}.",
+  "delete-title": "Xóa bài đăng này?",
   "description-label": "Mô tả",
   "description-placeholder": "Một bản tóm tắt ngắn về bài viết...",
   "editing-title": "Đang chỉnh sửa: {{title}}",

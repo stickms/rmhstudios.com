@@ -9,6 +9,7 @@
   "delete-failed": "Ștergerea postării a eșuat",
   "delete-post": "Șterge Postarea",
   "delete-success": "Postarea de blog a fost ștearsă: {{slug}}.",
+  "delete-title": "Ștergi această postare?",
   "description-label": "Descriere",
   "description-placeholder": "Un scurt rezumat al postării...",
   "editing-title": "Se editează: {{title}}",

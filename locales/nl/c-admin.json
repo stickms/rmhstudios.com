@@ -9,6 +9,7 @@
   "delete-failed": "Verwijderen van bericht mislukt",
   "delete-post": "Bericht verwijderen",
   "delete-success": "Blogbericht verwijderd: {{slug}}.",
+  "delete-title": "Deze post verwijderen?",
   "description-label": "Beschrijving",
   "description-placeholder": "Een korte samenvatting van het bericht...",
   "editing-title": "Bewerken: {{title}}",

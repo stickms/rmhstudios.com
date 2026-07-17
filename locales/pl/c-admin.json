@@ -9,6 +9,7 @@
   "delete-failed": "Nie udało się usunąć posta",
   "delete-post": "Usuń post",
   "delete-success": "Usunięto post: {{slug}}.",
+  "delete-title": "Usunąć ten post?",
   "description-label": "Opis",
   "description-placeholder": "Krótkie podsumowanie posta...",
   "editing-title": "Edycja: {{title}}",

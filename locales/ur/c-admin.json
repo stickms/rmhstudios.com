@@ -9,6 +9,7 @@
   "delete-failed": "پوسٹ حذف کرنے میں ناکامی",
   "delete-post": "پوسٹ حذف کریں",
   "delete-success": "بلاگ پوسٹ حذف ہو گئی: {{slug}}۔",
+  "delete-title": "یہ پوسٹ حذف کریں؟",
   "description-label": "تفصیل",
   "description-placeholder": "پوسٹ کا ایک مختصر خلاصہ...",
   "editing-title": "ترمیم: {{title}}",

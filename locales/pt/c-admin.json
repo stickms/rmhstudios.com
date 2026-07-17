@@ -9,6 +9,7 @@
   "delete-failed": "Falha ao excluir postagem",
   "delete-post": "Excluir Postagem",
   "delete-success": "Postagem do blog excluída: {{slug}}.",
+  "delete-title": "Excluir esta publicação?",
   "description-label": "Descrição",
   "description-placeholder": "Um breve resumo da postagem...",
   "editing-title": "Editando: {{title}}",

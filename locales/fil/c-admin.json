@@ -9,6 +9,7 @@
   "delete-failed": "Nabigo ang pagtanggal ng post",
   "delete-post": "Tanggalin ang Post",
   "delete-success": "Natanggal ang blog post: {{slug}}.",
+  "delete-title": "Burahin ang post na ito?",
   "description-label": "Paglalarawan",
   "description-placeholder": "Isang maikling buod ng post...",
   "editing-title": "Ini-edit: {{title}}",

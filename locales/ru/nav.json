@@ -1,3 +1,6 @@
 {
+  "lang-firstrun-body": "RMH Studios доступен на 32 языках. Вы можете изменить это в любое время в настройках.",
+  "lang-firstrun-continue": "Продолжить на {{lang}}",
+  "lang-firstrun-title": "Выберите язык",
   "language": "Язык"
 }

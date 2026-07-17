@@ -9,6 +9,7 @@
   "delete-failed": "投稿の削除に失敗しました",
   "delete-post": "投稿を削除",
   "delete-success": "ブログ投稿を削除しました: {{slug}}。",
+  "delete-title": "この投稿を削除しますか？",
   "description-label": "説明",
   "description-placeholder": "投稿の短い概要...",
   "editing-title": "編集中: {{title}}",

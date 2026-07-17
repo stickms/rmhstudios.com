@@ -9,6 +9,7 @@
   "delete-failed": "पोस्ट हटाने में विफल",
   "delete-post": "पोस्ट हटाएं",
   "delete-success": "ब्लॉग पोस्ट हटा दी गई: {{slug}}।",
+  "delete-title": "यह पोस्ट हटाएँ?",
   "description-label": "विवरण",
   "description-placeholder": "पोस्ट का एक संक्षिप्त सारांश...",
   "editing-title": "संपादन: {{title}}",

@@ -9,6 +9,7 @@
   "delete-failed": "حذف پست ناموفق بود",
   "delete-post": "حذف پست",
   "delete-success": "پست وبلاگ حذف شد: {{slug}}.",
+  "delete-title": "این پست حذف شود؟",
   "description-label": "توضیحات",
   "description-placeholder": "خلاصه‌ای کوتاه از پست...",
   "editing-title": "در حال ویرایش: {{title}}",
