@@ -61,7 +61,7 @@ export async function setPostLike(userId: string, postId: string, liked: boolean
       prisma.rMHarkLike.create({ data: { rmheetId: postId, userId } }),
       prisma.rMHark.update({ where: { id: postId }, data: { likeCount: { increment: 1 } }, select: { likeCount: true } }),
     ]);
-    feedEventBus.publish({ type: 'rmhark.liked', rmharkId: postId, payload: { id: postId, likeCount: updated.likeCount }, timestamp: new Date().toISOString() });
+    feedEventBus.publishPostEngagement(postId, { type: 'rmhark.liked', rmharkId: postId, payload: { id: postId, likeCount: updated.likeCount }, timestamp: new Date().toISOString() });
     await createNotification({
       userId: post.userId, actorId: userId, type: 'LIKE', entityType: 'rmhark', entityId: postId,
       preview: post.content ?? null, link: postLink(post.user?.handle, post.userId, postId), dedupeUnread: true,
@@ -77,7 +77,7 @@ export async function setPostLike(userId: string, postId: string, liked: boolean
     prisma.rMHarkLike.delete({ where: { id: existing!.id } }),
     prisma.rMHark.update({ where: { id: postId }, data: { likeCount: { decrement: 1 } }, select: { likeCount: true } }),
   ]);
-  feedEventBus.publish({ type: 'rmhark.unliked', rmharkId: postId, payload: { id: postId, likeCount: updated.likeCount }, timestamp: new Date().toISOString() });
+  feedEventBus.publishPostEngagement(postId, { type: 'rmhark.unliked', rmharkId: postId, payload: { id: postId, likeCount: updated.likeCount }, timestamp: new Date().toISOString() });
   await removeNotification({ userId: post.userId, actorId: userId, type: 'LIKE', entityType: 'rmhark', entityId: postId });
   return { ok: true, found: true, liked: false, likeCount: updated.likeCount };
 }
@@ -123,7 +123,7 @@ export async function createComment(args: { userId: string; postId: string; cont
     prisma.rMHark.update({ where: { id: postId }, data: { commentCount: { increment: 1 } }, select: { commentCount: true } }),
   ]);
 
-  feedEventBus.publish({ type: 'rmhark.commented', rmharkId: postId, payload: { id: postId, commentCount: updated.commentCount }, timestamp: new Date().toISOString() });
+  feedEventBus.publishPostEngagement(postId, { type: 'rmhark.commented', rmharkId: postId, payload: { id: postId, commentCount: updated.commentCount }, timestamp: new Date().toISOString() });
 
   // Notifications (best-effort).
   try {
@@ -204,17 +204,26 @@ async function applyFollow(args: { followerId: string; followingId: string; foll
   if (!following && !existing) return { ok: true, found: true, following: false };
 
   if (following) {
-    await prisma.follow.create({ data: { followerId, followingId } });
+    // One transaction keeps all three writes atomic: the edge, the followed
+    // user's follower count, and the follower's own following count. Reuse the
+    // returned followerCount for achievement progress (avoids a follow.count).
+    const [, followedRow] = await prisma.$transaction([
+      prisma.follow.create({ data: { followerId, followingId } }),
+      prisma.user.update({
+        where: { id: followingId },
+        data: { followerCount: { increment: 1 } },
+        select: { followerCount: true },
+      }),
+      prisma.user.update({
+        where: { id: followerId },
+        data: { followingCount: { increment: 1 } },
+        select: { id: true },
+      }),
+    ]);
+    const { followerCount } = followedRow;
     // The follower's cached follow graph is now stale — drop it so their next
     // feed/sidebar read reflects the new follow immediately.
     invalidateFollowingIds(followerId);
-    // Keep the denormalized follower count in sync and reuse the new value for
-    // achievement progress (avoids a separate follow.count aggregate).
-    const { followerCount } = await prisma.user.update({
-      where: { id: followingId },
-      data: { followerCount: { increment: 1 } },
-      select: { followerCount: true },
-    });
     await createNotification({
       userId: followingId, actorId: followerId, type: 'FOLLOW', entityType: 'user', entityId: followerId,
       link: args.followerHandle ? `/u/${args.followerHandle}` : `/profile/${followerId}`, dedupeUnread: true,
@@ -232,13 +241,21 @@ async function applyFollow(args: { followerId: string; followingId: string; foll
     return { ok: true, found: true, following: true };
   }
 
-  await prisma.follow.delete({ where: { followerId_followingId: { followerId, followingId } } });
+  // Remove the edge and keep both denormalized counters in sync (never below
+  // zero), atomically: the followed user's follower count and the follower's
+  // own following count.
+  await prisma.$transaction([
+    prisma.follow.delete({ where: { followerId_followingId: { followerId, followingId } } }),
+    prisma.user.updateMany({
+      where: { id: followingId, followerCount: { gt: 0 } },
+      data: { followerCount: { decrement: 1 } },
+    }),
+    prisma.user.updateMany({
+      where: { id: followerId, followingCount: { gt: 0 } },
+      data: { followingCount: { decrement: 1 } },
+    }),
+  ]);
   invalidateFollowingIds(followerId);
-  // Keep the denormalized follower count in sync (never below zero).
-  await prisma.user.updateMany({
-    where: { id: followingId, followerCount: { gt: 0 } },
-    data: { followerCount: { decrement: 1 } },
-  });
   await removeNotification({ userId: followingId, actorId: followerId, type: 'FOLLOW', entityType: 'user', entityId: followerId });
   void emitWebhookEvent(followerId, 'follow.deleted', { followingId });
   return { ok: true, found: true, following: false };

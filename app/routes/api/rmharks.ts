@@ -6,6 +6,7 @@ import { createRMHarkSchema } from "@/lib/rmhark-schema";
 import type { FeedItem, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
+import { linkPostHashtags } from "@/lib/tags-extract.server";
 import { notifyMentions } from "@/lib/feed/notify-mentions.server";
 import { createNotification } from "@/lib/notifications.server";
 import { grantAchievement, progressAchievement } from "@/lib/achievements/engine.server";
@@ -161,6 +162,18 @@ export const Route = createFileRoute('/api/rmharks')({
         },
       });
 
+      // Extract @hashtags once at write time into the normalized hashtag /
+      // post_hashtag tables (indexed lookups for trending + tag feeds) instead
+      // of scanning `content` with ILIKE on read. Same tx as the post insert.
+      await linkPostHashtags(tx, created.id, created.content);
+
+      // Maintain the author's denormalized post count atomically with the
+      // insert (profile pages read this column instead of COUNT(*)).
+      await tx.user.update({
+        where: { id: session.user.id },
+        data: { postCount: { increment: 1 } },
+      });
+
       if (quotedOriginalId) {
         await tx.rMHark.update({
           where: { id: quotedOriginalId },
@@ -298,7 +311,7 @@ export const Route = createFileRoute('/api/rmharks')({
       unlockPrice && unlockPrice > 0
         ? { ...item, content: "", imageUrls: undefined, imageAlts: undefined, gifUrl: undefined, poll: undefined, locked: true, unlockPrice }
         : item;
-    feedEventBus.publish({
+    feedEventBus.publishPostCreated({
       type: "rmhark.created",
       rmharkId: item.id,
       payload: broadcastItem,

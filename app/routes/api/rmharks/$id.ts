@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { feedEventBus } from "@/lib/feed-sse";
+import { unlinkPostHashtags } from "@/lib/tags-extract.server";
 import { editRMHarkSchema } from "@/lib/rmhark-schema";
 import { canViewPost } from "@/lib/feed/audience.server";
 import { isLocked } from "@/lib/feed/map-feed-item.server";
@@ -142,7 +143,7 @@ export const Route = createFileRoute('/api/rmharks/$id')({
 
     const rmhark = await prisma.rMHark.findUnique({
       where: { id },
-      select: { userId: true },
+      select: { userId: true, deletedAt: true },
     });
 
     if (!rmhark) {
@@ -156,10 +157,25 @@ export const Route = createFileRoute('/api/rmharks/$id')({
 
     const deletedByAdmin = isAdmin && rmhark.userId !== session.user.id;
     const deletedAt = new Date();
+    // Only the first delete transitions the post out of the feed; guard the
+    // one-shot side effects (hashtag unlink, author post-count decrement) so a
+    // re-delete (e.g. admin re-flagging a user-deleted post) can't double-count.
+    const firstDelete = !rmhark.deletedAt;
 
-    await prisma.rMHark.update({
-      where: { id },
-      data: { deletedAt, deletedByAdmin },
+    await prisma.$transaction(async (tx) => {
+      await tx.rMHark.update({
+        where: { id },
+        data: { deletedAt, deletedByAdmin },
+      });
+      if (firstDelete) {
+        // Drop the post's hashtag links (keeps trending counts accurate).
+        await unlinkPostHashtags(tx, id);
+        // Decrement the AUTHOR's denormalized post count (never below zero).
+        await tx.user.updateMany({
+          where: { id: rmhark.userId, postCount: { gt: 0 } },
+          data: { postCount: { decrement: 1 } },
+        });
+      }
     });
 
     // Record admin moderation (deleting another user's post).
@@ -175,7 +191,7 @@ export const Route = createFileRoute('/api/rmharks/$id')({
     const deletedMessage = deletedByAdmin
       ? "[This RMHark was deleted by an admin]"
       : "[This RMHark was deleted by the user]";
-    feedEventBus.publish({
+    feedEventBus.publishPostEngagement(id, {
       type: "rmhark.deleted",
       rmharkId: id,
       payload: {
@@ -238,7 +254,7 @@ export const Route = createFileRoute('/api/rmharks/$id')({
       }),
     ]);
 
-    feedEventBus.publish({
+    feedEventBus.publishPostEngagement(id, {
       type: "rmhark.edited",
       rmharkId: id,
       // For paid posts, broadcast the locked teaser (no content) to followers.
