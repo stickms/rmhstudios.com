@@ -117,6 +117,15 @@ function isDiscordRoute(pathname: string): boolean {
 }
 
 export const Route = createRootRoute({
+  // perf audit §4.1: without this the root loader default-stales at 0ms and
+  // refires on EVERY client navigation — two server-fn round trips (a full
+  // Better Auth session resolution + re-serializing the locale payload) per
+  // click, sitewide. Identity and locale change only via explicit actions, so
+  // hold the loader data for 5 minutes. This suppresses only the automatic
+  // per-navigation refetch; an explicit `router.invalidate()` (used by the
+  // sign-out flow) and full-document reloads (OAuth sign-in returns) still get
+  // fresh data, and any missed refresh self-heals within the window.
+  staleTime: 5 * 60_000,
   loader: async () => {
     const [user, i18n] = await Promise.all([getInitialUser(), getInitialI18n()]);
     return { user, locale: i18n.locale, i18nResources: i18n.resources };

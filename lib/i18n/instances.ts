@@ -5,15 +5,24 @@ import { EN_CORE_RESOURCES, loadEnResources, LOCALE_LOADERS, type LocaleBundle }
 import { localeResources } from "@/lib/i18n/resources.server";
 
 /**
- * Fresh instance per server request — never share a mutable lng across requests.
- * The server can read every language synchronously (resources.server.ts), so it
- * always has the active language plus the en fallback available for SSR.
+ * One initialized instance PER LOCALE, cached at module scope (perf audit §4.3).
+ * Previously this created a fresh i18next instance and ran a 66-namespace init on
+ * EVERY SSR render. That's safe to share instead: each instance's `lng` is fixed
+ * (keyed by locale) and the server only ever *reads* (t()) — it never calls
+ * changeLanguage — so there is no cross-request mutable state. The resource
+ * bundles are the same static objects regardless of request. At most one instance
+ * per active locale is ever built (≤32), versus one per request under load.
  */
+const serverInstances = new Map<Locale, i18n>();
+
 export function getServerI18n(locale: Locale): i18n {
+  const existing = serverInstances.get(locale);
+  if (existing) return existing;
   const instance = i18next.createInstance();
   const resources: Record<string, LocaleBundle> = { [DEFAULT_LOCALE]: localeResources(DEFAULT_LOCALE) };
   if (locale !== DEFAULT_LOCALE) resources[locale] = localeResources(locale);
   instance.use(initReactI18next).init(buildInitOptions(locale, resources));
+  serverInstances.set(locale, instance);
   return instance;
 }
 
