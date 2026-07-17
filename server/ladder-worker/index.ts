@@ -34,6 +34,11 @@ import {
   releaseWorkerLease,
   type WorkerLeasePrisma,
 } from '../../lib/rmhladder/worker-lease';
+import {
+  runCleanup,
+  cleanupOptionsFromEnv,
+  type CleanupPrisma,
+} from '../../lib/cleanup.server';
 
 // ─── Prisma Client (standalone for worker process) ──────────────
 
@@ -70,6 +75,51 @@ const workerLease = {
 const leasePrisma = prisma as unknown as WorkerLeasePrisma;
 const enrichmentPrisma = prisma as unknown as JobEnrichmentPrisma;
 const resumePrisma = prisma as unknown as ResumePrisma;
+const cleanupPrisma = prisma as unknown as CleanupPrisma;
+
+// ─── Data-lifecycle cleanup (audit §1.5) ─────────────────────────
+// A separate, slower cron (default daily) hosted in this worker because it
+// already has node-cron + the DB worker-lease. Uses its OWN lease name so it
+// never blocks (or is blocked by) the job-discovery pipeline lease, and its own
+// overlap guard. See lib/cleanup.server.ts for the batched delete queries.
+const cleanupSchedule = process.env.CLEANUP_CRON_SCHEDULE ?? '0 4 * * *';
+const cleanupLease = {
+  name: 'rmhstudios-cleanup',
+  ownerId: `${process.pid}-${randomUUID()}`,
+  ttlMs: leaseTtlMs,
+};
+let cleanupRunning = false;
+
+async function cleanupTick() {
+  if (cleanupRunning) {
+    console.log('[ladder-worker] Cleanup skipped — previous run still in flight');
+    return;
+  }
+  cleanupRunning = true;
+  let leaseAcquired = false;
+  try {
+    leaseAcquired = await acquireWorkerLease(leasePrisma, cleanupLease);
+    if (!leaseAcquired) {
+      console.log('[ladder-worker] Cleanup skipped — another worker owns the cleanup lease');
+      return;
+    }
+    const result = await runCleanup(
+      cleanupPrisma,
+      cleanupOptionsFromEnv((line) => console.log(`[ladder-worker] ${line}`)),
+    );
+    console.log(
+      `[ladder-worker] Cleanup complete — sessions=${result.expiredSessions} verifications=${result.expiredVerifications} notifications=${result.oldNotifications} notificationsCapped=${result.cappedNotifications} commentViews=${result.oldCommentViews} softDeletedPosts=${result.hardDeletedPosts} durationMs=${result.durationMs}`,
+    );
+  } catch (error) {
+    console.error('[ladder-worker] Cleanup run failed:', error);
+  } finally {
+    if (leaseAcquired) {
+      await releaseWorkerLease(leasePrisma, cleanupLease)
+        .catch((error) => console.error('[ladder-worker] Cleanup lease release failed:', error));
+    }
+    cleanupRunning = false;
+  }
+}
 
 // ─── Overlap guard ───────────────────────────────────────────────
 
@@ -239,8 +289,14 @@ const task: ScheduledTask = schedule(cronSchedule, tick, {
   noOverlap: true,
 });
 
+// Separate, slower schedule for the data-lifecycle cleanup sweep (audit §1.5).
+const cleanupTask: ScheduledTask = schedule(cleanupSchedule, cleanupTick, {
+  timezone: 'UTC',
+  noOverlap: true,
+});
+
 console.log(
-  `[ladder-worker] Started — schedule="${cronSchedule}" timezone="UTC" probeBatchSize=${probeBatchSize} aiEnrichmentBatchSize=${aiEnrichmentBatchSize} matchRefreshBatchSize=${matchRefreshBatchSize} leaseTtlMs=${leaseTtlMs}`,
+  `[ladder-worker] Started — schedule="${cronSchedule}" cleanupSchedule="${cleanupSchedule}" timezone="UTC" probeBatchSize=${probeBatchSize} aiEnrichmentBatchSize=${aiEnrichmentBatchSize} matchRefreshBatchSize=${matchRefreshBatchSize} leaseTtlMs=${leaseTtlMs}`,
 );
 
 void bootstrap();
@@ -251,12 +307,13 @@ async function shutdown(signal: string) {
   console.log(`[ladder-worker] ${signal} received, shutting down...`);
 
   await task.stop();
+  await cleanupTask.stop();
 
-  if (running) {
+  if (running || cleanupRunning) {
     console.log('[ladder-worker] Waiting for in-flight run to complete...');
     await new Promise<void>((resolve) => {
       const interval = setInterval(() => {
-        if (!running) {
+        if (!running && !cleanupRunning) {
           clearInterval(interval);
           resolve();
         }

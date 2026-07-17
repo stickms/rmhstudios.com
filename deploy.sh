@@ -742,7 +742,20 @@ else
     fi
     MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate deploy"
 
-    if ! dc run --rm --no-deps web sh -c "$MIGRATE_CMD"; then
+    # Migration lock safety (audit §1.7). Without a lock_timeout, a migration's
+    # ALTER/CREATE INDEX takes an ACCESS EXCLUSIVE lock and — if the table is
+    # busy — can queue behind (and then block) ALL reads/writes on that table for
+    # the migration's whole duration: an outage, not a blip, on a large table.
+    # lock_timeout=5s makes a DDL that can't get its lock FAIL FAST (the deploy
+    # then reports "database migration failed" and stops) instead of freezing the
+    # table indefinitely; statement_timeout=0 leaves long-but-unblocked work (a
+    # legit big backfill) alone. PGOPTIONS passes these as session GUCs to the
+    # migrate connection; scoped to THIS container via `-e` so it never affects
+    # the running app. (If a future Prisma engine ignores PGOPTIONS, the
+    # equivalent is `?options=-c%20lock_timeout%3D5s` on the migrate DATABASE_URL.)
+    if ! dc run --rm --no-deps \
+        -e PGOPTIONS='-c lock_timeout=5s -c statement_timeout=0' \
+        web sh -c "$MIGRATE_CMD"; then
         log "ERROR: Database migration failed."
         update_deploy_status fail "database migration failed"
         exit 1
