@@ -342,7 +342,6 @@ export function RightSidebar({
           <Link to="/security" className="hover:text-site-text transition-colors">{t('security', { defaultValue: 'Security' })}</Link>
           <Link to="/optimization" className="hover:text-site-text transition-colors">{t('optimization', { defaultValue: 'Speed' })}</Link>
           <Link to="/roadmap" className="hover:text-site-text transition-colors">{t('roadmap', { defaultValue: 'Roadmap' })}</Link>
-          <Link to="/black-lives-matter" className="hover:text-site-text transition-colors">{t('black-lives-matter', { defaultValue: 'Black Lives Matter' })}</Link>
         </div>
       </div>
     </div>

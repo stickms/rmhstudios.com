@@ -250,7 +250,7 @@
   transform: translateY(-4px);
   border-color: var(--site-border-bright);
 }
-/* Link cards (e.g. the /black-lives-matter resource list): an <a> is blockified
+/* Link cards (e.g. external-resource lists on /security): an <a> is blockified
    as a grid item, but still needs its default underline/link color cleared. */
 a.sec-card { text-decoration: none; color: inherit; display: block; }
 .sec-card__icon {
@@ -288,8 +288,8 @@ a.sec-card { text-decoration: none; color: inherit; display: block; }
   text-transform: uppercase;
   color: var(--site-text-dim);
 }
-/* Tag rendered as a "Visit ↗" affordance on link cards (e.g. /black-lives-matter
-   resources). Inherits the mono/uppercase tag styling; adds the trailing icon. */
+/* Tag rendered as a "Visit ↗" affordance on link cards (external resource
+   links). Inherits the mono/uppercase tag styling; adds the trailing icon. */
 .sec-card__tag--link {
   display: inline-flex;
   align-items: center;

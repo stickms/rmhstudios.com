@@ -48,7 +48,6 @@ import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CopyrightRouteImport } from './routes/copyright'
 import { Route as CookiesRouteImport } from './routes/cookies'
 import { Route as CookgameRouteImport } from './routes/cookgame'
-import { Route as BlackLivesMatterRouteImport } from './routes/black-lives-matter'
 import { Route as AltairRouteImport } from './routes/altair'
 import { Route as AdaptiveIntelligenceRouteImport } from './routes/adaptive-intelligence'
 import { Route as SiteRouteImport } from './routes/_site'
@@ -817,11 +816,6 @@ const CookiesRoute = CookiesRouteImport.update({
 const CookgameRoute = CookgameRouteImport.update({
   id: '/cookgame',
   path: '/cookgame',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BlackLivesMatterRoute = BlackLivesMatterRouteImport.update({
-  id: '/black-lives-matter',
-  path: '/black-lives-matter',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AltairRoute = AltairRouteImport.update({
@@ -3792,7 +3786,6 @@ export interface FileRoutesByFullPath {
   '/': typeof SiteIndexRoute
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/altair': typeof AltairRouteWithChildren
-  '/black-lives-matter': typeof BlackLivesMatterRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -4405,7 +4398,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
-  '/black-lives-matter': typeof BlackLivesMatterRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -4998,7 +4990,6 @@ export interface FileRoutesById {
   '/_site': typeof SiteRouteWithChildren
   '/adaptive-intelligence': typeof AdaptiveIntelligenceRoute
   '/altair': typeof AltairRouteWithChildren
-  '/black-lives-matter': typeof BlackLivesMatterRoute
   '/cookgame': typeof CookgameRoute
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
@@ -5616,7 +5607,6 @@ export interface FileRouteTypes {
     | '/'
     | '/adaptive-intelligence'
     | '/altair'
-    | '/black-lives-matter'
     | '/cookgame'
     | '/cookies'
     | '/copyright'
@@ -6229,7 +6219,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/adaptive-intelligence'
-    | '/black-lives-matter'
     | '/cookgame'
     | '/cookies'
     | '/copyright'
@@ -6821,7 +6810,6 @@ export interface FileRouteTypes {
     | '/_site'
     | '/adaptive-intelligence'
     | '/altair'
-    | '/black-lives-matter'
     | '/cookgame'
     | '/cookies'
     | '/copyright'
@@ -7438,7 +7426,6 @@ export interface RootRouteChildren {
   SiteRoute: typeof SiteRouteWithChildren
   AdaptiveIntelligenceRoute: typeof AdaptiveIntelligenceRoute
   AltairRoute: typeof AltairRouteWithChildren
-  BlackLivesMatterRoute: typeof BlackLivesMatterRoute
   CookgameRoute: typeof CookgameRoute
   CookiesRoute: typeof CookiesRoute
   CopyrightRoute: typeof CopyrightRoute
@@ -8043,13 +8030,6 @@ declare module '@tanstack/react-router' {
       path: '/cookgame'
       fullPath: '/cookgame'
       preLoaderRoute: typeof CookgameRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/black-lives-matter': {
-      id: '/black-lives-matter'
-      path: '/black-lives-matter'
-      fullPath: '/black-lives-matter'
-      preLoaderRoute: typeof BlackLivesMatterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/altair': {
@@ -13363,7 +13343,6 @@ const rootRouteChildren: RootRouteChildren = {
   SiteRoute: SiteRouteWithChildren,
   AdaptiveIntelligenceRoute: AdaptiveIntelligenceRoute,
   AltairRoute: AltairRouteWithChildren,
-  BlackLivesMatterRoute: BlackLivesMatterRoute,
   CookgameRoute: CookgameRoute,
   CookiesRoute: CookiesRoute,
   CopyrightRoute: CopyrightRoute,
