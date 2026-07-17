@@ -35,12 +35,11 @@ const ComposeModal = lazy(() =>
   import('@/components/feed/ComposeModal').then((m) => ({ default: m.ComposeModal }))
 );
 
-export const COMMAND_PALETTE_EVENT = 'rmh:command-palette';
-
-/** Open the palette from anywhere (e.g. a toolbar search button). */
-export function openCommandPalette() {
-  window.dispatchEvent(new CustomEvent(COMMAND_PALETTE_EVENT));
-}
+// The open event + opener live in a dependency-free module so callers can trigger
+// the palette without importing fuse.js / the games+apps registries this file
+// pulls in. Re-exported here for back-compat with existing import sites.
+export { COMMAND_PALETTE_EVENT, openCommandPalette } from './command-palette-bus';
+import { COMMAND_PALETTE_EVENT } from './command-palette-bus';
 
 type Section = 'pages' | 'games' | 'apps' | 'actions' | 'themes' | 'people' | 'posts';
 
@@ -114,12 +113,15 @@ interface SearchPost {
   user: { name: string | null; handle: string | null } | null;
 }
 
-export function CommandPalette() {
+export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean } = {}) {
   const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const { data: session } = useSession();
   const setStyle = useThemeStore((s) => s.setStyle);
-  const [open, setOpen] = useState(false);
+  // `initialOpen` lets a lazy mount that was triggered by ⌘K open immediately once
+  // the chunk finishes loading (the triggering keypress can't reach a not-yet-
+  // mounted listener). Only seeds the first render.
+  const [open, setOpen] = useState(initialOpen);
   const [composeOpen, setComposeOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);

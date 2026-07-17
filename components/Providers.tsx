@@ -13,7 +13,7 @@ import { applyHtmlLangDir } from "@/lib/i18n/dom";
 import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
 import { AppI18nProvider } from "@/components/i18n/AppI18nProvider";
-import { CommandPalette } from "@/components/site/CommandPalette";
+import { CommandPaletteMount } from "@/components/site/CommandPaletteMount";
 import { RecentsTracker } from "@/components/site/RecentsTracker";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import type { Locale } from "@/lib/i18n/config";
@@ -476,7 +476,7 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
         <ResolvedUserCtx.Provider value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}>
         <ConfirmProvider>
         {children}
-        <CommandPalette />
+        <CommandPaletteMount />
         <RecentsTracker />
         </ConfirmProvider>
         </ResolvedUserCtx.Provider>

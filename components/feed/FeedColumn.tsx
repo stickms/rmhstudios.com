@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect, Suspense } from 'react';
+import { useState, useRef, useEffect, Suspense, lazy } from 'react';
 import { SlidersHorizontal, Search, X, BadgeCheck, ShieldCheck, Menu } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { FeedTabs } from './FeedTabs';
-import { ComposeBox } from './ComposeBox';
-import { ThreadComposer } from './ThreadComposer';
+import { ComposeBoxLazy } from './ComposeBoxLazy';
 import { FeedList } from './FeedList';
 import { PullToRefresh } from './PullToRefresh';
 import { FeedAnnouncements } from './FeedAnnouncements';
@@ -19,6 +18,13 @@ import { Link, useNavigate, useSearch, Await } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
 import type { FeedItem as FeedItemType } from '@/lib/feed-types';
+
+// The authored-thread composer is signed-in-only and rarely the first thing a
+// reader reaches for, so it loads as its own chunk instead of riding in the feed
+// route's initial bundle.
+const ThreadComposer = lazy(() =>
+  import('./ThreadComposer').then((m) => ({ default: m.ThreadComposer })),
+);
 
 interface SearchUser {
   id: string;
@@ -263,11 +269,15 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
       {/* Resume rail — recently played games/apps (device-local) */}
       {!search && <JumpBackIn />}
 
-      {/* Compose */}
-      {!search && <ComposeBox />}
+      {/* Compose — deferred out of the feed route's initial chunk (see ComposeBoxLazy) */}
+      {!search && <ComposeBoxLazy />}
 
       {/* Authored-thread composer (chain several of your own posts) */}
-      {!search && session && <ThreadComposer />}
+      {!search && session && (
+        <Suspense fallback={null}>
+          <ThreadComposer />
+        </Suspense>
+      )}
 
       {/* Feed */}
       {mode === 'friends' && !session ? (

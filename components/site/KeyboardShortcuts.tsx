@@ -16,7 +16,7 @@ import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { useTranslation } from 'react-i18next';
-import { openCommandPalette } from '@/components/site/CommandPalette';
+import { openCommandPalette } from '@/components/site/command-palette-bus';
 import { useSession } from '@/components/Providers';
 
 const ComposeModal = lazy(() =>
