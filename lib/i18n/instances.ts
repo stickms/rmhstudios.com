@@ -2,7 +2,7 @@ import i18next, { type i18n } from "i18next";
 import { initReactI18next } from "react-i18next";
 import { buildInitOptions, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
 import { EN_CORE_RESOURCES, loadEnResources, LOCALE_LOADERS, type LocaleBundle } from "@/lib/i18n/resources";
-import { localeResources } from "@/lib/i18n/resources.server";
+import { localeCoreResources } from "@/lib/i18n/resources.server";
 
 /**
  * One initialized instance PER LOCALE, cached at module scope (perf audit §4.3).
@@ -19,8 +19,13 @@ export function getServerI18n(locale: Locale): i18n {
   const existing = serverInstances.get(locale);
   if (existing) return existing;
   const instance = i18next.createInstance();
-  const resources: Record<string, LocaleBundle> = { [DEFAULT_LOCALE]: localeResources(DEFAULT_LOCALE) };
-  if (locale !== DEFAULT_LOCALE) resources[locale] = localeResources(locale);
+  // CORE namespaces only (perf audit §4.1). SSR renders the shell + feed in the
+  // active language; non-core (game/app) keys resolve to their English
+  // defaultValue — identical to what the client hydrates with (EN_CORE_RESOURCES
+  // + the core locale payload), so hydration matches. The client then backfills
+  // the rest of the active locale off the critical path (ensureClientLocale).
+  const resources: Record<string, LocaleBundle> = { [DEFAULT_LOCALE]: EN_CORE_RESOURCES };
+  if (locale !== DEFAULT_LOCALE) resources[locale] = localeCoreResources(locale);
   instance.use(initReactI18next).init(buildInitOptions(locale, resources));
   serverInstances.set(locale, instance);
   return instance;
@@ -52,6 +57,31 @@ async function backfillEnRest(): Promise<void> {
     // Left to a later locale switch (LOCALE_LOADERS.en) to retry; core keys and
     // per-call defaultValues keep the UI correct regardless.
     enRestBackfilled = false;
+  }
+}
+
+const localeRestBackfilled = new Set<Locale>();
+
+/**
+ * Pull the non-core namespaces of the ACTIVE non-en locale in from its chunk and
+ * register any not already present (perf audit §4.1). Mirrors backfillEnRest: the
+ * server only hands down the core locale namespaces for a lean first paint, and
+ * this fills in the game/app catalogs shortly after, off the critical path.
+ * Idempotent. Does NOT change the active language (already set), just adds
+ * bundles — i18next re-renders consumers of the newly-added namespaces.
+ */
+async function backfillLocaleRest(locale: Locale): Promise<void> {
+  if (localeRestBackfilled.has(locale)) return;
+  localeRestBackfilled.add(locale);
+  try {
+    const full = await LOCALE_LOADERS[locale]();
+    for (const [ns, data] of Object.entries(full)) {
+      if (!clientI18n.hasResourceBundle(locale, ns)) {
+        clientI18n.addResourceBundle(locale, ns, data, true, true);
+      }
+    }
+  } catch {
+    localeRestBackfilled.delete(locale);
   }
 }
 
@@ -87,9 +117,14 @@ export function ensureClientLocale(locale: Locale, initialResources?: LocaleBund
     // Backfill the non-core en namespaces from their own chunk (off the critical
     // path) so the full English catalog is available without bloating the entry.
     void backfillEnRest();
-    // Active non-en locale without server-provided resources (e.g. a client-only
-    // render path): fetch its chunk and switch once it's in.
-    if (locale !== DEFAULT_LOCALE && !initialResources) void loadAndSwitch(locale);
+    if (locale !== DEFAULT_LOCALE) {
+      // The server now hands down only the CORE locale namespaces (perf audit
+      // §4.1). With a core payload present, backfill the rest of THIS language
+      // off the critical path; without one (client-only render path), load the
+      // whole locale chunk and switch.
+      if (initialResources) void backfillLocaleRest(locale);
+      else void loadAndSwitch(locale);
+    }
   } else if (clientI18n.language !== locale) {
     void loadAndSwitch(locale);
   }

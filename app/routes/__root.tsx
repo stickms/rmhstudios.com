@@ -29,7 +29,7 @@ import { ACCENT_MAP } from "@/lib/appearance";
 import appCss from "@/app/globals.css?url";
 import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
 import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from "@/lib/i18n/config";
-import { localeResources } from "@/lib/i18n/resources.server";
+import { localeCoreResources } from "@/lib/i18n/resources.server";
 
 /**
  * Resolve the signed-in user from the session cookie on the server. Runs in the
@@ -104,10 +104,13 @@ const getInitialI18n = createServerFn({ method: "GET" }).handler(async () => {
   const request = getRequest();
   const cookie = parseLocaleCookie(request.headers.get("cookie"));
   const locale = resolveLocale({ cookie, acceptLanguage: request.headers.get("accept-language") });
-  // en is bundled on the client; for zh/ar we serialize the active language's
-  // resources into the loader payload so the client hydrates synchronously in the
-  // right language (no flash, no mismatch) without shipping all languages.
-  const resources = locale === DEFAULT_LOCALE ? null : localeResources(locale);
+  // en is bundled on the client; for non-en we serialize only the active
+  // language's CORE namespaces (shell + feed) into the loader payload — not the
+  // full ~66-namespace catalog (~250-300KB) — so the client hydrates synchronously
+  // in the right language for the shell/feed. The rest of the locale is backfilled
+  // client-side after hydration (perf audit §4.1; see lib/i18n/instances.ts). SSR
+  // renders from the same core set, so hydration still matches.
+  const resources = locale === DEFAULT_LOCALE ? null : localeCoreResources(locale);
   return { locale, resources };
 });
 
