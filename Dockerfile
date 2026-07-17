@@ -219,6 +219,18 @@ ENV DATABASE_URL=${DATABASE_URL} \
 RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi,sharing=locked \
     --mount=type=cache,id=vibe-pkgs-${COMPOSE_PROJECT_NAME},target=/app/.cache/vibe-packages,sharing=locked \
     rm -rf .output \
+    # Incremental i18n translation, baked into the bundle. translate-locales.ts
+    # is idempotent — it only calls DeepSeek for keys that are missing or whose
+    # English source changed, so a fully-translated catalog is a no-op ("nothing
+    # to translate"). Regenerate the resource modules from the freshened JSON so
+    # `vite build` below compiles the new strings in. Guarded on the key: when
+    # DEEPSEEK_API_KEY is unset the committed translations ship as-is (English is
+    # the runtime fallback for any still-missing key), so the build never breaks.
+    && (if [ -n "$DEEPSEEK_API_KEY" ]; then \
+          echo "[i18n] translating any missing locale keys before build" \
+          && pnpm exec tsx scripts/translate-locales.ts \
+          && pnpm exec tsx scripts/gen-i18n-resources.ts; \
+        else echo "[i18n] DEEPSEEK_API_KEY unset — shipping committed translations as-is"; fi) \
     && VIBE_PKG_CACHE_DIR=/app/.cache/vibe-packages pnpm run build-vibe-packages \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs
