@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Compass, Hash, Sparkles, TrendingUp, Coins } from 'lucide-react';
-import { RMHarkCard } from './RMHarkCard';
+import { MemoRMHarkCard } from './VirtualPostList';
 import { RevealGroup, RevealItem } from '@/components/motion';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -185,9 +185,14 @@ export function ExploreColumn({
           {data && data.hotPosts.length > 0 && (
             <RevealItem as="section">
               <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('hot-this-week', { defaultValue: 'Hot this week' })}</h2>
-              <div className="divide-y divide-site-border">
+              {/* Short teaser list nested in animated sections — a memoized row +
+                  content-visibility rather than full windowing (which would be
+                  low-reward and finicky against the reveal transforms above). */}
+              <div>
                 {data.hotPosts.map((item) => (
-                  <RMHarkCard key={item.id} item={item} />
+                  <div key={item.id} className="feed-card-cv">
+                    <MemoRMHarkCard item={item} />
+                  </div>
                 ))}
               </div>
             </RevealItem>

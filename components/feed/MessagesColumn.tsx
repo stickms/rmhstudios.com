@@ -12,6 +12,7 @@ import { MobileBrandPrefix } from './MobileHeader';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { subscribeMessageStream } from '@/lib/useUnreadCount';
 import { toast } from 'sonner';
 
 export interface ConversationItem {
@@ -142,95 +143,57 @@ export function MessagesColumn({
     };
   }, [query]);
 
-  // SSE connection for real-time conversation list updates
+  // Real-time conversation-list updates ride the ONE shared message stream
+  // (see lib/useUnreadCount) instead of this view opening its own EventSource.
   useEffect(() => {
     if (!session) return;
-
-    let eventSource: EventSource | null = null;
-    let cancelled = false;
-    let retryCount = 0;
-
-    const connect = () => {
-      if (cancelled) return;
-      eventSource = new EventSource('/api/messages/stream');
-
-      eventSource.addEventListener('new-message', (e) => {
-        try {
-          const msg = JSON.parse(e.data);
-          setConversations((prev) => {
-            const idx = prev.findIndex((c) => c.id === msg.conversationId);
-            if (idx === -1) {
-              // New conversation we don't have yet — refetch
-              fetchConversations(true);
-              return prev;
-            }
-            const updated = [...prev];
-            const conv = { ...updated[idx] };
-            conv.lastMessage = {
-              id: msg.id,
-              content: msg.content,
-              senderId: msg.senderId,
-              read: msg.read,
-              createdAt: msg.createdAt,
-              gifUrl: msg.gifUrl,
-              imageUrls: msg.imageUrls,
-            };
-            conv.lastMessageAt = msg.createdAt;
-            // Increment unread if the message is from the other user
-            if (msg.senderId !== session.user.id) {
-              conv.unreadCount += 1;
-            }
-            // Remove from current position and move to top
-            updated.splice(idx, 1);
-            updated.unshift(conv);
-            return updated;
-          });
-          retryCount = 0;
-        } catch {
-          // Ignore parse errors
-        }
-      });
-
-      eventSource.addEventListener('unread', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          // If unread count dropped (e.g. opened a chat), refetch to sync
-          if (typeof data.count === 'number' && data.count === 0) {
-            setConversations((prev) => {
-              if (prev.some((c) => c.unreadCount > 0)) {
-                fetchConversations(true);
-              }
-              return prev;
-            });
+    return subscribeMessageStream((type, data) => {
+      if (type === 'new-message') {
+        const msg = data as {
+          id: string; conversationId: string; content: string; senderId: string;
+          read: boolean; createdAt: string; gifUrl?: string | null; imageUrls?: string[];
+        };
+        setConversations((prev) => {
+          const idx = prev.findIndex((c) => c.id === msg.conversationId);
+          if (idx === -1) {
+            // New conversation we don't have yet — refetch
+            fetchConversations(true);
+            return prev;
           }
-        } catch {
-          // Ignore
+          const updated = [...prev];
+          const conv = { ...updated[idx] };
+          conv.lastMessage = {
+            id: msg.id,
+            content: msg.content,
+            senderId: msg.senderId,
+            read: msg.read,
+            createdAt: msg.createdAt,
+            gifUrl: msg.gifUrl,
+            imageUrls: msg.imageUrls,
+          };
+          conv.lastMessageAt = msg.createdAt;
+          // Increment unread if the message is from the other user
+          if (msg.senderId !== session.user.id) {
+            conv.unreadCount += 1;
+          }
+          // Remove from current position and move to top
+          updated.splice(idx, 1);
+          updated.unshift(conv);
+          return updated;
+        });
+      } else if (type === 'unread') {
+        const c = (data as { count?: number }).count;
+        // If unread count dropped (e.g. opened a chat), refetch to sync
+        if (typeof c === 'number' && c === 0) {
+          setConversations((prev) => {
+            if (prev.some((cv) => cv.unreadCount > 0)) {
+              fetchConversations(true);
+            }
+            return prev;
+          });
         }
-      });
-
-      eventSource.onerror = () => {
-        eventSource?.close();
-        eventSource = null;
-        if (cancelled) return;
-        retryCount++;
-        const delay = Math.min(retryCount * 2000, 10000);
-        setTimeout(connect, delay);
-      };
-    };
-
-    connect();
-
-    const onBeforeUnload = () => {
-      cancelled = true;
-      eventSource?.close();
-    };
-    window.addEventListener('beforeunload', onBeforeUnload);
-
-    return () => {
-      cancelled = true;
-      eventSource?.close();
-      window.removeEventListener('beforeunload', onBeforeUnload);
-    };
+      }
+    });
   }, [session, fetchConversations]);
 
   // Infinite scroll

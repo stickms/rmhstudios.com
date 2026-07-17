@@ -34,6 +34,19 @@ export const useUserDisplayStore = create<UserDisplayState>((set, get) => ({
           image: u.image ?? existing.image,
           name: u.name ?? existing.name,
         };
+        // `cosmetics` (and its nested nameColor/badge/avatarFrame) is a FRESH
+        // object on every API response, so the reference compare in the dirty
+        // loop below always differs even when the contents are identical — which
+        // would mark every author-with-cosmetics dirty and re-render all their
+        // cards on each fetch. Reuse the existing reference when the cosmetics are
+        // structurally unchanged so the stable-reference short-circuit holds.
+        const mergedCosmetics = (merged as { cosmetics?: unknown }).cosmetics;
+        if (
+          mergedCosmetics !== existing.cosmetics &&
+          JSON.stringify(mergedCosmetics) === JSON.stringify(existing.cosmetics)
+        ) {
+          (merged as { cosmetics?: unknown }).cosmetics = existing.cosmetics;
+        }
         // Only replace the entry when a field actually changed. `setUsers` runs
         // on every page append / SSE event with the same authors — keeping the
         // reference stable stops useFreshUser subscribers (3 per visible card)

@@ -4,7 +4,7 @@ import { MessageCircle, Repeat2, Heart, Eye, Repeat, PenSquare } from 'lucide-re
 import { useNavigate } from '@tanstack/react-router';
 import { lazy, Suspense, useState, useRef, useEffect } from 'react';
 import { useFeedStore } from '@/stores/feedStore';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import type { FeedItem } from '@/lib/feed-types';
 
 // Quote-compose modal — only opens on the "quote" repost action, so it's
@@ -32,7 +32,8 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
   // Select just the action (a stable reference) so this component doesn't
   // re-render on every unrelated feed-store change.
   const storeUpdate = useFeedStore((s) => s.updateItem);
-  const { data: session } = authClient.useSession();
+  // Shared root-level session (one subscription for the whole app).
+  const { data: session } = useSession();
   const [repostMenu, setRepostMenu] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
   // Latch so the quote modal stays mounted after first open (close animation).
