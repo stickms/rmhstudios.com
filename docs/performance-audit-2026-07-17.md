@@ -59,24 +59,30 @@ runtime benefit, would desync the lockfile).
 read paths (bookmarks, thread, profile own/repost/pinned, similar — §2.3);
 **comment-tree batching** (per-parent BFS → 2 queries/level via a ROW_NUMBER
 id-window + hydrate, §2.5); **rmhbox weekly/monthly + per-minigame boards** cached
-(§2.6). All verified with `tsc` + `vite build`.
+(§2.6); **core-namespace-only SSR i18n payload** (§4.1 — SSR render instance AND
+the loader payload both trimmed to core namespaces so they render identically, no
+hydration mismatch; the rest of the active locale backfills client-side, mirroring
+the existing en-core backfill); **origin LRU cache for `/api/image-proxy`** (§1.2 —
+the code half: a cache hit skips both the upstream fetch and the sharp transcode).
+All verified with `tsc` + `vite build`.
 
-**Deliberately NOT shipped (would regress without work this environment can't do):**
-- **Core-namespace-only SSR i18n serialization (§4.1):** the per-navigation
-  re-download is already gone via root `staleTime`. Trimming the *initial* SSR
-  hydration payload to core namespaces would cause a **React hydration mismatch +
-  flash** on direct loads of game/app routes in non-English locales — SSR renders
-  fully translated (full server i18next), so the client would hydrate non-core
-  namespaces to the en fallback, then re-render. Doing it safely needs per-route
-  namespace scoping (a route→namespace map this codebase doesn't expose). Left as
-  a scoped follow-up rather than a blind regression.
+**The i18n trade-off (accepted, documented):** a direct load of a game/app route
+in a non-English locale briefly shows English for that route's own strings until
+the client backfill lands; the shell + feed are translated throughout, and
+client-side navigation (the common case) is unaffected because the backfill runs
+right after hydration.
 
-**Ops actions — config committed, applying them is a deploy step (can't run from the repo):**
-- Cloudflare cache rule for `/api/image-proxy*` (§1.2); running 2–3 web replicas +
-  SSR HTML `s-maxage` for anonymous pages (§1.1); applying
-  `deploy/postgres/postgresql.tuning.conf` + `deploy/apache/mpm_event.conf` on the
-  VPS. These (single-process SSR, untuned Postgres, no HTML edge cache) are the
-  biggest remaining "slow under load" wins and are infrastructure-level.
+**Genuinely external — cannot be run from the repo (config is committed; applying it is a deploy step):**
+- **Cloudflare cache rule** for `/api/image-proxy*` and `/api/feed/image/*`
+  ("cache everything", key on query string) — the origin LRU above already cuts
+  the transcode cost; the CF rule additionally offloads delivery to the edge.
+- **Running 2–3 web replicas** + SSR HTML `s-maxage` for anonymous pages (§1.1) —
+  a change to the deploy topology (the blue/green hotswap runs a single web
+  container) and a Cloudflare cookie-bypass rule, not a code edit.
+- **Applying** `deploy/postgres/postgresql.tuning.conf` +
+  `deploy/apache/mpm_event.conf` on the VPS host. These three (single-process SSR,
+  untuned co-resident Postgres, no HTML edge cache) are the biggest remaining
+  "slow under load" wins and are infrastructure actions on the server/Cloudflare.
 
 **Intentionally skipped (low value / already healthy):** group-chat page size +
 DM-search trigram (§2.10, already conversation-scoped); fonts-per-theme +
