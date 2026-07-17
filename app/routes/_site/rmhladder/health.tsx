@@ -18,6 +18,7 @@ import {
   type QueriesPrisma,
 } from '@/lib/rmhladder/server/queries';
 import { resumeSubsystemReadiness } from '@/lib/rmhladder/resume/readiness.server';
+import { detectLadderHealthAlerts, resolveAlertThresholds } from '@/lib/rmhladder/health-alerts';
 import { timeAgo } from '@/components/rmhladder/time';
 
 const queriesPrisma = prisma as unknown as QueriesPrisma;
@@ -28,12 +29,31 @@ const fetchHealth = createServerFn({ method: 'GET' }).handler(async () => {
     if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/health' } });
     const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
     if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
-  const [stale, runs, overview] = await Promise.all([
+  const resumeReadiness = resumeSubsystemReadiness();
+  const [stale, runs, overview, openMassExpiryTasks] = await Promise.all([
     listStaleSources(queriesPrisma),
     listRuns(queriesPrisma, 20),
     getOverview(queriesPrisma, session.user.id, { includeAdminStats: true }),
+    prisma.ladderReviewTask.count({ where: { reason: 'mass_expiry_suspected', status: 'open' } }),
   ]);
-  return { stale, runs, openReviewTasks: overview.openReviewTasks, resumeReadiness: resumeSubsystemReadiness() };
+
+  // Derive last-completed-run signals from the already-fetched runs (sorted by startedAt desc).
+  const lastCompletedRun = (runs as AnyRow[]).find((r) => r.finishedAt != null) ?? null;
+  const lastCompletedRunAt = lastCompletedRun ? (lastCompletedRun.finishedAt as Date) : null;
+  const latestRun = lastCompletedRun
+    ? { errorCount: lastCompletedRun.errorCount as number, discoveredCount: lastCompletedRun.discoveredCount as number }
+    : null;
+
+  const alerts = detectLadderHealthAlerts({
+    now: new Date(),
+    lastCompletedRunAt,
+    latestRun,
+    openMassExpiryTasks,
+    resumeReady: resumeReadiness.ready,
+    thresholds: resolveAlertThresholds(),
+  });
+
+  return { stale, runs, openReviewTasks: overview.openReviewTasks, resumeReadiness, alerts };
 });
 
 export const Route = createFileRoute('/_site/rmhladder/health')({
@@ -50,7 +70,7 @@ function durationLabel(run: AnyRow): string {
 }
 
 function HealthPage() {
-  const { stale, runs, openReviewTasks, resumeReadiness } = Route.useLoaderData();
+  const { stale, runs, openReviewTasks, resumeReadiness, alerts } = Route.useLoaderData();
   const [expandedRun, setExpandedRun] = useState<string | null>(null);
 
   return (
@@ -58,6 +78,23 @@ function HealthPage() {
       <Link to="/rmhladder/review" className="rl-chip rl-review-chip">
         Review queue · {openReviewTasks} open
       </Link>
+
+      <section className="rl-stale-panel">
+        <h2 className="rl-eyebrow">Health alerts</h2>
+        {alerts.length === 0 ? (
+          <p className="rl-quicklist__empty">No active alerts — the pipeline is healthy.</p>
+        ) : (
+          <ul>
+            {alerts.map((a) => (
+              <li key={a.code} className="rl-stale-row">
+                <span className="rl-program-chip">{a.severity}</span>
+                <span className="rl-mono">{a.code}</span>
+                <span>{a.message}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <section className="rl-stale-panel">
         <h2 className="rl-eyebrow">Resume subsystem</h2>
