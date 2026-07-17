@@ -118,6 +118,9 @@ jobs:
           bash .github/scripts/discord-notify.sh post 16776960 \
             "🟡 [PRODUCTION] Commit ${COMMIT_SHORT:-} — build started" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
+          # Stamp the build start so the "images pushed" edit can show how long the
+          # build took. Runs even when Discord is off (the step is only ref-gated).
+          echo "BUILD_START_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
 
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
@@ -175,8 +178,13 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
+          # Build duration = now − the stamp from the "build started" step.
+          now=$(date +%s)
+          start="${BUILD_START_EPOCH:-$now}"
+          elapsed=$(( now - start ))
+          dur="$(( elapsed / 60 ))m $(( elapsed % 60 ))s"
           bash .github/scripts/discord-notify.sh edit 3447003 \
-            "🔵 [PRODUCTION] Commit ${COMMIT_SHORT:-} — images pushed to GHCR, triggering deploy…" \
+            "🔵 [PRODUCTION] Commit ${COMMIT_SHORT:-} — images built + pushed to GHCR in ${dur}, triggering deploy…" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
 
       - name: Trigger VPS deploy (webhook listener)
@@ -188,40 +196,32 @@ jobs:
         run: |
           set -euo pipefail
           # Body carries ONLY {ref, after} — the fields the listener maps + the SHA
-          # deploy.sh pulls. The Discord message id is sent as a HEADER, not in the
-          # body: a 19-digit id in the JSON body tripped an origin WAF numeric/PAN
-          # rule and got the POST blocked with a 400 (worked for #501–#503 which had
-          # no long number, broke at #504 when the id was added). The header is
-          # unsigned but harmless (worst case a wrong id → a mis-targeted Discord
-          # edit); the body HMAC still authenticates the request. HMAC is computed
-          # exactly like webhook-server.cjs (crypto.createHmac 'sha256' over the raw
-          # body, hex), the secret read from the environment (never on argv).
+          # deploy.sh pulls. The Discord message id rides in the X-Discord-Msg-Id
+          # HEADER (keeping the body minimal). The body HMAC authenticates the
+          # request, computed exactly like webhook-server.cjs (crypto.createHmac
+          # 'sha256' over the raw body, hex), the secret read from the environment.
           body="$(jq -nc \
             --arg ref "$COMMIT_REF" \
             --arg after "$COMMIT_SHA" \
             '{ref:$ref, after:$after}')"
           sig="sha256=$(printf '%s' "$body" | node -e 'const c=require("crypto");let d="";process.stdin.on("data",x=>d+=x).on("end",()=>process.stdout.write(c.createHmac("sha256",process.env.WEBHOOK_SECRET).update(d).digest("hex")))')"
-          # Diagnostics: the body + its byte length (proves it isn't empty/malformed;
-          # neither ref nor sha is secret) and the signature length (not the value).
-          echo "Body (${#body} bytes): $body"
-          echo "Signature length: ${#sig}"
           echo "Triggering deploy for ${COMMIT_SHA}"
-          # Capture the response instead of failing silently: print the HTTP status
-          # AND the response body so we can see WHO answers (listener 'Bad JSON' /
-          # 'Unauthorized' vs a Cloudflare/Apache error page) and why.
+          # Capture the status + response body so a failure shows WHO rejected it and
+          # why (e.g. the listener's 'Unauthorized', or a proxy/Discord error page),
+          # instead of curl -f hiding it.
           code=$(curl -sS -o /tmp/webhook-resp.txt -w '%{http_code}' --max-time 30 -X POST "$DEPLOY_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -H "X-Hub-Signature-256: $sig" \
             -H "X-Discord-Msg-Id: ${DISCORD_MSG_ID:-}" \
             --data-raw "$body" || echo "000")
-          echo "HTTP status: $code"
-          echo "----- response body -----"
-          cat /tmp/webhook-resp.txt 2>/dev/null || true
-          echo
-          echo "-------------------------"
           case "$code" in
-            2*) echo "Trigger accepted." ;;
-            *) echo "::error::Webhook trigger returned HTTP $code (see response body above)."; exit 1 ;;
+            2*) echo "Trigger accepted (HTTP $code)." ;;
+            *)
+              echo "::error::Webhook trigger returned HTTP $code:"
+              cat /tmp/webhook-resp.txt 2>/dev/null || true
+              echo
+              exit 1
+              ;;
           esac
 
       - name: Discord — pipeline failed (build or trigger)
