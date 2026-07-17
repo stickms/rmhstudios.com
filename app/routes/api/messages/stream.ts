@@ -120,7 +120,11 @@ export const Route = createFileRoute('/api/messages/stream')({
         }
       }, 30_000);
 
-      // Auto-close after 5 min to avoid leaks; client will reconnect
+      // Auto-close after ~30 min to avoid leaks; client will reconnect. The
+      // longer lifetime cuts the session re-resolve churn a 5-min recycle caused
+      // on every idle tab. A few minutes of random jitter spreads the reconnects
+      // so many long-lived tabs don't all re-handshake in the same instant.
+      const closeAfterMs = 30 * 60_000 + Math.floor(Math.random() * 5 * 60_000);
       const timeout = setTimeout(() => {
         unsubscribe();
         clearInterval(heartbeat);
@@ -129,7 +133,7 @@ export const Route = createFileRoute('/api/messages/stream')({
         } catch {
           // Already closed
         }
-      }, 5 * 60_000);
+      }, closeAfterMs);
 
       cleanup = () => {
         unsubscribe();

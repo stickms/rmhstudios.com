@@ -31,11 +31,13 @@ export const auth = betterAuth({
         // Signed session snapshot cached in the cookie so the common case
         // (validate the current session) does NOT hit the session/user table on
         // every request — the single biggest per-request DB read at scale.
-        // TTL is deliberately short (60s) so a ban/sign-out still propagates
-        // within a minute; longer would trade revocation latency for fewer reads.
+        // TTL is 5 minutes: idle-tab pollers (presence, unread counts, feed SSE)
+        // then revalidate without a session/user lookup for most of their life.
+        // The tradeoff is revocation latency — a ban or sign-out can stay stale
+        // for up to 5 minutes; that window is acceptable for this app.
         cookieCache: {
             enabled: true,
-            maxAge: 60, // seconds
+            maxAge: 300, // seconds
         },
     },
     // Throttle auth endpoints to blunt credential stuffing / account enumeration.

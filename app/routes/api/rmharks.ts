@@ -18,6 +18,10 @@ import { getTimeline, type FeedSurface } from "@/lib/feed/timeline";
 import { ownsFeedImageUrl } from "@/lib/storage/keys";
 import { publishDueForUser } from "@/lib/scheduled/publish.server";
 import { screenNewContent } from "@/lib/moderation/auto-moderate.server";
+import { apiCache } from "@/lib/cache";
+
+/** Throttle window for the lazy scheduled-post probe on the feed read path. */
+const SCHEDULED_PROBE_TTL_MS = 60_000;
 
 export const Route = createFileRoute('/api/rmharks')({
   server: {
@@ -66,9 +70,15 @@ export const Route = createFileRoute('/api/rmharks')({
     // so they appear in the feed without the author visiting the drafts page.
     // Fire-and-forget (not awaited) so it never adds a serial DB round-trip to
     // the hot path: a just-due post surfaces on the next read/SSE tick instead.
-    // Only on the first page (no cursor) to bound overhead.
+    // Only on the first page (no cursor), and throttled per-user so a rapidly
+    // refreshing feed doesn't re-run the scheduled_post scan on every request —
+    // a newly-due post still surfaces within the throttle window.
     if (userId && !cursor) {
-      void publishDueForUser(userId).catch(() => {});
+      const probeKey = `scheduled:probe:${userId}`;
+      if (!apiCache.get(probeKey)) {
+        apiCache.set(probeKey, 1, SCHEDULED_PROBE_TTL_MS);
+        void publishDueForUser(userId).catch(() => {});
+      }
     }
 
     // Surface resolution. The Twitter-shaped name is `feed=following|foryou`;
@@ -165,6 +175,9 @@ export const Route = createFileRoute('/api/rmharks')({
       quotedOriginalId = orig.originalId ?? orig.id; // quote the root, not a quote
     }
 
+    // Captured from the in-transaction user update so the deferred achievements
+    // block can read the author's post total without a separate COUNT(*).
+    let newPostCount = 0;
     const rmhark = await prisma.$transaction(async (tx) => {
       const created = await tx.rMHark.create({
         data: {
@@ -192,10 +205,21 @@ export const Route = createFileRoute('/api/rmharks')({
 
       // Maintain the author's denormalized post count atomically with the
       // insert (profile pages read this column instead of COUNT(*)).
-      await tx.user.update({
+      const updatedUser = await tx.user.update({
         where: { id: session.user.id },
         data: { postCount: { increment: 1 } },
+        select: { postCount: true },
       });
+      newPostCount = updatedUser.postCount;
+
+      // Maintain the community's denormalized post count in the same tx so the
+      // community page reads this column instead of COUNT(*) over rmheet.
+      if (communityId) {
+        await tx.community.update({
+          where: { id: communityId },
+          data: { postCount: { increment: 1 } },
+        });
+      }
 
       if (quotedOriginalId) {
         await tx.rMHark.update({
@@ -366,25 +390,29 @@ export const Route = createFileRoute('/api/rmharks')({
       console.error("Mention notification error:", err);
     }
 
-    // Achievements: posting milestones + night-owl easter egg (best-effort).
-    try {
-      const count = await prisma.rMHark.count({
-        where: { userId: session.user.id, deletedAt: null },
-      });
-      await progressAchievement(session.user.id, "social.first_post", { setProgress: count });
-      await progressAchievement(session.user.id, "social.posts_10", { setProgress: count });
-      await progressAchievement(session.user.id, "social.posts_100", { setProgress: count });
-      const hour = new Date().getHours();
-      if (hour >= 2 && hour < 5) await grantAchievement(session.user.id, "special.night_owl");
-      if (poll) await grantAchievement(session.user.id, "social.first_poll");
-      if (originalId) await grantAchievement(session.user.id, "social.first_quote");
-      if (unlockPrice && unlockPrice > 0) await grantAchievement(session.user.id, "creator.first_paid_post");
-      // Progression: XP + quests for posting.
-      await awardXp(session.user.id, 25);
-      await progressQuests(session.user.id, "post");
-    } catch (e) {
-      console.error("post achievement error:", e);
-    }
+    // Achievements + progression (posting milestones, night-owl easter egg, XP,
+    // quests) are best-effort and don't shape the response, so run them as a
+    // fire-and-forget background task. Awaiting them here added ~6 serial DB
+    // round-trips before the 201. The post total comes from the denormalized
+    // User.postCount captured in the transaction (no separate COUNT(*)).
+    void (async () => {
+      try {
+        const count = newPostCount;
+        await progressAchievement(session.user.id, "social.first_post", { setProgress: count });
+        await progressAchievement(session.user.id, "social.posts_10", { setProgress: count });
+        await progressAchievement(session.user.id, "social.posts_100", { setProgress: count });
+        const hour = new Date().getHours();
+        if (hour >= 2 && hour < 5) await grantAchievement(session.user.id, "special.night_owl");
+        if (poll) await grantAchievement(session.user.id, "social.first_poll");
+        if (originalId) await grantAchievement(session.user.id, "social.first_quote");
+        if (unlockPrice && unlockPrice > 0) await grantAchievement(session.user.id, "creator.first_paid_post");
+        // Progression: XP + quests for posting.
+        await awardXp(session.user.id, 25);
+        await progressQuests(session.user.id, "post");
+      } catch (e) {
+        console.error("post achievement error:", e);
+      }
+    })();
 
     return Response.json(item, { status: 201 });
   } catch (error) {

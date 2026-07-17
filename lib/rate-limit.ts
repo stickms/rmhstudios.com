@@ -68,10 +68,20 @@ export function rateLimit(ip: string, opts: RateLimitOptions): RateLimitResult {
     const entry = store.get(key);
 
     if (!entry || entry.resetAt < now) {
-        // Evict oldest entry if at capacity (FIFO — Map preserves insertion order)
+        // Evict the entry whose window ends soonest (already-expired or
+        // expiring-first) rather than the oldest-INSERTED one. FIFO could drop a
+        // key with a live, still-counting window while keeping a long-since
+        // expired one, effectively resetting an active limiter under abuse.
         if (store.size >= MAX_STORE_SIZE) {
-            const oldest = store.keys().next().value;
-            if (oldest !== undefined) store.delete(oldest);
+            let soonestKey: string | undefined;
+            let soonestResetAt = Infinity;
+            for (const [k, e] of store) {
+                if (e.resetAt < soonestResetAt) {
+                    soonestResetAt = e.resetAt;
+                    soonestKey = k;
+                }
+            }
+            if (soonestKey !== undefined) store.delete(soonestKey);
         }
         const reset = now + opts.windowMs;
         store.set(key, { count: 1, resetAt: reset });

@@ -9,6 +9,9 @@ const deepseek = new OpenAI({
   apiKey: process.env.DEEPSEEK_API_KEY || 'missing',
   baseURL: 'https://api.deepseek.com/v1',
   maxRetries: 1,
+  // Cap upstream stalls: the SDK default (~10 min) would pin a request handler
+  // on a hung DeepSeek connection. 20s is well above normal completion latency.
+  timeout: 20_000,
 });
 const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
 

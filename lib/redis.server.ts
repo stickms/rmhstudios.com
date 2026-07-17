@@ -107,6 +107,21 @@ export function redisSubscribe(channel: string, handler: (data: unknown) => void
 }
 
 /**
+ * Fixed-window limiter as one atomic script: INCR the counter, stamp the window
+ * TTL only on the first hit (count == 1), and return the new count plus the
+ * remaining TTL in a single round-trip. Replaces the old INCR → PEXPIRE → PTTL
+ * sequence (3 sequential awaits, and a race window where the key could persist
+ * with no expiry if a request died between INCR and PEXPIRE).
+ */
+const RATE_LIMIT_LUA = `
+local count = redis.call('INCR', KEYS[1])
+if count == 1 then
+  redis.call('PEXPIRE', KEYS[1], tonumber(ARGV[1]))
+end
+return {count, redis.call('PTTL', KEYS[1])}
+`;
+
+/**
  * Atomic fixed-window rate limit backed by Redis (shared across instances).
  * Returns null when Redis is unavailable so the caller can fall back to the
  * in-process limiter.
@@ -120,9 +135,12 @@ export async function redisRateLimit(
   if (!publisher) return null;
   try {
     const k = `rl:${key}`;
-    const count = await publisher.incr(k);
-    if (count === 1) await publisher.pexpire(k, windowMs);
-    const ttl = await publisher.pttl(k);
+    // Single round-trip: INCR, set the window TTL on the first hit only, and
+    // read the remaining TTL back — atomically, so concurrent requests can't
+    // race between the INCR and the PEXPIRE and leave a key with no expiry.
+    const res = (await publisher.eval(RATE_LIMIT_LUA, 1, k, String(windowMs))) as [number, number];
+    const count = Number(res[0]);
+    const ttl = Number(res[1]);
     const reset = Date.now() + (ttl > 0 ? ttl : windowMs);
     if (count > limit) {
       return { allowed: false, retryAfter: Math.ceil((ttl > 0 ? ttl : windowMs) / 1000), limit, remaining: 0, reset };
@@ -212,12 +230,11 @@ export async function redisPresenceCount(bucketKeys: string[]): Promise<number |
   if (!publisher || bucketKeys.length === 0) return null;
   try {
     if (bucketKeys.length === 1) return await publisher.scard(bucketKeys[0]);
-    return await publisher.sunionstore(`presence:tmp:${bucketKeys.join(':')}`, ...bucketKeys)
-      .then(async (n) => {
-        // sunionstore returns the cardinality of the resulting set.
-        await publisher!.pexpire(`presence:tmp:${bucketKeys.join(':')}`, 5_000);
-        return n;
-      });
+    // Only the cardinality is needed, so union in-memory (SUNION) rather than
+    // materializing a temp key (SUNIONSTORE) that then needs a PEXPIRE and later
+    // eviction — one command, no extra write, nothing to clean up.
+    const members = await publisher.sunion(...bucketKeys);
+    return members.length;
   } catch {
     return null;
   }

@@ -11,30 +11,46 @@
 import React from 'react';
 import satori from 'satori';
 import { Resvg } from '@resvg/resvg-js';
+import { LRUCache } from 'lru-cache';
+import { safeFetch } from '@/lib/ssrf-guard.server';
+
+const FONT_REGULAR_URL =
+  'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf';
+const FONT_BOLD_URL =
+  'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf';
+const FONT_FETCH_TIMEOUT_MS = 5_000;
+// Cool down after a font fetch failure instead of re-hitting Google every request.
+const FONT_FAIL_COOLDOWN_MS = 30_000;
 
 let fontRegular: ArrayBuffer | null = null;
 let fontBold: ArrayBuffer | null = null;
 let fontsLoading: Promise<void> | null = null;
+let fontFailUntil = 0;
+
+async function fetchFont(url: string): Promise<ArrayBuffer> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FONT_FETCH_TIMEOUT_MS);
+  try {
+    const r = await fetch(url, { signal: controller.signal });
+    if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
+    return await r.arrayBuffer();
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 function loadFonts(): Promise<void> {
   if (fontRegular && fontBold) return Promise.resolve();
   if (fontsLoading) return fontsLoading;
-  fontsLoading = Promise.all([
-    fetch('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf').then((r) => {
-      if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
-      return r.arrayBuffer();
-    }),
-    fetch('https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf').then((r) => {
-      if (!r.ok) throw new Error(`Font fetch failed: ${r.status}`);
-      return r.arrayBuffer();
-    }),
-  ])
+  if (Date.now() < fontFailUntil) return Promise.reject(new Error('Fonts unavailable (cooling down)'));
+  fontsLoading = Promise.all([fetchFont(FONT_REGULAR_URL), fetchFont(FONT_BOLD_URL)])
     .then(([reg, bold]) => {
       fontRegular = reg;
       fontBold = bold;
     })
     .catch((err) => {
       fontsLoading = null;
+      fontFailUntil = Date.now() + FONT_FAIL_COOLDOWN_MS;
       throw err;
     });
   return fontsLoading;
@@ -45,14 +61,20 @@ const pngCache = new Map<string, { png: Buffer; ts: number }>();
 const PNG_TTL = 10 * 60 * 1000;
 const PNG_MAX = 100;
 
+const avatarCache = new LRUCache<string, string>({ max: 200, ttl: 10 * 60 * 1000 });
+
 async function fetchAvatarDataUri(url: string | null | undefined): Promise<string | null> {
   if (!url) return null;
+  const hit = avatarCache.get(url);
+  if (hit) return hit;
   try {
-    const res = await fetch(url);
+    const res = await safeFetch(url, { timeoutMs: 3_000 });
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());
     const type = res.headers.get('content-type') || 'image/png';
-    return `data:${type};base64,${buf.toString('base64')}`;
+    const dataUri = `data:${type};base64,${buf.toString('base64')}`;
+    avatarCache.set(url, dataUri);
+    return dataUri;
   } catch {
     return null;
   }
@@ -92,7 +114,11 @@ function formatCount(n: number): string {
 }
 
 export async function renderProfileOgImage(data: ProfileOgData): Promise<Buffer> {
-  const cacheKey = `${data.id}:${data.followerCount}:${data.postCount}`;
+  // Bucket follower/post counts (per 10) so ordinary count churn doesn't bust
+  // the rendered-PNG cache on every follow/post — the displayed figure is
+  // K/M-abbreviated anyway, so small deltas don't change the card.
+  const bucket = (n: number) => Math.floor((n ?? 0) / 10);
+  const cacheKey = `${data.id}:${bucket(data.followerCount)}:${bucket(data.postCount)}`;
   const cached = pngCache.get(cacheKey);
   if (cached && Date.now() - cached.ts < PNG_TTL) return cached.png;
 
