@@ -208,10 +208,9 @@ export function DialogueScreen() {
     : settings.textSpeed === 'slow' ? 50
     : 30;
 
-  const speakerName = useMemo(() => {
-    if (!currentNode?.speaker) return null;
-    return getCharacterFirstName(currentNode.speaker, settings.characterPresentations);
-  }, [currentNode?.speaker, settings.characterPresentations]);
+  const speakerName = currentNode?.speaker
+    ? getCharacterFirstName(currentNode.speaker, settings.characterPresentations)
+    : null;
 
   const speakerColor = currentNode?.speaker
     ? CHARACTERS[currentNode.speaker]?.color || '#c4a35a'

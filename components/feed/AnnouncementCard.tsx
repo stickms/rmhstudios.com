@@ -20,33 +20,32 @@ function getTypeLabel(type: FeedItem['type']): string {
   }
 }
 
-function getTypeIcon(type: FeedItem['type']) {
+function TypeIcon({ type, className }: { type: FeedItem['type']; className?: string }) {
   switch (type) {
-    case 'game_announcement': return Gamepad2;
-    case 'app_announcement': return AppWindow;
-    case 'news': return Newspaper;
-    case 'blog': return BookOpen;
-    case 'research': return FlaskConical;
-    default: return Newspaper;
+    case 'game_announcement': return <Gamepad2 className={className} />;
+    case 'app_announcement': return <AppWindow className={className} />;
+    case 'news': return <Newspaper className={className} />;
+    case 'blog': return <BookOpen className={className} />;
+    case 'research': return <FlaskConical className={className} />;
+    default: return <Newspaper className={className} />;
   }
 }
 
 export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
-  const TypeIcon = getTypeIcon(item.type);
   const typeLabel = getTypeLabel(item.type);
 
   return (
     <div className="px-4 py-3 border-b border-site-border hover:bg-site-surface/30 transition-colors">
       {/* System badge */}
       <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 pl-[52px]">
-        <TypeIcon className="w-3.5 h-3.5" />
+        <TypeIcon type={item.type} className="w-3.5 h-3.5" />
         <span className="font-medium">RMH {typeLabel}</span>
       </div>
 
       <div className="flex gap-3">
         {/* Icon avatar */}
         <div className={`w-10 h-10 rounded-full bg-linear-to-br ${item.gradient || 'from-site-accent to-site-accent-hover'} flex items-center justify-center shrink-0`}>
-          <TypeIcon className="w-5 h-5 text-white" />
+          <TypeIcon type={item.type} className="w-5 h-5 text-white" />
         </div>
 
         <div className="flex-1 min-w-0">

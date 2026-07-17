@@ -75,11 +75,6 @@ export default tseslint.config(
       "react-hooks/purity": "off",
       "react-hooks/immutability": "off",
       "react-hooks/refs": "off",
-      // Compiler-diagnostic rules (memoization bailouts / components created
-      // during render) — code smells, not correctness bugs. Surface as warnings
-      // so pre-existing patterns don't block CI; tighten as the code is cleaned up.
-      "react-hooks/static-components": "warn",
-      "react-hooks/preserve-manual-memoization": "warn",
     },
   },
 

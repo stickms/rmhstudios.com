@@ -3,7 +3,7 @@
  */
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, type Dispatch, type SetStateAction } from 'react';
 import { emit, getSocket } from '@/lib/rmhtube/socket';
 import { C2S, S2C } from '@/lib/rmhtube/events';
 import { AVAILABLE_REACTIONS } from '@/lib/rmhtube/constants';
@@ -16,6 +16,19 @@ interface FloatingReaction {
 
 let reactionCounter = 0;
 
+// Module-scope so the mount effect below can call it with a stable reference
+// (no per-render component-local callback to memoize). setReactions is a stable
+// state setter, passed in.
+function spawnReaction(setReactions: Dispatch<SetStateAction<FloatingReaction[]>>, emoji: string) {
+  const id = ++reactionCounter;
+  const x = 10 + Math.random() * 80; // Random horizontal position (10-90%)
+  setReactions((prev) => [...prev.slice(-20), { id, emoji, x }]);
+  // Remove after animation completes
+  setTimeout(() => {
+    setReactions((prev) => prev.filter((r) => r.id !== id));
+  }, 2000);
+}
+
 export default function ReactionOverlay() {
   const [reactions, setReactions] = useState<FloatingReaction[]>([]);
 
@@ -25,7 +38,7 @@ export default function ReactionOverlay() {
     if (!socket) return;
 
     const handler = (data: { emoji: string }) => {
-      addFloatingReaction(data.emoji);
+      spawnReaction(setReactions, data.emoji);
     };
 
     socket.on(S2C.REACTION_BROADCAST, handler);
@@ -34,21 +47,10 @@ export default function ReactionOverlay() {
     };
   }, []);
 
-  const addFloatingReaction = useCallback((emoji: string) => {
-    const id = ++reactionCounter;
-    const x = 10 + Math.random() * 80; // Random horizontal position (10-90%)
-    setReactions((prev) => [...prev.slice(-20), { id, emoji, x }]);
-
-    // Remove after animation completes
-    setTimeout(() => {
-      setReactions((prev) => prev.filter((r) => r.id !== id));
-    }, 2000);
-  }, []);
-
-  const handleSendReaction = useCallback((emoji: string) => {
+  const handleSendReaction = (emoji: string) => {
     emit(C2S.REACTION_SEND, { emoji });
-    addFloatingReaction(emoji);
-  }, [addFloatingReaction]);
+    spawnReaction(setReactions, emoji);
+  };
 
   return (
     <>

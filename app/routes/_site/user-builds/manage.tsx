@@ -3,7 +3,7 @@
  */
 
 import { createFileRoute, Link, useNavigate, useLocation } from '@tanstack/react-router';
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Boxes, Plus, Edit, Trash2, Eye, Loader2 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -29,26 +29,22 @@ function ManageContent() {
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
 
-  const fetchBuilds = useCallback(async () => {
-    if (!session?.user?.id) return;
-    try {
-      const res = await fetch(`/api/user-builds?userId=${session.user.id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setBuilds(data.items);
-      }
-    } catch (error) {
-      console.error('Error fetching builds:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [session?.user?.id]);
-
   useEffect(() => {
-    if (session?.user?.id) {
-      fetchBuilds();
-    }
-  }, [fetchBuilds, session?.user?.id]);
+    if (!session?.user?.id) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/user-builds?userId=${session.user.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setBuilds(data.items);
+        }
+      } catch (error) {
+        console.error('Error fetching builds:', error);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [session?.user?.id]);
 
   const handleDelete = async (build: Build) => {
     if (!(await confirm({ title: t("delete-confirm", { title: build.title, defaultValue: `Delete "{{title}}"? This cannot be undone.` }), danger: true }))) return;
