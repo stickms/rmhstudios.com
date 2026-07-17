@@ -16,6 +16,7 @@ package events
 
 import (
 	"context"
+	"encoding/json"
 	"sync"
 
 	"github.com/redis/go-redis/v9"
@@ -110,12 +111,46 @@ func NewRedis(origin, url string) (*Redis, error) {
 	return &Redis{origin: origin, client: redis.NewClient(opt)}, nil
 }
 
-// Publish sends a payload to a Redis channel named after the topic.
-func (r *Redis) Publish(ctx context.Context, topic string, payload []byte) error {
-	return r.client.Publish(ctx, topic, payload).Err()
+// wireEnvelope frames a message on the Redis pub/sub wire so the TRUE
+// publishing replica's origin travels with the payload. Redis echoes a publish
+// to every subscriber — including the publisher — so a subscriber must be able
+// to tell a foreign broadcast from its own echo. Previously the subscriber
+// stamped every received message with the LOCAL replica's origin, so
+// pkg/realtime/room.go treated every cross-replica message as a self-echo
+// (msg.Origin == h.origin) and dropped it, silently discarding all
+// cross-replica fan-out. Carrying the publisher's origin here is what makes
+// room self-suppression correct across replicas. Payload is opaque bytes and
+// is base64-encoded by encoding/json's []byte handling.
+type wireEnvelope struct {
+	Origin  string `json:"origin"`
+	Payload []byte `json:"payload"`
 }
 
-// Subscribe consumes a Redis channel and adapts it to the Bus contract.
+func marshalWire(origin string, payload []byte) ([]byte, error) {
+	return json.Marshal(wireEnvelope{Origin: origin, Payload: payload})
+}
+
+func unmarshalWire(raw []byte) (origin string, payload []byte, err error) {
+	var w wireEnvelope
+	if err := json.Unmarshal(raw, &w); err != nil {
+		return "", nil, err
+	}
+	return w.Origin, w.Payload, nil
+}
+
+// Publish frames the payload with this replica's origin, then sends it to a
+// Redis channel named after the topic.
+func (r *Redis) Publish(ctx context.Context, topic string, payload []byte) error {
+	framed, err := marshalWire(r.origin, payload)
+	if err != nil {
+		return err
+	}
+	return r.client.Publish(ctx, topic, framed).Err()
+}
+
+// Subscribe consumes a Redis channel and adapts it to the Bus contract,
+// decoding the framed publisher origin so self-suppression works across
+// replicas.
 func (r *Redis) Subscribe(ctx context.Context, topic string) (<-chan Message, func(), error) {
 	sub := r.client.Subscribe(ctx, topic)
 	out := make(chan Message, 64)
@@ -130,7 +165,15 @@ func (r *Redis) Subscribe(ctx context.Context, topic string) (<-chan Message, fu
 				if !ok {
 					return
 				}
-				out <- Message{Topic: m.Channel, Payload: []byte(m.Payload), Origin: r.origin}
+				origin, payload, err := unmarshalWire([]byte(m.Payload))
+				if err != nil {
+					// Not a framed message (a stray publisher, or a replica
+					// on an older build mid-rolling-deploy). Skipping is safer
+					// than delivering with an unknown origin, which room
+					// self-suppression could mishandle.
+					continue
+				}
+				out <- Message{Topic: m.Channel, Payload: payload, Origin: origin}
 			}
 		}
 	}()

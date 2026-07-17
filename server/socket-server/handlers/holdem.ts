@@ -136,6 +136,11 @@ const socketToUserId = new Map<string, string>();
 const userToRoom = new Map<string, string>();
 let ioRef: Server;
 
+// Socket.io room that lobby browsers join so room-list updates reach only the
+// clients currently viewing the lobby — not every connected socket on the
+// server (which sprayed all ~18 games on every casino room mutation).
+const LOBBY_ROOM = 'holdem:lobby';
+
 function roomKey(roomId: string): string {
   return `holdem:${roomId}`;
 }
@@ -261,7 +266,7 @@ function broadcastRoomList() {
       bigBlind: r.bigBlind,
       inProgress: r.phase !== 'waiting',
     }));
-  ioRef.emit(S2C.ROOM_LIST, { rooms: list });
+  ioRef.to(LOBBY_ROOM).emit(S2C.ROOM_LIST, { rooms: list });
 }
 
 // ── Seat Assignment ────────────────────────────────────────────────
@@ -783,6 +788,9 @@ function destroyRoom(roomId: string) {
 }
 
 function onListRooms(socket: Socket) {
+  // Browsing the lobby → subscribe this socket to the lobby room so it keeps
+  // receiving broadcastRoomList() updates while it's viewing the list.
+  socket.join(LOBBY_ROOM);
   const list = Array.from(rooms.values())
     .filter((r) => r.privacy === 'public')
     .map((r) => ({
@@ -922,6 +930,7 @@ async function onJoinRoom(socket: Socket, payload: unknown) {
     socketToUserId.set(socket.id, userId);
     userToRoom.set(userId, room.roomId);
     socket.join(roomKey(room.roomId));
+    socket.leave(LOBBY_ROOM); // entering a table → stop receiving lobby updates
     socket.emit(S2C.ROOM_JOINED, {
       roomId: room.roomId,
       name: room.name,
@@ -1001,6 +1010,7 @@ async function joinRoom(room: HoldemRoom, socket: Socket) {
     socketToUserId.set(socket.id, userId);
     userToRoom.set(userId, room.roomId);
     socket.join(roomKey(room.roomId));
+    socket.leave(LOBBY_ROOM); // entering a table → stop receiving lobby updates
 
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
 

@@ -61,6 +61,39 @@ function getAuthPool(): Pool | null {
   return authPool;
 }
 
+// ─── Session-token auth cache ────────────────────────────────────
+//
+// softAuthMiddleware validates the Better Auth session token against Postgres
+// on every connection. A reconnection storm (deploy, network blip, tab wake)
+// would otherwise fire one `SELECT ... FROM session` per socket on the max-10
+// auth pool. Cache validated tokens for a short TTL in a bounded Map (same
+// bounded-map discipline as server/shared/rate-limit.ts) so repeated reconnects
+// from the same clients don't hammer the pool. Only positive validations are
+// cached; tokenless connections skip the cache entirely, so soft-auth semantics
+// (anonymous connections still allowed) are unchanged. A revoked session is
+// honoured for at most AUTH_CACHE_TTL_MS.
+interface CachedAuth {
+  userId: string;
+  userName: string;
+  avatarUrl: string | null;
+  sessionExpiresAt: number; // ms epoch — the session row's own expiry
+  cachedAt: number; // ms epoch — when we validated it
+}
+
+const AUTH_CACHE_TTL_MS = 60_000;
+const AUTH_CACHE_MAX_ENTRIES = 10_000;
+const authCache = new Map<string, CachedAuth>();
+
+const authCacheGc = setInterval(() => {
+  const now = Date.now();
+  for (const [token, entry] of authCache) {
+    if (now - entry.cachedAt >= AUTH_CACHE_TTL_MS || entry.sessionExpiresAt <= now) {
+      authCache.delete(token);
+    }
+  }
+}, 30_000);
+authCacheGc.unref();
+
 async function softAuthMiddleware(
   socket: import('socket.io').Socket,
   next: (err?: import('socket.io').ExtendedError) => void,
@@ -69,6 +102,18 @@ async function softAuthMiddleware(
 
   // No token → allow connection but without user data (legacy games)
   if (!token || typeof token !== 'string') {
+    return next();
+  }
+
+  const now = Date.now();
+
+  // Cache hit: reuse a recently-validated, still-unexpired session and skip the DB.
+  const cached = authCache.get(token);
+  if (cached && now - cached.cachedAt < AUTH_CACHE_TTL_MS && cached.sessionExpiresAt > now) {
+    socket.data.userId = cached.userId;
+    socket.data.userName = cached.userName;
+    socket.data.avatarUrl = cached.avatarUrl;
+    socket.data.sessionToken = token;
     return next();
   }
 
@@ -91,10 +136,25 @@ async function softAuthMiddleware(
       const row = result.rows[0];
       const expiresAt = new Date(row.expiresAt);
       if (expiresAt > new Date()) {
+        const userName = row.name || 'Player';
+        const avatarUrl = row.image || null;
         socket.data.userId = row.userId;
-        socket.data.userName = row.name || 'Player';
-        socket.data.avatarUrl = row.image || null;
+        socket.data.userName = userName;
+        socket.data.avatarUrl = avatarUrl;
         socket.data.sessionToken = token;
+
+        // Cache the validated session (bounded: evict oldest at capacity).
+        if (authCache.size >= AUTH_CACHE_MAX_ENTRIES) {
+          const oldest = authCache.keys().next().value;
+          if (oldest !== undefined) authCache.delete(oldest);
+        }
+        authCache.set(token, {
+          userId: row.userId,
+          userName,
+          avatarUrl,
+          sessionExpiresAt: expiresAt.getTime(),
+          cachedAt: now,
+        });
       }
     }
 
@@ -132,6 +192,11 @@ const io = new Server(httpServer, {
   maxHttpBufferSize: config.MAX_HTTP_BUFFER_SIZE,
   pingInterval: config.PING_INTERVAL_MS,
   pingTimeout: config.PING_TIMEOUT_MS,
+  // Resume a briefly-dropped connection (network blip, tab sleep) without a
+  // full re-handshake: Socket.IO restores the socket's id, rooms, data, and
+  // replays missed packets. rmhbox/rmhtube already enable this; socket-server
+  // did not, so every blip forced a fresh connection + auth round-trip.
+  connectionStateRecovery: {},
 });
 
 // ─── Auth middleware ────────────────────────────────────────────
