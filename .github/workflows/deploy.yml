@@ -22,9 +22,13 @@
 #       PROD_VITE_RMHBOX_SOCKET_URL, PROD_VITE_RMHTUBE_SOCKET_URL,
 #       PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID, PROD_VITE_CDN_BASE_URL
 #   • Repo SECRETS:
-#       DEPLOY_WEBHOOK_URL — public URL that proxies to the listener (127.0.0.1:7002)
-#       WEBHOOK_SECRET     — same value as the listener's WEBHOOK_SECRET env
-#       DEEPSEEK_API_KEY   — optional (library cover titles); may be unset
+#       DEPLOY_WEBHOOK_URL  — public URL that proxies to the listener (127.0.0.1:7002)
+#       WEBHOOK_SECRET      — same value as the listener's WEBHOOK_SECRET env
+#       DEEPSEEK_API_KEY    — optional (library cover titles); may be unset
+#       DISCORD_WEBHOOK_URL — optional; enables the push → build → deploy embed
+#                             that Actions posts and deploy.sh edits (same URL the
+#                             VPS listener's DISCORD_WEBHOOK_URL env uses). Unset =
+#                             no CI-side Discord messages (deploy.sh still posts).
 #   • On the VPS: give deploy.sh a token that can pull the GHCR packages
 #     (GHCR_TOKEN / GITHUB_TOKEN with read:packages) OR make the two packages
 #     public. Remove GitHub's old push webhook so only THIS workflow drives the
@@ -37,10 +41,17 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
-# One deploy at a time; a push during a deploy queues (never cancels) the next.
+# One build per ref at a time. A newer commit to the same ref CANCELS the
+# in-progress build and starts fresh — no point finishing a build that's already
+# superseded. Keyed by ref so a branch test-dispatch never cancels a production
+# (main) build, and vice-versa.
+#
+# NOTE: this cancels the BUILD only. The VPS deploy phase has its own flock+queue
+# in deploy.sh — a running deploy is never interrupted mid-migration/hotswap; a
+# newer deploy queues and supersedes older queued ones once the current finishes.
 concurrency:
-  group: deploy-production
-  cancel-in-progress: false
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 # GITHUB_TOKEN needs packages:write to push the images to GHCR; nothing else.
 permissions:
@@ -59,6 +70,17 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Resolve commit info (for Discord pipeline embed)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          set -uo pipefail
+          # %s is the single-line subject (no newlines → safe for $GITHUB_ENV).
+          {
+            echo "COMMIT_SHORT=$(git rev-parse --short HEAD)"
+            echo "COMMIT_MSG=$(git log -1 --pretty=%s)"
+            echo "COMMIT_AUTHOR=$(git log -1 --pretty=%an)"
+          } >> "$GITHUB_ENV"
 
       - name: Verify required deploy variables + secrets
         env:
@@ -87,6 +109,15 @@ jobs:
             echo "::error::Missing required deploy config:$missing — see deploy/README.md 'Automated deploys — CI build → GHCR'." >&2
             exit 1
           fi
+
+      - name: Discord — build started
+        if: github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          bash .github/scripts/discord-notify.sh post 16776960 \
+            "🟡 [PRODUCTION] Commit ${COMMIT_SHORT:-} — build started" \
+            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
 
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
@@ -139,6 +170,15 @@ jobs:
           build-args: |
             WEB_IMAGE=${{ env.IMAGE_WEB }}:${{ github.sha }}
 
+      - name: Discord — images pushed, triggering deploy
+        if: github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          bash .github/scripts/discord-notify.sh edit 3447003 \
+            "🔵 [PRODUCTION] Commit ${COMMIT_SHORT:-} — images pushed to GHCR, triggering deploy…" \
+            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
+
       - name: Trigger VPS deploy (webhook listener)
         env:
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
@@ -147,11 +187,17 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          # Body mirrors a GitHub push payload's fields the listener reads. The
-          # HMAC is computed exactly like webhook-server.cjs (crypto.createHmac
-          # 'sha256' over the raw body, hex) with the secret read from the
-          # environment (never placed on argv). deploy.sh then pulls this SHA.
-          body="$(printf '{"ref":"%s","after":"%s"}' "$COMMIT_REF" "$COMMIT_SHA")"
+          # Body mirrors a GitHub push payload's fields the listener reads, PLUS
+          # the Discord message id so deploy.sh edits the SAME message for the
+          # deploy phase (empty when Discord is off). The HMAC covers the whole
+          # body and is computed exactly like webhook-server.cjs (crypto.createHmac
+          # 'sha256' over the raw body, hex), the secret read from the environment
+          # (never on argv). deploy.sh then pulls this SHA.
+          body="$(jq -nc \
+            --arg ref "$COMMIT_REF" \
+            --arg after "$COMMIT_SHA" \
+            --arg mid "${DISCORD_MSG_ID:-}" \
+            '{ref:$ref, after:$after, discord_msg_id:$mid}')"
           sig="sha256=$(printf '%s' "$body" | node -e 'const c=require("crypto");let d="";process.stdin.on("data",x=>d+=x).on("end",()=>process.stdout.write(c.createHmac("sha256",process.env.WEBHOOK_SECRET).update(d).digest("hex")))')"
           echo "Triggering deploy for ${COMMIT_SHA}"
           curl -fsS --max-time 30 -X POST "$DEPLOY_WEBHOOK_URL" \
@@ -159,3 +205,25 @@ jobs:
             -H "X-Hub-Signature-256: $sig" \
             --data-raw "$body"
           echo
+
+      - name: Discord — pipeline failed (build or trigger)
+        if: failure() && github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          # Only fires when a step BEFORE the VPS handoff failed (build/trigger).
+          # Once deploy.sh is triggered it owns the message's final state.
+          bash .github/scripts/discord-notify.sh edit 15158332 \
+            "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-} — CI build/trigger failed (see Actions logs)" \
+            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
+
+      - name: Discord — build superseded (cancelled)
+        if: cancelled() && github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          # A newer commit cancelled this build (cancel-in-progress). Close out its
+          # embed so it doesn't sit orphaned at 🟡; the newer commit posts its own.
+          bash .github/scripts/discord-notify.sh edit 9807270 \
+            "⏹️ [PRODUCTION] Commit ${COMMIT_SHORT:-} — build superseded by a newer commit" \
+            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"

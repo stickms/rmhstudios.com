@@ -77,6 +77,14 @@ http.createServer((req, res) => {
           const sha = /^[0-9a-f]{7,40}$/i.test(rawSha) ? rawSha : '';
           const deployArgs = sha ? [DEPLOY_SCRIPT, environment, sha] : [DEPLOY_SCRIPT, environment];
 
+          /* Discord message id from the CI build phase. Passing it to deploy.sh
+             (via DEPLOY_DISCORD_MSG_ID) lets it EDIT the same message through the
+             deploy phase, so push → build → deploy is one evolving embed. Validate
+             it's a snowflake before it becomes an env value; empty = deploy.sh
+             posts its own message. */
+          const rawMid = typeof payload.discord_msg_id === 'string' ? payload.discord_msg_id : '';
+          const discordMsgId = /^[0-9]{5,25}$/.test(rawMid) ? rawMid : '';
+
           logMsg(`Deploy request for ${payload.ref} (${sha ? sha.slice(0, 7) : 'tip'}) — triggering ${environment} deploy`);
           res.writeHead(200);
           res.end(`Deploying ${environment}`);
@@ -86,7 +94,11 @@ http.createServer((req, res) => {
                   detached: true,
                   stdio: ['ignore', fs.openSync(LOG_FILE, 'a'), fs.openSync(LOG_FILE, 'a')],
                   cwd: PROJECT_DIR,
-                  env: { ...process.env, PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' }
+                  env: {
+                      ...process.env,
+                      PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+                      DEPLOY_DISCORD_MSG_ID: discordMsgId,
+                  }
                 });
           child.unref();
         });
