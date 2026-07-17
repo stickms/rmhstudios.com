@@ -72,19 +72,32 @@ export function workdaySourceSlug(config: WorkdaySourceConfig): string {
 
 export function discoverWorkdaySourceUrls(html: string, pageUrl: string): string[] {
   const urls = new Set<string>();
+
+  const add = (candidate: string): void => {
+    const config = parseWorkdaySource(candidate);
+    if (config) urls.add(`${config.origin}/${encodeURIComponent(config.site)}`);
+  };
+
+  // 1. Anchor hrefs (resolves relative URLs against the page).
   const root = parseHtml(html);
   for (const anchor of root.querySelectorAll('a')) {
     const href = anchor.getAttribute('href');
     if (!href) continue;
-    let absolute: string;
     try {
-      absolute = new URL(href, pageUrl).toString();
+      add(new URL(href, pageUrl).toString());
     } catch {
-      continue;
+      // ignore unparseable href
     }
-    const config = parseWorkdaySource(absolute);
-    if (config) urls.add(`${config.origin}/${encodeURIComponent(config.site)}`);
   }
+
+  // 2. Absolute *.myworkdayjobs.com URLs embedded anywhere in the HTML
+  //    (scripts, JSON config, iframes, meta-refresh). parseWorkdaySource is the
+  //    trust boundary — junk and lookalike hosts are rejected there.
+  const EMBEDDED = /https?:\/\/[a-z0-9.-]+\.myworkdayjobs\.com\/[A-Za-z0-9/_-]+/gi;
+  for (const match of html.match(EMBEDDED) ?? []) {
+    add(match);
+  }
+
   return [...urls];
 }
 

@@ -163,6 +163,35 @@ describe('workdayAdapter verification and expiry', () => {
   });
 });
 
+describe('discoverWorkdaySourceUrls — full HTML', () => {
+  it('discovers a Workday URL embedded only in a <script>/JSON blob (no anchor)', () => {
+    const html = `<!doctype html><html><head>
+    <script>window.__CFG = {"careersUrl":"https://acme.wd1.myworkdayjobs.com/en-US/AcmeCareers"};</script>
+    </head><body><p>Careers</p></body></html>`;
+    const urls = discoverWorkdaySourceUrls(html, 'https://acme.com/careers');
+    expect(urls).toContain('https://acme.wd1.myworkdayjobs.com/AcmeCareers');
+  });
+
+  it('still discovers anchor-based Workday URLs (regression)', () => {
+    const html = `<a href="https://acme.wd1.myworkdayjobs.com/en-US/AcmeCareers">Jobs</a>`;
+    expect(discoverWorkdaySourceUrls(html, 'https://acme.com/careers'))
+      .toContain('https://acme.wd1.myworkdayjobs.com/AcmeCareers');
+  });
+
+  it('dedupes anchor + embedded occurrences of the same site', () => {
+    const html = `<a href="https://acme.wd1.myworkdayjobs.com/en-US/AcmeCareers">a</a>
+    <script>var u="https://acme.wd1.myworkdayjobs.com/AcmeCareers";</script>`;
+    const urls = discoverWorkdaySourceUrls(html, 'https://acme.com/careers');
+    expect(urls.filter((u) => u.includes('AcmeCareers'))).toHaveLength(1);
+  });
+
+  it('rejects non-Workday and malformed lookalikes', () => {
+    const html = `<script>var a="https://evil.myworkdayjobs.com.attacker.com/x";
+    var b="https://acme.myworkdayjobs.com";</script>`; // second has no site segment
+    expect(discoverWorkdaySourceUrls(html, 'https://acme.com')).toEqual([]);
+  });
+});
+
 describe('workdayAdapter pagination', () => {
   it('advances by the returned page size and aggregates the complete board', async () => {
     const offsets: number[] = [];

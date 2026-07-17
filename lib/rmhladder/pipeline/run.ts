@@ -110,6 +110,11 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export function resolveWorkdayDiscoveryCap(env: { LADDER_WORKDAY_DISCOVERY_CAP?: string } = process.env): number {
+  const parsed = Number(env.LADDER_WORKDAY_DISCOVERY_CAP);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 5;
+}
+
 // ── runPipeline ───────────────────────────────────────────────────────────────
 
 export async function runPipeline(
@@ -367,7 +372,7 @@ export async function runPipeline(
           // Manual landing pages often link to a Workday tenant. Validate the
           // official CXS endpoint before activating it; it will be processed
           // as a normal source on the next pipeline run.
-          for (const workdayUrl of discoverWorkdaySourceUrls(res.body, source.url).slice(0, 3)) {
+          for (const workdayUrl of discoverWorkdaySourceUrls(res.body, source.url).slice(0, resolveWorkdayDiscoveryCap())) {
             const config = parseWorkdaySource(workdayUrl);
             if (!config) continue;
             const probed = await probeWorkdaySourceUrl(workdayUrl, deps.fetchImpl);
