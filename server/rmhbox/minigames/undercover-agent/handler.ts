@@ -52,6 +52,21 @@ import type {
   UndercoverAgentState,
 } from './types';
 
+// ─── Static word pool (loaded once) ──────────────────────────────
+// The word pool is static content shared by every game instance. Reading and
+// JSON-parsing it in the constructor meant a disk read + parse on every game
+// start; hoist it to a module-level lazy singleton (same pattern as the other
+// minigames' data loaders, e.g. lib/rmhbox/rhyme-time/dictionary-loader).
+let cachedWordPool: string[] | null = null;
+function loadWordPool(): string[] {
+  if (cachedWordPool) return cachedWordPool;
+  const poolPath = path.join(
+    process.cwd(), 'data', 'rmhbox', 'undercover-agent', 'word-pool.json',
+  );
+  cachedWordPool = JSON.parse(fs.readFileSync(poolPath, 'utf-8')) as string[];
+  return cachedWordPool;
+}
+
 // ─── Undercover Agent Minigame ───────────────────────────────────
 
 export class UndercoverAgentMinigame extends BaseMinigame {
@@ -79,11 +94,9 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
   constructor(context: MinigameContext) {
     super(context);
-    const poolPath = path.join(
-      process.cwd(), 'data', 'rmhbox', 'undercover-agent', 'word-pool.json',
-    );
-    const raw = fs.readFileSync(poolPath, 'utf-8');
-    this.wordPool = JSON.parse(raw) as string[];
+    // Shared, cached reference — initializeState() spreads it before shuffling
+    // ([...this.wordPool]) so the singleton array is never mutated.
+    this.wordPool = loadWordPool();
   }
 
   // ─── Lifecycle ───────────────────────────────────────────────

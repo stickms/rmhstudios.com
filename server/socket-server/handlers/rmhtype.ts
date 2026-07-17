@@ -576,9 +576,15 @@ function startProgressBroadcast(io: Server, room: TypeRoom): void {
       return;
     }
     const passageLen = room.passage?.length ?? 0;
+    // Batch every connected player's progress into ONE room-wide emit per tick
+    // instead of emitting one event per player (which fanned out O(players^2)
+    // messages per tick). Per-player fields are unchanged — only the envelope
+    // is now an array. Client consumers of `rmhtype:game:progress` must read
+    // the array (see lib/rmhtype/socket.ts).
+    const progress = [];
     for (const p of room.players.values()) {
       if (!p.isConnected) continue;
-      io.to(`rmhtype:${room.roomId}`).emit('rmhtype:game:progress', {
+      progress.push({
         userId: p.userId,
         userName: p.userName,
         charsTyped: p.currentPosition,
@@ -586,6 +592,9 @@ function startProgressBroadcast(io: Server, room: TypeRoom): void {
         wpm: Math.round(p.wpm * 100) / 100,
         finished: p.finished,
       });
+    }
+    if (progress.length > 0) {
+      io.to(`rmhtype:${room.roomId}`).emit('rmhtype:game:progress', progress);
     }
   }, PROGRESS_BROADCAST_INTERVAL_MS);
 }

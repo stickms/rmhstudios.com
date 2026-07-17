@@ -58,6 +58,31 @@ async function validateSessionToken(token: string): Promise<ValidatedSession | n
   };
 }
 
+// ─── Session-token auth cache ───────────────────────────────────
+//
+// Hard auth validates the Better Auth session token against Postgres on every
+// new connection. A reconnection storm (deploy, network blip, tab wake) would
+// otherwise fire one `SELECT ... FROM session` per socket on the max-10 auth
+// pool. Cache validated sessions for a short TTL in a bounded Map (same
+// bounded-map discipline as server/socket-server/index.ts) so repeated
+// reconnects from the same clients don't hammer the pool. Only positive,
+// still-valid sessions are cached; missing/failed/expired tokens fall through
+// to the DB, so accept/reject outcomes are unchanged. A revoked or expired
+// session is honoured for at most AUTH_CACHE_TTL_MS.
+const AUTH_CACHE_TTL_MS = 60_000;
+const AUTH_CACHE_MAX_ENTRIES = 10_000;
+const authCache = new Map<string, { session: ValidatedSession; cachedAt: number }>();
+
+const authCacheGc = setInterval(() => {
+  const now = Date.now();
+  for (const [token, entry] of authCache) {
+    if (now - entry.cachedAt >= AUTH_CACHE_TTL_MS || entry.session.expiresAt.getTime() <= now) {
+      authCache.delete(token);
+    }
+  }
+}, 30_000);
+authCacheGc.unref();
+
 // ─── Socket.io middleware ───────────────────────────────────────
 
 export async function authMiddleware(
@@ -71,6 +96,18 @@ export async function authMiddleware(
   }
 
   try {
+    const now = Date.now();
+
+    // Cache hit: reuse a recently-validated, still-unexpired session, skip the DB.
+    const cached = authCache.get(token);
+    if (cached && now - cached.cachedAt < AUTH_CACHE_TTL_MS && cached.session.expiresAt.getTime() > now) {
+      socket.data.userId = cached.session.userId;
+      socket.data.userName = cached.session.userName;
+      socket.data.avatarUrl = cached.session.avatarUrl;
+      socket.data.sessionToken = token;
+      return next();
+    }
+
     const session = await validateSessionToken(token);
 
     if (!session) {
@@ -85,6 +122,13 @@ export async function authMiddleware(
     socket.data.userName = session.userName;
     socket.data.avatarUrl = session.avatarUrl;
     socket.data.sessionToken = token;
+
+    // Cache the validated session (bounded: evict oldest at capacity).
+    if (authCache.size >= AUTH_CACHE_MAX_ENTRIES) {
+      const oldest = authCache.keys().next().value;
+      if (oldest !== undefined) authCache.delete(oldest);
+    }
+    authCache.set(token, { session, cachedAt: now });
 
     next();
   } catch (err) {

@@ -117,8 +117,12 @@ export async function connectToRmhType(roomCode?: string): Promise<Socket> {
     useRmhTypeStore.getState().setPassage(data.passageId, data.text, data.round, data.totalRounds);
   });
 
-  socket.on(S2C.GAME_PROGRESS, (data: PlayerProgress) => {
-    useRmhTypeStore.getState().updateProgress(data);
+  // The server now batches every player's progress into ONE array per tick
+  // (perf audit §7 — was one emit per player, O(players^2) messages). Iterate
+  // and apply each entry.
+  socket.on(S2C.GAME_PROGRESS, (data: PlayerProgress[]) => {
+    const store = useRmhTypeStore.getState();
+    for (const p of data) store.updateProgress(p);
   });
 
   socket.on(S2C.GAME_PLAYER_FINISHED, (data: { userId: string; userName: string; wpm: number; accuracy: number; timeMs: number; rank: number }) => {

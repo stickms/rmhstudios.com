@@ -18,6 +18,7 @@
 
 import type { Server, Socket } from 'socket.io';
 import { generateRoomCode } from '../utils';
+import { checkRateLimit } from '../rate-limit';
 import { getPrismaClient } from '../prisma-client';
 import { logger } from '../logger';
 
@@ -163,6 +164,8 @@ interface Farm {
     joinRequests: MemberRec[];
     presence: Map<string, PresenceRec>; // userId -> presence (currently inside)
     shippedValue: number;              // lifetime earnings (leaderboard-ish)
+    presenceDirty: boolean;            // someone moved/joined/left since last presence tick
+    emptySince: number | null;         // ms epoch when presence last dropped to 0 (for GC eviction); null while occupied
 }
 
 // ── Indices (in-memory cache over the DB) ──────────────────────────
@@ -208,6 +211,8 @@ function newFarmObject(userId: string, userName: string): Farm {
         joinRequests: [],
         presence: new Map(),
         shippedValue: 0,
+        presenceDirty: false,
+        emptySince: null,
     };
 }
 
@@ -256,6 +261,8 @@ function hydrateFarm(row: { ownerId: string; code: string; name: string; saveDat
         joinRequests: [],
         presence: new Map(),
         shippedValue: typeof s.shippedValue === 'number' ? s.shippedValue : 0,
+        presenceDirty: false,
+        emptySince: null,
     };
 }
 
@@ -441,6 +448,9 @@ function broadcastMembers(farm: Farm): void {
     for (const s of socketsInFarm(farm)) s.emit(S2C.MEMBERS, payload);
 }
 function broadcastPresence(farm: Farm): void {
+    // Emitting the current full presence clears the dirty flag; the throttled
+    // loop won't re-broadcast this farm until someone next moves/joins/leaves.
+    farm.presenceDirty = false;
     const payload = serializePresence(farm);
     for (const s of socketsInFarm(farm)) s.emit(S2C.PRESENCE, payload);
 }
@@ -556,14 +566,19 @@ function areaTiles(cx: number, cz: number, radius: number): number[] {
 }
 
 function onMove(socket: Socket, payload: any): void {
+    // High-frequency movement — silently drop over-limit packets (the client is
+    // authoritative on its own position; the next accepted move corrects it).
+    if (!checkRateLimit(socket.id, C2S.MOVE)) return;
     const ctx = currentFarm(socket);
     if (!ctx) return;
-    const { p } = ctx;
+    const { farm, p } = ctx;
     const x = Number(payload?.x), z = Number(payload?.z), dir = Number(payload?.dir);
     if (!Number.isFinite(x) || !Number.isFinite(z)) return;
     p.x = Math.max(0, Math.min(GRID, x));
     p.z = Math.max(0, Math.min(GRID, z));
     if (Number.isFinite(dir)) p.dir = dir;
+    // Mark presence dirty so the throttled loop broadcasts this farm this tick.
+    farm.presenceDirty = true;
     // presence is broadcast on a timer (see startPresenceLoop) to keep it cheap
 }
 
@@ -986,10 +1001,49 @@ function startPresenceLoop(): void {
     if (presenceTimer) return;
     presenceTimer = setInterval(() => {
         for (const farm of farms.values()) {
-            if (farm.presence.size > 0) broadcastPresence(farm);
+            // Only re-broadcast farms where someone actually moved (or joined/
+            // left) since the last tick — an idle farm needs no packets.
+            if (farm.presence.size > 0 && farm.presenceDirty) broadcastPresence(farm);
         }
     }, 100);
     if (presenceTimer.unref) presenceTimer.unref();
+}
+
+// ── Farm cache eviction (memory GC) ─────────────────────────────────
+// `farms` / `codeToFarm` are an in-memory cache over the DB. Without eviction
+// every farm ever visited stays resident for the process lifetime. Evict a farm
+// once it has had no connected presence for a grace period: flush any pending
+// save first so no progress is lost, then drop it from both maps. It re-hydrates
+// from the DB on the next visit (loadOrCreateFarm / loadFarmByCode).
+const FARM_EVICT_GRACE_MS = 5 * 60_000; // empty this long → safe to drop from cache
+const FARM_GC_INTERVAL_MS = 60_000;
+let farmGcTimer: NodeJS.Timeout | null = null;
+function startFarmGc(): void {
+    if (farmGcTimer) return;
+    farmGcTimer = setInterval(() => {
+        const now = Date.now();
+        for (const [id, farm] of farms) {
+            if (farm.presence.size > 0) {
+                farm.emptySince = null;
+                continue;
+            }
+            if (farm.emptySince === null) {
+                farm.emptySince = now;
+                continue;
+            }
+            if (now - farm.emptySince >= FARM_EVICT_GRACE_MS) {
+                // Flush pending changes before dropping the live copy.
+                if (dirty.has(id)) {
+                    dirty.delete(id);
+                    void persistFarm(farm);
+                }
+                farms.delete(id);
+                codeToFarm.delete(farm.code);
+                logger.info({ event: 'rfs_farm_evicted', farmId: id });
+            }
+        }
+    }, FARM_GC_INTERVAL_MS);
+    if (farmGcTimer.unref) farmGcTimer.unref();
 }
 
 // ── Public API ─────────────────────────────────────────────────────
@@ -997,6 +1051,7 @@ export function registerRmhFarmingSimHandlers(io: Server, socket: Socket): void 
     ioRef = io;
     startPresenceLoop();
     startSaveLoop();
+    startFarmGc();
     socket.on(C2S.HELLO, () => { void onHello(socket); });
     socket.on(C2S.MOVE, (p) => onMove(socket, p));
     socket.on(C2S.TILL, (p) => onTill(socket, p));
