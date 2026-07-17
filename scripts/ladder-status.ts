@@ -58,15 +58,7 @@ async function main(): Promise<void> {
   const manualOnly = await prisma.ladderCompany.count({
     where: { enabled: true, sources: { none: { status: 'active' }, some: { platform: 'manual' } } },
   });
-  const unconfigured = await prisma.ladderCompany.count({
-    where: {
-      enabled: true,
-      AND: [
-        { sources: { none: { status: 'active' } } },
-        { sources: { none: { platform: 'manual' } } },
-      ],
-    },
-  });
+  const companiesUnconfigured = Math.max(0, enabledCompanies - companiesWithActive - manualOnly);
   // Active jobs by firm type (join companyId → firmType).
   const companies = await prisma.ladderCompany.findMany({ select: { id: true, firmType: true } });
   const firmTypeById = new Map(companies.map((c) => [c.id, c.firmType]));
@@ -79,7 +71,7 @@ async function main(): Promise<void> {
     totalCompanies: enabledCompanies,
     companiesWithActiveSource: companiesWithActive,
     companiesManualOnly: manualOnly,
-    companiesUnconfigured: unconfigured,
+    companiesUnconfigured,
     activeJobsByFirmType,
   };
   console.log('\n' + formatCoverageSnapshot(coverage));

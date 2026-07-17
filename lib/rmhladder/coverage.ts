@@ -15,7 +15,7 @@ export function formatCoverageSnapshot(s: CoverageSnapshot): string {
   lines.push('--------');
   lines.push(`companies with an active source: ${s.companiesWithActiveSource} / ${s.totalCompanies} (${pct}%)`);
   lines.push(`  manual-only (no active API source): ${s.companiesManualOnly}`);
-  lines.push(`  still unconfigured: ${s.companiesUnconfigured}`);
+  lines.push(`  not yet active (unconfigured/blocked/no source): ${s.companiesUnconfigured}`);
   lines.push('active jobs by firm type:');
   const entries = Object.entries(s.activeJobsByFirmType).sort((a, b) => b[1] - a[1]);
   if (entries.length === 0) {
