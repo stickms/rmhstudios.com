@@ -55,25 +55,34 @@ the plugin's input schema. No bundle change was needed. Dead-dep removal
 (`recharts`/`katex`/`@tiptap/*`, unused) was left as optional hygiene (zero
 runtime benefit, would desync the lockfile).
 
-**Deferred — need runtime verification / infra action (NOT done):**
-- **Bounded reactions on secondary read paths (§2.3)** and **comment-tree query
-  batching (§2.5):** high value but require a coordinated change across ~7
-  shared-mapper callers / raw window queries; a blind mistake would blank
-  reactions or corrupt comment trees sitewide. Port `loadReactionSummaries`
-  (already proven in `lib/feed/timeline.ts`) to the secondary paths under test.
-- **rmhbox leaderboard aggregates (§2.6):** read `RMHboxProfile` totals / cache
-  the board — rate-limited, so bounded.
+**Also done (second pass):** bounded reactions extended to **all** the remaining
+read paths (bookmarks, thread, profile own/repost/pinned, similar — §2.3);
+**comment-tree batching** (per-parent BFS → 2 queries/level via a ROW_NUMBER
+id-window + hydrate, §2.5); **rmhbox weekly/monthly + per-minigame boards** cached
+(§2.6). All verified with `tsc` + `vite build`.
+
+**Deliberately NOT shipped (would regress without work this environment can't do):**
 - **Core-namespace-only SSR i18n serialization (§4.1):** the per-navigation
-  re-download is already gone via root `staleTime`; trimming the *initial* SSR
-  payload still needs route-namespace scoping to avoid a flash of untranslated
-  keys — verify in a browser before shipping.
-- **Ops-only:** Cloudflare cache rule for `/api/image-proxy*` (§1.2), running
-  2–3 web replicas + SSR HTML `s-maxage` for anonymous pages (§1.1), tuned
-  `postgresql.conf`/Apache MPM applied on the VPS. Config files are committed;
-  applying them is a deploy step.
-- **Low-value/risky:** group-chat page size + DM-search trigram (§2.10),
-  fonts-per-theme + Discord-SDK eager split (§5) — bundle is already healthy;
-  the `socket.on` lazy-registration refactor (§7).
+  re-download is already gone via root `staleTime`. Trimming the *initial* SSR
+  hydration payload to core namespaces would cause a **React hydration mismatch +
+  flash** on direct loads of game/app routes in non-English locales — SSR renders
+  fully translated (full server i18next), so the client would hydrate non-core
+  namespaces to the en fallback, then re-render. Doing it safely needs per-route
+  namespace scoping (a route→namespace map this codebase doesn't expose). Left as
+  a scoped follow-up rather than a blind regression.
+
+**Ops actions — config committed, applying them is a deploy step (can't run from the repo):**
+- Cloudflare cache rule for `/api/image-proxy*` (§1.2); running 2–3 web replicas +
+  SSR HTML `s-maxage` for anonymous pages (§1.1); applying
+  `deploy/postgres/postgresql.tuning.conf` + `deploy/apache/mpm_event.conf` on the
+  VPS. These (single-process SSR, untuned Postgres, no HTML edge cache) are the
+  biggest remaining "slow under load" wins and are infrastructure-level.
+
+**Intentionally skipped (low value / already healthy):** group-chat page size +
+DM-search trigram (§2.10, already conversation-scoped); fonts-per-theme +
+Discord-SDK eager split (§5 — measured eager bundle is already ~334 KB brotli);
+the `socket.on` lazy-registration refactor (§7, too invasive for the payoff);
+dead-dep removal (zero runtime benefit, would desync the lockfile).
 
 ---
 
