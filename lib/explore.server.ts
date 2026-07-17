@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { rmharkInclude, mapRmharkToFeedItem } from '@/lib/feed/map-feed-item.server';
+import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { audienceWhere } from '@/lib/feed/audience.server';
@@ -84,11 +84,39 @@ async function loadExploreBase(): Promise<ExploreBase> {
  * mount. FeedItem dates are already serialized to ISO strings by
  * `mapRmharkToFeedItem`.
  */
-export async function listExplore(viewerId: string | null): Promise<ExploreResult> {
-  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+/**
+ * Size of the viewer-independent hot-post candidate pool (perf audit §2.4).
+ * We rank the top public posts of the last 7 days ONCE (cached, shared) into a
+ * candidate id list, then each viewer hydrates just those ids. That moves the
+ * expensive 7-day scan-and-sort-by-likeCount off the per-request path — it ran
+ * per viewer per explore view before, sorting 10^5–10^6 rows each time.
+ */
+const HOT_CANDIDATE_POOL = 100;
 
-  // Viewer-independent slice — cached and shared across all viewers.
-  const base = await cached('explore:list', 120_000, loadExploreBase);
+/**
+ * Viewer-independent hot-post candidates: ids of the most-liked PUBLIC posts in
+ * the last 7 days. PUBLIC-only by design — explore is a discovery surface, and
+ * scoping candidates to public content is what lets the pool be shared across
+ * all viewers (each viewer's audience/hidden/mute filters still apply on top
+ * during hydration below).
+ */
+async function loadHotPostCandidateIds(): Promise<string[]> {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const rows = await prisma.rMHark.findMany({
+    where: { deletedAt: null, createdAt: { gte: since }, audience: 'PUBLIC', likeCount: { gt: 0 } },
+    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
+    take: HOT_CANDIDATE_POOL,
+    select: { id: true },
+  });
+  return rows.map((r) => r.id);
+}
+
+export async function listExplore(viewerId: string | null): Promise<ExploreResult> {
+  // Viewer-independent slices — cached and shared across all viewers.
+  const [base, hotCandidateIds] = await Promise.all([
+    cached('explore:list', 120_000, loadExploreBase),
+    cached('explore:hot-candidates', 60_000, loadHotPostCandidateIds),
+  ]);
 
   // Per-viewer inputs for hot posts (audience/mute) and the suggested-user
   // exclude set. These are cheap indexed reads.
@@ -104,19 +132,27 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
   const followingIds = following.map((f) => f.followingId);
   const aud = audienceWhere(viewerId, followingIds);
 
-  // Hot posts are viewer-dependent (audience visibility + muted words), so they
-  // stay per-request rather than in the shared cache.
-  const hotRows = await prisma.rMHark.findMany({
-    where: { deletedAt: null, createdAt: { gte: since }, ...notHidden, ...aud },
-    orderBy: [{ likeCount: 'desc' }, { createdAt: 'desc' }],
-    take: HOT_POSTS_TAKE,
-    include: rmharkInclude(viewerId),
-  });
+  // Hydrate the shared candidate pool with this viewer's state (likes/reposts/
+  // bookmarks via the include) and apply the viewer's hidden-author filter. The
+  // candidates are already PUBLIC, so `aud` is a no-op guard here — kept for
+  // defense in depth. This is a bounded primary-key `IN` lookup, not a 7-day
+  // scan. Order isn't guaranteed by an `IN` query, so re-sort by likeCount.
+  const hotRows = hotCandidateIds.length
+    ? await prisma.rMHark.findMany({
+        where: { id: { in: hotCandidateIds }, deletedAt: null, ...notHidden, ...aud },
+        include: rmharkIncludeLite(viewerId),
+      })
+    : [];
+  hotRows.sort(
+    (a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0) || (b.createdAt.getTime() - a.createdAt.getTime()),
+  );
 
   // Apply the viewer's muted words to hot posts too (the timeline already does;
-  // explore would otherwise be a mute-filter bypass).
+  // explore would otherwise be a mute-filter bypass), then take the display slice.
+  // Reactions load as bounded aggregates for the whole slice (perf audit §2.3).
+  const displayRows = hotRows.filter((r) => (r.likeCount ?? 0) > 0).slice(0, HOT_POSTS_TAKE);
   const hotPosts = applyMutedWords(
-    hotRows.filter((r) => (r.likeCount ?? 0) > 0).map((r) => mapRmharkToFeedItem(r, viewerId)),
+    await mapRmharksWithBoundedReactions(displayRows, viewerId),
     muted,
   );
 

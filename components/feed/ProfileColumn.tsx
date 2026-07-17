@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { MobileMenuButton } from './MobileMenuButton';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
-import { RMHarkCard } from './RMHarkCard';
+import { VirtualPostList } from './VirtualPostList';
 import { AchievementsColumn } from './AchievementsColumn';
 import { AchievementBadgeStrip } from './AchievementBadgeStrip';
 import { ProfileEditModal } from './ProfileEditModal';
@@ -881,9 +881,7 @@ export function ProfileColumn({
       {/* RMHarks tab content */}
       {tab === 'rmharks' && (
         <div>
-          {items.map((item) => (
-            <RMHarkCard key={item.id} item={item} />
-          ))}
+          <VirtualPostList items={items} />
 
           {loadingItems && (
             <div className="flex items-center justify-center py-8">
@@ -915,9 +913,7 @@ export function ProfileColumn({
       {/* Likes tab content */}
       {tab === 'likes' && (
         <div>
-          {likedItems.map((item) => (
-            <RMHarkCard key={item.id} item={item} />
-          ))}
+          <VirtualPostList items={likedItems} />
 
           {loadingLiked && (
             <div className="flex items-center justify-center py-8">

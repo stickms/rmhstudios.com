@@ -13,7 +13,7 @@ import { JumpBackIn } from './JumpBackIn';
 import { useMobileSidebar } from './MobileSidebarShell';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { Link, useNavigate, useSearch, Await } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
@@ -59,7 +59,8 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   const setSearch = useFeedStore((s) => s.setSearch);
   // Stable store action — drives swipe-down-to-refresh on the mobile feed.
   const refreshFeed = useFeedStore((s) => s.refresh);
-  const { data: session } = authClient.useSession();
+  // Shared root-level session (one subscription for the whole app).
+  const { data: session } = useSession();
   const navigate = useNavigate();
   // `?q=` is the shareable source of truth; the store search mirrors it.
   const urlQuery = (useSearch({ strict: false }) as { q?: string }).q ?? null;

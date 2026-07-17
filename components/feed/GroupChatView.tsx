@@ -250,8 +250,21 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
     };
   }, [id, notFound, loading, appendMessages, patchMessage]);
 
+  // Autoscroll only when the viewer is already at the bottom — never yank them
+  // back down while they're reading history. `stickToBottom` is captured from the
+  // scroll position BEFORE the new message grows the list (via onScroll), and the
+  // jump is instant ('auto'), not a smooth animation re-running on every append.
+  const stickToBottom = useRef(true);
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+  }, []);
+
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
+    const el = scrollRef.current;
+    if (!el || !stickToBottom.current) return;
+    el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   // Chat members get priority in @-mention autocomplete.
@@ -405,7 +418,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
         </button>
       </header>
 
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 space-y-3 overflow-y-auto p-4">
         {messages.map((m) => {
           const mine = m.sender.id === currentUserId;
           const animateIn = !reducedMotion && !historyIds.current.has(m.id);

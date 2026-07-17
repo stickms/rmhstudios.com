@@ -116,8 +116,16 @@ services:
       - PORT=${PORT_WEB:-7005}
       - HOSTNAME=0.0.0.0
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      # Cap V8 old-space BELOW the 1g cgroup (perf audit §1.5). V8 does not
+      # reliably size its heap to a container limit, so under load the process
+      # either OOM-kills (restart flap → 503s) or GC-thrashes at the ceiling.
+      # 768m leaves ~256m for non-heap (buffers, sharp/resvg native, code).
+      - NODE_OPTIONS=--max-old-space-size=768
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT_WEB:-7005}/"]
+      # Hit the cheap liveness endpoint, not `/` — curling `/` every 30s renders
+      # the full homepage through SSR on the single web event loop (perf audit
+      # §1.6). /api/health returns 200 without touching the DB or rendering.
+      test: ["CMD", "curl", "-f", "http://localhost:${PORT_WEB:-7005}/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -138,6 +146,8 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - SOCKET_PORT=${PORT_SOCKET:-7001}
+      # Cap V8 old-space below the 768m cgroup (perf audit §1.5).
+      - NODE_OPTIONS=--max-old-space-size=576
     command: ["node", "dist-server/server/socket-server/index.cjs"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_SOCKET:-7001}/"]
@@ -161,6 +171,8 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - RMHBOX_PORT=${PORT_RMHBOX:-7676}
+      # Cap V8 old-space below the 512m cgroup (perf audit §1.5).
+      - NODE_OPTIONS=--max-old-space-size=384
     command: ["node", "dist-server/server/rmhbox/index.cjs"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_RMHBOX:-7676}/"]
@@ -184,6 +196,8 @@ services:
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - RMHTUBE_PORT=${PORT_RMHTUBE:-7003}
+      # Cap V8 old-space below the 512m cgroup (perf audit §1.5).
+      - NODE_OPTIONS=--max-old-space-size=384
     command: ["node", "dist-server/server/rmhtube/index.cjs"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${PORT_RMHTUBE:-7003}/"]
@@ -352,7 +366,7 @@ services:
     image: redis:7.4-alpine
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-redis
     restart: unless-stopped
-    # Resource limits — starting point (audit §5.2). maxmemory is 256mb (below);
+    # Resource limits — starting point (audit §5.2). maxmemory is 320mb (below);
     # give the process headroom above that for its own overhead/fragmentation.
     mem_limit: 384m
     mem_reservation: 128m
@@ -362,7 +376,12 @@ services:
       - ALL
     security_opt:
       - no-new-privileges:true
-    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    # perf audit §2.10: raised maxmemory 256mb→320mb (within the 384m cgroup) so
+    # the cache + dirty view-count/presence buffers have more headroom before any
+    # eviction kicks in. Policy left allkeys-lru deliberately: switching to
+    # volatile-* risks OOM-on-write if any key lacks a TTL — verify every key sets
+    # an expiry (it should) before tightening the policy to protect dirty buffers.
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "320mb", "--maxmemory-policy", "allkeys-lru"]
     tmpfs:
       - /data:size=256m,mode=0700
     healthcheck:

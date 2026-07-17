@@ -81,15 +81,19 @@ export const Route = createFileRoute('/api/rmharks/thread')({
               },
               include: { user: { select: userDisplaySelect } },
             });
-            for (let i = 1; i < segments.length; i++) {
-              await tx.rMHark.create({
-                data: {
-                  content: segments[i],
+            // Follow-up segments need no returned rows, so insert them in ONE
+            // createMany instead of N awaited creates (perf audit §2.10 — the old
+            // loop held the pool connection + row-lock across up to 24 serial
+            // round-trips). Millisecond-offset createdAt preserves thread order.
+            if (segments.length > 1) {
+              await tx.rMHark.createMany({
+                data: segments.slice(1).map((content, idx) => ({
+                  content,
                   userId,
-                  audience: 'PUBLIC',
+                  audience: 'PUBLIC' as const,
                   threadRootId: created.id,
-                  createdAt: new Date(base + i),
-                },
+                  createdAt: new Date(base + idx + 1),
+                })),
               });
             }
             return created;

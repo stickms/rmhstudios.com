@@ -4,58 +4,55 @@ import { useEffect, useState } from 'react';
 import { useIdleReady } from '@/hooks/useIdleReady';
 
 /**
- * Real-time unread message count, shared across every consumer.
+ * Shared message-stream bus.
  *
- * The site layout mounts the left sidebar TWICE (a desktop copy and a mobile
- * copy, one CSS-hidden), and MobileNav / the inbox column read this too — so
- * previously a single page held several duplicate `/api/messages/stream`
- * EventSource connections. This is now a ref-counted module singleton: ONE SSE
- * (with the same retry → polling fallback), fanned out to every subscriber.
- * Mirrors the singleton pattern used by useFeedSSE.
+ * `/api/messages/stream` carries every DM signal — `unread` (badge count),
+ * `new-message`, `typing`, and `message-reaction`. Previously each consumer
+ * opened its OWN EventSource with its own reconnect loop: the unread-count badge
+ * (mounted twice — desktop + mobile sidebar), the inbox list (MessagesColumn),
+ * AND the open conversation (ConversationView). A single page could therefore
+ * hold 3-4 connections to one endpoint and crowd the browser's ~6-per-origin
+ * pool.
+ *
+ * This is now ONE module-level singleton EventSource (mirrors hooks/useFeedSSE):
+ * a subscriber registry fanned out to every consumer, with exponential-backoff
+ * reconnect and a polling fallback that keeps the badge fresh while SSE is down.
+ * The connection opens on the first subscriber and closes when the last leaves.
  */
 
-let count = 0;
-const subscribers = new Set<(n: number) => void>();
+export type MessageStreamEventType = 'unread' | 'new-message' | 'typing' | 'message-reaction';
+export type MessageStreamHandler = (type: MessageStreamEventType, data: unknown) => void;
+
+const STREAM_URL = '/api/messages/stream';
+const STREAM_EVENTS: MessageStreamEventType[] = ['unread', 'new-message', 'typing', 'message-reaction'];
+const MAX_RECONNECT_DELAY = 15_000;
+
+// Full-stream subscribers (MessagesColumn, ConversationView).
+const streamSubscribers = new Set<MessageStreamHandler>();
+// Unread-count subscribers (the badge) — a thin fan-out reading just the number.
+const countSubscribers = new Set<(n: number) => void>();
+
 let eventSource: EventSource | null = null;
 let fallbackInterval: ReturnType<typeof setInterval> | null = null;
+let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let retryCount = 0;
 let beforeUnloadBound = false;
+let count = 0;
 
-function broadcast(n: number) {
-  count = n;
-  for (const s of subscribers) s(n);
+function hasSubscribers() {
+  return streamSubscribers.size > 0 || countSubscribers.size > 0;
 }
 
-function connectSSE() {
-  if (eventSource) return;
-  eventSource = new EventSource('/api/messages/stream');
+function broadcastCount(n: number) {
+  count = n;
+  for (const s of countSubscribers) s(n);
+}
 
-  eventSource.addEventListener('unread', (event) => {
-    try {
-      const data = JSON.parse(event.data);
-      if (typeof data.count === 'number') broadcast(data.count);
-      retryCount = 0;
-    } catch {
-      // Ignore parse errors
-    }
-  });
-
-  eventSource.onerror = () => {
-    eventSource?.close();
-    eventSource = null;
-    if (subscribers.size === 0) return;
-
-    retryCount++;
-    // After 3 failed SSE attempts, fall back to polling.
-    if (retryCount >= 3) {
-      startPolling();
-    } else {
-      const delay = Math.min(retryCount * 2000, 10000);
-      setTimeout(() => {
-        if (subscribers.size > 0 && !eventSource && !fallbackInterval) connectSSE();
-      }, delay);
-    }
-  };
+function stopPolling() {
+  if (fallbackInterval) {
+    clearInterval(fallbackInterval);
+    fallbackInterval = null;
+  }
 }
 
 function startPolling() {
@@ -63,14 +60,59 @@ function startPolling() {
   const fetchUnread = () => {
     fetch('/api/messages/unread-count')
       .then((res) => res.json())
-      .then((data) => broadcast(data.count ?? 0))
+      .then((data) => broadcastCount(data.count ?? 0))
       .catch(() => {});
   };
   fetchUnread();
   fallbackInterval = setInterval(fetchUnread, 15_000);
 }
 
-function start() {
+function dispatch(type: MessageStreamEventType, raw: string) {
+  // A live event means SSE is healthy again: reset backoff and drop any polling.
+  retryCount = 0;
+  stopPolling();
+  let data: unknown;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    return;
+  }
+  if (type === 'unread') {
+    const c = (data as { count?: number }).count;
+    if (typeof c === 'number') broadcastCount(c);
+  }
+  for (const fn of streamSubscribers) fn(type, data);
+}
+
+function connectSSE() {
+  if (eventSource) return;
+  const es = new EventSource(STREAM_URL);
+  eventSource = es;
+
+  for (const type of STREAM_EVENTS) {
+    es.addEventListener(type, (event) => dispatch(type, (event as MessageEvent).data));
+  }
+
+  es.onerror = () => {
+    es.close();
+    if (eventSource === es) eventSource = null;
+    if (!hasSubscribers()) return;
+
+    retryCount++;
+    // Keep the badge fresh via polling while SSE is down (after a few failures),
+    // but keep retrying SSE indefinitely so chat realtime recovers.
+    if (retryCount >= 3) startPolling();
+    const delay = Math.min(1000 * 2 ** retryCount, MAX_RECONNECT_DELAY);
+    if (reconnectTimer) clearTimeout(reconnectTimer);
+    reconnectTimer = setTimeout(() => {
+      reconnectTimer = null;
+      if (hasSubscribers() && !eventSource) connectSSE();
+    }, delay);
+  };
+}
+
+function ensureStarted() {
+  if (typeof window === 'undefined') return;
   if (!beforeUnloadBound) {
     window.addEventListener('beforeunload', stop);
     beforeUnloadBound = true;
@@ -81,12 +123,32 @@ function start() {
 function stop() {
   eventSource?.close();
   eventSource = null;
-  if (fallbackInterval) {
-    clearInterval(fallbackInterval);
-    fallbackInterval = null;
+  stopPolling();
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
   }
   retryCount = 0;
   count = 0;
+}
+
+/** Tear the shared connection down only once nobody is listening. */
+function maybeStop() {
+  if (!hasSubscribers()) stop();
+}
+
+/**
+ * Subscribe to the shared DM stream. The handler receives every event type
+ * (`unread` / `new-message` / `typing` / `message-reaction`) with its parsed
+ * payload; filter by `type` in the handler. Returns an unsubscribe function.
+ */
+export function subscribeMessageStream(handler: MessageStreamHandler): () => void {
+  streamSubscribers.add(handler);
+  ensureStarted();
+  return () => {
+    streamSubscribers.delete(handler);
+    maybeStop();
+  };
 }
 
 export function useUnreadCount(isLoggedIn: boolean) {
@@ -100,13 +162,12 @@ export function useUnreadCount(isLoggedIn: boolean) {
       setValue(0);
       return;
     }
-    subscribers.add(setValue);
+    countSubscribers.add(setValue);
     setValue(count);
-    start();
+    ensureStarted();
     return () => {
-      subscribers.delete(setValue);
-      // Tear the shared connection down only when the last consumer unmounts.
-      if (subscribers.size === 0) stop();
+      countSubscribers.delete(setValue);
+      maybeStop();
     };
   }, [isLoggedIn, idle]);
 

@@ -19,19 +19,28 @@ import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import type { Locale } from "@/lib/i18n/config";
 import type { LocaleBundle } from "@/lib/i18n/resources";
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60_000, // 1 minute — serve cached data before refetching
-      gcTime: 10 * 60_000, // keep unused data 10 min so back-nav doesn't refetch
-      retry: 1,
-      // Slow-WiFi friendly: don't re-hit the network just because the user
-      // tab-switched. Reconnects still revalidate stale data.
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: true,
+// perf audit §4.3: build the QueryClient PER component instance (via useState
+// below), not once at module scope. A module-scope client is shared by every
+// concurrent SSR request on the server — it accumulates entries (gcTime holds
+// them 10 min) across all users and is a latent cross-request cache-bleed
+// hazard. useState(() => makeQueryClient()) gives a fresh client per server
+// request while staying stable across client re-renders (the standard TanStack
+// SSR pattern).
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 60_000, // 1 minute — serve cached data before refetching
+        gcTime: 10 * 60_000, // keep unused data 10 min so back-nav doesn't refetch
+        retry: 1,
+        // Slow-WiFi friendly: don't re-hit the network just because the user
+        // tab-switched. Reconnects still revalidate stale data.
+        refetchOnWindowFocus: false,
+        refetchOnReconnect: true,
+      },
     },
-  },
-});
+  });
+}
 
 /* ------------------------------------------------------------------ */
 /*  Session context – single useSession() call shared across the app  */
@@ -165,6 +174,8 @@ export const THEME_EXCLUDED_ROUTES = [
 ].filter((href) => href.startsWith("/"));
 
 export function Providers({ children, initialUser = null, locale = "en", i18nResources = null }: ProvidersProps) {
+  // Per-request/per-mount QueryClient (perf audit §4.3) — see makeQueryClient.
+  const [queryClient] = useState(makeQueryClient);
   const session = authClient.useSession();
   const style = useThemeStore((s) => s.style);
   const preview = useThemeStore((s) => s.preview);
@@ -182,8 +193,17 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   // via CSS only — no component branches. Chrome keeps its blur (few elements,
   // carry the identity).
   useEffect(() => {
-    const nav = navigator as Navigator & { deviceMemory?: number };
-    const lite = (nav.deviceMemory ?? 8) <= 4 || (navigator.hardwareConcurrency ?? 8) <= 4;
+    const nav = navigator as Navigator & {
+      deviceMemory?: number;
+      connection?: { saveData?: boolean };
+    };
+    // perf audit §6.4: widened from ≤4GB/≤4-core to ≤6GB/≤6-core so more
+    // mid-range devices drop the expensive backdrop blur, and honor the
+    // browser's Data Saver / reduced-data signal when present.
+    const lite =
+      (nav.deviceMemory ?? 8) <= 6 ||
+      (navigator.hardwareConcurrency ?? 8) <= 6 ||
+      nav.connection?.saveData === true;
     document.documentElement.classList.toggle("perf-lite", lite);
   }, []);
 

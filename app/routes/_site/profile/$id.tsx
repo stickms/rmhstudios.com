@@ -4,19 +4,19 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { RightSidebar } from '@/components/feed/RightSidebar';
 import { ProfileColumn } from '@/components/feed/ProfileColumn';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getProfile } from '@/lib/profile.server';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
   .handler(async ({ data: id }) => {
-    const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+    // Request-memoized session (perf audit §4.2) — shares the SSR session
+    // resolution with the root loader / sidebar instead of re-running it.
+    const session = await getRequestSession().catch(() => null);
     const viewer = {
       id: session?.user?.id ?? null,
       isAdmin: Boolean((session?.user as { isAdmin?: boolean } | undefined)?.isAdmin),

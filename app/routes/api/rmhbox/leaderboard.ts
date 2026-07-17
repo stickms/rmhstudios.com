@@ -21,6 +21,10 @@ import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { auth } from '@/lib/auth';
 import { resolveUserDisplay } from '@/lib/user-display';
+import { cached } from '@/lib/cached.server';
+
+/** One precomputed, viewer-independent leaderboard row (perf audit §2.6). */
+type BoardRow = { userId: string; userName: string; score: number; gamesPlayed: number; wins: number };
 
 /** Handle weekly/monthly leaderboard via RMHboxMatchPlayer aggregation */
 async function handlePeriodLeaderboard(
@@ -30,57 +34,71 @@ async function handlePeriodLeaderboard(
   offset: number,
   currentUserId: string | null,
 ) {
-  const now = new Date();
-  const startDate = period === 'weekly'
-    ? new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-    : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  // The aggregation over every match-player row in the window is viewer-
+  // independent, so compute+sort it ONCE per (period, metric) and cache 60s —
+  // shared across all viewers (perf audit §2.6). Pagination + the viewer's own
+  // rank are derived per-request from the cached board.
+  const sorted = await cached<BoardRow[]>(`rmhbox-lb:period:${period}:${metric}`, 60_000, async () => {
+    const now = new Date();
+    const startDate = period === 'weekly'
+      ? new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+      : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  const aggregated = await prisma.rMHboxMatchPlayer.groupBy({
-    by: ['userId', 'userName'],
-    where: { createdAt: { gte: startDate } },
-    _sum: { score: true },
-    _count: { id: true },
+    const [aggregated, winCounts] = await Promise.all([
+      prisma.rMHboxMatchPlayer.groupBy({
+        by: ['userId', 'userName'],
+        where: { createdAt: { gte: startDate } },
+        _sum: { score: true },
+        _count: { id: true },
+      }),
+      prisma.rMHboxMatchPlayer.groupBy({
+        by: ['userId'],
+        where: { createdAt: { gte: startDate }, wasWinner: true },
+        _count: { id: true },
+      }),
+    ]);
+    const winMap = new Map(winCounts.map((w) => [w.userId, w._count.id]));
+    return aggregated
+      .map((row) => ({
+        userId: row.userId,
+        userName: row.userName,
+        score: row._sum.score ?? 0,
+        gamesPlayed: row._count.id,
+        wins: winMap.get(row.userId) ?? 0,
+      }))
+      .sort((a, b) =>
+        metric === 'wins' ? b.wins - a.wins : metric === 'games' ? b.gamesPlayed - a.gamesPlayed : b.score - a.score,
+      );
   });
 
-  // Compute wins count for each user in the period
-  const winCounts = await prisma.rMHboxMatchPlayer.groupBy({
-    by: ['userId'],
-    where: { createdAt: { gte: startDate }, wasWinner: true },
-    _count: { id: true },
-  });
-  const winMap = new Map(winCounts.map((w) => [w.userId, w._count.id]));
+  return Response.json(paginateBoard(sorted, offset, limit, metric, currentUserId, { period }));
+}
 
-  // Sort based on metric
-  const sorted = aggregated.sort((a, b) => {
-    if (metric === 'wins') return (winMap.get(b.userId) ?? 0) - (winMap.get(a.userId) ?? 0);
-    if (metric === 'games') return (b._count.id) - (a._count.id);
-    return (b._sum.score ?? 0) - (a._sum.score ?? 0);
-  });
-
+/** Slice a cached board into a response page + the viewer's rank. */
+function paginateBoard(
+  sorted: BoardRow[],
+  offset: number,
+  limit: number,
+  metric: string,
+  currentUserId: string | null,
+  extra: Record<string, unknown>,
+) {
   const total = sorted.length;
-  const paged = sorted.slice(offset, offset + limit);
-
-  const entries = paged.map((row, idx) => ({
+  const entries = sorted.slice(offset, offset + limit).map((row, idx) => ({
     rank: offset + idx + 1,
     userId: row.userId,
     userName: row.userName,
     avatarUrl: null,
-    value: metric === 'wins'
-      ? (winMap.get(row.userId) ?? 0)
-      : metric === 'games'
-        ? row._count.id
-        : (row._sum.score ?? 0),
-    gamesPlayed: row._count.id,
-    wins: winMap.get(row.userId) ?? 0,
+    value: metric === 'wins' ? row.wins : metric === 'games' ? row.gamesPlayed : row.score,
+    gamesPlayed: row.gamesPlayed,
+    wins: row.wins,
   }));
-
   let userRank: number | null = null;
   if (currentUserId) {
     const idx = sorted.findIndex((r) => r.userId === currentUserId);
     userRank = idx >= 0 ? idx + 1 : null;
   }
-
-  return Response.json({ entries, total, period, metric, userRank });
+  return { entries, total, metric, userRank, ...extra };
 }
 
 /** Handle per-minigame leaderboard via match player aggregation */
@@ -92,51 +110,37 @@ async function handleMinigameLeaderboard(
   period: string,
   currentUserId: string | null,
 ) {
-  // Join through RMHboxMatch to filter by minigameId
-  const aggregated = await prisma.rMHboxMatchPlayer.groupBy({
-    by: ['userId', 'userName'],
-    where: { match: { minigameId: minigame } },
-    _sum: { score: true },
-    _count: { id: true },
+  // Viewer-independent aggregation over this minigame's match players — computed
+  // once per (minigame, metric) and cached 60s (perf audit §2.6).
+  const sorted = await cached<BoardRow[]>(`rmhbox-lb:minigame:${minigame}:${metric}`, 60_000, async () => {
+    const [aggregated, winCounts] = await Promise.all([
+      prisma.rMHboxMatchPlayer.groupBy({
+        by: ['userId', 'userName'],
+        where: { match: { minigameId: minigame } },
+        _sum: { score: true },
+        _count: { id: true },
+      }),
+      prisma.rMHboxMatchPlayer.groupBy({
+        by: ['userId'],
+        where: { match: { minigameId: minigame }, wasWinner: true },
+        _count: { id: true },
+      }),
+    ]);
+    const winMap = new Map(winCounts.map((w) => [w.userId, w._count.id]));
+    return aggregated
+      .map((row) => ({
+        userId: row.userId,
+        userName: row.userName,
+        score: row._sum.score ?? 0,
+        gamesPlayed: row._count.id,
+        wins: winMap.get(row.userId) ?? 0,
+      }))
+      .sort((a, b) =>
+        metric === 'wins' ? b.wins - a.wins : metric === 'games' ? b.gamesPlayed - a.gamesPlayed : b.score - a.score,
+      );
   });
 
-  const winCounts = await prisma.rMHboxMatchPlayer.groupBy({
-    by: ['userId'],
-    where: { match: { minigameId: minigame }, wasWinner: true },
-    _count: { id: true },
-  });
-  const winMap = new Map(winCounts.map((w) => [w.userId, w._count.id]));
-
-  const sorted = aggregated.sort((a, b) => {
-    if (metric === 'wins') return (winMap.get(b.userId) ?? 0) - (winMap.get(a.userId) ?? 0);
-    if (metric === 'games') return (b._count.id) - (a._count.id);
-    return (b._sum.score ?? 0) - (a._sum.score ?? 0);
-  });
-
-  const total = sorted.length;
-  const paged = sorted.slice(offset, offset + limit);
-
-  const entries = paged.map((row, idx) => ({
-    rank: offset + idx + 1,
-    userId: row.userId,
-    userName: row.userName,
-    avatarUrl: null,
-    value: metric === 'wins'
-      ? (winMap.get(row.userId) ?? 0)
-      : metric === 'games'
-        ? row._count.id
-        : (row._sum.score ?? 0),
-    gamesPlayed: row._count.id,
-    wins: winMap.get(row.userId) ?? 0,
-  }));
-
-  let userRank: number | null = null;
-  if (currentUserId) {
-    const idx = sorted.findIndex((r) => r.userId === currentUserId);
-    userRank = idx >= 0 ? idx + 1 : null;
-  }
-
-  return Response.json({ entries, total, period, minigame, metric, userRank });
+  return Response.json(paginateBoard(sorted, offset, limit, metric, currentUserId, { period, minigame }));
 }
 
 /** Compute a user's global rank based on metric */

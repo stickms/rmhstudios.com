@@ -5,7 +5,7 @@
 // per-language bundles here does NOT pull zh/ar into the client — the server
 // build gets them (size is irrelevant there), the client never sees this file.
 // On the client, languages are loaded per-chunk via resources.ts's LOCALE_LOADERS.
-import type { Locale } from "@/lib/i18n/config";
+import { CORE_NAMESPACES, type Locale } from "@/lib/i18n/config";
 import type { LocaleBundle } from "@/lib/i18n/resources";
 import en from "@/lib/i18n/resources.en";
 import zh from "@/lib/i18n/resources.zh";
@@ -78,4 +78,23 @@ const ALL: Record<Locale, LocaleBundle> = {
 /** The full resource bundle (all namespaces) for one language. Server use only. */
 export function localeResources(locale: Locale): LocaleBundle {
   return ALL[locale] ?? ALL.en;
+}
+
+/**
+ * Only the CORE namespaces (shell + feed) for one language (perf audit §4.1).
+ * This is what SSR renders with and what the root loader dehydrates into the
+ * HTML — instead of the full ~66-namespace catalog (~250-300KB per non-en page
+ * view). Non-core (game/app) namespaces resolve to their English `defaultValue`
+ * until the client backfills them from the per-locale chunk after hydration
+ * (see lib/i18n/instances.ts). Because BOTH the server render and the client
+ * hydrate from this same core set, there is no hydration mismatch.
+ */
+export function localeCoreResources(locale: Locale): LocaleBundle {
+  const full = ALL[locale] ?? ALL.en;
+  const core: LocaleBundle = {};
+  for (const ns of CORE_NAMESPACES) {
+    const v = (full as Record<string, unknown>)[ns];
+    if (v !== undefined) core[ns] = v as LocaleBundle[string];
+  }
+  return core;
 }

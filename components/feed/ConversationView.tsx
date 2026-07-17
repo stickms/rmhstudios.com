@@ -23,6 +23,7 @@ import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { ReactionChips } from '@/components/shared/ReactionChips';
 import { groupReactions, type ReactionRow } from '@/lib/social/reactions';
 import { useItemReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
+import { subscribeMessageStream } from '@/lib/useUnreadCount';
 
 interface Message {
   id: string;
@@ -299,91 +300,44 @@ export function ConversationView({
     };
   }, [conversationId, session, markAsRead]);
 
-  // SSE connection for real-time incoming messages
+  // Real-time incoming messages ride the ONE shared message stream
+  // (see lib/useUnreadCount) instead of this view opening its own EventSource.
   useEffect(() => {
     if (!session) return;
-
-    let eventSource: EventSource | null = null;
-    let cancelled = false;
-    let retryCount = 0;
-
-    const connect = () => {
-      if (cancelled) return;
-      eventSource = new EventSource('/api/messages/stream');
-
-      eventSource.addEventListener('new-message', (e) => {
-        try {
-          const msg = JSON.parse(e.data);
-          // Only handle messages for this conversation
-          if (msg.conversationId === conversationId && msg.senderId !== session.user.id) {
-            handleIncomingMessage({
-              id: msg.id,
-              content: msg.content,
-              senderId: msg.senderId,
-              read: msg.read,
-              createdAt: msg.createdAt,
-              gifUrl: msg.gifUrl,
-              imageUrls: msg.imageUrls,
-            });
-          }
-          retryCount = 0;
-        } catch {
-          // Ignore parse errors
+    return subscribeMessageStream((type, data) => {
+      if (type === 'new-message') {
+        const msg = data as {
+          id: string; conversationId: string; content: string; senderId: string;
+          read: boolean; createdAt: string; gifUrl?: string | null; imageUrls?: string[];
+        };
+        // Only handle messages for this conversation
+        if (msg.conversationId === conversationId && msg.senderId !== session.user.id) {
+          handleIncomingMessage({
+            id: msg.id,
+            content: msg.content,
+            senderId: msg.senderId,
+            read: msg.read,
+            createdAt: msg.createdAt,
+            gifUrl: msg.gifUrl,
+            imageUrls: msg.imageUrls,
+          });
         }
-      });
-
-      eventSource.addEventListener('message-reaction', (e) => {
-        try {
-          // Payload is { conversationId, messageId, reactions } with no `type`
-          // field — the named SSE event already scopes it, matching how this
-          // stream's new-message/typing payloads are shaped.
-          const data = JSON.parse(e.data);
-          if (data.conversationId === conversationId) {
-            setMessages((prev) =>
-              prev.map((m) => (m.id === data.messageId ? { ...m, reactions: data.reactions } : m)),
-            );
-          }
-          retryCount = 0;
-        } catch {
-          // Ignore parse errors
+      } else if (type === 'message-reaction') {
+        // Payload is { conversationId, messageId, reactions } — the named SSE
+        // event already scopes it, matching the new-message/typing payloads.
+        const d = data as { conversationId: string; messageId: string; reactions: ReactionRow[] };
+        if (d.conversationId === conversationId) {
+          setMessages((prev) =>
+            prev.map((m) => (m.id === d.messageId ? { ...m, reactions: d.reactions } : m)),
+          );
         }
-      });
-
-      eventSource.addEventListener('typing', (e) => {
-        try {
-          const data = JSON.parse(e.data);
-          if (data.conversationId === conversationId && data.senderId !== session.user.id) {
-            handleTypingEvent(Boolean(data.isTyping));
-          }
-          retryCount = 0;
-        } catch {
-          // Ignore parse errors
+      } else if (type === 'typing') {
+        const d = data as { conversationId: string; senderId: string; isTyping?: boolean };
+        if (d.conversationId === conversationId && d.senderId !== session.user.id) {
+          handleTypingEvent(Boolean(d.isTyping));
         }
-      });
-
-      eventSource.onerror = () => {
-        eventSource?.close();
-        eventSource = null;
-        if (cancelled) return;
-        retryCount++;
-        const delay = Math.min(retryCount * 2000, 10000);
-        setTimeout(connect, delay);
-      };
-    };
-
-    connect();
-
-    const onBeforeUnload = () => {
-      cancelled = true;
-      eventSource?.close();
-    };
-    window.addEventListener('beforeunload', onBeforeUnload);
-
-    return () => {
-      cancelled = true;
-      eventSource?.close();
-      window.removeEventListener('beforeunload', onBeforeUnload);
-    };
+      }
+    });
   }, [session, conversationId, handleIncomingMessage, handleTypingEvent]);
 
   // Reset the typing indicator and tell the other side we stopped when the

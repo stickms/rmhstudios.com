@@ -4,7 +4,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { rmharkInclude, mapRmharkToFeedItem } from '@/lib/feed/map-feed-item.server';
+import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import type { FeedItem } from '@/lib/feed-types';
 
 export async function getThread(id: string, viewerId: string | null): Promise<FeedItem[] | null> {
@@ -21,9 +21,9 @@ export async function getThread(id: string, viewerId: string | null): Promise<Fe
       deletedAt: null,
     },
     orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
-    include: rmharkInclude(viewerId),
+    include: rmharkIncludeLite(viewerId),
   });
   if (posts.length === 0) return null;
 
-  return posts.map((p) => mapRmharkToFeedItem(p, viewerId));
+  return mapRmharksWithBoundedReactions(posts, viewerId);
 }

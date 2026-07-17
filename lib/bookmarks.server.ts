@@ -1,8 +1,7 @@
 import { prisma } from '@/lib/prisma.server';
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
-import { applyLock } from '@/lib/feed/map-feed-item.server';
-import { groupReactions } from '@/lib/social/reactions';
+import { applyLock, loadBoundedReactionSummaries } from '@/lib/feed/map-feed-item.server';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -36,7 +35,8 @@ function mapPoll(poll: any): FeedPoll | undefined {
 
 const rmharkInclude = (viewerId: string | null) => ({
   user: { select: userDisplaySelect },
-  reactions: { select: { emoji: true, userId: true } },
+  // Reactions are NOT fetched per row (perf audit §2.3) — loaded as bounded
+  // aggregates for the whole page below via loadBoundedReactionSummaries.
   ...(viewerId
     ? {
         likes: { where: { userId: viewerId }, select: { id: true } },
@@ -69,6 +69,13 @@ export async function listBookmarks(
   const hasMore = bookmarks.length > limit;
   const page = hasMore ? bookmarks.slice(0, limit) : bookmarks;
 
+  // Bounded reaction summaries for the whole page (two aggregate queries) instead
+  // of fetching every reaction row per post (perf audit §2.3).
+  const reactionSummaries = await loadBoundedReactionSummaries(
+    page.map((bm) => (bm.rmhark as { id: string }).id),
+    viewerId,
+  );
+
   const items: FeedItem[] = page.map((bm) => {
     const r: any = bm.rmhark;
     return applyLock(
@@ -88,7 +95,7 @@ export async function listBookmarks(
         poll: mapPoll(r.poll),
         gifUrl: r.gifUrl ?? undefined,
         imageUrls: r.imageUrls ?? undefined,
-        reactions: groupReactions(r.reactions ?? [], viewerId),
+        reactions: reactionSummaries.get(r.id) ?? [],
       },
       r,
       viewerId

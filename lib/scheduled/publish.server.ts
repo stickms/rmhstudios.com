@@ -44,6 +44,21 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
       select: { id: true },
     });
 
+    // Keep the denormalized post counters consistent with the compose path
+    // (app/routes/api/rmharks.ts): the author's post total and, when the post
+    // targets a community, that community's post count. The RMHark.create above
+    // succeeds only if the community FK resolves, so the update is safe.
+    await tx.user.update({
+      where: { id: sp.userId },
+      data: { postCount: { increment: 1 } },
+    });
+    if (sp.communityId) {
+      await tx.community.update({
+        where: { id: sp.communityId },
+        data: { postCount: { increment: 1 } },
+      });
+    }
+
     if (poll && poll.question && Array.isArray(poll.options) && poll.options.length >= 2) {
       await tx.rMHarkPoll.create({
         data: {

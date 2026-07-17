@@ -130,6 +130,7 @@ import { Route as ApiProfileRouteImport } from './routes/api/profile'
 import { Route as ApiOembedRouteImport } from './routes/api/oembed'
 import { Route as ApiMessagesRouteImport } from './routes/api/messages'
 import { Route as ApiImageProxyRouteImport } from './routes/api/image-proxy'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as ApiGiftSubRouteImport } from './routes/api/gift-sub'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as ApiExploreRouteImport } from './routes/api/explore'
@@ -1226,6 +1227,11 @@ const ApiMessagesRoute = ApiMessagesRouteImport.update({
 const ApiImageProxyRoute = ApiImageProxyRouteImport.update({
   id: '/api/image-proxy',
   path: '/api/image-proxy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGiftSubRoute = ApiGiftSubRouteImport.update({
@@ -3866,6 +3872,7 @@ export interface FileRoutesByFullPath {
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
@@ -4457,6 +4464,7 @@ export interface FileRoutesByTo {
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
@@ -5072,6 +5080,7 @@ export interface FileRoutesById {
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
   '/api/gift-sub': typeof ApiGiftSubRoute
+  '/api/health': typeof ApiHealthRoute
   '/api/image-proxy': typeof ApiImageProxyRoute
   '/api/messages': typeof ApiMessagesRouteWithChildren
   '/api/oembed': typeof ApiOembedRoute
@@ -5690,6 +5699,7 @@ export interface FileRouteTypes {
     | '/api/explore'
     | '/api/feedback'
     | '/api/gift-sub'
+    | '/api/health'
     | '/api/image-proxy'
     | '/api/messages'
     | '/api/oembed'
@@ -6281,6 +6291,7 @@ export interface FileRouteTypes {
     | '/api/explore'
     | '/api/feedback'
     | '/api/gift-sub'
+    | '/api/health'
     | '/api/image-proxy'
     | '/api/messages'
     | '/api/oembed'
@@ -6895,6 +6906,7 @@ export interface FileRouteTypes {
     | '/api/explore'
     | '/api/feedback'
     | '/api/gift-sub'
+    | '/api/health'
     | '/api/image-proxy'
     | '/api/messages'
     | '/api/oembed'
@@ -7486,6 +7498,7 @@ export interface RootRouteChildren {
   ApiExploreRoute: typeof ApiExploreRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
   ApiGiftSubRoute: typeof ApiGiftSubRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   ApiImageProxyRoute: typeof ApiImageProxyRoute
   ApiMessagesRoute: typeof ApiMessagesRouteWithChildren
   ApiOembedRoute: typeof ApiOembedRoute
@@ -8617,6 +8630,13 @@ declare module '@tanstack/react-router' {
       path: '/api/image-proxy'
       fullPath: '/api/image-proxy'
       preLoaderRoute: typeof ApiImageProxyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/gift-sub': {
@@ -13412,6 +13432,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiExploreRoute: ApiExploreRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
   ApiGiftSubRoute: ApiGiftSubRoute,
+  ApiHealthRoute: ApiHealthRoute,
   ApiImageProxyRoute: ApiImageProxyRoute,
   ApiMessagesRoute: ApiMessagesRouteWithChildren,
   ApiOembedRoute: ApiOembedRoute,

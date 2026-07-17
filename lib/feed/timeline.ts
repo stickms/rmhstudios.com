@@ -14,6 +14,7 @@
  * path no longer does `_count` aggregation per item.
  */
 
+import { Prisma } from "@prisma/client";
 import { prisma } from "../prisma.server";
 import type { FeedItem, FeedFilter, FeedPoll } from "../feed-types";
 import type { ResolvedUser } from "../user-display";
@@ -56,6 +57,48 @@ export interface TimelineResult {
   /** The viewer's muted words (signed-in only), returned so the client can filter
    *  live SSE posts without a second round-trip to /api/preferences/muted-words. */
   mutedWords?: string[];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Content search (FTS id resolution)                                  */
+/* ------------------------------------------------------------------ */
+
+/** Cap on FTS-matched ids fed into the feed query's `id IN (...)` filter. */
+const SEARCH_ID_CAP = 1000;
+
+/**
+ * Resolve the ids of posts whose content matches `search`, using the
+ * `content_tsv` full-text index (rmheet_content_tsv_idx) instead of an
+ * unindexed `content ILIKE '%…%'` full-table scan. Returns a bounded,
+ * recency-ordered id set; the caller folds it into its Prisma `where` as
+ * `id: { in: [...] }`, so every audience / deleted / following / community
+ * filter and the keyset cursor still apply on top — behaviour matches the old
+ * `contains` filter, just index-backed. Mirrors app/routes/api/search.ts's
+ * `searchPosts`; `content_tsv` is a raw-SQL migration column (not in
+ * schema.prisma), hence `$queryRaw`. Fully parameterised — no interpolation.
+ */
+async function resolveSearchPostIds(search: string): Promise<string[]> {
+  const rows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+    SELECT id
+    FROM rmheet
+    WHERE "deletedAt" IS NULL
+      AND content_tsv @@ websearch_to_tsquery('simple', ${search})
+    ORDER BY "createdAt" DESC, id DESC
+    LIMIT ${SEARCH_ID_CAP}
+  `);
+  return rows.map((r) => r.id);
+}
+
+/**
+ * Build the content-search fragment of a feed `where`. Empty when not
+ * searching; otherwise an `id: { in: [...] }` filter over the FTS-matched ids
+ * (works identically as a top-level RMHark filter and nested under a repost's
+ * `rmhark`). An empty match set yields `{ in: [] }`, i.e. no rows.
+ */
+async function searchContentWhere(search: string | null): Promise<Record<string, unknown>> {
+  if (!search) return {};
+  const ids = await resolveSearchPostIds(search);
+  return { id: { in: ids } };
 }
 
 /* ------------------------------------------------------------------ */
@@ -446,9 +489,10 @@ async function getFollowingTimeline(
 
   const decoded = decodeCursor(cursor);
   const keyset = keysetWhere(decoded);
-  const contentWhere = search
-    ? { content: { contains: search, mode: "insensitive" as const } }
-    : {};
+  // Content search now resolves matching ids via the FTS index (not a `content
+  // ILIKE` scan); the resulting `id: { in: [...] }` filter combines with every
+  // other WHERE clause below exactly as the old `contains` fragment did.
+  const contentWhere = await searchContentWhere(search);
   const include = rmharkInclude(userId);
 
   const [rmharks, repostRecords] = await Promise.all([
@@ -520,9 +564,10 @@ async function getForYouTimeline(
   const { userId, cursor, limit, search, filter } = params;
   const decoded = decodeCursor(cursor);
   const keyset = keysetWhere(decoded);
-  const contentWhere = search
-    ? { content: { contains: search, mode: "insensitive" as const } }
-    : {};
+  // Content search resolves matching ids via the FTS index (see
+  // searchContentWhere) rather than a `content ILIKE` full scan; the resulting
+  // `id: { in: [...] }` filter drops into the WHERE like the old fragment.
+  const contentWhere = await searchContentWhere(search);
   const include = rmharkInclude(userId);
 
   const shouldFetchRmharks = filter === "all" || filter === "rmhark" || !!search;

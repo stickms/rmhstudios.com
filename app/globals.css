@@ -95,7 +95,11 @@
   --site-glass-ink: color-mix(in srgb, var(--site-bg) 45%, transparent); /* recessed wells */
   /* Backdrop treatment, by elevation tier */
   --site-glass-blur-pane: 16px;
-  --site-glass-blur-chrome: 24px;
+  /* Chrome (sticky headers, fixed sidebar) stays pinned while the page scrolls,
+     so its backdrop-filter re-samples the moving content every frame — the most
+     expensive glass on the site. Kept to a cheaper radius; the tint + saturate
+     still read as frosted glass across light/dark/high-contrast. */
+  --site-glass-blur-chrome: 12px;
   --site-glass-blur-overlay: 28px;
   --site-glass-saturate: 160%;
   /* Lighting — one sun, top-slightly-left (§4.2) */
@@ -561,8 +565,8 @@ html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-b
      More of the aurora shows through; condenses on scroll via [data-scrolled]. */
   .glass-chrome {
     background: color-mix(in srgb, var(--site-bg) 32%, transparent);
-    -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(170%);
-    backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(170%);
+    -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
+    backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
   }
   .glass-chrome[data-scrolled] {
     background: color-mix(in srgb, var(--site-bg) 55%, transparent);
@@ -579,8 +583,8 @@ html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-b
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(170%);
-    backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(170%);
+    -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
+    backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
   }
 
   /* ── L4 · glass-overlay ── floating UI (dialogs, popovers, menus, palette,

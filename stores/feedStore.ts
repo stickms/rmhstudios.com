@@ -294,17 +294,25 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   },
 
   updateItem: (id, updates) => {
-    set((state) => ({
-      items: state.items.map((item) =>
-        item.id === id ? { ...item, ...updates } : item
-      ),
-    }));
+    set((state) => {
+      // `items.map` allocates a NEW array even when nothing matched, which
+      // re-renders FeedList on every SSE like/comment/repost tick for a post
+      // that isn't on this surface. Bail out with the unchanged state so those
+      // offscreen events cost nothing.
+      if (!state.items.some((item) => item.id === id)) return state;
+      return {
+        items: state.items.map((item) =>
+          item.id === id ? { ...item, ...updates } : item
+        ),
+      };
+    });
   },
 
   removeItem: (id) => {
-    set((state) => ({
-      items: state.items.filter((item) => item.id !== id),
-    }));
+    set((state) => {
+      if (!state.items.some((item) => item.id === id)) return state;
+      return { items: state.items.filter((item) => item.id !== id) };
+    });
   },
 
   reconcileItem: (tempId, real) => {

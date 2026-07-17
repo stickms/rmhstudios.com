@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { rmharkInclude, mapRmharkToFeedItem } from '@/lib/feed/map-feed-item.server';
+import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import type { FeedItem } from '@/lib/feed-types';
 
@@ -40,7 +40,7 @@ export async function getCommunity(
     where: { slug },
     select: {
       id: true, slug: true, name: true, description: true, icon: true, color: true,
-      isPrivate: true, memberCount: true, createdById: true, createdAt: true,
+      isPrivate: true, memberCount: true, postCount: true, createdById: true, createdAt: true,
     },
   });
   if (!community) return null;
@@ -54,25 +54,23 @@ export async function getCommunity(
     role = mem?.role ?? null;
   }
 
-  const [postCount, announcements] = await Promise.all([
-    prisma.rMHark.count({ where: { communityId: community.id, deletedAt: null } }),
-    prisma.communityAnnouncement.findMany({
-      where: { communityId: community.id },
-      orderBy: { createdAt: 'desc' },
-      take: 5,
-      select: {
-        id: true,
-        body: true,
-        createdAt: true,
-        author: { select: { name: true, handle: true, image: true } },
-      },
-    }),
-  ]);
+  // Post count is the denormalized `community.postCount` column (maintained on
+  // post create/delete), so this no longer runs COUNT(*) over rmheet per read.
+  const announcements = await prisma.communityAnnouncement.findMany({
+    where: { communityId: community.id },
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+    select: {
+      id: true,
+      body: true,
+      createdAt: true,
+      author: { select: { name: true, handle: true, image: true } },
+    },
+  });
 
   return {
     ...community,
     createdAt: community.createdAt.toISOString(),
-    postCount,
     joined: !!role,
     role,
     announcements: announcements.map((a) => ({ ...a, createdAt: a.createdAt.toISOString() })),
@@ -110,13 +108,13 @@ export async function getCommunityFeed(
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: limit + 1,
     ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),
-    include: rmharkInclude(viewerId),
+    include: rmharkIncludeLite(viewerId),
   });
 
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;
   return {
-    items: page.map((r) => mapRmharkToFeedItem(r, viewerId)),
+    items: await mapRmharksWithBoundedReactions(page, viewerId),
     nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
     hasMore,
   };

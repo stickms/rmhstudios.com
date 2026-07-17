@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma.server";
 import type { FeedItem, FeedPoll } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
 import { audienceWhere } from "@/lib/feed/audience.server";
-import { applyLock } from "@/lib/feed/map-feed-item.server";
-import { groupReactions } from "@/lib/social/reactions";
+import { applyLock, loadBoundedReactionSummaries } from "@/lib/feed/map-feed-item.server";
 
 function pollInclude(userId: string | null) {
   return {
@@ -50,7 +49,8 @@ function mapPoll(poll: any): FeedPoll | undefined {
 // consistent with the main feed read path.
 const rmharkInclude = (viewerId: string | null) => ({
   user: { select: userDisplaySelect },
-  reactions: { select: { emoji: true, userId: true } },
+  // Reactions loaded as bounded aggregates for the page (perf audit §2.3),
+  // not fetched per row here.
   ...(viewerId
     ? {
         likes: { where: { userId: viewerId }, select: { id: true } },
@@ -144,6 +144,13 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
       }),
     ]);
 
+    // Bounded reaction summaries for every post on the page (own + the posts
+    // underlying reposts), two aggregate queries total (perf audit §2.3).
+    const reactionSummaries = await loadBoundedReactionSummaries(
+      [...rmharks.map((r: any) => r.id), ...reposts.map((rp: any) => rp.rmhark.id)],
+      viewerId,
+    );
+
     // Map own RMHarks to FeedItems
     const ownItems: FeedItem[] = rmharks.map((r: any) => applyLock({
       id: r.id,
@@ -162,7 +169,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
       poll: mapPoll(r.poll),
       gifUrl: r.gifUrl ?? undefined,
       imageUrls: r.imageUrls ?? undefined,
-      reactions: groupReactions(r.reactions ?? [], viewerId),
+      reactions: reactionSummaries.get(r.id) ?? [],
     }, r, viewerId));
 
     // Map reposts to FeedItems with repostedBy
@@ -186,7 +193,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
         poll: mapPoll(r.poll),
         gifUrl: r.gifUrl ?? undefined,
         imageUrls: r.imageUrls ?? undefined,
-        reactions: groupReactions(r.reactions ?? [], viewerId),
+        reactions: reactionSummaries.get(r.id) ?? [],
       }, r, viewerId);
     });
 
@@ -210,6 +217,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
       });
       if (pinned) {
         const p: any = pinned;
+        const pinnedSummaries = await loadBoundedReactionSummaries([p.id], viewerId);
         const pinnedItem: FeedItem = applyLock({
           id: p.id,
           type: "rmhark",
@@ -228,7 +236,7 @@ export const Route = createFileRoute('/api/profile/$id/rmharks')({
           poll: mapPoll(p.poll),
           gifUrl: p.gifUrl ?? undefined,
           imageUrls: p.imageUrls ?? undefined,
-          reactions: groupReactions(p.reactions ?? [], viewerId),
+          reactions: pinnedSummaries.get(p.id) ?? [],
         }, p, viewerId);
         items = [pinnedItem, ...merged.filter((it) => (it.actualId ?? it.id) !== p.id)];
       }

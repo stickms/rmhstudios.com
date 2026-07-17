@@ -143,7 +143,7 @@ export const Route = createFileRoute('/api/rmharks/$id')({
 
     const rmhark = await prisma.rMHark.findUnique({
       where: { id },
-      select: { userId: true, deletedAt: true },
+      select: { userId: true, deletedAt: true, communityId: true },
     });
 
     if (!rmhark) {
@@ -175,6 +175,13 @@ export const Route = createFileRoute('/api/rmharks/$id')({
           where: { id: rmhark.userId, postCount: { gt: 0 } },
           data: { postCount: { decrement: 1 } },
         });
+        // Decrement the community's denormalized post count (never below zero).
+        if (rmhark.communityId) {
+          await tx.community.updateMany({
+            where: { id: rmhark.communityId, postCount: { gt: 0 } },
+            data: { postCount: { decrement: 1 } },
+          });
+        }
       }
     });
 

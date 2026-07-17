@@ -24,8 +24,7 @@ import { ReactionMenu } from '@/components/shared/ReactionMenu';
 import { ReactionChips } from '@/components/shared/ReactionChips';
 import { useReactionTrigger } from '@/lib/emoji/use-reaction-trigger';
 import { applyReactionToggle } from '@/lib/social/reactions';
-import { authClient } from '@/lib/auth-client';
-import { useResolvedUser } from '@/components/Providers';
+import { useResolvedUser, useSession } from '@/components/Providers';
 import { useFreshUser } from '@/stores/userDisplayStore';
 import { timeAgoShort } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -55,7 +54,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const actualId = item.actualId ?? item.id;
-  const { data: session } = authClient.useSession();
+  // Read the viewer from the ONE root-level session subscription (shared
+  // context) instead of each card opening its own authClient.useSession().
+  const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
   // Select actions individually (stable references) instead of subscribing to
   // the whole store, so an unrelated store change doesn't re-render this card.

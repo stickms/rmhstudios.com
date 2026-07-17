@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { authClient } from '@/lib/auth-client';
+import { useSession } from '@/components/Providers';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { cn } from '@/lib/utils';
@@ -71,7 +71,8 @@ export function RMHarkOverflowMenu({
 }: RMHarkOverflowMenuProps) {
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
-  const { data: session } = authClient.useSession();
+  // Shared root-level session (one subscription for the whole app).
+  const { data: session } = useSession();
   const actualId = item.actualId ?? item.id;
   const targetUserId = item.user?.id;
 

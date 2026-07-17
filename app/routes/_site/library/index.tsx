@@ -75,12 +75,18 @@ export const Route = createFileRoute('/_site/library/')({
       { name: 'description', content: 'Browse and read the RMH Studios library — a shelf of documents, theses, and plans.' },
     ],
   }),
-  loader: async () => ({
-    ...(await fetchBooks()),
-    ...(await fetchBlogPosts()),
-    ...(await fetchCollections()),
-    ...(await fetchAlbums()),
-  }),
+  // perf audit §4.2: the four server fns were awaited sequentially — 4 serial
+  // HTTP round trips on client nav / 4 serial DB reads on SSR. They're
+  // independent, so run them in parallel.
+  loader: async () => {
+    const [books, blog, collections, albums] = await Promise.all([
+      fetchBooks(),
+      fetchBlogPosts(),
+      fetchCollections(),
+      fetchAlbums(),
+    ]);
+    return { ...books, ...blog, ...collections, ...albums };
+  },
   component: Library,
 });
 

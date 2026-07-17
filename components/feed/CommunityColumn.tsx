@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Users, MessageSquare, Megaphone, Shield, ShieldOff, UserX, X, Send } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { RMHarkCard } from './RMHarkCard';
+import { VirtualPostList } from './VirtualPostList';
 import { ComposeBox } from './ComposeBox';
 import { Reveal } from '@/components/motion';
 import { Spinner } from '@/components/ui/spinner';
@@ -247,11 +247,7 @@ export function CommunityColumn({
       {items.length === 0 ? (
         <EmptyState description={t('no-posts-yet', { defaultValue: 'No posts yet. Be the first!' })} />
       ) : (
-        <div className="divide-y divide-site-border">
-          {items.map((item) => (
-            <RMHarkCard key={item.id} item={item} />
-          ))}
-        </div>
+        <VirtualPostList items={items} />
       )}
 
       {announceOpen && (

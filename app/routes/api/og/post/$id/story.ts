@@ -42,7 +42,7 @@ export const Route = createFileRoute('/api/og/post/$id/story')({
           return new Response(new Uint8Array(png), {
             headers: {
               'Content-Type': 'image/png',
-              'Cache-Control': 'public, max-age=600, s-maxage=600',
+              'Cache-Control': 'public, max-age=600, s-maxage=3600, stale-while-revalidate=86400',
             },
           });
         } catch (error) {

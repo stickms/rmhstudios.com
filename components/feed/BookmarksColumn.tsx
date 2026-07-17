@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bookmark, Loader2 } from 'lucide-react';
-import { RMHarkCard } from './RMHarkCard';
+import { VirtualPostList } from './VirtualPostList';
 import { Reveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -73,11 +73,7 @@ export function BookmarksColumn({
           </p>
         </Reveal>
       ) : (
-        <div className="divide-y divide-site-border">
-          {items.map((item) => (
-            <RMHarkCard key={item.id} item={item} />
-          ))}
-        </div>
+        <VirtualPostList items={items} />
       )}
 
       {hasMore && (

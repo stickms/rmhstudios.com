@@ -1450,6 +1450,10 @@ model RMHark {
   @@index([userId, createdAt(sort: Desc), id(sort: Desc)])
   @@index([userId, pinnedAt])
   @@index([threadRootId])
+  // Community feed keyset scan (communityId + ORDER BY createdAt desc, id desc).
+  @@index([communityId, createdAt(sort: Desc), id(sort: Desc)])
+  // Quote-repost lookups ("who quoted this post") and original hydration.
+  @@index([originalId])
   @@map("rmheet")
 }
 
@@ -4083,6 +4087,8 @@ model RMHarkBookmark {
 
   @@unique([userId, rmheetId])
   @@index([userId, createdAt(sort: Desc)])
+  // Reverse lookup: a post's bookmark rows (bookmark toggle / count by post).
+  @@index([rmheetId])
   @@map("rmheet_bookmark")
 }
 
@@ -4345,6 +4351,9 @@ model Community {
   icon        String?  @db.VarChar(8) // emoji
   isPrivate   Boolean  @default(false)
   memberCount Int      @default(1)
+  // Denormalized count of non-deleted posts, maintained on post create/delete so
+  // the community page never runs COUNT(*) over rmheet. Backfilled in migration.
+  postCount   Int      @default(0)
   createdById String
   createdAt   DateTime @default(now())
 

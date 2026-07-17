@@ -6,6 +6,7 @@
 
 import type { Server, Socket } from 'socket.io';
 import { sanitizeLobbyId, sanitizeUserName } from '../utils';
+import { checkRateLimit } from '../rate-limit';
 
 interface NDWPlayer {
   id: string; name: string; score: number; speed: number; distance: number;
@@ -76,6 +77,8 @@ export function registerNeonDriftwayHandlers(io: Server, socket: Socket): void {
   });
 
   socket.on('ndw:playerUpdate', (payload: { roomId?: string; x?: number; speed?: number; distance?: number; score?: number; lane?: number }) => {
+    // High-frequency position relay — silently drop over-limit packets.
+    if (!checkRateLimit(socket.id, 'ndw:playerUpdate')) return;
     const roomId = sanitizeLobbyId(payload?.roomId);
     const lobby = ndwLobbies.get(roomId);
     if (!lobby || lobby.status !== 'PLAYING') return;

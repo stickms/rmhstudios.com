@@ -94,6 +94,16 @@ export const config = {
     'dr:join':                { max: 30,  windowMs: 60_000 },
     'dr:quickplay':           { max: 20,  windowMs: 60_000 },
     'dr:browse':              { max: 30,  windowMs: 60_000 },
+    // ─── High-frequency relay / movement events ───
+    // Movement + per-frame update events were previously unmetered (the rate
+    // limiter returns true for events with no rule), so a single socket could
+    // flood the relay path unbounded. Caps are deliberately generous — well
+    // above any plausible legitimate client send rate — so they bound abuse
+    // without dropping real gameplay traffic. Only wired where the handler
+    // actually calls checkRateLimit (rfs:move, ndw:playerUpdate).
+    'rfs:move':               { max: 2400, windowMs: 60_000 },
+    'ndw:playerUpdate':       { max: 3600, windowMs: 60_000 },
+    'ndw:scoreUpdate':        { max: 1200, windowMs: 60_000 },
   } as Record<string, { max: number; windowMs: number }>,
 
   // ─── Shutdown ───

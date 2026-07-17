@@ -6,8 +6,17 @@
 
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { getFollowingIds } from '@/lib/social/follow-graph.server';
+import { cached } from '@/lib/cached.server';
 
 const ONLINE_WINDOW_MS = 2 * 60 * 1000;
+/**
+ * This is a per-viewer poll (the sidebar refreshes it on a ~minute cadence), so
+ * a short read-through cache collapses the repeated fan-out (follow graph + the
+ * online/room-membership queries) into one DB pass per viewer per window while
+ * staying fresh enough that "who's online" isn't visibly stale.
+ */
+const PRESENCE_FRIENDS_TTL_MS = 45_000;
 
 export interface OnlineFriend {
   user: ReturnType<typeof resolveUser>;
@@ -16,13 +25,19 @@ export interface OnlineFriend {
 }
 
 export async function getOnlineFriends(viewerId: string, limit = 12): Promise<OnlineFriend[]> {
+  return cached<OnlineFriend[]>(
+    `presence:friends:${viewerId}:${limit}`,
+    PRESENCE_FRIENDS_TTL_MS,
+    () => computeOnlineFriends(viewerId, limit)
+  );
+}
+
+async function computeOnlineFriends(viewerId: string, limit: number): Promise<OnlineFriend[]> {
   const cutoff = new Date(Date.now() - ONLINE_WINDOW_MS);
 
-  const follows = await prisma.follow.findMany({
-    where: { followerId: viewerId },
-    select: { followingId: true },
-  });
-  const followingIds = follows.map((f) => f.followingId);
+  // Reuse the cached follow-graph reader instead of an unbounded raw findMany —
+  // it's the same list the feed already keeps warm, invalidated on follow/block.
+  const followingIds = await getFollowingIds(viewerId);
   if (followingIds.length === 0) return [];
 
   const online = await prisma.user.findMany({
