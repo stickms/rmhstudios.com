@@ -83,7 +83,7 @@ function pollInclude(userId: string | null) {
 function mapPoll(poll: any): FeedPoll | undefined {
   if (!poll) return undefined;
   const totalVotes = poll.options.reduce(
-    (sum: number, o: any) => sum + (o.voteCount ?? 0),
+    (sum: number, o: { voteCount?: number }) => sum + (o.voteCount ?? 0),
     0
   );
   return {

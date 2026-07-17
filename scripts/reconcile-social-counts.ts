@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Reconcile the denormalized SOCIAL counters added in the scalability pass
  * against their source tables — the sibling of scripts/reconcile-feed-counts.ts.
