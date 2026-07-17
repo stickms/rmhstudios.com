@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
-import { prisma } from '@/lib/prisma.server';
+import { getUnreadNotificationCount } from '@/lib/notifications.server';
 
 /** GET /api/notifications/unread-count — number of unread notifications. */
 export const Route = createFileRoute('/api/notifications/unread-count')({
@@ -12,9 +12,9 @@ export const Route = createFileRoute('/api/notifications/unread-count')({
           if (!session) {
             return Response.json({ count: 0 });
           }
-          const count = await prisma.notification.count({
-            where: { userId: session.user.id, read: false },
-          });
+          // Reads the denormalized Redis counter (kept warm by notification
+          // create/remove), falling back to a COUNT on a miss / without Redis.
+          const count = await getUnreadNotificationCount(session.user.id);
           return Response.json({ count }, {
             headers: { 'Cache-Control': 'no-store' },
           });

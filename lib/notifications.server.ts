@@ -10,7 +10,53 @@
 import { prisma } from '@/lib/prisma.server';
 import { sendPushToUser, pushTitleFor } from '@/lib/push/send.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
+import { redisEnabled, redisGetJSON, redisSetJSON, redisIncrBy } from '@/lib/redis.server';
 import type { NotificationType } from '@prisma/client';
+
+/**
+ * Denormalized per-user unread-notification counter in Redis. The unread badge
+ * is polled frequently per client; reading a counter avoids a `COUNT` on every
+ * poll. The counter is a *cache over a warm key*: `getUnreadNotificationCount`
+ * lazily backfills it from a real COUNT (with a short TTL) on a miss, and the
+ * create/remove writers only nudge an already-warm key — never initialize a
+ * cold one to a partial value (a cold key just backfills correctly on the next
+ * read, since the notification row is already persisted). Everything degrades to
+ * a direct COUNT without Redis.
+ */
+const NOTIF_UNREAD_TTL_MS = 60_000;
+const notifUnreadKey = (userId: string) => `notif:unread:${userId}`;
+
+/**
+ * Read a user's unread-notification count from the Redis counter, falling back
+ * to `prisma.notification.count` when Redis is unavailable or the counter is
+ * unset (lazily initializing + caching it on that first miss).
+ */
+export async function getUnreadNotificationCount(userId: string): Promise<number> {
+  if (redisEnabled()) {
+    const key = notifUnreadKey(userId);
+    const cached = await redisGetJSON<number>(key);
+    if (typeof cached === 'number' && cached >= 0) return cached;
+    const count = await prisma.notification.count({ where: { userId, read: false } });
+    await redisSetJSON(key, count, NOTIF_UNREAD_TTL_MS);
+    return count;
+  }
+  return prisma.notification.count({ where: { userId, read: false } });
+}
+
+/** Nudge a *warm* unread counter by `delta`, clamped at 0. No-op without Redis
+ * or when the counter isn't currently cached. */
+async function adjustNotifUnread(userId: string, delta: number): Promise<void> {
+  if (delta === 0 || !redisEnabled()) return;
+  try {
+    const key = notifUnreadKey(userId);
+    const current = await redisGetJSON<number>(key);
+    if (typeof current !== 'number') return; // cold — let the next read backfill
+    const next = await redisIncrBy(key, delta, NOTIF_UNREAD_TTL_MS);
+    if (next !== null && next < 0) await redisIncrBy(key, -next, NOTIF_UNREAD_TTL_MS);
+  } catch {
+    /* best-effort — the counter self-heals from COUNT on TTL expiry */
+  }
+}
 
 export interface NotificationListItem {
   id: string;
@@ -138,6 +184,10 @@ export async function createNotification(input: CreateNotificationInput): Promis
       },
     });
 
+    // A fresh unread row was created — bump the recipient's denormalized counter
+    // (dedupe refreshes above don't reach here, so they don't double-count).
+    void adjustNotifUnread(input.userId, 1);
+
     // Mirror to Web Push (no-op unless the user enabled push on a device and
     // VAPID keys are configured). Fire-and-forget: never delays the caller.
     void sendPushToUser(input.userId, {
@@ -160,7 +210,7 @@ export async function removeNotification(input: {
   entityId: string;
 }): Promise<void> {
   try {
-    await prisma.notification.deleteMany({
+    const res = await prisma.notification.deleteMany({
       where: {
         userId: input.userId,
         actorId: input.actorId,
@@ -170,6 +220,8 @@ export async function removeNotification(input: {
         read: false,
       },
     });
+    // Removed unread rows — decrement the recipient's denormalized counter.
+    if (res.count > 0) void adjustNotifUnread(input.userId, -res.count);
   } catch (err) {
     console.error('[notifications] failed to remove notification:', err);
   }
