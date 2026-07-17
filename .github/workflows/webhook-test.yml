@@ -1,0 +1,62 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# TEMPORARY diagnostic — fires ONE signed request at the VPS webhook listener
+# from a GitHub datacenter IP (the same network path the deploy trigger uses:
+# runner → Cloudflare → Apache → listener), and prints the HTTP status + the
+# exact response body. Manual-dispatch only; no build, ~10s. Uses a non-deploying
+# ref by default so it returns "Ignored" instead of triggering a real deploy.
+# Delete once the webhook trigger is sorted.
+# ─────────────────────────────────────────────────────────────────────────────
+name: webhook-test
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "ref to send (keep a non-main ref to avoid deploying)"
+        default: "refs/heads/ping"
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  fire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fire signed webhook and show the response
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          REF: ${{ inputs.ref }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEPLOY_WEBHOOK_URL:-}" ] || [ -z "${WEBHOOK_SECRET:-}" ]; then
+            echo "::error::DEPLOY_WEBHOOK_URL and WEBHOOK_SECRET must be set."
+            exit 1
+          fi
+          # A well-formed, validly-signed body (same shape as the deploy trigger).
+          body="$(jq -nc \
+            --arg ref "$REF" \
+            --arg after "0000000000000000000000000000000000000000" \
+            --arg mid "" \
+            '{ref:$ref, after:$after, discord_msg_id:$mid}')"
+          sig="sha256=$(printf '%s' "$body" | node -e 'const c=require("crypto");let d="";process.stdin.on("data",x=>d+=x).on("end",()=>process.stdout.write(c.createHmac("sha256",process.env.WEBHOOK_SECRET).update(d).digest("hex")))')"
+          echo "Runner public IP: $(curl -sS --max-time 10 https://api.ipify.org || echo unknown)"
+          echo "Body (${#body} bytes): $body"
+          echo "Signature length: ${#sig}"
+          echo "POST -> $DEPLOY_WEBHOOK_URL"
+          code=$(curl -sS -o /tmp/resp.txt -w '%{http_code}' --max-time 30 -X POST "$DEPLOY_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: $sig" \
+            --data-raw "$body" || echo "000")
+          echo "HTTP status: $code"
+          echo "----- response headers + body -----"
+          # Second call with -i so we also see the Server header (cloudflare/Apache).
+          curl -sS -i --max-time 30 -X POST "$DEPLOY_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: $sig" \
+            --data-raw "$body" || true
+          echo
+          echo "-----------------------------------"
+          echo "Expected if healthy: 200 with body 'Ignored' (non-main ref)."
