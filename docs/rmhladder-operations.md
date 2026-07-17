@@ -115,7 +115,7 @@ Override the defaults with env vars (set in the production env file):
 | Var | Default | Meaning |
 |---|---|---|
 | `LADDER_ALERT_STALE_RUN_MS` | `86400000` (24h) | Age threshold (ms) before `worker_stale` fires. |
-| `LADDER_ALERT_ERROR_RATE` | `0.5` (50%) | Error rate (0–1) above which `high_error_run` fires. |
+| `LADDER_ALERT_ERROR_RATE` | `0.5` (50%) | error rate threshold, >0 and ≤1 (default 0.5); above which `high_error_run` fires. |
 | `LADDER_ALERT_MIN_RUN_FOR_RATE` | `10` | Minimum `discoveredCount` before the error-rate check applies (ignores tiny runs). |
 
 ## Env var reference (ladder)

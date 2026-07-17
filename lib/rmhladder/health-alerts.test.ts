@@ -58,4 +58,16 @@ describe('resolveAlertThresholds', () => {
     expect(resolveAlertThresholds({ LADDER_ALERT_ERROR_RATE: '0.25' }).errorRate).toBe(0.25);
     expect(resolveAlertThresholds({ LADDER_ALERT_ERROR_RATE: 'abc' }).errorRate).toBe(0.5);
   });
+  it('boundary tests for LADDER_ALERT_ERROR_RATE', () => {
+    expect(resolveAlertThresholds({ LADDER_ALERT_ERROR_RATE: '0' }).errorRate).toBe(0.5);
+    expect(resolveAlertThresholds({ LADDER_ALERT_ERROR_RATE: '1' }).errorRate).toBe(1);
+    expect(resolveAlertThresholds({ LADDER_ALERT_ERROR_RATE: '1.5' }).errorRate).toBe(0.5);
+  });
+  it('does NOT flag high_error_run when discoveredCount is 0, even with minRunForRate=0', () => {
+    expect(codes({
+      ...base,
+      latestRun: { errorCount: 1, discoveredCount: 0 },
+      thresholds: { ...DEFAULT_ALERT_THRESHOLDS, minRunForRate: 0 },
+    })).not.toContain('high_error_run');
+  });
 });

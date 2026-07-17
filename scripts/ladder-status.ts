@@ -81,7 +81,7 @@ async function main(): Promise<void> {
     where: { reason: 'mass_expiry_suspected', status: 'open' },
   });
   const alerts = detectLadderHealthAlerts({
-    now: new Date(),
+    now: data.now,
     lastCompletedRunAt: lastRun?.finishedAt ?? null,
     latestRun: lastRun ? { errorCount: lastRun.errorCount ?? 0, discoveredCount: lastRun.discoveredCount ?? 0 } : null,
     openMassExpiryTasks,

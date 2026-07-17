@@ -75,7 +75,7 @@ export function detectLadderHealthAlerts(input: AlertInput): LadderHealthAlert[]
   }
 
   const r = input.latestRun;
-  if (r && r.discoveredCount >= t.minRunForRate) {
+  if (r && r.discoveredCount > 0 && r.discoveredCount >= t.minRunForRate) {
     const rate = r.errorCount / Math.max(1, r.discoveredCount);
     if (rate > t.errorRate) {
       alerts.push({
