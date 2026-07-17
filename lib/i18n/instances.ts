@@ -1,7 +1,7 @@
 import i18next, { type i18n } from "i18next";
 import { initReactI18next } from "react-i18next";
 import { buildInitOptions, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
-import { EN_RESOURCES, LOCALE_LOADERS, type LocaleBundle } from "@/lib/i18n/resources";
+import { EN_CORE_RESOURCES, loadEnResources, LOCALE_LOADERS, type LocaleBundle } from "@/lib/i18n/resources";
 import { localeResources } from "@/lib/i18n/resources.server";
 
 /**
@@ -20,6 +20,31 @@ export function getServerI18n(locale: Locale): i18n {
 /** Singleton client instance, initialized once. */
 export const clientI18n: i18n = i18next.createInstance();
 let clientReady = false;
+let enRestBackfilled = false;
+
+/**
+ * Pull the non-core English namespaces (game/app catalogs) in from their own
+ * chunk and register any not already present. The entry only ships the core en
+ * namespaces (resources.en-core.ts) so first paint stays lean; every en key
+ * still resolves synchronously via defaultValue in the meantime, and this makes
+ * the full catalog available shortly after — off the critical path. Idempotent.
+ */
+async function backfillEnRest(): Promise<void> {
+  if (enRestBackfilled) return;
+  enRestBackfilled = true;
+  try {
+    const full = await loadEnResources();
+    for (const [ns, data] of Object.entries(full)) {
+      if (!clientI18n.hasResourceBundle(DEFAULT_LOCALE, ns)) {
+        clientI18n.addResourceBundle(DEFAULT_LOCALE, ns, data, true, true);
+      }
+    }
+  } catch {
+    // Left to a later locale switch (LOCALE_LOADERS.en) to retry; core keys and
+    // per-call defaultValues keep the UI correct regardless.
+    enRestBackfilled = false;
+  }
+}
 
 /**
  * Pull a language's chunk in (if not already present) and switch to it. en is
@@ -46,10 +71,13 @@ async function loadAndSwitch(locale: Locale): Promise<void> {
  */
 export function ensureClientLocale(locale: Locale, initialResources?: LocaleBundle | null): i18n {
   if (!clientReady) {
-    const resources: Record<string, LocaleBundle> = { [DEFAULT_LOCALE]: EN_RESOURCES };
+    const resources: Record<string, LocaleBundle> = { [DEFAULT_LOCALE]: EN_CORE_RESOURCES };
     if (locale !== DEFAULT_LOCALE && initialResources) resources[locale] = initialResources;
     clientI18n.use(initReactI18next).init(buildInitOptions(locale, resources));
     clientReady = true;
+    // Backfill the non-core en namespaces from their own chunk (off the critical
+    // path) so the full English catalog is available without bloating the entry.
+    void backfillEnRest();
     // Active non-en locale without server-provided resources (e.g. a client-only
     // render path): fetch its chunk and switch once it's in.
     if (locale !== DEFAULT_LOCALE && !initialResources) void loadAndSwitch(locale);
