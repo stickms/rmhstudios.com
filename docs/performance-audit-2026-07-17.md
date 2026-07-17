@@ -80,9 +80,16 @@ right after hydration.
   a change to the deploy topology (the blue/green hotswap runs a single web
   container) and a Cloudflare cookie-bypass rule, not a code edit.
 - **Applying** `deploy/postgres/postgresql.tuning.conf` +
-  `deploy/apache/mpm_event.conf` on the VPS host. These three (single-process SSR,
-  untuned co-resident Postgres, no HTML edge cache) are the biggest remaining
-  "slow under load" wins and are infrastructure actions on the server/Cloudflare.
+  `deploy/apache/mpm_event.conf` on the VPS host — now a single committed,
+  idempotent command: `sudo bash deploy/apply-perf-tuning.sh` (supports
+  `DRY_RUN=1`). It cannot run from CI / the sandboxed webhook (writes under /etc,
+  restarts services), so an operator runs it once on the host.
+
+These three (single-process SSR, untuned co-resident Postgres, no HTML edge
+cache) are the biggest remaining "slow under load" wins. They are operations on
+Cloudflare's control plane and the production VPS — everything the *repository*
+can contain (config files, the turnkey apply script, and the origin-side image
+cache) is committed; executing them requires Cloudflare + host access.
 
 **Intentionally skipped (low value / already healthy):** group-chat page size +
 DM-search trigram (§2.10, already conversation-scoped); fonts-per-theme +
