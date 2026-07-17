@@ -84,13 +84,28 @@ right after hydration.
   idempotent command: `sudo bash deploy/apply-perf-tuning.sh` (supports
   `DRY_RUN=1`). It cannot run from CI / the sandboxed webhook (writes under /etc,
   restarts services), so an operator runs it once on the host.
-- **Running 2–3 web replicas** + SSR HTML edge cache (§1.1) — the remaining item
-  with no safe blind-code form. Multi-core serving in one container (Nitro
-  `node-cluster` preset) is the lower-risk lever but needs the container's
-  1 GB / 1.5-CPU limits raised first (a capacity decision), and edge-caching
-  anonymous HTML must be a Cloudflare **cookie-bypass** rule so signed-in shells
-  are never served from cache — deliberately NOT implemented as origin logic,
-  where a cookie-detection slip would be a privacy bug.
+- **Multi-core / replicated web serving** (§1.1) — the single biggest remaining
+  "slow under load" win (all SSR + API + SSE currently share one event loop).
+  The installed Nitro (`node-cluster` preset) makes this a **build + env +
+  capacity** toggle, no code change required:
+  1. Build the web image with `NITRO_PRESET=node-cluster` (a build-time env in
+     CI / the Docker build) — Nitro then emits a cluster entry that forks workers
+     which share the one listening port, so the blue/green hotswap (single
+     container, single port) keeps working unchanged.
+  2. Set `NITRO_CLUSTER_WORKERS=<n>` at runtime (env on the `web` service).
+  3. **Raise the container limits first** — `docker-compose.yml` caps `web` at
+     `mem_limit: 1g` / `cpus: 1.5` with `NODE_OPTIONS=--max-old-space-size=768`.
+     N workers need ~N× the heap and ≥N cores to actually parallelize, so bump
+     `cpus`/`mem_limit` and lower per-worker `--max-old-space-size` accordingly
+     (e.g. 2 workers → `cpus: 3`, `mem_limit: 2g`, `--max-old-space-size=768`
+     each). This capacity call is the only decision that's genuinely yours.
+  The alternative (N separate containers behind an Apache `balancer://`) also
+  works but reworks the blue/green deploy — cluster mode is the lower-risk lever.
+- **Edge-caching anonymous page HTML** (§1.1) — must be a Cloudflare
+  **cookie-bypass** cache rule so signed-in shells are never served from cache.
+  Deliberately NOT implemented as origin logic, where a cookie-detection slip
+  would serve one user's authenticated page to another — a privacy bug. Configure
+  it at the edge (Cache Rule: cache HTML only when the session cookie is absent).
 
 Everything the *repository* can contain is committed: the code fixes, the config
 files, the origin-side image cache, and two turnkey apply scripts
