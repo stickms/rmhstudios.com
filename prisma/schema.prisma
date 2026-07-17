@@ -36,6 +36,11 @@ model User {
   // Denormalized follower count, kept in sync on follow/unfollow so hot paths
   // (recommendations, profile cards) can sort/read without a relation aggregate.
   followerCount    Int       @default(0)
+  // Denormalized following/post counts, maintained on follow-unfollow and
+  // post create/delete so the (hot) profile page never runs COUNT(*) aggregates.
+  // Reconciled by scripts/reconcile-social-counts.ts.
+  followingCount   Int       @default(0)
+  postCount        Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -311,6 +316,9 @@ model User {
 
   @@index([isBot])
   @@index([followerCount])
+  // Backs the "online now" fallback count (WHERE lastSeenAt >= cutoff). The
+  // fast path is a Redis presence set; this keeps the DB fallback sane.
+  @@index([lastSeenAt])
   @@map("user")
 }
 
@@ -1421,6 +1429,10 @@ model RMHark {
 
   reactions RMHarkReaction[]
 
+  // Normalized hashtags extracted at write time (replaces scanning content with
+  // ILIKE '%#tag%'). Trending / tag feeds read these indexed rows instead.
+  hashtags PostHashtag[]
+
   // Authored threads (chain-your-own-posts). Follow-up segments carry the root
   // post's id in `threadRootId` (null on the root and on standalone posts) so
   // the feed can show only the root; the root carries `threadReplyCount` (number
@@ -1479,6 +1491,11 @@ model RMHarkComment {
   content   String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Denormalized engagement counters (maintained atomically by the comment
+  // like/reply routes) so the comment list never runs per-comment _count.
+  likeCount  Int @default(0)
+  replyCount Int @default(0)
 
   rmhark RMHark @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1615,6 +1632,10 @@ model RMHarkPollOption {
   text     String @db.VarChar(80)
   position Int
 
+  // Denormalized tally, maintained atomically by the vote route so feed reads
+  // never aggregate _count over rmheet_poll_vote per option per render.
+  voteCount Int @default(0)
+
   poll  RMHarkPoll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
   votes RMHarkPollVote[]
 
@@ -1687,6 +1708,10 @@ model UserProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Leaderboard scans (global by xp / by coins) — without these the leaderboard
+  // is a full-table sort of user_profile on every load.
+  @@index([xp(sort: Desc)])
+  @@index([coins(sort: Desc)])
   @@map("user_profile")
 }
 
@@ -1811,7 +1836,46 @@ model Follow {
   @@unique([followerId, followingId])
   @@index([followerId])
   @@index([followingId])
+  // Keyset pagination of a user's followers / following ordered by recency
+  // (celebrity accounts have millions of followers — single-column index +
+  // sort is not enough).
+  @@index([followingId, createdAt(sort: Desc)])
+  @@index([followerId, createdAt(sort: Desc)])
   @@map("follow")
+}
+
+/// Normalized hashtag registry. Tags are extracted from post content at write
+/// time (see lib/tags-extract.server.ts) into these tables so trending and tag
+/// feeds are indexed lookups instead of ILIKE '%#tag%' scans of rmheet.content.
+model Hashtag {
+  id        String   @id @default(cuid())
+  tag       String   @unique // normalized: lowercased, no leading '#'
+  postCount Int      @default(0) // denormalized count of linked, non-deleted posts
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts PostHashtag[]
+
+  // Trending: order tags by popularity.
+  @@index([postCount(sort: Desc)])
+  @@map("hashtag")
+}
+
+/// Join row linking a post to a hashtag it contains.
+model PostHashtag {
+  id        String   @id @default(cuid())
+  hashtagId String
+  rmheetId  String
+  createdAt DateTime @default(now())
+
+  hashtag Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+  rmhark  RMHark  @relation(fields: [rmheetId], references: [id], onDelete: Cascade)
+
+  @@unique([hashtagId, rmheetId])
+  // Keyset scan of a tag's recent posts.
+  @@index([hashtagId, createdAt(sort: Desc)])
+  @@index([rmheetId])
+  @@map("post_hashtag")
 }
 
 /// A coin-funded membership: `supporter` supports `creator` for a 30-day period.

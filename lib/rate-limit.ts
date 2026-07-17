@@ -42,7 +42,7 @@ interface RateLimitOptions {
  * once so normal (and lightly bursty) usage isn't throttled, while still
  * stopping runaway abuse. Tunable via RATE_LIMIT_MULTIPLIER (clamped 1–20).
  */
-const RATE_LIMIT_MULTIPLIER = (() => {
+export const RATE_LIMIT_MULTIPLIER = (() => {
     const raw = Number(process.env.RATE_LIMIT_MULTIPLIER);
     if (!Number.isFinite(raw) || raw <= 0) return 4;
     return Math.min(20, Math.max(1, raw));
