@@ -195,6 +195,12 @@ ARG VITE_CDN_BASE_URL
 # Optional: only used to title/describe NEW library PDFs. Cover rendering itself
 # needs no key — titles fall back to the humanized filename when it's absent.
 ARG DEEPSEEK_API_KEY
+# Nitro server preset (perf audit §1.1). Defaults to `node-server` (single
+# process — current behavior). Build with `--build-arg NITRO_PRESET=node-cluster`
+# to emit a multi-worker cluster entry that uses more than one core; workers are
+# then capped at runtime by NITRO_CLUSTER_WORKERS (set on the web service, and
+# raise the container's cpus/mem to match). Nitro's Vite plugin reads this env.
+ARG NITRO_PRESET=node-server
 
 ENV DATABASE_URL=${DATABASE_URL} \
     BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET} \
@@ -205,7 +211,8 @@ ENV DATABASE_URL=${DATABASE_URL} \
     VITE_RMHTUBE_SOCKET_URL=${VITE_RMHTUBE_SOCKET_URL} \
     VITE_DISCORD_ACTIVITY_CLIENT_ID=${VITE_DISCORD_ACTIVITY_CLIENT_ID} \
     VITE_CDN_BASE_URL=${VITE_CDN_BASE_URL} \
-    DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+    DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY} \
+    NITRO_PRESET=${NITRO_PRESET}
 
 # NOTE: library cover/metadata generation is NOT run here. The library PDFs are
 # excluded from the build context (.dockerignore), so this stage can't render new

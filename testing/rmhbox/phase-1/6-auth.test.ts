@@ -21,7 +21,7 @@ vi.mock('pg', () => {
   };
 });
 
-import { authMiddleware } from '../../../server/rmhbox/auth';
+import { authMiddleware, __resetAuthCache } from '../../../server/rmhbox/auth';
 
 function setupMockDB() {
   const validTokens = new Map(
@@ -46,6 +46,9 @@ function setupMockDB() {
 describe('Auth Middleware (§6.1)', () => {
   beforeEach(() => {
     setupMockDB();
+    // The auth cache is a module-level singleton; reset it so a prior test's
+    // cached validation doesn't short-circuit the DB path under test.
+    __resetAuthCache();
   });
 
   it('should reject connection with missing token', async () => {

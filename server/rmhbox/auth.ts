@@ -158,6 +158,15 @@ function cacheIdentity(key: string, identity: ValidatedIdentity, expiresAt: numb
   authCache.set(key, { identity, expiresAt, cachedAt: Date.now() });
 }
 
+/**
+ * Test-only: clear the in-process auth cache. The cache is a module-level
+ * singleton, so unit tests that exercise the DB path must reset it between
+ * cases (otherwise a prior test's cached success short-circuits the DB call).
+ */
+export function __resetAuthCache(): void {
+  authCache.clear();
+}
+
 // ─── Socket.io middleware ────────────────────────────────────────
 
 export async function authMiddleware(
@@ -211,12 +220,14 @@ export async function authMiddleware(
     cacheIdentity(`s:${token}`, result.identity, result.expiresAt);
     next();
   } catch (err) {
-    console.error(JSON.stringify({
-      level: 'error',
-      timestamp: new Date().toISOString(),
-      event: 'auth_validation_error',
-      error: String(err),
-    }));
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        timestamp: new Date().toISOString(),
+        event: 'auth_validation_error',
+        error: String(err),
+      }),
+    );
     next(new Error('AUTH_FAILED'));
   }
 }

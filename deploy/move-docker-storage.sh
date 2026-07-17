@@ -123,7 +123,7 @@ if [ -f "$DAEMON_JSON" ]; then
 fi
 if command -v jq >/dev/null 2>&1; then
     tmp=$(mktemp)
-    jq --arg dr "$TARGET_DIR" '. + {"data-root": $dr}' "${DAEMON_JSON:-/dev/null}" 2>/dev/null \
+    jq --arg dr "$TARGET_DIR" '. + {"data-root": $dr}' "${DAEMON_JSON:-/dev/null}" \
         > "$tmp" 2>/dev/null || echo "{\"data-root\": \"$TARGET_DIR\"}" > "$tmp"
     mv "$tmp" "$DAEMON_JSON"
 elif command -v python3 >/dev/null 2>&1; then

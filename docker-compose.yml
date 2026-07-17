@@ -121,6 +121,12 @@ services:
       # either OOM-kills (restart flap → 503s) or GC-thrashes at the ceiling.
       # 768m leaves ~256m for non-heap (buffers, sharp/resvg native, code).
       - NODE_OPTIONS=--max-old-space-size=768
+      # Multi-core web serving (perf audit §1.1). Only takes effect when the image
+      # is built with --build-arg NITRO_PRESET=node-cluster; defaults to 1 worker
+      # = today's single-process behavior. To use >1: build cluster, set
+      # WEB_WORKERS, and RAISE cpus/mem_limit above + lower per-worker
+      # --max-old-space-size so N workers fit the (enlarged) container.
+      - NITRO_CLUSTER_WORKERS=${WEB_WORKERS:-1}
     healthcheck:
       # Hit the cheap liveness endpoint, not `/` — curling `/` every 30s renders
       # the full homepage through SSR on the single web event loop (perf audit
