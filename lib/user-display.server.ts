@@ -16,7 +16,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import { apiCache } from '@/lib/cache';
+import { cached, invalidateCached } from '@/lib/cached.server';
 import { userDisplaySelect, resolveUser, type ResolvedUser } from '@/lib/user-display';
 
 const USER_DISPLAY_TTL_MS = 60_000;
@@ -34,23 +34,33 @@ export async function getUserDisplayMap(
   const ids = [...new Set(userIds.filter((v): v is string => !!v))];
   if (ids.length === 0) return map;
 
-  const misses: string[] = [];
-  for (const id of ids) {
-    const cached = apiCache.get<ResolvedUser>(userDisplayKey(id));
-    if (cached) map.set(id, cached);
-    else misses.push(id);
-  }
+  // Resolve each id through the shared L1(in-process)+L2(Redis) cache. Warm ids
+  // (the hot-path common case, and now shared across instances via L2) resolve
+  // with zero DB work; only ids cold on every layer hit Postgres, as parallel
+  // primary-key lookups. Routing through `cached()` also subscribes this process
+  // to the invalidation channel so `invalidateUserDisplay` on any instance drops
+  // our copy. Missing users (hard-deleted between queries) resolve to null and
+  // are neither cached nor added to the map.
+  const resolved = await Promise.all(
+    ids.map((id) =>
+      cached<ResolvedUser | null>(
+        userDisplayKey(id),
+        USER_DISPLAY_TTL_MS,
+        async () => {
+          const row = await prisma.user.findUnique({
+            where: { id },
+            select: userDisplaySelect,
+          });
+          return row ? resolveUser(row) : null;
+        },
+        { shouldCache: (v) => v !== null },
+      ),
+    ),
+  );
 
-  if (misses.length > 0) {
-    const rows = await prisma.user.findMany({
-      where: { id: { in: misses } },
-      select: userDisplaySelect,
-    });
-    for (const row of rows) {
-      const resolved = resolveUser(row);
-      apiCache.set(userDisplayKey(row.id), resolved, USER_DISPLAY_TTL_MS);
-      map.set(row.id, resolved);
-    }
+  for (let i = 0; i < ids.length; i++) {
+    const r = resolved[i];
+    if (r) map.set(ids[i], r);
   }
 
   return map;
@@ -62,5 +72,8 @@ export async function getUserDisplayMap(
  * the change immediately instead of waiting out the TTL.
  */
 export function invalidateUserDisplay(userId: string): void {
-  apiCache.invalidate(userDisplayKey(userId));
+  // Fire-and-forget: drops the local L1 copy synchronously and broadcasts the
+  // drop to every instance over Redis pub/sub. Signature stays `void` for the
+  // existing fire-and-forget callers.
+  void invalidateCached(userDisplayKey(userId));
 }
