@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 import 'dotenv/config';
 import { prisma } from '@/lib/prisma.server';
+import { formatCoverageSnapshot, type CoverageSnapshot } from '@/lib/rmhladder/coverage';
 import { resumeSubsystemReadiness } from '@/lib/rmhladder/resume/readiness.server';
 import { DEFAULT_STALE_AFTER_MS } from '@/lib/rmhladder/scheduler';
 import { formatLadderStatus, type LadderStatusData } from '@/lib/rmhladder/status';
@@ -48,6 +49,41 @@ async function main(): Promise<void> {
   };
 
   console.log(formatLadderStatus(data));
+
+  const [companiesWithActive, enabledCompanies, activeJobsGrouped] = await Promise.all([
+    prisma.ladderCompany.count({ where: { enabled: true, sources: { some: { status: 'active' } } } }),
+    prisma.ladderCompany.count({ where: { enabled: true } }),
+    prisma.ladderJob.groupBy({ by: ['companyId'], where: { status: 'active' }, _count: { _all: true } }),
+  ]);
+  const manualOnly = await prisma.ladderCompany.count({
+    where: { enabled: true, sources: { none: { status: 'active' }, some: { platform: 'manual' } } },
+  });
+  const unconfigured = await prisma.ladderCompany.count({
+    where: {
+      enabled: true,
+      AND: [
+        { sources: { none: { status: 'active' } } },
+        { sources: { none: { platform: 'manual' } } },
+      ],
+    },
+  });
+  // Active jobs by firm type (join companyId → firmType).
+  const companies = await prisma.ladderCompany.findMany({ select: { id: true, firmType: true } });
+  const firmTypeById = new Map(companies.map((c) => [c.id, c.firmType]));
+  const activeJobsByFirmType: Record<string, number> = {};
+  for (const row of activeJobsGrouped) {
+    const ft = firmTypeById.get(row.companyId) ?? 'unknown';
+    activeJobsByFirmType[ft] = (activeJobsByFirmType[ft] ?? 0) + row._count._all;
+  }
+  const coverage: CoverageSnapshot = {
+    totalCompanies: enabledCompanies,
+    companiesWithActiveSource: companiesWithActive,
+    companiesManualOnly: manualOnly,
+    companiesUnconfigured: unconfigured,
+    activeJobsByFirmType,
+  };
+  console.log('\n' + formatCoverageSnapshot(coverage));
+
   await prisma.$disconnect();
 }
 
