@@ -117,16 +117,25 @@ export async function processSource(
     };
 
     // 3. Discover jobs.
-    const { jobs: normalizedJobs } = await adapter.discoverJobs(ctx);
+    const { jobs: normalizedJobs, fetchSucceeded } = await adapter.discoverJobs(ctx);
     stats.discovered = normalizedJobs.length;
 
-    // Zero discoveries: a successful fetch means the board is genuinely empty; a failed fetch means nothing conclusive. Task 3 acts on fetchSucceeded here.
+    // Zero discoveries: a successfully-fetched empty board means the source is
+    // alive but has no current reqs (stamp success); a failed fetch is a real
+    // failure (increment). Conflating them wrongly flagged healthy firms silent.
     if (stats.discovered === 0) {
+      if (fetchSucceeded) {
+        await deps.prisma.ladderSource.update({
+          where: { id: source.id },
+          data: { status: 'active', lastAttemptAt: now, lastSuccessAt: now, nextProbeAt: null, consecutiveFailures: 0 },
+        });
+        return { ...stats };
+      }
       await deps.prisma.ladderSource.update({
         where: { id: source.id },
         data: { lastAttemptAt: now, consecutiveFailures: { increment: 1 } },
       });
-      return { ...stats, errorMessage: 'no jobs discovered (empty board or fetch failure)' };
+      return { ...stats, errored: true, errorMessage: 'board fetch failed (no jobs discovered)' };
     }
 
     // 4. Per-job pipeline.

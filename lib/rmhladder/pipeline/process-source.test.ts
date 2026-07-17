@@ -476,11 +476,10 @@ describe('processSource', () => {
     });
   });
 
-  describe('scenario 7 — throwing fetchImpl yields zero discoveries, no success stamp', () => {
-    it('errored=false, discovered=0, errorMessage set, and failure health updated', async () => {
+  describe('scenario 7 — empty board vs failed fetch (Task 3: fetchSucceeded)', () => {
+    it('failed fetch: errored=true, discovered=0, failure health updated, no success stamp', async () => {
       const prisma = makeFakePrisma();
-      // politeFetch swallows the throw → discoverJobs returns [] → discovered=0.
-      // Zero discoveries carry no success evidence, so lastSuccessAt must NOT be set.
+      // politeFetch swallows the throw → fetchBoard returns jobs:null → discoverJobs { jobs: [], fetchSucceeded: false }.
       const throwingFetch: typeof fetch = async () => {
         throw new Error('network down');
       };
@@ -488,10 +487,28 @@ describe('processSource', () => {
       const stats = await processSource({ prisma, fetchImpl: throwingFetch, now: NOW }, SOURCE);
 
       expect(stats.discovered).toBe(0);
-      expect(stats.errored).toBe(false);
-      expect(stats.errorMessage).toBe('no jobs discovered (empty board or fetch failure)');
+      expect(stats.errored).toBe(true);
+      expect(stats.errorMessage).toBe('board fetch failed (no jobs discovered)');
       expect(prisma._state.lastSourceUpdate?.lastSuccessAt).toBeUndefined();
       expect(prisma._state.lastSourceUpdate?.consecutiveFailures).toEqual({ increment: 1 });
+    });
+
+    it('successful empty board: alive-but-empty stamps lastSuccessAt and resets failures', async () => {
+      const prisma = makeFakePrisma();
+      // HTTP 200 with an empty job list → fetchSucceeded=true, discovered=0.
+      const emptyBoardFetch: typeof fetch = async (input) => {
+        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
+        return url === GREENHOUSE_URL
+          ? new Response('{"jobs":[]}', { status: 200 })
+          : new Response('Not found', { status: 404 });
+      };
+
+      const stats = await processSource({ prisma, fetchImpl: emptyBoardFetch, now: NOW }, SOURCE);
+
+      expect(stats.discovered).toBe(0);
+      expect(stats.errored).toBe(false);
+      expect(prisma._state.lastSourceUpdate?.lastSuccessAt).toEqual(NOW);
+      expect(prisma._state.lastSourceUpdate?.consecutiveFailures).toBe(0);
     });
   });
 });

@@ -346,15 +346,16 @@ describe('scenario A — two API sources (one good, one 500) + one manual (ok)',
     expect(result.discovered).toBe(2);
   });
 
-  it('created = 2, errors = 0', () => {
-    // badco returns 500 → processSource returns errored=false, discovered=0.
-    // No sourceError row is created for errored=false sources.
+  it('created = 2, errors = 1 (badco 500 surfaces as a fetch failure)', () => {
+    // badco returns 500 → processSource returns errored=true, discovered=0.
+    // Phase 1: a failed board fetch now surfaces one sourceError row instead of
+    // being silently ignored (it used to report errored=false).
     expect(result.created).toBe(2);
-    expect(result.errors).toBe(0);
+    expect(result.errors).toBe(1);
   });
 
-  it('no sourceError rows (500 source has errored=false per Task-5 semantics)', () => {
-    expect(prisma._state.sourceErrors).toHaveLength(0);
+  it('one sourceError row (500 source now surfaces as a failed fetch)', () => {
+    expect(prisma._state.sourceErrors).toHaveLength(1);
   });
 
   it('badco source: lastSuccessAt NOT set', () => {
@@ -367,11 +368,11 @@ describe('scenario A — two API sources (one good, one 500) + one manual (ok)',
     expect(update?.lastSuccessAt).toEqual(NOW);
   });
 
-  it('run row finalized: discoveredCount=2, newCount=2, errorCount=0', () => {
+  it('run row finalized: discoveredCount=2, newCount=2, errorCount=1', () => {
     const run = [...prisma._state.scrapeRuns.values()][0];
     expect(run.discoveredCount).toBe(2);
     expect(run.newCount).toBe(2);
-    expect(run.errorCount).toBe(0);
+    expect(run.errorCount).toBe(1);
     expect(run.finishedAt).toBeDefined();
   });
 
