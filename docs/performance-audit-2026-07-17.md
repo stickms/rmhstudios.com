@@ -86,19 +86,23 @@ right after hydration.
   restarts services), so an operator runs it once on the host.
 - **Multi-core / replicated web serving** (§1.1) — the single biggest remaining
   "slow under load" win (all SSR + API + SSE currently share one event loop).
-  The installed Nitro (`node-cluster` preset) makes this a **build + env +
-  capacity** toggle, no code change required:
-  1. Build the web image with `NITRO_PRESET=node-cluster` (a build-time env in
-     CI / the Docker build) — Nitro then emits a cluster entry that forks workers
-     which share the one listening port, so the blue/green hotswap (single
-     container, single port) keeps working unchanged.
-  2. Set `NITRO_CLUSTER_WORKERS=<n>` at runtime (env on the `web` service).
-  3. **Raise the container limits first** — `docker-compose.yml` caps `web` at
-     `mem_limit: 1g` / `cpus: 1.5` with `NODE_OPTIONS=--max-old-space-size=768`.
-     N workers need ~N× the heap and ≥N cores to actually parallelize, so bump
-     `cpus`/`mem_limit` and lower per-worker `--max-old-space-size` accordingly
-     (e.g. 2 workers → `cpus: 3`, `mem_limit: 2g`, `--max-old-space-size=768`
-     each). This capacity call is the only decision that's genuinely yours.
+  The toggle is now **wired into the build + compose** (verified against the
+  installed Nitro: `NITRO_PRESET=node-cluster` produces a `cluster.fork` entry
+  that reads `NITRO_CLUSTER_WORKERS`), defaulting to today's single-process
+  behavior. To turn it on:
+  1. Build the web image with `--build-arg NITRO_PRESET=node-cluster`
+     (`Dockerfile` ARG defaults to `node-server`). Workers share the one
+     listening port, so the blue/green hotswap keeps working unchanged.
+  2. Set `WEB_WORKERS=<n>` in the deploy env — the `web` service already passes
+     `NITRO_CLUSTER_WORKERS=${WEB_WORKERS:-1}` (defaults to 1 worker = current
+     behavior even on a cluster build, so nothing changes until you opt in).
+  3. **Raise the container limits to match** — `docker-compose.yml` caps `web`
+     at `mem_limit: 1g` / `cpus: 1.5`. N workers need ~N× heap and ≥N cores, so
+     bump `cpus`/`mem_limit` and lower per-worker `--max-old-space-size` (e.g. 2
+     workers → `cpus: 3`, `mem_limit: 2g`, `--max-old-space-size=768` each). This
+     capacity call — sized to the VPS's actual RAM/cores — is the only decision
+     that's genuinely yours; the audit flags the limits already sum to ~7.4 GB,
+     so confirm headroom before bumping.
   The alternative (N separate containers behind an Apache `balancer://`) also
   works but reworks the blue/green deploy — cluster mode is the lower-risk lever.
 - **Edge-caching anonymous page HTML** (§1.1) — must be a Cloudflare
