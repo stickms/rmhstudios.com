@@ -15,6 +15,68 @@ healthy" so they don't get re-litigated.
 
 ---
 
+## Remediation status (implemented on `claude/website-performance-audit-veciar`)
+
+Most of this audit has been implemented and verified (`tsc --noEmit` + `vite
+build` green) across six commits. Summary:
+
+**Done — infrastructure/config:** Prisma pool default 10→20 + acquire timeout
+10s→5s; `NODE_OPTIONS` heap caps on web/socket/rmhbox/rmhtube; container
+healthcheck now hits a new cheap `/api/health` instead of SSR-ing `/`; Apache
+`ProxyTimeout` + new `deploy/apache/mpm_event.conf` (raised MaxRequestWorkers);
+new `deploy/postgres/postgresql.tuning.conf`; Redis maxmemory headroom;
+`DATABASE_POOL_SIZE` documented.
+
+**Done — database:** the `communityId`/`originalId`/bookmark-`rmheetId` indexes
++ denormalized `Community.postCount` (migration `20260717120000`); feed search &
+hashtag autocomplete moved onto FTS/the `Hashtag` table; explore hot-posts pool
+cached; `getFollowingIds` capped; `getUserDisplayMap` batched; post-create
+gamification deferred; thread `createMany`.
+
+**Done — API/SSR/client/realtime:** session cookieCache 60→300s; presence
+caching; bucketed OG cache key + guarded avatar fetch + SWR headers; single-op
+Redis limiter; DeepSeek timeout; soonest-expiry limiter eviction; 30-min DM SSE
+lifetime. Root-route `staleTime` (kills the per-navigation session refetch **and
+the full i18n catalog re-download**); per-request QueryClient; per-locale
+i18next instance cache; parallelized library/news loaders; widened perf-lite.
+Shared `<VirtualPostList>` for secondary feeds; one shared message-stream SSE
+bus; shared session context per card; store dirty-check fixes; GroupChat
+autoscroll; `useCardSheen`/doctrine-poller/glass-blur. Farming-sim leak +
+dirty-gated broadcast; rmhtype batched emit; rmhbox/rmhtube auth caches; O(1)
+rate-limiter cleanup; relay rate limits; undercover static-data singleton.
+
+**Correction to §5 (bundle):** the premise below — "route splitting is OFF,
+4–5 MB entry" — is **wrong for the installed TanStack Start version**. A
+production build confirms routes ARE code-split (883 chunks) and every heavy lib
+(maplibre/three/monaco/pdfjs/markdown/…) is already a lazy async chunk. The
+measured first-visit eager JS is **~334 KB brotli**, not 1–1.3 MB. `§5.1`'s
+`autoCodeSplitting: true` one-liner is also a no-op — the option is omitted from
+the plugin's input schema. No bundle change was needed. Dead-dep removal
+(`recharts`/`katex`/`@tiptap/*`, unused) was left as optional hygiene (zero
+runtime benefit, would desync the lockfile).
+
+**Deferred — need runtime verification / infra action (NOT done):**
+- **Bounded reactions on secondary read paths (§2.3)** and **comment-tree query
+  batching (§2.5):** high value but require a coordinated change across ~7
+  shared-mapper callers / raw window queries; a blind mistake would blank
+  reactions or corrupt comment trees sitewide. Port `loadReactionSummaries`
+  (already proven in `lib/feed/timeline.ts`) to the secondary paths under test.
+- **rmhbox leaderboard aggregates (§2.6):** read `RMHboxProfile` totals / cache
+  the board — rate-limited, so bounded.
+- **Core-namespace-only SSR i18n serialization (§4.1):** the per-navigation
+  re-download is already gone via root `staleTime`; trimming the *initial* SSR
+  payload still needs route-namespace scoping to avoid a flash of untranslated
+  keys — verify in a browser before shipping.
+- **Ops-only:** Cloudflare cache rule for `/api/image-proxy*` (§1.2), running
+  2–3 web replicas + SSR HTML `s-maxage` for anonymous pages (§1.1), tuned
+  `postgresql.conf`/Apache MPM applied on the VPS. Config files are committed;
+  applying them is a deploy step.
+- **Low-value/risky:** group-chat page size + DM-search trigram (§2.10),
+  fonts-per-theme + Discord-SDK eager split (§5) — bundle is already healthy;
+  the `socket.on` lazy-registration refactor (§7).
+
+---
+
 ## Executive summary — why the site collapses under load
 
 The slowness is not one bug; it is a **serving topology that funnels 100% of
