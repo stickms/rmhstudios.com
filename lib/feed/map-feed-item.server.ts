@@ -4,8 +4,79 @@
  */
 
 import type { FeedItem, FeedPoll } from '@/lib/feed-types';
+import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { groupReactions } from '@/lib/social/reactions';
+
+/** One per-emoji reaction summary entry, as it appears on a FeedItem. */
+type ReactionSummary = NonNullable<FeedItem['reactions']>[number];
+
+/**
+ * rmharkInclude WITHOUT the unbounded `reactions` fan-out (perf audit §2.3).
+ * Pair with mapRmharksWithBoundedReactions below: instead of pulling every
+ * reaction row per post (a viral post can carry tens of thousands), the caller
+ * loads per-emoji counts + the viewer's own reactions as two BOUNDED aggregate
+ * queries for the whole page. Opt-in — existing callers of rmharkInclude/
+ * mapRmharkToFeedItem keep the old behavior, so this is a no-regression change.
+ */
+export function rmharkIncludeLite(viewerId: string | null) {
+  const { reactions: _reactions, ...lite } = rmharkInclude(viewerId);
+  return lite;
+}
+
+/**
+ * Load per-post reaction summaries with two bounded queries (groupBy for the
+ * per-emoji counts + the viewer's own reactions), keyed by post id. Mirrors the
+ * proven approach in lib/feed/timeline.ts (loadReactionSummaries) so the main
+ * timeline and the secondary read paths compute reactions identically.
+ */
+async function loadBoundedReactionSummaries(
+  postIds: string[],
+  viewerId: string | null,
+): Promise<Map<string, ReactionSummary[]>> {
+  const result = new Map<string, ReactionSummary[]>();
+  const ids = [...new Set(postIds)];
+  if (ids.length === 0) return result;
+
+  const [grouped, mine] = await Promise.all([
+    prisma.rMHarkReaction.groupBy({
+      by: ['rmheetId', 'emoji'],
+      where: { rmheetId: { in: ids } },
+      _count: { _all: true },
+    }),
+    viewerId
+      ? prisma.rMHarkReaction.findMany({
+          where: { rmheetId: { in: ids }, userId: viewerId },
+          select: { rmheetId: true, emoji: true },
+        })
+      : Promise.resolve([] as { rmheetId: string; emoji: string }[]),
+  ]);
+
+  const mineSet = new Set(mine.map((m) => `${m.rmheetId} ${m.emoji}`));
+  for (const g of grouped) {
+    const list = result.get(g.rmheetId) ?? [];
+    list.push({ emoji: g.emoji, count: g._count._all, reactedByMe: mineSet.has(`${g.rmheetId} ${g.emoji}`) });
+    result.set(g.rmheetId, list);
+  }
+  for (const list of result.values()) list.sort((a, b) => b.count - a.count);
+  return result;
+}
+
+/**
+ * Map a page of rmhark rows (fetched with rmharkIncludeLite — no reactions
+ * include) to FeedItems, attaching bounded reaction summaries loaded in two
+ * aggregate queries for the whole page instead of per-post reaction fan-outs.
+ */
+export async function mapRmharksWithBoundedReactions(
+  rows: { id: string }[],
+  viewerId: string | null,
+): Promise<FeedItem[]> {
+  const summaries = await loadBoundedReactionSummaries(
+    rows.map((r) => r.id),
+    viewerId,
+  );
+  return rows.map((r) => mapRmharkToFeedItem(r, viewerId, summaries.get(r.id) ?? []));
+}
 
 /**
  * Whether a post is locked for a viewer: it has a price, the viewer isn't the
@@ -81,7 +152,11 @@ function mapPoll(poll: any): FeedPoll | undefined {
   };
 }
 
-export function mapRmharkToFeedItem(r: any, viewerId: string | null): FeedItem {
+export function mapRmharkToFeedItem(
+  r: any,
+  viewerId: string | null,
+  reactionsOverride?: ReactionSummary[],
+): FeedItem {
   const item: FeedItem = {
     id: r.id,
     type: 'rmhark',
@@ -115,7 +190,7 @@ export function mapRmharkToFeedItem(r: any, viewerId: string | null): FeedItem {
     imageAlts: r.imageAlts ?? undefined,
     isSensitive: r.isSensitive ?? false,
     replyControl: r.replyControl ?? 'EVERYONE',
-    reactions: groupReactions(r.reactions ?? [], viewerId),
+    reactions: reactionsOverride ?? groupReactions(r.reactions ?? [], viewerId),
     threadReplyCount: r.threadReplyCount ?? 0,
   };
   return applyLock(item, r, viewerId);

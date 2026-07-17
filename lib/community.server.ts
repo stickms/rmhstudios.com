@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { rmharkInclude, mapRmharkToFeedItem } from '@/lib/feed/map-feed-item.server';
+import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import type { FeedItem } from '@/lib/feed-types';
 
@@ -108,13 +108,13 @@ export async function getCommunityFeed(
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: limit + 1,
     ...(opts.cursor ? { skip: 1, cursor: { id: opts.cursor } } : {}),
-    include: rmharkInclude(viewerId),
+    include: rmharkIncludeLite(viewerId),
   });
 
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;
   return {
-    items: page.map((r) => mapRmharkToFeedItem(r, viewerId)),
+    items: await mapRmharksWithBoundedReactions(page, viewerId),
     nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
     hasMore,
   };

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { rmharkInclude, mapRmharkToFeedItem } from '@/lib/feed/map-feed-item.server';
+import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { audienceWhere } from '@/lib/feed/audience.server';
@@ -140,7 +140,7 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
   const hotRows = hotCandidateIds.length
     ? await prisma.rMHark.findMany({
         where: { id: { in: hotCandidateIds }, deletedAt: null, ...notHidden, ...aud },
-        include: rmharkInclude(viewerId),
+        include: rmharkIncludeLite(viewerId),
       })
     : [];
   hotRows.sort(
@@ -149,11 +149,10 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
 
   // Apply the viewer's muted words to hot posts too (the timeline already does;
   // explore would otherwise be a mute-filter bypass), then take the display slice.
+  // Reactions load as bounded aggregates for the whole slice (perf audit §2.3).
+  const displayRows = hotRows.filter((r) => (r.likeCount ?? 0) > 0).slice(0, HOT_POSTS_TAKE);
   const hotPosts = applyMutedWords(
-    hotRows
-      .filter((r) => (r.likeCount ?? 0) > 0)
-      .slice(0, HOT_POSTS_TAKE)
-      .map((r) => mapRmharkToFeedItem(r, viewerId)),
+    await mapRmharksWithBoundedReactions(displayRows, viewerId),
     muted,
   );
 

@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma.server';
-import { rmharkInclude, mapRmharkToFeedItem } from '@/lib/feed/map-feed-item.server';
+import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { audienceWhere } from '@/lib/feed/audience.server';
 import type { FeedItem } from '@/lib/feed-types';
@@ -53,12 +53,12 @@ export async function listTagFeed(
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: limit + 1,
     ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-    include: rmharkInclude(viewerId),
+    include: rmharkIncludeLite(viewerId),
   });
 
   const hasMore = rows.length > limit;
   const page = hasMore ? rows.slice(0, limit) : rows;
-  const items = page.map((r) => mapRmharkToFeedItem(r, viewerId));
+  const items = await mapRmharksWithBoundedReactions(page, viewerId);
 
   return {
     tag,
