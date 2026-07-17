@@ -3,16 +3,15 @@
 # key public pages of the built, running app. Thresholds in .github/lighthouserc
 # .json are "warn" (informational) to start; raise them to "error" to gate merges
 # once the scores are known-good. Reports upload to temporary public storage.
+#
+# Runs on push-to-main + a nightly schedule (+ on demand), NOT on every PR: it is
+# warn-only (never gates) and its full production build + Postgres + server boot
+# duplicated e2e-smoke's build/boot on every PR — ~5 min of redundant compute for
+# an informational score. e2e-smoke remains the per-PR "does it render" gate.
 # ─────────────────────────────────────────────────────────────────────────────
 name: lighthouse
 
 on:
-  pull_request:
-    paths-ignore:
-      - "go-services/**"
-      - "deploy/**"
-      - "docs/**"
-      - "**/*.md"
   push:
     branches: [main]
     paths-ignore:
@@ -20,6 +19,8 @@ on:
       - "deploy/**"
       - "docs/**"
       - "**/*.md"
+  schedule:
+    - cron: "0 3 * * *"
   workflow_dispatch: {}
 
 concurrency:

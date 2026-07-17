@@ -37,7 +37,10 @@ jobs:
         with:
           scan-type: fs
           scan-ref: .
-          scanners: vuln,misconfig,secret
+          # secret scanning intentionally omitted — gitleaks (pattern) and
+          # trufflehog (verified) are the dedicated secret scanners; Trivy's
+          # secret mode was pure overlap. Keep vuln + IaC/misconfig here.
+          scanners: vuln,misconfig
           format: sarif
           output: trivy-fs.sarif
           severity: CRITICAL,HIGH

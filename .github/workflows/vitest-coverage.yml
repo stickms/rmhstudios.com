@@ -2,16 +2,17 @@
 # Test coverage report. Runs the main Vitest suite with V8 coverage and publishes
 # the summary to the run. Report-only (the coverage provider is installed
 # ad-hoc, without touching the committed lockfile); web-ci owns the pass/fail gate.
+#
+# Runs NIGHTLY (+ on demand), NOT on every PR: it re-ran the exact same Vitest
+# suite web-ci already gates, just with --coverage, doubling that ~2 min of test
+# compute on every PR for a number that doesn't gate anything. The coverage trend
+# is a nightly signal against main; use workflow_dispatch for an on-demand run.
 # ─────────────────────────────────────────────────────────────────────────────
 name: vitest-coverage
 
 on:
-  pull_request:
-    paths-ignore:
-      - "go-services/**"
-      - "deploy/**"
-      - "docs/**"
-      - "**/*.md"
+  schedule:
+    - cron: "0 4 * * *"
   workflow_dispatch: {}
 
 concurrency:

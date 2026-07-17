@@ -40,6 +40,7 @@ writing, not necessarily the current code).
 | [`superpowers/`](./superpowers/) | The main archive of dated design specs + implementation plans (~75 files, `plans/` + `specs/`), plus the reusable [`i18n-extraction-guide.md`](./superpowers/i18n-extraction-guide.md) |
 | [`plans/`](./plans/) | Older dated plan/design pairs (dream-rift, rmhmusic, rmhcode CLI, terraform/helm migration, farming sim) |
 | [`scalability-audit-2026-07-17.md`](./scalability-audit-2026-07-17.md) | **Scalability & future-proofing audit** (2026-07-17): what breaks at 10x–100x users/data across DB, feed/social, caching, realtime, infra, frontend, and security — with a phased roadmap |
+| [`ci-speed-audit-2026-07-17.md`](./ci-speed-audit-2026-07-17.md) | **CI/CD speed audit** (2026-07-17): measured timings for the 79-workflow fleet, deploy-pipeline latency breakdown, redundancy map, and phased recommendations (parallel deploy gate, `buildx bake`, PR-lane consolidation, registry layer cache) |
 | [`website-improvement-plan.md`](./website-improvement-plan.md) | Cross-cutting audit + phased roadmap (2026-06-30) |
 | [`mobile-friendliness-audit.md`](./mobile-friendliness-audit.md) | Mobile audit — findings implemented 2026-06-29 (historical) |
 | [`feed/`](./feed/) | Feed/timeline scaling plan |
