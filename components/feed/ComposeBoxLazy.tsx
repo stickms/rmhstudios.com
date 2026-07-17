@@ -3,6 +3,7 @@
 import { Suspense, lazy, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSession, useResolvedUser } from '@/components/Providers';
+import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { readComposeDraft } from '@/hooks/useComposeDraft';
 
@@ -80,11 +81,14 @@ function ComposePlaceholder({ onActivate }: { onActivate?: () => void }) {
         {/* Avatar — matches ComposeBox's resting avatar exactly */}
         <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-sm ring-2 ring-site-bg shrink-0 overflow-hidden">
           {image ? (
+            // Optimized at ~2x the 40px display size (avoids the raw CDN original).
             <img
-              src={image}
+              src={buildOptimizedUrl(image, 80, 80)}
               alt={name || t('user-alt', { defaultValue: 'User' })}
               loading="lazy"
               decoding="async"
+              width={40}
+              height={40}
               className="w-full h-full rounded-full object-cover"
             />
           ) : (
