@@ -95,6 +95,29 @@ later phase; until then use the CLI.)
 - `/rmhladder/health` "silent sources" lists sources with a stale
   `lastSuccessAt` — the earliest signal of a quietly-failing board.
 
+## Alerts
+
+`pnpm ladder:status` prints an **ALERTS** section at the bottom, and the
+`ladder-worker` logs a `[ladder-worker] HEALTH ALERT [severity] code: message`
+line to stderr after each tick for every active alert. The four codes:
+
+| Code | Severity | Meaning | Operator response |
+|---|---|---|---|
+| `worker_stale` | high | No completed scrape run within the stale window (default 24h). | Check `docker compose ps ladder-worker` and `docker compose logs ladder-worker`. Restart if crash-looping. |
+| `breaker_tripped` | high | Open `mass_expiry_suspected` review task(s) — the circuit breaker tripped because a source's board looked empty for many active jobs. | Investigate the flagged source at `/rmhladder/review`. Verify the board is actually live before clearing the task. |
+| `resume_not_ready` | high | Resume subsystem blocked — object storage or encryption key unconfigured. | Provision `S3_*` vars and `LADDER_RESUME_ENCRYPTION_KEY` (see the resume section above), then restart `web` and `ladder-worker`. |
+| `high_error_run` | medium | The latest scrape run's error rate exceeded the threshold (default 50%). | Check the failing sources on `/rmhladder/health`. Transient network blips self-resolve; repeated failures need source investigation. |
+
+### Tunable thresholds
+
+Override the defaults with env vars (set in the production env file):
+
+| Var | Default | Meaning |
+|---|---|---|
+| `LADDER_ALERT_STALE_RUN_MS` | `86400000` (24h) | Age threshold (ms) before `worker_stale` fires. |
+| `LADDER_ALERT_ERROR_RATE` | `0.5` (50%) | Error rate (0–1) above which `high_error_run` fires. |
+| `LADDER_ALERT_MIN_RUN_FOR_RATE` | `10` | Minimum `discoveredCount` before the error-rate check applies (ignores tiny runs). |
+
 ## Env var reference (ladder)
 
 See `.env.example` (search `LADDER_`): `LADDER_CRON_SCHEDULE`,

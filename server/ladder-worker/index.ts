@@ -32,6 +32,7 @@ import {
   resumeReadinessError,
 } from '../../lib/rmhladder/resume/readiness.server';
 import { runLadderAlertCycle } from '../../lib/rmhladder/alerts/dispatch.server';
+import { detectLadderHealthAlerts, resolveAlertThresholds } from '../../lib/rmhladder/health-alerts';
 import {
   acquireWorkerLease,
   heartbeatWorkerLease,
@@ -177,6 +178,26 @@ async function tick() {
       `[ladder-worker] Run complete [${result.runId}] — discovered=${result.discovered} created=${result.created} updated=${result.updated} verified=${result.verified} struck=${result.struck} expired=${result.expired} errors=${result.errors} reviewTasks=${result.reviewTasks} durationMs=${result.durationMs}`,
     );
     await refreshMatchingAndAlerts();
+    try {
+      const lastRun = await prisma.ladderScrapeRun.findFirst({
+        where: { finishedAt: { not: null } }, orderBy: { finishedAt: 'desc' },
+        select: { finishedAt: true, errorCount: true, discoveredCount: true },
+      });
+      const openMassExpiryTasks = await prisma.ladderReviewTask.count({
+        where: { reason: 'mass_expiry_suspected', status: 'open' },
+      });
+      const alerts = detectLadderHealthAlerts({
+        now: new Date(),
+        lastCompletedRunAt: lastRun?.finishedAt ?? null,
+        latestRun: lastRun ? { errorCount: lastRun.errorCount ?? 0, discoveredCount: lastRun.discoveredCount ?? 0 } : null,
+        openMassExpiryTasks,
+        resumeReady: resumeSubsystemReadiness().ready,
+        thresholds: resolveAlertThresholds(),
+      });
+      for (const a of alerts) console.error(`[ladder-worker] HEALTH ALERT [${a.severity}] ${a.code}: ${a.message}`);
+    } catch (error) {
+      console.error('[ladder-worker] Alert detection failed:', error);
+    }
   } catch (e) {
     console.error('[ladder-worker] Run failed:', e);
   } finally {

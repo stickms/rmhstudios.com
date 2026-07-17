@@ -2,6 +2,7 @@
 import 'dotenv/config';
 import { prisma } from '@/lib/prisma.server';
 import { formatCoverageSnapshot, type CoverageSnapshot } from '@/lib/rmhladder/coverage';
+import { detectLadderHealthAlerts, resolveAlertThresholds } from '@/lib/rmhladder/health-alerts';
 import { resumeSubsystemReadiness } from '@/lib/rmhladder/resume/readiness.server';
 import { DEFAULT_STALE_AFTER_MS } from '@/lib/rmhladder/scheduler';
 import { formatLadderStatus, type LadderStatusData } from '@/lib/rmhladder/status';
@@ -75,6 +76,25 @@ async function main(): Promise<void> {
     activeJobsByFirmType,
   };
   console.log('\n' + formatCoverageSnapshot(coverage));
+
+  const openMassExpiryTasks = await prisma.ladderReviewTask.count({
+    where: { reason: 'mass_expiry_suspected', status: 'open' },
+  });
+  const alerts = detectLadderHealthAlerts({
+    now: new Date(),
+    lastCompletedRunAt: lastRun?.finishedAt ?? null,
+    latestRun: lastRun ? { errorCount: lastRun.errorCount ?? 0, discoveredCount: lastRun.discoveredCount ?? 0 } : null,
+    openMassExpiryTasks,
+    resumeReady: readiness.ready,
+    thresholds: resolveAlertThresholds(),
+  });
+  console.log('\nalerts');
+  console.log('------');
+  if (alerts.length === 0) {
+    console.log('  none — all healthy');
+  } else {
+    for (const a of alerts) console.log(`  [${a.severity.toUpperCase()}] ${a.code}: ${a.message}`);
+  }
 
   await prisma.$disconnect();
 }
