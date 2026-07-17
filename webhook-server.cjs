@@ -79,10 +79,14 @@ http.createServer((req, res) => {
 
           /* Discord message id from the CI build phase. Passing it to deploy.sh
              (via DEPLOY_DISCORD_MSG_ID) lets it EDIT the same message through the
-             deploy phase, so push → build → deploy is one evolving embed. Validate
-             it's a snowflake before it becomes an env value; empty = deploy.sh
-             posts its own message. */
-          const rawMid = typeof payload.discord_msg_id === 'string' ? payload.discord_msg_id : '';
+             deploy phase, so push → build → deploy is one evolving embed. It comes
+             in the `X-Discord-Msg-Id` HEADER (kept out of the signed JSON body — a
+             19-digit id in the body tripped an origin WAF PAN/numeric rule and the
+             POST was blocked with a 400). Fall back to a body field for safety.
+             Validate it's a snowflake before it becomes an env value; empty =
+             deploy.sh posts its own message. */
+          const rawMid = req.headers['x-discord-msg-id'] ||
+                  (typeof payload.discord_msg_id === 'string' ? payload.discord_msg_id : '');
           const discordMsgId = /^[0-9]{5,25}$/.test(rawMid) ? rawMid : '';
 
           logMsg(`Deploy request for ${payload.ref} (${sha ? sha.slice(0, 7) : 'tip'}) — triggering ${environment} deploy`);

@@ -187,21 +187,22 @@ jobs:
           COMMIT_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          # Body mirrors a GitHub push payload's fields the listener reads, PLUS
-          # the Discord message id so deploy.sh edits the SAME message for the
-          # deploy phase (empty when Discord is off). The HMAC covers the whole
-          # body and is computed exactly like webhook-server.cjs (crypto.createHmac
-          # 'sha256' over the raw body, hex), the secret read from the environment
-          # (never on argv). deploy.sh then pulls this SHA.
+          # Body carries ONLY {ref, after} — the fields the listener maps + the SHA
+          # deploy.sh pulls. The Discord message id is sent as a HEADER, not in the
+          # body: a 19-digit id in the JSON body tripped an origin WAF numeric/PAN
+          # rule and got the POST blocked with a 400 (worked for #501–#503 which had
+          # no long number, broke at #504 when the id was added). The header is
+          # unsigned but harmless (worst case a wrong id → a mis-targeted Discord
+          # edit); the body HMAC still authenticates the request. HMAC is computed
+          # exactly like webhook-server.cjs (crypto.createHmac 'sha256' over the raw
+          # body, hex), the secret read from the environment (never on argv).
           body="$(jq -nc \
             --arg ref "$COMMIT_REF" \
             --arg after "$COMMIT_SHA" \
-            --arg mid "${DISCORD_MSG_ID:-}" \
-            '{ref:$ref, after:$after, discord_msg_id:$mid}')"
+            '{ref:$ref, after:$after}')"
           sig="sha256=$(printf '%s' "$body" | node -e 'const c=require("crypto");let d="";process.stdin.on("data",x=>d+=x).on("end",()=>process.stdout.write(c.createHmac("sha256",process.env.WEBHOOK_SECRET).update(d).digest("hex")))')"
           # Diagnostics: the body + its byte length (proves it isn't empty/malformed;
-          # none of ref/sha/msg_id are secret) and the signature length (not the
-          # value). WEBHOOK_SECRET is masked by GitHub regardless.
+          # neither ref nor sha is secret) and the signature length (not the value).
           echo "Body (${#body} bytes): $body"
           echo "Signature length: ${#sig}"
           echo "Triggering deploy for ${COMMIT_SHA}"
@@ -211,6 +212,7 @@ jobs:
           code=$(curl -sS -o /tmp/webhook-resp.txt -w '%{http_code}' --max-time 30 -X POST "$DEPLOY_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -H "X-Hub-Signature-256: $sig" \
+            -H "X-Discord-Msg-Id: ${DISCORD_MSG_ID:-}" \
             --data-raw "$body" || echo "000")
           echo "HTTP status: $code"
           echo "----- response body -----"
