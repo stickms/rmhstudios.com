@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimit } from "@/lib/rate-limit.server";
 import { createRMHarkSchema } from "@/lib/rmhark-schema";
 import type { FeedItem, FeedFilter } from "@/lib/feed-types";
 import { userDisplaySelect, resolveUser } from "@/lib/user-display";
@@ -37,6 +38,28 @@ export const Route = createFileRoute('/api/rmharks')({
       userId = session?.user?.id ?? null;
     } catch {
       // Not logged in, that's fine
+    }
+
+    // Normal feed browsing stays open and unthrottled. Only the `search` path is
+    // gated: it runs a text match over posts and (unlike normal pages) bypasses
+    // the anon first-page cache, so an unauthenticated attacker could otherwise
+    // use it as a cheap DB-scan amplifier. Require a session and apply a
+    // generous per-user limit (does not affect ordinary navigation).
+    if (search && search.trim()) {
+      if (!userId) {
+        return Response.json({ error: "Sign in to search" }, { status: 401 });
+      }
+      const { allowed, retryAfter } = await checkRateLimit(userId, {
+        limit: 40, // ×4 multiplier ⇒ ~160/min — comfortably above debounced typing
+        windowMs: 60_000,
+        prefix: "feed:search",
+      });
+      if (!allowed) {
+        return Response.json(
+          { error: "Searching too fast, please slow down" },
+          { status: 429, headers: { "Retry-After": String(retryAfter) } }
+        );
+      }
     }
 
     // Lazily publish any of the viewer's scheduled posts whose time has come,
