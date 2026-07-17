@@ -16,6 +16,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
+import { apiCache } from '@/lib/cache';
 import { cached, invalidateCached } from '@/lib/cached.server';
 import { userDisplaySelect, resolveUser, type ResolvedUser } from '@/lib/user-display';
 
@@ -34,25 +35,35 @@ export async function getUserDisplayMap(
   const ids = [...new Set(userIds.filter((v): v is string => !!v))];
   if (ids.length === 0) return map;
 
-  // Resolve each id through the shared L1(in-process)+L2(Redis) cache. Warm ids
-  // (the hot-path common case, and now shared across instances via L2) resolve
-  // with zero DB work; only ids cold on every layer hit Postgres, as parallel
-  // primary-key lookups. Routing through `cached()` also subscribes this process
-  // to the invalidation channel so `invalidateUserDisplay` on any instance drops
-  // our copy. Missing users (hard-deleted between queries) resolve to null and
-  // are neither cached nor added to the map.
+  // Batch the cold path: any id absent from the in-process L1 cache is loaded in
+  // ONE `findMany({ id: { in } })` here, instead of N parallel `findUnique`s
+  // (perf audit §2.9 — a 20-item feed page can reference ~40 distinct authors, so
+  // after each 60s TTL expiry the old code fired ~40 point queries that queued
+  // 4-deep on the pool). The per-id `cached()` calls below then resolve their
+  // loader from this prefetch map, so the DB is touched at most once per call.
+  const l1Misses = ids.filter((id) => apiCache.get(userDisplayKey(id)) === undefined);
+  const prefetched = new Map<string, ResolvedUser | null>();
+  if (l1Misses.length > 0) {
+    const rows = await prisma.user.findMany({
+      where: { id: { in: l1Misses } },
+      select: userDisplaySelect,
+    });
+    for (const row of rows) prefetched.set(row.id, resolveUser(row));
+    for (const id of l1Misses) if (!prefetched.has(id)) prefetched.set(id, null);
+  }
+
+  // Resolve each id through the shared L1(in-process)+L2(Redis) cache. Warm L1
+  // ids resolve with zero work; L1-cold ids consult L2, then fall back to the
+  // batched prefetch above (no per-id DB). Routing through `cached()` keeps the
+  // cross-instance invalidation subscription and L2 write-through intact.
+  // Missing users (hard-deleted between queries) resolve to null and are neither
+  // cached nor added to the map.
   const resolved = await Promise.all(
     ids.map((id) =>
       cached<ResolvedUser | null>(
         userDisplayKey(id),
         USER_DISPLAY_TTL_MS,
-        async () => {
-          const row = await prisma.user.findUnique({
-            where: { id },
-            select: userDisplaySelect,
-          });
-          return row ? resolveUser(row) : null;
-        },
+        async () => prefetched.get(id) ?? null,
         { shouldCache: (v) => v !== null },
       ),
     ),
