@@ -118,7 +118,11 @@ export async function probeWorkdaySourceUrl(
   if (!res.ok) return { live: false, jobCount: 0 };
   try {
     const body = JSON.parse(res.body) as WorkdayBoardResponse;
-    if (!Number.isInteger(body.total) || (body.total as number) < 0 || !Array.isArray(body.jobPostings)) {
+    if (
+      !Number.isInteger(body.total) ||
+      (body.total as number) < 0 ||
+      !Array.isArray(body.jobPostings)
+    ) {
       return { live: false, jobCount: 0 };
     }
     return { live: true, jobCount: body.total as number };
@@ -161,7 +165,12 @@ async function fetchBoard(ctx: AdapterContext): Promise<WorkdayBoardResult> {
       init: {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ appliedFacets: {}, limit: PAGE_SIZE, offset: jobs.length, searchText: '' }),
+        body: JSON.stringify({
+          appliedFacets: {},
+          limit: PAGE_SIZE,
+          offset: jobs.length,
+          searchText: '',
+        }),
       },
     });
     status = res.status;
@@ -174,7 +183,11 @@ async function fetchBoard(ctx: AdapterContext): Promise<WorkdayBoardResult> {
       return { jobs: null, status, total };
     }
 
-    if (!Number.isInteger(data.total) || (data.total as number) < 0 || !Array.isArray(data.jobPostings)) {
+    if (
+      !Number.isInteger(data.total) ||
+      (data.total as number) < 0 ||
+      !Array.isArray(data.jobPostings)
+    ) {
       return { jobs: null, status, total };
     }
 
@@ -189,7 +202,10 @@ async function fetchBoard(ctx: AdapterContext): Promise<WorkdayBoardResult> {
   return { jobs, status, total };
 }
 
-function normalize(raw: WorkdayPosting & { title: string; externalPath: string }, config: WorkdaySourceConfig): NormalizedJob {
+function normalize(
+  raw: WorkdayPosting & { title: string; externalPath: string },
+  config: WorkdaySourceConfig,
+): NormalizedJob {
   const locationRaw = typeof raw.locationsText === 'string' ? raw.locationsText : '';
   const remoteType = typeof raw.remoteType === 'string' ? raw.remoteType : '';
   const bullets = Array.isArray(raw.bulletFields)
@@ -224,13 +240,18 @@ export const workdayAdapter: SourceAdapter = {
     const config = resolveConfig(ctx);
     if (!config) return { jobs: [], fetchSucceeded: false };
     const { jobs } = await fetchBoard(ctx);
-    return { jobs: (jobs ?? []).filter(validPosting).map((job) => normalize(job, config)), fetchSucceeded: jobs !== null };
+    return {
+      jobs: (jobs ?? []).filter(validPosting).map((job) => normalize(job, config)),
+      fetchSucceeded: jobs !== null,
+    };
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {
     const config = resolveConfig(ctx);
     const { jobs, status } = config ? await fetchBoard(ctx) : { jobs: null, status: 0 };
-    const hit = jobs?.filter(validPosting).find((candidate) => candidate.externalPath === job.externalId) ?? null;
+    const hit =
+      jobs?.filter(validPosting).find((candidate) => candidate.externalPath === job.externalId) ??
+      null;
     const normalized = hit && config ? normalize(hit, config) : null;
     const location = normalized
       ? classifyUSLocation({ locationRaw: normalized.locationRaw, country: normalized.country })

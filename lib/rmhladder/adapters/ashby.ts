@@ -26,7 +26,9 @@ interface AshbyJob {
   };
 }
 
-async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: AshbyJob[] | null; status: number }> {
+async function fetchBoard(
+  ctx: AdapterContext,
+): Promise<{ jobs: AshbyJob[] | null; status: number }> {
   const res = await politeFetch(ashbyBoardUrl(ctx.slug), { fetchImpl: ctx.fetchImpl });
   if (!res.ok) return { jobs: null, status: res.status };
   try {
@@ -43,7 +45,10 @@ async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: AshbyJob[] | nul
 
 function normalize(raw: AshbyJob): NormalizedJob {
   const addressRegion = raw.address?.postalAddress?.addressRegion;
-  const locationRaw = addressRegion && addressRegion !== raw.location ? `${raw.location}, ${addressRegion}` : raw.location;
+  const locationRaw =
+    addressRegion && addressRegion !== raw.location
+      ? `${raw.location}, ${addressRegion}`
+      : raw.location;
 
   return {
     externalId: raw.id,
@@ -64,14 +69,19 @@ export const ashbyAdapter: SourceAdapter = {
 
   async discoverJobs(ctx): Promise<DiscoverResult> {
     const { jobs } = await fetchBoard(ctx);
-    return { jobs: (jobs ?? []).filter((j) => j.isListed).map(normalize), fetchSucceeded: jobs !== null };
+    return {
+      jobs: (jobs ?? []).filter((j) => j.isListed).map(normalize),
+      fetchSucceeded: jobs !== null,
+    };
   },
 
   async verifyJob(ctx, job): Promise<VerificationEvidence> {
     const { jobs, status } = await fetchBoard(ctx);
     const hit = jobs?.find((j) => j.id === job.externalId) ?? null;
     const normalized = hit ? normalize(hit) : null;
-    const loc = normalized ? classifyUSLocation({ locationRaw: normalized.locationRaw, country: normalized.country }) : null;
+    const loc = normalized
+      ? classifyUSLocation({ locationRaw: normalized.locationRaw, country: normalized.country })
+      : null;
     return {
       fetched: jobs !== null,
       httpStatus: status,

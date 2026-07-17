@@ -32,7 +32,9 @@ interface SrPostingsResponse {
   content?: unknown;
 }
 
-async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; status: number; totalFound: number; ok: boolean }> {
+async function fetchBoard(
+  ctx: AdapterContext,
+): Promise<{ jobs: SrJob[] | null; status: number; totalFound: number; ok: boolean }> {
   const aggregated: SrJob[] = [];
   let totalFound = 0;
   let status = 200;
@@ -40,7 +42,9 @@ async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: SrJob[] | null; 
   const hardCap = 500;
 
   while (aggregated.length < hardCap) {
-    const res = await politeFetch(smartRecruitersPostingsUrl(ctx.slug, offset), { fetchImpl: ctx.fetchImpl });
+    const res = await politeFetch(smartRecruitersPostingsUrl(ctx.slug, offset), {
+      fetchImpl: ctx.fetchImpl,
+    });
 
     if (!res.ok) {
       // If the first page fails, return null; otherwise return what we have so far
@@ -140,7 +144,9 @@ export const smartRecruitersAdapter: SourceAdapter = {
     const { jobs, status } = await fetchBoard(ctx);
     const hit = jobs?.find((j) => j.id === job.externalId) ?? null;
     const normalized = hit ? normalize(hit, ctx) : null;
-    const loc = normalized ? classifyUSLocation({ locationRaw: normalized.locationRaw, country: normalized.country }) : null;
+    const loc = normalized
+      ? classifyUSLocation({ locationRaw: normalized.locationRaw, country: normalized.country })
+      : null;
     return {
       fetched: jobs !== null,
       httpStatus: status,

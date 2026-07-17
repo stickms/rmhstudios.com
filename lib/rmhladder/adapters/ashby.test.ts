@@ -51,7 +51,10 @@ describe('ashbyAdapter.discoverJobs', () => {
   });
 
   it('fetch failure (500): fetchSucceeded=false, jobs=[]', async () => {
-    const result = await ashbyAdapter.discoverJobs({ ...ctx, fetchImpl: stub(500, 'server error') });
+    const result = await ashbyAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(500, 'server error'),
+    });
     expect(result.fetchSucceeded).toBe(false);
     expect(result.jobs).toEqual([]);
   });
@@ -59,11 +62,20 @@ describe('ashbyAdapter.discoverJobs', () => {
 
 describe('ashbyAdapter.verifyJob', () => {
   it('produces API-source evidence when the job is on the board', async () => {
-    const e = await ashbyAdapter.verifyJob(ctx, { externalId: 'uuid-1', title: 'Software Engineering Intern' });
+    const e = await ashbyAdapter.verifyJob(ctx, {
+      externalId: 'uuid-1',
+      title: 'Software Engineering Intern',
+    });
     expect(e).toMatchObject({
-      fetched: true, httpStatus: 200,
-      apiSource: true, titleMatch: true, usConfirmed: true, applyPresent: true,
-      reqIdPresent: false, blocked: false, platform: 'ashby',
+      fetched: true,
+      httpStatus: 200,
+      apiSource: true,
+      titleMatch: true,
+      usConfirmed: true,
+      applyPresent: true,
+      reqIdPresent: false,
+      blocked: false,
+      platform: 'ashby',
     });
   });
 
@@ -121,6 +133,8 @@ describe('ashbyAdapter.detectExpired', () => {
 
 describe('ashbyBoardUrl', () => {
   it('builds the correct API URL', () => {
-    expect(ashbyBoardUrl('ramp')).toBe('https://api.ashbyhq.com/posting-api/job-board/ramp?includeCompensation=false');
+    expect(ashbyBoardUrl('ramp')).toBe(
+      'https://api.ashbyhq.com/posting-api/job-board/ramp?includeCompensation=false',
+    );
   });
 });

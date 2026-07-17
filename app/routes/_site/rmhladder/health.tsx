@@ -25,10 +25,14 @@ const queriesPrisma = prisma as unknown as QueriesPrisma;
 
 const fetchHealth = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session?.user) throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/health' } });
-    const admin = await prisma.user.findUnique({ where: { id: session.user.id }, select: { isAdmin: true } });
-    if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session?.user)
+    throw redirect({ to: '/login', search: { callbackURL: '/rmhladder/health' } });
+  const admin = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { isAdmin: true },
+  });
+  if (!admin?.isAdmin) throw redirect({ to: '/rmhladder' });
   const resumeReadiness = resumeSubsystemReadiness();
   const [stale, runs, overview, openMassExpiryTasks] = await Promise.all([
     listStaleSources(queriesPrisma),
@@ -41,7 +45,10 @@ const fetchHealth = createServerFn({ method: 'GET' }).handler(async () => {
   const lastCompletedRun = (runs as AnyRow[]).find((r) => r.finishedAt != null) ?? null;
   const lastCompletedRunAt = lastCompletedRun ? (lastCompletedRun.finishedAt as Date) : null;
   const latestRun = lastCompletedRun
-    ? { errorCount: lastCompletedRun.errorCount as number, discoveredCount: lastCompletedRun.discoveredCount as number }
+    ? {
+        errorCount: lastCompletedRun.errorCount as number,
+        discoveredCount: lastCompletedRun.discoveredCount as number,
+      }
     : null;
 
   const alerts = detectLadderHealthAlerts({
@@ -115,7 +122,9 @@ function HealthPage() {
       <section className="rl-stale-panel">
         <h2 className="rl-eyebrow">Silent for two scrape cycles (8h)</h2>
         {(stale as AnyRow[]).length === 0 ? (
-          <p className="rl-quicklist__empty">Every active source has succeeded within the last eight hours.</p>
+          <p className="rl-quicklist__empty">
+            Every active source has succeeded within the last eight hours.
+          </p>
         ) : (
           <ul>
             {(stale as AnyRow[]).map((s) => (
@@ -125,13 +134,18 @@ function HealthPage() {
                 </span>
                 <span className="rl-program-chip">{s.platform as string}</span>
                 <span className="rl-mono">
-                  {s.lastSuccessAt ? `last ok ${timeAgo(s.lastSuccessAt as Date)}` : 'never succeeded'}
+                  {s.lastSuccessAt
+                    ? `last ok ${timeAgo(s.lastSuccessAt as Date)}`
+                    : 'never succeeded'}
                 </span>
                 <span className="rl-mono">
-                  {s.lastAttemptAt ? `last tried ${timeAgo(s.lastAttemptAt as Date)}` : 'never attempted'}
+                  {s.lastAttemptAt
+                    ? `last tried ${timeAgo(s.lastAttemptAt as Date)}`
+                    : 'never attempted'}
                 </span>
                 <span className="rl-mono">
-                  {Number(s.consecutiveFailures ?? 0)} consecutive failure{Number(s.consecutiveFailures ?? 0) === 1 ? '' : 's'}
+                  {Number(s.consecutiveFailures ?? 0)} consecutive failure
+                  {Number(s.consecutiveFailures ?? 0) === 1 ? '' : 's'}
                 </span>
               </li>
             ))}
@@ -153,7 +167,9 @@ function HealthPage() {
               <th scope="col">Expired</th>
               <th scope="col">Errors</th>
               <th scope="col">Trigger</th>
-              <th scope="col"><span className="rl-visually-hidden">Details</span></th>
+              <th scope="col">
+                <span className="rl-visually-hidden">Details</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -169,7 +185,9 @@ function HealthPage() {
                   <td className="rl-mono">{run.verifiedCount as number}</td>
                   <td className="rl-mono">{run.expiredCount as number}</td>
                   <td className="rl-mono">{run.errorCount as number}</td>
-                  <td><span className="rl-program-chip">{run.trigger as string}</span></td>
+                  <td>
+                    <span className="rl-program-chip">{run.trigger as string}</span>
+                  </td>
                   <td>
                     {errors.length > 0 && (
                       <button
@@ -178,7 +196,9 @@ function HealthPage() {
                         aria-expanded={expanded}
                         onClick={() => setExpandedRun(expanded ? null : (run.id as string))}
                       >
-                        {expanded ? 'Hide errors' : `${errors.length} error${errors.length > 1 ? 's' : ''}`}
+                        {expanded
+                          ? 'Hide errors'
+                          : `${errors.length} error${errors.length > 1 ? 's' : ''}`}
                       </button>
                     )}
                   </td>
@@ -201,7 +221,9 @@ function HealthPage() {
           </tbody>
         </table>
         {(runs as AnyRow[]).length === 0 && (
-          <p className="rl-quicklist__empty">No runs recorded. Start one: <code>pnpm ladder:run</code></p>
+          <p className="rl-quicklist__empty">
+            No runs recorded. Start one: <code>pnpm ladder:run</code>
+          </p>
         )}
       </section>
     </div>

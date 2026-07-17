@@ -59,7 +59,12 @@ describe('resumeSubsystemReadiness', () => {
 describe('resumeReadinessError', () => {
   it('is empty when ready', () => {
     expect(
-      resumeReadinessError({ ready: true, objectStorageConfigured: true, encryptionKeyConfigured: true, missing: [] }),
+      resumeReadinessError({
+        ready: true,
+        objectStorageConfigured: true,
+        encryptionKeyConfigured: true,
+        missing: [],
+      }),
     ).toBe('');
   });
 

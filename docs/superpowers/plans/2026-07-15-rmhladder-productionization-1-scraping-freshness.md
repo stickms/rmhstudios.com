@@ -21,31 +21,33 @@
 
 ## File Structure
 
-| File | Responsibility | Task |
-|---|---|---|
-| `lib/rmhladder/adapters/types.ts` (modify) | add `DiscoverResult`; change `discoverJobs` signature | 1 |
-| `lib/rmhladder/adapters/{greenhouse,lever,ashby,smartrecruiters,workday}.ts` (modify) | `discoverJobs` returns `{ jobs, fetchSucceeded }`; smartrecruiters stops collapsing empty→null | 1 |
-| `lib/rmhladder/adapters/*.test.ts` (modify) | update to new return shape + assert `fetchSucceeded` | 1 |
-| `lib/rmhladder/pipeline/recheck.ts` (modify) | consume `fetchSucceeded`; drop `boardJobs.length > 0` heuristic | 2 |
-| `lib/rmhladder/pipeline/recheck.test.ts` (modify) | empty-but-successful board strikes/expires; breaker still trips | 2 |
-| `lib/rmhladder/pipeline/process-source.ts` (modify) | empty-but-alive board → success (stamp lastSuccessAt), not failure | 3 |
-| `lib/rmhladder/pipeline/process-source.test.ts` (modify) | empty-success vs fetch-failure branch behavior | 3 |
-| `lib/rmhladder/pipeline/run.test.ts` (modify) | adjust any fakes to the new `discoverJobs` shape | 1/3 |
-| `lib/rmhladder/pipeline/expire-stale.ts` (create) | pure `decideAgeExpiry` + `expireStaleJobs` sweep | 4 |
-| `lib/rmhladder/pipeline/expire-stale.test.ts` (create) | age-cutoff decisions + sweep behavior | 4 |
-| `lib/rmhladder/pipeline/run.ts` (modify) | call `expireStaleJobs` as a run step; count in `RunResult` | 4 |
-| `.env.example` (modify) | document `LADDER_JOB_MAX_AGE_MS` | 4 |
+| File                                                                                  | Responsibility                                                                                 | Task |
+| ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---- |
+| `lib/rmhladder/adapters/types.ts` (modify)                                            | add `DiscoverResult`; change `discoverJobs` signature                                          | 1    |
+| `lib/rmhladder/adapters/{greenhouse,lever,ashby,smartrecruiters,workday}.ts` (modify) | `discoverJobs` returns `{ jobs, fetchSucceeded }`; smartrecruiters stops collapsing empty→null | 1    |
+| `lib/rmhladder/adapters/*.test.ts` (modify)                                           | update to new return shape + assert `fetchSucceeded`                                           | 1    |
+| `lib/rmhladder/pipeline/recheck.ts` (modify)                                          | consume `fetchSucceeded`; drop `boardJobs.length > 0` heuristic                                | 2    |
+| `lib/rmhladder/pipeline/recheck.test.ts` (modify)                                     | empty-but-successful board strikes/expires; breaker still trips                                | 2    |
+| `lib/rmhladder/pipeline/process-source.ts` (modify)                                   | empty-but-alive board → success (stamp lastSuccessAt), not failure                             | 3    |
+| `lib/rmhladder/pipeline/process-source.test.ts` (modify)                              | empty-success vs fetch-failure branch behavior                                                 | 3    |
+| `lib/rmhladder/pipeline/run.test.ts` (modify)                                         | adjust any fakes to the new `discoverJobs` shape                                               | 1/3  |
+| `lib/rmhladder/pipeline/expire-stale.ts` (create)                                     | pure `decideAgeExpiry` + `expireStaleJobs` sweep                                               | 4    |
+| `lib/rmhladder/pipeline/expire-stale.test.ts` (create)                                | age-cutoff decisions + sweep behavior                                                          | 4    |
+| `lib/rmhladder/pipeline/run.ts` (modify)                                              | call `expireStaleJobs` as a run step; count in `RunResult`                                     | 4    |
+| `.env.example` (modify)                                                               | document `LADDER_JOB_MAX_AGE_MS`                                                               | 4    |
 
 ---
 
 ## Task 1: `DiscoverResult` contract — surface `fetchSucceeded` across all adapters
 
 **Files:**
+
 - Modify: `lib/rmhladder/adapters/types.ts`
 - Modify: `lib/rmhladder/adapters/greenhouse.ts`, `lever.ts`, `ashby.ts`, `smartrecruiters.ts`, `workday.ts`
 - Modify: each adapter's `*.test.ts`, and `lib/rmhladder/pipeline/run.test.ts` / any fake adapter used by pipeline tests
 
 **Interfaces:**
+
 - Produces: `interface DiscoverResult { jobs: NormalizedJob[]; fetchSucceeded: boolean }`; `SourceAdapter.discoverJobs(ctx): Promise<DiscoverResult>`.
 - Consumed by Tasks 2 (recheck) and 3 (process-source).
 
@@ -62,7 +64,9 @@ export interface DiscoverResult {
   fetchSucceeded: boolean;
 }
 ```
+
 Change the method signature in `SourceAdapter`:
+
 ```ts
   discoverJobs(ctx: AdapterContext): Promise<DiscoverResult>;
 ```
@@ -77,20 +81,25 @@ Expected: FAIL — every adapter's `discoverJobs` (returns `NormalizedJob[]`) an
 Each already has `const { jobs } = await fetchBoard(ctx)` where `fetchBoard` returns `jobs: X[] | null` (null only on failure). Change each `discoverJobs` to return the struct with `fetchSucceeded: jobs !== null`:
 
 greenhouse (`greenhouse.ts:66-69`):
+
 ```ts
   async discoverJobs(ctx) {
     const { jobs } = await fetchBoard(ctx);
     return { jobs: (jobs ?? []).map(normalize), fetchSucceeded: jobs !== null };
   },
 ```
+
 lever (`lever.ts:51-54`):
+
 ```ts
   async discoverJobs(ctx) {
     const { jobs } = await fetchBoard(ctx);
     return { jobs: (jobs ?? []).map(normalize), fetchSucceeded: jobs !== null };
   },
 ```
+
 ashby (`ashby.ts:65-68`):
+
 ```ts
   async discoverJobs(ctx) {
     const { jobs } = await fetchBoard(ctx);
@@ -101,6 +110,7 @@ ashby (`ashby.ts:65-68`):
 - [ ] **Step 4: workday — same signal + the config guard**
 
 `workday.ts` `fetchBoard` returns `jobs: X[] | null` (null on config-missing, HTTP error, parse error, or partial `jobs.length < total`), and an empty successful board returns `[]`. The `discoverJobs` config-missing early return must report failure. Change `workday.ts:210-215` region:
+
 ```ts
   async discoverJobs(ctx) {
     const config = resolveConfig(ctx);
@@ -119,6 +129,7 @@ Read `smartrecruiters.ts` `fetchBoard` (around lines 35-106). It currently retur
 3. In the final success `return` (line ~106), return the array as-is (may be empty) with `ok: true`: `return { jobs: aggregated, status, totalFound, ok: true };` — do NOT map empty to null.
 4. `verifyJob` and `detectExpired` currently key off `jobs === null` / `jobs !== null`; with `jobs` now `SrJob[]` on success they still behave correctly (`jobs !== null` stays true on success; `[].some(...)` is false, matching "not found"). Verify these two methods still read correctly after the change; if any relied on empty→null, switch them to use `ok`.
 5. `discoverJobs` (`smartrecruiters.ts:133-136`):
+
 ```ts
   async discoverJobs(ctx) {
     const { jobs, ok } = await fetchBoard(ctx);
@@ -133,6 +144,7 @@ Read `smartrecruiters.ts` `fetchBoard` (around lines 35-106). It currently retur
 - [ ] **Step 7: Update adapter tests**
 
 For each `adapters/*.test.ts`: existing tests that call `adapter.discoverJobs(ctx)` and read the array must read `result.jobs`. ADD one assertion per adapter that pins the new behavior:
+
 - A **successful empty board** (mock the board endpoint returning HTTP 200 with an empty job list) → `result.fetchSucceeded === true` and `result.jobs.length === 0`.
 - A **fetch failure** (mock HTTP 500/404) → `result.fetchSucceeded === false` and `result.jobs.length === 0`.
 
@@ -155,10 +167,12 @@ git commit -m "feat(rmhladder): discoverJobs reports fetchSucceeded (empty vs fa
 ## Task 2: recheck uses `fetchSucceeded` — empty boards expire dead jobs
 
 **Files:**
+
 - Modify: `lib/rmhladder/pipeline/recheck.ts`
 - Modify: `lib/rmhladder/pipeline/recheck.test.ts`
 
 **Interfaces:**
+
 - Consumes: `DiscoverResult` from Task 1.
 
 - [ ] **Step 1: Write the failing test first**
@@ -173,32 +187,36 @@ Expected: FAIL — current code sets `fetchSucceeded = boardJobs.length > 0`, so
 - [ ] **Step 3: Change recheck to use the reported signal**
 
 In `recheck.ts`, replace the memoized discovery block (currently ~lines 124-134):
-```ts
-  let boardJobs: Awaited<ReturnType<typeof adapter.discoverJobs>>;
-  try {
-    boardJobs = await adapter.discoverJobs(ctx);
-  } catch {
-    boardJobs = [];
-  }
 
-  // [] is ambiguous (empty board vs. fetch failure) → skip all, no strikes.
-  const fetchSucceeded = boardJobs.length > 0;
-  const presentIds = new Set(boardJobs.map((j) => j.externalId));
+```ts
+let boardJobs: Awaited<ReturnType<typeof adapter.discoverJobs>>;
+try {
+  boardJobs = await adapter.discoverJobs(ctx);
+} catch {
+  boardJobs = [];
+}
+
+// [] is ambiguous (empty board vs. fetch failure) → skip all, no strikes.
+const fetchSucceeded = boardJobs.length > 0;
+const presentIds = new Set(boardJobs.map((j) => j.externalId));
 ```
+
 with:
-```ts
-  let discovered: Awaited<ReturnType<typeof adapter.discoverJobs>>;
-  try {
-    discovered = await adapter.discoverJobs(ctx);
-  } catch {
-    discovered = { jobs: [], fetchSucceeded: false };
-  }
 
-  // A successfully-fetched board that is empty IS evidence of absence; only a
-  // failed fetch is ambiguous. This is the empty-board expiry fix (Phase 1).
-  const fetchSucceeded = discovered.fetchSucceeded;
-  const presentIds = new Set(discovered.jobs.map((j) => j.externalId));
+```ts
+let discovered: Awaited<ReturnType<typeof adapter.discoverJobs>>;
+try {
+  discovered = await adapter.discoverJobs(ctx);
+} catch {
+  discovered = { jobs: [], fetchSucceeded: false };
+}
+
+// A successfully-fetched board that is empty IS evidence of absence; only a
+// failed fetch is ambiguous. This is the empty-board expiry fix (Phase 1).
+const fetchSucceeded = discovered.fetchSucceeded;
+const presentIds = new Set(discovered.jobs.map((j) => j.externalId));
 ```
+
 The downstream `decideRecheck`/circuit-breaker logic is unchanged — it already keys off `fetchSucceeded` and `presentOnBoard`.
 
 - [ ] **Step 4: Confirm the circuit breaker still protects**
@@ -222,10 +240,12 @@ git commit -m "feat(rmhladder): expire dead jobs on empty-but-successful boards"
 ## Task 3: process-source treats empty-but-alive boards as success
 
 **Files:**
+
 - Modify: `lib/rmhladder/pipeline/process-source.ts`
 - Modify: `lib/rmhladder/pipeline/process-source.test.ts`
 
 **Interfaces:**
+
 - Consumes: `DiscoverResult` from Task 1.
 
 Currently (`process-source.ts:120-130`) a zero-length discovery always increments `consecutiveFailures` and skips `lastSuccessAt` — so a healthy company with no current early-career reqs is wrongly marked as failing and shows up as a "silent source". Fix: distinguish empty-success from fetch failure.
@@ -233,6 +253,7 @@ Currently (`process-source.ts:120-130`) a zero-length discovery always increment
 - [ ] **Step 1: Write the failing tests first**
 
 In `process-source.test.ts`, ADD two tests:
+
 - Adapter returns `{ jobs: [], fetchSucceeded: true }` → source is updated with `lastSuccessAt` set and `consecutiveFailures` reset to 0 (alive, just empty); stats `discovered === 0`, `errored === false`.
 - Adapter returns `{ jobs: [], fetchSucceeded: false }` → source `consecutiveFailures` incremented, `lastSuccessAt` NOT set; `errored` reflects a failure. (This preserves today's behavior for genuine fetch failures.)
 
@@ -244,44 +265,54 @@ Expected: FAIL — current code increments failures for both cases.
 - [ ] **Step 3: Implement the split**
 
 In `process-source.ts`, change the discovery + zero-branch (currently lines 120-130):
-```ts
-    // 3. Discover jobs.
-    const normalizedJobs = await adapter.discoverJobs(ctx);
-    stats.discovered = normalizedJobs.length;
 
-    // Zero discoveries carry no success evidence (empty board or fetch failure); skip lastSuccessAt.
-    if (stats.discovered === 0) {
-      await deps.prisma.ladderSource.update({
-        where: { id: source.id },
-        data: { lastAttemptAt: now, consecutiveFailures: { increment: 1 } },
-      });
-      return { ...stats, errorMessage: 'no jobs discovered (empty board or fetch failure)' };
-    }
+```ts
+// 3. Discover jobs.
+const normalizedJobs = await adapter.discoverJobs(ctx);
+stats.discovered = normalizedJobs.length;
+
+// Zero discoveries carry no success evidence (empty board or fetch failure); skip lastSuccessAt.
+if (stats.discovered === 0) {
+  await deps.prisma.ladderSource.update({
+    where: { id: source.id },
+    data: { lastAttemptAt: now, consecutiveFailures: { increment: 1 } },
+  });
+  return { ...stats, errorMessage: 'no jobs discovered (empty board or fetch failure)' };
+}
 ```
+
 to:
-```ts
-    // 3. Discover jobs.
-    const { jobs: normalizedJobs, fetchSucceeded } = await adapter.discoverJobs(ctx);
-    stats.discovered = normalizedJobs.length;
 
-    // Zero discoveries: a successfully-fetched empty board means the source is
-    // alive but has no current reqs (stamp success); a failed fetch is a real
-    // failure (increment). Conflating them wrongly flagged healthy firms silent.
-    if (stats.discovered === 0) {
-      if (fetchSucceeded) {
-        await deps.prisma.ladderSource.update({
-          where: { id: source.id },
-          data: { status: 'active', lastAttemptAt: now, lastSuccessAt: now, nextProbeAt: null, consecutiveFailures: 0 },
-        });
-        return { ...stats };
-      }
-      await deps.prisma.ladderSource.update({
-        where: { id: source.id },
-        data: { lastAttemptAt: now, consecutiveFailures: { increment: 1 } },
-      });
-      return { ...stats, errored: true, errorMessage: 'board fetch failed (no jobs discovered)' };
-    }
+```ts
+// 3. Discover jobs.
+const { jobs: normalizedJobs, fetchSucceeded } = await adapter.discoverJobs(ctx);
+stats.discovered = normalizedJobs.length;
+
+// Zero discoveries: a successfully-fetched empty board means the source is
+// alive but has no current reqs (stamp success); a failed fetch is a real
+// failure (increment). Conflating them wrongly flagged healthy firms silent.
+if (stats.discovered === 0) {
+  if (fetchSucceeded) {
+    await deps.prisma.ladderSource.update({
+      where: { id: source.id },
+      data: {
+        status: 'active',
+        lastAttemptAt: now,
+        lastSuccessAt: now,
+        nextProbeAt: null,
+        consecutiveFailures: 0,
+      },
+    });
+    return { ...stats };
+  }
+  await deps.prisma.ladderSource.update({
+    where: { id: source.id },
+    data: { lastAttemptAt: now, consecutiveFailures: { increment: 1 } },
+  });
+  return { ...stats, errored: true, errorMessage: 'board fetch failed (no jobs discovered)' };
+}
 ```
+
 (The non-empty path below is unchanged and still stamps `lastSuccessAt` on success.)
 
 - [ ] **Step 4: Green**
@@ -301,6 +332,7 @@ git commit -m "feat(rmhladder): empty-but-alive board counts as source success"
 ## Task 4: Age backstop — expire jobs unseen for a cadence-safe window
 
 **Files:**
+
 - Create: `lib/rmhladder/pipeline/expire-stale.ts`
 - Test: `lib/rmhladder/pipeline/expire-stale.test.ts`
 - Modify: `lib/rmhladder/pipeline/run.ts`
@@ -308,29 +340,65 @@ git commit -m "feat(rmhladder): empty-but-alive board counts as source success"
 - Modify: `.env.example`
 
 **Interfaces:**
+
 - Produces: `DEFAULT_JOB_MAX_AGE_MS`, `resolveJobMaxAgeMs(env)`, `decideAgeExpiry({ lastSeenAt, discoveredAt, now, maxAgeMs }): boolean`, `expireStaleJobs(prisma, { now, maxAgeMs }): Promise<{ expired: number }>`.
 - Consumed by: `run.ts`.
 
 - [ ] **Step 1: Write the failing test (pure decision + sweep)**
 
 Create `expire-stale.test.ts`:
+
 ```ts
 import { describe, expect, it, vi, afterEach } from 'vitest';
-import { decideAgeExpiry, resolveJobMaxAgeMs, DEFAULT_JOB_MAX_AGE_MS, expireStaleJobs, type ExpireStalePrisma } from './expire-stale';
+import {
+  decideAgeExpiry,
+  resolveJobMaxAgeMs,
+  DEFAULT_JOB_MAX_AGE_MS,
+  expireStaleJobs,
+  type ExpireStalePrisma,
+} from './expire-stale';
 
 const now = new Date('2026-07-15T12:00:00.000Z');
 const dayMs = 24 * 60 * 60 * 1_000;
 
 describe('decideAgeExpiry', () => {
   it('expires a job last seen beyond the window', () => {
-    expect(decideAgeExpiry({ lastSeenAt: new Date(now.getTime() - 31 * dayMs), discoveredAt: new Date(0), now, maxAgeMs: DEFAULT_JOB_MAX_AGE_MS })).toBe(true);
+    expect(
+      decideAgeExpiry({
+        lastSeenAt: new Date(now.getTime() - 31 * dayMs),
+        discoveredAt: new Date(0),
+        now,
+        maxAgeMs: DEFAULT_JOB_MAX_AGE_MS,
+      }),
+    ).toBe(true);
   });
   it('keeps a job seen within the window', () => {
-    expect(decideAgeExpiry({ lastSeenAt: new Date(now.getTime() - 5 * dayMs), discoveredAt: new Date(0), now, maxAgeMs: DEFAULT_JOB_MAX_AGE_MS })).toBe(false);
+    expect(
+      decideAgeExpiry({
+        lastSeenAt: new Date(now.getTime() - 5 * dayMs),
+        discoveredAt: new Date(0),
+        now,
+        maxAgeMs: DEFAULT_JOB_MAX_AGE_MS,
+      }),
+    ).toBe(false);
   });
   it('falls back to discoveredAt when lastSeenAt is null', () => {
-    expect(decideAgeExpiry({ lastSeenAt: null, discoveredAt: new Date(now.getTime() - 31 * dayMs), now, maxAgeMs: DEFAULT_JOB_MAX_AGE_MS })).toBe(true);
-    expect(decideAgeExpiry({ lastSeenAt: null, discoveredAt: new Date(now.getTime() - 1 * dayMs), now, maxAgeMs: DEFAULT_JOB_MAX_AGE_MS })).toBe(false);
+    expect(
+      decideAgeExpiry({
+        lastSeenAt: null,
+        discoveredAt: new Date(now.getTime() - 31 * dayMs),
+        now,
+        maxAgeMs: DEFAULT_JOB_MAX_AGE_MS,
+      }),
+    ).toBe(true);
+    expect(
+      decideAgeExpiry({
+        lastSeenAt: null,
+        discoveredAt: new Date(now.getTime() - 1 * dayMs),
+        now,
+        maxAgeMs: DEFAULT_JOB_MAX_AGE_MS,
+      }),
+    ).toBe(false);
   });
 });
 
@@ -353,13 +421,23 @@ describe('expireStaleJobs', () => {
   it('expires only stale active jobs and writes a verification row for each', async () => {
     const updates: Array<{ id: string; data: Record<string, unknown> }> = [];
     const verifications: Array<Record<string, unknown>> = [];
-    const stale = [{ id: 'a', lastSeenAt: new Date(now.getTime() - 40 * dayMs), discoveredAt: new Date(0) }];
+    const stale = [
+      { id: 'a', lastSeenAt: new Date(now.getTime() - 40 * dayMs), discoveredAt: new Date(0) },
+    ];
     const prisma: ExpireStalePrisma = {
       ladderJob: {
         findMany: async () => stale,
-        update: async ({ where, data }) => { updates.push({ id: where.id, data }); return { id: where.id }; },
+        update: async ({ where, data }) => {
+          updates.push({ id: where.id, data });
+          return { id: where.id };
+        },
       },
-      ladderVerification: { create: async ({ data }) => { verifications.push(data); return { id: 'v' }; } },
+      ladderVerification: {
+        create: async ({ data }) => {
+          verifications.push(data);
+          return { id: 'v' };
+        },
+      },
     };
     const result = await expireStaleJobs(prisma, { now, maxAgeMs: DEFAULT_JOB_MAX_AGE_MS });
     expect(result.expired).toBe(1);
@@ -377,6 +455,7 @@ Expected: FAIL — module does not exist.
 - [ ] **Step 3: Implement `expire-stale.ts`**
 
 Create `lib/rmhladder/pipeline/expire-stale.ts`:
+
 ```ts
 export const DEFAULT_JOB_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1_000; // 30 days
 
@@ -398,7 +477,10 @@ export function decideAgeExpiry(args: {
 
 export interface ExpireStalePrisma {
   ladderJob: {
-    findMany(args: { where: Record<string, unknown>; select?: Record<string, unknown> }): Promise<Array<{ id: string; lastSeenAt: Date | null; discoveredAt: Date }>>;
+    findMany(args: {
+      where: Record<string, unknown>;
+      select?: Record<string, unknown>;
+    }): Promise<Array<{ id: string; lastSeenAt: Date | null; discoveredAt: Date }>>;
     update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderVerification: {
@@ -427,7 +509,15 @@ export async function expireStaleJobs(
 
   let expired = 0;
   for (const job of candidates) {
-    if (!decideAgeExpiry({ lastSeenAt: job.lastSeenAt, discoveredAt: job.discoveredAt, now: opts.now, maxAgeMs: opts.maxAgeMs })) continue;
+    if (
+      !decideAgeExpiry({
+        lastSeenAt: job.lastSeenAt,
+        discoveredAt: job.discoveredAt,
+        now: opts.now,
+        maxAgeMs: opts.maxAgeMs,
+      })
+    )
+      continue;
     await prisma.ladderJob.update({
       where: { id: job.id },
       data: { status: 'expired', lastCheckedAt: opts.now },
@@ -454,23 +544,33 @@ Expected: PASS.
 - [ ] **Step 5: Wire into `run.ts`**
 
 In `run.ts`: import at top:
+
 ```ts
 import { expireStaleJobs, resolveJobMaxAgeMs } from './expire-stale';
 ```
+
 Add `expired` is already in `RunResult`/`totals`. Extend the `ExpireStalePrisma` shape into `RunPrisma` — `ladderJob.findMany` already exists on `RunPrisma`; confirm its return type is compatible (it returns `{ id; externalId; failedCheckCount }` today — widen the `RunPrisma.ladderJob.findMany` signature to also allow the `{ id; lastSeenAt; discoveredAt }` select used here, or add a second `findMany` overload; keep it minimal and type-correct). Then, after Step 4 (recheck loop) and before Step 5 (manual sources), add a new step:
+
 ```ts
-  // Step 4.5: Age backstop — expire jobs unseen for the max-age window,
-  // independent of per-source recheck. Bounded, long horizon (default 30d).
-  try {
-    const ageResult = await expireStaleJobs(deps.prisma as unknown as import('./expire-stale').ExpireStalePrisma, {
+// Step 4.5: Age backstop — expire jobs unseen for the max-age window,
+// independent of per-source recheck. Bounded, long horizon (default 30d).
+try {
+  const ageResult = await expireStaleJobs(
+    deps.prisma as unknown as import('./expire-stale').ExpireStalePrisma,
+    {
       now: deps.now ?? new Date(),
       maxAgeMs: resolveJobMaxAgeMs(),
-    });
-    totals.expired += ageResult.expired;
-  } catch (err) {
-    totals.errors++;
-    statsSummary.push({ step: 'age_backstop', errored: true, errorMessage: err instanceof Error ? err.message : String(err) });
-  }
+    },
+  );
+  totals.expired += ageResult.expired;
+} catch (err) {
+  totals.errors++;
+  statsSummary.push({
+    step: 'age_backstop',
+    errored: true,
+    errorMessage: err instanceof Error ? err.message : String(err),
+  });
+}
 ```
 
 - [ ] **Step 6: Add a run-level test**
@@ -480,6 +580,7 @@ In `run.test.ts`, ADD a test: seed the in-memory fake with an `active` job whose
 - [ ] **Step 7: Document the env var**
 
 In `.env.example`, near the other `LADDER_` vars, add:
+
 ```
 # LADDER_JOB_MAX_AGE_MS=2592000000   # age backstop: expire active jobs unseen this long (default 30d)
 ```
@@ -501,6 +602,7 @@ git commit -m "feat(rmhladder): age backstop expires long-unseen active jobs"
 ## Self-Review
 
 **Spec coverage (Phase 1):**
+
 - 1.1 Explicit fetch-success signal → Tasks 1 (contract + adapters) & 2 (recheck consumes it). ✅
 - 1.2 Last-seen age backstop → Task 4. ✅
 - 1.3 Freshness visibility → Task 3 makes empty-but-alive boards stamp `lastSuccessAt`, so the existing `/rmhladder/health` "silent sources" signal stops false-flagging healthy empty boards. Deeper per-source freshness surfacing is Phase 3. ✅

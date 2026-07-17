@@ -52,9 +52,15 @@ async function main(): Promise<void> {
   console.log(formatLadderStatus(data));
 
   const [companiesWithActive, enabledCompanies, activeJobsGrouped] = await Promise.all([
-    prisma.ladderCompany.count({ where: { enabled: true, sources: { some: { status: 'active' } } } }),
+    prisma.ladderCompany.count({
+      where: { enabled: true, sources: { some: { status: 'active' } } },
+    }),
     prisma.ladderCompany.count({ where: { enabled: true } }),
-    prisma.ladderJob.groupBy({ by: ['companyId'], where: { status: 'active' }, _count: { _all: true } }),
+    prisma.ladderJob.groupBy({
+      by: ['companyId'],
+      where: { status: 'active' },
+      _count: { _all: true },
+    }),
   ]);
   const manualOnly = await prisma.ladderCompany.count({
     where: { enabled: true, sources: { none: { status: 'active' }, some: { platform: 'manual' } } },
@@ -83,7 +89,9 @@ async function main(): Promise<void> {
   const alerts = detectLadderHealthAlerts({
     now: data.now,
     lastCompletedRunAt: lastRun?.finishedAt ?? null,
-    latestRun: lastRun ? { errorCount: lastRun.errorCount ?? 0, discoveredCount: lastRun.discoveredCount ?? 0 } : null,
+    latestRun: lastRun
+      ? { errorCount: lastRun.errorCount ?? 0, discoveredCount: lastRun.discoveredCount ?? 0 }
+      : null,
     openMassExpiryTasks,
     resumeReady: readiness.ready,
     thresholds: resolveAlertThresholds(),

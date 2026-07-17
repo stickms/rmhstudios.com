@@ -18,7 +18,10 @@ export function decideAgeExpiry(args: {
 
 export interface ExpireStalePrisma {
   ladderJob: {
-    findMany(args: { where: Record<string, unknown>; select?: Record<string, unknown> }): Promise<Array<{ id: string; lastSeenAt: Date | null; discoveredAt: Date }>>;
+    findMany(args: {
+      where: Record<string, unknown>;
+      select?: Record<string, unknown>;
+    }): Promise<Array<{ id: string; lastSeenAt: Date | null; discoveredAt: Date }>>;
     update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderVerification: {
@@ -47,7 +50,15 @@ export async function expireStaleJobs(
 
   let expired = 0;
   for (const job of candidates) {
-    if (!decideAgeExpiry({ lastSeenAt: job.lastSeenAt, discoveredAt: job.discoveredAt, now: opts.now, maxAgeMs: opts.maxAgeMs })) continue;
+    if (
+      !decideAgeExpiry({
+        lastSeenAt: job.lastSeenAt,
+        discoveredAt: job.discoveredAt,
+        now: opts.now,
+        maxAgeMs: opts.maxAgeMs,
+      })
+    )
+      continue;
     await prisma.ladderJob.update({
       where: { id: job.id },
       data: { status: 'expired', lastCheckedAt: opts.now },

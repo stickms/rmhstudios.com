@@ -10,8 +10,7 @@ const GREENHOUSE_FIXTURE = readFileSync(
   join(__dirname, '../adapters/__fixtures__/greenhouse-board.json'),
   'utf8',
 );
-const GREENHOUSE_URL =
-  'https://boards-api.greenhouse.io/v1/boards/stripe/jobs?content=true';
+const GREENHOUSE_URL = 'https://boards-api.greenhouse.io/v1/boards/stripe/jobs?content=true';
 
 /** Returns a fetch stub that always serves the greenhouse fixture at the board URL. */
 function makeGreenhouseFetch(): typeof fetch {
@@ -20,8 +19,8 @@ function makeGreenhouseFetch(): typeof fetch {
       typeof input === 'string'
         ? input
         : input instanceof URL
-        ? input.toString()
-        : (input as Request).url;
+          ? input.toString()
+          : (input as Request).url;
     if (url === GREENHOUSE_URL) {
       return new Response(GREENHOUSE_FIXTURE, { status: 200 });
     }
@@ -65,14 +64,23 @@ function makeFakePrisma(): PrismaLike & {
         const identity = where.sourceId_externalId;
         const row = jobs.get(`${identity.sourceId}:${identity.externalId}`);
         return row
-          ? (row as { id: string; discoveredAt: Date; alternateUrls: string[]; originalPostingUrl: string })
+          ? (row as {
+              id: string;
+              discoveredAt: Date;
+              alternateUrls: string[];
+              originalPostingUrl: string;
+            })
           : null;
       },
       async findFirst({ where }) {
         const excluded = (where.NOT ?? {}) as AnyRow;
-        const row = [...jobs.values()].find((candidate) =>
-          candidate.dedupeHash === where.dedupeHash &&
-          !(candidate.sourceId === excluded.sourceId && candidate.externalId === excluded.externalId),
+        const row = [...jobs.values()].find(
+          (candidate) =>
+            candidate.dedupeHash === where.dedupeHash &&
+            !(
+              candidate.sourceId === excluded.sourceId &&
+              candidate.externalId === excluded.externalId
+            ),
         );
         return row ? { id: row.id as string } : null;
       },
@@ -125,7 +133,14 @@ function makeFakePrisma(): PrismaLike & {
         return { id: 'source-1' };
       },
     },
-    _state: { jobs, verifications, reviewTasks, get lastSourceUpdate() { return lastSourceUpdate; } },
+    _state: {
+      jobs,
+      verifications,
+      reviewTasks,
+      get lastSourceUpdate() {
+        return lastSourceUpdate;
+      },
+    },
   } as PrismaLike & {
     _state: {
       jobs: Map<string, AnyRow>;
@@ -207,7 +222,11 @@ describe('processSource', () => {
 
     it('runs without error', async () => {
       stats = await processSource(
-        { prisma: sharedPrisma, fetchImpl: makeGreenhouseFetch(), now: new Date(NOW.getTime() + 60_000) },
+        {
+          prisma: sharedPrisma,
+          fetchImpl: makeGreenhouseFetch(),
+          now: new Date(NOW.getTime() + 60_000),
+        },
         SOURCE,
       );
       expect(stats.errored).toBe(false);
@@ -290,10 +309,12 @@ describe('processSource', () => {
       );
 
       expect(stats.errored).toBe(false);
-      expect(stats.recordErrors).toEqual([{
-        externalId: '4285367008',
-        message: 'DB connection lost',
-      }]);
+      expect(stats.recordErrors).toEqual([
+        {
+          externalId: '4285367008',
+          message: 'DB connection lost',
+        },
+      ]);
       // First job fully processed.
       expect(stats.created).toBe(1);
       // One verification row for the first job.
@@ -356,8 +377,8 @@ describe('processSource', () => {
           typeof input === 'string'
             ? input
             : input instanceof URL
-            ? input.toString()
-            : (input as Request).url;
+              ? input.toString()
+              : (input as Request).url;
         return url === GREENHOUSE_URL
           ? new Response(modifiedFixture, { status: 200 })
           : new Response('Not found', { status: 404 });
@@ -375,7 +396,11 @@ describe('processSource', () => {
 
     it('second run with changed URLs: originalPostingUrl = new URL, alternateUrls has old URL not new', async () => {
       const stats = await processSource(
-        { prisma: prisma6, fetchImpl: makeModifiedGreenhouseFetch(), now: new Date(NOW.getTime() + 60_000) },
+        {
+          prisma: prisma6,
+          fetchImpl: makeModifiedGreenhouseFetch(),
+          now: new Date(NOW.getTime() + 60_000),
+        },
         SOURCE,
       );
 
@@ -397,7 +422,11 @@ describe('processSource', () => {
     it('third run back to original URL (A→B→A flip-flop): original URL not in alternates', async () => {
       // Third run: board flips back to original URLs
       await processSource(
-        { prisma: prisma6, fetchImpl: makeGreenhouseFetch(), now: new Date(NOW.getTime() + 120_000) },
+        {
+          prisma: prisma6,
+          fetchImpl: makeGreenhouseFetch(),
+          now: new Date(NOW.getTime() + 120_000),
+        },
         SOURCE,
       );
 
@@ -418,40 +447,54 @@ describe('processSource', () => {
     const prisma8 = makeFakePrisma();
 
     const FIXTURE_V1 = JSON.stringify({
-      jobs: [{
-        id: 4285367007,
-        title: 'Product Management Intern',
-        updated_at: '2026-06-20T12:00:00-04:00',
-        first_published: '2026-06-01T09:00:00-04:00',
-        requisition_id: 'R-1234',
-        location: { name: 'New York, NY' },
-        absolute_url: 'https://boards.greenhouse.io/stripe/jobs/4285367007',
-        content: '&lt;p&gt;Summer PM internship.&lt;/p&gt;',
-      }],
+      jobs: [
+        {
+          id: 4285367007,
+          title: 'Product Management Intern',
+          updated_at: '2026-06-20T12:00:00-04:00',
+          first_published: '2026-06-01T09:00:00-04:00',
+          requisition_id: 'R-1234',
+          location: { name: 'New York, NY' },
+          absolute_url: 'https://boards.greenhouse.io/stripe/jobs/4285367007',
+          content: '&lt;p&gt;Summer PM internship.&lt;/p&gt;',
+        },
+      ],
     });
 
     const FIXTURE_V2 = JSON.stringify({
-      jobs: [{
-        id: 9999999999,   // NEW external id — same title / location → same dedupeHash
-        title: 'Product Management Intern',
-        updated_at: '2026-07-01T12:00:00-04:00',
-        first_published: '2026-07-01T09:00:00-04:00',
-        requisition_id: 'R-5678',
-        location: { name: 'New York, NY' },
-        absolute_url: 'https://boards.greenhouse.io/stripe/jobs/9999999999',
-        content: '&lt;p&gt;Summer PM internship (re-posted).&lt;/p&gt;',
-      }],
+      jobs: [
+        {
+          id: 9999999999, // NEW external id — same title / location → same dedupeHash
+          title: 'Product Management Intern',
+          updated_at: '2026-07-01T12:00:00-04:00',
+          first_published: '2026-07-01T09:00:00-04:00',
+          requisition_id: 'R-5678',
+          location: { name: 'New York, NY' },
+          absolute_url: 'https://boards.greenhouse.io/stripe/jobs/9999999999',
+          content: '&lt;p&gt;Summer PM internship (re-posted).&lt;/p&gt;',
+        },
+      ],
     });
 
     function makeFetchFor(fixture: string): typeof fetch {
       return async (input: RequestInfo | URL, _init?: RequestInit): Promise<Response> => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
-        return url === GREENHOUSE_URL ? new Response(fixture, { status: 200 }) : new Response('Not found', { status: 404 });
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
+        return url === GREENHOUSE_URL
+          ? new Response(fixture, { status: 200 })
+          : new Response('Not found', { status: 404 });
       };
     }
 
     it('first run: creates 1 job with externalId "4285367007"', async () => {
-      const stats = await processSource({ prisma: prisma8, fetchImpl: makeFetchFor(FIXTURE_V1), now: NOW }, SOURCE);
+      const stats = await processSource(
+        { prisma: prisma8, fetchImpl: makeFetchFor(FIXTURE_V1), now: NOW },
+        SOURCE,
+      );
       expect(stats.created).toBe(1);
       expect(stats.updated).toBe(0);
       const job = [...prisma8._state.jobs.values()][0] as { externalId: string };
@@ -459,20 +502,36 @@ describe('processSource', () => {
     });
 
     it('second run with new externalId creates a new row and duplicate review signal', async () => {
-      const stats = await processSource({ prisma: prisma8, fetchImpl: makeFetchFor(FIXTURE_V2), now: new Date(NOW.getTime() + 60_000) }, SOURCE);
+      const stats = await processSource(
+        {
+          prisma: prisma8,
+          fetchImpl: makeFetchFor(FIXTURE_V2),
+          now: new Date(NOW.getTime() + 60_000),
+        },
+        SOURCE,
+      );
       expect(stats.created).toBe(1);
       expect(stats.updated).toBe(0);
       expect(prisma8._state.jobs.size).toBe(2);
-      const job = [...prisma8._state.jobs.values()].find((row) => row.externalId === '9999999999') as { externalId: string; sourceUrl: string; canonicalApplyUrl: string | null; externalRequisitionId: string | null };
+      const job = [...prisma8._state.jobs.values()].find(
+        (row) => row.externalId === '9999999999',
+      ) as {
+        externalId: string;
+        sourceUrl: string;
+        canonicalApplyUrl: string | null;
+        externalRequisitionId: string | null;
+      };
       expect(job.externalId).toBe('9999999999');
       expect(job.sourceUrl).toBe('https://boards.greenhouse.io/stripe/jobs/9999999999');
       expect(job.externalRequisitionId).toBe('R-5678');
-      expect(prisma8._state.reviewTasks).toContainEqual(expect.objectContaining({
-        jobId: expect.any(String),
-        sourceId: 'src-1',
-        reason: 'possible_duplicate',
-        status: 'open',
-      }));
+      expect(prisma8._state.reviewTasks).toContainEqual(
+        expect.objectContaining({
+          jobId: expect.any(String),
+          sourceId: 'src-1',
+          reason: 'possible_duplicate',
+          status: 'open',
+        }),
+      );
     });
   });
 
@@ -497,7 +556,12 @@ describe('processSource', () => {
       const prisma = makeFakePrisma();
       // HTTP 200 with an empty job list → fetchSucceeded=true, discovered=0.
       const emptyBoardFetch: typeof fetch = async (input) => {
-        const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url;
+        const url =
+          typeof input === 'string'
+            ? input
+            : input instanceof URL
+              ? input.toString()
+              : (input as Request).url;
         return url === GREENHOUSE_URL
           ? new Response('{"jobs":[]}', { status: 200 })
           : new Response('Not found', { status: 404 });

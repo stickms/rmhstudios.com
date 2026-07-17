@@ -20,32 +20,35 @@
 
 ## File Structure
 
-| File | Responsibility | Task |
-|---|---|---|
-| `lib/rmhladder/adapters/workday.ts` (modify) | `discoverWorkdaySourceUrls` scans full HTML, not just anchors | 1 |
-| `lib/rmhladder/adapters/workday.test.ts` (modify) | fixtures: Workday URL in a `<script>`/iframe is discovered; junk is rejected | 1 |
-| `lib/rmhladder/pipeline/run.ts` (modify) | Step 5 discovery cap becomes env-configurable (`LADDER_WORKDAY_DISCOVERY_CAP`, default 5) | 1 |
-| `.env.example` (modify) | document `LADDER_WORKDAY_DISCOVERY_CAP` | 1 |
-| `lib/rmhladder/coverage.ts` (create) | pure `formatCoverageSnapshot` + `CoverageSnapshot` type | 2 |
-| `lib/rmhladder/coverage.test.ts` (create) | formatter unit tests | 2 |
-| `scripts/ladder-status.ts` (modify) | gather + print the coverage snapshot | 2 |
+| File                                              | Responsibility                                                                            | Task |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---- |
+| `lib/rmhladder/adapters/workday.ts` (modify)      | `discoverWorkdaySourceUrls` scans full HTML, not just anchors                             | 1    |
+| `lib/rmhladder/adapters/workday.test.ts` (modify) | fixtures: Workday URL in a `<script>`/iframe is discovered; junk is rejected              | 1    |
+| `lib/rmhladder/pipeline/run.ts` (modify)          | Step 5 discovery cap becomes env-configurable (`LADDER_WORKDAY_DISCOVERY_CAP`, default 5) | 1    |
+| `.env.example` (modify)                           | document `LADDER_WORKDAY_DISCOVERY_CAP`                                                   | 1    |
+| `lib/rmhladder/coverage.ts` (create)              | pure `formatCoverageSnapshot` + `CoverageSnapshot` type                                   | 2    |
+| `lib/rmhladder/coverage.test.ts` (create)         | formatter unit tests                                                                      | 2    |
+| `scripts/ladder-status.ts` (modify)               | gather + print the coverage snapshot                                                      | 2    |
 
 ---
 
 ## Task 1: Full-HTML Workday tenant discovery
 
 **Files:**
+
 - Modify: `lib/rmhladder/adapters/workday.ts` (`discoverWorkdaySourceUrls`)
 - Modify: `lib/rmhladder/adapters/workday.test.ts`
 - Modify: `lib/rmhladder/pipeline/run.ts` (Step 5 cap)
 - Modify: `.env.example`
 
 **Interfaces:**
+
 - Produces: `discoverWorkdaySourceUrls(html, pageUrl)` — unchanged signature (`string[]`), broader results. `resolveWorkdayDiscoveryCap(env)`.
 
 - [ ] **Step 1: Write the failing test**
 
 In `workday.test.ts`, ADD a `describe('discoverWorkdaySourceUrls — full HTML', ...)` with:
+
 ```ts
 it('discovers a Workday URL embedded only in a <script>/JSON blob (no anchor)', () => {
   const html = `<!doctype html><html><head>
@@ -57,8 +60,9 @@ it('discovers a Workday URL embedded only in a <script>/JSON blob (no anchor)', 
 
 it('still discovers anchor-based Workday URLs (regression)', () => {
   const html = `<a href="https://acme.wd1.myworkdayjobs.com/en-US/AcmeCareers">Jobs</a>`;
-  expect(discoverWorkdaySourceUrls(html, 'https://acme.com/careers'))
-    .toContain('https://acme.wd1.myworkdayjobs.com/AcmeCareers');
+  expect(discoverWorkdaySourceUrls(html, 'https://acme.com/careers')).toContain(
+    'https://acme.wd1.myworkdayjobs.com/AcmeCareers',
+  );
 });
 
 it('dedupes anchor + embedded occurrences of the same site', () => {
@@ -74,6 +78,7 @@ it('rejects non-Workday and malformed lookalikes', () => {
   expect(discoverWorkdaySourceUrls(html, 'https://acme.com')).toEqual([]);
 });
 ```
+
 (The canonical form returned is `${origin}/${site}` with the locale prefix stripped, matching the current behavior.)
 
 - [ ] **Step 2: Run to verify it fails**
@@ -84,6 +89,7 @@ Expected: FAIL — the `<script>`-embedded and JSON cases are not found (anchor-
 - [ ] **Step 3: Implement the full-HTML scan**
 
 In `workday.ts`, replace `discoverWorkdaySourceUrls` (lines 73-89) with a version that keeps the anchor pass AND adds a raw-HTML URL scan, funneling every candidate through the existing `parseWorkdaySource`:
+
 ```ts
 export function discoverWorkdaySourceUrls(html: string, pageUrl: string): string[] {
   const urls = new Set<string>();
@@ -125,17 +131,22 @@ Expected: PASS — embedded, anchor, dedupe, and rejection cases all green.
 - [ ] **Step 5: Make the run.ts discovery cap configurable**
 
 In `run.ts`, the manual-source discovery loop currently reads `discoverWorkdaySourceUrls(res.body, source.url).slice(0, 3)`. Add a helper near the top of the file:
+
 ```ts
-function resolveWorkdayDiscoveryCap(env: { LADDER_WORKDAY_DISCOVERY_CAP?: string } = process.env): number {
+function resolveWorkdayDiscoveryCap(
+  env: { LADDER_WORKDAY_DISCOVERY_CAP?: string } = process.env,
+): number {
   const parsed = Number(env.LADDER_WORKDAY_DISCOVERY_CAP);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : 5;
 }
 ```
+
 and change the `.slice(0, 3)` to `.slice(0, resolveWorkdayDiscoveryCap())`. (Default 5, up from a hard-coded 3, since a firm may expose several campus/experienced sites; each candidate is still probed before activation.)
 
 - [ ] **Step 6: Document the env var**
 
 In `.env.example`, near the other `LADDER_` vars:
+
 ```
 # LADDER_WORKDAY_DISCOVERY_CAP=5   # max Workday sites probed per manual-source landing page
 ```
@@ -157,11 +168,13 @@ git commit -m "feat(rmhladder): discover Workday tenants embedded in page HTML, 
 ## Task 2: Coverage snapshot in `ladder:status`
 
 **Files:**
+
 - Create: `lib/rmhladder/coverage.ts`
 - Test: `lib/rmhladder/coverage.test.ts`
 - Modify: `scripts/ladder-status.ts`
 
 **Interfaces:**
+
 - Produces:
   - `interface CoverageSnapshot { totalCompanies: number; companiesWithActiveSource: number; companiesManualOnly: number; companiesUnconfigured: number; activeJobsByFirmType: Record<string, number> }`
   - `formatCoverageSnapshot(s: CoverageSnapshot): string`
@@ -170,6 +183,7 @@ git commit -m "feat(rmhladder): discover Workday tenants embedded in page HTML, 
 - [ ] **Step 1: Write the failing test**
 
 Create `lib/rmhladder/coverage.test.ts`:
+
 ```ts
 import { describe, expect, it } from 'vitest';
 import { formatCoverageSnapshot, type CoverageSnapshot } from './coverage';
@@ -210,6 +224,7 @@ Expected: FAIL — module missing.
 - [ ] **Step 3: Implement the formatter**
 
 Create `lib/rmhladder/coverage.ts`:
+
 ```ts
 export interface CoverageSnapshot {
   totalCompanies: number;
@@ -220,13 +235,14 @@ export interface CoverageSnapshot {
 }
 
 export function formatCoverageSnapshot(s: CoverageSnapshot): string {
-  const pct = s.totalCompanies > 0
-    ? Math.round((s.companiesWithActiveSource / s.totalCompanies) * 100)
-    : 0;
+  const pct =
+    s.totalCompanies > 0 ? Math.round((s.companiesWithActiveSource / s.totalCompanies) * 100) : 0;
   const lines: string[] = [];
   lines.push('coverage');
   lines.push('--------');
-  lines.push(`companies with an active source: ${s.companiesWithActiveSource} / ${s.totalCompanies} (${pct}%)`);
+  lines.push(
+    `companies with an active source: ${s.companiesWithActiveSource} / ${s.totalCompanies} (${pct}%)`,
+  );
   lines.push(`  manual-only (no active API source): ${s.companiesManualOnly}`);
   lines.push(`  still unconfigured: ${s.companiesUnconfigured}`);
   lines.push('active jobs by firm type:');
@@ -248,39 +264,47 @@ Expected: PASS.
 - [ ] **Step 5: Gather + print the snapshot in the CLI**
 
 In `scripts/ladder-status.ts`, add imports:
+
 ```ts
 import { formatCoverageSnapshot, type CoverageSnapshot } from '@/lib/rmhladder/coverage';
 ```
+
 After the existing status report is printed, gather and print coverage. A company "has an active source" if any of its `LadderSource` rows is `status: 'active'`. "Manual-only" = enabled company with ≥1 source but no `active` source and at least one `manual` source. "Unconfigured" = enabled company whose sources are all `unconfigured`/`error`. Compute with grouped queries:
+
 ```ts
-  const [companiesWithActive, enabledCompanies, activeJobsGrouped] = await Promise.all([
-    prisma.ladderCompany.count({ where: { enabled: true, sources: { some: { status: 'active' } } } }),
-    prisma.ladderCompany.count({ where: { enabled: true } }),
-    prisma.ladderJob.groupBy({ by: ['companyId'], where: { status: 'active' }, _count: { _all: true } }),
-  ]);
-  const manualOnly = await prisma.ladderCompany.count({
-    where: { enabled: true, sources: { none: { status: 'active' }, some: { platform: 'manual' } } },
-  });
-  const unconfigured = await prisma.ladderCompany.count({
-    where: { enabled: true, sources: { none: { status: { in: ['active', 'manual'] } } } },
-  });
-  // Active jobs by firm type (join companyId → firmType).
-  const companies = await prisma.ladderCompany.findMany({ select: { id: true, firmType: true } });
-  const firmTypeById = new Map(companies.map((c) => [c.id, c.firmType]));
-  const activeJobsByFirmType: Record<string, number> = {};
-  for (const row of activeJobsGrouped) {
-    const ft = firmTypeById.get(row.companyId) ?? 'unknown';
-    activeJobsByFirmType[ft] = (activeJobsByFirmType[ft] ?? 0) + row._count._all;
-  }
-  const coverage: CoverageSnapshot = {
-    totalCompanies: enabledCompanies,
-    companiesWithActiveSource: companiesWithActive,
-    companiesManualOnly: manualOnly,
-    companiesUnconfigured: unconfigured,
-    activeJobsByFirmType,
-  };
-  console.log('\n' + formatCoverageSnapshot(coverage));
+const [companiesWithActive, enabledCompanies, activeJobsGrouped] = await Promise.all([
+  prisma.ladderCompany.count({ where: { enabled: true, sources: { some: { status: 'active' } } } }),
+  prisma.ladderCompany.count({ where: { enabled: true } }),
+  prisma.ladderJob.groupBy({
+    by: ['companyId'],
+    where: { status: 'active' },
+    _count: { _all: true },
+  }),
+]);
+const manualOnly = await prisma.ladderCompany.count({
+  where: { enabled: true, sources: { none: { status: 'active' }, some: { platform: 'manual' } } },
+});
+const unconfigured = await prisma.ladderCompany.count({
+  where: { enabled: true, sources: { none: { status: { in: ['active', 'manual'] } } } },
+});
+// Active jobs by firm type (join companyId → firmType).
+const companies = await prisma.ladderCompany.findMany({ select: { id: true, firmType: true } });
+const firmTypeById = new Map(companies.map((c) => [c.id, c.firmType]));
+const activeJobsByFirmType: Record<string, number> = {};
+for (const row of activeJobsGrouped) {
+  const ft = firmTypeById.get(row.companyId) ?? 'unknown';
+  activeJobsByFirmType[ft] = (activeJobsByFirmType[ft] ?? 0) + row._count._all;
+}
+const coverage: CoverageSnapshot = {
+  totalCompanies: enabledCompanies,
+  companiesWithActiveSource: companiesWithActive,
+  companiesManualOnly: manualOnly,
+  companiesUnconfigured: unconfigured,
+  activeJobsByFirmType,
+};
+console.log('\n' + formatCoverageSnapshot(coverage));
 ```
+
 (If a Prisma `where` on the `sources` relation filter needs the exact relation name, confirm it against `schema.prisma` — `LadderCompany.sources` is the relation; adjust the filter to the generated client's shape. `platform: 'manual'` and `status` enums are as in earlier phases. Keep the query type-correct; do not use `any`.)
 
 - [ ] **Step 6: Typecheck**
@@ -299,6 +323,7 @@ git commit -m "feat(rmhladder): coverage snapshot in ladder:status"
 ## Self-Review
 
 **Spec coverage (Phase 2):**
+
 - 2.1 Maximize Workday coverage → Task 1 (full-HTML tenant discovery + configurable multi-site cap). ✅
 - 2.2 Auto-discovery robustness → verified already-implemented in `probe-sources.ts` (retry/backoff/idempotent); intentionally NOT rebuilt (YAGNI), documented in Global Constraints. ✅ (no task)
 - 2.3 Coverage reporting → Task 2 (`ladder:status` coverage snapshot). ✅

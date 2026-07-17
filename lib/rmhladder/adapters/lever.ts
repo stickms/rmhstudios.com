@@ -18,7 +18,9 @@ interface LeverJob {
   description?: string;
 }
 
-async function fetchBoard(ctx: AdapterContext): Promise<{ jobs: LeverJob[] | null; status: number }> {
+async function fetchBoard(
+  ctx: AdapterContext,
+): Promise<{ jobs: LeverJob[] | null; status: number }> {
   const res = await politeFetch(leverPostingsUrl(ctx.slug), { fetchImpl: ctx.fetchImpl });
   if (!res.ok) return { jobs: null, status: res.status };
   try {
@@ -56,7 +58,12 @@ export const leverAdapter: SourceAdapter = {
   async verifyJob(ctx, job): Promise<VerificationEvidence> {
     const { jobs, status } = await fetchBoard(ctx);
     const hit = jobs?.find((j) => j.id === job.externalId) ?? null;
-    const loc = hit ? classifyUSLocation({ locationRaw: hit.categories?.location ?? '', country: hit.country ?? null }) : null;
+    const loc = hit
+      ? classifyUSLocation({
+          locationRaw: hit.categories?.location ?? '',
+          country: hit.country ?? null,
+        })
+      : null;
     return {
       fetched: jobs !== null,
       httpStatus: status,

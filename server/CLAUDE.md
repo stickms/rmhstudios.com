@@ -14,17 +14,17 @@ not the README, not old docs.
 
 Current production (Docker Compose on the VPS):
 
-| Service | Runtime | Port | Entry |
-|---|---|---|---|
-| `web` (Nitro SSR) | **Node** | 7005 (blue/green spare: 7015) | `.output/server/index.mjs` |
-| `socket` (games hub) | **Node** | 7001 | `dist-server/server/socket-server/index.cjs` |
-| `rmhbox` (party games) | **Node** | 7676 | `dist-server/server/rmhbox/index.cjs` |
-| `rmhtube` (watch together) | **Node** | 7003 | `dist-server/server/rmhtube/index.cjs` |
-| `ladder-worker` (job cron) | **Node** | — | `dist-server/server/ladder-worker/index.cjs` |
-| `supervisor` (5 background workers) | **Go** | 9090 (metrics) | `/app/bin/supervisor` |
-| `status` | **Go** | 7008 | `/app/bin/status` |
-| `assets` | **Go** | 7007 | `/app/bin/assets` |
-| `minio` | infra | 9000/9001 | S3-compatible store |
+| Service                             | Runtime  | Port                          | Entry                                        |
+| ----------------------------------- | -------- | ----------------------------- | -------------------------------------------- |
+| `web` (Nitro SSR)                   | **Node** | 7005 (blue/green spare: 7015) | `.output/server/index.mjs`                   |
+| `socket` (games hub)                | **Node** | 7001                          | `dist-server/server/socket-server/index.cjs` |
+| `rmhbox` (party games)              | **Node** | 7676                          | `dist-server/server/rmhbox/index.cjs`        |
+| `rmhtube` (watch together)          | **Node** | 7003                          | `dist-server/server/rmhtube/index.cjs`       |
+| `ladder-worker` (job cron)          | **Node** | —                             | `dist-server/server/ladder-worker/index.cjs` |
+| `supervisor` (5 background workers) | **Go**   | 9090 (metrics)                | `/app/bin/supervisor`                        |
+| `status`                            | **Go**   | 7008                          | `/app/bin/status`                            |
+| `assets`                            | **Go**   | 7007                          | `/app/bin/assets`                            |
+| `minio`                             | infra    | 9000/9001                     | S3-compatible store                          |
 
 Consequences:
 
@@ -50,7 +50,7 @@ Consequences:
     token attaches `socket.data.userId/userName/avatarUrl`.
   - **Handler contract**: `handlers/<game>.ts` exports
     `register<Game>Handlers(io, socket)` + `handle<Game>Disconnect(io,
-    socket)` (casino games also `initialize<Game>(io)` at boot). Registered
+socket)` (casino games also `initialize<Game>(io)` at boot). Registered
     per-connection in `index.ts`. Isolation is by event-name prefix
     (`rmhtype:*`, `altair:*`, `bj:*`, …) + socket.io rooms — **no namespaces**.
   - The rate-limit rule map in `config.ts` doubles as the catalog of valid
@@ -61,7 +61,7 @@ Consequences:
   **Hard auth** (Better Auth session OR Discord Activity OAuth token; unlinked
   Discord users get transient `discord:<id>` identities).
   - Lobby FSM: `WAITING → (VOTING|GAME_SETTINGS) → INSTRUCTIONS → PRELOADING →
-    COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
+COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
     `DISBANDED`), driven by `StateSyncService` timers; host controls
     (skip/end/pause).
   - **Adding a minigame** requires touching THREE places: (1)

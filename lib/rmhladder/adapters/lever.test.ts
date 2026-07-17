@@ -43,7 +43,10 @@ describe('leverAdapter.discoverJobs', () => {
     expect(result.jobs).toEqual([]);
   });
   it('fetch failure (500): fetchSucceeded=false, jobs=[]', async () => {
-    const result = await leverAdapter.discoverJobs({ ...ctx, fetchImpl: stub(500, 'server error') });
+    const result = await leverAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(500, 'server error'),
+    });
     expect(result.fetchSucceeded).toBe(false);
     expect(result.jobs).toEqual([]);
   });
@@ -51,9 +54,13 @@ describe('leverAdapter.discoverJobs', () => {
 
 describe('leverAdapter.verifyJob', () => {
   it('produces API-source evidence when the job is on the board', async () => {
-    const e = await leverAdapter.verifyJob(ctx, { externalId: 'a1b2c3d4-uuid', title: 'Data Science Intern' });
+    const e = await leverAdapter.verifyJob(ctx, {
+      externalId: 'a1b2c3d4-uuid',
+      title: 'Data Science Intern',
+    });
     expect(e).toMatchObject({
-      fetched: true, httpStatus: 200,
+      fetched: true,
+      httpStatus: 200,
       apiSource: true,
       titleMatch: true,
       usConfirmed: true,
@@ -99,7 +106,9 @@ describe('leverAdapter.detectExpired', () => {
     expect(await leverAdapter.detectExpired(ctx, 'a1b2c3d4-uuid')).toBe(false);
   });
   it('fetch failure → not expired (false)', async () => {
-    expect(await leverAdapter.detectExpired({ ...ctx, fetchImpl: stub(500, '') }, 'a1b2c3d4-uuid')).toBe(false);
+    expect(
+      await leverAdapter.detectExpired({ ...ctx, fetchImpl: stub(500, '') }, 'a1b2c3d4-uuid'),
+    ).toBe(false);
   });
 });
 

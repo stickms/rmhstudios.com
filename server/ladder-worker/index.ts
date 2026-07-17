@@ -15,7 +15,10 @@ import { randomUUID } from 'node:crypto';
 import { schedule } from 'node-cron';
 import type { ScheduledTask } from 'node-cron';
 import { runPipeline, type RunPrisma } from '../../lib/rmhladder/pipeline/run';
-import { probeUnconfiguredSources, type ProbePrisma } from '../../lib/rmhladder/pipeline/probe-sources';
+import {
+  probeUnconfiguredSources,
+  type ProbePrisma,
+} from '../../lib/rmhladder/pipeline/probe-sources';
 import { seedLadder, type SeedPrisma } from '../../lib/rmhladder/seed/run-seed';
 import { isScrapeStale, resolveLadderCron } from '../../lib/rmhladder/scheduler';
 import {
@@ -32,7 +35,10 @@ import {
   resumeReadinessError,
 } from '../../lib/rmhladder/resume/readiness.server';
 import { runLadderAlertCycle } from '../../lib/rmhladder/alerts/dispatch.server';
-import { detectLadderHealthAlerts, resolveAlertThresholds } from '../../lib/rmhladder/health-alerts';
+import {
+  detectLadderHealthAlerts,
+  resolveAlertThresholds,
+} from '../../lib/rmhladder/health-alerts';
 import {
   acquireWorkerLease,
   heartbeatWorkerLease,
@@ -120,7 +126,9 @@ async function refreshMatchingAndAlerts() {
       orderBy: [{ matchesRefreshedAt: { sort: 'asc', nulls: 'first' } }, { confirmedAt: 'asc' }],
       take: matchRefreshBatchSize,
     });
-    const activeVersions = candidates.filter((version) => version.resume.activeVersionId === version.id);
+    const activeVersions = candidates.filter(
+      (version) => version.resume.activeVersionId === version.id,
+    );
     let refreshed = 0;
     for (const version of activeVersions) {
       try {
@@ -131,10 +139,15 @@ async function refreshMatchingAndAlerts() {
         });
         refreshed++;
       } catch (error) {
-        console.error(`[ladder-worker] Match refresh failed for resume version ${version.id}:`, error);
+        console.error(
+          `[ladder-worker] Match refresh failed for resume version ${version.id}:`,
+          error,
+        );
       }
     }
-    console.log(`[ladder-worker] Resume matches — refreshed=${refreshed} candidates=${activeVersions.length}`);
+    console.log(
+      `[ladder-worker] Resume matches — refreshed=${refreshed} candidates=${activeVersions.length}`,
+    );
   } catch (error) {
     console.error('[ladder-worker] Resume match refresh batch failed:', error);
   }
@@ -165,9 +178,12 @@ async function tick() {
       return;
     }
     heartbeat = setInterval(() => {
-      void heartbeatWorkerLease(leasePrisma, workerLease).then((renewed) => {
-        if (!renewed) console.error('[ladder-worker] Lost database lease while a run was in flight');
-      }).catch((error) => console.error('[ladder-worker] Lease heartbeat failed:', error));
+      void heartbeatWorkerLease(leasePrisma, workerLease)
+        .then((renewed) => {
+          if (!renewed)
+            console.error('[ladder-worker] Lost database lease while a run was in flight');
+        })
+        .catch((error) => console.error('[ladder-worker] Lease heartbeat failed:', error));
     }, leaseHeartbeatMs);
     heartbeat.unref();
 
@@ -180,7 +196,8 @@ async function tick() {
     await refreshMatchingAndAlerts();
     try {
       const lastRun = await prisma.ladderScrapeRun.findFirst({
-        where: { finishedAt: { not: null } }, orderBy: { finishedAt: 'desc' },
+        where: { finishedAt: { not: null } },
+        orderBy: { finishedAt: 'desc' },
         select: { finishedAt: true, errorCount: true, discoveredCount: true },
       });
       const openMassExpiryTasks = await prisma.ladderReviewTask.count({
@@ -189,12 +206,15 @@ async function tick() {
       const alerts = detectLadderHealthAlerts({
         now: new Date(),
         lastCompletedRunAt: lastRun?.finishedAt ?? null,
-        latestRun: lastRun ? { errorCount: lastRun.errorCount ?? 0, discoveredCount: lastRun.discoveredCount ?? 0 } : null,
+        latestRun: lastRun
+          ? { errorCount: lastRun.errorCount ?? 0, discoveredCount: lastRun.discoveredCount ?? 0 }
+          : null,
         openMassExpiryTasks,
         resumeReady: resumeSubsystemReadiness().ready,
         thresholds: resolveAlertThresholds(),
       });
-      for (const a of alerts) console.error(`[ladder-worker] HEALTH ALERT [${a.severity}] ${a.code}: ${a.message}`);
+      for (const a of alerts)
+        console.error(`[ladder-worker] HEALTH ALERT [${a.severity}] ${a.code}: ${a.message}`);
     } catch (error) {
       console.error('[ladder-worker] Alert detection failed:', error);
     }
@@ -203,8 +223,9 @@ async function tick() {
   } finally {
     if (heartbeat) clearInterval(heartbeat);
     if (leaseAcquired) {
-      await releaseWorkerLease(leasePrisma, workerLease)
-        .catch((error) => console.error('[ladder-worker] Lease release failed:', error));
+      await releaseWorkerLease(leasePrisma, workerLease).catch((error) =>
+        console.error('[ladder-worker] Lease release failed:', error),
+      );
     }
     running = false;
   }
@@ -226,7 +247,9 @@ async function bootstrap() {
     if (companyCount === 0) {
       console.log('[ladder-worker] Bootstrap: empty database — seeding companies/sources/rules');
       const seeded = await seedLadder(prisma as unknown as SeedPrisma);
-      console.log(`[ladder-worker] Bootstrap: seeded ${seeded.companies} companies, ${seeded.sources} sources`);
+      console.log(
+        `[ladder-worker] Bootstrap: seeded ${seeded.companies} companies, ${seeded.sources} sources`,
+      );
     }
 
     const latestCompletedRun = await prisma.ladderScrapeRun.findFirst({
@@ -269,7 +292,9 @@ console.log(
 );
 const resumeReady = resumeSubsystemReadiness();
 if (resumeReady.ready) {
-  console.log('[ladder-worker] Resume subsystem ready — object storage + encryption key configured');
+  console.log(
+    '[ladder-worker] Resume subsystem ready — object storage + encryption key configured',
+  );
 } else {
   console.error(`[ladder-worker] ${resumeReadinessError(resumeReady)}`);
 }

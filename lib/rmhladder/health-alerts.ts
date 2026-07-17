@@ -1,4 +1,5 @@
-export type LadderAlertCode = 'worker_stale' | 'high_error_run' | 'breaker_tripped' | 'resume_not_ready';
+export type LadderAlertCode =
+  'worker_stale' | 'high_error_run' | 'breaker_tripped' | 'resume_not_ready';
 
 export interface LadderHealthAlert {
   code: LadderAlertCode;
@@ -18,18 +19,38 @@ export const DEFAULT_ALERT_THRESHOLDS: AlertThresholds = {
   minRunForRate: 10,
 };
 
-function num(value: string | undefined, fallback: number, predicate: (n: number) => boolean): number {
+function num(
+  value: string | undefined,
+  fallback: number,
+  predicate: (n: number) => boolean,
+): number {
   const parsed = Number(value);
   return Number.isFinite(parsed) && predicate(parsed) ? parsed : fallback;
 }
 
 export function resolveAlertThresholds(
-  env: { LADDER_ALERT_STALE_RUN_MS?: string; LADDER_ALERT_ERROR_RATE?: string; LADDER_ALERT_MIN_RUN_FOR_RATE?: string } = process.env,
+  env: {
+    LADDER_ALERT_STALE_RUN_MS?: string;
+    LADDER_ALERT_ERROR_RATE?: string;
+    LADDER_ALERT_MIN_RUN_FOR_RATE?: string;
+  } = process.env,
 ): AlertThresholds {
   return {
-    staleRunMs: num(env.LADDER_ALERT_STALE_RUN_MS, DEFAULT_ALERT_THRESHOLDS.staleRunMs, (n) => n > 0),
-    errorRate: num(env.LADDER_ALERT_ERROR_RATE, DEFAULT_ALERT_THRESHOLDS.errorRate, (n) => n > 0 && n <= 1),
-    minRunForRate: num(env.LADDER_ALERT_MIN_RUN_FOR_RATE, DEFAULT_ALERT_THRESHOLDS.minRunForRate, (n) => n >= 0),
+    staleRunMs: num(
+      env.LADDER_ALERT_STALE_RUN_MS,
+      DEFAULT_ALERT_THRESHOLDS.staleRunMs,
+      (n) => n > 0,
+    ),
+    errorRate: num(
+      env.LADDER_ALERT_ERROR_RATE,
+      DEFAULT_ALERT_THRESHOLDS.errorRate,
+      (n) => n > 0 && n <= 1,
+    ),
+    minRunForRate: num(
+      env.LADDER_ALERT_MIN_RUN_FOR_RATE,
+      DEFAULT_ALERT_THRESHOLDS.minRunForRate,
+      (n) => n >= 0,
+    ),
   };
 }
 
@@ -47,7 +68,9 @@ export function detectLadderHealthAlerts(input: AlertInput): LadderHealthAlert[]
   const alerts: LadderHealthAlert[] = [];
   const { thresholds: t } = input;
 
-  const runAgeMs = input.lastCompletedRunAt ? input.now.getTime() - input.lastCompletedRunAt.getTime() : Infinity;
+  const runAgeMs = input.lastCompletedRunAt
+    ? input.now.getTime() - input.lastCompletedRunAt.getTime()
+    : Infinity;
   if (runAgeMs >= t.staleRunMs) {
     alerts.push({
       code: 'worker_stale',

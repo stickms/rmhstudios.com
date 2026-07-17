@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  detectLadderHealthAlerts, resolveAlertThresholds, DEFAULT_ALERT_THRESHOLDS,
+  detectLadderHealthAlerts,
+  resolveAlertThresholds,
+  DEFAULT_ALERT_THRESHOLDS,
   type AlertInput,
 } from './health-alerts';
 
@@ -20,14 +22,20 @@ describe('detectLadderHealthAlerts', () => {
     expect(detectLadderHealthAlerts(base)).toEqual([]);
   });
   it('flags worker_stale when no completed run is within the window', () => {
-    expect(codes({ ...base, lastCompletedRunAt: new Date(now.getTime() - 25 * 60 * 60_000) })).toContain('worker_stale');
+    expect(
+      codes({ ...base, lastCompletedRunAt: new Date(now.getTime() - 25 * 60 * 60_000) }),
+    ).toContain('worker_stale');
     expect(codes({ ...base, lastCompletedRunAt: null })).toContain('worker_stale');
   });
   it('flags high_error_run when the latest run error rate exceeds the threshold', () => {
-    expect(codes({ ...base, latestRun: { errorCount: 60, discoveredCount: 100 } })).toContain('high_error_run');
+    expect(codes({ ...base, latestRun: { errorCount: 60, discoveredCount: 100 } })).toContain(
+      'high_error_run',
+    );
   });
   it('does NOT flag high_error_run for a tiny run below minRunForRate', () => {
-    expect(codes({ ...base, latestRun: { errorCount: 3, discoveredCount: 3 } })).not.toContain('high_error_run');
+    expect(codes({ ...base, latestRun: { errorCount: 3, discoveredCount: 3 } })).not.toContain(
+      'high_error_run',
+    );
   });
   it('flags breaker_tripped when open mass-expiry tasks exist', () => {
     expect(codes({ ...base, openMassExpiryTasks: 2 })).toContain('breaker_tripped');
@@ -37,7 +45,10 @@ describe('detectLadderHealthAlerts', () => {
   });
   it('assigns severities (worker_stale/breaker/resume = high, error rate = medium)', () => {
     const alerts = detectLadderHealthAlerts({
-      ...base, lastCompletedRunAt: null, openMassExpiryTasks: 1, resumeReady: false,
+      ...base,
+      lastCompletedRunAt: null,
+      openMassExpiryTasks: 1,
+      resumeReady: false,
       latestRun: { errorCount: 60, discoveredCount: 100 },
     });
     const bySeverity = Object.fromEntries(alerts.map((a) => [a.code, a.severity]));
@@ -64,10 +75,12 @@ describe('resolveAlertThresholds', () => {
     expect(resolveAlertThresholds({ LADDER_ALERT_ERROR_RATE: '1.5' }).errorRate).toBe(0.5);
   });
   it('does NOT flag high_error_run when discoveredCount is 0, even with minRunForRate=0', () => {
-    expect(codes({
-      ...base,
-      latestRun: { errorCount: 1, discoveredCount: 0 },
-      thresholds: { ...DEFAULT_ALERT_THRESHOLDS, minRunForRate: 0 },
-    })).not.toContain('high_error_run');
+    expect(
+      codes({
+        ...base,
+        latestRun: { errorCount: 1, discoveredCount: 0 },
+        thresholds: { ...DEFAULT_ALERT_THRESHOLDS, minRunForRate: 0 },
+      }),
+    ).not.toContain('high_error_run');
   });
 });

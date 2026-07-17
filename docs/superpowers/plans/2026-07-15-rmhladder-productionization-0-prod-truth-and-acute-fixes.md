@@ -22,35 +22,37 @@
 
 ## File Structure
 
-| File | Responsibility | Task |
-|---|---|---|
-| `lib/rmhladder/resume/crypto.server.ts` (modify) | add non-throwing `resumeEncryptionConfigured()` | 1 |
-| `lib/rmhladder/resume/readiness.server.ts` (create) | single source of truth: `resumeSubsystemReadiness()`, `resumeReadinessError()` | 1 |
-| `lib/rmhladder/resume/readiness.server.test.ts` (create) | unit tests for readiness + error message | 1 |
-| `app/routes/api/rmhladder/resume/index.ts` (modify) | fail-loud upload gate using readiness | 2 |
-| `app/routes/_site/rmhladder/health.tsx` (modify) | surface resume readiness to admins | 2 |
-| `server/ladder-worker/index.ts` (modify) | log resume readiness at startup | 2 |
-| `lib/rmhladder/scheduler.ts` (modify) | 12h cron + staleness defaults | 3 |
-| `lib/rmhladder/scheduler.test.ts` (modify) | update default/boundary expectations | 3 |
-| `.env.example` (modify) | document 12h default | 3 |
-| `docker-compose.yml` (modify) | correct the "default every 4h" comment | 3 |
-| `server/CLAUDE.md` (modify) | correct the "default every 4h" note | 3 |
-| `lib/rmhladder/status.ts` (create) | pure `formatLadderStatus()` report builder | 4 |
-| `lib/rmhladder/status.test.ts` (create) | unit tests for the formatter | 4 |
-| `scripts/ladder-status.ts` (create) | prisma-backed `pnpm ladder:status` CLI | 4 |
-| `package.json` (modify) | add `ladder:status` script | 4 |
-| `docs/rmhladder-operations.md` (create) | operations runbook (prod truth, provisioning, schedule, manual run) | 5 |
+| File                                                     | Responsibility                                                                 | Task |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------ | ---- |
+| `lib/rmhladder/resume/crypto.server.ts` (modify)         | add non-throwing `resumeEncryptionConfigured()`                                | 1    |
+| `lib/rmhladder/resume/readiness.server.ts` (create)      | single source of truth: `resumeSubsystemReadiness()`, `resumeReadinessError()` | 1    |
+| `lib/rmhladder/resume/readiness.server.test.ts` (create) | unit tests for readiness + error message                                       | 1    |
+| `app/routes/api/rmhladder/resume/index.ts` (modify)      | fail-loud upload gate using readiness                                          | 2    |
+| `app/routes/_site/rmhladder/health.tsx` (modify)         | surface resume readiness to admins                                             | 2    |
+| `server/ladder-worker/index.ts` (modify)                 | log resume readiness at startup                                                | 2    |
+| `lib/rmhladder/scheduler.ts` (modify)                    | 12h cron + staleness defaults                                                  | 3    |
+| `lib/rmhladder/scheduler.test.ts` (modify)               | update default/boundary expectations                                           | 3    |
+| `.env.example` (modify)                                  | document 12h default                                                           | 3    |
+| `docker-compose.yml` (modify)                            | correct the "default every 4h" comment                                         | 3    |
+| `server/CLAUDE.md` (modify)                              | correct the "default every 4h" note                                            | 3    |
+| `lib/rmhladder/status.ts` (create)                       | pure `formatLadderStatus()` report builder                                     | 4    |
+| `lib/rmhladder/status.test.ts` (create)                  | unit tests for the formatter                                                   | 4    |
+| `scripts/ladder-status.ts` (create)                      | prisma-backed `pnpm ladder:status` CLI                                         | 4    |
+| `package.json` (modify)                                  | add `ladder:status` script                                                     | 4    |
+| `docs/rmhladder-operations.md` (create)                  | operations runbook (prod truth, provisioning, schedule, manual run)            | 5    |
 
 ---
 
 ## Task 1: Resume-subsystem readiness helpers
 
 **Files:**
+
 - Modify: `lib/rmhladder/resume/crypto.server.ts` (add one exported function at end)
 - Create: `lib/rmhladder/resume/readiness.server.ts`
 - Test: `lib/rmhladder/resume/readiness.server.test.ts`
 
 **Interfaces:**
+
 - Consumes: `s3Configured()` from `@/lib/storage/s3.server`; `encryptionKey()` (module-private in `crypto.server.ts`).
 - Produces:
   - `resumeEncryptionConfigured(): boolean` — never throws.
@@ -114,7 +116,12 @@ describe('resumeSubsystemReadiness', () => {
 describe('resumeReadinessError', () => {
   it('is empty when ready', () => {
     expect(
-      resumeReadinessError({ ready: true, objectStorageConfigured: true, encryptionKeyConfigured: true, missing: [] }),
+      resumeReadinessError({
+        ready: true,
+        objectStorageConfigured: true,
+        encryptionKeyConfigured: true,
+        missing: [],
+      }),
     ).toBe('');
   });
 
@@ -141,7 +148,6 @@ Expected: FAIL — `Failed to resolve import "./readiness.server"` (module does 
 Append to `lib/rmhladder/resume/crypto.server.ts` (after the last function, line 58):
 
 ```ts
-
 /**
  * True when a usable resume-encryption secret is configured — the dedicated
  * LADDER_RESUME_ENCRYPTION_KEY, or (dev only) the BETTER_AUTH_SECRET fallback.
@@ -225,11 +231,13 @@ git commit -m "feat(rmhladder): resume-subsystem readiness check"
 ## Task 2: Fail-loud wiring — upload route, health page, worker startup
 
 **Files:**
+
 - Modify: `app/routes/api/rmhladder/resume/index.ts` (replace the production 503 gate; drop now-unused `s3Configured` import)
 - Modify: `app/routes/_site/rmhladder/health.tsx` (surface readiness to admins)
 - Modify: `server/ladder-worker/index.ts` (startup readiness log)
 
 **Interfaces:**
+
 - Consumes: `resumeSubsystemReadiness`, `resumeReadinessError` from `@/lib/rmhladder/resume/readiness.server` (Task 1). The worker uses the relative path `../../lib/rmhladder/resume/readiness.server`.
 - Produces: no new exports. Behavior change only.
 
@@ -240,37 +248,43 @@ git commit -m "feat(rmhladder): resume-subsystem readiness check"
 In `app/routes/api/rmhladder/resume/index.ts`:
 
 Remove the `s3Configured` import (line 5):
+
 ```ts
 import { s3Configured } from '@/lib/storage/s3.server';
 ```
+
 Add the readiness import beside the other resume imports (after line 7):
+
 ```ts
 import { resumeSubsystemReadiness } from '@/lib/rmhladder/resume/readiness.server';
 ```
 
 Replace the production storage gate (current lines 34-37):
+
 ```ts
-          if (process.env.NODE_ENV === 'production' && !s3Configured()) {
-            console.error('[rmhladder-resume] upload blocked: private object storage is not configured');
-            return Response.json({ error: 'Resume storage is unavailable.' }, { status: 503 });
-          }
+if (process.env.NODE_ENV === 'production' && !s3Configured()) {
+  console.error('[rmhladder-resume] upload blocked: private object storage is not configured');
+  return Response.json({ error: 'Resume storage is unavailable.' }, { status: 503 });
+}
 ```
+
 with:
+
 ```ts
-          if (process.env.NODE_ENV === 'production') {
-            const readiness = resumeSubsystemReadiness();
-            if (!readiness.ready) {
-              // Operators get the actionable detail in logs / on /rmhladder/health;
-              // end users get a generic message (never leak internal env var names).
-              console.error(
-                `[rmhladder-resume] upload blocked — resume subsystem not ready: missing ${readiness.missing.join('; ')}`,
-              );
-              return Response.json(
-                { error: 'Resume uploads are temporarily unavailable. Please try again later.' },
-                { status: 503 },
-              );
-            }
-          }
+if (process.env.NODE_ENV === 'production') {
+  const readiness = resumeSubsystemReadiness();
+  if (!readiness.ready) {
+    // Operators get the actionable detail in logs / on /rmhladder/health;
+    // end users get a generic message (never leak internal env var names).
+    console.error(
+      `[rmhladder-resume] upload blocked — resume subsystem not ready: missing ${readiness.missing.join('; ')}`,
+    );
+    return Response.json(
+      { error: 'Resume uploads are temporarily unavailable. Please try again later.' },
+      { status: 503 },
+    );
+  }
+}
 ```
 
 - [ ] **Step 2: Surface readiness on the admin health page**
@@ -278,41 +292,50 @@ with:
 In `app/routes/_site/rmhladder/health.tsx`:
 
 Add the import after line 19 (`... from '@/lib/rmhladder/server/queries';`):
+
 ```ts
 import { resumeSubsystemReadiness } from '@/lib/rmhladder/resume/readiness.server';
 ```
 
 In the `fetchHealth` handler, change the return (current lines 30-35) to include readiness:
+
 ```ts
-  const [stale, runs, overview] = await Promise.all([
-    listStaleSources(queriesPrisma),
-    listRuns(queriesPrisma, 20),
-    getOverview(queriesPrisma, session.user.id, { includeAdminStats: true }),
-  ]);
-  return { stale, runs, openReviewTasks: overview.openReviewTasks, resumeReadiness: resumeSubsystemReadiness() };
+const [stale, runs, overview] = await Promise.all([
+  listStaleSources(queriesPrisma),
+  listRuns(queriesPrisma, 20),
+  getOverview(queriesPrisma, session.user.id, { includeAdminStats: true }),
+]);
+return {
+  stale,
+  runs,
+  openReviewTasks: overview.openReviewTasks,
+  resumeReadiness: resumeSubsystemReadiness(),
+};
 ```
 
 Update the destructure in `HealthPage` (current line 52):
+
 ```ts
-  const { stale, runs, openReviewTasks, resumeReadiness } = Route.useLoaderData();
+const { stale, runs, openReviewTasks, resumeReadiness } = Route.useLoaderData();
 ```
 
 Insert this panel immediately after the review-queue `<Link>` (current lines 57-59), before the silent-sources `<section>`:
+
 ```tsx
-      <section className="rl-stale-panel">
-        <h2 className="rl-eyebrow">Resume subsystem</h2>
-        {resumeReadiness.ready ? (
-          <p className="rl-quicklist__empty">Object storage and encryption key are configured.</p>
-        ) : (
-          <ul>
-            {resumeReadiness.missing.map((item) => (
-              <li key={item} className="rl-stale-row">
-                <span className="rl-mono">missing: {item}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+<section className="rl-stale-panel">
+  <h2 className="rl-eyebrow">Resume subsystem</h2>
+  {resumeReadiness.ready ? (
+    <p className="rl-quicklist__empty">Object storage and encryption key are configured.</p>
+  ) : (
+    <ul>
+      {resumeReadiness.missing.map((item) => (
+        <li key={item} className="rl-stale-row">
+          <span className="rl-mono">missing: {item}</span>
+        </li>
+      ))}
+    </ul>
+  )}
+</section>
 ```
 
 - [ ] **Step 3: Log readiness at worker startup**
@@ -320,6 +343,7 @@ Insert this panel immediately after the review-queue `<Link>` (current lines 57-
 In `server/ladder-worker/index.ts`:
 
 Add the import beside the other resume import (after the block ending line 29, `... from '../../lib/rmhladder/resume/schemas';`):
+
 ```ts
 import {
   resumeSubsystemReadiness,
@@ -328,10 +352,13 @@ import {
 ```
 
 Immediately after the existing startup banner `console.log('[ladder-worker] Started ...')` (current lines 242-244), add:
+
 ```ts
 const resumeReady = resumeSubsystemReadiness();
 if (resumeReady.ready) {
-  console.log('[ladder-worker] Resume subsystem ready — object storage + encryption key configured');
+  console.log(
+    '[ladder-worker] Resume subsystem ready — object storage + encryption key configured',
+  );
 } else {
   console.error(`[ladder-worker] ${resumeReadinessError(resumeReady)}`);
 }
@@ -362,6 +389,7 @@ git commit -m "feat(rmhladder): fail loud when resume storage is unconfigured"
 ## Task 3: 12-hour cadence
 
 **Files:**
+
 - Modify: `lib/rmhladder/scheduler.ts`
 - Modify: `lib/rmhladder/scheduler.test.ts`
 - Modify: `.env.example`
@@ -369,6 +397,7 @@ git commit -m "feat(rmhladder): fail loud when resume storage is unconfigured"
 - Modify: `server/CLAUDE.md`
 
 **Interfaces:**
+
 - Consumes: nothing new.
 - Produces: `DEFAULT_LADDER_CRON = '0 */12 * * *'`, `DEFAULT_STALE_AFTER_MS = 43_200_000` (unchanged names/signatures for `resolveLadderCron`, `isScrapeStale`).
 
@@ -377,18 +406,18 @@ git commit -m "feat(rmhladder): fail loud when resume storage is unconfigured"
 In `lib/rmhladder/scheduler.test.ts`, replace the `'defaults to every four hours'` test and the `'becomes stale at the four-hour boundary'` test with:
 
 ```ts
-  it('defaults to every twelve hours', () => {
-    expect(resolveLadderCron(undefined)).toBe('0 */12 * * *');
-    expect(DEFAULT_LADDER_CRON).toBe('0 */12 * * *');
-  });
+it('defaults to every twelve hours', () => {
+  expect(resolveLadderCron(undefined)).toBe('0 */12 * * *');
+  expect(DEFAULT_LADDER_CRON).toBe('0 */12 * * *');
+});
 ```
 
 ```ts
-  it('becomes stale at the twelve-hour boundary', () => {
-    expect(isScrapeStale(new Date('2026-07-12T00:00:00.001Z'), now)).toBe(false);
-    expect(isScrapeStale(new Date('2026-07-12T00:00:00.000Z'), now)).toBe(true);
-    expect(DEFAULT_STALE_AFTER_MS).toBe(43_200_000);
-  });
+it('becomes stale at the twelve-hour boundary', () => {
+  expect(isScrapeStale(new Date('2026-07-12T00:00:00.001Z'), now)).toBe(false);
+  expect(isScrapeStale(new Date('2026-07-12T00:00:00.000Z'), now)).toBe(true);
+  expect(DEFAULT_STALE_AFTER_MS).toBe(43_200_000);
+});
 ```
 
 (The `now` constant in that describe block is `2026-07-12T12:00:00.000Z`; 12h earlier is `2026-07-12T00:00:00.000Z`.)
@@ -401,11 +430,14 @@ Expected: FAIL — default still `'0 */4 * * *'`, `DEFAULT_STALE_AFTER_MS` still
 - [ ] **Step 3: Update the defaults in `scheduler.ts`**
 
 In `lib/rmhladder/scheduler.ts`, change lines 3-4:
+
 ```ts
 export const DEFAULT_LADDER_CRON = '0 */4 * * *';
 export const DEFAULT_STALE_AFTER_MS = 4 * 60 * 60 * 1_000;
 ```
+
 to:
+
 ```ts
 export const DEFAULT_LADDER_CRON = '0 */12 * * *';
 export const DEFAULT_STALE_AFTER_MS = 12 * 60 * 60 * 1_000;
@@ -419,6 +451,7 @@ Expected: PASS.
 - [ ] **Step 5: Update docs/config references to 12h**
 
 In `.env.example`, change the `LADDER_CRON_SCHEDULE` comment (currently `# LADDER_CRON_SCHEDULE=0 */4 * * *`) to:
+
 ```
 # LADDER_CRON_SCHEDULE=0 */12 * * *   # default: every 12h
 ```
@@ -439,12 +472,14 @@ git commit -m "feat(rmhladder): scrape every 12h (cron + staleness window)"
 ## Task 4: `pnpm ladder:status` diagnostic
 
 **Files:**
+
 - Create: `lib/rmhladder/status.ts`
 - Test: `lib/rmhladder/status.test.ts`
 - Create: `scripts/ladder-status.ts`
 - Modify: `package.json`
 
 **Interfaces:**
+
 - Consumes: `isScrapeStale`, `DEFAULT_STALE_AFTER_MS` from `./scheduler`; at runtime the script uses `prisma` and `resumeSubsystemReadiness`.
 - Produces:
   - `interface LadderStatusData { now: Date; lastCompletedRun: { finishedAt: Date; discoveredCount: number; newCount: number; expiredCount: number; errorCount: number } | null; activeJobs: number; expiredJobs: number; sourcesByStatus: Record<string, number>; resume: { ready: boolean; missing: string[] }; staleAfterMs: number }`
@@ -492,7 +527,10 @@ describe('formatLadderStatus', () => {
   it('flags a stale scrape (older than the window)', () => {
     const out = formatLadderStatus({
       ...BASE,
-      lastCompletedRun: { ...BASE.lastCompletedRun!, finishedAt: new Date('2026-07-14T00:00:00.000Z') },
+      lastCompletedRun: {
+        ...BASE.lastCompletedRun!,
+        finishedAt: new Date('2026-07-14T00:00:00.000Z'),
+      },
     });
     expect(out).toContain('STALE');
   });
@@ -556,7 +594,11 @@ export function formatLadderStatus(d: LadderStatusData): string {
   lines.push('================');
 
   const run = d.lastCompletedRun;
-  const stale = isScrapeStale(run?.finishedAt ?? null, d.now, d.staleAfterMs || DEFAULT_STALE_AFTER_MS);
+  const stale = isScrapeStale(
+    run?.finishedAt ?? null,
+    d.now,
+    d.staleAfterMs || DEFAULT_STALE_AFTER_MS,
+  );
   if (!run) {
     lines.push(`last completed run: none (no completed run) ${stale ? '[STALE]' : ''}`.trimEnd());
   } else {
@@ -662,6 +704,7 @@ main().catch(async (error) => {
 - [ ] **Step 6: Register the script**
 
 In `package.json`, beside the other ladder scripts (`ladder:seed`, `ladder:probe`, `ladder:run`), add:
+
 ```json
     "ladder:status": "pnpm exec tsx scripts/ladder-status.ts",
 ```
@@ -683,6 +726,7 @@ git commit -m "feat(rmhladder): pnpm ladder:status diagnostic report"
 ## Task 5: Operations runbook
 
 **Files:**
+
 - Create: `docs/rmhladder-operations.md`
 
 **Interfaces:** none (documentation). No test — verification is that the commands referenced exist (`pnpm ladder:status`, `pnpm ladder:run`) and the env var names match Global Constraints.
@@ -735,26 +779,30 @@ generic 503 to users, and the specific missing capability is logged
 
 Required env (all four for storage):
 
-| Var | Purpose |
-|---|---|
-| `S3_BUCKET` | bucket name |
-| `S3_ENDPOINT` | S3/R2 endpoint (account host; bucket appended by the SDK) |
-| `S3_ACCESS_KEY_ID` | credential |
-| `S3_SECRET_ACCESS_KEY` | credential |
-| `S3_REGION` | optional (default `us-east-1`) |
-| `LADDER_RESUME_ENCRYPTION_KEY` | AES-256-GCM key for resume text + files |
+| Var                            | Purpose                                                   |
+| ------------------------------ | --------------------------------------------------------- |
+| `S3_BUCKET`                    | bucket name                                               |
+| `S3_ENDPOINT`                  | S3/R2 endpoint (account host; bucket appended by the SDK) |
+| `S3_ACCESS_KEY_ID`             | credential                                                |
+| `S3_SECRET_ACCESS_KEY`         | credential                                                |
+| `S3_REGION`                    | optional (default `us-east-1`)                            |
+| `LADDER_RESUME_ENCRYPTION_KEY` | AES-256-GCM key for resume text + files                   |
 
 Generate the encryption key (32-byte hex):
+
 ```bash
 openssl rand -hex 32
 ```
+
 Set it as `LADDER_RESUME_ENCRYPTION_KEY` in the production env file, then
 restart the `web` and `ladder-worker` services so they pick it up.
 
 Verify after provisioning:
+
 ```bash
 pnpm ladder:status   # resume subsystem: READY
 ```
+
 Then upload a PDF/DOCX at `/rmhladder/resume` — expect `201`, not `503`.
 
 > Rotating `LADDER_RESUME_ENCRYPTION_KEY` invalidates previously encrypted
@@ -770,11 +818,13 @@ Then upload a PDF/DOCX at `/rmhladder/resume` — expect `201`, not `503`.
 ## Force a run now
 
 The web tier never scrapes. Trigger a manual run from the worker/web container:
+
 ```bash
 pnpm ladder:run                 # full pipeline, trigger=manual
 pnpm ladder:run --limit 20      # cap sources (smoke test)
 pnpm ladder:run --platform greenhouse
 ```
+
 Each run writes a `LadderScrapeRun` row visible on `/rmhladder/health`.
 
 (An in-dashboard "Run now" button that signals the worker is planned for a
@@ -813,6 +863,7 @@ git commit -m "docs(rmhladder): operations runbook (prod truth, provisioning, sc
 ## Self-Review
 
 **Spec coverage (Phase 0 of the spec):**
+
 - 0.1 Establish prod truth → Task 4 (`ladder:status`), Task 2 (health readiness surface), Task 5 (prod-truth checklist). ✅
 - 0.2 Resume fail-loud + provisioning → Task 1 (readiness), Task 2 (route/health/worker wiring), Task 5 (provisioning runbook). ✅
 - 0.3 Schedule → 12h + manual run → Task 3 (cron + staleness), Task 5 (manual run via `pnpm ladder:run`; dashboard button explicitly deferred). ✅

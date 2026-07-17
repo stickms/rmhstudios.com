@@ -61,25 +61,17 @@ export function circuitBreaker(args: {
 
 export interface RecheckPrismaLike {
   ladderJob: {
-    update(args: {
-      where: { id: string };
-      data: Record<string, unknown>;
-    }): Promise<{ id: string }>;
+    update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderVerification: {
     create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderReviewTask: {
-    findFirst(args: {
-      where: Record<string, unknown>;
-    }): Promise<{ id: string } | null>;
+    findFirst(args: { where: Record<string, unknown> }): Promise<{ id: string } | null>;
     create(args: { data: Record<string, unknown> }): Promise<{ id: string }>;
   };
   ladderSource: {
-    update(args: {
-      where: { id: string };
-      data: Record<string, unknown>;
-    }): Promise<{ id: string }>;
+    update(args: { where: { id: string }; data: Record<string, unknown> }): Promise<{ id: string }>;
   };
 }
 
@@ -112,7 +104,8 @@ export async function recheckSource(
 
   // Resolve adapter. Unknown platform or missing slug → all skip, no DB writes.
   const adapter = getAdapter(source.platform);
-  if (!adapter || (!source.slug && !(source.platform === 'workday' && source.url))) return ALL_SKIPPED;
+  if (!adapter || (!source.slug && !(source.platform === 'workday' && source.url)))
+    return ALL_SKIPPED;
 
   const memoized = memoFetch(deps.fetchImpl);
   const ctx = {

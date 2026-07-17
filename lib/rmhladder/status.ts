@@ -30,7 +30,11 @@ export function formatLadderStatus(d: LadderStatusData): string {
   lines.push('================');
 
   const run = d.lastCompletedRun;
-  const stale = isScrapeStale(run?.finishedAt ?? null, d.now, d.staleAfterMs || DEFAULT_STALE_AFTER_MS);
+  const stale = isScrapeStale(
+    run?.finishedAt ?? null,
+    d.now,
+    d.staleAfterMs || DEFAULT_STALE_AFTER_MS,
+  );
   if (!run) {
     lines.push(`last completed run: none (no completed run) ${stale ? '[STALE]' : ''}`.trimEnd());
   } else {

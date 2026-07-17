@@ -6,24 +6,42 @@ import type { RecheckPrismaLike } from './recheck';
 
 describe('decideRecheck', () => {
   it('returns skip when fetchSucceeded is false, regardless of other params', () => {
-    expect(decideRecheck({ fetchSucceeded: false, presentOnBoard: false, failedCheckCount: 0 }).action).toBe('skip');
-    expect(decideRecheck({ fetchSucceeded: false, presentOnBoard: true, failedCheckCount: 5 }).action).toBe('skip');
-    expect(decideRecheck({ fetchSucceeded: false, presentOnBoard: false, failedCheckCount: 2 }).action).toBe('skip');
+    expect(
+      decideRecheck({ fetchSucceeded: false, presentOnBoard: false, failedCheckCount: 0 }).action,
+    ).toBe('skip');
+    expect(
+      decideRecheck({ fetchSucceeded: false, presentOnBoard: true, failedCheckCount: 5 }).action,
+    ).toBe('skip');
+    expect(
+      decideRecheck({ fetchSucceeded: false, presentOnBoard: false, failedCheckCount: 2 }).action,
+    ).toBe('skip');
   });
 
   it('returns reset when job is present on board (fetch succeeded)', () => {
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: true, failedCheckCount: 0 }).action).toBe('reset');
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: true, failedCheckCount: 5 }).action).toBe('reset');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: true, failedCheckCount: 0 }).action,
+    ).toBe('reset');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: true, failedCheckCount: 5 }).action,
+    ).toBe('reset');
   });
 
   it('returns strike when absent and failedCheckCount+1 < 3', () => {
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 0 }).action).toBe('strike');
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 1 }).action).toBe('strike');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 0 }).action,
+    ).toBe('strike');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 1 }).action,
+    ).toBe('strike');
   });
 
   it('returns expire when absent and failedCheckCount+1 >= 3 (boundary: failedCheckCount 2)', () => {
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 2 }).action).toBe('expire');
-    expect(decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 5 }).action).toBe('expire');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 2 }).action,
+    ).toBe('expire');
+    expect(
+      decideRecheck({ fetchSucceeded: true, presentOnBoard: false, failedCheckCount: 5 }).action,
+    ).toBe('expire');
   });
 });
 
@@ -81,9 +99,7 @@ function makeFakePrisma(): RecheckPrismaLike & {
     },
     ladderReviewTask: {
       async findFirst({ where }) {
-        const found = reviewTasks.find((t) =>
-          Object.entries(where).every(([k, v]) => t[k] === v),
-        );
+        const found = reviewTasks.find((t) => Object.entries(where).every(([k, v]) => t[k] === v));
         return found ? { id: found['id'] as string } : null;
       },
       async create({ data }) {
@@ -148,11 +164,11 @@ describe('recheckSource', () => {
   it('normal mix: resets present jobs, strikes / expires absent jobs, skips null-externalId', async () => {
     const prisma = makeFakePrisma();
     const activeJobs = [
-      { id: 'j1', externalId: '111', failedCheckCount: 0 },  // present → reset
-      { id: 'j2', externalId: '222', failedCheckCount: 2 },  // absent → expire (2+1=3)
-      { id: 'j3', externalId: '333', failedCheckCount: 1 },  // present → reset
-      { id: 'j4', externalId: '444', failedCheckCount: 0 },  // absent → strike (0+1=1)
-      { id: 'j5', externalId: null, failedCheckCount: 0 },   // null → skip
+      { id: 'j1', externalId: '111', failedCheckCount: 0 }, // present → reset
+      { id: 'j2', externalId: '222', failedCheckCount: 2 }, // absent → expire (2+1=3)
+      { id: 'j3', externalId: '333', failedCheckCount: 1 }, // present → reset
+      { id: 'j4', externalId: '444', failedCheckCount: 0 }, // absent → strike (0+1=1)
+      { id: 'j5', externalId: null, failedCheckCount: 0 }, // null → skip
     ];
 
     // Board returns 111 and 333; 222 and 444 are absent

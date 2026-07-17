@@ -35,7 +35,10 @@ describe('formatLadderStatus', () => {
   it('flags a stale scrape (older than the window)', () => {
     const out = formatLadderStatus({
       ...BASE,
-      lastCompletedRun: { ...BASE.lastCompletedRun!, finishedAt: new Date('2026-07-14T00:00:00.000Z') },
+      lastCompletedRun: {
+        ...BASE.lastCompletedRun!,
+        finishedAt: new Date('2026-07-14T00:00:00.000Z'),
+      },
     });
     expect(out).toContain('STALE');
   });

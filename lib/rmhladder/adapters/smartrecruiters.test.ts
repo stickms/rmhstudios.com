@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { smartRecruitersAdapter, smartRecruitersPostingsUrl, smartRecruitersJobUrl } from './smartrecruiters';
+import {
+  smartRecruitersAdapter,
+  smartRecruitersPostingsUrl,
+  smartRecruitersJobUrl,
+} from './smartrecruiters';
 
 const fixture = readFileSync(join(__dirname, '__fixtures__/smartrecruiters-postings.json'), 'utf8');
 const stub = (status: number, body: string): typeof fetch =>
@@ -39,13 +43,19 @@ describe('smartRecruitersAdapter.discoverJobs', () => {
   });
 
   it('returns fetchSucceeded=false and [] on non-200 without throwing', async () => {
-    const result = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: stub(404, 'not found') });
+    const result = await smartRecruitersAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(404, 'not found'),
+    });
     expect(result.jobs).toEqual([]);
     expect(result.fetchSucceeded).toBe(false);
   });
 
   it('returns fetchSucceeded=false and [] on non-content-shape 200 (bare array)', async () => {
-    const result = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: stub(200, '[]') });
+    const result = await smartRecruitersAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(200, '[]'),
+    });
     expect(result.jobs).toEqual([]);
     expect(result.fetchSucceeded).toBe(false);
   });
@@ -60,7 +70,10 @@ describe('smartRecruitersAdapter.discoverJobs', () => {
   });
 
   it('fetch failure (500): fetchSucceeded=false, jobs=[]', async () => {
-    const result = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: stub(500, 'server error') });
+    const result = await smartRecruitersAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(500, 'server error'),
+    });
     expect(result.fetchSucceeded).toBe(false);
     expect(result.jobs).toEqual([]);
   });
@@ -68,9 +81,13 @@ describe('smartRecruitersAdapter.discoverJobs', () => {
 
 describe('smartRecruitersAdapter.verifyJob', () => {
   it('produces API-source evidence when the job is on the board', async () => {
-    const e = await smartRecruitersAdapter.verifyJob(ctx, { externalId: '744000012345', title: 'Finance Analyst Program 2027' });
+    const e = await smartRecruitersAdapter.verifyJob(ctx, {
+      externalId: '744000012345',
+      title: 'Finance Analyst Program 2027',
+    });
     expect(e).toMatchObject({
-      fetched: true, httpStatus: 200,
+      fetched: true,
+      httpStatus: 200,
       apiSource: true,
       titleMatch: true,
       companyMatch: true,
@@ -83,12 +100,18 @@ describe('smartRecruitersAdapter.verifyJob', () => {
   });
 
   it('non-US job (London) has usConfirmed: false', async () => {
-    const e = await smartRecruitersAdapter.verifyJob(ctx, { externalId: '744000067890', title: 'Director of Operations' });
+    const e = await smartRecruitersAdapter.verifyJob(ctx, {
+      externalId: '744000067890',
+      title: 'Director of Operations',
+    });
     expect(e.usConfirmed).toBe(false);
   });
 
   it('reports fetched-but-absent as titleMatch=false', async () => {
-    const e = await smartRecruitersAdapter.verifyJob(ctx, { externalId: '999', title: 'Ghost Role' });
+    const e = await smartRecruitersAdapter.verifyJob(ctx, {
+      externalId: '999',
+      title: 'Ghost Role',
+    });
     expect(e.titleMatch).toBe(false);
     expect(e.applyPresent).toBe(false);
   });
@@ -135,7 +158,10 @@ describe('smartRecruitersAdapter.detectExpired', () => {
   });
 
   it('non-200 → jobs=[]', async () => {
-    const result = await smartRecruitersAdapter.discoverJobs({ ...ctx, fetchImpl: stub(500, 'error') });
+    const result = await smartRecruitersAdapter.discoverJobs({
+      ...ctx,
+      fetchImpl: stub(500, 'error'),
+    });
     expect(result.jobs).toEqual([]);
     expect(result.fetchSucceeded).toBe(false);
   });
@@ -143,17 +169,23 @@ describe('smartRecruitersAdapter.detectExpired', () => {
 
 describe('smartRecruitersPostingsUrl', () => {
   it('builds the correct API URL with default offset', () => {
-    expect(smartRecruitersPostingsUrl('honeywell')).toBe('https://api.smartrecruiters.com/v1/companies/honeywell/postings?limit=100&offset=0');
+    expect(smartRecruitersPostingsUrl('honeywell')).toBe(
+      'https://api.smartrecruiters.com/v1/companies/honeywell/postings?limit=100&offset=0',
+    );
   });
 
   it('builds the correct API URL with custom offset', () => {
-    expect(smartRecruitersPostingsUrl('honeywell', 100)).toBe('https://api.smartrecruiters.com/v1/companies/honeywell/postings?limit=100&offset=100');
+    expect(smartRecruitersPostingsUrl('honeywell', 100)).toBe(
+      'https://api.smartrecruiters.com/v1/companies/honeywell/postings?limit=100&offset=100',
+    );
   });
 });
 
 describe('smartRecruitersJobUrl', () => {
   it('builds the correct job URL', () => {
-    expect(smartRecruitersJobUrl('honeywell', '744000012345')).toBe('https://jobs.smartrecruiters.com/honeywell/744000012345');
+    expect(smartRecruitersJobUrl('honeywell', '744000012345')).toBe(
+      'https://jobs.smartrecruiters.com/honeywell/744000012345',
+    );
   });
 });
 
@@ -186,7 +218,9 @@ describe('smartRecruitersAdapter pagination', () => {
           new Response(JSON.stringify({ totalFound: 150, content: page2Content }), { status: 200 }),
         );
       }
-      return Promise.resolve(new Response(JSON.stringify({ totalFound: 150, content: [] }), { status: 200 }));
+      return Promise.resolve(
+        new Response(JSON.stringify({ totalFound: 150, content: [] }), { status: 200 }),
+      );
     };
 
     const result = await smartRecruitersAdapter.discoverJobs({
@@ -227,12 +261,18 @@ describe('smartRecruitersAdapter pagination', () => {
   it('under-filled pages advance offset by item count, not page size', async () => {
     const calls: string[] = [];
     const f = (async (url: unknown) => {
-      const u = String(url); calls.push(u);
+      const u = String(url);
+      calls.push(u);
       const offset = Number(new URL(u).searchParams.get('offset') ?? '0');
-      const make = (n: number, start: number) => JSON.stringify({
-        totalFound: 150,
-        content: Array.from({ length: n }, (_, i) => ({ id: String(start + i), name: `Job ${start + i}`, location: { city: 'Austin', region: 'TX', country: 'us' } })),
-      });
+      const make = (n: number, start: number) =>
+        JSON.stringify({
+          totalFound: 150,
+          content: Array.from({ length: n }, (_, i) => ({
+            id: String(start + i),
+            name: `Job ${start + i}`,
+            location: { city: 'Austin', region: 'TX', country: 'us' },
+          })),
+        });
       if (offset === 0) return new Response(make(75, 0), { status: 200 });
       if (offset === 75) return new Response(make(75, 75), { status: 200 });
       return new Response(JSON.stringify({ totalFound: 150, content: [] }), { status: 200 });
@@ -260,7 +300,9 @@ describe('smartRecruitersAdapter pagination', () => {
 describe('smartRecruitersAdapter detectExpired with empty board', () => {
   it('returns false when totalFound === 0 (empty board is not expiry evidence)', async () => {
     const emptyBoardStub = (_url: string): Promise<Response> => {
-      return Promise.resolve(new Response(JSON.stringify({ totalFound: 0, content: [] }), { status: 200 }));
+      return Promise.resolve(
+        new Response(JSON.stringify({ totalFound: 0, content: [] }), { status: 200 }),
+      );
     };
 
     const result = await smartRecruitersAdapter.detectExpired(
