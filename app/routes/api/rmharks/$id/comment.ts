@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
@@ -149,17 +150,45 @@ export const Route = createFileRoute('/api/rmharks/$id/comment')({
     while (frontier.length > 0 && depth < MAX_TREE_DEPTH && expanded < MAX_EXPANDED_PARENTS) {
       const batch = frontier.slice(0, MAX_EXPANDED_PARENTS - expanded);
       expanded += batch.length;
-      const replyLists = await Promise.all(
-        batch.map((parent) => fetchComments({ parentId: parent.id }, REPLY_CAP_PER_PARENT, false)),
-      );
+      // One id-window query caps each parent to REPLY_CAP_PER_PARENT replies
+      // (ROW_NUMBER per parent), then ONE hydrate with the full include —
+      // replacing up to MAX_EXPANDED_PARENTS per-parent queries per level with 2
+      // (perf audit §2.5). A parent's deeper/truncated replies still load via
+      // `?parentId=`. Only ids come from raw SQL, so the include isn't duplicated.
+      const batchIds = batch.map((parent) => parent.id);
+      const cappedIdRows = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
+        SELECT id FROM (
+          SELECT id, ROW_NUMBER() OVER (
+            PARTITION BY "parentId" ORDER BY "createdAt" ASC, id ASC
+          ) AS rn
+          FROM "rmheet_comment"
+          WHERE "rmheetId" = ${id} AND "parentId" IN (${Prisma.join(batchIds)})
+        ) t WHERE t.rn <= ${REPLY_CAP_PER_PARENT}
+      `);
+      const cappedIds = cappedIdRows.map((r) => r.id);
+      const replyRows = cappedIds.length
+        ? await prisma.rMHarkComment.findMany({
+            where: { id: { in: cappedIds } },
+            orderBy: [{ createdAt: "asc" as const }, { id: "asc" as const }],
+            include: commentInclude,
+          })
+        : [];
+      // Group the hydrated replies by parent, preserving ascending order.
+      const repliesByParent = new Map<string, CommentRow[]>();
+      for (const rep of replyRows) {
+        const key = rep.parentId ?? "";
+        const list = repliesByParent.get(key) ?? [];
+        list.push(rep);
+        repliesByParent.set(key, list);
+      }
       const next: ResolvedComment[] = [];
-      batch.forEach((parent, i) => {
-        for (const rep of replyLists[i]) {
+      for (const parent of batch) {
+        for (const rep of repliesByParent.get(parent.id) ?? []) {
           const node: ResolvedComment = { ...resolveComment(rep), replies: [] };
           parent.replies.push(node);
           next.push(node);
         }
-      });
+      }
       frontier = next;
       depth++;
     }

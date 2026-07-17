@@ -30,7 +30,7 @@ export function rmharkIncludeLite(viewerId: string | null) {
  * proven approach in lib/feed/timeline.ts (loadReactionSummaries) so the main
  * timeline and the secondary read paths compute reactions identically.
  */
-async function loadBoundedReactionSummaries(
+export async function loadBoundedReactionSummaries(
   postIds: string[],
   viewerId: string | null,
 ): Promise<Map<string, ReactionSummary[]>> {

@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
-import { rmharkInclude, mapRmharkToFeedItem } from '@/lib/feed/map-feed-item.server';
+import { rmharkIncludeLite, mapRmharksWithBoundedReactions } from '@/lib/feed/map-feed-item.server';
 import { rankSimilar } from '@/lib/feed/similarity';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
 import { tokenize } from '@/lib/feed/similarity';
@@ -44,7 +44,7 @@ export const Route = createFileRoute('/api/rmharks/$id/similar')({
             },
             orderBy: { createdAt: 'desc' },
             take: 200,
-            include: rmharkInclude(viewerId),
+            include: rmharkIncludeLite(viewerId),
           });
 
           const ranked = rankSimilar(
@@ -54,7 +54,7 @@ export const Route = createFileRoute('/api/rmharks/$id/similar')({
           );
 
           return Response.json({
-            items: ranked.map((r) => mapRmharkToFeedItem(r.doc, viewerId)),
+            items: await mapRmharksWithBoundedReactions(ranked.map((r) => r.doc), viewerId),
           });
         } catch (error) {
           console.error('Similar posts error:', error);
