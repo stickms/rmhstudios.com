@@ -199,12 +199,28 @@ jobs:
             --arg mid "${DISCORD_MSG_ID:-}" \
             '{ref:$ref, after:$after, discord_msg_id:$mid}')"
           sig="sha256=$(printf '%s' "$body" | node -e 'const c=require("crypto");let d="";process.stdin.on("data",x=>d+=x).on("end",()=>process.stdout.write(c.createHmac("sha256",process.env.WEBHOOK_SECRET).update(d).digest("hex")))')"
+          # Diagnostics: the body + its byte length (proves it isn't empty/malformed;
+          # none of ref/sha/msg_id are secret) and the signature length (not the
+          # value). WEBHOOK_SECRET is masked by GitHub regardless.
+          echo "Body (${#body} bytes): $body"
+          echo "Signature length: ${#sig}"
           echo "Triggering deploy for ${COMMIT_SHA}"
-          curl -fsS --max-time 30 -X POST "$DEPLOY_WEBHOOK_URL" \
+          # Capture the response instead of failing silently: print the HTTP status
+          # AND the response body so we can see WHO answers (listener 'Bad JSON' /
+          # 'Unauthorized' vs a Cloudflare/Apache error page) and why.
+          code=$(curl -sS -o /tmp/webhook-resp.txt -w '%{http_code}' --max-time 30 -X POST "$DEPLOY_WEBHOOK_URL" \
             -H "Content-Type: application/json" \
             -H "X-Hub-Signature-256: $sig" \
-            --data-raw "$body"
+            --data-raw "$body" || echo "000")
+          echo "HTTP status: $code"
+          echo "----- response body -----"
+          cat /tmp/webhook-resp.txt 2>/dev/null || true
           echo
+          echo "-------------------------"
+          case "$code" in
+            2*) echo "Trigger accepted." ;;
+            *) echo "::error::Webhook trigger returned HTTP $code (see response body above)."; exit 1 ;;
+          esac
 
       - name: Discord — pipeline failed (build or trigger)
         if: failure() && github.ref == 'refs/heads/main'
