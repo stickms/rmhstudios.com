@@ -73,23 +73,30 @@ client-side navigation (the common case) is unaffected because the backfill runs
 right after hydration.
 
 **Genuinely external — cannot be run from the repo (config is committed; applying it is a deploy step):**
-- **Cloudflare cache rule** for `/api/image-proxy*` and `/api/feed/image/*`
-  ("cache everything", key on query string) — the origin LRU above already cuts
-  the transcode cost; the CF rule additionally offloads delivery to the edge.
-- **Running 2–3 web replicas** + SSR HTML `s-maxage` for anonymous pages (§1.1) —
-  a change to the deploy topology (the blue/green hotswap runs a single web
-  container) and a Cloudflare cookie-bypass rule, not a code edit.
+- **Cloudflare cache rule** for `/api/image-proxy*` and `/api/feed/image/*` —
+  now a committed, idempotent script: set `CLOUDFLARE_API_TOKEN` (scoped: Zone →
+  Cache Rules → Edit) + `CLOUDFLARE_ZONE_ID` and run
+  `bash deploy/apply-cloudflare-cache-rules.sh` (supports `DRY_RUN=1`). Safe to
+  edge-cache: these responses are non-user-specific. The origin LRU already cuts
+  the transcode cost; this offloads delivery to the edge too.
 - **Applying** `deploy/postgres/postgresql.tuning.conf` +
-  `deploy/apache/mpm_event.conf` on the VPS host — now a single committed,
+  `deploy/apache/mpm_event.conf` on the VPS host — a single committed,
   idempotent command: `sudo bash deploy/apply-perf-tuning.sh` (supports
   `DRY_RUN=1`). It cannot run from CI / the sandboxed webhook (writes under /etc,
   restarts services), so an operator runs it once on the host.
+- **Running 2–3 web replicas** + SSR HTML edge cache (§1.1) — the remaining item
+  with no safe blind-code form. Multi-core serving in one container (Nitro
+  `node-cluster` preset) is the lower-risk lever but needs the container's
+  1 GB / 1.5-CPU limits raised first (a capacity decision), and edge-caching
+  anonymous HTML must be a Cloudflare **cookie-bypass** rule so signed-in shells
+  are never served from cache — deliberately NOT implemented as origin logic,
+  where a cookie-detection slip would be a privacy bug.
 
-These three (single-process SSR, untuned co-resident Postgres, no HTML edge
-cache) are the biggest remaining "slow under load" wins. They are operations on
-Cloudflare's control plane and the production VPS — everything the *repository*
-can contain (config files, the turnkey apply script, and the origin-side image
-cache) is committed; executing them requires Cloudflare + host access.
+Everything the *repository* can contain is committed: the code fixes, the config
+files, the origin-side image cache, and two turnkey apply scripts
+(`apply-cloudflare-cache-rules.sh`, `apply-perf-tuning.sh`). What's left is
+supplying credentials + running those scripts, and one capacity/topology
+decision — all operations on Cloudflare and the VPS, outside the repo.
 
 **Intentionally skipped (low value / already healthy):** group-chat page size +
 DM-search trigram (§2.10, already conversation-scoped); fonts-per-theme +
