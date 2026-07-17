@@ -41,10 +41,17 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
-# One deploy at a time; a push during a deploy queues (never cancels) the next.
+# One build per ref at a time. A newer commit to the same ref CANCELS the
+# in-progress build and starts fresh — no point finishing a build that's already
+# superseded. Keyed by ref so a branch test-dispatch never cancels a production
+# (main) build, and vice-versa.
+#
+# NOTE: this cancels the BUILD only. The VPS deploy phase has its own flock+queue
+# in deploy.sh — a running deploy is never interrupted mid-migration/hotswap; a
+# newer deploy queues and supersedes older queued ones once the current finishes.
 concurrency:
-  group: deploy-production
-  cancel-in-progress: false
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 # GITHUB_TOKEN needs packages:write to push the images to GHCR; nothing else.
 permissions:
@@ -208,4 +215,15 @@ jobs:
           # Once deploy.sh is triggered it owns the message's final state.
           bash .github/scripts/discord-notify.sh edit 15158332 \
             "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-} — CI build/trigger failed (see Actions logs)" \
+            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
+
+      - name: Discord — build superseded (cancelled)
+        if: cancelled() && github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          # A newer commit cancelled this build (cancel-in-progress). Close out its
+          # embed so it doesn't sit orphaned at 🟡; the newer commit posts its own.
+          bash .github/scripts/discord-notify.sh edit 9807270 \
+            "⏹️ [PRODUCTION] Commit ${COMMIT_SHORT:-} — build superseded by a newer commit" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"

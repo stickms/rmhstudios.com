@@ -56,10 +56,13 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
 1. **Trigger:** push to `main` → `.github/workflows/deploy.yml` builds the two
    images on a native ARM64 runner, pushes them to GHCR tagged with the commit
    SHA, then POSTs an HMAC-signed request to the VPS webhook receiver
-   (`webhook-server.cjs`), which runs `./deploy.sh production <sha>`. (Serialized
-   via a concurrency group; deploys queue rather than cancel. The listener is
-   driven by CI — not a raw push webhook — so the deploy runs after the image
-   exists.)
+   (`webhook-server.cjs`), which runs `./deploy.sh production <sha>`. (A newer
+   commit to `main` **cancels** the in-progress *build* and starts fresh
+   — `concurrency: cancel-in-progress`, keyed by ref so branch dispatches don't
+   interfere. The *deploy* phase is never cancelled mid-flight: `deploy.sh`'s
+   flock+queue lets a running deploy finish and runs the newest queued one next.
+   The listener is driven by CI — not a raw push webhook — so the deploy runs
+   after the image exists.)
 2. **`deploy.sh production <sha>`** (flock-serialized; reports to Discord + GitHub
    commit status):
    - `git fetch` + `reset --hard <sha>` (self-restarts if deploy.sh itself changed)
