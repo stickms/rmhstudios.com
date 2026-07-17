@@ -1,0 +1,19 @@
+# golangci-lint config for the Go fleet.
+#
+# Runs via .github/workflows/go-lint.yml (working-directory: go-services) with
+# only-new-issues: true — so these linters flag problems a PR INTRODUCES without
+# red-gating the pre-existing backlog (the repo's "no NEW warnings" bar).
+#
+# This umbrella linter replaces three former standalone per-PR workflows, each of
+# which spun its own runner + Go toolchain:
+#   go-vet.yml         → govet        (default-enabled)
+#   go-staticcheck.yml → staticcheck  (default-enabled)
+#   go-fmt.yml         → gofmt        (enabled below)
+# Build + test are owned by Bazel (go-microservices.yml); gosec keeps its own
+# workflow (go-gosec.yml) for the Security-tab SARIF upload.
+#
+# Default-enabled linters (errcheck, gosimple, govet, ineffassign, staticcheck,
+# unused) stay on; we only ADD gofmt on top.
+linters:
+  enable:
+    - gofmt

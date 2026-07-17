@@ -2,6 +2,11 @@
 # golangci-lint for the Go fleet. Runs on pull requests with `only-new-issues`
 # so it flags problems introduced by the PR without red-gating on the pre-existing
 # backlog (matching the repo's "don't add NEW warnings" bar).
+#
+# This is the UMBRELLA Go linter: its config (go-services/.golangci.yml) enables
+# govet + staticcheck (default) + gofmt, so the former standalone go-vet / go-fmt
+# / go-staticcheck / go-cyclo workflows were retired. Build + test live in Bazel
+# (go-microservices.yml); gosec keeps go-gosec.yml for its Security-tab SARIF.
 # ─────────────────────────────────────────────────────────────────────────────
 name: go-lint
 

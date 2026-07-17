@@ -3,15 +3,27 @@
 # VPS for the release.
 #
 # Flow (every push to main):
-#   1. Build the slim web image (target `runner`) natively on an ARM64 runner
-#      (matches the Oracle ARM VPS) and push it to GHCR tagged with the commit SHA.
-#   2. Build the full supervisor/status image (target `runner-full`) FROM that
-#      just-pushed web image (so the Vite build runs exactly ONCE) and push it too.
-#   3. POST an HMAC-signed request to the VPS webhook listener (webhook-server.cjs)
-#      with the built SHA. The listener runs `deploy.sh production <sha>`, which
+#   1. `ci` (typecheck/lint/test) and `build` (images) run IN PARALLEL. The CI
+#      gate no longer serializes in front of the ~8 min build — it runs in the
+#      build's shadow, so a green deploy costs ~max(ci, build), not ci + build.
+#   2. `build` builds BOTH images from ONE shared BuildKit graph via
+#      `docker buildx bake` (see docker-bake.hcl): the slim web image (`runner`)
+#      and the full supervisor/status image (`runner-full`, FROM the in-graph
+#      `runner`). The expensive Vite build is a shared stage → runs ONCE; the Go
+#      build + Chromium layer that `runner-full` adds run in parallel with it,
+#      not serialized behind a second `docker build`. Both are pushed to GHCR
+#      tagged with the commit SHA (+ :latest).
+#   3. `deploy-gate` (needs BOTH ci + build) POSTs the HMAC-signed request to the
+#      VPS webhook listener (webhook-server.cjs) with the built SHA — but ONLY
+#      when CI is green. The listener runs `deploy.sh production <sha>`, which
 #      PULLS these images, migrates, and blue/green-swaps — see deploy.sh.
 #
-# The heavy build (vibe-packages → vite build → esbuild → Go → Chromium) now runs
+# Gating the *webhook trigger* (not the image build) preserves the exact safety
+# of the old serial gate — red CI ⇒ no webhook ⇒ nothing ships — while letting
+# the build run concurrently. A build that ran while CI turned out red just
+# leaves an inert SHA-tagged image in GHCR that no deploy ever pulls.
+#
+# The heavy build (vibe-packages → vite build → esbuild → Go → Chromium) runs
 # here instead of on the VPS; deploy.sh no longer builds anything.
 #
 # One-time setup (see deploy/README.md "Automated deploys — CI build → GHCR"):
@@ -33,6 +45,9 @@
 #     (GHCR_TOKEN / GITHUB_TOKEN with read:packages) OR make the two packages
 #     public. Remove GitHub's old push webhook so only THIS workflow drives the
 #     listener (a raw push webhook would fire before the image exists).
+#   • GHCR layer cache: the build reads/writes registry cache tags
+#     ${IMAGE_WEB}:buildcache / ${IMAGE_FULL}:buildcache (docker-bake.hcl). These
+#     are created automatically on the first push; no manual setup needed.
 # ─────────────────────────────────────────────────────────────────────────────
 name: deploy
 
@@ -42,7 +57,7 @@ on:
   workflow_dispatch: {}
 
 # One build per ref at a time. A newer commit to the same ref CANCELS the
-# in-progress build and starts fresh — no point finishing a build that's already
+# in-progress run and starts fresh — no point finishing a build that's already
 # superseded. Keyed by ref so a branch test-dispatch never cancels a production
 # (main) build, and vice-versa.
 #
@@ -64,21 +79,19 @@ env:
 
 jobs:
   # ── CI gate (audit §5.4) ────────────────────────────────────────────────────
-  # Deploys were previously NOT gated on CI: a push to main built + pushed the
-  # two images and triggered the VPS deploy even if typecheck/lint/tests were
-  # red. This job runs the same fast, high-signal web checks as web-ci.yml, and
-  # build-and-deploy `needs:` it — so a red build can no longer ship.
+  # Runs the same fast, high-signal web checks as web-ci.yml. `deploy-gate`
+  # `needs:` this AND `build` — so a red CI can no longer ship, but CI is no
+  # longer in the deploy's critical path (it runs concurrently with the build).
   #
-  # Why an in-workflow `needs:` gate rather than a `workflow_run:` trigger keyed
-  # on web-ci: web-ci.yml has `paths-ignore` (go-services/**, deploy/**, docs/**,
+  # Why an in-workflow gate rather than a `workflow_run:` trigger keyed on
+  # web-ci: web-ci.yml has `paths-ignore` (go-services/**, deploy/**, docs/**,
   # **/*.md), so a go-only, deploy-config-only, or docs-only push to main does
   # NOT run web-ci. A `workflow_run` gate on it would then never fire for those
   # pushes, and legitimate changes could never deploy — and deploy.sh itself
   # lives under deploy/**. A same-workflow gate runs on EVERY push to main
-  # regardless of paths and leaves all the SHA/webhook/HMAC/ARM logic below
-  # untouched. Note: build-TIME breakage (web or Go) is ALREADY blocking, because
-  # the image build in build-and-deploy fails before anything is pushed to GHCR;
-  # this job adds the typecheck/lint/test coverage the image build doesn't give.
+  # regardless of paths. Note: build-TIME breakage (web or Go) is ALREADY
+  # blocking, because the image build in `build` fails before anything usable is
+  # deployed; this job adds the typecheck/lint/test coverage the build doesn't.
   ci:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -111,34 +124,42 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      # Tests run on every deploy but are REPORT-ONLY for now: the suite has a
-      # pre-existing red spot (i18n-catalogs — an English string added without a
-      # translation for the other locales) that is unrelated to code health and
-      # should not strand a deploy. Typecheck + lint above are the hard gates.
-      # Once the i18n catalog drift is resolved (run the i18n:translate pipeline)
-      # and the suite is reliably green, drop `continue-on-error` to make tests
-      # blocking again.
+      # Blocking again now that the i18n-catalogs drift is healed (the two
+      # untranslated feed keys are tracked in an explicit allowlist in
+      # lib/__tests__/i18n-catalogs.test.ts). If it flakes on catalog drift
+      # again, run `pnpm i18n:translate && pnpm i18n:resources` to heal, or
+      # extend that allowlist — do NOT re-add continue-on-error.
       - name: Test
         run: pnpm exec vitest run
-        continue-on-error: true
 
-  build-and-deploy:
-    # Gate: do not build/push images or trigger the VPS deploy unless CI is green
-    # (audit §5.4). A skipped `ci` (never happens here — it has no path filter)
-    # or a failed `ci` skips this job, so nothing ships.
-    needs: ci
+  build:
+    # NO `needs:` — runs concurrently with `ci`. `deploy-gate` waits on both.
     # Native ARM64 hosted runner (free on public repos) — builds arm64 images for
     # the Oracle ARM VPS without slow QEMU emulation.
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 90
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      commit_short: ${{ steps.commit.outputs.short }}
+      commit_msg: ${{ steps.commit.outputs.msg }}
+      commit_author: ${{ steps.commit.outputs.author }}
+      discord_msg_id: ${{ steps.discord_out.outputs.id }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Resolve commit info (for Discord pipeline embed)
+        id: commit
         if: github.ref == 'refs/heads/main'
         run: |
           set -uo pipefail
-          # %s is the single-line subject (no newlines → safe for $GITHUB_ENV).
+          # %s is the single-line subject (no newlines → safe for outputs).
+          {
+            echo "short=$(git rev-parse --short HEAD)"
+            echo "msg=$(git log -1 --pretty=%s)"
+            echo "author=$(git log -1 --pretty=%an)"
+          } >> "$GITHUB_OUTPUT"
           {
             echo "COMMIT_SHORT=$(git rev-parse --short HEAD)"
             echo "COMMIT_MSG=$(git log -1 --pretty=%s)"
@@ -185,6 +206,14 @@ jobs:
           # build took. Runs even when Discord is off (the step is only ref-gated).
           echo "BUILD_START_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
 
+      # Export the Discord message id (set into $GITHUB_ENV by discord-notify.sh
+      # `post`) as a JOB OUTPUT so deploy-gate can EDIT the same embed after the
+      # gate resolves. Empty on non-main / when Discord is off — the edit no-ops.
+      - name: Export Discord message id
+        id: discord_out
+        if: always()
+        run: echo "id=${DISCORD_MSG_ID:-}" >> "$GITHUB_OUTPUT"
+
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Log in to GHCR
@@ -194,49 +223,29 @@ jobs:
           set -euo pipefail
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Build + push slim web image (runner)
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
-        with:
-          context: .
-          target: runner
-          platforms: linux/arm64
-          push: true
-          provenance: false
-          tags: |
-            ${{ env.IMAGE_WEB }}:${{ github.sha }}
-            ${{ env.IMAGE_WEB }}:latest
-          cache-from: type=gha,scope=web
-          cache-to: type=gha,mode=max,scope=web
-          build-args: |
-            COMPOSE_PROJECT_NAME=rmhstudios-prod
-            DATABASE_URL=postgresql://ci-build:ci-build@localhost:5432/ci-build
-            BETTER_AUTH_SECRET=ci-build-not-a-runtime-secret-000000000000
-            BETTER_AUTH_URL=${{ vars.PROD_BETTER_AUTH_URL }}
-            VITE_BETTER_AUTH_URL=${{ vars.PROD_VITE_BETTER_AUTH_URL }}
-            VITE_SOCKET_URL=${{ vars.PROD_VITE_SOCKET_URL }}
-            VITE_RMHBOX_SOCKET_URL=${{ vars.PROD_VITE_RMHBOX_SOCKET_URL }}
-            VITE_RMHTUBE_SOCKET_URL=${{ vars.PROD_VITE_RMHTUBE_SOCKET_URL }}
-            VITE_DISCORD_ACTIVITY_CLIENT_ID=${{ vars.PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID }}
-            VITE_CDN_BASE_URL=${{ vars.PROD_VITE_CDN_BASE_URL }}
-            DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
+      # Build + push BOTH images in a single BuildKit graph (docker-bake.hcl).
+      # Vite (the ~5 min long pole) is a shared stage built once; the Go build +
+      # Chromium layer for runner-full run in parallel with it. Registry-backed
+      # layer cache on GHCR (no 10 GB GHA-cache eviction cap).
+      - name: Build + push both images (bake, single graph)
+        env:
+          GIT_SHA: ${{ github.sha }}
+          COMPOSE_PROJECT_NAME: rmhstudios-prod
+          DATABASE_URL: postgresql://ci-build:ci-build@localhost:5432/ci-build
+          BETTER_AUTH_SECRET: ci-build-not-a-runtime-secret-000000000000
+          BETTER_AUTH_URL: ${{ vars.PROD_BETTER_AUTH_URL }}
+          VITE_BETTER_AUTH_URL: ${{ vars.PROD_VITE_BETTER_AUTH_URL }}
+          VITE_SOCKET_URL: ${{ vars.PROD_VITE_SOCKET_URL }}
+          VITE_RMHBOX_SOCKET_URL: ${{ vars.PROD_VITE_RMHBOX_SOCKET_URL }}
+          VITE_RMHTUBE_SOCKET_URL: ${{ vars.PROD_VITE_RMHTUBE_SOCKET_URL }}
+          VITE_DISCORD_ACTIVITY_CLIENT_ID: ${{ vars.PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID }}
+          VITE_CDN_BASE_URL: ${{ vars.PROD_VITE_CDN_BASE_URL }}
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          set -euo pipefail
+          docker buildx bake -f docker-bake.hcl --push web full
 
-      - name: Build + push full image (runner-full, FROM the pushed web image)
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
-        with:
-          context: .
-          target: runner-full
-          platforms: linux/arm64
-          push: true
-          provenance: false
-          tags: |
-            ${{ env.IMAGE_FULL }}:${{ github.sha }}
-            ${{ env.IMAGE_FULL }}:latest
-          cache-from: type=gha,scope=full
-          cache-to: type=gha,mode=max,scope=full
-          build-args: |
-            WEB_IMAGE=${{ env.IMAGE_WEB }}:${{ github.sha }}
-
-      - name: Discord — images pushed, triggering deploy
+      - name: Discord — images pushed, awaiting CI gate
         if: github.ref == 'refs/heads/main'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -247,15 +256,59 @@ jobs:
           elapsed=$(( now - start ))
           dur="$(( elapsed / 60 ))m $(( elapsed % 60 ))s"
           bash .github/scripts/discord-notify.sh edit 3447003 \
-            "🔵 [PRODUCTION] Commit ${COMMIT_SHORT:-} — images built + pushed to GHCR in ${dur}, triggering deploy…" \
+            "🔵 [PRODUCTION] Commit ${COMMIT_SHORT:-} — images built + pushed to GHCR in ${dur}, awaiting CI gate…" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
 
+      - name: Discord — build superseded (cancelled)
+        if: cancelled() && github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          # A newer commit cancelled this build (cancel-in-progress). Close out its
+          # embed so it doesn't sit orphaned at 🟡; the newer commit posts its own.
+          bash .github/scripts/discord-notify.sh edit 9807270 \
+            "⏹️ [PRODUCTION] Commit ${COMMIT_SHORT:-} — build superseded by a newer commit" \
+            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
+
+  # ── Deploy gate: fire the VPS webhook ONLY when CI + build are both green ────
+  # `if: always()` so this runs even when `ci` fails (so it can mark the embed
+  # red). The trigger step is guarded on BOTH jobs succeeding; the failure step
+  # fires when either genuinely failed. Cancellation (superseded) is handled by
+  # `build` above, so neither step runs then.
+  deploy-gate:
+    needs: [ci, build]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Gate failed — CI or build not green
+        if: needs.ci.result == 'failure' || needs.build.result == 'failure'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}
+          COMMIT_SHORT: ${{ needs.build.outputs.commit_short }}
+          COMMIT_MSG: ${{ needs.build.outputs.commit_msg }}
+          COMMIT_AUTHOR: ${{ needs.build.outputs.commit_author }}
+        run: |
+          set -uo pipefail
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            bash .github/scripts/discord-notify.sh edit 15158332 \
+              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-} — gate failed (CI=${{ needs.ci.result }}, build=${{ needs.build.result }}); NOT deploying" \
+              "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}" || true
+          fi
+          echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, build=${{ needs.build.result }}. Images (if any) are inert; nothing shipped."
+          exit 1
+
       - name: Trigger VPS deploy (webhook listener)
+        if: needs.ci.result == 'success' && needs.build.result == 'success'
         env:
           DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
           COMMIT_REF: ${{ github.ref }}
           COMMIT_SHA: ${{ github.sha }}
+          DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}
         run: |
           set -euo pipefail
           # Body carries ONLY {ref, after} — the fields the listener maps + the SHA
@@ -287,24 +340,17 @@ jobs:
               ;;
           esac
 
-      - name: Discord — pipeline failed (build or trigger)
-        if: failure() && github.ref == 'refs/heads/main'
+      - name: Discord — trigger failed (post-build handoff)
+        if: failure() && needs.ci.result == 'success' && needs.build.result == 'success' && github.ref == 'refs/heads/main'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}
+          COMMIT_SHORT: ${{ needs.build.outputs.commit_short }}
+          COMMIT_MSG: ${{ needs.build.outputs.commit_msg }}
+          COMMIT_AUTHOR: ${{ needs.build.outputs.commit_author }}
         run: |
-          # Only fires when a step BEFORE the VPS handoff failed (build/trigger).
-          # Once deploy.sh is triggered it owns the message's final state.
+          # Only fires when the webhook handoff itself failed (build + CI were
+          # green). Once deploy.sh is triggered it owns the message's final state.
           bash .github/scripts/discord-notify.sh edit 15158332 \
-            "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-} — CI build/trigger failed (see Actions logs)" \
-            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
-
-      - name: Discord — build superseded (cancelled)
-        if: cancelled() && github.ref == 'refs/heads/main'
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          # A newer commit cancelled this build (cancel-in-progress). Close out its
-          # embed so it doesn't sit orphaned at 🟡; the newer commit posts its own.
-          bash .github/scripts/discord-notify.sh edit 9807270 \
-            "⏹️ [PRODUCTION] Commit ${COMMIT_SHORT:-} — build superseded by a newer commit" \
+            "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-} — CI green + images pushed, but the VPS deploy trigger failed (see Actions logs)" \
             "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"

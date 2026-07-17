@@ -38,6 +38,62 @@ build graph for both images), and a typical PR gets its meaningful signal in
 
 ---
 
+## 0. Implementation status (this PR)
+
+The bulk of the audit is implemented in this PR. Summary of changes:
+
+| Rec | Change | Files |
+|---|---|---|
+| R1 | Deploy CI gate now runs **concurrently** with the image build; only the webhook trigger (`deploy-gate` job) waits on both. Red CI ⇒ no webhook ⇒ nothing ships (unchanged safety). | `.github/workflows/deploy.yml` |
+| R1b | Both images build from **one `docker buildx bake` graph** (`web` + `full`); the Vite stage is shared → built once, Go build + Chromium run alongside it. No more serial second `docker build`. | `docker-bake.hcl`, `deploy.yml` |
+| R4 | Docker layer cache moved from `type=gha` (10 GB evicting) to **registry cache on GHCR** (`:buildcache` tags). | `docker-bake.hcl` |
+| R2 | `i18n-catalogs` drift **healed durably** — a targeted allowlist tolerates the two known-untranslated `feed` keys while still failing on any *other* orphan/missing key. Test is a hard gate again (`continue-on-error` dropped). | `lib/__tests__/i18n-catalogs.test.ts`, `deploy.yml` |
+| R2 | `web-ci` split into **parallel `check` / `build` / `audit` jobs** so the production Build runs on every PR regardless of the test result. | `.github/workflows/web-ci.yml` |
+| R3 | Eight report-only JS checks merged into one `pr-reports` job (one checkout, one install). | new `pr-reports.yml`; deleted `knip`, `type-coverage`, `madge-circular`, `todo-scan`, `no-hardcoded-hex`, `server-import-guard`, `large-file-guard`, `i18n-coverage` |
+| R3 | `vitest-coverage` demoted to **nightly**; `lighthouse` demoted to **push-to-main + nightly** (both were warn-only / redundant on PRs). | `vitest-coverage.yml`, `lighthouse.yml` |
+| R3 | Go linters consolidated under the golangci umbrella (`.golangci.yml` enables gofmt; vet/staticcheck are default-on). Retired `go-vet`, `go-fmt`, `go-staticcheck`, `go-cyclo`, `go-build`, `go-test` (build/test covered by Bazel). | new `go-services/.golangci.yml`; `go-lint.yml`; deleted 6 Go workflows |
+| R3 | Trivy `secret` scanner dropped (gitleaks + trufflehog already cover secrets); `dependency-review` scoped to manifest paths. | `trivy-fs.yml`, `dependency-review.yml` |
+| R5 | Playwright browser cached in `e2e-smoke`. | `e2e-smoke.yml` |
+
+Net: **78 → 65 workflow files** (−14 deleted, +1 added). A typical frontend PR
+drops from ~20 fired workflows to a handful. Each changed workflow was
+YAML-validated, the bake file resolves via `docker buildx bake --print`, and the
+healed i18n test was verified to be green **and** to still catch a newly-injected
+orphan or untranslated key.
+
+### ⚠️ Required manual follow-up — branch protection
+
+Splitting/renaming jobs and deleting workflows changes the set of **status-check
+names** GitHub knows about. If any of these were marked *required* in branch
+protection (Settings → Branches), update the rule after merge or PRs will wedge
+(a required check that never runs blocks merge):
+
+- **Remove** required checks for the deleted workflows: `go-vet`, `go-fmt`,
+  `go-staticcheck`, `go-cyclo`, `go-build`, `go-test`, `knip`, `type-coverage`,
+  `madge-circular`, `todo-scan`, `no-hardcoded-hex`, `server-import-guard`,
+  `large-file-guard`, `i18n-coverage`, `vitest-coverage` (no longer on PRs),
+  `lighthouse` (no longer on PRs).
+- **Add** the new gate names you want required: `web-ci / build`,
+  `web-ci / audit` (the old single `web-ci / check` still exists and now covers
+  only typecheck+lint+test — add `build` to keep build breakage blocking).
+- Everything else keeps its name (`web-ci / check`, `go-lint`,
+  `go-microservices`, `codeql`, `senior-review`, `e2e-smoke`, …).
+
+### Not done (deliberately deferred)
+
+- **Security-scanner cadence** (moving `semgrep`/`trufflehog` off PRs): left as-is
+  — reducing SAST/secret coverage cadence is a security-posture call for the
+  maintainer, and the PR-time saving is small (they run in parallel, ~40–80s).
+  The safe dedup (Trivy secret mode, since two dedicated secret scanners remain)
+  is done.
+- **Prebuilt-binary swaps** for the `go install …@latest` tool bootstraps
+  (`editorconfig-check`, `shfmt`, `kube-linter`, `kubeconform`): path-scoped and
+  low-value; each needs its release URL verified before pinning. Follow-up.
+- **`buildkit-cache-dance`** to persist the `.vinxi` mount across runs (makes the
+  Vite build incremental in CI): measure the registry-cache win from R4 first.
+
+---
+
 ## 1. Measured baseline
 
 ### 1.1 Deploy pipeline (push to `main` → VPS webhook trigger)
