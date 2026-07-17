@@ -19,7 +19,7 @@ import { authenticateApiKey, CORS_HEADERS } from '@/lib/api/developer-auth.serve
 import { errorBody, defaultStatus } from '@/lib/api/errors';
 import { hasScope } from '@/lib/api/scopes';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { redisRateLimit } from '@/lib/redis.server';
+import { redisRateLimit, redisIncrBy } from '@/lib/redis.server';
 import { prisma } from '@/lib/prisma.server';
 import type { Tier } from '@/lib/entitlements';
 
@@ -72,10 +72,41 @@ export interface ApiHandlerOptions {
    * (409). Set on POST/PATCH/DELETE handlers that create or mutate state.
    */
   idempotent?: boolean;
+  /**
+   * Cost weight (request units) this endpoint charges against the per-key DAILY
+   * quota. Defaults to 1. Heavier endpoints should pass a larger value so an
+   * expensive call (e.g. an image upload or a fan-out feed read) counts for more
+   * than a cheap point-read. The per-minute limiter is unaffected — it still
+   * counts one request. Integer ≥ 1.
+   */
+  cost?: number;
 }
 
-// Per-key request budget. Pro+ gets a higher ceiling than Starter.
+// Per-key per-minute request budget. Pro+ gets a higher ceiling than Starter.
 const LIMITS: Record<string, number> = { starter: 120, pro: 600, enterprise: 600 };
+
+// Per-key DAILY quota (request units). Programmatic clients get a firm ceiling —
+// unlike interactive human traffic, an API key should not be able to run
+// unbounded volume forever on a per-minute limit alone. Cost-weighted by the
+// `cost` option so heavy endpoints draw down faster. Tunable via env.
+const DAILY_LIMITS: Record<string, number> = {
+  starter: Number(process.env.DEV_API_DAILY_STARTER) || 20_000,
+  pro: Number(process.env.DEV_API_DAILY_PRO) || 200_000,
+  enterprise: Number(process.env.DEV_API_DAILY_ENTERPRISE) || 200_000,
+};
+
+/** Daily counters live slightly longer than a day so a key crossing midnight
+ * never briefly loses its running total before the new day's key takes over. */
+const DAILY_TTL_MS = 26 * 60 * 60 * 1000;
+
+/** UTC day bucket, e.g. "20260717" — the daily counter's key suffix. */
+function utcDayKey(now: Date = new Date()): string {
+  return now.toISOString().slice(0, 10).replace(/-/g, '');
+}
+/** Epoch (ms) at the next UTC midnight — when the daily quota resets. */
+function utcMidnightMs(now: Date = new Date()): number {
+  return Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+}
 
 /** How long an idempotent response stays replayable. */
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000;
@@ -122,13 +153,43 @@ export async function withDeveloperApi(
   const auth = await authenticateApiKey(request);
   if (!auth.ok) return pre.error(auth.code, auth.message, auth.status);
 
-  // 3. Per-key, tier-scaled rate limit. Headers are attached to every response.
+  // 3. Per-key, tier-scaled per-minute rate limit.
   const max = LIMITS[auth.tier] ?? 120;
   const rl = await limit(`dev-api:apikey:${auth.keyId}`, max, 60_000);
-  const headers = rateHeaders(rl);
-  const res = makeResponder(requestId, headers);
+  const minuteHeaders = rateHeaders(rl);
   if (!rl.allowed) {
-    return res.error('rate_limited', 'Too many requests. Slow down.', 429, { 'Retry-After': String(rl.retryAfter) });
+    return makeResponder(requestId, minuteHeaders).error(
+      'rate_limited', 'Too many requests. Slow down.', 429, { 'Retry-After': String(rl.retryAfter) }
+    );
+  }
+
+  // 3b. Per-key DAILY quota (cost-weighted). Redis-backed so it holds across
+  // instances; when Redis is unavailable `redisIncrBy` returns null and we
+  // gracefully fall back to the per-minute limit only (same degrade contract as
+  // §3). Charged AFTER the per-minute gate so a throttled burst doesn't burn the
+  // day's budget. `X-RateLimit-Daily-*` ride on every response, like the minute
+  // headers, whenever the counter is live.
+  const cost = Math.max(1, Math.floor(options.cost ?? 1));
+  const dailyMax = DAILY_LIMITS[auth.tier] ?? DAILY_LIMITS.starter;
+  const dailyUsed = await redisIncrBy(`devapi:daily:${auth.keyId}:${utcDayKey()}`, cost, DAILY_TTL_MS);
+  const dailyHeaders: Record<string, string> =
+    dailyUsed === null
+      ? {}
+      : {
+          'X-RateLimit-Daily-Limit': String(dailyMax),
+          'X-RateLimit-Daily-Remaining': String(Math.max(0, dailyMax - dailyUsed)),
+          'X-RateLimit-Daily-Reset': String(Math.ceil(utcMidnightMs() / 1000)),
+        };
+  const headers = { ...minuteHeaders, ...dailyHeaders };
+  const res = makeResponder(requestId, headers);
+  if (dailyUsed !== null && dailyUsed > dailyMax) {
+    const retryAfter = Math.max(1, Math.ceil((utcMidnightMs() - Date.now()) / 1000));
+    return res.error(
+      'quota_exceeded',
+      `Daily quota of ${dailyMax} request units for this API key is exhausted. It resets at 00:00 UTC.`,
+      429,
+      { 'Retry-After': String(retryAfter) }
+    );
   }
 
   // 4. Scope enforcement.

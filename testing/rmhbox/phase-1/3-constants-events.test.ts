@@ -83,7 +83,7 @@ describe('Shared Constants (§3.1)', () => {
 describe('Event Constants (§3.2)', () => {
   it('should define all client-to-server events with rmhbox: prefix', () => {
     const c2sEvents = Object.values(C2S);
-    expect(c2sEvents).toHaveLength(26);
+    expect(c2sEvents).toHaveLength(29);
     for (const event of c2sEvents) {
       expect(event).toMatch(/^rmhbox:/);
     }

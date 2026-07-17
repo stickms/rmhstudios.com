@@ -1,0 +1,41 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# ShellCheck — static analysis for the repo's shell scripts (scripts/*.sh,
+# deploy.sh, …). Gates on error-severity findings only (real bugs), so style
+# nits don't block. shellcheck is preinstalled on GitHub-hosted runners.
+# ─────────────────────────────────────────────────────────────────────────────
+name: shellcheck
+
+on:
+  pull_request:
+    paths:
+      - "**/*.sh"
+      - ".github/workflows/shellcheck.yml"
+  push:
+    branches: [main]
+    paths:
+      - "**/*.sh"
+  workflow_dispatch: {}
+
+concurrency:
+  group: shellcheck-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - name: Run ShellCheck (error severity)
+        run: |
+          set -uo pipefail
+          mapfile -t scripts < <(find . -path ./node_modules -prune -o -name '*.sh' -print)
+          if [ ${#scripts[@]} -eq 0 ]; then
+            echo "No shell scripts found."
+            exit 0
+          fi
+          printf '%s\n' "${scripts[@]}"
+          shellcheck --severity=error "${scripts[@]}"

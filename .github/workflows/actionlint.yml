@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# actionlint — static analysis for the GitHub Actions workflows themselves:
+# catches YAML/expression mistakes, invalid `runs-on`/`uses` refs, and (via the
+# runner's preinstalled shellcheck) bugs in `run:` shell scripts. Pinned to a
+# tagged actionlint release.
+# ─────────────────────────────────────────────────────────────────────────────
+name: actionlint
+
+on:
+  pull_request:
+    paths:
+      - ".github/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/**"
+  workflow_dispatch: {}
+
+concurrency:
+  group: actionlint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Run actionlint
+        run: |
+          set -euo pipefail
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color

@@ -7,10 +7,9 @@
 
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { getRequest } from '@tanstack/react-start/server';
 import { FeedLayout } from '@/components/feed/FeedLayout';
 import { getSidebarData } from '@/lib/sidebar-data';
-import { auth } from '@/lib/auth';
+import { getRequestSession } from '@/lib/auth-session.server';
 import { getTimeline } from '@/lib/feed/timeline';
 
 const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
@@ -21,13 +20,10 @@ const fetchSidebarData = createServerFn({ method: 'GET' }).handler(async () => {
 // it UNAWAITED (deferred) — it streams into the page after the shell instead of
 // blocking the initial response.
 const fetchInitialFeed = createServerFn({ method: 'GET' }).handler(async () => {
-  let viewerId: string | null = null;
-  try {
-    const session = await auth.api.getSession({ headers: getRequest().headers });
-    viewerId = session?.user?.id ?? null;
-  } catch {
-    viewerId = null;
-  }
+  // Shares the request-scoped session resolution with the root loader and the
+  // sidebar server fn, so the homepage resolves the viewer once, not three times.
+  const session = await getRequestSession();
+  const viewerId: string | null = session?.user?.id ?? null;
   const feed = await getTimeline({
     userId: viewerId,
     surface: 'foryou',
@@ -36,7 +32,14 @@ const fetchInitialFeed = createServerFn({ method: 'GET' }).handler(async () => {
     limit: 20,
     search: null,
   });
-  return { items: feed.items, nextCursor: feed.nextCursor, hasMore: feed.hasMore };
+  return {
+    items: feed.items,
+    nextCursor: feed.nextCursor,
+    hasMore: feed.hasMore,
+    // Carry the viewer's muted words so the client filters live SSE posts without
+    // a separate /api/preferences/muted-words request at hydration.
+    mutedWords: feed.mutedWords ?? [],
+  };
 });
 
 export const Route = createFileRoute('/_site/')({
@@ -45,6 +48,12 @@ export const Route = createFileRoute('/_site/')({
     const q = typeof search.q === 'string' ? search.q.trim() : '';
     return q ? { q } : {};
   },
+  // Back-nav / repeat visits within 60s reuse the cached loader payload instead
+  // of re-running both server fns (each a full session resolution + timeline
+  // query). The module-level feed store is the live source of truth after
+  // hydration — the loader result is only consumed by a pristine store, so
+  // re-running it sooner is pure waste.
+  staleTime: 60_000,
   // Return BOTH the sidebar and the feed as deferred promises so neither DB
   // read blocks the first byte: the feed column + composer + skeleton paint
   // immediately and each region streams into its own <Suspense> slot. This is

@@ -9,6 +9,7 @@
   "delete-failed": "فشل في حذف المنشور",
   "delete-post": "حذف المنشور",
   "delete-success": "تم حذف منشور المدونة: {{slug}}.",
+  "delete-title": "هل تريد حذف هذا المنشور؟",
   "description-label": "الوصف",
   "description-placeholder": "ملخص قصير للمنشور...",
   "editing-title": "تحرير: {{title}}",

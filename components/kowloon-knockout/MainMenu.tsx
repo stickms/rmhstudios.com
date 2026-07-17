@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { useGameStore } from '@/lib/kowloon-knockout/store';
 import { useEffect, useState } from 'react';
 import { COMBO_DEFS } from '@/lib/kowloon-knockout/game/combat/combos';

@@ -35,6 +35,7 @@ export const games: GameInfo[] = [
         longDescription:
             'Create or join a lobby, vote on minigames, and compete with friends in real-time. Features 16+ unique minigames across word, trivia, action, and creative categories with live leaderboards and match history.',
         href: '/rmhbox',
+        status: 'Playable',
         cta: 'Play Now',
         isSteam: false,
         gradient: 'from-purple-500 to-pink-500',

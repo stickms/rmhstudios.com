@@ -11,6 +11,7 @@ import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
+import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { Button } from '@/components/ui/button';
 import { useFeedStore } from '@/stores/feedStore';
 import {
@@ -22,6 +23,7 @@ import {
   MAX_IMAGE_ALT_LENGTH,
 } from '@/lib/rmhark-schema';
 import { clearComposeDraft, useComposeDraftAutosave } from '@/hooks/useComposeDraft';
+import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 
 const MAX_IMAGES = 4;
 
@@ -62,8 +64,10 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
   const [imageError, setImageError] = useState<string | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuPopRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
+  useMenuViewportFit(menuOpen, menuPopRef);
   const { prependItem } = useFeedStore();
   const { data: session } = authClient.useSession();
   const { resolved: resolvedUser } = useResolvedUser();
@@ -237,7 +241,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
               </button>
 
               {menuOpen && (
-                <div className="absolute top-full right-0 mt-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
+                <div ref={menuPopRef} className="absolute top-full right-0 mt-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
                   <button
                     onClick={() => {
                       setAttachment('poll');
@@ -270,9 +274,14 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
             {/* Avatar */}
             <div className="w-10 h-10 rounded-full bg-linear-to-tr from-site-accent to-site-accent-hover flex items-center justify-center text-site-bg font-bold text-sm ring-2 ring-site-bg shrink-0">
               {(resolvedUser?.image || session.user.image) ? (
+                // Optimized at ~2x the 40px display size (avoids the raw CDN original).
                 <img
-                  src={resolvedUser?.image || session.user.image!}
+                  src={buildOptimizedUrl(resolvedUser?.image || session.user.image!, 80, 80)}
                   alt={resolvedUser?.name || session.user.name || t("user-alt", { defaultValue: "User" })}
+                  loading="lazy"
+                  decoding="async"
+                  width={40}
+                  height={40}
                   className="w-full h-full rounded-full object-cover"
                   onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
                 />

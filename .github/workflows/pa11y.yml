@@ -1,0 +1,99 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# pa11y-ci — runs the axe + HTML CodeSniffer accessibility engines against the
+# built, running app on key public routes (deeper WCAG coverage than the smoke
+# test's structural checks). Report-only, published to the run summary. Boots the
+# full app, so it runs on a schedule and on demand, not on every PR.
+# ─────────────────────────────────────────────────────────────────────────────
+name: pa11y
+
+on:
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch: {}
+
+concurrency:
+  group: pa11y-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  pa11y:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rmh
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
+      BETTER_AUTH_SECRET: ci-not-a-real-secret-000000000000000000000000
+      BETTER_AUTH_URL: http://localhost:3000/
+      VITE_BETTER_AUTH_URL: http://localhost:3000/
+      VITE_SOCKET_URL: http://localhost:7001/
+      VITE_RMHBOX_SOCKET_URL: http://localhost:7676/
+      VITE_RMHTUBE_SOCKET_URL: http://localhost:7003/
+      TOKEN_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      WEBHOOK_SECRET: ci-webhook-secret
+      DISCORD_CLIENT_ID: ci
+      DISCORD_CLIENT_SECRET: ci
+      GOOGLE_CLIENT_ID: ci
+      GOOGLE_CLIENT_SECRET: ci
+      GITHUB_CLIENT_ID: ci
+      GITHUB_CLIENT_SECRET: ci
+      SPOTIFY_CLIENT_ID: ci
+      SPOTIFY_CLIENT_SECRET: ci
+      PORT: "3000"
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply database schema
+        run: pnpm db:push
+      - name: Build frontend
+        run: pnpm run build:frontend
+      - name: Start web server
+        run: |
+          set -uo pipefail
+          nohup node .output/server/index.mjs > server.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/ >/dev/null 2>&1; then echo "up"; break; fi
+            sleep 2
+          done
+      - name: Run pa11y-ci
+        run: |
+          set -uo pipefail
+          {
+            echo '### pa11y-ci accessibility report'
+            echo ''
+            echo '```'
+            pnpm dlx pa11y-ci@3 \
+              http://localhost:3000/ \
+              http://localhost:3000/login \
+              http://localhost:3000/privacy 2>&1 | head -300 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload server log
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: pa11y-server-log
+          path: server.log
+          retention-days: 5
+          if-no-files-found: ignore

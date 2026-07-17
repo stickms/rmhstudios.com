@@ -113,7 +113,6 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
   // otherwise peek out behind it.
   const [asidePainted, setAsidePainted] = useState(false);
 
-  const scrollRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   // Outer wrapper the gesture listeners attach to (so touches on the page, the
   // scrim, and the sidebar all reach them) and a ref to the sidebar panel (so a
@@ -156,6 +155,15 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [isOpen]);
+
+  // NO CSS scroll-lock while the drawer is open — deliberately. Both
+  // overflow:hidden and the position:fixed body technique CLIP the document to
+  // the visual viewport, which on iOS reveals the bare page background (--site-bg)
+  // behind Safari's floating bar as a stray colored band (the content that
+  // normally scrolls under the bar gets clipped away). Instead the page keeps
+  // flowing behind the bar exactly like when the drawer is closed, and background
+  // scroll is blocked by the scrim: it covers the page with touch-action:none, and
+  // the touch handlers below preventDefault vertical drags on it (mode 'lock').
 
   // Swipe handling, via non-passive native listeners on the OUTER wrapper so a
   // touch anywhere — the page (to open), the scrim, or the glass sidebar itself
@@ -286,7 +294,6 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
   // offset 0 = fully off-screen (translateX(-DRAWER_WIDTH)); DRAWER_WIDTH = in.
   // The page itself never moves.
   const sidebarTransform = `translateX(${offset - DRAWER_WIDTH}px)`;
-  const scrimProgress = offset / DRAWER_WIDTH;
 
   // Paint the fixed sidebar only while it's actually being revealed. It must
   // stay painted through the whole close animation (React snaps `offset` to 0 at
@@ -307,65 +314,63 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
   return (
     <MobileSidebarContext.Provider value={{ isOpen, open, close, toggle }}>
       {/* Outer wrapper — the gesture listeners attach here so touches on the
-          page, the scrim, and the glass sidebar all reach them. */}
-      <div ref={wrapRef} className="md:hidden w-full min-w-0">
-        {/* Page scroll container. It never moves; when the drawer is open it is
-            scroll-locked (`overflow-y-hidden`) so the page can't scroll behind
-            the overlay. `touch-pan-y` reserves horizontal gestures for the drawer
-            drag; `overscroll-contain` keeps scroll from chaining to the document.
-            `data-scroll-root` marks it for useScrollRestoration. `h-dvh` makes it
-            a real scroller (its parent only sets min-h-dvh). */}
-        <div
-          ref={scrollRef}
-          data-scroll-root
-          className={`min-w-0 w-full h-dvh min-h-0 overflow-x-hidden touch-pan-y overscroll-contain ${
-            isOpen ? 'overflow-y-hidden' : 'overflow-y-auto'
-          }`}
-        >
-          {/* Transparent so the body aurora is the single backdrop and draws
-              edge-to-edge (incl. under the floating dock) — no opaque band. The
-              glass sidebar overlay blurs this content when the drawer is open. */}
-          <div ref={panelRef} className="relative min-h-dvh touch-pan-y">
-            {children}
-          </div>
+          page, the scrim, and the glass sidebar all reach them.
+          On desktop this is `display:contents` (transparent): the page renders
+          once, and its columns flow up to the site layout's centering flex
+          exactly as the old desktop-only copy did. On mobile it's the full-width
+          gesture column that owns the swipe-to-open drawer. */}
+      <div ref={wrapRef} className="relative w-full min-w-0 md:contents">
+        {/* Page content — every _site page flows here and scrolls the DOCUMENT
+            (the window), NOT an inner overflow container. That's deliberate: iOS
+            Safari only shrinks its floating bottom bar when the *document*
+            scrolls, and document scroll isn't capped at 100lvh, so content draws
+            all the way to the physical bottom behind the (then-minimized) bar. An
+            inner scroller can do neither. Transparent, so the body aurora is the
+            single backdrop and draws edge-to-edge. `min-h-dvh` fills the viewport
+            on short pages. `touch-pan-y` reserves horizontal gestures for the
+            drawer drag (vertical stays native document scroll). The drawer's
+            scroll-lock is the overflow:hidden effect above. No
+            `data-scroll-root` → useScrollRestoration and BackToTop use
+            the window; the custom PullToRefresh (which needs an inner scroller)
+            goes inert, so iOS's native document pull-to-refresh takes over. */}
+        <div ref={panelRef} className="relative min-h-[100lvh] touch-pan-y md:contents">
+          {children}
         </div>
 
-        {/* Scrim — dims the page and captures taps/keys to close. Above the page,
-            below the sidebar. A real <button> so it's keyboard-operable (Esc also
-            closes). No backdrop blur here (the sidebar already frosts the page —
-            stacking a second backdrop-filter is wasteful). */}
+        {/* Tap-catcher — TRANSPARENT (no dim). A dimming scrim can't be reliably
+            kept from bleeding behind Safari's floating bar on iOS (inset-0 and
+            bottom-0+h-[100dvh] both reach the physical bottom there), where it
+            read as a dimmed band. So the drawer slides over undimmed content; this
+            layer only captures taps/keys to close. A real <button> so it's
+            keyboard-operable (Esc also closes); touch-none blocks page scroll. */}
         {asideRevealed && (
           <button
             type="button"
             onClick={close}
             aria-label={t('close-menu', { defaultValue: 'Close menu' })}
-            className={`fixed inset-0 z-[55] bg-black/40 ${
-              dragging
-                ? ''
-                : 'transition-opacity duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none'
-            }`}
-            style={{ opacity: scrimProgress }}
+            className="fixed inset-0 z-[55] touch-none md:hidden"
           />
         )}
 
-        {/* Sidebar — a Liquid Glass overlay that slides in OVER the page (blurring
-            the content + aurora behind it) instead of sitting underneath it. The
-            blur lives on glass-chrome--aside's ::before, so the aside itself never
-            gains backdrop-filter and stays a valid containing block for
-            LeftSidebar's non-portaled fixed user menu (§3.3.1). */}
+        {/* Sidebar — Liquid Glass overlay. inset-y-0 fills top-to-bottom (full
+            height); bottom-0 + a height would anchor to the physical bottom on iOS
+            and push the panel down. Blur lives on glass-chrome--aside's ::before so
+            the aside isn't a backdrop-filter containing block; the transform keeps
+            LeftSidebar's non-portaled fixed user menu inside it. The bottom
+            safe-area inset lives INSIDE LeftSidebar (its footer padding), not as
+            aside paddingBottom — a trailing pad here left an empty tinted strip
+            below the last item that read as a stray colored band above the bottom
+            bar. */}
         <aside
           ref={asideRef}
-          className={`glass-chrome--aside fixed left-0 top-0 bottom-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
+          className={`glass-chrome--aside md:hidden fixed inset-y-0 left-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
           } ${
             dragging
               ? ''
               : 'transition-transform duration-[380ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none motion-reduce:duration-0'
           }`}
-          // The overlay covers the floating dock (it's behind the scrim), so the
-          // pinned footer only needs a small gap above the home-indicator /
-          // browser bottom bar (--safe-bottom).
-          style={{ transform: sidebarTransform, paddingBottom: 'calc(var(--safe-bottom) + 16px)' }}
+          style={{ transform: sidebarTransform }}
           aria-hidden={!isOpen}
         >
           <LeftSidebar expanded />

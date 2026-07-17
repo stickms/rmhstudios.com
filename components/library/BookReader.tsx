@@ -62,15 +62,17 @@ type PdfPage = {
   };
 };
 
-// Full-quality page raster width (px) per quality level. A page is drawn from this
-// bitmap, so a wider raster keeps it sharp on a tall screen and when the user zooms.
-// Higher levels cost more GPU memory per resident page, so the menu lets a user dial
-// it down on a weak device. Default is the highest.
+// Per-quality CAP (px) on the full-res page raster. The reader rasterises each page to
+// its actual on-screen size in *device* pixels (see BookCanvas' RasterSizer) so text
+// stays crisp on HiDPI/large displays and when zoomed, instead of a one-size-fits-all
+// width that under-samples big screens and over-samples small ones. This cap only
+// bounds that adaptive width, so a weak device can dial the ceiling — and its GPU-memory
+// cost — down. Default is the highest.
 export type PageQuality = 'low' | 'medium' | 'high';
-const QUALITY_WIDTH: Record<PageQuality, number> = {
-  low: 1200,
-  medium: 1900,
-  high: 2600,
+const QUALITY_CAP: Record<PageQuality, number> = {
+  low: 1600,
+  medium: 2600,
+  high: 3600,
 };
 const QUALITY_LABEL: Record<PageQuality, string> = {
   low: 'Low',
@@ -79,6 +81,30 @@ const QUALITY_LABEL: Record<PageQuality, string> = {
 };
 const QUALITY_ORDER: PageQuality[] = ['high', 'medium', 'low'];
 const DEFAULT_QUALITY: PageQuality = 'high';
+
+// Never rasterise a full page below this width, so a page still sharpens up nicely the
+// instant it's zoomed even from a small viewport.
+const MIN_RASTER_WIDTH = 1100;
+// GPU-memory budget for the resident full-res pages. A page texture costs
+// width × (width / aspect) × 4 bytes; we keep as many resident as fit (clamped 4–6),
+// so a 3600px page keeps ~4 resident while a 1600px page keeps the full 6.
+const FULL_TEXTURE_BUDGET_BYTES = 320 * 1024 * 1024;
+
+/** Resident full-page count that keeps total texture memory within budget. */
+function fullCapForWidth(width: number, aspect: number): number {
+  const bytesPerPage = width * (width / Math.max(0.1, aspect)) * 4;
+  return Math.max(4, Math.min(6, Math.floor(FULL_TEXTURE_BUDGET_BYTES / bytesPerPage)));
+}
+
+/**
+ * Adaptive full raster width: the page's on-screen device-pixel width, floored to a
+ * readable minimum and capped by the chosen quality tier. `displayWidthPx` is 0 until
+ * the WebGL stage has measured itself, in which case we start at the floor.
+ */
+function rasterWidthFor(displayWidthPx: number, quality: PageQuality): number {
+  const wanted = displayWidthPx > 0 ? displayWidthPx : MIN_RASTER_WIDTH;
+  return Math.round(Math.max(MIN_RASTER_WIDTH, Math.min(QUALITY_CAP[quality], wanted)));
+}
 
 /**
  * Flatten a PDF's outline (bookmarks / table of contents) into chapter markers,
@@ -132,6 +158,9 @@ export function BookReader({ book }: { book: LibraryBook }) {
   const [editingPage, setEditingPage] = useState(false);
   const [quality, setQuality] = useState<PageQuality>(DEFAULT_QUALITY);
   const [zoom, setZoom] = useState(1);
+  // On-screen device-pixel width of a single page, reported by the WebGL stage. Drives
+  // the adaptive raster width so pages render at display resolution, not a fixed size.
+  const [displayWidth, setDisplayWidth] = useState(0);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const detailsTriggerRef = useRef<HTMLElement | null>(null);
@@ -198,8 +227,10 @@ export function BookReader({ book }: { book: LibraryBook }) {
         const first = await pdf.getPage(1);
         const vp = first.getViewport({ scale: 1 });
         if (cancelled) return;
+        const initialWidth = rasterWidthFor(0, DEFAULT_QUALITY);
         storeRef.current = new PageStore(pdf, {
-          fullWidth: QUALITY_WIDTH[DEFAULT_QUALITY],
+          fullWidth: initialWidth,
+          fullCap: fullCapForWidth(initialWidth, vp.width / vp.height),
           onChange: force,
         });
         setAspect(vp.width / vp.height);
@@ -223,18 +254,22 @@ export function BookReader({ book }: { book: LibraryBook }) {
     };
   }, [book.url, hasToc]);
 
-  // Quality change: widen/narrow the full raster and re-render the pages in view so
-  // the change is visible immediately rather than only after navigating.
+  // Keep the full raster sized to the page's on-screen resolution. Recomputes when the
+  // display width (viewport resize / zoom), the quality cap, or the page aspect change,
+  // then re-renders the pages in view so the new sharpness shows immediately rather than
+  // only after navigating. Widening re-rasters stale pages; the cap tracks the memory
+  // budget for the new width.
+  const targetRasterWidth = rasterWidthFor(displayWidth, quality);
   useEffect(() => {
     const store = storeRef.current;
     if (!store) return;
-    store.setFullWidth(QUALITY_WIDTH[quality]);
+    store.setFull(targetRasterWidth, fullCapForWidth(targetRasterWidth, aspect));
     const c = curPageRef.current;
     for (let d = -1; d <= 4; d++) {
       const p = c + d;
       if (p >= 1 && p <= numPages) store.ensure(p);
     }
-  }, [quality, numPages]);
+  }, [targetRasterWidth, aspect, numPages]);
 
   // Resume where the reader left off, once both the book and saved state are ready.
   // Guarded so it fires exactly once (and never fights the user's own navigation).
@@ -389,6 +424,7 @@ export function BookReader({ book }: { book: LibraryBook }) {
                 seek={seek}
                 zoom={zoom}
                 onPageChange={onPageChange}
+                onRasterWidth={setDisplayWidth}
               />
             </div>
             {numPages > 1 && (

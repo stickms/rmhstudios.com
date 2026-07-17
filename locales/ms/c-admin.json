@@ -9,6 +9,7 @@
   "delete-failed": "Gagal memadam siaran",
   "delete-post": "Padam Siaran",
   "delete-success": "Siaran blog dipadam: {{slug}}.",
+  "delete-title": "Padam hantaran ini?",
   "description-label": "Penerangan",
   "description-placeholder": "Ringkasan pendek siaran...",
   "editing-title": "Menyunting: {{title}}",

@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Check, X, Clock, SkipForward, Zap } from 'lucide-react';
 import { useTranslation } from "react-i18next";
 import { FF_SPEED_BONUS } from '@/lib/rmhbox/constants';

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { MapPin, Link as LinkIcon, Calendar, MessageCircle, BadgeCheck, ShieldCheck, Coins, Store, Gift, BarChart3, Star } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { TipDialog } from '@/components/economy/TipDialog';
 import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
 import { useNavigate } from '@tanstack/react-router';
@@ -85,7 +86,10 @@ function ProfileAvatar({ image, name }: { image: string | null; name: string | n
   return (
     <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-2xl ring-4 ring-site-bg shrink-0">
       {imgSrc ? (
-        <img src={imgSrc} alt={name || t('user', { defaultValue: 'User' })} className="w-full h-full rounded-full object-cover" onError={() => setImgError(true)} />
+        // Route the avatar through the optimizer at ~2x its 80px display size so
+        // the profile header doesn't pull the full-res external CDN original.
+        // Local paths (the default-avatar fallback) pass through untouched.
+        <img src={buildOptimizedUrl(imgSrc, 160, 80)} alt={name || t('user', { defaultValue: 'User' })} loading="lazy" decoding="async" width={80} height={80} className="w-full h-full rounded-full object-cover" onError={() => setImgError(true)} />
       ) : (
         (name?.[0] || 'U').toUpperCase()
       )}

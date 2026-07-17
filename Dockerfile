@@ -122,6 +122,10 @@ COPY lib/ssrf-guard.server.ts ./lib/ssrf-guard.server.ts
 # ladder-worker (RMHLadder job-discovery cron) is the one Node worker not in
 # the Go supervisor — it needs lib/rmhladder for its pipeline/seed/probe code.
 COPY lib/rmhladder ./lib/rmhladder/
+# ladder-worker also hosts the data-lifecycle cleanup cron, which imports the
+# batched purge queries from this module (relative import, so it must be present
+# in this bundle context).
+COPY lib/cleanup.server.ts ./lib/cleanup.server.ts
 # homes-worker (RMHHomes external-listing scraper cron) needs lib/homes for its
 # scrape pipeline/seed and the dependency-light watch notifier. Its bundle only
 # reaches lib/homes/scrape + types/distance/watch-match, so the heavier
@@ -219,6 +223,18 @@ ENV DATABASE_URL=${DATABASE_URL} \
 RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi,sharing=locked \
     --mount=type=cache,id=vibe-pkgs-${COMPOSE_PROJECT_NAME},target=/app/.cache/vibe-packages,sharing=locked \
     rm -rf .output \
+    # Incremental i18n translation, baked into the bundle. translate-locales.ts
+    # is idempotent — it only calls DeepSeek for keys that are missing or whose
+    # English source changed, so a fully-translated catalog is a no-op ("nothing
+    # to translate"). Regenerate the resource modules from the freshened JSON so
+    # `vite build` below compiles the new strings in. Guarded on the key: when
+    # DEEPSEEK_API_KEY is unset the committed translations ship as-is (English is
+    # the runtime fallback for any still-missing key), so the build never breaks.
+    && (if [ -n "$DEEPSEEK_API_KEY" ]; then \
+          echo "[i18n] translating any missing locale keys before build" \
+          && pnpm exec tsx scripts/translate-locales.ts \
+          && pnpm exec tsx scripts/gen-i18n-resources.ts; \
+        else echo "[i18n] DEEPSEEK_API_KEY unset — shipping committed translations as-is"; fi) \
     && VIBE_PKG_CACHE_DIR=/app/.cache/vibe-packages pnpm run build-vibe-packages \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs
@@ -324,8 +340,14 @@ COPY --from=vite-builder --chown=app:nodejs /app/.output ./.output
 COPY --from=server-builder --chown=app:nodejs /app/dist-server ./dist-server
 
 # ─── Supporting files (from build context, not a builder stage) ─────────
+# NOTE: content/ is intentionally NOT copied. It's untracked, host-only seed
+# material (content/blog/*.mdx, content/news/*.mdx) that fed one-off seed/migrate
+# scripts (scripts/seed-news.ts, scripts/migrate-blogs.ts). Blog + news are served
+# from the database at runtime (prisma.blogPost / news tables), so nothing in the
+# image reads content/. Since the build moved to CI (where content/ isn't in the
+# checkout), baking it would fail; to run a seed script against it, bind-mount the
+# host content/ into a one-shot container (like deploy.sh does for public/).
 COPY --chown=app:nodejs scripts ./scripts
-COPY --chown=app:nodejs content ./content
 COPY --chown=app:nodejs data ./data
 COPY --chown=app:nodejs prisma ./prisma
 COPY --chown=app:nodejs prisma.config.ts ./prisma.config.ts

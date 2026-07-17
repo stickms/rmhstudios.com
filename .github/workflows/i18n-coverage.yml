@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# i18n key-coverage report. Compares every locale against the authoritative `en`
+# reference and publishes a per-locale coverage table to the run summary.
+# Informational (analysis) by design — untranslated strings silently fall back to
+# English, so this surfaces them without blocking merges. Flip to `--strict` to
+# turn it into a gate once locales are backfilled.
+# ─────────────────────────────────────────────────────────────────────────────
+name: i18n-coverage
+
+on:
+  pull_request:
+    paths:
+      - "locales/**"
+      - "app/**"
+      - "components/**"
+      - ".github/workflows/i18n-coverage.yml"
+  push:
+    branches: [main]
+    paths:
+      - "locales/**"
+      - "app/**"
+      - "components/**"
+  workflow_dispatch: {}
+
+concurrency:
+  group: i18n-coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: i18n coverage report
+        run: |
+          {
+            echo '### i18n key coverage'
+            echo ''
+            echo '```'
+            pnpm i18n:coverage || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

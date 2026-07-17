@@ -9,6 +9,7 @@
   "delete-failed": "Gagal menghapus posting",
   "delete-post": "Hapus Posting",
   "delete-success": "Posting blog dihapus: {{slug}}.",
+  "delete-title": "Hapus postingan ini?",
   "description-label": "Deskripsi",
   "description-placeholder": "Ringkasan singkat posting...",
   "editing-title": "Mengedit: {{title}}",

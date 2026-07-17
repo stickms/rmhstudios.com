@@ -9,6 +9,7 @@
   "delete-failed": "Gönderi silinemedi",
   "delete-post": "Gönderiyi Sil",
   "delete-success": "Blog gönderisi silindi: {{slug}}.",
+  "delete-title": "Bu gönderi silinsin mi?",
   "description-label": "Açıklama",
   "description-placeholder": "Gönderinin kısa bir özeti...",
   "editing-title": "Düzenleniyor: {{title}}",

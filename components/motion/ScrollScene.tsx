@@ -31,7 +31,7 @@
  */
 import type { ReactNode } from 'react';
 import { createContext, useContext, useRef } from 'react';
-import { motion, useScroll, useMotionValue } from 'framer-motion';
+import { m as motion, useScroll, useMotionValue } from 'framer-motion';
 import type { MotionValue } from 'framer-motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 

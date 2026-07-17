@@ -33,12 +33,18 @@ interface FeedState {
   /** Set the viewer's muted words (fetched once on feed mount). */
   setMutedWords: (words: string[]) => void;
   fetchNextPage: () => Promise<void>;
+  /** Reload the first page of the current surface fresh (pull-to-refresh).
+   *  Keeps the existing timeline on screen until the new page arrives, then
+   *  replaces it and clears the "N new" buffer. Resolves when the fetch settles
+   *  so the caller can time its spinner. */
+  refresh: () => Promise<void>;
   /** Re-attempt the current surface after an error (clears the error flag). */
   retry: () => void;
   /** Seed the first page from the server (streamed SSR prefetch) — no-ops unless
    *  the store is still pristine, so it never clobbers a live or navigated-back
-   *  timeline. */
-  hydrate: (items: FeedItem[], cursor: string | null, hasMore: boolean) => void;
+   *  timeline. `mutedWords` (when provided) primes the live-SSE filter so the
+   *  client needs no separate muted-words request. */
+  hydrate: (items: FeedItem[], cursor: string | null, hasMore: boolean, mutedWords?: string[]) => void;
   prependItem: (item: FeedItem) => void;
   updateItem: (id: string, updates: Partial<FeedItem>) => void;
   removeItem: (id: string) => void;
@@ -142,6 +148,56 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     get().fetchNextPage();
   },
 
+  refresh: async () => {
+    // Pull-to-refresh: fetch page 1 of the current surface fresh and replace the
+    // timeline. Unlike setFilter/setSearch we DON'T clear items up front — the
+    // old posts stay visible under the pull spinner until the new page lands, so
+    // there's no skeleton flash. A fresh generation + controller supersedes any
+    // in-flight page load and can't be clobbered by its late resolver.
+    requestGeneration += 1;
+    const generation = requestGeneration;
+    activeController?.abort();
+    const controller = new AbortController();
+    activeController = controller;
+    const timeout = setTimeout(() => controller.abort(), FEED_FETCH_TIMEOUT_MS);
+
+    const { filter, search } = get();
+    set({ loading: true, error: false });
+    try {
+      const params = new URLSearchParams({ limit: "20", filter });
+      if (filter === "friends") params.set("feed", "following");
+      if (search) params.set("search", search);
+
+      const res = await fetch(`/api/rmharks?${params}`, { signal: controller.signal });
+      if (!res.ok) throw new Error("Failed to refresh feed");
+
+      const data = await res.json();
+      if (generation !== requestGeneration) return;
+
+      cacheItemUsers(data.items as FeedItem[]);
+      set((state) => ({
+        items: data.items as FeedItem[],
+        cursor: data.nextCursor,
+        hasMore: data.hasMore,
+        loading: false,
+        initialized: true,
+        error: false,
+        // The fresh page already includes anything that was buffered.
+        pendingItems: [],
+        // Keep the live-SSE muted-words filter in sync with the server.
+        mutedWords: (data.mutedWords as string[] | undefined) ?? state.mutedWords,
+      }));
+    } catch (error) {
+      if (generation !== requestGeneration) return;
+      // Keep the existing timeline on a failed refresh — only surface the error.
+      if (!controller.signal.aborted) console.error("Feed refresh error:", error);
+      set({ loading: false, error: true });
+    } finally {
+      clearTimeout(timeout);
+      if (activeController === controller) activeController = null;
+    }
+  },
+
   retry: () => {
     // Clear the error and re-drive the current surface. `loading` is already
     // false after any failure, so the guard in fetchNextPage lets this through.
@@ -149,13 +205,20 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     get().fetchNextPage();
   },
 
-  hydrate: (items, cursor, hasMore) => {
+  hydrate: (items, cursor, hasMore, mutedWords) => {
     const s = get();
     // Only seed a pristine store — never overwrite an in-flight load or a
     // timeline the reader already scrolled/navigated back to.
     if (s.initialized || s.loading || s.items.length > 0) return;
     cacheItemUsers(items);
-    set({ items, cursor, hasMore, initialized: true, error: false });
+    set({
+      items,
+      cursor,
+      hasMore,
+      initialized: true,
+      error: false,
+      ...(mutedWords ? { mutedWords } : {}),
+    });
   },
 
   fetchNextPage: async () => {
@@ -201,6 +264,8 @@ export const useFeedStore = create<FeedState>((set, get) => ({
           loading: false,
           initialized: true,
           error: false,
+          // Keep the live-SSE muted-words filter in sync with the server.
+          mutedWords: (data.mutedWords as string[] | undefined) ?? state.mutedWords,
         };
       });
     } catch (error) {

@@ -16,7 +16,7 @@
 
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Trophy, MapPin, Target, Flag } from 'lucide-react';
 
 interface WRPlayerResult {

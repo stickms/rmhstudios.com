@@ -2,11 +2,14 @@
 
 import { MessageCircle, Repeat2, Heart, Eye, Repeat, PenSquare } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
-import { useState, useRef, useEffect } from 'react';
+import { lazy, Suspense, useState, useRef, useEffect } from 'react';
 import { useFeedStore } from '@/stores/feedStore';
 import { authClient } from '@/lib/auth-client';
-import { ComposeModal } from './ComposeModal';
 import type { FeedItem } from '@/lib/feed-types';
+
+// Quote-compose modal — only opens on the "quote" repost action, so it's
+// code-split out of the initial feed chunk and imported on first open.
+const ComposeModal = lazy(() => import('./ComposeModal').then((m) => ({ default: m.ComposeModal })));
 import { useTranslation } from 'react-i18next';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
@@ -32,6 +35,9 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
   const { data: session } = authClient.useSession();
   const [repostMenu, setRepostMenu] = useState(false);
   const [quoteOpen, setQuoteOpen] = useState(false);
+  // Latch so the quote modal stays mounted after first open (close animation).
+  const quoteMounted = useRef(false);
+  quoteMounted.current ||= quoteOpen;
   const repostRef = useRef<HTMLDivElement>(null);
   const { run: runLike } = useOptimisticAction();
   const { run: runRepost } = useOptimisticAction();
@@ -90,9 +96,11 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
       {/* Comment */}
       <button
         onClick={handleCommentClick}
+        title={t('comment', { defaultValue: 'Comment' })}
+        aria-label={t('comment', { defaultValue: 'Comment' })}
         className="flex items-center gap-1.5 px-2 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-[color,background-color,transform] duration-150 group active:scale-95"
       >
-        <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+        <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" aria-hidden />
         <AnimatedCount value={item.commentCount} format={formatCount} hideZero className="text-xs" />
       </button>
 
@@ -106,8 +114,9 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
               : 'text-site-text-dim hover:text-site-success hover:bg-site-success/10'
           }`}
           title="reRMHark"
+          aria-label="reRMHark"
         >
-          <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+          <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" aria-hidden />
           <AnimatedCount value={item.repostCount} format={formatCount} hideZero className="text-xs" />
         </button>
         {repostMenu && (
@@ -130,11 +139,15 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
         )}
       </div>
 
-      <ComposeModal
-        open={quoteOpen}
-        onClose={() => setQuoteOpen(false)}
-        quoteItem={{ id: item.actualId ?? item.id, content: item.content, user: item.user }}
-      />
+      {quoteMounted.current && (
+        <Suspense fallback={null}>
+          <ComposeModal
+            open={quoteOpen}
+            onClose={() => setQuoteOpen(false)}
+            quoteItem={{ id: item.actualId ?? item.id, content: item.content, user: item.user }}
+          />
+        </Suspense>
+      )}
 
       {/* Like */}
       <button
@@ -145,8 +158,9 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
             : 'text-site-text-dim hover:text-site-danger hover:bg-site-danger/10'
         }`}
         title={t('like', { defaultValue: 'Like' })}
+        aria-label={t('like', { defaultValue: 'Like' })}
       >
-        <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`} />
+        <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`} aria-hidden />
         <AnimatedCount value={item.likeCount} format={formatCount} hideZero className="text-xs" />
       </button>
 

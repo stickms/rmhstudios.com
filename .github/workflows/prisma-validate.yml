@@ -1,0 +1,51 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Prisma schema validation. `prisma validate` parses schema.prisma + prisma.config
+# and checks relations, attributes, and datasource config are well-formed. No live
+# database is contacted (a dummy DATABASE_URL satisfies the datasource block).
+# ─────────────────────────────────────────────────────────────────────────────
+name: prisma-validate
+
+on:
+  pull_request:
+    paths:
+      - "prisma/**"
+      - "prisma.config.ts"
+      - ".github/workflows/prisma-validate.yml"
+  push:
+    branches: [main]
+    paths:
+      - "prisma/**"
+      - "prisma.config.ts"
+  workflow_dispatch: {}
+
+concurrency:
+  group: prisma-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # postinstall runs `prisma generate` (schema-only, no DB needed).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Prisma schema
+        run: pnpm exec prisma validate

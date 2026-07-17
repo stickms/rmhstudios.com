@@ -19,7 +19,7 @@
  */
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Clock, Hash, Trophy } from 'lucide-react';
 
 interface TurnIndicatorProps {

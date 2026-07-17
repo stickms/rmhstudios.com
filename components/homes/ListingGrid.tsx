@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Home, SearchX } from 'lucide-react';
 import type { Listing } from '@/lib/homes/types';
 import { EmptyState } from '@/components/ui/empty-state';

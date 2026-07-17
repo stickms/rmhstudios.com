@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import type { HudState, HudFighter } from '@/lib/kowloon-knockout/net/session';
 import { TEAM_COLORS } from '@/lib/kowloon-knockout/game/config';
 

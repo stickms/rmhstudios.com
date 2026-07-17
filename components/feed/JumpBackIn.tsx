@@ -10,7 +10,7 @@ import { Link } from '@tanstack/react-router';
 import { Clock, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useRecents } from '@/hooks/useRecents';
-import { openCommandPalette } from '@/components/site/CommandPalette';
+import { openCommandPalette } from '@/components/site/command-palette-bus';
 
 export function JumpBackIn() {
   const { t } = useTranslation('feed');

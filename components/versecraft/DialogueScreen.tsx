@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
 import { getChapterEntry } from '@/lib/versecraft/chapters/registry';
@@ -208,10 +208,9 @@ export function DialogueScreen() {
     : settings.textSpeed === 'slow' ? 50
     : 30;
 
-  const speakerName = useMemo(() => {
-    if (!currentNode?.speaker) return null;
-    return getCharacterFirstName(currentNode.speaker, settings.characterPresentations);
-  }, [currentNode?.speaker, settings.characterPresentations]);
+  const speakerName = currentNode?.speaker
+    ? getCharacterFirstName(currentNode.speaker, settings.characterPresentations)
+    : null;
 
   const speakerColor = currentNode?.speaker
     ? CHARACTERS[currentNode.speaker]?.color || '#c4a35a'

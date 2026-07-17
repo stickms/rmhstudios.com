@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { prisma } from "@/lib/prisma.server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { bufferPostView } from "@/lib/hot-counters.server";
 
 export const Route = createFileRoute('/api/rmharks/$id/view')({
   server: {
@@ -22,10 +22,11 @@ export const Route = createFileRoute('/api/rmharks/$id/view')({
     // Count every view, including repeat views by the same person (refreshes,
     // return visits). The per-viewer dedup was removed intentionally; the IP
     // rate limit above is what caps abuse.
-    await prisma.rMHark.update({
-      where: { id },
-      data: { viewCount: { increment: 1 } },
-    });
+    //
+    // Buffer the increment in Redis (flushed to Postgres in batches) so a viral
+    // post is one UPDATE per flush interval instead of a row-locked UPDATE per
+    // impression. Falls back to a direct atomic increment when Redis is unset.
+    await bufferPostView(id);
 
     return Response.json({ success: true });
   } catch (error) {

@@ -3,24 +3,32 @@
 # rmhstudios.com — Docker-based deploy script
 #
 # Usage:
-#   ./deploy.sh production   — deploy main branch to production containers
-#   ./deploy.sh staging      — deploy staging branch to staging containers
+#   ./deploy.sh production [SHA]  — deploy main branch to production containers
+#   ./deploy.sh staging    [SHA]  — deploy staging branch to staging containers
 #
-# Cache strategy:
-#   - BuildKit cache mounts (pnpm store, Vinxi/TanStack cache) persist across
-#     builds and are shared between prod/staging.
-#   - Parallel Dockerfile stages: server-builder (env-agnostic, fully cached
-#     between envs) and vite-builder (env-specific, incrementally cached).
-#   - node_modules layer in runner sourced from deps stage (lockfile-keyed),
-#     not from the env-specific builder, so it survives source/env changes.
-#   - Images are tagged with git SHA for instant rollback.
-#   - Dangling images are pruned, but build cache is preserved.
+# The optional SHA is the exact commit whose images GitHub Actions built and
+# pushed to GHCR (the webhook listener passes it through). When omitted (a manual
+# run), the branch tip is used.
+#
+# Image strategy (build now runs in CI):
+#   - The heavy build (vibe-packages → vite build → esbuild server bundles → Go
+#     binaries → Chromium) happens in GitHub Actions on native ARM64 runners and
+#     is pushed to GHCR as two images (slim web + full supervisor/status), each
+#     tagged with the full commit SHA. See .github/workflows/deploy.yml.
+#   - This script PULLS those images and retags them to the local names
+#     docker-compose.yml expects, so the compose file + blue/green hotswap are
+#     unchanged. No BuildKit, no on-host cache mounts, no build-disk gymnastics.
+#   - Pulled images are also tagged with the git SHA for instant rollback.
+#   - Dangling + stale rollback images are pruned to bound disk usage.
 # ─────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
 
 # ── Determine environment ────────────────────────────────────────────────────
 ENVIRONMENT="${1:-production}"
+# Optional: the exact commit CI built + pushed to GHCR. Passed by the webhook
+# listener as $2; empty on a manual run (falls back to the branch tip).
+DEPLOY_TARGET_SHA="${2:-}"
 
 case "$ENVIRONMENT" in
     production)
@@ -68,6 +76,17 @@ DISCORD_WEBHOOK="${DISCORD_WEBHOOK_URL:-}"
 GITHUB_TOKEN="${GITHUB_TOKEN:-}"
 GITHUB_REPO="stickms/rmhstudios.com"
 
+# ── GHCR pull config ─────────────────────────────────────────────────────────
+# The web (slim) + full (supervisor/status) images built by GitHub Actions.
+# GHCR_TOKEN needs `read:packages`; it defaults to GITHUB_TOKEN so a single PAT
+# with `repo` (commit status) + `read:packages` (image pull) covers both. If the
+# packages are public, no token is needed (the pull works unauthenticated).
+GHCR_REGISTRY="${GHCR_REGISTRY:-ghcr.io}"
+GHCR_IMAGE="${GHCR_IMAGE:-ghcr.io/stickms/rmhstudios-app}"
+GHCR_IMAGE_FULL="${GHCR_IMAGE_FULL:-ghcr.io/stickms/rmhstudios-app-full}"
+GHCR_USER="${GHCR_USER:-stickms}"
+GHCR_TOKEN="${GHCR_TOKEN:-$GITHUB_TOKEN}"
+
 DOCKER_BIN=$(which docker 2>/dev/null || echo "/usr/bin/docker")
 GIT_BIN=$(which git 2>/dev/null || echo "/usr/bin/git")
 
@@ -75,7 +94,11 @@ log() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$ENVIRONMENT] $1"
 }
 
-DEPLOY_MSG_ID=""
+# Discord message id for the single push → build → deploy embed. When GitHub
+# Actions posted the build-phase message, its id arrives via DEPLOY_DISCORD_MSG_ID
+# (set by the webhook listener) and we EDIT that message instead of posting a new
+# one. Empty on manual runs / when Actions didn't post — then we post our own.
+DEPLOY_MSG_ID="${DEPLOY_DISCORD_MSG_ID:-}"
 
 # ── Discord/GitHub curl with retries ─────────────────────────────────────────
 # Wraps curl with retry logic + exponential backoff. Handles Discord 429
@@ -160,16 +183,23 @@ send_deploy_started() {
     get_commit_info
     local env_label
     env_label=$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')
+    # Purple "picked up on the VPS" state (color 0x9B59B6).
     local payload
     payload=$(printf '{"embeds":[{"title":"%s","description":"%s","color":%d,"footer":{"text":"%s"}}]}' \
-        "[$env_label] Commit $DEPLOY_SHORT_HASH - deploy started" "$DEPLOY_COMMIT_MSG" 16776960 "$DEPLOY_AUTHOR")
+        "[$env_label] Commit $DEPLOY_SHORT_HASH - deploying on VPS (pulling images)…" "$DEPLOY_COMMIT_MSG" 10181046 "$DEPLOY_AUTHOR")
 
-    local response
-    response=$(curl_retry -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true")
-    DEPLOY_MSG_ID=$(printf '%s' "$response" | grep -o '"id": *"[^"]*"' | head -1 | cut -d'"' -f4)
-
-    if [ -z "$DEPLOY_MSG_ID" ]; then
-        log "WARNING: Failed to send or parse Discord webhook notification after retries."
+    if [ -n "$DEPLOY_MSG_ID" ]; then
+        # GitHub Actions already posted the build-phase message and handed us its
+        # id — EDIT it so push → build → deploy stays a single evolving embed.
+        curl_retry -X PATCH -H "Content-Type: application/json" \
+            -d "$payload" "${DISCORD_WEBHOOK}/messages/${DEPLOY_MSG_ID}" > /dev/null || \
+            log "WARNING: Failed to edit Discord deploy-started message after retries."
+    else
+        # No upstream message (manual run, or Actions' post failed) — post fresh.
+        local response
+        response=$(curl_retry -H "Content-Type: application/json" -d "$payload" "${DISCORD_WEBHOOK}?wait=true")
+        DEPLOY_MSG_ID=$(printf '%s' "$response" | grep -o '"id": *"[^"]*"' | head -1 | cut -d'"' -f4)
+        [ -z "$DEPLOY_MSG_ID" ] && log "WARNING: Failed to send or parse Discord webhook notification after retries."
     fi
 
     set_github_status "pending" "Deploy started ($DEPLOY_SHORT_HASH)"
@@ -295,75 +325,6 @@ total_disk_gb() {
     df -BG --output=size "$root" 2>/dev/null | tail -1 | tr -dc '0-9' || echo 0
 }
 
-# ── Helper: total BuildKit build-cache size in whole GB ──────────────────────
-# Reads the real on-disk size from `docker system df` (includes the pnpm-store
-# and vinxi cache MOUNTS, which `builder prune --keep-storage` can't trim
-# internally and so let storage creep upward). Parses Docker's human size
-# string (e.g. "6.123GB", "812MB") into a floored integer GB. Echoes 0 on any
-# failure so callers can use it unguarded in arithmetic tests.
-build_cache_gb() {
-    "$DOCKER_BIN" system df --format '{{.Type}}\t{{.Size}}' 2>/dev/null | awk -F'\t' '
-        $1 == "Build Cache" {
-            n=$2; sub(/[A-Za-z]+$/,"",n)
-            u=$2; sub(/^[0-9.]+/,"",u)
-            if      (u ~ /^T/) g=n*1024
-            else if (u ~ /^G/) g=n
-            else if (u ~ /^M/) g=n/1024
-            else if (u ~ /^k/||u ~ /^K/) g=n/1048576
-            else g=n/1073741824
-            printf("%d", g); found=1
-        }
-        END { if (!found) print 0 }'
-}
-
-# ── Helper: dynamic build-cache keep target (whole GB) ───────────────────────
-# Self-calibrates to the actual disk: keep as much warm cache as fits while still
-# leaving room for the SHA-tagged images, a rebuild's transient layers, AND the
-# deploy headroom. Floored so a small disk still keeps a little cache for
-# incremental builds. All inputs are env-overridable.
-#
-# The keep target MUST leave (build_reserve + headroom) free even when the cache
-# is sitting at the cap — otherwise the LRU trim "succeeds" but the very next
-# build still can't get its 10G and escalates to the destructive full-cache wipe
-# (which also evicts the pnpm-store + .vinxi mounts, forcing a cold vite build).
-# That is exactly what happened on the 45G prod host: keep was 45−12−2=31, so a
-# cache at 31G left only ~9G free while the build needs ≥10G → wipe every deploy.
-# Subtracting build_reserve makes the warm cache self-consistent with the build.
-cache_keep_gb() {
-    local total reserve build_reserve floor headroom keep
-    total=$(total_disk_gb)
-    reserve=${DEPLOY_IMAGE_RESERVE_GB:-12}         # room for current + rollback images
-    build_reserve=${DEPLOY_BUILD_RESERVE_GB:-8}    # transient space a full rebuild needs
-    floor=${BUILD_CACHE_MIN_KEEP_GB:-3}
-    headroom=${DEPLOY_HEADROOM_GB:-2}
-    keep=$(( total - reserve - build_reserve - headroom ))
-    [ "$keep" -lt "$floor" ] && keep=$floor
-    echo "$keep"
-}
-
-# ── Helper: content hash of everything that affects the Docker image build ────
-# Combines the git tree SHAs of the build-relevant paths, the env-specific build
-# args (ENV_FILE → DATABASE_URL / VITE_* etc.), and the working-tree dirty state.
-# If this is unchanged since the last successful build AND both images still
-# exist, the produced images are byte-identical, so the build can be skipped and
-# the SHA re-tagged instead — turning a no-op / config-only / docs-only redeploy
-# from a full `vite build` into an instant retag. Over-inclusive on purpose
-# (a go-only change rebuilds web too, but BuildKit caches that): never a wrong skip.
-build_inputs_hash() {
-    local p
-    local paths=(app components lib public content data prisma server go-services scripts \
-        package.json pnpm-lock.yaml vite.config.ts tsconfig.json \
-        tsconfig.server.json Dockerfile .dockerignore docker-compose.yml)
-    {
-        for p in "${paths[@]}"; do
-            git -C "$REPO_DIR" rev-parse "HEAD:$p" 2>/dev/null || echo "missing:$p"
-        done
-        sha256sum "$ENV_FILE" 2>/dev/null | awk '{print $1}'
-        # Any uncommitted change → unique hash, so a dirty-tree deploy never skips.
-        git -C "$REPO_DIR" status --porcelain 2>/dev/null | sha256sum | awk '{print $1}'
-    } | sha256sum | awk '{print $1}'
-}
-
 cleanup() {
     rm -f "$DEPLOY_LOG"
 }
@@ -451,7 +412,21 @@ PRE_PULL_HASH=$(sha256sum "$DEPLOY_SCRIPT_PATH" | awk '{print $1}')
 }
 
 "$GIT_BIN" checkout "$BRANCH" 2>/dev/null || "$GIT_BIN" checkout -b "$BRANCH" "$REMOTE_REPO/$BRANCH"
-"$GIT_BIN" reset --hard "$REMOTE_REPO/$BRANCH" || {
+
+# Deploy target: the exact commit CI built + pushed to GHCR (passed as $2), so
+# the checked-out code and the pulled image are the same SHA even if
+# origin/$BRANCH has already advanced past it. Falls back to the branch tip for
+# manual runs (`./deploy.sh production`) that pass no SHA, or if the requested
+# SHA somehow isn't reachable after the fetch.
+RESET_TARGET="$REMOTE_REPO/$BRANCH"
+if [ -n "$DEPLOY_TARGET_SHA" ]; then
+    if "$GIT_BIN" cat-file -e "${DEPLOY_TARGET_SHA}^{commit}" 2>/dev/null; then
+        RESET_TARGET="$DEPLOY_TARGET_SHA"
+    else
+        log "WARNING: requested deploy SHA ${DEPLOY_TARGET_SHA} not reachable after fetch — falling back to ${REMOTE_REPO}/${BRANCH} tip."
+    fi
+fi
+"$GIT_BIN" reset --hard "$RESET_TARGET" || {
     log "ERROR: git reset failed."
     update_deploy_status fail "git reset failed"
     exit 1
@@ -484,277 +459,101 @@ IMAGE_NAME="${PROJECT_NAME}-app"
 # `image:` for the supervisor/status services in docker-compose.yml.
 FULL_IMAGE_NAME="${IMAGE_NAME}-full"
 GIT_SHA=$("$GIT_BIN" rev-parse --short HEAD 2>/dev/null || echo "unknown")
+# Full (untruncated) commit SHA — the immutable tag CI pushes to GHCR. After the
+# reset above, HEAD is exactly the deploy target, so this is the tag to pull.
+GIT_SHA_FULL=$("$GIT_BIN" rev-parse HEAD 2>/dev/null || echo "")
 
 send_deploy_started
 
-# ── Step 1b: Pre-build cleanup ────────────────────────────────────────────────
-# Free disk space before building to avoid "no space left on device" errors.
-# Prune dangling images and cap build cache proactively.
-step_start "Pre-build disk cleanup..."
+# ── Step 1b: Pre-pull cleanup ─────────────────────────────────────────────────
+# The heavy build now runs in GitHub Actions, so the old BuildKit-cache headroom
+# math is gone. We just need room for the incoming image layers: prune dangling
+# containers/images + stale SHA-tagged rollback images, then confirm there's
+# enough free space to pull. Thresholds are env-overridable.
+#   DEPLOY_HEADROOM_GB     — free space the deploy must always leave (default 2)
+#   DEPLOY_PULL_RESERVE_GB — transient space the incoming image layers need (default 6)
+step_start "Pre-pull disk cleanup..."
 "$DOCKER_BIN" container prune -f > /dev/null 2>&1 || true
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
-# Reclaim stale rollback images BEFORE building. Previously this only ran
-# post-deploy, so a build that filled the disk left the old multi-GB images
-# behind and every retry failed identically with "no space left on device".
 prune_rollback_images
 
-# Build cache is the main disk hog. A full rebuild needs headroom to materialize
-# the new node_modules + .output layers into the runner image. When free space is
-# below that, escalate to a full cache + image wipe so the build doesn't die
-# mid-COPY with "no space left on device". The wipe is a rare safety valve, not
-# the common path — and it is EXPENSIVE: it evicts the BuildKit layer cache AND
-# the cache MOUNTS (pnpm store + .vinxi Vite/Rolldown module graph). Since the
-# `vite build` re-runs every deploy (any source change busts its COPY layer), a
-# warm .vinxi is the difference between an incremental build and a cold one — so
-# the higher the disk headroom we can keep, the more often the build stays fast.
-#
-# Thresholds self-calibrate to the disk (env-overridable):
-#   DEPLOY_HEADROOM_GB      — free space the deploy must always leave (default 2)
-#   DEPLOY_BUILD_RESERVE_GB — transient space a full rebuild needs to materialize
-#                             the new node_modules + .output layers (default 8)
-# We need (headroom + reserve) free to build safely. Below that, escalate:
-# LRU-trim the cache → prune images → full cache wipe → and, if STILL under the
-# headroom, FAIL the deploy rather than fill the disk (the old code would wipe and
-# build anyway, risking an out-of-space mid-build on a small disk).
 DEPLOY_HEADROOM_GB="${DEPLOY_HEADROOM_GB:-2}"
-DEPLOY_BUILD_RESERVE_GB="${DEPLOY_BUILD_RESERVE_GB:-8}"
+DEPLOY_PULL_RESERVE_GB="${DEPLOY_PULL_RESERVE_GB:-6}"
 DISK_TOTAL_GB=$(total_disk_gb)
-NEED_FREE_GB=$(( DEPLOY_HEADROOM_GB + DEPLOY_BUILD_RESERVE_GB ))
+NEED_FREE_GB=$(( DEPLOY_HEADROOM_GB + DEPLOY_PULL_RESERVE_GB ))
 DISK_FREE_GB=$(free_disk_gb)
-log "Disk: ${DISK_FREE_GB}G free of ${DISK_TOTAL_GB}G (need ≥ ${NEED_FREE_GB}G to build and keep ${DEPLOY_HEADROOM_GB}G headroom)."
+log "Disk: ${DISK_FREE_GB}G free of ${DISK_TOTAL_GB}G (need ≥ ${NEED_FREE_GB}G to pull and keep ${DEPLOY_HEADROOM_GB}G headroom)."
 if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
-    log "Low disk — LRU-trimming build cache (keep ≤ $(cache_keep_gb)G) and pruning unused images."
-    "$DOCKER_BIN" builder prune --keep-storage "$(cache_keep_gb)g" -f > /dev/null 2>&1 || true
+    log "Low disk — trimming rollback images to 1 and pruning all unused images."
+    prune_rollback_images 1
     "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
-    prune_rollback_images
     DISK_FREE_GB=$(free_disk_gb)
-    if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
-        # Before the destructive full wipe (which also evicts the pnpm-store and
-        # .vinxi cache MOUNTS, forcing a cold `vite build` next deploy), reclaim
-        # the SHA-tagged rollback images down to the single newest — they're
-        # multiple GB each and trivially recreatable, so spending them to KEEP a
-        # warm Vite cache is the right trade. Only wipe the cache if still low.
-        log "Still low (${DISK_FREE_GB}G free) — trimming rollback images to 1 to spare the warm build cache."
-        prune_rollback_images 1
-        "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
-        DISK_FREE_GB=$(free_disk_gb)
-    fi
-    if [ "${DISK_FREE_GB:-0}" -lt "$NEED_FREE_GB" ]; then
-        log "Still low (${DISK_FREE_GB}G free) — wiping ALL build cache (cold rebuild next deploy)."
-        "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
-        DISK_FREE_GB=$(free_disk_gb)
-    fi
     if [ "${DISK_FREE_GB:-0}" -lt "$DEPLOY_HEADROOM_GB" ]; then
-        log "ERROR: only ${DISK_FREE_GB}G free after pruning — refusing to build (would breach the ${DEPLOY_HEADROOM_GB}G headroom)."
-        update_deploy_status fail "insufficient disk to build safely"
+        log "ERROR: only ${DISK_FREE_GB}G free after pruning — refusing to pull (would breach the ${DEPLOY_HEADROOM_GB}G headroom)."
+        update_deploy_status fail "insufficient disk to pull safely"
         exit 1
     fi
     log "After prune: ${DISK_FREE_GB}G free."
 else
-    log "Disk healthy — keeping build cache warm for a fast incremental build."
+    log "Disk healthy."
 fi
 step_done
 
-# ── Step 1e: Generate library covers + metadata (automatic) ──────────────────
-# New library PDFs need a rendered first-page cover + a catalogue entry in
-# data/library-metadata.json (which lib/library imports at build time). Cover
-# rendering needs the PDF bytes (host checkout) + the canvas/pdfjs toolchain
-# (in the app image), but the PDFs are deliberately kept out of the build
-# context (.dockerignore) to keep builds small/fast — so we generate HERE, on
-# the host, before the build:
-#   - Run the previous app image as a one-shot with the host's public/ and data/
-#     bind-mounted. The script (idempotent) renders only NEW covers into
-#     public/library/covers (Apache serves them off the host) and rewrites
-#     data/library-metadata.json, which `vite build` then bakes into the image.
-#   - --user maps to the host user so it can write the mounted dirs.
-#   - Best-effort: any failure (no prior image, no toolchain, render error)
-#     falls back to the committed metadata and NEVER blocks the deploy.
-if "$DOCKER_BIN" image inspect "${IMAGE_NAME}:latest" >/dev/null 2>&1; then
-    # The PDFs live on the host only (untracked by git — see .dockerignore), so
-    # `git reset --hard` never touches them and their on-disk fingerprint is a
-    # stable trigger. Hash the set of library PDFs (name + size + mtime) and only
-    # boot the renderer (a one-shot node + pdfjs/canvas container, ~5–10s of pure
-    # startup) when that set CHANGED since the last successful generation —
-    # otherwise the run is a guaranteed no-op the deploy paid for on every push.
-    # Set DEPLOY_FORCE_LIBRARY=1 to force it (e.g. after manually deleting a cover).
-    LIB_HASH=$(find "${REPO_DIR}/public/library" -maxdepth 1 -name '*.pdf' -printf '%f %s %T@\n' 2>/dev/null | sort | sha256sum | awk '{print $1}')
-    LIB_HASH_DIR="${REPO_DIR}/.deploy"
-    LIB_HASH_FILE="${LIB_HASH_DIR}/${ENVIRONMENT}-library.hash"
-    mkdir -p "$LIB_HASH_DIR"
-    if [ "${DEPLOY_FORCE_LIBRARY:-0}" != "1" ] && [ -n "$LIB_HASH" ] && \
-       [ "$(cat "$LIB_HASH_FILE" 2>/dev/null)" = "$LIB_HASH" ]; then
-        log "No library PDF changes since last generation (${LIB_HASH:0:12}) — skipping cover/metadata generation."
-    else
-        step_start "Generating library covers + metadata..."
-        if "$DOCKER_BIN" run --rm \
-            --user "$(id -u):$(id -g)" \
-            --env-file "$ENV_FILE" \
-            -v "${REPO_DIR}/public:/app/public" \
-            -v "${REPO_DIR}/data:/app/data" \
-            --entrypoint node \
-            "${IMAGE_NAME}:latest" \
-            scripts/generate-library-metadata.ts; then
-            # Record the fingerprint only after a SUCCESSFUL run so a failure
-            # retries next deploy instead of being wrongly skipped.
-            printf '%s\n' "$LIB_HASH" > "$LIB_HASH_FILE"
-        else
-            log "WARNING: library cover/metadata generation failed — using committed metadata."
-        fi
-        step_done
-    fi
-else
-    log "No prior ${IMAGE_NAME}:latest image — skipping library cover generation (first deploy; using committed metadata)."
-fi
+# NOTE: the old "Step 1e: generate library covers" ran here. The static library
+# (bundled public/library/*.pdf → data/library-metadata.json) has been fully
+# retired — the catalogue JSON is empty, the bundled PDFs were removed from the
+# repo, and lib/library.server.ts now reads LibraryDocument rows (DB) with covers
+# in R2 (coverKey → asset()). So there is nothing to render on the host and the
+# step was a no-op; it's removed.
 
-# (R2 static asset sync runs post-build as Step 2a, using the freshly built
+# (R2 static asset sync runs post-pull as Step 2a, using the freshly pulled
 #  image — see below.)
 
-# ── Step 2: Build Docker image ──────────────────────────────────────────────
-# The Dockerfile uses parallel BuildKit stages:
-#   - server-builder (esbuild, env-agnostic → fully cached between envs)
-#   - vite-builder   (vite build, env-specific → incrementally cached)
-# node_modules layer in runner comes from deps stage (lockfile-keyed),
-# not from the builder, so it caches independently of source/env changes.
-step_start "Building Docker images (slim web + full supervisor/status)..."
+# ── Step 2: Pull pre-built images from GHCR ──────────────────────────────────
+# The two images (slim web → runner, full supervisor/status → runner-full) are
+# built + pushed by .github/workflows/deploy.yml on GitHub's native ARM64
+# runners, each tagged with the full commit SHA. We pull THIS deploy's SHA and
+# retag it to the local names docker-compose.yml expects (${IMAGE_NAME}:latest /
+# ${FULL_IMAGE_NAME}:latest), so the compose file and the blue/green hotswap need
+# no changes. This replaces the old on-host `vite build` entirely — no BuildKit,
+# no cache mounts, no build-disk gymnastics.
+step_start "Pulling images from GHCR (${GHCR_IMAGE}:${GIT_SHA_FULL})..."
 
-# Content-addressed build skip: if nothing that affects the image build has
-# changed since the last successful build AND both images still exist, the
-# rebuild would be a no-op — skip it and just re-tag the SHA. This turns a
-# redeploy of the same commit (or a docs/config-only change) into an instant
-# operation instead of a full `vite build`. Env-keyed so prod/staging don't share
-# a hash. Set DEPLOY_FORCE_BUILD=1 to bypass.
-BUILD_HASH=$(build_inputs_hash)
-HASH_DIR="${REPO_DIR}/.deploy"
-HASH_FILE="${HASH_DIR}/${ENVIRONMENT}-build.hash"
-mkdir -p "$HASH_DIR"
-SKIP_BUILD=0
-if [ "${DEPLOY_FORCE_BUILD:-0}" != "1" ] && [ -n "$BUILD_HASH" ] && [ -f "$HASH_FILE" ] && \
-   [ "$(cat "$HASH_FILE" 2>/dev/null)" = "$BUILD_HASH" ] && \
-   "$DOCKER_BIN" image inspect "${IMAGE_NAME}:latest" >/dev/null 2>&1 && \
-   "$DOCKER_BIN" image inspect "${FULL_IMAGE_NAME}:latest" >/dev/null 2>&1; then
-    SKIP_BUILD=1
+if [ -z "$GIT_SHA_FULL" ]; then
+    log "ERROR: could not determine the commit SHA to pull."
+    update_deploy_status fail "no image tag to pull"
+    exit 1
 fi
 
-if [ "$SKIP_BUILD" -eq 1 ]; then
-    log "No build-relevant changes since last build (${BUILD_HASH:0:12}) — skipping rebuild, re-tagging existing images."
+# Authenticate to GHCR when a token is available. If the packages are public the
+# pull succeeds without a login, so a missing/failed login is only a warning — we
+# still attempt the (possibly anonymous) pull and let it be the hard gate.
+if [ -n "$GHCR_TOKEN" ]; then
+    if ! printf '%s' "$GHCR_TOKEN" | "$DOCKER_BIN" login "$GHCR_REGISTRY" -u "$GHCR_USER" --password-stdin > /dev/null 2>&1; then
+        log "WARNING: docker login to ${GHCR_REGISTRY} failed — attempting an unauthenticated pull (works only if the package is public)."
+    fi
 else
-    # Build BOTH images: `web` → runner (slim), `supervisor` → runner-full
-    # (Chromium + git + Go binaries on top of the slim image).
-    #
-    # We build them as TWO sequential `dc build` calls — WEB FIRST, then supervisor
-    # — and runner-full is `FROM ${WEB_IMAGE}` (Dockerfile). The web build runs the
-    # single (expensive) `vite build` and compose tags it ${IMAGE_NAME}:latest; we
-    # then build supervisor with WEB_IMAGE=${IMAGE_NAME}:latest so runner-full starts
-    # FROM that concrete image and its graph does NOT include vite-builder — the
-    # frontend is built exactly ONCE per deploy.
-    #
-    # Why not a two-target bake, or sequential `FROM runner`? Both were measured to
-    # build vite TWICE (~50–110s wasted): BuildKit does not share the vite-builder /
-    # `COPY --exclude … . .` layer across the two target builds (their contexts
-    # differ byte-for-byte — 461kB vs 407kB in the logs). Building runner-full FROM
-    # the already-produced web IMAGE sidesteps layer sharing entirely.
-    #
-    # Exception: a container-driver builder (registry cache, below) can't FROM a
-    # local-only image tag, so on that path we keep WEB_IMAGE=runner and let the
-    # registry cache dedupe the second vite build instead (web exports the vite
-    # layer, supervisor imports it). go-builder is an independent branch feeding
-    # runner-full's `COPY --from=go-builder`, so the Go compile still runs (in
-    # parallel with the Chromium apk layer) during the supervisor build.
-    # Optional shared/remote BuildKit layer cache. When DEPLOY_BUILDKIT_CACHE is
-    # set to a registry ref (e.g. registry.example.com/rmhstudios/buildcache), the
-    # build imports AND exports the layer cache to that registry via the
-    # docker-compose.cache.yml overlay, so a fresh or disk-pressure-wiped host
-    # repopulates the deps/prisma/server/vite stages from remote instead of the
-    # slow cold path this script otherwise falls back to (see the cache-wipe note
-    # above). The `-full` image gets its own cache ref. Inert when unset — the
-    # local BuildKit cache is used exactly as before. NOTE: registry cache export
-    # needs a buildx/docker-container builder; the default `docker` driver can't
-    # export mode=max cache. Failures to *export* cache never fail the build (they
-    # print a warning), but a misconfigured builder can, so keep it opt-in.
-    BUILD_OK=1
-
-    # Per-stage build profiling: capture BuildKit's plain progress to a log so the
-    # post-build report can attribute wall-clock per stage (vite vs go vs deps vs
-    # image assembly) — the durable answer to "what dominates the build?". On by
-    # default; set DEPLOY_PROFILE_BUILD=0 to skip it and keep BuildKit's default
-    # tty progress. The non-interactive webhook deploy already effectively gets
-    # plain progress, so this only changes the console for manual runs. The log
-    # lives under the gitignored .deploy/ dir and is overwritten each build.
-    PROFILE_BUILD="${DEPLOY_PROFILE_BUILD:-1}"
-    BUILD_LOG="${HASH_DIR}/${ENVIRONMENT}-build-progress.log"
-    [ "$PROFILE_BUILD" = "1" ] && : > "$BUILD_LOG"
-
-    # Build web (runner) FIRST — it runs the one vite build and is tagged
-    # ${IMAGE_NAME}:latest — then supervisor (runner-full) FROM that image so vite
-    # isn't re-run (see the block comment above). $@ carries optional extra `-f`
-    # compose files (the cache overlay). When profiling, force plain progress and
-    # append both builds to the same log; the pass-through tee keeps live output
-    # flowing. `|| return 1` stops at the first failing build so the caller's
-    # `|| BUILD_OK=0` fires (set -e is suppressed inside a `||` list).
-    run_build() {
-        # runner-full's base image: the just-built local web image on the default
-        # builder; `runner` (rebuild-in-graph) when the registry-cache container
-        # builder is active, since it can't FROM a local-only tag.
-        local sup_web_image="${IMAGE_NAME}:latest"
-        [ "${CACHE_ACTIVE:-0}" -eq 1 ] && sup_web_image="runner"
-        if [ "$PROFILE_BUILD" = "1" ]; then
-            COMPOSE_BAKE=1 BUILDKIT_PROGRESS=plain dc "$@" build web 2>&1 | tee -a "$BUILD_LOG" || return 1
-            COMPOSE_BAKE=1 BUILDKIT_PROGRESS=plain WEB_IMAGE="$sup_web_image" dc "$@" build supervisor 2>&1 | tee -a "$BUILD_LOG" || return 1
-        else
-            COMPOSE_BAKE=1 dc "$@" build web || return 1
-            COMPOSE_BAKE=1 WEB_IMAGE="$sup_web_image" dc "$@" build supervisor || return 1
-        fi
-    }
-
-    # Registry-cache activation. mode=max export to a registry needs a buildx
-    # container-driver builder (the default `docker` driver can't), so we only
-    # turn the cache on when DEPLOY_BUILDKIT_CACHE is set AND that builder exists.
-    # Provision it once with `deploy/setup-buildx-cache.sh`. If it's missing we
-    # DON'T fail — we warn and fall back to the local cache, so a misconfigured or
-    # not-yet-provisioned host still deploys. CACHE_ACTIVE gates the container
-    # builder's own cache prune in the post-deploy step (its cache lives separately
-    # from the default builder, so the normal `builder prune` doesn't reach it).
-    CACHE_ACTIVE=0
-    if [ -n "${DEPLOY_BUILDKIT_CACHE:-}" ]; then
-        BUILDX_CACHE_BUILDER="${DEPLOY_BUILDX_BUILDER:-rmhstudios-cache}"
-        if "$DOCKER_BIN" buildx inspect "$BUILDX_CACHE_BUILDER" >/dev/null 2>&1; then
-            export BUILDX_BUILDER="$BUILDX_CACHE_BUILDER"
-            export BUILDKIT_CACHE_WEB="$DEPLOY_BUILDKIT_CACHE"
-            export BUILDKIT_CACHE_FULL="${DEPLOY_BUILDKIT_CACHE}-full"
-            CACHE_ACTIVE=1
-            log "Shared BuildKit registry cache ON (builder '${BUILDX_CACHE_BUILDER}', ref ${DEPLOY_BUILDKIT_CACHE} + -full)."
-        else
-            log "WARN: DEPLOY_BUILDKIT_CACHE is set but buildx builder '${BUILDX_CACHE_BUILDER}' does not exist."
-            log "      Run deploy/setup-buildx-cache.sh once to create it. Falling back to LOCAL cache this deploy."
-        fi
-    fi
-    if [ "$CACHE_ACTIVE" -eq 1 ]; then
-        run_build -f docker-compose.yml -f docker-compose.cache.yml || BUILD_OK=0
-    else
-        run_build || BUILD_OK=0
-    fi
-    if [ "$BUILD_OK" -ne 1 ]; then
-        log "ERROR: Docker build failed."
-        update_deploy_status fail "docker build failed"
-        exit 1
-    fi
-    # Record the hash only after a SUCCESSFUL build, so a failed build never lets
-    # the next deploy wrongly skip.
-    printf '%s\n' "$BUILD_HASH" > "$HASH_FILE"
-
-    # Print the per-stage timing breakdown. Best-effort: a parse hiccup must never
-    # fail a build that already succeeded.
-    if [ "$PROFILE_BUILD" = "1" ] && [ -s "$BUILD_LOG" ]; then
-        log "Build stage timing breakdown (uncached wall-clock):"
-        sh "${REPO_DIR}/scripts/build-timing-report.sh" "$BUILD_LOG" 2>/dev/null \
-            || log "  (build timing report unavailable — skipped)"
-    fi
+    log "No GHCR_TOKEN/GITHUB_TOKEN set — attempting an unauthenticated pull (works only if the package is public)."
 fi
 
-# Tag both images with the git SHA for instant rollback (docker compose up with
-# the old tag). Layers are shared, so the full SHA tag costs almost no disk.
-"$DOCKER_BIN" tag "${IMAGE_NAME}:latest" "${IMAGE_NAME}:${GIT_SHA}" 2>/dev/null || true
-"$DOCKER_BIN" tag "${FULL_IMAGE_NAME}:latest" "${FULL_IMAGE_NAME}:${GIT_SHA}" 2>/dev/null || true
+if ! "$DOCKER_BIN" pull "${GHCR_IMAGE}:${GIT_SHA_FULL}"; then
+    log "ERROR: failed to pull ${GHCR_IMAGE}:${GIT_SHA_FULL}."
+    update_deploy_status fail "image pull failed (web)"
+    exit 1
+fi
+if ! "$DOCKER_BIN" pull "${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}"; then
+    log "ERROR: failed to pull ${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}."
+    update_deploy_status fail "image pull failed (full)"
+    exit 1
+fi
+
+# Retag the pulled images to the local names docker-compose.yml references — both
+# :latest (the compose `image:`) and :${GIT_SHA} (instant rollback target).
+# Layers are shared, so the extra tags cost almost no disk.
+"$DOCKER_BIN" tag "${GHCR_IMAGE}:${GIT_SHA_FULL}"      "${IMAGE_NAME}:latest"
+"$DOCKER_BIN" tag "${GHCR_IMAGE}:${GIT_SHA_FULL}"      "${IMAGE_NAME}:${GIT_SHA}"
+"$DOCKER_BIN" tag "${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}" "${FULL_IMAGE_NAME}:latest"
+"$DOCKER_BIN" tag "${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}" "${FULL_IMAGE_NAME}:${GIT_SHA}"
 step_done
 
 # ── Step 2a: Sync static assets to Cloudflare R2 (incremental) ───────────────
@@ -943,7 +742,20 @@ else
     fi
     MIGRATE_CMD="$MIGRATE_CMD; npx prisma migrate deploy"
 
-    if ! dc run --rm --no-deps web sh -c "$MIGRATE_CMD"; then
+    # Migration lock safety (audit §1.7). Without a lock_timeout, a migration's
+    # ALTER/CREATE INDEX takes an ACCESS EXCLUSIVE lock and — if the table is
+    # busy — can queue behind (and then block) ALL reads/writes on that table for
+    # the migration's whole duration: an outage, not a blip, on a large table.
+    # lock_timeout=5s makes a DDL that can't get its lock FAIL FAST (the deploy
+    # then reports "database migration failed" and stops) instead of freezing the
+    # table indefinitely; statement_timeout=0 leaves long-but-unblocked work (a
+    # legit big backfill) alone. PGOPTIONS passes these as session GUCs to the
+    # migrate connection; scoped to THIS container via `-e` so it never affects
+    # the running app. (If a future Prisma engine ignores PGOPTIONS, the
+    # equivalent is `?options=-c%20lock_timeout%3D5s` on the migrate DATABASE_URL.)
+    if ! dc run --rm --no-deps \
+        -e PGOPTIONS='-c lock_timeout=5s -c statement_timeout=0' \
+        web sh -c "$MIGRATE_CMD"; then
         log "ERROR: Database migration failed."
         update_deploy_status fail "database migration failed"
         exit 1
@@ -1055,51 +867,22 @@ done
 
 step_done
 
-# ── Step 6: Prune stale images & cap build cache ─────────────────────────────
+# ── Step 6: Prune stale images ───────────────────────────────────────────────
 log "Pruning dangling images..."
 "$DOCKER_BIN" image prune -f > /dev/null 2>&1 || true
 
 # Keep at most 2 SHA-tagged images per environment for rollback.
-prune_rollback_images
+prune_rollback_images 2
 
-# Cap BuildKit build cache. The keep target self-calibrates to the disk
-# (cache_keep_gb: total − image reserve − build reserve − headroom) so it can
-# never exceed available space AND always leaves room for the next build — the
-# old fixed BUILD_CACHE_KEEP_GB=20 was larger than total free on a small disk, so
-# it never trimmed and the cache could fill the disk.
-# The LRU trim keeps the pnpm store + .vinxi warm (incremental `vite build`)
-# while staying under the cap. Still env-overridable via BUILD_CACHE_KEEP_GB.
-BUILD_CACHE_KEEP_GB="${BUILD_CACHE_KEEP_GB:-$(cache_keep_gb)}"
-log "Pruning build cache (LRU trim toward ≤${BUILD_CACHE_KEEP_GB} GB)..."
-"$DOCKER_BIN" builder prune --keep-storage "${BUILD_CACHE_KEEP_GB}g" -f > /dev/null 2>&1 || true
-
-# When the registry cache is active, the build ran on a separate container-driver
-# builder whose cache lives OUTSIDE the default builder that the line above trims
-# (and outside `docker system df`'s "Build Cache" accounting). Trim it to the same
-# cap so it can't grow unbounded and silently fill the disk. Guarded so it's a
-# no-op on hosts without the registry cache. Best-effort — never fails the deploy.
-if [ "${CACHE_ACTIVE:-0}" -eq 1 ] && [ -n "${BUILDX_BUILDER:-}" ]; then
-    log "Trimming container builder '${BUILDX_BUILDER}' cache (LRU trim toward ≤${BUILD_CACHE_KEEP_GB} GB)..."
-    "$DOCKER_BIN" buildx prune --builder "$BUILDX_BUILDER" --keep-storage "${BUILD_CACHE_KEEP_GB}g" -f > /dev/null 2>&1 || true
-fi
-
-# Headroom enforcement: `--keep-storage` can't trim WITHIN the long-lived
-# pnpm-store / vinxi cache mounts, so real free space can still drift below the
-# headroom deploy after deploy. Measure actual free space and, if it's under the
-# headroom, escalate to a full cache reset (costs one cold rebuild next time but
-# guarantees the disk is never left dangerously full). Replaces the old fixed
-# 30 GB ceiling, which was unreachable on a small disk.
+# Headroom enforcement. With the build now off-host there is no BuildKit cache to
+# cap or wipe — the SHA-tagged rollback images are the only heavy, reclaimable
+# thing left. If disk is still under the headroom after the prune above, drop to
+# a single rollback image and prune all unused images.
 if [ "$(free_disk_gb)" -lt "$DEPLOY_HEADROOM_GB" ]; then
-    # Reclaim rollback images (GBs each, recreatable) BEFORE the cache reset, so
-    # a warm pnpm-store/.vinxi can survive into the next deploy's `vite build`.
-    log "Only $(free_disk_gb)G free (< ${DEPLOY_HEADROOM_GB}G headroom) after LRU trim — trimming rollback images to 1 first."
+    log "Only $(free_disk_gb)G free (< ${DEPLOY_HEADROOM_GB}G headroom) — trimming rollback images to 1."
     prune_rollback_images 1
     "$DOCKER_BIN" image prune -af > /dev/null 2>&1 || true
-    if [ "$(free_disk_gb)" -lt "$DEPLOY_HEADROOM_GB" ]; then
-        log "Still under headroom — full build-cache reset (cold rebuild next deploy)."
-        "$DOCKER_BIN" builder prune -af > /dev/null 2>&1 || true
-    fi
-    log "After reclaim: $(build_cache_gb)G build cache, $(free_disk_gb)G disk free."
+    log "After reclaim: $(free_disk_gb)G disk free."
 fi
 
 # ── Join background best-effort jobs ─────────────────────────────────────────

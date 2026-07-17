@@ -9,6 +9,7 @@
   "delete-failed": "Misslyckades med att ta bort inlägg",
   "delete-post": "Ta bort inlägg",
   "delete-success": "Blogginlägg borttaget: {{slug}}.",
+  "delete-title": "Ta bort det här inlägget?",
   "description-label": "Beskrivning",
   "description-placeholder": "En kort sammanfattning av inlägget...",
   "editing-title": "Redigerar: {{title}}",

@@ -1,5 +1,5 @@
 import { AlertTriangle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from "react-i18next";
 

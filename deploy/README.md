@@ -63,121 +63,106 @@ curl -fsS -H "Host: <app_host>" http://127.0.0.1/    # via Traefik
 - Tail a service:  `kubectl -n rmhstudios logs -f deploy/rmhstudios-socket`
 - DNS changes:  see `deploy/terraform/README.md`
 
-## Automated deploys (GitHub Actions → `deploy.sh`)
+## Automated deploys — CI build → GHCR → VPS pull
 
-`.github/workflows/deploy.yml` deploys every push to `main`: the runner SSHes
-into the VPS and runs `./deploy.sh production` (which self-serializes with a
-flock and pulls `origin/main` itself). One-time setup:
+Every push to `main`, `.github/workflows/deploy.yml` builds the two images
+**in GitHub Actions** (native ARM64 runner, matching the Oracle ARM VPS), pushes
+them to GHCR tagged with the commit SHA, then POSTs an HMAC-signed request to the
+VPS webhook listener (`webhook-server.cjs`). The listener runs
+`./deploy.sh production <sha>`, which **pulls** those images (no on-host build),
+migrates, and blue/green-swaps. The listener still self-serializes via `deploy.sh`'s
+flock, and `deploy.sh` still owns the `deploy/production` commit status.
 
-1. **On the VPS** — create a dedicated deploy key and authorize it:
+Why the listener is triggered by CI (not by GitHub's raw push webhook): the image
+must exist in GHCR *before* the deploy runs, so the deploy is sequenced after the
+build. **Remove GitHub's old push webhook** (repo Settings → Webhooks) so only this
+workflow drives the listener.
+
+One-time setup:
+
+1. **Repo variables** (Settings → Secrets and variables → Actions → **Variables**).
+   These are baked into the client bundle by `vite build`, so they must be the
+   **production** values. They are public (they end up in client JS / are public
+   URLs), so they belong in variables, not secrets. Keep them in sync with the
+   VPS `.env.production`:
+   - `PROD_BETTER_AUTH_URL`
+   - `PROD_VITE_BETTER_AUTH_URL`
+   - `PROD_VITE_SOCKET_URL`
+   - `PROD_VITE_RMHBOX_SOCKET_URL`
+   - `PROD_VITE_RMHTUBE_SOCKET_URL`
+   - `PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID`
+   - `PROD_VITE_CDN_BASE_URL`
+2. **Repo secrets**:
+   - `DEPLOY_WEBHOOK_URL` — the public URL that proxies to the listener
+     (`127.0.0.1:7002/webhook`), e.g. `https://<host>/webhook`.
+   - `WEBHOOK_SECRET` — the **same** value as the listener's `WEBHOOK_SECRET` env
+     (the HMAC key). Nothing deploys unless the signatures match.
+   - `DEEPSEEK_API_KEY` — optional (library cover titles); may be unset.
+   - `GITHUB_TOKEN` (built-in) pushes the images — no PAT needed in CI.
+3. **On the VPS**, give `deploy.sh` a way to pull the GHCR packages. Either make
+   the two packages (`rmhstudios-app`, `rmhstudios-app-full`) **public** on GHCR,
+   or export a token with `read:packages` for the deploy user (the listener's
+   systemd unit / `.env`):
    ```bash
-   ssh-keygen -t ed25519 -f ~/.ssh/gh-deploy -N "" -C gh-deploy
-   cat ~/.ssh/gh-deploy.pub >> ~/.ssh/authorized_keys
-   cat ~/.ssh/gh-deploy          # copy the PRIVATE key for step 2
-   ssh-keyscan -H <vps-host>     # optional: copy for DEPLOY_KNOWN_HOSTS
+   GHCR_TOKEN=<PAT with read:packages>   # defaults to $GITHUB_TOKEN if that's set
+   GHCR_USER=stickms
    ```
-2. **Repo secrets** (Settings → Secrets → Actions, or `gh secret set`):
-   - `DEPLOY_HOST` — VPS IP or hostname (the SSH host, not the Cloudflare-proxied domain)
-   - `DEPLOY_USER` — `rmhstudios`
-   - `DEPLOY_SSH_KEY` — contents of `~/.ssh/gh-deploy` (the private key)
-   - `DEPLOY_PORT` — optional, default 22
-   - `DEPLOY_KNOWN_HOSTS` — optional `ssh-keyscan` output; pins the host key
+   `deploy.sh` also uses `GITHUB_TOKEN` (with `repo`/`repo:status`) for the commit
+   status — a single classic PAT with `repo` + `read:packages` covers both.
 
-Manual runs: Actions → deploy → "Run workflow". Deploy history, full
-`deploy.sh` output, and failures all live in the Actions tab.
+Manual runs: Actions → deploy → "Run workflow" (rebuilds + re-triggers), or on the
+VPS directly `./deploy.sh production <sha>` (or with no SHA to deploy the branch
+tip). Deploy history + the build logs live in the Actions tab; the `deploy.sh`
+run log lives on the VPS (`/home/rmhstudios/webhook.log`).
 
-## Faster builds (`deploy.sh` compose path)
+> The old SSH-based flow (`DEPLOY_HOST` / `DEPLOY_USER` / `DEPLOY_SSH_KEY`) is
+> retired — those secrets are no longer used and can be deleted.
 
-The single-host `deploy.sh` build is dominated by the Vite frontend build. Two
-opt-in knobs keep it fast, especially on a disk-constrained host that keeps
-wiping its local BuildKit cache.
+### Library covers
 
-### Shared / remote BuildKit cache
+No special handling — the static bundled-PDF library was retired. The catalogue
+JSON (`data/library-metadata.json`) is empty, the bundled PDFs were removed from
+the repo, and `lib/library.server.ts` now reads `LibraryDocument` rows (DB) with
+covers served from R2 (`coverKey` → `asset()`). Nothing about the library depends
+on where the image is built, so moving the build to CI changes nothing here. (The
+old host-side cover-render step in `deploy.sh` was a no-op and has been removed.)
 
-Import & export the BuildKit layer cache to a registry so a fresh — or
-disk-pressure-wiped — host repopulates the deps / prisma / vite stages from
-remote instead of rebuilding them cold.
+## Disk usage on the VPS
 
-```bash
-# 1. Provision the container-driver builder once (mode=max registry export needs
-#    it; the default docker driver can't). Idempotent.
-./deploy/setup-buildx-cache.sh
+The heavy build now runs in CI, so the VPS no longer keeps a BuildKit build cache
+— it only holds the **pulled** images. `deploy.sh` prunes dangling images and
+keeps at most **2** SHA-tagged rollback images per environment (dropping to 1 if
+free space falls under the headroom). Tune via `DEPLOY_HEADROOM_GB` (2) and
+`DEPLOY_PULL_RESERVE_GB` (6 — transient space the incoming image layers need).
 
-# 2. If the registry is private, log in once so the builder can push/pull cache.
-docker login ghcr.io
+> The old on-host build knobs are gone: `setup-buildx-cache.sh`,
+> `docker-compose.cache.yml`, and the `DEPLOY_BUILDKIT_CACHE` /
+> `DEPLOY_BUILD_RESERVE_GB` / `DEPLOY_IMAGE_RESERVE_GB` env vars are no longer
+> read by `deploy.sh`.
 
-# 3. Set on the deploy env (webhook unit / .env):
-DEPLOY_BUILDKIT_CACHE=ghcr.io/stickms/rmh/buildcache
-# optional, only if you renamed the builder:
-DEPLOY_BUILDX_BUILDER=rmhstudios-cache
-```
-
-`deploy.sh` enables the cache only when the env var is set **and** the builder
-exists; otherwise it warns and falls back to the local cache (never fails the
-build). The `-full` image gets its own `…-full` cache ref automatically. The
-deploy LRU-trims the container builder's cache to the same disk-calibrated cap
-as the local one, so it can't grow unbounded. Disable any time by unsetting
-`DEPLOY_BUILDKIT_CACHE`.
-
-### Disk pressure
-
-When the deploy keeps wiping the BuildKit cache (`wiping ALL build cache` in the
-log), free space on the disk backing Docker has dropped below the ~10 GB a build
-needs. **Find out what's actually filling the disk before assuming it's Docker** —
-on this host it turned out NOT to be:
+If the disk fills, find out what's actually using it before blaming Docker:
 
 ```bash
-df -h /                                   # is the disk really full? one disk or several?
-sudo du -xh --max-depth=1 / | sort -h     # where the space is: /var/lib/docker vs /home vs …
-docker system df                          # Docker's own split: images vs build cache
+df -h /                                   # is the disk really full?
+sudo du -xh --max-depth=1 / | sort -h     # where the space is
+docker system df                          # Docker's own split: images vs cache
+./deploy/disk-report.sh                   # read-only summary
 ```
 
-Common findings, in order of how often they're the culprit here:
-
-1. **Non-Docker cruft in `/home`** — the usual real cause. Dev-tool caches
-   (`~/.vscode-server`, `~/.cache`, `~/.npm`, `~/go`) and other users' home dirs
-   can quietly eat 5–15 GB. `docker system df` won't show any of it. Clearing the
-   regenerable caches (`rm -rf ~/.vscode-server ~/.cache ~/.npm ~/go`) is usually
-   enough to let the ~6 GB build cache survive between deploys → warm builds. Do
-   NOT `docker builder prune` — that throws away the very cache you want warm.
-2. **Docker footprint** — images here are small (the `runner-full` image is
-   `FROM` the slim one, so they largely share layers). The deploy keeps only **1**
-   rollback image per environment and caps the cache at `total − image reserve −
-   build reserve − headroom`. Tune via `DEPLOY_IMAGE_RESERVE_GB` (12),
-   `DEPLOY_BUILD_RESERVE_GB` (8), `DEPLOY_HEADROOM_GB` (2).
-3. **Genuinely out of disk** — only if the above don't free enough. Check for a
-   real second volume first (`lsblk`): on a single-disk host (one `/dev/sda1` at
-   `/`, with `/mnt/*` just folders on it) there is nowhere to move to — relocating
-   Docker within the same disk gains nothing. If you attach a separate volume, see
-   below.
+The usual real culprit is non-Docker cruft in `/home` (dev-tool caches like
+`~/.vscode-server`, `~/.cache`, `~/.npm`, `~/go`) that `docker system df` won't
+show. Docker's own footprint is small — `runner-full` is `FROM` the slim image,
+so they largely share layers.
 
 **If you attach a genuinely separate large volume**, move Docker's data-root onto
-it so images + cache no longer compete with the root disk. One-time, host-level,
-brief downtime (Docker restarts):
+it so the images no longer compete with the root disk (one-time, brief downtime):
 
 ```bash
 sudo ./deploy/move-docker-storage.sh /mnt/<separate-volume>/docker
 ```
 
-It copies `/var/lib/docker` (rsync, or GNU tar if rsync is absent) and repoints
-the daemon (old copy kept → reversible). The script refuses if the target volume
-lacks room (`used + 5 GB` headroom), so it won't half-migrate onto a full disk.
-Afterwards `deploy.sh`'s cache cap self-calibrates to the new volume
-(`cache_keep_gb` reads the fs backing Docker's data dir) and the warm
-`.vinxi`/pnpm cache survives between deploys.
-
-**Footprint reduction (no extra disk needed):** the deploy keeps only **1**
-rollback image per environment (was 2, frees a full image set) and caps the cache
-at `total − image reserve − build reserve − headroom`. Tune via
-`DEPLOY_IMAGE_RESERVE_GB` (12), `DEPLOY_BUILD_RESERVE_GB` (8),
-`DEPLOY_HEADROOM_GB` (2). With images trimmed, more of the 45 GB stays free for a
-warm cache, so wipes become rarer even without a second disk.
-
-See where the disk actually goes (read-only):
-
-```bash
-./deploy/disk-report.sh
-```
+It copies `/var/lib/docker` and repoints the daemon (old copy kept → reversible),
+refusing if the target lacks `used + 5 GB` headroom.
 
 ## Multi-node scaling
 

@@ -60,7 +60,7 @@ const mockPrisma = {
   },
 };
 
-vi.mock('../../../lib/prisma', () => ({
+vi.mock('@/lib/prisma.server', () => ({
   prisma: mockPrisma,
 }));
 

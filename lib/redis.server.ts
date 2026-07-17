@@ -156,3 +156,107 @@ export async function redisSetJSON(key: string, value: unknown, ttlMs: number): 
     /* best-effort */
   }
 }
+
+/** Delete one or more keys. No-op when Redis is off. */
+export async function redisDel(...keys: string[]): Promise<void> {
+  init();
+  if (!publisher || keys.length === 0) return;
+  try {
+    await publisher.del(...keys);
+  } catch {
+    /* best-effort */
+  }
+}
+
+/**
+ * Atomically add `by` to a counter and return the new value, setting a TTL on
+ * first touch so orphaned counters self-expire. Returns null when Redis is off
+ * so callers can fall back (e.g. write straight to Postgres).
+ */
+export async function redisIncrBy(key: string, by: number, ttlMs?: number): Promise<number | null> {
+  init();
+  if (!publisher) return null;
+  try {
+    const next = await publisher.incrby(key, by);
+    if (ttlMs && next === by) await publisher.pexpire(key, ttlMs);
+    return next;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Presence: mark a member active in a time-bucketed set with a TTL, and count
+ * distinct active members across the recent buckets. Used to compute an
+ * "online now" count without hammering Postgres. No-op / null without Redis.
+ */
+export async function redisPresenceMark(
+  member: string,
+  bucketKey: string,
+  ttlMs: number
+): Promise<boolean> {
+  init();
+  if (!publisher) return false;
+  try {
+    await publisher.sadd(bucketKey, member);
+    await publisher.pexpire(bucketKey, ttlMs);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Count distinct members across the given presence buckets. Null without Redis. */
+export async function redisPresenceCount(bucketKeys: string[]): Promise<number | null> {
+  init();
+  if (!publisher || bucketKeys.length === 0) return null;
+  try {
+    if (bucketKeys.length === 1) return await publisher.scard(bucketKeys[0]);
+    return await publisher.sunionstore(`presence:tmp:${bucketKeys.join(':')}`, ...bucketKeys)
+      .then(async (n) => {
+        // sunionstore returns the cardinality of the resulting set.
+        await publisher!.pexpire(`presence:tmp:${bucketKeys.join(':')}`, 5_000);
+        return n;
+      });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Pop up to `max` members from a Redis set (used to drain buffered counter
+ * keys for flushing). Returns [] without Redis. Uses SPOP which is atomic.
+ */
+export async function redisSpop(key: string, max: number): Promise<string[]> {
+  init();
+  if (!publisher) return [];
+  try {
+    const res = await publisher.spop(key, max);
+    return Array.isArray(res) ? res : res ? [res] : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Add a member to a set (used to track which counters are dirty). No-op without Redis. */
+export async function redisSadd(key: string, member: string): Promise<void> {
+  init();
+  if (!publisher) return;
+  try {
+    await publisher.sadd(key, member);
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** GETDEL: atomically read and clear a key (drain a buffered counter). Null without Redis. */
+export async function redisGetDel(key: string): Promise<string | null> {
+  init();
+  if (!publisher) return null;
+  try {
+    // GETDEL is available on Redis 6.2+ (prod runs 7.4).
+    return await publisher.getdel(key);
+  } catch {
+    return null;
+  }
+}

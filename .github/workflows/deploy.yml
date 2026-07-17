@@ -1,16 +1,38 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Continuous deployment — every push to main SSHes into the VPS and runs the
-# battle-tested ./deploy.sh production (which self-serializes via flock, pulls
-# origin/main, builds, migrates, and rolls the compose stack blue/green).
+# Continuous deployment — build the two Docker images in CI and hand off to the
+# VPS for the release.
 #
-# One-time setup (see deploy/README.md "Automated deploys"):
-#   1. On the VPS:  ssh-keygen -t ed25519 -f ~/.ssh/gh-deploy -N "" -C gh-deploy
-#                   cat ~/.ssh/gh-deploy.pub >> ~/.ssh/authorized_keys
-#   2. Repo secrets: DEPLOY_HOST (IP or hostname), DEPLOY_USER (rmhstudios),
-#                    DEPLOY_SSH_KEY (contents of ~/.ssh/gh-deploy private key),
-#                    optional DEPLOY_PORT (default 22),
-#                    optional DEPLOY_KNOWN_HOSTS (ssh-keyscan output; pins the
-#                    host key — otherwise first connection uses accept-new).
+# Flow (every push to main):
+#   1. Build the slim web image (target `runner`) natively on an ARM64 runner
+#      (matches the Oracle ARM VPS) and push it to GHCR tagged with the commit SHA.
+#   2. Build the full supervisor/status image (target `runner-full`) FROM that
+#      just-pushed web image (so the Vite build runs exactly ONCE) and push it too.
+#   3. POST an HMAC-signed request to the VPS webhook listener (webhook-server.cjs)
+#      with the built SHA. The listener runs `deploy.sh production <sha>`, which
+#      PULLS these images, migrates, and blue/green-swaps — see deploy.sh.
+#
+# The heavy build (vibe-packages → vite build → esbuild → Go → Chromium) now runs
+# here instead of on the VPS; deploy.sh no longer builds anything.
+#
+# One-time setup (see deploy/README.md "Automated deploys — CI build → GHCR"):
+#   • Repo VARIABLES (Settings → Secrets and variables → Actions → Variables) —
+#     these are baked into the client bundle by `vite build`, so they must be the
+#     PRODUCTION values (they are public, not secrets):
+#       PROD_BETTER_AUTH_URL, PROD_VITE_BETTER_AUTH_URL, PROD_VITE_SOCKET_URL,
+#       PROD_VITE_RMHBOX_SOCKET_URL, PROD_VITE_RMHTUBE_SOCKET_URL,
+#       PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID, PROD_VITE_CDN_BASE_URL
+#   • Repo SECRETS:
+#       DEPLOY_WEBHOOK_URL  — public URL that proxies to the listener (127.0.0.1:7002)
+#       WEBHOOK_SECRET      — same value as the listener's WEBHOOK_SECRET env
+#       DEEPSEEK_API_KEY    — optional (library cover titles); may be unset
+#       DISCORD_WEBHOOK_URL — optional; enables the push → build → deploy embed
+#                             that Actions posts and deploy.sh edits (same URL the
+#                             VPS listener's DISCORD_WEBHOOK_URL env uses). Unset =
+#                             no CI-side Discord messages (deploy.sh still posts).
+#   • On the VPS: give deploy.sh a token that can pull the GHCR packages
+#     (GHCR_TOKEN / GITHUB_TOKEN with read:packages) OR make the two packages
+#     public. Remove GitHub's old push webhook so only THIS workflow drives the
+#     listener (a raw push webhook would fire before the image exists).
 # ─────────────────────────────────────────────────────────────────────────────
 name: deploy
 
@@ -19,64 +41,270 @@ on:
     branches: [main]
   workflow_dispatch: {}
 
-# One deploy at a time; a push during a deploy queues (never cancels) the next.
+# One build per ref at a time. A newer commit to the same ref CANCELS the
+# in-progress build and starts fresh — no point finishing a build that's already
+# superseded. Keyed by ref so a branch test-dispatch never cancels a production
+# (main) build, and vice-versa.
+#
+# NOTE: this cancels the BUILD only. The VPS deploy phase has its own flock+queue
+# in deploy.sh — a running deploy is never interrupted mid-migration/hotswap; a
+# newer deploy queues and supersedes older queued ones once the current finishes.
 concurrency:
-  group: deploy-production
-  cancel-in-progress: false
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
-# Least privilege: this workflow only SSHes out to the VPS (deploy.sh pulls the
-# repo on the host itself — there is no checkout here), so the GITHUB_TOKEN needs
-# no write scopes. No OIDC/id-token or packages access is used.
+# GITHUB_TOKEN needs packages:write to push the images to GHCR; nothing else.
 permissions:
   contents: read
+  packages: write
+
+env:
+  IMAGE_WEB: ghcr.io/stickms/rmhstudios-app
+  IMAGE_FULL: ghcr.io/stickms/rmhstudios-app-full
 
 jobs:
-  deploy:
+  # ── CI gate (audit §5.4) ────────────────────────────────────────────────────
+  # Deploys were previously NOT gated on CI: a push to main built + pushed the
+  # two images and triggered the VPS deploy even if typecheck/lint/tests were
+  # red. This job runs the same fast, high-signal web checks as web-ci.yml, and
+  # build-and-deploy `needs:` it — so a red build can no longer ship.
+  #
+  # Why an in-workflow `needs:` gate rather than a `workflow_run:` trigger keyed
+  # on web-ci: web-ci.yml has `paths-ignore` (go-services/**, deploy/**, docs/**,
+  # **/*.md), so a go-only, deploy-config-only, or docs-only push to main does
+  # NOT run web-ci. A `workflow_run` gate on it would then never fire for those
+  # pushes, and legitimate changes could never deploy — and deploy.sh itself
+  # lives under deploy/**. A same-workflow gate runs on EVERY push to main
+  # regardless of paths and leaves all the SHA/webhook/HMAC/ARM logic below
+  # untouched. Note: build-TIME breakage (web or Go) is ALREADY blocking, because
+  # the image build in build-and-deploy fails before anything is pushed to GHCR;
+  # this job adds the typecheck/lint/test coverage the image build doesn't give.
+  ci:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    # tsc/vitest on this codebase exceed Node's default ~4 GB heap (matches
+    # web-ci.yml); set the larger heap for every step.
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
     steps:
-      - name: Verify deploy secrets are configured
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+
+      # Node 24 to match the production Dockerfile (node:24-alpine).
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      # postinstall runs `prisma generate` (schema-only, no DB needed).
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      # Tests run on every deploy but are REPORT-ONLY for now: the suite has a
+      # pre-existing red spot (i18n-catalogs — an English string added without a
+      # translation for the other locales) that is unrelated to code health and
+      # should not strand a deploy. Typecheck + lint above are the hard gates.
+      # Once the i18n catalog drift is resolved (run the i18n:translate pipeline)
+      # and the suite is reliably green, drop `continue-on-error` to make tests
+      # blocking again.
+      - name: Test
+        run: pnpm exec vitest run
+        continue-on-error: true
+
+  build-and-deploy:
+    # Gate: do not build/push images or trigger the VPS deploy unless CI is green
+    # (audit §5.4). A skipped `ci` (never happens here — it has no path filter)
+    # or a failed `ci` skips this job, so nothing ships.
+    needs: ci
+    # Native ARM64 hosted runner (free on public repos) — builds arm64 images for
+    # the Oracle ARM VPS without slow QEMU emulation.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Resolve commit info (for Discord pipeline embed)
+        if: github.ref == 'refs/heads/main'
         run: |
+          set -uo pipefail
+          # %s is the single-line subject (no newlines → safe for $GITHUB_ENV).
+          {
+            echo "COMMIT_SHORT=$(git rev-parse --short HEAD)"
+            echo "COMMIT_MSG=$(git log -1 --pretty=%s)"
+            echo "COMMIT_AUTHOR=$(git log -1 --pretty=%an)"
+          } >> "$GITHUB_ENV"
+
+      - name: Verify required deploy variables + secrets
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          PROD_BETTER_AUTH_URL: ${{ vars.PROD_BETTER_AUTH_URL }}
+          PROD_VITE_BETTER_AUTH_URL: ${{ vars.PROD_VITE_BETTER_AUTH_URL }}
+          PROD_VITE_SOCKET_URL: ${{ vars.PROD_VITE_SOCKET_URL }}
+          PROD_VITE_RMHBOX_SOCKET_URL: ${{ vars.PROD_VITE_RMHBOX_SOCKET_URL }}
+          PROD_VITE_RMHTUBE_SOCKET_URL: ${{ vars.PROD_VITE_RMHTUBE_SOCKET_URL }}
+          PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID: ${{ vars.PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID }}
+          PROD_VITE_CDN_BASE_URL: ${{ vars.PROD_VITE_CDN_BASE_URL }}
+        run: |
+          set -uo pipefail
           missing=""
-          [ -n "$DEPLOY_HOST" ]    || missing="$missing DEPLOY_HOST"
-          [ -n "$DEPLOY_USER" ]    || missing="$missing DEPLOY_USER"
-          [ -n "$DEPLOY_SSH_KEY" ] || missing="$missing DEPLOY_SSH_KEY"
+          for name in DEPLOY_WEBHOOK_URL WEBHOOK_SECRET \
+                      PROD_BETTER_AUTH_URL PROD_VITE_BETTER_AUTH_URL \
+                      PROD_VITE_SOCKET_URL PROD_VITE_RMHBOX_SOCKET_URL \
+                      PROD_VITE_RMHTUBE_SOCKET_URL PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID \
+                      PROD_VITE_CDN_BASE_URL; do
+            if [ -z "${!name:-}" ]; then
+              missing="$missing $name"
+            fi
+          done
           if [ -n "$missing" ]; then
-            echo "::error::Deploy secrets not configured:$missing — see deploy/README.md 'Automated deploys'." >&2
+            echo "::error::Missing required deploy config:$missing — see deploy/README.md 'Automated deploys — CI build → GHCR'." >&2
             exit 1
           fi
 
-      - name: Set up SSH
+      - name: Discord — build started
+        if: github.ref == 'refs/heads/main'
         env:
-          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
-            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
-            chmod 644 ~/.ssh/known_hosts
-            echo "STRICT_HOST_KEY=yes" >> "$GITHUB_ENV"
-          else
-            echo "STRICT_HOST_KEY=accept-new" >> "$GITHUB_ENV"
-          fi
+          bash .github/scripts/discord-notify.sh post 16776960 \
+            "🟡 [PRODUCTION] Commit ${COMMIT_SHORT:-} — build started" \
+            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
+          # Stamp the build start so the "images pushed" edit can show how long the
+          # build took. Runs even when Discord is off (the step is only ref-gated).
+          echo "BUILD_START_EPOCH=$(date +%s)" >> "$GITHUB_ENV"
 
-      - name: Deploy to production
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Log in to GHCR
         env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # deploy.sh pulls origin/main itself, so no checkout is needed here.
-          # ServerAlive keeps the connection open through the long image build.
-          ssh -i ~/.ssh/deploy_key \
-              -p "${DEPLOY_PORT:-22}" \
-              -o StrictHostKeyChecking="$STRICT_HOST_KEY" \
-              -o ServerAliveInterval=30 -o ServerAliveCountMax=10 \
-              "$DEPLOY_USER@$DEPLOY_HOST" \
-              'cd "$HOME/rmhstudios.com" && ./deploy.sh production'
+          set -euo pipefail
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Build + push slim web image (runner)
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: runner
+          platforms: linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.IMAGE_WEB }}:${{ github.sha }}
+            ${{ env.IMAGE_WEB }}:latest
+          cache-from: type=gha,scope=web
+          cache-to: type=gha,mode=max,scope=web
+          build-args: |
+            COMPOSE_PROJECT_NAME=rmhstudios-prod
+            DATABASE_URL=postgresql://ci-build:ci-build@localhost:5432/ci-build
+            BETTER_AUTH_SECRET=ci-build-not-a-runtime-secret-000000000000
+            BETTER_AUTH_URL=${{ vars.PROD_BETTER_AUTH_URL }}
+            VITE_BETTER_AUTH_URL=${{ vars.PROD_VITE_BETTER_AUTH_URL }}
+            VITE_SOCKET_URL=${{ vars.PROD_VITE_SOCKET_URL }}
+            VITE_RMHBOX_SOCKET_URL=${{ vars.PROD_VITE_RMHBOX_SOCKET_URL }}
+            VITE_RMHTUBE_SOCKET_URL=${{ vars.PROD_VITE_RMHTUBE_SOCKET_URL }}
+            VITE_DISCORD_ACTIVITY_CLIENT_ID=${{ vars.PROD_VITE_DISCORD_ACTIVITY_CLIENT_ID }}
+            VITE_CDN_BASE_URL=${{ vars.PROD_VITE_CDN_BASE_URL }}
+            DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
+
+      - name: Build + push full image (runner-full, FROM the pushed web image)
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: runner-full
+          platforms: linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.IMAGE_FULL }}:${{ github.sha }}
+            ${{ env.IMAGE_FULL }}:latest
+          cache-from: type=gha,scope=full
+          cache-to: type=gha,mode=max,scope=full
+          build-args: |
+            WEB_IMAGE=${{ env.IMAGE_WEB }}:${{ github.sha }}
+
+      - name: Discord — images pushed, triggering deploy
+        if: github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          # Build duration = now − the stamp from the "build started" step.
+          now=$(date +%s)
+          start="${BUILD_START_EPOCH:-$now}"
+          elapsed=$(( now - start ))
+          dur="$(( elapsed / 60 ))m $(( elapsed % 60 ))s"
+          bash .github/scripts/discord-notify.sh edit 3447003 \
+            "🔵 [PRODUCTION] Commit ${COMMIT_SHORT:-} — images built + pushed to GHCR in ${dur}, triggering deploy…" \
+            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
+
+      - name: Trigger VPS deploy (webhook listener)
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+          COMMIT_REF: ${{ github.ref }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          # Body carries ONLY {ref, after} — the fields the listener maps + the SHA
+          # deploy.sh pulls. The Discord message id rides in the X-Discord-Msg-Id
+          # HEADER (keeping the body minimal). The body HMAC authenticates the
+          # request, computed exactly like webhook-server.cjs (crypto.createHmac
+          # 'sha256' over the raw body, hex), the secret read from the environment.
+          body="$(jq -nc \
+            --arg ref "$COMMIT_REF" \
+            --arg after "$COMMIT_SHA" \
+            '{ref:$ref, after:$after}')"
+          sig="sha256=$(printf '%s' "$body" | node -e 'const c=require("crypto");let d="";process.stdin.on("data",x=>d+=x).on("end",()=>process.stdout.write(c.createHmac("sha256",process.env.WEBHOOK_SECRET).update(d).digest("hex")))')"
+          echo "Triggering deploy for ${COMMIT_SHA}"
+          # Capture the status + response body so a failure shows WHO rejected it and
+          # why (e.g. the listener's 'Unauthorized', or a proxy/Discord error page),
+          # instead of curl -f hiding it.
+          code=$(curl -sS -o /tmp/webhook-resp.txt -w '%{http_code}' --max-time 30 -X POST "$DEPLOY_WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -H "X-Hub-Signature-256: $sig" \
+            -H "X-Discord-Msg-Id: ${DISCORD_MSG_ID:-}" \
+            --data-raw "$body" || echo "000")
+          case "$code" in
+            2*) echo "Trigger accepted (HTTP $code)." ;;
+            *)
+              echo "::error::Webhook trigger returned HTTP $code:"
+              cat /tmp/webhook-resp.txt 2>/dev/null || true
+              echo
+              exit 1
+              ;;
+          esac
+
+      - name: Discord — pipeline failed (build or trigger)
+        if: failure() && github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          # Only fires when a step BEFORE the VPS handoff failed (build/trigger).
+          # Once deploy.sh is triggered it owns the message's final state.
+          bash .github/scripts/discord-notify.sh edit 15158332 \
+            "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-} — CI build/trigger failed (see Actions logs)" \
+            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"
+
+      - name: Discord — build superseded (cancelled)
+        if: cancelled() && github.ref == 'refs/heads/main'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          # A newer commit cancelled this build (cancel-in-progress). Close out its
+          # embed so it doesn't sit orphaned at 🟡; the newer commit posts its own.
+          bash .github/scripts/discord-notify.sh edit 9807270 \
+            "⏹️ [PRODUCTION] Commit ${COMMIT_SHORT:-} — build superseded by a newer commit" \
+            "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}"

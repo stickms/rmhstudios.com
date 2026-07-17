@@ -1,18 +1,19 @@
 import { ReactNode, createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
-import { MotionConfig } from "framer-motion";
+import { MotionConfig, LazyMotion } from "framer-motion";
 import { Toaster } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { useThemeStore, SITE_STYLES, THEME_BG, DEFAULT_STYLE, SiteStyle, REDUCE_TRANSPARENCY_KEY } from "@/stores/themeStore";
 import { applyAccent, isAccentId, ACCENT_STORAGE_KEY } from "@/lib/appearance";
 import { useGlassLight } from "@/hooks/useGlassLight";
+import { useIdleReady } from "@/hooks/useIdleReady";
 import { useLocaleStore, writeLocaleCookie } from "@/stores/localeStore";
 import { applyHtmlLangDir } from "@/lib/i18n/dom";
 import { games } from "@/lib/games";
 import { apps } from "@/lib/apps";
 import { AppI18nProvider } from "@/components/i18n/AppI18nProvider";
-import { CommandPalette } from "@/components/site/CommandPalette";
+import { CommandPaletteMount } from "@/components/site/CommandPaletteMount";
 import { RecentsTracker } from "@/components/site/RecentsTracker";
 import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 import type { Locale } from "@/lib/i18n/config";
@@ -140,6 +141,11 @@ interface ProvidersProps {
 
 const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 
+// framer-motion feature bundle, loaded on demand so the animation/gesture/layout
+// drivers stay out of the initial bundle. Every component ships the lightweight
+// `m` component (aliased as `motion`) and picks these up from LazyMotion context.
+const loadMotionFeatures = () => import("@/lib/motion-features").then((mod) => mod.default);
+
 // THEME_BG (theme → document background color) lives in stores/themeStore.ts,
 // derived from SITE_STYLES, so the runtime and the no-flash inline script share
 // one source. Excluded app/game routes always paint THEME_BG.default (pure
@@ -244,8 +250,16 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     return session;
   }, [session, cachedUser]);
 
-  // Resolved user display data (custom image/name)
-  const [resolvedUser, setResolvedUser] = useState<ResolvedUserDisplay | null>(null);
+  // Resolved user display data (custom image/name). Seed from the SSR-resolved
+  // user so the current user's own avatar/name paint immediately from the loader
+  // payload instead of flashing empty until /api/profile/me resolves; the fetch
+  // below still runs to layer on any custom displayName/customImage overrides.
+  // Same seed on server and client, so no hydration mismatch.
+  const [resolvedUser, setResolvedUser] = useState<ResolvedUserDisplay | null>(
+    initialUser
+      ? { name: initialUser.name ?? null, image: initialUser.image ?? null, handle: initialUser.handle ?? null }
+      : null,
+  );
   const fetchResolvedUser = useCallback(() => {
     fetch("/api/profile/me")
       .then((r) => (r.ok ? r.json() : null))
@@ -254,13 +268,17 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   }, []);
 
   const userId = effectiveSession.data?.user?.id;
+  // These two reads only *overlay* data the SSR shell already seeded (display
+  // name/avatar, account theme), so defer them to idle — the feed and its images
+  // own the hydration window.
+  const idleReady = useIdleReady();
   useEffect(() => {
     if (userId) {
-      fetchResolvedUser();
+      if (idleReady) fetchResolvedUser();
     } else {
       setResolvedUser(null);
     }
-  }, [userId, fetchResolvedUser]);
+  }, [userId, idleReady, fetchResolvedUser]);
 
   // Referral attribution: /ref/$code stashes an invite code before sign-up;
   // claim it once a session exists (works for email and OAuth flows alike).
@@ -401,6 +419,9 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
       lastSavedAppearanceRef.current = null;
       return;
     }
+    // The inline FOUC script already applied this device's saved theme pre-paint;
+    // the account sync only reconciles across devices, so it can wait for idle.
+    if (!idleReady) return;
     let cancelled = false;
     fetch("/api/preferences/appearance", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
@@ -432,7 +453,7 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     return () => {
       cancelled = true;
     };
-  }, [userId, saveAppearance]);
+  }, [userId, idleReady, saveAppearance]);
 
   // Persist later appearance changes (theme gallery, accent picker, command
   // palette) for signed-in users. Guarded so it never fires before the initial
@@ -447,13 +468,15 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   return (
     <QueryClientProvider client={queryClient}>
       <AppI18nProvider locale={locale} resources={i18nResources}>
+      {/* Load framer-motion features lazily so they're off the initial bundle. */}
+      <LazyMotion features={loadMotionFeatures}>
       {/* Honor the OS "reduce motion" setting across all framer-motion animations. */}
       <MotionConfig reducedMotion="user">
       <SessionCtx.Provider value={effectiveSession}>
         <ResolvedUserCtx.Provider value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}>
         <ConfirmProvider>
         {children}
-        <CommandPalette />
+        <CommandPaletteMount />
         <RecentsTracker />
         </ConfirmProvider>
         </ResolvedUserCtx.Provider>
@@ -476,6 +499,7 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
         />
       </SessionCtx.Provider>
       </MotionConfig>
+      </LazyMotion>
       </AppI18nProvider>
     </QueryClientProvider>
   );

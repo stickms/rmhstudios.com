@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* Scope Tailwind's content scanning to code that actually renders in the browser.
+   Without this, auto-detection also scans build/test/infra/docs directories and
+   emits utility classes that only appear in those non-shipped files into the
+   render-blocking globals stylesheet. Excluding them trims dead utilities off the
+   critical path with zero risk to any rendered route (nothing here paints in the
+   app). Directories under components/app/lib/hooks/stores are intentionally kept. */
+@source not "../scripts";
+@source not "../testing";
+@source not "../specs";
+@source not "../cli";
+@source not "../server";
+@source not "../go-services";
+@source not "../docs";
+@source not "../deploy";
+
 /* Theme stylesheets moved to their respective route files for code splitting */
 
 /* ── Font family variables (loaded via Google Fonts CSS link) ── */
@@ -474,15 +489,31 @@
    docs/plans/2026-07-14-liquid-glass-ui-redesign.md §3–6.
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* The aurora canvas — every theme defines --site-canvas; painted on <body> with
-   fixed attachment so every blur samples one shared backdrop. Gated to non-app
-   routes (games/apps own their background). THEME_BG still paints the opaque
-   base inline (no-flash script + Providers) so overscroll/pre-paint frames stay
-   solid; this only layers colour on top. background-attachment: fixed degrades
-   to scroll on iOS (accepted — the stops are soft, so it stays smooth). */
-html:not(.app-route) body {
+/* The aurora canvas — every theme defines --site-canvas. Painted as a
+   position:fixed pseudo-element pinned to the viewport, NOT via
+   background-attachment: fixed — iOS silently degrades that to `scroll`, which
+   left the aurora scrolling with the tall feed so that behind the floating dock
+   and Safari's bottom bar the viewport showed a dark mid-slice of the gradient
+   instead of the aurora. A real fixed layer works on iOS too, so the canvas
+   draws edge-to-edge to the physical bottom — under the dock and behind the
+   translucent browser bar. z-index:-1 keeps it behind the (transparent) app
+   content while every glass blur still samples it as the one shared backdrop.
+   Gated to non-app routes (games/apps own their background); THEME_BG still
+   paints the opaque base inline (no-flash script + Providers) so overscroll /
+   pre-paint frames stay solid — this only layers colour on top. */
+html:not(.app-route) body::before {
+  content: "";
+  position: fixed;
+  /* iOS 26 clips position:fixed to the VISUAL viewport (verified on-device: a
+     fixed inset:0 box, and a fixed 100lvh+25vh box, both render only between the
+     notch and Safari's floating bar). So this pseudo can only cover that region —
+     which is fine, it's the crisp in-viewport aurora. Painting the aurora BEHIND
+     the browser chrome is handled by the root canvas background (see the mobile
+     html:not(.app-route) rule), the one layer iOS lets reach those strips. */
+  inset: 0;
+  z-index: -1;
   background-image: var(--site-canvas);
-  background-attachment: fixed;
+  pointer-events: none;
 }
 
 /* Page canvas show-through: elements that use bg-site-bg as the page ground let
@@ -928,19 +959,19 @@ html.perf-lite .glass-interactive::after {
   --shadow-neon: 0 0 10px var(--neon-purple), 0 0 20px var(--neon-purple);
 }
 
-/* Bottom insets for floating mobile UI.
-   --browser-bottom-bar is published by <ViewportBottomInset> from the visual
-   viewport: the height of the browser's OWN dynamic bottom chrome — chiefly
-   iOS 26 Safari's floating tab bar, which floats over the page and is NOT part
-   of env(safe-area-inset-*). It stays 0 on desktop, standalone PWAs, and
-   top-bar browsers (Android Chrome), so it never adds spurious spacing there.
-   --safe-bottom is the total inset needed to clear system UI at the bottom: the
-   home-indicator safe area OR that browser bar, whichever is larger. Both are
-   measured from the physical bottom edge, so max() — not a sum — is correct and
-   avoids double-counting. Collapses to plain env() everywhere the bar is 0. */
+/* Bottom inset shared by floating mobile UI (dock, FAB, mini-player,
+   back-to-top) and content columns (.pb-dock).
+
+   Just env(safe-area-inset-bottom) — deliberately. On iOS Safari, including
+   iOS 26's floating tab bar, position:fixed is anchored to the VISUAL viewport,
+   which already sits ABOVE the browser's bottom bar; and env(safe-area-inset-
+   bottom) reports 0 while that bar is shown, then the home-indicator inset once
+   it collapses on scroll. So env() alone lands fixed UI just above whatever is
+   at the bottom (browser bar or home indicator) in every state. Do NOT add the
+   toolbar height (100lvh − 100dvh) on top — verified on-device that it stacks a
+   second bar's worth of space and floats the dock ~100px too high. */
 :root {
-  --browser-bottom-bar: 0px;
-  --safe-bottom: max(env(safe-area-inset-bottom, 0px), var(--browser-bottom-bar, 0px));
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @layer utilities {
@@ -962,12 +993,12 @@ html.perf-lite .glass-interactive::after {
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  /* Center-column bottom padding: lets feed/library/app content flow
-     edge-to-edge UNDER the floating mobile dock (iOS-26 style) while reserving
-     enough space that the last item can still be scrolled clear of the dock —
-     and of the home indicator / browser bottom bar beneath it (--safe-bottom).
-     0 at md+, where the dock gives way to the sidebar. Single source of truth;
-     replaces the old inline pb-[calc(env(safe-area-inset-bottom,0px)+92px)]. */
+  /* Center-column bottom padding. Mobile _site pages scroll the DOCUMENT, so
+     content flows to the physical bottom behind the floating dock, iOS Safari's
+     bar (which minimizes as you scroll), and the home indicator. This inset just
+     reserves room for the last item to clear the floating dock: --safe-bottom
+     (the home indicator, exposed once Safari's bar minimizes) + 92px (the dock's
+     height plus a breathing gap). 0 at md+, where the sidebar replaces the dock. */
   .pb-dock {
     padding-bottom: calc(var(--safe-bottom) + 92px);
   }

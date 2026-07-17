@@ -156,11 +156,13 @@ port flip (`deploy/hotswap-web.sh`). Full pipeline details:
     This compiles the Vite/Nitro app and bundles the WebSocket servers via esbuild.
 
 2.  **Deployment:**
-    Pushing to `main` triggers `.github/workflows/deploy.yml`, which SSHes to
-    the VPS and runs `./deploy.sh production` (pull → build two images →
-    prisma migrate → compose up → blue/green web hotswap). The script can
-    also be run manually; a legacy webhook receiver (`webhook-server.cjs`)
-    can trigger it as well.
+    Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds
+    the two images on a native ARM64 runner, pushes them to GHCR, then POSTs
+    an HMAC-signed request to the VPS webhook receiver (`webhook-server.cjs`).
+    That runs `./deploy.sh production <sha>`, which pulls those images →
+    prisma migrate → compose up → blue/green web hotswap. `deploy.sh` can
+    also be run manually on the VPS. See
+    [`deploy/README.md`](deploy/README.md) for setup.
 
 ## Documentation
 

@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma.server';
-import type { Tier } from '@/lib/entitlements';
+import { invalidateUserTier, type Tier } from '@/lib/entitlements';
 
 export type GiftableTier = 'starter' | 'pro';
 
@@ -50,7 +50,7 @@ export async function giftMembership(params: {
   if (gifterId === recipientId) throw new GiftError('SELF');
   const cost = GIFT_PRICES[tier] * months;
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     await tx.userProfile.upsert({
       where: { userId: gifterId },
       create: { userId: gifterId, coins: 10 },
@@ -84,4 +84,9 @@ export async function giftMembership(params: {
 
     return { expiresAt, cost };
   });
+
+  // The recipient's entitlement just changed — drop their cached tier so the
+  // gifted membership unlocks immediately instead of within the TTL.
+  invalidateUserTier(recipientId);
+  return result;
 }

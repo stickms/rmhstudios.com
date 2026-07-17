@@ -11,15 +11,14 @@ import { useTranslation } from 'react-i18next';
 import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
 import { NotFound } from '@/components/errors/NotFound';
 import { LeftSidebar } from '@/components/feed/LeftSidebar';
-import { MobileNav } from '@/components/feed/MobileNav';
 import { MobileSidebarShell } from '@/components/feed/MobileSidebarShell';
+import { ShellLayoutContext } from '@/components/feed/shell-context';
 import { WelcomeModal } from '@/components/feed/WelcomeModal';
 import { LanguageFirstRunModal } from '@/components/site/LanguageFirstRunModal';
 import { WhatsNewModal } from '@/components/feed/WhatsNewModal';
 import { FreeMonthModal } from '@/components/feed/FreeMonthModal';
 import { CookieConsent } from '@/components/site/CookieConsent';
 import { KeyboardShortcuts } from '@/components/site/KeyboardShortcuts';
-import { ViewportBottomInset } from '@/components/site/ViewportBottomInset';
 import { BackToTop } from '@/components/ui/back-to-top';
 import { MiniPlayer } from '@/components/rmhmusic/MiniPlayer';
 import '@/components/feed/feed.css';
@@ -34,65 +33,60 @@ export const Route = createFileRoute('/_site')({
 function SiteLayout() {
   const { t } = useTranslation('common');
   return (
-    <div className="vibe-app min-h-dvh flex flex-col md:flex-row">
-      {/* Measures the browser's own bottom bar (iOS 26 Safari's floating tab
-          bar) into --browser-bottom-bar so the dock + content clear it. */}
-      <ViewportBottomInset />
-      {/* Keyboard skip link — visually hidden until focused. */}
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-site-sm focus:bg-site-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-site-accent-fg"
-      >
-        {t('skipToContent', { defaultValue: 'Skip to content' })}
-      </a>
-      <LanguageFirstRunModal />
-      <WelcomeModal />
-      <WhatsNewModal />
-      <FreeMonthModal />
-      {/* Desktop/tablet: fixed left sidebar + centered content */}
-      <div className="hidden md:flex min-w-0 w-full justify-center">
-        <div className="md:w-16 xl:w-64 shrink-0 relative">
-          {/* On desktop the sidebar is INLINE (not an overlay), so it stays
-              transparent and shares the body aurora with the content — just a
-              hairline border divides them. (The mobile drawer, which slides OVER
-              the page, keeps the frosted glass-chrome--aside treatment.) The aside
-              itself carries no backdrop-filter, so LeftSidebar's non-portaled
-              fixed user menu keeps the viewport as its containing block (§3.3.1). */}
+    <ShellLayoutContext.Provider value={true}>
+      <div className="vibe-app min-h-dvh flex flex-col md:flex-row md:justify-center">
+        {/* Keyboard skip link — visually hidden until focused. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-site-sm focus:bg-site-accent focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-site-accent-fg"
+        >
+          {t('skipToContent', { defaultValue: 'Skip to content' })}
+        </a>
+        <LanguageFirstRunModal />
+        <WelcomeModal />
+        <WhatsNewModal />
+        <FreeMonthModal />
+        {/* Desktop/tablet: a spacer reserves the sidebar's width so the content
+            centers beside it; the aside itself is fixed within that width. Hidden
+            on mobile (the mobile drawer, below, owns the sidebar there).
+            On desktop the sidebar is INLINE (not an overlay), so it stays
+            transparent and shares the body aurora with the content — just a
+            hairline border divides them. The aside carries no backdrop-filter, so
+            LeftSidebar's non-portaled fixed user menu keeps the viewport as its
+            containing block (§3.3.1). */}
+        <div className="hidden md:block md:w-16 xl:w-64 shrink-0 relative">
           <aside className="fixed top-0 md:w-16 xl:w-64 h-screen border-r border-site-border overflow-hidden z-30 flex flex-col">
             <LeftSidebar />
           </aside>
         </div>
-        {/* `display:contents` keeps the flex layout identical while exposing a
-            real <main> landmark and giving the skip link a focus target.
-            `page-root` drives the per-page enter animation on the content
-            column(s) only — the left sidebar sits outside <main>, so it never
-            animates (see the `.page-root > *` rule in globals.css). */}
-        <main id="main-content" tabIndex={-1} className="contents page-root">
-          <Outlet />
-        </main>
+
+        {/* The page renders exactly ONCE (previously it was rendered twice — a
+            desktop copy and a mobile copy — which doubled the feed's hydration
+            cost and fired every mount effect twice). MobileSidebarShell is
+            display:contents on desktop, so the page's columns still become direct
+            children of the outer flex and center exactly as before; on mobile it's
+            the full-width gesture column + slide-in drawer overlay. `display:contents`
+            on <main> keeps the layout identical while exposing a real landmark and
+            the skip-link focus target; `page-root` drives the per-page enter
+            animation on the content column(s) only. */}
+        <MobileSidebarShell>
+          <main id="main-content" tabIndex={-1} className="contents page-root">
+            <Outlet />
+          </main>
+        </MobileSidebarShell>
+
+        {/* One-time, non-blocking cookie notice (site pages only). */}
+        <CookieConsent />
+
+        {/* Site-wide shortcuts (c compose, g+<x> navigation, ? help overlay). */}
+        <KeyboardShortcuts />
+
+        {/* Music keeps playing when you leave RMHMusic — surface controls here. */}
+        <MiniPlayer />
+
+        {/* Floating scroll-to-top affordance for long pages. */}
+        <BackToTop />
       </div>
-
-      {/* Mobile: page content slides right to reveal the left sidebar */}
-      <MobileSidebarShell>
-        <main className="contents page-root">
-          <Outlet />
-        </main>
-      </MobileSidebarShell>
-
-      {/* Mobile bottom nav */}
-      <MobileNav />
-
-      {/* One-time, non-blocking cookie notice (site pages only). */}
-      <CookieConsent />
-
-      {/* Site-wide shortcuts (c compose, g+<x> navigation, ? help overlay). */}
-      <KeyboardShortcuts />
-
-      {/* Music keeps playing when you leave RMHMusic — surface controls here. */}
-      <MiniPlayer />
-
-      {/* Floating scroll-to-top affordance for long pages. */}
-      <BackToTop />
-    </div>
+    </ShellLayoutContext.Provider>
   );
 }

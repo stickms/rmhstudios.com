@@ -9,6 +9,7 @@
   "delete-failed": "Не удалось удалить пост",
   "delete-post": "Удалить пост",
   "delete-success": "Пост блога удалён: {{slug}}.",
+  "delete-title": "Удалить этот пост?",
   "description-label": "Описание",
   "description-placeholder": "Краткое описание поста...",
   "editing-title": "Редактирование: {{title}}",

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
+import { invalidateMutedWords } from '@/lib/feed/timeline';
 
 /**
  * GET  /api/preferences/muted-words — the caller's muted words.
@@ -81,6 +82,8 @@ export const Route = createFileRoute('/api/preferences/muted-words')({
             create: { userId: session.user.id, mutedWords: words },
             update: { mutedWords: words },
           });
+          // The feed read caches this list — drop it so the new set applies at once.
+          invalidateMutedWords(session.user.id);
           return Response.json({ words });
         } catch (error) {
           console.error('Muted words save error:', error);

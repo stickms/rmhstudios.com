@@ -18,6 +18,8 @@ import {
 } from 'lucide-react';
 import { useSession } from '@/components/Providers';
 import { useClipboard } from '@/hooks/useClipboard';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useIdleReady } from '@/hooks/useIdleReady';
 import { TodayWidget } from '@/components/feed/TodayWidget';
 import { FriendsOnlineWidget } from '@/components/feed/FriendsOnlineWidget';
 
@@ -71,9 +73,14 @@ interface RightSidebarProps {
 /** Live "N people online" pill. Polls the cached count once a minute. */
 function OnlineNowPill() {
   const { t } = useTranslation('feed');
+  const isDesktop = useIsDesktop();
+  const idle = useIdleReady();
   const [count, setCount] = useState<number | null>(null);
 
+  // Desktop-only + idle-deferred: this pill sits in the `hidden lg:block`
+  // sidebar, so mobile clients skip the fetch/poll entirely.
   useEffect(() => {
+    if (!isDesktop || !idle) return;
     let cancelled = false;
     const load = async () => {
       try {
@@ -91,7 +98,7 @@ function OnlineNowPill() {
       cancelled = true;
       clearInterval(interval);
     };
-  }, []);
+  }, [isDesktop, idle]);
 
   if (!count) return null;
   return (
@@ -230,7 +237,7 @@ export function RightSidebar({
             );
           })}
         </div>
-        <Link to="/builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+        <Link to="/builds" aria-label={t('show-more-builds', { defaultValue: 'Show more official builds' })} className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
           {t('show-more', { defaultValue: 'Show more' })}
         </Link>
       </section>
@@ -273,8 +280,8 @@ export function RightSidebar({
             </Link>
           ))}
         </div>
-        <Link to="/user-builds" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
-          Show more
+        <Link to="/user-builds" aria-label={t('show-more-user-builds', { defaultValue: 'Show more community builds' })} className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+          {t('show-more', { defaultValue: 'Show more' })}
         </Link>
       </section>
 
@@ -323,8 +330,8 @@ export function RightSidebar({
             </Link>
           ))}
         </div>
-        <Link to="/blog" className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
-          Show more
+        <Link to="/blog" aria-label={t('show-more-blog', { defaultValue: 'Show more blog posts' })} className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+          {t('show-more', { defaultValue: 'Show more' })}
         </Link>
       </section>
 
@@ -335,6 +342,7 @@ export function RightSidebar({
           <Link to="/security" className="hover:text-site-text transition-colors">{t('security', { defaultValue: 'Security' })}</Link>
           <Link to="/optimization" className="hover:text-site-text transition-colors">{t('optimization', { defaultValue: 'Speed' })}</Link>
           <Link to="/roadmap" className="hover:text-site-text transition-colors">{t('roadmap', { defaultValue: 'Roadmap' })}</Link>
+          <Link to="/black-lives-matter" className="hover:text-site-text transition-colors">{t('black-lives-matter', { defaultValue: 'Black Lives Matter' })}</Link>
         </div>
       </div>
     </div>

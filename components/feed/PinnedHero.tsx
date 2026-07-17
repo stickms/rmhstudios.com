@@ -19,7 +19,7 @@
  * Consumes ScrollScene; never modifies it.
  */
 import type { ReactNode } from 'react';
-import { motion, useTransform } from 'framer-motion';
+import { m as motion, useTransform } from 'framer-motion';
 import type { MotionValue, MotionStyle } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 import { ScrollScene } from '@/components/motion';

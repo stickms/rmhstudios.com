@@ -65,16 +65,44 @@ http.createServer((req, res) => {
                   return res.end('Ignored');
                 }
 
-          logMsg(`Push to ${payload.ref} detected (${payload.after?.slice(0, 7)}) — triggering ${environment} deploy`);
+          /* The exact commit whose images GitHub Actions built + pushed to GHCR.
+             deploy.sh pulls this SHA's images and checks out this SHA, so the
+             running code and the image always match. This request is now sent by
+             the CI build workflow AFTER the push+build (not by GitHub's raw push
+             webhook), which is what sequences the deploy after the image exists.
+             Validate it looks like a git SHA; otherwise omit it and let deploy.sh
+             fall back to the branch tip. (The body is already HMAC-authenticated;
+             this is just hygiene before it becomes a process argument.) */
+          const rawSha = typeof payload.after === 'string' ? payload.after : '';
+          const sha = /^[0-9a-f]{7,40}$/i.test(rawSha) ? rawSha : '';
+          const deployArgs = sha ? [DEPLOY_SCRIPT, environment, sha] : [DEPLOY_SCRIPT, environment];
+
+          /* Discord message id from the CI build phase. Passing it to deploy.sh
+             (via DEPLOY_DISCORD_MSG_ID) lets it EDIT the same message through the
+             deploy phase, so push → build → deploy is one evolving embed. It comes
+             in the `X-Discord-Msg-Id` HEADER (kept out of the signed JSON body — a
+             19-digit id in the body tripped an origin WAF PAN/numeric rule and the
+             POST was blocked with a 400). Fall back to a body field for safety.
+             Validate it's a snowflake before it becomes an env value; empty =
+             deploy.sh posts its own message. */
+          const rawMid = req.headers['x-discord-msg-id'] ||
+                  (typeof payload.discord_msg_id === 'string' ? payload.discord_msg_id : '');
+          const discordMsgId = /^[0-9]{5,25}$/.test(rawMid) ? rawMid : '';
+
+          logMsg(`Deploy request for ${payload.ref} (${sha ? sha.slice(0, 7) : 'tip'}) — triggering ${environment} deploy`);
           res.writeHead(200);
           res.end(`Deploying ${environment}`);
 
           /* Run deploy script detached so it outlives the request */
-          const child = spawn('bash', [DEPLOY_SCRIPT, environment], {
+          const child = spawn('bash', deployArgs, {
                   detached: true,
                   stdio: ['ignore', fs.openSync(LOG_FILE, 'a'), fs.openSync(LOG_FILE, 'a')],
                   cwd: PROJECT_DIR,
-                  env: { ...process.env, PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' }
+                  env: {
+                      ...process.env,
+                      PATH: '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+                      DEPLOY_DISCORD_MSG_ID: discordMsgId,
+                  }
                 });
           child.unref();
         });

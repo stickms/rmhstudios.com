@@ -1,3 +1,6 @@
 {
+  "lang-firstrun-body": "RMH Studios 支持 32 种语言。您可以随时在设置中更改此项。",
+  "lang-firstrun-continue": "以 {{lang}} 继续",
+  "lang-firstrun-title": "选择您的语言",
   "language": "语言"
 }

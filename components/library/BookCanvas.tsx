@@ -48,11 +48,14 @@ export type BookCanvasProps = {
   /** Scales the canvas surface; enlarged pages remain scrollable in the stage. */
   zoom?: number;
   onPageChange?: (info: { label: string; page: number; k: number }) => void;
+  /** Reports a single page's on-screen width in device pixels so the parent can size
+   *  page rasters to the display (DPR- and zoom-aware). */
+  onRasterWidth?: (deviceWidthPx: number) => void;
   /** Parent stashes a `goToPage(n)` fn here so the toolbar can jump to any page. */
   seek?: React.MutableRefObject<((page: number) => void) | null>;
 };
 
-export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom = 1, onPageChange, seek }: BookCanvasProps) {
+export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom = 1, onPageChange, onRasterWidth, seek }: BookCanvasProps) {
   const { t } = useTranslation("c-library");
   const wrapRef = useRef<HTMLDivElement>(null);
   const [k, setK] = useState(0);
@@ -429,6 +432,7 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom 
         gl={{ alpha: true, antialias: true, powerPreference: 'high-performance' }}
         camera={{ position: [0, 0, 6], zoom: 120, near: 0.1, far: 100 }}
       >
+        <RasterSizer aspect={aspect} contentW={contentW} contentH={contentH} onRasterWidth={onRasterWidth} />
         <Scene
           aspect={aspect}
           single={single}
@@ -478,6 +482,45 @@ export function BookCanvas({ aspect, single, numPages, getTex, ensurePage, zoom 
       </button>
     </div>
   );
+}
+
+/**
+ * Reports a single page's on-screen width in *device* pixels (its CSS width × the WebGL
+ * surface's pixel ratio) so the parent's raster pipeline can size page textures to the
+ * display — DPR- and zoom-aware — instead of a fixed width. Lives inside <Canvas> so it
+ * can read the live surface size and renderer. The value is quantised to 128px steps so
+ * a few pixels of resize never thrash a re-raster, and only reported when it changes.
+ */
+function RasterSizer({
+  aspect,
+  contentW,
+  contentH,
+  onRasterWidth,
+}: {
+  aspect: number;
+  contentW: number;
+  contentH: number;
+  onRasterWidth?: (deviceWidthPx: number) => void;
+}) {
+  const size = useThree((s) => s.size);
+  const gl = useThree((s) => s.gl);
+  const last = useRef(0);
+  useEffect(() => {
+    if (!onRasterWidth) return;
+    // Mirror Fit's camera zoom (fit the book to whichever axis binds). A single page's
+    // on-screen CSS width is then aspect × that zoom; scale by the surface's pixel ratio
+    // (r3f clamps it to [1, 2]) to get the width the page actually occupies in device
+    // pixels — the resolution a raster needs to be pixel-crisp rather than upscaled.
+    const camZoom = Math.min(size.width / contentW, size.height / contentH) * 0.995;
+    const deviceWidth = aspect * camZoom * gl.getPixelRatio();
+    if (!Number.isFinite(deviceWidth) || deviceWidth <= 0) return;
+    const quantised = Math.ceil(deviceWidth / 128) * 128;
+    if (quantised !== last.current) {
+      last.current = quantised;
+      onRasterWidth(quantised);
+    }
+  }, [size.width, size.height, aspect, contentW, contentH, gl, onRasterWidth]);
+  return null;
 }
 
 // ─── 3D scene ──────────────────────────────────────────────────────────────────

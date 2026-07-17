@@ -1,11 +1,40 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma.server";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit.server";
+import { redisEnabled, redisGetJSON, redisIncrBy } from "@/lib/redis.server";
+import { readJsonLimited, RequestTooLargeError } from "@/lib/request-limits";
 import { notifyUser } from "@/lib/message-events";
 import { ownsFeedImageUrl } from "@/lib/storage/keys";
 import { gifUrlSchema, feedImageUrlSchema } from "@/lib/rmhark-schema";
 import { z } from "zod";
+
+/**
+ * Denormalized DM unread counter (per recipient) in Redis. Keeps the polled
+ * unread-count endpoint and the SSE stream off an O(conversations) COUNT on
+ * every read/delivered event. The counter is a *cache over a warm key*: reads
+ * (in the unread-count / stream routes) lazily backfill it from a real COUNT on
+ * a miss with a short TTL, so writes here only nudge an already-warm counter and
+ * never initialize a cold one to a partial value (a cold key just backfills
+ * correctly on the next read, since the message row is already persisted).
+ */
+const DM_UNREAD_TTL_MS = 60_000;
+const dmUnreadKey = (userId: string) => `dm:unread:${userId}`;
+
+/** Nudge a *warm* DM-unread counter by `delta`, clamped at 0. No-op without
+ * Redis or when the counter isn't currently cached. */
+async function adjustDmUnread(userId: string, delta: number): Promise<void> {
+  if (delta === 0 || !redisEnabled()) return;
+  try {
+    const key = dmUnreadKey(userId);
+    const current = await redisGetJSON<number>(key);
+    if (typeof current !== "number") return; // cold — let the next read backfill
+    const next = await redisIncrBy(key, delta, DM_UNREAD_TTL_MS);
+    if (next !== null && next < 0) await redisIncrBy(key, -next, DM_UNREAD_TTL_MS);
+  } catch {
+    /* best-effort — the counter self-heals from COUNT on TTL expiry */
+  }
+}
 
 const sendSchema = z
   .object({
@@ -79,16 +108,26 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
     const hasMore = messages.length > limit;
     const items = hasMore ? messages.slice(0, limit) : messages;
 
-    // Mark unread messages from the other person as read
-    await prisma.directMessage.updateMany({
-      where: {
-        conversationId,
-        senderId: { not: userId },
-        read: false,
-        id: { in: items.map((m) => m.id) },
-      },
-      data: { read: true },
-    });
+    // Mark unread messages from the other person as read — fire-and-forget.
+    // The response returns each message's pre-update `read` value from `items`
+    // (fetched above), so the write's result is never used; awaiting it only
+    // added a write round-trip to every conversation open / scroll-back. We do
+    // read `count` off the batch payload (still non-blocking) to decrement the
+    // viewer's denormalized DM-unread counter by exactly the number marked read.
+    void prisma.directMessage
+      .updateMany({
+        where: {
+          conversationId,
+          senderId: { not: userId },
+          read: false,
+          id: { in: items.map((m) => m.id) },
+        },
+        data: { read: true },
+      })
+      .then((res) => {
+        if (res.count > 0) void adjustDmUnread(userId, -res.count);
+      })
+      .catch((e) => console.error("mark-as-read failed:", e));
 
     return Response.json({
       messages: items.reverse().map((m) => ({
@@ -119,21 +158,33 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ip = getClientIp(request);
-    const { allowed, retryAfter } = rateLimit(ip, {
-      limit: 30,
-      windowMs: 60_000,
-      prefix: "send-message",
-    });
-    if (!allowed) {
-      return Response.json(
-        { error: "Too many requests" },
-        { status: 429, headers: { "Retry-After": String(retryAfter) } }
-      );
-    }
-
     const { conversationId } = params;
     const userId = session.user.id;
+
+    // Anti-spam, tuned to never hinder a real fast-typed conversation — only
+    // botnet-scale flooding. Every limit carries the global ×4 multiplier, so
+    // effective ceilings sit far above any human typer:
+    //   • per-IP     ~120/min  (coarse; pre-existing, now Redis-coordinated)
+    //   • per-sender ~240/min  (bounds one account regardless of IP rotation)
+    // The per-(sender→recipient) limit is applied below, once we know the target.
+    const ipRl = await checkRateLimit(getClientIp(request), {
+      limit: 30, windowMs: 60_000, prefix: "send-message",
+    });
+    if (!ipRl.allowed) {
+      return Response.json(
+        { error: "Too many requests" },
+        { status: 429, headers: { "Retry-After": String(ipRl.retryAfter) } }
+      );
+    }
+    const senderRl = await checkRateLimit(userId, {
+      limit: 60, windowMs: 60_000, prefix: "dm:send",
+    });
+    if (!senderRl.allowed) {
+      return Response.json(
+        { error: "You're sending messages too quickly. Please slow down." },
+        { status: 429, headers: { "Retry-After": String(senderRl.retryAfter) } }
+      );
+    }
 
     // Verify user is a participant
     const conversation = await prisma.conversation.findUnique({
@@ -155,7 +206,17 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
       return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const body = await request.json();
+    let body: unknown;
+    try {
+      // A DM is tiny (2000-char text + a few media URLs); cap well below the
+      // generic 1 MB so an oversized body is rejected before it's buffered.
+      body = await readJsonLimited(request, 256 * 1024);
+    } catch (e) {
+      if (e instanceof RequestTooLargeError) {
+        return Response.json({ error: "Message payload too large" }, { status: 413 });
+      }
+      return Response.json({ error: "Invalid input" }, { status: 400 });
+    }
     const parsed = sendSchema.safeParse(body);
     if (!parsed.success) {
       return Response.json(
@@ -174,6 +235,18 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
       conversation.participantOneId === userId
         ? conversation.participantTwoId
         : conversation.participantOneId;
+
+    // Per-(sender→recipient) limit: bounds targeted flooding of one person while
+    // staying generous for a normal rapid exchange (~160/min effective).
+    const pairRl = await checkRateLimit(`${userId}:${recipientId}`, {
+      limit: 40, windowMs: 60_000, prefix: "dm:to",
+    });
+    if (!pairRl.allowed) {
+      return Response.json(
+        { error: "You're messaging this person too quickly. Please slow down." },
+        { status: 429, headers: { "Retry-After": String(pairRl.retryAfter) } }
+      );
+    }
 
     const recipient = await prisma.user.findUnique({
       where: { id: recipientId },
@@ -236,6 +309,10 @@ export const Route = createFileRoute('/api/messages/$conversationId')({
       imageUrls: message.imageUrls,
       reactions: [],
     };
+
+    // Bump the recipient's denormalized unread counter (only if warm) before we
+    // notify them, so their SSE stream reads the fresh count without a COUNT.
+    void adjustDmUnread(recipientId, 1);
 
     // Notify recipient via SSE with message payload
     notifyUser(recipientId, {

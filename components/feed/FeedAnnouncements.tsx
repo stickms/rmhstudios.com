@@ -7,6 +7,7 @@ import { RMHarkContent } from './RMHarkContent';
 import { GifEmbed } from './GifEmbed';
 import { PostImageGrid } from './PostImageGrid';
 import { PollDisplay } from './PollDisplay';
+import { useIdleReady } from '@/hooks/useIdleReady';
 import type { FeedPoll } from '@/lib/feed-types';
 
 interface Announcement {
@@ -42,16 +43,23 @@ function readDismissed(): string[] {
 /** Admin-authored announcement banners, pinned at the top of the feed. */
 export function FeedAnnouncements() {
   const { t } = useTranslation('feed');
+  const idle = useIdleReady();
   const [items, setItems] = useState<Announcement[]>([]);
   const [dismissed, setDismissed] = useState<string[]>([]);
 
+  // Read dismissed ids immediately (cheap, needed for render); defer the network
+  // fetch until the browser is idle so it doesn't compete during hydration.
   useEffect(() => {
     setDismissed(readDismissed());
+  }, []);
+
+  useEffect(() => {
+    if (!idle) return;
     fetch('/api/announcements')
       .then((r) => (r.ok ? r.json() : { announcements: [] }))
       .then((d) => setItems(d.announcements ?? []))
       .catch(() => {});
-  }, []);
+  }, [idle]);
 
   const dismiss = (id: string) => {
     const next = [...new Set([...dismissed, id])];

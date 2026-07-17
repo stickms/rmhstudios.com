@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m as motion, AnimatePresence } from 'framer-motion';
 import { useBreakpointStore, type MatchConfig } from '@/lib/breakpoint/store';
 import { roomClient, type RoomState, type StartPayload } from '@/lib/breakpoint/net/room';
 import { getAgent, ROLE_LABEL } from '@/lib/breakpoint/agents';
@@ -9,6 +9,41 @@ import type { Team, MatchMode } from '@/lib/breakpoint/types';
 
 type Status = 'connecting' | 'browser' | 'room' | 'error';
 interface RoomListItem { id: string; name: string; mode: MatchMode; count: number; max: number; hasPassword: boolean; state: string }
+
+function TeamCol({ team, title, color, players, isZombies, me }: {
+  team: Team;
+  title: string;
+  color: string;
+  players: RoomState['players'];
+  isZombies: boolean;
+  me: RoomState['players'][number] | undefined;
+}) {
+  return (
+    <div className="bp-team-col" style={{ ['--c' as string]: color }}>
+      <div className="bp-team-head"><span>{title}</span><span className="bp-team-count">{players.length}/5</span></div>
+      <div className="bp-team-slots">
+        {Array.from({ length: 5 }).map((_, i) => {
+          const p = players[i];
+          if (!p) {
+            const canJoin = !isZombies && me?.team !== team && players.length < 5;
+            return <button key={i} className={`bp-slot empty ${canJoin ? 'joinable' : ''}`} disabled={!canJoin} onClick={() => roomClient.selectTeam(team)}>{canJoin ? '+ JOIN' : '—'}</button>;
+          }
+          const ag = getAgent(p.agentId ?? '');
+          return (
+            <div key={p.id} className={`bp-slot filled ${p.id === roomClient.id ? 'me' : ''}`}>
+              <span className="bp-slot-fig" style={{ background: color }} />
+              <div className="bp-slot-info">
+                <div className="bp-slot-name">{p.name}{p.isHost ? ' 👑' : ''}</div>
+                <div className="bp-slot-agent" style={{ color: ag.color }}>{ag.name} · {ROLE_LABEL[ag.role]}</div>
+              </div>
+              <span className={`bp-slot-ready ${p.ready ? 'on' : ''}`}>{p.ready ? 'READY' : '…'}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function Lobby() {
   const setPhase = useBreakpointStore((s) => s.setPhase);
@@ -147,32 +182,6 @@ export function Lobby() {
   const def = room?.players.filter((p) => p.team === 'defenders') ?? [];
   const leave = () => { roomClient.leave(); setStatus('browser'); roomClient.listRooms(); };
 
-  const TeamCol = ({ team, title, color, players }: { team: Team; title: string; color: string; players: typeof att }) => (
-    <div className="bp-team-col" style={{ ['--c' as string]: color }}>
-      <div className="bp-team-head"><span>{title}</span><span className="bp-team-count">{players.length}/5</span></div>
-      <div className="bp-team-slots">
-        {Array.from({ length: 5 }).map((_, i) => {
-          const p = players[i];
-          if (!p) {
-            const canJoin = !isZombies && me?.team !== team && players.length < 5;
-            return <button key={i} className={`bp-slot empty ${canJoin ? 'joinable' : ''}`} disabled={!canJoin} onClick={() => roomClient.selectTeam(team)}>{canJoin ? '+ JOIN' : '—'}</button>;
-          }
-          const ag = getAgent(p.agentId ?? '');
-          return (
-            <div key={p.id} className={`bp-slot filled ${p.id === roomClient.id ? 'me' : ''}`}>
-              <span className="bp-slot-fig" style={{ background: color }} />
-              <div className="bp-slot-info">
-                <div className="bp-slot-name">{p.name}{p.isHost ? ' 👑' : ''}</div>
-                <div className="bp-slot-agent" style={{ color: ag.color }}>{ag.name} · {ROLE_LABEL[ag.role]}</div>
-              </div>
-              <span className={`bp-slot-ready ${p.ready ? 'on' : ''}`}>{p.ready ? 'READY' : '…'}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-
   return (
     <div className="bp-lobby">
       <div className="bp-lobby-nav">
@@ -197,8 +206,8 @@ export function Lobby() {
 
       <div className="bp-lobby-teams">
         {isZombies
-          ? <TeamCol team="attackers" title="SURVIVORS" color="#16e0a3" players={att} />
-          : <><TeamCol team="attackers" title="ATTACKERS" color="#ff4655" players={att} /><div className="bp-team-vs">VS</div><TeamCol team="defenders" title="DEFENDERS" color="#3b6fe0" players={def} /></>}
+          ? <TeamCol team="attackers" title="SURVIVORS" color="#16e0a3" players={att} isZombies={isZombies} me={me} />
+          : <><TeamCol team="attackers" title="ATTACKERS" color="#ff4655" players={att} isZombies={isZombies} me={me} /><div className="bp-team-vs">VS</div><TeamCol team="defenders" title="DEFENDERS" color="#3b6fe0" players={def} isZombies={isZombies} me={me} /></>}
       </div>
 
       <div className="bp-lobby-bar">

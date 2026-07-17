@@ -43,6 +43,24 @@ x-common: &common
       max-size: "10m"
       max-file: "3"
 
+# ─── Resource limits (STARTING POINT — tune against real `docker stats`) ──────
+# Per-service mem_limit/mem_reservation/cpus are added inline below. They are
+# intentionally CONSERVATIVE for a shared VPS that ALSO hosts Postgres (on the
+# host, reached via host.docker.internal) — the goal is to stop one runaway
+# process (e.g. the vibe-worker Chromium or an AI loop in supervisor) from
+# starving the box (audit §5.2), not to right-size for peak. These use the
+# Compose v2 (non-swarm) keys, the same family as the existing `pids_limit`, so
+# `docker compose up` enforces them directly. Revisit once metrics exist.
+#
+# File-descriptor ceiling for the services that hold MANY concurrent connections
+# — the web SSR tier and the three realtime WebSocket hubs (socket/rmhbox/
+# rmhtube). The default 1024 soft nofile is far too low for thousands of
+# long-lived sockets (audit §4.6). Workers/Go services don't need it.
+x-hub-ulimits: &hub-ulimits
+  nofile:
+    soft: 65536
+    hard: 65536
+
 # Shared BUILD config for both images. Factored out so the long arg list isn't
 # duplicated and the slim (`runner`) and full (`runner-full`) images can never
 # drift apart — they differ only in the `target:` overridden by each service.
@@ -82,6 +100,12 @@ services:
       <<: *build-common
       target: runner
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-web
+    # Resource limits — starting point (audit §5.2). NOTE: a SECOND web container
+    # runs briefly during the blue/green hotswap, so the box must fit ~2× this.
+    mem_limit: 1g
+    mem_reservation: 512m
+    cpus: 1.5
+    ulimits: *hub-ulimits
     # NOTE: web does NOT publish a fixed host port. It is deployed blue/green by
     # deploy/hotswap-web.sh (zero-downtime), which publishes the active port
     # (7005 blue / 7015 green) itself and flips Apache between them. deploy.sh
@@ -103,6 +127,12 @@ services:
   socket:
     <<: *common
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-socket
+    # Resource limits — starting point (audit §5.2). Holds all ~18 games' state
+    # in-process; nofile raised for the many concurrent WebSocket clients.
+    mem_limit: 768m
+    mem_reservation: 256m
+    cpus: 1.0
+    ulimits: *hub-ulimits
     ports:
       - "127.0.0.1:${PORT_SOCKET:-7001}:${PORT_SOCKET:-7001}"
     env_file: ${ENV_FILE:-.env.production}
@@ -120,6 +150,12 @@ services:
   rmhbox:
     <<: *common
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-rmhbox
+    # Resource limits — starting point (audit §5.2). nofile raised for many
+    # concurrent WebSocket lobby clients.
+    mem_limit: 512m
+    mem_reservation: 192m
+    cpus: 0.75
+    ulimits: *hub-ulimits
     ports:
       - "127.0.0.1:${PORT_RMHBOX:-7676}:${PORT_RMHBOX:-7676}"
     env_file: ${ENV_FILE:-.env.production}
@@ -137,6 +173,12 @@ services:
   rmhtube:
     <<: *common
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-rmhtube
+    # Resource limits — starting point (audit §5.2). nofile raised for many
+    # concurrent WebSocket watch-together clients.
+    mem_limit: 512m
+    mem_reservation: 192m
+    cpus: 0.75
+    ulimits: *hub-ulimits
     ports:
       - "127.0.0.1:${PORT_RMHTUBE:-7003}:${PORT_RMHTUBE:-7003}"
     env_file: ${ENV_FILE:-.env.production}
@@ -156,6 +198,11 @@ services:
   ladder-worker:
     <<: *common
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-ladder-worker
+    # Resource limits — starting point (audit §5.2). Also hosts the data-lifecycle
+    # cleanup cron (lib/cleanup.server.ts). No inbound sockets, so no nofile bump.
+    mem_limit: 512m
+    mem_reservation: 128m
+    cpus: 0.75
     env_file: ${ENV_FILE:-.env.production}
     command: ["node", "dist-server/server/ladder-worker/index.cjs"]
 
@@ -166,6 +213,10 @@ services:
   homes-worker:
     <<: *common
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-homes-worker
+    # Resource limits — starting point (audit §5.2). Scraper cron; no inbound sockets.
+    mem_limit: 384m
+    mem_reservation: 128m
+    cpus: 0.5
     env_file: ${ENV_FILE:-.env.production}
     command: ["node", "dist-server/server/homes-worker/index.cjs"]
 
@@ -186,6 +237,12 @@ services:
       <<: *build-common
       target: runner-full
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-supervisor
+    # Resource limits — starting point (audit §5.2). The HEAVIEST worker: bundles
+    # Chromium (vibe-worker chromedp) + AI loops, the exact runaway the audit
+    # flags. Give it the most headroom of the workers, but still cap it.
+    mem_limit: 1536m
+    mem_reservation: 512m
+    cpus: 1.5
     env_file: ${ENV_FILE:-.env.production}
     environment:
       # recap worker's internal HTTP port (doctrine / vibe-worker idles if absent)
@@ -220,6 +277,10 @@ services:
     # supervisor service above). Overrides the slim image: from *common.
     image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app-full:latest
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-status
+    # Resource limits — starting point (audit §5.2). Small Go probe/dashboard.
+    mem_limit: 128m
+    mem_reservation: 64m
+    cpus: 0.5
     ports:
       - "127.0.0.1:${PORT_STATUS:-7008}:${PORT_STATUS:-7008}"
     env_file: ${ENV_FILE:-.env.production}
@@ -265,6 +326,11 @@ services:
     # supervisor service's runner-full build). Overrides the slim image: from *common.
     image: ${COMPOSE_PROJECT_NAME:-rmhstudios}-app-full:latest
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-assets
+    # Resource limits — starting point (audit §5.2). Go media streamer (range
+    # reads from object storage); modest but streams can buffer, so leave room.
+    mem_limit: 256m
+    mem_reservation: 64m
+    cpus: 0.5
     ports:
       - "127.0.0.1:${PORT_ASSETS:-7007}:${PORT_ASSETS:-7007}"
     env_file: ${ENV_FILE:-.env.production}
@@ -286,6 +352,11 @@ services:
     image: redis:7.4-alpine
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-redis
     restart: unless-stopped
+    # Resource limits — starting point (audit §5.2). maxmemory is 256mb (below);
+    # give the process headroom above that for its own overhead/fragmentation.
+    mem_limit: 384m
+    mem_reservation: 128m
+    cpus: 0.5
     read_only: true
     cap_drop:
       - ALL
@@ -305,6 +376,11 @@ services:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-minio
     restart: unless-stopped
+    # Resource limits — starting point (audit §5.2). S3-compatible store; sized
+    # for dev/smoke use (prod media lives in Cloudflare R2).
+    mem_limit: 512m
+    mem_reservation: 128m
+    cpus: 0.5
     command: ["server", "/data", "--console-address", ":9001"]
     environment:
       # Fail closed: no default credential fallback. Both must be supplied via

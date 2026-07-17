@@ -1,5 +1,5 @@
 import { Flame } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { useTranslation } from "react-i18next";
 
 interface StreakDisplayProps {

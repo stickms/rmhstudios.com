@@ -18,7 +18,7 @@
 
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Star, Flame, AlertTriangle } from 'lucide-react';
 
 type AnswerStatus = 'unique' | 'shared' | 'crashed' | 'invalid' | 'empty';

@@ -19,6 +19,7 @@ import { progressQuests } from '@/lib/quests/engine.server';
 import { resolveMediaForPost } from '@/lib/media/attach.server';
 import { userDisplaySelect } from '@/lib/user-display';
 import { emitWebhookEvent } from '@/lib/webhooks/emit.server';
+import { invalidateFollowingIds } from '@/lib/social/follow-graph.server';
 import type { RMHarkAudience } from '@prisma/client';
 
 function postLink(handle: string | null | undefined, userId: string, postId: string): string {
@@ -40,13 +41,16 @@ export interface LikeResult {
  * already in the requested state. Returns the resulting like state + count.
  */
 export async function setPostLike(userId: string, postId: string, liked: boolean): Promise<LikeResult> {
-  const post = await prisma.rMHark.findUnique({
-    where: { id: postId },
-    select: { userId: true, content: true, likeCount: true, user: { select: { handle: true } } },
-  });
+  // The post row and the viewer's existing like are independent lookups — fetch
+  // them together instead of serially on the highest-traffic write path.
+  const [post, existing] = await Promise.all([
+    prisma.rMHark.findUnique({
+      where: { id: postId },
+      select: { userId: true, content: true, likeCount: true, user: { select: { handle: true } } },
+    }),
+    prisma.rMHarkLike.findUnique({ where: { rmheetId_userId: { rmheetId: postId, userId } } }),
+  ]);
   if (!post) return { ok: false, found: false, liked: false, likeCount: 0 };
-
-  const existing = await prisma.rMHarkLike.findUnique({ where: { rmheetId_userId: { rmheetId: postId, userId } } });
 
   // Already in the requested state — no-op.
   if (liked && existing) return { ok: true, found: true, liked: true, likeCount: post.likeCount };
@@ -57,7 +61,7 @@ export async function setPostLike(userId: string, postId: string, liked: boolean
       prisma.rMHarkLike.create({ data: { rmheetId: postId, userId } }),
       prisma.rMHark.update({ where: { id: postId }, data: { likeCount: { increment: 1 } }, select: { likeCount: true } }),
     ]);
-    feedEventBus.publish({ type: 'rmhark.liked', rmharkId: postId, payload: { id: postId, likeCount: updated.likeCount }, timestamp: new Date().toISOString() });
+    feedEventBus.publishPostEngagement(postId, { type: 'rmhark.liked', rmharkId: postId, payload: { id: postId, likeCount: updated.likeCount }, timestamp: new Date().toISOString() });
     await createNotification({
       userId: post.userId, actorId: userId, type: 'LIKE', entityType: 'rmhark', entityId: postId,
       preview: post.content ?? null, link: postLink(post.user?.handle, post.userId, postId), dedupeUnread: true,
@@ -73,7 +77,7 @@ export async function setPostLike(userId: string, postId: string, liked: boolean
     prisma.rMHarkLike.delete({ where: { id: existing!.id } }),
     prisma.rMHark.update({ where: { id: postId }, data: { likeCount: { decrement: 1 } }, select: { likeCount: true } }),
   ]);
-  feedEventBus.publish({ type: 'rmhark.unliked', rmharkId: postId, payload: { id: postId, likeCount: updated.likeCount }, timestamp: new Date().toISOString() });
+  feedEventBus.publishPostEngagement(postId, { type: 'rmhark.unliked', rmharkId: postId, payload: { id: postId, likeCount: updated.likeCount }, timestamp: new Date().toISOString() });
   await removeNotification({ userId: post.userId, actorId: userId, type: 'LIKE', entityType: 'rmhark', entityId: postId });
   return { ok: true, found: true, liked: false, likeCount: updated.likeCount };
 }
@@ -103,21 +107,27 @@ export async function createComment(args: { userId: string; postId: string; cont
   const { userId, postId } = args;
   const content = args.content.trim();
 
-  const exists = await prisma.rMHark.findUnique({ where: { id: postId }, select: { id: true } });
-  if (!exists) return { ok: false, found: false };
+  // One read up front for both the existence guard AND the notification target
+  // (author id + handle). Previously the same row was read three times per
+  // comment: an existence check, a redundant count re-read, and this author read.
+  const post = await prisma.rMHark.findUnique({
+    where: { id: postId },
+    select: { id: true, userId: true, user: { select: { handle: true } } },
+  });
+  if (!post) return { ok: false, found: false };
 
-  const [comment] = await prisma.$transaction([
+  // The transaction's update already returns the incremented count — capture it
+  // instead of issuing a separate findUnique afterward.
+  const [comment, updated] = await prisma.$transaction([
     createCommentRow({ content, rmheetId: postId, userId, parentId: args.parentId ?? null }),
     prisma.rMHark.update({ where: { id: postId }, data: { commentCount: { increment: 1 } }, select: { commentCount: true } }),
   ]);
 
-  const updatedCount = await prisma.rMHark.findUnique({ where: { id: postId }, select: { commentCount: true } });
-  feedEventBus.publish({ type: 'rmhark.commented', rmharkId: postId, payload: { id: postId, commentCount: updatedCount?.commentCount ?? 0 }, timestamp: new Date().toISOString() });
+  feedEventBus.publishPostEngagement(postId, { type: 'rmhark.commented', rmharkId: postId, payload: { id: postId, commentCount: updated.commentCount }, timestamp: new Date().toISOString() });
 
   // Notifications (best-effort).
   try {
-    const post = await prisma.rMHark.findUnique({ where: { id: postId }, select: { userId: true, user: { select: { handle: true } } } });
-    const link = post ? postLink(post.user?.handle, post.userId, postId) : undefined;
+    const link = postLink(post.user?.handle, post.userId, postId);
     let parentAuthorId: string | null = null;
     if (args.parentId) {
       const parent = await prisma.rMHarkComment.findUnique({ where: { id: args.parentId }, select: { userId: true } });
@@ -126,16 +136,14 @@ export async function createComment(args: { userId: string; postId: string; cont
         await createNotification({ userId: parent.userId, actorId: userId, type: 'REPLY', entityType: 'comment', entityId: comment.id, preview: content, link });
       }
     }
-    if (post && post.userId !== parentAuthorId) {
+    if (post.userId !== parentAuthorId) {
       await createNotification({ userId: post.userId, actorId: userId, type: 'COMMENT', entityType: 'rmhark', entityId: postId, preview: content, link });
     }
-    if (post && link) {
-      await notifyMentions({
-        content: comment.content,
-        author: { id: comment.user.id, name: comment.user.name ?? null, image: comment.user.image ?? null, handle: comment.user.handle ?? null },
-        postId, entityType: 'comment', entityId: comment.id, link, timestamp: comment.createdAt.toISOString(),
-      });
-    }
+    await notifyMentions({
+      content: comment.content,
+      author: { id: comment.user.id, name: comment.user.name ?? null, image: comment.user.image ?? null, handle: comment.user.handle ?? null },
+      postId, entityType: 'comment', entityId: comment.id, link, timestamp: comment.createdAt.toISOString(),
+    });
   } catch (e) {
     console.error('comment notification error:', e);
   }
@@ -196,14 +204,26 @@ async function applyFollow(args: { followerId: string; followingId: string; foll
   if (!following && !existing) return { ok: true, found: true, following: false };
 
   if (following) {
-    await prisma.follow.create({ data: { followerId, followingId } });
-    // Keep the denormalized follower count in sync and reuse the new value for
-    // achievement progress (avoids a separate follow.count aggregate).
-    const { followerCount } = await prisma.user.update({
-      where: { id: followingId },
-      data: { followerCount: { increment: 1 } },
-      select: { followerCount: true },
-    });
+    // One transaction keeps all three writes atomic: the edge, the followed
+    // user's follower count, and the follower's own following count. Reuse the
+    // returned followerCount for achievement progress (avoids a follow.count).
+    const [, followedRow] = await prisma.$transaction([
+      prisma.follow.create({ data: { followerId, followingId } }),
+      prisma.user.update({
+        where: { id: followingId },
+        data: { followerCount: { increment: 1 } },
+        select: { followerCount: true },
+      }),
+      prisma.user.update({
+        where: { id: followerId },
+        data: { followingCount: { increment: 1 } },
+        select: { id: true },
+      }),
+    ]);
+    const { followerCount } = followedRow;
+    // The follower's cached follow graph is now stale — drop it so their next
+    // feed/sidebar read reflects the new follow immediately.
+    invalidateFollowingIds(followerId);
     await createNotification({
       userId: followingId, actorId: followerId, type: 'FOLLOW', entityType: 'user', entityId: followerId,
       link: args.followerHandle ? `/u/${args.followerHandle}` : `/profile/${followerId}`, dedupeUnread: true,
@@ -221,12 +241,21 @@ async function applyFollow(args: { followerId: string; followingId: string; foll
     return { ok: true, found: true, following: true };
   }
 
-  await prisma.follow.delete({ where: { followerId_followingId: { followerId, followingId } } });
-  // Keep the denormalized follower count in sync (never below zero).
-  await prisma.user.updateMany({
-    where: { id: followingId, followerCount: { gt: 0 } },
-    data: { followerCount: { decrement: 1 } },
-  });
+  // Remove the edge and keep both denormalized counters in sync (never below
+  // zero), atomically: the followed user's follower count and the follower's
+  // own following count.
+  await prisma.$transaction([
+    prisma.follow.delete({ where: { followerId_followingId: { followerId, followingId } } }),
+    prisma.user.updateMany({
+      where: { id: followingId, followerCount: { gt: 0 } },
+      data: { followerCount: { decrement: 1 } },
+    }),
+    prisma.user.updateMany({
+      where: { id: followerId, followingCount: { gt: 0 } },
+      data: { followingCount: { decrement: 1 } },
+    }),
+  ]);
+  invalidateFollowingIds(followerId);
   await removeNotification({ userId: followingId, actorId: followerId, type: 'FOLLOW', entityType: 'user', entityId: followerId });
   void emitWebhookEvent(followerId, 'follow.deleted', { followingId });
   return { ok: true, found: true, following: false };

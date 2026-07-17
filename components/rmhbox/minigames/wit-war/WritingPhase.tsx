@@ -9,7 +9,7 @@
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import { Send, Check, Pencil } from 'lucide-react';
 import { WW_MAX_ANSWER_LENGTH } from '@/lib/rmhbox/constants';
 import type { PromptAssignment } from './WitWarGame';

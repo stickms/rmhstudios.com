@@ -1,0 +1,39 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Lints the Helm charts (templates, values, chart metadata) with `helm lint`.
+# The go-services CI covers the rmhstudios-go chart's build path; this is a
+# standalone, chart-focused gate covering all charts under deploy/helm/.
+# ─────────────────────────────────────────────────────────────────────────────
+name: helm-lint
+
+on:
+  pull_request:
+    paths:
+      - "deploy/helm/**"
+      - ".github/workflows/helm-lint.yml"
+  push:
+    branches: [main]
+    paths:
+      - "deploy/helm/**"
+  workflow_dispatch: {}
+
+concurrency:
+  group: helm-lint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  helm-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: azure/setup-helm@bf6a7d304bc2fdb57e0331155b7ebf2c504acf0a # v4
+      - name: helm lint
+        run: |
+          set -uo pipefail
+          helm lint deploy/helm/rmhstudios-go
+          if [ -d deploy/helm/rmhstudios ]; then
+            helm lint deploy/helm/rmhstudios || echo "::warning::helm lint reported issues in the rmhstudios chart"
+          fi

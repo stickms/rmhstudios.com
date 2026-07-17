@@ -1,0 +1,50 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# hadolint — lints the Dockerfile for best-practice and correctness issues
+# (unpinned base tags, missing `--no-install-recommends`, shell pitfalls, …).
+# Fails only on error-level findings; style/info are advisory.
+# ─────────────────────────────────────────────────────────────────────────────
+name: hadolint
+
+on:
+  pull_request:
+    paths:
+      - "Dockerfile"
+      - ".dockerignore"
+      - ".github/workflows/hadolint.yml"
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+  workflow_dispatch: {}
+
+concurrency:
+  group: hadolint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  hadolint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      # hadolint (2.12.0, last released 2022) can't parse the dockerfile:1.7-labs
+      # `COPY --exclude=… . .` on line ~174 and aborts with a hard parse error
+      # before linting anything. Produce a lint-only copy with just that labs COPY
+      # collapsed to `COPY . .` so hadolint can still check the rest of the file.
+      # The real Dockerfile is unchanged; the exclude list only affects build cache.
+      - name: Generate lint-only Dockerfile (strip 1.7-labs COPY --exclude flags)
+        run: |
+          awk '
+            skip { if ($0 !~ /\\[[:space:]]*$/) skip = 0; next }
+            /^COPY --exclude=/ { print "COPY . ."; if ($0 ~ /\\[[:space:]]*$/) skip = 1; next }
+            { print }
+          ' Dockerfile > Dockerfile.hadolint
+
+      - uses: hadolint/hadolint-action@54c9adbab1582c2ef04b2016b760714a4bfde3cf # v3.1.0
+        with:
+          dockerfile: Dockerfile.hadolint
+          failure-threshold: error

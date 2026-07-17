@@ -1,0 +1,63 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Replays the committed migrations (`prisma migrate deploy`) against a fresh
+# PostgreSQL and reports `prisma migrate status`. Surfaces migrations that fail to
+# apply or a schema that has drifted from the migration history. Report-only.
+# ─────────────────────────────────────────────────────────────────────────────
+name: prisma-migrate-status
+
+on:
+  pull_request:
+    paths:
+      - "prisma/migrations/**"
+      - ".github/workflows/prisma-migrate-status.yml"
+  schedule:
+    - cron: "0 6 * * 3"
+  workflow_dispatch: {}
+
+concurrency:
+  group: prisma-migrate-status-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  migrate-status:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rmh
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Deploy migrations + status
+        run: |
+          set -uo pipefail
+          {
+            echo '### prisma migrate deploy + status'
+            echo ''
+            echo '```'
+            pnpm exec prisma migrate deploy 2>&1 | head -100 || true
+            echo '---'
+            pnpm exec prisma migrate status 2>&1 | head -100 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

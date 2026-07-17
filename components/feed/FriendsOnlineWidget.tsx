@@ -12,6 +12,8 @@ import { Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { UserAvatar } from '@/components/ui/UserAvatar';
+import { useIsDesktop } from '@/hooks/useIsDesktop';
+import { useIdleReady } from '@/hooks/useIdleReady';
 
 interface OnlineFriend {
   user: { id: string; name: string | null; handle: string | null; image: string | null };
@@ -21,6 +23,8 @@ interface OnlineFriend {
 export function FriendsOnlineWidget() {
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
+  const isDesktop = useIsDesktop();
+  const idle = useIdleReady();
   const [friends, setFriends] = useState<OnlineFriend[] | null>(null);
 
   const load = useCallback(async () => {
@@ -35,12 +39,15 @@ export function FriendsOnlineWidget() {
     }
   }, []);
 
+  // Only fetch/poll on desktop (this widget lives in the `hidden lg:block` right
+  // sidebar) and only after the browser is idle, so mobile clients never pay for
+  // it and it doesn't contend during hydration.
   useEffect(() => {
-    if (!session?.user) return;
+    if (!session?.user || !isDesktop || !idle) return;
     void load();
     const interval = setInterval(load, 60_000);
     return () => clearInterval(interval);
-  }, [session?.user, load]);
+  }, [session?.user, isDesktop, idle, load]);
 
   // Render nothing until we know there's at least one friend online — keeps the
   // sidebar clean for solo sessions.

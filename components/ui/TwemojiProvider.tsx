@@ -23,7 +23,16 @@ const twemojiCallback: ParseCallback = (icon, options) => {
   return `${o.base}${o.size}/${icon}${o.ext}`;
 };
 
-const PARSE_OPTIONS = { folder: 'svg', ext: '.svg', className: 'emoji', callback: twemojiCallback } as const;
+const PARSE_OPTIONS = {
+  folder: 'svg',
+  ext: '.svg',
+  className: 'emoji',
+  callback: twemojiCallback,
+  // Emoji <img>s replace inline glyphs across all rendered content (feed posts,
+  // names). Marking them lazy/async keeps a feed full of emoji from firing a
+  // burst of eager CDN image requests during hydration for off-screen cards.
+  attributes: () => ({ loading: 'lazy', decoding: 'async' }),
+} as const;
 
 /** A node that twemoji can parse (text nodes are parsed via their parent). */
 function parseTarget(node: Node): HTMLElement | null {

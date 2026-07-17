@@ -1,0 +1,42 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# markdownlint — style/consistency lint for the repo's Markdown (README, docs,
+# the per-directory CLAUDE.md guides). Report-only.
+# ─────────────────────────────────────────────────────────────────────────────
+name: markdownlint
+
+on:
+  pull_request:
+    paths:
+      - "**/*.md"
+      - ".github/workflows/markdownlint.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: markdownlint-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  markdownlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+      - name: Run markdownlint
+        run: |
+          set -uo pipefail
+          {
+            echo '### markdownlint'
+            echo ''
+            echo '```'
+            pnpm dlx markdownlint-cli2 "**/*.md" "#node_modules" 2>&1 | head -300 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

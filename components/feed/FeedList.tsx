@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useWindowVirtualizer, type VirtualItem } from '@tanstack/react-virtual';
 import { useFeedStore } from '@/stores/feedStore';
 import type { FeedItem as FeedItemType } from '@/lib/feed-types';
 import { FeedItem } from './FeedItem';
@@ -9,6 +10,29 @@ import { ArrowUp } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
+
+// useLayoutEffect warns during SSR; fall back to useEffect on the server so the
+// render stays quiet, and keep pre-paint timing on the client (scrollMargin must
+// be right before the virtualized rows paint).
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
+
+// Estimate before a row is measured. Matches `contain-intrinsic-size` on
+// `.feed-card-cv` (globals.css) so the scrollbar reads similarly pre-measurement.
+const ESTIMATED_ROW_HEIGHT = 320;
+const OVERSCAN = 6;
+
+// Module-level so it survives route unmounts (the feed store is module-scoped
+// for the same reason). Two purposes:
+//  - `hasClientMounted` lets a back-nav remount go STRAIGHT to the virtualized
+//    render, skipping the one-shot non-virtualized pass we only need so the very
+//    first client render matches the SSR HTML (hydration).
+//  - `savedMeasurements` round-trips the virtualizer's measured row heights so a
+//    remount restores the exact total height (and thus the exact scroll offset)
+//    the reader left — measurements are keyed by post id via `getItemKey`, so
+//    unchanged posts reuse their real heights and only new posts fall back to the
+//    estimate.
+let hasClientMounted = false;
+let savedMeasurements: VirtualItem[] | undefined;
 
 interface FeedListProps {
   /** Whether this is the Following surface — drives empty-state copy. */
@@ -20,9 +44,11 @@ interface FeedListProps {
   initialItems?: FeedItemType[];
   initialCursor?: string | null;
   initialHasMore?: boolean;
+  /** Viewer's muted words from the same payload — primes the live-SSE filter. */
+  initialMutedWords?: string[];
 }
 
-export function FeedList({ following = false, onSwitchToForYou, initialItems, initialCursor = null, initialHasMore = false }: FeedListProps) {
+export function FeedList({ following = false, onSwitchToForYou, initialItems, initialCursor = null, initialHasMore = false, initialMutedWords }: FeedListProps) {
   const { t } = useTranslation('feed');
   const { items, loading, initialized, error, hasMore, fetchNextPage, retry, hydrate, pendingItems, flushPending } =
     useFeedStore();
@@ -40,6 +66,78 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
     !initialized && items.length === 0 && !following && !!initialItems && initialItems.length > 0;
   const displayItems = usingInitial ? initialItems : items;
 
+  // ── Windowing ──────────────────────────────────────────────────────────────
+  // Only visible rows (+ overscan) live in the DOM once mounted; on the server
+  // and the first client (hydration) render we fall back to a plain list so the
+  // SSR HTML has content and hydration matches, then flip to virtualized after
+  // mount. A back-nav remount (hasClientMounted already true) starts virtualized
+  // immediately so scroll restoration lands without a flash of the top.
+  const [virtualized, setVirtualized] = useState(() => typeof window !== 'undefined' && hasClientMounted);
+  useEffect(() => {
+    hasClientMounted = true;
+    if (!virtualized) setVirtualized(true);
+  }, [virtualized]);
+
+  // The list column scrolls the WINDOW (both desktop and mobile — the mobile
+  // shell scrolls the document too), so virtualize against window scroll. This
+  // keeps the page scrolling normally, which is what the router's scroll
+  // restoration and useScrollRestoration both drive.
+  const parentRef = useRef<HTMLDivElement>(null);
+  // `scrollMargin` = the list container's offset from the top of the document.
+  // The window virtualizer measures item visibility against window.scrollY, so it
+  // needs to know how far below the top of the page the list begins. Content
+  // above the list (composer, announcements) streams in and can resize, so we
+  // keep this in sync rather than measuring once.
+  const [scrollMargin, setScrollMargin] = useState(0);
+
+  const virtualizer = useWindowVirtualizer({
+    count: displayItems.length,
+    estimateSize: () => ESTIMATED_ROW_HEIGHT,
+    overscan: OVERSCAN,
+    // Stable per-post key so measured heights survive reorders (new post
+    // prepended) and round-trip through `initialMeasurementsCache` on remount.
+    getItemKey: (index) => displayItems[index]?.id ?? index,
+    scrollMargin,
+    initialMeasurementsCache: savedMeasurements,
+  });
+
+  useIsoLayoutEffect(() => {
+    if (!virtualized) return;
+    const el = parentRef.current;
+    if (!el || typeof window === 'undefined') return;
+    const update = () => {
+      const top = el.getBoundingClientRect().top + window.scrollY;
+      setScrollMargin((prev) => (Math.abs(prev - top) > 1 ? top : prev));
+    };
+    update();
+    // Height changes ABOVE the list (composer lazy-loads, announcements arrive)
+    // shift where the list starts — observe the document so scrollMargin follows.
+    const ro = new ResizeObserver(update);
+    ro.observe(document.body);
+    window.addEventListener('resize', update);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, [virtualized]);
+
+  // Persist the measured row heights when leaving the feed, so a back-nav remount
+  // rebuilds the exact total height and the saved scroll offset lands on the same
+  // content (no re-scroll). The virtualizer instance is stable, so a ref keeps the
+  // unmount cleanup reading the live one.
+  const virtualizerRef = useRef(virtualizer);
+  virtualizerRef.current = virtualizer;
+  useEffect(() => {
+    return () => {
+      try {
+        const snap = virtualizerRef.current.takeSnapshot();
+        if (snap.length > 0) savedMeasurements = snap;
+      } catch {
+        // best-effort — a missing snapshot only means estimate-based restore
+      }
+    };
+  }, []);
+
   // Initial load. The feed store is module-level, so items survive navigation —
   // returning to the feed (back-nav) shows the cached timeline instantly and,
   // paired with the router's scroll restoration, lands you where you were.
@@ -53,13 +151,13 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
         // Seed from the streamed prefetch when it matches the surface the store
         // starts on (For You / all, no search) — otherwise fetch client-side.
         if (initialItems && initialItems.length > 0 && s.filter === 'all' && !s.search) {
-          hydrate(initialItems, initialCursor, initialHasMore);
+          hydrate(initialItems, initialCursor, initialHasMore, initialMutedWords);
         } else {
           fetchNextPage();
         }
       }
     }
-  }, [fetchNextPage, hydrate, items.length, initialItems, initialCursor, initialHasMore]);
+  }, [fetchNextPage, hydrate, items.length, initialItems, initialCursor, initialHasMore, initialMutedWords]);
 
   // Self-heal the feed when the environment recovers. Mobile browsers suspend
   // backgrounded tabs (killing an in-flight fetch), and networks drop — either
@@ -84,7 +182,10 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
     };
   }, []);
 
-  // Infinite scroll via IntersectionObserver
+  // Infinite scroll via IntersectionObserver. The sentinel sits after the
+  // full-height virtual container, so it only intersects at the true bottom of
+  // all loaded rows — preserving the existing "fetch the next page as you near
+  // the end" behavior with windowing in place.
   const observerCallback = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       // Don't auto-refetch while an error is unresolved — that would spin into a
@@ -138,19 +239,56 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
         </div>
       )}
 
-      {displayItems.map((item) => {
-        const entering = enteringIds.has(item.id);
-        // `feed-card-cv` skips layout/paint for cards far from the viewport so
-        // long timelines stay smooth. Pending (optimistic) and just-entered
-        // posts opt out — they sit at the top and must render (and animate)
-        // without being skipped.
-        const cv = item.pending || entering ? '' : 'feed-card-cv';
-        return (
-          <div key={item.id} className={`${cv} ${entering ? 'feed-item-enter' : ''}`.trim() || undefined}>
-            <FeedItem item={item} />
-          </div>
-        );
-      })}
+      {virtualized ? (
+        // Windowed list: the container reserves the full (measured) height so the
+        // scrollbar and the infinite-scroll sentinel behave, and only the rows in
+        // view (+ overscan) are mounted and measured. No `feed-card-cv` here — the
+        // virtualizer already culls off-screen rows, and `content-visibility` would
+        // report the intrinsic-size estimate for overscan rows instead of their
+        // real height, corrupting measurement.
+        <div ref={parentRef} className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
+          {virtualizer.getVirtualItems().map((vRow) => {
+            const item = displayItems[vRow.index];
+            if (!item) return null;
+            const entering = enteringIds.has(item.id);
+            return (
+              <div
+                key={vRow.key}
+                data-index={vRow.index}
+                ref={virtualizer.measureElement}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${vRow.start - virtualizer.options.scrollMargin}px)`,
+                }}
+              >
+                {/* Enter animation on an INNER element so its transform can't
+                    clobber the row-positioning transform above. */}
+                <div className={entering ? 'feed-item-enter' : undefined}>
+                  <FeedItem item={item} />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        // Server render + first client (hydration) render: a plain list so the
+        // streamed HTML has posts and hydration matches. `feed-card-cv` skips
+        // layout/paint for cards far from the viewport until the virtualizer takes
+        // over on mount. Pending (optimistic) and just-entered posts opt out —
+        // they sit at the top and must render (and animate) without being skipped.
+        displayItems.map((item) => {
+          const entering = enteringIds.has(item.id);
+          const cv = item.pending || entering ? '' : 'feed-card-cv';
+          return (
+            <div key={item.id} className={`${cv} ${entering ? 'feed-item-enter' : ''}`.trim() || undefined}>
+              <FeedItem item={item} />
+            </div>
+          );
+        })
+      )}
 
       {/* Initial load → layout-matched skeletons so the feed reads as
           "content arriving" rather than a bare spinner, and the empty state

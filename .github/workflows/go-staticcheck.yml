@@ -1,0 +1,45 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# staticcheck — the standard advanced Go linter (bug-prone patterns, dead code,
+# simplifications) beyond `go vet`. Report-only, published to the summary.
+# ─────────────────────────────────────────────────────────────────────────────
+name: go-staticcheck
+
+on:
+  pull_request:
+    paths:
+      - "go-services/**"
+      - ".github/workflows/go-staticcheck.yml"
+  workflow_dispatch: {}
+
+concurrency:
+  group: go-staticcheck-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  staticcheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: go-services
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version: "1.23"
+          cache-dependency-path: go-services/go.sum
+      - name: Install staticcheck
+        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+      - name: Run staticcheck
+        run: |
+          set -uo pipefail
+          {
+            echo '### staticcheck'
+            echo ''
+            echo '```'
+            "$(go env GOPATH)/bin/staticcheck" ./... 2>&1 | head -300 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

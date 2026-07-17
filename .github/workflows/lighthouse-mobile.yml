@@ -1,0 +1,87 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Lighthouse on the MOBILE form factor (throttled). Mobile perf/a11y/SEO differ
+# meaningfully from desktop; this audits key pages under mobile emulation. Uses
+# .github/lighthouserc.mobile.json (warn-only). Boots the app → scheduled + on
+# demand.
+# ─────────────────────────────────────────────────────────────────────────────
+name: lighthouse-mobile
+
+on:
+  schedule:
+    - cron: "0 3 * * 4"
+  workflow_dispatch: {}
+
+concurrency:
+  group: lighthouse-mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lighthouse-mobile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: rmh
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rmh
+      BETTER_AUTH_SECRET: ci-not-a-real-secret-000000000000000000000000
+      BETTER_AUTH_URL: http://localhost:3000/
+      VITE_BETTER_AUTH_URL: http://localhost:3000/
+      VITE_SOCKET_URL: http://localhost:7001/
+      VITE_RMHBOX_SOCKET_URL: http://localhost:7676/
+      VITE_RMHTUBE_SOCKET_URL: http://localhost:7003/
+      TOKEN_ENCRYPTION_KEY: "0000000000000000000000000000000000000000000000000000000000000000"
+      WEBHOOK_SECRET: ci-webhook-secret
+      DISCORD_CLIENT_ID: ci
+      DISCORD_CLIENT_SECRET: ci
+      GOOGLE_CLIENT_ID: ci
+      GOOGLE_CLIENT_SECRET: ci
+      GITHUB_CLIENT_ID: ci
+      GITHUB_CLIENT_SECRET: ci
+      SPOTIFY_CLIENT_ID: ci
+      SPOTIFY_CLIENT_SECRET: ci
+      PORT: "3000"
+      NODE_OPTIONS: --max-old-space-size=8192
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 10
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Apply database schema
+        run: pnpm db:push
+      - name: Build frontend
+        run: pnpm run build:frontend
+      - name: Start web server
+        run: |
+          set -uo pipefail
+          nohup node .output/server/index.mjs > server.log 2>&1 &
+          for _ in $(seq 1 60); do
+            if curl -fsS http://localhost:3000/ >/dev/null 2>&1; then echo "up"; break; fi
+            sleep 2
+          done
+      - name: Run Lighthouse (mobile)
+        uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12
+        with:
+          urls: |
+            http://localhost:3000/
+            http://localhost:3000/login
+          configPath: .github/lighthouserc.mobile.json
+          uploadArtifacts: true
+          temporaryPublicStorage: true

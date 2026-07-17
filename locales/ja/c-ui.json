@@ -1,3 +1,9 @@
 {
-  "close": "閉じる"
+  "back-to-top": "トップへ戻る",
+  "breadcrumb": "パンくずリスト",
+  "cancel": "キャンセル",
+  "close": "閉じる",
+  "confirm": "確認",
+  "copied": "コピーしました",
+  "copy": "コピー"
 }

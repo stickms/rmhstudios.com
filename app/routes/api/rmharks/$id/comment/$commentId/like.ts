@@ -52,10 +52,25 @@ export const Route = createFileRoute('/api/rmharks/$id/comment/$commentId/like')
     });
 
     if (existing) {
-      await prisma.rMHarkCommentLike.delete({ where: { id: existing.id } });
+      // Remove the like and drop the comment's denormalized tally in the same
+      // transaction (guarded so it never goes below zero).
+      await prisma.$transaction([
+        prisma.rMHarkCommentLike.delete({ where: { id: existing.id } }),
+        prisma.rMHarkComment.updateMany({
+          where: { id: commentId, likeCount: { gt: 0 } },
+          data: { likeCount: { decrement: 1 } },
+        }),
+      ]);
       return Response.json({ success: true, liked: false });
     } else {
-      await prisma.rMHarkCommentLike.create({ data: { commentId, userId } });
+      // Add the like and bump the comment's denormalized tally atomically.
+      await prisma.$transaction([
+        prisma.rMHarkCommentLike.create({ data: { commentId, userId } }),
+        prisma.rMHarkComment.update({
+          where: { id: commentId },
+          data: { likeCount: { increment: 1 } },
+        }),
+      ]);
       return Response.json({ success: true, liked: true });
     }
   } catch (error) {

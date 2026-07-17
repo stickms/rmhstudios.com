@@ -23,6 +23,7 @@
 import OpenAI from 'openai';
 import { prisma } from '@/lib/prisma.server';
 import { notifyAdminsOfReview } from '@/lib/admin-review.server';
+import { redisRateLimit } from '@/lib/redis.server';
 import type { ReportReason } from '@prisma/client';
 
 const deepseek = new OpenAI({
@@ -31,6 +32,73 @@ const deepseek = new OpenAI({
   maxRetries: 1,
 });
 const MODEL = process.env.RMHARK_AI_MODEL || 'deepseek-chat';
+
+/** Per-request timeout on the classifier call (ms) — a stalled provider must not
+ * hang the fire-and-forget screen, and repeated timeouts trip the breaker. */
+const CLASSIFY_TIMEOUT_MS = 8_000;
+
+/**
+ * Cost controls (mirrors the AI-budget pattern in `app/routes/api/vibe/ai.ts`
+ * and `versecraft/*`). Screening is best-effort: when a cap is hit we SKIP the
+ * LLM call and return "not screened" rather than throwing or blocking the post.
+ *
+ * - Global per-minute cap (`AUTOMOD_PER_MINUTE_CAP`, default 120): smooths bursts.
+ * - Global daily budget (`AUTOMOD_DAILY_CAP`, default 5000): bounds daily spend.
+ *
+ * Both use `redisRateLimit`, so they coordinate across every web/worker
+ * instance. Without Redis the helper returns null and the global caps can't be
+ * enforced cross-instance — the circuit breaker below still protects the
+ * provider — which is the same graceful-degrade contract as the other AI routes.
+ */
+const GLOBAL_PER_MINUTE_CAP = (() => {
+  const raw = Number(process.env.AUTOMOD_PER_MINUTE_CAP);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 120;
+})();
+const GLOBAL_DAILY_CAP = (() => {
+  const raw = Number(process.env.AUTOMOD_DAILY_CAP);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 5_000;
+})();
+
+/**
+ * Circuit breaker: if the classifier call throws/times out repeatedly, stop
+ * calling DeepSeek for a cooldown window instead of hammering a dead provider
+ * (and burning latency on every post). Purely in-process module state — a
+ * best-effort local safety valve, complementary to the global caps above.
+ */
+const BREAKER_FAILURE_THRESHOLD = 5;
+const BREAKER_COOLDOWN_MS = 60_000;
+let consecutiveFailures = 0;
+let breakerOpenUntil = 0;
+
+function breakerIsOpen(): boolean {
+  return Date.now() < breakerOpenUntil;
+}
+function recordProviderFailure(): void {
+  consecutiveFailures += 1;
+  if (consecutiveFailures >= BREAKER_FAILURE_THRESHOLD) {
+    breakerOpenUntil = Date.now() + BREAKER_COOLDOWN_MS;
+  }
+}
+function recordProviderSuccess(): void {
+  consecutiveFailures = 0;
+  breakerOpenUntil = 0;
+}
+
+/**
+ * Best-effort gate before spending money on the classifier. Returns false (skip
+ * the LLM call) when the breaker is open or a global cap is exhausted. Checks
+ * the breaker first so a tripped breaker doesn't consume budget units.
+ */
+async function screeningAllowed(): Promise<boolean> {
+  if (breakerIsOpen()) return false;
+  // Per-minute first: if it's exhausted we return before touching the daily
+  // counter, so an exhausted minute doesn't waste daily budget.
+  const minute = await redisRateLimit('automod:global:minute', GLOBAL_PER_MINUTE_CAP, 60_000);
+  if (minute && !minute.allowed) return false;
+  const day = await redisRateLimit('automod:global:day', GLOBAL_DAILY_CAP, 86_400_000);
+  if (day && !day.allowed) return false;
+  return true;
+}
 
 /** Categories the classifier may return — the ReportReason enum plus NONE. */
 const CATEGORIES = [
@@ -82,18 +150,31 @@ interface Classification {
 }
 
 async function classify(text: string): Promise<Classification | null> {
+  let raw: string;
   try {
-    const res = await deepseek.chat.completions.create({
-      model: MODEL,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: text.slice(0, MAX_CHARS) },
-      ],
-      max_tokens: 80,
-      temperature: 0,
-      stream: false,
-    });
-    const raw = res.choices[0]?.message?.content?.trim() ?? '';
+    const res = await deepseek.chat.completions.create(
+      {
+        model: MODEL,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: text.slice(0, MAX_CHARS) },
+        ],
+        max_tokens: 80,
+        temperature: 0,
+        stream: false,
+      },
+      { timeout: CLASSIFY_TIMEOUT_MS }
+    );
+    raw = res.choices[0]?.message?.content?.trim() ?? '';
+  } catch {
+    // Provider error / timeout — this is what the circuit breaker guards against.
+    recordProviderFailure();
+    return null;
+  }
+  // The provider responded, so it's healthy — reset the breaker even if the
+  // payload turns out to be unparseable (that's a model quirk, not an outage).
+  recordProviderSuccess();
+  try {
     const parsed = JSON.parse(raw.replace(/^```(?:json)?\s*|\s*```$/g, ''));
     const category = (CATEGORIES as readonly string[]).includes(parsed.category)
       ? (parsed.category as Category)
@@ -103,7 +184,7 @@ async function classify(text: string): Promise<Classification | null> {
     const reason = typeof parsed.reason === 'string' ? parsed.reason.slice(0, 120) : '';
     return { category, confidence, reason };
   } catch {
-    // Model unavailable or unparseable output — fail open (no flag).
+    // Unparseable output — fail open (no flag), but the provider is up.
     return null;
   }
 }
@@ -127,6 +208,11 @@ export async function screenNewContent(args: ScreenArgs): Promise<void> {
     if (!process.env.DEEPSEEK_API_KEY) return;
     const text = args.text?.trim() ?? '';
     if (text.length < MIN_CHARS) return;
+
+    // Cost/backpressure gate: skip the LLM call (leave content unscreened) when a
+    // global cap is exhausted or the circuit breaker is open. Screening is
+    // best-effort — never block or fail the post because we chose not to screen.
+    if (!(await screeningAllowed())) return;
 
     const verdict = await classify(text);
     if (!verdict || verdict.category === 'NONE') return;

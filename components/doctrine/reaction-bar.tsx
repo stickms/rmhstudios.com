@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { m as motion } from 'framer-motion';
 import type { ReactionCount, Reaction } from '@/lib/doctrine/types';
 
 const REACTIONS: Array<{ key: Reaction; emoji: string; label: string; color: string }> = [

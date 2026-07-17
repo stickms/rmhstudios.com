@@ -16,15 +16,19 @@
 
 import { prisma } from "../prisma.server";
 import type { FeedItem, FeedFilter, FeedPoll } from "../feed-types";
-import { userDisplaySelect, resolveUser } from "../user-display";
+import type { ResolvedUser } from "../user-display";
+import { getUserDisplayMap } from "../user-display.server";
 import { getAllPosts } from "../blog";
 import { decodeCursor, encodeCursor, keysetWhere } from "./cursor";
 import { rankCandidates, type RankContext } from "./ranking";
 import { buildInterestProfile } from "./personalize.server";
 import { getHiddenAuthorIds } from "../moderation.server";
+import { getFollowingIds } from "../social/follow-graph.server";
 import { audienceWhere } from "./audience.server";
 import { applyLock } from "./map-feed-item.server";
-import { groupReactions } from "../social/reactions";
+import type { ReactionSummary } from "../social/reactions";
+import { apiCache } from "../cache";
+import { cached } from "../cached.server";
 
 export type FeedSurface = "following" | "foryou";
 
@@ -49,6 +53,9 @@ export interface TimelineResult {
   hasMore: boolean;
   /** True when "following" has no candidates — lets the UI offer a cold-start. */
   empty?: boolean;
+  /** The viewer's muted words (signed-in only), returned so the client can filter
+   *  live SSE posts without a second round-trip to /api/preferences/muted-words. */
+  mutedWords?: string[];
 }
 
 /* ------------------------------------------------------------------ */
@@ -60,12 +67,14 @@ function pollInclude(userId: string | null) {
     include: {
       options: {
         orderBy: { position: "asc" as const },
-        include: {
-          _count: { select: { votes: true } },
-          ...(userId
-            ? { votes: { where: { userId }, select: { id: true, optionId: true } } }
-            : {}),
-        },
+        // `voteCount` is the denormalized per-option tally column (maintained
+        // atomically by the vote route), so the feed read no longer aggregates
+        // `_count.votes` per option on every render. The scalar column is
+        // returned by default; only the viewer's own vote still needs a bounded
+        // relation include.
+        ...(userId
+          ? { include: { votes: { where: { userId }, select: { id: true, optionId: true } } } }
+          : {}),
       },
     },
   };
@@ -74,7 +83,7 @@ function pollInclude(userId: string | null) {
 function mapPoll(poll: any): FeedPoll | undefined {
   if (!poll) return undefined;
   const totalVotes = poll.options.reduce(
-    (sum: number, o: any) => sum + (o._count?.votes ?? 0),
+    (sum: number, o: { voteCount?: number }) => sum + (o.voteCount ?? 0),
     0
   );
   return {
@@ -86,7 +95,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
     options: poll.options.map((o: any) => ({
       id: o.id,
       text: o.text,
-      voteCount: o._count?.votes ?? 0,
+      voteCount: o.voteCount ?? 0,
     })),
     myVotes: poll.options
       .filter((o: any) => o.votes?.length > 0)
@@ -117,8 +126,16 @@ export function deduplicateReposts(items: FeedItem[], windowSize = 2): FeedItem[
 
 function rmharkInclude(userId: string | null) {
   return {
-    user: { select: userDisplaySelect },
-    reactions: { select: { emoji: true, userId: true } },
+    // Author display (profile + equipped cosmetics) is NOT joined per row. It is
+    // viewer-independent and changes rarely, so it's resolved after the query via
+    // getUserDisplayMap (batched + cached cross-viewer, keyed by the scalar
+    // `userId` column) — see lib/user-display.server.ts. This drops ~40 profile+
+    // inventory relation fan-outs per 20-item page off the hottest query.
+    //
+    // Emoji reactions are NOT included here either. Fetching every reaction row per
+    // post is unbounded — a single viral post can carry thousands, ballooning the
+    // feed query. The feed only needs per-emoji counts + whether the viewer
+    // reacted, loaded as bounded aggregates after the query (loadReactionSummaries).
     ...(userId
       ? {
           likes: { where: { userId }, select: { id: true } },
@@ -128,10 +145,104 @@ function rmharkInclude(userId: string | null) {
         }
       : {}),
     poll: pollInclude(userId),
-    original: {
-      include: { user: { select: userDisplaySelect } },
-    },
+    // Quoted original: scalar fields only (incl. its `userId`); its author is
+    // resolved through the same display map.
+    original: true,
   } as const;
+}
+
+/** Minimal author-bearing shapes the id collector reads (structurally satisfied
+ *  by the richer Prisma rows). Typed rather than `any` to avoid lint noise. */
+type AuthoredRow = { userId: string; original?: { userId: string } | null };
+type RepostRow = { userId: string; rmhark?: AuthoredRow | null };
+
+/**
+ * Collect every distinct author id referenced by a fetched page — post authors,
+ * quoted-original authors, and reposters — so their display objects can be
+ * batch-resolved once (via getUserDisplayMap) instead of joined per row.
+ */
+function collectAuthorIds(rmharks: AuthoredRow[], repostRecords: RepostRow[]): string[] {
+  const ids: string[] = [];
+  for (const r of rmharks) {
+    ids.push(r.userId);
+    if (r.original?.userId) ids.push(r.original.userId);
+  }
+  for (const rp of repostRecords) {
+    ids.push(rp.userId);
+    if (rp.rmhark?.userId) ids.push(rp.rmhark.userId);
+    if (rp.rmhark?.original?.userId) ids.push(rp.rmhark.original.userId);
+  }
+  return ids;
+}
+
+/** Look up a resolved author from the display map, with a safe fallback for the
+ *  (practically impossible) case of an author missing from the batch. */
+function displayUser(map: Map<string, ResolvedUser>, userId: string): ResolvedUser {
+  return (
+    map.get(userId) ?? {
+      id: userId,
+      name: null,
+      image: null,
+      username: null,
+      handle: null,
+      isVerified: false,
+      isAdmin: false,
+    }
+  );
+}
+
+/**
+ * Load per-post reaction summaries (emoji → count + whether the viewer reacted)
+ * with two BOUNDED queries instead of fetching every reaction row per post:
+ *   - a `groupBy` over (post, emoji) → counts (bounded by distinct emojis, tiny)
+ *   - the viewer's own reactions on these posts (bounded — a viewer reacts to few)
+ * The full "who reacted" roster is never needed for the feed; it stays a separate
+ * on-demand read. Keyed by post id so callers can attach to both posts and reposts.
+ */
+async function loadReactionSummaries(
+  postIds: string[],
+  userId: string | null,
+): Promise<Map<string, ReactionSummary[]>> {
+  const result = new Map<string, ReactionSummary[]>();
+  const ids = [...new Set(postIds)];
+  if (ids.length === 0) return result;
+
+  const [grouped, mine] = await Promise.all([
+    prisma.rMHarkReaction.groupBy({
+      by: ["rmheetId", "emoji"],
+      where: { rmheetId: { in: ids } },
+      _count: { _all: true },
+    }),
+    userId
+      ? prisma.rMHarkReaction.findMany({
+          where: { rmheetId: { in: ids }, userId },
+          select: { rmheetId: true, emoji: true },
+        })
+      : Promise.resolve([] as { rmheetId: string; emoji: string }[]),
+  ]);
+
+  const mineSet = new Set(mine.map((m) => `${m.rmheetId} ${m.emoji}`));
+  for (const g of grouped) {
+    const list = result.get(g.rmheetId) ?? [];
+    list.push({
+      emoji: g.emoji,
+      count: g._count._all,
+      reactedByMe: mineSet.has(`${g.rmheetId} ${g.emoji}`),
+    });
+    result.set(g.rmheetId, list);
+  }
+  // Match the previous ordering: most-used emoji first.
+  for (const list of result.values()) list.sort((a, b) => b.count - a.count);
+  return result;
+}
+
+/** Fill in each rmhark item's `reactions` from a pre-loaded summary map (mutates). */
+function attachReactions(items: FeedItem[], summaries: Map<string, ReactionSummary[]>): void {
+  for (const item of items) {
+    if (item.type !== "rmhark") continue;
+    // For a repost, the reactions belong to the underlying post (actualId).
+    item.reactions = summaries.get(item.actualId ?? item.id) ?? [];
+  }
 }
 
 function deletedMessageFor(record: { deletedByAdmin?: boolean }): string {
@@ -140,7 +251,7 @@ function deletedMessageFor(record: { deletedByAdmin?: boolean }): string {
     : "[This RMHark was deleted by the user]";
 }
 
-function mapOriginal(o: any): FeedItem | undefined {
+function mapOriginal(o: any, displayMap: Map<string, ResolvedUser>): FeedItem | undefined {
   if (!o) return undefined;
   const isDeleted = !!o.deletedAt;
   // Only free, public originals expose their media in the quote card —
@@ -151,7 +262,7 @@ function mapOriginal(o: any): FeedItem | undefined {
     type: "rmhark",
     createdAt: o.createdAt.toISOString(),
     content: isDeleted ? deletedMessageFor(o) : o.content,
-    user: resolveUser(o.user),
+    user: displayUser(displayMap, o.userId),
     likeCount: o.likeCount,
     commentCount: o.commentCount,
     repostCount: o.repostCount,
@@ -164,14 +275,14 @@ function mapOriginal(o: any): FeedItem | undefined {
   };
 }
 
-function mapOwn(r: any, userId: string | null): FeedItem {
+function mapOwn(r: any, userId: string | null, displayMap: Map<string, ResolvedUser>): FeedItem {
   const isDeleted = !!r.deletedAt;
   const item: FeedItem = {
     id: r.id,
     type: "rmhark",
     createdAt: r.createdAt.toISOString(),
     content: isDeleted ? deletedMessageFor(r) : r.content,
-    user: resolveUser(r.user),
+    user: displayUser(displayMap, r.userId),
     likeCount: r.likeCount,
     commentCount: r.commentCount,
     repostCount: r.repostCount,
@@ -180,14 +291,14 @@ function mapOwn(r: any, userId: string | null): FeedItem {
     reposted: userId ? r.reposts?.length > 0 : false,
     bookmarked: userId ? r.bookmarks?.length > 0 : false,
     edited: !!r.editedAt,
-    original: mapOriginal(r.original),
+    original: mapOriginal(r.original, displayMap),
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
     imageAlts: isDeleted ? undefined : r.imageAlts,
     isSensitive: isDeleted ? false : (r.isSensitive ?? false),
     replyControl: r.replyControl ?? 'EVERYONE',
-    reactions: groupReactions(r.reactions ?? [], userId),
+    reactions: [], // filled in by loadReactionSummaries after the query
     threadReplyCount: r.threadReplyCount ?? 0,
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
@@ -195,7 +306,7 @@ function mapOwn(r: any, userId: string | null): FeedItem {
   return isDeleted ? item : applyLock(item, r, userId);
 }
 
-function mapRepost(rp: any, userId: string | null): FeedItem {
+function mapRepost(rp: any, userId: string | null, displayMap: Map<string, ResolvedUser>): FeedItem {
   const r = rp.rmhark;
   const isDeleted = !!r.deletedAt;
   const item: FeedItem = {
@@ -204,7 +315,7 @@ function mapRepost(rp: any, userId: string | null): FeedItem {
     createdAt: rp.createdAt.toISOString(),
     actualId: r.id,
     content: isDeleted ? deletedMessageFor(r) : r.content,
-    user: resolveUser(r.user),
+    user: displayUser(displayMap, r.userId),
     likeCount: r.likeCount,
     commentCount: r.commentCount,
     repostCount: r.repostCount,
@@ -212,15 +323,15 @@ function mapRepost(rp: any, userId: string | null): FeedItem {
     liked: userId ? r.likes?.length > 0 : false,
     reposted: userId ? r.reposts?.length > 0 : false,
     bookmarked: userId ? r.bookmarks?.length > 0 : false,
-    repostedBy: resolveUser(rp.user),
-    original: mapOriginal(r.original),
+    repostedBy: displayUser(displayMap, rp.userId),
+    original: mapOriginal(r.original, displayMap),
     poll: isDeleted ? undefined : mapPoll(r.poll),
     gifUrl: isDeleted ? undefined : (r.gifUrl ?? undefined),
     imageUrls: isDeleted ? undefined : r.imageUrls,
     imageAlts: isDeleted ? undefined : r.imageAlts,
     isSensitive: isDeleted ? false : (r.isSensitive ?? false),
     replyControl: r.replyControl ?? 'EVERYONE',
-    reactions: groupReactions(r.reactions ?? [], userId),
+    reactions: [], // filled in by loadReactionSummaries after the query
     deletedAt: r.deletedAt?.toISOString() || null,
     deletedByAdmin: r.deletedByAdmin,
   };
@@ -241,6 +352,14 @@ function keysetOf(item: FeedItem): { createdAt: string; id: string } {
 /* ------------------------------------------------------------------ */
 
 async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
+  // Announcements are static (games/apps catalogs) or slow-moving (blog posts),
+  // yet this runs on every feed read *and* every pagination. Cache per-filter for
+  // a minute so the feed's hot path stops re-querying blog posts each time; a
+  // freshly published blog post surfaces within the TTL.
+  const cacheKey = `feed:announcements:${filter}`;
+  const cached = apiCache.get<FeedItem[]>(cacheKey);
+  if (cached) return cached;
+
   const { games } = await import("../games");
   const { apps } = await import("../apps");
   const items: FeedItem[] = [];
@@ -297,6 +416,7 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
     }
   }
 
+  apiCache.set(cacheKey, items, 60_000);
   return items;
 }
 
@@ -312,18 +432,13 @@ async function getFollowingTimeline(
     return { items: [], nextCursor: null, hasMore: false, empty: true };
   }
 
-  const [followRecords, hiddenIds] = await Promise.all([
-    prisma.follow.findMany({
-      where: { followerId: userId },
-      select: { followingId: true },
-    }),
+  const [followingAll, hiddenIds] = await Promise.all([
+    getFollowingIds(userId),
     getHiddenAuthorIds(userId),
   ]);
   // Exclude muted/blocked authors even if still followed.
   const hiddenSet = new Set(hiddenIds);
-  const followingIds = followRecords
-    .map((f) => f.followingId)
-    .filter((id) => !hiddenSet.has(id));
+  const followingIds = followingAll.filter((id) => !hiddenSet.has(id));
 
   if (followingIds.length === 0) {
     return { items: [], nextCursor: null, hasMore: false, empty: true };
@@ -366,18 +481,23 @@ async function getFollowingTimeline(
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: limit,
       include: {
-        user: { select: userDisplaySelect },
         rmhark: { include },
       },
     }),
   ]);
 
+  // Batch-resolve author display objects (post authors, quoted originals,
+  // reposters) once instead of joining them per row.
+  const displayMap = await getUserDisplayMap(collectAuthorIds(rmharks, repostRecords));
+
   const merged = [
-    ...rmharks.map((r) => mapOwn(r, userId)),
-    ...repostRecords.map((rp) => mapRepost(rp, userId)),
+    ...rmharks.map((r) => mapOwn(r, userId, displayMap)),
+    ...repostRecords.map((rp) => mapRepost(rp, userId, displayMap)),
   ].sort(compareKeysetDesc);
 
   const items = deduplicateReposts(merged).slice(0, limit);
+
+  attachReactions(items, await loadReactionSummaries(items.map((i) => i.actualId ?? i.id), userId));
 
   const nextCursor =
     items.length === limit
@@ -405,27 +525,32 @@ async function getForYouTimeline(
     : {};
   const include = rmharkInclude(userId);
 
-  // Hide blocked/muted authors (and authors who blocked the viewer).
-  const hiddenIds = await getHiddenAuthorIds(userId);
-  const authorWhere = hiddenIds.length ? { userId: { notIn: hiddenIds } } : {};
+  const shouldFetchRmharks = filter === "all" || filter === "rmhark" || !!search;
 
-  // Audience visibility (PUBLIC, own, or FOLLOWERS-of-followed).
-  const viewerFollowingIds = userId
-    ? (await prisma.follow.findMany({ where: { followerId: userId }, select: { followingId: true } })).map((f) => f.followingId)
-    : [];
+  // Only the hidden-author set + follow graph gate the main feed query (they shape
+  // its WHERE), so resolve just those before it. Everything else is NOT an input to
+  // the query — the interest profile only reorders the returned page, and
+  // announcements are interleaved afterward — so kicking those off alongside the
+  // query keeps them off its critical path. Previously a cold interest-profile read
+  // (a likes join) sat in the same batch and delayed the feed query from starting.
+  const [hiddenIds, viewerFollowingIds] = await Promise.all([
+    getHiddenAuthorIds(userId),
+    userId ? getFollowingIds(userId) : Promise.resolve([] as string[]),
+  ]);
+
+  // In-flight alongside the main query below (neither gates it).
+  const interestPromise =
+    shouldFetchRmharks && userId && !cursor ? buildInterestProfile(userId) : Promise.resolve(null);
+  // Announcements are a first-page-only garnish. Game/app cards carry a static
+  // 2025 date, so on every paginated page (2026 cursor dates) they'd all pass a
+  // date filter and get re-interleaved — re-sending duplicate JSON and forcing
+  // real posts to be sliced off the page. Skip them entirely once paginating.
+  const announcementsPromise: Promise<FeedItem[]> =
+    search || cursor ? Promise.resolve([]) : getAnnouncementItems(filter);
+
+  const authorWhere = hiddenIds.length ? { userId: { notIn: hiddenIds } } : {};
   const audWhere = audienceWhere(userId, viewerFollowingIds);
 
-  // Personalized ranking context (#11): the viewer's follow graph plus an
-  // interest profile from their recent engagement. Only built on the first
-  // page, since ranking reorders within a page window.
-  const interest = userId && !cursor ? await buildInterestProfile(userId) : null;
-  const rankCtx: RankContext = {
-    followingIds: new Set(viewerFollowingIds),
-    authorAffinity: interest?.authorAffinity,
-    topicInterest: interest?.topicInterest,
-  };
-
-  const shouldFetchRmharks = filter === "all" || filter === "rmhark" || !!search;
   let dbItems: FeedItem[] = [];
 
   if (shouldFetchRmharks) {
@@ -447,35 +572,50 @@ async function getForYouTimeline(
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: limit,
         include: {
-          user: { select: userDisplaySelect },
           rmhark: { include },
         },
       }),
     ]);
 
+    // Reaction summaries and author-display resolution both depend only on the
+    // returned rows — kick both off concurrently (each its own query, or a cache
+    // hit) so neither serializes behind the in-memory mapping.
+    const reactionsPromise = loadReactionSummaries(
+      [...rmharks.map((r) => r.id), ...repostRecords.map((rp) => rp.rmhark.id)],
+      userId,
+    );
+    const displayMap = await getUserDisplayMap(collectAuthorIds(rmharks, repostRecords));
+
     dbItems = deduplicateReposts(
       [
-        ...rmharks.map((r) => mapOwn(r, userId)),
-        ...repostRecords.map((rp) => mapRepost(rp, userId)),
+        ...rmharks.map((r) => mapOwn(r, userId, displayMap)),
+        ...repostRecords.map((rp) => mapRepost(rp, userId, displayMap)),
       ].sort(compareKeysetDesc)
     ).slice(0, limit);
 
+    const interest = await interestPromise;
+    const rankCtx: RankContext = {
+      followingIds: new Set(viewerFollowingIds),
+      authorAffinity: interest?.authorAffinity,
+      topicInterest: interest?.topicInterest,
+    };
     // Ranking seam (Phase 5) — personalized For-You ordering (#11).
     dbItems = rankCandidates(dbItems, rankCtx);
+
+    attachReactions(dbItems, await reactionsPromise);
   }
 
-  // Announcements (skip when searching — only RMHarks have content).
-  const announcements = search ? [] : await getAnnouncementItems(filter);
-  const cursorDate = decoded?.createdAt;
-  const filteredAnnouncements = cursorDate
-    ? announcements.filter((a) => new Date(a.createdAt) < cursorDate)
-    : announcements;
+  // Announcements were kicked off before the feed query (skipped when searching
+  // or paginating — only RMHarks have content and only the first page garnishes);
+  // await them now for interleaving. Empty on any page past the first.
+  const announcements = await announcementsPromise;
 
   let paginatedItems: FeedItem[];
 
   if (filter === "all") {
     // Interleave: 3 RMHarks per 1 announcement to prioritize user content.
-    const sortedAnnouncements = filteredAnnouncements.sort(
+    // Copy before sorting — `announcements` may be a shared cached array.
+    const sortedAnnouncements = [...announcements].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
     const result: FeedItem[] = [];
@@ -491,7 +631,7 @@ async function getForYouTimeline(
     }
     paginatedItems = result;
   } else {
-    paginatedItems = [...dbItems, ...filteredAnnouncements]
+    paginatedItems = [...dbItems, ...announcements]
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, limit);
   }
@@ -526,13 +666,27 @@ function compareKeysetDesc(a: FeedItem, b: FeedItem): number {
 /*  Reader-level muted words (per-viewer content control)               */
 /* ------------------------------------------------------------------ */
 
-/** The viewer's muted words (already lowercased on write). Empty when none. */
+const MUTED_WORDS_TTL_MS = 60_000;
+const mutedWordsKey = (userId: string) => `muted-words:${userId}`;
+
+/** The viewer's muted words (already lowercased on write). Empty when none.
+ *  Cached ~60s and invalidated when the list is saved, so it stops re-querying
+ *  the profile row on every feed read. */
 export async function getMutedWords(userId: string): Promise<string[]> {
+  const cached = apiCache.get<string[]>(mutedWordsKey(userId));
+  if (cached) return cached;
   const profile = await prisma.userProfile.findUnique({
     where: { userId },
     select: { mutedWords: true },
   });
-  return profile?.mutedWords ?? [];
+  const words = profile?.mutedWords ?? [];
+  apiCache.set(mutedWordsKey(userId), words, MUTED_WORDS_TTL_MS);
+  return words;
+}
+
+/** Drop the cached muted-words list for a user (call after they save the list). */
+export function invalidateMutedWords(userId: string): void {
+  apiCache.invalidate(mutedWordsKey(userId));
 }
 
 /** True when `text` contains any muted word (case-insensitive substring). */
@@ -560,16 +714,78 @@ export function applyMutedWords(items: FeedItem[], muted: string[]): FeedItem[] 
 /*  Public entry point                                                 */
 /* ------------------------------------------------------------------ */
 
-export async function getTimeline(params: GetTimelineParams): Promise<TimelineResult> {
-  const result =
-    params.surface === "following"
-      ? await getFollowingTimeline(params)
-      : await getForYouTimeline(params);
+const ANON_FIRST_PAGE_TTL_MS = 30_000;
+/** Cache key for the signed-out For-You first page. Keyed by page size so anon
+ *  requests with a non-default `limit` don't collide with the 20-item page. */
+const anonFirstPageKey = (limit: number) => `timeline:anon:first:${limit}`;
 
-  // Apply the viewer's muted words (reader-level content control). Cheap indexed
-  // read; skipped entirely for signed-out viewers.
-  if (!params.userId) return result;
-  const muted = await getMutedWords(params.userId);
-  if (!muted.length) return result;
-  return { ...result, items: applyMutedWords(result.items, muted) };
+/** Short TTL for the signed-in first-page cache (Phase 2). Deliberately tiny so
+ *  viewer-specific state (liked/reposted/bookmarked/myVotes) is at most this
+ *  stale; the SSE stream + optimistic client updates cover the gap in between. */
+const SIGNED_IN_FIRST_PAGE_TTL_MS = 15_000;
+
+/**
+ * Assemble a timeline page (surface dispatch + reader-level muted-word filter).
+ * Pulled out of `getTimeline` so both the cache paths and the uncached path
+ * share one implementation and the FeedItem shape stays identical everywhere.
+ */
+async function assembleTimeline(params: GetTimelineParams): Promise<TimelineResult> {
+  // The muted-words read (reader-level content control) only needs the viewer
+  // id, so run it alongside the timeline assembly rather than after it — one
+  // fewer serial round-trip on the hot path. Skipped for signed-out viewers.
+  const [result, muted] = await Promise.all([
+    params.surface === "following"
+      ? getFollowingTimeline(params)
+      : getForYouTimeline(params),
+    params.userId ? getMutedWords(params.userId) : Promise.resolve([] as string[]),
+  ]);
+
+  // Return the muted words with the page so the client can filter live SSE posts
+  // without separately hitting /api/preferences/muted-words at hydration.
+  return muted.length
+    ? { ...result, items: applyMutedWords(result.items, muted), mutedWords: muted }
+    : { ...result, mutedWords: muted };
+}
+
+export async function getTimeline(params: GetTimelineParams): Promise<TimelineResult> {
+  // The signed-out For-You first page is identical for every visitor, so serve
+  // it from a short cache — landing/logged-out traffic never runs full timeline
+  // assembly. 30s staleness is invisible (the SSE stream still delivers new
+  // posts live).
+  const anonCacheable =
+    !params.userId &&
+    params.surface === "foryou" &&
+    params.filter === "all" &&
+    !params.cursor &&
+    !params.search;
+  if (anonCacheable) {
+    const anonKey = anonFirstPageKey(params.limit);
+    const hit = apiCache.get<TimelineResult>(anonKey);
+    if (hit) return hit;
+    const result = await assembleTimeline(params);
+    apiCache.set(anonKey, result, ANON_FIRST_PAGE_TTL_MS);
+    return result;
+  }
+
+  // Signed-in first page (no cursor / no search): a short Redis-backed cache
+  // per (surface, filter, viewer) so the common "open the app" request is a
+  // cache hit instead of two `findMany`s + an in-memory merge. The whole result
+  // — including this viewer's liked/reposted/bookmarked/myVotes bits — is safe
+  // to cache under a viewer-keyed key because it is computed for exactly this
+  // viewer. Subsequent (cursored) pages are never cached. `cached()` degrades to
+  // pure in-process caching when Redis is unset, so local/single-instance dev is
+  // unaffected. NOTE: there is no write-through invalidation here (the post /
+  // follow write paths live in modules outside this change's scope), so the TTL
+  // is the sole freshness bound — the client's optimistic updates + SSE cover
+  // the viewer's own actions within the window.
+  const signedInFirstPage = !!params.userId && !params.cursor && !params.search;
+  if (signedInFirstPage) {
+    return cached(
+      `feed:v1:${params.surface}:${params.filter}:${params.userId}:${params.limit}`,
+      SIGNED_IN_FIRST_PAGE_TTL_MS,
+      () => assembleTimeline(params),
+    );
+  }
+
+  return assembleTimeline(params);
 }
