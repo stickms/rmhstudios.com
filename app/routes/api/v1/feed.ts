@@ -35,7 +35,8 @@ export const Route = createFileRoute('/api/v1/feed')({
             });
             return json(page(posts.map(serializePublicPost), limit, (p) => p.createdAt.toISOString()));
           },
-          { scope: 'read:feed' }
+          // Feed assembly is heavier than a single-row read; weight it modestly.
+          { scope: 'read:feed', cost: 2 }
         ),
     },
   },

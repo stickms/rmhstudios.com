@@ -45,7 +45,7 @@ export async function getUnreadNotificationCount(userId: string): Promise<number
 
 /** Nudge a *warm* unread counter by `delta`, clamped at 0. No-op without Redis
  * or when the counter isn't currently cached. */
-async function adjustNotifUnread(userId: string, delta: number): Promise<void> {
+export async function adjustNotifUnread(userId: string, delta: number): Promise<void> {
   if (delta === 0 || !redisEnabled()) return;
   try {
     const key = notifUnreadKey(userId);
