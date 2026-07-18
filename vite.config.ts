@@ -114,14 +114,11 @@ const heavyExternals = [
   // Editor — monaco alone is 2.6MB in server bundle
   'monaco-editor',
   '@monaco-editor/react',
-  // Charting
-  'recharts',
   // UI libs
   'canvas-confetti',
   'react-player',
   'emoji-picker-react',
   'react-easy-crop',
-  'katex',
   // Audio (native/WASM — can't bundle)
   'tone',
   'audio-decode',
@@ -141,10 +138,6 @@ const ssrOnlyExternals = [
   '@dnd-kit/core',
   '@dnd-kit/sortable',
   '@dnd-kit/utilities',
-  '@tiptap/react',
-  '@tiptap/starter-kit',
-  '@tiptap/core',
-  '@tiptap/pm',
   '@anthropic-ai/sdk',
   // Native binary — used server-side to bundle generated vibe projects.
   'esbuild',
@@ -165,7 +158,7 @@ function manualChunks(id: string) {
   ) {
     return 'vendor-react';
   }
-  // Everything else (three, monaco, tone, pixi, recharts, tiptap, framer-motion,
+  // Everything else (three, monaco, tone, pixi, framer-motion,
   // …) is intentionally left to rolldown's automatic chunking. Every heavy library
   // is reached only through a React.lazy(() => import(...)) route boundary, so
   // rolldown emits it as an async chunk that loads on its own route — NOT in the
