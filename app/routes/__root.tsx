@@ -79,19 +79,10 @@ const localeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )rmh-l
 const bodyThemeScript = `if(window.__themeBg)document.body.style.backgroundColor=window.__themeBg`;
 
 /**
- * Load the Inter body font WITHOUT blocking first paint. `--site-font-body`
- * falls back to -apple-system / system-ui, so the page paints immediately in the
- * system font and swaps to Inter when it arrives (display=swap → no invisible
- * text). The link is inserted with media="print" — which browsers never treat as
- * render-blocking — then flipped to "all" on load. This removes the render-blocking
- * Google Fonts stylesheet request that Lighthouse measured at ~235ms on the
- * critical path, which matters most on slow connections.
- */
-const interFontScript = `(function(){var l=document.createElement("link");l.rel="stylesheet";l.media="print";l.href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap";l.onload=function(){l.media="all"};document.head.appendChild(l)})()`;
-
-/**
  * Deferred font loading script — loads decorative/theme fonts after the page
  * is interactive via requestIdleCallback, keeping them off the critical path.
+ * (Inter, the body/display font, is now self-hosted via @fontsource-variable/inter
+ * imported in globals.css — no Google Fonts request on the critical path.)
  */
 const deferredFontsScript = `(function(){var u="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Playfair+Display:wght@400..900&family=Bangers&family=Bebas+Neue&family=Orbitron:wght@400..900&family=Cinzel:wght@400..900&family=Pacifico&family=Space+Grotesk:wght@300..700&family=Permanent+Marker&family=Caveat:wght@400..700&family=Dancing+Script:wght@400..700&family=Patrick+Hand&display=swap";function l(){var k=document.createElement("link");k.rel="stylesheet";k.href=u;document.head.appendChild(k)}if("requestIdleCallback"in window)requestIdleCallback(l);else setTimeout(l,200)})()`;
 
@@ -176,8 +167,8 @@ export const Route = createRootRoute({
       scripts: [
         { children: themeScript },
         { children: localeScript },
-        // Inter (body font) loads non-blocking; decorative/theme fonts stay deferred.
-        { children: interFontScript },
+        // Inter (body font) is self-hosted via globals.css; decorative/theme fonts
+        // stay idle-deferred (loaded from Google Fonts after the page is interactive).
         { children: deferredFontsScript },
         // Site-wide structured data (Organization + WebSite w/ SearchAction).
         jsonLdScript([organizationSchema(), websiteSchema()]),

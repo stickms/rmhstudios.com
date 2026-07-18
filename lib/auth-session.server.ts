@@ -23,6 +23,18 @@ type SessionResult = Awaited<ReturnType<typeof auth.api.getSession>>;
 
 const sessionByRequest = new WeakMap<object, Promise<SessionResult>>();
 
+/**
+ * Better Auth names its session cookies `*session_token` / `*session_data` (plus
+ * `__Secure-`/`__Host-` prefixes under HTTPS — see server/nitro/anon-html-cache.ts,
+ * which keys the edge cache on the same signal). A request that carries neither
+ * cannot be authenticated, so we can skip Better Auth entirely for it.
+ */
+function hasSessionCookie(headers: Headers): boolean {
+  const cookie = headers.get("cookie");
+  if (!cookie) return false;
+  return cookie.includes("session_token") || cookie.includes("session_data");
+}
+
 /** Resolve the current request's session once, memoized for that request. */
 export function getRequestSession(): Promise<SessionResult> {
   let req: { headers: Headers } | null = null;
@@ -32,6 +44,15 @@ export function getRequestSession(): Promise<SessionResult> {
     req = null;
   }
   if (!req || !req.headers) return Promise.resolve(null as SessionResult);
+
+  // Anonymous fast path (perf audit §6.4): no session cookie → definitely signed
+  // out, so skip the whole Better Auth resolution — no session/user lookup, no
+  // signed-cookie decode, no customSession tier resolution. This takes auth work
+  // off every anonymous request, which is the common case for landing / first-visit
+  // traffic (root loader + feed + sidebar all resolve the session on that path).
+  // "When in doubt, resolve": any session cookie present still goes through the
+  // full check below, so logged-in users are unaffected.
+  if (!hasSessionCookie(req.headers)) return Promise.resolve(null as SessionResult);
 
   const key = req as unknown as object;
   const cached = sessionByRequest.get(key);
