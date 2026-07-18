@@ -192,6 +192,13 @@ export default defineConfig({
     tailwindcss(),
     tanstackStart({
       srcDirectory: 'app',
+      // NOTE: `router: { autoCodeSplitting: true }` was tested (rewrite R3-T5,
+      // 2026-07-18) and is a VERIFIED NO-OP here — enabling it produced a
+      // byte-identical build (same chunk hashes, same 582 chunks, same 216 KB
+      // brotli entry). Routes are already split by rolldown's per-route async
+      // chunking; the shared entry is framework+shell, not "all route shells".
+      // The real shared-entry reduction is the workspace decomposition (design
+      // §7.1), not this flag. Do not re-add it expecting a win.
     }),
     react(),
     nitro({
