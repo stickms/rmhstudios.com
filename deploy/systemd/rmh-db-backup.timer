@@ -1,0 +1,12 @@
+# rmhstudios — schedule for rmh-db-backup.service (nightly 03:30 UTC).
+# Install/enable instructions live in rmh-db-backup.service.
+[Unit]
+Description=Nightly rmhstudios Postgres backup to R2
+
+[Timer]
+OnCalendar=*-*-* 03:30:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
