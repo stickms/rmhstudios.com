@@ -30,19 +30,19 @@
 
 ## Directory guides
 
-| Area | Guide |
-|---|---|
-| Whole repo (start here) | [`CLAUDE.md`](./CLAUDE.md) |
-| Routes, pages, API endpoints | [`app/CLAUDE.md`](./app/CLAUDE.md) |
-| React components & UI primitives | [`components/CLAUDE.md`](./components/CLAUDE.md) |
-| Shared logic, auth, prisma, i18n | [`lib/CLAUDE.md`](./lib/CLAUDE.md) |
-| Node realtime hubs & workers | [`server/CLAUDE.md`](./server/CLAUDE.md) |
-| Go microservice fleet | [`go-services/CLAUDE.md`](./go-services/CLAUDE.md) |
-| Runtime topology & deploy pipeline | [`docs/architecture.md`](./docs/architecture.md) |
-| Design language (themes, tokens) | [`docs/design-language.md`](./docs/design-language.md) |
-| New-page consistency checklist | [`docs/page-consistency.md`](./docs/page-consistency.md) |
-| Docs index (incl. stale-doc flags) | [`docs/README.md`](./docs/README.md) |
-| Contribution rules | [`CONTRIBUTING.md`](./CONTRIBUTING.md) |
+| Area                               | Guide                                                    |
+| ---------------------------------- | -------------------------------------------------------- |
+| Whole repo (start here)            | [`CLAUDE.md`](./CLAUDE.md)                               |
+| Routes, pages, API endpoints       | [`app/CLAUDE.md`](./app/CLAUDE.md)                       |
+| React components & UI primitives   | [`components/CLAUDE.md`](./components/CLAUDE.md)         |
+| Shared logic, auth, prisma, i18n   | [`lib/CLAUDE.md`](./lib/CLAUDE.md)                       |
+| Node realtime hubs & workers       | [`server/CLAUDE.md`](./server/CLAUDE.md)                 |
+| Go microservice fleet              | [`go-services/CLAUDE.md`](./go-services/CLAUDE.md)       |
+| Runtime topology & deploy pipeline | [`docs/architecture.md`](./docs/architecture.md)         |
+| Design language (themes, tokens)   | [`docs/design-language.md`](./docs/design-language.md)   |
+| New-page consistency checklist     | [`docs/page-consistency.md`](./docs/page-consistency.md) |
+| Docs index (incl. stale-doc flags) | [`docs/README.md`](./docs/README.md)                     |
+| Contribution rules                 | [`CONTRIBUTING.md`](./CONTRIBUTING.md)                   |
 
 ## Key commands
 
