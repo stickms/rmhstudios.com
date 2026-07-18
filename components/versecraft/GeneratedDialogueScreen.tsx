@@ -47,9 +47,9 @@ function lighten(hex: string, amt = 0.45): string {
 }
 
 function bgImage(env: string, time: string): string {
-  // Existing assets are named "<env>_day.png" with some evening/night variants.
+  // Existing assets are named "<env>_day.webp" with some evening/night variants.
   const variant = (time === 'evening' || time === 'night') ? time : 'day';
-  return `${BG_BASE}/${env}_${variant}.png`;
+  return `${BG_BASE}/${env}_${variant}.webp`;
 }
 
 function Typewriter({ text, speed, onDone, skipRef }: {

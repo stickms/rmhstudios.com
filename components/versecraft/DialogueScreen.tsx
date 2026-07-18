@@ -14,29 +14,29 @@ import { asset } from '@/lib/storage/asset';
 // Background image presets (Sutemo VN backgrounds)
 const BG_BASE = asset('/sprites/versecraft/backgrounds');
 const BACKGROUNDS: Record<string, { image: string; fallback: string }> = {
-  school_hallway: { image: `${BG_BASE}/school_hallway_day.png`, fallback: '#4A3F35' },
-  club_room:      { image: `${BG_BASE}/club_room_day.png`, fallback: '#4A3B6B' },
-  classroom:      { image: `${BG_BASE}/classroom_day.png`, fallback: '#5A4A3B' },
-  school_stairs:  { image: `${BG_BASE}/school_stairs_day.png`, fallback: '#6B5B45' },
-  school_gym:     { image: `${BG_BASE}/school_gym_day.png`, fallback: '#3A4A5B' },
-  park:           { image: `${BG_BASE}/park_day.png`, fallback: '#2A4A2B' },
-  cafe:           { image: `${BG_BASE}/cafe_day.png`, fallback: '#5A3A2B' },
-  personal_room:  { image: `${BG_BASE}/personal_room_day.png`, fallback: '#3A2A4B' },
-  beach:          { image: `${BG_BASE}/beach_day.png`, fallback: '#4A6A8B' },
-  city:           { image: `${BG_BASE}/city_day.png`, fallback: '#3A3A4B' },
-  forest:         { image: `${BG_BASE}/forest_night.png`, fallback: '#1A2A1B' },
+  school_hallway: { image: `${BG_BASE}/school_hallway_day.webp`, fallback: '#4A3F35' },
+  club_room:      { image: `${BG_BASE}/club_room_day.webp`, fallback: '#4A3B6B' },
+  classroom:      { image: `${BG_BASE}/classroom_day.webp`, fallback: '#5A4A3B' },
+  school_stairs:  { image: `${BG_BASE}/school_stairs_day.webp`, fallback: '#6B5B45' },
+  school_gym:     { image: `${BG_BASE}/school_gym_day.webp`, fallback: '#3A4A5B' },
+  park:           { image: `${BG_BASE}/park_day.webp`, fallback: '#2A4A2B' },
+  cafe:           { image: `${BG_BASE}/cafe_day.webp`, fallback: '#5A3A2B' },
+  personal_room:  { image: `${BG_BASE}/personal_room_day.webp`, fallback: '#3A2A4B' },
+  beach:          { image: `${BG_BASE}/beach_day.webp`, fallback: '#4A6A8B' },
+  city:           { image: `${BG_BASE}/city_day.webp`, fallback: '#3A3A4B' },
+  forest:         { image: `${BG_BASE}/forest_night.webp`, fallback: '#1A2A1B' },
 };
 
 // Time-of-day variants override the default image
 const TIME_BG_VARIANTS: Record<string, Record<string, string>> = {
-  school_hallway: { evening: `${BG_BASE}/school_hallway_evening.png` },
-  club_room:      { evening: `${BG_BASE}/club_room_evening.png` },
-  classroom:      { evening: `${BG_BASE}/classroom_evening.png`, night: `${BG_BASE}/classroom2_night.png` },
-  school_stairs:  { evening: `${BG_BASE}/school_stairs_evening.png` },
-  park:           { evening: `${BG_BASE}/park_evening.png`, night: `${BG_BASE}/park_night.png` },
-  cafe:           { night: `${BG_BASE}/cafe_night.png` },
-  personal_room:  { evening: `${BG_BASE}/personal_room_evening.png`, night: `${BG_BASE}/personal_room_night.png` },
-  city:           { night: `${BG_BASE}/city_night.png` },
+  school_hallway: { evening: `${BG_BASE}/school_hallway_evening.webp` },
+  club_room:      { evening: `${BG_BASE}/club_room_evening.webp` },
+  classroom:      { evening: `${BG_BASE}/classroom_evening.webp`, night: `${BG_BASE}/classroom2_night.webp` },
+  school_stairs:  { evening: `${BG_BASE}/school_stairs_evening.webp` },
+  park:           { evening: `${BG_BASE}/park_evening.webp`, night: `${BG_BASE}/park_night.webp` },
+  cafe:           { night: `${BG_BASE}/cafe_night.webp` },
+  personal_room:  { evening: `${BG_BASE}/personal_room_evening.webp`, night: `${BG_BASE}/personal_room_night.webp` },
+  city:           { night: `${BG_BASE}/city_night.webp` },
 };
 
 const TIME_FILTERS: Record<string, string> = {

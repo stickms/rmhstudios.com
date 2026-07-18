@@ -8,7 +8,7 @@ import { asset } from '@/lib/storage/asset';
 
 const SPRITE_BASE = asset('/sprites/versecraft');
 
-/** Available sprite filenames per character (without .png extension).
+/** Available sprite filenames per character (without .webp extension).
  *  Generated from Sutemo PSD packs via generate_sprites.py */
 const SPRITE_FILES: Record<string, string[]> = {
   // Full body (Sutemo Female) - 11 expressions each
@@ -132,7 +132,7 @@ export function getSpritePath(characterId: string, expression?: string, pack: Sp
   if (pack === 'hoshiko') {
     const mappedFile = expression ? (HOSHIKO_EXPRESSION_MAP[expression] || 'smile') : 'smile';
     const filename = HOSHIKO_FILES.includes(mappedFile) ? mappedFile : 'smile';
-    return `${SPRITE_BASE}/hoshiko/${filename}.png`;
+    return `${SPRITE_BASE}/hoshiko/${filename}.webp`;
   }
 
   const files = SPRITE_FILES[characterId];
@@ -144,7 +144,7 @@ export function getSpritePath(characterId: string, expression?: string, pack: Sp
   const mappedFile = expression ? (charMap[expression] || 'normal') : 'normal';
   const filename = files.includes(mappedFile) ? mappedFile : 'normal';
 
-  return `${SPRITE_BASE}/${characterId}/${filename}.png`;
+  return `${SPRITE_BASE}/${characterId}/${filename}.webp`;
 }
 
 /**

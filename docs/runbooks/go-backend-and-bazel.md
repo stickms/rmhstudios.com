@@ -24,13 +24,11 @@ gateway cutover.
      then `apachectl configtest && systemctl reload apache2`.
    Verify behind Cloudflare; watch error rate, latency, and range behavior.
 5. **Roll the rest** one at a time: `music` → `sprites` → `library`.
-6. **Phase 4 — slim the image:** activate the `.dockerignore` exclusions and
-   update the Dockerfile together — both steps are required:
-   a. In `.dockerignore`, uncomment the two lines in the "Assets/CDN cutover —
-      Phase 4" block (`public/library` and `public/models`).
-   b. In the Node `Dockerfile` (vite-builder stage), remove the sanity check
-      `test -f /app/build-output/public/models/marlonjack.glb` — the file will
-      no longer be present in the build context once `public/models` is excluded.
+6. **Phase 4 — slim the image:** activate the `.dockerignore` exclusion for
+   `public/library` (uncomment it in the "Assets/CDN cutover — Phase 4" block).
+   `public/models` no longer exists (its two unused `.glb` files were deleted),
+   and the Dockerfile's public-root sanity check already targets
+   `public/robots.txt`, so no Dockerfile change is needed here.
    Rebuild and confirm the image is ~500 MB lighter.
 7. **Rollback (any phase):** re-point the prefix back to the Apache `Alias` /
    disk (or remove the gateway prefix) and reload.

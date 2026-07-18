@@ -67,9 +67,10 @@ db/music
 #     metadata step can see them. data/library-metadata.json (committed) carries
 #     the catalogue. Adding a NEW library PDF requires running
 #     `pnpm run library:metadata` locally and committing its cover + the JSON.
-#   - models: still shipped IN the image for now (~20 MB; the Dockerfile
-#     smoke-tests public/models/marlonjack.glb). Exclusion deferred to Phase 4 —
-#     see block below.
+#   - models: public/models/ was removed entirely — its only contents were two
+#     unused .glb files (marlonjack ~19 MB, brain ~1 MB) referenced by no code.
+#     The Dockerfile now smoke-tests public/robots.txt to confirm the public
+#     root was copied.
 public/library/*.pdf
 public/music
 public/sprites
@@ -84,13 +85,9 @@ public/sprites
 content
 
 # ── Assets/CDN cutover — Phase 4 (see docs/runbooks/go-backend-and-bazel.md) ──
-# Uncomment these ONLY after /library and /models are served from the bucket by
-# the Go assets service. Activating them drops ~500 MB from the build context.
-# When you uncomment public/models, you MUST also remove the
-# `test -f .../public/models/marlonjack.glb` sanity check in the Node Dockerfile
-# (the file will no longer be in the build context).
+# Uncomment this ONLY after /library is served from the bucket by the Go assets
+# service. Activating it drops ~500 MB from the build context.
 # public/library
-# public/models
 public/**/*.psd
 public/**/generate_sprites.py
 
