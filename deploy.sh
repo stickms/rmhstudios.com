@@ -899,6 +899,39 @@ if [ -n "${BG_AVATAR_PID:-}" ]; then
     wait "$BG_AVATAR_PID" 2>/dev/null || true
 fi
 
+# ── Host perf-tuning preflight (non-fatal, perf audit §1.3/§1.4) ──────────────
+# The Postgres + Apache tuning (deploy/postgres/postgresql.tuning.conf,
+# deploy/apache/mpm_event.conf) is a HOST action this deploy CANNOT perform: the
+# webhook runs sandboxed (ProtectSystem=strict — no /etc writes, no service
+# restarts). We can still DETECT whether it was applied — apply-perf-tuning.sh
+# installs two well-known files — and nag on every deploy until it is, so an
+# untuned box (stock max_connections=100, Apache MaxRequestWorkers ~400) doesn't
+# silently cap the whole fleet under load. Fully guarded: never affects the
+# deploy result.
+{
+    _tuning_missing=0
+    # Host Postgres only (skip when the DB is external / not on this host).
+    if [ -d /etc/postgresql ]; then
+        ls /etc/postgresql/*/main/conf.d/rmhstudios-tuning.conf >/dev/null 2>&1 || _tuning_missing=1
+    fi
+    # Host Apache MPM tuning (a2enconf symlinks into conf-enabled).
+    if command -v apache2ctl >/dev/null 2>&1 || command -v apachectl >/dev/null 2>&1; then
+        [ -e /etc/apache2/conf-enabled/mpm-tuning.conf ] || _tuning_missing=1
+    fi
+    if [ "$_tuning_missing" = "1" ]; then
+        log "  ┌── ⚠  HOST PERF TUNING NOT FULLY APPLIED ──────────────────────────"
+        log "  │ Postgres max_connections and/or Apache MaxRequestWorkers look like"
+        log "  │ stock defaults (100 / ~400), which caps the fleet under load. This"
+        log "  │ sandboxed deploy cannot change host config. Apply ONCE on the host"
+        log "  │ (idempotent, needs root):"
+        log "  │     sudo bash deploy/apply-perf-tuning.sh"
+        log "  │ or enable the unit: deploy/systemd/rmhstudios-perf-tuning.service"
+        log "  └───────────────────────────────────────────────────────────────────"
+    else
+        log "Host perf tuning present (Postgres + Apache tuning files installed)."
+    fi
+} 2>/dev/null || true
+
 # ── Done ─────────────────────────────────────────────────────────────────────
 update_deploy_status success
 log "=== Deployment complete ($ENVIRONMENT: web=$PORT_WEB, socket=$PORT_SOCKET, rmhbox=$PORT_RMHBOX, rmhtube=$PORT_RMHTUBE, status=$PORT_STATUS) ==="

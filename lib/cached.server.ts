@@ -130,6 +130,122 @@ export async function cached<T>(
 }
 
 /**
+ * Stale-while-revalidate read-through cache (L1 + optional L2) with
+ * single-flight.
+ *
+ * Difference from `cached()`: a value stays *served* for `swrMs` after its
+ * `ttlMs` freshness window expires. During that stale window the cached value
+ * is returned IMMEDIATELY and a background refresh is kicked off (deduped), so
+ * no request ever blocks on the expensive loader once the key is warm. Only a
+ * cold key (never computed, or idle past `ttlMs + swrMs`) pays the synchronous
+ * loader cost, and concurrent cold callers still share one invocation.
+ *
+ * This is the fix for the "feed skeleton hangs" tail: the per-viewer feed cache
+ * previously blocked the first caller after every short TTL on a full ~32-query
+ * assemble, and the anon path (raw apiCache) had no single-flight at all, so a
+ * burst of visitors on TTL expiry each ran the assemble at once. With SWR the
+ * skeleton resolves from cache in ~1ms and the assemble runs off the hot path.
+ *
+ * Values are stored wrapped as `{ v, freshUntil }`; the L1/L2 hard TTL is
+ * `ttlMs + swrMs` so the entry survives into the stale window. `cachedSWR` is
+ * the sole reader/writer of its keys, so use a key namespace distinct from any
+ * `cached()` key (the wrapper shape differs). Background-refresh failures are
+ * swallowed — the last good value keeps serving until it hard-expires.
+ */
+interface SWREntry<T> {
+  v: T;
+  freshUntil: number;
+}
+
+const swrInflight = new Map<string, Promise<unknown>>();
+
+export interface CachedSWROptions {
+  /** Freshness window (ms): within this, the value is returned with no refresh. */
+  ttlMs: number;
+  /** Extra window (ms) after `ttlMs` during which the stale value is served
+   *  while a background refresh runs. */
+  swrMs: number;
+  /** Also consult/populate the shared Redis L2. Default true. */
+  l2?: boolean;
+}
+
+/** Recompute `key` and rewrite both cache layers. Deduped via `swrInflight`;
+ *  never rejects (a failed refresh keeps the existing stale value). */
+function swrRefresh<T>(
+  key: string,
+  opts: CachedSWROptions,
+  loader: () => Promise<T>,
+): Promise<T | undefined> {
+  const existing = swrInflight.get(key);
+  if (existing) return existing as Promise<T | undefined>;
+  const useL2 = opts.l2 !== false;
+  const hardTtl = opts.ttlMs + opts.swrMs;
+  const promise = (async () => {
+    try {
+      const value = await loader();
+      const entry: SWREntry<T> = { v: value, freshUntil: Date.now() + opts.ttlMs };
+      apiCache.set(key, entry, hardTtl);
+      if (useL2 && redisEnabled()) void redisSetJSON(key, entry, hardTtl);
+      return value;
+    } catch {
+      // Keep the stale value; it will keep serving until it hard-expires.
+      return undefined;
+    } finally {
+      swrInflight.delete(key);
+    }
+  })();
+  swrInflight.set(key, promise);
+  return promise;
+}
+
+export async function cachedSWR<T>(
+  key: string,
+  opts: CachedSWROptions,
+  loader: () => Promise<T>,
+): Promise<T> {
+  ensureSubscribed();
+  const useL2 = opts.l2 !== false;
+  const hardTtl = opts.ttlMs + opts.swrMs;
+
+  // L1 — fresh returns immediately; stale returns immediately + refreshes.
+  const local = apiCache.get<SWREntry<T>>(key);
+  if (local && typeof local === 'object' && 'freshUntil' in local) {
+    if (Date.now() >= local.freshUntil) void swrRefresh(key, opts, loader);
+    return local.v;
+  }
+
+  // L1 miss — coalesce concurrent cold callers onto one resolution.
+  const existing = swrInflight.get(key);
+  if (existing) return existing as Promise<T>;
+
+  const promise = (async () => {
+    try {
+      // L2 — a warm value from another worker/instance seeds L1; if it is
+      // already stale, serve it and refresh in the background.
+      if (useL2 && redisEnabled()) {
+        const remote = await redisGetJSON<SWREntry<T>>(key);
+        if (remote && typeof remote === 'object' && 'freshUntil' in remote) {
+          apiCache.set(key, remote, hardTtl);
+          if (Date.now() >= remote.freshUntil) void swrRefresh(key, opts, loader);
+          return remote.v;
+        }
+      }
+      // Cold — compute synchronously (this is the only blocking path).
+      const value = await loader();
+      const entry: SWREntry<T> = { v: value, freshUntil: Date.now() + opts.ttlMs };
+      apiCache.set(key, entry, hardTtl);
+      if (useL2 && redisEnabled()) void redisSetJSON(key, entry, hardTtl);
+      return value;
+    } finally {
+      swrInflight.delete(key);
+    }
+  })();
+
+  swrInflight.set(key, promise);
+  return promise;
+}
+
+/**
  * Drop a single key from L1 + L2 and broadcast the drop to every instance.
  * Call after a mutation that changes the cached value.
  */

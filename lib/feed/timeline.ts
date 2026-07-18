@@ -29,7 +29,7 @@ import { audienceWhere } from "./audience.server";
 import { applyLock } from "./map-feed-item.server";
 import type { ReactionSummary } from "../social/reactions";
 import { apiCache } from "../cache";
-import { cached } from "../cached.server";
+import { cachedSWR } from "../cached.server";
 
 export type FeedSurface = "following" | "foryou";
 
@@ -760,14 +760,23 @@ export function applyMutedWords(items: FeedItem[], muted: string[]): FeedItem[] 
 /* ------------------------------------------------------------------ */
 
 const ANON_FIRST_PAGE_TTL_MS = 30_000;
+/** Stale-while-revalidate window after the anon TTL: within this the stale page
+ *  is served instantly while a single background refresh reassembles it, so a
+ *  burst of visitors on TTL expiry no longer each run a cold assemble. */
+const ANON_FIRST_PAGE_SWR_MS = 120_000;
 /** Cache key for the signed-out For-You first page. Keyed by page size so anon
- *  requests with a non-default `limit` don't collide with the 20-item page. */
-const anonFirstPageKey = (limit: number) => `timeline:anon:first:${limit}`;
+ *  requests with a non-default `limit` don't collide with the 20-item page.
+ *  `v2` namespaces the SWR wrapper shape apart from the pre-SWR raw value. */
+const anonFirstPageKey = (limit: number) => `timeline:anon:v2:first:${limit}`;
 
 /** Short TTL for the signed-in first-page cache (Phase 2). Deliberately tiny so
  *  viewer-specific state (liked/reposted/bookmarked/myVotes) is at most this
  *  stale; the SSE stream + optimistic client updates cover the gap in between. */
 const SIGNED_IN_FIRST_PAGE_TTL_MS = 15_000;
+/** SWR window after the signed-in TTL: the returning viewer gets the last page
+ *  instantly (~1ms) while the ~32-query assemble runs in the background, so the
+ *  feed skeleton no longer blocks on a cold assemble every 15s under load. */
+const SIGNED_IN_FIRST_PAGE_SWR_MS = 45_000;
 
 /**
  * Assemble a timeline page (surface dispatch + reader-level muted-word filter).
@@ -794,9 +803,12 @@ async function assembleTimeline(params: GetTimelineParams): Promise<TimelineResu
 
 export async function getTimeline(params: GetTimelineParams): Promise<TimelineResult> {
   // The signed-out For-You first page is identical for every visitor, so serve
-  // it from a short cache — landing/logged-out traffic never runs full timeline
-  // assembly. 30s staleness is invisible (the SSE stream still delivers new
-  // posts live).
+  // it from a short stale-while-revalidate cache — landing/logged-out traffic
+  // never runs full timeline assembly on the hot path. 30s staleness is
+  // invisible (the SSE stream still delivers new posts live); the SWR window
+  // then keeps the page served instantly while a single background refresh
+  // reassembles it, and `cachedSWR`'s single-flight collapses a TTL-expiry
+  // burst of visitors into ONE assemble instead of one-per-request.
   const anonCacheable =
     !params.userId &&
     params.surface === "foryou" &&
@@ -804,30 +816,31 @@ export async function getTimeline(params: GetTimelineParams): Promise<TimelineRe
     !params.cursor &&
     !params.search;
   if (anonCacheable) {
-    const anonKey = anonFirstPageKey(params.limit);
-    const hit = apiCache.get<TimelineResult>(anonKey);
-    if (hit) return hit;
-    const result = await assembleTimeline(params);
-    apiCache.set(anonKey, result, ANON_FIRST_PAGE_TTL_MS);
-    return result;
+    return cachedSWR(
+      anonFirstPageKey(params.limit),
+      { ttlMs: ANON_FIRST_PAGE_TTL_MS, swrMs: ANON_FIRST_PAGE_SWR_MS },
+      () => assembleTimeline(params),
+    );
   }
 
-  // Signed-in first page (no cursor / no search): a short Redis-backed cache
-  // per (surface, filter, viewer) so the common "open the app" request is a
-  // cache hit instead of two `findMany`s + an in-memory merge. The whole result
-  // — including this viewer's liked/reposted/bookmarked/myVotes bits — is safe
-  // to cache under a viewer-keyed key because it is computed for exactly this
-  // viewer. Subsequent (cursored) pages are never cached. `cached()` degrades to
-  // pure in-process caching when Redis is unset, so local/single-instance dev is
-  // unaffected. NOTE: there is no write-through invalidation here (the post /
-  // follow write paths live in modules outside this change's scope), so the TTL
-  // is the sole freshness bound — the client's optimistic updates + SSE cover
-  // the viewer's own actions within the window.
+  // Signed-in first page (no cursor / no search): a short Redis-backed
+  // stale-while-revalidate cache per (surface, filter, viewer) so the common
+  // "open the app" request returns instantly. The whole result — including this
+  // viewer's liked/reposted/bookmarked/myVotes bits — is safe to cache under a
+  // viewer-keyed key because it is computed for exactly this viewer. Subsequent
+  // (cursored) pages are never cached. `cachedSWR` degrades to pure in-process
+  // caching when Redis is unset, so local/single-instance dev is unaffected.
+  // With SWR, once warm the viewer never blocks on the ~32-query assemble — the
+  // last page serves in ~1ms while a deduped background refresh runs. NOTE:
+  // there is no write-through invalidation here (the post / follow write paths
+  // live in modules outside this change's scope), so the TTL+SWR window is the
+  // sole freshness bound — the client's optimistic updates + SSE cover the
+  // viewer's own actions within it.
   const signedInFirstPage = !!params.userId && !params.cursor && !params.search;
   if (signedInFirstPage) {
-    return cached(
-      `feed:v1:${params.surface}:${params.filter}:${params.userId}:${params.limit}`,
-      SIGNED_IN_FIRST_PAGE_TTL_MS,
+    return cachedSWR(
+      `feed:v2:${params.surface}:${params.filter}:${params.userId}:${params.limit}`,
+      { ttlMs: SIGNED_IN_FIRST_PAGE_TTL_MS, swrMs: SIGNED_IN_FIRST_PAGE_SWR_MS },
       () => assembleTimeline(params),
     );
   }
