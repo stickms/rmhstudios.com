@@ -32,7 +32,7 @@ locales, RTL for ar/ur/fa).
 | `go-services/` | **Go** microservice fleet (Bazel + gazelle): supervisor/status/assets run in prod; gateway + hubs are the future topology. | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
 | `stores/` | Site-level Zustand stores (theme, locale, feed, user display). | `lib/CLAUDE.md` |
 | `hooks/` | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, …). | `lib/CLAUDE.md` |
-| `prisma/` | `schema.prisma` (~199 models) + migrations. | `lib/CLAUDE.md` |
+| `prisma/` | `schema.prisma` (225 models) + migrations. | `lib/CLAUDE.md` |
 | `locales/` | 32 locales × 66 namespaces; `en` is authoritative. | `lib/CLAUDE.md` §i18n |
 | `data/` | Static JSON (RMHBox content packs, library metadata). | — |
 | `public/` | Static assets, `robots.txt`, `manifest.webmanifest`. | — |

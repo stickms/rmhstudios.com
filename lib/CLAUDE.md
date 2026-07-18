@@ -98,12 +98,17 @@ don't remove that plugin.
 
 ## Database (Prisma)
 
-- `prisma/schema.prisma`: ~199 models, 4500+ lines. IDs are
-  `String @id @default(cuid())`; models `@@map` to snake_case tables; ~48
+- `prisma/schema.prisma`: 225 models, 5400+ lines. IDs are
+  `String @id @default(cuid())`; models `@@map` to snake_case tables; ~61
   enums. Model families: auth/user, social feed (RMHark*), per-game
   player/match tables, economy (CoinTransaction, inventory, quests),
   media/library, Stripe subscriptions, moderation, Ladder*, Doctrine*,
   rideshare/homes, messaging.
+- **New-table PK policy (rewrite R0-T7):** existing tables keep their `cuid()`
+  PKs (the keyset `(createdAt desc, id desc)` indexes make them scannable). For
+  any NEW append-only / high-volume table, prefer a time-sortable key —
+  UUIDv7/ULID or `BigInt` identity — for insert locality, so a second
+  `(fk, createdAt)` index isn't needed just to scan it.
 - Workflow: `pnpm db:push` for local dev; real migrations via
   `pnpm db:migrate` (dev) / `pnpm db:migrate:prod` (deploy runs this).
   `postinstall` runs `prisma generate`.

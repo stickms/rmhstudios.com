@@ -61,7 +61,7 @@ go-services/
 | `bot-worker` | — | worker | bot-worker | ported; idles without `DEEPSEEK_API_KEY` |
 | `assets` | `ASSETS_PORT` 7007 | HTTP | Apache off-disk CDN | range-aware S3/R2 streaming for `/library /music /models /sprites` |
 | `status` | `STATUS_PORT` 7008 | HTTP | server/status | fully ported dashboard + `/api/status` |
-| `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the 5 workers as goroutines under an errgroup |
+| `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the 6 workers (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker, streak-saver) as goroutines under an errgroup |
 | `ledger` | `LEDGER_ADDR` :7100 | HTTP `/ledger/v0/*` | none (net-new) | implemented, **not integrated**: no BUILD.bazel, no image, not deployed |
 
 Do not confuse **`ledger`** (Go artifact/provenance store) with
@@ -114,10 +114,13 @@ A thin TS client adapter is required before pointing the frontend at Go hubs.
 - `Conn`: read/write pumps, 256-msg send buffer, 1 MiB frames, ping/pong;
   slow consumers are dropped rather than wedging the room.
 - `GraceTimers`: keyed cancellable delayed actions (disconnect grace, room GC).
-- **Known caveat:** the Redis bus stamps received messages with the local
-  origin, and rooms skip self-origin messages — so cross-replica fan-out is
-  effectively dropped. Verify/fix `pkg/events` + `room.go` origin handling
-  before scaling any WS service past 1 replica.
+- **Cross-replica origin (FIXED):** `pkg/events` now frames each publish in a
+  `wireEnvelope{Origin, Payload}` carrying the TRUE publisher's origin, and
+  `Subscribe` decodes that origin instead of stamping the local replica's, so
+  `room.go`'s self-origin skip no longer drops cross-replica fan-out. (Earlier
+  revisions of this doc described this as an open bug — it is resolved in
+  `pkg/events/events.go`.) The Go WS fleet still isn't in the production request
+  path regardless (Apache routes realtime to the Node hubs).
 
 **Adding a realtime game:** simple 1v1 host-authoritative → register a
 `gamehub.RelayGroup` (`internal/gamehub/relay.go`) in `buildRelayRegistry`.
@@ -177,8 +180,9 @@ make images TAG=…   # OCI images via bazel (go_service_image macro)
 2. The legacy `go-services/Makefile` `SERVICES` list and the root `Makefile`
    image loop both lag the real service set — check `images/BUILD.bazel` for
    what's actually buildable.
-3. `cmd/ledger` has no BUILD.bazel/image — run gazelle and add an image target
-   before trying to ship it.
+3. `cmd/ledger` was never integrated (no BUILD.bazel/image, not deployed) and
+   was removed in the rewrite reap (R0-T6). The `ledger_*` schema tables remain.
 4. Discord bot commands are `/chat` + the Alex tamagotchi; there is no
    `/rmhbot` command (README claim is stale).
-5. The Redis backplane origin bug (see Realtime above) blocks >1 WS replica.
+5. Cross-replica fan-out via `pkg/events` is fixed (see Realtime above); the Go
+   WS fleet is still not in the production request path.
