@@ -1,10 +1,10 @@
 ---
 doc: full-rewrite-design
-version: 2
+version: 3
 date: 2026-07-18
 baseline_commit: efb6269
 repo: stickms/rmhstudios.com
-status: design
+status: in-progress # R0 landed 2026-07-18 (see §13); R1–R5 pending
 audience: [llm-agents, humans]
 machine_readable: true
 supersedes: []
@@ -12,6 +12,9 @@ builds_on:
   - docs/performance-audit-2026-07-17.md # per-request fixes; largely implemented
   - docs/scalability-audit-2026-07-17.md # scale roadmap; Phase-1 items largely implemented
   - docs/feed/plan.md # feed phases 0/1/3 shipped; 2/4 gated
+external_inputs:
+  - id: TEAM-PERF-2026-07-18 # team web-performance analysis (build @ ce41a39b); reconciled in §7.6
+    summary: '39.3MB client JS, 380KB blocking CSS, 0 code-split routes claim, i18n payload, root-loader TTFB, eager modals, 12 fonts, oversized assets'
 owner_decisions:
   - id: OD-1
     date: 2026-07-18
@@ -454,6 +457,52 @@ lint to prevent cross-domain Prisma access from the wrong route family.
 - Keep the esbuild step for `server/*` bundles (add `server/jobs`).
 - CI: per-package bundle-size delta gate + Lighthouse budget on the shell
   (warn R0-T3 → block R3-T1).
+
+### 7.6 Reconciliation with the team web-performance analysis (TEAM-PERF-2026-07-18)
+
+The team's measured analysis (production build @ `ce41a39b`) **confirms and
+sharpens** this section rather than redirecting it. Mapping its findings to
+this plan:
+
+| Finding                                                                                                             | Measured | This plan                                                                                                                   | Status                                                    |
+| ------------------------------------------------------------------------------------------------------------------- | -------- | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| **F1** route tree not code-split (`0` `createLazyFileRoute`, shared entry `index`~540KB + `src`~340KB uncompressed) | HIGH     | §7.1 workspace decomposition removes the games/apps from the shell graph entirely                                           | Superseded by decomposition; see the empirical note below |
+| **F2** 380 KB render-blocking `globals.css` on every route                                                          | HIGH     | §7.3 → `packages/ui/tokens.css` (≤40 KB brotli eager), rest co-located                                                      | Task R3-T4                                                |
+| **F3** per-locale i18n 350–560 KB, inlined into SSR HTML                                                            | HIGH     | §7.3 declarative namespaces; SSR already trimmed to 12 core namespaces (2026-07-17)                                         | Task R3-T4 + already-partly-shipped                       |
+| **F5** root loader blocks TTFB on a DB session lookup                                                               | MED      | §4.5/§5.3 session cache + defer; the shipped `staleTime` stops per-nav refetch                                              | Partly shipped; deferred-shell is R1/R3                   |
+| **F8** oversized static assets (sprites 133/music 95/models 20 MB)                                                  | MED      | OD-1 keeps them in-repo; the Dockerfile already excludes them from the slim image; edge-cache + `assets` service serve them | Bounded by OD-1                                           |
+
+New, concrete items F1/F4/F6/F7 add — folded in as R3 tasks:
+
+- **F1 empirical (autoCodeSplitting).** The July-17 audit called
+  `autoCodeSplitting` a no-op ("omitted from the plugin's input schema"); the
+  team analysis says enable it. Verified 2026-07-18: the option **is** present
+  in the installed `@tanstack/router-plugin` type surface
+  (`node_modules/@tanstack/router-plugin/dist/esm/vite.d.ts:60,110`), so the
+  lever is real and the audit's claim was about the `tanstackStart` wrapper's
+  pass-through. **R3-T5 (new):** enable `autoCodeSplitting`, rebuild, confirm
+  the shared entry shrinks via the R0-T3 budget report, and **SSR/hydration
+  smoke-test** before keeping it (this needs a running app + browser flow — do
+  it in R3, not blind). Even if it lands, the decomposition (§7.1) is still the
+  structural fix; splitting is complementary.
+- **F4 Monaco (~13 MB across editor + language workers, 1 import site
+  `components/admin/DynamicMonacoEditor.tsx`).** **R3-T6 (new):** when `rmhcode`
+  is extracted (§9.5), register only the languages actually offered and drop
+  unused Monaco workers — several MB off the editor route. It is admin/editor-
+  only and already lazy, so this is route-local, not shell.
+- **F6 eager providers & modals** (CommandPalette, Sonner, MiniPlayer,
+  KeyboardShortcuts, ≥6 modals in `Providers`/`_site`). **R3-T7 (new):**
+  lazy-mount each modal behind its trigger condition; defer MiniPlayer +
+  CommandPalette to first-interaction/idle. Behaviour-affecting (trigger
+  timing) → verify each modal still appears on its real trigger in a running
+  app before shipping.
+- **F7 12 decorative Google-Font families** loaded via `requestIdleCallback`.
+  **R3-T8 (new):** load decorative families per-route/per-theme on demand and
+  subset to used weights/glyphs (pairs with §7.3 tokens split).
+
+These four are frontend-runtime changes whose correctness needs the app driven
+in a browser; they are intentionally scheduled in R3 (after the workspace
+boundary exists) rather than attempted as blind edits.
 
 ---
 
@@ -1389,3 +1438,62 @@ prod_kpis:
     reason: 'games are client apps; SEO surfaces (landing pages) stay in apps/web',
   }
 ```
+
+---
+
+## 12. Implementation status (updated 2026-07-18)
+
+Phase **R0 landed** on `claude/website-performance-rewrite-j06tqj`. Everything
+below was verified with the real toolchain in this order: `pnpm install` →
+`tsc --noEmit` (clean) → `vitest run` (**4532 tests pass, 212 files**) →
+`pnpm build` (green, all 5 esbuild worker bundles) → `docker compose config`
+(valid) → `prisma validate` (valid) → `go build ./...` (clean). The full-repo
+`pnpm lint` was not run locally; it is the one CI `check`-job step left to
+confirm (the edits are deletion-heavy with no new unused symbols).
+
+### Landed
+
+| Task  | What shipped                                                                                                                                                                                                                                                 | Commit theme |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| R0-T1 | `deploy/backup/{pg-backup.sh,restore-drill.sh,README.md}` + `deploy/systemd/rmh-db-backup.{service,timer}` — nightly `pg_dump`→R2 (fail-closed, idempotent retention), restore drill, WAL-archiving doc. Closes the "no backups exist" P0.                   | reap+rails   |
+| R0-T2 | Redis cache/state split **seam** — `statePublisher` routes the 8 state-class helpers; dormant `redis-state` compose service (profile-gated, noeviction+AOF); `REDIS_STATE_URL` documented. **Inert until opt-in** (statePublisher === publisher when unset). | seam         |
+| R0-T3 | `scripts/ci/{bundle-budget.ts,perf-budgets.json}` + warn-only budget step in `web-ci.yml`.                                                                                                                                                                   | reap+rails   |
+| R0-T4 | Removed the dead npm deps (all `@tiptap/*`, `lowlight`, `@fontsource/*`, `recharts`, `katex`, `marked`, `turndown`, `discord.js`, `@types/{katex,turndown}`); `pixi.js`+`playwright`→devDeps; pruned vite externals.                                         | deps         |
+| R0-T5 | Deleted the 5 dead Node worker dirs (`server/{bot-worker,doctrine-worker,recap,vibe-worker,status}`).                                                                                                                                                        | deps         |
+| R0-T6 | Deleted `specs/`, 11 stale one-off scripts + `blog-data.json`, `go-services/cmd/ledger`.                                                                                                                                                                     | reap+rails   |
+| R0-T7 | Marked the 10 dead models `/// DEAD` in `schema.prisma`; **fixed the `reconcile-feed-counts` view-count bug** (it derived `viewCount` from the dead `rmheet_view`, which would zero all view counts).                                                        | dead-models  |
+| R0-T8 | Doc truth: 199→225 models; `go-services/CLAUDE.md` (events bug fixed, 6 workers, ledger removed); `server/CLAUDE.md` (dead dirs deleted, homes-worker added); new-table PK policy in `lib/CLAUDE.md`.                                                        | dead-models  |
+
+### Evidence-backed deviations from the original plan
+
+1. **immer / uuid / lodash-es kept in `dependencies`** (plan said reclassify to
+   devDeps). `lib/rmhvibe/vibe-packages.ts:51-53` is explicit: `inline`-tier
+   packages are resolved by esbuild at page-generation **(runtime)**, so
+   devDependencies would break prod vibe generation (they're pruned in the
+   `prod-deps` image stage). Only `pixi.js` (hosted-tier, build-time prebundle)
+   moved. The inventory's blanket reclassification was wrong for the inline tier.
+2. **`lib/rmhvibe/vibe-screenshot.server.ts` kept** (plan said delete it with
+   playwright). It is still imported by the **live** `scripts/backfill-vibe-thumbs.ts`
+   (package.json-wired). Playwright still moved to devDeps — no runtime path
+   imports it now, only scripts.
+3. **Go realtime/gateway deletion (R4-T1) not executed here.** It is entangled
+   with CI gates that can't run in a sandbox (Bazel, `helm lint`, `kube-linter`,
+   `kubeconform`, the Postgres-backed e2e harness) across six workflows plus
+   `images/BUILD.bazel` and the e2e scripts. Executing it blind risks reddening
+   CI. Deferred to a CI-connected run; the `pkg/events` fix that unblocked it is
+   already in `main` (recorded in §5.2 / R0-T8).
+4. **Redis split shipped as an inert seam, not a live cutover.** The dual-Redis
+   routing can't be runtime-verified without a running two-instance staging, so
+   R0-T2 landed behavior-preserving (fallback to the single connection) and the
+   `redis-state` service is dormant (profile-gated). Activation (set
+   `REDIS_STATE_URL` + start the profile) is the operator opt-in the design
+   always intended.
+
+### Not started (need infra / CI / app-runtime this sandbox lacks)
+
+R1 (PgBouncer + schema moves + partitioning — need a live Postgres and multi-
+week production gates), R2 (pg-boss — needs Postgres), R3 (workspace
+decomposition + the F1/F4/F6/F7 frontend-runtime items — need the app driven in
+a browser to verify), R4-T1..T4 (Bazel/helm/e2e + hub runtime), R5 (evidence-
+gated). Each remains fully specified in §8; the phase-ordering and exit-gate
+rules there still bind.
