@@ -19,8 +19,8 @@
 // (lib/i18n/instances.ts) still reads a warm bundle. English needs nothing here:
 // its core namespaces are statically bundled client-side (EN_CORE_RESOURCES) and
 // getServerI18n only calls localeCoreResources for non-en locales.
-import { CORE_NAMESPACES, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
-import { LOCALE_LOADERS, type LocaleBundle } from "@/lib/i18n/resources";
+import { CORE_NAMESPACES, DEFAULT_LOCALE, type Locale } from '@/lib/i18n/config';
+import { LOCALE_LOADERS, type LocaleBundle } from '@/lib/i18n/resources';
 
 /** Per-locale bundle cache, populated on first preloadLocale()/access and kept
  *  for the life of the process (the bundles are immutable static objects). */

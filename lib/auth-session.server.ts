@@ -30,9 +30,9 @@ const sessionByRequest = new WeakMap<object, Promise<SessionResult>>();
  * cannot be authenticated, so we can skip Better Auth entirely for it.
  */
 function hasSessionCookie(headers: Headers): boolean {
-  const cookie = headers.get("cookie");
+  const cookie = headers.get('cookie');
   if (!cookie) return false;
-  return cookie.includes("session_token") || cookie.includes("session_data");
+  return cookie.includes('session_token') || cookie.includes('session_data');
 }
 
 /** Resolve the current request's session once, memoized for that request. */
