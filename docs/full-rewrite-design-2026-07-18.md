@@ -474,28 +474,33 @@ this plan:
 
 New, concrete items F1/F4/F6/F7 add — folded in as R3 tasks:
 
-- **F1 empirical (autoCodeSplitting).** The July-17 audit called
-  `autoCodeSplitting` a no-op ("omitted from the plugin's input schema"); the
-  team analysis says enable it. Verified 2026-07-18: the option **is** present
-  in the installed `@tanstack/router-plugin` type surface
-  (`node_modules/@tanstack/router-plugin/dist/esm/vite.d.ts:60,110`), so the
-  lever is real and the audit's claim was about the `tanstackStart` wrapper's
-  pass-through. **R3-T5 (new):** enable `autoCodeSplitting`, rebuild, confirm
-  the shared entry shrinks via the R0-T3 budget report, and **SSR/hydration
-  smoke-test** before keeping it (this needs a running app + browser flow — do
-  it in R3, not blind). Even if it lands, the decomposition (§7.1) is still the
-  structural fix; splitting is complementary.
+- **F1 empirical (autoCodeSplitting) — RESOLVED 2026-07-18: verified no-op.**
+  The option **is** in the installed start-plugin-core schema
+  (`router.autoCodeSplitting`), so it's a real, accepted config key (the
+  audit's "omitted from the schema" was stale). But enabling it and rebuilding
+  produced a **byte-identical build** — same chunk hashes (`index-BsYx4LKv`,
+  `src-DFKXgIWm`), same 582 chunks, same 216 KB brotli entry. Routes are
+  already split by rolldown's per-route async chunking; the 216 KB entry is
+  framework+shell, not "all route shells". Reverted; `vite.config.ts` carries a
+  note so it isn't re-attempted. **The real shared-entry reduction is the
+  workspace decomposition (§7.1), not this flag.**
 - **F4 Monaco (~13 MB across editor + language workers, 1 import site
   `components/admin/DynamicMonacoEditor.tsx`).** **R3-T6 (new):** when `rmhcode`
   is extracted (§9.5), register only the languages actually offered and drop
   unused Monaco workers — several MB off the editor route. It is admin/editor-
   only and already lazy, so this is route-local, not shell.
-- **F6 eager providers & modals** (CommandPalette, Sonner, MiniPlayer,
-  KeyboardShortcuts, ≥6 modals in `Providers`/`_site`). **R3-T7 (new):**
-  lazy-mount each modal behind its trigger condition; defer MiniPlayer +
-  CommandPalette to first-interaction/idle. Behaviour-affecting (trigger
-  timing) → verify each modal still appears on its real trigger in a running
-  app before shipping.
+- **F6 eager overlays — LANDED 2026-07-18 (commit `perf(_site)`).** The
+  `_site` layout statically mounted 7 client-only overlays that render nothing
+  until a condition fires (Welcome/LanguageFirstRun/WhatsNew/FreeMonth modals,
+  cookie notice, keyboard shortcuts, music mini-player). Converted to
+  `React.lazy` + `Suspense(fallback null)` — their code moved to async chunks
+  off the eager entry. **Verified against a locally-run production build
+  (native Postgres + headless Chromium):** 0 hydration errors, 0 console
+  errors, all 7 chunks load+mount post-hydration, none in the eager
+  modulepreload set. **~28 KB brotli** off the feed entry (~13% of the 216 KB
+  app-shell). Further gain available (gate MiniPlayer's lazy mount on an active
+  track so its chunk never loads for feed users) — deferred as a refinement.
+  `Providers`-level widgets (Sonner, CommandPalette) not yet touched.
 - **F7 12 decorative Google-Font families** loaded via `requestIdleCallback`.
   **R3-T8 (new):** load decorative families per-route/per-theme on demand and
   subset to used weights/glyphs (pairs with §7.3 tokens split).
