@@ -111,9 +111,6 @@ const heavyExternals = [
   '@react-three/drei',
   '@react-three/rapier',
   'pixi.js',
-  // Editor — monaco alone is 2.6MB in server bundle
-  'monaco-editor',
-  '@monaco-editor/react',
   // UI libs
   'canvas-confetti',
   'react-player',
@@ -146,7 +143,7 @@ const ssrOnlyExternals = [
 function manualChunks(id: string) {
   // React core first — it MUST be one shared chunk. Everything the app renders
   // imports React, so isolating it keeps the heavy route-only vendors
-  // (three/monaco/tone/…) from bridging into the entry via shared React runtime.
+  // (three/tone/…) from bridging into the entry via shared React runtime.
   // (When React had no chunk of its own, rolldown co-located it inside vendor-three;
   // the entry then imported that 1.3 MB chunk on every page just to get React.)
   if (
@@ -158,13 +155,13 @@ function manualChunks(id: string) {
   ) {
     return 'vendor-react';
   }
-  // Everything else (three, monaco, tone, pixi, framer-motion,
+  // Everything else (three, tone, pixi, framer-motion,
   // …) is intentionally left to rolldown's automatic chunking. Every heavy library
   // is reached only through a React.lazy(() => import(...)) route boundary, so
   // rolldown emits it as an async chunk that loads on its own route — NOT in the
   // entry graph. Force-chunking them into named vendor chunks (the previous
   // approach) made rolldown scatter shared runtime into those chunks and drag the
-  // whole 1.3 MB three + 1 MB monaco payload onto every page, including the
+  // whole 1.3 MB three payload onto every page, including the
   // homepage. Only React is pinned above, because it is genuinely shared by the
   // entry and must not be duplicated.
 }

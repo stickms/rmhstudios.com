@@ -1,16 +1,14 @@
-import { useState, useCallback, lazy, Suspense } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from '@tanstack/react-router';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import ReactMarkdown from 'react-markdown';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-
-// Load Monaco editor lazily to avoid SSR "window is not defined" or initialization errors
-const Editor = lazy(() => import('@/components/admin/DynamicMonacoEditor'));
+import { MarkdownEditor } from '@/components/admin/MarkdownEditor';
 import {
   AnimatedH1, AnimatedH2, AnimatedH3, AnimatedP,
   AnimatedUl, AnimatedOl, AnimatedLi,
@@ -45,7 +43,8 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
     tags: initialData?.tags ? (Array.isArray(initialData.tags) ? initialData.tags.join(', ') : initialData.tags) : '',
   });
   const [content, setContent] = useState(initialData?.content || '');
-  
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [previewContent, setPreviewContent] = useState<string | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,8 +53,18 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleEditorChange = (value: string | undefined) => {
-    setContent(value || '');
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // Reset so re-uploading the same file fires change again.
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const text = await file.text();
+      setContent(text);
+      toast.success(t('markdown-imported', { defaultValue: 'Imported {{name}}', name: file.name }));
+    } catch {
+      toast.error(t('markdown-import-failed', { defaultValue: 'Could not read that file' }));
+    }
   };
 
   const generatePreview = useCallback(async () => {
@@ -175,22 +184,32 @@ export function MDXEditor({ initialData, isEdit = false }: { initialData?: any, 
                         </form>
 
                         <div className="flex-1 flex flex-col min-h-0 h-full">
-                            <Label className="mb-2">{t('content-label', { defaultValue: 'Content' })} <span className="text-site-danger">*</span></Label>
+                            <div className="flex items-center justify-between mb-2">
+                              <Label>{t('content-label', { defaultValue: 'Content' })} <span className="text-site-danger">*</span></Label>
+                              <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".md,.markdown,.mdx,.txt,text/markdown,text/plain"
+                                className="hidden"
+                                onChange={handleFileUpload}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-8"
+                                onClick={() => fileInputRef.current?.click()}
+                              >
+                                <Upload className="w-4 h-4 mr-1.5" aria-hidden="true" />
+                                {t('upload-markdown', { defaultValue: 'Upload .md' })}
+                              </Button>
+                            </div>
                             <div className="flex-1 border border-site-border rounded-site-sm overflow-hidden relative min-h-75 sm:min-h-0">
-                              <Suspense fallback={<div className="flex-1 flex items-center justify-center bg-site-surface border border-site-border rounded-site-sm text-site-text-muted">{t('loading-editor', { defaultValue: 'Loading Editor...' })}</div>}>
-                                <Editor
-                                  height="100%"
-                                  defaultLanguage="markdown"
-                                  theme="vs-dark"
-                                  value={content}
-                                  onChange={handleEditorChange}
-                                  options={{
-                                    wordWrap: 'on',
-                                    minimap: { enabled: false },
-                                    scrollBeyondLastLine: false,
-                                  }}
-                                />
-                              </Suspense>
+                              <MarkdownEditor
+                                value={content}
+                                onChange={setContent}
+                                placeholder={t('content-placeholder', { defaultValue: 'Write your post in Markdown…' })}
+                              />
                             </div>
                         </div>
                     </div>
