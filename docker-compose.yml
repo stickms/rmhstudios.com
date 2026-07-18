@@ -100,11 +100,14 @@ services:
       <<: *build-common
       target: runner
     container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-web
-    # Resource limits — starting point (audit §5.2). NOTE: a SECOND web container
-    # runs briefly during the blue/green hotswap, so the box must fit ~2× this.
-    mem_limit: 1g
-    mem_reservation: 512m
-    cpus: 1.5
+    # Resource limits — sized for multi-core SSR (perf audit §1.1): 2 Nitro
+    # cluster workers on ~2 cores. NOTE: a SECOND web container runs briefly
+    # during the blue/green hotswap, so the box must fit ~2× this (≈3 GB / 4
+    # cores for web during a deploy). Lower WEB_WORKERS + cpus/mem together if the
+    # host is smaller.
+    mem_limit: 1536m
+    mem_reservation: 768m
+    cpus: 2.0
     ulimits: *hub-ulimits
     # NOTE: web does NOT publish a fixed host port. It is deployed blue/green by
     # deploy/hotswap-web.sh (zero-downtime), which publishes the active port
@@ -116,17 +119,19 @@ services:
       - PORT=${PORT_WEB:-7005}
       - HOSTNAME=0.0.0.0
       - REDIS_URL=${REDIS_URL:-redis://redis:6379}
-      # Cap V8 old-space BELOW the 1g cgroup (perf audit §1.5). V8 does not
-      # reliably size its heap to a container limit, so under load the process
-      # either OOM-kills (restart flap → 503s) or GC-thrashes at the ceiling.
-      # 768m leaves ~256m for non-heap (buffers, sharp/resvg native, code).
-      - NODE_OPTIONS=--max-old-space-size=768
-      # Multi-core web serving (perf audit §1.1). Only takes effect when the image
-      # is built with --build-arg NITRO_PRESET=node-cluster; defaults to 1 worker
-      # = today's single-process behavior. To use >1: build cluster, set
-      # WEB_WORKERS, and RAISE cpus/mem_limit above + lower per-worker
-      # --max-old-space-size so N workers fit the (enlarged) container.
-      - NITRO_CLUSTER_WORKERS=${WEB_WORKERS:-1}
+      # Per-WORKER V8 old-space cap (perf audit §1.5). With node-cluster the
+      # master forks NITRO_CLUSTER_WORKERS workers, each with its OWN heap, so
+      # this is per-process: 2 × 384m heap + master + native (sharp/resvg) fits
+      # under the 1.5g cgroup. Kept below the limit because V8 does not reliably
+      # size its heap to a container limit (OOM-flap or GC-thrash otherwise).
+      - NODE_OPTIONS=--max-old-space-size=384
+      # Multi-core web serving (perf audit §1.1). The production image is built
+      # with NITRO_PRESET=node-cluster (docker-bake.hcl), so these workers run on
+      # separate cores instead of one shared event loop. Default 2; set
+      # WEB_WORKERS in .env.production to tune — WEB_WORKERS=1 reverts to
+      # single-process. Raise cpus/mem_limit above together with the worker count,
+      # and size per-worker --max-old-space-size so N workers fit the container.
+      - NITRO_CLUSTER_WORKERS=${WEB_WORKERS:-2}
     healthcheck:
       # Hit the cheap liveness endpoint, not `/` — curling `/` every 30s renders
       # the full homepage through SSR on the single web event loop (perf audit

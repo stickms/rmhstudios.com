@@ -1,0 +1,45 @@
+# rmhstudios host performance tuning — systemd one-shot (perf audit §1.3/§1.4).
+#
+# WHY THIS EXISTS: the CD deploy (webhook → deploy.sh) runs sandboxed
+# (ProtectSystem=strict), so it CANNOT write /etc or restart Postgres/Apache —
+# it can only DETECT and warn (see deploy.sh's tuning preflight). This unit is
+# the privileged, out-of-sandbox path that actually applies the committed
+# Postgres + Apache tuning. Running it is the one host action that makes the
+# multi-core web tier + larger DB pool land against tuned limits instead of
+# stock ones (max_connections 100 → 200, Apache MaxRequestWorkers ~400 → 1536).
+#
+# apply-perf-tuning.sh is idempotent (it reinstalls the config and reloads), so
+# re-running is safe.
+#
+# ── Install (once, as root) ──────────────────────────────────────────────────
+#   1. Edit ExecStart below so the path matches where this repo lives on the VPS
+#      (the deploy checks it out under the same dir deploy.sh runs from).
+#   2. sudo cp deploy/systemd/rmhstudios-perf-tuning.service /etc/systemd/system/
+#      sudo systemctl daemon-reload
+#   3. Apply now:            sudo systemctl start  rmhstudios-perf-tuning.service
+#      Re-assert on boot:    sudo systemctl enable rmhstudios-perf-tuning.service
+#      (enable is optional — it re-applies the idempotent tuning after a reboot,
+#       which also restarts Postgres, so only enable it if you want that.)
+#   4. Verify:  systemctl status rmhstudios-perf-tuning.service
+#               sudo -u postgres psql -c 'SHOW max_connections;'
+#               apachectl -M | grep mpm
+# ─────────────────────────────────────────────────────────────────────────────
+
+[Unit]
+Description=rmhstudios host performance tuning (Postgres + Apache)
+Documentation=file:deploy/apply-perf-tuning.sh
+# Apply after the services it tunes are up so the reload/restart takes effect.
+After=postgresql.service apache2.service
+Wants=postgresql.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# EDIT this path to the repo's location on the VPS.
+ExecStart=/bin/bash /opt/rmhstudios.com/deploy/apply-perf-tuning.sh
+# The script itself uses sudo for the privileged copies/reloads; run the unit as
+# root so those succeed without an interactive prompt.
+User=root
+
+[Install]
+WantedBy=multi-user.target

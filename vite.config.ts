@@ -239,9 +239,13 @@ export default defineConfig({
       //    auth/passkey chunk (which needs it via tsyringe).
       //  - security-headers: adds baseline security headers to every response as
       //    defense-in-depth (mirrors the edge/Traefik policy for non-proxied paths).
+      //  - anon-html-cache: marks the anonymous, default-locale homepage HTML
+      //    edge-cacheable (and authenticated HTML no-store); inert until the
+      //    matching Cloudflare cache rule is created.
       plugins: [
         fileURLToPath(new URL('./server/nitro/reflect-metadata.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/security-headers.ts', import.meta.url)),
+        fileURLToPath(new URL('./server/nitro/anon-html-cache.ts', import.meta.url)),
       ],
       rollupConfig: {
         external: heavyExternals.map(

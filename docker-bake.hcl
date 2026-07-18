@@ -75,6 +75,16 @@ variable "DEEPSEEK_API_KEY" {
   default = ""
 }
 
+# Nitro server preset (perf audit §1.1). `node-cluster` emits a multi-worker
+# cluster entry that uses more than one core — the production default so the web
+# tier is no longer a single event loop under load. Worker count is capped at
+# RUNTIME by NITRO_CLUSTER_WORKERS (docker-compose.yml `WEB_WORKERS`), so an
+# image built as cluster still runs single-process when WEB_WORKERS=1. Override
+# to `node-server` here only to force a single-process image.
+variable "NITRO_PRESET" {
+  default = "node-cluster"
+}
+
 # The full frontend build args, shared by both targets so the in-graph
 # vite-builder stage they both depend on resolves to ONE cache key.
 function "frontend_args" {
@@ -91,6 +101,9 @@ function "frontend_args" {
     VITE_DISCORD_ACTIVITY_CLIENT_ID = VITE_DISCORD_ACTIVITY_CLIENT_ID
     VITE_CDN_BASE_URL               = VITE_CDN_BASE_URL
     DEEPSEEK_API_KEY                = DEEPSEEK_API_KEY
+    # Both images derive from the shared vite-builder stage, so the preset must
+    # be part of the shared arg set (it keys that stage's cache).
+    NITRO_PRESET                    = NITRO_PRESET
   }
 }
 
