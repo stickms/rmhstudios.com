@@ -22,7 +22,7 @@ def go_service_image(
     Args:
       name: service name (e.g. "gateway"). Drives the local repo tag
         `rmhstudios-go-<name>:dev`.
-      binary: label of the go_binary (e.g. "//go-services/cmd/gateway:gateway").
+      binary: label of the go_binary (e.g. "//go-services/cmd/status:status").
       base: base OCI image label.
       registry_repo: default push repository. Defaults to
         "ghcr.io/rmhstudios/rmhstudios-go-<name>"; override at run time with

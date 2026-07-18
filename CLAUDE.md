@@ -88,8 +88,8 @@ status 7008 · assets 7007. Env: see `.env.example`; minimum is
    `high-contrast` themes.
 8. **Security:** zod-validate all input; rate-limit writes/AI/uploads;
    user-supplied URL fetches through `lib/ssrf-guard.server`; CSP/security
-   headers must change in BOTH `deploy/apache/rmhstudios.conf` and the Helm
-   Traefik middleware.
+   headers live in `deploy/apache/rmhstudios.conf` (the production front door;
+   the Helm/Traefik path was removed in the rewrite — design §5.2).
 9. **Go code:** config via `pkg/config`, logging via `pkg/log`, sessions
    validated via `pkg/auth` against the shared `session` table. Run
    `make gazelle` after adding files.

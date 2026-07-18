@@ -1,6 +1,0 @@
-apiVersion: v2
-name: rmhstudios
-description: rmhstudios.com — all 8 services from one image, single-node k3s
-type: application
-version: 0.1.0
-appVersion: "0.1.0"

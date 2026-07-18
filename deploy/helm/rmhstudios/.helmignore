@@ -1,7 +1,0 @@
-.git
-*.tmp
-*.bak
-.DS_Store
-*.tfstate
-*.tfstate.*
-.env*
