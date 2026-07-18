@@ -1,4 +1,12 @@
 @import "tailwindcss";
+/* Self-hosted Inter (the body/display font) — served same-origin from the build
+   output instead of Google Fonts, so first paint no longer depends on a
+   third-party origin (perf audit §6.3). `wght.css` is the weight-axis-only,
+   per-unicode-range-subset variable font with `font-display: swap`, so the
+   browser fetches only the subset it needs (latin for most) and text paints
+   immediately in the system fallback until it arrives. Decorative/theme fonts
+   stay on idle-deferred Google Fonts (off the critical path — see __root.tsx). */
+@import "@fontsource-variable/inter/wght.css";
 
 /* Scope Tailwind's content scanning to code that actually renders in the browser.
    Without this, auto-detection also scans build/test/infra/docs directories and
@@ -17,10 +25,12 @@
 
 /* Theme stylesheets moved to their respective route files for code splitting */
 
-/* ── Font family variables (loaded via Google Fonts CSS link) ── */
+/* ── Font family variables ── */
+/* Inter is self-hosted (@fontsource-variable/inter, imported above); the rest
+   load via the idle-deferred Google Fonts CSS link in __root.tsx. */
 :root {
   --font-nunito: "Nunito", sans-serif;
-  --font-inter: "Inter", sans-serif;
+  --font-inter: "Inter Variable", "Inter", sans-serif;
   --font-jetbrains-mono: "JetBrains Mono", monospace;
   --font-playfair: "Playfair Display", serif;
   --font-bangers: "Bangers", cursive;

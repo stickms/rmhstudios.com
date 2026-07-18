@@ -239,10 +239,14 @@ export default defineConfig({
       //  - anon-html-cache: marks the anonymous, default-locale homepage HTML
       //    edge-cacheable (and authenticated HTML no-store); inert until the
       //    matching Cloudflare cache rule is created.
+      //  - warmup: per-worker cold-start warmup — opens the Prisma pool and
+      //    primes the anon homepage feed + sidebar caches so the first request
+      //    after a deploy/restart doesn't pay the full cold cost.
       plugins: [
         fileURLToPath(new URL('./server/nitro/reflect-metadata.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/security-headers.ts', import.meta.url)),
         fileURLToPath(new URL('./server/nitro/anon-html-cache.ts', import.meta.url)),
+        fileURLToPath(new URL('./server/nitro/warmup.ts', import.meta.url)),
       ],
       rollupConfig: {
         external: heavyExternals.map(

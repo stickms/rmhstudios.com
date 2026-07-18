@@ -17,8 +17,10 @@
 //     LOCALE_LOADERS only when that language becomes active (initial SSR carries
 //     the active non-en language inline via the root loader; see instances.ts).
 //
-// Server-side rendering does NOT go through here — it reads every language
-// synchronously from resources.server.ts (stubbed out of the client bundle).
+// Server-side rendering reads through resources.server.ts (stubbed out of the
+// client bundle), which reuses the LOCALE_LOADERS below to load ONLY the active
+// language on demand (no longer all 32 statically at boot — cold-start win) and
+// caches it for the synchronous SSR i18n init.
 import type { Locale } from "@/lib/i18n/config";
 import enCore from "@/lib/i18n/resources.en-core";
 

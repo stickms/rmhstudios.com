@@ -91,8 +91,12 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   run as its own compose service.
 - **`nitro/`** — not a service: Nitro startup plugins for the web tier,
   registered in `vite.config.ts`. `reflect-metadata.ts` (required by the
-  Better Auth passkey plugin — do not remove) and `security-headers.ts`
-  (defense-in-depth response headers).
+  Better Auth passkey plugin — do not remove), `security-headers.ts`
+  (defense-in-depth response headers), `anon-html-cache.ts` (marks the
+  anonymous default-locale homepage HTML edge-cacheable), and `warmup.ts`
+  (per-worker cold-start warmup: opens the Prisma pool + primes the anon
+  homepage feed/sidebar caches so the first request after a deploy/restart
+  isn't cold).
 - **`shared/`** — `createLogger(service)` (structured JSON lines),
   `createServerPrismaClient(logger)` (`@prisma/adapter-pg`, pool
   `SERVER_DB_POOL_SIZE` default 5), `createRateLimiter(rules)` (per

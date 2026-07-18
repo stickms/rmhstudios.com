@@ -29,7 +29,7 @@ import { ACCENT_MAP } from "@/lib/appearance";
 import appCss from "@/app/globals.css?url";
 import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
 import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from "@/lib/i18n/config";
-import { localeCoreResources } from "@/lib/i18n/resources.server";
+import { localeCoreResources, preloadLocale } from "@/lib/i18n/resources.server";
 
 /**
  * Resolve the signed-in user from the session cookie on the server. Runs in the
@@ -79,19 +79,10 @@ const localeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )rmh-l
 const bodyThemeScript = `if(window.__themeBg)document.body.style.backgroundColor=window.__themeBg`;
 
 /**
- * Load the Inter body font WITHOUT blocking first paint. `--site-font-body`
- * falls back to -apple-system / system-ui, so the page paints immediately in the
- * system font and swaps to Inter when it arrives (display=swap → no invisible
- * text). The link is inserted with media="print" — which browsers never treat as
- * render-blocking — then flipped to "all" on load. This removes the render-blocking
- * Google Fonts stylesheet request that Lighthouse measured at ~235ms on the
- * critical path, which matters most on slow connections.
- */
-const interFontScript = `(function(){var l=document.createElement("link");l.rel="stylesheet";l.media="print";l.href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap";l.onload=function(){l.media="all"};document.head.appendChild(l)})()`;
-
-/**
  * Deferred font loading script — loads decorative/theme fonts after the page
  * is interactive via requestIdleCallback, keeping them off the critical path.
+ * (Inter, the body/display font, is now self-hosted via @fontsource-variable/inter
+ * imported in globals.css — no Google Fonts request on the critical path.)
  */
 const deferredFontsScript = `(function(){var u="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@100..800&family=Playfair+Display:wght@400..900&family=Bangers&family=Bebas+Neue&family=Orbitron:wght@400..900&family=Cinzel:wght@400..900&family=Pacifico&family=Space+Grotesk:wght@300..700&family=Permanent+Marker&family=Caveat:wght@400..700&family=Dancing+Script:wght@400..700&family=Patrick+Hand&display=swap";function l(){var k=document.createElement("link");k.rel="stylesheet";k.href=u;document.head.appendChild(k)}if("requestIdleCallback"in window)requestIdleCallback(l);else setTimeout(l,200)})()`;
 
@@ -104,14 +95,19 @@ const getInitialI18n = createServerFn({ method: "GET" }).handler(async () => {
   const request = getRequest();
   const cookie = parseLocaleCookie(request.headers.get("cookie"));
   const locale = resolveLocale({ cookie, acceptLanguage: request.headers.get("accept-language") });
-  // en is bundled on the client; for non-en we serialize only the active
-  // language's CORE namespaces (shell + feed) into the loader payload — not the
-  // full ~66-namespace catalog (~250-300KB) — so the client hydrates synchronously
-  // in the right language for the shell/feed. The rest of the locale is backfilled
-  // client-side after hydration (perf audit §4.1; see lib/i18n/instances.ts). SSR
-  // renders from the same core set, so hydration still matches.
-  const resources = locale === DEFAULT_LOCALE ? null : localeCoreResources(locale);
-  return { locale, resources };
+  // en is bundled on the client and needs nothing here. For non-en we lazily load
+  // ONLY the active language's bundle (its own async chunk) — the server no longer
+  // imports all 32 catalogs at boot (cold-start win; see lib/i18n/resources.server.ts)
+  // — then serialize only its CORE namespaces (shell + feed) into the loader
+  // payload — not the full ~66-namespace catalog (~250-300KB) — so the client
+  // hydrates synchronously in the right language for the shell/feed. preloadLocale()
+  // must finish before the synchronous getServerI18n render path reads the bundle,
+  // so we await it here. The rest of the locale is backfilled client-side after
+  // hydration (perf audit §4.1; see lib/i18n/instances.ts). SSR renders from the
+  // same core set, so hydration still matches.
+  if (locale === DEFAULT_LOCALE) return { locale, resources: null };
+  await preloadLocale(locale);
+  return { locale, resources: localeCoreResources(locale) };
 });
 
 /** Check if a URL path is a Discord Activity route (embedded iframe) */
@@ -171,8 +167,8 @@ export const Route = createRootRoute({
       scripts: [
         { children: themeScript },
         { children: localeScript },
-        // Inter (body font) loads non-blocking; decorative/theme fonts stay deferred.
-        { children: interFontScript },
+        // Inter (body font) is self-hosted via globals.css; decorative/theme fonts
+        // stay idle-deferred (loaded from Google Fonts after the page is interactive).
         { children: deferredFontsScript },
         // Site-wide structured data (Organization + WebSite w/ SearchAction).
         jsonLdScript([organizationSchema(), websiteSchema()]),
