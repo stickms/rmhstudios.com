@@ -899,6 +899,37 @@ if [ -n "${BG_AVATAR_PID:-}" ]; then
     wait "$BG_AVATAR_PID" 2>/dev/null || true
 fi
 
+# ── Cloudflare cache rules (best-effort, perf audit §1.2 / §5.4) ──────────────
+# Apply/refresh the edge cache ruleset (deploy/apply-cloudflare-cache-rules.sh):
+# the image endpoints AND the anonymous default-locale homepage HTML — the latter
+# activates server/nitro/anon-html-cache.ts so signed-out landing traffic is
+# served from the edge instead of a full origin SSR render. The PUT replaces the
+# whole ruleset, so this is IDEMPOTENT and safe to run every deploy. Fully guarded
+# on credentials and best-effort: with no token it just logs and skips, and an API
+# error only warns — it never fails the deploy. Creds may be exported in the
+# environment or live in $ENV_FILE (CLOUDFLARE_API_TOKEN, CLOUDFLARE_ZONE_ID).
+{
+    _cf_token="${CLOUDFLARE_API_TOKEN:-}"
+    _cf_zone="${CLOUDFLARE_ZONE_ID:-}"
+    if [ -z "$_cf_token" ] && [ -f "$ENV_FILE" ]; then
+        _cf_token=$(grep -E '^CLOUDFLARE_API_TOKEN=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+    fi
+    if [ -z "$_cf_zone" ] && [ -f "$ENV_FILE" ]; then
+        _cf_zone=$(grep -E '^CLOUDFLARE_ZONE_ID=' "$ENV_FILE" 2>/dev/null | tail -n1 | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')
+    fi
+    if [ -n "$_cf_token" ] && [ -n "$_cf_zone" ]; then
+        log "Applying Cloudflare cache rules (image endpoints + anon homepage HTML)..."
+        if CLOUDFLARE_API_TOKEN="$_cf_token" CLOUDFLARE_ZONE_ID="$_cf_zone" \
+            bash "${REPO_DIR}/deploy/apply-cloudflare-cache-rules.sh" >/dev/null 2>&1; then
+            log "Cloudflare cache rules applied."
+        else
+            log "WARNING: Cloudflare cache-rule apply failed — anon HTML edge cache may be inactive until re-run (bash deploy/apply-cloudflare-cache-rules.sh)."
+        fi
+    else
+        log "Cloudflare creds not set (CLOUDFLARE_API_TOKEN/CLOUDFLARE_ZONE_ID) — skipping edge cache-rule apply (anon HTML served from origin until applied)."
+    fi
+} 2>/dev/null || true
+
 # ── Host perf-tuning preflight (non-fatal, perf audit §1.3/§1.4) ──────────────
 # The Postgres + Apache tuning (deploy/postgres/postgresql.tuning.conf,
 # deploy/apache/mpm_event.conf) is a HOST action this deploy CANNOT perform: the

@@ -117,8 +117,11 @@ don't remove that plugin.
 
 - 32 locales, 66 namespaces (`lib/i18n/config.ts`); RTL: `ar`, `ur`, `fa`.
 - **Only `en` is statically bundled**; other locales are code-split chunks in
-  the auto-generated `lib/i18n/resources.<locale>.ts` files. SSR reads all
-  locales synchronously from `resources.server.ts`.
+  the auto-generated `lib/i18n/resources.<locale>.ts` files. SSR lazily loads
+  only the *active* locale on demand via `resources.server.ts`
+  (`preloadLocale()` is awaited in the `__root.tsx` root loader before render;
+  the sync `getServerI18n` path then reads the warmed cache) — it no longer
+  imports all 32 catalogs at boot.
 - Flow when strings change: `pnpm i18n:extract` (scan `t()` calls into
   `locales/*/…json`) → `pnpm i18n:translate` (machine-translate) →
   `pnpm i18n:resources` (regenerate the resource modules) →
