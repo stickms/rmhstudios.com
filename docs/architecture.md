@@ -31,25 +31,25 @@
 **Production is a hybrid runtime.** Node is authoritative for the web SSR and
 every user-facing realtime hub; Go is authoritative for the background-worker
 tier, the status dashboard, and asset streaming. All container ports bind to
-`127.0.0.1`; Apache is the only front door. rmhmusic runs *inside* the Node
+`127.0.0.1`; Apache is the only front door. rmhmusic runs _inside_ the Node
 socket-server (port 7001), not as its own service.
 
-The **full-Go topology** — the `gateway` (7005) fronting Go hubs
-(gamehub/rmhbox/rmhtube/rmhmusic) with a Redis backplane — is implemented in
-`go-services/` and deployable via the Helm chart
-(`deploy/helm/rmhstudios-go/`, k3s) or `go-services/docker-compose.go.yml`,
-but the front-door cutover has **not** happened. See
-[`go-services/CLAUDE.md`](../go-services/CLAUDE.md) and the runbooks in
-`docs/runbooks/`.
+The former **full-Go topology** — a `gateway` fronting Go hubs
+(gamehub/rmhbox/rmhtube/rmhmusic) with a Redis backplane, plus its Helm chart
+and k8s manifests — was **removed in the rewrite** (design §5.2): it never
+served a production request and duplicated the Node hubs. Go now runs only what
+production uses — the `supervisor` (background workers), `status`, and
+`assets`. The Node hubs are the realtime tier. Recover the deleted topology from
+git history (tag `pre-rewrite-go-realtime`) if it is ever revived.
 
 ## 2. Images: two, from one Dockerfile
 
 The root `Dockerfile` builds both production images; `vite build` runs once:
 
-| Image | Target | Contents | Runs |
-|---|---|---|---|
-| `rmhstudios-app` (slim) | `runner` | Node app: `.output/` (Nitro) + `dist-server/*.cjs` bundles | web, socket, rmhbox, rmhtube, ladder-worker |
-| `rmhstudios-app-full` | `runner-full` | slim image + Chromium + git + Go binaries in `/app/bin/` (built by the Dockerfile's `go-builder` stage — plain `go build`, not Bazel) | supervisor, status, assets |
+| Image                   | Target        | Contents                                                                                                                              | Runs                                        |
+| ----------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
+| `rmhstudios-app` (slim) | `runner`      | Node app: `.output/` (Nitro) + `dist-server/*.cjs` bundles                                                                            | web, socket, rmhbox, rmhtube, ladder-worker |
+| `rmhstudios-app-full`   | `runner-full` | slim image + Chromium + git + Go binaries in `/app/bin/` (built by the Dockerfile's `go-builder` stage — plain `go build`, not Bazel) | supervisor, status, assets                  |
 
 ## 3. Deploy pipeline (push → production)
 
@@ -57,9 +57,9 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
    images on a native ARM64 runner, pushes them to GHCR tagged with the commit
    SHA, then POSTs an HMAC-signed request to the VPS webhook receiver
    (`webhook-server.cjs`), which runs `./deploy.sh production <sha>`. (A newer
-   commit to `main` **cancels** the in-progress *build* and starts fresh
+   commit to `main` **cancels** the in-progress _build_ and starts fresh
    — `concurrency: cancel-in-progress`, keyed by ref so branch dispatches don't
-   interfere. The *deploy* phase is never cancelled mid-flight: `deploy.sh`'s
+   interfere. The _deploy_ phase is never cancelled mid-flight: `deploy.sh`'s
    flock+queue lets a running deploy finish and runs the newest queued one next.
    The listener is driven by CI — not a raw push webhook — so the deploy runs
    after the image exists.)
@@ -81,12 +81,12 @@ The root `Dockerfile` builds both production images; `vite build` runs once:
 
 ## 4. CI
 
-| Workflow | Gates |
-|---|---|
-| `deploy.yml` | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above) |
-| `go-microservices.yml` | Go fleet: `bazelisk test //go-services/...`, Postgres-backed e2e (`go-services/scripts/e2e/run.sh --no-docker`), `helm lint`/`template`. Path-filtered to `go-services/**` + the Helm chart. |
-| `senior-review.yml` | LLM review gate on PRs (Claude Opus over the diff; fails the check on a FAIL verdict; short-circuits green for non-owner authors) |
-| `dependabot.yml` | weekly: npm (root), gomod (`go-services/`), github-actions |
+| Workflow               | Gates                                                                                                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `deploy.yml`           | CD — push to `main` → build + push images to GHCR → trigger VPS listener (above)                                                                                                            |
+| `go-microservices.yml` | Go fleet: `bazelisk test //go-services/...`. Path-filtered to `go-services/**`. (The Postgres-backed e2e + `helm lint` jobs were removed with the Go realtime/Helm topology — design §5.2.) |
+| `senior-review.yml`    | LLM review gate on PRs (Claude Opus over the diff; fails the check on a FAIL verdict; short-circuits green for non-owner authors)                                                           |
+| `dependabot.yml`       | weekly: npm (root), gomod (`go-services/`), github-actions                                                                                                                                  |
 
 ⚠️ There is **no frontend typecheck/lint/build CI gate** — run
 `pnpm exec tsc --noEmit`, `pnpm lint`, and ideally `pnpm build` locally
@@ -94,20 +94,20 @@ before pushing.
 
 ## 5. Ports reference
 
-| Port | Service | Runtime | Exposure |
-|---|---|---|---|
-| 7005 | web (Nitro SSR) — blue | Node | Apache `/` |
-| 7015 | web — green (hotswap spare) | Node | Apache flip target |
-| 7001 | socket-server (games + rmhmusic) | Node | Apache `/socket/` |
-| 7676 | rmhbox | Node | Apache `/rmhbox-ws/` |
-| 7003 | rmhtube | Node | Apache `/rmhtube-ws/` |
-| 7002 | rmhmusic (Go hub) | Go | k3s topology only |
-| 7004 | recap health | Go (in supervisor) | internal |
-| 7007 | assets | Go | internal / Helm `/library/` |
-| 7008 | status | Go | dashboard |
-| 7100 | ledger | Go | not deployed |
-| 9090 | supervisor metrics | Go | internal (Prometheus) |
-| 9000/9001 | MinIO | infra | internal |
+| Port      | Service                          | Runtime            | Exposure                    |
+| --------- | -------------------------------- | ------------------ | --------------------------- |
+| 7005      | web (Nitro SSR) — blue           | Node               | Apache `/`                  |
+| 7015      | web — green (hotswap spare)      | Node               | Apache flip target          |
+| 7001      | socket-server (games + rmhmusic) | Node               | Apache `/socket/`           |
+| 7676      | rmhbox                           | Node               | Apache `/rmhbox-ws/`        |
+| 7003      | rmhtube                          | Node               | Apache `/rmhtube-ws/`       |
+| 7002      | rmhmusic (Go hub)                | Go                 | k3s topology only           |
+| 7004      | recap health                     | Go (in supervisor) | internal                    |
+| 7007      | assets                           | Go                 | internal / Helm `/library/` |
+| 7008      | status                           | Go                 | dashboard                   |
+| 7100      | ledger                           | Go                 | not deployed                |
+| 9090      | supervisor metrics               | Go                 | internal (Prometheus)       |
+| 9000/9001 | MinIO                            | infra              | internal                    |
 
 ## 6. Auth across tiers
 

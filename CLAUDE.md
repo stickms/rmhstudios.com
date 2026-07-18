@@ -23,25 +23,25 @@ locales, RTL for ar/ur/fa).
 
 ## Repository map
 
-| Path | What | Details |
-|---|---|---|
-| `app/` | TanStack Start routes: pages, API routes, `globals.css` (theme tokens: 3 base + 4 curated themes + accent presets; `liquid-glass` is the default), router. `routeTree.gen.ts` is GENERATED — never edit. | [`app/CLAUDE.md`](app/CLAUDE.md) |
-| `components/` | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper. | [`components/CLAUDE.md`](components/CLAUDE.md) |
-| `lib/` | Shared logic: auth, prisma, feed, economy, i18n, per-game logic, `.server.ts` server-only modules. | [`lib/CLAUDE.md`](lib/CLAUDE.md) |
-| `server/` | **Node** service tier: socket-server (7001), rmhbox (7676), rmhtube (7003), ladder-worker; plus fallback sources for workers now run in Go. | [`server/CLAUDE.md`](server/CLAUDE.md) |
-| `go-services/` | **Go** microservice fleet (Bazel + gazelle): supervisor/status/assets run in prod; gateway + hubs are the future topology. | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
-| `stores/` | Site-level Zustand stores (theme, locale, feed, user display). | `lib/CLAUDE.md` |
-| `hooks/` | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, …). | `lib/CLAUDE.md` |
-| `prisma/` | `schema.prisma` (225 models) + migrations. | `lib/CLAUDE.md` |
-| `locales/` | 32 locales × 66 namespaces; `en` is authoritative. | `lib/CLAUDE.md` §i18n |
-| `data/` | Static JSON (RMHBox content packs, library metadata). | — |
-| `public/` | Static assets, `robots.txt`, `manifest.webmanifest`. | — |
-| `scripts/` | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build. | `docs/README.md` |
-| `deploy/` | Apache vhosts, blue/green hotswap, Helm charts, Terraform, runbooks. | [`docs/architecture.md`](docs/architecture.md) |
-| `docs/` | Reference docs, design docs, plans, runbooks. | [`docs/README.md`](docs/README.md) |
-| `testing/` | Vitest tests (RMHBox phases). | `lib/CLAUDE.md` §Testing |
-| `cli/` | `rmhcode` CLI (wraps Claude Code; publishes User Builds). | — |
-| `specs/` | Legacy AI-agent game specs (some stale — see docs/README.md). | — |
+| Path           | What                                                                                                                                                                                                     | Details                                          |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
+| `app/`         | TanStack Start routes: pages, API routes, `globals.css` (theme tokens: 3 base + 4 curated themes + accent presets; `liquid-glass` is the default), router. `routeTree.gen.ts` is GENERATED — never edit. | [`app/CLAUDE.md`](app/CLAUDE.md)                 |
+| `components/`  | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper.                                                                                                  | [`components/CLAUDE.md`](components/CLAUDE.md)   |
+| `lib/`         | Shared logic: auth, prisma, feed, economy, i18n, per-game logic, `.server.ts` server-only modules.                                                                                                       | [`lib/CLAUDE.md`](lib/CLAUDE.md)                 |
+| `server/`      | **Node** service tier: socket-server (7001), rmhbox (7676), rmhtube (7003), ladder-worker; plus fallback sources for workers now run in Go.                                                              | [`server/CLAUDE.md`](server/CLAUDE.md)           |
+| `go-services/` | **Go** microservice fleet (Bazel + gazelle): supervisor/status/assets run in prod; gateway + hubs are the future topology.                                                                               | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
+| `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                                                           | `lib/CLAUDE.md`                                  |
+| `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, …).                                                                                                                                    | `lib/CLAUDE.md`                                  |
+| `prisma/`      | `schema.prisma` (225 models) + migrations.                                                                                                                                                               | `lib/CLAUDE.md`                                  |
+| `locales/`     | 32 locales × 66 namespaces; `en` is authoritative.                                                                                                                                                       | `lib/CLAUDE.md` §i18n                            |
+| `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                                                    | —                                                |
+| `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                                                     | —                                                |
+| `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                                                                  | `docs/README.md`                                 |
+| `deploy/`      | Apache vhosts, blue/green hotswap, Helm charts, Terraform, runbooks.                                                                                                                                     | [`docs/architecture.md`](docs/architecture.md)   |
+| `docs/`        | Reference docs, design docs, plans, runbooks.                                                                                                                                                            | [`docs/README.md`](docs/README.md)               |
+| `testing/`     | Vitest tests (RMHBox phases).                                                                                                                                                                            | `lib/CLAUDE.md` §Testing                         |
+| `cli/`         | `rmhcode` CLI (wraps Claude Code; publishes User Builds).                                                                                                                                                | —                                                |
+| `specs/`       | Legacy AI-agent game specs (some stale — see docs/README.md).                                                                                                                                            | —                                                |
 
 ## Commands
 

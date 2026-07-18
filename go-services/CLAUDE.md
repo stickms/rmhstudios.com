@@ -20,40 +20,35 @@ Production is a **hybrid** (see `docker-compose.yml` at repo root):
   recap, doctrine-worker, vibe-worker, bot-worker — consolidated as goroutines
   in one `supervisor` binary (metrics :9090); the `status` dashboard (7008);
   and `assets` (7007, off the main user path under Compose).
-- **Node is still authoritative for:** web SSR (7005), the realtime hubs —
+- **Node is authoritative for:** web SSR (7005) and the realtime hubs —
   socket-server (7001), rmhbox (7676), rmhtube (7003), rmhmusic (inside
-  socket-server) — and ladder-worker. Apache routes all user traffic to Node
-  ports; the Go `gateway` is **not** in the production request path.
-- The full-Go topology (gateway fronting Go hubs + Redis backplane) is
-  deployable via the Helm chart (`deploy/helm/rmhstudios-go/`) or
-  `go-services/docker-compose.go.yml`, but that cutover has not been done.
+  socket-server) — plus ladder-worker + homes-worker. Apache routes all user
+  traffic to Node ports.
+- **The full-Go realtime topology was REMOVED in the rewrite (design §5.2):**
+  the `gateway`, the Go hubs (gamehub/rmhbox/rmhtube/rmhmusic), `pkg/realtime`/
+  `pkg/events`, the Helm charts, the k8s manifests, and the e2e suite are all
+  gone — they never served production traffic and duplicated the Node hubs.
+  Recover from git history (tag `pre-rewrite-go-realtime`) if ever revived.
 - In production the Go binaries are built by the **root `Dockerfile`'s
-  `go-builder` stage** (plain `go build` into `/app/bin/`, copied into the
-  `runner-full` image) — not by Bazel. Bazel is the CI test gate and the
-  k3s/registry image path.
+  `go-builder` stage** (plain `go build ./cmd/...` into `/app/bin/`, copied
+  into the `runner-full` image) — not by Bazel. Bazel is only the CI unit-test
+  gate (`go-microservices.yml`).
 
 ## Layout
 
 ```
 go-services/
-  cmd/<svc>/main.go       one main package per binary (15)
+  cmd/<svc>/main.go       one main package per binary (workers + status + assets)
   internal/<svc>/         each service's private implementation
-  pkg/                    shared libraries (12 packages, API doc: FOUNDATION.md)
-  e2e/                    end-to-end tests (build tag `e2e`; real ws clients + Postgres)
-  images/BUILD.bazel      hand-maintained OCI image targets (12 images)
-  Dockerfile, Makefile    LEGACY docker-build path (used by deploy/deploy-go.sh)
-  docker-compose.go.yml   parallel full-Go stack for local/staging
+  pkg/                    shared libraries (config/db/auth/httpx/ratelimit/telemetry/objectstore/worker/log)
+  images/BUILD.bazel      hand-maintained OCI image targets (worker/status/assets)
+  Dockerfile, Makefile    standalone docker-build path for the worker images
 ```
 
 ### Services (cmd/)
 
 | Service | Port (default) | Transport | Replaces (Node) | Status |
 |---|---|---|---|---|
-| `gateway` | `PORT_WEB` 7005 | HTTP + WS reverse proxy | web edge | complete; not in prod path; `WEB_UPSTREAM` default is wrong for compose (override needed) |
-| `gamehub` | `SOCKET_PORT` 7001 | WS `/socket/` | socket-server | Kowloon Knockout fully ported; other games = generic `RelayGroup` framework, registry currently empty |
-| `rmhmusic` | `RMHMUSIC_PORT` 7002 | WS `/rmhmusic-ws/` | rmhmusic | faithful port; auth required |
-| `rmhtube` | `RMHTUBE_PORT` 7003 | WS `/rmhtube-ws/` | rmhtube | faithful port; DB room restore |
-| `rmhbox` | `RMHBOX_PORT` 7676 | WS `/rmhbox-ws/` | rmhbox | lobby FSM + coordinator complete; 1 of 9 minigames ported (rhyme-time), others stub |
 | `recap` | `RECAP_PORT` 7004 | HTTP (health) | recap | fully ported (Lights Out → Discord) |
 | `doctrine-worker` | — | worker | doctrine-worker | fully ported (mulberry32 bit-exact puzzle gen, Sahur, decay) |
 | `vibe-worker` | — | worker | vibe-worker | fully ported (chromedp thumbnails; needs Chromium in image) |
