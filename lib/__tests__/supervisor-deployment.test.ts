@@ -8,7 +8,10 @@ const dockerfile = readFileSync(join(root, 'Dockerfile'), 'utf8');
 
 describe('supervisor deployment boundary', () => {
   it('starts the Go supervisor directly without copying the host repository', () => {
-    expect(compose).toContain('command: ["/app/bin/supervisor"]');
+    // Quote-agnostic: prettier (singleQuote: true) normalizes the compose file's
+    // command arrays to single quotes, so assert the invariant — supervisor boots
+    // directly from /app/bin/supervisor — without coupling to the quote style.
+    expect(compose).toMatch(/command:\s*\[\s*['"]\/app\/bin\/supervisor['"]\s*\]/);
     expect(compose).not.toContain('RMHBOT_REPO_PATH');
     expect(compose).not.toContain('/mnt/rmhbot-repo-source');
     expect(compose).not.toContain('rmhbot-worktrees');
