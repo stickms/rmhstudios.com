@@ -401,6 +401,40 @@ services:
       timeout: 3s
       retries: 5
 
+  # Durable STATE plane (rewrite R0-T2). Separate from the `redis` cache above so
+  # rate-limit counters, view/counter buffers, presence sets, and dirty-set
+  # drains are NEVER evicted (noeviction) and survive restart (AOF) — the exact
+  # data-loss risk the `redis` block's comment warns about. DORMANT by default:
+  # the `redis-state` profile means a plain `docker compose up` does NOT start
+  # it, and the app only routes state keys here once REDIS_STATE_URL is set
+  # (lib/redis.server.ts falls back to the cache connection until then). To
+  # enable: `docker compose --profile redis-state up -d redis-state` and set
+  # REDIS_STATE_URL=redis://redis-state:6379 in the app env.
+  redis-state:
+    image: redis:7.4-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-redis-state
+    profiles: ["redis-state"]
+    restart: unless-stopped
+    mem_limit: 192m
+    mem_reservation: 64m
+    cpus: 0.5
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # noeviction: reject writes rather than drop a durable key under pressure.
+    # AOF everysec: at most ~1s of state loss on crash. Sized well under the
+    # cgroup so it never approaches the memory ceiling in practice.
+    command: ["redis-server", "--save", "", "--appendonly", "yes", "--appendfsync", "everysec", "--maxmemory", "128mb", "--maxmemory-policy", "noeviction"]
+    volumes:
+      - ${REDIS_STATE_DATA_PATH:-./redis-state-data}:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
   # ─── MinIO (S3-compatible object storage) ──────────────────────────────────
   minio:
     image: minio/minio:RELEASE.2025-04-22T22-12-26Z

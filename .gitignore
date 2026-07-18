@@ -51,6 +51,7 @@ yarn-error.log*
 
 /lib/generated/prisma
 db/**/*
+redis-state-data/
 dist-server/
 .venv/
 package-lock.json

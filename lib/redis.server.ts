@@ -7,14 +7,27 @@
  * their in-process behaviour. This is what makes SSE, rate limits, and the
  * ranking cache correct across multiple instances without becoming a hard
  * dependency for single-instance / local dev.
+ *
+ * Cache vs. state split (rewrite R0-T2). `REDIS_URL` is the CACHE plane — it is
+ * evictable (`allkeys-lru`), so pub/sub transport and cache reads/writes
+ * (redisGetJSON/SetJSON/Del) live here. `REDIS_STATE_URL`, when set, is a
+ * separate durable plane (`noeviction` + AOF) for keys we cannot afford to lose
+ * to eviction: rate-limit counters, the view/counter buffers, presence sets,
+ * and dirty-set drains. When `REDIS_STATE_URL` is unset the state helpers reuse
+ * the main connection, so behaviour is byte-identical to before this split —
+ * the second plane is opt-in via config + the `redis-state` compose service.
  */
 
 import Redis from 'ioredis';
 
 const URL = process.env.REDIS_URL || process.env.REDIS_CONNECTION_STRING;
+const STATE_URL = process.env.REDIS_STATE_URL;
 
 let publisher: Redis | null = null;
 let subscriber: Redis | null = null;
+// Durable-state plane. Equals `publisher` unless REDIS_STATE_URL points
+// elsewhere, in which case it's a dedicated connection to the noeviction Redis.
+let statePublisher: Redis | null = null;
 let initialized = false;
 
 // channel -> local handlers fed by the shared subscriber connection.
@@ -34,6 +47,16 @@ function init(): void {
     };
     publisher = new Redis(URL, opts);
     subscriber = publisher.duplicate();
+
+    // Durable-state plane: a dedicated connection only when REDIS_STATE_URL is
+    // set AND differs from the cache URL; otherwise reuse `publisher` so nothing
+    // changes for single-Redis deployments.
+    if (STATE_URL && STATE_URL !== URL) {
+      statePublisher = new Redis(STATE_URL, opts);
+      statePublisher.on('error', (e) => console.error('[redis] state error:', e?.message));
+    } else {
+      statePublisher = publisher;
+    }
 
     publisher.on('error', (e) => console.error('[redis] publisher error:', e?.message));
     subscriber.on('error', (e) => console.error('[redis] subscriber error:', e?.message));
@@ -59,6 +82,7 @@ function init(): void {
     console.error('[redis] init failed; falling back to in-process:', err);
     publisher = null;
     subscriber = null;
+    statePublisher = null;
   }
 }
 
@@ -132,13 +156,13 @@ export async function redisRateLimit(
   windowMs: number
 ): Promise<{ allowed: boolean; retryAfter: number; limit: number; remaining: number; reset: number } | null> {
   init();
-  if (!publisher) return null;
+  if (!statePublisher) return null;
   try {
     const k = `rl:${key}`;
     // Single round-trip: INCR, set the window TTL on the first hit only, and
     // read the remaining TTL back — atomically, so concurrent requests can't
     // race between the INCR and the PEXPIRE and leave a key with no expiry.
-    const res = (await publisher.eval(RATE_LIMIT_LUA, 1, k, String(windowMs))) as [number, number];
+    const res = (await statePublisher.eval(RATE_LIMIT_LUA, 1, k, String(windowMs))) as [number, number];
     const count = Number(res[0]);
     const ttl = Number(res[1]);
     const reset = Date.now() + (ttl > 0 ? ttl : windowMs);
@@ -193,10 +217,10 @@ export async function redisDel(...keys: string[]): Promise<void> {
  */
 export async function redisIncrBy(key: string, by: number, ttlMs?: number): Promise<number | null> {
   init();
-  if (!publisher) return null;
+  if (!statePublisher) return null;
   try {
-    const next = await publisher.incrby(key, by);
-    if (ttlMs && next === by) await publisher.pexpire(key, ttlMs);
+    const next = await statePublisher.incrby(key, by);
+    if (ttlMs && next === by) await statePublisher.pexpire(key, ttlMs);
     return next;
   } catch {
     return null;
@@ -214,10 +238,10 @@ export async function redisPresenceMark(
   ttlMs: number
 ): Promise<boolean> {
   init();
-  if (!publisher) return false;
+  if (!statePublisher) return false;
   try {
-    await publisher.sadd(bucketKey, member);
-    await publisher.pexpire(bucketKey, ttlMs);
+    await statePublisher.sadd(bucketKey, member);
+    await statePublisher.pexpire(bucketKey, ttlMs);
     return true;
   } catch {
     return false;
@@ -227,13 +251,13 @@ export async function redisPresenceMark(
 /** Count distinct members across the given presence buckets. Null without Redis. */
 export async function redisPresenceCount(bucketKeys: string[]): Promise<number | null> {
   init();
-  if (!publisher || bucketKeys.length === 0) return null;
+  if (!statePublisher || bucketKeys.length === 0) return null;
   try {
-    if (bucketKeys.length === 1) return await publisher.scard(bucketKeys[0]);
+    if (bucketKeys.length === 1) return await statePublisher.scard(bucketKeys[0]);
     // Only the cardinality is needed, so union in-memory (SUNION) rather than
     // materializing a temp key (SUNIONSTORE) that then needs a PEXPIRE and later
     // eviction — one command, no extra write, nothing to clean up.
-    const members = await publisher.sunion(...bucketKeys);
+    const members = await statePublisher.sunion(...bucketKeys);
     return members.length;
   } catch {
     return null;
@@ -246,9 +270,9 @@ export async function redisPresenceCount(bucketKeys: string[]): Promise<number |
  */
 export async function redisSpop(key: string, max: number): Promise<string[]> {
   init();
-  if (!publisher) return [];
+  if (!statePublisher) return [];
   try {
-    const res = await publisher.spop(key, max);
+    const res = await statePublisher.spop(key, max);
     return Array.isArray(res) ? res : res ? [res] : [];
   } catch {
     return [];
@@ -258,9 +282,9 @@ export async function redisSpop(key: string, max: number): Promise<string[]> {
 /** Add a member to a set (used to track which counters are dirty). No-op without Redis. */
 export async function redisSadd(key: string, member: string): Promise<void> {
   init();
-  if (!publisher) return;
+  if (!statePublisher) return;
   try {
-    await publisher.sadd(key, member);
+    await statePublisher.sadd(key, member);
   } catch {
     /* best-effort */
   }
@@ -269,10 +293,10 @@ export async function redisSadd(key: string, member: string): Promise<void> {
 /** GETDEL: atomically read and clear a key (drain a buffered counter). Null without Redis. */
 export async function redisGetDel(key: string): Promise<string | null> {
   init();
-  if (!publisher) return null;
+  if (!statePublisher) return null;
   try {
     // GETDEL is available on Redis 6.2+ (prod runs 7.4).
-    return await publisher.getdel(key);
+    return await statePublisher.getdel(key);
   } catch {
     return null;
   }
