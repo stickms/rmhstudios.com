@@ -76,7 +76,7 @@
     "@tanstack/react-start": "^1.168.25",
     "@tanstack/react-virtual": "^3.14.6",
     "@twemoji/api": "^17.0.3",
-    "audio-decode": "^2.2.3",
+    "audio-decode": "^3.11.4",
     "better-auth": "^1.6.17",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",
