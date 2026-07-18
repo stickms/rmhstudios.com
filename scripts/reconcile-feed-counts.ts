@@ -16,6 +16,12 @@
  *
  * Note: commentCount counts ALL comment rows (including soft-deleted) to match
  * the historical `_count` semantics the feed relied on before denormalization.
+ *
+ * viewCount is intentionally NOT reconciled here. Views are buffered in Redis
+ * and flushed by lib/hot-counters.server.ts; the old per-view `rmheet_view`
+ * table is dead (nothing writes it — drop scheduled in rewrite R1-T3). Deriving
+ * viewCount from that empty table would zero every post's view count, so it was
+ * removed (rewrite R0-T7).
  */
 
 import { prisma } from "@/lib/prisma.server";
@@ -27,22 +33,19 @@ async function main() {
     UPDATE "rmheet" r SET
       "likeCount"    = c.likes,
       "commentCount" = c.comments,
-      "repostCount"  = c.reposts,
-      "viewCount"    = c.views
+      "repostCount"  = c.reposts
     FROM (
       SELECT
         r2."id",
         (SELECT COUNT(*) FROM "rmheet_like"    l  WHERE l."rmheetId"  = r2."id")::int AS likes,
         (SELECT COUNT(*) FROM "rmheet_comment" cm WHERE cm."rmheetId" = r2."id")::int AS comments,
-        (SELECT COUNT(*) FROM "rmheet_repost"  rp WHERE rp."rmheetId" = r2."id")::int AS reposts,
-        (SELECT COUNT(*) FROM "rmheet_view"    v  WHERE v."rmheetId"  = r2."id")::int AS views
+        (SELECT COUNT(*) FROM "rmheet_repost"  rp WHERE rp."rmheetId" = r2."id")::int AS reposts
       FROM "rmheet" r2
     ) c
     WHERE r."id" = c."id" AND (
       r."likeCount"    <> c.likes    OR
       r."commentCount" <> c.comments OR
-      r."repostCount"  <> c.reposts  OR
-      r."viewCount"    <> c.views
+      r."repostCount"  <> c.reposts
     );
   `);
 

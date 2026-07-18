@@ -5,31 +5,9 @@ load("//bazel:defs.bzl", "go_service_image")
 # static base; vibe-worker/discord-bot use special bases (see below).
 
 # ── Standard services (distroless static) ────────────────────────────────────
-go_service_image(
-    name = "gateway",
-    binary = "//go-services/cmd/gateway:gateway",
-)
-
-go_service_image(
-    name = "gamehub",
-    binary = "//go-services/cmd/gamehub:gamehub",
-)
-
-go_service_image(
-    name = "rmhmusic",
-    binary = "//go-services/cmd/rmhmusic:rmhmusic",
-)
-
-go_service_image(
-    name = "rmhtube",
-    binary = "//go-services/cmd/rmhtube:rmhtube",
-)
-
-go_service_image(
-    name = "rmhbox",
-    binary = "//go-services/cmd/rmhbox:rmhbox",
-)
-
+# The realtime hubs (gateway/gamehub/rmhbox/rmhmusic/rmhtube) were removed in the
+# rewrite (design §5.2): they were an unshipped duplicate of the production Node
+# hubs. The Node hubs remain the production realtime tier.
 go_service_image(
     name = "recap",
     binary = "//go-services/cmd/recap:recap",

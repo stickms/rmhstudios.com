@@ -20,40 +20,35 @@ Production is a **hybrid** (see `docker-compose.yml` at repo root):
   recap, doctrine-worker, vibe-worker, bot-worker — consolidated as goroutines
   in one `supervisor` binary (metrics :9090); the `status` dashboard (7008);
   and `assets` (7007, off the main user path under Compose).
-- **Node is still authoritative for:** web SSR (7005), the realtime hubs —
+- **Node is authoritative for:** web SSR (7005) and the realtime hubs —
   socket-server (7001), rmhbox (7676), rmhtube (7003), rmhmusic (inside
-  socket-server) — and ladder-worker. Apache routes all user traffic to Node
-  ports; the Go `gateway` is **not** in the production request path.
-- The full-Go topology (gateway fronting Go hubs + Redis backplane) is
-  deployable via the Helm chart (`deploy/helm/rmhstudios-go/`) or
-  `go-services/docker-compose.go.yml`, but that cutover has not been done.
+  socket-server) — plus ladder-worker + homes-worker. Apache routes all user
+  traffic to Node ports.
+- **The full-Go realtime topology was REMOVED in the rewrite (design §5.2):**
+  the `gateway`, the Go hubs (gamehub/rmhbox/rmhtube/rmhmusic), `pkg/realtime`/
+  `pkg/events`, the Helm charts, the k8s manifests, and the e2e suite are all
+  gone — they never served production traffic and duplicated the Node hubs.
+  Recover from git history (tag `pre-rewrite-go-realtime`) if ever revived.
 - In production the Go binaries are built by the **root `Dockerfile`'s
-  `go-builder` stage** (plain `go build` into `/app/bin/`, copied into the
-  `runner-full` image) — not by Bazel. Bazel is the CI test gate and the
-  k3s/registry image path.
+  `go-builder` stage** (plain `go build ./cmd/...` into `/app/bin/`, copied
+  into the `runner-full` image) — not by Bazel. Bazel is only the CI unit-test
+  gate (`go-microservices.yml`).
 
 ## Layout
 
 ```
 go-services/
-  cmd/<svc>/main.go       one main package per binary (15)
+  cmd/<svc>/main.go       one main package per binary (workers + status + assets)
   internal/<svc>/         each service's private implementation
-  pkg/                    shared libraries (12 packages, API doc: FOUNDATION.md)
-  e2e/                    end-to-end tests (build tag `e2e`; real ws clients + Postgres)
-  images/BUILD.bazel      hand-maintained OCI image targets (12 images)
-  Dockerfile, Makefile    LEGACY docker-build path (used by deploy/deploy-go.sh)
-  docker-compose.go.yml   parallel full-Go stack for local/staging
+  pkg/                    shared libraries (config/db/auth/httpx/ratelimit/telemetry/objectstore/worker/log)
+  images/BUILD.bazel      hand-maintained OCI image targets (worker/status/assets)
+  Dockerfile, Makefile    standalone docker-build path for the worker images
 ```
 
 ### Services (cmd/)
 
 | Service | Port (default) | Transport | Replaces (Node) | Status |
 |---|---|---|---|---|
-| `gateway` | `PORT_WEB` 7005 | HTTP + WS reverse proxy | web edge | complete; not in prod path; `WEB_UPSTREAM` default is wrong for compose (override needed) |
-| `gamehub` | `SOCKET_PORT` 7001 | WS `/socket/` | socket-server | Kowloon Knockout fully ported; other games = generic `RelayGroup` framework, registry currently empty |
-| `rmhmusic` | `RMHMUSIC_PORT` 7002 | WS `/rmhmusic-ws/` | rmhmusic | faithful port; auth required |
-| `rmhtube` | `RMHTUBE_PORT` 7003 | WS `/rmhtube-ws/` | rmhtube | faithful port; DB room restore |
-| `rmhbox` | `RMHBOX_PORT` 7676 | WS `/rmhbox-ws/` | rmhbox | lobby FSM + coordinator complete; 1 of 9 minigames ported (rhyme-time), others stub |
 | `recap` | `RECAP_PORT` 7004 | HTTP (health) | recap | fully ported (Lights Out → Discord) |
 | `doctrine-worker` | — | worker | doctrine-worker | fully ported (mulberry32 bit-exact puzzle gen, Sahur, decay) |
 | `vibe-worker` | — | worker | vibe-worker | fully ported (chromedp thumbnails; needs Chromium in image) |
@@ -61,7 +56,7 @@ go-services/
 | `bot-worker` | — | worker | bot-worker | ported; idles without `DEEPSEEK_API_KEY` |
 | `assets` | `ASSETS_PORT` 7007 | HTTP | Apache off-disk CDN | range-aware S3/R2 streaming for `/library /music /models /sprites` |
 | `status` | `STATUS_PORT` 7008 | HTTP | server/status | fully ported dashboard + `/api/status` |
-| `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the 5 workers as goroutines under an errgroup |
+| `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the 6 workers (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker, streak-saver) as goroutines under an errgroup |
 | `ledger` | `LEDGER_ADDR` :7100 | HTTP `/ledger/v0/*` | none (net-new) | implemented, **not integrated**: no BUILD.bazel, no image, not deployed |
 
 Do not confuse **`ledger`** (Go artifact/provenance store) with
@@ -114,10 +109,13 @@ A thin TS client adapter is required before pointing the frontend at Go hubs.
 - `Conn`: read/write pumps, 256-msg send buffer, 1 MiB frames, ping/pong;
   slow consumers are dropped rather than wedging the room.
 - `GraceTimers`: keyed cancellable delayed actions (disconnect grace, room GC).
-- **Known caveat:** the Redis bus stamps received messages with the local
-  origin, and rooms skip self-origin messages — so cross-replica fan-out is
-  effectively dropped. Verify/fix `pkg/events` + `room.go` origin handling
-  before scaling any WS service past 1 replica.
+- **Cross-replica origin (FIXED):** `pkg/events` now frames each publish in a
+  `wireEnvelope{Origin, Payload}` carrying the TRUE publisher's origin, and
+  `Subscribe` decodes that origin instead of stamping the local replica's, so
+  `room.go`'s self-origin skip no longer drops cross-replica fan-out. (Earlier
+  revisions of this doc described this as an open bug — it is resolved in
+  `pkg/events/events.go`.) The Go WS fleet still isn't in the production request
+  path regardless (Apache routes realtime to the Node hubs).
 
 **Adding a realtime game:** simple 1v1 host-authoritative → register a
 `gamehub.RelayGroup` (`internal/gamehub/relay.go`) in `buildRelayRegistry`.
@@ -177,8 +175,9 @@ make images TAG=…   # OCI images via bazel (go_service_image macro)
 2. The legacy `go-services/Makefile` `SERVICES` list and the root `Makefile`
    image loop both lag the real service set — check `images/BUILD.bazel` for
    what's actually buildable.
-3. `cmd/ledger` has no BUILD.bazel/image — run gazelle and add an image target
-   before trying to ship it.
+3. `cmd/ledger` was never integrated (no BUILD.bazel/image, not deployed) and
+   was removed in the rewrite reap (R0-T6). The `ledger_*` schema tables remain.
 4. Discord bot commands are `/chat` + the Alex tamagotchi; there is no
    `/rmhbot` command (README claim is stale).
-5. The Redis backplane origin bug (see Realtime above) blocks >1 WS replica.
+5. Cross-replica fan-out via `pkg/events` is fixed (see Realtime above); the Go
+   WS fleet is still not in the production request path.

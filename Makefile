@@ -5,14 +5,16 @@
 
 BAZEL    ?= bazelisk
 PLATFORM ?= linux_amd64   # target arch for images; override with PLATFORM=linux_arm64
-SERVICES := gateway gamehub rmhmusic rmhtube rmhbox recap doctrine-worker vibe-worker discord-bot
+# Realtime hubs (gateway/gamehub/rmhmusic/rmhtube/rmhbox) + the Helm/k8s deploy
+# path were removed in the rewrite (design §5.2). Production Go is the four
+# background workers, built into the app-full image; the Node hubs serve
+# realtime. What remains here builds/pushes the standalone worker images.
+SERVICES := recap doctrine-worker vibe-worker discord-bot
 SHA      := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 REGISTRY ?=
-RELEASE  ?= rmhstudios-go
-CHART    := deploy/helm/rmhstudios-go
 GUARD    := ./scripts/preflight.sh --guard
 
-.PHONY: help bootstrap dev gazelle build images base-images push prod test test-e2e clean assets-sync
+.PHONY: help bootstrap dev gazelle build images base-images push test clean assets-sync
 
 help: ## list targets
 	@grep -hE '^[a-z][a-z-]*:.*?## ' $(MAKEFILE_LIST) | awk -F':.*?## ' '{printf "  \033[36m%-12s\033[0m %s\n",$$1,$$2}'
@@ -57,22 +59,10 @@ push: ## push every service image to $REGISTRY (REGISTRY required)
 			--repository=$(REGISTRY)/rmhstudios-go-$$svc --tag=$(SHA) || exit 1; \
 	done
 
-prod: ## build + push SHA-tagged images to $REGISTRY and deploy via Helm (multi-node)
-	@test -n "$(REGISTRY)" || { echo "REGISTRY is required for 'make prod' (multi-node). For single-node k3s use deploy/deploy-go.sh, which ctr-imports into containerd."; exit 1; }
-	@$(GUARD)
-	$(MAKE) push REGISTRY=$(REGISTRY)
-	helm upgrade --install $(RELEASE) $(CHART) \
-		-f $(CHART)/values-prod.yaml \
-		--set image.tag=$(SHA) --set image.registry=$(REGISTRY) \
-		--atomic --wait --timeout 5m
-
 test: ## run Go tests (Bazel) + frontend tests (vitest)
 	@$(GUARD)
 	$(BAZEL) test --build_tests_only //go-services/...
 	pnpm exec vitest run
-
-test-e2e: ## run the Go end-to-end suite
-	cd go-services && bash scripts/e2e/run.sh
 
 clean: ## remove Bazel outputs
 	$(BAZEL) clean

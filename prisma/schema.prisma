@@ -682,6 +682,7 @@ model SongLike {
   @@unique([songId, userId])
 }
 
+/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
 model SongRating {
   id        String   @id @default(cuid())
   songId    String
@@ -976,6 +977,7 @@ model RmhTubeQueueItem {
   @@map("rmhtube_queue_item")
 }
 
+/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
 model RmhTubePlaylist {
   id        String   @id @default(cuid())
   name      String
@@ -990,6 +992,7 @@ model RmhTubePlaylist {
   @@map("rmhtube_playlist")
 }
 
+/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
 model RmhTubePlaylistItem {
   id           String  @id @default(cuid())
   playlistId   String
@@ -1021,6 +1024,7 @@ model RmhTubeSubscription {
   @@map("rmhtube_subscription")
 }
 
+/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
 model RmhTubeUserStats {
   userId                String   @id
   totalWatchTimeMinutes Int      @default(0)
@@ -1600,6 +1604,7 @@ model RMHarkRepost {
   @@map("rmheet_repost")
 }
 
+/// DEAD (rewrite R0-T7): no writers; views live in Redis (hot-counters) + viewCount. Drop scheduled R1-T3.
 model RMHarkView {
   id        String   @id @default(cuid())
   rmheetId  String
@@ -1937,6 +1942,7 @@ model RmhMusicRoomMember {
   @@map("rmh_music_room_member")
 }
 
+/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
 model RmhMusicQueueItem {
   id          String       @id @default(cuid())
   roomId      String
@@ -1957,6 +1963,7 @@ model RmhMusicQueueItem {
   @@map("rmh_music_queue_item")
 }
 
+/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
 model RmhMusicChatMessage {
   id        String       @id @default(cuid())
   roomId    String
@@ -2512,6 +2519,7 @@ model PlaylistItem {
   @@map("playlist_item")
 }
 
+/// DEAD (rewrite R0-T7): zero code references (marketplace versioning unshipped). Drop scheduled R1-T3.
 model BuildVersion {
   id         String   @id @default(cuid())
   buildId    String
@@ -3016,6 +3024,7 @@ model DoctrineSahurSession {
   @@map("doctrine_sahur_session")
 }
 
+/// DEAD (rewrite R0-T7): zero code references. Drop scheduled R1-T3; do not add writers.
 model DoctrineSahurParticipation {
   id               String               @id @default(cuid())
   sessionId        String
@@ -4219,6 +4228,7 @@ model FeedAnnouncement {
   @@map("feed_announcement")
 }
 
+/// DEAD (rewrite R0-T7): orphaned parent, zero code references. Drop scheduled R1-T3 (with option/vote children).
 model FeedAnnouncementPoll {
   id             String    @id @default(cuid())
   announcementId String    @unique

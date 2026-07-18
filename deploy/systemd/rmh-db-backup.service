@@ -1,0 +1,36 @@
+# rmhstudios — nightly Postgres backup → R2 (one-shot, driven by the timer).
+#
+# WHY A SYSTEMD UNIT (not the CD deploy): the webhook deploy.sh runs sandboxed
+# (ProtectSystem=strict) and cannot hold host R2 credentials or run a long dump.
+# This privileged, out-of-sandbox unit is the real backup path — same model as
+# rmhstudios-perf-tuning.service.
+#
+# ── Install (once, as root) ──────────────────────────────────────────────────
+#   1. Put credentials in /etc/rmhstudios/db-backup.env (chmod 600), e.g.:
+#        DATABASE_URL=postgres://…@localhost:5432/rmhstudios
+#        R2_ACCOUNT_ID=…
+#        R2_ACCESS_KEY_ID=…
+#        R2_SECRET_ACCESS_KEY=…
+#        R2_BACKUP_BUCKET=rmh-db-backups
+#   2. Edit WorkingDirectory below to where this repo lives on the VPS.
+#   3. sudo cp deploy/systemd/rmh-db-backup.{service,timer} /etc/systemd/system/
+#      sudo systemctl daemon-reload
+#      sudo systemctl enable --now rmh-db-backup.timer
+#   4. Test now:  sudo systemctl start rmh-db-backup.service
+#                 journalctl -u rmh-db-backup.service -n 50
+# ─────────────────────────────────────────────────────────────────────────────
+[Unit]
+Description=rmhstudios nightly Postgres backup to R2
+Documentation=file:deploy/backup/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# EDIT: repo checkout path on the VPS (matches where deploy.sh runs from).
+WorkingDirectory=/opt/rmhstudios.com
+EnvironmentFile=/etc/rmhstudios/db-backup.env
+ExecStart=/usr/bin/env bash deploy/backup/pg-backup.sh
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6

@@ -34,14 +34,14 @@ x-common: &common
   tmpfs:
     - /tmp:size=256m,mode=1777
   extra_hosts:
-    - "host.docker.internal:host-gateway"
+    - 'host.docker.internal:host-gateway'
   volumes:
     - ${STORAGE_PATH:-./db}:/app/db
   logging:
     driver: json-file
     options:
-      max-size: "10m"
-      max-file: "3"
+      max-size: '10m'
+      max-file: '3'
 
 # ─── Resource limits (STARTING POINT — tune against real `docker stats`) ──────
 # Per-service mem_limit/mem_reservation/cpus are added inline below. They are
@@ -68,7 +68,7 @@ x-build: &build-common
   context: .
   dockerfile: Dockerfile
   extra_hosts:
-    - "host.docker.internal:host-gateway"
+    - 'host.docker.internal:host-gateway'
   args:
     COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME:-rmhstudios}
     # Base image for the runner-full stage. Defaults to the `runner` stage (so a
@@ -136,7 +136,7 @@ services:
       # Hit the cheap liveness endpoint, not `/` — curling `/` every 30s renders
       # the full homepage through SSR on the single web event loop (perf audit
       # §1.6). /api/health returns 200 without touching the DB or rendering.
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT_WEB:-7005}/api/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_WEB:-7005}/api/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -153,15 +153,15 @@ services:
     cpus: 1.0
     ulimits: *hub-ulimits
     ports:
-      - "127.0.0.1:${PORT_SOCKET:-7001}:${PORT_SOCKET:-7001}"
+      - '127.0.0.1:${PORT_SOCKET:-7001}:${PORT_SOCKET:-7001}'
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - SOCKET_PORT=${PORT_SOCKET:-7001}
       # Cap V8 old-space below the 768m cgroup (perf audit §1.5).
       - NODE_OPTIONS=--max-old-space-size=576
-    command: ["node", "dist-server/server/socket-server/index.cjs"]
+    command: ['node', 'dist-server/server/socket-server/index.cjs']
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT_SOCKET:-7001}/"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_SOCKET:-7001}/']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -178,15 +178,15 @@ services:
     cpus: 0.75
     ulimits: *hub-ulimits
     ports:
-      - "127.0.0.1:${PORT_RMHBOX:-7676}:${PORT_RMHBOX:-7676}"
+      - '127.0.0.1:${PORT_RMHBOX:-7676}:${PORT_RMHBOX:-7676}'
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - RMHBOX_PORT=${PORT_RMHBOX:-7676}
       # Cap V8 old-space below the 512m cgroup (perf audit §1.5).
       - NODE_OPTIONS=--max-old-space-size=384
-    command: ["node", "dist-server/server/rmhbox/index.cjs"]
+    command: ['node', 'dist-server/server/rmhbox/index.cjs']
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT_RMHBOX:-7676}/"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_RMHBOX:-7676}/']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -203,15 +203,15 @@ services:
     cpus: 0.75
     ulimits: *hub-ulimits
     ports:
-      - "127.0.0.1:${PORT_RMHTUBE:-7003}:${PORT_RMHTUBE:-7003}"
+      - '127.0.0.1:${PORT_RMHTUBE:-7003}:${PORT_RMHTUBE:-7003}'
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - RMHTUBE_PORT=${PORT_RMHTUBE:-7003}
       # Cap V8 old-space below the 512m cgroup (perf audit §1.5).
       - NODE_OPTIONS=--max-old-space-size=384
-    command: ["node", "dist-server/server/rmhtube/index.cjs"]
+    command: ['node', 'dist-server/server/rmhtube/index.cjs']
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT_RMHTUBE:-7003}/"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_RMHTUBE:-7003}/']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -229,7 +229,7 @@ services:
     mem_reservation: 128m
     cpus: 0.75
     env_file: ${ENV_FILE:-.env.production}
-    command: ["node", "dist-server/server/ladder-worker/index.cjs"]
+    command: ['node', 'dist-server/server/ladder-worker/index.cjs']
 
   # ─── Homes Worker (RMHHomes external-listing scraper cron) ─────────────────
   # Node cron process: self-bootstraps an empty DB (seed sources → scrape), then
@@ -243,7 +243,21 @@ services:
     mem_reservation: 128m
     cpus: 0.5
     env_file: ${ENV_FILE:-.env.production}
-    command: ["node", "dist-server/server/homes-worker/index.cjs"]
+    command: ['node', 'dist-server/server/homes-worker/index.cjs']
+
+  # ─── Jobs Worker (pg-boss async backbone — rewrite R2) ─────────────────────
+  # Drains the Postgres-backed job queues (engagement progression today). Owns
+  # queue maintenance so the web tier stays send-only. No port. If this is down,
+  # the web tier runs the work inline instead — it's an optimisation, never a
+  # correctness dependency (lib/social/engagement-effects.server.ts).
+  jobs:
+    <<: *common
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-jobs
+    mem_limit: 512m
+    mem_reservation: 128m
+    cpus: 0.5
+    env_file: ${ENV_FILE:-.env.production}
+    command: ['node', 'dist-server/server/jobs/index.cjs']
 
   # ─── Go Supervisor (discord-bot + recap + doctrine-worker + vibe-worker + bot-worker) ─
   # Runs the five background workers as goroutines in a single Go process.
@@ -275,7 +289,7 @@ services:
       # Merged /metrics + /health endpoint for all five workers (httpx.ServeMetrics).
       # Templated so the healthcheck below stays in sync with the bind port.
       - METRICS_ADDR=:${PORT_SUPERVISOR_METRICS:-9090}
-    command: ["/app/bin/supervisor"]
+    command: ['/app/bin/supervisor']
     restart: unless-stopped
     # discord-bot needs 90s for in-flight AI; vibe-worker needs 30s for Chromium
     stop_grace_period: 90s
@@ -284,7 +298,7 @@ services:
     # db-wait (WaitForReachable: up to 10 tries × 5s = 50s) before the metrics
     # server comes up.
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT_SUPERVISOR_METRICS:-9090}/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_SUPERVISOR_METRICS:-9090}/health']
       interval: 60s
       timeout: 10s
       retries: 3
@@ -307,7 +321,7 @@ services:
     mem_reservation: 64m
     cpus: 0.5
     ports:
-      - "127.0.0.1:${PORT_STATUS:-7008}:${PORT_STATUS:-7008}"
+      - '127.0.0.1:${PORT_STATUS:-7008}:${PORT_STATUS:-7008}'
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - STATUS_PORT=${PORT_STATUS:-7008}
@@ -329,9 +343,9 @@ services:
       # rather than probing a service that isn't here.
       # Uptime history persists to the shared db/ volume (mounted at /app/db).
       - STATUS_DATA_DIR=/app/db
-    command: ["/app/bin/status"]
+    command: ['/app/bin/status']
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT_STATUS:-7008}/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_STATUS:-7008}/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -357,16 +371,16 @@ services:
     mem_reservation: 64m
     cpus: 0.5
     ports:
-      - "127.0.0.1:${PORT_ASSETS:-7007}:${PORT_ASSETS:-7007}"
+      - '127.0.0.1:${PORT_ASSETS:-7007}:${PORT_ASSETS:-7007}'
     env_file: ${ENV_FILE:-.env.production}
     environment:
       - ASSETS_PORT=${PORT_ASSETS:-7007}
-    command: ["/app/bin/assets"]
+    command: ['/app/bin/assets']
     depends_on:
       minio:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${PORT_ASSETS:-7007}/health"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:${PORT_ASSETS:-7007}/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -392,11 +406,69 @@ services:
     # eviction kicks in. Policy left allkeys-lru deliberately: switching to
     # volatile-* risks OOM-on-write if any key lacks a TTL — verify every key sets
     # an expiry (it should) before tightening the policy to protect dirty buffers.
-    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "320mb", "--maxmemory-policy", "allkeys-lru"]
+    command:
+      [
+        'redis-server',
+        '--save',
+        '',
+        '--appendonly',
+        'no',
+        '--maxmemory',
+        '320mb',
+        '--maxmemory-policy',
+        'allkeys-lru',
+      ]
     tmpfs:
       - /data:size=256m,mode=0700
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # Durable STATE plane (rewrite R0-T2). Separate from the `redis` cache above so
+  # rate-limit counters, view/counter buffers, presence sets, and dirty-set
+  # drains are NEVER evicted (noeviction) and survive restart (AOF) — the exact
+  # data-loss risk the `redis` block's comment warns about. DORMANT by default:
+  # the `redis-state` profile means a plain `docker compose up` does NOT start
+  # it, and the app only routes state keys here once REDIS_STATE_URL is set
+  # (lib/redis.server.ts falls back to the cache connection until then). To
+  # enable: `docker compose --profile redis-state up -d redis-state` and set
+  # REDIS_STATE_URL=redis://redis-state:6379 in the app env.
+  redis-state:
+    image: redis:7.4-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-rmhstudios}-redis-state
+    profiles: ['redis-state']
+    restart: unless-stopped
+    mem_limit: 192m
+    mem_reservation: 64m
+    cpus: 0.5
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    # noeviction: reject writes rather than drop a durable key under pressure.
+    # AOF everysec: at most ~1s of state loss on crash. Sized well under the
+    # cgroup so it never approaches the memory ceiling in practice.
+    command:
+      [
+        'redis-server',
+        '--save',
+        '',
+        '--appendonly',
+        'yes',
+        '--appendfsync',
+        'everysec',
+        '--maxmemory',
+        '128mb',
+        '--maxmemory-policy',
+        'noeviction',
+      ]
+    volumes:
+      - ${REDIS_STATE_DATA_PATH:-./redis-state-data}:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 3s
       retries: 5
@@ -411,7 +483,7 @@ services:
     mem_limit: 512m
     mem_reservation: 128m
     cpus: 0.5
-    command: ["server", "/data", "--console-address", ":9001"]
+    command: ['server', '/data', '--console-address', ':9001']
     environment:
       # Fail closed: no default credential fallback. Both must be supplied via
       # the environment (.env) or `docker compose up` aborts — never ship a
@@ -419,12 +491,12 @@ services:
       - MINIO_ROOT_USER=${S3_ACCESS_KEY_ID:?S3_ACCESS_KEY_ID must be set}
       - MINIO_ROOT_PASSWORD=${S3_SECRET_ACCESS_KEY:?S3_SECRET_ACCESS_KEY must be set}
     ports:
-      - "127.0.0.1:9000:9000"
-      - "127.0.0.1:9001:9001"
+      - '127.0.0.1:9000:9000'
+      - '127.0.0.1:9001:9001'
     volumes:
       - ${MINIO_DATA_PATH:-./minio-data}:/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ['CMD', 'curl', '-f', 'http://localhost:9000/minio/health/live']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -443,4 +515,4 @@ services:
       mc mb --ignore-existing local/${S3_BUCKET:-rmh-media} &&
       echo 'bucket ready';
       "
-    restart: "no"
+    restart: 'no'

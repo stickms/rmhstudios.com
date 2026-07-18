@@ -4,26 +4,28 @@ on:
   push:
     paths:
       - "go-services/**"
-      - "deploy/helm/rmhstudios-go/**"
       - ".github/workflows/go-microservices.yml"
   pull_request:
     paths:
       - "go-services/**"
-      - "deploy/helm/rmhstudios-go/**"
 
 # Cancel superseded runs: a new push to the same branch/PR aborts the in-flight
-# bazel build+test, the Postgres-backed e2e job, and the helm lint instead of
-# letting them run to completion against stale code. Frees runners and gives
-# faster feedback on the latest commit.
+# bazel build+test instead of running it to completion against stale code.
 concurrency:
   group: go-microservices-${{ github.ref }}
   cancel-in-progress: true
 
-# Least privilege: build/test, the Postgres-backed e2e job, and helm lint only
-# read the repo (checkout). No write scopes are needed.
+# Least privilege: build/test only reads the repo (checkout).
 permissions:
   contents: read
 
+# NOTE: the Postgres-backed `e2e` job and the `helm` lint/template job were
+# removed with the Go realtime/gateway + Helm topology (rewrite, design §5.2).
+# The e2e suite only exercised the deleted gamehub/rmhtube hubs, and there is no
+# Helm chart to lint. Production Go is the four background workers (recap,
+# doctrine-worker, vibe-worker, discord-bot) run by the supervisor, plus status
+# and assets — all covered by the bazel unit tests below and built into the
+# app-full image by plain `go build ./cmd/...` in the root Dockerfile.
 jobs:
   build-test:
     runs-on: ubuntu-latest
@@ -47,41 +49,3 @@ jobs:
         run: echo "build --remote_cache=${BAZEL_REMOTE_CACHE}" >> .bazelrc
       - name: build + test (bazel)
         run: bazelisk test --build_tests_only //go-services/...
-
-  e2e:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: go-services
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: rmh
-        ports: ["5432:5432"]
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 5s --health-timeout 5s --health-retries 10
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
-        with: { go-version: "1.23", cache-dependency-path: go-services/go.sum }
-      - name: load e2e schema
-        env: { PGPASSWORD: postgres }
-        run: psql -h localhost -U postgres -d rmh -f scripts/e2e/schema.sql
-      - name: run e2e (binaries + ws clients)
-        env:
-          DATABASE_URL: postgres://postgres:postgres@localhost:5432/rmh?sslmode=disable
-        run: bash scripts/e2e/run.sh --no-docker
-
-  helm:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-      - uses: azure/setup-helm@bf6a7d304bc2fdb57e0331155b7ebf2c504acf0a # v4
-      - run: helm lint deploy/helm/rmhstudios-go
-        working-directory: .
-      - run: helm template rmhstudios-go deploy/helm/rmhstudios-go > /dev/null
-        working-directory: .

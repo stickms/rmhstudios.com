@@ -252,7 +252,7 @@ RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi
 # second path, which only cost disk + wall-clock every build.
 RUN test -d /app/.output && \
     test -f /app/.output/server/index.mjs && \
-    test -f /app/.output/public/models/marlonjack.glb && \
+    test -f /app/.output/public/robots.txt && \
     test -f /app/.output/public/vibe-packages/react.js
 
 # ── Slim runtime image: drop assets that Apache serves off the host disk ──────

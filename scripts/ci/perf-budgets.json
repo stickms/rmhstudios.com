@@ -1,0 +1,13 @@
+{
+  "$comment": "Payload budgets from docs/full-rewrite-design-2026-07-18.md §2.1. Brotli KB. Enforced warn-only by scripts/ci/bundle-budget.ts (R0-T3); flips to blocking with --strict once the frontend decomposition (R3) lands. Corroborated by the team analysis (2026-07-18): built globals.css ~380KB uncompressed, shared entry index~540KB + src~340KB uncompressed.",
+  "brotli_kb": {
+    "platform_shell_eager_js": 300,
+    "platform_eager_css": 40,
+    "total_client_js_warn": 6000
+  },
+  "notes": {
+    "platform_shell_eager_js": "Sum of brotli sizes of entry (isEntry) JS chunks — the code parsed before interactivity on the feed shell.",
+    "platform_eager_css": "Sum of brotli sizes of CSS emitted for entry chunks (the render-blocking stylesheet).",
+    "total_client_js_warn": "Whole client JS surface across all lazy chunks; informational drift signal, not a per-page cost."
+  }
+}

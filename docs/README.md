@@ -12,49 +12,50 @@ writing, not necessarily the current code).
 
 ## Reference docs (keep current)
 
-| Doc | Contents |
-|---|---|
-| [`codebase-overview.md`](./codebase-overview.md) | Canonical code-layout overview: stack, repo layout, conventions, where to look first |
-| [`architecture.md`](./architecture.md) | Runtime topology + deploy pipeline: what runs where in production, images, CI, ports, auth across tiers |
-| [`design-language.md`](./design-language.md) | The visual system: `--site-*` token contract, themes + accent presets, primitives, typography, motion, a11y |
-| [`page-consistency.md`](./page-consistency.md) | Checklist + recipes for building pages that look native |
-| [`developer-api.md`](./developer-api.md) | Scoped public developer API summary (canonical spec is in-app at `/developer/docs`) |
-| [`albums-storage.md`](./albums-storage.md) | Albums storage architecture (DB + R2/S3) |
-| [`coins.md`](./coins.md) | Coin economy design (implementation plan, largely shipped) |
+| Doc                                              | Contents                                                                                                    |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------- |
+| [`codebase-overview.md`](./codebase-overview.md) | Canonical code-layout overview: stack, repo layout, conventions, where to look first                        |
+| [`architecture.md`](./architecture.md)           | Runtime topology + deploy pipeline: what runs where in production, images, CI, ports, auth across tiers     |
+| [`design-language.md`](./design-language.md)     | The visual system: `--site-*` token contract, themes + accent presets, primitives, typography, motion, a11y |
+| [`page-consistency.md`](./page-consistency.md)   | Checklist + recipes for building pages that look native                                                     |
+| [`developer-api.md`](./developer-api.md)         | Scoped public developer API summary (canonical spec is in-app at `/developer/docs`)                         |
+| [`albums-storage.md`](./albums-storage.md)       | Albums storage architecture (DB + R2/S3)                                                                    |
+| [`coins.md`](./coins.md)                         | Coin economy design (implementation plan, largely shipped)                                                  |
 
 ## Operations
 
-| Location | Contents |
-|---|---|
-| [`runbooks/`](./runbooks/) | **Current operational runbooks**: Go runtime cutover (2026-06-22), Go fleet steady-state deploy (2026-06-23), assets/CDN cutover. Follow these for deploy/rollback work. |
+| Location                           | Contents                                                                                                                                                                                                                                                                |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`runbooks/`](./runbooks/)         | **Current operational runbooks**: Go runtime cutover (2026-06-22), Go fleet steady-state deploy (2026-06-23), assets/CDN cutover. Follow these for deploy/rollback work.                                                                                                |
 | [`go-migration/`](./go-migration/) | The Go+Bazel migration book: [`go-backend-and-bazel.md`](./go-migration/go-backend-and-bazel.md) is the **authoritative Go operator runbook**; the PDF/HTML sections are the rendered design doc (written at the original 9-service scope — the fleet has grown since). |
-| [`misc/`](./misc/) | Security audits/reports (`SECURITY.md` is the current upload-security reference) + the UI redesign vision doc |
-| [`opti/`](./opti/) | Optimization/build-speed audits and plans (mostly executed) |
+| [`misc/`](./misc/)                 | Security audits/reports (`SECURITY.md` is the current upload-security reference) + the UI redesign vision doc                                                                                                                                                           |
+| [`opti/`](./opti/)                 | Optimization/build-speed audits and plans (mostly executed)                                                                                                                                                                                                             |
 
 ## Plans & specs (dated snapshots — check dates before trusting)
 
-| Location | Contents |
-|---|---|
-| [`plans/2026-07-15-cross-system-feature-ideas.md`](./plans/2026-07-15-cross-system-feature-ideas.md) | **Cross-system feature ideas** design doc (2026-07-15): six features that compose existing systems — Tournaments Hub, Wager Matches, self-referential prediction markets, creator coin→value bridge, AI personas as residents, unified live-ops season + spectating/"Guess the ___". Data models, economy loops, prioritization (RMHLadder "Career Mode" excluded — owned separately) |
-| [`plans/2026-07-14-liquid-glass-ui-redesign.md`](./plans/2026-07-14-liquid-glass-ui-redesign.md) | **Sitewide Liquid Glass redesign** design doc (2026-07-14): glass as the material system — tokens, elevation tiers, realism/reactivity/performance specs, per-page coverage incl. library/studio/shop/admin, phased rollout |
-| [`superpowers/`](./superpowers/) | The main archive of dated design specs + implementation plans (~75 files, `plans/` + `specs/`), plus the reusable [`i18n-extraction-guide.md`](./superpowers/i18n-extraction-guide.md) |
-| [`plans/`](./plans/) | Older dated plan/design pairs (dream-rift, rmhmusic, rmhcode CLI, terraform/helm migration, farming sim) |
-| [`scalability-audit-2026-07-17.md`](./scalability-audit-2026-07-17.md) | **Scalability & future-proofing audit** (2026-07-17): what breaks at 10x–100x users/data across DB, feed/social, caching, realtime, infra, frontend, and security — with a phased roadmap |
-| [`ci-speed-audit-2026-07-17.md`](./ci-speed-audit-2026-07-17.md) | **CI/CD speed audit** (2026-07-17): measured timings for the 79-workflow fleet, deploy-pipeline latency breakdown, redundancy map, and phased recommendations (parallel deploy gate, `buildx bake`, PR-lane consolidation, registry layer cache) |
-| [`website-improvement-plan.md`](./website-improvement-plan.md) | Cross-cutting audit + phased roadmap (2026-06-30) |
-| [`mobile-friendliness-audit.md`](./mobile-friendliness-audit.md) | Mobile audit — findings implemented 2026-06-29 (historical) |
-| [`feed/`](./feed/) | Feed/timeline scaling plan |
+| Location                                                                                             | Contents                                                                                                                                                                                                                                                                                                                                                                                 |
+| ---------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`plans/2026-07-15-cross-system-feature-ideas.md`](./plans/2026-07-15-cross-system-feature-ideas.md) | **Cross-system feature ideas** design doc (2026-07-15): six features that compose existing systems — Tournaments Hub, Wager Matches, self-referential prediction markets, creator coin→value bridge, AI personas as residents, unified live-ops season + spectating/"Guess the \_\_\_". Data models, economy loops, prioritization (RMHLadder "Career Mode" excluded — owned separately) |
+| [`plans/2026-07-14-liquid-glass-ui-redesign.md`](./plans/2026-07-14-liquid-glass-ui-redesign.md)     | **Sitewide Liquid Glass redesign** design doc (2026-07-14): glass as the material system — tokens, elevation tiers, realism/reactivity/performance specs, per-page coverage incl. library/studio/shop/admin, phased rollout                                                                                                                                                              |
+| [`superpowers/`](./superpowers/)                                                                     | The main archive of dated design specs + implementation plans (~75 files, `plans/` + `specs/`), plus the reusable [`i18n-extraction-guide.md`](./superpowers/i18n-extraction-guide.md)                                                                                                                                                                                                   |
+| [`plans/`](./plans/)                                                                                 | Older dated plan/design pairs (dream-rift, rmhmusic, rmhcode CLI, terraform/helm migration, farming sim)                                                                                                                                                                                                                                                                                 |
+| [`full-rewrite-design-2026-07-18.md`](./full-rewrite-design-2026-07-18.md)                           | **Full rewrite design & implementation spec** (2026-07-18, machine-readable): target architecture, database domain-schema redesign, async backbone, frontend decomposition, exact deletion inventories, and a dependency-ordered task graph (R0–R5) with per-task verify/acceptance/rollback                                                                                             |
+| [`scalability-audit-2026-07-17.md`](./scalability-audit-2026-07-17.md)                               | **Scalability & future-proofing audit** (2026-07-17): what breaks at 10x–100x users/data across DB, feed/social, caching, realtime, infra, frontend, and security — with a phased roadmap                                                                                                                                                                                                |
+| [`ci-speed-audit-2026-07-17.md`](./ci-speed-audit-2026-07-17.md)                                     | **CI/CD speed audit** (2026-07-17): measured timings for the 79-workflow fleet, deploy-pipeline latency breakdown, redundancy map, and phased recommendations (parallel deploy gate, `buildx bake`, PR-lane consolidation, registry layer cache)                                                                                                                                         |
+| [`website-improvement-plan.md`](./website-improvement-plan.md)                                       | Cross-cutting audit + phased roadmap (2026-06-30)                                                                                                                                                                                                                                                                                                                                        |
+| [`mobile-friendliness-audit.md`](./mobile-friendliness-audit.md)                                     | Mobile audit — findings implemented 2026-06-29 (historical)                                                                                                                                                                                                                                                                                                                              |
+| [`feed/`](./feed/)                                                                                   | Feed/timeline scaling plan                                                                                                                                                                                                                                                                                                                                                               |
 
 ## Per-feature docs
 
-| Location | Feature |
-|---|---|
-| [`rmhbox/`](./rmhbox/) | RMHBox party games — largest doc set: `info.md` (agent-facing codebase reference — keep in sync when changing RMHBox), design specs, phase plans |
-| [`altair/`](./altair/) | Altair strategy game — implementation, multiplayer, balance patch history |
-| [`rmhmusic/`](./rmhmusic/), [`rmhtube/`](./rmhtube/), [`rmhvibe/`](./rmhvibe/), [`rmhtech/`](./rmhtech/) | App design docs (rmhtube `features.md` is a 2025 roadmap — historical) |
-| [`signal-forge/`](./signal-forge/), [`temple-of-joy/`](./temple-of-joy/), [`void-breaker/`](./void-breaker/), [`daily-puzzles/`](./daily-puzzles/), [`rmhpoetry/`](./rmhpoetry/) | Game design docs |
-| [`alex-tamagotchi/`](./alex-tamagotchi/) | Alex, the Discord tamagotchi pet (now implemented in `go-services/internal/discordbot`) |
-| [`textbook/`](./textbook/), [`indonesia-history/`](./indonesia-history/) | Generated book projects (architecture textbook; Library content) — content artifacts, not code docs |
+| Location                                                                                                                                                                         | Feature                                                                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [`rmhbox/`](./rmhbox/)                                                                                                                                                           | RMHBox party games — largest doc set: `info.md` (agent-facing codebase reference — keep in sync when changing RMHBox), design specs, phase plans |
+| [`altair/`](./altair/)                                                                                                                                                           | Altair strategy game — implementation, multiplayer, balance patch history                                                                        |
+| [`rmhmusic/`](./rmhmusic/), [`rmhtube/`](./rmhtube/), [`rmhvibe/`](./rmhvibe/), [`rmhtech/`](./rmhtech/)                                                                         | App design docs (rmhtube `features.md` is a 2025 roadmap — historical)                                                                           |
+| [`signal-forge/`](./signal-forge/), [`temple-of-joy/`](./temple-of-joy/), [`void-breaker/`](./void-breaker/), [`daily-puzzles/`](./daily-puzzles/), [`rmhpoetry/`](./rmhpoetry/) | Game design docs                                                                                                                                 |
+| [`alex-tamagotchi/`](./alex-tamagotchi/)                                                                                                                                         | Alex, the Discord tamagotchi pet (now implemented in `go-services/internal/discordbot`)                                                          |
+| [`textbook/`](./textbook/), [`indonesia-history/`](./indonesia-history/)                                                                                                         | Generated book projects (architecture textbook; Library content) — content artifacts, not code docs                                              |
 
 ## ⚠️ Known-stale docs (do not trust these claims)
 

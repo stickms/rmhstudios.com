@@ -111,17 +111,11 @@ const heavyExternals = [
   '@react-three/drei',
   '@react-three/rapier',
   'pixi.js',
-  // Editor — monaco alone is 2.6MB in server bundle
-  'monaco-editor',
-  '@monaco-editor/react',
-  // Charting
-  'recharts',
   // UI libs
   'canvas-confetti',
   'react-player',
   'emoji-picker-react',
   'react-easy-crop',
-  'katex',
   // Audio (native/WASM — can't bundle)
   'tone',
   'audio-decode',
@@ -141,10 +135,6 @@ const ssrOnlyExternals = [
   '@dnd-kit/core',
   '@dnd-kit/sortable',
   '@dnd-kit/utilities',
-  '@tiptap/react',
-  '@tiptap/starter-kit',
-  '@tiptap/core',
-  '@tiptap/pm',
   '@anthropic-ai/sdk',
   // Native binary — used server-side to bundle generated vibe projects.
   'esbuild',
@@ -153,7 +143,7 @@ const ssrOnlyExternals = [
 function manualChunks(id: string) {
   // React core first — it MUST be one shared chunk. Everything the app renders
   // imports React, so isolating it keeps the heavy route-only vendors
-  // (three/monaco/tone/…) from bridging into the entry via shared React runtime.
+  // (three/tone/…) from bridging into the entry via shared React runtime.
   // (When React had no chunk of its own, rolldown co-located it inside vendor-three;
   // the entry then imported that 1.3 MB chunk on every page just to get React.)
   if (
@@ -165,13 +155,13 @@ function manualChunks(id: string) {
   ) {
     return 'vendor-react';
   }
-  // Everything else (three, monaco, tone, pixi, recharts, tiptap, framer-motion,
+  // Everything else (three, tone, pixi, framer-motion,
   // …) is intentionally left to rolldown's automatic chunking. Every heavy library
   // is reached only through a React.lazy(() => import(...)) route boundary, so
   // rolldown emits it as an async chunk that loads on its own route — NOT in the
   // entry graph. Force-chunking them into named vendor chunks (the previous
   // approach) made rolldown scatter shared runtime into those chunks and drag the
-  // whole 1.3 MB three + 1 MB monaco payload onto every page, including the
+  // whole 1.3 MB three payload onto every page, including the
   // homepage. Only React is pinned above, because it is genuinely shared by the
   // entry and must not be duplicated.
 }
@@ -199,6 +189,13 @@ export default defineConfig({
     tailwindcss(),
     tanstackStart({
       srcDirectory: 'app',
+      // NOTE: `router: { autoCodeSplitting: true }` was tested (rewrite R3-T5,
+      // 2026-07-18) and is a VERIFIED NO-OP here — enabling it produced a
+      // byte-identical build (same chunk hashes, same 582 chunks, same 216 KB
+      // brotli entry). Routes are already split by rolldown's per-route async
+      // chunking; the shared entry is framework+shell, not "all route shells".
+      // The real shared-entry reduction is the workspace decomposition (design
+      // §7.1), not this flag. Do not re-add it expecting a win.
     }),
     react(),
     nitro({

@@ -21,7 +21,8 @@ Current production (Docker Compose on the VPS):
 | `rmhbox` (party games)              | **Node** | 7676                          | `dist-server/server/rmhbox/index.cjs`        |
 | `rmhtube` (watch together)          | **Node** | 7003                          | `dist-server/server/rmhtube/index.cjs`       |
 | `ladder-worker` (job cron)          | **Node** | —                             | `dist-server/server/ladder-worker/index.cjs` |
-| `supervisor` (5 background workers) | **Go**   | 9090 (metrics)                | `/app/bin/supervisor`                        |
+| `homes-worker` (listings cron)      | **Node** | —                             | `dist-server/server/homes-worker/index.cjs`  |
+| `supervisor` (6 background workers) | **Go**   | 9090 (metrics)                | `/app/bin/supervisor`                        |
 | `status`                            | **Go**   | 7008                          | `/app/bin/status`                            |
 | `assets`                            | **Go**   | 7007                          | `/app/bin/assets`                            |
 | `minio`                             | infra    | 9000/9001                     | S3-compatible store                          |
@@ -29,10 +30,10 @@ Current production (Docker Compose on the VPS):
 Consequences:
 
 - `server/doctrine-worker/`, `server/vibe-worker/`, `server/bot-worker/`,
-  `server/recap/`, `server/status/` are **replaced by Go** (they run as
-  goroutines inside the Go `supervisor`, or as the Go `status` binary). Their
-  Node source remains only as a documented rollback path — it is not built by
-  `pnpm build` and not run in prod.
+  `server/recap/`, `server/status/` were **replaced by Go** (they run as
+  goroutines inside the Go `supervisor`, or as the Go `status` binary) and their
+  dead Node source was **deleted in the rewrite reap (R0-T5)** — recover from
+  git history (or the `pre-rewrite-*` tags) if a rollback ever needs them.
 - The Go realtime hubs (gamehub/rmhbox/rmhtube/rmhmusic/gateway) exist but are
   **not** in the production request path — Apache routes `/socket/`,
   `/rmhbox-ws/`, `/rmhtube-ws/` and `/` straight to the Node ports.
@@ -85,6 +86,9 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   `lib/rmhladder/pipeline`. Self-bootstraps an empty DB on startup
   (seed → probe sources → run pipeline). Manual triggers:
   `pnpm ladder:seed | ladder:probe | ladder:run`.
+- **`homes-worker/`** — RMHHomes listings-scraper cron. No port. `node-cron`
+  schedule `HOMES_CRON_SCHEDULE` (default every 6h). Built by `pnpm build` and
+  run as its own compose service.
 - **`nitro/`** — not a service: Nitro startup plugins for the web tier,
   registered in `vite.config.ts`. `reflect-metadata.ts` (required by the
   Better Auth passkey plugin — do not remove) and `security-headers.ts`
@@ -95,13 +99,15 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
   `socketId:event` sliding window). **Auth and room/lobby abstractions are NOT
   shared** — each hub owns its own.
 
-### Fallback only (replaced by Go — do not extend)
+### Deleted (replaced by Go)
 
-`doctrine-worker/` (daily puzzle gen, reputation decay), `vibe-worker/`
-(Playwright thumbnail renderer), `bot-worker/` (synthetic AI feed users),
-`recap/` (Lights Out Discord recaps), `status/` (status page). New work on
-these behaviors belongs in `go-services/internal/<svc>/` — see
-`go-services/CLAUDE.md`.
+The dead Node fallbacks — `doctrine-worker/` (daily puzzle gen, reputation
+decay), `vibe-worker/` (Playwright thumbnail renderer), `bot-worker/` (synthetic
+AI feed users), `recap/` (Lights Out Discord recaps), `status/` (status page) —
+were removed in the rewrite reap (R0-T5). These behaviors live in
+`go-services/internal/<svc>/` (run by the Go `supervisor`, or the Go `status`
+binary) — see `go-services/CLAUDE.md`. Recover the old Node source from git
+history if a rollback ever needs it.
 
 ## Dev, build, prod
 

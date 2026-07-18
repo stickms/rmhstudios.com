@@ -7,7 +7,7 @@ if (!SECRET || SECRET === 'change-me') {
     process.exit(1);
 }
 const PORT = 7002;
-// Default to the Compose deploy; set DEPLOY_SCRIPT to deploy/deploy-k8s.sh to cut over to k3s.
+// Compose deploy (the production path). DEPLOY_SCRIPT can override the path.
 const DEPLOY_SCRIPT = process.env.DEPLOY_SCRIPT || '/home/rmhstudios/rmhstudios.com/deploy.sh';
 const PROJECT_DIR = '/home/rmhstudios/rmhstudios.com';
 const LOG_FILE = '/home/rmhstudios/webhook.log';
