@@ -1,0 +1,802 @@
+{
+  "generatedAt": "2026-07-19T23:36:58.512Z",
+  "entries": [
+    {
+      "id": "help:coins",
+      "title": "How coins work",
+      "tags": [
+        "coins",
+        "economy",
+        "currency",
+        "rewards"
+      ],
+      "text": "Coins are the site-wide currency. You earn them by checking in daily, completing quests, winning games, and hitting achievements. Spend them in the shop on cosmetics, on the prize wheel, on gifts, and to buy streak freezes. Your balance lives in your wallet.",
+      "kind": "help"
+    },
+    {
+      "id": "help:wallet",
+      "title": "Where to find your wallet and coin balance",
+      "tags": [
+        "wallet",
+        "coins",
+        "balance"
+      ],
+      "route": "/wallet",
+      "text": "Open your wallet at /wallet to see your coin balance, your transaction history (the coin ledger), and ways to earn or spend coins.",
+      "kind": "help"
+    },
+    {
+      "id": "help:daily-streak",
+      "title": "Daily check-in streak",
+      "tags": [
+        "streak",
+        "daily",
+        "check-in",
+        "coins"
+      ],
+      "text": "Check in once per day to build a streak. Consecutive days grow it and pay out coins that scale with the streak length. Miss a day and it resets — unless you hold streak freezes, which are spent automatically to bridge a missed day. Buy freezes with coins.",
+      "kind": "help"
+    },
+    {
+      "id": "help:quests",
+      "title": "Quests and how to claim rewards",
+      "tags": [
+        "quests",
+        "daily",
+        "weekly",
+        "xp",
+        "coins",
+        "rewards"
+      ],
+      "route": "/achievements",
+      "text": "Daily and weekly quests give you goals like playing a game or posting. Progress fills as you go; once a quest is complete you claim it for XP and coins. Unclaimed completed rewards wait for you.",
+      "kind": "help"
+    },
+    {
+      "id": "help:achievements",
+      "title": "Achievements",
+      "tags": [
+        "achievements",
+        "badges",
+        "progression",
+        "xp"
+      ],
+      "route": "/achievements",
+      "text": "Achievements are one-time milestones across the whole platform (social, games, economy). Unlocking one grants XP and sometimes coins. See your progress on the achievements page.",
+      "kind": "help"
+    },
+    {
+      "id": "help:xp-levels",
+      "title": "XP and levels",
+      "tags": [
+        "xp",
+        "levels",
+        "progression"
+      ],
+      "text": "You earn XP from quests, achievements, streaks, and activity. XP raises your level, which shows on your profile and feeds progression rewards.",
+      "kind": "help"
+    },
+    {
+      "id": "help:battle-pass",
+      "title": "The season pass / battle pass",
+      "tags": [
+        "pass",
+        "battle pass",
+        "season",
+        "tiers",
+        "rewards"
+      ],
+      "text": "Each season has a pass that awards tiered rewards as you earn season XP by playing and engaging. Climb tiers over the season to unlock cosmetics and coins.",
+      "kind": "help"
+    },
+    {
+      "id": "help:membership",
+      "title": "Memberships and paid tiers",
+      "tags": [
+        "membership",
+        "subscription",
+        "stripe",
+        "pro",
+        "starter",
+        "enterprise",
+        "billing"
+      ],
+      "route": "/membership",
+      "text": "Paid memberships (Starter, Pro, Enterprise) unlock perks like the developer API, a profile badge, and higher limits. Manage or upgrade your plan on the membership page; billing is handled by Stripe.",
+      "kind": "help"
+    },
+    {
+      "id": "help:gift-membership",
+      "title": "Gifting a membership with coins",
+      "tags": [
+        "gift",
+        "membership",
+        "coins"
+      ],
+      "text": "You can gift a membership to another user using coins. The recipient gets the tier perks for the gift period.",
+      "kind": "help"
+    },
+    {
+      "id": "help:theme",
+      "title": "Changing your theme and appearance",
+      "tags": [
+        "theme",
+        "appearance",
+        "dark mode",
+        "light mode",
+        "accent",
+        "settings",
+        "customize"
+      ],
+      "route": "/settings",
+      "text": "Change your look in Settings under appearance. Pick a base or curated theme (the default is Liquid Glass), choose an accent color, and toggle reduced transparency. Your choice syncs across devices once signed in.",
+      "kind": "help"
+    },
+    {
+      "id": "help:language",
+      "title": "Changing your language",
+      "tags": [
+        "language",
+        "locale",
+        "i18n",
+        "translation",
+        "settings"
+      ],
+      "route": "/settings",
+      "text": "The site is available in 32 languages, including right-to-left layouts for Arabic, Urdu, and Farsi. Switch languages from the language switcher or in settings.",
+      "kind": "help"
+    },
+    {
+      "id": "help:tournaments",
+      "title": "Joining a tournament",
+      "tags": [
+        "tournament",
+        "compete",
+        "bracket",
+        "events",
+        "games"
+      ],
+      "text": "Tournaments are organized competitions for supported games. Browse open tournaments, join one before it starts, then play your matches through the bracket. Winners earn coins and bragging rights.",
+      "kind": "help"
+    },
+    {
+      "id": "help:wagers",
+      "title": "What wagers are",
+      "tags": [
+        "wager",
+        "bet",
+        "coins",
+        "games",
+        "stakes"
+      ],
+      "text": "A wager lets you stake coins on the outcome of a match or challenge. Both sides put up coins; the winner takes the pot. Only wager coins you can afford to lose — it is for fun, not real money.",
+      "kind": "help"
+    },
+    {
+      "id": "help:ladder",
+      "title": "Ranked ladder and Elo",
+      "tags": [
+        "ladder",
+        "ranked",
+        "elo",
+        "rating",
+        "leaderboard",
+        "compete"
+      ],
+      "text": "Ranked play tracks an Elo-style rating that goes up when you win and down when you lose, placing you on the competitive leaderboard for that game.",
+      "kind": "help"
+    },
+    {
+      "id": "help:feed",
+      "title": "The RMHarks social feed",
+      "tags": [
+        "feed",
+        "rmharks",
+        "posts",
+        "social",
+        "follow",
+        "timeline"
+      ],
+      "route": "/",
+      "text": "RMHarks is the social feed. Post text, images, GIFs, and polls; like, comment, repost, and react; and follow people to fill your timeline. The home page is your feed.",
+      "kind": "help"
+    },
+    {
+      "id": "help:posting",
+      "title": "How to make a post (RMHark)",
+      "tags": [
+        "post",
+        "rmhark",
+        "compose",
+        "feed",
+        "share"
+      ],
+      "text": "Use the composer on the feed to write a post (an RMHark). You can attach images with alt text, a GIF, or a poll, mark it sensitive, and choose who can reply. AI compose-assist can help you improve or rewrite a draft.",
+      "kind": "help"
+    },
+    {
+      "id": "help:communities",
+      "title": "Communities",
+      "tags": [
+        "community",
+        "communities",
+        "groups",
+        "join"
+      ],
+      "route": "/communities",
+      "text": "Communities are topic-based spaces. Join ones that interest you and post to them; community picks can surface in your feed and digest.",
+      "kind": "help"
+    },
+    {
+      "id": "help:messages",
+      "title": "Direct messages and group chats",
+      "tags": [
+        "messages",
+        "dm",
+        "chat",
+        "group chat",
+        "inbox"
+      ],
+      "route": "/messages",
+      "text": "Send direct messages and start group chats from your inbox. Chats support real-time messaging and reactions.",
+      "kind": "help"
+    },
+    {
+      "id": "help:events",
+      "title": "Events and RSVPs",
+      "tags": [
+        "events",
+        "rsvp",
+        "calendar",
+        "community"
+      ],
+      "text": "Communities and profiles can host events. RSVP \"going\" or \"maybe\"; your upcoming RSVPs also show up in your weekly digest email.",
+      "kind": "help"
+    },
+    {
+      "id": "help:notifications",
+      "title": "Notification settings",
+      "tags": [
+        "notifications",
+        "settings",
+        "preferences",
+        "push",
+        "email"
+      ],
+      "route": "/settings",
+      "text": "Control what you get notified about — likes, comments, follows, mentions, reposts, and system events — in notification settings. You can also opt into the weekly digest email and enable web push.",
+      "kind": "help"
+    },
+    {
+      "id": "help:weekly-digest",
+      "title": "The weekly digest email",
+      "tags": [
+        "digest",
+        "email",
+        "weekly",
+        "newsletter",
+        "unsubscribe",
+        "notifications"
+      ],
+      "route": "/settings",
+      "text": "The weekly digest is an opt-in email recapping top posts from people you follow, a featured story, your streak and quest progress, and upcoming events. Turn it on in notification settings; every email has a one-click unsubscribe link.",
+      "kind": "help"
+    },
+    {
+      "id": "help:profile",
+      "title": "Your profile and handle",
+      "tags": [
+        "profile",
+        "handle",
+        "username",
+        "bio",
+        "avatar"
+      ],
+      "text": "Your profile shows your posts, achievements, and level. Your @handle is your unique address for mentions and your profile URL; you can change it (with a cooldown) in settings.",
+      "kind": "help"
+    },
+    {
+      "id": "help:shop-cosmetics",
+      "title": "The shop and cosmetics",
+      "tags": [
+        "shop",
+        "store",
+        "cosmetics",
+        "coins",
+        "inventory"
+      ],
+      "route": "/shop",
+      "text": "Spend coins in the shop on cosmetics like avatar frames and profile flair. Owned items live in your inventory and can be equipped from your profile.",
+      "kind": "help"
+    },
+    {
+      "id": "help:prize-wheel",
+      "title": "The prize wheel",
+      "tags": [
+        "wheel",
+        "spin",
+        "coins",
+        "prizes",
+        "luck"
+      ],
+      "text": "The prize wheel lets you spend coins for a chance at coin payouts and cosmetic prizes.",
+      "kind": "help"
+    },
+    {
+      "id": "help:developer-api",
+      "title": "The developer API",
+      "tags": [
+        "api",
+        "developer",
+        "tokens",
+        "webhooks",
+        "integration"
+      ],
+      "route": "/developer",
+      "text": "Members on Starter and above get a scoped developer API with API keys and webhooks. Manage keys and read the docs in the developer area.",
+      "kind": "help"
+    },
+    {
+      "id": "help:library",
+      "title": "The library",
+      "tags": [
+        "library",
+        "books",
+        "documents",
+        "reading"
+      ],
+      "route": "/library",
+      "text": "The library hosts documents and books you can browse and read on the site.",
+      "kind": "help"
+    },
+    {
+      "id": "help:blog-news",
+      "title": "Blog and news",
+      "tags": [
+        "blog",
+        "news",
+        "articles",
+        "updates"
+      ],
+      "route": "/news",
+      "text": "The blog and newsroom carry platform updates, announcements, and curated stories. Featured articles can appear in your weekly digest.",
+      "kind": "help"
+    },
+    {
+      "id": "help:leaderboards",
+      "title": "Leaderboards",
+      "tags": [
+        "leaderboard",
+        "scores",
+        "ranking",
+        "compete",
+        "games"
+      ],
+      "text": "Many games have global leaderboards ranking players by score, time, or rating. Post a strong run to climb.",
+      "kind": "help"
+    },
+    {
+      "id": "help:ai-features",
+      "title": "AI features on the site",
+      "tags": [
+        "ai",
+        "assistant",
+        "compose",
+        "translate",
+        "concierge"
+      ],
+      "route": "/help",
+      "text": "AI powers several features: compose-assist and translation on posts, an \"ask the feed\" answer layer, AI personas you can chat with, and this concierge, which answers questions about the platform.",
+      "kind": "help"
+    },
+    {
+      "id": "help:concierge",
+      "title": "What the concierge can do",
+      "tags": [
+        "concierge",
+        "help",
+        "assistant",
+        "guide",
+        "support"
+      ],
+      "route": "/help",
+      "text": "The concierge is your in-site guide. Ask it how something works, where to find a page, or for a game recommendation, and it points you to the right place. It answers only about RMH Studios and never performs actions for you.",
+      "kind": "help"
+    },
+    {
+      "id": "help:security-privacy",
+      "title": "Account security and privacy",
+      "tags": [
+        "security",
+        "privacy",
+        "password",
+        "passkey",
+        "login",
+        "2fa"
+      ],
+      "route": "/settings",
+      "text": "Sign in with Discord, Google, GitHub, or email, and add a passkey for passwordless login. Manage sign-in methods and security options in settings.",
+      "kind": "help"
+    },
+    {
+      "id": "help:report-block",
+      "title": "Reporting and blocking",
+      "tags": [
+        "report",
+        "block",
+        "moderation",
+        "safety",
+        "harassment"
+      ],
+      "text": "You can report posts or users that break the rules and block accounts you do not want to interact with. Reports go to moderators for review.",
+      "kind": "help"
+    },
+    {
+      "id": "game:rmhbox",
+      "kind": "game",
+      "title": "RMHbox",
+      "tags": [
+        "Multiplayer",
+        "Party",
+        "Minigames"
+      ],
+      "route": "/rmhbox",
+      "players": "multiplayer / playable with friends",
+      "text": "Party game madness! Join a lobby and play 16+ minigames with friends. Create or join a lobby, vote on minigames, and compete with friends in real-time. Features 16+ unique minigames across word, trivia, action, and creative categories with live leaderboards and match history."
+    },
+    {
+      "id": "game:altair",
+      "kind": "game",
+      "title": "Altair",
+      "tags": [
+        "Deckbuilder",
+        "Roguelike",
+        "Strategy"
+      ],
+      "route": "/altair",
+      "players": "single-player",
+      "text": "A narrative-driven extraction thriller set on a fragmented deep space mining rig. Navigate Outpost 13, a reality-glitched mining station overrun by \"Echoes.\" Use your neural link to piece together fragmented memories, manage cryo-sickness, and survive the shadows in this narrative-heavy survival experience."
+    },
+    {
+      "id": "game:daily-puzzles",
+      "kind": "game",
+      "title": "Daily Puzzles",
+      "tags": [
+        "Puzzle",
+        "Daily",
+        "Brain Games"
+      ],
+      "route": "/daily",
+      "players": "single-player",
+      "text": "Six daily brain games: Lights Out, Alibi, Spectrum, Outcast, Chainlink, and Impostor. New puzzles every day at midnight EST. A suite of six daily brain games. Toggle lights in Lights Out, solve crime scenarios in Alibi, rank items in Spectrum, spot the odd one out in Outcast, build word chains in Chainlink, and detect lies in Impostor. Share your results wi…"
+    },
+    {
+      "id": "game:versecraft",
+      "kind": "game",
+      "title": "Versecraft",
+      "tags": [
+        "Visual Novel",
+        "AI-Generated",
+        "Romance",
+        "Poetry"
+      ],
+      "route": "/versecraft",
+      "players": "single-player",
+      "text": "A visual novel that writes a brand-new emotional story every time — your cast, your bonds, your seed to share. Every playthrough is generated from a seed: a unique anime cast, setting, and a multi-act, character-driven story you steer through choices and poem-writing. Prompt the kind of experience you want or roll the dice, deepen bonds with the cast, and s…"
+    },
+    {
+      "id": "game:slice-it",
+      "kind": "game",
+      "title": "Slice It!",
+      "tags": [
+        "Arcade",
+        "Rhythm",
+        "Action"
+      ],
+      "route": "/slice-it",
+      "players": "single-player",
+      "text": "A high-octane neon rhythm game where you slice through beats in a pulse-pounding world. Test your reflexes as you slice through beat sequences and dodge obstacles in a vibrant, neon-soaked environment. Feature-rich with global leaderboards, multiplayer lobbies, and support for custom track uploads."
+    },
+    {
+      "id": "game:velum2099",
+      "kind": "game",
+      "title": "VELUM2099",
+      "tags": [
+        "Simulation",
+        "Driving",
+        "3D",
+        "Cyberpunk"
+      ],
+      "route": "/velum2099",
+      "players": "single-player",
+      "text": "A cyberpunk courier driver: run timed deliveries and outrun the police across a procedural neon city. Run courier deliveries through the neon-lit streets of a procedurally generated cyberpunk city — pick up cargo, race it to the drop-off before the timer runs out, and bank credits with a combo multiplier. Cause chaos and the police give chase: shake them of…"
+    },
+    {
+      "id": "game:synapse-storm",
+      "kind": "game",
+      "title": "Synapse Storm",
+      "tags": [
+        "Action",
+        "Puzzle",
+        "Fast-paced"
+      ],
+      "route": "/synapse-storm",
+      "players": "single-player",
+      "text": "Juggle a storm of micro-challenges. Stay sharp. Juggle a storm of micro-challenges. Stay sharp. See how long your mind can keep up before the load becomes too great."
+    },
+    {
+      "id": "game:temple-of-joy",
+      "kind": "game",
+      "title": "Temple of Joy",
+      "tags": [
+        "Idle",
+        "Clicker",
+        "Prestige"
+      ],
+      "route": "/temple-of-joy",
+      "players": "single-player",
+      "text": "An advanced idle clicker exploring the pursuit of bliss through spiritual and carnal indulgence. Accumulate Happiness to construct a sprawling temple of delights. Balance the Hedonic Treadmill, earn Karma through pilgrimages, and Transcend the Wheel of Samsara in a deep idle game featuring relics, rituals, and philosophical choices."
+    },
+    {
+      "id": "game:neon-driftway",
+      "kind": "game",
+      "title": "Neon Driftway",
+      "tags": [
+        "Arcade",
+        "Racing",
+        "Endless"
+      ],
+      "route": "/neon-driftway",
+      "players": "single-player",
+      "text": "An endless highway survival racer featuring high-speed drifting and close-call mechanics. Push your car to the limit across three distinct levels: Sunset Freeway, Rainline, and Night Circuit. Rack up multipliers with daring close calls, manage grip in the rain, and dodge aggressive traffic in a neon-soaked endless racer."
+    },
+    {
+      "id": "game:laundry-sort",
+      "kind": "game",
+      "title": "Laundry Sort",
+      "tags": [
+        "Casual",
+        "Physics",
+        "Puzzle"
+      ],
+      "route": "/laundry-sort",
+      "players": "single-player",
+      "text": "A frantic physics-based arcade game where gravity and color matching are your only tools. Sort falling laundry into color-coded bins using ragdoll physics. Watch clothes tumble and bounce through complex dividers as you chase high scores in a race against the clock. Simple controls, chaotic physics."
+    },
+    {
+      "id": "game:forest-explorer",
+      "kind": "game",
+      "title": "Forest Explorer",
+      "tags": [
+        "Exploration",
+        "3D",
+        "Relaxing"
+      ],
+      "route": "/forest-explorer",
+      "players": "single-player",
+      "text": "Wander a peaceful 3D ancient forest, plant a garden that grows in real time, or play the 3-act story mode with puzzles and lore. A first-person 3D forest experience with two modes. Free Explore lets you roam a dense ancient forest with towering conifers, glowing fireflies, butterflies, and dappled sunlight — and plant your own garden of five flower species …"
+    },
+    {
+      "id": "game:void-breaker",
+      "kind": "game",
+      "title": "Void Breaker",
+      "tags": [
+        "Arcade",
+        "Shooter",
+        "3D",
+        "Survival"
+      ],
+      "route": "/void-breaker",
+      "players": "single-player",
+      "text": "Obsidian and gold arena shooter. Collect void shards, dash, slow time with Focus, detonate when overwhelmed. Survive waves of enemies in a dark arena. Collect void shards that orbit you as a shield and score multiplier. Activate Focus for bullet-time. Dash to dodge. Detonate your shard ring for a devastating Void Burst. Boss fights every 5 waves."
+    },
+    {
+      "id": "game:kowloon-knockout",
+      "kind": "game",
+      "title": "Kowloon Knockout",
+      "tags": [
+        "Fighting",
+        "Multiplayer",
+        "3D"
+      ],
+      "route": "/kowloon-knockout",
+      "players": "multiplayer / playable with friends",
+      "text": "A neon 3D brawler set in 90s Hong Kong — pixel-shaded stick fighters, combos, and up to 4-player FFA or team battles. Step into the neon-lit rooftops of Kowloon, 1997, rendered in fully animated 3D stick fighters with a retro pixel-art filter. Pick from nine fighter classes, master devastating combos and counter-strikes, and brawl across an open arena. Batt…"
+    },
+    {
+      "id": "game:cookgame",
+      "kind": "game",
+      "title": "CookGame",
+      "tags": [
+        "Simulation",
+        "Tycoon",
+        "Crime"
+      ],
+      "route": "/cookgame",
+      "players": "single-player",
+      "text": "A satirical underground tycoon sim — buy ingredients, mix product for wild effects, and hustle your block before the heat catches up. A tongue-in-cheek crime-management sim. Run a small-town operation: stock up at the supplier, experiment at the mixing bench to stack value-boosting effects onto your product, package it, and sell to the neighbourhood — all w…"
+    },
+    {
+      "id": "game:rochester-offensive",
+      "kind": "game",
+      "title": "Mental-Hospital: Rochester Offensive",
+      "tags": [
+        "FPS",
+        "Multiplayer",
+        "Tactical",
+        "3D"
+      ],
+      "route": "/rochester-offensive",
+      "players": "multiplayer / playable with friends",
+      "text": "A pixelated tactical 5v5 FPS — agents, abilities, an economy, the spike and MR13, plus co-op Zombies and online lobbies. A browser-based, Valorant-inspired tactical shooter rendered in chunky pixel-art 3D. Pick an agent, buy weapons and abilities each round, plant or defuse the spike, and play to 13 in standard 5v5 — or team up for wave-based co-op Zombies …"
+    },
+    {
+      "id": "game:house-always-wins",
+      "kind": "game",
+      "title": "House Always Wins",
+      "tags": [
+        "Metroidvania",
+        "Platformer",
+        "Narrative",
+        "Pixel Art"
+      ],
+      "route": "/house-always-wins",
+      "players": "single-player",
+      "text": "A dark casino metroidvania: explore the abandoned Mirage Royale, talk your way past its ghosts, unlock new moves, and outwit The House. A narrative pixel-art metroidvania set inside a decaying casino. Explore six interconnected wings — Lobby, Poker Hall, Slot Vault, Security Wing, Maintenance shafts and the Vault — gating your progress behind three unlockab…"
+    },
+    {
+      "id": "game:dream-rift",
+      "kind": "game",
+      "title": "Dream Rift",
+      "tags": [
+        "Bullet Hell",
+        "Multiplayer",
+        "Danmaku",
+        "Pixel Art"
+      ],
+      "route": "/dream-rift",
+      "players": "multiplayer / playable with friends",
+      "text": "A danmaku bullet hell — dodge gorgeous bullet curtains solo or in up to 4-player co-op across three dream worlds. A vertical bullet-hell shoot-’em-up: weave a tiny pinpoint hitbox through dense, beautiful danmaku curtains, graze bullets for score, bomb to survive, and capture each boss’s spell cards before the timer runs out. Four playable dreamers — the sh…"
+    },
+    {
+      "id": "game:rmh-farming-sim",
+      "kind": "game",
+      "title": "RMH Farming Simulator",
+      "tags": [
+        "Simulation",
+        "Farming",
+        "Co-op",
+        "Multiplayer",
+        "3D"
+      ],
+      "route": "/rmh-farming-sim",
+      "players": "multiplayer / playable with friends",
+      "text": "A cozy pixel-3D farming sim — till, plant, water and harvest, sell at the shop, upgrade your gear, and farm co-op with friends. Claim your own pixelated 3D homestead and grow it from a few seed packets into a thriving farm. Till the soil, plant seasonal crops across spring, summer, fall and winter, water them (or let the rain do it), and harvest for Normal,…"
+    },
+    {
+      "id": "app:rmhtube",
+      "kind": "app",
+      "title": "RMHTube",
+      "tags": [
+        "Watch Party",
+        "Real-time",
+        "Beta"
+      ],
+      "route": "/rmhtube",
+      "players": "multiplayer / playable with friends",
+      "text": "Watch videos together in sync. Create rooms, queue media, and chat in real-time. RMHTube is a real-time watch party platform. Create a room, share the code, and watch YouTube, Twitch, or direct videos in perfect sync with friends. Queue up media, vote to skip, react live, and chat — all powered by WebSocket magic."
+    },
+    {
+      "id": "app:rmhtype",
+      "kind": "app",
+      "title": "RMH Type",
+      "tags": [
+        "Typing",
+        "Multiplayer",
+        "Competitive",
+        "Beta"
+      ],
+      "route": "/rmhtype",
+      "players": "multiplayer / playable with friends",
+      "text": "Test your typing speed solo or race against friends in real-time multiplayer. RMH Type is a competitive typing platform. Practice solo to improve your WPM, or create a room to race friends on the same passage simultaneously. Track your progress on the global leaderboard and climb the ranks."
+    },
+    {
+      "id": "app:rmhmusic",
+      "kind": "app",
+      "title": "RMHMusic",
+      "tags": [
+        "Music",
+        "Spotify",
+        "Real-time",
+        "Beta"
+      ],
+      "route": "/rmhmusic",
+      "players": "multiplayer / playable with friends",
+      "text": "Listen to Spotify together. Create rooms, share queues, vibe with friends, and play Guess the Song. RMHMusic is a social music player powered by Spotify. Connect your Premium account, create a listening room, and enjoy synced playback with friends. Features a mesmerizing WebGL particle visualizer, shared queues, real-time chat, and Guess the Song — create a…"
+    },
+    {
+      "id": "app:rmhstudy",
+      "kind": "app",
+      "title": "RMH Study",
+      "tags": [
+        "Pomodoro",
+        "Study",
+        "Productivity",
+        "Beta"
+      ],
+      "route": "/rmhstudy",
+      "players": "single-player",
+      "text": "Study together with synced Pomodoro timers, focus tracking, and flashcards. RMH Study brings the Pomodoro technique to a social setting. Create a study room, invite friends, and stay focused together with synced timers. Track your focus time, set session goals, climb the study leaderboard, and drill solo with flashcard decks and an AI tutor."
+    },
+    {
+      "id": "app:studio",
+      "kind": "app",
+      "title": "RMH Studio",
+      "tags": [
+        "DAW",
+        "Music Production",
+        "Beta"
+      ],
+      "route": "/studio",
+      "players": "single-player",
+      "text": "Make beats in your browser. Multi-track DAW with synths, drums, effects, and samples. RMH Studio is a fully-featured digital audio workstation that runs entirely in your browser. Create multi-track arrangements with built-in synths, drum machines, effects, and samples. Record audio, edit MIDI, mix, and export — no downloads required."
+    },
+    {
+      "id": "app:rmhcode",
+      "kind": "app",
+      "title": "rmhcode",
+      "tags": [
+        "AI",
+        "CLI",
+        "Developer Tools",
+        "Beta"
+      ],
+      "route": "/rmhcode",
+      "players": "single-player",
+      "text": "AI-powered coding assistant. Build projects with Claude and publish to User Builds. rmhcode is a CLI wrapper around Claude Code with RMH integrations. Sign in with your rmhstudios.com account, build projects with AI assistance, and publish your creations to the User Builds showcase."
+    },
+    {
+      "id": "app:rmh-strategies",
+      "kind": "app",
+      "title": "RMH Strategies",
+      "tags": [
+        "Puzzles",
+        "Community",
+        "Reputation",
+        "Beta"
+      ],
+      "route": "/strategies",
+      "players": "single-player",
+      "text": "The coalition command center. Daily puzzles, tiered safehouse, reputation system, and Sahur Mode. RMH Strategies is the unified platform layer for the RMH ecosystem. Earn XP across all RMH products with a single reputation system, compete on daily puzzle leaderboards across five modes (Alibi, Spectrum, Outcast, Chainlink, Impostor), access tiered Safehouse …"
+    },
+    {
+      "id": "app:rmhladder",
+      "kind": "app",
+      "title": "RMH Ladder",
+      "tags": [
+        "Careers",
+        "Jobs",
+        "Early Career",
+        "AI",
+        "Beta"
+      ],
+      "route": "/rmhladder",
+      "players": "single-player",
+      "text": "Discover verified internships, new-grad programs, and early-career roles from official company sources. RMH Ladder automatically checks official company job boards every four hours, filters for verified early-career opportunities, and helps you save roles, track applications, and compare your resume with the jobs that fit."
+    },
+    {
+      "id": "app:rmhhomes",
+      "kind": "app",
+      "title": "RMHHomes",
+      "tags": [
+        "Housing",
+        "Search",
+        "Maps",
+        "Beta"
+      ],
+      "route": "/homes",
+      "players": "single-player",
+      "text": "A housing marketplace — browse member posts plus real listings aggregated from across the web on a map, filter, and save favorites. RMHHomes is a housing marketplace that blends member-posted rentals and houses with real apartment/home postings aggregated from public feeds across the web. Browse everything on an interactive map, filter by price, beds, baths…"
+    }
+  ]
+}
