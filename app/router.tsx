@@ -6,6 +6,15 @@ export function getRouter() {
   const router = createTanStackRouter({
     routeTree,
     scrollRestoration: true,
+    // Jump, don't animate. globals.css sets `html { scroll-behavior: smooth }`
+    // for in-page anchors, and with this option unset the router's reset
+    // inherits it — so every navigation became an animated scroll to the top.
+    // That animation is asynchronous: any touch/wheel input cancels it, and
+    // content mounting mid-flight (skeleton → streamed loader data →
+    // content-visibility feed cards) resizes the document under it, so slow
+    // routes landed short of the top while fast ones looked fine. "instant"
+    // makes the reset land in one frame, before paint.
+    scrollRestorationBehavior: "instant",
     defaultPreload: "intent",
     // Wait until a hover/focus is deliberate (50ms) before prefetching a route,
     // so brushing past links on a slow connection doesn't burn bandwidth.
