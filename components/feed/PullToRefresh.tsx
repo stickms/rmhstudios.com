@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const THRESHOLD = 72; // px of (damped) pull needed to commit to a refresh
 const MAX_PULL = 112; // cap on how far the content follows the finger
@@ -13,14 +14,14 @@ const MIN_SPIN_MS = 500; // floor so a fast refresh doesn't flash the spinner
 /**
  * Swipe-down-to-refresh for the mobile feed, matching the native app pattern.
  *
- * The gesture listens on the mobile shell's scroll container
- * (`[data-scroll-root]`), so it's naturally inert on desktop (window scroll, no
- * such element). It only engages on a downward drag that STARTS at the very top
- * of the scroller, and it bails the moment the browser won't let it
- * `preventDefault()` (i.e. once the native rubber-band has committed) — so it
- * never fights the shell's drawer/scroll gestures or the browser's own scroll.
- * The existing shell handler classifies a vertical-down swipe as `scroll` and
- * does nothing, leaving the boundary pull to us.
+ * `_site` pages scroll the DOCUMENT (the window), not an inner `[data-scroll-root]`
+ * container — that element was removed for iOS Safari's floating-bar behaviour —
+ * so the gesture listens on `window` and reads `window.scrollY`. It is gated to
+ * the mobile breakpoint via `useIsMobile()` so it never binds on desktop. It only
+ * engages on a downward drag that STARTS at the very top of the page, and it bails
+ * the moment the browser won't let it `preventDefault()` (i.e. once the native
+ * rubber-band has committed) — so it never fights the shell's drawer/scroll
+ * gestures or the browser's own scroll.
  */
 export function PullToRefresh({
   onRefresh,
@@ -30,6 +31,7 @@ export function PullToRefresh({
   children: React.ReactNode;
 }) {
   const { t } = useTranslation('feed');
+  const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   const [pull, setPull] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -47,14 +49,16 @@ export function PullToRefresh({
   };
 
   useEffect(() => {
-    const scroller = containerRef.current?.closest<HTMLElement>('[data-scroll-root]');
-    if (!scroller) return; // desktop / no mobile scroll root → PTR disabled
+    if (!isMobile) return; // PTR is a mobile-only gesture; desktop never binds.
+
+    // `_site` pages scroll the document, so the top is `window.scrollY === 0`.
+    const atTop = () => (window.scrollY || document.documentElement.scrollTop || 0) <= 0;
 
     const g = { startY: 0, active: false };
 
     const onStart = (e: TouchEvent) => {
       const touch = e.touches[0];
-      if (refreshingRef.current || e.touches.length !== 1 || !touch || scroller.scrollTop > 0) {
+      if (refreshingRef.current || e.touches.length !== 1 || !touch || !atTop()) {
         g.active = false;
         return;
       }
@@ -72,8 +76,8 @@ export function PullToRefresh({
         return;
       }
       const dy = touch.clientY - g.startY;
-      // Pulling up, or the scroller left the top → hand back to normal scroll.
-      if (dy <= 0 || scroller.scrollTop > 0) {
+      // Pulling up, or the page left the top → hand back to normal scroll.
+      if (dy <= 0 || !atTop()) {
         if (pullRef.current) setPullBoth(0);
         setDragging(false);
         g.active = false;
@@ -116,18 +120,18 @@ export function PullToRefresh({
       }
     };
 
-    scroller.addEventListener('touchstart', onStart, { passive: true });
-    scroller.addEventListener('touchmove', onMove, { passive: false });
-    scroller.addEventListener('touchend', onEnd, { passive: true });
-    scroller.addEventListener('touchcancel', onEnd, { passive: true });
+    window.addEventListener('touchstart', onStart, { passive: true });
+    window.addEventListener('touchmove', onMove, { passive: false });
+    window.addEventListener('touchend', onEnd, { passive: true });
+    window.addEventListener('touchcancel', onEnd, { passive: true });
     return () => {
-      scroller.removeEventListener('touchstart', onStart);
-      scroller.removeEventListener('touchmove', onMove);
-      scroller.removeEventListener('touchend', onEnd);
-      scroller.removeEventListener('touchcancel', onEnd);
+      window.removeEventListener('touchstart', onStart);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onEnd);
+      window.removeEventListener('touchcancel', onEnd);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isMobile]);
 
   const progress = Math.min(1, pull / THRESHOLD);
 
@@ -153,7 +157,11 @@ export function PullToRefresh({
       </div>
 
       <div
-        className={dragging ? '' : 'transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none'}
+        className={
+          dragging
+            ? ''
+            : 'transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none'
+        }
         style={{ transform: pull ? `translateY(${pull}px)` : undefined }}
       >
         {children}
