@@ -66,6 +66,13 @@ jobs:
       GITHUB_CLIENT_SECRET: ci
       SPOTIFY_CLIENT_ID: ci
       SPOTIFY_CLIENT_SECRET: ci
+      # Better Auth's Stripe plugin does `new Stripe(process.env.STRIPE_SECRET_KEY!)`
+      # at module load (lib/auth.ts); with the var unset the Stripe SDK throws
+      # "Neither apiKey nor config.authenticator provided", the SSR entry fails to
+      # load, and every route 500s. A placeholder key lets the client construct
+      # (no network call happens at construction) so the server actually boots.
+      STRIPE_SECRET_KEY: sk_test_ci_placeholder_00000000000000000000
+      STRIPE_WEBHOOK_SECRET: whsec_ci_placeholder
       PORT: "3000"
       BASE_URL: http://localhost:3000
       NODE_OPTIONS: --max-old-space-size=8192
