@@ -5,6 +5,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 // Stub it so tests don't load that chain and so we can assert the HELD path.
 const notifyAdminsOfReview = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/lib/admin-review.server', () => ({ notifyAdminsOfReview }));
+// getCreatorEarnings (imported in test e) transitively pulls these in; stub them
+// so the test doesn't load the push/redis chain and stays isolated.
+vi.mock('@/lib/notifications.server', () => ({ createNotification: vi.fn() }));
+vi.mock('@/lib/admin-audit.server', () => ({ logAdminAction: vi.fn() }));
 
 // ── Stateful, rollback-aware Prisma mock ────────────────────────────────────
 // Models the two invariants under test: the conditional `updateMany where
