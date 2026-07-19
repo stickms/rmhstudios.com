@@ -34,6 +34,8 @@ import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/d
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
 import { registerDreamRiftHandlers, handleDreamRiftDisconnect } from './handlers/dream-rift';
 import { registerRmhFarmingSimHandlers, handleRmhFarmingSimDisconnect } from './handlers/rmh-farming-sim';
+import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
+import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 
 // ─── Startup validation ─────────────────────────────────────────
 
@@ -230,10 +232,16 @@ io.on('connection', (socket) => {
   registerDreamRiftHandlers(io, socket);
   registerRmhFarmingSimHandlers(io, socket);
 
+  // Platform expansion (§4, §5): live Spaces + cross-game party.
+  registerSpacesHandlers(io, socket);
+  registerPartyHandlers(io, socket);
+
   // Disconnect cleanup
   socket.on('disconnect', (reason) => {
     logger.info({ event: 'disconnect', userId, socketId: socket.id, reason });
 
+    handleSpacesDisconnect(io, socket);
+    handlePartyDisconnect(io, socket);
     handleSynapseStormDisconnect(io, socket);
     handleSliceItDisconnect(io, socket);
     handleNeonDriftwayDisconnect(io, socket);
