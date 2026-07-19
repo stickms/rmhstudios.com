@@ -449,8 +449,28 @@ services:
         '--maxmemory-policy',
         'allkeys-lru',
       ]
+    # Run AS the redis user instead of starting as root. The official image's
+    # entrypoint does, when it is root and argv[0] is redis-server:
+    #     find . \! -user redis -exec chown redis '{}' + ; exec gosu redis ...
+    # `cap_drop: ALL` above removes CAP_CHOWN, so that chown fails with
+    # "Operation not permitted", `set -e` aborts, and the container exits 1 —
+    # forever, under `restart: unless-stopped`. The tmpfs below is mounted fresh
+    # and root-owned on every start, so the chown is always attempted and always
+    # fails. This crash-looped Redis in production: the container never stayed up
+    # long enough to hold a DNS record, so the web tier got `getaddrinfo EAI_AGAIN
+    # redis` and (before the ioredis fix) hung ~28s per feed render.
+    #
+    # Setting `user:` makes the entrypoint skip that root-only branch entirely
+    # (it explicitly supports being started with --user), so no chown and no gosu
+    # are attempted and NO capabilities are needed — the hardening above stays
+    # intact. Pinned numerically because `user:` cannot resolve an image's
+    # /etc/passwd name. Verify with: docker run --rm redis:7.4-alpine id redis
+    user: '999:999'
+    # Must be owned by the uid above: mode=0700 means ONLY the owner has access,
+    # and redis chdir()s here at startup. Without uid/gid the tmpfs is root-owned
+    # and redis (999) cannot enter it.
     tmpfs:
-      - /data:size=256m,mode=0700
+      - /data:size=256m,mode=0700,uid=999,gid=999
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
@@ -496,6 +516,14 @@ services:
         '--maxmemory-policy',
         'noeviction',
       ]
+    # Same root-entrypoint/CAP_CHOWN trap as the `redis` service above — see the
+    # long comment there. This plane is dormant (profiles: redis-state), so it
+    # never hit it in production, but enabling it without this would crash-loop
+    # identically. NOTE: unlike the cache plane's tmpfs, this is a HOST bind
+    # mount, so Docker cannot set its ownership — the directory must already be
+    # owned by 999:999 or redis cannot write its AOF:
+    #     sudo mkdir -p ./redis-state-data && sudo chown 999:999 ./redis-state-data
+    user: '999:999'
     volumes:
       - ${REDIS_STATE_DATA_PATH:-./redis-state-data}:/data
     healthcheck:
