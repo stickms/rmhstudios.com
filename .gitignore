@@ -18,6 +18,10 @@
 .output/
 .tanstack/
 
+# stale Next.js artifacts (this app uses TanStack Start)
+.next/
+next-env.d.ts
+
 # production
 /build
 /dist/

@@ -23,21 +23,55 @@ let count = 0;
 const subscribers = new Set<(n: number) => void>();
 let interval: ReturnType<typeof setInterval> | null = null;
 let listenersBound = false;
+let fetchController: AbortController | null = null;
+let fetchPromise: Promise<void> | null = null;
+let generation = 0;
 
 function broadcast(n: number) {
   count = n;
   for (const s of subscribers) s(n);
 }
 
-async function fetchCount() {
-  try {
-    const res = await fetch('/api/notifications/unread-count', { credentials: 'include' });
-    if (!res.ok) return;
-    const data = await res.json();
-    if (typeof data.count === 'number') broadcast(data.count);
-  } catch {
-    // Network hiccup — keep the last known value.
-  }
+function fetchCount(): Promise<void> {
+  // Focus, visibility, the read event, and the interval can all fire together.
+  // Share one request so those triggers never fan out duplicate reads.
+  if (fetchPromise) return fetchPromise;
+
+  const requestGeneration = generation;
+  const controller = new AbortController();
+  fetchController = controller;
+
+  // Begin in a microtask so fetchPromise owns the request before any mocked or
+  // platform fetch implementation has a chance to throw synchronously.
+  const request = Promise.resolve()
+    .then(async () => {
+      const res = await fetch('/api/notifications/unread-count', {
+        credentials: 'include',
+        signal: controller.signal,
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      // stop() advances the generation before aborting. Ignore a response that
+      // raced teardown so one signed-in user's count cannot repopulate the store
+      // after the final subscriber leaves.
+      if (requestGeneration === generation && typeof data.count === 'number') {
+        broadcast(data.count);
+      }
+    })
+    .catch(() => {
+      // Network hiccup or teardown abort — keep the last known value.
+    })
+    .finally(() => {
+      // A stopped transport may already have started a newer request. Only the
+      // request that still owns these slots may clear them.
+      if (fetchController === controller) {
+        fetchController = null;
+        fetchPromise = null;
+      }
+    });
+
+  fetchPromise = request;
+  return request;
 }
 
 function onVisible() {
@@ -57,10 +91,15 @@ function start(intervalMs: number) {
 }
 
 function stop() {
+  generation++;
+
   if (interval) {
     clearInterval(interval);
     interval = null;
   }
+  fetchController?.abort();
+  fetchController = null;
+  fetchPromise = null;
   if (listenersBound) {
     document.removeEventListener('visibilitychange', onVisible);
     window.removeEventListener('focus', fetchCount);

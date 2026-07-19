@@ -36,9 +36,55 @@ import {
 /** Pub/sub channel carrying "drop this key / prefix everywhere" messages. */
 const INVALIDATION_CHANNEL = 'cache:invalidate';
 
-type InvalidationMessage =
-  | { type: 'key'; key: string }
-  | { type: 'prefix'; prefix: string };
+type InvalidationMessage = { type: 'key'; key: string } | { type: 'prefix'; prefix: string };
+
+type InflightRecord = {
+  promise: Promise<unknown> | null;
+  invalidated: boolean;
+};
+
+const inflight = new Map<string, InflightRecord>();
+const swrInflight = new Map<string, InflightRecord>();
+
+function isCurrentFlight(
+  flights: Map<string, InflightRecord>,
+  key: string,
+  flight: InflightRecord,
+): boolean {
+  return !flight.invalidated && flights.get(key) === flight;
+}
+
+function detachFlight(flights: Map<string, InflightRecord>, key: string): void {
+  const flight = flights.get(key);
+  if (!flight) return;
+  flight.invalidated = true;
+  flights.delete(key);
+}
+
+function detachFlightsWithPrefix(flights: Map<string, InflightRecord>, prefix: string): void {
+  for (const [key, flight] of flights) {
+    if (!key.startsWith(prefix)) continue;
+    flight.invalidated = true;
+    flights.delete(key);
+  }
+}
+
+/**
+ * Drop local cache state and detach any older computation for `key`. Detaching
+ * lets the next caller start a fresh load immediately; the old promise still
+ * resolves for its original callers, but can no longer repopulate the cache.
+ */
+function invalidateLocalKey(key: string): void {
+  detachFlight(inflight, key);
+  detachFlight(swrInflight, key);
+  apiCache.invalidate(key);
+}
+
+function invalidateLocalPrefix(prefix: string): void {
+  detachFlightsWithPrefix(inflight, prefix);
+  detachFlightsWithPrefix(swrInflight, prefix);
+  apiCache.invalidatePrefix(prefix);
+}
 
 let subscribed = false;
 
@@ -54,9 +100,9 @@ function ensureSubscribed(): void {
     const msg = data as InvalidationMessage;
     if (!msg || typeof msg !== 'object') return;
     if (msg.type === 'key' && typeof msg.key === 'string') {
-      apiCache.invalidate(msg.key);
+      invalidateLocalKey(msg.key);
     } else if (msg.type === 'prefix' && typeof msg.prefix === 'string') {
-      apiCache.invalidatePrefix(msg.prefix);
+      invalidateLocalPrefix(msg.prefix);
     }
   });
 }
@@ -80,13 +126,11 @@ export interface CachedOptions {
  * on a miss. Concurrent callers within a process share one loader invocation
  * via an in-flight promise map (prevents a local stampede).
  */
-const inflight = new Map<string, Promise<unknown>>();
-
 export async function cached<T>(
   key: string,
   ttlMs: number,
   loader: () => Promise<T>,
-  opts: CachedOptions = {}
+  opts: CachedOptions = {},
 ): Promise<T> {
   ensureSubscribed();
   const useL2 = opts.l2 !== false;
@@ -96,23 +140,26 @@ export async function cached<T>(
   if (local !== undefined) return local;
 
   // Coalesce concurrent local callers.
-  const existing = inflight.get(key);
+  const existing = inflight.get(key)?.promise;
   if (existing) return existing as Promise<T>;
 
+  const flight: InflightRecord = { promise: null, invalidated: false };
   const promise = (async () => {
     try {
       // L2
       if (useL2 && redisEnabled()) {
         const remote = await redisGetJSON<T>(key);
         if (remote !== null && remote !== undefined) {
-          apiCache.set(key, remote, ttlMs);
+          if (isCurrentFlight(inflight, key, flight)) {
+            apiCache.set(key, remote, ttlMs);
+          }
           return remote;
         }
       }
       // Loader
       const value = await loader();
       const store = opts.shouldCache ? opts.shouldCache(value) : true;
-      if (store) {
+      if (store && isCurrentFlight(inflight, key, flight)) {
         apiCache.set(key, value, ttlMs);
         if (useL2 && redisEnabled()) {
           // Best-effort; don't block on the write.
@@ -121,11 +168,14 @@ export async function cached<T>(
       }
       return value;
     } finally {
-      inflight.delete(key);
+      // An invalidation may have detached this flight and installed a newer
+      // one. Only the record that is still current may remove itself.
+      if (inflight.get(key) === flight) inflight.delete(key);
     }
   })();
 
-  inflight.set(key, promise);
+  flight.promise = promise;
+  inflight.set(key, flight);
   return promise;
 }
 
@@ -157,8 +207,6 @@ interface SWREntry<T> {
   freshUntil: number;
 }
 
-const swrInflight = new Map<string, Promise<unknown>>();
-
 export interface CachedSWROptions {
   /** Freshness window (ms): within this, the value is returned with no refresh. */
   ttlMs: number;
@@ -176,25 +224,29 @@ function swrRefresh<T>(
   opts: CachedSWROptions,
   loader: () => Promise<T>,
 ): Promise<T | undefined> {
-  const existing = swrInflight.get(key);
+  const existing = swrInflight.get(key)?.promise;
   if (existing) return existing as Promise<T | undefined>;
   const useL2 = opts.l2 !== false;
   const hardTtl = opts.ttlMs + opts.swrMs;
+  const flight: InflightRecord = { promise: null, invalidated: false };
   const promise = (async () => {
     try {
       const value = await loader();
       const entry: SWREntry<T> = { v: value, freshUntil: Date.now() + opts.ttlMs };
-      apiCache.set(key, entry, hardTtl);
-      if (useL2 && redisEnabled()) void redisSetJSON(key, entry, hardTtl);
+      if (isCurrentFlight(swrInflight, key, flight)) {
+        apiCache.set(key, entry, hardTtl);
+        if (useL2 && redisEnabled()) void redisSetJSON(key, entry, hardTtl);
+      }
       return value;
     } catch {
       // Keep the stale value; it will keep serving until it hard-expires.
       return undefined;
     } finally {
-      swrInflight.delete(key);
+      if (swrInflight.get(key) === flight) swrInflight.delete(key);
     }
   })();
-  swrInflight.set(key, promise);
+  flight.promise = promise;
+  swrInflight.set(key, flight);
   return promise;
 }
 
@@ -215,9 +267,10 @@ export async function cachedSWR<T>(
   }
 
   // L1 miss — coalesce concurrent cold callers onto one resolution.
-  const existing = swrInflight.get(key);
+  const existing = swrInflight.get(key)?.promise;
   if (existing) return existing as Promise<T>;
 
+  const flight: InflightRecord = { promise: null, invalidated: false };
   const promise = (async () => {
     try {
       // L2 — a warm value from another worker/instance seeds L1; if it is
@@ -225,23 +278,28 @@ export async function cachedSWR<T>(
       if (useL2 && redisEnabled()) {
         const remote = await redisGetJSON<SWREntry<T>>(key);
         if (remote && typeof remote === 'object' && 'freshUntil' in remote) {
-          apiCache.set(key, remote, hardTtl);
-          if (Date.now() >= remote.freshUntil) void swrRefresh(key, opts, loader);
+          if (isCurrentFlight(swrInflight, key, flight)) {
+            apiCache.set(key, remote, hardTtl);
+            if (Date.now() >= remote.freshUntil) void swrRefresh(key, opts, loader);
+          }
           return remote.v;
         }
       }
       // Cold — compute synchronously (this is the only blocking path).
       const value = await loader();
       const entry: SWREntry<T> = { v: value, freshUntil: Date.now() + opts.ttlMs };
-      apiCache.set(key, entry, hardTtl);
-      if (useL2 && redisEnabled()) void redisSetJSON(key, entry, hardTtl);
+      if (isCurrentFlight(swrInflight, key, flight)) {
+        apiCache.set(key, entry, hardTtl);
+        if (useL2 && redisEnabled()) void redisSetJSON(key, entry, hardTtl);
+      }
       return value;
     } finally {
-      swrInflight.delete(key);
+      if (swrInflight.get(key) === flight) swrInflight.delete(key);
     }
   })();
 
-  swrInflight.set(key, promise);
+  flight.promise = promise;
+  swrInflight.set(key, flight);
   return promise;
 }
 
@@ -250,7 +308,7 @@ export async function cachedSWR<T>(
  * Call after a mutation that changes the cached value.
  */
 export async function invalidateCached(key: string): Promise<void> {
-  apiCache.invalidate(key);
+  invalidateLocalKey(key);
   if (redisEnabled()) {
     await redisDel(key);
     redisPublish(INVALIDATION_CHANNEL, { type: 'key', key } satisfies InvalidationMessage);
@@ -264,7 +322,7 @@ export async function invalidateCached(key: string): Promise<void> {
  * prefix-invalidated families.
  */
 export async function invalidateCachedPrefix(prefix: string): Promise<void> {
-  apiCache.invalidatePrefix(prefix);
+  invalidateLocalPrefix(prefix);
   if (redisEnabled()) {
     redisPublish(INVALIDATION_CHANNEL, { type: 'prefix', prefix } satisfies InvalidationMessage);
   }
