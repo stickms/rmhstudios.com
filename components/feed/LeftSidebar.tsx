@@ -43,6 +43,7 @@ import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNavStore } from '@/stores/navStore';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
+import { MobileSidebarCloseButton } from './MobileSidebarCloseButton';
 import { useAppBadge } from '@/lib/useAppBadge';
 import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
@@ -374,21 +375,46 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     <div
       ref={rootRef}
       className={`flex flex-col gap-1 ${rootSizeClass} ${paddingClass}`}
-      style={expanded ? { paddingBottom: 'calc(1rem + var(--safe-bottom))' } : undefined}
+      style={
+        expanded
+          ? {
+              // The drawer aside is fixed top-0 with height 100lvh +
+              // --drawer-bleed, so its box deliberately runs past the visual
+              // viewport to the physical screen bottom. Add that overhang back as
+              // padding so the footer lands above Safari's bar rather than behind
+              // it: (100lvh − 100dvh) is the bar itself and collapses to 0 once it
+              // minimizes on scroll; --drawer-bleed is the fixed overhang. Not the
+              // double-count warned about in globals.css §--safe-bottom — that's
+              // about offsetting *fixed* UI, which is already visual-viewport
+              // anchored; this is inner padding of an oversized panel.
+              paddingBottom:
+                'calc(1rem + var(--safe-bottom) + (100lvh - 100dvh) + var(--drawer-bleed))',
+            }
+          : undefined
+      }
     >
-      {/* Logo */}
-      <Link to="/" className={`mb-6 flex items-center shrink-0 ${logoAlignClass}`}>
-        <span
-          className={`site-logo font-playfair font-bold text-xl text-site-text ${logoFullClass}`}
-        >
-          RMH<span className="text-site-text-muted font-semibold">Studios</span>
-        </span>
-        <span
-          className={`site-logo font-playfair font-bold text-xl text-site-text ${logoShortClass}`}
-        >
-          RMH
-        </span>
-      </Link>
+      {/* Logo row. In the drawer (expanded) it also carries an explicit close
+          button pushed to the far edge; on the desktop rail the row has a single
+          child, so logoAlignClass centers/starts it exactly as before. */}
+      <div
+        className={`mb-6 flex items-center shrink-0 ${
+          expanded ? 'justify-between gap-2' : logoAlignClass
+        }`}
+      >
+        <Link to="/" className="flex items-center">
+          <span
+            className={`site-logo font-playfair font-bold text-xl text-site-text ${logoFullClass}`}
+          >
+            RMH<span className="text-site-text-muted font-semibold">Studios</span>
+          </span>
+          <span
+            className={`site-logo font-playfair font-bold text-xl text-site-text ${logoShortClass}`}
+          >
+            RMH
+          </span>
+        </Link>
+        {expanded && <MobileSidebarCloseButton />}
+      </div>
 
       {/* Nav Links — its own scroll region on desktop; part of the drawer's
           scroll on mobile (see rootSizeClass/navScrollClass above). */}
