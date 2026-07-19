@@ -32,18 +32,19 @@ import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from "@/lib
 import { localeCoreResources, preloadLocale } from "@/lib/i18n/resources.server";
 
 /**
- * Resolve the signed-in user from the session cookie on the server. Runs in the
- * root loader so the shell can render signed-in on the first paint instead of
- * flashing "signed out" while better-auth's client session loads after hydration.
- */
-/**
  * Cap how long the root loader will block on the session lookup before it gives
  * up and renders a signed-out shell. `getInitialUser` resolves the Better Auth
  * session against Postgres on EVERY document render (signed-in and anonymous).
- * Under origin CPU/DB contention that query can stall for many seconds, and
- * because the root loader awaits it, that stall becomes the document's TTFB
- * (initial-load audit: cold TTFB measured at 20-32s while warm was ~80ms). A
- * timeout turns the worst case into a signed-out first paint instead of a hang:
+ * If that query ever stalls, the root loader awaits it, so the stall becomes the
+ * document's TTFB for every page on the site. A timeout bounds that blast radius.
+ *
+ * NOTE (supersedes the rationale in commit d25d2f1e): this bound did NOT cause
+ * or fix the 20-32s cold TTFB that commit cites — that was traced to
+ * lib/redis.server.ts hanging on an unreachable Redis. This is a defensive cap
+ * on one unbounded dependency, not a fix for a diagnosed stall. Keep it, but
+ * don't treat it as evidence about where that latency came from.
+ *
+ * A timeout turns the worst case into a signed-out first paint instead of a hang:
  * Better Auth's client session backfills the real identity right after
  * hydration — the exact path the shell used before this server-side lookup
  * existed — so the only cost of a timeout is a brief "signed out" flash for
@@ -67,6 +68,11 @@ function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   });
 }
 
+/**
+ * Resolve the signed-in user from the session cookie on the server. Runs in the
+ * root loader so the shell can render signed-in on the first paint instead of
+ * flashing "signed out" while better-auth's client session loads after hydration.
+ */
 const getInitialUser = createServerFn({ method: "GET" }).handler(async () => {
   try {
     // Request-scoped so this shares one session resolution with the page loader
