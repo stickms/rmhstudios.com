@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { recordGamePlay } from '@/lib/quests/engine.server';
+import { reportGameResult } from '@/lib/game/results.server';
 
 export const Route = createFileRoute('/api/void-breaker/score')({
   server: {
@@ -57,6 +58,7 @@ export const Route = createFileRoute('/api/void-breaker/score')({
         },
       });
       await recordGamePlay(userId);
+      await reportGameResult(userId, { game: 'void-breaker', score: Math.round(score), cleared: safeWave });
       return Response.json({ success: true, linked: true });
     }
 
@@ -77,6 +79,7 @@ export const Route = createFileRoute('/api/void-breaker/score')({
       },
     });
     await recordGamePlay(userId);
+    await reportGameResult(userId, { game: 'void-breaker', score: Math.round(score), cleared: safeWave });
     return Response.json({ success: true, created: true });
   } catch (e) {
     console.error('Failed to submit void-breaker score:', e);
