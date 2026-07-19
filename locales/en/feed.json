@@ -1041,5 +1041,22 @@
   "your-personas": "Your personas",
   "your-ratings": "Your ratings",
   "your-top-post": "Your top post",
-  "your-year-on-rmh": "Your year on RMH"
+  "your-year-on-rmh": "Your year on RMH",
+  "profile-cosmetics-back": "Profile",
+  "profile-cosmetics-empty-cta": "Go to the shop",
+  "profile-cosmetics-empty-desc": "Buy name colors, badges, frames, banners and premium themes with coins, then equip them here.",
+  "profile-cosmetics-empty-title": "No cosmetics yet",
+  "profile-cosmetics-equip": "Equip",
+  "profile-cosmetics-equip-failed": "Couldn't update that",
+  "profile-cosmetics-equip-label": "Equip {{name}}",
+  "profile-cosmetics-equipped": "Equipped",
+  "profile-cosmetics-equipped-toast": "Equipped {{name}}",
+  "profile-cosmetics-error": "Couldn't load your cosmetics.",
+  "profile-cosmetics-subtitle": "Equip the cosmetics you own from the shop. These apply to your profile — everyone who visits it sees them.",
+  "profile-cosmetics-title": "Profile customization",
+  "profile-cosmetics-unequip-label": "Unequip {{name}}",
+  "profile-cosmetics-unequipped-toast": "Unequipped {{name}}",
+  "settings-back": "Back",
+  "settings-premium-themes-equip-link": "equip what you own",
+  "settings-premium-themes-or": "or"
 }
