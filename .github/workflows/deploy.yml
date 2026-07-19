@@ -283,19 +283,34 @@ jobs:
     permissions:
       contents: read
     steps:
-      - name: Gate failed — CI or build not green
-        if: needs.ci.result == 'failure' || needs.build.result == 'failure'
+      # deploy-gate runs .github/scripts/discord-notify.sh, so it needs the repo on
+      # disk. WITHOUT this checkout the gate-failed / trigger-failed alerts silently
+      # no-op with "discord-notify.sh: No such file or directory" (the `|| true`
+      # masks it) — so a BLOCKED deploy never turns the pipeline embed 🔴 and no
+      # Discord alert is sent, which is exactly the failure this job exists to report.
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Gate failed — CI, build, or a stall blocked the deploy
+        # `!= 'success'` (not `== 'failure'`) so a CANCELLED or TIMED-OUT job — i.e. a
+        # stalled run that hit its timeout-minutes — also alerts, not just a clean
+        # lint/test failure. This exactly complements the trigger step's
+        # `success && success` guard, so precisely one of the two steps runs.
+        if: needs.ci.result != 'success' || needs.build.result != 'success'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_MSG_ID: ${{ needs.build.outputs.discord_msg_id }}
           COMMIT_SHORT: ${{ needs.build.outputs.commit_short }}
           COMMIT_MSG: ${{ needs.build.outputs.commit_msg }}
           COMMIT_AUTHOR: ${{ needs.build.outputs.commit_author }}
+          GIT_SHA: ${{ github.sha }}
         run: |
           set -uo pipefail
           if [ "${{ github.ref }}" = "refs/heads/main" ]; then
-            bash .github/scripts/discord-notify.sh edit 15158332 \
-              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-} — gate failed (CI=${{ needs.ci.result }}, build=${{ needs.build.result }}); NOT deploying" \
+            # edit-or-post: if `build` died before posting the 🟡 embed there is no
+            # id to edit, so post a fresh red alert instead of silently no-opping.
+            # Fall back to the raw SHA for the label if the build never exported one.
+            bash .github/scripts/discord-notify.sh edit-or-post 15158332 \
+              "🔴 [PRODUCTION] Commit ${COMMIT_SHORT:-${GIT_SHA:0:7}} — deploy BLOCKED (CI=${{ needs.ci.result }}, build=${{ needs.build.result }}); nothing shipped" \
               "${COMMIT_MSG:-}" "${COMMIT_AUTHOR:-}" || true
           fi
           echo "::error::Deploy gate failed — CI=${{ needs.ci.result }}, build=${{ needs.build.result }}. Images (if any) are inert; nothing shipped."

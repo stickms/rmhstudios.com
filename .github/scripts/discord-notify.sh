@@ -12,8 +12,14 @@
 # every path exits 0.
 #
 # Usage:
-#   discord-notify.sh post <color> <title> <description> <footer>
-#   discord-notify.sh edit <color> <title> <description> <footer>
+#   discord-notify.sh post         <color> <title> <description> <footer>
+#   discord-notify.sh edit         <color> <title> <description> <footer>
+#   discord-notify.sh edit-or-post <color> <title> <description> <footer>
+#
+# `edit-or-post` edits the tracked embed when DISCORD_MSG_ID is set, else posts a
+# fresh message. Use it for failure/stall alerts: if the build job died (or was
+# cancelled) before it ever posted the 🟡 embed there is no id to edit, but the
+# error must still reach Discord instead of silently vanishing.
 #
 # Env:
 #   DISCORD_WEBHOOK_URL  when unset the script no-ops (the feature is simply off)
@@ -66,6 +72,21 @@ case "$mode" in
             -H 'Content-Type: application/json' -d "$payload" >/dev/null 2>&1 ||
             echo "Discord PATCH failed — continuing."
         echo "Edited Discord message ${DISCORD_MSG_ID}."
+        ;;
+    edit-or-post)
+        # Edit the tracked pipeline embed if we know its id; otherwise POST a fresh
+        # one so the alert is never lost when the build job died before posting 🟡.
+        if [ -n "${DISCORD_MSG_ID:-}" ]; then
+            curl -sS --max-time 15 -X PATCH "${DISCORD_WEBHOOK_URL}/messages/${DISCORD_MSG_ID}" \
+                -H 'Content-Type: application/json' -d "$payload" >/dev/null 2>&1 ||
+                echo "Discord PATCH failed — continuing."
+            echo "Edited Discord message ${DISCORD_MSG_ID}."
+        else
+            curl -sS --max-time 15 -X POST "$DISCORD_WEBHOOK_URL" \
+                -H 'Content-Type: application/json' -d "$payload" >/dev/null 2>&1 ||
+                echo "Discord POST failed — continuing."
+            echo "Posted new Discord message (no id to edit)."
+        fi
         ;;
     *)
         echo "Usage: discord-notify.sh {post|edit} <color> <title> <description> <footer>" >&2
