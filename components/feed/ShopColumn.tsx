@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
 import { KIND_LABELS, KIND_ORDER, RARITY_COLORS, RARITY_ORDER, type ShopItemKind, type Rarity } from '@/lib/shop/catalog';
 import { PinnedHero } from './PinnedHero';
+import { ColumnHeader } from './ColumnHeader';
 import { Reveal } from '@/components/motion';
 
 interface ShopItemView {
@@ -153,17 +154,17 @@ export function ShopColumn({
           scrollCue={t("shop-scroll-cue", { defaultValue: "Browse the shop" })}
         />
       )}
-      <header className="glass-chrome sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-site-border px-4 py-3">
-        <div className="flex items-center gap-2">
-          <ShoppingBag className="h-5 w-5 text-site-accent" />
-          <h1 className="text-lg font-bold text-site-text">{t("shop-title", { defaultValue: "Shop" })}</h1>
-        </div>
-        {signedIn && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-site-surface px-3 py-1 text-sm font-semibold text-site-text">
-            <CoinIcon className="h-4 w-4" /> {coins.toLocaleString()}
-          </span>
-        )}
-      </header>
+      <ColumnHeader
+        icon={ShoppingBag}
+        title={t("shop-title", { defaultValue: "Shop" })}
+        actions={
+          signedIn && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-site-surface px-3 py-1 text-sm font-semibold text-site-text">
+              <CoinIcon className="h-4 w-4" /> {coins.toLocaleString()}
+            </span>
+          )
+        }
+      />
 
       <div
         className="flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain border-b border-site-border px-3 py-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"

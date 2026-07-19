@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { Compass, Hash, Sparkles, TrendingUp, Coins } from 'lucide-react';
 import { MemoRMHarkCard } from './VirtualPostList';
+import { ColumnHeader } from './ColumnHeader';
 import { RevealGroup, RevealItem } from '@/components/motion';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from '@/components/ui/UserAvatar';
@@ -79,10 +80,7 @@ export function ExploreColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
-        <Compass className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">{t('explore-title', { defaultValue: 'Explore' })}</h1>
-      </header>
+      <ColumnHeader icon={Compass} title={t('explore-title', { defaultValue: 'Explore' })} />
 
       {/* Ask the feed */}
       <section className="border-b border-site-border p-4">

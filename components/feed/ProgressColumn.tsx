@@ -21,6 +21,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { DailyWheel } from './DailyWheel';
 import { StakingCard } from './StakingCard';
+import { ColumnHeader } from './ColumnHeader';
 
 interface QuestView {
   id: string;
@@ -171,13 +172,10 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
 
   return (
     <div className={hideHeader ? '' : 'min-h-screen'}>
+      {/* hideHeader === embedded in JourneyColumn, which supplies the page
+          header (and the drawer button) itself. */}
       {!hideHeader && (
-        <header className="sticky top-0 z-10 border-b border-site-border glass-chrome px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-site-accent" />
-            <h1 className="text-lg font-bold text-site-text">{t('progress-heading', { defaultValue: 'Progress' })}</h1>
-          </div>
-        </header>
+        <ColumnHeader icon={Zap} title={t('progress-heading', { defaultValue: 'Progress' })} />
       )}
 
       <div className="space-y-8 p-4">

@@ -1,4 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
+import { ColumnHeader } from './ColumnHeader';
 
 /** A single community card placeholder — mirrors the real card's layout. */
 function CommunityCardSkeleton() {
@@ -39,13 +40,15 @@ export function CommunityListSkeleton({ count = 6 }: { count?: number }) {
 export function CommunitiesSkeleton() {
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-site-border glass-chrome px-4 py-3">
+      {/* Real ColumnHeader, skeleton contents: the drawer button is live and
+          usable while the page loads, and the header doesn't shift when the real
+          one swaps in. */}
+      <ColumnHeader actions={<Skeleton className="h-8 w-16 rounded-site-sm" />}>
         <div className="flex items-center gap-2">
           <Skeleton className="h-5 w-5 rounded" />
           <Skeleton className="h-6 w-32" />
         </div>
-        <Skeleton className="h-8 w-16 rounded-site-sm" />
-      </header>
+      </ColumnHeader>
       <div className="border-b border-site-border p-3">
         <Skeleton className="h-9 w-full rounded-site-sm" />
       </div>

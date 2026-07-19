@@ -10,6 +10,7 @@ import { CommunityListSkeleton } from '@/components/feed/CommunitiesSkeleton';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
+import { ColumnHeader } from './ColumnHeader';
 import { toast } from 'sonner';
 
 interface Community {
@@ -104,17 +105,17 @@ export function CommunitiesColumn({ initialCommunities = [] }: { initialCommunit
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-site-border glass-chrome px-4 py-3">
-        <div className="flex items-center gap-2">
-          <Users className="h-5 w-5 text-site-accent" />
-          <h1 className="text-lg font-bold text-site-text">{t('communities-heading', { defaultValue: 'Communities' })}</h1>
-        </div>
-        {session && (
-          <Button size="sm" variant="accent" onClick={() => setCreateOpen(true)}>
-            <Plus className="h-4 w-4" /> {t('new-button', { defaultValue: 'New' })}
-          </Button>
-        )}
-      </header>
+      <ColumnHeader
+        icon={Users}
+        title={t('communities-heading', { defaultValue: 'Communities' })}
+        actions={
+          session && (
+            <Button size="sm" variant="accent" onClick={() => setCreateOpen(true)}>
+              <Plus className="h-4 w-4" /> {t('new-button', { defaultValue: 'New' })}
+            </Button>
+          )
+        }
+      />
 
       <div className="border-b border-site-border p-3">
         <div className="relative">

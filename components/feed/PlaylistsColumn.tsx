@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { ColumnHeader } from './ColumnHeader';
 
 interface Summary {
   id: string;
@@ -129,10 +130,7 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
-        <ListMusic className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">{t('playlists-title', { defaultValue: 'Playlists' })}</h1>
-      </header>
+      <ColumnHeader icon={ListMusic} title={t('playlists-title', { defaultValue: 'Playlists' })} />
 
       {!signedIn ? (
         <div className="p-4">

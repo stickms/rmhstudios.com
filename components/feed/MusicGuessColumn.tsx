@@ -8,6 +8,7 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from './UserAvatar';
+import { ColumnHeader } from './ColumnHeader';
 
 interface PuzzleRow {
   id: string;
@@ -98,15 +99,17 @@ export function MusicGuessColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
-        <Music className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">{t('guess-the-song', { defaultValue: 'Guess the Song' })}</h1>
-        {signedIn && (
-          <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-3.5 w-3.5" /> {t('new-puzzle', { defaultValue: 'New puzzle' })}
-          </Button>
-        )}
-      </header>
+      <ColumnHeader
+        icon={Music}
+        title={t('guess-the-song', { defaultValue: 'Guess the Song' })}
+        actions={
+          signedIn && (
+            <Button size="sm" variant="accent" className="gap-1" onClick={() => setShowForm((v) => !v)}>
+              <Plus className="h-3.5 w-3.5" /> {t('new-puzzle', { defaultValue: 'New puzzle' })}
+            </Button>
+          )
+        }
+      />
 
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, Suspense, lazy } from 'react';
-import { SlidersHorizontal, Search, X, BadgeCheck, ShieldCheck, Menu } from 'lucide-react';
+import { SlidersHorizontal, Search, X, BadgeCheck, ShieldCheck } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { FeedTabs } from './FeedTabs';
 import { ComposeBoxLazy } from './ComposeBoxLazy';
@@ -10,7 +10,7 @@ import { PullToRefresh } from './PullToRefresh';
 import { FeedAnnouncements } from './FeedAnnouncements';
 import { OnboardingChecklist } from './OnboardingChecklist';
 import { JumpBackIn } from './JumpBackIn';
-import { useMobileSidebar } from './MobileSidebarShell';
+import { MobileMenuButton } from './MobileMenuButton';
 import { useFeedStore } from '@/stores/feedStore';
 import { useFeedSSE } from '@/hooks/useFeedSSE';
 import { useSession } from '@/components/Providers';
@@ -50,7 +50,6 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   const { t } = useTranslation('feed');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
-  const { open: openSidebar } = useMobileSidebar();
   // Select individually (stable action refs; `search` is the only reactive value)
   // so an unrelated store mutation — every SSE like/comment/repost count tick —
   // doesn't re-render the header/search/composer subtree.
@@ -138,14 +137,10 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
       {/* Header */}
       <div className="sticky top-0 z-10 glass-chrome border-b border-site-border">
         <div className="flex items-center justify-between px-4 py-3">
-          {/* Mobile: sandwich menu left, RMH center, filters right */}
-          <button
-            onClick={openSidebar}
-            className="md:hidden p-2 -ml-2 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
-            aria-label={t("open-menu", { defaultValue: "Open menu" })}
-          >
-            <Menu className="w-5 h-5" />
-          </button>
+          {/* Mobile: sandwich menu left, RMH center, filters right. This used to
+              be a hand-rolled copy of MobileMenuButton that had drifted — it was
+              missing the canonical 44px (min-h-11/min-w-11) touch target. */}
+          <MobileMenuButton />
 
           {/* Desktop: For You / Following tabs inline */}
           <div className="hidden md:flex items-center gap-1">

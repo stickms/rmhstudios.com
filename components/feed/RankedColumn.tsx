@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from './UserAvatar';
 import { HandleInput } from './HandleInput';
+import { ColumnHeader } from './ColumnHeader';
 import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
 import type { RankTier } from '@/lib/ranked/tiers';
@@ -195,10 +196,7 @@ export function RankedColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
-        <Swords className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">{t('ranked', { defaultValue: 'Ranked' })}</h1>
-      </header>
+      <ColumnHeader icon={Swords} title={t('ranked', { defaultValue: 'Ranked' })} />
 
       <div className="space-y-6 p-4">
         {signedIn && (

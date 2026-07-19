@@ -15,6 +15,7 @@ import {
   type DiscoveryUserBuild,
   type DiscoveryBlogPost,
 } from './ExploreRecommendations';
+import { ColumnHeader } from './ColumnHeader';
 
 interface SearchUser {
   id: string;
@@ -192,21 +193,25 @@ export function SearchColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-site-border glass-chrome px-4 py-3">
-        <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-4 py-2">
-          <Search className="h-4 w-4 text-site-text-muted" />
-          <input
-            autoFocus
-            type="search"
-            aria-label={t('search-input-aria-label', { defaultValue: 'Search people, posts, builds, and blog' })}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder={t('search-placeholder', { defaultValue: 'Search people, posts, builds…' })}
-            className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
-          />
-          {loading && <Spinner size={16} className="text-site-text-muted" />}
-        </div>
-        <div className="mt-3 flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}>
+      {/* The search field is the header, so it goes in ColumnHeader's `children`
+          slot; the category tabs sit under it inside the same sticky block. */}
+      <div className="sticky top-0 z-10 border-b border-site-border glass-chrome">
+        <ColumnHeader sticky={false} className="border-b-0 pb-0">
+          <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-4 py-2">
+            <Search className="h-4 w-4 text-site-text-muted" />
+            <input
+              autoFocus
+              type="search"
+              aria-label={t('search-input-aria-label', { defaultValue: 'Search people, posts, builds, and blog' })}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={t('search-placeholder', { defaultValue: 'Search people, posts, builds…' })}
+              className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
+            />
+            {loading && <Spinner size={16} className="text-site-text-muted" />}
+          </div>
+        </ColumnHeader>
+        <div className="flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}>
           {TABS.map((tab_item) => (
             <button
               key={tab_item.id}
@@ -223,7 +228,7 @@ export function SearchColumn({
             </button>
           ))}
         </div>
-      </header>
+      </div>
 
       {query.trim().length >= 2 && <AISearchPanel query={query.trim()} />}
 
