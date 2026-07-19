@@ -44,9 +44,33 @@ function init(): void {
       maxRetriesPerRequest: 2,
       retryStrategy: (times: number) => Math.min(times * 200, 2000),
       lazyConnect: false,
+      // Bound the TCP connect so an unroutable or misconfigured host fails fast
+      // instead of sitting in ioredis's 10s default.
+      connectTimeout: 2000,
+      // REJECT commands while disconnected instead of buffering them. ioredis
+      // defaults this to true, which queues commands until a connection is
+      // (re)established — and because retryStrategy above ALWAYS returns a delay
+      // (it never returns null to stop retrying), the client reconnects forever,
+      // so a queued command never settles. The `try/catch -> return null` in
+      // redisGetJSON/redisSetJSON then never runs and the caller's await hangs
+      // instead of degrading, which defeats this module's "entirely optional"
+      // contract (see the file docblock).
+      //
+      // Observed in production: with Redis unreachable, the anonymous homepage
+      // fanned out ~40 L2 reads via getUserDisplayMap and blocked ~28s, while
+      // Postgres sat idle and every route that skips Redis (/login, /api/health)
+      // served in ~50ms. Failing the command fast makes those reads a cache miss
+      // that falls through to Postgres, which is the intended degraded path.
+      enableOfflineQueue: false,
     };
     publisher = new Redis(URL, opts);
-    subscriber = publisher.duplicate();
+    // The subscriber is NOT a request-path connection: it holds long-lived
+    // channel subscriptions that ioredis re-issues automatically on reconnect.
+    // Keep ITS offline queue enabled so a subscribe() issued while the link is
+    // down is replayed rather than rejected — otherwise a transient blip would
+    // silently drop this process's SSE fan-out. Only the command planes below
+    // (publisher / statePublisher) need to fail fast.
+    subscriber = publisher.duplicate({ enableOfflineQueue: true });
 
     // Durable-state plane: a dedicated connection only when REDIS_STATE_URL is
     // set AND differs from the cache URL; otherwise reuse `publisher` so nothing
