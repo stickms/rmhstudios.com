@@ -63,6 +63,28 @@ export default tseslint.config(
     },
   },
 
+  // ── Static browser microsites under public/ (hand-authored DOM scripts) ───
+  // Plain browser <script> assets served as-is (e.g. the rmh-internal-affairs
+  // site), not part of the app bundle or the TS program, so eslint needs their
+  // DOM/browser globals declared or every `document`/`setTimeout` reference
+  // trips no-undef. `public/sw.js` keeps its own service-worker block above.
+  {
+    files: ["public/**/*.js"],
+    ignores: ["public/sw.js"],
+    languageOptions: {
+      globals: {
+        window: "readonly", document: "readonly", navigator: "readonly",
+        location: "readonly", history: "readonly", console: "readonly",
+        setTimeout: "readonly", clearTimeout: "readonly",
+        setInterval: "readonly", clearInterval: "readonly",
+        requestAnimationFrame: "readonly", cancelAnimationFrame: "readonly",
+        fetch: "readonly", URL: "readonly", URLSearchParams: "readonly",
+        localStorage: "readonly", sessionStorage: "readonly",
+        FormData: "readonly", CustomEvent: "readonly", Event: "readonly",
+      },
+    },
+  },
+
   // ── React Hooks ───────────────────────────────────────────────────────────
   {
     plugins: { "react-hooks": reactHooks },
