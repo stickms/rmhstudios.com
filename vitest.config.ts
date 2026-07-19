@@ -18,6 +18,7 @@ export default defineConfig({
       'lib/predictions/__tests__/**/*.test.ts',
       'lib/tournaments/__tests__/**/*.test.ts',
       'lib/__tests__/**/*.test.ts',
+      'lib/market/__tests__/**/*.test.ts',
       'lib/versecraft/gen/__tests__/**/*.test.ts',
       'lib/kowloon-knockout/render/__tests__/**/*.test.ts',
       'lib/kowloon-knockout/render/**/__tests__/**/*.test.ts',

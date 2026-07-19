@@ -236,7 +236,7 @@ export async function renderStatCard(data: StatCardData): Promise<Buffer> {
         paddingTop: Math.round(s.badge * 0.5),
         paddingBottom: Math.round(s.badge * 0.5),
         borderRadius: 999,
-        backgroundColor: `${theme.accent}22`,
+        backgroundColor: SURFACE,
         border: `2px solid ${theme.accent}`,
       }}
     >

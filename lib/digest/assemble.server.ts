@@ -15,6 +15,8 @@
 import { prisma } from '@/lib/prisma.server';
 import { SITE_URL } from '@/lib/seo';
 import { signUnsubToken } from '@/lib/email/unsubscribe';
+import { getStreak } from '@/lib/streak.server';
+import { getActiveQuests } from '@/lib/quests/engine.server';
 
 const DAY_MS = 86_400_000;
 
@@ -141,12 +143,8 @@ async function latestEditorial(): Promise<Editorial | null> {
 /** Best-effort quest/streak snapshot. Any failure degrades to nulls. */
 async function progressSnapshot(userId: string): Promise<{ streak: number | null; claimableQuests: number | null }> {
   const [streak, quests] = await Promise.all([
-    import('@/lib/streak.server')
-      .then((m) => m.getStreak(userId).then((s) => s.current))
-      .catch(() => null),
-    import('@/lib/quests/engine.server')
-      .then((m) => m.getActiveQuests(userId).then((qs) => qs.filter((q) => q.completed && !q.claimed).length))
-      .catch(() => null),
+    getStreak(userId).then((s) => s.current).catch(() => null),
+    getActiveQuests(userId).then((qs) => qs.filter((q) => q.completed && !q.claimed).length).catch(() => null),
   ]);
   return { streak, claimableQuests: quests };
 }
