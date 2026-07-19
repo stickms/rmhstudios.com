@@ -17,18 +17,16 @@
       "@/*": ["./*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "**/*.mts",
-    "app/routeTree.gen.ts"
-  ],
+  "include": ["**/*.ts", "**/*.tsx", "**/*.mts", "app/routeTree.gen.ts"],
   "exclude": [
     "node_modules",
     "dist-server",
+    "public/vibe-packages",
     "server/api-routes",
     "scripts",
     ".output",
+    ".next",
+    "next-env.d.ts",
     ".vinxi",
     "proxy.ts"
   ]
