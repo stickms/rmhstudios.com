@@ -233,7 +233,11 @@ export function registerPartyHandlers(io: Server, socket: Socket, _ctx?: unknown
   socket.on(PARTY_C2S.LEAVE, () => {
     if (!checkRateLimit(socket.id, PARTY_C2S.LEAVE)) return;
     const userId = selfId();
-    if (userId) leaveParty(io, userId, socket);
+    if (!userId) return;
+    leaveParty(io, userId, socket);
+    // The leaver has left the party room, so it won't receive the broadcast
+    // state — tell it directly so the party bar clears.
+    socket.emit(PARTY_S2C.DISBANDED, { reason: 'left' });
   });
 
   // ─── Kick (leader only) ───
