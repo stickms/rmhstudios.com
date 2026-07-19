@@ -108,15 +108,23 @@ services:
     mem_limit: 1536m
     mem_reservation: 768m
     cpus: 2.0
-    # CPU PRIORITY, not just a cap (initial-load audit). `cpus:` hard-caps each
-    # service but leaves every container at the SAME scheduler weight (1024), so
-    # on this oversubscribed box (Σ cpus ≈ 9.75 on ~4 cores) the batch workers
-    # (supervisor Chromium/AI, the cron workers) compete with web as equals and
-    # starve the single SSR event loop — the measured 20-32s cold TTFB. A high
-    # relative weight makes web WIN the CPU whenever the box is saturated; the
-    # background services are dropped well below default so they yield to it. The
-    # `cpus` caps still stop any one runaway from eating the box. Realtime hubs
-    # (socket/rmhbox/rmhtube) keep the 1024 default — latency-sensitive too.
+    # CPU PRIORITY, not just a cap. `cpus:` hard-caps each service but leaves
+    # every container at the SAME scheduler weight (1024), so on this
+    # oversubscribed box (Σ cpus ≈ 9.75 on ~4 cores) the batch workers
+    # (supervisor Chromium/AI, the cron workers) compete with web as equals. A
+    # high relative weight makes web WIN the CPU whenever the box is saturated;
+    # the background services are dropped well below default so they yield to it.
+    # The `cpus` caps still stop any one runaway from eating the box. Realtime
+    # hubs (socket/rmhbox/rmhtube) keep the 1024 default — latency-sensitive too.
+    #
+    # CORRECTION (supersedes the rationale in commit d25d2f1e): this was NOT the
+    # cause of the 20-32s cold TTFB that commit claimed to fix. That was later
+    # traced to lib/redis.server.ts buffering commands on an unreachable Redis
+    # (see the fix commit touching enableOfflineQueue). CPU starvation was ruled
+    # out by the fact that /login — a FULL SSR render — served in ~53ms while /
+    # took 28s, so the box demonstrably had CPU. This weighting is still correct
+    # as defensive hygiene on an oversubscribed host; it just isn't a latency fix.
+    # Don't cite the 20-32s number as evidence for it.
     cpu_shares: 4096
     ulimits: *hub-ulimits
     # NOTE: web does NOT publish a fixed host port. It is deployed blue/green by
