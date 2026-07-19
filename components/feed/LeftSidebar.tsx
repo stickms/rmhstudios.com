@@ -34,6 +34,12 @@ import {
   Briefcase,
   Trophy,
   ListMusic,
+  Gamepad2,
+  Coins,
+  CalendarDays,
+  Store,
+  Radio,
+  HelpCircle,
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -105,6 +111,7 @@ const NAV: NavItem[] = [
   { href: '/library', tKey: 'nav-library', label: 'Library', icon: Library },
   { href: '/communities', tKey: 'nav-communities', label: 'Communities', icon: Users },
   { href: '/store', tKey: 'nav-store', label: 'Store', icon: ShoppingBag },
+  { href: '/arcade', tKey: 'nav-arcade', label: 'Arcade', icon: Gamepad2 },
   { href: '/predictions', tKey: 'nav-predictions', label: 'Predictions', icon: TrendingUp },
   {
     group: 'more',
@@ -113,6 +120,11 @@ const NAV: NavItem[] = [
     icon: MoreHorizontal,
     children: [
       { href: '/leaderboard', tKey: 'nav-leaderboard', label: 'Leaderboard', icon: Trophy },
+      { href: '/spaces', tKey: 'nav-spaces', label: 'Spaces', icon: Radio },
+      { href: '/events', tKey: 'nav-events', label: 'Events', icon: CalendarDays },
+      { href: '/market', tKey: 'nav-market', label: 'Market', icon: Store },
+      { href: '/creator-studio', tKey: 'nav-studio', label: 'Studio', icon: Coins },
+      { href: '/help', tKey: 'nav-help', label: 'Help', icon: HelpCircle },
       { href: '/playlists', tKey: 'nav-playlists', label: 'Playlists', icon: ListMusic },
       { href: '/homes', tKey: 'nav-homes', label: 'RMHHomes', icon: Building2 },
       { href: '/rmhladder', tKey: 'nav-rmhladder', label: 'RMHLadder', icon: Briefcase },
