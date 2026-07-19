@@ -26,6 +26,7 @@ import {
   Users,
   Zap,
   Shield,
+  Eye,
   Terminal,
   ChevronDown,
   Car,
@@ -119,6 +120,13 @@ const NAV: NavItem[] = [
       { href: '/developer', tKey: 'nav-developer', label: 'Developer', icon: Terminal },
       { href: '/rmh-capital', tKey: 'nav-rmh-capital', label: 'RMH Capital', icon: Landmark },
       { href: '/rmh-pmc', tKey: 'nav-rmh-pmc', label: 'RMH PMC', icon: Shield },
+      {
+        href: '/rmh-internal-affairs',
+        tKey: 'nav-internal-affairs',
+        label: 'Internal Affairs',
+        icon: Eye,
+        external: true,
+      },
       {
         href: '/adaptive-intelligence',
         tKey: 'nav-adaptive-intelligence',

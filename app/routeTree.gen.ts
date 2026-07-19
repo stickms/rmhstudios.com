@@ -29,6 +29,7 @@ import { Route as RmhmusicRouteImport } from './routes/rmhmusic'
 import { Route as RmhcodeRouteImport } from './routes/rmhcode'
 import { Route as RmhboxRouteImport } from './routes/rmhbox'
 import { Route as RmhPmcRouteImport } from './routes/rmh-pmc'
+import { Route as RmhInternalAffairsRouteImport } from './routes/rmh-internal-affairs'
 import { Route as RmhFarmingSimRouteImport } from './routes/rmh-farming-sim'
 import { Route as RmhCapitalRouteImport } from './routes/rmh-capital'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -94,6 +95,7 @@ import { Route as RmhPmcIntelligenceRouteImport } from './routes/rmh-pmc/intelli
 import { Route as RmhPmcContactRouteImport } from './routes/rmh-pmc/contact'
 import { Route as RmhPmcCommandRouteImport } from './routes/rmh-pmc/command'
 import { Route as RmhPmcCapabilitiesRouteImport } from './routes/rmh-pmc/capabilities'
+import { Route as RmhInternalAffairsPageRouteImport } from './routes/rmh-internal-affairs.$page'
 import { Route as RmhCapitalInsightsRouteImport } from './routes/rmh-capital/insights'
 import { Route as RmhCapitalFirmRouteImport } from './routes/rmh-capital/firm'
 import { Route as RmhCapitalContactRouteImport } from './routes/rmh-capital/contact'
@@ -726,6 +728,11 @@ const RmhPmcRoute = RmhPmcRouteImport.update({
   path: '/rmh-pmc',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RmhInternalAffairsRoute = RmhInternalAffairsRouteImport.update({
+  id: '/rmh-internal-affairs',
+  path: '/rmh-internal-affairs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RmhFarmingSimRoute = RmhFarmingSimRouteImport.update({
   id: '/rmh-farming-sim',
   path: '/rmh-farming-sim',
@@ -1049,6 +1056,11 @@ const RmhPmcCapabilitiesRoute = RmhPmcCapabilitiesRouteImport.update({
   id: '/capabilities',
   path: '/capabilities',
   getParentRoute: () => RmhPmcRoute,
+} as any)
+const RmhInternalAffairsPageRoute = RmhInternalAffairsPageRouteImport.update({
+  id: '/$page',
+  path: '/$page',
+  getParentRoute: () => RmhInternalAffairsRoute,
 } as any)
 const RmhCapitalInsightsRoute = RmhCapitalInsightsRouteImport.update({
   id: '/insights',
@@ -3824,6 +3836,7 @@ export interface FileRoutesByFullPath {
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
+  '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
@@ -3915,6 +3928,7 @@ export interface FileRoutesByFullPath {
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
+  '/rmh-internal-affairs/$page': typeof RmhInternalAffairsPageRoute
   '/rmh-pmc/capabilities': typeof RmhPmcCapabilitiesRoute
   '/rmh-pmc/command': typeof RmhPmcCommandRoute
   '/rmh-pmc/contact': typeof RmhPmcContactRoute
@@ -4434,6 +4448,7 @@ export interface FileRoutesByTo {
   '/offline': typeof OfflineRoute
   '/optimization': typeof OptimizationRoute
   '/privacy': typeof PrivacyRoute
+  '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rochester-offensive': typeof RochesterOffensiveRoute
   '/security': typeof SecurityRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -4508,6 +4523,7 @@ export interface FileRoutesByTo {
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
+  '/rmh-internal-affairs/$page': typeof RmhInternalAffairsPageRoute
   '/rmh-pmc/capabilities': typeof RmhPmcCapabilitiesRoute
   '/rmh-pmc/command': typeof RmhPmcCommandRoute
   '/rmh-pmc/contact': typeof RmhPmcContactRoute
@@ -5034,6 +5050,7 @@ export interface FileRoutesById {
   '/privacy': typeof PrivacyRoute
   '/rmh-capital': typeof RmhCapitalRouteWithChildren
   '/rmh-farming-sim': typeof RmhFarmingSimRouteWithChildren
+  '/rmh-internal-affairs': typeof RmhInternalAffairsRouteWithChildren
   '/rmh-pmc': typeof RmhPmcRouteWithChildren
   '/rmhbox': typeof RmhboxRouteWithChildren
   '/rmhcode': typeof RmhcodeRouteWithChildren
@@ -5125,6 +5142,7 @@ export interface FileRoutesById {
   '/rmh-capital/contact': typeof RmhCapitalContactRoute
   '/rmh-capital/firm': typeof RmhCapitalFirmRoute
   '/rmh-capital/insights': typeof RmhCapitalInsightsRoute
+  '/rmh-internal-affairs/$page': typeof RmhInternalAffairsPageRoute
   '/rmh-pmc/capabilities': typeof RmhPmcCapabilitiesRoute
   '/rmh-pmc/command': typeof RmhPmcCommandRoute
   '/rmh-pmc/contact': typeof RmhPmcContactRoute
@@ -5654,6 +5672,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
+    | '/rmh-internal-affairs'
     | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
@@ -5745,6 +5764,7 @@ export interface FileRouteTypes {
     | '/rmh-capital/contact'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
+    | '/rmh-internal-affairs/$page'
     | '/rmh-pmc/capabilities'
     | '/rmh-pmc/command'
     | '/rmh-pmc/contact'
@@ -6264,6 +6284,7 @@ export interface FileRouteTypes {
     | '/offline'
     | '/optimization'
     | '/privacy'
+    | '/rmh-internal-affairs'
     | '/rochester-offensive'
     | '/security'
     | '/sitemap.xml'
@@ -6338,6 +6359,7 @@ export interface FileRouteTypes {
     | '/rmh-capital/contact'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
+    | '/rmh-internal-affairs/$page'
     | '/rmh-pmc/capabilities'
     | '/rmh-pmc/command'
     | '/rmh-pmc/contact'
@@ -6863,6 +6885,7 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/rmh-capital'
     | '/rmh-farming-sim'
+    | '/rmh-internal-affairs'
     | '/rmh-pmc'
     | '/rmhbox'
     | '/rmhcode'
@@ -6954,6 +6977,7 @@ export interface FileRouteTypes {
     | '/rmh-capital/contact'
     | '/rmh-capital/firm'
     | '/rmh-capital/insights'
+    | '/rmh-internal-affairs/$page'
     | '/rmh-pmc/capabilities'
     | '/rmh-pmc/command'
     | '/rmh-pmc/contact'
@@ -7482,6 +7506,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   RmhCapitalRoute: typeof RmhCapitalRouteWithChildren
   RmhFarmingSimRoute: typeof RmhFarmingSimRouteWithChildren
+  RmhInternalAffairsRoute: typeof RmhInternalAffairsRouteWithChildren
   RmhPmcRoute: typeof RmhPmcRouteWithChildren
   RmhboxRoute: typeof RmhboxRouteWithChildren
   RmhcodeRoute: typeof RmhcodeRouteWithChildren
@@ -7935,6 +7960,13 @@ declare module '@tanstack/react-router' {
       path: '/rmh-pmc'
       fullPath: '/rmh-pmc'
       preLoaderRoute: typeof RmhPmcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/rmh-internal-affairs': {
+      id: '/rmh-internal-affairs'
+      path: '/rmh-internal-affairs'
+      fullPath: '/rmh-internal-affairs'
+      preLoaderRoute: typeof RmhInternalAffairsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rmh-farming-sim': {
@@ -8391,6 +8423,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmh-pmc/capabilities'
       preLoaderRoute: typeof RmhPmcCapabilitiesRouteImport
       parentRoute: typeof RmhPmcRoute
+    }
+    '/rmh-internal-affairs/$page': {
+      id: '/rmh-internal-affairs/$page'
+      path: '/$page'
+      fullPath: '/rmh-internal-affairs/$page'
+      preLoaderRoute: typeof RmhInternalAffairsPageRouteImport
+      parentRoute: typeof RmhInternalAffairsRoute
     }
     '/rmh-capital/insights': {
       id: '/rmh-capital/insights'
@@ -12494,6 +12533,17 @@ const RmhFarmingSimRouteWithChildren = RmhFarmingSimRoute._addFileChildren(
   RmhFarmingSimRouteChildren,
 )
 
+interface RmhInternalAffairsRouteChildren {
+  RmhInternalAffairsPageRoute: typeof RmhInternalAffairsPageRoute
+}
+
+const RmhInternalAffairsRouteChildren: RmhInternalAffairsRouteChildren = {
+  RmhInternalAffairsPageRoute: RmhInternalAffairsPageRoute,
+}
+
+const RmhInternalAffairsRouteWithChildren =
+  RmhInternalAffairsRoute._addFileChildren(RmhInternalAffairsRouteChildren)
+
 interface RmhPmcRouteChildren {
   RmhPmcCapabilitiesRoute: typeof RmhPmcCapabilitiesRoute
   RmhPmcCommandRoute: typeof RmhPmcCommandRoute
@@ -13424,6 +13474,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   RmhCapitalRoute: RmhCapitalRouteWithChildren,
   RmhFarmingSimRoute: RmhFarmingSimRouteWithChildren,
+  RmhInternalAffairsRoute: RmhInternalAffairsRouteWithChildren,
   RmhPmcRoute: RmhPmcRouteWithChildren,
   RmhboxRoute: RmhboxRouteWithChildren,
   RmhcodeRoute: RmhcodeRouteWithChildren,
