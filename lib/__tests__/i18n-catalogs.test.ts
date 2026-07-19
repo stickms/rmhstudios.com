@@ -22,7 +22,30 @@ function load(locale: string, ns: string): Record<string, string> {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
-  feed: ["menu-audience", "menu-reply-control"],
+  feed: [
+    "menu-audience",
+    "menu-reply-control",
+    // Profile-customization page + settings strings added in #526; awaiting the
+    // DeepSeek translate pipeline. Remove once `pnpm i18n:translate &&
+    // pnpm i18n:resources` has been run and the catalogs committed.
+    "profile-cosmetics-back",
+    "profile-cosmetics-empty-cta",
+    "profile-cosmetics-empty-desc",
+    "profile-cosmetics-empty-title",
+    "profile-cosmetics-equip",
+    "profile-cosmetics-equip-failed",
+    "profile-cosmetics-equip-label",
+    "profile-cosmetics-equipped",
+    "profile-cosmetics-equipped-toast",
+    "profile-cosmetics-error",
+    "profile-cosmetics-subtitle",
+    "profile-cosmetics-title",
+    "profile-cosmetics-unequip-label",
+    "profile-cosmetics-unequipped-toast",
+    "settings-back",
+    "settings-premium-themes-equip-link",
+    "settings-premium-themes-or",
+  ],
 };
 
 describe("catalog integrity", () => {

@@ -3,7 +3,7 @@
 # Postgres, and drives public (auth-free) routes with a real Chromium via the
 # already-installed `playwright` package (testing/e2e/smoke.mjs). Asserts each
 # page renders without crashing and carries its universal invariants (title,
-# <html lang>, HTTP 2xx/3xx). Deeper a11y/SEO scoring lives in lighthouse.yml.
+# <html lang>, HTTP 2xx/3xx).
 # ─────────────────────────────────────────────────────────────────────────────
 name: e2e-smoke
 
