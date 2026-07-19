@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import { FileText } from 'lucide-react';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
+import { ColumnHeader } from '@/components/feed/ColumnHeader';
 import { DraftsColumn } from '@/components/feed/DraftsColumn';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -28,6 +30,9 @@ export const Route = createFileRoute('/_site/drafts')({
 
 function DraftsPage() {
   const { t } = useTranslation("site");
+  // The signed-in header lives in DraftsColumn, which reads from the `feed`
+  // namespace — reuse the same key here so the title doesn't change on sign-in.
+  const { t: tFeed } = useTranslation("feed");
   const { data: session, isPending } = useSession();
   const { drafts } = Route.useLoaderData();
 
@@ -37,19 +42,26 @@ function DraftsPage() {
         className="w-full min-w-0 border-r border-site-border pb-dock"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
-        {isPending ? (
-          <div className="flex justify-center py-20">
-            <Spinner />
-          </div>
-        ) : !session ? (
-          <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-            <p className="font-medium text-site-text">{t("sign-in-to-manage-drafts", { defaultValue: "Sign in to manage drafts" })}</p>
-            <Link to="/login" search={{ callbackURL: '/drafts' }}>
-              <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
-            </Link>
-          </div>
-        ) : (
+        {session && !isPending ? (
           <DraftsColumn initialData={drafts} />
+        ) : (
+          /* The gate states get their own header so the mobile drawer button is
+             present when signed out / still resolving the session. */
+          <>
+            <ColumnHeader icon={FileText} title={tFeed('drafts-and-scheduled', { defaultValue: 'Drafts & Scheduled' })} />
+            {isPending ? (
+              <div className="flex justify-center py-20">
+                <Spinner />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
+                <p className="font-medium text-site-text">{t("sign-in-to-manage-drafts", { defaultValue: "Sign in to manage drafts" })}</p>
+                <Link to="/login" search={{ callbackURL: '/drafts' }}>
+                  <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
+                </Link>
+              </div>
+            )}
+          </>
         )}
       </AnimatedMain>
       <div className="hidden lg:block w-4 shrink-0" />

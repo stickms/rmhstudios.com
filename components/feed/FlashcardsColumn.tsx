@@ -8,6 +8,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
+import { ColumnHeader } from './ColumnHeader';
 
 interface Deck {
   id: string;
@@ -119,21 +120,25 @@ export function FlashcardsColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
-        <BookOpen className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">{t('flashcards-title', { defaultValue: 'Flashcards' })}</h1>
-        <Link
-          to="/study/browse"
-          className="ml-auto inline-flex items-center gap-1 rounded-site-sm px-2.5 py-1.5 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text"
-        >
-          <Layers className="h-3.5 w-3.5" /> {t('deck-browse', { defaultValue: 'Browse' })}
-        </Link>
-        {signedIn && (
-          <Button size="sm" variant="accent" className="gap-1" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-3.5 w-3.5" /> {t('new-deck', { defaultValue: 'New deck' })}
-          </Button>
-        )}
-      </header>
+      <ColumnHeader
+        icon={BookOpen}
+        title={t('flashcards-title', { defaultValue: 'Flashcards' })}
+        actions={
+          <>
+            <Link
+              to="/study/browse"
+              className="inline-flex items-center gap-1 rounded-site-sm px-2.5 py-1.5 text-sm font-medium text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text"
+            >
+              <Layers className="h-3.5 w-3.5" /> {t('deck-browse', { defaultValue: 'Browse' })}
+            </Link>
+            {signedIn && (
+              <Button size="sm" variant="accent" className="gap-1" onClick={() => setShowForm((v) => !v)}>
+                <Plus className="h-3.5 w-3.5" /> {t('new-deck', { defaultValue: 'New deck' })}
+              </Button>
+            )}
+          </>
+        }
+      />
 
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">

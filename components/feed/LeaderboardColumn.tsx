@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Trophy, Coins, Zap } from 'lucide-react';
 import { UserAvatar } from './UserAvatar';
+import { ColumnHeader } from './ColumnHeader';
 import { Spinner } from '@/components/ui/spinner';
 import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
@@ -78,10 +79,7 @@ export function LeaderboardColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
-        <Trophy className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">{t('leaderboard', { defaultValue: 'Leaderboard' })}</h1>
-      </header>
+      <ColumnHeader icon={Trophy} title={t('leaderboard', { defaultValue: 'Leaderboard' })} />
 
       <div className="space-y-4 p-4">
         {/* Scope toggle */}

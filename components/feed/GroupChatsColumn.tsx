@@ -8,6 +8,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Reveal } from '@/components/motion';
 import { HandleInput } from './HandleInput';
+import { ColumnHeader } from './ColumnHeader';
 import { useTranslation } from 'react-i18next';
 
 interface GroupRow {
@@ -89,22 +90,36 @@ export function GroupChatsColumn({
     }
   }
 
+  // The loading and signed-out branches return before the main header, so they
+  // need their own — otherwise a signed-out visitor on /groups has no mobile
+  // drawer button at all. Skipped when embedded: the host page (InboxColumn)
+  // already renders a header carrying that button.
+  const gateHeader = embedded ? null : (
+    <ColumnHeader icon={Users} title={t("group-chats", { defaultValue: "Group chats" })} />
+  );
+
   if (loading) {
     return (
-      <div className="flex justify-center py-20">
-        <Spinner />
-      </div>
+      <>
+        {gateHeader}
+        <div className="flex justify-center py-20">
+          <Spinner />
+        </div>
+      </>
     );
   }
 
   if (!signedIn) {
     return (
-      <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-        <p className="font-medium text-site-text">{t("sign-in-to-use-group-chats", { defaultValue: "Sign in to use group chats" })}</p>
-        <Link to="/login" search={{ callbackURL: '/groups' }}>
-          <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
-        </Link>
-      </div>
+      <>
+        {gateHeader}
+        <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
+          <p className="font-medium text-site-text">{t("sign-in-to-use-group-chats", { defaultValue: "Sign in to use group chats" })}</p>
+          <Link to="/login" search={{ callbackURL: '/groups' }}>
+            <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
+          </Link>
+        </div>
+      </>
     );
   }
 
@@ -113,11 +128,25 @@ export function GroupChatsColumn({
 
   return (
     <div className="min-h-screen">
-      <header className={`flex items-center gap-2 border-b border-site-border px-4 py-3 ${embedded ? '' : 'sticky top-0 z-10 glass-chrome'}`}>
-        {!embedded && <Users className="h-5 w-5 shrink-0 text-site-accent" />}
-        {!embedded && <h1 className="shrink-0 text-lg font-bold text-site-text">{t("group-chats", { defaultValue: "Group chats" })}</h1>}
+      <ColumnHeader
+        sticky={!embedded}
+        showMenuButton={!embedded}
+        icon={embedded ? undefined : Users}
+        title={embedded ? undefined : t("group-chats", { defaultValue: "Group chats" })}
+        actions={
+          <button
+            type="button"
+            onClick={() => setShowForm((v) => !v)}
+            className="flex shrink-0 items-center justify-center rounded-full bg-site-accent p-2 text-site-bg transition-opacity hover:opacity-90"
+            title={t("new-group", { defaultValue: "New group" })}
+            aria-label={t("new-group", { defaultValue: "New group" })}
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        }
+      >
         {/* Search + new-group action share a single row; the action is icon-only. */}
-        <div className="relative flex-1 min-w-0">
+        <div className="relative min-w-0">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim" />
           <input
             type="search"
@@ -138,16 +167,7 @@ export function GroupChatsColumn({
             </button>
           )}
         </div>
-        <button
-          type="button"
-          onClick={() => setShowForm((v) => !v)}
-          className="flex shrink-0 items-center justify-center rounded-full bg-site-accent p-2 text-site-bg transition-opacity hover:opacity-90"
-          title={t("new-group", { defaultValue: "New group" })}
-          aria-label={t("new-group", { defaultValue: "New group" })}
-        >
-          <Plus className="h-4 w-4" />
-        </button>
-      </header>
+      </ColumnHeader>
 
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">

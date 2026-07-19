@@ -391,6 +391,7 @@ import { Route as SiteStudyBrowseRouteImport } from './routes/_site/study/browse
 import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
 import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
 import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
+import { Route as SiteSettingsProfileRouteImport } from './routes/_site/settings/profile'
 import { Route as SiteSettingsPrivacyRouteImport } from './routes/_site/settings/privacy'
 import { Route as SiteRmhladderSettingsRouteImport } from './routes/_site/rmhladder/settings'
 import { Route as SiteRmhladderReviewRouteImport } from './routes/_site/rmhladder/review'
@@ -2556,6 +2557,11 @@ const SiteSettingsSecurityRoute = SiteSettingsSecurityRouteImport.update({
   path: '/settings/security',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteSettingsProfileRoute = SiteSettingsProfileRouteImport.update({
+  id: '/settings/profile',
+  path: '/settings/profile',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteSettingsPrivacyRoute = SiteSettingsPrivacyRouteImport.update({
   id: '/settings/privacy',
   path: '/settings/privacy',
@@ -3983,6 +3989,7 @@ export interface FileRoutesByFullPath {
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
+  '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
@@ -4574,6 +4581,7 @@ export interface FileRoutesByTo {
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
+  '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
   '/store/$userid': typeof SiteStoreUseridRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
@@ -5192,6 +5200,7 @@ export interface FileRoutesById {
   '/_site/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/_site/rmhladder/settings': typeof SiteRmhladderSettingsRoute
   '/_site/settings/privacy': typeof SiteSettingsPrivacyRoute
+  '/_site/settings/profile': typeof SiteSettingsProfileRoute
   '/_site/settings/security': typeof SiteSettingsSecurityRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
   '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
@@ -5810,6 +5819,7 @@ export interface FileRouteTypes {
     | '/rmhladder/review'
     | '/rmhladder/settings'
     | '/settings/privacy'
+    | '/settings/profile'
     | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
@@ -6401,6 +6411,7 @@ export interface FileRouteTypes {
     | '/rmhladder/review'
     | '/rmhladder/settings'
     | '/settings/privacy'
+    | '/settings/profile'
     | '/settings/security'
     | '/store/$userid'
     | '/study/$deckId'
@@ -7018,6 +7029,7 @@ export interface FileRouteTypes {
     | '/_site/rmhladder/review'
     | '/_site/rmhladder/settings'
     | '/_site/settings/privacy'
+    | '/_site/settings/profile'
     | '/_site/settings/security'
     | '/_site/store/$userid'
     | '/_site/study/$deckId'
@@ -10459,6 +10471,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteSettingsSecurityRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/settings/profile': {
+      id: '/_site/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof SiteSettingsProfileRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/settings/privacy': {
       id: '/_site/settings/privacy'
       path: '/settings/privacy'
@@ -12246,6 +12265,7 @@ interface SiteRouteChildren {
   SiteRideshareDriveRoute: typeof SiteRideshareDriveRoute
   SiteRideshareRideRoute: typeof SiteRideshareRideRoute
   SiteSettingsPrivacyRoute: typeof SiteSettingsPrivacyRoute
+  SiteSettingsProfileRoute: typeof SiteSettingsProfileRoute
   SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
   SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
@@ -12317,6 +12337,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRideshareDriveRoute: SiteRideshareDriveRoute,
   SiteRideshareRideRoute: SiteRideshareRideRoute,
   SiteSettingsPrivacyRoute: SiteSettingsPrivacyRoute,
+  SiteSettingsProfileRoute: SiteSettingsProfileRoute,
   SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
   SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,

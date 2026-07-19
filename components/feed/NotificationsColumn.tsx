@@ -13,6 +13,7 @@ import { Reveal } from '@/components/motion';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 import { usePushSubscription } from '@/lib/usePushSubscription';
+import { ColumnHeader } from './ColumnHeader';
 
 type NotificationType = 'LIKE' | 'COMMENT' | 'REPLY' | 'FOLLOW' | 'MENTION' | 'REPOST' | 'SYSTEM';
 
@@ -325,9 +326,14 @@ export function NotificationsColumn({
 
   return (
     <div className="min-h-screen">
-      <header className={`flex items-center gap-3 border-b border-site-border px-4 py-3 ${embedded ? 'justify-end' : 'sticky top-0 z-10 justify-between glass-chrome'}`}>
-        {!embedded && <h1 className="text-lg font-bold text-site-text">{t('notifications-heading', { defaultValue: 'Notifications' })}</h1>}
-        <div className="flex items-center gap-1.5">
+      {/* Embedded (as a profile tab) this is just a toolbar: the host page owns
+          the heading, the sticky bar and the drawer button. */}
+      <ColumnHeader
+        sticky={!embedded}
+        showMenuButton={!embedded}
+        title={embedded ? undefined : t('notifications-heading', { defaultValue: 'Notifications' })}
+        actions={
+          <>
           {push.supported && (
             <Button
               variant="accent-ghost"
@@ -369,8 +375,9 @@ export function NotificationsColumn({
           >
             <Settings2 className="h-4 w-4" />
           </Button>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {prefsOpen && <PreferencesPanel />}
 

@@ -14,10 +14,10 @@ const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : use
  * The router's built-in scroll restoration only tracks the WINDOW, which leaves
  * two gaps this hook fills:
  *
- *   1. Mobile — the scroller isn't the window but MobileSidebarShell's inner
- *      container (marked `data-scroll-root`). The router never restores it, so
- *      back-nav lost the feed position and forward-nav left a post scrolled to
- *      wherever the feed was. We save/restore that element ourselves.
+ *   1. Feed → post with `resetScroll: false` — RMHarkCard opts that navigation
+ *      out of the router's reset entirely (so the feed doesn't visibly yank to
+ *      the top mid-transition), which makes this hook the ONLY thing that scrolls
+ *      the destination to the top. It runs at commit, once the post is rendering.
  *
  *   2. Exact restore despite `content-visibility` — off-screen feed cards
  *      (`.feed-card-cv`) fall back to a size *estimate* on a fresh remount, so a
@@ -49,8 +49,12 @@ function remember(key: string, y: number) {
 
 type Scroller = { el: HTMLElement; win: boolean };
 
-// The element that actually scrolls right now: the mobile shell's container when
-// it's the live scroller (visible on mobile), otherwise the window/document.
+// The element that actually scrolls right now. In practice this is ALWAYS the
+// window today: nothing sets `data-scroll-root` any more (every _site page
+// scrolls the document on mobile and desktop alike — see the comment in
+// MobileSidebarShell). The probe is kept because it's the documented opt-in for
+// a page that needs an inner scroller, and PullToRefresh/BackToTop look for the
+// same attribute; it just never matches at the moment.
 function getScroller(): Scroller {
   const mobile = document.querySelector<HTMLElement>('[data-scroll-root]');
   // `md:hidden` makes the container display:none on desktop → offsetParent null.
@@ -63,9 +67,16 @@ function topOf(s: Scroller): number {
   return s.win ? window.scrollY : s.el.scrollTop;
 }
 
+// Always instant. `html { scroll-behavior: smooth }` (globals.css) applies to
+// programmatic scrolls too — including a plain `scrollTop =` assignment — so
+// without an explicit behavior every reset/restore here animated. That broke
+// both paths: the reset raced content mounting and landed short of the top, and
+// the restore loop below re-read a mid-animation offset each frame, so it never
+// converged and burned all 12 retries. Matches `scrollRestorationBehavior` in
+// app/router.tsx, so the hook and the router agree.
 function applyScroll(s: Scroller, y: number) {
-  if (s.win) window.scrollTo(0, y);
-  else s.el.scrollTop = y;
+  if (s.win) window.scrollTo({ top: y, left: 0, behavior: 'instant' });
+  else s.el.scrollTo({ top: y, left: 0, behavior: 'instant' });
 }
 
 export function useScrollRestoration() {

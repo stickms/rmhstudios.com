@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { TIER_COLORS, CATEGORY_LABELS, type AchievementCategory, type AchievementTier } from '@/lib/achievements/catalog';
+import { ColumnHeader } from './ColumnHeader';
 
 // Library icons per achievement category (replaces emoji badges).
 const CATEGORY_ICON: Record<AchievementCategory, typeof Users> = {
@@ -100,16 +101,20 @@ export function AchievementsColumn({
 
   return (
     <div className={hideHeader ? '' : 'min-h-screen'}>
+      {/* hideHeader === embedded in JourneyColumn/ProfileColumn, which supply
+          the page header (and the drawer button); only the stats survive. */}
       {hideHeader ? (
         <div className="px-4 pt-4">{Stats}</div>
       ) : (
-        <header className="sticky top-0 z-10 border-b border-site-border glass-chrome px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-site-accent" />
-            <h1 className="text-lg font-bold text-site-text">{t("achievements-header", { defaultValue: "Achievements" })}</h1>
-          </div>
-          <div className="mt-2">{Stats}</div>
-        </header>
+        <div className="sticky top-0 z-10 border-b border-site-border glass-chrome">
+          <ColumnHeader
+            sticky={false}
+            className="border-b-0 pb-0"
+            icon={Trophy}
+            title={t("achievements-header", { defaultValue: "Achievements" })}
+          />
+          <div className="px-4 pb-3 pt-2">{Stats}</div>
+        </div>
       )}
 
       <div className="space-y-6 p-4">

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FileText, CalendarClock, Send, Trash2, Globe, Users, Lock, BarChart3, Image as ImageIcon } from 'lucide-react';
+import { ColumnHeader } from './ColumnHeader';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
@@ -112,12 +113,7 @@ export function DraftsColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-site-border glass-chrome px-4 py-3">
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-site-accent" />
-          <h1 className="text-lg font-bold text-site-text">{t('drafts-and-scheduled', { defaultValue: 'Drafts & Scheduled' })}</h1>
-        </div>
-      </header>
+      <ColumnHeader icon={FileText} title={t('drafts-and-scheduled', { defaultValue: 'Drafts & Scheduled' })} />
 
       {empty ? (
         <Reveal className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">

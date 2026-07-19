@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { useTranslation } from 'react-i18next';
 import { Reveal, RevealGroup, RevealItem } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
+import { ColumnHeader } from './ColumnHeader';
 
 interface StreakState {
   current: number;
@@ -60,13 +61,15 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
 
   return (
     <div className={hideHeader ? '' : 'min-h-screen'}>
+      {/* hideHeader === embedded in JourneyColumn, which supplies the page
+          header (and the drawer button) itself. */}
       {!hideHeader && (
-        <header className="sticky top-0 z-10 border-b border-site-border glass-chrome px-4 py-3">
+        <ColumnHeader>
           <div className="flex items-center gap-2">
             <Flame className="h-5 w-5 text-site-warning" />
             <h1 className="text-lg font-bold text-site-text">{t('streak-title', { defaultValue: 'Streak' })}</h1>
           </div>
-        </header>
+        </ColumnHeader>
       )}
 
       <div className="space-y-8 p-4">

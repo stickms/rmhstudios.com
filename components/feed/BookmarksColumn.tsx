@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bookmark, Loader2 } from 'lucide-react';
 import { VirtualPostList } from './VirtualPostList';
+import { ColumnHeader } from './ColumnHeader';
 import { Reveal } from '@/components/motion';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
@@ -53,10 +54,7 @@ export function BookmarksColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
-        <Bookmark className="h-5 w-5 text-site-accent" />
-        <h1 className="text-lg font-bold text-site-text">{t("bookmarks-title", { defaultValue: "Bookmarks" })}</h1>
-      </header>
+      <ColumnHeader icon={Bookmark} title={t("bookmarks-title", { defaultValue: "Bookmarks" })} />
 
       {loading ? (
         <div className="flex justify-center py-20">

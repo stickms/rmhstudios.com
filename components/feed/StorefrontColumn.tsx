@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from './UserAvatar';
 import { PinnedHero } from './PinnedHero';
+import { ColumnHeader } from './ColumnHeader';
 import { Reveal } from '@/components/motion';
 
 interface Product {
@@ -179,19 +180,20 @@ export function StorefrontColumn({
         })}
         scrollCue={t('storefront-scroll-cue', { defaultValue: 'View products' })}
       />
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
-        <Store className="h-5 w-5 text-site-accent" />
-        <div className="min-w-0">
-          <h1 className="truncate text-lg font-bold text-site-text">
-            {t('creators-store', { name: creator.name || creator.handle || 'Creator', defaultValue: "{{name}}'s store" })}
-          </h1>
-        </div>
-        {isOwner && (
-          <Button size="sm" variant="accent" className="ml-auto gap-1" onClick={() => setShowForm((v) => !v)}>
-            <Plus className="h-3.5 w-3.5" /> {t('new-product', { defaultValue: 'New product' })}
-          </Button>
-        )}
-      </header>
+      <ColumnHeader
+        icon={Store}
+        actions={
+          isOwner && (
+            <Button size="sm" variant="accent" className="gap-1" onClick={() => setShowForm((v) => !v)}>
+              <Plus className="h-3.5 w-3.5" /> {t('new-product', { defaultValue: 'New product' })}
+            </Button>
+          )
+        }
+      >
+        <h1 className="truncate text-lg font-bold text-site-text">
+          {t('creators-store', { name: creator.name || creator.handle || 'Creator', defaultValue: "{{name}}'s store" })}
+        </h1>
+      </ColumnHeader>
 
       <div className="flex items-center gap-3 border-b border-site-border px-4 py-3">
         <UserAvatar user={creator} />
