@@ -108,6 +108,16 @@ services:
     mem_limit: 1536m
     mem_reservation: 768m
     cpus: 2.0
+    # CPU PRIORITY, not just a cap (initial-load audit). `cpus:` hard-caps each
+    # service but leaves every container at the SAME scheduler weight (1024), so
+    # on this oversubscribed box (Σ cpus ≈ 9.75 on ~4 cores) the batch workers
+    # (supervisor Chromium/AI, the cron workers) compete with web as equals and
+    # starve the single SSR event loop — the measured 20-32s cold TTFB. A high
+    # relative weight makes web WIN the CPU whenever the box is saturated; the
+    # background services are dropped well below default so they yield to it. The
+    # `cpus` caps still stop any one runaway from eating the box. Realtime hubs
+    # (socket/rmhbox/rmhtube) keep the 1024 default — latency-sensitive too.
+    cpu_shares: 4096
     ulimits: *hub-ulimits
     # NOTE: web does NOT publish a fixed host port. It is deployed blue/green by
     # deploy/hotswap-web.sh (zero-downtime), which publishes the active port
@@ -228,6 +238,9 @@ services:
     mem_limit: 512m
     mem_reservation: 128m
     cpus: 0.75
+    # Batch cron — deprioritized below web so a 12h pipeline run can't starve SSR
+    # (initial-load audit). 256 = ¼ of default weight; it still runs, just yields.
+    cpu_shares: 256
     env_file: ${ENV_FILE:-.env.production}
     command: ['node', 'dist-server/server/ladder-worker/index.cjs']
 
@@ -242,6 +255,8 @@ services:
     mem_limit: 384m
     mem_reservation: 128m
     cpus: 0.5
+    # Batch scraper cron — deprioritized below web (initial-load audit).
+    cpu_shares: 256
     env_file: ${ENV_FILE:-.env.production}
     command: ['node', 'dist-server/server/homes-worker/index.cjs']
 
@@ -256,6 +271,9 @@ services:
     mem_limit: 512m
     mem_reservation: 128m
     cpus: 0.5
+    # Async queue drainer — the web tier falls back to inline work if it's
+    # starved (never a correctness dependency), so it yields to web too.
+    cpu_shares: 512
     env_file: ${ENV_FILE:-.env.production}
     command: ['node', 'dist-server/server/jobs/index.cjs']
 
@@ -282,6 +300,11 @@ services:
     mem_limit: 1536m
     mem_reservation: 512m
     cpus: 1.5
+    # The HEAVIEST background service (Chromium + AI loops) and the most likely
+    # to spike CPU — lowest weight so it can never starve web SSR (initial-load
+    # audit). Its 1.5-core cap still bounds it; the low weight just means when
+    # web and supervisor both want CPU, web wins.
+    cpu_shares: 256
     env_file: ${ENV_FILE:-.env.production}
     environment:
       # recap worker's internal HTTP port (doctrine / vibe-worker idles if absent)

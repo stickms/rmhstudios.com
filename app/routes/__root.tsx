@@ -36,6 +36,37 @@ import { localeCoreResources, preloadLocale } from "@/lib/i18n/resources.server"
  * root loader so the shell can render signed-in on the first paint instead of
  * flashing "signed out" while better-auth's client session loads after hydration.
  */
+/**
+ * Cap how long the root loader will block on the session lookup before it gives
+ * up and renders a signed-out shell. `getInitialUser` resolves the Better Auth
+ * session against Postgres on EVERY document render (signed-in and anonymous).
+ * Under origin CPU/DB contention that query can stall for many seconds, and
+ * because the root loader awaits it, that stall becomes the document's TTFB
+ * (initial-load audit: cold TTFB measured at 20-32s while warm was ~80ms). A
+ * timeout turns the worst case into a signed-out first paint instead of a hang:
+ * Better Auth's client session backfills the real identity right after
+ * hydration — the exact path the shell used before this server-side lookup
+ * existed — so the only cost of a timeout is a brief "signed out" flash for
+ * that one slow request, not a wrong session.
+ */
+const SESSION_LOADER_TIMEOUT_MS = 800;
+
+/**
+ * Resolve `p`, but if it hasn't settled within `ms` resolve `fallback` instead.
+ * Never rejects — a rejection from `p` also yields `fallback`. Used to bound the
+ * root loader's session wait (see SESSION_LOADER_TIMEOUT_MS). The timer is
+ * cleared once `p` settles so a resolved promise can't leak a pending timeout.
+ */
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise<T>((resolve) => {
+    const timer = setTimeout(() => resolve(fallback), ms);
+    p.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      () => { clearTimeout(timer); resolve(fallback); },
+    );
+  });
+}
+
 const getInitialUser = createServerFn({ method: "GET" }).handler(async () => {
   try {
     // Request-scoped so this shares one session resolution with the page loader
@@ -126,7 +157,14 @@ export const Route = createRootRoute({
   // fresh data, and any missed refresh self-heals within the window.
   staleTime: 5 * 60_000,
   loader: async () => {
-    const [user, i18n] = await Promise.all([getInitialUser(), getInitialI18n()]);
+    // Bound the session wait so a slow/contended DB can't hold the whole
+    // document hostage (initial-load audit). i18n is NOT wrapped: it loads a
+    // local locale chunk (no DB) and MUST finish before the synchronous SSR
+    // render reads the bundle, or hydration mismatches — see getInitialI18n.
+    const [user, i18n] = await Promise.all([
+      withTimeout(getInitialUser(), SESSION_LOADER_TIMEOUT_MS, null),
+      getInitialI18n(),
+    ]);
     return { user, locale: i18n.locale, i18nResources: i18n.resources };
   },
   head: (ctx) => {
