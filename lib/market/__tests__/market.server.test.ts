@@ -51,8 +51,8 @@ function emptyState(): State {
   };
 }
 
-const db = {
-  $transaction: async <T>(fn: (tx: typeof db) => Promise<T>): Promise<T> => {
+const db: any = {
+  $transaction: async <T>(fn: (tx: any) => Promise<T>): Promise<T> => {
     const snapshot = structuredClone(store.state);
     try {
       return await fn(db);

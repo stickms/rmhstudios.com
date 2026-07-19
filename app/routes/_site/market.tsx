@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Store, Tag } from 'lucide-react';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
@@ -97,14 +97,14 @@ function MarketPage() {
   }, [sort, itemFilter]);
 
   // Refetch on filter/sort change (skip the very first render — loader seeded it).
-  const [mounted, setMounted] = useState(false);
+  const firstRun = useRef(true);
   useEffect(() => {
-    if (!mounted) {
-      setMounted(true);
+    if (firstRun.current) {
+      firstRun.current = false;
       return;
     }
     load();
-  }, [load, mounted]);
+  }, [load]);
 
   const onDone = useCallback((id: string) => {
     setListings((prev) => prev.filter((l) => l.id !== id));
