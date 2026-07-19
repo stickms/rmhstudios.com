@@ -24,6 +24,7 @@ function load(locale: string, ns: string): Record<string, string> {
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
   feed: [
     'menu-audience',
+    'menu-content-warning',
     'menu-reply-control',
     // Profile-customization page + settings strings added in #526; awaiting the
     // DeepSeek translate pipeline. Remove once `pnpm i18n:translate &&
