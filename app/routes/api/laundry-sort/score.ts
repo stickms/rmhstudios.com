@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma.server';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { recordGamePlay } from '@/lib/quests/engine.server';
+import { reportGameResult } from '@/lib/game/results.server';
 
 export const Route = createFileRoute('/api/laundry-sort/score')({
   server: {
@@ -73,6 +74,7 @@ export const Route = createFileRoute('/api/laundry-sort/score')({
                 }
             });
             await recordGamePlay(userId);
+            await reportGameResult(userId, { game: 'laundry-sort', score });
             return Response.json({ success: true, linked: true });
         }
         

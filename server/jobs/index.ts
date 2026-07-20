@@ -16,6 +16,8 @@ import { type Job } from 'pg-boss';
 import { createLogger } from '@/server/shared/logger';
 import { getBoss, PROGRESSION_QUEUE } from '@/lib/jobs/boss.server';
 import { runProgression, type ProgressionJob } from '@/lib/social/engagement-effects.server';
+import { registerEventReminderWorker } from '@/lib/events.server';
+import { registerDigestCron } from '@/lib/digest/pipeline.server';
 
 const log = createLogger('jobs');
 
@@ -38,6 +40,24 @@ async function main() {
   });
 
   log.info({ event: 'jobs.started', queue: PROGRESSION_QUEUE });
+
+  // Event reminders (RMHEvents §6): T-24h / T-15m RSVP reminders. Creates its
+  // own queue idempotently and re-checks the RSVP before firing.
+  try {
+    await registerEventReminderWorker(boss);
+    log.info({ event: 'jobs.started', queue: 'event.reminder' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'event.reminder', err: (e as Error)?.message });
+  }
+
+  // Weekly digest email (§10): schedules its own pg-boss cron (worker-only,
+  // since only the worker instance has schedule:true).
+  try {
+    await registerDigestCron(boss);
+    log.info({ event: 'jobs.started', queue: 'email.weekly-digest' });
+  } catch (e) {
+    log.error({ event: 'jobs.register_failed', queue: 'email.weekly-digest', err: (e as Error)?.message });
+  }
 
   const shutdown = async (sig: string) => {
     log.info({ event: 'jobs.stopping', signal: sig });

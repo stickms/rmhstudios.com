@@ -37,6 +37,19 @@ export const config = {
 
   // ─── Rate Limits ───
   SOCKET_RATE_LIMITS: {
+    // Live Spaces (§4) + Party (§5)
+    'space:join':             { max: 20,  windowMs: 60_000 },
+    'space:chat':             { max: 30,  windowMs: 60_000 },
+    'space:react':            { max: 60,  windowMs: 60_000 },
+    'space:pin':              { max: 20,  windowMs: 60_000 },
+    'space:end':              { max: 10,  windowMs: 60_000 },
+    'party:create':           { max: 10,  windowMs: 60_000 },
+    'party:invite':           { max: 20,  windowMs: 60_000 },
+    'party:accept':           { max: 20,  windowMs: 60_000 },
+    'party:leave':            { max: 30,  windowMs: 60_000 },
+    'party:kick':             { max: 20,  windowMs: 60_000 },
+    'party:transfer':         { max: 20,  windowMs: 60_000 },
+    'party:queue':            { max: 20,  windowMs: 60_000 },
     'rmhtype:room:create':    { max: 3,   windowMs: 60_000 },
     'rmhtype:room:join':      { max: 10,  windowMs: 60_000 },
     'rmhtype:room:chat':      { max: 30,  windowMs: 60_000 },

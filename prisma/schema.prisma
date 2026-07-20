@@ -314,6 +314,18 @@ model User {
   // Appearance preferences (theme + accent), synced across devices
   appearancePreference AppearancePreference?
 
+  // ─── Platform expansion (2026-07-19 design) ──────────────────────────────
+  arcadeStreak         ArcadeStreak?
+  creatorTiers         CreatorTier[]
+  spacesHosted         Space[]          @relation("SpaceHost")
+  spaceMessages        SpaceMessage[]
+  eventsHosted         CommunityEvent[] @relation("EventHost")
+  eventRsvps           EventRsvp[]
+  gameReplays          GameReplay[]
+  marketListingsSold   MarketListing[]  @relation("MarketSeller")
+  marketListingsBought MarketListing[]  @relation("MarketBuyer")
+  sharedMoments        SharedMoment[]
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the "online now" fallback count (WHERE lastSeenAt >= cutoff). The
@@ -333,6 +345,9 @@ model NotificationPreference {
   mentions Boolean @default(true)
   reposts  Boolean @default(true)
   system   Boolean @default(true) // achievements, levels, coins, …
+  // Weekly digest email (opt-in). Missing row / unset = off; users turn it on
+  // in settings. Kept opt-in for deliverability + consent hygiene.
+  emailDigest Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -1714,6 +1729,14 @@ model UserProfile {
   // (null = not claimed; also acts as the atomic double-claim guard)
   onboardingRewardedAt DateTime?
 
+  // Onboarding v2 "First Week" arc: when the graduation reward was claimed
+  // (null = not graduated; atomic double-claim guard, like onboardingRewardedAt)
+  firstWeekRewardedAt DateTime?
+
+  // Gifting v2: whether this user accepts peer coin gifts (opt-out). When false,
+  // /api/coins/gift rejects gifts to them.
+  receiveGifts Boolean @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -1897,13 +1920,19 @@ model CreatorMembership {
   startedAt   DateTime @default(now())
   expiresAt   DateTime
 
-  creator   User @relation("CreatorMemberships", fields: [creatorId], references: [id], onDelete: Cascade)
-  supporter User @relation("SupportedCreators", fields: [supporterId], references: [id], onDelete: Cascade)
+  // Multi-tier memberships (Creator Studio). Null for legacy single-price rows;
+  // backfilled to the creator's auto-created default tier by the studio UI.
+  tierId String?
+
+  creator   User         @relation("CreatorMemberships", fields: [creatorId], references: [id], onDelete: Cascade)
+  supporter User         @relation("SupportedCreators", fields: [supporterId], references: [id], onDelete: Cascade)
+  tier      CreatorTier? @relation(fields: [tierId], references: [id], onDelete: SetNull)
 
   @@unique([creatorId, supporterId])
   @@index([creatorId])
   @@index([supporterId])
   @@index([expiresAt])
+  @@index([tierId])
   @@map("creator_membership")
 }
 
@@ -4177,6 +4206,7 @@ enum CoinTxnType {
   ADMIN
   MEMBERSHIP
   WAGER // coin-staked match / tournament entry, escrow, and payout
+  MARKET // secondary-market (player marketplace) sale proceeds — excluded from creator "earned"
 }
 
 model CoinTransaction {
@@ -4321,6 +4351,7 @@ enum RMHarkAudience {
   PUBLIC // anyone
   FOLLOWERS // the author's followers only
   PRIVATE // only the author
+  SUPPORTERS // active members of the author (any creator tier)
 }
 
 enum RMHarkReplyControl {
@@ -4371,6 +4402,8 @@ model Community {
   members       CommunityMember[]
   posts         RMHark[]
   announcements CommunityAnnouncement[]
+  spaces        Space[]
+  events        CommunityEvent[]
 
   @@index([memberCount(sort: Desc)])
   @@map("community")
@@ -5410,4 +5443,199 @@ model RedemptionRequest {
   @@index([status, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
   @@map("redemption_request")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Platform expansion (design: docs/plans/2026-07-19-platform-expansion-design.md)
+// Twelve features specified as deltas over the shipped economy/quest/realtime
+// systems. New tables only where a new noun exists; every coin flow still lands
+// in CoinTransaction.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Arcade Pass (§2) ──────────────────────────────────────────────────────
+// One row per user tracking the cross-game daily-challenge streak. Challenge
+// *definitions* and per-challenge progress are code-driven / reuse UserQuest
+// (questId "a.<day>.<game>.<metric>"); only the streak needs storage.
+model ArcadeStreak {
+  userId    String   @id
+  current   Int      @default(0)
+  best      Int      @default(0)
+  lastDay   String?  @db.VarChar(10) // UTC day key "2026-07-19"
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("arcade_streak")
+}
+
+// ─── Creator Studio (§3) ───────────────────────────────────────────────────
+// A creator-defined membership tier (max 3 per creator, enforced in code).
+model CreatorTier {
+  id         String   @id @default(cuid())
+  creatorId  String
+  name       String   @db.VarChar(40)
+  priceCoins Int // per 30 days
+  perks      Json     @default("[]") // ordered perk keys: 'badge'|'posts'|'chat'|'early_builds'
+  sortOrder  Int      @default(0)
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  creator     User                @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  memberships CreatorMembership[]
+
+  @@index([creatorId, active])
+  @@map("creator_tier")
+}
+
+// ─── Live Spaces (§4) ──────────────────────────────────────────────────────
+enum SpaceStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+}
+
+model Space {
+  id          String      @id @default(cuid())
+  hostId      String
+  communityId String? // null = profile-hosted
+  title       String      @db.VarChar(120)
+  status      SpaceStatus @default(SCHEDULED)
+  scheduledAt DateTime?
+  startedAt   DateTime?
+  endedAt     DateTime?
+  pinned      Json? // { kind: 'post'|'url'|'music_room'|'tube_room', ref }
+  recordChat  Boolean     @default(true) // transcript visible after end
+  createdAt   DateTime    @default(now())
+
+  host      User           @relation("SpaceHost", fields: [hostId], references: [id], onDelete: Cascade)
+  community Community?     @relation(fields: [communityId], references: [id], onDelete: SetNull)
+  messages  SpaceMessage[]
+
+  @@index([status, startedAt(sort: Desc)])
+  @@index([communityId, status])
+  @@map("space")
+}
+
+model SpaceMessage {
+  id        String   @id @default(cuid())
+  spaceId   String
+  userId    String
+  body      String   @db.VarChar(500)
+  createdAt DateTime @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([spaceId, createdAt])
+  @@map("space_message")
+}
+
+// ─── RMHEvents (§6) ────────────────────────────────────────────────────────
+enum EventVenueKind {
+  SPACE
+  TOURNAMENT
+  GAME
+  URL
+  IRL
+}
+
+model CommunityEvent {
+  id          String         @id @default(cuid())
+  hostId      String
+  communityId String? // null = profile-hosted
+  title       String         @db.VarChar(120)
+  description String         @db.VarChar(2000)
+  startsAt    DateTime
+  endsAt      DateTime?
+  venueKind   EventVenueKind
+  venueRef    String?        @db.VarChar(191) // spaceId / tournamentId / game id / URL (SSRF-guarded)
+  capacity    Int?
+  canceledAt  DateTime?
+  createdAt   DateTime       @default(now())
+
+  host      User        @relation("EventHost", fields: [hostId], references: [id], onDelete: Cascade)
+  community Community?  @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  rsvps     EventRsvp[]
+
+  @@index([communityId, startsAt])
+  @@index([startsAt])
+  @@map("community_event")
+}
+
+model EventRsvp {
+  id        String   @id @default(cuid())
+  eventId   String
+  userId    String
+  status    String   @db.VarChar(8) // 'going' | 'maybe'
+  createdAt DateTime @default(now())
+
+  event CommunityEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@index([userId, createdAt])
+  @@map("event_rsvp")
+}
+
+// ─── Replays as content (§7) ───────────────────────────────────────────────
+model GameReplay {
+  id         String   @id @default(cuid())
+  userId     String
+  game       String   @db.VarChar(32)
+  version    String   @db.VarChar(16) // game logic version for playback compat
+  score      Int?
+  durationMs Int
+  data       Json // { seed, inputs } | { snapshots } — zod-validated per game
+  sizeBytes  Int // enforced cap (e.g. 256 KB)
+  visibility String   @default("public") @db.VarChar(8) // 'public' | 'unlisted'
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([game, score(sort: Desc)])
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("game_replay")
+}
+
+// ─── Player Marketplace (§8) ───────────────────────────────────────────────
+enum ListingStatus {
+  ACTIVE
+  SOLD
+  CANCELED
+  HELD // flagged for admin review (anomalous price); funds not yet released
+}
+
+model MarketListing {
+  id          String        @id @default(cuid())
+  sellerId    String
+  inventoryId String        @unique // the exact UserInventory row held in escrow
+  itemId      String        @db.VarChar(64)
+  priceCoins  Int
+  status      ListingStatus @default(ACTIVE)
+  buyerId     String?
+  createdAt   DateTime      @default(now())
+  closedAt    DateTime?
+
+  seller User  @relation("MarketSeller", fields: [sellerId], references: [id], onDelete: Cascade)
+  buyer  User? @relation("MarketBuyer", fields: [buyerId], references: [id], onDelete: SetNull)
+
+  @@index([status, itemId, priceCoins])
+  @@index([sellerId, status])
+  @@map("market_listing")
+}
+
+// ─── Shareable stat cards (§13) ────────────────────────────────────────────
+// Created only when a user chooses to share a moment (nothing public by
+// default). Deleting the row kills the landing page and 404s the OG route.
+model SharedMoment {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @db.VarChar(24) // 'achievement'|'rank'|'streak'|'pass_tier'|'arcade'|'wrapped_stat'|'market'
+  payload   Json // snapshot at share time: { title, value, subtitle, ... }
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("shared_moment")
 }

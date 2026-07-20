@@ -89,6 +89,8 @@ const LEGACY_SHOP_ITEMS: ShopItem[] = [
 
   // ─── Avatar Frames ─────────────────────────────────────────────────────
   { id: 'frame.gold', kind: 'AVATAR_FRAME', name: 'Gold Ring', description: 'A polished gold ring.', price: 250, rarity: 'rare', data: { color: '#fbbf24' } },
+  // Onboarding v2 "First Week" graduation pack (also cheaply buyable). See lib/quests/onboarding.ts.
+  { id: 'frame.starter', kind: 'AVATAR_FRAME', name: 'Newcomer Ring', description: 'A welcoming ring for finishing your first week.', price: 120, rarity: 'common', data: { color: '#34d399' } },
   { id: 'frame.neon', kind: 'AVATAR_FRAME', name: 'Neon Ring', description: 'A glowing neon ring.', price: 250, rarity: 'rare', data: { color: '#22d3ee' } },
   { id: 'frame.fire', kind: 'AVATAR_FRAME', name: 'Inferno', description: 'A fiery animated frame.', price: 600, rarity: 'epic', data: { gradient: 'conic-gradient(#f97316,#ef4444,#f97316)' } },
   { id: 'frame.ice', kind: 'AVATAR_FRAME', name: 'Frostbite', description: 'A frozen crystalline frame.', price: 600, rarity: 'epic', data: { gradient: 'conic-gradient(#38bdf8,#a5f3fc,#38bdf8)' } },
@@ -96,6 +98,8 @@ const LEGACY_SHOP_ITEMS: ShopItem[] = [
 
   // ─── Badges (flair next to your name) ──────────────────────────────────
   { id: 'badge.star', kind: 'BADGE', name: 'Star', description: 'A shining star badge.', price: 80, rarity: 'common', data: { emoji: '⭐' } },
+  // Onboarding v2 "First Week" graduation pack (also cheaply buyable). See lib/quests/onboarding.ts.
+  { id: 'badge.newcomer', kind: 'BADGE', name: 'Newcomer', description: 'Awarded for completing the First Week arc.', price: 80, rarity: 'common', data: { emoji: '🌱' } },
   { id: 'badge.fire', kind: 'BADGE', name: 'Flame', description: 'A blazing flame badge.', price: 80, rarity: 'common', data: { emoji: '🔥' } },
   { id: 'badge.heart', kind: 'BADGE', name: 'Heart', description: 'A lovely heart badge.', price: 80, rarity: 'common', data: { emoji: '💖' } },
   { id: 'badge.bolt', kind: 'BADGE', name: 'Bolt', description: 'An electric bolt badge.', price: 120, rarity: 'rare', data: { emoji: '⚡' } },

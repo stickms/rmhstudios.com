@@ -44,6 +44,11 @@ const KeyboardShortcuts = lazy(() =>
 const MiniPlayer = lazy(() =>
   import('@/components/rmhmusic/MiniPlayer').then((m) => ({ default: m.MiniPlayer })),
 );
+// Cross-game party bar (§5): a docked pill, only for signed-in users; renders
+// null otherwise. Lazy so its socket hook stays off the eager hydration path.
+const PartyBar = lazy(() =>
+  import('@/components/party/PartyBar').then((m) => ({ default: m.PartyBar })),
+);
 
 export const Route = createFileRoute('/_site')({
   component: SiteLayout,
@@ -111,6 +116,9 @@ function SiteLayout() {
 
           {/* Music keeps playing when you leave RMHMusic — surface controls here. */}
           <MiniPlayer />
+
+          {/* Cross-game party bar (§5) — docked; renders null when signed out. */}
+          <PartyBar />
         </Suspense>
 
         {/* Floating scroll-to-top affordance for long pages. */}
