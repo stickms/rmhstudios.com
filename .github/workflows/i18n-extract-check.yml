@@ -43,13 +43,19 @@ jobs:
           if git diff --quiet -- locales; then
             echo "i18n extraction is up to date."
           else
+            # Report-only: capture the diff to a file first, then cap it with
+            # `head`. Piping `git diff | head -300` directly would SIGPIPE git
+            # (exit 141) once head closes the pipe, and — since the runner's
+            # default shell is `bash -e` and this script enables pipefail — that
+            # 141 would fail the whole step. Reading from a file avoids it.
+            git --no-pager diff -- locales > "$RUNNER_TEMP/i18n-drift.diff" || true
             {
               echo '### i18n:extract produced uncommitted changes'
               echo ''
-              echo 'Run pnpm i18n:extract locally and commit the result.'
+              echo 'Run `pnpm i18n:extract` locally and commit the result.'
               echo ''
               echo '```diff'
-              git --no-pager diff -- locales | head -300
+              head -n 300 "$RUNNER_TEMP/i18n-drift.diff"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
             git checkout -- locales
