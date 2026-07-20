@@ -69,8 +69,9 @@ These predate the Next.js → TanStack Start migration and/or the Go cutover:
 - Older design docs in `rmhbox/`, `plans/`, `misc/`, and the textbook chapters
   mention Next.js in historical context — the routes/stack described there
   map to `app/routes/` + TanStack Start today
-- `../go-services/README.md` + `FOUNDATION.md` — describe the pre-Bazel
-  9-service world; see `go-services/CLAUDE.md` and
-  `go-migration/go-backend-and-bazel.md` instead
+- `../go-services/FOUNDATION.md` — a `pkg/` API reference; the removed
+  `pkg/events`/`pkg/realtime` sections were cut, but treat
+  `go-services/CLAUDE.md` as canonical (`go-services/README.md` was refreshed to
+  the current 3-service-in-prod reality)
 - Anything claiming production runs PM2 — production is Docker Compose with a
   blue/green web hotswap (see `architecture.md`)

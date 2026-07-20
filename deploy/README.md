@@ -1,67 +1,48 @@
-# rmhstudios deploy — k3s + Helm
+# rmhstudios deploy — Docker Compose (VPS)
 
-This directory holds the k3s/Helm/Terraform deploy. The legacy Docker-Compose
-deploy (`/deploy.sh` + `/docker-compose.yml`) stays in place as a fallback.
+Production and staging both run as **Docker Compose** stacks on a VPS behind
+**Apache** (TLS terminated at **Cloudflare**). The web tier deploys **blue/green**
+with a health-gated Apache port flip. This directory holds the Apache vhosts,
+the blue/green hotswap script, Postgres/backup helpers, systemd units, and the
+Terraform DNS config.
 
-## One-time VPS setup
+> The earlier **k3s + Helm/Traefik** deploy was **removed in the rewrite** — its
+> scripts (`deploy-k8s.sh`, `deploy-go.sh`) and the `deploy/helm/` chart no
+> longer exist. Compose (`/deploy.sh` + `/docker-compose.yml`) is the only
+> deploy path. Runtime topology & the full pipeline:
+> [`../docs/architecture.md`](../docs/architecture.md).
 
-1. **Install k3s** (bundles Traefik ingress + local-path PVC provisioner):
-   ```bash
-   curl -sfL https://get.k3s.io | sh -
-   sudo k3s kubectl get nodes        # node should be Ready
-   ```
-2. **Give the deploy user kubectl + ctr access:**
-   ```bash
-   sudo mkdir -p ~/.kube
-   sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
-   sudo chown "$(id -u):$(id -g)" ~/.kube/config
-   # deploy-k8s.sh uses `sudo k3s ctr` to import images — ensure the deploy
-   # user has passwordless sudo for `k3s ctr`, or run the deploy as root.
-   ```
-3. **TLS (if using cert-manager):** install cert-manager and a ClusterIssuer,
-   then set `ingress.tls.secretName`. Alternatively terminate TLS at Cloudflare.
+## What's in here
 
-## First deploy
+| Path                             | Purpose                                                              |
+| -------------------------------- | ------------------------------------------------------------------- |
+| `apache/`                        | vhosts (`rmhstudios.conf` — the front door + security headers/CSP) + the active-web-port include the hotswap flips |
+| `hotswap-web.sh`                 | blue/green web swap: start new container on the spare port (7005 ⇄ 7015), health-gate, flip Apache, stop the old one |
+| `docker/`                        | Docker daemon config / helpers                                      |
+| `postgres/`                      | Postgres tuning + host setup (DB runs on the host, reached via `host.docker.internal`) |
+| `backup/`                        | DB backup scripts (driven by the systemd timer)                    |
+| `systemd/`                       | units: `rmh-db-backup.{service,timer}`, `rmhstudios-perf-tuning.service` |
+| `terraform/`                     | Cloudflare **DNS** as code — see [`terraform/README.md`](./terraform/README.md) |
+| `apply-cloudflare-cache-rules.sh`, `apply-perf-tuning.sh` | one-shot host/CDN tuning helpers                 |
+| `disk-report.sh`, `move-docker-storage.sh` | disk diagnostics + moving Docker's data-root onto a separate volume |
 
-```bash
-cd /home/rmhstudios/rmhstudios.com
-# Edit deploy/helm/rmhstudios/values-prod.yaml — set the four real hostnames.
-./deploy/deploy-k8s.sh production
-```
+## The deploy pipeline (push → production)
 
-This builds the image (Compose), imports it into k3s, syncs the Secret from
-`.env.production`, runs the Prisma migration hook, then rolls the 8 Deployments.
-`--atomic` auto-rolls-back if anything fails.
+1. **Push to `main`** → `.github/workflows/deploy.yml` builds the **two images**
+   (`rmhstudios-app` slim + `rmhstudios-app-full`) on a native ARM64 runner from
+   one `Dockerfile`, pushes them to **GHCR** tagged with the commit SHA, then
+   POSTs an **HMAC-signed** request to the VPS webhook listener.
+2. The listener (`webhook-server.cjs`, `127.0.0.1:7002`) runs
+   `./deploy.sh production <sha>`.
+3. **`deploy.sh production <sha>`** (flock-serialized; reports to Discord +
+   GitHub commit status): `git reset --hard <sha>` → **pull** the two GHCR
+   images → sync static assets/avatars to R2 (background) →
+   `prisma migrate deploy` in a throwaway container → `docker compose up -d
+   --scale web=0` (everything except web) → **blue/green web hotswap**
+   (`hotswap-web.sh`) → health checks → prune stale/rollback images.
 
-## Smoke test (on the VPS, after first deploy)
-
-```bash
-kubectl -n rmhstudios get pods                       # all Running/Ready
-kubectl -n rmhstudios logs job/rmhstudios-migrate    # "[migrate] done"
-kubectl -n rmhstudios get ingress                    # hosts listed
-curl -fsS -H "Host: <app_host>" http://127.0.0.1/    # via Traefik
-```
-
-## Cutover (reversible)
-
-1. Run `./deploy/deploy-k8s.sh production` and pass the smoke test while the
-   old Compose stack is still up (k3s Traefik binds :80/:443 — stop the old
-   reverse proxy / Compose web only when ready to flip).
-2. Point the webhook at the new script:
-   ```bash
-   # in the webhook server's systemd unit / env:
-   DEPLOY_SCRIPT=/home/rmhstudios/rmhstudios.com/deploy/deploy-k8s.sh
-   sudo systemctl restart rmhstudios-webhook   # or however it is supervised
-   ```
-3. **Rollback to Compose:** unset `DEPLOY_SCRIPT` (back to `deploy.sh`), restart
-   the webhook, and `docker compose -p rmhstudios-prod --env-file .env.production up -d`.
-
-## Day-2 ops
-
-- Roll back one release:  `helm -n rmhstudios rollback rmhstudios`
-- Scale web (after multi-node + RWX):  `kubectl -n rmhstudios scale deploy/rmhstudios-web --replicas=3`
-- Tail a service:  `kubectl -n rmhstudios logs -f deploy/rmhstudios-socket`
-- DNS changes:  see `deploy/terraform/README.md`
+`deploy.sh` takes `production` or `staging` and an optional SHA (no SHA deploys
+the branch tip). It can also be run directly on the VPS.
 
 ## Automated deploys — CI build → GHCR → VPS pull
 
@@ -70,8 +51,8 @@ Every push to `main`, `.github/workflows/deploy.yml` builds the two images
 them to GHCR tagged with the commit SHA, then POSTs an HMAC-signed request to the
 VPS webhook listener (`webhook-server.cjs`). The listener runs
 `./deploy.sh production <sha>`, which **pulls** those images (no on-host build),
-migrates, and blue/green-swaps. The listener still self-serializes via `deploy.sh`'s
-flock, and `deploy.sh` still owns the `deploy/production` commit status.
+migrates, and blue/green-swaps. The listener self-serializes via `deploy.sh`'s
+flock, and `deploy.sh` owns the `deploy/production` commit status.
 
 Why the listener is triggered by CI (not by GitHub's raw push webhook): the image
 must exist in GHCR *before* the deploy runs, so the deploy is sequenced after the
@@ -127,18 +108,21 @@ covers served from R2 (`coverKey` → `asset()`). Nothing about the library depe
 on where the image is built, so moving the build to CI changes nothing here. (The
 old host-side cover-render step in `deploy.sh` was a no-op and has been removed.)
 
+## Rollback
+
+`deploy.sh` keeps the previous SHA-tagged images (one per env). To roll back,
+re-run `./deploy.sh <env> <previous-sha>` on the VPS — it pulls (or reuses) that
+SHA's images and blue/green-swaps back. Replaced Node workers can be revived by
+restoring their compose command blocks (see
+[`../docs/runbooks/2026-06-22-go-runtime-cutover.md`](../docs/runbooks/2026-06-22-go-runtime-cutover.md)).
+
 ## Disk usage on the VPS
 
-The heavy build now runs in CI, so the VPS no longer keeps a BuildKit build cache
+The heavy build runs in CI, so the VPS no longer keeps a BuildKit build cache
 — it only holds the **pulled** images. `deploy.sh` prunes dangling images and
 keeps at most **2** SHA-tagged rollback images per environment (dropping to 1 if
 free space falls under the headroom). Tune via `DEPLOY_HEADROOM_GB` (2) and
 `DEPLOY_PULL_RESERVE_GB` (6 — transient space the incoming image layers need).
-
-> The old on-host build knobs are gone: `setup-buildx-cache.sh`,
-> `docker-compose.cache.yml`, and the `DEPLOY_BUILDKIT_CACHE` /
-> `DEPLOY_BUILD_RESERVE_GB` / `DEPLOY_IMAGE_RESERVE_GB` env vars are no longer
-> read by `deploy.sh`.
 
 If the disk fills, find out what's actually using it before blaming Docker:
 
@@ -164,51 +148,12 @@ sudo ./deploy/move-docker-storage.sh /mnt/<separate-volume>/docker
 It copies `/var/lib/docker` and repoints the daemon (old copy kept → reversible),
 refusing if the target lacks `used + 5 GB` headroom.
 
-## Multi-node scaling
+## Scaling note
 
-The deploy is already **wired for a registry** — switching to multi-node is an
-env var on the deploy, plus two storage changes.
-
-### 1. Registry (wired)
-
-Set `REGISTRY` (and optionally `REGISTRY_PULL_SECRET`) before deploying. The
-script then pushes the image instead of importing it locally, and flips the
-chart to `pullPolicy: IfNotPresent` with the full registry path:
-
-```bash
-# Public/self-hosted registry, no auth:
-REGISTRY=registry.rmhstudios.com ./deploy/deploy-k8s.sh production
-
-# GHCR or any private registry (create the pull secret once):
-kubectl -n rmhstudios create secret docker-registry regcred \
-  --docker-server=ghcr.io --docker-username=<user> --docker-password=<token>
-REGISTRY=ghcr.io/<owner> REGISTRY_PULL_SECRET=regcred ./deploy/deploy-k8s.sh production
-```
-
-Unset `REGISTRY` → single-node behavior (local `k3s ctr` import, `pullPolicy: Never`).
-
-### 2. Shared storage (`MULTI-NODE SEAM` in pvc.yaml)
-
-`local-path` is node-local RWO. For pods to share `/app/db` across nodes, switch
-to a `ReadWriteMany` class (NFS / Longhorn / Rook) and set
-`data.storageClass` + the PVC `accessModes` accordingly.
-
-### 3. discord-bot repo mount (`MULTI-NODE SEAM` in deployment.yaml)
-
-The `hostPath` repo mount pins discord-bot to one node. Either keep it pinned
-with a `nodeSelector`/affinity, or move its git-worktree workdir onto the shared
-RWX volume.
-
-### Then scale
-
-```bash
-kubectl -n rmhstudios scale deploy/rmhstudios-web --replicas=4
-kubectl -n rmhstudios scale deploy/rmhstudios-socket --replicas=3
-```
-
-> Stateful realtime note: `socket`/`rmhbox`/`rmhtube` hold in-memory game/lobby
-> state. Scaling them past 1 replica needs sticky sessions at the ingress AND a
-> shared backplane (e.g. socket.io Redis adapter) — otherwise clients on
-> different replicas can't see each other. `web` and the workers scale freely;
-> the realtime tier needs that backplane first. See the scaling discussion in
-> the migration plan.
+The realtime tier is stateful: `socket`/`rmhbox`/`rmhtube` hold in-memory
+game/lobby state and there is no socket.io Redis adapter, so they run
+single-instance. `web` runs multiple Nitro cluster workers in one container; the
+`redis`/`redis-state` planes back caching and durable rate-limit/presence state.
+Horizontal scaling of the realtime hubs would need sticky sessions plus a shared
+backplane first — see the scalability audit in
+[`../docs/scalability-audit-2026-07-17.md`](../docs/scalability-audit-2026-07-17.md).

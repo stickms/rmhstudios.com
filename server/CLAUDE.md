@@ -22,6 +22,7 @@ Current production (Docker Compose on the VPS):
 | `rmhtube` (watch together)          | **Node** | 7003                          | `dist-server/server/rmhtube/index.cjs`       |
 | `ladder-worker` (job cron)          | **Node** | —                             | `dist-server/server/ladder-worker/index.cjs` |
 | `homes-worker` (listings cron)      | **Node** | —                             | `dist-server/server/homes-worker/index.cjs`  |
+| `jobs` (pg-boss async backbone)     | **Node** | —                             | `dist-server/server/jobs/index.cjs`          |
 | `supervisor` (6 background workers) | **Go**   | 9090 (metrics)                | `/app/bin/supervisor`                        |
 | `status`                            | **Go**   | 7008                          | `/app/bin/status`                            |
 | `assets`                            | **Go**   | 7007                          | `/app/bin/assets`                            |
@@ -34,9 +35,10 @@ Consequences:
   goroutines inside the Go `supervisor`, or as the Go `status` binary) and their
   dead Node source was **deleted in the rewrite reap (R0-T5)** — recover from
   git history (or the `pre-rewrite-*` tags) if a rollback ever needs them.
-- The Go realtime hubs (gamehub/rmhbox/rmhtube/rmhmusic/gateway) exist but are
-  **not** in the production request path — Apache routes `/socket/`,
-  `/rmhbox-ws/`, `/rmhtube-ws/` and `/` straight to the Node ports.
+- The Go realtime hubs (gamehub/rmhbox/rmhtube/rmhmusic) and the `gateway` were
+  **removed in the rewrite** — they never served production traffic. Apache
+  routes `/socket/`, `/rmhbox-ws/`, `/rmhtube-ws/` and `/` straight to the Node
+  ports; these hubs here are the realtime tier.
 
 ## Directory guide
 
@@ -80,15 +82,24 @@ COUNTDOWN → PLAYING → ROUND_RESULTS → WAITING` (+ `SESSION_RESULTS`,
 - **`rmhmusic/`** — collaborative listening. **Not a standalone server**: its
   RoomManager/SyncEngine/QueueManager/ChatHandler mount inside socket-server
   (port 7001) via `socket-server/handlers/rmhmusic.ts`. Auth required.
-  (The standalone rmhmusic:7002 is the Go hub, k3s-only.)
+  (The standalone Go rmhmusic:7002 hub was removed in the rewrite.)
 - **`ladder-worker/`** — RMHLadder job-discovery cron. No port. `node-cron`
   schedule `LADDER_CRON_SCHEDULE` (default every 12h) around
   `lib/rmhladder/pipeline`. Self-bootstraps an empty DB on startup
   (seed → probe sources → run pipeline). Manual triggers:
   `pnpm ladder:seed | ladder:probe | ladder:run`.
 - **`homes-worker/`** — RMHHomes listings-scraper cron. No port. `node-cron`
-  schedule `HOMES_CRON_SCHEDULE` (default every 6h). Built by `pnpm build` and
-  run as its own compose service.
+  schedule `HOMES_CRON_SCHEDULE` (default every 6h). Aggregates public housing
+  feeds (Craigslist/RSS) into `EXTERNAL` `HomeListing` rows and notifies
+  watchers. Self-bootstraps default sources + a first run on an empty DB. Built
+  by `pnpm build` and run as its own compose service.
+- **`jobs/`** — the durable async backbone (rewrite R2). No port. A **pg-boss**
+  consumer that drains queues and runs background work that used to block
+  request handlers: `engagement.progression` (achievements/XP/quests/webhooks),
+  `event.reminder` (T-24h/T-15m RSVP reminders), and the `email.weekly-digest`
+  cron. Owns pg-boss queue maintenance/scheduling (the web tier is send-only).
+  Degrades safely: with no `DATABASE_URL` it exits and the web tier runs the
+  work inline. Logic lives in `lib/jobs/` + `lib/social/engagement-effects.server.ts`.
 - **`nitro/`** — not a service: Nitro startup plugins for the web tier,
   registered in `vite.config.ts`. `reflect-metadata.ts` (required by the
   Better Auth passkey plugin — do not remove), `security-headers.ts`
@@ -116,13 +127,13 @@ history if a rollback ever needs it.
 ## Dev, build, prod
 
 - **Dev:** `pnpm dev` = concurrently Vite (7005) + socket-server + rmhbox +
-  rmhtube + ladder-worker, each under `tsx watch`. The replaced workers do
-  not run in dev.
+  rmhtube + ladder-worker + homes-worker + jobs, each under `tsx watch`. The
+  Go-replaced workers (doctrine/vibe/bot/recap/status) do not run in dev.
 - **Build order is load-bearing:** `pnpm build` = build-vibe-packages →
-  `vite build` → esbuild bundles exactly **4 entrypoints**
-  (socket-server, rmhbox, rmhtube, ladder-worker) into `dist-server/**/*.cjs`
-  with `--packages=external` (deps, including the generated Prisma client,
-  resolve at runtime — `prisma generate` must have run).
+  `vite build` → esbuild bundles exactly **6 entrypoints**
+  (socket-server, rmhbox, rmhtube, ladder-worker, homes-worker, jobs) into
+  `dist-server/**/*.cjs` with `--packages=external` (deps, including the
+  generated Prisma client, resolve at runtime — `prisma generate` must have run).
 - **Adding a new Node service** requires editing the `build` and `start`
   scripts in `package.json` AND `docker-compose.yml`. Ask whether it should
   be a Go worker instead (that's the migration direction).
@@ -157,5 +168,6 @@ history if a rollback ever needs it.
    success.
 5. Per-socket rate limits reset on reconnect; the rule maps in each
    `config.ts` are the de-facto event allowlists.
-6. `tsconfig.server.json` includes more than gets bundled — esbuild's 4
-   entrypoints are the truth.
+6. `tsconfig.server.json` includes more than gets bundled — esbuild's 6
+   entrypoints (socket-server, rmhbox, rmhtube, ladder-worker, homes-worker,
+   jobs) are the truth.

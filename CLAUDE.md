@@ -28,12 +28,12 @@ locales, RTL for ar/ur/fa).
 | `app/`         | TanStack Start routes: pages, API routes, `globals.css` (theme tokens: 3 base + 4 curated themes + accent presets; `liquid-glass` is the default), router. `routeTree.gen.ts` is GENERATED — never edit. | [`app/CLAUDE.md`](app/CLAUDE.md)                 |
 | `components/`  | React components by feature; `ui/` = shared primitives; `feed/PageLayout.tsx` = canonical page wrapper.                                                                                                  | [`components/CLAUDE.md`](components/CLAUDE.md)   |
 | `lib/`         | Shared logic: auth, prisma, feed, economy, i18n, per-game logic, `.server.ts` server-only modules.                                                                                                       | [`lib/CLAUDE.md`](lib/CLAUDE.md)                 |
-| `server/`      | **Node** service tier: socket-server (7001), rmhbox (7676), rmhtube (7003), ladder-worker; plus fallback sources for workers now run in Go.                                                              | [`server/CLAUDE.md`](server/CLAUDE.md)           |
+| `server/`      | **Node** service tier: web SSR plus socket-server (7001), rmhbox (7676), rmhtube (7003), and the ladder-worker / homes-worker / jobs (pg-boss) workers.                                                   | [`server/CLAUDE.md`](server/CLAUDE.md)           |
 | `go-services/` | **Go** microservice fleet (Bazel + gazelle): supervisor/status/assets run in prod; the gateway + Go hubs were removed (rewrite §5.2).                                                                    | [`go-services/CLAUDE.md`](go-services/CLAUDE.md) |
 | `stores/`      | Site-level Zustand stores (theme, locale, feed, user display).                                                                                                                                           | `lib/CLAUDE.md`                                  |
 | `hooks/`       | Shared hooks (`useReducedMotion`, `useCelebration`, `useFeedSSE`, …).                                                                                                                                    | `lib/CLAUDE.md`                                  |
-| `prisma/`      | `schema.prisma` (225 models) + migrations.                                                                                                                                                               | `lib/CLAUDE.md`                                  |
-| `locales/`     | 32 locales × 66 namespaces; `en` is authoritative.                                                                                                                                                       | `lib/CLAUDE.md` §i18n                            |
+| `prisma/`      | `schema.prisma` (234 models) + migrations.                                                                                                                                                               | `lib/CLAUDE.md`                                  |
+| `locales/`     | 32 locales × 69 namespaces; `en` is authoritative.                                                                                                                                                       | `lib/CLAUDE.md` §i18n                            |
 | `data/`        | Static JSON (RMHBox content packs, library metadata).                                                                                                                                                    | —                                                |
 | `public/`      | Static assets, `robots.txt`, `manifest.webmanifest`.                                                                                                                                                     | —                                                |
 | `scripts/`     | Seeding, i18n pipeline, OG/icon generation, ladder pipeline, news pipeline, epic build.                                                                                                                  | `docs/README.md`                                 |
@@ -48,12 +48,12 @@ locales, RTL for ar/ur/fa).
 ```bash
 pnpm install                 # postinstall runs prisma generate
 pnpm db:push                 # apply schema to local Postgres (dev)
-pnpm dev                     # Vite (7005) + socket/rmhbox/rmhtube hubs + ladder-worker
+pnpm dev                     # Vite (7005) + socket/rmhbox/rmhtube hubs + ladder/homes/jobs workers
 pnpm exec tsc --noEmit       # typecheck
 pnpm lint                    # eslint (jsx-a11y at warn — add no new warnings)
 pnpm format                  # prettier
 pnpm exec vitest run         # main test suite
-pnpm build                   # vibe-packages → vite build → esbuild 4 server bundles
+pnpm build                   # vibe-packages → vite build → esbuild 6 server bundles
 pnpm i18n:extract            # after adding t() strings
 make gazelle && make test    # Go: regenerate BUILD files, run Bazel tests
 ```
@@ -99,18 +99,19 @@ status 7008 · assets 7007. Env: see `.env.example`; minimum is
 ## Runtime & deploy reality (summary — details in docs/architecture.md)
 
 Production is Docker Compose on a VPS behind Apache/Cloudflare — **hybrid
-runtime**: Node runs web SSR + all realtime hubs + ladder-worker; **Go** runs
-the five background workers (as one `supervisor` process), `status`, and
-`assets`. The Go gateway/hub topology exists (Helm/k3s) but is not the
-production request path. Deploys: push to `main` → GitHub Actions builds the
-two images (native ARM64) from one Dockerfile + pushes them to GHCR → an
-HMAC-signed request wakes the VPS webhook listener (`webhook-server.cjs`) →
-`./deploy.sh production <sha>` pulls those images → prisma migrate →
-blue/green web hotswap (port 7005/7015 flip). CI:
-`go-microservices.yml` (Bazel + e2e + helm), `web-ci.yml` (typecheck, lint,
-tests, build, and production dependency audit), `codeql.yml` (JS/TS + Go SAST),
-and `senior-review.yml` (LLM review gate). Run the same checks locally before
-opening a pull request.
+runtime**: Node runs web SSR + all realtime hubs + the ladder/homes/jobs
+workers; **Go** runs the six background workers (as one `supervisor` process),
+`status`, and `assets`. The old full-Go gateway/hub topology (and its Helm/k3s
+charts) was **removed** in the rewrite — the Node hubs are the realtime tier.
+Deploys: push to `main` → GitHub Actions builds the two images (native ARM64)
+from one Dockerfile + pushes them to GHCR → an HMAC-signed request wakes the VPS
+webhook listener (`webhook-server.cjs`) → `./deploy.sh production <sha>` pulls
+those images → prisma migrate → blue/green web hotswap (port 7005/7015 flip).
+CI: `web-ci.yml` (typecheck, lint, tests, build, production dependency audit),
+`typecheck-server.yml`, `vitest-coverage.yml`, `go-microservices.yml` (Bazel
+test), `codeql.yml` (JS/TS + Go SAST), and `senior-review.yml` (LLM review
+gate), plus many granular lint/security workflows. Run the core checks locally
+before opening a pull request.
 
 ## Trust order for conflicting information
 

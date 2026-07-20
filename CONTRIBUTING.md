@@ -51,8 +51,10 @@ pnpm format              # Prettier (optional but appreciated for files you touc
 - **Accessibility.** Prefer native/Radix elements; interactive UI must be
   keyboard-operable and labeled; honor `prefers-reduced-motion` (there's a global
   CSS gate and a `useReducedMotion()` hook).
-- **Security headers / CSP** are set in two places — the Apache vhost
-  (`deploy/apache/rmhstudios.conf`) and the Helm/Traefik middleware. Change both.
+- **Security headers / CSP** live in the Apache vhost
+  (`deploy/apache/rmhstudios.conf`, the production front door), with a Nitro
+  `security-headers` startup plugin (`server/nitro/security-headers.ts`) adding
+  defense-in-depth headers. (The old Helm/Traefik middleware was removed.)
 
 ## Commits & PRs
 

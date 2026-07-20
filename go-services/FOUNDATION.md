@@ -3,6 +3,14 @@
 Module path: `github.com/rmhstudios/rmh-go`. Go 1.23. Every service is a binary
 under `cmd/<service>/main.go` with its private code under `internal/<service>/`.
 
+> **Scope note.** The current fleet is workers + `status` + `assets` (see
+> [`CLAUDE.md`](./CLAUDE.md)). The `pkg/events` (pub/sub backplane) and
+> `pkg/realtime` (WebSocket framework) packages — and the realtime/HTTP-hub
+> service skeleton that used them — were **removed in the rewrite** with the Go
+> gateway/hub topology, and are no longer documented here. Surviving shared
+> packages: `config`, `log`, `db`, `auth`, `httpx`, `ratelimit`, `telemetry`,
+> `objectstore`, `worker`.
+
 **Rules for service authors**
 - Import shared packages; do **not** edit anything under `pkg/` or `go.mod`.
 - Write only under `cmd/<your-service>/` and `internal/<your-service>/`.
@@ -88,93 +96,52 @@ metrics.JobRuns.WithLabelValues("daily_puzzles", "ok").Inc()
 metrics.DBQueries.WithLabelValues("ok").Inc()
 ```
 
-## events (cross-instance pub/sub backplane)
+## objectstore
 ```go
-host, _ := os.Hostname()
-bus, err := events.FromURL(host, cfg.RedisURL) // Local bus if RedisURL=="" else Redis
-defer bus.Close()
+store, err := objectstore.New(ctx) // *S3 — range-aware S3/MinIO reader (the only pkg importing the AWS SDK)
+// used by the `assets` service to stream /library /music /models /sprites
 ```
 
-## realtime (WebSocket framework — replaces Socket.IO)
+## worker (uniform worker contract)
 ```go
-hub := realtime.NewHub(ctx, realtime.Options{
-    Origin: host, Logger: logger, Metrics: metrics,
-    Validator: v, Bus: bus,
-    AllowOrigins: config.GetCSV("SOCKET_CORS_ORIGIN"), // empty => allow all
-    RequireAuth: false, // true for rmhmusic
-})
-hub.On("room:join", func(c *realtime.Conn, e realtime.Envelope) {
-    var p struct{ RoomID string `json:"roomId"` }
-    if err := e.Bind(&p); err != nil { return }
-    room := hub.Join(c, p.RoomID)
-    hub.BroadcastSeq(p.RoomID, realtime.MustEnvelope("room:action", map[string]any{"type":"MEMBER_JOINED","userId":c.UserID()}))
-    _ = room
-})
-hub.OnConnect(func(c *realtime.Conn) {})
-hub.OnDisconnect(func(c *realtime.Conn) {})
-mux.HandleFunc("/rmhbox-ws/", hub.ServeWS)
+// A worker is just a RunFunc; it returns errors and NEVER calls log.Fatal inside Run.
+type Deps struct { DB *db.DB; Logger *log.Logger; Metrics *telemetry.Metrics; Cfg config.Common }
+type RunFunc = func(ctx context.Context, d worker.Deps) error
 
-// Conn: c.ID string; c.Identity auth.Identity; c.Anonymous bool; c.UserID() string
-//       c.Send(env); c.Set(k,v)/c.Get(k)(any,bool); c.Rooms() []string
-// Hub:  hub.Join(c, roomID) *Room; hub.Leave(c, roomID); hub.Room(id)(*Room,bool)
-//       hub.Broadcast(roomID, env); hub.BroadcastSeq(roomID, env) // stamps room seq
-//       hub.Count() int
-// Room: room.ID; room.NextSeq() uint64; room.Size() int; room.Members() []*Conn
-// Envelope: realtime.MustEnvelope(event string, payload any) Envelope
-//           realtime.NewEnvelope(event, payload)(Envelope,error); env.Bind(&v); env.Event/.Payload/.Seq/.TS
-// GraceTimers: g := realtime.NewGraceTimers(); g.Schedule(key, d, fn); g.Cancel(key) bool; g.CancelAll()
+// Wire the same RunFunc into BOTH cmd/<svc> (standalone) and cmd/supervisor.
+func Run(ctx context.Context, d worker.Deps) error { /* ... tickers / loops ... */ return nil }
 ```
 
-## Standard main() skeleton (HTTP/realtime service)
+## Standard main() skeleton — HTTP service (status / assets)
 ```go
 package main
 func main() {
-    cfg, err := config.LoadCommon("rmhbox")
-    logger := log.New("rmhbox", cfg.LogLevel)
+    cfg, err := config.LoadCommon("status")
+    logger := log.New("status", cfg.LogLevel)
     if err != nil { logger.Fatal("config", "error", err) }
-    ctx, cancel := context.WithCancel(context.Background())
+    ctx, cancel := httpx.SignalContext() // ctx cancelled on SIGINT/SIGTERM
     defer cancel()
     database, err := db.Open(ctx, cfg.DatabaseURL, cfg.DBPoolSize)
     if err != nil { logger.Fatal("db", "error", err) }
     defer database.Close()
-    metrics := telemetry.New("rmhbox")
-    host, _ := os.Hostname()
-    bus, _ := events.FromURL(host, cfg.RedisURL)
-    defer bus.Close()
-    v := auth.NewValidator(database.Pool)
-    hub := realtime.NewHub(ctx, realtime.Options{Origin: host, Logger: logger, Metrics: metrics, Validator: v, Bus: bus})
-    mgr := rmhbox.NewManager(hub, database, logger) // your internal package
-    mgr.Register()
+    metrics := telemetry.New("status")
     mux := http.NewServeMux()
-    mux.HandleFunc("/health", httpx.Health("rmhbox", nil))
+    mux.HandleFunc("/health", httpx.Health("status", nil))
     mux.Handle("/metrics", metrics.Handler())
-    mux.HandleFunc("/rmhbox-ws/", hub.ServeWS)
-    addr := ":" + config.GetString("RMHBOX_PORT", "7676")
+    // ... register the service's own routes on mux ...
+    addr := ":" + config.GetString("STATUS_PORT", "7008")
     srv := httpx.NewServer(addr, mux, logger)
     if err := srv.Run(30 * time.Second); err != nil { logger.Error("server", "error", err) }
 }
 ```
 
-## Worker skeleton (no client HTTP, just metrics + jobs)
+## Standard main() skeleton — standalone worker
 ```go
+package main
+// The thin wrapper: RunStandalone owns config/log/db/metrics/signals and the
+// :9090 metrics+health server, then calls your RunFunc. In production the same
+// RunFunc runs inside cmd/supervisor instead.
 func main() {
-    cfg, _ := config.LoadCommon("doctrine-worker")
-    logger := log.New("doctrine-worker", cfg.LogLevel)
-    ctx, cancel := context.WithCancel(context.Background())
-    defer cancel()
-    database, err := db.WaitForReachable(ctx, cfg.DatabaseURL, 10, 5*time.Second)
-    if err != nil { logger.Fatal("db", "error", err) }
-    defer database.Close()
-    metrics := telemetry.New("doctrine-worker")
-    go func() {
-        mux := http.NewServeMux()
-        mux.HandleFunc("/health", httpx.Health("doctrine-worker", nil))
-        mux.Handle("/metrics", metrics.Handler())
-        _ = http.ListenAndServe(cfg.MetricsAddr, mux)
-    }()
-    w := worker.New(database, logger, metrics)
-    w.Start(ctx)              // launches goroutine tickers
-    httpx.WaitForSignal()     // block
-    cancel(); w.Stop()
+    worker.RunStandalone("doctrine-worker", "", doctrine.Run) // "" => METRICS_ADDR default :9090
 }
 ```

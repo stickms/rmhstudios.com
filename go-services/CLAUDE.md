@@ -16,10 +16,10 @@ the newer services.
 
 Production is a **hybrid** (see `docker-compose.yml` at repo root):
 
-- **Go is authoritative for:** the five background workers — discord-bot,
-  recap, doctrine-worker, vibe-worker, bot-worker — consolidated as goroutines
-  in one `supervisor` binary (metrics :9090); the `status` dashboard (7008);
-  and `assets` (7007, off the main user path under Compose).
+- **Go is authoritative for:** the six background workers — discord-bot,
+  recap, doctrine-worker, vibe-worker, bot-worker, streak-saver — consolidated
+  as goroutines in one `supervisor` binary (metrics :9090); the `status`
+  dashboard (7008); and `assets` (7007, off the main user path under Compose).
 - **Node is authoritative for:** web SSR (7005) and the realtime hubs —
   socket-server (7001), rmhbox (7676), rmhtube (7003), rmhmusic (inside
   socket-server) — plus ladder-worker + homes-worker. Apache routes all user
@@ -57,10 +57,16 @@ go-services/
 | `assets` | `ASSETS_PORT` 7007 | HTTP | Apache off-disk CDN | range-aware S3/R2 streaming for `/library /music /models /sprites` |
 | `status` | `STATUS_PORT` 7008 | HTTP | server/status | fully ported dashboard + `/api/status` |
 | `supervisor` | `METRICS_ADDR` :9090 | — | (consolidation) | runs the 6 workers (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker, streak-saver) as goroutines under an errgroup |
-| `ledger` | `LEDGER_ADDR` :7100 | HTTP `/ledger/v0/*` | none (net-new) | implemented, **not integrated**: no BUILD.bazel, no image, not deployed |
 
-Do not confuse **`ledger`** (Go artifact/provenance store) with
-**`ladder-worker`** (Node RMHLadder job cron) — the latter has NOT been ported.
+The **6 supervised workers** are the five worker `cmd/` binaries (bot-worker,
+discord-bot, doctrine-worker, recap, vibe-worker) plus `streak-saver` — which
+has **no** standalone `cmd/`: it lives only in `internal/streaksaver` and runs
+inside the supervisor. (`status`, `assets`, and `supervisor` are the three
+non-worker `cmd/` binaries.) `internal/ledger`
+(a Go artifact/provenance store, `LEDGER_ADDR :7100` in docs only) is also
+`internal/`-only — implemented but wired into no binary, not built, not
+deployed. Don't confuse **`ledger`** with **`ladder-worker`** (the Node
+RMHLadder job cron, not ported).
 
 ### Shared packages (pkg/)
 
@@ -73,8 +79,6 @@ Do not confuse **`ledger`** (Go artifact/provenance store) with
 | `httpx` | `Health`, `WriteJSON`, `SessionToken` extraction, graceful `Server.Run`, `SignalContext`, `ServeMetrics` |
 | `ratelimit` | in-memory sliding window keyed `(conn, event)`, bounded + GC'd |
 | `telemetry` | Prometheus metrics per service; `MergedHandler` for supervisor |
-| `events` | pub/sub `Bus`: `Local` (in-proc) or `Redis`, chosen by `FromURL` — empty `REDIS_URL` ⇒ Local |
-| `realtime` | the WebSocket framework: `Hub`, `Room`, `Conn`, `Envelope`, `GraceTimers` |
 | `objectstore` | range-aware S3/MinIO reader (only place importing the AWS SDK) |
 | `worker` | uniform worker contract: `RunFunc(ctx, Deps)`, `RunStandalone`; workers return errors, **never** `log.Fatal` inside `Run` |
 
@@ -90,38 +94,20 @@ directly against the shared `session` table (`pkg/auth`):
 2. `SELECT ... FROM "session" s JOIN "user" u ...  WHERE s."token" = $1` →
    `Identity{UserID, Name, Image, IsAdmin}`; expired/unknown ⇒
    `ErrUnauthenticated`.
-3. The gateway **strips all inbound `X-Rmh-*` headers** then injects
-   `X-Rmh-User-Id/-User-Name/-Is-Admin` for upstreams (anonymous passes
-   through; SSR does its own auth).
 
-## Realtime framework (pkg/realtime)
+The Go services here are workers + `status` + `assets`; none terminate
+user-facing WebSocket traffic, so there is no WS auth handshake in this fleet.
+Realtime auth lives in the **Node** hubs (`server/CLAUDE.md`). The old Go
+`gateway` that injected trusted `X-Rmh-*` headers was removed with the Go
+realtime topology.
 
-The wire protocol is **not Socket.IO**: plain JSON
-`Envelope{event, payload, seq, ts}` over gorilla WebSocket. `seq` is
-server-assigned per room (snapshot + seq-stamped deltas, like the Node hubs).
-A thin TS client adapter is required before pointing the frontend at Go hubs.
-
-- One `Hub` per service; register handlers with `On`/`OnConnect`/
-  `OnDisconnect` **before** mounting `ServeWS` (dispatch map is lock-free).
-- `Room` tracks local members + monotonic seq; `Hub.Broadcast` delivers
-  locally and publishes to the `events.Bus`; rooms subscribe to
-  `rt:room:<id>` on Redis.
-- `Conn`: read/write pumps, 256-msg send buffer, 1 MiB frames, ping/pong;
-  slow consumers are dropped rather than wedging the room.
-- `GraceTimers`: keyed cancellable delayed actions (disconnect grace, room GC).
-- **Cross-replica origin (FIXED):** `pkg/events` now frames each publish in a
-  `wireEnvelope{Origin, Payload}` carrying the TRUE publisher's origin, and
-  `Subscribe` decodes that origin instead of stamping the local replica's, so
-  `room.go`'s self-origin skip no longer drops cross-replica fan-out. (Earlier
-  revisions of this doc described this as an open bug — it is resolved in
-  `pkg/events/events.go`.) The Go WS fleet still isn't in the production request
-  path regardless (Apache routes realtime to the Node hubs).
-
-**Adding a realtime game:** simple 1v1 host-authoritative → register a
-`gamehub.RelayGroup` (`internal/gamehub/relay.go`) in `buildRelayRegistry`.
-Room/lobby games → follow `internal/rmhtube` / `internal/rmhbox` (per-room
-mutex, `broadcastAction` seq deltas, snapshot on join). Skeleton in
-`FOUNDATION.md`.
+> **Removed:** `pkg/realtime` (the gorilla-WebSocket `Hub`/`Room`/`Conn`
+> framework) and `pkg/events` (the Redis/local pub-sub `Bus`), along with the
+> `gateway` and the Go hubs (`internal/gamehub`/`rmhtube`/`rmhbox`/`rmhmusic`),
+> were deleted in the rewrite (design §5.2) — they never served production
+> traffic and duplicated the Node hubs. Older revisions of this doc documented
+> that framework and an "adding a realtime game" recipe; recover them from git
+> history (tag `pre-rewrite-go-realtime`) if the topology is ever revived.
 
 ## Conventions
 
@@ -147,37 +133,36 @@ From the **repo root**:
 ```bash
 make gazelle        # regenerate BUILD files (after adding Go files)
 make test           # bazel test --build_tests_only //go-services/... (+ vitest)
-make build          # bazel build //go-services/cmd/...
-make test-e2e       # go-services/scripts/e2e/run.sh — throwaway Postgres + real ws clients
-make images TAG=…   # OCI images via bazel (go_service_image macro)
+make build          # bazel build //go-services/cmd/... + frontend bundle
+make images         # build + load every service image into Docker (Bazel)
 ```
 
-- CI: `.github/workflows/go-microservices.yml` — Bazel unit gate + Postgres
-  e2e + `helm lint`/`template`. Path-filtered to `go-services/**` and the
-  Helm chart.
+- CI: `.github/workflows/go-microservices.yml` — Bazel unit gate only
+  (`bazelisk test --build_tests_only //go-services/...`), path-filtered to
+  `go-services/**`. The old Postgres e2e job and the `helm lint`/`template` job
+  were removed with the Go realtime/Helm topology (design §5.2).
 - Images: `bazel/defs.bzl#go_service_image` → `<svc>_image/_load/_push`
   targets in `images/BUILD.bazel`; distroless base, except vibe-worker
   (chromium), discord-bot (git), supervisor (chromium+git). No image for
   bot-worker (lives in supervisor) or ledger.
-- k3s deploy: `deploy/deploy-go.sh` (legacy per-service Dockerfile) or
-  `make prod` (Bazel + registry) + Helm chart `deploy/helm/rmhstudios-go/`.
-  In Helm, recap runs **only** inside supervisor (a standalone recap would
-  double-post to Discord).
-- Production Compose path: root `Dockerfile` `go-builder` stage → binaries in
-  the `rmhstudios-app-full` image (see `docs/architecture.md`).
+- **Production Compose path (what actually ships):** root `Dockerfile`
+  `go-builder` stage (`go build ./cmd/...`) → binaries in the
+  `rmhstudios-app-full` image (see `docs/architecture.md`). The k3s/Helm deploy
+  (`deploy/deploy-go.sh`, `deploy/helm/`) was removed with the Go realtime
+  topology — Bazel now only gates CI tests + builds local images.
 
 ## Gotchas
 
-1. `go-services/README.md`, `FOUNDATION.md`, and the migration PDF describe
-   the original 9-service scope and the Docker build — the fleet is now 13+
-   binaries built via Bazel/root-Dockerfile. Trust code +
-   `docs/go-migration/go-backend-and-bazel.md`.
+1. `go-services/README.md` and `FOUNDATION.md` were written for the original
+   9-service Helm/realtime design and still mention the removed hubs/gateway and
+   `pkg/events`/`pkg/realtime` — the real fleet is **8 binaries** under `cmd/`
+   (assets, bot-worker, discord-bot, doctrine-worker, recap, status, supervisor,
+   vibe-worker). Trust the code + this file.
 2. The legacy `go-services/Makefile` `SERVICES` list and the root `Makefile`
    image loop both lag the real service set — check `images/BUILD.bazel` for
    what's actually buildable.
-3. `cmd/ledger` was never integrated (no BUILD.bazel/image, not deployed) and
-   was removed in the rewrite reap (R0-T6). The `ledger_*` schema tables remain.
+3. There is no `cmd/ledger`: `internal/ledger` (Go artifact/provenance store)
+   is implemented but wired into no binary — not built, not deployed. The
+   `ledger_*` schema tables remain.
 4. Discord bot commands are `/chat` + the Alex tamagotchi; there is no
-   `/rmhbot` command (README claim is stale).
-5. Cross-replica fan-out via `pkg/events` is fixed (see Realtime above); the Go
-   WS fleet is still not in the production request path.
+   `/rmhbot` command (old README claim is stale).

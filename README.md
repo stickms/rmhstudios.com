@@ -1,25 +1,31 @@
 # rmhstudios.com
 
-**Digital Portfolio, Blog, & Gaming Studio Platform**
+**A single social + gaming + apps platform**
 
-rmhstudios.com is a modern, high-performance web application designed to showcase a digital portfolio, devlogs, and a fully functional gaming platform. Built with the latest web technologies, it features a dynamic, animated user interface alongside real-time multiplayer gaming capabilities.
+rmhstudios.com is one large, high-performance web platform: a social feed
+(RMHarks), ~20 browser games (several multiplayer/3D), a suite of full apps, a
+blog/news/library system, a coin economy with Stripe memberships, and a scoped
+developer API — served by a React SSR tier with Node realtime hubs and a Go
+worker fleet behind it. It features a dynamic, animated UI (7 themes + accent
+presets, 32 locales) alongside real-time multiplayer.
 
 ## Features
 
--   **Games Library**: A suite of original games ready to play directly in the browser:
-    -   *Slice It!* (Interactive rhythm game with custom song uploads)
-    -   *RMHBox* (Multiplayer minigame lobby — Rhyme Time, Emoji Cinema, Undercover Editor, and more)
-    -   *Altair* (Multiplayer strategy game)
-    -   *VELUM 2099* (3D cyberpunk game)
-    -   *Forest Explorer* (3D exploration game)
-    -   *Synapse Storm* (Multiplayer trivia)
-    -   *Signal Forge*, *Temple of Joy*, *Neon Driftway*, *Kowloon Knockout*, *Lights Out*, *Cursed Logic*, *House Always Wins*, *Laundry Sort*, *Void Breaker*, and more
--   **Apps**: RMHTube (video platform), RMHMusic (collaborative listening rooms), RMHType (typing races), RMHStudy (study tools), RMHCode (code editor)
--   **Multiplayer & Social**: Real-time multiplayer lobbies, match results, leaderboards, social feed, messaging, and user profiles.
--   **Authentication (RMH Auth)**: Secure user login powered by Better Auth, including Discord, GitHub, and Google integration.
--   **Modern UI/UX**: Built with **Tailwind CSS v4** and **Framer Motion** for smooth animations, complex transitions, and premium aesthetic (20+ themes).
--   **Immersive Audio & 3D**: Games powered by `howler` for audio and `@react-three/fiber` / `@react-three/rapier` for 3D physics.
--   **Blog / Research**: Blog system with research papers and devlogs.
+-   **Games Library**: ~20 original games ready to play directly in the browser:
+    -   *Slice It!* (swipe-slicing arcade with custom song uploads)
+    -   *RMHBox* (multiplayer party-minigame lobby — Rhyme Time, Emoji Cinema, Undercover Editor, and more)
+    -   *Altair* (multiplayer strategy game)
+    -   *VELUM 2099* (3D sci-fi action) · *Forest Explorer* (3D exploration) · *Void Breaker* (brick-breaker) · *Kowloon Knockout* (pixel fighter)
+    -   *Synapse Storm* (multiplayer trivia) · *Dream Rift* (co-op bullet hell) · *RMH Farming Sim* (pixel farming)
+    -   *Daily Puzzles* hub (Lights Out, Alibi, Chainlink, Impostor, Outcast, Spectrum) · *Strategies* (coalition meta-game)
+    -   *Signal Forge*, *Cursed Logic*, *Project Vega* (hidden `/secret/` games), plus *Temple of Joy*, *Neon Driftway*, *House Always Wins*, *Laundry Sort*, *Cookgame*, *Versecraft*, and more
+-   **Apps**: RMHTube (watch videos in sync), RMHMusic (Spotify listening rooms), RMHType (typing races), RMHStudy (synced Pomodoro rooms), RMHCode (installable coding CLI + tokens), RMHLadder (early-career job board), plus the RMHVibe / Creator Studio AI page builder.
+-   **Social & Economy**: Social feed (RMHarks), messaging & group chats, communities, profiles, achievements/quests, a coin economy (wallet, shop, market, staking, battle pass, tips), tournaments/ranked/wager, and Stripe-backed memberships.
+-   **Authentication (RMH Auth)**: Secure login powered by Better Auth — Discord, Google, and GitHub OAuth plus passkeys.
+-   **Developer API**: A scoped, versioned public API (`/api/v1`) with in-app docs at `/developer/docs`.
+-   **Modern UI/UX**: Built with **Tailwind CSS v4** and **Framer Motion** for smooth animations, complex transitions, and a premium aesthetic (`liquid-glass` is the default theme).
+-   **Immersive Audio & 3D**: Games powered by `howler`/`tone` for audio and `@react-three/fiber` / `@react-three/rapier` for 3D physics.
+-   **Blog / News / Library**: Blog, news, and a document library (DB-backed, covers served from R2).
 
 ## Tech Stack
 
@@ -34,40 +40,56 @@ rmhstudios.com is a modern, high-performance web application designed to showcas
 -   **State**: Zustand, TanStack React Query
 -   **Backend services**: Go (`go-services/`) — built with [Bazel](https://bazel.build/) (+ gazelle)
 
-## Backend Services (Go)
+## Service topology (Node + Go)
 
-The backend service layer has a Go implementation (`go-services/`). Production
-today is a **hybrid**: the React SSR `web` tier and the realtime hubs
-(socket-server, rmhbox, rmhtube) run Node, while the Go fleet runs the five
-background workers (as one `supervisor` process), the `status` dashboard, and
-the `assets` streamer. The full-Go topology (gateway + Go hubs) is deployable
-via Helm/k3s but is not the production request path yet — see
-[`docs/architecture.md`](docs/architecture.md) for what actually runs where.
+Production is a **hybrid runtime** (Docker Compose on a VPS behind
+Apache/Cloudflare). **Node** runs the web SSR tier, every user-facing realtime
+hub, and three background workers; **Go** runs the background-worker supervisor,
+the status dashboard, and the asset streamer. All container ports bind to
+`127.0.0.1`; Apache is the only front door. See
+[`docs/architecture.md`](docs/architecture.md) for the full picture.
 
-| Service | Port | Role | In prod today? |
-|---|---|---|---|
-| `gateway` | 7005 | Edge / reverse-proxy in front of the hubs + assets | k3s topology only |
-| `gamehub` (socket) | 7001 | Realtime games WebSocket hub | Node runs this |
-| `rmhbox` | 7676 | Party-game WebSocket hub | Node runs this |
-| `rmhtube` | 7003 | Watch-together WebSocket hub | Node runs this |
-| `rmhmusic` | 7002 | Collaborative listening WebSocket hub | Node (inside socket-server) |
-| `assets` | 7007 | Streams `/library` `/music` `/models` `/sprites` from S3 (Range-aware), replacing the Apache-off-disk CDN | ✅ Go |
-| `status` | 7008 | Standalone health dashboard (`/`, `/api/status`); survives outages | ✅ Go |
-| `supervisor` | 9090 | Runs the five background workers (discord-bot, recap, doctrine-worker, vibe-worker, bot-worker) as goroutines in one process | ✅ Go |
+**Node services** (`server/`)
 
-Build & test the Go services with Bazel:
+| Service | Port | Role |
+|---|---|---|
+| `web` (Nitro SSR) | 7005 (blue/green spare 7015) | React SSR app + API routes |
+| `socket` | 7001 | Games realtime hub (Socket.IO); also hosts RMHMusic |
+| `rmhbox` | 7676 | Party-game lobby hub (Socket.IO) |
+| `rmhtube` | 7003 | Watch-together hub (Socket.IO) |
+| `ladder-worker` | — | RMHLadder job-discovery cron (`node-cron`) |
+| `homes-worker` | — | RMHHomes listings-scraper cron (`node-cron`) |
+| `jobs` | — | Durable async backbone (pg-boss): progression, event reminders, weekly digest |
+
+**Go services** (`go-services/`)
+
+| Service | Port | Role |
+|---|---|---|
+| `supervisor` | 9090 (metrics) | Runs six background workers as goroutines: discord-bot, recap, doctrine-worker, vibe-worker, bot-worker, streak-saver |
+| `status` | 7008 | Standalone health dashboard (`/`, `/api/status`); survives outages |
+| `assets` | 7007 | Range-aware S3/R2 streaming for `/library` `/music` `/models` `/sprites` |
+
+> The earlier full-Go realtime topology (a `gateway` fronting Go `gamehub` /
+> `rmhbox` / `rmhtube` / `rmhmusic` hubs with a Redis backplane, plus its
+> Helm/k3s charts) was **removed in the rewrite** — it never served production
+> traffic and duplicated the Node hubs. Recover it from git history (tag
+> `pre-rewrite-go-realtime`) if it is ever revived.
+
+Build & test the Go fleet (from the repo root):
 
 ```bash
-cd go-services
-bazel run //:gazelle                 # regenerate BUILD files after adding Go files
-bazel test //go-services/...         # run all Go tests
-bazel build //go-services/images/... # assemble the per-service OCI images
+make gazelle        # regenerate Bazel BUILD files after adding Go files
+make test           # bazel test //go-services/... (+ vitest)
+make build          # bazel build //go-services/cmd/...
 ```
 
-Locally, `docker-compose.yml` runs the Go services from two images built off the
-same `Dockerfile` (`rmhstudios-app` slim for the Node services, `rmhstudios-app-full`
-for the Go services + Chromium/git). MinIO provides the S3-compatible bucket the
-`assets` service streams from.
+In production the Go binaries are compiled by the root `Dockerfile`'s
+`go-builder` stage (plain `go build ./cmd/...`) into the `rmhstudios-app-full`
+image — Bazel is the CI unit-test gate, not the production build. `docker-compose.yml`
+runs everything from two images built off that one `Dockerfile` (`rmhstudios-app`
+slim for the Node services, `rmhstudios-app-full` for the Go services +
+Chromium/git). MinIO provides the S3-compatible bucket the `assets` service
+streams from locally.
 
 ## Project Structure
 
@@ -80,20 +102,20 @@ for the Go services + Chromium/git). MinIO provides the S3-compatible bucket the
 │   │   ├── altair/       # Altair game routes
 │   │   └── ...           # Other game/app routes
 │   └── globals.css       # Global styles and theme definitions
-├── components/           # React components organized by feature (594 files)
-├── lib/                  # Utility functions, schemas, and shared logic (361 files)
-├── server/               # Node service entrypoints (WebSocket servers, workers, status)
-├── go-services/          # Go port of the backend services (hubs, gateway, status, assets, supervisor)
+├── components/           # React components organized by feature (~860 files)
+├── lib/                  # Utility functions, schemas, and shared logic (~950 files; *.server.ts = server-only)
+├── server/               # Node service tier (Nitro plugins, WebSocket hubs, cron/async workers)
+├── go-services/          # Go worker fleet: supervisor + status + assets (Bazel + gazelle)
 ├── stores/               # Zustand state management
 ├── hooks/                # Custom React hooks
-├── prisma/               # Database schema and migrations
-├── data/                 # Game data (JSON)
-├── scripts/              # Utility scripts (seeding, migrations, blog generation)
+├── prisma/               # Database schema (234 models) and migrations
+├── data/                 # Static JSON (RMHBox content packs, library metadata)
+├── scripts/              # Utility scripts (seeding, i18n pipeline, OG/icon gen, ladder/news pipelines)
 ├── public/               # Static assets (images, sprites, music)
-├── deploy/               # Helm charts, Docker bases, runbooks
+├── deploy/               # Apache vhosts, blue/green hotswap, Postgres/backups, Terraform DNS, runbooks
 ├── testing/              # Vitest test files
-├── docker-compose.yml    # Container topology (web + Go services + MinIO)
-└── deploy.sh             # Deployment script
+├── docker-compose.yml    # Container topology (Node + Go services + Redis + MinIO)
+└── deploy.sh             # Deployment script (blue/green web hotswap)
 ```
 
 ## Development Setup
@@ -125,7 +147,7 @@ SOCKET_CORS_ORIGIN=http://localhost:7005
 
 1.  Clone the repository and install dependencies:
     ```bash
-    git clone https://github.com/your-username/rmhstudios.com.git
+    git clone https://github.com/stickms/rmhstudios.com.git
     cd rmhstudios.com
     pnpm install
     ```
@@ -135,7 +157,7 @@ SOCKET_CORS_ORIGIN=http://localhost:7005
     pnpm run db:push
     ```
 
-3.  Run the development server (runs Vite dev server & WebSocket servers concurrently):
+3.  Run the development server (runs Vite plus the socket/rmhbox/rmhtube hubs and the ladder/homes/jobs workers concurrently):
     ```bash
     pnpm dev
     ```
