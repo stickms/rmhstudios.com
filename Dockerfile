@@ -159,6 +159,29 @@ RUN test -f dist-server/server/socket-server/index.cjs && \
     test -f dist-server/server/ladder-worker/index.cjs && \
     test -f dist-server/server/homes-worker/index.cjs
 
+# ── Stage 2b: Pre-build the hosted vibe packages (cached as a layer) ──────────
+# scripts/build-vibe-packages.ts bundles the ~14 "hosted" vibe libs (three, pixi,
+# p5, framer-motion, …) into public/vibe-packages/*.js — a ~35s esbuild pass
+# (measured). It depends ONLY on that script, the self-contained hosted-package
+# registry (lib/rmhvibe/vibe-packages.ts), and the installed versions of those libs
+# (already baked into the `deps` layer this builds on) — NOT on any app/component
+# source. Isolating it here means BuildKit's registry LAYER cache skips the whole
+# pass on every deploy that didn't touch those inputs (the overwhelming common
+# case), instead of re-bundling it inside the always-re-run vite-builder stage
+# below where a one-line app change forced a full re-bundle. A registry/lib bump
+# invalidates this layer and it rebuilds correctly. Output is COPYd into vite-builder.
+#
+# Runs FROM prisma-generate (full node_modules incl. the devDep bundlers three/
+# pixi/p5/esbuild), not prod-deps (which prunes them). node_modules + package.json
+# are already present from that base; we add only the three inputs the bundler reads.
+FROM prisma-generate AS vibe-builder
+
+COPY tsconfig.json ./
+COPY scripts/build-vibe-packages.ts ./scripts/build-vibe-packages.ts
+COPY lib/rmhvibe/vibe-packages.ts ./lib/rmhvibe/vibe-packages.ts
+
+RUN pnpm run build-vibe-packages
+
 # ── Stage 3: Vite/Nitro build (env-specific) ─────────────────────────────
 # BuildKit executes this IN PARALLEL with server-builder (stage 2).
 # Build args are needed because Nitro/TanStack static generation may
@@ -187,6 +210,13 @@ COPY --exclude=go-services \
      --exclude=server/bot-worker --exclude=server/doctrine-worker \
      --exclude=server/status --exclude=server/vibe-worker \
      --exclude=server/shared . .
+
+# The hosted vibe-package bundles, built once in the cached vibe-builder stage
+# above (not re-bundled here). public/vibe-packages is .dockerignore'd out of the
+# context copy above, so this is the only copy — placed AFTER the context COPY so
+# it can't be clobbered. It must exist before `vite build` so Nitro folds it into
+# .output/public (the build validates .output/public/vibe-packages/react.js).
+COPY --from=vibe-builder /app/public/vibe-packages ./public/vibe-packages
 
 ARG COMPOSE_PROJECT_NAME=rmhstudios
 ARG DATABASE_URL
@@ -228,27 +258,26 @@ ENV DATABASE_URL=${DATABASE_URL} \
 # copies. Dropping the duplicate in-image run saves a Node + pdfjs/canvas startup
 # every build.
 
-# Build with cache mounts for faster incremental builds.
+# Build with a cache mount for faster incremental builds.
 # .vinxi cache is preserved between builds for Vite's module graph cache.
 # The fix-ssr-css-hash.mjs script corrects any SSR/client CSS hash mismatches
 # that may arise from the cache, so it's safe to keep .vinxi across builds.
-# NODE_OPTIONS prevents OOM on large bundles (three.js, monaco, tiptap, etc.)
+# NODE_OPTIONS prevents OOM on large bundles (three.js, codemirror, r3f, etc.)
+# (build-vibe-packages moved to the cached vibe-builder stage above; its output is
+# COPYd in before this RUN, so it is no longer bundled on the vite critical path.)
 RUN --mount=type=cache,id=vinxi-cache-${COMPOSE_PROJECT_NAME},target=/app/.vinxi,sharing=locked \
-    --mount=type=cache,id=vibe-pkgs-${COMPOSE_PROJECT_NAME},target=/app/.cache/vibe-packages,sharing=locked \
     rm -rf .output \
-    # Incremental i18n translation, baked into the bundle. translate-locales.ts
-    # is idempotent — it only calls DeepSeek for keys that are missing or whose
-    # English source changed, so a fully-translated catalog is a no-op ("nothing
-    # to translate"). Regenerate the resource modules from the freshened JSON so
-    # `vite build` below compiles the new strings in. Guarded on the key: when
-    # DEEPSEEK_API_KEY is unset the committed translations ship as-is (English is
-    # the runtime fallback for any still-missing key), so the build never breaks.
-    && (if [ -n "$DEEPSEEK_API_KEY" ]; then \
-          echo "[i18n] translating any missing locale keys before build" \
-          && pnpm exec tsx scripts/translate-locales.ts \
-          && pnpm exec tsx scripts/gen-i18n-resources.ts; \
-        else echo "[i18n] DEEPSEEK_API_KEY unset — shipping committed translations as-is"; fi) \
-    && VIBE_PKG_CACHE_DIR=/app/.cache/vibe-packages pnpm run build-vibe-packages \
+    # i18n translation is NOT run here. It used to call the DeepSeek API to
+    # translate any missing keys before the build — a ~39s live-network step on
+    # the deploy critical path that re-translated the same still-uncommitted keys
+    # every deploy and discarded the result. Translation now runs in
+    # .github/workflows/i18n-translate.yml, which COMMITS the output, so the
+    # checked-in catalog is the source of truth. We still regenerate the resource
+    # modules from that committed locale JSON (fast, deterministic, offline) so a
+    # locale edit that skipped `pnpm i18n:resources` can't ship stale strings.
+    # Anything not yet translated falls back to English at runtime.
+    && echo "[i18n] regenerating resource modules from committed locales (translation runs in CI, not here)" \
+    && pnpm exec tsx scripts/gen-i18n-resources.ts \
     && NODE_OPTIONS='--max-old-space-size=8192' pnpm exec vite build \
     && node scripts/fix-ssr-css-hash.mjs
 
