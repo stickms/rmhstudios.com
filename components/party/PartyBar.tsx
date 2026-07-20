@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Crown, Gamepad2, LogOut, UserPlus, X } from 'lucide-react';
+import { Crown, Gamepad2, LogOut, UserPlus, Users, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
@@ -50,10 +50,15 @@ function MemberAvatar({ member, size = 30 }: { member: PartyMemberView; size?: n
 }
 
 /**
- * Docked party pill for the site shell (and game shells). Renders nothing when
- * signed out. Mount once — see integration notes for placement.
+ * Party launcher. Renders nothing when signed out.
+ *
+ * Two layouts share one interactive core:
+ * - `inline` (default): a static card, meant to live inside a page section —
+ *   currently the **Games tab of Creator Studio** (`/create?tab=games`). This is
+ *   the primary placement; it does not float over the page.
+ * - non-inline: a fixed docked pill (kept for game shells / future use).
  */
-export function PartyBar() {
+export function PartyBar({ inline = true }: { inline?: boolean }) {
   const { t } = useTranslation('site');
   const { data: session } = useSession();
   const { party, createParty, leave, queue } = useParty();
@@ -61,85 +66,110 @@ export function PartyBar() {
 
   if (!session?.user) return null;
 
+  const core = !party ? (
+    <Button size="sm" variant="accent" onClick={createParty} className="gap-1.5">
+      <UserPlus className="h-4 w-4" aria-hidden />
+      {t('party-start', { defaultValue: 'Start a party' })}
+    </Button>
+  ) : (
+    <>
+      <div className="flex -space-x-2">
+        {party.members.map((m) => (
+          <MemberAvatar key={m.userId} member={m} />
+        ))}
+      </div>
+      <span className="px-1 text-xs text-site-text-muted">
+        {party.members.length}/{party.maxSize}
+      </span>
+
+      <div className="relative">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setMenuOpen((o) => !o)}
+          className="gap-1.5"
+        >
+          <Gamepad2 className="h-4 w-4" aria-hidden />
+          {t('party-choose-game', { defaultValue: 'Choose game' })}
+        </Button>
+        {menuOpen && (
+          <div
+            className={cn(
+              'absolute right-0 z-10 w-52 rounded-site border border-site-border bg-site-surface p-1 shadow-site',
+              // Inline card opens the menu downward; the docked pill opens it up.
+              inline ? 'top-full mt-2' : 'bottom-full mb-2',
+            )}
+            role="menu"
+          >
+            <div className="flex items-center justify-between px-2 py-1">
+              <span className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+                {t('party-games', { defaultValue: 'Party games' })}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                className="rounded p-0.5 text-site-text-dim hover:text-site-text"
+                aria-label={t('close', { defaultValue: 'Close' })}
+              >
+                <X className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </div>
+            {PARTY_GAMES.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  queue(g.id);
+                  setMenuOpen(false);
+                }}
+                className={cn(
+                  'flex w-full items-center gap-2 rounded-site-sm px-2 py-1.5 text-left text-sm text-site-text',
+                  'hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent',
+                )}
+              >
+                <Gamepad2 className="h-4 w-4 text-site-accent" aria-hidden />
+                {g.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={leave}
+        aria-label={t('party-leave', { defaultValue: 'Leave party' })}
+      >
+        <LogOut className="h-4 w-4" aria-hidden />
+      </Button>
+    </>
+  );
+
+  if (inline) {
+    return (
+      <section className="mb-4 rounded-site border border-site-border bg-site-surface p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <Users className="h-4 w-4 text-site-accent" aria-hidden />
+          <h3 className="text-sm font-semibold text-site-text">
+            {t('party-heading', { defaultValue: 'Party up' })}
+          </h3>
+          <p className="text-xs text-site-text-dim">
+            {t('party-subheading', {
+              defaultValue: 'Start a party and pick a game to play with friends.',
+            })}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">{core}</div>
+      </section>
+    );
+  }
+
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-16 z-40 flex justify-center px-3 md:bottom-4">
       <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-site-border bg-site-surface/95 px-3 py-2 shadow-site backdrop-blur">
-        {!party ? (
-          <Button size="sm" variant="accent" onClick={createParty} className="gap-1.5">
-            <UserPlus className="h-4 w-4" aria-hidden />
-            {t('party-start', { defaultValue: 'Start a party' })}
-          </Button>
-        ) : (
-          <>
-            <div className="flex -space-x-2">
-              {party.members.map((m) => (
-                <MemberAvatar key={m.userId} member={m} />
-              ))}
-            </div>
-            <span className="px-1 text-xs text-site-text-muted">
-              {party.members.length}/{party.maxSize}
-            </span>
-
-            <div className="relative">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setMenuOpen((o) => !o)}
-                className="gap-1.5"
-              >
-                <Gamepad2 className="h-4 w-4" aria-hidden />
-                {t('party-choose-game', { defaultValue: 'Choose game' })}
-              </Button>
-              {menuOpen && (
-                <div
-                  className="absolute bottom-full right-0 mb-2 w-52 rounded-site border border-site-border bg-site-surface p-1 shadow-site"
-                  role="menu"
-                >
-                  <div className="flex items-center justify-between px-2 py-1">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-                      {t('party-games', { defaultValue: 'Party games' })}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setMenuOpen(false)}
-                      className="rounded p-0.5 text-site-text-dim hover:text-site-text"
-                      aria-label={t('close', { defaultValue: 'Close' })}
-                    >
-                      <X className="h-3.5 w-3.5" aria-hidden />
-                    </button>
-                  </div>
-                  {PARTY_GAMES.map((g) => (
-                    <button
-                      key={g.id}
-                      type="button"
-                      role="menuitem"
-                      onClick={() => {
-                        queue(g.id);
-                        setMenuOpen(false);
-                      }}
-                      className={cn(
-                        'flex w-full items-center gap-2 rounded-site-sm px-2 py-1.5 text-left text-sm text-site-text',
-                        'hover:bg-site-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent',
-                      )}
-                    >
-                      <Gamepad2 className="h-4 w-4 text-site-accent" aria-hidden />
-                      {g.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={leave}
-              aria-label={t('party-leave', { defaultValue: 'Leave party' })}
-            >
-              <LogOut className="h-4 w-4" aria-hidden />
-            </Button>
-          </>
-        )}
+        {core}
       </div>
     </div>
   );

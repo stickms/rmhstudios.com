@@ -26,6 +26,7 @@ import { CuratedBuildsTab, UserBuildsTab } from '@/components/creator-studio/Bui
 import { RankedSummary } from '@/components/creator-studio/RankedSummary';
 import { PersonasTab } from '@/components/creator-studio/PersonasTab';
 import { EarningsTab } from '@/components/creator-studio/EarningsTab';
+import { PartyBar } from '@/components/party/PartyBar';
 import '@/components/rmhvibe/vibe.css';
 import '@/components/library/library.css';
 import '@/components/builds/builds.css';
@@ -163,6 +164,7 @@ function CreatorStudio() {
         )}
         {tab === 'games' && (
           <div className="cstudio-body" role="tabpanel" id="cstudio-panel-games" aria-labelledby="cstudio-tab-games">
+            <PartyBar inline />
             <RankedSummary />
             <CuratedBuildsTab
               curated={games}
