@@ -160,6 +160,7 @@ import { Route as SiteNotificationsRouteImport } from './routes/_site/notificati
 import { Route as SiteMusicTriviaRouteImport } from './routes/_site/music-trivia'
 import { Route as SiteMarketRouteImport } from './routes/_site/market'
 import { Route as SiteLeaderboardRouteImport } from './routes/_site/leaderboard'
+import { Route as SiteHistoryRouteImport } from './routes/_site/history'
 import { Route as SiteHelpRouteImport } from './routes/_site/help'
 import { Route as SiteExploreRouteImport } from './routes/_site/explore'
 import { Route as SiteEventsRouteImport } from './routes/_site/events'
@@ -195,6 +196,7 @@ import { Route as ApiPersonasIndexRouteImport } from './routes/api/personas/inde
 import { Route as ApiOnboardingIndexRouteImport } from './routes/api/onboarding/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiMomentsIndexRouteImport } from './routes/api/moments/index'
+import { Route as ApiHistoryIndexRouteImport } from './routes/api/history/index'
 import { Route as ApiGroupChatsIndexRouteImport } from './routes/api/group-chats/index'
 import { Route as ApiEventsIndexRouteImport } from './routes/api/events/index'
 import { Route as ApiCommunitiesIndexRouteImport } from './routes/api/communities/index'
@@ -360,6 +362,8 @@ import { Route as ApiHomesWatchesRouteImport } from './routes/api/homes/watches'
 import { Route as ApiHomesListingsRouteImport } from './routes/api/homes/listings'
 import { Route as ApiHomesGeocodeRouteImport } from './routes/api/homes/geocode'
 import { Route as ApiHomesAiImageRouteImport } from './routes/api/homes/ai-image'
+import { Route as ApiHistoryBeatRouteImport } from './routes/api/history/beat'
+import { Route as ApiHistoryIdRouteImport } from './routes/api/history/$id'
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
@@ -1424,6 +1428,11 @@ const SiteLeaderboardRoute = SiteLeaderboardRouteImport.update({
   path: '/leaderboard',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteHistoryRoute = SiteHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteHelpRoute = SiteHelpRouteImport.update({
   id: '/help',
   path: '/help',
@@ -1600,6 +1609,11 @@ const ApiNotificationsIndexRoute = ApiNotificationsIndexRouteImport.update({
 const ApiMomentsIndexRoute = ApiMomentsIndexRouteImport.update({
   id: '/api/moments/',
   path: '/api/moments/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHistoryIndexRoute = ApiHistoryIndexRouteImport.update({
+  id: '/api/history/',
+  path: '/api/history/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGroupChatsIndexRoute = ApiGroupChatsIndexRouteImport.update({
@@ -2442,6 +2456,16 @@ const ApiHomesGeocodeRoute = ApiHomesGeocodeRouteImport.update({
 const ApiHomesAiImageRoute = ApiHomesAiImageRouteImport.update({
   id: '/api/homes/ai-image',
   path: '/api/homes/ai-image',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHistoryBeatRoute = ApiHistoryBeatRouteImport.update({
+  id: '/api/history/beat',
+  path: '/api/history/beat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHistoryIdRoute = ApiHistoryIdRouteImport.update({
+  id: '/api/history/$id',
+  path: '/api/history/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHandleCheckRoute = ApiHandleCheckRouteImport.update({
@@ -4124,6 +4148,7 @@ export interface FileRoutesByFullPath {
   '/events': typeof SiteEventsRoute
   '/explore': typeof SiteExploreRoute
   '/help': typeof SiteHelpRoute
+  '/history': typeof SiteHistoryRoute
   '/leaderboard': typeof SiteLeaderboardRoute
   '/market': typeof SiteMarketRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
@@ -4326,6 +4351,8 @@ export interface FileRoutesByFullPath {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/history/$id': typeof ApiHistoryIdRoute
+  '/api/history/beat': typeof ApiHistoryBeatRoute
   '/api/homes/ai-image': typeof ApiHomesAiImageRoute
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
@@ -4491,6 +4518,7 @@ export interface FileRoutesByFullPath {
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
+  '/api/history/': typeof ApiHistoryIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
@@ -4763,6 +4791,7 @@ export interface FileRoutesByTo {
   '/events': typeof SiteEventsRoute
   '/explore': typeof SiteExploreRoute
   '/help': typeof SiteHelpRoute
+  '/history': typeof SiteHistoryRoute
   '/leaderboard': typeof SiteLeaderboardRoute
   '/market': typeof SiteMarketRoute
   '/music-trivia': typeof SiteMusicTriviaRoute
@@ -4962,6 +4991,8 @@ export interface FileRoutesByTo {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/history/$id': typeof ApiHistoryIdRoute
+  '/api/history/beat': typeof ApiHistoryBeatRoute
   '/api/homes/ai-image': typeof ApiHomesAiImageRoute
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
@@ -5127,6 +5158,7 @@ export interface FileRoutesByTo {
   '/api/communities': typeof ApiCommunitiesIndexRoute
   '/api/events': typeof ApiEventsIndexRoute
   '/api/group-chats': typeof ApiGroupChatsIndexRoute
+  '/api/history': typeof ApiHistoryIndexRoute
   '/api/moments': typeof ApiMomentsIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
   '/api/onboarding': typeof ApiOnboardingIndexRoute
@@ -5422,6 +5454,7 @@ export interface FileRoutesById {
   '/_site/events': typeof SiteEventsRoute
   '/_site/explore': typeof SiteExploreRoute
   '/_site/help': typeof SiteHelpRoute
+  '/_site/history': typeof SiteHistoryRoute
   '/_site/leaderboard': typeof SiteLeaderboardRoute
   '/_site/market': typeof SiteMarketRoute
   '/_site/music-trivia': typeof SiteMusicTriviaRoute
@@ -5625,6 +5658,8 @@ export interface FileRoutesById {
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/handle/check': typeof ApiHandleCheckRoute
+  '/api/history/$id': typeof ApiHistoryIdRoute
+  '/api/history/beat': typeof ApiHistoryBeatRoute
   '/api/homes/ai-image': typeof ApiHomesAiImageRoute
   '/api/homes/geocode': typeof ApiHomesGeocodeRoute
   '/api/homes/listings': typeof ApiHomesListingsRouteWithChildren
@@ -5790,6 +5825,7 @@ export interface FileRoutesById {
   '/api/communities/': typeof ApiCommunitiesIndexRoute
   '/api/events/': typeof ApiEventsIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
+  '/api/history/': typeof ApiHistoryIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
@@ -6086,6 +6122,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/explore'
     | '/help'
+    | '/history'
     | '/leaderboard'
     | '/market'
     | '/music-trivia'
@@ -6288,6 +6325,8 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/gif/search'
     | '/api/handle/check'
+    | '/api/history/$id'
+    | '/api/history/beat'
     | '/api/homes/ai-image'
     | '/api/homes/geocode'
     | '/api/homes/listings'
@@ -6453,6 +6492,7 @@ export interface FileRouteTypes {
     | '/api/communities/'
     | '/api/events/'
     | '/api/group-chats/'
+    | '/api/history/'
     | '/api/moments/'
     | '/api/notifications/'
     | '/api/onboarding/'
@@ -6725,6 +6765,7 @@ export interface FileRouteTypes {
     | '/events'
     | '/explore'
     | '/help'
+    | '/history'
     | '/leaderboard'
     | '/market'
     | '/music-trivia'
@@ -6924,6 +6965,8 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/gif/search'
     | '/api/handle/check'
+    | '/api/history/$id'
+    | '/api/history/beat'
     | '/api/homes/ai-image'
     | '/api/homes/geocode'
     | '/api/homes/listings'
@@ -7089,6 +7132,7 @@ export interface FileRouteTypes {
     | '/api/communities'
     | '/api/events'
     | '/api/group-chats'
+    | '/api/history'
     | '/api/moments'
     | '/api/notifications'
     | '/api/onboarding'
@@ -7383,6 +7427,7 @@ export interface FileRouteTypes {
     | '/_site/events'
     | '/_site/explore'
     | '/_site/help'
+    | '/_site/history'
     | '/_site/leaderboard'
     | '/_site/market'
     | '/_site/music-trivia'
@@ -7586,6 +7631,8 @@ export interface FileRouteTypes {
     | '/api/forest-explorer/save'
     | '/api/gif/search'
     | '/api/handle/check'
+    | '/api/history/$id'
+    | '/api/history/beat'
     | '/api/homes/ai-image'
     | '/api/homes/geocode'
     | '/api/homes/listings'
@@ -7751,6 +7798,7 @@ export interface FileRouteTypes {
     | '/api/communities/'
     | '/api/events/'
     | '/api/group-chats/'
+    | '/api/history/'
     | '/api/moments/'
     | '/api/notifications/'
     | '/api/onboarding/'
@@ -8117,6 +8165,8 @@ export interface RootRouteChildren {
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
+  ApiHistoryIdRoute: typeof ApiHistoryIdRoute
+  ApiHistoryBeatRoute: typeof ApiHistoryBeatRoute
   ApiHomesAiImageRoute: typeof ApiHomesAiImageRoute
   ApiHomesGeocodeRoute: typeof ApiHomesGeocodeRoute
   ApiHomesListingsRoute: typeof ApiHomesListingsRouteWithChildren
@@ -8231,6 +8281,7 @@ export interface RootRouteChildren {
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
   ApiEventsIndexRoute: typeof ApiEventsIndexRoute
   ApiGroupChatsIndexRoute: typeof ApiGroupChatsIndexRoute
+  ApiHistoryIndexRoute: typeof ApiHistoryIndexRoute
   ApiMomentsIndexRoute: typeof ApiMomentsIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   ApiOnboardingIndexRoute: typeof ApiOnboardingIndexRoute
@@ -9415,6 +9466,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteLeaderboardRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/history': {
+      id: '/_site/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof SiteHistoryRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/help': {
       id: '/_site/help'
       path: '/help'
@@ -9658,6 +9716,13 @@ declare module '@tanstack/react-router' {
       path: '/api/moments'
       fullPath: '/api/moments/'
       preLoaderRoute: typeof ApiMomentsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/history/': {
+      id: '/api/history/'
+      path: '/api/history'
+      fullPath: '/api/history/'
+      preLoaderRoute: typeof ApiHistoryIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/group-chats/': {
@@ -10813,6 +10878,20 @@ declare module '@tanstack/react-router' {
       path: '/api/homes/ai-image'
       fullPath: '/api/homes/ai-image'
       preLoaderRoute: typeof ApiHomesAiImageRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/history/beat': {
+      id: '/api/history/beat'
+      path: '/api/history/beat'
+      fullPath: '/api/history/beat'
+      preLoaderRoute: typeof ApiHistoryBeatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/history/$id': {
+      id: '/api/history/$id'
+      path: '/api/history/$id'
+      fullPath: '/api/history/$id'
+      preLoaderRoute: typeof ApiHistoryIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/handle/check': {
@@ -13108,6 +13187,7 @@ interface SiteRouteChildren {
   SiteEventsRoute: typeof SiteEventsRoute
   SiteExploreRoute: typeof SiteExploreRoute
   SiteHelpRoute: typeof SiteHelpRoute
+  SiteHistoryRoute: typeof SiteHistoryRoute
   SiteLeaderboardRoute: typeof SiteLeaderboardRoute
   SiteMarketRoute: typeof SiteMarketRoute
   SiteMusicTriviaRoute: typeof SiteMusicTriviaRoute
@@ -13189,6 +13269,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteEventsRoute: SiteEventsRoute,
   SiteExploreRoute: SiteExploreRoute,
   SiteHelpRoute: SiteHelpRoute,
+  SiteHistoryRoute: SiteHistoryRoute,
   SiteLeaderboardRoute: SiteLeaderboardRoute,
   SiteMarketRoute: SiteMarketRoute,
   SiteMusicTriviaRoute: SiteMusicTriviaRoute,
@@ -14443,6 +14524,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
+  ApiHistoryIdRoute: ApiHistoryIdRoute,
+  ApiHistoryBeatRoute: ApiHistoryBeatRoute,
   ApiHomesAiImageRoute: ApiHomesAiImageRoute,
   ApiHomesGeocodeRoute: ApiHomesGeocodeRoute,
   ApiHomesListingsRoute: ApiHomesListingsRouteWithChildren,
@@ -14557,6 +14640,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
   ApiEventsIndexRoute: ApiEventsIndexRoute,
   ApiGroupChatsIndexRoute: ApiGroupChatsIndexRoute,
+  ApiHistoryIndexRoute: ApiHistoryIndexRoute,
   ApiMomentsIndexRoute: ApiMomentsIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   ApiOnboardingIndexRoute: ApiOnboardingIndexRoute,

@@ -327,8 +327,9 @@ model User {
   sharedMoments        SharedMoment[]
 
   // ─── Parity / QOL / customization (2026-07-20 design) ────────────────────
-  saveFolders SaveFolder[]
-  savedItems  SavedItem[]
+  saveFolders    SaveFolder[]
+  savedItems     SavedItem[]
+  historyEntries HistoryEntry[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -1721,6 +1722,9 @@ model UserProfile {
   statusText    String?   @db.VarChar(80)
   statusExpires DateTime?
   statusAuto    Boolean   @default(false)
+
+  // History & resume (§5): when true, no new HistoryEntry rows are recorded.
+  historyPaused Boolean @default(false)
 
   // RMH Coins
   coins          Int     @default(10)
@@ -5686,4 +5690,23 @@ model SavedItem {
   @@unique([userId, entityType, entityId])
   @@index([userId, folderId, createdAt(sort: Desc)])
   @@map("saved_item")
+}
+
+// History & resume (§5): most-recent visit per (user, entity), with an optional
+// playback `position` for resume. Upserted by a throttled client heartbeat;
+// swept after HISTORY_RETENTION_DAYS.
+model HistoryEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  entityType String   @db.VarChar(24) // 'tube_video' | 'song' | 'game' | 'library_doc' | 'news' | ...
+  entityId   String
+  position   Int? // seconds (media) | percent*100 (docs) | null (games)
+  duration   Int?
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("history_entry")
 }
