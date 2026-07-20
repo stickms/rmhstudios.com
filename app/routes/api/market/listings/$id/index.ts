@@ -6,7 +6,7 @@ import { cancelListing, MarketError } from '@/lib/market/market.server';
 /**
  * DELETE /api/market/listings/$id — cancel your own active listing (release escrow).
  */
-export const Route = createFileRoute('/api/market/listings/$id')({
+export const Route = createFileRoute('/api/market/listings/$id/')({
   server: {
     handlers: {
       DELETE: async ({ request, params }) => {

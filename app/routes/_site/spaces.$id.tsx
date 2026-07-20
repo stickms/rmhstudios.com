@@ -14,7 +14,9 @@ const fetchSpace = createServerFn({ method: 'GET' })
 
 export const Route = createFileRoute('/_site/spaces/$id')({
   head: ({ loaderData }) => ({
-    meta: [{ title: `${loaderData?.title ?? 'Live Space'} | RMH Studios` }],
+    meta: [
+      { title: `${(loaderData as SpaceView | undefined)?.title ?? 'Live Space'} | RMH Studios` },
+    ],
   }),
   loader: async ({ params }): Promise<SpaceView> => {
     const space = await fetchSpace({ data: params.id });
@@ -25,7 +27,7 @@ export const Route = createFileRoute('/_site/spaces/$id')({
 });
 
 function SpacePage() {
-  const space = Route.useLoaderData();
+  const space = Route.useLoaderData() as SpaceView;
   return (
     <>
       <AnimatedMain

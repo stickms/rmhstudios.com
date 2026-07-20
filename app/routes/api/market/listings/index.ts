@@ -16,7 +16,7 @@ const createSchema = z.object({
 
 const SORTS: BrowseSort[] = ['price_asc', 'price_desc', 'recent'];
 
-export const Route = createFileRoute('/api/market/listings')({
+export const Route = createFileRoute('/api/market/listings/')({
   server: {
     handlers: {
       GET: async ({ request }) => {
