@@ -1,0 +1,110 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# i18n-translate — machine-translate any missing locale keys OFF the deploy path.
+#
+# Why this exists: the production Docker build used to run scripts/translate-locales.ts
+# inside the vite-builder stage. That was a ~39s live DeepSeek API call on the
+# deploy critical path (measured) that re-translated the same still-uncommitted
+# keys on EVERY deploy and threw the result away — pure repeated cost plus an
+# external-network dependency that could stall a release.
+#
+# Instead, translation runs HERE (scheduled + on new English keys + on demand),
+# and the result is COMMITTED via a PR, so the checked-in catalog is the single
+# source of truth. The deploy build now only regenerates the resource modules
+# from the committed JSON (fast, deterministic, offline). Any key not yet
+# translated simply falls back to English at runtime until this job fills it in.
+# ─────────────────────────────────────────────────────────────────────────────
+name: i18n-translate
+
+on:
+  # New English strings land in locales/en/** (via `pnpm i18n:extract`). When such
+  # a change hits main, translate the additions promptly as a follow-up PR.
+  push:
+    branches: [main]
+    paths:
+      - "locales/en/**"
+  # Weekly safety net for anything that slipped through.
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch: {}
+
+# One translation run at a time; a newer trigger supersedes an in-flight one.
+concurrency:
+  group: i18n-translate
+  cancel-in-progress: true
+
+# contents: write — push the translation branch. pull-requests: write — open the PR.
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      # Skip cleanly (not fail) when the DeepSeek key isn't configured — e.g. on a
+      # fork. The deploy is unaffected either way; committed translations ship as-is.
+      - name: Check for DeepSeek key
+        id: guard
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          if [ -z "${DEEPSEEK_API_KEY:-}" ]; then
+            echo "DEEPSEEK_API_KEY not set — skipping translation."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        if: steps.guard.outputs.run == 'true'
+        with:
+          version: 10
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        if: steps.guard.outputs.run == 'true'
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.guard.outputs.run == 'true'
+        run: pnpm install --frozen-lockfile
+
+      # translate-locales.ts is idempotent — it only calls DeepSeek for keys that
+      # are missing or whose English source changed, then writes locales/**. We
+      # regenerate the resource modules from the freshened JSON so both stay in sync.
+      - name: Translate missing keys + regenerate resources
+        if: steps.guard.outputs.run == 'true'
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          set -euo pipefail
+          pnpm exec tsx scripts/translate-locales.ts
+          pnpm exec tsx scripts/gen-i18n-resources.ts
+
+      # Open a PR only when something actually changed. GITHUB_TOKEN-authored PRs
+      # don't retrigger workflows, which is fine here — the diff is machine JSON +
+      # generated TS. Review/merge (or enable auto-merge) to land the translations.
+      - name: Open PR if translations changed
+        if: steps.guard.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if git diff --quiet -- locales lib/i18n; then
+            echo "No new translations — nothing to open."
+            exit 0
+          fi
+          branch="i18n/auto-translate-${{ github.run_id }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add locales lib/i18n
+          git commit -m "chore(i18n): machine-translate new locale keys"
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" \
+            --title "chore(i18n): machine-translate new locale keys" \
+            --body "Automated DeepSeek translation of locale keys that were missing or whose English source changed, plus regenerated \`lib/i18n/resources.*.ts\`. Opened by the \`i18n-translate\` workflow so translation stays OFF the deploy critical path. English is the runtime fallback for anything still untranslated."

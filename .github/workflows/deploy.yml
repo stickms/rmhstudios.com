@@ -241,10 +241,12 @@ jobs:
       # a green build red. Worst case it no-ops and we are back to today's cold
       # mounts; it can never block a deploy.
       #
-      # CORRECTNESS: BuildKit keys cache mounts by `id`, not target path, so the ids
-      # below MUST equal the Dockerfile's `id=vinxi-cache-${COMPOSE_PROJECT_NAME}` /
-      # `id=vibe-pkgs-${COMPOSE_PROJECT_NAME}` with COMPOSE_PROJECT_NAME=rmhstudios-prod
-      # (the bake env below). A mismatch makes this silently cache nothing (still safe).
+      # CORRECTNESS: BuildKit keys cache mounts by `id`, not target path, so the id
+      # below MUST equal the Dockerfile's `id=vinxi-cache-${COMPOSE_PROJECT_NAME}`
+      # with COMPOSE_PROJECT_NAME=rmhstudios-prod (the bake env below). A mismatch
+      # makes this silently cache nothing (still safe). (The vibe-packages bundle
+      # cache moved out of a cache-mount into the dedicated, layer-cached
+      # vibe-builder Docker stage, so only the vite .vinxi module graph is danced here.)
       #
       # TO REVERT (if a measured before/after doesn't beat the dance's own extract
       # overhead): delete these two steps — nothing else depends on them — and drop
@@ -265,8 +267,7 @@ jobs:
           skip-extraction: ${{ steps.vite-cache.outputs.cache-hit }}
           cache-map: |
             {
-              ".buildkit-cache/vinxi": { "target": "/app/.vinxi", "id": "vinxi-cache-rmhstudios-prod" },
-              ".buildkit-cache/vibe-packages": { "target": "/app/.cache/vibe-packages", "id": "vibe-pkgs-rmhstudios-prod" }
+              ".buildkit-cache/vinxi": { "target": "/app/.vinxi", "id": "vinxi-cache-rmhstudios-prod" }
             }
 
       # Build + push BOTH images in a single BuildKit graph (docker-bake.hcl).
