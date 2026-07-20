@@ -24,11 +24,22 @@ import { createSeededRng } from '@/lib/lights-out/seed';
 import { getDailyShape, isActiveCell, getShapeLabel } from '@/lib/lights-out/shapes';
 import { generatePuzzle, toggleCellInGrid, isSolved, type Grid } from '@/lib/lights-out/lights-out';
 
+/** A JSON-serializable value — replay payloads are stored as JSON and travel
+ * through server-function loaders, so the element type must be serializable
+ * (TanStack's `ValidateSerializableMapped` rejects `unknown`). */
+export type ReplayJsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | ReplayJsonValue[]
+  | { [key: string]: ReplayJsonValue };
+
 /** Loose base shape every replay payload conforms to. Per-game schemas narrow it. */
 export interface ReplayData {
   seed?: number | string;
-  inputs?: unknown[];
-  snapshots?: unknown[];
+  inputs?: ReplayJsonValue[];
+  snapshots?: ReplayJsonValue[];
 }
 
 export interface ReplayableGame {

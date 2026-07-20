@@ -29,8 +29,8 @@ import { logger } from '../logger';
 import { checkRateLimit } from '../rate-limit';
 import { config } from '../config';
 import { sanitizeString } from '../utils';
-import { SPACE_C2S, SPACE_S2C } from '../../lib/spaces/events';
-import type { SpacePinned } from '../../lib/spaces/types';
+import { SPACE_C2S, SPACE_S2C } from '../../../lib/spaces/events';
+import type { SpacePinned } from '../../../lib/spaces/types';
 
 // ─── Ephemeral in-memory state ──────────────────────────────────
 

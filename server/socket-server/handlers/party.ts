@@ -29,7 +29,7 @@ import { getPrismaClient } from '../prisma-client';
 import { logger } from '../logger';
 import { checkRateLimit } from '../rate-limit';
 import { partyGames, mintPartyTicket, type PartyMember } from '../party-contract';
-import { PARTY_C2S, PARTY_S2C } from '../../lib/party/events';
+import { PARTY_C2S, PARTY_S2C } from '../../../lib/party/events';
 
 const MAX_PARTY_SIZE = 8;
 
