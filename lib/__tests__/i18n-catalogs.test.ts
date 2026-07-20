@@ -47,6 +47,37 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'settings-premium-themes-equip-link',
     'settings-premium-themes-or',
   ],
+  // Daily Puzzles hub strings added with the non-3D /daily rewrite; awaiting the
+  // DeepSeek translate pipeline. Runtime falls back to English per key. Remove
+  // once `pnpm i18n:translate && pnpm i18n:resources` has been run and the
+  // catalogs committed.
+  'c-daily-puzzles': [
+    'all-done-filter',
+    'copy-failed',
+    'filter-all',
+    'filter-done',
+    'filter-label',
+    'filter-todo',
+    'hub-footer',
+    'hub-headline',
+    'mode-title-alibi',
+    'mode-title-chainlink',
+    'mode-title-impostor',
+    'mode-title-lights-out',
+    'mode-title-outcast',
+    'mode-title-spectrum',
+    'moves-suffix',
+    'next-drop-in',
+    'none-done-yet',
+    'pts-suffix',
+    'puzzle-number',
+    'share-today',
+    'stat-all-time',
+    'stat-points-today',
+    'stat-solved-today',
+    'stat-streak',
+    'view-results-short',
+  ],
 };
 
 describe('catalog integrity', () => {
