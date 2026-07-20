@@ -9,6 +9,7 @@ import { PageLayout } from '@/components/feed/PageLayout';
 import { DataExportPanel } from '@/components/site/DataExportPanel';
 import { DeleteAccountPanel } from '@/components/site/DeleteAccountPanel';
 import { MutedWordsPanel } from '@/components/site/MutedWordsPanel';
+import { PresencePrivacyControls } from '@/components/settings/PresencePrivacyControls';
 import { useSession } from '@/components/Providers';
 
 export const Route = createFileRoute('/_site/settings/privacy')({
@@ -51,6 +52,7 @@ function PrivacySettingsPage() {
           </p>
         ) : (
           <>
+            <PresencePrivacyControls />
             <MutedWordsPanel />
             <DataExportPanel />
             <DeleteAccountPanel />

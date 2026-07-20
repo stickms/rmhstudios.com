@@ -337,6 +337,7 @@ import { Route as ApiProfileIdRouteImport } from './routes/api/profile/$id'
 import { Route as ApiPresenceOnlineCountRouteImport } from './routes/api/presence/online-count'
 import { Route as ApiPresenceHeartbeatRouteImport } from './routes/api/presence/heartbeat'
 import { Route as ApiPresenceFriendsRouteImport } from './routes/api/presence/friends'
+import { Route as ApiPreferencesPresenceRouteImport } from './routes/api/preferences/presence'
 import { Route as ApiPreferencesNotificationsRouteImport } from './routes/api/preferences/notifications'
 import { Route as ApiPreferencesMutedWordsRouteImport } from './routes/api/preferences/muted-words'
 import { Route as ApiPreferencesLayoutRouteImport } from './routes/api/preferences/layout'
@@ -382,6 +383,7 @@ import { Route as ApiHistoryIdRouteImport } from './routes/api/history/$id'
 import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
 import { Route as ApiGuidesIdRouteImport } from './routes/api/guides/$id'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
+import { Route as ApiFriendsActiveRouteImport } from './routes/api/friends/active'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
 import { Route as ApiFeedSignalRouteImport } from './routes/api/feed/signal'
@@ -2362,6 +2364,11 @@ const ApiPresenceFriendsRoute = ApiPresenceFriendsRouteImport.update({
   path: '/api/presence/friends',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPreferencesPresenceRoute = ApiPreferencesPresenceRouteImport.update({
+  id: '/api/preferences/presence',
+  path: '/api/preferences/presence',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPreferencesNotificationsRoute =
   ApiPreferencesNotificationsRouteImport.update({
     id: '/api/preferences/notifications',
@@ -2595,6 +2602,11 @@ const ApiGuidesIdRoute = ApiGuidesIdRouteImport.update({
 const ApiGifSearchRoute = ApiGifSearchRouteImport.update({
   id: '/api/gif/search',
   path: '/api/gif/search',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiFriendsActiveRoute = ApiFriendsActiveRouteImport.update({
+  id: '/api/friends/active',
+  path: '/api/friends/active',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiForestExplorerSaveRoute = ApiForestExplorerSaveRouteImport.update({
@@ -4591,6 +4603,7 @@ export interface FileRoutesByFullPath {
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
+  '/api/friends/active': typeof ApiFriendsActiveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -4636,6 +4649,7 @@ export interface FileRoutesByFullPath {
   '/api/preferences/layout': typeof ApiPreferencesLayoutRoute
   '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
+  '/api/preferences/presence': typeof ApiPreferencesPresenceRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
@@ -5269,6 +5283,7 @@ export interface FileRoutesByTo {
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
+  '/api/friends/active': typeof ApiFriendsActiveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -5314,6 +5329,7 @@ export interface FileRoutesByTo {
   '/api/preferences/layout': typeof ApiPreferencesLayoutRoute
   '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
+  '/api/preferences/presence': typeof ApiPreferencesPresenceRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
@@ -5974,6 +5990,7 @@ export interface FileRoutesById {
   '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
+  '/api/friends/active': typeof ApiFriendsActiveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
   '/api/guides/$id': typeof ApiGuidesIdRouteWithChildren
   '/api/handle/check': typeof ApiHandleCheckRoute
@@ -6019,6 +6036,7 @@ export interface FileRoutesById {
   '/api/preferences/layout': typeof ApiPreferencesLayoutRoute
   '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
+  '/api/preferences/presence': typeof ApiPreferencesPresenceRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
   '/api/presence/heartbeat': typeof ApiPresenceHeartbeatRoute
   '/api/presence/online-count': typeof ApiPresenceOnlineCountRoute
@@ -6679,6 +6697,7 @@ export interface FileRouteTypes {
     | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
+    | '/api/friends/active'
     | '/api/gif/search'
     | '/api/guides/$id'
     | '/api/handle/check'
@@ -6724,6 +6743,7 @@ export interface FileRouteTypes {
     | '/api/preferences/layout'
     | '/api/preferences/muted-words'
     | '/api/preferences/notifications'
+    | '/api/preferences/presence'
     | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
@@ -7357,6 +7377,7 @@ export interface FileRouteTypes {
     | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
+    | '/api/friends/active'
     | '/api/gif/search'
     | '/api/guides/$id'
     | '/api/handle/check'
@@ -7402,6 +7423,7 @@ export interface FileRouteTypes {
     | '/api/preferences/layout'
     | '/api/preferences/muted-words'
     | '/api/preferences/notifications'
+    | '/api/preferences/presence'
     | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
@@ -8061,6 +8083,7 @@ export interface FileRouteTypes {
     | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
+    | '/api/friends/active'
     | '/api/gif/search'
     | '/api/guides/$id'
     | '/api/handle/check'
@@ -8106,6 +8129,7 @@ export interface FileRouteTypes {
     | '/api/preferences/layout'
     | '/api/preferences/muted-words'
     | '/api/preferences/notifications'
+    | '/api/preferences/presence'
     | '/api/presence/friends'
     | '/api/presence/heartbeat'
     | '/api/presence/online-count'
@@ -8624,6 +8648,7 @@ export interface RootRouteChildren {
   ApiFeedSignalRoute: typeof ApiFeedSignalRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
+  ApiFriendsActiveRoute: typeof ApiFriendsActiveRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
   ApiGuidesIdRoute: typeof ApiGuidesIdRouteWithChildren
   ApiHandleCheckRoute: typeof ApiHandleCheckRoute
@@ -8663,6 +8688,7 @@ export interface RootRouteChildren {
   ApiPreferencesLayoutRoute: typeof ApiPreferencesLayoutRoute
   ApiPreferencesMutedWordsRoute: typeof ApiPreferencesMutedWordsRoute
   ApiPreferencesNotificationsRoute: typeof ApiPreferencesNotificationsRoute
+  ApiPreferencesPresenceRoute: typeof ApiPreferencesPresenceRoute
   ApiPresenceFriendsRoute: typeof ApiPresenceFriendsRoute
   ApiPresenceHeartbeatRoute: typeof ApiPresenceHeartbeatRoute
   ApiPresenceOnlineCountRoute: typeof ApiPresenceOnlineCountRoute
@@ -11183,6 +11209,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPresenceFriendsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/preferences/presence': {
+      id: '/api/preferences/presence'
+      path: '/api/preferences/presence'
+      fullPath: '/api/preferences/presence'
+      preLoaderRoute: typeof ApiPreferencesPresenceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/preferences/notifications': {
       id: '/api/preferences/notifications'
       path: '/api/preferences/notifications'
@@ -11496,6 +11529,13 @@ declare module '@tanstack/react-router' {
       path: '/api/gif/search'
       fullPath: '/api/gif/search'
       preLoaderRoute: typeof ApiGifSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/friends/active': {
+      id: '/api/friends/active'
+      path: '/api/friends/active'
+      fullPath: '/api/friends/active'
+      preLoaderRoute: typeof ApiFriendsActiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/forest-explorer/save': {
@@ -15356,6 +15396,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiFeedSignalRoute: ApiFeedSignalRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
+  ApiFriendsActiveRoute: ApiFriendsActiveRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,
   ApiGuidesIdRoute: ApiGuidesIdRouteWithChildren,
   ApiHandleCheckRoute: ApiHandleCheckRoute,
@@ -15395,6 +15436,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPreferencesLayoutRoute: ApiPreferencesLayoutRoute,
   ApiPreferencesMutedWordsRoute: ApiPreferencesMutedWordsRoute,
   ApiPreferencesNotificationsRoute: ApiPreferencesNotificationsRoute,
+  ApiPreferencesPresenceRoute: ApiPreferencesPresenceRoute,
   ApiPresenceFriendsRoute: ApiPresenceFriendsRoute,
   ApiPresenceHeartbeatRoute: ApiPresenceHeartbeatRoute,
   ApiPresenceOnlineCountRoute: ApiPresenceOnlineCountRoute,

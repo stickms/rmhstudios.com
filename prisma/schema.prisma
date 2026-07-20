@@ -1753,6 +1753,12 @@ model UserProfile {
   bannerSizeBytes       Int?
   showLikes             Boolean   @default(false)
   dmPrivacy             DmPrivacy @default(EVERYONE)
+  // Rich presence & Friends rail (§9). Who may see this user in the rail /
+  // activity line: 'mutuals' (default, Discord-like), 'followers', or 'nobody'.
+  // presenceDetail=false → online/offline only, activity hidden. Presence
+  // activity itself is ephemeral (expires with the heartbeat) — no column.
+  presenceVisibility    String    @default("mutuals") @db.VarChar(12)
+  presenceDetail        Boolean   @default(true)
   // Reader content control: feed posts whose text contains any of these words
   // are hidden from this user (case-insensitive substring match). Opt-in.
   mutedWords            String[]  @default([])

@@ -17,6 +17,7 @@ import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { userDisplaySelect, resolveUser, resolveUserDisplay } from '@/lib/user-display';
 import { getRole, canModerate } from '@/lib/communities/access.server';
+import { setActivity } from '@/lib/presence.server';
 import type {
   LiveSpaceSummary,
   SpaceMessageView,
@@ -147,7 +148,12 @@ export async function startSpace(id: string, hostId: string): Promise<SpaceView>
     data: { status: 'LIVE', startedAt: existing.startedAt ?? new Date() },
     select: spaceSelect,
   });
-  return shapeSpace(row);
+  const view = shapeSpace(row);
+  // §9 rich presence: the host is now "Live in a Space". Ephemeral — clears on
+  // endSpace or with the heartbeat if they drop. One of the ~10 activity touch
+  // points (games / rooms / spaces); the rest are the documented follow-up.
+  void setActivity(hostId, { kind: 'space', spaceId: id, label: `Live: ${view.title}` });
+  return view;
 }
 
 /** End a LIVE/SCHEDULED space (host only). */
@@ -164,6 +170,8 @@ export async function endSpace(id: string, hostId: string): Promise<SpaceView> {
     data: { status: 'ENDED', endedAt: new Date() },
     select: spaceSelect,
   });
+  // §9: clear the host's "Live in a Space" activity on end.
+  void setActivity(hostId, null);
   return shapeSpace(row);
 }
 
