@@ -5,15 +5,16 @@ import { renderReplayOgImage } from '@/lib/og/replay-image.server';
 import { REPLAY_GAME_TITLES, lightsOutShapeLabel } from '@/lib/game/replay';
 
 /** Best-effort subtitle from the game-specific payload. */
-function replaySubtitle(game: string, data: any): string | null {
+function replaySubtitle(game: string, data: unknown): string | null {
+  const d = data as { seed?: number; inputs?: unknown[]; track?: string } | null;
   try {
-    if (game === 'lights-out' && typeof data?.seed === 'number') {
-      const moves = Array.isArray(data?.inputs) ? data.inputs.length : null;
-      const shape = lightsOutShapeLabel(data.seed);
+    if (game === 'lights-out' && typeof d?.seed === 'number') {
+      const moves = Array.isArray(d?.inputs) ? d.inputs.length : null;
+      const shape = lightsOutShapeLabel(d.seed);
       return moves != null ? `${shape} · ${moves} moves` : shape;
     }
-    if (game === 'slice-it' && typeof data?.track === 'string') {
-      return data.track;
+    if (game === 'slice-it' && typeof d?.track === 'string') {
+      return d.track;
     }
   } catch {
     /* fall through to null */

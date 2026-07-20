@@ -11,6 +11,7 @@
  * work (see `saveReplay` note) — not built here.
  */
 
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma.server';
 import { getReplayable, REPLAY_SIZE_CAP, type ReplayData } from '@/lib/game/replay';
 import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
@@ -85,7 +86,7 @@ export async function saveReplay(input: SaveReplayInput): Promise<SavedReplay> {
       version: def.version,
       score,
       durationMs,
-      data,
+      data: data as Prisma.InputJsonValue,
       sizeBytes,
       visibility,
     },

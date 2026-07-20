@@ -253,6 +253,7 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
                     return (
                       <label
                         key={key}
+                        aria-label={label}
                         className={`flex items-start gap-3 rounded-site px-3 py-2.5 cursor-pointer transition-colors ${
                           checked ? 'bg-site-accent-dim' : 'glass-inset hover:bg-site-surface-hover'
                         }`}
