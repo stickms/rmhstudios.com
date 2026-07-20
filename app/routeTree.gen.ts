@@ -186,6 +186,7 @@ import { Route as ApiStakingIndexRouteImport } from './routes/api/staking/index'
 import { Route as ApiSpacesIndexRouteImport } from './routes/api/spaces/index'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
 import { Route as ApiScheduledIndexRouteImport } from './routes/api/scheduled/index'
+import { Route as ApiSavesIndexRouteImport } from './routes/api/saves/index'
 import { Route as ApiReplaysIndexRouteImport } from './routes/api/replays/index'
 import { Route as ApiRankedIndexRouteImport } from './routes/api/ranked/index'
 import { Route as ApiPredictionsIndexRouteImport } from './routes/api/predictions/index'
@@ -209,6 +210,7 @@ import { Route as SiteStudyIndexRouteImport } from './routes/_site/study/index'
 import { Route as SiteStoreIndexRouteImport } from './routes/_site/store/index'
 import { Route as SiteSpacesIndexRouteImport } from './routes/_site/spaces.index'
 import { Route as SiteSettingsIndexRouteImport } from './routes/_site/settings/index'
+import { Route as SiteSavesIndexRouteImport } from './routes/_site/saves/index'
 import { Route as SiteRmhladderIndexRouteImport } from './routes/_site/rmhladder/index'
 import { Route as SiteRideshareIndexRouteImport } from './routes/_site/rideshare/index'
 import { Route as SitePersonasIndexRouteImport } from './routes/_site/personas/index'
@@ -283,6 +285,7 @@ import { Route as ApiShopPurchaseRouteImport } from './routes/api/shop/purchase'
 import { Route as ApiShopEquipRouteImport } from './routes/api/shop/equip'
 import { Route as ApiSettingsEmailDigestRouteImport } from './routes/api/settings/email-digest'
 import { Route as ApiScheduledIdRouteImport } from './routes/api/scheduled/$id'
+import { Route as ApiSavesFoldersRouteImport } from './routes/api/saves/folders'
 import { Route as ApiRmhtubeOembedRouteImport } from './routes/api/rmhtube/oembed'
 import { Route as ApiRmhladderSearchesRouteImport } from './routes/api/rmhladder/searches'
 import { Route as ApiRmhladderImportRouteImport } from './routes/api/rmhladder/import'
@@ -507,6 +510,7 @@ import { Route as ApiSpacesIdEndRouteImport } from './routes/api/spaces/$id/end'
 import { Route as ApiSliceItSongsUploadRouteImport } from './routes/api/slice-it/songs/upload'
 import { Route as ApiSliceItSongsIdRouteImport } from './routes/api/slice-it/songs/$id'
 import { Route as ApiScheduledIdPublishRouteImport } from './routes/api/scheduled/$id/publish'
+import { Route as ApiSavesFoldersIdRouteImport } from './routes/api/saves/folders.$id'
 import { Route as ApiRmhtubeSubscribeChannelIdRouteImport } from './routes/api/rmhtube/subscribe/$channelId'
 import { Route as ApiRmhmusicSpotifySearchRouteImport } from './routes/api/rmhmusic/spotify/search'
 import { Route as ApiRmhladderResumeIdRouteImport } from './routes/api/rmhladder/resume/$id'
@@ -1553,6 +1557,11 @@ const ApiScheduledIndexRoute = ApiScheduledIndexRouteImport.update({
   path: '/api/scheduled/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSavesIndexRoute = ApiSavesIndexRouteImport.update({
+  id: '/api/saves/',
+  path: '/api/saves/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiReplaysIndexRoute = ApiReplaysIndexRouteImport.update({
   id: '/api/replays/',
   path: '/api/replays/',
@@ -1666,6 +1675,11 @@ const SiteSpacesIndexRoute = SiteSpacesIndexRouteImport.update({
 const SiteSettingsIndexRoute = SiteSettingsIndexRouteImport.update({
   id: '/settings/',
   path: '/settings/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSavesIndexRoute = SiteSavesIndexRouteImport.update({
+  id: '/saves/',
+  path: '/saves/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteRmhladderIndexRoute = SiteRmhladderIndexRouteImport.update({
@@ -2044,6 +2058,11 @@ const ApiSettingsEmailDigestRoute = ApiSettingsEmailDigestRouteImport.update({
 const ApiScheduledIdRoute = ApiScheduledIdRouteImport.update({
   id: '/api/scheduled/$id',
   path: '/api/scheduled/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSavesFoldersRoute = ApiSavesFoldersRouteImport.update({
+  id: '/api/saves/folders',
+  path: '/api/saves/folders',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiRmhtubeOembedRoute = ApiRmhtubeOembedRouteImport.update({
@@ -3187,6 +3206,11 @@ const ApiScheduledIdPublishRoute = ApiScheduledIdPublishRouteImport.update({
   id: '/publish',
   path: '/publish',
   getParentRoute: () => ApiScheduledIdRoute,
+} as any)
+const ApiSavesFoldersIdRoute = ApiSavesFoldersIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiSavesFoldersRoute,
 } as any)
 const ApiRmhtubeSubscribeChannelIdRoute =
   ApiRmhtubeSubscribeChannelIdRouteImport.update({
@@ -4376,6 +4400,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/import': typeof ApiRmhladderImportRoute
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -4450,6 +4475,7 @@ export interface FileRoutesByFullPath {
   '/personas/': typeof SitePersonasIndexRoute
   '/rideshare/': typeof SiteRideshareIndexRoute
   '/rmhladder/': typeof SiteRmhladderIndexRoute
+  '/saves/': typeof SiteSavesIndexRoute
   '/settings/': typeof SiteSettingsIndexRoute
   '/spaces/': typeof SiteSpacesIndexRoute
   '/store/': typeof SiteStoreIndexRoute
@@ -4473,6 +4499,7 @@ export interface FileRoutesByFullPath {
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
+  '/api/saves/': typeof ApiSavesIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/spaces/': typeof ApiSpacesIndexRoute
@@ -4587,6 +4614,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
+  '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
@@ -5008,6 +5036,7 @@ export interface FileRoutesByTo {
   '/api/rmhladder/import': typeof ApiRmhladderImportRoute
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -5082,6 +5111,7 @@ export interface FileRoutesByTo {
   '/personas': typeof SitePersonasIndexRoute
   '/rideshare': typeof SiteRideshareIndexRoute
   '/rmhladder': typeof SiteRmhladderIndexRoute
+  '/saves': typeof SiteSavesIndexRoute
   '/settings': typeof SiteSettingsIndexRoute
   '/spaces': typeof SiteSpacesIndexRoute
   '/store': typeof SiteStoreIndexRoute
@@ -5105,6 +5135,7 @@ export interface FileRoutesByTo {
   '/api/predictions': typeof ApiPredictionsIndexRoute
   '/api/ranked': typeof ApiRankedIndexRoute
   '/api/replays': typeof ApiReplaysIndexRoute
+  '/api/saves': typeof ApiSavesIndexRoute
   '/api/scheduled': typeof ApiScheduledIndexRoute
   '/api/shop': typeof ApiShopIndexRoute
   '/api/spaces': typeof ApiSpacesIndexRoute
@@ -5219,6 +5250,7 @@ export interface FileRoutesByTo {
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
+  '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
@@ -5667,6 +5699,7 @@ export interface FileRoutesById {
   '/api/rmhladder/import': typeof ApiRmhladderImportRoute
   '/api/rmhladder/searches': typeof ApiRmhladderSearchesRoute
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
+  '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
@@ -5741,6 +5774,7 @@ export interface FileRoutesById {
   '/_site/personas/': typeof SitePersonasIndexRoute
   '/_site/rideshare/': typeof SiteRideshareIndexRoute
   '/_site/rmhladder/': typeof SiteRmhladderIndexRoute
+  '/_site/saves/': typeof SiteSavesIndexRoute
   '/_site/settings/': typeof SiteSettingsIndexRoute
   '/_site/spaces/': typeof SiteSpacesIndexRoute
   '/_site/store/': typeof SiteStoreIndexRoute
@@ -5764,6 +5798,7 @@ export interface FileRoutesById {
   '/api/predictions/': typeof ApiPredictionsIndexRoute
   '/api/ranked/': typeof ApiRankedIndexRoute
   '/api/replays/': typeof ApiReplaysIndexRoute
+  '/api/saves/': typeof ApiSavesIndexRoute
   '/api/scheduled/': typeof ApiScheduledIndexRoute
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/spaces/': typeof ApiSpacesIndexRoute
@@ -5878,6 +5913,7 @@ export interface FileRoutesById {
   '/api/rmhladder/resume/$id': typeof ApiRmhladderResumeIdRouteWithChildren
   '/api/rmhmusic/spotify/search': typeof ApiRmhmusicSpotifySearchRoute
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
+  '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
@@ -6326,6 +6362,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/import'
     | '/api/rmhladder/searches'
     | '/api/rmhtube/oembed'
+    | '/api/saves/folders'
     | '/api/scheduled/$id'
     | '/api/settings/email-digest'
     | '/api/shop/equip'
@@ -6400,6 +6437,7 @@ export interface FileRouteTypes {
     | '/personas/'
     | '/rideshare/'
     | '/rmhladder/'
+    | '/saves/'
     | '/settings/'
     | '/spaces/'
     | '/store/'
@@ -6423,6 +6461,7 @@ export interface FileRouteTypes {
     | '/api/predictions/'
     | '/api/ranked/'
     | '/api/replays/'
+    | '/api/saves/'
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/spaces/'
@@ -6537,6 +6576,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id'
     | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
+    | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
@@ -6958,6 +6998,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/import'
     | '/api/rmhladder/searches'
     | '/api/rmhtube/oembed'
+    | '/api/saves/folders'
     | '/api/scheduled/$id'
     | '/api/settings/email-digest'
     | '/api/shop/equip'
@@ -7032,6 +7073,7 @@ export interface FileRouteTypes {
     | '/personas'
     | '/rideshare'
     | '/rmhladder'
+    | '/saves'
     | '/settings'
     | '/spaces'
     | '/store'
@@ -7055,6 +7097,7 @@ export interface FileRouteTypes {
     | '/api/predictions'
     | '/api/ranked'
     | '/api/replays'
+    | '/api/saves'
     | '/api/scheduled'
     | '/api/shop'
     | '/api/spaces'
@@ -7169,6 +7212,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id'
     | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
+    | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
@@ -7616,6 +7660,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/import'
     | '/api/rmhladder/searches'
     | '/api/rmhtube/oembed'
+    | '/api/saves/folders'
     | '/api/scheduled/$id'
     | '/api/settings/email-digest'
     | '/api/shop/equip'
@@ -7690,6 +7735,7 @@ export interface FileRouteTypes {
     | '/_site/personas/'
     | '/_site/rideshare/'
     | '/_site/rmhladder/'
+    | '/_site/saves/'
     | '/_site/settings/'
     | '/_site/spaces/'
     | '/_site/store/'
@@ -7713,6 +7759,7 @@ export interface FileRouteTypes {
     | '/api/predictions/'
     | '/api/ranked/'
     | '/api/replays/'
+    | '/api/saves/'
     | '/api/scheduled/'
     | '/api/shop/'
     | '/api/spaces/'
@@ -7827,6 +7874,7 @@ export interface FileRouteTypes {
     | '/api/rmhladder/resume/$id'
     | '/api/rmhmusic/spotify/search'
     | '/api/rmhtube/subscribe/$channelId'
+    | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
@@ -8126,6 +8174,7 @@ export interface RootRouteChildren {
   ApiRmhladderImportRoute: typeof ApiRmhladderImportRoute
   ApiRmhladderSearchesRoute: typeof ApiRmhladderSearchesRoute
   ApiRmhtubeOembedRoute: typeof ApiRmhtubeOembedRoute
+  ApiSavesFoldersRoute: typeof ApiSavesFoldersRouteWithChildren
   ApiScheduledIdRoute: typeof ApiScheduledIdRouteWithChildren
   ApiSettingsEmailDigestRoute: typeof ApiSettingsEmailDigestRoute
   ApiShopEquipRoute: typeof ApiShopEquipRoute
@@ -8190,6 +8239,7 @@ export interface RootRouteChildren {
   ApiPredictionsIndexRoute: typeof ApiPredictionsIndexRoute
   ApiRankedIndexRoute: typeof ApiRankedIndexRoute
   ApiReplaysIndexRoute: typeof ApiReplaysIndexRoute
+  ApiSavesIndexRoute: typeof ApiSavesIndexRoute
   ApiScheduledIndexRoute: typeof ApiScheduledIndexRoute
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiSpacesIndexRoute: typeof ApiSpacesIndexRoute
@@ -9547,6 +9597,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiScheduledIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/saves/': {
+      id: '/api/saves/'
+      path: '/api/saves'
+      fullPath: '/api/saves/'
+      preLoaderRoute: typeof ApiSavesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/replays/': {
       id: '/api/replays/'
       path: '/api/replays'
@@ -9706,6 +9763,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings/'
       preLoaderRoute: typeof SiteSettingsIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/saves/': {
+      id: '/_site/saves/'
+      path: '/saves'
+      fullPath: '/saves/'
+      preLoaderRoute: typeof SiteSavesIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/rmhladder/': {
@@ -10224,6 +10288,13 @@ declare module '@tanstack/react-router' {
       path: '/api/scheduled/$id'
       fullPath: '/api/scheduled/$id'
       preLoaderRoute: typeof ApiScheduledIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/saves/folders': {
+      id: '/api/saves/folders'
+      path: '/api/saves/folders'
+      fullPath: '/api/saves/folders'
+      preLoaderRoute: typeof ApiSavesFoldersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/rmhtube/oembed': {
@@ -11794,6 +11865,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiScheduledIdPublishRouteImport
       parentRoute: typeof ApiScheduledIdRoute
     }
+    '/api/saves/folders/$id': {
+      id: '/api/saves/folders/$id'
+      path: '/$id'
+      fullPath: '/api/saves/folders/$id'
+      preLoaderRoute: typeof ApiSavesFoldersIdRouteImport
+      parentRoute: typeof ApiSavesFoldersRoute
+    }
     '/api/rmhtube/subscribe/$channelId': {
       id: '/api/rmhtube/subscribe/$channelId'
       path: '/api/rmhtube/subscribe/$channelId'
@@ -13084,6 +13162,7 @@ interface SiteRouteChildren {
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
   SitePersonasIndexRoute: typeof SitePersonasIndexRoute
   SiteRideshareIndexRoute: typeof SiteRideshareIndexRoute
+  SiteSavesIndexRoute: typeof SiteSavesIndexRoute
   SiteSettingsIndexRoute: typeof SiteSettingsIndexRoute
   SiteSpacesIndexRoute: typeof SiteSpacesIndexRoute
   SiteStoreIndexRoute: typeof SiteStoreIndexRoute
@@ -13164,6 +13243,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteNewsIndexRoute: SiteNewsIndexRoute,
   SitePersonasIndexRoute: SitePersonasIndexRoute,
   SiteRideshareIndexRoute: SiteRideshareIndexRoute,
+  SiteSavesIndexRoute: SiteSavesIndexRoute,
   SiteSettingsIndexRoute: SiteSettingsIndexRoute,
   SiteSpacesIndexRoute: SiteSpacesIndexRoute,
   SiteStoreIndexRoute: SiteStoreIndexRoute,
@@ -13898,6 +13978,18 @@ const ApiRideshareRidesRouteChildren: ApiRideshareRidesRouteChildren = {
 const ApiRideshareRidesRouteWithChildren =
   ApiRideshareRidesRoute._addFileChildren(ApiRideshareRidesRouteChildren)
 
+interface ApiSavesFoldersRouteChildren {
+  ApiSavesFoldersIdRoute: typeof ApiSavesFoldersIdRoute
+}
+
+const ApiSavesFoldersRouteChildren: ApiSavesFoldersRouteChildren = {
+  ApiSavesFoldersIdRoute: ApiSavesFoldersIdRoute,
+}
+
+const ApiSavesFoldersRouteWithChildren = ApiSavesFoldersRoute._addFileChildren(
+  ApiSavesFoldersRouteChildren,
+)
+
 interface ApiScheduledIdRouteChildren {
   ApiScheduledIdPublishRoute: typeof ApiScheduledIdPublishRoute
 }
@@ -14408,6 +14500,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRmhladderImportRoute: ApiRmhladderImportRoute,
   ApiRmhladderSearchesRoute: ApiRmhladderSearchesRoute,
   ApiRmhtubeOembedRoute: ApiRmhtubeOembedRoute,
+  ApiSavesFoldersRoute: ApiSavesFoldersRouteWithChildren,
   ApiScheduledIdRoute: ApiScheduledIdRouteWithChildren,
   ApiSettingsEmailDigestRoute: ApiSettingsEmailDigestRoute,
   ApiShopEquipRoute: ApiShopEquipRoute,
@@ -14472,6 +14565,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPredictionsIndexRoute: ApiPredictionsIndexRoute,
   ApiRankedIndexRoute: ApiRankedIndexRoute,
   ApiReplaysIndexRoute: ApiReplaysIndexRoute,
+  ApiSavesIndexRoute: ApiSavesIndexRoute,
   ApiScheduledIndexRoute: ApiScheduledIndexRoute,
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiSpacesIndexRoute: ApiSpacesIndexRoute,

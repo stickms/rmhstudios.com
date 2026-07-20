@@ -326,6 +326,10 @@ model User {
   marketListingsBought MarketListing[]  @relation("MarketBuyer")
   sharedMoments        SharedMoment[]
 
+  // ─── Parity / QOL / customization (2026-07-20 design) ────────────────────
+  saveFolders SaveFolder[]
+  savedItems  SavedItem[]
+
   @@index([isBot])
   @@index([followerCount])
   // Backs the "online now" fallback count (WHERE lastSeenAt >= cutoff). The
@@ -5647,4 +5651,39 @@ model SharedMoment {
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("shared_moment")
+}
+
+// ─── Parity / QOL / customization (2026-07-20 design) ───────────────────────
+
+// Unified Saves (§4): user-created folders holding polymorphic saved items
+// (posts, builds, songs, …). Addressing reuses the ledger's
+// entityType/entityId convention. Replaces the flat, posts-only bookmark.
+model SaveFolder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(40)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items SavedItem[]
+
+  @@index([userId, sortOrder])
+  @@map("save_folder")
+}
+
+model SavedItem {
+  id         String   @id @default(cuid())
+  userId     String
+  folderId   String? // null = default "Saved"
+  entityType String   @db.VarChar(24) // see SAVE_ENTITY_TYPES in lib/saves/types.ts
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder SaveFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId, folderId, createdAt(sort: Desc)])
+  @@map("saved_item")
 }
