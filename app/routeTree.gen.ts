@@ -375,6 +375,7 @@ import { Route as ApiHandleCheckRouteImport } from './routes/api/handle/check'
 import { Route as ApiGifSearchRouteImport } from './routes/api/gif/search'
 import { Route as ApiForestExplorerSaveRouteImport } from './routes/api/forest-explorer/save'
 import { Route as ApiFeedStreamRouteImport } from './routes/api/feed/stream'
+import { Route as ApiFeedSignalRouteImport } from './routes/api/feed/signal'
 import { Route as ApiFeedMentionSearchRouteImport } from './routes/api/feed/mention-search'
 import { Route as ApiFeedHashtagSearchRouteImport } from './routes/api/feed/hashtag-search'
 import { Route as ApiEmbedOembedRouteImport } from './routes/api/embed/oembed'
@@ -434,6 +435,7 @@ import { Route as SiteSpacesIdRouteImport } from './routes/_site/spaces.$id'
 import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
 import { Route as SiteSettingsProfileRouteImport } from './routes/_site/settings/profile'
 import { Route as SiteSettingsPrivacyRouteImport } from './routes/_site/settings/privacy'
+import { Route as SiteSettingsContentRouteImport } from './routes/_site/settings/content'
 import { Route as SiteSettingsCircleRouteImport } from './routes/_site/settings/circle'
 import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/settings/appearance'
 import { Route as SiteRmhladderSettingsRouteImport } from './routes/_site/rmhladder/settings'
@@ -2537,6 +2539,11 @@ const ApiFeedStreamRoute = ApiFeedStreamRouteImport.update({
   path: '/api/feed/stream',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFeedSignalRoute = ApiFeedSignalRouteImport.update({
+  id: '/api/feed/signal',
+  path: '/api/feed/signal',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiFeedMentionSearchRoute = ApiFeedMentionSearchRouteImport.update({
   id: '/api/feed/mention-search',
   path: '/api/feed/mention-search',
@@ -2832,6 +2839,11 @@ const SiteSettingsProfileRoute = SiteSettingsProfileRouteImport.update({
 const SiteSettingsPrivacyRoute = SiteSettingsPrivacyRouteImport.update({
   id: '/settings/privacy',
   path: '/settings/privacy',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteSettingsContentRoute = SiteSettingsContentRouteImport.update({
+  id: '/settings/content',
+  path: '/settings/content',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSettingsCircleRoute = SiteSettingsCircleRouteImport.update({
@@ -4377,6 +4389,7 @@ export interface FileRoutesByFullPath {
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
+  '/settings/content': typeof SiteSettingsContentRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
@@ -4436,6 +4449,7 @@ export interface FileRoutesByFullPath {
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
+  '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
@@ -5031,6 +5045,7 @@ export interface FileRoutesByTo {
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
+  '/settings/content': typeof SiteSettingsContentRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
@@ -5090,6 +5105,7 @@ export interface FileRoutesByTo {
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
+  '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
@@ -5712,6 +5728,7 @@ export interface FileRoutesById {
   '/_site/rmhladder/settings': typeof SiteRmhladderSettingsRoute
   '/_site/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/_site/settings/circle': typeof SiteSettingsCircleRoute
+  '/_site/settings/content': typeof SiteSettingsContentRoute
   '/_site/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/_site/settings/profile': typeof SiteSettingsProfileRoute
   '/_site/settings/security': typeof SiteSettingsSecurityRoute
@@ -5771,6 +5788,7 @@ export interface FileRoutesById {
   '/api/embed/oembed': typeof ApiEmbedOembedRoute
   '/api/feed/hashtag-search': typeof ApiFeedHashtagSearchRoute
   '/api/feed/mention-search': typeof ApiFeedMentionSearchRoute
+  '/api/feed/signal': typeof ApiFeedSignalRoute
   '/api/feed/stream': typeof ApiFeedStreamRoute
   '/api/forest-explorer/save': typeof ApiForestExplorerSaveRoute
   '/api/gif/search': typeof ApiGifSearchRoute
@@ -6393,6 +6411,7 @@ export interface FileRouteTypes {
     | '/rmhladder/settings'
     | '/settings/appearance'
     | '/settings/circle'
+    | '/settings/content'
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
@@ -6452,6 +6471,7 @@ export interface FileRouteTypes {
     | '/api/embed/oembed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
+    | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/gif/search'
@@ -7047,6 +7067,7 @@ export interface FileRouteTypes {
     | '/rmhladder/settings'
     | '/settings/appearance'
     | '/settings/circle'
+    | '/settings/content'
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
@@ -7106,6 +7127,7 @@ export interface FileRouteTypes {
     | '/api/embed/oembed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
+    | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/gif/search'
@@ -7727,6 +7749,7 @@ export interface FileRouteTypes {
     | '/_site/rmhladder/settings'
     | '/_site/settings/appearance'
     | '/_site/settings/circle'
+    | '/_site/settings/content'
     | '/_site/settings/privacy'
     | '/_site/settings/profile'
     | '/_site/settings/security'
@@ -7786,6 +7809,7 @@ export interface FileRouteTypes {
     | '/api/embed/oembed'
     | '/api/feed/hashtag-search'
     | '/api/feed/mention-search'
+    | '/api/feed/signal'
     | '/api/feed/stream'
     | '/api/forest-explorer/save'
     | '/api/gif/search'
@@ -8330,6 +8354,7 @@ export interface RootRouteChildren {
   ApiEmbedOembedRoute: typeof ApiEmbedOembedRoute
   ApiFeedHashtagSearchRoute: typeof ApiFeedHashtagSearchRoute
   ApiFeedMentionSearchRoute: typeof ApiFeedMentionSearchRoute
+  ApiFeedSignalRoute: typeof ApiFeedSignalRoute
   ApiFeedStreamRoute: typeof ApiFeedStreamRoute
   ApiForestExplorerSaveRoute: typeof ApiForestExplorerSaveRoute
   ApiGifSearchRoute: typeof ApiGifSearchRoute
@@ -11146,6 +11171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiFeedStreamRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/feed/signal': {
+      id: '/api/feed/signal'
+      path: '/api/feed/signal'
+      fullPath: '/api/feed/signal'
+      preLoaderRoute: typeof ApiFeedSignalRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/feed/mention-search': {
       id: '/api/feed/mention-search'
       path: '/api/feed/mention-search'
@@ -11557,6 +11589,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/privacy'
       fullPath: '/settings/privacy'
       preLoaderRoute: typeof SiteSettingsPrivacyRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/settings/content': {
+      id: '/_site/settings/content'
+      path: '/settings/content'
+      fullPath: '/settings/content'
+      preLoaderRoute: typeof SiteSettingsContentRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/settings/circle': {
@@ -13496,6 +13535,7 @@ interface SiteRouteChildren {
   SiteRideshareRideRoute: typeof SiteRideshareRideRoute
   SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
   SiteSettingsCircleRoute: typeof SiteSettingsCircleRoute
+  SiteSettingsContentRoute: typeof SiteSettingsContentRoute
   SiteSettingsPrivacyRoute: typeof SiteSettingsPrivacyRoute
   SiteSettingsProfileRoute: typeof SiteSettingsProfileRoute
   SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
@@ -13583,6 +13623,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRideshareRideRoute: SiteRideshareRideRoute,
   SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
   SiteSettingsCircleRoute: SiteSettingsCircleRoute,
+  SiteSettingsContentRoute: SiteSettingsContentRoute,
   SiteSettingsPrivacyRoute: SiteSettingsPrivacyRoute,
   SiteSettingsProfileRoute: SiteSettingsProfileRoute,
   SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,
@@ -14818,6 +14859,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEmbedOembedRoute: ApiEmbedOembedRoute,
   ApiFeedHashtagSearchRoute: ApiFeedHashtagSearchRoute,
   ApiFeedMentionSearchRoute: ApiFeedMentionSearchRoute,
+  ApiFeedSignalRoute: ApiFeedSignalRoute,
   ApiFeedStreamRoute: ApiFeedStreamRoute,
   ApiForestExplorerSaveRoute: ApiForestExplorerSaveRoute,
   ApiGifSearchRoute: ApiGifSearchRoute,

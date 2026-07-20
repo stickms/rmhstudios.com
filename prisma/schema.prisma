@@ -336,6 +336,7 @@ model User {
   closeFriendOf      CloseFriend[]  @relation("CircleMember")
   userLists          UserList[]
   userListMemberships UserListMember[]
+  feedSignals        FeedSignal[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -5816,4 +5817,21 @@ model UserListMember {
   @@id([listId, userId])
   @@index([userId]) // "lists you're on"
   @@map("user_list_member")
+}
+
+// Feed controls (§17): reader tuning signals. 'mute_tag' filters a hashtag out;
+// 'less_author' demotes an author (applied in ranking — recorded here);
+// 'follow_tag' boosts a topic. Every signal is inspectable + reversible in
+// settings (the transparency half).
+model FeedSignal {
+  userId    String
+  kind      String   @db.VarChar(16) // 'less_author' | 'mute_tag' | 'follow_tag'
+  targetId  String   @db.VarChar(64) // authorId | tag (lowercase, no '#')
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, kind, targetId])
+  @@index([userId, kind])
+  @@map("feed_signal")
 }

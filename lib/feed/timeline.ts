@@ -26,6 +26,8 @@ import { buildInterestProfile } from './personalize.server';
 import { getHiddenAuthorIds } from '../moderation.server';
 import { getFollowingIds } from '../social/follow-graph.server';
 import { audienceWhere, circleOwnerIds } from './audience.server';
+import { getSignals } from './signals.server';
+import { mutedTagWhere } from './signals';
 import { applyLock } from './map-feed-item.server';
 import type { ReactionSummary } from '../social/reactions';
 import { apiCache } from '../cache';
@@ -600,6 +602,8 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
   const authorWhere = hiddenIds.length ? { userId: { notIn: hiddenIds } } : {};
   const viewerCircleOwnerIds = await circleOwnerIds(userId);
   const audWhere = audienceWhere(userId, viewerFollowingIds, [], viewerCircleOwnerIds);
+  // Feed controls (§17): hide posts carrying a muted hashtag.
+  const tagWhere = mutedTagWhere((await getSignals(userId)).mutedTags);
 
   let dbItems: FeedItem[] = [];
 
@@ -615,6 +619,7 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
           ...contentWhere,
           ...authorWhere,
           ...audWhere,
+          ...tagWhere,
           ...keyset,
         },
         orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
@@ -623,7 +628,7 @@ async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineRes
       }),
       prisma.rMHarkRepost.findMany({
         where: {
-          rmhark: { deletedAt: null, ...contentWhere, ...authorWhere, ...audWhere },
+          rmhark: { deletedAt: null, ...contentWhere, ...authorWhere, ...audWhere, ...tagWhere },
           ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
           ...keyset,
         },
