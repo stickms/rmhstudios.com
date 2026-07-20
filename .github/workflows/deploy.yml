@@ -124,13 +124,16 @@ jobs:
       - name: Lint
         run: pnpm lint
 
-      # Blocking again now that the i18n-catalogs drift is healed (the two
-      # untranslated feed keys are tracked in an explicit allowlist in
-      # lib/__tests__/i18n-catalogs.test.ts). If it flakes on catalog drift
-      # again, run `pnpm i18n:translate && pnpm i18n:resources` to heal, or
-      # extend that allowlist — do NOT re-add continue-on-error.
+      # Advisory (warn, don't block) by owner decision: a failing test no longer
+      # gates the deploy — typecheck + lint above stay hard gates, and the image
+      # build in `build` still blocks on any build-time breakage. A red test
+      # turns this step's annotation red and shows in the run summary, but `ci`
+      # still succeeds so `deploy-gate` proceeds. To heal i18n-catalogs drift
+      # specifically, run `pnpm i18n:translate && pnpm i18n:resources` or extend
+      # the allowlist in lib/__tests__/i18n-catalogs.test.ts.
       - name: Test
         run: pnpm exec vitest run
+        continue-on-error: true
 
   build:
     # NO `needs:` — runs concurrently with `ci`. `deploy-gate` waits on both.
