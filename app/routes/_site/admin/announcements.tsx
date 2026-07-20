@@ -211,7 +211,12 @@ function AdminAnnouncementsPage() {
     'w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none';
 
   return (
-    <PageLayout title="Announcements" wide backTo="/admin">
+    <PageLayout
+      title={t('announcements-title', { defaultValue: 'Announcements' })}
+      backTo="/admin"
+      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+      wide
+    >
       <div className="mx-auto max-w-3xl space-y-6 p-4 md:p-8">
         <div className="flex items-center gap-2 text-sm text-site-text-muted">
           <Megaphone className="h-5 w-5 shrink-0 text-site-accent" />

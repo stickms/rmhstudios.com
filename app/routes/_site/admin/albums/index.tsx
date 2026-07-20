@@ -9,9 +9,13 @@ import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { Images, Plus, Video } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
-import '@/components/library/album-admin.css';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/ui/empty-state';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const getAdminSession = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
@@ -39,6 +43,7 @@ type AdminAlbum = {
 };
 
 function AdminAlbumsPage() {
+  const { t } = useTranslation('admin');
   const navigate = useNavigate();
   const [albums, setAlbums] = useState<AdminAlbum[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,63 +77,100 @@ function AdminAlbumsPage() {
         body: JSON.stringify({ title: trimmed }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || 'Failed to create album');
-      toast.success(`Created "${data.album.title}". Now upload media.`);
+      if (!res.ok) throw new Error(data?.error || t('album-create-failed', { defaultValue: 'Failed to create album' }));
+      toast.success(
+        t('album-created', { title: data.album.title, defaultValue: `Created "${data.album.title}". Now upload media.` }),
+      );
       // Straight to the manager so the admin can upload all images afterwards.
       navigate({ to: '/admin/albums/$id', params: { id: data.album.id } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to create album');
+      toast.error(err instanceof Error ? err.message : t('album-create-failed', { defaultValue: 'Failed to create album' }));
     } finally {
       setCreating(false);
     }
   }
 
   return (
-    <PageLayout title="Library Albums" wide backTo="/admin">
-      <div className="aa">
-        <div>
-          <h1 className="aa__intro-title">Library Albums</h1>
-          <p className="aa__intro-sub">
-            Create an album, then bulk-upload photos and videos. Images are compressed to WebP and videos
-            transcoded before being stored in object storage.
-          </p>
-        </div>
+    <PageLayout
+      title={t('albums-title', { defaultValue: 'Library Albums' })}
+      backTo="/admin"
+      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+      wide
+    >
+      <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 p-4 md:p-8">
+        <p className="text-sm text-site-text-muted">
+          {t('albums-intro', {
+            defaultValue:
+              'Create an album, then bulk-upload photos and videos. Images are compressed to WebP and videos transcoded before being stored in object storage.',
+          })}
+        </p>
 
-        <form onSubmit={createAlbum} className="aa__create">
-          <input
+        {/* Create — a singular action panel gets the L2 glass pane. */}
+        <form
+          onSubmit={createAlbum}
+          className="glass-pane flex flex-col gap-2 rounded-site p-3 sm:flex-row sm:items-center"
+        >
+          <Input
             type="text"
-            className="aa__input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="New album title…"
+            placeholder={t('album-title-placeholder', { defaultValue: 'New album title…' })}
             maxLength={120}
+            className="flex-1"
           />
-          <button type="submit" className="aa__btn aa__btn--primary" disabled={creating || !title.trim()}>
-            <Plus size={16} aria-hidden="true" /> {creating ? 'Creating…' : 'Create album'}
-          </button>
+          <Button type="submit" loading={creating} disabled={!title.trim()} className="shrink-0">
+            <Plus aria-hidden="true" /> {t('create-album', { defaultValue: 'Create album' })}
+          </Button>
         </form>
 
         {loading ? (
-          <p className="aa__empty">Loading…</p>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="aspect-[4/3] rounded-site" />
+            ))}
+          </div>
         ) : albums.length === 0 ? (
-          <p className="aa__empty">No albums yet. Create one above.</p>
+          <EmptyState
+            icon={Images}
+            title={t('albums-empty', { defaultValue: 'No albums yet' })}
+            description={t('albums-empty-hint', { defaultValue: 'Create one above to get started.' })}
+          />
         ) : (
-          <div className="aa__cards">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             {albums.map((album) => {
               const cover = album.slides[0]?.thumb;
               const images = album.slides.filter((s) => s.type === 'image').length;
               const videos = album.slides.length - images;
               return (
-                <Link key={album.id} to="/admin/albums/$id" params={{ id: album.id }} className="aa__card">
-                  <div className="aa__card-cover">{cover && <img src={cover} alt="" />}</div>
-                  <div className="aa__card-body">
-                    <span className="aa__card-title">{album.title}</span>
-                    <span className="aa__card-sub">/library/albums/{album.slug}</span>
-                    <span className="aa__card-stats">
-                      <span>
+                <Link
+                  key={album.id}
+                  to="/admin/albums/$id"
+                  params={{ id: album.id }}
+                  className="glass-fill glass-interactive group flex flex-col overflow-hidden rounded-site"
+                  data-glass-light=""
+                >
+                  <div className="aspect-[4/3] w-full overflow-hidden bg-site-bg">
+                    {cover ? (
+                      <img
+                        src={cover}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-site-text-dim">
+                        <Images className="size-8" aria-hidden="true" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1 p-3">
+                    <span className="truncate font-semibold text-site-text">{album.title}</span>
+                    <span className="truncate font-mono text-xs text-site-text-dim">/library/albums/{album.slug}</span>
+                    <span className="mt-1 flex items-center gap-3 text-xs text-site-text-muted">
+                      <span className="inline-flex items-center gap-1">
                         <Images size={12} aria-hidden="true" /> {images}
                       </span>
-                      <span>
+                      <span className="inline-flex items-center gap-1">
                         <Video size={12} aria-hidden="true" /> {videos}
                       </span>
                     </span>

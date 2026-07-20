@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Coins, Gift, Package, Banknote } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -88,20 +89,23 @@ function AdminRedemptionsPage() {
   };
 
   return (
-    <PageLayout title={t('redemptions-title', { defaultValue: 'Redemption Queue' })}>
+    <PageLayout
+      title={t('redemptions-title', { defaultValue: 'Redemption Queue' })}
+      backTo="/admin"
+      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+    >
+      <div className="mx-auto w-full max-w-2xl p-4 md:p-8">
       {loading ? (
         <div className="flex justify-center py-16">
           <Spinner />
         </div>
       ) : rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
-          <Coins className="size-10 text-site-text-dim" />
-          <p className="text-site-text-dim">
-            {t('redemptions-empty', { defaultValue: 'No pending redemption requests.' })}
-          </p>
-        </div>
+        <EmptyState
+          icon={Coins}
+          title={t('redemptions-empty', { defaultValue: 'No pending redemption requests.' })}
+        />
       ) : (
-        <div className="space-y-3 max-w-2xl">
+        <div className="space-y-3">
           {rows.map((r) => {
             const Icon = KIND_ICON[r.kind];
             return (
@@ -130,7 +134,7 @@ function AdminRedemptionsPage() {
                   </div>
                   <Badge variant="outline" className="shrink-0">
                     <span className="flex items-center gap-1">
-                      <Coins className="size-3 text-yellow-500" />
+                      <Coins className="size-3 text-site-warning" />
                       {r.amountCoins}
                     </span>
                   </Badge>
@@ -164,6 +168,7 @@ function AdminRedemptionsPage() {
           })}
         </div>
       )}
+      </div>
     </PageLayout>
   );
 }

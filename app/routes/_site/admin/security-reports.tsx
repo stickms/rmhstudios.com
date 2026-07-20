@@ -4,10 +4,14 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { formatDistanceToNow } from 'date-fns';
 import { ShieldAlert, Trash2 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { EmptyState } from '@/components/ui/empty-state';
 import { toast } from 'sonner';
 import {
   listSecurityReports,
@@ -39,6 +43,7 @@ export const Route = createFileRoute('/_site/admin/security-reports')({
 const SEVERITY_ORDER: Record<string, number> = { critical: 0, high: 1, medium: 2, low: 3 };
 
 function AdminSecurityReportsPage() {
+  const { t } = useTranslation('admin');
   const confirm = useConfirm();
   const [status, setStatus] = useState<SecurityReportStatus>('NEW');
   const [items, setItems] = useState<SecurityReportDTO[]>([]);
@@ -56,11 +61,11 @@ function AdminSecurityReportsPage() {
       setItems(sorted);
       setCounts(data.counts ?? {});
     } catch {
-      toast.error('Failed to load reports');
+      toast.error(t('reports-load-failed', { defaultValue: 'Failed to load reports' }));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     load(status);
@@ -71,15 +76,15 @@ function AdminSecurityReportsPage() {
     try {
       const res = await updateSecurityReport({ data: { id, status: next } });
       if (res.ok) {
-        toast.success(`Marked ${SECURITY_STATUS_LABELS[next]}`);
+        toast.success(t('marked-status', { label: SECURITY_STATUS_LABELS[next], defaultValue: `Marked ${SECURITY_STATUS_LABELS[next]}` }));
         if (next !== status) setItems((prev) => prev.filter((r) => r.id !== id));
         setCounts((prev) => ({ ...prev }));
         load(status);
       } else {
-        toast.error(res.error ?? 'Update failed');
+        toast.error(res.error ?? t('update-failed', { defaultValue: 'Update failed' }));
       }
     } catch {
-      toast.error('Update failed');
+      toast.error(t('update-failed', { defaultValue: 'Update failed' }));
     } finally {
       setBusyId(null);
     }
@@ -89,40 +94,54 @@ function AdminSecurityReportsPage() {
     setBusyId(id);
     try {
       const res = await updateSecurityReport({ data: { id, adminNotes } });
-      if (res.ok) toast.success('Notes saved');
-      else toast.error(res.error ?? 'Save failed');
+      if (res.ok) toast.success(t('notes-saved', { defaultValue: 'Notes saved' }));
+      else toast.error(res.error ?? t('save-failed', { defaultValue: 'Save failed' }));
     } catch {
-      toast.error('Save failed');
+      toast.error(t('save-failed', { defaultValue: 'Save failed' }));
     } finally {
       setBusyId(null);
     }
   };
 
   const remove = async (id: string) => {
-    if (!(await confirm({ title: 'Delete this report permanently?', description: 'This cannot be undone.', danger: true }))) return;
+    if (
+      !(await confirm({
+        title: t('delete-report-confirm', { defaultValue: 'Delete this report permanently?' }),
+        description: t('cannot-be-undone', { defaultValue: 'This cannot be undone.' }),
+        danger: true,
+      }))
+    )
+      return;
     setBusyId(id);
     try {
       const res = await updateSecurityReport({ data: { id, delete: true } });
       if (res.ok) {
-        toast.success('Report deleted');
+        toast.success(t('report-deleted', { defaultValue: 'Report deleted' }));
         setItems((prev) => prev.filter((r) => r.id !== id));
         load(status);
       } else {
-        toast.error(res.error ?? 'Delete failed');
+        toast.error(res.error ?? t('delete-failed', { defaultValue: 'Delete failed' }));
       }
     } catch {
-      toast.error('Delete failed');
+      toast.error(t('delete-failed', { defaultValue: 'Delete failed' }));
     } finally {
       setBusyId(null);
     }
   };
 
   return (
-    <PageLayout title="Security Reports" wide backTo="/admin">
+    <PageLayout
+      title={t('security-reports-title', { defaultValue: 'Security Reports' })}
+      backTo="/admin"
+      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+      wide
+    >
       <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
         <div className="flex items-center gap-2 text-site-text-muted text-sm">
           <ShieldAlert className="h-5 w-5 text-site-accent shrink-0" />
-          Triage and resolve bug-bounty submissions from the /security page.
+          {t('security-reports-description', {
+            defaultValue: 'Triage and resolve bug-bounty submissions from the /security page.',
+          })}
         </div>
 
         <div className="flex flex-wrap gap-2">
@@ -148,9 +167,10 @@ function AdminSecurityReportsPage() {
             <Spinner />
           </div>
         ) : items.length === 0 ? (
-          <div className="rounded-site border border-site-border bg-site-surface p-10 text-center text-site-text-muted">
-            Nothing here. This queue is clear.
-          </div>
+          <EmptyState
+            icon={ShieldAlert}
+            title={t('security-queue-empty', { defaultValue: 'Nothing here. This queue is clear.' })}
+          />
         ) : (
           <ul className="space-y-3">
             {items.map((r) => (
@@ -183,10 +203,11 @@ function ReportCard({
   onNotes: (id: string, notes: string) => void;
   onDelete: (id: string) => void;
 }) {
+  const { t } = useTranslation('admin');
   const [notes, setNotes] = useState(report.adminNotes ?? '');
 
   return (
-    <li className="rounded-site border border-site-border bg-site-surface p-4">
+    <li className="glass-fill rounded-site p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -206,7 +227,7 @@ function ReportCard({
 
       {report.affectedArea ? (
         <p className="mt-2 text-xs text-site-text-muted break-words">
-          <span className="text-site-text-dim">Affected:</span> {report.affectedArea}
+          <span className="text-site-text-dim">{t('affected-label', { defaultValue: 'Affected:' })}</span> {report.affectedArea}
         </p>
       ) : null}
 
@@ -214,8 +235,8 @@ function ReportCard({
 
       {report.reporterName || report.reporterEmail || report.userId ? (
         <p className="mt-3 text-xs text-site-text-muted">
-          <span className="text-site-text-dim">Reporter:</span>{' '}
-          {report.reporterName || 'Anonymous'}
+          <span className="text-site-text-dim">{t('reporter-label', { defaultValue: 'Reporter:' })}</span>{' '}
+          {report.reporterName || t('anonymous', { defaultValue: 'Anonymous' })}
           {report.reporterEmail ? (
             <>
               {' · '}
@@ -224,25 +245,25 @@ function ReportCard({
               </a>
             </>
           ) : null}
-          {report.userId ? <span className="text-site-text-dim"> · signed-in user</span> : null}
+          {report.userId ? <span className="text-site-text-dim"> · {t('signed-in-user', { defaultValue: 'signed-in user' })}</span> : null}
         </p>
       ) : null}
 
-      <textarea
-        className="mt-3 w-full rounded-site-sm border border-site-border bg-site-bg p-2 text-sm text-site-text placeholder:text-site-text-dim"
+      <Textarea
+        className="mt-3"
         rows={2}
-        placeholder="Internal triage notes…"
+        placeholder={t('triage-notes-placeholder', { defaultValue: 'Internal triage notes…' })}
         value={notes}
         onChange={(e) => setNotes(e.target.value)}
       />
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <label className="sr-only" htmlFor={`status-${report.id}`}>
-          Status
+          {t('status-label', { defaultValue: 'Status' })}
         </label>
         <select
           id={`status-${report.id}`}
-          className="rounded-site-sm border border-site-border bg-site-bg px-2 py-1.5 text-sm text-site-text"
+          className="glass-inset px-2.5 py-1.5 text-sm text-site-text"
           value={report.status}
           disabled={busy}
           onChange={(e) => onStatus(report.id, e.target.value as SecurityReportStatus)}
@@ -253,23 +274,19 @@ function ReportCard({
             </option>
           ))}
         </select>
-        <button
-          type="button"
-          onClick={() => onNotes(report.id, notes)}
-          disabled={busy}
-          className="rounded-site-sm bg-site-accent px-3 py-1.5 text-sm font-medium text-site-accent-fg transition disabled:opacity-60 hover:opacity-90"
-        >
-          Save notes
-        </button>
-        <button
-          type="button"
+        <Button variant="accent" size="sm" onClick={() => onNotes(report.id, notes)} loading={busy}>
+          {t('save-notes', { defaultValue: 'Save notes' })}
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={() => onDelete(report.id)}
           disabled={busy}
-          className="ml-auto rounded-site-sm p-1.5 text-site-danger transition hover:bg-site-danger/10 disabled:opacity-60"
-          aria-label="Delete report"
+          className="ml-auto text-site-danger hover:bg-site-danger/10"
+          aria-label={t('delete-report', { defaultValue: 'Delete report' })}
         >
           <Trash2 className="size-4" aria-hidden="true" />
-        </button>
+        </Button>
       </div>
     </li>
   );

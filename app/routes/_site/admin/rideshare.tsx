@@ -4,16 +4,20 @@
  * Review pending driver applications (vehicle details + self-reported licence
  * number) and approve or reject.
  */
-import { createFileRoute, redirect, Link } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Loader2, ArrowLeft, ShieldCheck, Car, Check, X, MapPin, Search, Route as RouteIcon } from 'lucide-react';
+import { Car, Check, X, MapPin, Search, Route as RouteIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { auth } from '@/lib/auth';
 import { Spinner } from '@/components/ui/spinner';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { EmptyState } from '@/components/ui/empty-state';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { rideClassName } from '@/lib/rideshare/classes';
@@ -170,22 +174,16 @@ function AdminRidesharePage() {
   }
 
   return (
-    <PageLayout title="Rideshare Applications" wide>
+    <PageLayout
+      title={t('rideshare-title', { defaultValue: 'Rideshare Applications' })}
+      backTo="/admin"
+      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+      wide
+    >
       <div className="mx-auto w-full max-w-4xl space-y-5 p-4 md:p-8">
-        <div>
-          <Link to="/admin" className="inline-flex items-center gap-1 text-sm text-site-text-muted hover:text-site-text">
-            <ArrowLeft className="h-4 w-4" /> {t('admin-link', { defaultValue: 'Admin' })}
-          </Link>
-          <div className="mt-2 flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6 text-site-accent" />
-            <h1 className="text-2xl font-bold text-site-text" style={{ fontFamily: 'var(--site-font-display)' }}>
-              {t('driver-applications-heading', { defaultValue: 'Driver Applications' })}
-            </h1>
-          </div>
-          <p className="mt-1 text-site-text-muted">
-            {t('rideshare-admin-description', { defaultValue: 'Review and verify community drivers, and browse every ride placed across the community.' })}
-          </p>
-        </div>
+        <p className="text-sm text-site-text-muted">
+          {t('rideshare-admin-description', { defaultValue: 'Review and verify community drivers, and browse every ride placed across the community.' })}
+        </p>
 
         {/* View switcher */}
         <div className="flex gap-1 rounded-site border border-site-border bg-site-surface/80 p-1">
@@ -228,15 +226,16 @@ function AdminRidesharePage() {
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16"><Spinner className="text-site-text-muted" /></div>
+          <div className="flex justify-center py-16"><Spinner /></div>
         ) : items.length === 0 ? (
-          <p className="rounded-site border border-dashed border-site-border px-4 py-16 text-center text-site-text-muted">
-            {t('no-applications', { status: status.toLowerCase(), defaultValue: 'No {{status}} applications.' })}
-          </p>
+          <EmptyState
+            icon={Car}
+            title={t('no-applications', { status: status.toLowerCase(), defaultValue: 'No {{status}} applications.' })}
+          />
         ) : (
           <ul className="space-y-4">
             {items.map((app) => (
-              <li key={app.id} className="rounded-site border border-site-border bg-site-surface/80 p-5">
+              <li key={app.id} className="glass-fill rounded-site p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={app.user.image} alt={app.user.name ?? t('user-alt', { defaultValue: 'User' })} size={40} />
@@ -254,7 +253,7 @@ function AdminRidesharePage() {
 
                 <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
                   {/* Vehicle */}
-                  <div className="rounded-site border border-site-border bg-site-surface p-4">
+                  <div className="glass-inset rounded-site-sm p-4">
                     <div className="flex items-center gap-2 text-sm font-semibold text-site-text">
                       <Car className="h-4 w-4 text-site-accent" /> {t('vehicle-section', { defaultValue: 'Vehicle' })}
                     </div>
@@ -268,7 +267,7 @@ function AdminRidesharePage() {
                   </div>
 
                   {/* License */}
-                  <div className="rounded-site border border-site-border bg-site-surface p-4">
+                  <div className="glass-inset rounded-site-sm p-4">
                     <div className="mb-2 text-sm font-semibold text-site-text">{t('drivers-license-section', { defaultValue: "Driver's license" })}</div>
                     <dl className="space-y-1.5">
                       <Row label={t('license-number-label', { defaultValue: 'License #' })} value={app.licenseNumber || '—'} />
@@ -286,48 +285,45 @@ function AdminRidesharePage() {
                   <div className="mt-4">
                     {rejecting === app.id ? (
                       <div className="space-y-2">
-                        <textarea
+                        <Textarea
                           value={reason}
                           onChange={(e) => setReason(e.target.value)}
                           rows={2}
                           maxLength={500}
                           placeholder={t('rejection-reason-placeholder', { defaultValue: 'Reason for rejection (shared with the applicant)' })}
-                          className="w-full resize-none rounded-site-sm border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent/60"
+                          className="resize-none"
                         />
                         <div className="flex gap-2">
-                          <button
+                          <Button
+                            variant="danger"
+                            size="sm"
                             onClick={() => decide(app.id, 'reject', reason.trim() || undefined)}
-                            disabled={busy === app.id}
-                            className="flex items-center gap-1.5 rounded-site-sm bg-site-danger px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+                            loading={busy === app.id}
                           >
-                            {busy === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4" />}
-                            {t('confirm-reject', { defaultValue: 'Confirm reject' })}
-                          </button>
-                          <button
+                            <X className="h-4 w-4" /> {t('confirm-reject', { defaultValue: 'Confirm reject' })}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => { setRejecting(null); setReason(''); }}
-                            className="rounded-site-sm border border-site-border px-4 py-1.5 text-sm text-site-text-muted hover:text-site-text"
                           >
                             {t('cancel', { defaultValue: 'Cancel' })}
-                          </button>
+                          </Button>
                         </div>
                       </div>
                     ) : (
                       <div className="flex gap-2">
-                        <button
-                          onClick={() => decide(app.id, 'approve')}
-                          disabled={busy === app.id}
-                          className="flex items-center gap-1.5 rounded-site-sm bg-site-success px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-                        >
-                          {busy === app.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                          {t('approve', { defaultValue: 'Approve' })}
-                        </button>
-                        <button
+                        <Button onClick={() => decide(app.id, 'approve')} loading={busy === app.id}>
+                          <Check className="h-4 w-4" /> {t('approve', { defaultValue: 'Approve' })}
+                        </Button>
+                        <Button
+                          variant="outline"
                           onClick={() => setRejecting(app.id)}
                           disabled={busy === app.id}
-                          className="flex items-center gap-1.5 rounded-site-sm border border-site-border px-4 py-2 text-sm font-medium text-site-danger hover:bg-site-danger/10 disabled:opacity-50"
+                          className="text-site-danger hover:bg-site-danger/10"
                         >
                           <X className="h-4 w-4" /> {t('reject', { defaultValue: 'Reject' })}
-                        </button>
+                        </Button>
                       </div>
                     )}
                   </div>
@@ -363,12 +359,12 @@ function RideHistory({
     <div className="space-y-4">
       {/* Search */}
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
-        <input
+        <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-site-text-muted" />
+        <Input
           value={query}
           onChange={(e) => onQuery(e.target.value)}
           placeholder={t('ride-search-placeholder', { defaultValue: 'Search rider, driver, or address…' })}
-          className="w-full rounded-site border border-site-border bg-site-surface/80 py-2.5 pl-9 pr-3 text-sm text-site-text outline-none transition-colors placeholder:text-site-text-dim focus:border-site-accent/60"
+          className="pl-9"
         />
       </div>
 
@@ -390,17 +386,15 @@ function RideHistory({
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><Spinner className="text-site-text-muted" /></div>
+        <div className="flex justify-center py-16"><Spinner /></div>
       ) : rides.length === 0 ? (
-        <p className="rounded-site border border-dashed border-site-border px-4 py-16 text-center text-site-text-muted">
-          {t('no-rides-found', { defaultValue: 'No rides found.' })}
-        </p>
+        <EmptyState icon={MapPin} title={t('no-rides-found', { defaultValue: 'No rides found.' })} />
       ) : (
         <ul className="space-y-3">
           {rides.map((ride) => {
             const meta = RIDE_STATUS_META[ride.status];
             return (
-              <li key={ride.id} className="rounded-site border border-site-border bg-site-surface/80 p-4">
+              <li key={ride.id} className="glass-fill rounded-site p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <UserAvatar src={ride.rider?.image ?? null} alt={ride.rider?.name ?? t('rider-alt', { defaultValue: 'Rider' })} size={36} />

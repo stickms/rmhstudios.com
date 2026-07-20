@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AlertCircle, Check, Film, Loader2, RotateCw, UploadCloud, X } from 'lucide-react';
+import './album-admin.css';
 
 export type AdminSlide = { id: string; type: string; position: number; thumb: string; src: string };
 

@@ -5,9 +5,12 @@
 import { useTranslation } from "react-i18next";
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { Loader2, Search, CheckCircle, Shield, AlertCircle, Pencil, Check, X, Crown, Coins } from 'lucide-react';
+import { Loader2, Search, CheckCircle, Shield, Pencil, Check, X, Crown, Coins } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 
@@ -84,13 +87,13 @@ function AdminUsersPage() {
 
   const toggleStatus = async (userId: string, field: 'isAdmin' | 'isVerified', currentValue: boolean) => {
     if (field === 'isAdmin' && !currentValue && !(await confirm({ title: t("confirm-grant-admin", { defaultValue: "Are you sure you want to grant Admin privileges to this user? They will have full access to the database." }), danger: true }))) return;
-    if (field === 'isAdmin' && currentValue && userId === session?.user?.id) { alert(t("alert-self-admin-remove", { defaultValue: "You cannot remove your own admin privileges from the dashboard." })); return; }
+    if (field === 'isAdmin' && currentValue && userId === session?.user?.id) { toast.error(t("alert-self-admin-remove", { defaultValue: "You cannot remove your own admin privileges from the dashboard." })); return; }
     setUpdating(userId);
     try {
       const res = await fetch('/api/admin/users', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId, [field]: !currentValue }) });
       if (res.ok) { const updated = await res.json(); setUsers(prev => prev.map(u => u.id === userId ? { ...u, ...updated } : u)); }
-      else { const err = await res.text(); alert(t("alert-update-user-failed", { err, defaultValue: "Failed to update user: {{err}}" })); }
-    } catch (error) { console.error("Failed to update user", error); alert(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
+      else { const err = await res.text(); toast.error(t("alert-update-user-failed", { err, defaultValue: "Failed to update user: {{err}}" })); }
+    } catch (error) { console.error("Failed to update user", error); toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
 
   const grantMembership = async (userId: string) => {
@@ -105,7 +108,7 @@ function AdminUsersPage() {
       const months = Math.max(1, Math.min(24, parseInt(monthsStr || '1', 10) || 1));
       body = { tier: action, months };
     } else {
-      alert(t("alert-invalid-membership-choice", { defaultValue: 'Enter "starter", "pro", or "revoke".' }));
+      toast.error(t("alert-invalid-membership-choice", { defaultValue: 'Enter "starter", "pro", or "revoke".' }));
       return;
     }
     setUpdating(userId);
@@ -115,9 +118,9 @@ function AdminUsersPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (res.ok) alert(action === 'revoke' ? t("alert-grants-revoked", { defaultValue: 'Active grants revoked.' }) : t("alert-membership-granted", { action, defaultValue: 'Granted {{action}}.' }));
-      else { const d = await res.json().catch(() => ({})); alert(t("alert-membership-failed", { error: d.error || 'error', defaultValue: 'Failed: {{error}}' })); }
-    } catch { alert(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
+      if (res.ok) toast.success(action === 'revoke' ? t("alert-grants-revoked", { defaultValue: 'Active grants revoked.' }) : t("alert-membership-granted", { action, defaultValue: 'Granted {{action}}.' }));
+      else { const d = await res.json().catch(() => ({})); toast.error(t("alert-membership-failed", { error: d.error || 'error', defaultValue: 'Failed: {{error}}' })); }
+    } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
 
   const setCoins = async (user: User) => {
@@ -126,7 +129,7 @@ function AdminUsersPage() {
     if (input === null) return;
     const coins = parseInt(input.trim(), 10);
     if (!Number.isFinite(coins) || coins < 0) {
-      alert(t("alert-invalid-coins", { defaultValue: "Enter a whole number of 0 or more." }));
+      toast.error(t("alert-invalid-coins", { defaultValue: "Enter a whole number of 0 or more." }));
       return;
     }
     setUpdating(user.id);
@@ -139,11 +142,12 @@ function AdminUsersPage() {
       if (res.ok) {
         const data = await res.json();
         setUsers(prev => prev.map(u => u.id === user.id ? { ...u, profile: { coins: data.coins } } : u));
+        toast.success(t("alert-coins-updated", { defaultValue: "Coin balance updated." }));
       } else {
         const d = await res.json().catch(() => ({}));
-        alert(t("alert-set-coins-failed", { error: d.error || 'error', defaultValue: 'Failed: {{error}}' }));
+        toast.error(t("alert-set-coins-failed", { error: d.error || 'error', defaultValue: 'Failed: {{error}}' }));
       }
-    } catch { alert(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
+    } catch { toast.error(t("alert-connect-failed", { defaultValue: "Failed to connect to server." })); } finally { setUpdating(null); }
   };
 
   const startEditHandle = (user: User) => { setEditingHandle(user.id); setHandleInput(user.handle || ''); setHandleError(null); };
@@ -165,14 +169,12 @@ function AdminUsersPage() {
       <div className="p-4 md:p-6 space-y-6">
         <p className="text-site-text-muted">{t("page-subtitle", { defaultValue: "Search users, verify accounts, and manage admin privileges." })}</p>
 
-        <div className="bg-site-surface border border-site-border rounded-site overflow-hidden p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-site-text-dim" />
-            <input type="text" placeholder={t("search-placeholder", { defaultValue: "Search by name, handle, or email..." })} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-site-bg border border-site-border rounded-site-sm pl-10 pr-4 py-2.5 text-site-text focus:outline-none focus:border-site-accent/50 focus:ring-1 focus:ring-site-accent/50 transition-all placeholder:text-site-text-dim/50" />
-          </div>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-site-text-dim" />
+          <Input type="text" placeholder={t("search-placeholder", { defaultValue: "Search by name, handle, or email..." })} value={search} onChange={(e) => setSearch(e.target.value)} className="h-12 pl-10" />
         </div>
 
-        <div className="bg-site-surface border border-site-border rounded-site overflow-x-auto min-h-[400px]">
+        <div className="glass-fill rounded-site overflow-x-auto min-h-[400px]">
           {/* min-w keeps the header and rows column-aligned; the container scrolls
               horizontally on narrow screens instead of crushing the name column. */}
           <div className="min-w-[600px]">
@@ -194,10 +196,7 @@ function AdminUsersPage() {
             )}
 
             {!loading && users.length === 0 && (
-              <div className="p-12 text-center text-site-text-muted flex flex-col items-center">
-                <AlertCircle className="w-8 h-8 mb-3 text-site-text-dim" />
-                <p>{t("no-users-found", { defaultValue: "No users found matching your search." })}</p>
-              </div>
+              <EmptyState icon={Search} title={t("no-users-found", { defaultValue: "No users found matching your search." })} />
             )}
 
             {users.map((user, index) => {
@@ -208,7 +207,7 @@ function AdminUsersPage() {
                   <div className="flex-1 flex items-center gap-4 min-w-0">
                     <div className="w-10 h-10 rounded-full bg-site-bg overflow-hidden flex-shrink-0 border border-site-border">
                       {user.image ? (
-                        <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                        <img src={user.image} alt={user.name} loading="lazy" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full bg-linear-to-br from-site-surface to-site-surface-hover flex items-center justify-center">
                           <span className="text-xs font-bold text-site-text-dim">{user.name?.charAt(0) || user.handle?.charAt(0) || 'U'}</span>
@@ -225,7 +224,7 @@ function AdminUsersPage() {
                         {isEditingThis ? (
                           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                             <span className="text-site-text-dim">@</span>
-                            <input type="text" value={handleInput} onChange={(e) => setHandleInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} className="bg-site-bg border border-site-border rounded px-1.5 py-0.5 text-sm text-site-text w-32 focus:outline-none focus:border-site-accent" autoFocus maxLength={20} onKeyDown={(e) => { if (e.key === 'Enter') saveHandle(user.id); if (e.key === 'Escape') cancelEditHandle(); }} />
+                            <input type="text" value={handleInput} onChange={(e) => setHandleInput(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))} className="glass-inset px-1.5 py-0.5 text-sm text-site-text w-32 focus:outline-none focus:border-site-accent" autoFocus maxLength={20} onKeyDown={(e) => { if (e.key === 'Enter') saveHandle(user.id); if (e.key === 'Escape') cancelEditHandle(); }} />
                             <button onClick={() => saveHandle(user.id)} className="p-0.5 text-site-success hover:text-site-success" disabled={updating === user.id}><Check className="w-3.5 h-3.5" /></button>
                             <button onClick={cancelEditHandle} className="p-0.5 text-site-text-dim hover:text-site-text"><X className="w-3.5 h-3.5" /></button>
                             {handleError && <span className="text-xs text-site-danger">{handleError}</span>}

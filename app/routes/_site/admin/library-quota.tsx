@@ -1,12 +1,14 @@
-import { createFileRoute, redirect, Link } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { ArrowLeft, Check, Loader2, X } from 'lucide-react';
+import { Check, Inbox, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
@@ -92,56 +94,59 @@ function AdminLibraryQuotaPage() {
   );
 
   return (
-    <PageLayout title={t('library-quota-title', { defaultValue: 'Library Upload Appeals' })} wide>
-      <div className="mb-4">
-        <Link to="/admin" className="inline-flex items-center gap-1.5 text-sm text-site-text-muted hover:text-site-text">
-          <ArrowLeft size={15} /> {t('back-to-admin', { defaultValue: 'Back to admin' })}
-        </Link>
+    <PageLayout
+      title={t('library-quota-title', { defaultValue: 'Library Upload Appeals' })}
+      backTo="/admin"
+      backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+      wide
+    >
+      <div className="mx-auto w-full max-w-4xl p-4 md:p-8">
+        {loading ? (
+          <div className="flex justify-center py-16">
+            <Spinner />
+          </div>
+        ) : requests.length === 0 ? (
+          <EmptyState
+            icon={Inbox}
+            title={t('quota-none', { defaultValue: 'No pending upload appeals.' })}
+          />
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {requests.map((req) => {
+              const who = req.user.handle ? `@${req.user.handle}` : req.user.name ?? req.user.id;
+              return (
+                <li key={req.id} className="glass-fill rounded-site p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-site-text">{who}</p>
+                      <p className="text-sm text-site-text-muted mt-0.5">
+                        {t('quota-summary', {
+                          used: req.user.used,
+                          current: req.user.currentQuota,
+                          requested: req.requestedTotal,
+                          defaultValue: `Using {{used}} of {{current}} — requesting a cap of {{requested}}`,
+                        })}
+                      </p>
+                      {req.reason && <p className="text-sm text-site-text mt-2 whitespace-pre-wrap">{req.reason}</p>}
+                      <p className="text-xs text-site-text-muted mt-2">
+                        {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <Button size="sm" variant="outline" disabled={busy === req.id} onClick={() => decide(req, false)}>
+                        <X size={15} /> {t('deny', { defaultValue: 'Deny' })}
+                      </Button>
+                      <Button size="sm" loading={busy === req.id} onClick={() => decide(req, true)}>
+                        <Check size={15} /> {t('approve', { defaultValue: 'Approve' })}
+                      </Button>
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
-
-      {loading ? (
-        <div className="flex items-center gap-2 text-site-text-muted">
-          <Loader2 className="animate-spin" size={18} /> {t('loading', { defaultValue: 'Loading…' })}
-        </div>
-      ) : requests.length === 0 ? (
-        <p className="text-site-text-muted">{t('quota-none', { defaultValue: 'No pending upload appeals.' })}</p>
-      ) : (
-        <ul className="flex flex-col gap-3">
-          {requests.map((req) => {
-            const who = req.user.handle ? `@${req.user.handle}` : req.user.name ?? req.user.id;
-            return (
-              <li key={req.id} className="rounded-site-sm border border-site-border bg-site-card p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-semibold text-site-text">{who}</p>
-                    <p className="text-sm text-site-text-muted mt-0.5">
-                      {t('quota-summary', {
-                        used: req.user.used,
-                        current: req.user.currentQuota,
-                        requested: req.requestedTotal,
-                        defaultValue: `Using {{used}} of {{current}} — requesting a cap of {{requested}}`,
-                      })}
-                    </p>
-                    {req.reason && <p className="text-sm text-site-text mt-2 whitespace-pre-wrap">{req.reason}</p>}
-                    <p className="text-xs text-site-text-muted mt-2">
-                      {formatDistanceToNow(new Date(req.createdAt), { addSuffix: true })}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button size="sm" variant="outline" disabled={busy === req.id} onClick={() => decide(req, false)}>
-                      <X size={15} /> {t('deny', { defaultValue: 'Deny' })}
-                    </Button>
-                    <Button size="sm" disabled={busy === req.id} onClick={() => decide(req, true)}>
-                      {busy === req.id ? <Loader2 className="animate-spin" size={15} /> : <Check size={15} />}{' '}
-                      {t('approve', { defaultValue: 'Approve' })}
-                    </Button>
-                  </div>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
     </PageLayout>
   );
 }

@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Flag, ExternalLink } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { EmptyState } from '@/components/ui/empty-state';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -150,15 +151,13 @@ function AdminReportsPage() {
             <Spinner />
           </div>
         ) : reports.length === 0 ? (
-          <div className="rounded-site border border-site-border bg-site-surface p-10 text-center text-site-text-muted">
-            {t('queue-empty', { defaultValue: 'Nothing here. The queue is clear.' })}
-          </div>
+          <EmptyState icon={Flag} title={t('queue-empty', { defaultValue: 'Nothing here. The queue is clear.' })} />
         ) : (
           <ul className="space-y-3">
             {reports.map((r) => {
               const link = entityLink(r);
               return (
-                <li key={r.id} className="rounded-site border border-site-border bg-site-surface p-4">
+                <li key={r.id} className="glass-fill rounded-site p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-site-sm bg-site-danger/15 px-2 py-0.5 text-xs font-semibold text-site-danger">
                       {r.reason.replace('_', ' ')}

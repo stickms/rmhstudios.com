@@ -39,7 +39,8 @@ function AdminDashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             to="/admin/users"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("users-title", { defaultValue: "Users" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -49,7 +50,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/user-builds"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("user-builds-title", { defaultValue: "All User Builds" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -59,7 +61,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/blog"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("blog-title", { defaultValue: "Manage Blog Posts" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -69,7 +72,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/reports"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="flex items-center gap-2 text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">
               {t("moderation-queue-title", { defaultValue: "Moderation Queue" })}
@@ -86,7 +90,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/security-reports"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("security-reports-title", { defaultValue: "Security Reports" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -96,7 +101,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/library-quota"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("library-quota-title", { defaultValue: "Library Upload Appeals" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -106,7 +112,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/library-storage"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("library-storage-title", { defaultValue: "Library Storage Health" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -116,7 +123,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/announcements"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("announcements-title", { defaultValue: "Feed Announcements" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -126,7 +134,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/predictions"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("predictions-title", { defaultValue: "Prediction Markets" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -136,7 +145,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/analytics"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("analytics-title", { defaultValue: "Analytics" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -146,7 +156,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/rideshare"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("rideshare-title", { defaultValue: "Rideshare Applications" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -156,7 +167,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/albums"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("albums-title", { defaultValue: "Library Albums" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
@@ -166,7 +178,8 @@ function AdminDashboardPage() {
 
           <Link
             to="/admin/audit"
-            className="block p-6 rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-colors group"
+            className="glass-fill glass-interactive block p-6 rounded-site hover:-translate-y-px group"
+            data-glass-light=""
           >
             <h2 className="text-xl font-bold text-site-text group-hover:text-site-accent transition-colors">{t("audit-log-title", { defaultValue: "Audit Log" })}</h2>
             <p className="text-site-text-muted text-sm mt-2">
