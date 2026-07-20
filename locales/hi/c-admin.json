@@ -5,7 +5,7 @@
   "changes-now-live": "आपके परिवर्तन अब लाइव हैं।",
   "content-label": "सामग्री",
   "date-label": "दिनांक",
-  "delete-confirm": "क्या आप वाकई \"{{title}}\" को हटाना चाहते हैं? यह क्रिया पूर्ववत नहीं की जा सकती।",
+  "delete-confirm": "\"{{title}}\" को हटाना पूर्ववत नहीं किया जा सकता।",
   "delete-failed": "पोस्ट हटाने में विफल",
   "delete-post": "पोस्ट हटाएं",
   "delete-success": "ब्लॉग पोस्ट हटा दी गई: {{slug}}।",

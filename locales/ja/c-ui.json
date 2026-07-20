@@ -5,5 +5,7 @@
   "close": "閉じる",
   "confirm": "確認",
   "copied": "コピーしました",
-  "copy": "コピー"
+  "copy": "コピー",
+  "move-down": "下に移動{{name}}",
+  "move-up": "上に移動{{name}}"
 }

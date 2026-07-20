@@ -5,7 +5,7 @@
   "changes-now-live": "Le tue modifiche sono ora attive.",
   "content-label": "Contenuto",
   "date-label": "Data",
-  "delete-confirm": "Sei sicuro di voler eliminare \"{{title}}\"? Questa operazione non può essere annullata.",
+  "delete-confirm": "L'eliminazione di \"{{title}}\" non può essere annullata.",
   "delete-failed": "Eliminazione del post fallita",
   "delete-post": "Elimina Post",
   "delete-success": "Post del blog eliminato: {{slug}}.",

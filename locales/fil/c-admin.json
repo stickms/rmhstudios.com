@@ -5,7 +5,7 @@
   "changes-now-live": "Ang iyong mga pagbabago ay live na ngayon.",
   "content-label": "Nilalaman",
   "date-label": "Petsa",
-  "delete-confirm": "Sigurado ka bang gusto mong tanggalin ang \"{{title}}\"? Hindi na ito maaaring ibalik.",
+  "delete-confirm": "Ang pagtanggal ng \"{{title}}\" ay hindi na maaaring ibalik.",
   "delete-failed": "Nabigo ang pagtanggal ng post",
   "delete-post": "Tanggalin ang Post",
   "delete-success": "Natanggal ang blog post: {{slug}}.",

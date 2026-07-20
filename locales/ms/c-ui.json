@@ -5,5 +5,7 @@
   "close": "Tutup",
   "confirm": "Sahkan",
   "copied": "Disalin",
-  "copy": "Salin"
+  "copy": "Salin",
+  "move-down": "Gerakkan ke bawah{{name}}",
+  "move-up": "Gerakkan ke atas{{name}}"
 }

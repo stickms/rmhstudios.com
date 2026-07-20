@@ -5,5 +5,7 @@
   "close": "قريب",
   "confirm": "تأكيد",
   "copied": "تم النسخ",
-  "copy": "نسخ"
+  "copy": "نسخ",
+  "move-down": "تحريك لأسفل{{name}}",
+  "move-up": "تحريك لأعلى{{name}}"
 }

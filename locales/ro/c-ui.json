@@ -5,5 +5,7 @@
   "close": "Închide",
   "confirm": "Confirmă",
   "copied": "Copiat",
-  "copy": "Copiază"
+  "copy": "Copiază",
+  "move-down": "Mută în jos{{name}}",
+  "move-up": "Mută în sus{{name}}"
 }

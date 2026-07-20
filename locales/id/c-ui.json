@@ -5,5 +5,7 @@
   "close": "Tutup",
   "confirm": "Konfirmasi",
   "copied": "Disalin",
-  "copy": "Salin"
+  "copy": "Salin",
+  "move-down": "Turunkan{{name}}",
+  "move-up": "Naikkan{{name}}"
 }
