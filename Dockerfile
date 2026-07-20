@@ -109,6 +109,12 @@ COPY lib/dream-rift/net/events.ts ./lib/dream-rift/net/events.ts
 # the web tier — so those two files must be present when the bundle is built.
 COPY lib/battlepass/season.ts ./lib/battlepass/season.ts
 COPY lib/quests/catalog.ts ./lib/quests/catalog.ts
+# The socket-server's Spaces (live text rooms) and Party (cross-game groups)
+# handlers import their event-name + type contracts from these dirs
+# (server/socket-server/handlers/{spaces,party}.ts). Both are small, import-free
+# constant/type modules, so copy the dirs so the bundle can resolve them.
+COPY lib/party ./lib/party/
+COPY lib/spaces ./lib/spaces/
 # lights-out, doctrine, rmhvibe, rmhark-ai, media and storage were only imported
 # by the Node workers now running in the Go supervisor — no longer copied here so
 # changes to them don't bust this stage's cache.
