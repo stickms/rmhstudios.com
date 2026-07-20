@@ -337,6 +337,9 @@ model User {
   userLists          UserList[]
   userListMemberships UserListMember[]
   feedSignals        FeedSignal[]
+  gameReviews        GameReview[]
+  gameReviewVotes    GameReviewVote[]
+  gameGuides         GameGuide[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -5834,4 +5837,64 @@ model FeedSignal {
   @@id([userId, kind, targetId])
   @@index([userId, kind])
   @@map("feed_signal")
+}
+
+// Game hubs (§6): per-game reviews, ratings, and player guides.
+model GameReview {
+  id        String   @id @default(cuid())
+  userId    String
+  gameId    String   @db.VarChar(40) // key from lib/games.ts
+  stars     Int // 1..5 (zod)
+  body      String?  @db.VarChar(2000)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes GameReviewVote[]
+
+  @@unique([userId, gameId])
+  @@index([gameId, createdAt(sort: Desc)])
+  @@map("game_review")
+}
+
+model GameReviewVote {
+  reviewId String
+  userId   String
+  helpful  Boolean
+
+  review GameReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([reviewId, userId])
+  @@map("game_review_vote")
+}
+
+model GameGuide {
+  id        String   @id @default(cuid())
+  authorId  String
+  gameId    String   @db.VarChar(40)
+  title     String   @db.VarChar(120)
+  body      String // markdown, current revision
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author    User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  revisions GameGuideRevision[]
+
+  @@index([gameId, published, updatedAt(sort: Desc)])
+  @@map("game_guide")
+}
+
+model GameGuideRevision {
+  id        String   @id @default(cuid())
+  guideId   String
+  body      String
+  note      String?  @db.VarChar(120)
+  createdAt DateTime @default(now())
+
+  guide GameGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@index([guideId, createdAt(sort: Desc)])
+  @@map("game_guide_revision")
 }
