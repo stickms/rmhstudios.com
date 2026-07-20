@@ -367,6 +367,15 @@ model NotificationPreference {
   // in settings. Kept opt-in for deliverability + consent hygiene.
   emailDigest Boolean @default(false)
 
+  // Notification center v2 (§16): per-category × per-channel matrix
+  // ({ [category]: { inapp, push, email } }; missing = category default) plus
+  // quiet hours. The booleans above stay until every notifier is migrated onto
+  // lib/notify/dispatch.server.ts.
+  matrix     Json    @default("{}")
+  quietStart Int? // minutes from midnight, user tz
+  quietEnd   Int?
+  tz         String? @db.VarChar(40)
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preference")
@@ -4064,6 +4073,9 @@ model Notification {
   preview    String?          @db.VarChar(280) // short snapshot of the content
   link       String?          @db.VarChar(500) // where clicking should take the user
   read       Boolean          @default(false)
+  // §16 batching: rows sharing a groupKey collapse in the list/badge ("12 people
+  // liked your post"). Null = ungrouped (rendered individually, as today).
+  groupKey   String?          @db.VarChar(80)
   createdAt  DateTime         @default(now())
 
   user  User  @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
@@ -4071,6 +4083,7 @@ model Notification {
 
   @@index([userId, read, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, groupKey])
   @@map("notification")
 }
 

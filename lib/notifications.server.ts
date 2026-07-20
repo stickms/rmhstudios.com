@@ -112,6 +112,10 @@ export interface CreateNotificationInput {
   entityId?: string | null;
   preview?: string | null;
   link?: string | null;
+  /** §16 batching key — rows sharing it collapse in the list/badge. */
+  groupKey?: string | null;
+  /** §16 — suppress the Web Push mirror (e.g. quiet hours / channel off). */
+  skipPush?: boolean;
   /**
    * When true, collapse repeated identical unread notifications (same actor +
    * type + entity) into one instead of stacking. Used for like/follow/repost
@@ -184,6 +188,7 @@ export async function createNotification(input: CreateNotificationInput): Promis
         entityId: input.entityId ?? null,
         preview: input.preview?.slice(0, 280) ?? null,
         link: input.link ?? null,
+        groupKey: input.groupKey ?? null,
       },
     });
 
@@ -193,6 +198,8 @@ export async function createNotification(input: CreateNotificationInput): Promis
 
     // Mirror to Web Push (no-op unless the user enabled push on a device and
     // VAPID keys are configured). Fire-and-forget: never delays the caller.
+    // §16: the dispatch gateway sets skipPush to enforce channel/quiet-hours.
+    if (input.skipPush) return;
     void sendPushToUser(input.userId, {
       title: pushTitleFor(input.type),
       body: input.preview ?? undefined,

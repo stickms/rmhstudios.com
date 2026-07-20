@@ -4,7 +4,7 @@
  * awards for content, and lets a recipient hide an award.
  */
 import { prisma } from '@/lib/prisma.server';
-import { createNotification } from '@/lib/notifications.server';
+import { dispatch } from '@/lib/notify/dispatch.server';
 import {
   getAward,
   recipientShare,
@@ -110,10 +110,12 @@ export async function giveAward(
     return { balance: giver?.coins ?? 0 };
   });
 
-  await createNotification({
+  // §16: awards notify through the dispatch gateway (economy category).
+  await dispatch({
     userId: recipientId,
-    actorId: input.anonymous ? null : giverId,
+    category: 'economy',
     type: 'SYSTEM',
+    actorId: input.anonymous ? null : giverId,
     entityType: input.entityType,
     entityId: input.entityId,
     preview: `Your ${input.entityType === 'rmhark' ? 'post' : input.entityType} received a ${def.name} award ${def.emoji}`,
