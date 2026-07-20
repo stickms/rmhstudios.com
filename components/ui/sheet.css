@@ -1,0 +1,61 @@
+/* Sheet enter/exit, driven by Radix's data-state — the same hand-rolled
+ * approach as dialog.css (tailwindcss-animate is not installed here).
+ *
+ * Mobile (< md): a bottom sheet that slides up from the bottom edge.
+ * Desktop (>= md): a centered dialog that scales in, identical to Dialog.
+ * Transform/opacity only; the glass blur is never animated (janky). Gated on
+ * no-preference so reduced-motion users get an instant appearance. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-slot="sheet-overlay"][data-state="open"] {
+    animation: ui-sheet-overlay-in 0.3s ease-out;
+  }
+  [data-slot="sheet-overlay"][data-state="closed"] {
+    animation: ui-sheet-overlay-out 0.2s ease-in forwards;
+  }
+  [data-slot="sheet-content"][data-state="open"] {
+    animation: ui-sheet-content-in 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  [data-slot="sheet-content"][data-state="closed"] {
+    animation: ui-sheet-content-out 0.2s ease-in forwards;
+  }
+}
+
+@keyframes ui-sheet-overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes ui-sheet-overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+
+/* Mobile: slide up from the bottom edge. */
+@keyframes ui-sheet-content-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes ui-sheet-content-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+
+/* Desktop: centered scale-in (composes with the -50%/-50% translate set via
+ * Tailwind's native `translate` property, exactly like Dialog). */
+@media (min-width: 768px) {
+  @keyframes ui-sheet-content-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.96);
+    }
+  }
+  @keyframes ui-sheet-content-out {
+    to {
+      opacity: 0;
+      transform: translateY(8px) scale(0.96);
+    }
+  }
+}
