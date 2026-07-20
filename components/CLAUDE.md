@@ -4,7 +4,7 @@
 > [`/CLAUDE.md`](../CLAUDE.md). Visual rules:
 > [`docs/design-language.md`](../docs/design-language.md).
 
-~780 files organized **by feature, one directory per game/app/domain**, plus a
+~860 files organized **by feature, one directory per game/app/domain**, plus a
 few shared directories. Rule of thumb: a component used by exactly one
 feature lives in that feature's directory; genuinely shared primitives live in
 `ui/`.

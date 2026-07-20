@@ -48,7 +48,7 @@
 
 ```bash
 pnpm install && pnpm db:push && pnpm dev   # run locally → http://localhost:7005
-pnpm exec tsc --noEmit && pnpm lint        # gates (no CI for these — run them)
-pnpm exec vitest run                       # tests
+pnpm exec tsc --noEmit && pnpm lint        # gated by web-ci.yml — run them before pushing
+pnpm exec vitest run                       # tests (also run in web-ci.yml + vitest-coverage.yml)
 make gazelle && make test                  # Go fleet (Bazel)
 ```

@@ -1,6 +1,6 @@
 # lib/ — shared logic, server helpers, schemas
 
-> Scope: guidance for working inside `lib/` (~200 files, 70+ subdirectories).
+> Scope: guidance for working inside `lib/` (~920 files, 80+ subdirectories).
 > Repo-wide context: [`/CLAUDE.md`](../CLAUDE.md).
 
 `lib/` is the shared brain of the app: auth, database, feed, economy, i18n,
@@ -99,7 +99,7 @@ don't remove that plugin.
 
 ## Database (Prisma)
 
-- `prisma/schema.prisma`: 225 models, 5400+ lines. IDs are
+- `prisma/schema.prisma`: 234 models, 5600+ lines. IDs are
   `String @id @default(cuid())`; models `@@map` to snake_case tables; ~61
   enums. Model families: auth/user, social feed (RMHark*), per-game
   player/match tables, economy (CoinTransaction, inventory, quests),
