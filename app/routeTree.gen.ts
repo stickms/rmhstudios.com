@@ -296,6 +296,7 @@ import { Route as ApiSignalForgeAbandonRouteImport } from './routes/api/signal-f
 import { Route as ApiShopPurchaseRouteImport } from './routes/api/shop/purchase'
 import { Route as ApiShopEquipRouteImport } from './routes/api/shop/equip'
 import { Route as ApiSettingsEmailDigestRouteImport } from './routes/api/settings/email-digest'
+import { Route as ApiSearchSavedRouteImport } from './routes/api/search/saved'
 import { Route as ApiScheduledIdRouteImport } from './routes/api/scheduled/$id'
 import { Route as ApiSavesFoldersRouteImport } from './routes/api/saves/folders'
 import { Route as ApiRmhtubeOembedRouteImport } from './routes/api/rmhtube/oembed'
@@ -536,6 +537,7 @@ import { Route as ApiSpacesIdStartRouteImport } from './routes/api/spaces/$id/st
 import { Route as ApiSpacesIdEndRouteImport } from './routes/api/spaces/$id/end'
 import { Route as ApiSliceItSongsUploadRouteImport } from './routes/api/slice-it/songs/upload'
 import { Route as ApiSliceItSongsIdRouteImport } from './routes/api/slice-it/songs/$id'
+import { Route as ApiSearchSavedIdRouteImport } from './routes/api/search/saved.$id'
 import { Route as ApiScheduledIdPublishRouteImport } from './routes/api/scheduled/$id/publish'
 import { Route as ApiSavesFoldersIdRouteImport } from './routes/api/saves/folders.$id'
 import { Route as ApiRmhtubeSubscribeChannelIdRouteImport } from './routes/api/rmhtube/subscribe/$channelId'
@@ -2151,6 +2153,11 @@ const ApiSettingsEmailDigestRoute = ApiSettingsEmailDigestRouteImport.update({
   path: '/api/settings/email-digest',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSearchSavedRoute = ApiSearchSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => ApiSearchRoute,
+} as any)
 const ApiScheduledIdRoute = ApiScheduledIdRouteImport.update({
   id: '/api/scheduled/$id',
   path: '/api/scheduled/$id',
@@ -3373,6 +3380,11 @@ const ApiSliceItSongsIdRoute = ApiSliceItSongsIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ApiSliceItSongsRoute,
 } as any)
+const ApiSearchSavedIdRoute = ApiSearchSavedIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ApiSearchSavedRoute,
+} as any)
 const ApiScheduledIdPublishRoute = ApiScheduledIdPublishRouteImport.update({
   id: '/publish',
   path: '/publish',
@@ -4379,7 +4391,7 @@ export interface FileRoutesByFullPath {
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
-  '/api/search': typeof ApiSearchRoute
+  '/api/search': typeof ApiSearchRouteWithChildren
   '/api/streak': typeof ApiStreakRouteWithChildren
   '/api/today': typeof ApiTodayRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
@@ -4634,6 +4646,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
+  '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
@@ -4865,6 +4878,7 @@ export interface FileRoutesByFullPath {
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
+  '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
@@ -5052,7 +5066,7 @@ export interface FileRoutesByTo {
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
-  '/api/search': typeof ApiSearchRoute
+  '/api/search': typeof ApiSearchRouteWithChildren
   '/api/streak': typeof ApiStreakRouteWithChildren
   '/api/today': typeof ApiTodayRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
@@ -5306,6 +5320,7 @@ export interface FileRoutesByTo {
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
+  '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
@@ -5537,6 +5552,7 @@ export interface FileRoutesByTo {
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
+  '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
@@ -5749,7 +5765,7 @@ export interface FileRoutesById {
   '/api/recap': typeof ApiRecapRoute
   '/api/rmharks': typeof ApiRmharksRouteWithChildren
   '/api/rum': typeof ApiRumRoute
-  '/api/search': typeof ApiSearchRoute
+  '/api/search': typeof ApiSearchRouteWithChildren
   '/api/streak': typeof ApiStreakRouteWithChildren
   '/api/today': typeof ApiTodayRoute
   '/api/user-builds': typeof ApiUserBuildsRouteWithChildren
@@ -6005,6 +6021,7 @@ export interface FileRoutesById {
   '/api/rmhtube/oembed': typeof ApiRmhtubeOembedRoute
   '/api/saves/folders': typeof ApiSavesFoldersRouteWithChildren
   '/api/scheduled/$id': typeof ApiScheduledIdRouteWithChildren
+  '/api/search/saved': typeof ApiSearchSavedRouteWithChildren
   '/api/settings/email-digest': typeof ApiSettingsEmailDigestRoute
   '/api/shop/equip': typeof ApiShopEquipRoute
   '/api/shop/purchase': typeof ApiShopPurchaseRoute
@@ -6236,6 +6253,7 @@ export interface FileRoutesById {
   '/api/rmhtube/subscribe/$channelId': typeof ApiRmhtubeSubscribeChannelIdRoute
   '/api/saves/folders/$id': typeof ApiSavesFoldersIdRoute
   '/api/scheduled/$id/publish': typeof ApiScheduledIdPublishRoute
+  '/api/search/saved/$id': typeof ApiSearchSavedIdRoute
   '/api/slice-it/songs/$id': typeof ApiSliceItSongsIdRouteWithChildren
   '/api/slice-it/songs/upload': typeof ApiSliceItSongsUploadRoute
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
@@ -6704,6 +6722,7 @@ export interface FileRouteTypes {
     | '/api/rmhtube/oembed'
     | '/api/saves/folders'
     | '/api/scheduled/$id'
+    | '/api/search/saved'
     | '/api/settings/email-digest'
     | '/api/shop/equip'
     | '/api/shop/purchase'
@@ -6935,6 +6954,7 @@ export interface FileRouteTypes {
     | '/api/rmhtube/subscribe/$channelId'
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
+    | '/api/search/saved/$id'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
@@ -7376,6 +7396,7 @@ export interface FileRouteTypes {
     | '/api/rmhtube/oembed'
     | '/api/saves/folders'
     | '/api/scheduled/$id'
+    | '/api/search/saved'
     | '/api/settings/email-digest'
     | '/api/shop/equip'
     | '/api/shop/purchase'
@@ -7607,6 +7628,7 @@ export interface FileRouteTypes {
     | '/api/rmhtube/subscribe/$channelId'
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
+    | '/api/search/saved/$id'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
@@ -8074,6 +8096,7 @@ export interface FileRouteTypes {
     | '/api/rmhtube/oembed'
     | '/api/saves/folders'
     | '/api/scheduled/$id'
+    | '/api/search/saved'
     | '/api/settings/email-digest'
     | '/api/shop/equip'
     | '/api/shop/purchase'
@@ -8305,6 +8328,7 @@ export interface FileRouteTypes {
     | '/api/rmhtube/subscribe/$channelId'
     | '/api/saves/folders/$id'
     | '/api/scheduled/$id/publish'
+    | '/api/search/saved/$id'
     | '/api/slice-it/songs/$id'
     | '/api/slice-it/songs/upload'
     | '/api/spaces/$id/end'
@@ -8484,7 +8508,7 @@ export interface RootRouteChildren {
   ApiRecapRoute: typeof ApiRecapRoute
   ApiRmharksRoute: typeof ApiRmharksRouteWithChildren
   ApiRumRoute: typeof ApiRumRoute
-  ApiSearchRoute: typeof ApiSearchRoute
+  ApiSearchRoute: typeof ApiSearchRouteWithChildren
   ApiStreakRoute: typeof ApiStreakRouteWithChildren
   ApiTodayRoute: typeof ApiTodayRoute
   ApiUserBuildsRoute: typeof ApiUserBuildsRouteWithChildren
@@ -10820,6 +10844,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSettingsEmailDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/search/saved': {
+      id: '/api/search/saved'
+      path: '/saved'
+      fullPath: '/api/search/saved'
+      preLoaderRoute: typeof ApiSearchSavedRouteImport
+      parentRoute: typeof ApiSearchRoute
+    }
     '/api/scheduled/$id': {
       id: '/api/scheduled/$id'
       path: '/api/scheduled/$id'
@@ -12499,6 +12530,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/slice-it/songs/$id'
       preLoaderRoute: typeof ApiSliceItSongsIdRouteImport
       parentRoute: typeof ApiSliceItSongsRoute
+    }
+    '/api/search/saved/$id': {
+      id: '/api/search/saved/$id'
+      path: '/$id'
+      fullPath: '/api/search/saved/$id'
+      preLoaderRoute: typeof ApiSearchSavedIdRouteImport
+      parentRoute: typeof ApiSearchSavedRoute
     }
     '/api/scheduled/$id/publish': {
       id: '/api/scheduled/$id/publish'
@@ -14546,6 +14584,30 @@ const ApiRmharksRouteWithChildren = ApiRmharksRoute._addFileChildren(
   ApiRmharksRouteChildren,
 )
 
+interface ApiSearchSavedRouteChildren {
+  ApiSearchSavedIdRoute: typeof ApiSearchSavedIdRoute
+}
+
+const ApiSearchSavedRouteChildren: ApiSearchSavedRouteChildren = {
+  ApiSearchSavedIdRoute: ApiSearchSavedIdRoute,
+}
+
+const ApiSearchSavedRouteWithChildren = ApiSearchSavedRoute._addFileChildren(
+  ApiSearchSavedRouteChildren,
+)
+
+interface ApiSearchRouteChildren {
+  ApiSearchSavedRoute: typeof ApiSearchSavedRouteWithChildren
+}
+
+const ApiSearchRouteChildren: ApiSearchRouteChildren = {
+  ApiSearchSavedRoute: ApiSearchSavedRouteWithChildren,
+}
+
+const ApiSearchRouteWithChildren = ApiSearchRoute._addFileChildren(
+  ApiSearchRouteChildren,
+)
+
 interface ApiStreakRouteChildren {
   ApiStreakFreezeRoute: typeof ApiStreakFreezeRoute
 }
@@ -15144,7 +15206,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiRecapRoute: ApiRecapRoute,
   ApiRmharksRoute: ApiRmharksRouteWithChildren,
   ApiRumRoute: ApiRumRoute,
-  ApiSearchRoute: ApiSearchRoute,
+  ApiSearchRoute: ApiSearchRouteWithChildren,
   ApiStreakRoute: ApiStreakRouteWithChildren,
   ApiTodayRoute: ApiTodayRoute,
   ApiUserBuildsRoute: ApiUserBuildsRouteWithChildren,

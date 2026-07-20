@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma.server';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit.server';
 import { userDisplaySelect, resolveUser } from '@/lib/user-display';
 import { getHiddenAuthorIds } from '@/lib/moderation.server';
+import { parseQuery } from '@/lib/search/parse';
 
 /** Cap on results per category (was 30 for the focused tab). */
 const MAX = 25;
@@ -53,17 +54,30 @@ async function searchPeople(q: string, take: number) {
  * select. `content_tsv` isn't in schema.prisma (raw-SQL migration), hence
  * $queryRaw. Fully parameterised.
  */
-async function searchPosts(q: string, hiddenIds: string[], take: number) {
+async function searchPosts(
+  q: string,
+  hiddenIds: string[],
+  take: number,
+  opts: { authorId?: string | null; before?: string; after?: string } = {},
+) {
   const hiddenClause = hiddenIds.length
     ? Prisma.sql`AND "userId" NOT IN (${Prisma.join(hiddenIds)})`
     : Prisma.empty;
+  // Free text is optional when operators are present (e.g. `from:@x`).
+  const ftsClause = q ? Prisma.sql`AND content_tsv @@ websearch_to_tsquery('simple', ${q})` : Prisma.empty;
+  const authorClause = opts.authorId ? Prisma.sql`AND "userId" = ${opts.authorId}` : Prisma.empty;
+  const beforeClause = opts.before ? Prisma.sql`AND "createdAt" < ${new Date(opts.before)}` : Prisma.empty;
+  const afterClause = opts.after ? Prisma.sql`AND "createdAt" >= ${new Date(opts.after)}` : Prisma.empty;
   const matches = await prisma.$queryRaw<{ id: string }[]>(Prisma.sql`
     SELECT id
     FROM rmheet
     WHERE "deletedAt" IS NULL
-      AND content_tsv @@ websearch_to_tsquery('simple', ${q})
+      ${ftsClause}
       AND audience = 'PUBLIC'
       AND "unlockPrice" IS NULL
+      ${authorClause}
+      ${beforeClause}
+      ${afterClause}
       ${hiddenClause}
     ORDER BY "likeCount" DESC, "createdAt" DESC
     LIMIT ${take}
@@ -118,14 +132,27 @@ export const Route = createFileRoute('/api/search')({
         if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
         const url = new URL(request.url);
-        const q = url.searchParams.get('q')?.trim();
+        const rawQ = url.searchParams.get('q')?.trim();
         const type = url.searchParams.get('type') ?? 'all';
-        if (!q || q.length < 2) {
+        if (!rawQ || rawQ.length < 2) {
           return Response.json({ people: [], posts: [], builds: [], blog: [] });
         }
 
+        // §18: parse operators (from:/before:/after:/has:media/in:). The free
+        // text drives FTS; operators refine the posts query.
+        const parsed = parseQuery(rawQ);
+        // A query with operators but no text is still valid (e.g. `from:@x`).
+        const q = parsed.text || (parsed.operatorCount > 0 ? '' : rawQ);
+        const postAuthorId = parsed.from
+          ? (
+              await prisma.user.findFirst({ where: { handle: parsed.from }, select: { id: true } })
+            )?.id ?? '__none__'
+          : null;
+
         const viewerId = session.user.id;
-        const contains = { contains: q, mode: 'insensitive' as const };
+        // Non-post categories use the free-text part (operators don't apply there).
+        const containsTerm = q || rawQ;
+        const contains = { contains: containsTerm, mode: 'insensitive' as const };
 
         const wantPeople = type === 'all' || type === 'people';
         const wantPosts = type === 'all' || type === 'posts';
@@ -136,8 +163,14 @@ export const Route = createFileRoute('/api/search')({
           const hiddenIds = wantPosts ? await getHiddenAuthorIds(viewerId) : [];
 
           const [people, posts, builds, blog] = await Promise.all([
-            wantPeople ? searchPeople(q, type === 'people' ? MAX : 6) : Promise.resolve([]),
-            wantPosts ? searchPosts(q, hiddenIds, type === 'posts' ? MAX : 6) : Promise.resolve([]),
+            wantPeople && q ? searchPeople(q, type === 'people' ? MAX : 6) : Promise.resolve([]),
+            wantPosts
+              ? searchPosts(q, hiddenIds, type === 'posts' ? MAX : 6, {
+                  authorId: postAuthorId,
+                  before: parsed.before,
+                  after: parsed.after,
+                })
+              : Promise.resolve([]),
             wantBuilds
               ? prisma.userBuild.findMany({
                   where: {

@@ -342,6 +342,7 @@ model User {
   gameGuides         GameGuide[]
   userThemes         UserTheme[]
   profileLayout      ProfileLayout?
+  savedSearches      SavedSearch[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -5940,4 +5941,21 @@ model ProfileLayout {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("profile_layout")
+}
+
+// Universal search v2 (§18): site-wide saved searches (promotes the
+// ladder-only pattern). Optional weekly new-result alerts.
+model SavedSearch {
+  id        String    @id @default(cuid())
+  userId    String
+  query     String    @db.VarChar(200) // raw query incl. operators
+  types     Json      @default("[]") // entity-type chips
+  alerts    Boolean   @default(false)
+  lastRunAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("saved_search")
 }
