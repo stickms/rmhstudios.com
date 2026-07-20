@@ -56,14 +56,14 @@ function AuditLogPage() {
         ) : items.length === 0 ? (
           <EmptyState description={t("no-admin-actions", { defaultValue: "No admin actions logged yet." })} />
         ) : (
-          <ul className="divide-y divide-site-border rounded-site border border-site-border bg-site-surface">
+          <ul className="glass-fill divide-y divide-site-border rounded-site overflow-hidden">
             {items.map((e) => (
               <li key={e.id} className="flex items-center gap-3 px-4 py-2.5">
                 <UserAvatar src={e.admin.image} alt={e.admin.name || 'Admin'} size={28} fallbackName={e.admin.name || 'A'} />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-site-text">
                     <span className="font-semibold">{e.admin.name || e.admin.handle}</span>{' '}
-                    <code className="rounded bg-site-bg px-1 text-xs text-site-accent">{e.action}</code>
+                    <code className="glass-inset rounded-site-sm px-1.5 py-0.5 font-mono text-xs text-site-accent">{e.action}</code>
                     {e.targetType && <span className="text-site-text-muted"> · {e.targetType}</span>}
                   </p>
                   {e.detail && <p className="truncate text-xs text-site-text-muted">{e.detail}</p>}

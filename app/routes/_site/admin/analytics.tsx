@@ -31,12 +31,12 @@ interface Analytics {
 
 function Stat({ icon: Icon, label, value, sub }: { icon: typeof Users; label: string; value: number; sub?: string }) {
   return (
-    <div className="rounded-site border border-site-border bg-site-surface p-4">
+    <div className="glass-fill rounded-site p-4">
       <div className="flex items-center gap-2 text-site-text-muted">
         <Icon className="h-4 w-4 text-site-accent" />
-        <span className="text-xs uppercase tracking-wide">{label}</span>
+        <span className="font-mono text-[0.68rem] uppercase tracking-widest text-site-text-dim">{label}</span>
       </div>
-      <p className="mt-1 text-2xl font-bold text-site-text">{value.toLocaleString()}</p>
+      <p className="mt-1 font-(family-name:--site-font-display) text-2xl font-bold tracking-tight text-site-text">{value.toLocaleString()}</p>
       {sub && <p className="text-xs text-site-text-dim">{sub}</p>}
     </div>
   );
@@ -79,7 +79,7 @@ function AnalyticsPage() {
               <Stat icon={Coins} label={t('stat-coins-in-circulation', { defaultValue: 'Coins in circulation' })} value={data.economy.coinsInCirculation} />
             </div>
 
-            <div className="rounded-site border border-site-border bg-site-surface p-4">
+            <div className="glass-pane rounded-site p-4">
               <h2 className="mb-3 text-sm font-semibold text-site-text">{t('posts-per-day-14d', { defaultValue: 'Posts per day (14 days)' })}</h2>
               <div className="flex h-40 items-end gap-1">
                 {data.postsPerDay.map((d) => (

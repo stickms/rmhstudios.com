@@ -6,8 +6,10 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
-import { Loader2, Search, AlertCircle, Edit, ExternalLink, Lock, Award } from 'lucide-react';
+import { Loader2, Search, Edit, ExternalLink, Lock, Award } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
+import { Input } from '@/components/ui/input';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useSession } from '@/components/Providers';
 
 interface Build {
@@ -91,18 +93,21 @@ function AdminUserBuildsPage() {
   };
 
   return (
-    <PageLayout title={t("manage-user-builds", { defaultValue: "Manage User Builds" })} wide backTo="/admin">
+    <PageLayout
+      title={t("manage-user-builds", { defaultValue: "Manage User Builds" })}
+      backTo="/admin"
+      backLabel={t("back-to-admin", { defaultValue: "Back to admin" })}
+      wide
+    >
       <div className="p-4 md:p-6 space-y-6">
         <p className="text-site-text-muted">{t("user-builds-description", { defaultValue: "Search, moderate, and manage all user-submitted builds." })}</p>
 
-        <div className="bg-site-surface border border-site-border rounded-site overflow-hidden p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-site-text-dim" />
-            <input type="text" placeholder={t("search-builds-placeholder", { defaultValue: "Search by build title or description..." })} value={search} onChange={(e) => setSearch(e.target.value)} className="w-full bg-site-bg border border-site-border rounded-site-sm pl-10 pr-4 py-2.5 text-site-text focus:outline-none focus:border-site-accent/50 focus:ring-1 focus:ring-site-accent/50 transition-all placeholder:text-site-text-dim/50" />
-          </div>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-5 w-5 -translate-y-1/2 text-site-text-dim" />
+          <Input type="text" placeholder={t("search-builds-placeholder", { defaultValue: "Search by build title or description..." })} value={search} onChange={(e) => setSearch(e.target.value)} className="h-12 pl-10" />
         </div>
 
-        <div className="bg-site-surface border border-site-border rounded-site overflow-hidden min-h-[400px]">
+        <div className="glass-fill rounded-site overflow-hidden min-h-[400px]">
           <div className="divide-y divide-site-border relative">
             {loading && (
               <div className="absolute inset-0 bg-site-surface/50 backdrop-blur-sm z-10 flex flex-col items-center justify-center p-8">
@@ -110,12 +115,9 @@ function AdminUserBuildsPage() {
                 <span className="text-site-text-muted">{t("loading-builds", { defaultValue: "Loading builds..." })}</span>
               </div>
             )}
-            
+
             {!loading && builds.length === 0 && (
-              <div className="p-12 text-center text-site-text-muted flex flex-col items-center">
-                <AlertCircle className="w-8 h-8 mb-3 text-site-text-dim" />
-                <p>{t("no-builds-found", { defaultValue: "No builds found matching your search." })}</p>
-              </div>
+              <EmptyState icon={Search} title={t("no-builds-found", { defaultValue: "No builds found matching your search." })} />
             )}
 
             {builds.map((build, index) => {

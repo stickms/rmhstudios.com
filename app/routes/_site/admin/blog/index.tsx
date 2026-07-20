@@ -8,8 +8,10 @@ import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { getAllPosts } from '@/lib/blog';
-import { Plus, Edit } from 'lucide-react';
+import { Plus, Edit, FileText } from 'lucide-react';
 import { DeleteBlogButton } from '@/components/admin/DeleteBlogButton';
+import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/ui/empty-state';
 import { useTranslation } from 'react-i18next';
 
 const fetchBlogData = createServerFn({ method: 'GET' }).handler(async () => {
@@ -35,42 +37,49 @@ function AdminBlogDashboard() {
   const { t } = useTranslation("admin");
 
   return (
-    <PageLayout title={t("manage-blog-posts", { defaultValue: "Manage Blog Posts" })} wide backTo="/admin">
-      <div className="p-4 md:p-6 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <PageLayout
+      title={t("manage-blog-posts", { defaultValue: "Manage Blog Posts" })}
+      backTo="/admin"
+      backLabel={t("back-to-admin", { defaultValue: "Back to admin" })}
+      wide
+    >
+      <div className="mx-auto w-full max-w-4xl p-4 md:p-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <p className="text-site-text-muted text-sm">{t("manage-blog-posts-description", { defaultValue: "Create, edit, and delete blog posts." })}</p>
 
-          <Link to="/admin/blog/new" className="inline-flex items-center justify-center whitespace-nowrap rounded-site-sm text-sm font-medium transition-colors h-10 px-4 py-2 gap-2 bg-site-accent hover:bg-site-accent-hover text-site-accent-fg self-end sm:self-auto shrink-0">
-            <Plus className="w-4 h-4" /> {t("new-post", { defaultValue: "New Post" })}
-          </Link>
+          <Button asChild className="self-end sm:self-auto shrink-0">
+            <Link to="/admin/blog/new">
+              <Plus className="w-4 h-4" /> {t("new-post", { defaultValue: "New Post" })}
+            </Link>
+          </Button>
         </div>
 
-        <div className="bg-site-surface border border-site-border rounded-site divide-y divide-site-border overflow-hidden">
-          {posts.length === 0 ? (
-            <div className="p-8 text-center text-site-text-dim">
-              {t("no-blog-posts-found", { defaultValue: "No blog posts found. Create one to get started!" })}
-            </div>
-          ) : (
-            posts.map((post) => (
-              <div key={post.slug as string} className="flex items-center justify-between gap-2 p-4 hover:bg-site-bg/50 transition-colors">
+        {posts.length === 0 ? (
+          <EmptyState
+            icon={FileText}
+            title={t("no-blog-posts-found", { defaultValue: "No blog posts found." })}
+            description={t("no-blog-posts-hint", { defaultValue: "Create one to get started!" })}
+          />
+        ) : (
+          <div className="glass-fill rounded-site divide-y divide-site-border overflow-hidden">
+            {posts.map((post) => (
+              <div key={post.slug as string} className="flex items-center justify-between gap-2 p-4 transition-colors hover:bg-site-surface-hover">
                 <div className="min-w-0">
                   <h3 className="font-bold text-site-text truncate">{post.title as string}</h3>
                   <p className="text-sm text-site-text-dim truncate">{post.date as string} · /{post.slug as string}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                  <Link
-                    to={`/admin/blog/${post.slug as string}/edit` as string}
-                    className="inline-flex items-center justify-center p-2 rounded-site-sm hover:bg-site-border text-site-text-dim hover:text-site-text transition-colors"
-                    title={t("edit-post", { defaultValue: "Edit Post" })}
-                  >
-                    <Edit className="w-4 h-4" />
-                  </Link>
+                  <Button asChild variant="ghost" size="icon-sm" title={t("edit-post", { defaultValue: "Edit Post" })}>
+                    <Link to={`/admin/blog/${post.slug as string}/edit` as string} aria-label={t("edit-post", { defaultValue: "Edit Post" })}>
+                      <Edit className="w-4 h-4" />
+                    </Link>
+                  </Button>
                   <DeleteBlogButton slug={post.slug as string} title={post.title as string} />
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </PageLayout>
   );

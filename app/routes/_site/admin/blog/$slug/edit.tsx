@@ -2,12 +2,16 @@
  * Edit Blog Post Route
  */
 
+import { lazy, Suspense } from 'react';
 import { createFileRoute, redirect, notFound } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { auth } from '@/lib/auth';
-import { MDXEditor } from '@/components/admin/MDXEditor';
+import { Spinner } from '@/components/ui/spinner';
 import { getPostBySlug } from '@/lib/blog';
+
+// Heavy, admin-only editor — code-split it out of the shared bundle.
+const MDXEditor = lazy(() => import('@/components/admin/MDXEditor').then((m) => ({ default: m.MDXEditor })));
 
 const fetchPostForEdit = createServerFn({ method: 'GET' })
   .validator((slug: string) => slug)
@@ -36,5 +40,15 @@ export const Route = createFileRoute('/_site/admin/blog/$slug/edit')({
 
 function EditBlogPostPage() {
   const post = Route.useLoaderData();
-  return <MDXEditor initialData={post} isEdit={true} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-site-bg">
+          <Spinner size={32} />
+        </div>
+      }
+    >
+      <MDXEditor initialData={post} isEdit={true} />
+    </Suspense>
+  );
 }
