@@ -58,7 +58,7 @@ RMHBox phase tests unrelated to these changes.
 | H-5 | Partially remediated | App: `image-proxy` rate-limited; per-user keying preferred where practical. Edge: Apache `mod_remoteip` + Cloudflare-range trust documented/scaffolded — the origin firewall restriction is an infra step that must be completed operationally. The ×4 multiplier and full Redis-backed shared limiter remain a follow-up. |
 | M-1 | Remediated | RMH Study + Synapse Storm socket handlers derive identity from `socket.data.userId` only; anonymous Synapse players get a per-connection guest id. (#404, #405) |
 | M-2 | Remediated | `safeFetch` pins undici's connection to the DNS-validated IP (per redirect hop); homes scraper routed through `safeFetch`; `isPrivateIp` IPv6/198.18 coverage widened; open image proxy rate-limited. (#407) |
-| M-3 | **Deferred (needs infra)** | Enabling `requireEmailVerification` without an email transport would break login/reset. Requires wiring an email provider + `sendVerificationEmail`/`sendResetPassword` + an account-linking policy — a product/infra decision, intentionally not auto-applied. (#408) |
+| M-3 | Remediated | Email transport now exists (`lib/email/send.server.ts`), so the deferral no longer applies: `lib/auth.ts` wires `sendVerificationEmail` + `sendResetPassword` through it, enables `requireEmailVerification` (gated on `RESEND_API_KEY` so unconfigured deploys aren't locked out), and adds an `account.accountLinking` policy (`allowDifferentEmails: false`, social providers untrusted) so a social identity never auto-links onto an unverified pre-existing credential account. (#408) |
 | M-4 | Remediated (Discord daily-progress, ranked) | Discord daily-progress now derives `discordId` from a verified access token (short-TTL cache; client updated to send the token); ranked report finalizes via an atomic status transition. `discord/race.ts` (ephemeral in-memory) remains a follow-up; true two-sided ranked confirmation is a noted product follow-up. |
 | M-5 | Partially remediated | Library upload rejects oversized bodies by declared length before buffering. A global Nitro/Apache body cap is deferred (needs an ops-chosen ceiling sized to the largest legitimate upload). |
 | M-6 | Remediated | rmhcode CLI tokens are stored/looked up as SHA-256 hashes (`hashRmhCodeToken`); existing plaintext tokens stop validating and must be re-issued. |
@@ -97,19 +97,20 @@ Verified against the current tree on 2026-07-13:
 
 | Issue | Sev | Finding | Current status | Evidence |
 | ----- | --- | ------- | -------------- | -------- |
-| #400 | Critical | Mass-assignable `isAdmin`/`isVerified` → unauth admin | ✅ **FIXED** | `lib/auth.ts:83,89` now set `input: false` on both fields |
-| #401 | High | `translate` endpoint leaks PRIVATE/paywalled posts | ❌ **STILL LIVE** | `app/routes/api/rmharks/$id/translate.ts:38` — no `getSession`/`canViewPost`/`isLocked` |
-| #402 | High | Stored XSS via user-build `repoUrl`/`demoUrl` (`javascript:`/`data:`) | ❌ **STILL LIVE** | `lib/user-builds-schema.ts:14` `urlSchema` has no scheme allowlist; sinks `BuildDetail.tsx:230,241`, `BuildCard.tsx:130,142` |
-| #403 | High | Prediction trade race → coin double-spend | ❌ **STILL LIVE** (one instance of a broader class — see H-1) | `lib/predictions/predictions.server.ts:110-126` non-locking `upsert({update:{}})` + absolute balance write |
-| #404 | Medium | RMH Study socket trusts client `payload.userId` | ❌ **STILL LIVE** | `server/socket-server/handlers/rmhstudy.ts:554-556,632-634` prefer `payload.userId` over `socket.data.userId` |
-| #405 | Medium | Synapse Storm socket trusts client `userId` + score | ❌ **STILL LIVE** | `server/socket-server/handlers/synapse-storm.ts:155,211,289,301,377,440,504` use `payload.userId`, never the session |
-| #406 | Medium | Thread-summary endpoint leaks private content | ❌ **STILL LIVE** | `app/routes/api/rmharks/$id/summary.ts:33-36` — no session/audience gate |
-| #407 | Medium | `safeFetch` DNS-rebinding TOCTOU (SSRF) | ❌ **STILL LIVE** | `lib/ssrf-guard.server.ts:111` validates DNS, `:147` `fetch()` re-resolves — IP never pinned |
-| #408 | Medium | Account pre-hijacking (no email verification) | ❌ **STILL LIVE** | `lib/auth.ts:65-67` no `requireEmailVerification`; `:52,57,62` `overrideUserInfoOnSignIn: true`; no `accountLinking` policy |
-| #409 | Low | `/api/v1/posts/{id}/comments` IDOR on non-public posts | ❌ **STILL LIVE** | `app/routes/api/v1/posts/$id/comments.ts:28-33` never loads the parent post's `audience`/`userId` |
+| #400 | Critical | Mass-assignable `isAdmin`/`isVerified` → unauth admin | ✅ **FIXED** | `lib/auth.ts` sets `input: false` on both fields |
+| #401 | High | `translate` endpoint leaks PRIVATE/paywalled posts | ✅ **FIXED** | `app/routes/api/rmharks/$id/translate.ts:35-56` resolves the session and gates on `canViewPost` + `isLocked` before reading/serving content |
+| #402 | High | Stored XSS via user-build `repoUrl`/`demoUrl` (`javascript:`/`data:`) | ✅ **FIXED** | `lib/user-builds-schema.ts:15` uses `httpUrl()`; sinks in `BuildDetail.tsx`/`BuildCard.tsx` wrapped in `safeHref()` |
+| #403 | High | Prediction trade race → coin double-spend | ✅ **FIXED** | `lib/predictions/predictions.server.ts:131-137` atomic conditional `updateMany({ where: { coins: { gte } }, data: { decrement } })` + `count === 0` guard |
+| #404 | Medium | RMH Study socket trusts client `payload.userId` | ✅ **FIXED** | `server/socket-server/handlers/rmhstudy.ts:562,642` derive identity from `socket.data.userId`, reject unauthenticated writes |
+| #405 | Medium | Synapse Storm socket trusts client `userId` + score | ✅ **FIXED** | `server/socket-server/handlers/synapse-storm.ts` derives identity from `socket.data.userId` in every handler |
+| #406 | Medium | Thread-summary endpoint leaks private content | ✅ **FIXED** | `app/routes/api/rmharks/$id/summary.ts:32-53` — session + `canViewPost` + `isLocked` gate |
+| #407 | Medium | `safeFetch` DNS-rebinding TOCTOU (SSRF) | ✅ **FIXED** | `lib/ssrf-guard.server.ts` pins undici to the DNS-validated IP via a per-request `Agent`, re-pinning each redirect hop |
+| #408 | Medium | Account pre-hijacking (no email verification) | ✅ **FIXED** | `lib/auth.ts` wires `sendVerificationEmail`/`sendResetPassword`, enables `requireEmailVerification` (gated on `RESEND_API_KEY`), and adds an `account.accountLinking` policy |
+| #409 | Low | `/api/v1/posts/{id}/comments` IDOR on non-public posts | ✅ **FIXED** | `app/routes/api/v1/posts/$id/comments.ts:31-37` loads the parent post and mirrors the `GET /api/v1/posts/{id}` audience gate |
 
-**Bottom line: 1 of 10 remediated; 9 remain exploitable in the current code.** The detailed
-sections below fold these into the full finding set and add newly discovered issues.
+**Bottom line: 10 of 10 remediated.** #400–#407 and #409 were fixed in prior work; #408 (the last
+one, deferred pending an email transport) is now fixed. The detailed sections below retain the
+original finding write-ups.
 
 ## Findings summary
 

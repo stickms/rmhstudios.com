@@ -289,7 +289,7 @@ Go services expose Prometheus metrics **that nothing scrapes** (`go-services/pkg
 
 ## 7. Security & abuse at scale
 
-The July 12/13 audits fixed most classic vulnerabilities (economy races → atomic conditional updates, SSRF rebinding → per-hop IP pinning, CSP reconciliation). Verified still open from those audits: **H-5** (in-memory ×4 rate limiter, spoofable IP trust), **M-3** (no email verification / account-linking policy), **M-5** (no global request-body cap; ~150 routes call `request.json()` unbounded, upload routes buffer entire files before size checks — `app/routes/api/library/upload.ts:66-78`), **M-8** (`'unsafe-inline'` still in `script-src` in both Apache and Traefik configs). New scale-specific findings:
+The July 12/13 audits fixed most classic vulnerabilities (economy races → atomic conditional updates, SSRF rebinding → per-hop IP pinning, CSP reconciliation). Verified still open from those audits: **H-5** (in-memory ×4 rate limiter, spoofable IP trust), **M-5** (no global request-body cap; ~150 routes call `request.json()` unbounded, upload routes buffer entire files before size checks — `app/routes/api/library/upload.ts:66-78`), **M-8** (`'unsafe-inline'` still in `script-src` in both Apache and Traefik configs). (**M-3** — email verification + account-linking policy — has since been remediated in `lib/auth.ts`; see the July 13 audit.) New scale-specific findings:
 
 ### 7.1 Abuse economics (P0)
 
