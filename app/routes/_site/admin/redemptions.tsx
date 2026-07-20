@@ -93,6 +93,7 @@ function AdminRedemptionsPage() {
       title={t('redemptions-title', { defaultValue: 'Redemption Queue' })}
       backTo="/admin"
       backLabel={t('back-to-admin', { defaultValue: 'Back to admin' })}
+      wide
     >
       <div className="mx-auto w-full max-w-2xl p-4 md:p-8">
       {loading ? (

@@ -5,6 +5,7 @@ import { MobileMenuButton } from '@/components/feed/MobileMenuButton';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { ConciergePanel } from '@/components/assistant/ConciergePanel';
 import { buildMeta, buildCanonical } from '@/lib/seo';
+import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 
 export const Route = createFileRoute('/_site/help')({
   head: () => ({
@@ -22,7 +23,10 @@ export const Route = createFileRoute('/_site/help')({
 function HelpPage() {
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 border-r border-site-border">
+      <AnimatedMain
+        className="w-full min-w-0 border-r border-site-border"
+        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
+      >
         <div className="flex flex-col h-screen">
           {/* Sticky header — matches the full-height chat layout used elsewhere. */}
           <div className="glass-chrome sticky top-0 z-10 h-18 border-b border-site-border shrink-0">
