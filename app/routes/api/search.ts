@@ -35,7 +35,10 @@ async function searchPeople(q: string, take: number) {
   `);
   if (matches.length === 0) return [];
   const ids = matches.map((m) => m.id);
-  const rows = await prisma.user.findMany({ where: { id: { in: ids } }, select: userDisplaySelect });
+  const rows = await prisma.user.findMany({
+    where: { id: { in: ids } },
+    select: userDisplaySelect,
+  });
   const byId = new Map(rows.map((u) => [u.id, u]));
   return ids
     .map((id) => byId.get(id))

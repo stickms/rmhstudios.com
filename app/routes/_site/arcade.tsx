@@ -63,7 +63,9 @@ function ArcadePage() {
             ) : (
               <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
                 <p className="font-medium text-site-text">
-                  {t('arcade-sign-in', { defaultValue: 'Sign in to play the daily arcade challenges' })}
+                  {t('arcade-sign-in', {
+                    defaultValue: 'Sign in to play the daily arcade challenges',
+                  })}
                 </p>
                 <Link to="/login" search={{ callbackURL: '/arcade' }}>
                   <Button variant="accent">{t('sign-in', { defaultValue: 'Sign in' })}</Button>

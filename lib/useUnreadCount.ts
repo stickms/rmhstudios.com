@@ -24,7 +24,12 @@ export type MessageStreamEventType = 'unread' | 'new-message' | 'typing' | 'mess
 export type MessageStreamHandler = (type: MessageStreamEventType, data: unknown) => void;
 
 const STREAM_URL = '/api/messages/stream';
-const STREAM_EVENTS: MessageStreamEventType[] = ['unread', 'new-message', 'typing', 'message-reaction'];
+const STREAM_EVENTS: MessageStreamEventType[] = [
+  'unread',
+  'new-message',
+  'typing',
+  'message-reaction',
+];
 const MAX_RECONNECT_DELAY = 15_000;
 
 // Full-stream subscribers (MessagesColumn, ConversationView).

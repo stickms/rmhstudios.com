@@ -24,10 +24,7 @@ export const Route = createFileRoute('/api/presence/online-count')({
                 isBot: false,
               },
             }));
-          return Response.json(
-            { count },
-            { headers: { 'Cache-Control': 'public, max-age=30' } }
-          );
+          return Response.json({ count }, { headers: { 'Cache-Control': 'public, max-age=30' } });
         } catch (error) {
           console.error('Online count error:', error);
           return Response.json({ count: 0 }, { status: 200 });

@@ -35,9 +35,7 @@ export interface RateLimiter {
 
 const MAX_ENTRIES = 50_000;
 
-export function createRateLimiter(
-  rules: Record<string, RateLimitRule>,
-): RateLimiter {
+export function createRateLimiter(rules: Record<string, RateLimitRule>): RateLimiter {
   // socketId → (eventName → entry). Nesting keeps cleanup(socketId) O(1).
   const bySocket = new Map<string, Map<string, RateLimitEntry>>();
   // Running total of individual event entries across all sockets, so the

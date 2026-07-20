@@ -127,7 +127,9 @@ export function RankedColumn({
     if (!g) return;
     setLbLoading(true);
     try {
-      const res = await fetch(`/api/ranked/${encodeURIComponent(g)}/leaderboard`, { credentials: 'include' });
+      const res = await fetch(`/api/ranked/${encodeURIComponent(g)}/leaderboard`, {
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = await res.json();
         setLb(data.leaderboard ?? []);
@@ -202,8 +204,13 @@ export function RankedColumn({
         {signedIn && (
           <>
             {/* Issue a challenge */}
-            <Reveal as="section" className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}>
-              <h2 className="mb-2 text-sm font-bold text-site-text">{t('challenge-a-player', { defaultValue: 'Challenge a player' })}</h2>
+            <Reveal
+              as="section"
+              className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}
+            >
+              <h2 className="mb-2 text-sm font-bold text-site-text">
+                {t('challenge-a-player', { defaultValue: 'Challenge a player' })}
+              </h2>
               <div className="flex flex-wrap items-center gap-2">
                 <select
                   value={game}
@@ -224,7 +231,13 @@ export function RankedColumn({
                     className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
                   />
                 </div>
-                <Button size="sm" variant="accent" loading={busy === 'send'} disabled={!opponent.trim()} onClick={sendChallenge}>
+                <Button
+                  size="sm"
+                  variant="accent"
+                  loading={busy === 'send'}
+                  disabled={!opponent.trim()}
+                  onClick={sendChallenge}
+                >
                   {t('challenge-btn', { defaultValue: 'Challenge' })}
                 </Button>
               </div>
@@ -234,21 +247,45 @@ export function RankedColumn({
             {/* Incoming challenges */}
             {incoming.length > 0 && (
               <Reveal as="section">
-                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('challenges-for-you', { defaultValue: 'Challenges for you' })}</h2>
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+                  {t('challenges-for-you', { defaultValue: 'Challenges for you' })}
+                </h2>
                 <div className="space-y-2">
                   {incoming.map((c) => (
-                    <div key={c.id} className={`flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}>
+                    <div
+                      key={c.id}
+                      className={`flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+                    >
                       <UserAvatar user={c.user} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-site-text">{c.user.name || c.user.handle || t('player-fallback', { defaultValue: 'Player' })}</p>
-                        <p className="text-[11px] text-site-text-dim">{nameOf(c.game)} · {c.status}</p>
+                        <p className="truncate text-sm font-semibold text-site-text">
+                          {c.user.name ||
+                            c.user.handle ||
+                            t('player-fallback', { defaultValue: 'Player' })}
+                        </p>
+                        <p className="text-[11px] text-site-text-dim">
+                          {nameOf(c.game)} · {c.status}
+                        </p>
                       </div>
                       {c.status === 'pending' ? (
                         <div className="flex gap-1">
-                          <Button size="sm" variant="accent" disabled={busy === `a:${c.id}`} onClick={() => act(c.id, { action: 'accept' }, `a:${c.id}`)} className="gap-1">
-                            <Check className="h-3.5 w-3.5" /> {t('accept', { defaultValue: 'Accept' })}
+                          <Button
+                            size="sm"
+                            variant="accent"
+                            disabled={busy === `a:${c.id}`}
+                            onClick={() => act(c.id, { action: 'accept' }, `a:${c.id}`)}
+                            className="gap-1"
+                          >
+                            <Check className="h-3.5 w-3.5" />{' '}
+                            {t('accept', { defaultValue: 'Accept' })}
                           </Button>
-                          <Button size="sm" variant="ghost" disabled={busy === `a:${c.id}`} onClick={() => act(c.id, { action: 'decline' }, `a:${c.id}`)} className="text-site-text-muted hover:text-site-danger">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={busy === `a:${c.id}`}
+                            onClick={() => act(c.id, { action: 'decline' }, `a:${c.id}`)}
+                            className="text-site-text-muted hover:text-site-danger"
+                          >
                             <X className="h-3.5 w-3.5" />
                           </Button>
                         </div>
@@ -264,14 +301,25 @@ export function RankedColumn({
             {/* Outgoing challenges */}
             {outgoing.length > 0 && (
               <Reveal as="section">
-                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-challenges', { defaultValue: 'Your challenges' })}</h2>
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+                  {t('your-challenges', { defaultValue: 'Your challenges' })}
+                </h2>
                 <div className="space-y-2">
                   {outgoing.map((c) => (
-                    <div key={c.id} className={`flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}>
+                    <div
+                      key={c.id}
+                      className={`flex items-center gap-2 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+                    >
                       <UserAvatar user={c.user} />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold text-site-text">{c.user.name || c.user.handle || t('player-fallback', { defaultValue: 'Player' })}</p>
-                        <p className="text-[11px] text-site-text-dim">{nameOf(c.game)} · {c.status}</p>
+                        <p className="truncate text-sm font-semibold text-site-text">
+                          {c.user.name ||
+                            c.user.handle ||
+                            t('player-fallback', { defaultValue: 'Player' })}
+                        </p>
+                        <p className="text-[11px] text-site-text-dim">
+                          {nameOf(c.game)} · {c.status}
+                        </p>
                       </div>
                       {c.status === 'accepted' && <ReportButtons id={c.id} busy={busy} act={act} />}
                     </div>
@@ -283,16 +331,24 @@ export function RankedColumn({
             {/* Your ratings */}
             {ratings.length > 0 && (
               <Reveal as="section">
-                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-ratings', { defaultValue: 'Your ratings' })}</h2>
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+                  {t('your-ratings', { defaultValue: 'Your ratings' })}
+                </h2>
                 <div className="space-y-1">
                   {ratings.map((r) => (
-                    <div key={r.game} className={`flex items-center justify-between gap-2 rounded-site border border-site-border bg-site-surface px-3 py-2.5 ${LIFT_CARD}`}>
+                    <div
+                      key={r.game}
+                      className={`flex items-center justify-between gap-2 rounded-site border border-site-border bg-site-surface px-3 py-2.5 ${LIFT_CARD}`}
+                    >
                       <span className="flex min-w-0 items-center gap-2">
-                        <span className="truncate text-sm font-medium text-site-text">{nameOf(r.game)}</span>
+                        <span className="truncate text-sm font-medium text-site-text">
+                          {nameOf(r.game)}
+                        </span>
                         <TierBadge tier={r.tier} />
                       </span>
                       <span className="shrink-0 text-sm text-site-text-dim">
-                        <strong className="text-site-text">{fmt(r.rating)}</strong> · {r.wins}W {r.losses}L {r.draws}D
+                        <strong className="text-site-text">{fmt(r.rating)}</strong> · {r.wins}W{' '}
+                        {r.losses}L {r.draws}D
                       </span>
                     </div>
                   ))}
@@ -325,15 +381,26 @@ export function RankedColumn({
               <Spinner size={20} />
             </div>
           ) : lb.length === 0 ? (
-            <p className="py-8 text-center text-sm text-site-text-muted">{t('no-ranked-players', { defaultValue: 'No ranked players yet.' })}</p>
+            <p className="py-8 text-center text-sm text-site-text-muted">
+              {t('no-ranked-players', { defaultValue: 'No ranked players yet.' })}
+            </p>
           ) : (
             <div className="space-y-1">
               {lb.map((row) => (
-                <div key={row.user.id} className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}>
-                  <span className="w-5 text-center text-xs font-bold text-site-text-dim">{row.rank}</span>
+                <div
+                  key={row.user.id}
+                  className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
+                >
+                  <span className="w-5 text-center text-xs font-bold text-site-text-dim">
+                    {row.rank}
+                  </span>
                   <UserAvatar user={row.user} />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-site-text">{row.user.name || row.user.handle || t('player-fallback', { defaultValue: 'Player' })}</p>
+                    <p className="truncate text-sm font-semibold text-site-text">
+                      {row.user.name ||
+                        row.user.handle ||
+                        t('player-fallback', { defaultValue: 'Player' })}
+                    </p>
                     <p className="flex items-center gap-1.5 text-[11px] text-site-text-dim">
                       <TierBadge tier={row.tier} />
                       {row.wins}W {row.losses}L {row.draws}D
@@ -365,13 +432,31 @@ function ReportButtons({
       <span className="mr-1 inline-flex items-center gap-1 text-[10px] text-site-text-dim">
         <Flag className="h-3 w-3" /> {t('report-label', { defaultValue: 'report:' })}
       </span>
-      <Button size="sm" variant="outline" disabled={busy === `r:${id}`} onClick={() => act(id, { action: 'report', result: 'win' }, `r:${id}`)} className="h-7 px-2 text-xs">
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={busy === `r:${id}`}
+        onClick={() => act(id, { action: 'report', result: 'win' }, `r:${id}`)}
+        className="h-7 px-2 text-xs"
+      >
         {t('won', { defaultValue: 'Won' })}
       </Button>
-      <Button size="sm" variant="outline" disabled={busy === `r:${id}`} onClick={() => act(id, { action: 'report', result: 'loss' }, `r:${id}`)} className="h-7 px-2 text-xs">
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={busy === `r:${id}`}
+        onClick={() => act(id, { action: 'report', result: 'loss' }, `r:${id}`)}
+        className="h-7 px-2 text-xs"
+      >
         {t('lost', { defaultValue: 'Lost' })}
       </Button>
-      <Button size="sm" variant="ghost" disabled={busy === `r:${id}`} onClick={() => act(id, { action: 'report', result: 'draw' }, `r:${id}`)} className="h-7 px-2 text-xs text-site-text-muted">
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={busy === `r:${id}`}
+        onClick={() => act(id, { action: 'report', result: 'draw' }, `r:${id}`)}
+        className="h-7 px-2 text-xs text-site-text-muted"
+      >
         {t('draw', { defaultValue: 'Draw' })}
       </Button>
     </div>

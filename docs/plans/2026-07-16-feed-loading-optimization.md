@@ -29,21 +29,21 @@ competes with it.
 
 **Top contributors found (each expanded in §2, fixed in §3):**
 
-| # | Finding | Layer | Impact |
-|---|---------|-------|--------|
-| F1 | Announcements re-sent and DB rows discarded on **every** pagination page | server | ~25% payload + DB waste per page |
-| F2 | Viewer context (blocks/mutes ×3 queries, follow list, muted words) re-queried on every feed read, uncached | server | 5+ queries per request before the feed query even starts |
-| F3 | Missing/weak indexes: no partial feed index, `rmheet_like` has no `(userId, createdAt)` index (interest profile scans), no `(userId, createdAt)` on `rmheet`/`rmheet_repost` for the Following feed | DB | Feed + personalization queries degrade with table growth |
-| F4 | Every author row joins `UserProfile` + equipped-`inventory` and re-resolves cosmetics per request | server | Per-row join fan-out on the hottest query |
-| F5 | `publishDueForUser` is **awaited** before every first-page feed read | server | Serial DB round-trip on the hot path |
-| F6 | No caching for the anonymous first page; no `Cache-Control` on `/api/rmharks` | server | Logged-out landing traffic hits full timeline assembly |
-| F7 | Home route loader has no `staleTime` — every back-nav re-runs both server fns; the feed result is then **discarded** by the store's hydrate guard | SSR | A full wasted timeline query + 2 RPCs per return visit |
-| F8 | `LinkPreview` fetches `/api/oembed` on **mount** for every card with a URL (server then fetches the external site) | client | Up to ~20 fetches + server-side external HTTP at hydration time |
-| F9 | `RMHarkOverflowMenu` eagerly imports 6 dialogs (`ReportDialog`, `TipDialog`, `EditPostModal`, `EngagementListModal`, `InsightsModal`, `ShareModal`); `RMHarkActions` eagerly imports `ComposeModal` | bundle | Modal code for click-only UI ships and evaluates during hydration |
-| F10 | `userDisplayStore.setUsers` replaces every touched user object each batch → all visible cards re-render on every page append / SSE event | client | Main-thread churn during scroll and live updates |
-| F11 | `FeedColumn` subscribes to the whole feed store → header/composer subtree re-renders on every SSE count update | client | Unnecessary re-renders at 60Hz-ish event rates |
-| F12 | Muted words are loaded inside `getTimeline` then thrown away; the client separately fetches `/api/preferences/muted-words` on mount | both | One redundant query + one redundant request |
-| F13 | Client mount-time request fan-out and image sizing (see §2.13) | client | Connection contention at TTI |
+| #   | Finding                                                                                                                                                                                             | Layer  | Impact                                                            |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------------- |
+| F1  | Announcements re-sent and DB rows discarded on **every** pagination page                                                                                                                            | server | ~25% payload + DB waste per page                                  |
+| F2  | Viewer context (blocks/mutes ×3 queries, follow list, muted words) re-queried on every feed read, uncached                                                                                          | server | 5+ queries per request before the feed query even starts          |
+| F3  | Missing/weak indexes: no partial feed index, `rmheet_like` has no `(userId, createdAt)` index (interest profile scans), no `(userId, createdAt)` on `rmheet`/`rmheet_repost` for the Following feed | DB     | Feed + personalization queries degrade with table growth          |
+| F4  | Every author row joins `UserProfile` + equipped-`inventory` and re-resolves cosmetics per request                                                                                                   | server | Per-row join fan-out on the hottest query                         |
+| F5  | `publishDueForUser` is **awaited** before every first-page feed read                                                                                                                                | server | Serial DB round-trip on the hot path                              |
+| F6  | No caching for the anonymous first page; no `Cache-Control` on `/api/rmharks`                                                                                                                       | server | Logged-out landing traffic hits full timeline assembly            |
+| F7  | Home route loader has no `staleTime` — every back-nav re-runs both server fns; the feed result is then **discarded** by the store's hydrate guard                                                   | SSR    | A full wasted timeline query + 2 RPCs per return visit            |
+| F8  | `LinkPreview` fetches `/api/oembed` on **mount** for every card with a URL (server then fetches the external site)                                                                                  | client | Up to ~20 fetches + server-side external HTTP at hydration time   |
+| F9  | `RMHarkOverflowMenu` eagerly imports 6 dialogs (`ReportDialog`, `TipDialog`, `EditPostModal`, `EngagementListModal`, `InsightsModal`, `ShareModal`); `RMHarkActions` eagerly imports `ComposeModal` | bundle | Modal code for click-only UI ships and evaluates during hydration |
+| F10 | `userDisplayStore.setUsers` replaces every touched user object each batch → all visible cards re-render on every page append / SSE event                                                            | client | Main-thread churn during scroll and live updates                  |
+| F11 | `FeedColumn` subscribes to the whole feed store → header/composer subtree re-renders on every SSE count update                                                                                      | client | Unnecessary re-renders at 60Hz-ish event rates                    |
+| F12 | Muted words are loaded inside `getTimeline` then thrown away; the client separately fetches `/api/preferences/muted-words` on mount                                                                 | both   | One redundant query + one redundant request                       |
+| F13 | Client mount-time request fan-out and image sizing (see §2.13)                                                                                                                                      | client | Connection contention at TTI                                      |
 
 **What is already good (do not regress):** deferred loader with `<Suspense>`/`Await`
 streaming; keyset cursor pagination; denormalized engagement counts; bounded
@@ -156,7 +156,7 @@ From `prisma/schema.prisma`:
 
 - `RMHark` has `@@index([createdAt(sort: Desc), id(sort: Desc)])` — the keyset
   order — but the hot query also filters `deletedAt IS NULL AND communityId IS NULL
-  AND threadRootId IS NULL`. A **partial index** with exactly those predicates makes
+AND threadRootId IS NULL`. A **partial index** with exactly those predicates makes
   the scan skip dead/community/thread rows instead of filtering them post-read.
 - `RMHark` has no `(userId, createdAt DESC, id DESC)` index → the Following feed
   (`userId IN (…) ORDER BY createdAt DESC, id DESC`) can't do an ordered
@@ -165,7 +165,7 @@ From `prisma/schema.prisma`:
   `(userId, createdAt DESC, id DESC)` → same problem for Following reposts.
 - `RMHarkLike` has **only** `@@unique([rmheetId, userId])` → `buildInterestProfile`
   (`lib/feed/personalize.server.ts:65–71`: `where { userId } orderBy createdAt desc
-  take 80`) cannot use an index at all — full scan of the likes table per cold
+take 80`) cannot use an index at all — full scan of the likes table per cold
   profile build.
 
 ### 2.4 (F4) Per-author profile + inventory joins on the hottest query
@@ -253,6 +253,7 @@ server-side Better Auth session resolution (plus the `customSession` entitlement
 lookup):
 
 **Immediate on mount:**
+
 - `GET /api/auth/get-session` — better-auth client re-validates even though the
   shell was SSR-seeded with `initialUser` (`components/Providers.tsx:167`; shared
   nanostore, so it's one request despite many `useSession()` consumers).
@@ -278,14 +279,16 @@ lookup):
 (when device/account values diverge), `GET /api/admin/review-counts` (admins).
 
 **Per-card (×20):**
+
 - View beacons `POST /api/rmharks/{id}/view` — already IntersectionObserver-gated
   (`RMHarkCard.tsx:142–172`); only near-viewport cards fire. Good.
 - `GET /api/oembed?type=og&url=…` per linked post on **mount** (F8).
-- `GET /api/oembed?url=…` per Tenor *share*-URL GIF on **mount**
+- `GET /api/oembed?url=…` per Tenor _share_-URL GIF on **mount**
   (`components/feed/GifEmbed.tsx:75–88`; direct media URLs skip it) — same
   problem/fix as F8.
 
 **Images:**
+
 - Post images go through `PostImageGrid` → `ui/BlurImage` → `ui/OptimizedImage`
   with srcSet + `loading="lazy"` — good — **but** the 32px blur placeholder
   `<img>` (`components/ui/BlurImage.tsx:114–125`) has no `loading` attribute →
@@ -329,8 +332,9 @@ present. Delete the `cursorDate` filtering (it no longer has a job).
 
 ```ts
 // BEFORE (timeline.ts:497–498)
-const announcementsPromise: Promise<FeedItem[]> =
-  search ? Promise.resolve([]) : getAnnouncementItems(filter);
+const announcementsPromise: Promise<FeedItem[]> = search
+  ? Promise.resolve([])
+  : getAnnouncementItems(filter);
 
 // AFTER — announcements are a first-page-only garnish; pagination pages are pure posts.
 const announcementsPromise: Promise<FeedItem[]> =
@@ -429,7 +433,7 @@ wherever `mutedWords` is written).
 **Note:** `apiCache` is per-process (fine — web SSR is a single process per color in
 the blue/green deploy). The 30s staleness window on blocks/follows is acceptable
 because the mutating user's own next read is fixed by invalidation; only
-*other-instance* staleness would exceed 30s, and there is one web instance.
+_other-instance_ staleness would exceed 30s, and there is one web instance.
 
 **Done when:** a feed page for a warm viewer issues no `user_block`/`user_mute`/
 `follow`/`user_profile(mutedWords)` queries (verify with the dev query log,
@@ -514,8 +518,11 @@ export async function getTimeline(params: GetTimelineParams): Promise<TimelineRe
   // The signed-out For-You first page is identical for every visitor — serve it
   // from a short cache so landing traffic doesn't run timeline assembly.
   const anonCacheable =
-    !params.userId && params.surface === 'foryou' && params.filter === 'all' &&
-    !params.cursor && !params.search;
+    !params.userId &&
+    params.surface === 'foryou' &&
+    params.filter === 'all' &&
+    !params.cursor &&
+    !params.search;
   const anonKey = 'timeline:anon:first';
   if (anonCacheable) {
     const cached = apiCache.get<TimelineResult>(anonKey);
@@ -669,12 +676,22 @@ for cards within ~1 viewport of the fold, and more as you scroll.
 ```tsx
 // RMHarkOverflowMenu.tsx — replace the six static modal imports with:
 import { lazy, Suspense } from 'react';
-const ReportDialog = lazy(() => import('@/components/moderation/ReportDialog').then(m => ({ default: m.ReportDialog })));
-const TipDialog = lazy(() => import('@/components/economy/TipDialog').then(m => ({ default: m.TipDialog })));
-const EditPostModal = lazy(() => import('./EditPostModal').then(m => ({ default: m.EditPostModal })));
-const EngagementListModal = lazy(() => import('./EngagementListModal').then(m => ({ default: m.EngagementListModal })));
-const InsightsModal = lazy(() => import('./InsightsModal').then(m => ({ default: m.InsightsModal })));
-const ShareModal = lazy(() => import('./ShareModal').then(m => ({ default: m.ShareModal })));
+const ReportDialog = lazy(() =>
+  import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
+);
+const TipDialog = lazy(() =>
+  import('@/components/economy/TipDialog').then((m) => ({ default: m.TipDialog })),
+);
+const EditPostModal = lazy(() =>
+  import('./EditPostModal').then((m) => ({ default: m.EditPostModal })),
+);
+const EngagementListModal = lazy(() =>
+  import('./EngagementListModal').then((m) => ({ default: m.EngagementListModal })),
+);
+const InsightsModal = lazy(() =>
+  import('./InsightsModal').then((m) => ({ default: m.InsightsModal })),
+);
+const ShareModal = lazy(() => import('./ShareModal').then((m) => ({ default: m.ShareModal })));
 ```
 
 Wrap each conditional render site in `<Suspense fallback={null}>` (the modals are
@@ -804,7 +821,7 @@ the remaining mount-time calls that are cosmetic or tolerant of a few seconds'
 delay, so the hydration window belongs to the feed, images, and SSE:
 
 - `components/Providers.tsx` — gate the `/api/profile/me` and
-  `/api/preferences/appearance` effects on idle (both only *overlay* data the SSR
+  `/api/preferences/appearance` effects on idle (both only _overlay_ data the SSR
   seed already provides; a 1–2s delay is invisible).
 - `lib/useNotificationCount.ts` — delay the first `unread-count` fetch to idle;
   keep the 45s/focus cadence.
@@ -827,7 +844,7 @@ profile/appearance/notification/streak/presence calls arriving after idle.
 
 **Files:** `components/feed/GifEmbed.tsx`
 
-**Change:** Tenor *share* URLs trigger a `/api/oembed` resolution fetch on mount
+**Change:** Tenor _share_ URLs trigger a `/api/oembed` resolution fetch on mount
 (`GifEmbed.tsx:75–88`). Gate it behind the same near-viewport IntersectionObserver
 as Fix 2.2 (share one small `useNearViewport(ref, rootMargin)` hook between
 `LinkPreview` and `GifEmbed` — put it in `hooks/useNearViewport.ts`). The existing
@@ -941,7 +958,7 @@ Before/after each phase, capture:
 1. **Server timing:** in dev, `lib/prisma.server.ts` logs queries — count queries
    and total time for `GET /api/rmharks?limit=20&filter=all` signed-in (warm and
    cold cache). Target after Phase 1: ≤ 6 queries warm (main pair + reactions pair
-   + interest-profile hit), no serial pre-queries.
+   - interest-profile hit), no serial pre-queries.
 2. **EXPLAIN:** `EXPLAIN (ANALYZE, BUFFERS)` for the For-You and Following queries
    before/after Fix 1.3.
 3. **Tab-loading time:** DevTools Network → `document` request duration for `/`
@@ -957,6 +974,7 @@ Before/after each phase, capture:
 7. **Regression suite:** `pnpm exec tsc --noEmit && pnpm lint && pnpm exec vitest run`.
 
 **Feature-level regression checklist (manual):**
+
 - Page 1 shows composer + announcements interleaved; page 2+ pure posts.
 - Muted words filter both fetched pages and live SSE posts.
 - Blocking/muting a user hides them on the next reload.

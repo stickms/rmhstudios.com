@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useLocation } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { LeftSidebar } from './LeftSidebar';
@@ -215,7 +208,9 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
         d.decided = true;
         const horizontal = Math.abs(dx) > Math.abs(dy);
         const overSidebar = !!(
-          asideRef.current && e.target instanceof Node && asideRef.current.contains(e.target)
+          asideRef.current &&
+          e.target instanceof Node &&
+          asideRef.current.contains(e.target)
         );
         if (overSidebar && !horizontal) {
           // Vertical swipe on the open sidebar: let it scroll the nav ONLY if an

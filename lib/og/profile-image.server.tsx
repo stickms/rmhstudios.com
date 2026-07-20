@@ -42,7 +42,8 @@ async function fetchFont(url: string): Promise<ArrayBuffer> {
 function loadFonts(): Promise<void> {
   if (fontRegular && fontBold) return Promise.resolve();
   if (fontsLoading) return fontsLoading;
-  if (Date.now() < fontFailUntil) return Promise.reject(new Error('Fonts unavailable (cooling down)'));
+  if (Date.now() < fontFailUntil)
+    return Promise.reject(new Error('Fonts unavailable (cooling down)'));
   fontsLoading = Promise.all([fetchFont(FONT_REGULAR_URL), fetchFont(FONT_BOLD_URL)])
     .then(([reg, bold]) => {
       fontRegular = reg;
@@ -99,7 +100,9 @@ export interface ProfileOgData {
 // Inter (used by satori) has no emoji glyphs; strip them so they don't render
 // as "tofu" boxes in the card.
 function stripEmoji(s: string): string {
-  return s.replace(/[\p{Extended_Pictographic}\u{FE00}-\u{FE0F}\u{200D}]/gu, '').replace(/\s{2,}/g, ' ');
+  return s
+    .replace(/[\p{Extended_Pictographic}\u{FE00}-\u{FE0F}\u{200D}]/gu, '')
+    .replace(/\s{2,}/g, ' ');
 }
 
 function truncate(s: string, n: number): string {
@@ -163,7 +166,9 @@ export async function renderProfileOgImage(data: ProfileOgData): Promise<Buffer>
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: 56, fontWeight: 700, color: TEXT }}>{truncate(data.name, 24)}</span>
+          <span style={{ fontSize: 56, fontWeight: 700, color: TEXT }}>
+            {truncate(data.name, 24)}
+          </span>
           {data.handle && <span style={{ fontSize: 34, color: MUTED }}>@{data.handle}</span>}
         </div>
       </div>
@@ -182,7 +187,14 @@ export async function renderProfileOgImage(data: ProfileOgData): Promise<Buffer>
         {bio || 'View this profile on RMH Studios'}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: 'auto',
+        }}
+      >
         <div style={{ display: 'flex', gap: 40, fontSize: 32, color: MUTED }}>
           <span style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
             <span style={{ color: TEXT, fontWeight: 700 }}>{formatCount(data.followerCount)}</span>
@@ -194,7 +206,15 @@ export async function renderProfileOgImage(data: ProfileOgData): Promise<Buffer>
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ display: 'flex', width: 28, height: 28, borderRadius: 8, backgroundColor: ACCENT }} />
+          <div
+            style={{
+              display: 'flex',
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              backgroundColor: ACCENT,
+            }}
+          />
           <span style={{ fontSize: 30, fontWeight: 700, color: TEXT }}>RMH Studios</span>
         </div>
       </div>

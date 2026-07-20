@@ -44,9 +44,7 @@ export async function sendEmail(input: SendEmailInput): Promise<boolean> {
   // Dev / unconfigured: log instead of sending so local runs and CI don't need
   // a provider, and callers see the same success path.
   if (!apiKey) {
-    console.warn(
-      `[email] (dev, not sent) to=${input.to} subject=${JSON.stringify(input.subject)}`,
-    );
+    console.warn(`[email] (dev, not sent) to=${input.to} subject=${JSON.stringify(input.subject)}`);
     return true;
   }
 

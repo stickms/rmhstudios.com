@@ -2,7 +2,16 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { CalendarPlus, Clock, Gamepad2, Link as LinkIcon, MapPin, Radio, Trophy, Users } from 'lucide-react';
+import {
+  CalendarPlus,
+  Clock,
+  Gamepad2,
+  Link as LinkIcon,
+  MapPin,
+  Radio,
+  Trophy,
+  Users,
+} from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { safeHref } from '@/lib/url-safety';
@@ -10,7 +19,10 @@ import { cn } from '@/lib/utils';
 import type { EventDTO, EventVenueKindValue, RsvpResult } from '@/lib/events.server';
 import { RsvpButton } from './RsvpButton';
 
-const VENUE_META: Record<EventVenueKindValue, { icon: LucideIcon; labelKey: string; label: string }> = {
+const VENUE_META: Record<
+  EventVenueKindValue,
+  { icon: LucideIcon; labelKey: string; label: string }
+> = {
   SPACE: { icon: Radio, labelKey: 'venue-space', label: 'Space' },
   TOURNAMENT: { icon: Trophy, labelKey: 'venue-tournament', label: 'Tournament' },
   GAME: { icon: Gamepad2, labelKey: 'venue-game', label: 'Game' },
@@ -90,7 +102,9 @@ export function EventCard({ event }: { event: EventDTO }) {
       </div>
 
       {event.description && (
-        <p className="line-clamp-3 whitespace-pre-wrap text-sm text-site-text-muted">{event.description}</p>
+        <p className="line-clamp-3 whitespace-pre-wrap text-sm text-site-text-muted">
+          {event.description}
+        </p>
       )}
 
       {event.venueKind === 'URL' && event.venueRef && !canceled && (
@@ -127,7 +141,9 @@ export function EventCard({ event }: { event: EventDTO }) {
               defaultValue: '{{count}} going',
             })}
             {event.capacity != null ? ` / ${event.capacity}` : ''}
-            {maybe > 0 ? ` · ${t('event-maybe-count', { count: maybe, defaultValue: '{{count}} maybe' })}` : ''}
+            {maybe > 0
+              ? ` · ${t('event-maybe-count', { count: maybe, defaultValue: '{{count}} maybe' })}`
+              : ''}
           </span>
         </div>
 

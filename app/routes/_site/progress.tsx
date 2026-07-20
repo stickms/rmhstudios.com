@@ -15,9 +15,9 @@ export const Route = createFileRoute('/_site/progress')({
 });
 
 function ProgressPage() {
-  const { t } = useTranslation("site");
+  const { t } = useTranslation('site');
   // The gate header reuses ProgressColumn's heading key, which lives in `feed`.
-  const { t: tFeed } = useTranslation("feed");
+  const { t: tFeed } = useTranslation('feed');
   const { data: session, isPending } = useSession();
 
   return (
@@ -36,16 +36,23 @@ function ProgressPage() {
              on desktop, where the drawer button is md:hidden. Key/icon match
              ProgressColumn's standalone header. */
           <>
-            <ColumnHeader icon={Zap} title={tFeed('progress-heading', { defaultValue: 'Progress' })} />
+            <ColumnHeader
+              icon={Zap}
+              title={tFeed('progress-heading', { defaultValue: 'Progress' })}
+            />
             {isPending ? (
               <div className="flex justify-center py-20">
                 <Spinner />
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-                <p className="font-medium text-site-text">{t("sign-in-to-track-progress", { defaultValue: "Sign in to track your progress" })}</p>
+                <p className="font-medium text-site-text">
+                  {t('sign-in-to-track-progress', {
+                    defaultValue: 'Sign in to track your progress',
+                  })}
+                </p>
                 <Link to="/login" search={{ callbackURL: '/progress' }}>
-                  <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
+                  <Button variant="accent">{t('sign-in', { defaultValue: 'Sign in' })}</Button>
                 </Link>
               </div>
             )}

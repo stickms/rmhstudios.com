@@ -56,7 +56,10 @@ export function MarketItemPreview({
   }
   if (kind === 'AVATAR_FRAME') {
     return (
-      <div className="h-12 w-12 rounded-full p-[3px]" style={{ background: data.gradient ?? data.color }}>
+      <div
+        className="h-12 w-12 rounded-full p-[3px]"
+        style={{ background: data.gradient ?? data.color }}
+      >
         <div className="h-full w-full rounded-full bg-site-bg" />
       </div>
     );
@@ -98,7 +101,9 @@ export function ListingCard({
       });
       const data = await res.json().catch(() => ({}));
       if (res.status === 202) {
-        toast.info(data.message || t('market-held', { defaultValue: 'This listing is under review.' }));
+        toast.info(
+          data.message || t('market-held', { defaultValue: 'This listing is under review.' }),
+        );
       } else if (res.ok) {
         toast.success(t('market-bought', { name, defaultValue: 'Bought {{name}}!' }));
         onDone(listing.id);
@@ -146,14 +151,24 @@ export function ListingCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-sm font-semibold text-site-text">{name}</p>
-          <span className="text-[10px] font-bold uppercase" style={{ color: RARITY_COLORS[rarity] }}>
+          <span
+            className="text-[10px] font-bold uppercase"
+            style={{ color: RARITY_COLORS[rarity] }}
+          >
             {rarity}
           </span>
         </div>
         <div className="mt-0.5 flex items-center gap-1.5 text-xs text-site-text-muted">
-          <UserAvatar src={listing.seller.image} alt="" size={16} fallbackName={listing.seller.name ?? undefined} />
+          <UserAvatar
+            src={listing.seller.image}
+            alt=""
+            size={16}
+            fallbackName={listing.seller.name ?? undefined}
+          />
           <span className="truncate">
-            {listing.seller.handle ? `@${listing.seller.handle}` : (listing.seller.name ?? t('market-seller', { defaultValue: 'Seller' }))}
+            {listing.seller.handle
+              ? `@${listing.seller.handle}`
+              : (listing.seller.name ?? t('market-seller', { defaultValue: 'Seller' }))}
           </span>
         </div>
       </div>

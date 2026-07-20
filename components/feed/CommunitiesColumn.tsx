@@ -8,7 +8,13 @@ import { Button } from '@/components/ui/button';
 import { RevealGroup, RevealItem } from '@/components/motion';
 import { CommunityListSkeleton } from '@/components/feed/CommunitiesSkeleton';
 import { EmptyState } from '@/components/ui/empty-state';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { useSession } from '@/components/Providers';
 import { ColumnHeader } from './ColumnHeader';
 import { toast } from 'sonner';
@@ -32,7 +38,11 @@ function formatCount(n: number): string {
   return String(n);
 }
 
-export function CommunitiesColumn({ initialCommunities = [] }: { initialCommunities?: Community[] }) {
+export function CommunitiesColumn({
+  initialCommunities = [],
+}: {
+  initialCommunities?: Community[];
+}) {
   const navigate = useNavigate();
   const { t } = useTranslation('feed');
   const { data: session } = useSession();
@@ -51,7 +61,8 @@ export function CommunitiesColumn({ initialCommunities = [] }: { initialCommunit
   const load = useCallback(async (q?: string) => {
     setLoading(true);
     try {
-      const url = q && q.trim() ? `/api/communities?q=${encodeURIComponent(q.trim())}` : '/api/communities';
+      const url =
+        q && q.trim() ? `/api/communities?q=${encodeURIComponent(q.trim())}` : '/api/communities';
       const res = await fetch(url, { credentials: 'include' });
       if (res.ok) setItems((await res.json()).communities);
     } finally {
@@ -85,7 +96,11 @@ export function CommunitiesColumn({ initialCommunities = [] }: { initialCommunit
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ name: name.trim(), description: description.trim() || undefined, icon: icon || undefined }),
+        body: JSON.stringify({
+          name: name.trim(),
+          description: description.trim() || undefined,
+          icon: icon || undefined,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
@@ -93,7 +108,9 @@ export function CommunitiesColumn({ initialCommunities = [] }: { initialCommunit
         setCreateOpen(false);
         navigate({ to: `/c/${data.slug}` as string });
       } else {
-        toast.error(data.error || t('community-create-error', { defaultValue: 'Could not create community' }));
+        toast.error(
+          data.error || t('community-create-error', { defaultValue: 'Could not create community' }),
+        );
       }
     } finally {
       setSubmitting(false);
@@ -174,16 +191,26 @@ export function CommunitiesColumn({ initialCommunities = [] }: { initialCommunit
                       )}
                     </div>
                     {c.description && (
-                      <p className="mt-0.5 line-clamp-2 text-sm text-site-text-muted">{c.description}</p>
+                      <p className="mt-0.5 line-clamp-2 text-sm text-site-text-muted">
+                        {c.description}
+                      </p>
                     )}
                     <div className="mt-2 flex items-center gap-4 text-xs text-site-text-dim">
                       <span className="inline-flex items-center gap-1">
                         <Users className="h-3.5 w-3.5" />
-                        {t('members-stat', { count: c.memberCount, formatted: formatCount(c.memberCount), defaultValue: '{{formatted}} members' })}
+                        {t('members-stat', {
+                          count: c.memberCount,
+                          formatted: formatCount(c.memberCount),
+                          defaultValue: '{{formatted}} members',
+                        })}
                       </span>
                       <span className="inline-flex items-center gap-1">
                         <MessageSquare className="h-3.5 w-3.5" />
-                        {t('posts-stat', { count: c.postCount, formatted: formatCount(c.postCount), defaultValue: '{{formatted}} posts' })}
+                        {t('posts-stat', {
+                          count: c.postCount,
+                          formatted: formatCount(c.postCount),
+                          defaultValue: '{{formatted}} posts',
+                        })}
                       </span>
                     </div>
                   </div>
@@ -197,15 +224,44 @@ export function CommunitiesColumn({ initialCommunities = [] }: { initialCommunit
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>{t('create-community-title', { defaultValue: 'Create a community' })}</DialogTitle>
+            <DialogTitle>
+              {t('create-community-title', { defaultValue: 'Create a community' })}
+            </DialogTitle>
           </DialogHeader>
-          <input className={inputCls} placeholder={t('name-placeholder', { defaultValue: 'Name' })} value={name} maxLength={60} onChange={(e) => setName(e.target.value)} />
-          <textarea className={inputCls} placeholder={t('description-placeholder', { defaultValue: 'Description (optional)' })} rows={2} maxLength={500} value={description} onChange={(e) => setDescription(e.target.value)} />
-          <input className={inputCls} placeholder={t('icon-placeholder', { defaultValue: 'Emoji icon (optional, e.g. 🎮)' })} value={icon} maxLength={8} onChange={(e) => setIcon(e.target.value)} />
+          <input
+            className={inputCls}
+            placeholder={t('name-placeholder', { defaultValue: 'Name' })}
+            value={name}
+            maxLength={60}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <textarea
+            className={inputCls}
+            placeholder={t('description-placeholder', { defaultValue: 'Description (optional)' })}
+            rows={2}
+            maxLength={500}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+          <input
+            className={inputCls}
+            placeholder={t('icon-placeholder', { defaultValue: 'Emoji icon (optional, e.g. 🎮)' })}
+            value={icon}
+            maxLength={8}
+            onChange={(e) => setIcon(e.target.value)}
+          />
           <DialogFooter>
-            <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={submitting}>{t('cancel-button', { defaultValue: 'Cancel' })}</Button>
-            <Button variant="accent" onClick={create} disabled={submitting || name.trim().length < 2}>
-              {submitting ? t('creating-button', { defaultValue: 'Creating…' }) : t('create-button', { defaultValue: 'Create' })}
+            <Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={submitting}>
+              {t('cancel-button', { defaultValue: 'Cancel' })}
+            </Button>
+            <Button
+              variant="accent"
+              onClick={create}
+              disabled={submitting || name.trim().length < 2}
+            >
+              {submitting
+                ? t('creating-button', { defaultValue: 'Creating…' })
+                : t('create-button', { defaultValue: 'Create' })}
             </Button>
           </DialogFooter>
         </DialogContent>

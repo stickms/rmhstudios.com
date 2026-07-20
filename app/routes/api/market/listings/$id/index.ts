@@ -15,14 +15,21 @@ export const Route = createFileRoute('/api/market/listings/$id/')({
           if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
           const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 20, windowMs: 60_000, prefix: 'market-cancel' });
+          const { allowed } = rateLimit(ip, {
+            limit: 20,
+            windowMs: 60_000,
+            prefix: 'market-cancel',
+          });
           if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
           await cancelListing(params.id, session.user.id);
           return Response.json({ success: true });
         } catch (error) {
           if (error instanceof MarketError) {
-            return Response.json({ error: error.message, code: error.code }, { status: error.status });
+            return Response.json(
+              { error: error.message, code: error.code },
+              { status: error.status },
+            );
           }
           console.error('market cancel error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });

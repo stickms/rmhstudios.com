@@ -27,7 +27,7 @@ async function warm(): Promise<void> {
   // 1. Open the Prisma pg pool now, so the first DB-touching request doesn't pay
   //    the TCP + TLS + auth handshake (the pool otherwise connects lazily).
   try {
-    const { prisma } = await import("../../lib/prisma.server");
+    const { prisma } = await import('../../lib/prisma.server');
     await prisma.$connect();
   } catch {
     // The pool still opens lazily on the first real query.
@@ -40,16 +40,16 @@ async function warm(): Promise<void> {
   //    full ~32-query timeline assembly + sidebar scans cold.
   try {
     const [{ getTimeline }, { getSidebarData }] = await Promise.all([
-      import("../../lib/feed/timeline"),
-      import("../../lib/sidebar-data"),
+      import('../../lib/feed/timeline'),
+      import('../../lib/sidebar-data'),
     ]);
     await Promise.all([
       // Same params (and therefore same cache key) as the anon homepage: For-You,
       // filter all, first page, limit 20, no viewer.
       getTimeline({
         userId: null,
-        surface: "foryou",
-        filter: "all",
+        surface: 'foryou',
+        filter: 'all',
         cursor: null,
         limit: 20,
         search: null,

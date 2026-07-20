@@ -322,7 +322,12 @@ function selectPassage(settings: RoomSettings): Passage {
   return filtered[Math.floor(Math.random() * filtered.length)];
 }
 
-function broadcastAction(io: Server, room: TypeRoom, type: string, payload: Record<string, any>): void {
+function broadcastAction(
+  io: Server,
+  room: TypeRoom,
+  type: string,
+  payload: Record<string, any>,
+): void {
   room.seq++;
   io.to(`rmhtype:${room.roomId}`).emit('rmhtype:room:action', {
     type,
@@ -365,16 +370,17 @@ function buildStateSnapshot(room: TypeRoom, userId: string) {
     totalRounds: room.totalRounds,
     passage: room.state === 'TYPING' ? room.passage : null,
     passageId: room.state === 'TYPING' ? room.passageId : null,
-    progress: room.state === 'TYPING'
-      ? Array.from(room.players.values()).map((p) => ({
-          userId: p.userId,
-          userName: p.userName,
-          charsTyped: p.currentPosition,
-          totalChars: passageLen,
-          wpm: Math.round(p.wpm * 100) / 100,
-          finished: p.finished,
-        }))
-      : [],
+    progress:
+      room.state === 'TYPING'
+        ? Array.from(room.players.values()).map((p) => ({
+            userId: p.userId,
+            userName: p.userName,
+            charsTyped: p.currentPosition,
+            totalChars: passageLen,
+            wpm: Math.round(p.wpm * 100) / 100,
+            finished: p.finished,
+          }))
+        : [],
     roundResults: null,
     finalResults: null,
     countdownSeconds: room.state === 'COUNTDOWN' ? COUNTDOWN_SECONDS : null,
@@ -488,10 +494,14 @@ function buildProgressSnapshot(room: TypeRoom) {
 
 function calculatePositionBonus(rank: number): number {
   switch (rank) {
-    case 1: return 500;
-    case 2: return 300;
-    case 3: return 150;
-    default: return 50;
+    case 1:
+      return 500;
+    case 2:
+      return 300;
+    case 3:
+      return 150;
+    default:
+      return 50;
   }
 }
 
@@ -538,22 +548,28 @@ function calculateFinalResults(room: TypeRoom) {
       avatarUrl: p.avatarUrl,
       finalRank: index + 1,
       totalScore: p.score,
-      avgWpm: room.roundResults.length > 0
-        ? Math.round(
-            (room.roundResults.reduce((sum, rr) => {
-              const playerResult = rr.rankings.find((r: any) => r.userId === p.userId);
-              return sum + (playerResult?.wpm ?? 0);
-            }, 0) / room.roundResults.length) * 100,
-          ) / 100
-        : 0,
-      avgAccuracy: room.roundResults.length > 0
-        ? Math.round(
-            (room.roundResults.reduce((sum, rr) => {
-              const playerResult = rr.rankings.find((r: any) => r.userId === p.userId);
-              return sum + (playerResult?.accuracy ?? 0);
-            }, 0) / room.roundResults.length) * 100,
-          ) / 100
-        : 0,
+      avgWpm:
+        room.roundResults.length > 0
+          ? Math.round(
+              (room.roundResults.reduce((sum, rr) => {
+                const playerResult = rr.rankings.find((r: any) => r.userId === p.userId);
+                return sum + (playerResult?.wpm ?? 0);
+              }, 0) /
+                room.roundResults.length) *
+                100,
+            ) / 100
+          : 0,
+      avgAccuracy:
+        room.roundResults.length > 0
+          ? Math.round(
+              (room.roundResults.reduce((sum, rr) => {
+                const playerResult = rr.rankings.find((r: any) => r.userId === p.userId);
+                return sum + (playerResult?.accuracy ?? 0);
+              }, 0) /
+                room.roundResults.length) *
+                100,
+            ) / 100
+          : 0,
     }));
 
   return {
@@ -663,11 +679,19 @@ function endRound(io: Server, room: TypeRoom): void {
             difficulty: room.settings.difficulty,
           });
         } catch (err) {
-          logger.error({ event: 'rmhtype_leaderboard_broadcast_error', roomId: room.roomId, error: String(err) });
+          logger.error({
+            event: 'rmhtype_leaderboard_broadcast_error',
+            roomId: room.roomId,
+            error: String(err),
+          });
         }
       })
       .catch((err) => {
-        logger.error({ event: 'rmhtype_persist_match_error', roomId: room.roomId, error: String(err) });
+        logger.error({
+          event: 'rmhtype_persist_match_error',
+          roomId: room.roomId,
+          error: String(err),
+        });
       });
   } else {
     room.state = 'ROUND_RESULTS';
@@ -731,15 +755,28 @@ function startRound(io: Server, room: TypeRoom): void {
     // Round timeout
     setTimeout(() => {
       if (room.state === 'TYPING') {
-        logger.info({ event: 'rmhtype_round_timeout', roomId: room.roomId, round: room.currentRound });
+        logger.info({
+          event: 'rmhtype_round_timeout',
+          roomId: room.roomId,
+          round: room.currentRound,
+        });
         endRound(io, room);
       }
     }, ROUND_TIMEOUT_MS);
 
-    logger.info({ event: 'rmhtype_round_started', roomId: room.roomId, round: room.currentRound, passageId: passage.id });
+    logger.info({
+      event: 'rmhtype_round_started',
+      roomId: room.roomId,
+      round: room.currentRound,
+      passageId: passage.id,
+    });
   }, COUNTDOWN_SECONDS * 1000);
 
-  logger.info({ event: 'rmhtype_countdown_started', roomId: room.roomId, round: room.currentRound });
+  logger.info({
+    event: 'rmhtype_countdown_started',
+    roomId: room.roomId,
+    round: room.currentRound,
+  });
 }
 
 // ─── DB Persistence ─────────────────────────────────────────
@@ -814,8 +851,8 @@ async function persistMatchResults(room: TypeRoom, finalResults: any): Promise<v
 
       // Running average: new_avg = ((old_avg * (n-1)) + new_value) / n
       const n = profile.totalGamesPlayed;
-      updates.avgWpm = ((profile.avgWpm * (n - 1)) + standing.avgWpm) / n;
-      updates.avgAccuracy = ((profile.avgAccuracy * (n - 1)) + standing.avgAccuracy) / n;
+      updates.avgWpm = (profile.avgWpm * (n - 1) + standing.avgWpm) / n;
+      updates.avgAccuracy = (profile.avgAccuracy * (n - 1) + standing.avgAccuracy) / n;
 
       if (standing.finalRank === 1) {
         const newStreak = profile.currentStreak + 1;
@@ -932,8 +969,8 @@ async function persistSoloResult(
     if (accuracy > profile.bestAccuracy) updates.bestAccuracy = accuracy;
 
     const n = profile.totalGamesPlayed;
-    updates.avgWpm = ((profile.avgWpm * (n - 1)) + wpm) / n;
-    updates.avgAccuracy = ((profile.avgAccuracy * (n - 1)) + accuracy) / n;
+    updates.avgWpm = (profile.avgWpm * (n - 1) + wpm) / n;
+    updates.avgAccuracy = (profile.avgAccuracy * (n - 1) + accuracy) / n;
 
     if (Object.keys(updates).length > 0) {
       await (prisma as any).rmhTypeProfile.update({
@@ -961,7 +998,12 @@ async function persistSoloResult(
     // Progression: XP + daily "play a game" quest for finishing a solo run.
     awardAppProgress(userId, { xp: 10, quest: { type: 'game_play' } });
 
-    logger.info({ event: 'rmhtype_solo_persisted', matchId: match.id, userId, scorePosted: qualifies });
+    logger.info({
+      event: 'rmhtype_solo_persisted',
+      matchId: match.id,
+      userId,
+      scorePosted: qualifies,
+    });
     return qualifies;
   } catch (err) {
     logger.error({ event: 'rmhtype_solo_persist_error', userId, error: String(err) });
@@ -1052,23 +1094,39 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     // Build settings from payload
     const rawSettings = payload?.settings;
     const settings: RoomSettings = {
-      isPublic: typeof rawSettings?.isPublic === 'boolean' ? rawSettings.isPublic : DEFAULT_SETTINGS.isPublic,
+      isPublic:
+        typeof rawSettings?.isPublic === 'boolean'
+          ? rawSettings.isPublic
+          : DEFAULT_SETTINGS.isPublic,
       maxPlayers: Math.min(
         MAX_PLAYERS,
-        Math.max(2, typeof rawSettings?.maxPlayers === 'number' ? rawSettings.maxPlayers : DEFAULT_SETTINGS.maxPlayers),
+        Math.max(
+          2,
+          typeof rawSettings?.maxPlayers === 'number'
+            ? rawSettings.maxPlayers
+            : DEFAULT_SETTINGS.maxPlayers,
+        ),
       ),
       difficulty:
         rawSettings?.difficulty && ['easy', 'medium', 'hard'].includes(rawSettings.difficulty)
           ? rawSettings.difficulty
           : DEFAULT_SETTINGS.difficulty,
       passageLength:
-        rawSettings?.passageLength && ['short', 'medium', 'long'].includes(rawSettings.passageLength)
+        rawSettings?.passageLength &&
+        ['short', 'medium', 'long'].includes(rawSettings.passageLength)
           ? rawSettings.passageLength
           : DEFAULT_SETTINGS.passageLength,
-      rounds: Math.min(10, Math.max(1, typeof rawSettings?.rounds === 'number' ? rawSettings.rounds : DEFAULT_SETTINGS.rounds)),
-      password: typeof rawSettings?.password === 'string' && rawSettings.password.length > 0
-        ? rawSettings.password.slice(0, 64)
-        : null,
+      rounds: Math.min(
+        10,
+        Math.max(
+          1,
+          typeof rawSettings?.rounds === 'number' ? rawSettings.rounds : DEFAULT_SETTINGS.rounds,
+        ),
+      ),
+      password:
+        typeof rawSettings?.password === 'string' && rawSettings.password.length > 0
+          ? rawSettings.password.slice(0, 64)
+          : null,
     };
 
     // If password is set, mark as private
@@ -1109,86 +1167,89 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     logger.info({ event: 'rmhtype_room_created', roomId, userId });
   });
 
-  socket.on('rmhtype:room:join', (payload?: { roomId?: string; roomCode?: string; password?: string }) => {
-    if (!checkRateLimit(socket.id, 'rmhtype:room:join')) {
-      socket.emit('rmhtype:error', { message: 'Rate limit exceeded' });
-      return;
-    }
-
-    const roomId = sanitizeString(payload?.roomCode ?? payload?.roomId, 16);
-    if (!roomId) {
-      socket.emit('rmhtype:error', { message: 'Room ID required' });
-      return;
-    }
-
-    const room = rooms.get(roomId);
-    if (!room) {
-      socket.emit('rmhtype:error', { message: 'Room not found' });
-      return;
-    }
-
-    // Ban check
-    if (room.bannedUsers.some((b) => b.userId === userId)) {
-      socket.emit('rmhtype:error', { code: 'BANNED', message: 'You are banned from this room' });
-      return;
-    }
-
-    // Password check
-    if (room.settings.password) {
-      const provided = typeof payload?.password === 'string' ? payload.password : '';
-      if (provided !== room.settings.password) {
-        socket.emit('rmhtype:error', { message: 'Incorrect password' });
+  socket.on(
+    'rmhtype:room:join',
+    (payload?: { roomId?: string; roomCode?: string; password?: string }) => {
+      if (!checkRateLimit(socket.id, 'rmhtype:room:join')) {
+        socket.emit('rmhtype:error', { message: 'Rate limit exceeded' });
         return;
       }
-    }
 
-    // Check if player is reconnecting
-    const existingPlayer = room.players.get(userId);
-    if (existingPlayer) {
-      // Reconnect
-      existingPlayer.socketId = socket.id;
-      existingPlayer.isConnected = true;
-      existingPlayer.userName = userName;
-      existingPlayer.avatarUrl = avatarUrl;
+      const roomId = sanitizeString(payload?.roomCode ?? payload?.roomId, 16);
+      if (!roomId) {
+        socket.emit('rmhtype:error', { message: 'Room ID required' });
+        return;
+      }
 
-      userSocketMap.set(userId, socket.id);
-      socketRoomMap.set(socket.id, roomId);
+      const room = rooms.get(roomId);
+      if (!room) {
+        socket.emit('rmhtype:error', { message: 'Room not found' });
+        return;
+      }
+
+      // Ban check
+      if (room.bannedUsers.some((b) => b.userId === userId)) {
+        socket.emit('rmhtype:error', { code: 'BANNED', message: 'You are banned from this room' });
+        return;
+      }
+
+      // Password check
+      if (room.settings.password) {
+        const provided = typeof payload?.password === 'string' ? payload.password : '';
+        if (provided !== room.settings.password) {
+          socket.emit('rmhtype:error', { message: 'Incorrect password' });
+          return;
+        }
+      }
+
+      // Check if player is reconnecting
+      const existingPlayer = room.players.get(userId);
+      if (existingPlayer) {
+        // Reconnect
+        existingPlayer.socketId = socket.id;
+        existingPlayer.isConnected = true;
+        existingPlayer.userName = userName;
+        existingPlayer.avatarUrl = avatarUrl;
+
+        userSocketMap.set(userId, socket.id);
+        socketRoomMap.set(socket.id, roomId);
+        socket.join(`rmhtype:${roomId}`);
+
+        broadcastRoomState(io, room);
+
+        logger.info({ event: 'rmhtype_player_reconnected', roomId, userId });
+        return;
+      }
+
+      // Check capacity
+      if (room.players.size >= room.settings.maxPlayers) {
+        socket.emit('rmhtype:error', { message: 'Room is full' });
+        return;
+      }
+
+      // Only allow joining during WAITING or ROUND_RESULTS
+      if (room.state !== 'WAITING' && room.state !== 'ROUND_RESULTS') {
+        socket.emit('rmhtype:error', { message: 'Game is in progress' });
+        return;
+      }
+
+      // Leave current room if in one
+      const currentRoomId = socketRoomMap.get(socket.id);
+      if (currentRoomId && currentRoomId !== roomId) {
+        handlePlayerLeave(io, socket, userId, currentRoomId);
+      }
+
+      const player = createPlayer(socket.id, userId, userName, avatarUrl, false);
+      room.players.set(userId, player);
+
       socket.join(`rmhtype:${roomId}`);
+      socketRoomMap.set(socket.id, roomId);
 
       broadcastRoomState(io, room);
 
-      logger.info({ event: 'rmhtype_player_reconnected', roomId, userId });
-      return;
-    }
-
-    // Check capacity
-    if (room.players.size >= room.settings.maxPlayers) {
-      socket.emit('rmhtype:error', { message: 'Room is full' });
-      return;
-    }
-
-    // Only allow joining during WAITING or ROUND_RESULTS
-    if (room.state !== 'WAITING' && room.state !== 'ROUND_RESULTS') {
-      socket.emit('rmhtype:error', { message: 'Game is in progress' });
-      return;
-    }
-
-    // Leave current room if in one
-    const currentRoomId = socketRoomMap.get(socket.id);
-    if (currentRoomId && currentRoomId !== roomId) {
-      handlePlayerLeave(io, socket, userId, currentRoomId);
-    }
-
-    const player = createPlayer(socket.id, userId, userName, avatarUrl, false);
-    room.players.set(userId, player);
-
-    socket.join(`rmhtype:${roomId}`);
-    socketRoomMap.set(socket.id, roomId);
-
-    broadcastRoomState(io, room);
-
-    logger.info({ event: 'rmhtype_player_joined', roomId, userId });
-  });
+      logger.info({ event: 'rmhtype_player_joined', roomId, userId });
+    },
+  );
 
   socket.on('rmhtype:room:leave', () => {
     const roomId = socketRoomMap.get(socket.id);
@@ -1264,7 +1325,10 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       userName: targetPlayer.userName,
       bannedAt: Date.now(),
       bannedBy: userId,
-      reason: typeof payload?.reason === 'string' && payload.reason.trim() ? payload.reason.trim().slice(0, 200) : null,
+      reason:
+        typeof payload?.reason === 'string' && payload.reason.trim()
+          ? payload.reason.trim().slice(0, 200)
+          : null,
     });
 
     // Kick the player
@@ -1345,7 +1409,10 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     if (rawSettings.difficulty && ['easy', 'medium', 'hard'].includes(rawSettings.difficulty)) {
       room.settings.difficulty = rawSettings.difficulty;
     }
-    if (rawSettings.passageLength && ['short', 'medium', 'long'].includes(rawSettings.passageLength)) {
+    if (
+      rawSettings.passageLength &&
+      ['short', 'medium', 'long'].includes(rawSettings.passageLength)
+    ) {
       room.settings.passageLength = rawSettings.passageLength;
     }
     if (typeof rawSettings.rounds === 'number') {
@@ -1353,9 +1420,10 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
       room.totalRounds = room.settings.rounds;
     }
     if (rawSettings.password !== undefined) {
-      room.settings.password = typeof rawSettings.password === 'string' && rawSettings.password.length > 0
-        ? rawSettings.password.slice(0, 64)
-        : null;
+      room.settings.password =
+        typeof rawSettings.password === 'string' && rawSettings.password.length > 0
+          ? rawSettings.password.slice(0, 64)
+          : null;
       if (room.settings.password) room.settings.isPublic = false;
     }
 
@@ -1366,7 +1434,10 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
 
   socket.on('rmhtype:room:browse', () => {
     const publicRooms = Array.from(rooms.values())
-      .filter((r) => r.settings.isPublic && r.state === 'WAITING' && r.players.size < r.settings.maxPlayers)
+      .filter(
+        (r) =>
+          r.settings.isPublic && r.state === 'WAITING' && r.players.size < r.settings.maxPlayers,
+      )
       .map((r) => ({
         roomId: r.roomId,
         hostUserName: r.players.get(r.hostUserId)?.userName ?? 'Unknown',
@@ -1479,7 +1550,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     // Calculate WPM: (characters / 5) / (elapsed minutes)
     const elapsedMs = Date.now() - room.roundStartTime;
     if (elapsedMs > 0 && position > 0) {
-      player.wpm = (position / 5) / (elapsedMs / 60000);
+      player.wpm = position / 5 / (elapsedMs / 60000);
       player.accuracy = ((position - errors) / position) * 100;
       if (player.accuracy < 0) player.accuracy = 0;
     }
@@ -1502,10 +1573,11 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
 
     // Calculate final WPM and accuracy
     if (player.finishTime > 0 && player.currentPosition > 0) {
-      player.wpm = (player.currentPosition / 5) / (player.finishTime / 60000);
-      player.accuracy = player.currentPosition > 0
-        ? ((player.currentPosition - player.errors) / player.currentPosition) * 100
-        : 100;
+      player.wpm = player.currentPosition / 5 / (player.finishTime / 60000);
+      player.accuracy =
+        player.currentPosition > 0
+          ? ((player.currentPosition - player.errors) / player.currentPosition) * 100
+          : 100;
       if (player.accuracy < 0) player.accuracy = 0;
     }
 
@@ -1636,8 +1708,12 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
     const player = room.players.get(userId);
     if (!player || player.finished) return;
 
-    const position = typeof payload?.position === 'number' ? Math.max(0, payload.position) : player.currentPosition;
-    const errors = typeof payload?.errors === 'number' ? Math.max(0, payload.errors) : player.errors;
+    const position =
+      typeof payload?.position === 'number'
+        ? Math.max(0, payload.position)
+        : player.currentPosition;
+    const errors =
+      typeof payload?.errors === 'number' ? Math.max(0, payload.errors) : player.errors;
 
     player.currentPosition = position;
     player.errors = errors;
@@ -1646,7 +1722,7 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
 
     // Calculate final WPM and accuracy
     if (player.finishTime > 0 && position > 0) {
-      player.wpm = (position / 5) / (player.finishTime / 60000);
+      player.wpm = position / 5 / (player.finishTime / 60000);
       player.accuracy = ((position - errors) / position) * 100;
       if (player.accuracy < 0) player.accuracy = 0;
     } else {
@@ -1684,21 +1760,27 @@ export function registerRmhTypeHandlers(io: Server, socket: Socket): void {
 
   // ─── Leaderboard ────────────────────────────────────────
 
-  socket.on('rmhtype:leaderboard:fetch', async (payload?: { limit?: number; difficulty?: string }) => {
-    try {
-      const prisma = getPrismaClient();
-      const limit = Math.min(100, Math.max(1, typeof payload?.limit === 'number' ? payload.limit : 50));
-      const difficulty = ['easy', 'medium', 'hard'].includes(payload?.difficulty ?? '')
-        ? payload!.difficulty!
-        : 'medium';
+  socket.on(
+    'rmhtype:leaderboard:fetch',
+    async (payload?: { limit?: number; difficulty?: string }) => {
+      try {
+        const prisma = getPrismaClient();
+        const limit = Math.min(
+          100,
+          Math.max(1, typeof payload?.limit === 'number' ? payload.limit : 50),
+        );
+        const difficulty = ['easy', 'medium', 'hard'].includes(payload?.difficulty ?? '')
+          ? payload!.difficulty!
+          : 'medium';
 
-      const leaderboard = await fetchLeaderboard(prisma, difficulty, limit);
-      socket.emit('rmhtype:leaderboard:data', { leaderboard, difficulty });
-    } catch (err) {
-      logger.error({ event: 'rmhtype_leaderboard_fetch_error', error: String(err) });
-      socket.emit('rmhtype:error', { message: 'Failed to fetch leaderboard' });
-    }
-  });
+        const leaderboard = await fetchLeaderboard(prisma, difficulty, limit);
+        socket.emit('rmhtype:leaderboard:data', { leaderboard, difficulty });
+      } catch (err) {
+        logger.error({ event: 'rmhtype_leaderboard_fetch_error', error: String(err) });
+        socket.emit('rmhtype:error', { message: 'Failed to fetch leaderboard' });
+      }
+    },
+  );
 }
 
 // ─── Helper: Leave Room ─────────────────────────────────────
@@ -1791,7 +1873,9 @@ export function handleRmhTypeDisconnect(io: Server, socket: Socket): void {
     setTimeout(() => {
       const currentRoom = rooms.get(roomId);
       if (!currentRoom) return;
-      const stillAllDisconnected = Array.from(currentRoom.players.values()).every((p) => !p.isConnected);
+      const stillAllDisconnected = Array.from(currentRoom.players.values()).every(
+        (p) => !p.isConnected,
+      );
       if (stillAllDisconnected) {
         removeRoom(roomId);
         logger.info({ event: 'rmhtype_room_abandoned', roomId });

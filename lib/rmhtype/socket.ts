@@ -113,9 +113,14 @@ export async function connectToRmhType(roomCode?: string): Promise<Socket> {
     useRmhTypeStore.getState().setCountdown(data.seconds);
   });
 
-  socket.on(S2C.GAME_PASSAGE, (data: { passageId: string; text: string; round: number; totalRounds: number }) => {
-    useRmhTypeStore.getState().setPassage(data.passageId, data.text, data.round, data.totalRounds);
-  });
+  socket.on(
+    S2C.GAME_PASSAGE,
+    (data: { passageId: string; text: string; round: number; totalRounds: number }) => {
+      useRmhTypeStore
+        .getState()
+        .setPassage(data.passageId, data.text, data.round, data.totalRounds);
+    },
+  );
 
   // The server now batches every player's progress into ONE array per tick
   // (perf audit §7 — was one emit per player, O(players^2) messages). Iterate
@@ -125,9 +130,19 @@ export async function connectToRmhType(roomCode?: string): Promise<Socket> {
     for (const p of data) store.updateProgress(p);
   });
 
-  socket.on(S2C.GAME_PLAYER_FINISHED, (data: { userId: string; userName: string; wpm: number; accuracy: number; timeMs: number; rank: number }) => {
-    useRmhTypeStore.getState().markPlayerFinished(data);
-  });
+  socket.on(
+    S2C.GAME_PLAYER_FINISHED,
+    (data: {
+      userId: string;
+      userName: string;
+      wpm: number;
+      accuracy: number;
+      timeMs: number;
+      rank: number;
+    }) => {
+      useRmhTypeStore.getState().markPlayerFinished(data);
+    },
+  );
 
   socket.on(S2C.GAME_ROUND_RESULTS, (data: RoundResults) => {
     useRmhTypeStore.getState().setRoundResults(data);

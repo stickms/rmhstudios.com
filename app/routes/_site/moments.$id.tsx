@@ -37,7 +37,7 @@ export const Route = createFileRoute('/_site/moments/$id')({
   head: ({ loaderData, params }) => {
     const m = loaderData?.moment;
     const who = m?.user?.name || (m?.user?.handle ? `@${m.user.handle}` : 'Someone');
-    const label = m ? KIND_LABELS[m.kind] ?? 'Milestone' : 'Moment';
+    const label = m ? (KIND_LABELS[m.kind] ?? 'Milestone') : 'Moment';
     const title = m ? `${who} — ${m.payload.value} | RMH Studios` : 'Moment | RMH Studios';
     const description = m
       ? `${label} on RMH Studios${m.payload.subtitle ? ` · ${m.payload.subtitle}` : ''}`
@@ -58,7 +58,9 @@ function MomentPage() {
   const label = KIND_LABELS[moment.kind] ?? 'Milestone';
   const who =
     moment.user.name ||
-    (moment.user.handle ? `@${moment.user.handle}` : t('moment-a-member', { defaultValue: 'A member' }));
+    (moment.user.handle
+      ? `@${moment.user.handle}`
+      : t('moment-a-member', { defaultValue: 'A member' }));
 
   return (
     <>

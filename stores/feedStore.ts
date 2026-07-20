@@ -1,6 +1,6 @@
-import { create } from "zustand";
-import type { FeedItem, FeedFilter, FeedItemUser } from "@/lib/feed-types";
-import { useUserDisplayStore } from "./userDisplayStore";
+import { create } from 'zustand';
+import type { FeedItem, FeedFilter, FeedItemUser } from '@/lib/feed-types';
+import { useUserDisplayStore } from './userDisplayStore';
 
 /** Per-viewer delivery metadata attached by the SSE stream to created events. */
 export interface CreatedDelivery {
@@ -44,7 +44,12 @@ interface FeedState {
    *  the store is still pristine, so it never clobbers a live or navigated-back
    *  timeline. `mutedWords` (when provided) primes the live-SSE filter so the
    *  client needs no separate muted-words request. */
-  hydrate: (items: FeedItem[], cursor: string | null, hasMore: boolean, mutedWords?: string[]) => void;
+  hydrate: (
+    items: FeedItem[],
+    cursor: string | null,
+    hasMore: boolean,
+    mutedWords?: string[],
+  ) => void;
   prependItem: (item: FeedItem) => void;
   updateItem: (id: string, updates: Partial<FeedItem>) => void;
   removeItem: (id: string) => void;
@@ -106,7 +111,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
   loading: false,
   initialized: false,
   error: false,
-  filter: "all",
+  filter: 'all',
   search: null,
   pendingItems: [],
   mutedWords: [],
@@ -164,12 +169,12 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     const { filter, search } = get();
     set({ loading: true, error: false });
     try {
-      const params = new URLSearchParams({ limit: "20", filter });
-      if (filter === "friends") params.set("feed", "following");
-      if (search) params.set("search", search);
+      const params = new URLSearchParams({ limit: '20', filter });
+      if (filter === 'friends') params.set('feed', 'following');
+      if (search) params.set('search', search);
 
       const res = await fetch(`/api/rmharks?${params}`, { signal: controller.signal });
-      if (!res.ok) throw new Error("Failed to refresh feed");
+      if (!res.ok) throw new Error('Failed to refresh feed');
 
       const data = await res.json();
       if (generation !== requestGeneration) return;
@@ -190,7 +195,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
     } catch (error) {
       if (generation !== requestGeneration) return;
       // Keep the existing timeline on a failed refresh — only surface the error.
-      if (!controller.signal.aborted) console.error("Feed refresh error:", error);
+      if (!controller.signal.aborted) console.error('Feed refresh error:', error);
       set({ loading: false, error: true });
     } finally {
       clearTimeout(timeout);
@@ -237,14 +242,14 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     set({ loading: true, error: false });
     try {
-      const params = new URLSearchParams({ limit: "20", filter });
+      const params = new URLSearchParams({ limit: '20', filter });
       // Twitter-shaped surface naming: the "friends" tab is the Following feed.
-      if (filter === "friends") params.set("feed", "following");
-      if (cursor) params.set("cursor", cursor);
-      if (search) params.set("search", search);
+      if (filter === 'friends') params.set('feed', 'following');
+      if (cursor) params.set('cursor', cursor);
+      if (search) params.set('search', search);
 
       const res = await fetch(`/api/rmharks?${params}`, { signal: controller.signal });
-      if (!res.ok) throw new Error("Failed to fetch feed");
+      if (!res.ok) throw new Error('Failed to fetch feed');
 
       const data = await res.json();
 
@@ -277,7 +282,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       // initialized so the UI shows a retry affordance instead of skeletons
       // forever, and preserve `hasMore` so one transient drop never permanently
       // kills pagination.
-      if (!controller.signal.aborted) console.error("Feed fetch error:", error);
+      if (!controller.signal.aborted) console.error('Feed fetch error:', error);
       set({ loading: false, initialized: true, error: true });
     } finally {
       clearTimeout(timeout);
@@ -301,9 +306,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       // offscreen events cost nothing.
       if (!state.items.some((item) => item.id === id)) return state;
       return {
-        items: state.items.map((item) =>
-          item.id === id ? { ...item, ...updates } : item
-        ),
+        items: state.items.map((item) => (item.id === id ? { ...item, ...updates } : item)),
       };
     });
   },
@@ -321,9 +324,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
       // The authoritative post may already be on screen if its SSE
       // `rmhark.created` event beat this response — in that case just drop the
       // optimistic copy instead of creating a duplicate.
-      const realAlreadyPresent = state.items.some(
-        (i) => i.id === real.id && i.id !== tempId
-      );
+      const realAlreadyPresent = state.items.some((i) => i.id === real.id && i.id !== tempId);
       if (realAlreadyPresent) {
         return { items: state.items.filter((i) => i.id !== tempId) };
       }
@@ -338,8 +339,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     // Created events are always RMHarks — ignore them on content-type tabs
     // that don't show RMHarks (Games/Apps/Blog).
-    const contentShowsRmharks =
-      filter === "all" || filter === "rmhark" || filter === "friends";
+    const contentShowsRmharks = filter === 'all' || filter === 'rmhark' || filter === 'friends';
     if (!contentShowsRmharks) return;
 
     // Honor the viewer's muted words in real time (the timeline read already
@@ -354,7 +354,7 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
     cacheItemUsers([item]);
 
-    if (filter === "friends") {
+    if (filter === 'friends') {
       // Following surface: only stream in posts from people you follow (or
       // your own). Strangers' posts never belong here.
       if (delivery.followed || delivery.own) {
@@ -384,6 +384,14 @@ export const useFeedStore = create<FeedState>((set, get) => ({
 
   reset: () => {
     cancelActiveFetch();
-    set({ items: [], cursor: null, hasMore: true, loading: false, initialized: false, error: false, pendingItems: [] });
+    set({
+      items: [],
+      cursor: null,
+      hasMore: true,
+      loading: false,
+      initialized: false,
+      error: false,
+      pendingItems: [],
+    });
   },
 }));

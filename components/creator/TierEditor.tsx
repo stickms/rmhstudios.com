@@ -3,7 +3,16 @@
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { BadgeCheck, Lock, MessagesSquare, Rocket, Plus, Trash2, Coins, type LucideIcon } from 'lucide-react';
+import {
+  BadgeCheck,
+  Lock,
+  MessagesSquare,
+  Rocket,
+  Plus,
+  Trash2,
+  Coins,
+  type LucideIcon,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,7 +32,9 @@ type TFn = (key: string, opts?: Record<string, unknown>) => string;
  * creator's editor and the supporter's picker label perks identically. The keys
  * are the fixed `PerkKey` enum; kept in sync with `PERK_KEYS` server-side.
  */
-export function perkOptions(t: TFn): { key: PerkKey; label: string; description: string; icon: LucideIcon }[] {
+export function perkOptions(
+  t: TFn,
+): { key: PerkKey; label: string; description: string; icon: LucideIcon }[] {
   return [
     {
       key: 'badge',
@@ -46,7 +57,9 @@ export function perkOptions(t: TFn): { key: PerkKey; label: string; description:
     {
       key: 'early_builds',
       label: t('perk-early-builds', { defaultValue: 'Early access to builds' }),
-      description: t('perk-early-builds-desc', { defaultValue: 'See new builds before everyone else' }),
+      description: t('perk-early-builds-desc', {
+        defaultValue: 'See new builds before everyone else',
+      }),
       icon: Rocket,
     },
   ];
@@ -82,7 +95,9 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
   const nextKey = useCallback(() => `tier-${keyCounter.current++}`, []);
 
   const [drafts, setDrafts] = useState<Draft[]>(() =>
-    (initialTiers.length > 0 ? initialTiers : []).map((tier) => toDraft(tier, `tier-${keyCounter.current++}`)),
+    (initialTiers.length > 0 ? initialTiers : []).map((tier) =>
+      toDraft(tier, `tier-${keyCounter.current++}`),
+    ),
   );
   const [saving, setSaving] = useState(false);
 
@@ -112,18 +127,15 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
     setDrafts((prev) => prev.filter((d) => d.key !== key));
   }, []);
 
-  const togglePerk = useCallback(
-    (key: string, perk: PerkKey) => {
-      setDrafts((prev) =>
-        prev.map((d) => {
-          if (d.key !== key) return d;
-          const has = d.perks.includes(perk);
-          return { ...d, perks: has ? d.perks.filter((p) => p !== perk) : [...d.perks, perk] };
-        }),
-      );
-    },
-    [],
-  );
+  const togglePerk = useCallback((key: string, perk: PerkKey) => {
+    setDrafts((prev) =>
+      prev.map((d) => {
+        if (d.key !== key) return d;
+        const has = d.perks.includes(perk);
+        return { ...d, perks: has ? d.perks.filter((p) => p !== perk) : [...d.perks, perk] };
+      }),
+    );
+  }, []);
 
   const invalid = drafts.some(
     (d) => !d.name.trim() || d.priceCoins < TIER_PRICE_MIN || d.priceCoins > TIER_PRICE_MAX,
@@ -179,7 +191,9 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
 
       {drafts.length === 0 && (
         <div className="rounded-site glass-fill p-6 text-center text-sm text-site-text-dim">
-          {t('no-tiers-yet', { defaultValue: 'No tiers yet. Add your first tier to start earning from supporters.' })}
+          {t('no-tiers-yet', {
+            defaultValue: 'No tiers yet. Add your first tier to start earning from supporters.',
+          })}
         </div>
       )}
 
@@ -205,7 +219,9 @@ export function TierEditor({ initialTiers, onSaved }: TierEditorProps) {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label htmlFor={`${d.key}-name`}>{t('tier-name', { defaultValue: 'Name' })}</Label>
+                  <Label htmlFor={`${d.key}-name`}>
+                    {t('tier-name', { defaultValue: 'Name' })}
+                  </Label>
                   <Input
                     id={`${d.key}-name`}
                     value={d.name}

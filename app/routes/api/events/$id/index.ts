@@ -18,8 +18,16 @@ const updateSchema = z
     capacity: z.coerce.number().int().min(1).max(1_000_000).nullable().optional(),
   })
   .superRefine((d, ctx) => {
-    if (d.venueKind === 'URL' && d.venueRef !== undefined && !httpUrl(191).safeParse(d.venueRef ?? '').success) {
-      ctx.addIssue({ code: 'custom', message: 'A valid http(s) URL is required', path: ['venueRef'] });
+    if (
+      d.venueKind === 'URL' &&
+      d.venueRef !== undefined &&
+      !httpUrl(191).safeParse(d.venueRef ?? '').success
+    ) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'A valid http(s) URL is required',
+        path: ['venueRef'],
+      });
     }
   });
 
@@ -78,7 +86,11 @@ export const Route = createFileRoute('/api/events/$id/')({
             );
           }
 
-          const event = await updateEvent({ id: params.id, hostId: session.user.id, ...parsed.data });
+          const event = await updateEvent({
+            id: params.id,
+            hostId: session.user.id,
+            ...parsed.data,
+          });
           return Response.json({ event });
         } catch (error) {
           if (error instanceof EventError) {

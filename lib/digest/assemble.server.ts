@@ -32,9 +32,10 @@ export interface AssembledDigest {
 }
 
 function esc(value: string): string {
-  return value.replace(/[&<>"']/g, (c) => (
-    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c
-  ));
+  return value.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
+  );
 }
 
 /** Absolute URL for an in-app path. */
@@ -69,7 +70,12 @@ interface UpcomingEvent {
 }
 
 /** Engagement score used to rank followed-user posts for the digest. */
-function score(p: { likeCount: number; commentCount: number; repostCount: number; viewCount: number }): number {
+function score(p: {
+  likeCount: number;
+  commentCount: number;
+  repostCount: number;
+  viewCount: number;
+}): number {
   return p.likeCount * 3 + p.commentCount * 2 + p.repostCount * 4 + p.viewCount * 0.05;
 }
 
@@ -124,27 +130,59 @@ async function topPostsFromFollows(userId: string, since: Date): Promise<DigestP
 async function latestEditorial(): Promise<Editorial | null> {
   const [news, blog] = await Promise.all([
     prisma.newsArticle
-      .findFirst({ where: { status: 'PUBLISHED' }, orderBy: { date: 'desc' }, select: { slug: true, title: true, description: true, date: true } })
+      .findFirst({
+        where: { status: 'PUBLISHED' },
+        orderBy: { date: 'desc' },
+        select: { slug: true, title: true, description: true, date: true },
+      })
       .catch(() => null),
     prisma.blogPost
-      .findFirst({ orderBy: { date: 'desc' }, select: { slug: true, title: true, description: true, date: true } })
+      .findFirst({
+        orderBy: { date: 'desc' },
+        select: { slug: true, title: true, description: true, date: true },
+      })
       .catch(() => null),
   ]);
 
   const candidates: (Editorial & { sort: number })[] = [];
-  if (news) candidates.push({ kind: 'news', title: news.title, description: news.description, href: `/news/${news.slug}`, sort: Date.parse(news.date) || 0 });
-  if (blog) candidates.push({ kind: 'blog', title: blog.title, description: blog.description, href: `/blog/${blog.slug}`, sort: Date.parse(blog.date) || 0 });
+  if (news)
+    candidates.push({
+      kind: 'news',
+      title: news.title,
+      description: news.description,
+      href: `/news/${news.slug}`,
+      sort: Date.parse(news.date) || 0,
+    });
+  if (blog)
+    candidates.push({
+      kind: 'blog',
+      title: blog.title,
+      description: blog.description,
+      href: `/blog/${blog.slug}`,
+      sort: Date.parse(blog.date) || 0,
+    });
   if (candidates.length === 0) return null;
   candidates.sort((a, b) => b.sort - a.sort);
   const pick = candidates[0];
-  return { kind: pick.kind, title: pick.title, description: truncate(pick.description, 180), href: pick.href };
+  return {
+    kind: pick.kind,
+    title: pick.title,
+    description: truncate(pick.description, 180),
+    href: pick.href,
+  };
 }
 
 /** Best-effort quest/streak snapshot. Any failure degrades to nulls. */
-async function progressSnapshot(userId: string): Promise<{ streak: number | null; claimableQuests: number | null }> {
+async function progressSnapshot(
+  userId: string,
+): Promise<{ streak: number | null; claimableQuests: number | null }> {
   const [streak, quests] = await Promise.all([
-    getStreak(userId).then((s) => s.current).catch(() => null),
-    getActiveQuests(userId).then((qs) => qs.filter((q) => q.completed && !q.claimed).length).catch(() => null),
+    getStreak(userId)
+      .then((s) => s.current)
+      .catch(() => null),
+    getActiveQuests(userId)
+      .then((qs) => qs.filter((q) => q.completed && !q.claimed).length)
+      .catch(() => null),
   ]);
   return { streak, claimableQuests: quests };
 }
@@ -170,7 +208,9 @@ async function upcomingEvents(userId: string): Promise<UpcomingEvent[]> {
 
 function formatDate(value: Date): string {
   try {
-    return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(value);
+    return new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' }).format(
+      value,
+    );
   } catch {
     return value.toISOString();
   }
@@ -218,7 +258,14 @@ export async function assembleDigest(userId: string): Promise<AssembledDigest | 
   const token = signUnsubToken(user.id);
   const unsubUrl = `${SITE_URL}/api/email/unsubscribe?token=${encodeURIComponent(token)}`;
 
-  const { html, text, subject } = renderDigest({ firstName, posts, editorial, snapshot, events, unsubUrl });
+  const { html, text, subject } = renderDigest({
+    firstName,
+    posts,
+    editorial,
+    snapshot,
+    events,
+    unsubUrl,
+  });
   return { subject, html, text };
 }
 
@@ -278,7 +325,8 @@ function renderDigest(input: RenderInput): { html: string; text: string; subject
   if (events.length > 0) {
     const rows = events
       .map(
-        (e) => `<div style="font-size:14px;color:${textCol};margin-bottom:6px;">📅 <strong>${esc(e.title)}</strong> <span style="color:${muted};">— ${esc(formatDate(e.startsAt))}</span></div>`,
+        (e) =>
+          `<div style="font-size:14px;color:${textCol};margin-bottom:6px;">📅 <strong>${esc(e.title)}</strong> <span style="color:${muted};">— ${esc(formatDate(e.startsAt))}</span></div>`,
       )
       .join('');
     sections.push(`
@@ -289,8 +337,12 @@ function renderDigest(input: RenderInput): { html: string; text: string; subject
   }
 
   const snapBits: string[] = [];
-  if ((snapshot.streak ?? 0) > 0) snapBits.push(`🔥 <strong>${snapshot.streak}-day</strong> streak going`);
-  if ((snapshot.claimableQuests ?? 0) > 0) snapBits.push(`🎯 <strong>${snapshot.claimableQuests}</strong> quest reward${snapshot.claimableQuests === 1 ? '' : 's'} ready to claim`);
+  if ((snapshot.streak ?? 0) > 0)
+    snapBits.push(`🔥 <strong>${snapshot.streak}-day</strong> streak going`);
+  if ((snapshot.claimableQuests ?? 0) > 0)
+    snapBits.push(
+      `🎯 <strong>${snapshot.claimableQuests}</strong> quest reward${snapshot.claimableQuests === 1 ? '' : 's'} ready to claim`,
+    );
   if (snapBits.length > 0) {
     sections.push(`
       <tr><td style="padding:0 0 14px 0;">
@@ -343,7 +395,8 @@ function renderDigest(input: RenderInput): { html: string; text: string; subject
   }
   if (snapBits.length) {
     if ((snapshot.streak ?? 0) > 0) textLines.push(`Streak: ${snapshot.streak} days`);
-    if ((snapshot.claimableQuests ?? 0) > 0) textLines.push(`Quest rewards ready: ${snapshot.claimableQuests}`);
+    if ((snapshot.claimableQuests ?? 0) > 0)
+      textLines.push(`Quest rewards ready: ${snapshot.claimableQuests}`);
     textLines.push('');
   }
   textLines.push(`Open RMH Studios: ${SITE_URL}`);

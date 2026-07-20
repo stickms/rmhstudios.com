@@ -1,6 +1,6 @@
-import { createRouter as createTanStackRouter } from "@tanstack/react-router";
-import { routeTree } from "./routeTree.gen";
-import { RoutePending } from "@/components/ui/RoutePending";
+import { createRouter as createTanStackRouter } from '@tanstack/react-router';
+import { routeTree } from './routeTree.gen';
+import { RoutePending } from '@/components/ui/RoutePending';
 
 export function getRouter() {
   const router = createTanStackRouter({
@@ -14,8 +14,8 @@ export function getRouter() {
     // content-visibility feed cards) resizes the document under it, so slow
     // routes landed short of the top while fast ones looked fine. "instant"
     // makes the reset land in one frame, before paint.
-    scrollRestorationBehavior: "instant",
-    defaultPreload: "intent",
+    scrollRestorationBehavior: 'instant',
+    defaultPreload: 'intent',
     // Wait until a hover/focus is deliberate (50ms) before prefetching a route,
     // so brushing past links on a slow connection doesn't burn bandwidth.
     defaultPreloadDelay: 50,
@@ -35,7 +35,7 @@ export function getRouter() {
   return router;
 }
 
-declare module "@tanstack/react-router" {
+declare module '@tanstack/react-router' {
   interface Register {
     router: ReturnType<typeof getRouter>;
   }

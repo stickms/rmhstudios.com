@@ -28,7 +28,7 @@ export async function getOnlineFriends(viewerId: string, limit = 12): Promise<On
   return cached<OnlineFriend[]>(
     `presence:friends:${viewerId}:${limit}`,
     PRESENCE_FRIENDS_TTL_MS,
-    () => computeOnlineFriends(viewerId, limit)
+    () => computeOnlineFriends(viewerId, limit),
   );
 }
 

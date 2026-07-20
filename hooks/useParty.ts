@@ -68,7 +68,9 @@ export function useParty() {
       toast.success(`Joining ${msg.game}…`);
       // Dynamic target route + ticket in router state (not the URL). Cast through
       // unknown because the game id isn't statically known to the route tree.
-      const opts = { to: `/${msg.game}`, state: { partyTicket: msg } } as unknown as Parameters<typeof navigate>[0];
+      const opts = { to: `/${msg.game}`, state: { partyTicket: msg } } as unknown as Parameters<
+        typeof navigate
+      >[0];
       void navigate(opts);
     });
     socket.on(PARTY_S2C.ERROR, (e: { message?: string }) => {

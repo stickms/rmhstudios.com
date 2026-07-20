@@ -30,23 +30,23 @@
  * post to everyone.
  */
 
-import type { FeedItem } from "./feed-types";
-import { createBus } from "./realtime-bus.server";
+import type { FeedItem } from './feed-types';
+import { createBus } from './realtime-bus.server';
 
 /* ------------------------------------------------------------------ */
 /*  Event types                                                        */
 /* ------------------------------------------------------------------ */
 
 export type FeedSSEEventType =
-  | "rmhark.created"
-  | "rmhark.liked"
-  | "rmhark.unliked"
-  | "rmhark.commented"
-  | "rmhark.deleted"
-  | "rmhark.edited"
-  | "rmhark.reposted"
-  | "rmhark.unreposted"
-  | "notification.mention";
+  | 'rmhark.created'
+  | 'rmhark.liked'
+  | 'rmhark.unliked'
+  | 'rmhark.commented'
+  | 'rmhark.deleted'
+  | 'rmhark.edited'
+  | 'rmhark.reposted'
+  | 'rmhark.unreposted'
+  | 'notification.mention';
 
 /**
  * Payload for a `notification.mention` event — pushed only to the viewers in
@@ -105,25 +105,25 @@ export interface FeedSSEDelivery {
 // Channel keys on the shared realtime bus. Keeping these as helpers means the
 // key scheme lives in exactly one place (mirrored by the stream endpoint's
 // subscriptions).
-const CREATED_KEY = "created";
+const CREATED_KEY = 'created';
 const postKey = (postId: string) => `post:${postId}`;
 const userKey = (userId: string) => `user:${userId}`;
 
 /** True for count/state patches that belong on a post's own channel. */
 function isEngagementEvent(type: FeedSSEEventType): boolean {
   return (
-    type === "rmhark.liked" ||
-    type === "rmhark.unliked" ||
-    type === "rmhark.commented" ||
-    type === "rmhark.reposted" ||
-    type === "rmhark.unreposted" ||
-    type === "rmhark.edited" ||
-    type === "rmhark.deleted"
+    type === 'rmhark.liked' ||
+    type === 'rmhark.unliked' ||
+    type === 'rmhark.commented' ||
+    type === 'rmhark.reposted' ||
+    type === 'rmhark.unreposted' ||
+    type === 'rmhark.edited' ||
+    type === 'rmhark.deleted'
   );
 }
 
 class FeedEventBus {
-  private bus = createBus<FeedSSEEvent>("feed");
+  private bus = createBus<FeedSSEEvent>('feed');
 
   /**
    * Backward-compatible smart publish. Routes by the event shape so every
@@ -138,7 +138,7 @@ class FeedEventBus {
       for (const uid of event.targetUserIds) this.bus.publish(userKey(uid), event);
       return;
     }
-    if (event.type === "rmhark.created") {
+    if (event.type === 'rmhark.created') {
       this.bus.publish(CREATED_KEY, event);
       return;
     }
@@ -187,7 +187,7 @@ class FeedEventBus {
 }
 
 // Singleton — survives HMR in dev via globalThis
-const globalKey = "__feed_event_bus__";
+const globalKey = '__feed_event_bus__';
 
 function getEventBus(): FeedEventBus {
   if (!(globalThis as any)[globalKey]) {

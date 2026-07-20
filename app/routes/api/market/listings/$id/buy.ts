@@ -27,18 +27,30 @@ export const Route = createFileRoute('/api/market/listings/$id/buy')({
             return Response.json(
               {
                 status: 'HELD',
-                message: 'This listing was flagged for review and is temporarily on hold. No coins were charged.',
+                message:
+                  'This listing was flagged for review and is temporarily on hold. No coins were charged.',
               },
               { status: 202 },
             );
           }
-          return Response.json({ success: true, status: 'SOLD', itemId: result.itemId, price: result.price });
+          return Response.json({
+            success: true,
+            status: 'SOLD',
+            itemId: result.itemId,
+            price: result.price,
+          });
         } catch (error) {
           if (error instanceof EscrowError && error.code === 'INSUFFICIENT_COINS') {
-            return Response.json({ error: 'Not enough coins', code: 'INSUFFICIENT_COINS' }, { status: 400 });
+            return Response.json(
+              { error: 'Not enough coins', code: 'INSUFFICIENT_COINS' },
+              { status: 400 },
+            );
           }
           if (error instanceof MarketError) {
-            return Response.json({ error: error.message, code: error.code }, { status: error.status });
+            return Response.json(
+              { error: error.message, code: error.code },
+              { status: error.status },
+            );
           }
           console.error('market buy error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });

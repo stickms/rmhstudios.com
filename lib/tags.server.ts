@@ -20,7 +20,7 @@ export interface TagFeedResult {
  */
 export async function listTagFeed(
   rawTag: string,
-  opts: { viewerId?: string | null; cursor?: string | null; limit?: number } = {}
+  opts: { viewerId?: string | null; cursor?: string | null; limit?: number } = {},
 ): Promise<TagFeedResult> {
   // Normalize to how tags are stored (see lib/tags-extract.server.ts): strip a
   // leading '#', lowercase, and keep only tag-legal (Unicode) word chars.
@@ -37,7 +37,12 @@ export async function listTagFeed(
 
   const hidden = await getHiddenAuthorIds(viewerId);
   const followingIds = viewerId
-    ? (await prisma.follow.findMany({ where: { followerId: viewerId }, select: { followingId: true } })).map((f) => f.followingId)
+    ? (
+        await prisma.follow.findMany({
+          where: { followerId: viewerId },
+          select: { followingId: true },
+        })
+      ).map((f) => f.followingId)
     : [];
 
   // Read the normalized hashtag links (post_hashtag → hashtag) instead of
@@ -63,7 +68,7 @@ export async function listTagFeed(
   return {
     tag,
     items,
-    nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+    nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
     hasMore,
   };
 }

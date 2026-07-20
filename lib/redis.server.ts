@@ -123,7 +123,9 @@ export function redisEnabled(): boolean {
 export function redisPublish(channel: string, data: unknown): boolean {
   init();
   if (!publisher) return false;
-  publisher.publish(channel, JSON.stringify(data)).catch((e) => console.error('[redis] publish failed:', e?.message));
+  publisher
+    .publish(channel, JSON.stringify(data))
+    .catch((e) => console.error('[redis] publish failed:', e?.message));
   return true;
 }
 
@@ -139,7 +141,9 @@ export function redisSubscribe(channel: string, handler: (data: unknown) => void
   if (!set) {
     set = new Set();
     channelHandlers.set(channel, set);
-    subscriber.subscribe(channel).catch((e) => console.error('[redis] subscribe failed:', e?.message));
+    subscriber
+      .subscribe(channel)
+      .catch((e) => console.error('[redis] subscribe failed:', e?.message));
   }
   set.add(handler);
 
@@ -177,8 +181,14 @@ return {count, redis.call('PTTL', KEYS[1])}
 export async function redisRateLimit(
   key: string,
   limit: number,
-  windowMs: number
-): Promise<{ allowed: boolean; retryAfter: number; limit: number; remaining: number; reset: number } | null> {
+  windowMs: number,
+): Promise<{
+  allowed: boolean;
+  retryAfter: number;
+  limit: number;
+  remaining: number;
+  reset: number;
+} | null> {
   init();
   if (!statePublisher) return null;
   try {
@@ -186,12 +196,21 @@ export async function redisRateLimit(
     // Single round-trip: INCR, set the window TTL on the first hit only, and
     // read the remaining TTL back — atomically, so concurrent requests can't
     // race between the INCR and the PEXPIRE and leave a key with no expiry.
-    const res = (await statePublisher.eval(RATE_LIMIT_LUA, 1, k, String(windowMs))) as [number, number];
+    const res = (await statePublisher.eval(RATE_LIMIT_LUA, 1, k, String(windowMs))) as [
+      number,
+      number,
+    ];
     const count = Number(res[0]);
     const ttl = Number(res[1]);
     const reset = Date.now() + (ttl > 0 ? ttl : windowMs);
     if (count > limit) {
-      return { allowed: false, retryAfter: Math.ceil((ttl > 0 ? ttl : windowMs) / 1000), limit, remaining: 0, reset };
+      return {
+        allowed: false,
+        retryAfter: Math.ceil((ttl > 0 ? ttl : windowMs) / 1000),
+        limit,
+        remaining: 0,
+        reset,
+      };
     }
     return { allowed: true, retryAfter: 0, limit, remaining: Math.max(0, limit - count), reset };
   } catch (e) {
@@ -259,7 +278,7 @@ export async function redisIncrBy(key: string, by: number, ttlMs?: number): Prom
 export async function redisPresenceMark(
   member: string,
   bucketKey: string,
-  ttlMs: number
+  ttlMs: number,
 ): Promise<boolean> {
   init();
   if (!statePublisher) return false;

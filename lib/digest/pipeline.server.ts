@@ -93,7 +93,10 @@ export async function runWeeklyDigest(staggerMs = 150): Promise<DigestRunResult>
       else result.failed++;
     } catch (error) {
       result.failed++;
-      console.error(`[digest] failed for user ${userId}:`, error instanceof Error ? error.message : error);
+      console.error(
+        `[digest] failed for user ${userId}:`,
+        error instanceof Error ? error.message : error,
+      );
     }
     if (staggerMs > 0) await sleep(staggerMs);
   }

@@ -47,7 +47,11 @@ async function main() {
     await registerEventReminderWorker(boss);
     log.info({ event: 'jobs.started', queue: 'event.reminder' });
   } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: 'event.reminder', err: (e as Error)?.message });
+    log.error({
+      event: 'jobs.register_failed',
+      queue: 'event.reminder',
+      err: (e as Error)?.message,
+    });
   }
 
   // Weekly digest email (§10): schedules its own pg-boss cron (worker-only,
@@ -56,7 +60,11 @@ async function main() {
     await registerDigestCron(boss);
     log.info({ event: 'jobs.started', queue: 'email.weekly-digest' });
   } catch (e) {
-    log.error({ event: 'jobs.register_failed', queue: 'email.weekly-digest', err: (e as Error)?.message });
+    log.error({
+      event: 'jobs.register_failed',
+      queue: 'email.weekly-digest',
+      err: (e as Error)?.message,
+    });
   }
 
   const shutdown = async (sig: string) => {

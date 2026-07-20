@@ -30,9 +30,9 @@ export const Route = createFileRoute('/_site/achievements')({
 });
 
 function AchievementsPage() {
-  const { t } = useTranslation("site");
+  const { t } = useTranslation('site');
   // The gate header reuses AchievementsColumn's heading key, which lives in `feed`.
-  const { t: tFeed } = useTranslation("feed");
+  const { t: tFeed } = useTranslation('feed');
   const { achievements } = Route.useLoaderData();
   const { data: session, isPending } = useSession();
 
@@ -43,7 +43,11 @@ function AchievementsPage() {
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         {session && !isPending ? (
-          <JourneyColumn userId={session.user.id} initialTab="achievements" achievementsInitialData={achievements} />
+          <JourneyColumn
+            userId={session.user.id}
+            initialTab="achievements"
+            achievementsInitialData={achievements}
+          />
         ) : (
           /* JourneyColumn owns the header once signed in (its tab bar *is* the
              header, deliberately title-less — its tab bar fills the row). The
@@ -62,9 +66,13 @@ function AchievementsPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-                <p className="font-medium text-site-text">{t("sign-in-to-track-achievements", { defaultValue: "Sign in to track achievements" })}</p>
+                <p className="font-medium text-site-text">
+                  {t('sign-in-to-track-achievements', {
+                    defaultValue: 'Sign in to track achievements',
+                  })}
+                </p>
                 <Link to="/login" search={{ callbackURL: '/achievements' }}>
-                  <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
+                  <Button variant="accent">{t('sign-in', { defaultValue: 'Sign in' })}</Button>
                 </Link>
               </div>
             )}
@@ -75,4 +83,3 @@ function AchievementsPage() {
     </>
   );
 }
-

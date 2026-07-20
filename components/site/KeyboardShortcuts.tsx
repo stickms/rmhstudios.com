@@ -20,7 +20,7 @@ import { openCommandPalette } from '@/components/site/command-palette-bus';
 import { useSession } from '@/components/Providers';
 
 const ComposeModal = lazy(() =>
-  import('@/components/feed/ComposeModal').then((m) => ({ default: m.ComposeModal }))
+  import('@/components/feed/ComposeModal').then((m) => ({ default: m.ComposeModal })),
 );
 
 /** Open the help overlay from anywhere (e.g. the command palette). */

@@ -22,7 +22,14 @@ import path from 'path';
 import { BaseMinigame } from '../base-minigame';
 import type { MinigameContext, MinigameResults } from '../base-minigame';
 import type { PlayerRanking, Award } from '@/lib/rmhbox/types';
-import { GiveClueSchema, GuessTileSchema, EndTurnSchema, SwapPlayerSchema, SetRoleSchema, HighlightTileSchema } from '@/lib/rmhbox/undercover-agent/schemas';
+import {
+  GiveClueSchema,
+  GuessTileSchema,
+  EndTurnSchema,
+  SwapPlayerSchema,
+  SetRoleSchema,
+  HighlightTileSchema,
+} from '@/lib/rmhbox/undercover-agent/schemas';
 import {
   UA_GRID_SIZE,
   UA_FIRST_TEAM_AGENTS,
@@ -41,16 +48,8 @@ import {
   UA_ASSASSIN_PENALTY,
 } from '@/lib/rmhbox/constants';
 import { logger } from '../../logger';
-import {
-  UndercoverAgentPhase,
-  TileType,
-  TileState,
-} from './types';
-import type {
-  GridTile,
-  TeamState,
-  UndercoverAgentState,
-} from './types';
+import { UndercoverAgentPhase, TileType, TileState } from './types';
+import type { GridTile, TeamState, UndercoverAgentState } from './types';
 
 // ─── Static word pool (loaded once) ──────────────────────────────
 // The word pool is static content shared by every game instance. Reading and
@@ -60,9 +59,7 @@ import type {
 let cachedWordPool: string[] | null = null;
 function loadWordPool(): string[] {
   if (cachedWordPool) return cachedWordPool;
-  const poolPath = path.join(
-    process.cwd(), 'data', 'rmhbox', 'undercover-agent', 'word-pool.json',
-  );
+  const poolPath = path.join(process.cwd(), 'data', 'rmhbox', 'undercover-agent', 'word-pool.json');
   cachedWordPool = JSON.parse(fs.readFileSync(poolPath, 'utf-8')) as string[];
   return cachedWordPool;
 }
@@ -76,21 +73,26 @@ export class UndercoverAgentMinigame extends BaseMinigame {
   private turnTimer: NodeJS.Timeout | null = null;
   private disconnectTimers: Map<string, NodeJS.Timeout> = new Map();
 
-  get spectatorMode(): 'shared-privileged' { return 'shared-privileged'; }
+  get spectatorMode(): 'shared-privileged' {
+    return 'shared-privileged';
+  }
 
   /** Operative tile highlights: position → Set<userId> */
   private highlights: Map<number, Set<string>> = new Map();
 
   /** Per-player stats for scoring and awards. */
-  private playerStats: Map<string, {
-    correctGuesses: number;
-    incorrectGuesses: number;
-    cluesGiven: number;
-    totalAgentsFromClues: number;
-    longestClueWord: number;
-    maxAgentsFromSingleClue: number;
-    triggeredAssassin: boolean;
-  }> = new Map();
+  private playerStats: Map<
+    string,
+    {
+      correctGuesses: number;
+      incorrectGuesses: number;
+      cluesGiven: number;
+      totalAgentsFromClues: number;
+      longestClueWord: number;
+      maxAgentsFromSingleClue: number;
+      triggeredAssassin: boolean;
+    }
+  > = new Map();
 
   constructor(context: MinigameContext) {
     super(context);
@@ -326,7 +328,11 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     if (this.state.phase === UndercoverAgentPhase.GAME_OVER) return;
 
     // Allow CONTINUE_BOARD_REVEAL during BOARD_REVEAL phase
-    if (this.state.phase === UndercoverAgentPhase.BOARD_REVEAL && action !== 'CONTINUE_BOARD_REVEAL') return;
+    if (
+      this.state.phase === UndercoverAgentPhase.BOARD_REVEAL &&
+      action !== 'CONTINUE_BOARD_REVEAL'
+    )
+      return;
 
     switch (action) {
       // ── Team Setup actions ──
@@ -793,7 +799,8 @@ export class UndercoverAgentMinigame extends BaseMinigame {
       operativeId: userId,
       word: tile.word,
       tileType: tile.type,
-      correct: tile.type === (this.state.currentTeam === 'red' ? TileType.RED_AGENT : TileType.BLUE_AGENT),
+      correct:
+        tile.type === (this.state.currentTeam === 'red' ? TileType.RED_AGENT : TileType.BLUE_AGENT),
       position,
     });
 
@@ -827,8 +834,10 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     });
 
     // Process the result
-    const ownAgentType = this.state.currentTeam === 'red' ? TileType.RED_AGENT : TileType.BLUE_AGENT;
-    const opponentAgentType = this.state.currentTeam === 'red' ? TileType.BLUE_AGENT : TileType.RED_AGENT;
+    const ownAgentType =
+      this.state.currentTeam === 'red' ? TileType.RED_AGENT : TileType.BLUE_AGENT;
+    const opponentAgentType =
+      this.state.currentTeam === 'red' ? TileType.BLUE_AGENT : TileType.RED_AGENT;
     const playerStatEntry = this.playerStats.get(userId);
 
     if (tile.type === TileType.ASSASSIN) {
@@ -1158,7 +1167,12 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     const isSpymaster = isRedSpymaster || isBlueSpymaster;
 
     const grid = this.state.grid.map((tile) => {
-      if (isSpymaster || tile.state === TileState.REVEALED || this.state.phase === UndercoverAgentPhase.BOARD_REVEAL || this.state.phase === UndercoverAgentPhase.GAME_OVER) {
+      if (
+        isSpymaster ||
+        tile.state === TileState.REVEALED ||
+        this.state.phase === UndercoverAgentPhase.BOARD_REVEAL ||
+        this.state.phase === UndercoverAgentPhase.GAME_OVER
+      ) {
         // Spymasters, revealed tiles, and board-reveal/game-over phase: see all types
         return {
           position: tile.position,
@@ -1180,10 +1194,19 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     // Determine role
     let role: 'spymaster' | 'operative' | 'spectator' = 'spectator';
     let teamId: 'red' | 'blue' | null = null;
-    if (isRedSpymaster) { role = 'spymaster'; teamId = 'red'; }
-    else if (isBlueSpymaster) { role = 'spymaster'; teamId = 'blue'; }
-    else if (this.state.teams.red.operativeIds.includes(userId)) { role = 'operative'; teamId = 'red'; }
-    else if (this.state.teams.blue.operativeIds.includes(userId)) { role = 'operative'; teamId = 'blue'; }
+    if (isRedSpymaster) {
+      role = 'spymaster';
+      teamId = 'red';
+    } else if (isBlueSpymaster) {
+      role = 'spymaster';
+      teamId = 'blue';
+    } else if (this.state.teams.red.operativeIds.includes(userId)) {
+      role = 'operative';
+      teamId = 'red';
+    } else if (this.state.teams.blue.operativeIds.includes(userId)) {
+      role = 'operative';
+      teamId = 'blue';
+    }
 
     return {
       phase: this.state.phase,
@@ -1243,11 +1266,7 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
   handlePlayerJoin(userId: string): void {
     // spectate_only: JIP players get spectator state
-    this.context.sendToPlayer(
-      userId,
-      'rmhbox:game:state_snapshot',
-      this.getStateForSpectator(),
-    );
+    this.context.sendToPlayer(userId, 'rmhbox:game:state_snapshot', this.getStateForSpectator());
   }
 
   handlePlayerDisconnect(userId: string): void {
@@ -1297,7 +1316,11 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     }
 
     // Spymaster disconnect during CLUE phase → auto-pass after timeout
-    if (isSpymaster && this.state.phase === UndercoverAgentPhase.CLUE && this.state.currentTeam === teamId) {
+    if (
+      isSpymaster &&
+      this.state.phase === UndercoverAgentPhase.CLUE &&
+      this.state.currentTeam === teamId
+    ) {
       // The existing turn timer will handle the timeout, no additional action needed
       logger.info({
         event: 'undercover_agent:spymaster_disconnect_auto_pass',
@@ -1401,7 +1424,9 @@ export class UndercoverAgentMinigame extends BaseMinigame {
     }
 
     entries.sort((a, b) => b.score - a.score);
-    entries.forEach((e, i) => { e.rank = i + 1; });
+    entries.forEach((e, i) => {
+      e.rank = i + 1;
+    });
 
     return entries;
   }
@@ -1569,9 +1594,15 @@ export class UndercoverAgentMinigame extends BaseMinigame {
 
     // Build initial state with grid words and key card
     const words = this.state.grid.map((tile) => tile.word);
-    const teamAWords = this.state.grid.filter((t) => t.type === TileType.RED_AGENT).map((t) => t.word);
-    const teamBWords = this.state.grid.filter((t) => t.type === TileType.BLUE_AGENT).map((t) => t.word);
-    const neutralWords = this.state.grid.filter((t) => t.type === TileType.BYSTANDER).map((t) => t.word);
+    const teamAWords = this.state.grid
+      .filter((t) => t.type === TileType.RED_AGENT)
+      .map((t) => t.word);
+    const teamBWords = this.state.grid
+      .filter((t) => t.type === TileType.BLUE_AGENT)
+      .map((t) => t.word);
+    const neutralWords = this.state.grid
+      .filter((t) => t.type === TileType.BYSTANDER)
+      .map((t) => t.word);
     const assassinWord = this.state.grid.find((t) => t.type === TileType.ASSASSIN)?.word ?? '';
 
     return {

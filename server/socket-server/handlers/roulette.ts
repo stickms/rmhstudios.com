@@ -94,12 +94,27 @@ const INSIDE_BET_COUNTS: Record<string, number> = {
 };
 
 const OUTSIDE_BET_TYPES = new Set<BetType>([
-  'red', 'black', 'odd', 'even', 'low', 'high',
-  'dozen1', 'dozen2', 'dozen3', 'column1', 'column2', 'column3',
+  'red',
+  'black',
+  'odd',
+  'even',
+  'low',
+  'high',
+  'dozen1',
+  'dozen2',
+  'dozen3',
+  'column1',
+  'column2',
+  'column3',
 ]);
 
 const ALL_BET_TYPES = new Set<BetType>([
-  'straight', 'split', 'street', 'corner', 'line', 'topline',
+  'straight',
+  'split',
+  'street',
+  'corner',
+  'line',
+  'topline',
   ...OUTSIDE_BET_TYPES,
 ]);
 
@@ -216,9 +231,18 @@ function getNextSeatIndex(room: RouletteRoom): number {
 // ── Round Lifecycle ────────────────────────────────────────────────
 
 function clearTimers(room: RouletteRoom) {
-  if (room.bettingTimer) { clearTimeout(room.bettingTimer); room.bettingTimer = null; }
-  if (room.resultsTimer) { clearTimeout(room.resultsTimer); room.resultsTimer = null; }
-  if (room.spinTimer) { clearTimeout(room.spinTimer); room.spinTimer = null; }
+  if (room.bettingTimer) {
+    clearTimeout(room.bettingTimer);
+    room.bettingTimer = null;
+  }
+  if (room.resultsTimer) {
+    clearTimeout(room.resultsTimer);
+    room.resultsTimer = null;
+  }
+  if (room.spinTimer) {
+    clearTimeout(room.spinTimer);
+    room.spinTimer = null;
+  }
 }
 
 function startBettingPhase(room: RouletteRoom) {
@@ -380,7 +404,9 @@ async function resolvePayouts(room: RouletteRoom, result: number) {
       if (p.pendingRemoval || !sock || !sock.connected) {
         room.players.delete(uid);
         userToRoom.delete(uid);
-        ioRef.to(roomKey(room.roomId)).emit(S2C.PLAYER_LEFT, { userId: uid, seatIndex: p.seatIndex });
+        ioRef
+          .to(roomKey(room.roomId))
+          .emit(S2C.PLAYER_LEFT, { userId: uid, seatIndex: p.seatIndex });
 
         if (room.ownerId === uid && room.players.size > 0) {
           const newOwner = room.players.values().next().value!;
@@ -458,11 +484,13 @@ function onCreateRoom(socket: Socket, payload: unknown) {
   }
 
   const data = payload as any;
-  const name = typeof data?.name === 'string' ? data.name.trim().slice(0, 30) : `${userName}'s Room`;
-  const maxPlayers = typeof data?.maxPlayers === 'number'
-    ? Math.min(Math.max(Math.floor(data.maxPlayers), 2), MAX_PLAYERS_CAP)
-    : DEFAULT_MAX_PLAYERS;
-  const privacy = data?.privacy === 'unlisted' ? 'unlisted' as const : 'public' as const;
+  const name =
+    typeof data?.name === 'string' ? data.name.trim().slice(0, 30) : `${userName}'s Room`;
+  const maxPlayers =
+    typeof data?.maxPlayers === 'number'
+      ? Math.min(Math.max(Math.floor(data.maxPlayers), 2), MAX_PLAYERS_CAP)
+      : DEFAULT_MAX_PLAYERS;
+  const privacy = data?.privacy === 'unlisted' ? ('unlisted' as const) : ('public' as const);
 
   const roomId = generateRoomId();
   const joinCode = generateRoomId();

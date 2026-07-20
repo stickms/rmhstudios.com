@@ -15,28 +15,34 @@ import { asset } from '@/lib/storage/asset';
 const BG_BASE = asset('/sprites/versecraft/backgrounds');
 const BACKGROUNDS: Record<string, { image: string; fallback: string }> = {
   school_hallway: { image: `${BG_BASE}/school_hallway_day.webp`, fallback: '#4A3F35' },
-  club_room:      { image: `${BG_BASE}/club_room_day.webp`, fallback: '#4A3B6B' },
-  classroom:      { image: `${BG_BASE}/classroom_day.webp`, fallback: '#5A4A3B' },
-  school_stairs:  { image: `${BG_BASE}/school_stairs_day.webp`, fallback: '#6B5B45' },
-  school_gym:     { image: `${BG_BASE}/school_gym_day.webp`, fallback: '#3A4A5B' },
-  park:           { image: `${BG_BASE}/park_day.webp`, fallback: '#2A4A2B' },
-  cafe:           { image: `${BG_BASE}/cafe_day.webp`, fallback: '#5A3A2B' },
-  personal_room:  { image: `${BG_BASE}/personal_room_day.webp`, fallback: '#3A2A4B' },
-  beach:          { image: `${BG_BASE}/beach_day.webp`, fallback: '#4A6A8B' },
-  city:           { image: `${BG_BASE}/city_day.webp`, fallback: '#3A3A4B' },
-  forest:         { image: `${BG_BASE}/forest_night.webp`, fallback: '#1A2A1B' },
+  club_room: { image: `${BG_BASE}/club_room_day.webp`, fallback: '#4A3B6B' },
+  classroom: { image: `${BG_BASE}/classroom_day.webp`, fallback: '#5A4A3B' },
+  school_stairs: { image: `${BG_BASE}/school_stairs_day.webp`, fallback: '#6B5B45' },
+  school_gym: { image: `${BG_BASE}/school_gym_day.webp`, fallback: '#3A4A5B' },
+  park: { image: `${BG_BASE}/park_day.webp`, fallback: '#2A4A2B' },
+  cafe: { image: `${BG_BASE}/cafe_day.webp`, fallback: '#5A3A2B' },
+  personal_room: { image: `${BG_BASE}/personal_room_day.webp`, fallback: '#3A2A4B' },
+  beach: { image: `${BG_BASE}/beach_day.webp`, fallback: '#4A6A8B' },
+  city: { image: `${BG_BASE}/city_day.webp`, fallback: '#3A3A4B' },
+  forest: { image: `${BG_BASE}/forest_night.webp`, fallback: '#1A2A1B' },
 };
 
 // Time-of-day variants override the default image
 const TIME_BG_VARIANTS: Record<string, Record<string, string>> = {
   school_hallway: { evening: `${BG_BASE}/school_hallway_evening.webp` },
-  club_room:      { evening: `${BG_BASE}/club_room_evening.webp` },
-  classroom:      { evening: `${BG_BASE}/classroom_evening.webp`, night: `${BG_BASE}/classroom2_night.webp` },
-  school_stairs:  { evening: `${BG_BASE}/school_stairs_evening.webp` },
-  park:           { evening: `${BG_BASE}/park_evening.webp`, night: `${BG_BASE}/park_night.webp` },
-  cafe:           { night: `${BG_BASE}/cafe_night.webp` },
-  personal_room:  { evening: `${BG_BASE}/personal_room_evening.webp`, night: `${BG_BASE}/personal_room_night.webp` },
-  city:           { night: `${BG_BASE}/city_night.webp` },
+  club_room: { evening: `${BG_BASE}/club_room_evening.webp` },
+  classroom: {
+    evening: `${BG_BASE}/classroom_evening.webp`,
+    night: `${BG_BASE}/classroom2_night.webp`,
+  },
+  school_stairs: { evening: `${BG_BASE}/school_stairs_evening.webp` },
+  park: { evening: `${BG_BASE}/park_evening.webp`, night: `${BG_BASE}/park_night.webp` },
+  cafe: { night: `${BG_BASE}/cafe_night.webp` },
+  personal_room: {
+    evening: `${BG_BASE}/personal_room_evening.webp`,
+    night: `${BG_BASE}/personal_room_night.webp`,
+  },
+  city: { night: `${BG_BASE}/city_night.webp` },
 };
 
 const TIME_FILTERS: Record<string, string> = {
@@ -47,8 +53,15 @@ const TIME_FILTERS: Record<string, string> = {
 };
 
 // Typewriter text component
-function TypewriterText({ text, speed, onComplete, skipRef }: {
-  text: string; speed: number; onComplete: () => void;
+function TypewriterText({
+  text,
+  speed,
+  onComplete,
+  skipRef,
+}: {
+  text: string;
+  speed: number;
+  onComplete: () => void;
   skipRef: React.MutableRefObject<(() => boolean) | null>;
 }) {
   const [displayedLength, setDisplayedLength] = useState(0);
@@ -67,7 +80,7 @@ function TypewriterText({ text, speed, onComplete, skipRef }: {
       }
       return;
     }
-    const timer = setTimeout(() => setDisplayedLength(d => d + 1), speed);
+    const timer = setTimeout(() => setDisplayedLength((d) => d + 1), speed);
     return () => clearTimeout(timer);
   }, [displayedLength, text, speed, onComplete, complete]);
 
@@ -80,7 +93,9 @@ function TypewriterText({ text, speed, onComplete, skipRef }: {
       }
       return false; // text already complete, let parent handle
     };
-    return () => { skipRef.current = null; };
+    return () => {
+      skipRef.current = null;
+    };
   }, [complete, text.length, skipRef]);
 
   return (
@@ -92,7 +107,14 @@ function TypewriterText({ text, speed, onComplete, skipRef }: {
 }
 
 // Character sprite with real images
-function CharacterSprite({ characterId, expression, position, isSpeaking, spritePack, dialogueBoxHeight }: {
+function CharacterSprite({
+  characterId,
+  expression,
+  position,
+  isSpeaking,
+  spritePack,
+  dialogueBoxHeight,
+}: {
   characterId: string;
   expression?: string;
   position: 'left' | 'center' | 'right';
@@ -158,11 +180,17 @@ function CharacterSprite({ characterId, expression, position, isSpeaking, sprite
 }
 
 export function DialogueScreen() {
-  const { t } = useTranslation("c-versecraft");
+  const { t } = useTranslation('c-versecraft');
   const {
-    currentChapter, currentSceneIndex, currentDialogueIndex, settings,
-    setScreen, advanceDialogue, applyChoiceEffects,
-    setSceneIndex, startPuzzle,
+    currentChapter,
+    currentSceneIndex,
+    currentDialogueIndex,
+    settings,
+    setScreen,
+    advanceDialogue,
+    applyChoiceEffects,
+    setSceneIndex,
+    startPuzzle,
   } = useGameStore();
 
   const [textComplete, setTextComplete] = useState(false);
@@ -189,24 +217,23 @@ export function DialogueScreen() {
   // Get all scenes in order (main scenes + post-puzzle scenes)
   const allScenes = useMemo(() => {
     if (!chapterEntry) return [];
-    return [
-      ...chapterEntry.data.scenes,
-      ...chapterEntry.postPuzzleScenes,
-    ];
+    return [...chapterEntry.data.scenes, ...chapterEntry.postPuzzleScenes];
   }, [chapterEntry]);
 
   // The scene index where the puzzle should trigger (end of main scenes)
-  const puzzleTriggerIndex = chapterEntry
-    ? chapterEntry.data.scenes.length - 1
-    : -1;
+  const puzzleTriggerIndex = chapterEntry ? chapterEntry.data.scenes.length - 1 : -1;
 
   const currentScene = allScenes[currentSceneIndex] as Scene | undefined;
   const currentNode = currentScene?.dialogueNodes[currentDialogueIndex] as DialogueNode | undefined;
 
-  const textSpeed = settings.textSpeed === 'instant' ? 0
-    : settings.textSpeed === 'fast' ? 15
-    : settings.textSpeed === 'slow' ? 50
-    : 30;
+  const textSpeed =
+    settings.textSpeed === 'instant'
+      ? 0
+      : settings.textSpeed === 'fast'
+        ? 15
+        : settings.textSpeed === 'slow'
+          ? 50
+          : 30;
 
   const speakerName = currentNode?.speaker
     ? getCharacterFirstName(currentNode.speaker, settings.characterPresentations)
@@ -257,14 +284,30 @@ export function DialogueScreen() {
         setScreen('summary');
       }
     }
-  }, [currentScene, currentNode, currentDialogueIndex, currentSceneIndex, textComplete, advanceDialogue, setSceneIndex, allScenes.length, setScreen, startPuzzle, chapterEntry, puzzleTriggerIndex]);
+  }, [
+    currentScene,
+    currentNode,
+    currentDialogueIndex,
+    currentSceneIndex,
+    textComplete,
+    advanceDialogue,
+    setSceneIndex,
+    allScenes.length,
+    setScreen,
+    startPuzzle,
+    chapterEntry,
+    puzzleTriggerIndex,
+  ]);
 
-  const handleChoice = useCallback((choiceIndex: number) => {
-    if (!currentNode?.choices) return;
-    const choice = currentNode.choices[choiceIndex];
-    applyChoiceEffects(choice);
-    setTextComplete(false);
-  }, [currentNode, applyChoiceEffects]);
+  const handleChoice = useCallback(
+    (choiceIndex: number) => {
+      if (!currentNode?.choices) return;
+      const choice = currentNode.choices[choiceIndex];
+      applyChoiceEffects(choice);
+      setTextComplete(false);
+    },
+    [currentNode, applyChoiceEffects],
+  );
 
   // Keyboard handler
   useEffect(() => {
@@ -281,7 +324,7 @@ export function DialogueScreen() {
   if (!currentScene || !currentNode) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p style={{ color: '#a89888' }}>{t("loading", { defaultValue: "Loading..." })}</p>
+        <p style={{ color: '#a89888' }}>{t('loading', { defaultValue: 'Loading...' })}</p>
       </div>
     );
   }
@@ -313,9 +356,14 @@ export function DialogueScreen() {
       <div className="absolute inset-0 z-10 pointer-events-none overflow-hidden">
         <AnimatePresence>
           {currentScene.charactersPresent.map((charId, i) => {
-            const position = currentScene.charactersPresent.length === 1
-              ? 'center' as const
-              : i === 0 ? 'left' as const : i === 1 ? 'center' as const : 'right' as const;
+            const position =
+              currentScene.charactersPresent.length === 1
+                ? ('center' as const)
+                : i === 0
+                  ? ('left' as const)
+                  : i === 1
+                    ? ('center' as const)
+                    : ('right' as const);
             return (
               <CharacterSprite
                 key={charId}
@@ -363,7 +411,9 @@ export function DialogueScreen() {
           <div
             className="text-base md:text-lg leading-relaxed min-h-[3em]"
             style={{
-              fontFamily: currentNode.speaker ? 'var(--font-nunito, sans-serif)' : 'var(--font-patrick-hand, serif)',
+              fontFamily: currentNode.speaker
+                ? 'var(--font-nunito, sans-serif)'
+                : 'var(--font-patrick-hand, serif)',
               color: currentNode.speaker ? '#e8e0d0' : '#a89888',
               fontStyle: currentNode.speaker ? 'normal' : 'italic',
             }}
@@ -407,10 +457,10 @@ export function DialogueScreen() {
                       handleChoice(i);
                     }}
                   >
-                    {choice.type === 'flirt' && (
-                      <span className="mr-2 text-pink-400">♥</span>
-                    )}
-                    <span className="mr-2" style={{ color: '#c4a35a' }}>▸</span>
+                    {choice.type === 'flirt' && <span className="mr-2 text-pink-400">♥</span>}
+                    <span className="mr-2" style={{ color: '#c4a35a' }}>
+                      ▸
+                    </span>
                     {choice.text}
                   </motion.button>
                 ))}
@@ -428,10 +478,12 @@ export function DialogueScreen() {
                   animate={{ opacity: [0.3, 0.8, 0.3] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  {t("click-to-continue", { defaultValue: "▸ Click to continue" })}
+                  {t('click-to-continue', { defaultValue: '▸ Click to continue' })}
                 </motion.span>
               ) : (
-                <span className="text-xs" style={{ color: '#c4a35a40' }}>...</span>
+                <span className="text-xs" style={{ color: '#c4a35a40' }}>
+                  ...
+                </span>
               )}
             </div>
           )}
@@ -439,12 +491,14 @@ export function DialogueScreen() {
 
         {/* Quick action bar */}
         <div className="max-w-4xl mx-auto mt-2 flex gap-2 justify-end">
-          {([
-            { key: 'menu', label: t("menu", { defaultValue: "Menu" }) },
-            { key: 'settings', label: t("settings", { defaultValue: "Settings" }) },
-            { key: 'save', label: t("save", { defaultValue: "Save" }) },
-            { key: 'journal', label: t("journal", { defaultValue: "Journal" }) },
-          ] as const).map(action => (
+          {(
+            [
+              { key: 'menu', label: t('menu', { defaultValue: 'Menu' }) },
+              { key: 'settings', label: t('settings', { defaultValue: 'Settings' }) },
+              { key: 'save', label: t('save', { defaultValue: 'Save' }) },
+              { key: 'journal', label: t('journal', { defaultValue: 'Journal' }) },
+            ] as const
+          ).map((action) => (
             <button
               key={action.key}
               onClick={(e) => {

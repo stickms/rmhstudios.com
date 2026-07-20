@@ -13,8 +13,20 @@
 
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import {
-  MoreHorizontal, Heart, Repeat, Trash2, Share2, Flag, Ban, VolumeX,
-  Bookmark, Coins, Pin, Pencil, Languages, TrendingUp,
+  MoreHorizontal,
+  Heart,
+  Repeat,
+  Trash2,
+  Share2,
+  Flag,
+  Ban,
+  VolumeX,
+  Bookmark,
+  Coins,
+  Pin,
+  Pencil,
+  Languages,
+  TrendingUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -27,11 +39,21 @@ import type { FeedItem } from '@/lib/feed-types';
 // These dialogs render only after a menu action — code-split so they stay out of
 // the initial feed chunk and their (per-post) code isn't evaluated during
 // hydration. Mounted lazily on first open (see the `mounted` latch below).
-const ReportDialog = lazy(() => import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })));
-const TipDialog = lazy(() => import('@/components/economy/TipDialog').then((m) => ({ default: m.TipDialog })));
-const EditPostModal = lazy(() => import('./EditPostModal').then((m) => ({ default: m.EditPostModal })));
-const EngagementListModal = lazy(() => import('./EngagementListModal').then((m) => ({ default: m.EngagementListModal })));
-const InsightsModal = lazy(() => import('./InsightsModal').then((m) => ({ default: m.InsightsModal })));
+const ReportDialog = lazy(() =>
+  import('@/components/moderation/ReportDialog').then((m) => ({ default: m.ReportDialog })),
+);
+const TipDialog = lazy(() =>
+  import('@/components/economy/TipDialog').then((m) => ({ default: m.TipDialog })),
+);
+const EditPostModal = lazy(() =>
+  import('./EditPostModal').then((m) => ({ default: m.EditPostModal })),
+);
+const EngagementListModal = lazy(() =>
+  import('./EngagementListModal').then((m) => ({ default: m.EngagementListModal })),
+);
+const InsightsModal = lazy(() =>
+  import('./InsightsModal').then((m) => ({ default: m.InsightsModal })),
+);
 const ShareModal = lazy(() => import('./ShareModal').then((m) => ({ default: m.ShareModal })));
 
 export interface RMHarkTranslateControl {
@@ -129,7 +151,8 @@ export function RMHarkOverflowMenu({
     runBookmark({
       apply: () => setBookmarked(next),
       rollback: () => setBookmarked(!next),
-      commit: () => fetch(`/api/rmharks/${actualId}/bookmark`, { method: 'POST', credentials: 'include' }),
+      commit: () =>
+        fetch(`/api/rmharks/${actualId}/bookmark`, { method: 'POST', credentials: 'include' }),
       reconcile: async (res) => {
         const data = await res.json().catch(() => ({}));
         setBookmarked(!!data.bookmarked);
@@ -137,7 +160,7 @@ export function RMHarkOverflowMenu({
         toast.success(
           data.bookmarked
             ? t('bookmark-saved', { defaultValue: 'Saved to bookmarks' })
-            : t('bookmark-removed', { defaultValue: 'Removed from bookmarks' })
+            : t('bookmark-removed', { defaultValue: 'Removed from bookmarks' }),
         );
       },
       onError: (_err, res) => {
@@ -153,7 +176,8 @@ export function RMHarkOverflowMenu({
     runPin({
       apply: () => setPinned(next),
       rollback: () => setPinned(!next),
-      commit: () => fetch(`/api/rmharks/${actualId}/pin`, { method: 'POST', credentials: 'include' }),
+      commit: () =>
+        fetch(`/api/rmharks/${actualId}/pin`, { method: 'POST', credentials: 'include' }),
       reconcile: async (res) => {
         const data = await res.json().catch(() => ({}));
         setPinned(!!data.pinned);
@@ -161,14 +185,17 @@ export function RMHarkOverflowMenu({
         toast.success(
           data.pinned
             ? t('pinned-success', { defaultValue: 'Pinned to your profile' })
-            : t('unpinned-success', { defaultValue: 'Unpinned' })
+            : t('unpinned-success', { defaultValue: 'Unpinned' }),
         );
       },
       onError: (_err, res) => {
         if (res) {
-          res.json().catch(() => ({})).then((data: { error?: string }) =>
-            toast.error(data.error || t('pin-error', { defaultValue: 'Could not pin post' }))
-          );
+          res
+            .json()
+            .catch(() => ({}))
+            .then((data: { error?: string }) =>
+              toast.error(data.error || t('pin-error', { defaultValue: 'Could not pin post' })),
+            );
         } else {
           toast.error(t('pin-error', { defaultValue: 'Could not pin post' }));
         }
@@ -178,7 +205,13 @@ export function RMHarkOverflowMenu({
 
   const handleDelete = async () => {
     setMenuOpen(false);
-    if (!(await confirm({ title: t('delete-confirm', { defaultValue: 'Delete this RMHark?' }), danger: true }))) return;
+    if (
+      !(await confirm({
+        title: t('delete-confirm', { defaultValue: 'Delete this RMHark?' }),
+        danger: true,
+      }))
+    )
+      return;
     try {
       await fetch(`/api/rmharks/${actualId}`, { method: 'DELETE' });
       onRemove?.();
@@ -199,7 +232,11 @@ export function RMHarkOverflowMenu({
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success(data.blocked ? t('user-blocked', { defaultValue: 'User blocked' }) : t('user-unblocked', { defaultValue: 'User unblocked' }));
+        toast.success(
+          data.blocked
+            ? t('user-blocked', { defaultValue: 'User blocked' })
+            : t('user-unblocked', { defaultValue: 'User unblocked' }),
+        );
         if (data.blocked) onRemove?.();
       } else {
         toast.error(data.error || t('block-error', { defaultValue: 'Could not block user' }));
@@ -221,7 +258,11 @@ export function RMHarkOverflowMenu({
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success(data.muted ? t('user-muted', { defaultValue: 'User muted' }) : t('user-unmuted', { defaultValue: 'User unmuted' }));
+        toast.success(
+          data.muted
+            ? t('user-muted', { defaultValue: 'User muted' })
+            : t('user-unmuted', { defaultValue: 'User unmuted' }),
+        );
         if (data.muted) onRemove?.();
       } else {
         toast.error(data.error || t('mute-error', { defaultValue: 'Could not mute user' }));
@@ -231,8 +272,10 @@ export function RMHarkOverflowMenu({
     }
   };
 
-  const itemClass = 'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors';
-  const dangerClass = 'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors';
+  const itemClass =
+    'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors';
+  const dangerClass =
+    'flex items-center gap-2 w-full px-3 py-2 text-sm text-site-danger hover:bg-site-danger/10 transition-colors';
   const showTranslate =
     translate && !!item.content && !item.deletedAt && (item.content?.length ?? 0) > 8;
 
@@ -240,11 +283,17 @@ export function RMHarkOverflowMenu({
     // Lift above sibling content (comments, related posts) while the menu is open.
     <div className={cn('relative', menuOpen && 'z-30', className)} ref={menuRef}>
       <button
-        onClick={(e) => { e.stopPropagation(); setMenuOpen((v) => !v); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          setMenuOpen((v) => !v);
+        }}
         aria-label={t('more-options', { defaultValue: 'More options' })}
         aria-haspopup="menu"
         aria-expanded={menuOpen}
-        className={cn('p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors', buttonClassName)}
+        className={cn(
+          'p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors',
+          buttonClassName,
+        )}
       >
         <MoreHorizontal className={cn('w-5 h-5', iconClassName)} />
       </button>
@@ -258,15 +307,31 @@ export function RMHarkOverflowMenu({
         >
           {session && (
             <button onClick={handleBookmark} className={itemClass}>
-              <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-site-accent text-site-accent' : 'text-site-text-dim'}`} />
-              {bookmarked ? t('bookmark-saved-label', { defaultValue: 'Saved' }) : t('bookmark-label', { defaultValue: 'Bookmark' })}
+              <Bookmark
+                className={`w-4 h-4 ${bookmarked ? 'fill-site-accent text-site-accent' : 'text-site-text-dim'}`}
+              />
+              {bookmarked
+                ? t('bookmark-saved-label', { defaultValue: 'Saved' })
+                : t('bookmark-label', { defaultValue: 'Bookmark' })}
             </button>
           )}
-          <button onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }} className={itemClass}>
+          <button
+            onClick={() => {
+              setMenuOpen(false);
+              setEngagementModal('likes');
+            }}
+            className={itemClass}
+          >
             <Heart className="w-4 h-4 text-site-text-dim" />
             {t('liked-by', { defaultValue: 'Liked by' })}
           </button>
-          <button onClick={() => { setMenuOpen(false); setEngagementModal('reposts'); }} className={itemClass}>
+          <button
+            onClick={() => {
+              setMenuOpen(false);
+              setEngagementModal('reposts');
+            }}
+            className={itemClass}
+          >
             <Repeat className="w-4 h-4 text-site-text-dim" />
             {t('rermharkd-by', { defaultValue: "reRMHark'd by" })}
           </button>
@@ -276,7 +341,10 @@ export function RMHarkOverflowMenu({
           </button>
           {showTranslate && (
             <button
-              onClick={() => { setMenuOpen(false); translate!.onToggle(); }}
+              onClick={() => {
+                setMenuOpen(false);
+                translate!.onToggle();
+              }}
               disabled={translate!.translating}
               className={cn(itemClass, 'disabled:opacity-60')}
             >
@@ -284,23 +352,41 @@ export function RMHarkOverflowMenu({
               {translate!.translating
                 ? t('translating', { defaultValue: 'Translating…' })
                 : translate!.hasTranslation
-                  ? (translate!.showing ? t('show-original', { defaultValue: 'Show original' }) : t('show-translation', { defaultValue: 'Show translation' }))
+                  ? translate!.showing
+                    ? t('show-original', { defaultValue: 'Show original' })
+                    : t('show-translation', { defaultValue: 'Show translation' })
                   : t('translate', { defaultValue: 'Translate' })}
             </button>
           )}
           {isAuthor && (
             <>
-              <button onClick={() => { setMenuOpen(false); setInsightsOpen(true); }} className={itemClass}>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setInsightsOpen(true);
+                }}
+                className={itemClass}
+              >
                 <TrendingUp className="w-4 h-4 text-site-text-dim" />
                 {t('view-insights', { defaultValue: 'View insights' })}
               </button>
-              <button onClick={() => { setMenuOpen(false); setEditOpen(true); }} className={itemClass}>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setEditOpen(true);
+                }}
+                className={itemClass}
+              >
                 <Pencil className="w-4 h-4 text-site-text-dim" />
                 {t('edit', { defaultValue: 'Edit' })}
               </button>
               <button onClick={handlePin} className={itemClass}>
-                <Pin className={`w-4 h-4 ${pinned ? 'fill-site-accent text-site-accent' : 'text-site-text-dim'}`} />
-                {pinned ? t('unpin-from-profile', { defaultValue: 'Unpin from profile' }) : t('pin-to-profile', { defaultValue: 'Pin to profile' })}
+                <Pin
+                  className={`w-4 h-4 ${pinned ? 'fill-site-accent text-site-accent' : 'text-site-text-dim'}`}
+                />
+                {pinned
+                  ? t('unpin-from-profile', { defaultValue: 'Unpin from profile' })
+                  : t('pin-to-profile', { defaultValue: 'Pin to profile' })}
               </button>
               <button onClick={handleDelete} className={dangerClass}>
                 <Trash2 className="w-4 h-4" />
@@ -311,12 +397,24 @@ export function RMHarkOverflowMenu({
           {!isAuthor && session && (
             <>
               {targetUserId && (
-                <button onClick={() => { setMenuOpen(false); setTipOpen(true); }} className={itemClass}>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    setTipOpen(true);
+                  }}
+                  className={itemClass}
+                >
                   <Coins className="w-4 h-4 text-site-warning" />
                   {t('send-tip', { defaultValue: 'Send tip' })}
                 </button>
               )}
-              <button onClick={() => { setMenuOpen(false); setReportOpen(true); }} className={itemClass}>
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  setReportOpen(true);
+                }}
+                className={itemClass}
+              >
                 <Flag className="w-4 h-4 text-site-text-dim" />
                 {t('report', { defaultValue: 'Report' })}
               </button>
@@ -358,7 +456,12 @@ export function RMHarkOverflowMenu({
 
       {mounted.current.report && (
         <Suspense fallback={null}>
-          <ReportDialog open={reportOpen} onOpenChange={setReportOpen} entityType="rmhark" entityId={actualId} />
+          <ReportDialog
+            open={reportOpen}
+            onOpenChange={setReportOpen}
+            entityType="rmhark"
+            entityId={actualId}
+          />
         </Suspense>
       )}
 
@@ -383,14 +486,20 @@ export function RMHarkOverflowMenu({
             postId={actualId}
             initialContent={item.content ?? ''}
             initialGifUrl={item.gifUrl ?? ''}
-            onSaved={(content, gifUrl) => onUpdate?.({ content, gifUrl: gifUrl ?? undefined, edited: true })}
+            onSaved={(content, gifUrl) =>
+              onUpdate?.({ content, gifUrl: gifUrl ?? undefined, edited: true })
+            }
           />
         </Suspense>
       )}
 
       {isAuthor && insightsOpen && (
         <Suspense fallback={null}>
-          <InsightsModal open={insightsOpen} onClose={() => setInsightsOpen(false)} postId={actualId} />
+          <InsightsModal
+            open={insightsOpen}
+            onClose={() => setInsightsOpen(false)}
+            postId={actualId}
+          />
         </Suspense>
       )}
     </div>

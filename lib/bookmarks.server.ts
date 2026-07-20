@@ -28,7 +28,11 @@ function mapPoll(poll: any): FeedPoll | undefined {
     multiSelect: poll.multiSelect,
     closesAt: poll.closesAt ? poll.closesAt.toISOString() : null,
     totalVotes,
-    options: poll.options.map((o: any) => ({ id: o.id, text: o.text, voteCount: o._count?.votes ?? 0 })),
+    options: poll.options.map((o: any) => ({
+      id: o.id,
+      text: o.text,
+      voteCount: o._count?.votes ?? 0,
+    })),
     myVotes: poll.options.filter((o: any) => o.votes?.length > 0).map((o: any) => o.id),
   };
 }
@@ -55,7 +59,7 @@ const rmharkInclude = (viewerId: string | null) => ({
  */
 export async function listBookmarks(
   viewerId: string,
-  opts: { cursor?: string | null; limit?: number } = {}
+  opts: { cursor?: string | null; limit?: number } = {},
 ): Promise<{ items: FeedItem[]; nextCursor: string | null; hasMore: boolean }> {
   const limit = Math.min(opts.limit ?? 20, 50);
   const bookmarks = await prisma.rMHarkBookmark.findMany({
@@ -98,13 +102,13 @@ export async function listBookmarks(
         reactions: reactionSummaries.get(r.id) ?? [],
       },
       r,
-      viewerId
+      viewerId,
     );
   });
 
   return {
     items,
-    nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+    nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
     hasMore,
   };
 }

@@ -11,10 +11,7 @@ import { SITE_URL } from '@/lib/seo';
 const fetchNews = createServerFn({ method: 'GET' }).handler(async () => {
   // perf audit §4.2: fetch the two viewer-independent news lists in parallel
   // instead of a sequential await chain (2 RTT / 2 serial DB reads → 1).
-  const [articles, featured] = await Promise.all([
-    getAllNewsArticles(),
-    getFeaturedNewsArticles(),
-  ]);
+  const [articles, featured] = await Promise.all([getAllNewsArticles(), getFeaturedNewsArticles()]);
   return { articles, featured };
 });
 
@@ -22,10 +19,19 @@ export const Route = createFileRoute('/_site/news/')({
   head: () => ({
     meta: [
       { title: 'News | RMH Studios' },
-      { name: 'description', content: 'Curated news and commentary on AI, gaming, neuroscience, tech, science, and culture from RMH Studios.' },
+      {
+        name: 'description',
+        content:
+          'Curated news and commentary on AI, gaming, neuroscience, tech, science, and culture from RMH Studios.',
+      },
     ],
     links: [
-      { rel: 'alternate', type: 'application/rss+xml', title: 'RMH Studios — News', href: `${SITE_URL}/news/rss.xml` },
+      {
+        rel: 'alternate',
+        type: 'application/rss+xml',
+        title: 'RMH Studios — News',
+        href: `${SITE_URL}/news/rss.xml`,
+      },
     ],
   }),
   // News lists are viewer-independent and change infrequently; hold loader data

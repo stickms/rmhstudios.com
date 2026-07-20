@@ -48,9 +48,7 @@ function brotliKb(file: string): number {
 
 /** Find a vite client manifest (has entries with `.file` + `.isEntry`). */
 function findManifest(): Record<string, any> | null {
-  const candidates = walk(path.join(ROOT, '.output')).filter((f) =>
-    f.endsWith('manifest.json'),
-  );
+  const candidates = walk(path.join(ROOT, '.output')).filter((f) => f.endsWith('manifest.json'));
   for (const c of candidates) {
     try {
       const j = JSON.parse(readFileSync(c, 'utf8'));
@@ -72,7 +70,9 @@ function fmt(n: number): string {
 function main(): number {
   const outDir = path.join(ROOT, '.output', 'public');
   if (!existsSync(outDir)) {
-    console.log('bundle-budget: no .output/public — run `pnpm run build:frontend` first. (skipping)');
+    console.log(
+      'bundle-budget: no .output/public — run `pnpm run build:frontend` first. (skipping)',
+    );
     return 0;
   }
   const budgets = loadBudgets().brotli_kb;
@@ -111,8 +111,7 @@ function main(): number {
   console.log('  ─────────────────────────────────────────────');
   for (const [name, actual, budget] of rows) {
     const skip = (name === 'platform_shell_eager_js' || name === 'platform_eager_css') && !manifest;
-    const status =
-      budget == null || skip ? 'n/a  ' : actual <= budget ? 'ok   ' : 'OVER ';
+    const status = budget == null || skip ? 'n/a  ' : actual <= budget ? 'ok   ' : 'OVER ';
     if (status === 'OVER ') over = true;
     const budgetStr = budget == null ? '' : `/ ${fmt(budget)}`;
     console.log(`  [${status}] ${name.padEnd(28)} ${fmt(actual).padStart(10)} ${budgetStr}`);

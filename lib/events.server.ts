@@ -166,7 +166,12 @@ async function scheduleEventReminders(
       await boss.send(
         EVENT_REMINDER_QUEUE,
         { eventId: event.id, userId, offset } satisfies EventReminderJob,
-        { startAfter: fireAt, singletonKey: reminderKey(event.id, userId, offset), retentionSeconds, retryLimit: 2 },
+        {
+          startAfter: fireAt,
+          singletonKey: reminderKey(event.id, userId, offset),
+          retentionSeconds,
+          retryLimit: 2,
+        },
       );
     }
   } catch (e) {
@@ -186,7 +191,9 @@ async function cancelEventReminders(eventId: string, userId: string): Promise<vo
   try {
     await ensureQueue(boss);
     for (const { offset } of REMINDER_OFFSETS) {
-      const jobs = await boss.findJobs(EVENT_REMINDER_QUEUE, { key: reminderKey(eventId, userId, offset) });
+      const jobs = await boss.findJobs(EVENT_REMINDER_QUEUE, {
+        key: reminderKey(eventId, userId, offset),
+      });
       const ids = jobs.filter((j) => j.state === 'created' || j.state === 'retry').map((j) => j.id);
       if (ids.length) await boss.cancel(EVENT_REMINDER_QUEUE, ids);
     }
@@ -253,7 +260,8 @@ function assertSafeVenueUrl(raw: string): string {
   } catch {
     throw new EventError('INVALID_VENUE_URL');
   }
-  if (url.protocol !== 'https:' && url.protocol !== 'http:') throw new EventError('INVALID_VENUE_URL');
+  if (url.protocol !== 'https:' && url.protocol !== 'http:')
+    throw new EventError('INVALID_VENUE_URL');
   if (isIP(url.hostname) && isPrivateIp(url.hostname)) throw new EventError('INVALID_VENUE_URL');
   const normalized = url.toString();
   if (normalized.length > 191) throw new EventError('INVALID_VENUE_URL');
@@ -380,7 +388,10 @@ async function summarize(eventId: string, userId: string): Promise<RsvpResult> {
 // ─── Reads ───────────────────────────────────────────────────────────────────
 
 /** A single event with counts, an attendee sample, and the viewer's RSVP. */
-export async function getEvent(id: string, viewerId: string | null = null): Promise<EventDTO | null> {
+export async function getEvent(
+  id: string,
+  viewerId: string | null = null,
+): Promise<EventDTO | null> {
   const row = await fetchEventRow(id);
   if (!row) return null;
   const [mapped] = await attachAndMap([row], viewerId, 12);
@@ -559,7 +570,10 @@ export async function cancelEvent(id: string, hostId: string): Promise<EventDTO>
     await prisma.communityEvent.update({ where: { id }, data: { canceledAt: new Date() } });
     // Notify everyone who RSVP'd (best-effort). Pending reminder jobs stay put;
     // the worker's canceled-check turns them into no-ops.
-    const rsvps = await prisma.eventRsvp.findMany({ where: { eventId: id }, select: { userId: true } });
+    const rsvps = await prisma.eventRsvp.findMany({
+      where: { eventId: id },
+      select: { userId: true },
+    });
     for (const r of rsvps) {
       createNotification({
         userId: r.userId,
@@ -575,7 +589,11 @@ export async function cancelEvent(id: string, hostId: string): Promise<EventDTO>
   return (await getEvent(id, hostId))!;
 }
 
-export async function rsvp(eventId: string, userId: string, status: RsvpStatus): Promise<RsvpResult> {
+export async function rsvp(
+  eventId: string,
+  userId: string,
+  status: RsvpStatus,
+): Promise<RsvpResult> {
   const event = await prisma.communityEvent.findUnique({
     where: { id: eventId },
     select: { id: true, startsAt: true, capacity: true, canceledAt: true },

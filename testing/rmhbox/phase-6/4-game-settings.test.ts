@@ -14,10 +14,7 @@ import {
 import { getDefaultSettings, validateGameSettings } from '../../../lib/rmhbox/game-settings';
 import { FactOrFrictionGame } from '../../../server/rmhbox/minigames/fact-or-friction';
 import { UndercoverEditorGame } from '../../../server/rmhbox/minigames/undercover-editor';
-import {
-  MOCK_USERS,
-  createMockContext,
-} from './setup';
+import { MOCK_USERS, createMockContext } from './setup';
 
 describe('Game Settings Integration (§6.6)', () => {
   beforeEach(() => {
@@ -92,7 +89,8 @@ describe('Game Settings Integration (§6.6)', () => {
 
       // Find the FF_QUESTION broadcast — totalQuestions should be 4
       const questionEvent = ctx.broadcastLog.find(
-        (e) => e.event === 'rmhbox:game:action' &&
+        (e) =>
+          e.event === 'rmhbox:game:action' &&
           (e.data as Record<string, unknown>).type === 'FF_QUESTION',
       );
       expect(questionEvent).toBeDefined();
@@ -104,14 +102,19 @@ describe('Game Settings Integration (§6.6)', () => {
 
     it('UE handler should respect custom writeTimeout setting', () => {
       const ctx = createMockContext([
-        MOCK_USERS.alice, MOCK_USERS.bob, MOCK_USERS.charlie, MOCK_USERS.diana, MOCK_USERS.eve,
+        MOCK_USERS.alice,
+        MOCK_USERS.bob,
+        MOCK_USERS.charlie,
+        MOCK_USERS.diana,
+        MOCK_USERS.eve,
       ]);
       ctx.context.gameSettings = { writeTimeout: 60 };
       const game = new UndercoverEditorGame(ctx.context);
       game.start();
 
       const writeStart = ctx.broadcastLog.find(
-        (e) => e.event === 'rmhbox:game:action' &&
+        (e) =>
+          e.event === 'rmhbox:game:action' &&
           (e.data as Record<string, unknown>).type === 'UE_WRITE_START',
       );
       expect(writeStart).toBeDefined();

@@ -92,7 +92,8 @@ export async function publishScheduledPost(sp: ScheduledPost): Promise<string | 
     await progressAchievement(sp.userId, 'social.posts_10', { setProgress: count });
     await progressAchievement(sp.userId, 'social.posts_100', { setProgress: count });
     if (poll) await grantAchievement(sp.userId, 'social.first_poll');
-    if (sp.unlockPrice && sp.unlockPrice > 0) await grantAchievement(sp.userId, 'creator.first_paid_post');
+    if (sp.unlockPrice && sp.unlockPrice > 0)
+      await grantAchievement(sp.userId, 'creator.first_paid_post');
     await awardXp(sp.userId, 25);
     await progressQuests(sp.userId, 'post');
   } catch (e) {

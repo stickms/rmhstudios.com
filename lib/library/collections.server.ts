@@ -23,7 +23,8 @@ import {
 
 export type Viewer = { id: string; isAdmin: boolean } | null;
 
-export type CollectionResult<T> = { ok: true; value: T } | { ok: false; status: number; error: string };
+export type CollectionResult<T> =
+  { ok: true; value: T } | { ok: false; status: number; error: string };
 
 /** Record collection mutations performed by an admin (best-effort). */
 function auditIfAdmin(viewer: Viewer, action: string, targetId: string, detail?: string): void {
@@ -49,8 +50,23 @@ const DOC_SELECT = {
   uploadedBy: { select: { handle: true, name: true } },
 } as const;
 
-// xAI is OpenAI-SDK compatible; point the base URL at their endpoint.
-const xai = new OpenAI({ apiKey: process.env.XAI_API_KEY || '', baseURL: 'https://api.x.ai/v1', maxRetries: 1 });
+// xAI is OpenAI-SDK compatible; point the base URL at their endpoint. Built
+// lazily: `new OpenAI({ apiKey: '' })` throws "Missing credentials" at
+// construction, so eagerly constructing this at module load would crash the
+// whole SSR entry (this module is imported by the /library page route) whenever
+// XAI_API_KEY is unset. Only `generateCollectionCover` needs it, and it already
+// guards on `isCollectionCoverConfigured()` first.
+let _xai: OpenAI | null = null;
+function xaiClient(): OpenAI {
+  if (!_xai) {
+    _xai = new OpenAI({
+      apiKey: process.env.XAI_API_KEY || '',
+      baseURL: 'https://api.x.ai/v1',
+      maxRetries: 1,
+    });
+  }
+  return _xai;
+}
 const XAI_IMAGE_MODEL = process.env.XAI_IMAGE_MODEL || 'grok-imagine-image';
 
 /** True when an xAI key is set and image generation isn't disabled. */
@@ -87,7 +103,11 @@ type CollectionRow = {
   items: { bookSlug: string; position: number }[];
 };
 
-function toView(row: CollectionRow, books: Map<string, LibraryBook>, viewer: Viewer): CollectionView {
+function toView(
+  row: CollectionRow,
+  books: Map<string, LibraryBook>,
+  viewer: Viewer,
+): CollectionView {
   const ordered = [...row.items].sort((a, b) => a.position - b.position);
   return {
     id: row.id,
@@ -150,7 +170,11 @@ export async function createCollection(
   if (!viewer.isAdmin) {
     const count = await prisma.libraryCollection.count({ where: { ownerUserId: viewer.id } });
     if (count >= COLLECTION_USER_QUOTA) {
-      return { ok: false, status: 429, error: `You've reached the limit of ${COLLECTION_USER_QUOTA} collections.` };
+      return {
+        ok: false,
+        status: 429,
+        error: `You've reached the limit of ${COLLECTION_USER_QUOTA} collections.`,
+      };
     }
   }
 
@@ -203,17 +227,26 @@ export async function updateCollection(
       data.title = fields.title;
     }
     if (typeof input.description === 'string') {
-      if (!fields.ok && input.title === undefined) return { ok: false, status: 422, error: fields.error };
+      if (!fields.ok && input.title === undefined)
+        return { ok: false, status: 422, error: fields.error };
       data.description = (input.description ?? '').trim();
     }
   }
-  if (Object.keys(data).length === 0) return { ok: false, status: 400, error: 'Nothing to update.' };
-  const updated = await prisma.libraryCollection.update({ where: { id }, data, select: { slug: true } });
+  if (Object.keys(data).length === 0)
+    return { ok: false, status: 400, error: 'Nothing to update.' };
+  const updated = await prisma.libraryCollection.update({
+    where: { id },
+    data,
+    select: { slug: true },
+  });
   auditIfAdmin(viewer, 'library.collection.update', id, Object.keys(data).join(','));
   return { ok: true, value: updated };
 }
 
-export async function deleteCollection(viewer: Viewer, id: string): Promise<CollectionResult<true>> {
+export async function deleteCollection(
+  viewer: Viewer,
+  id: string,
+): Promise<CollectionResult<true>> {
   const access = await requireManageable(viewer, id);
   if (!access.ok) return access;
   await prisma.libraryCollection.delete({ where: { id } });
@@ -226,7 +259,10 @@ async function viewerOwnsBook(viewer: Viewer, bookSlug: string): Promise<boolean
   if (!viewer) return false;
   if (viewer.isAdmin) {
     if (getLibraryBook(bookSlug)) return true;
-    const doc = await prisma.libraryDocument.findUnique({ where: { slug: bookSlug }, select: { id: true } });
+    const doc = await prisma.libraryDocument.findUnique({
+      where: { slug: bookSlug },
+      select: { id: true },
+    });
     return Boolean(doc);
   }
   const doc = await prisma.libraryDocument.findUnique({
@@ -236,7 +272,11 @@ async function viewerOwnsBook(viewer: Viewer, bookSlug: string): Promise<boolean
   return Boolean(doc && doc.uploadedByUserId === viewer.id);
 }
 
-export async function addItem(viewer: Viewer, id: string, bookSlug: string): Promise<CollectionResult<true>> {
+export async function addItem(
+  viewer: Viewer,
+  id: string,
+  bookSlug: string,
+): Promise<CollectionResult<true>> {
   const access = await requireManageable(viewer, id);
   if (!access.ok) return access;
   if (!(await viewerOwnsBook(viewer, bookSlug))) {
@@ -244,7 +284,11 @@ export async function addItem(viewer: Viewer, id: string, bookSlug: string): Pro
   }
   const count = await prisma.libraryCollectionItem.count({ where: { collectionId: id } });
   if (count >= COLLECTION_ITEM_CAP) {
-    return { ok: false, status: 429, error: `A collection can hold at most ${COLLECTION_ITEM_CAP} books.` };
+    return {
+      ok: false,
+      status: 429,
+      error: `A collection can hold at most ${COLLECTION_ITEM_CAP} books.`,
+    };
   }
   const max = await prisma.libraryCollectionItem.aggregate({
     where: { collectionId: id },
@@ -260,7 +304,11 @@ export async function addItem(viewer: Viewer, id: string, bookSlug: string): Pro
   return { ok: true, value: true };
 }
 
-export async function removeItem(viewer: Viewer, id: string, bookSlug: string): Promise<CollectionResult<true>> {
+export async function removeItem(
+  viewer: Viewer,
+  id: string,
+  bookSlug: string,
+): Promise<CollectionResult<true>> {
   const access = await requireManageable(viewer, id);
   if (!access.ok) return access;
   await prisma.libraryCollectionItem
@@ -271,7 +319,11 @@ export async function removeItem(viewer: Viewer, id: string, bookSlug: string): 
 }
 
 /** Reorder a collection's books to the given slug order. */
-export async function reorderItems(viewer: Viewer, id: string, slugs: string[]): Promise<CollectionResult<true>> {
+export async function reorderItems(
+  viewer: Viewer,
+  id: string,
+  slugs: string[],
+): Promise<CollectionResult<true>> {
   const access = await requireManageable(viewer, id);
   if (!access.ok) return access;
   await prisma.$transaction(
@@ -319,16 +371,23 @@ export async function generateCollectionCover(
   if (!row) return { ok: false, status: 404, error: 'Collection not found.' };
 
   try {
-    const res = await xai.images.generate({ model: XAI_IMAGE_MODEL, prompt: coverPrompt(row.title, row.description), n: 1 });
+    const res = await xaiClient().images.generate({
+      model: XAI_IMAGE_MODEL,
+      prompt: coverPrompt(row.title, row.description),
+      n: 1,
+    });
     const url = res.data?.[0]?.url;
     if (!url) return { ok: false, status: 502, error: 'Image generation returned nothing.' };
     const fetched = await fetch(url);
-    if (!fetched.ok) return { ok: false, status: 502, error: 'Could not download the generated image.' };
+    if (!fetched.ok)
+      return { ok: false, status: 502, error: 'Could not download the generated image.' };
     const buffer = Buffer.from(await fetched.arrayBuffer());
-    if (!validateImageBuffer(buffer).ok) return { ok: false, status: 502, error: 'Generated image was invalid.' };
+    if (!validateImageBuffer(buffer).ok)
+      return { ok: false, status: 502, error: 'Generated image was invalid.' };
 
     const ext = detectImageExt(buffer);
-    const contentType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
+    const contentType =
+      ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg';
     const key = libraryCoverKey(id);
     await putObject(key, buffer, contentType);
     await prisma.libraryCollection.update({ where: { id }, data: { coverKey: key } });

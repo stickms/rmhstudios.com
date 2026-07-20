@@ -24,7 +24,7 @@
  * removed (rewrite R0-T7).
  */
 
-import { prisma } from "@/lib/prisma.server";
+import { prisma } from '@/lib/prisma.server';
 
 async function main() {
   const startedAt = Date.now();
@@ -51,13 +51,13 @@ async function main() {
 
   const ms = Date.now() - startedAt;
   console.log(
-    `[reconcile-feed-counts] corrected ${corrected} drifted RMHark${corrected === 1 ? "" : "s"} in ${ms}ms`
+    `[reconcile-feed-counts] corrected ${corrected} drifted RMHark${corrected === 1 ? '' : 's'} in ${ms}ms`,
   );
 }
 
 main()
   .catch((e) => {
-    console.error("[reconcile-feed-counts] failed:", e);
+    console.error('[reconcile-feed-counts] failed:', e);
     process.exitCode = 1;
   })
   .finally(async () => {

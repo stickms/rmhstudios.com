@@ -1,23 +1,39 @@
-import { ReactNode, createContext, useContext, useEffect, useRef, useState, useCallback, useMemo } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useLocation } from "@tanstack/react-router";
-import { MotionConfig, LazyMotion } from "framer-motion";
-import { Toaster } from "sonner";
-import { authClient } from "@/lib/auth-client";
-import { useThemeStore, SITE_STYLES, THEME_BG, DEFAULT_STYLE, SiteStyle, REDUCE_TRANSPARENCY_KEY } from "@/stores/themeStore";
-import { applyAccent, isAccentId, ACCENT_STORAGE_KEY } from "@/lib/appearance";
-import { useGlassLight } from "@/hooks/useGlassLight";
-import { useIdleReady } from "@/hooks/useIdleReady";
-import { useLocaleStore, writeLocaleCookie } from "@/stores/localeStore";
-import { applyHtmlLangDir } from "@/lib/i18n/dom";
-import { games } from "@/lib/games";
-import { apps } from "@/lib/apps";
-import { AppI18nProvider } from "@/components/i18n/AppI18nProvider";
-import { CommandPaletteMount } from "@/components/site/CommandPaletteMount";
-import { RecentsTracker } from "@/components/site/RecentsTracker";
-import { ConfirmProvider } from "@/components/ui/confirm-dialog";
-import type { Locale } from "@/lib/i18n/config";
-import type { LocaleBundle } from "@/lib/i18n/resources";
+import {
+  ReactNode,
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  useCallback,
+  useMemo,
+} from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { useLocation } from '@tanstack/react-router';
+import { MotionConfig, LazyMotion } from 'framer-motion';
+import { Toaster } from 'sonner';
+import { authClient } from '@/lib/auth-client';
+import {
+  useThemeStore,
+  SITE_STYLES,
+  THEME_BG,
+  DEFAULT_STYLE,
+  SiteStyle,
+  REDUCE_TRANSPARENCY_KEY,
+} from '@/stores/themeStore';
+import { applyAccent, isAccentId, ACCENT_STORAGE_KEY } from '@/lib/appearance';
+import { useGlassLight } from '@/hooks/useGlassLight';
+import { useIdleReady } from '@/hooks/useIdleReady';
+import { useLocaleStore, writeLocaleCookie } from '@/stores/localeStore';
+import { applyHtmlLangDir } from '@/lib/i18n/dom';
+import { games } from '@/lib/games';
+import { apps } from '@/lib/apps';
+import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
+import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
+import { RecentsTracker } from '@/components/site/RecentsTracker';
+import { ConfirmProvider } from '@/components/ui/confirm-dialog';
+import type { Locale } from '@/lib/i18n/config';
+import type { LocaleBundle } from '@/lib/i18n/resources';
 
 // perf audit §4.3: build the QueryClient PER component instance (via useState
 // below), not once at module scope. A module-scope client is shared by every
@@ -59,7 +75,7 @@ const SessionCtx = createContext<SessionCtxValue | null>(null);
 /*  the context with it so the signed-in UI shows immediately, then    */
 /*  let the live session take over (and self-heal if it's stale).     */
 /* ------------------------------------------------------------------ */
-const CACHED_USER_KEY = "rmh-auth-user";
+const CACHED_USER_KEY = 'rmh-auth-user';
 
 type CachedSessionUser = {
   id: string;
@@ -153,7 +169,7 @@ const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 // framer-motion feature bundle, loaded on demand so the animation/gesture/layout
 // drivers stay out of the initial bundle. Every component ships the lightweight
 // `m` component (aliased as `motion`) and picks these up from LazyMotion context.
-const loadMotionFeatures = () => import("@/lib/motion-features").then((mod) => mod.default);
+const loadMotionFeatures = () => import('@/lib/motion-features').then((mod) => mod.default);
 
 // THEME_BG (theme → document background color) lives in stores/themeStore.ts,
 // derived from SITE_STYLES, so the runtime and the no-flash inline script share
@@ -171,9 +187,14 @@ const loadMotionFeatures = () => import("@/lib/motion-features").then((mod) => m
 export const THEME_EXCLUDED_ROUTES = [
   ...games.map((g) => g.href),
   ...apps.filter((a) => !a.usesSiteTheme).map((a) => a.href),
-].filter((href) => href.startsWith("/"));
+].filter((href) => href.startsWith('/'));
 
-export function Providers({ children, initialUser = null, locale = "en", i18nResources = null }: ProvidersProps) {
+export function Providers({
+  children,
+  initialUser = null,
+  locale = 'en',
+  i18nResources = null,
+}: ProvidersProps) {
   // Per-request/per-mount QueryClient (perf audit §4.3) — see makeQueryClient.
   const [queryClient] = useState(makeQueryClient);
   const session = authClient.useSession();
@@ -204,14 +225,14 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
       (nav.deviceMemory ?? 8) <= 6 ||
       (navigator.hardwareConcurrency ?? 8) <= 6 ||
       nav.connection?.saveData === true;
-    document.documentElement.classList.toggle("perf-lite", lite);
+    document.documentElement.classList.toggle('perf-lite', lite);
   }, []);
 
   // Sync the locale store to the SSR-resolved locale and reconcile <html lang/dir>
   // so a user whose locale was resolved via Accept-Language (no cookie yet) gets
   // the correct layout direction from the first client render onward.
   useEffect(() => {
-    if (typeof document !== "undefined") {
+    if (typeof document !== 'undefined') {
       applyHtmlLangDir(locale, document.documentElement);
       writeLocaleCookie(locale);
     }
@@ -277,13 +298,19 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   // Same seed on server and client, so no hydration mismatch.
   const [resolvedUser, setResolvedUser] = useState<ResolvedUserDisplay | null>(
     initialUser
-      ? { name: initialUser.name ?? null, image: initialUser.image ?? null, handle: initialUser.handle ?? null }
+      ? {
+          name: initialUser.name ?? null,
+          image: initialUser.image ?? null,
+          handle: initialUser.handle ?? null,
+        }
       : null,
   );
   const fetchResolvedUser = useCallback(() => {
-    fetch("/api/profile/me")
+    fetch('/api/profile/me')
       .then((r) => (r.ok ? r.json() : null))
-      .then((data) => { if (data) setResolvedUser(data); })
+      .then((data) => {
+        if (data) setResolvedUser(data);
+      })
       .catch(() => {});
   }, []);
 
@@ -308,30 +335,28 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     if (!userId) return;
     let code: string | null = null;
     try {
-      code = localStorage.getItem("rmh-ref");
+      code = localStorage.getItem('rmh-ref');
     } catch {
       return;
     }
     if (!code) return;
-    fetch("/api/referrals/claim", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
+    fetch('/api/referrals/claim', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ code }),
     })
       .then((res) => {
-        if (res.status !== 429) localStorage.removeItem("rmh-ref");
+        if (res.status !== 429) localStorage.removeItem('rmh-ref');
       })
       .catch(() => {});
   }, [userId]);
 
-  const isAppRoute = THEME_EXCLUDED_ROUTES.some((route) =>
-    pathname?.startsWith(route)
-  );
+  const isAppRoute = THEME_EXCLUDED_ROUTES.some((route) => pathname?.startsWith(route));
 
   // Toggle app-route class so CSS can disable scrollbar-gutter on game/app pages
   useEffect(() => {
-    document.documentElement.classList.toggle("app-route", isAppRoute);
+    document.documentElement.classList.toggle('app-route', isAppRoute);
   }, [isAppRoute]);
 
   // Hydrate style from localStorage on mount. Self-heal legacy values: any
@@ -340,18 +365,18 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   // falls back to the site default (DEFAULT_STYLE) and is rewritten so it
   // doesn't linger.
   useEffect(() => {
-    const stored = localStorage.getItem("rmh-style");
+    const stored = localStorage.getItem('rmh-style');
     if (stored && SITE_STYLES.some((s) => s.id === stored)) {
       useThemeStore.getState().setStyle(stored as SiteStyle);
     } else if (stored) {
-      localStorage.setItem("rmh-style", DEFAULT_STYLE);
+      localStorage.setItem('rmh-style', DEFAULT_STYLE);
       useThemeStore.getState().setStyle(DEFAULT_STYLE);
     }
     const storedAccent = localStorage.getItem(ACCENT_STORAGE_KEY);
     if (isAccentId(storedAccent)) {
       useThemeStore.getState().setAccent(storedAccent);
     }
-    if (localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === "1") {
+    if (localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1') {
       useThemeStore.getState().setReduceTransparency(true);
     }
   }, []);
@@ -376,16 +401,16 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     // Remove all style classes
     html.classList.remove(...STYLE_CLASSES);
     // Add active style class only on non-app pages (default needs no class — uses :root tokens)
-    if (activeStyle !== "default" && !isAppRoute) {
+    if (activeStyle !== 'default' && !isAppRoute) {
       html.classList.add(`style-${activeStyle}`);
     }
     // Persist the COMMITTED style (not a transient preview).
-    localStorage.setItem("rmh-style", style);
+    localStorage.setItem('rmh-style', style);
 
     // Reduce-transparency: the user setting toggles a class the glass
     // degradations key off (§10). Persisted for the no-flash script to re-apply.
-    html.classList.toggle("reduce-transparency", reduceTransparency);
-    if (reduceTransparency) localStorage.setItem(REDUCE_TRANSPARENCY_KEY, "1");
+    html.classList.toggle('reduce-transparency', reduceTransparency);
+    if (reduceTransparency) localStorage.setItem(REDUCE_TRANSPARENCY_KEY, '1');
     else localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
 
     // Accent override: apply on content pages; clear on app/game routes (they own
@@ -405,10 +430,10 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     // Also update theme-color meta for older Safari / other browsers.
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     if (metas.length > 0) {
-      metas.forEach((m) => m.setAttribute("content", bg));
+      metas.forEach((m) => m.setAttribute('content', bg));
     } else {
-      const meta = document.createElement("meta");
-      meta.name = "theme-color";
+      const meta = document.createElement('meta');
+      meta.name = 'theme-color';
       meta.content = bg;
       document.head.appendChild(meta);
     }
@@ -419,19 +444,26 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   // saved theme/accent; the account wins when it has a value, otherwise the
   // current device value is kept (and seeded up so the account isn't left empty).
   const appearanceSyncedRef = useRef(false);
-  const lastSavedAppearanceRef = useRef<{ style: string; accent: string | null; reduceTransparency: boolean } | null>(null);
+  const lastSavedAppearanceRef = useRef<{
+    style: string;
+    accent: string | null;
+    reduceTransparency: boolean;
+  } | null>(null);
 
   // Fire-and-forget PUT of the appearance to the account, recording it as the
   // last-saved value so the change-watcher below never echoes it straight back.
-  const saveAppearance = useCallback((next: { style: string; accent: string | null; reduceTransparency: boolean }) => {
-    lastSavedAppearanceRef.current = next;
-    fetch("/api/preferences/appearance", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(next),
-    }).catch(() => {});
-  }, []);
+  const saveAppearance = useCallback(
+    (next: { style: string; accent: string | null; reduceTransparency: boolean }) => {
+      lastSavedAppearanceRef.current = next;
+      fetch('/api/preferences/appearance', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(next),
+      }).catch(() => {});
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!userId) {
@@ -443,32 +475,54 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
     // the account sync only reconciles across devices, so it can wait for idle.
     if (!idleReady) return;
     let cancelled = false;
-    fetch("/api/preferences/appearance", { credentials: "include" })
+    fetch('/api/preferences/appearance', { credentials: 'include' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((remote: { style: string | null; accent: string | null; reduceTransparency?: boolean | null } | null) => {
-        if (cancelled || !remote) return;
-        const store = useThemeStore.getState();
-        // The account wins where it has a saved value; otherwise this device's
-        // current value is kept.
-        const nextStyle =
-          remote.style && SITE_STYLES.some((s) => s.id === remote.style)
-            ? (remote.style as SiteStyle)
-            : store.style;
-        const nextAccent = isAccentId(remote.accent) ? remote.accent : store.accent;
-        const nextReduce =
-          typeof remote.reduceTransparency === "boolean" ? remote.reduceTransparency : store.reduceTransparency;
-        if (remote.style !== nextStyle || remote.accent !== nextAccent || remote.reduceTransparency !== nextReduce) {
-          // Server was missing a value this device has → seed the account with the
-          // merged result (also records it as last-saved).
-          saveAppearance({ style: nextStyle, accent: nextAccent, reduceTransparency: nextReduce });
-        } else {
-          lastSavedAppearanceRef.current = { style: nextStyle, accent: nextAccent, reduceTransparency: nextReduce };
-        }
-        store.setStyle(nextStyle);
-        store.setAccent(nextAccent);
-        store.setReduceTransparency(nextReduce);
-        appearanceSyncedRef.current = true;
-      })
+      .then(
+        (
+          remote: {
+            style: string | null;
+            accent: string | null;
+            reduceTransparency?: boolean | null;
+          } | null,
+        ) => {
+          if (cancelled || !remote) return;
+          const store = useThemeStore.getState();
+          // The account wins where it has a saved value; otherwise this device's
+          // current value is kept.
+          const nextStyle =
+            remote.style && SITE_STYLES.some((s) => s.id === remote.style)
+              ? (remote.style as SiteStyle)
+              : store.style;
+          const nextAccent = isAccentId(remote.accent) ? remote.accent : store.accent;
+          const nextReduce =
+            typeof remote.reduceTransparency === 'boolean'
+              ? remote.reduceTransparency
+              : store.reduceTransparency;
+          if (
+            remote.style !== nextStyle ||
+            remote.accent !== nextAccent ||
+            remote.reduceTransparency !== nextReduce
+          ) {
+            // Server was missing a value this device has → seed the account with the
+            // merged result (also records it as last-saved).
+            saveAppearance({
+              style: nextStyle,
+              accent: nextAccent,
+              reduceTransparency: nextReduce,
+            });
+          } else {
+            lastSavedAppearanceRef.current = {
+              style: nextStyle,
+              accent: nextAccent,
+              reduceTransparency: nextReduce,
+            };
+          }
+          store.setStyle(nextStyle);
+          store.setAccent(nextAccent);
+          store.setReduceTransparency(nextReduce);
+          appearanceSyncedRef.current = true;
+        },
+      )
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -481,45 +535,53 @@ export function Providers({ children, initialUser = null, locale = "en", i18nRes
   useEffect(() => {
     if (!userId || !appearanceSyncedRef.current) return;
     const last = lastSavedAppearanceRef.current;
-    if (last && last.style === style && last.accent === accent && last.reduceTransparency === reduceTransparency) return;
+    if (
+      last &&
+      last.style === style &&
+      last.accent === accent &&
+      last.reduceTransparency === reduceTransparency
+    )
+      return;
     saveAppearance({ style, accent, reduceTransparency });
   }, [style, accent, reduceTransparency, userId, saveAppearance]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <AppI18nProvider locale={locale} resources={i18nResources}>
-      {/* Load framer-motion features lazily so they're off the initial bundle. */}
-      <LazyMotion features={loadMotionFeatures}>
-      {/* Honor the OS "reduce motion" setting across all framer-motion animations. */}
-      <MotionConfig reducedMotion="user">
-      <SessionCtx.Provider value={effectiveSession}>
-        <ResolvedUserCtx.Provider value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}>
-        <ConfirmProvider>
-        {children}
-        <CommandPaletteMount />
-        <RecentsTracker />
-        </ConfirmProvider>
-        </ResolvedUserCtx.Provider>
-        <Toaster
-          theme={style === "light" || style === "sepia" ? "light" : "dark"}
-          position="bottom-left"
-          toastOptions={{
-            style: {
-              // L4 glass — floating UI, more opaque so content never ghosts
-              // through toast text over a bright aurora corner (§7.3).
-              background: "color-mix(in srgb, var(--site-bg) 62%, transparent)",
-              backdropFilter: "blur(28px) saturate(180%)",
-              WebkitBackdropFilter: "blur(28px) saturate(180%)",
-              border: "1px solid var(--site-border)",
-              borderRadius: "var(--site-radius-sm)",
-              boxShadow: "var(--site-shadow)",
-              color: "var(--site-text)",
-            },
-          }}
-        />
-      </SessionCtx.Provider>
-      </MotionConfig>
-      </LazyMotion>
+        {/* Load framer-motion features lazily so they're off the initial bundle. */}
+        <LazyMotion features={loadMotionFeatures}>
+          {/* Honor the OS "reduce motion" setting across all framer-motion animations. */}
+          <MotionConfig reducedMotion="user">
+            <SessionCtx.Provider value={effectiveSession}>
+              <ResolvedUserCtx.Provider
+                value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}
+              >
+                <ConfirmProvider>
+                  {children}
+                  <CommandPaletteMount />
+                  <RecentsTracker />
+                </ConfirmProvider>
+              </ResolvedUserCtx.Provider>
+              <Toaster
+                theme={style === 'light' || style === 'sepia' ? 'light' : 'dark'}
+                position="bottom-left"
+                toastOptions={{
+                  style: {
+                    // L4 glass — floating UI, more opaque so content never ghosts
+                    // through toast text over a bright aurora corner (§7.3).
+                    background: 'color-mix(in srgb, var(--site-bg) 62%, transparent)',
+                    backdropFilter: 'blur(28px) saturate(180%)',
+                    WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+                    border: '1px solid var(--site-border)',
+                    borderRadius: 'var(--site-radius-sm)',
+                    boxShadow: 'var(--site-shadow)',
+                    color: 'var(--site-text)',
+                  },
+                }}
+              />
+            </SessionCtx.Provider>
+          </MotionConfig>
+        </LazyMotion>
       </AppI18nProvider>
     </QueryClientProvider>
   );

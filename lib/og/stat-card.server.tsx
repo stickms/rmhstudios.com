@@ -45,7 +45,8 @@ async function fetchFont(url: string): Promise<ArrayBuffer> {
 function loadFonts(): Promise<void> {
   if (fontRegular && fontBold) return Promise.resolve();
   if (fontsLoading) return fontsLoading;
-  if (Date.now() < fontFailUntil) return Promise.reject(new Error('Fonts unavailable (cooling down)'));
+  if (Date.now() < fontFailUntil)
+    return Promise.reject(new Error('Fonts unavailable (cooling down)'));
   fontsLoading = Promise.all([fetchFont(FONT_REGULAR_URL), fetchFont(FONT_BOLD_URL)])
     .then(([reg, bold]) => {
       fontRegular = reg;
@@ -92,13 +93,7 @@ const MUTED = '#9aa3b2';
 const BRAND = '#f5a623';
 
 export type StatCardKind =
-  | 'achievement'
-  | 'rank'
-  | 'streak'
-  | 'pass_tier'
-  | 'arcade'
-  | 'wrapped_stat'
-  | 'market';
+  'achievement' | 'rank' | 'streak' | 'pass_tier' | 'arcade' | 'wrapped_stat' | 'market';
 
 export type StatCardVariant = 'landscape' | 'story';
 
@@ -240,7 +235,15 @@ export async function renderStatCard(data: StatCardData): Promise<Buffer> {
         border: `2px solid ${theme.accent}`,
       }}
     >
-      <div style={{ display: 'flex', width: s.badge * 0.55, height: s.badge * 0.55, borderRadius: 999, backgroundColor: theme.accent }} />
+      <div
+        style={{
+          display: 'flex',
+          width: s.badge * 0.55,
+          height: s.badge * 0.55,
+          borderRadius: 999,
+          backgroundColor: theme.accent,
+        }}
+      />
       <span style={{ fontSize: s.badge, fontWeight: 700, color: theme.accent }}>{theme.label}</span>
     </div>
   );
@@ -257,17 +260,35 @@ export async function renderStatCard(data: StatCardData): Promise<Buffer> {
       }}
     >
       <span style={{ fontSize: s.eyebrow, fontWeight: 400, color: MUTED }}>{eyebrow}</span>
-      <span style={{ fontSize: heroSize, fontWeight: 700, color: TEXT, lineHeight: 1.05 }}>{value}</span>
-      {subtitle ? <span style={{ fontSize: s.subtitle, fontWeight: 400, color: theme.accent }}>{subtitle}</span> : null}
+      <span style={{ fontSize: heroSize, fontWeight: 700, color: TEXT, lineHeight: 1.05 }}>
+        {value}
+      </span>
+      {subtitle ? (
+        <span style={{ fontSize: s.subtitle, fontWeight: 400, color: theme.accent }}>
+          {subtitle}
+        </span>
+      ) : null}
     </div>
   );
 
   // User row (avatar + name/handle) — only when a user is supplied.
   const userRow =
     userName || avatar ? (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: s.center ? 'center' : 'flex-start', gap: 20 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: s.center ? 'center' : 'flex-start',
+          gap: 20,
+        }}
+      >
         {avatar ? (
-          <img src={avatar} width={s.avatar} height={s.avatar} style={{ borderRadius: s.avatar / 2 }} />
+          <img
+            src={avatar}
+            width={s.avatar}
+            height={s.avatar}
+            style={{ borderRadius: s.avatar / 2 }}
+          />
         ) : (
           <div
             style={{
@@ -287,15 +308,32 @@ export async function renderStatCard(data: StatCardData): Promise<Buffer> {
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          {userName ? <span style={{ fontSize: s.subtitle, fontWeight: 700, color: TEXT }}>{userName}</span> : null}
+          {userName ? (
+            <span style={{ fontSize: s.subtitle, fontWeight: 700, color: TEXT }}>{userName}</span>
+          ) : null}
           {handle ? <span style={{ fontSize: s.eyebrow, color: MUTED }}>@{handle}</span> : null}
         </div>
       </div>
     ) : null;
 
   const brandRow = (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: s.center ? 'center' : 'flex-start', gap: 12 }}>
-      <div style={{ display: 'flex', width: s.brand, height: s.brand, borderRadius: 8, backgroundColor: BRAND }} />
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: s.center ? 'center' : 'flex-start',
+        gap: 12,
+      }}
+    >
+      <div
+        style={{
+          display: 'flex',
+          width: s.brand,
+          height: s.brand,
+          borderRadius: 8,
+          backgroundColor: BRAND,
+        }}
+      />
       <span style={{ fontSize: s.brand, fontWeight: 700, color: TEXT }}>RMH Studios</span>
     </div>
   );
@@ -345,7 +383,11 @@ export async function renderStatCard(data: StatCardData): Promise<Buffer> {
         }}
       >
         {badge}
-        <div style={{ display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'center' }}>{hero}</div>
+        <div
+          style={{ display: 'flex', flex: 1, flexDirection: 'column', justifyContent: 'center' }}
+        >
+          {hero}
+        </div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           {userRow ?? <div style={{ display: 'flex' }} />}
           {brandRow}

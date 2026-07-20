@@ -44,7 +44,7 @@ export function TagColumn({
         setLoading(false);
       }
     },
-    [tag]
+    [tag],
   );
 
   useEffect(() => {
@@ -76,7 +76,12 @@ export function TagColumn({
         </div>
       ) : items.length === 0 ? (
         <Reveal>
-          <EmptyState description={t('no-posts-with-tag', { tag, defaultValue: 'No posts with #{{tag}} yet.' })} />
+          <EmptyState
+            description={t('no-posts-with-tag', {
+              tag,
+              defaultValue: 'No posts with #{{tag}} yet.',
+            })}
+          />
         </Reveal>
       ) : (
         <VirtualPostList items={items} />
@@ -85,7 +90,11 @@ export function TagColumn({
       {hasMore && (
         <div className="flex justify-center py-4">
           <Button variant="secondary" size="sm" onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : t('load-more', { defaultValue: 'Load more' })}
+            {loadingMore ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              t('load-more', { defaultValue: 'Load more' })
+            )}
           </Button>
         </div>
       )}

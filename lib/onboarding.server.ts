@@ -223,10 +223,10 @@ export async function getFirstWeekStatus(userId: string): Promise<FirstWeekStatu
 
   const profileCustomized = Boolean(
     profile &&
-      (profile.bio?.trim() ||
-        profile.displayName?.trim() ||
-        profile.customImage ||
-        profile.bannerUrl),
+    (profile.bio?.trim() ||
+      profile.displayName?.trim() ||
+      profile.customImage ||
+      profile.bannerUrl),
   );
 
   const doneById: Record<string, boolean> = {
@@ -263,10 +263,7 @@ export async function getFirstWeekStatus(userId: string): Promise<FirstWeekStatu
   const allDone = steps.every((s) => s.done);
 
   // Award coins for any step now detected done (idempotent, best-effort).
-  await grantDueStepCoins(
-    userId,
-    new Set(steps.filter((s) => s.done).map((s) => s.id)),
-  );
+  await grantDueStepCoins(userId, new Set(steps.filter((s) => s.done).map((s) => s.id)));
 
   return {
     steps,
@@ -278,19 +275,14 @@ export async function getFirstWeekStatus(userId: string): Promise<FirstWeekStatu
 }
 
 export type FirstWeekGraduationResult =
-  | 'graduated'
-  | 'incomplete'
-  | 'already-graduated'
-  | 'not-found';
+  'graduated' | 'incomplete' | 'already-graduated' | 'not-found';
 
 /**
  * Complete the First Week arc: award the graduation coin bonus and grant the
  * starter cosmetic pack, exactly once. The `firstWeekRewardedAt` flip is the
  * atomic double-claim guard (mirrors `claimOnboardingReward`).
  */
-export async function claimFirstWeekGraduation(
-  userId: string,
-): Promise<FirstWeekGraduationResult> {
+export async function claimFirstWeekGraduation(userId: string): Promise<FirstWeekGraduationResult> {
   const status = await getFirstWeekStatus(userId);
   if (!status) return 'not-found';
   if (status.graduated) return 'already-graduated';

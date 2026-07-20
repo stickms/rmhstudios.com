@@ -43,7 +43,8 @@ export const Route = createFileRoute('/api/email/unsubscribe')({
             windowMs: 60_000,
             prefix: 'email-unsub',
           });
-          if (!allowed) return page('Too many requests', 'Please wait a moment and try the link again.', 429);
+          if (!allowed)
+            return page('Too many requests', 'Please wait a moment and try the link again.', 429);
 
           const token = new URL(request.url).searchParams.get('token') ?? '';
           const userId = verifyUnsubToken(token);
@@ -66,7 +67,11 @@ export const Route = createFileRoute('/api/email/unsubscribe')({
           );
         } catch (error) {
           console.error('email unsubscribe error:', error);
-          return page('Something went wrong', 'Please try again later, or turn off the digest from your settings.', 500);
+          return page(
+            'Something went wrong',
+            'Please try again later, or turn off the digest from your settings.',
+            500,
+          );
         }
       },
     },

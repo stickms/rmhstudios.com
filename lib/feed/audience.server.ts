@@ -19,7 +19,7 @@ import { prisma } from '@/lib/prisma.server';
 export function audienceWhere(
   viewerId: string | null,
   followingIds: string[],
-  supportedCreatorIds: string[] = []
+  supportedCreatorIds: string[] = [],
 ) {
   if (!viewerId) return { audience: 'PUBLIC' as const };
   return {
@@ -45,7 +45,7 @@ export async function supportedCreatorIds(viewerId: string | null): Promise<stri
 /** Whether a single post is visible to a viewer (used on the post-detail route). */
 export async function canViewPost(
   post: { userId: string; audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'SUPPORTERS' },
-  viewerId: string | null
+  viewerId: string | null,
 ): Promise<boolean> {
   if (post.audience === 'PUBLIC') return true;
   if (!viewerId) return false;

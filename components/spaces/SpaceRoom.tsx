@@ -36,7 +36,15 @@ interface Burst {
 
 const REACTIONS = ['❤️', '🔥', '👏', '😂', '🎉', '😮'];
 
-function Avatar({ name, image, size = 28 }: { name: string | null; image: string | null; size?: number }) {
+function Avatar({
+  name,
+  image,
+  size = 28,
+}: {
+  name: string | null;
+  image: string | null;
+  size?: number;
+}) {
   const initial = (name?.trim()?.[0] ?? '?').toUpperCase();
   if (image) {
     return (
@@ -88,7 +96,9 @@ function PinnedPanel({ pinned }: { pinned: SpacePinned }) {
       <a
         href={href}
         className="break-words text-sm text-site-text underline-offset-2 hover:underline"
-        {...(pinned.kind === 'url' ? { target: '_blank', rel: 'noopener noreferrer nofollow' } : {})}
+        {...(pinned.kind === 'url'
+          ? { target: '_blank', rel: 'noopener noreferrer nofollow' }
+          : {})}
       >
         {pinned.ref}
       </a>
@@ -108,7 +118,9 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   const [pinned, setPinned] = useState<SpacePinned | null>(initialSpace.pinned);
   const [messages, setMessages] = useState<LiveMessage[]>([]);
   const [audience, setAudience] = useState<AudienceMember[]>([]);
-  const [audienceCount, setAudienceCount] = useState<number | null>(initialSpace.audienceCount ?? null);
+  const [audienceCount, setAudienceCount] = useState<number | null>(
+    initialSpace.audienceCount ?? null,
+  );
   const [connected, setConnected] = useState(false);
   const [draft, setDraft] = useState('');
   const [pinDraft, setPinDraft] = useState('');
@@ -154,19 +166,29 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       socket.emit(SPACE_C2S.JOIN, { spaceId: initialSpace.id });
     });
     socket.on('disconnect', () => setConnected(false));
-    socket.on(SPACE_S2C.STATE, (s: { audience?: AudienceMember[]; audienceCount?: number; pinned?: SpacePinned | null; status?: SpaceStatus }) => {
-      if (Array.isArray(s.audience)) setAudience(s.audience);
-      if (typeof s.audienceCount === 'number') setAudienceCount(s.audienceCount);
-      setPinned(s.pinned ?? null);
-      if (s.status) setStatus(s.status);
-    });
+    socket.on(
+      SPACE_S2C.STATE,
+      (s: {
+        audience?: AudienceMember[];
+        audienceCount?: number;
+        pinned?: SpacePinned | null;
+        status?: SpaceStatus;
+      }) => {
+        if (Array.isArray(s.audience)) setAudience(s.audience);
+        if (typeof s.audienceCount === 'number') setAudienceCount(s.audienceCount);
+        setPinned(s.pinned ?? null);
+        if (s.status) setStatus(s.status);
+      },
+    );
     socket.on(SPACE_S2C.MESSAGE, (m: LiveMessage) => {
       setMessages((prev) => [...prev.slice(-199), m]);
     });
     socket.on(SPACE_S2C.REACTION, (r: { emoji?: string }) => {
       if (r?.emoji) pushBurst(r.emoji);
     });
-    socket.on(SPACE_S2C.PINNED, (p: { pinned?: SpacePinned | null }) => setPinned(p?.pinned ?? null));
+    socket.on(SPACE_S2C.PINNED, (p: { pinned?: SpacePinned | null }) =>
+      setPinned(p?.pinned ?? null),
+    );
     socket.on(SPACE_S2C.ENDED, () => {
       setStatus('ENDED');
       toast(t('space-ended', { defaultValue: 'This Space has ended' }));
@@ -231,7 +253,10 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   const submitPin = useCallback(() => {
     const ref = pinDraft.trim();
     if (!ref) return;
-    socketRef.current?.emit(SPACE_C2S.PIN, { spaceId: initialSpace.id, pinned: { kind: 'url', ref } });
+    socketRef.current?.emit(SPACE_C2S.PIN, {
+      spaceId: initialSpace.id,
+      pinned: { kind: 'url', ref },
+    });
     setPinDraft('');
   }, [pinDraft, initialSpace.id]);
 
@@ -259,7 +284,9 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
         status === 'ENDED' && 'bg-site-surface-hover text-site-text-dim',
       )}
     >
-      {status === 'LIVE' && <span className="h-2 w-2 animate-pulse rounded-full bg-site-danger" aria-hidden />}
+      {status === 'LIVE' && (
+        <span className="h-2 w-2 animate-pulse rounded-full bg-site-danger" aria-hidden />
+      )}
       {status === 'LIVE'
         ? t('space-status-live', { defaultValue: 'Live' })
         : status === 'SCHEDULED'
@@ -309,11 +336,21 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
             placeholder={t('space-pin-placeholder', { defaultValue: 'Pin a link (URL)…' })}
             className="min-w-0 flex-1 rounded-site border border-site-border bg-site-surface px-3 py-1.5 text-sm text-site-text placeholder:text-site-text-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
           />
-          <Button size="sm" variant="ghost" onClick={submitPin} aria-label={t('space-pin', { defaultValue: 'Pin' })}>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={submitPin}
+            aria-label={t('space-pin', { defaultValue: 'Pin' })}
+          >
             <Pin className="h-4 w-4" aria-hidden />
           </Button>
           {pinned && (
-            <Button size="sm" variant="ghost" onClick={unpin} aria-label={t('space-unpin', { defaultValue: 'Unpin' })}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={unpin}
+              aria-label={t('space-unpin', { defaultValue: 'Unpin' })}
+            >
               <PinOff className="h-4 w-4" aria-hidden />
             </Button>
           )}
@@ -323,9 +360,7 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       {/* Audience strip */}
       <div className="flex items-center gap-2 px-4 py-3">
         <Users className="h-4 w-4 text-site-text-muted" aria-hidden />
-        <span className="text-sm text-site-text-muted">
-          {audienceCount ?? audience.length}
-        </span>
+        <span className="text-sm text-site-text-muted">{audienceCount ?? audience.length}</span>
         <div className="flex -space-x-2">
           {audience.slice(0, 8).map((m) => (
             <span key={m.userId} className="ring-2 ring-site-bg rounded-full">
@@ -336,11 +371,17 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-2" aria-live="polite">
+      <div
+        ref={scrollRef}
+        className="flex-1 space-y-2 overflow-y-auto px-4 py-2"
+        aria-live="polite"
+      >
         {isEnded ? (
           initialSpace.recordChat ? (
             transcript.length > 0 ? (
-              transcript.map((m) => <MessageRow key={m.id} name={m.name} image={m.image} body={m.body} />)
+              transcript.map((m) => (
+                <MessageRow key={m.id} name={m.name} image={m.image} body={m.body} />
+              ))
             ) : (
               <p className="py-10 text-center text-sm text-site-text-dim">
                 {t('space-no-transcript', { defaultValue: 'No messages were recorded.' })}
@@ -364,9 +405,16 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
 
       {/* Floating reaction bursts */}
       {!reduced && bursts.length > 0 && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-24 h-40 overflow-hidden" aria-hidden>
+        <div
+          className="pointer-events-none absolute inset-x-0 bottom-24 h-40 overflow-hidden"
+          aria-hidden
+        >
           {bursts.map((b) => (
-            <span key={b.key} className="space-burst absolute text-2xl" style={{ left: `${b.left}%` }}>
+            <span
+              key={b.key}
+              className="space-burst absolute text-2xl"
+              style={{ left: `${b.left}%` }}
+            >
               {b.emoji}
             </span>
           ))}
@@ -408,7 +456,13 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
               }
               className="min-w-0 flex-1 rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent"
             />
-            <Button type="submit" size="sm" variant="accent" disabled={!draft.trim() || !viewerId} aria-label={t('space-send', { defaultValue: 'Send' })}>
+            <Button
+              type="submit"
+              size="sm"
+              variant="accent"
+              disabled={!draft.trim() || !viewerId}
+              aria-label={t('space-send', { defaultValue: 'Send' })}
+            >
               <Send className="h-4 w-4" aria-hidden />
             </Button>
           </form>
@@ -430,7 +484,15 @@ export function SpaceRoom({ initialSpace }: { initialSpace: SpaceView }) {
   );
 }
 
-function MessageRow({ name, image, body }: { name: string | null; image: string | null; body: string }) {
+function MessageRow({
+  name,
+  image,
+  body,
+}: {
+  name: string | null;
+  image: string | null;
+  body: string;
+}) {
   return (
     <div className="flex items-start gap-2">
       <Avatar name={name} image={image} />

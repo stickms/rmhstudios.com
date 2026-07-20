@@ -1,8 +1,13 @@
-import i18next, { type i18n } from "i18next";
-import { initReactI18next } from "react-i18next";
-import { buildInitOptions, DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
-import { EN_CORE_RESOURCES, loadEnResources, LOCALE_LOADERS, type LocaleBundle } from "@/lib/i18n/resources";
-import { localeCoreResources } from "@/lib/i18n/resources.server";
+import i18next, { type i18n } from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import { buildInitOptions, DEFAULT_LOCALE, type Locale } from '@/lib/i18n/config';
+import {
+  EN_CORE_RESOURCES,
+  loadEnResources,
+  LOCALE_LOADERS,
+  type LocaleBundle,
+} from '@/lib/i18n/resources';
+import { localeCoreResources } from '@/lib/i18n/resources.server';
 
 /**
  * One initialized instance PER LOCALE, cached at module scope (perf audit §4.3).
@@ -90,7 +95,7 @@ async function backfillLocaleRest(locale: Locale): Promise<void> {
  * always bundled; zh/ar resolve to their own dynamically-imported chunks.
  */
 async function loadAndSwitch(locale: Locale): Promise<void> {
-  if (locale !== DEFAULT_LOCALE && !clientI18n.hasResourceBundle(locale, "common")) {
+  if (locale !== DEFAULT_LOCALE && !clientI18n.hasResourceBundle(locale, 'common')) {
     const bundle = await LOCALE_LOADERS[locale]();
     for (const [ns, data] of Object.entries(bundle)) {
       clientI18n.addResourceBundle(locale, ns, data, true, true);

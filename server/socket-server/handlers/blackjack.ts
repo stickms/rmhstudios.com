@@ -10,51 +10,66 @@ import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../prisma-client';
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
-import { type Card, createShoe, handValue, isBlackjack, isBusted } from '../../../lib/blackjack/logic';
+import {
+  type Card,
+  createShoe,
+  handValue,
+  isBlackjack,
+  isBusted,
+} from '../../../lib/blackjack/logic';
 
 // ── Event Constants ────────────────────────────────────────────────
 
 const C2S = {
-  LIST_ROOMS:    'bj:list_rooms',
-  CREATE_ROOM:   'bj:create_room',
-  JOIN_ROOM:     'bj:join_room',
-  LEAVE_ROOM:    'bj:leave_room',
-  UPDATE_ROOM:   'bj:update_room',
-  PLACE_BET:     'bj:place_bet',
-  HIT:           'bj:hit',
-  STAND:         'bj:stand',
-  DOUBLE_DOWN:   'bj:double_down',
+  LIST_ROOMS: 'bj:list_rooms',
+  CREATE_ROOM: 'bj:create_room',
+  JOIN_ROOM: 'bj:join_room',
+  LEAVE_ROOM: 'bj:leave_room',
+  UPDATE_ROOM: 'bj:update_room',
+  PLACE_BET: 'bj:place_bet',
+  HIT: 'bj:hit',
+  STAND: 'bj:stand',
+  DOUBLE_DOWN: 'bj:double_down',
   TAKE_INSURANCE: 'bj:take_insurance',
   DECLINE_INSURANCE: 'bj:decline_insurance',
-  SPLIT:          'bj:split',
+  SPLIT: 'bj:split',
 } as const;
 
 const S2C = {
-  ROOM_LIST:       'bj:room_list',
-  ROOM_CREATED:    'bj:room_created',
-  ROOM_JOINED:     'bj:room_joined',
-  ROOM_LEFT:       'bj:room_left',
-  ROOM_UPDATED:    'bj:room_updated',
-  TABLE_STATE:     'bj:table_state',
-  PLAYER_JOINED:   'bj:player_joined',
-  PLAYER_LEFT:     'bj:player_left',
-  BETTING_PHASE:   'bj:betting_phase',
-  DEAL:            'bj:deal',
-  TURN:            'bj:turn',
-  CARD_DEALT:      'bj:card_dealt',
-  DEALER_REVEAL:   'bj:dealer_reveal',
-  ROUND_RESULTS:   'bj:round_results',
-  BALANCE_UPDATE:  'bj:balance_update',
-  ERROR:           'bj:error',
+  ROOM_LIST: 'bj:room_list',
+  ROOM_CREATED: 'bj:room_created',
+  ROOM_JOINED: 'bj:room_joined',
+  ROOM_LEFT: 'bj:room_left',
+  ROOM_UPDATED: 'bj:room_updated',
+  TABLE_STATE: 'bj:table_state',
+  PLAYER_JOINED: 'bj:player_joined',
+  PLAYER_LEFT: 'bj:player_left',
+  BETTING_PHASE: 'bj:betting_phase',
+  DEAL: 'bj:deal',
+  TURN: 'bj:turn',
+  CARD_DEALT: 'bj:card_dealt',
+  DEALER_REVEAL: 'bj:dealer_reveal',
+  ROUND_RESULTS: 'bj:round_results',
+  BALANCE_UPDATE: 'bj:balance_update',
+  ERROR: 'bj:error',
   INSURANCE_OFFER: 'bj:insurance_offer',
   INSURANCE_RESOLVED: 'bj:insurance_resolved',
 } as const;
 
 // ── Types ──────────────────────────────────────────────────────────
 
-type PlayerStatus = 'waiting' | 'betting' | 'playing' | 'standing' | 'busted' | 'blackjack' | 'done';
+type PlayerStatus =
+  'waiting' | 'betting' | 'playing' | 'standing' | 'busted' | 'blackjack' | 'done';
 type HandResult = 'win' | 'lose' | 'push' | 'blackjack' | null;
-type TablePhase = 'idle' | 'betting' | 'insurance' | 'dealing' | 'player_turns' | 'dealer_turn' | 'payout' | 'results';
+type TablePhase =
+  | 'idle'
+  | 'betting'
+  | 'insurance'
+  | 'dealing'
+  | 'player_turns'
+  | 'dealer_turn'
+  | 'payout'
+  | 'results';
 
 /**
  * A single playable hand. Every dealt seat has at least one hand; splitting
@@ -90,7 +105,7 @@ interface PlayerSeat {
   // (waiting/betting); the per-hand status lives on each Hand.
   status: PlayerStatus;
   result: HandResult; // main-hand result, for wire compatibility
-  payout: number;     // total payout across all hands + insurance
+  payout: number; // total payout across all hands + insurance
   insuranceBet: number;
   insuranceDecision: 'pending' | 'taken' | 'declined';
   insuranceResult: 'won' | 'lost' | null;
@@ -263,9 +278,10 @@ function serializeTableState(room: BlackjackRoom) {
     bettingCountdown: room.bettingDeadline
       ? Math.max(0, Math.ceil((room.bettingDeadline - Date.now()) / 1000))
       : null,
-    turnTimeout: room.currentTurnUserId && room.turnDeadline
-      ? Math.max(0, Math.ceil((room.turnDeadline - Date.now()) / 1000))
-      : null,
+    turnTimeout:
+      room.currentTurnUserId && room.turnDeadline
+        ? Math.max(0, Math.ceil((room.turnDeadline - Date.now()) / 1000))
+        : null,
   };
 }
 
@@ -300,10 +316,22 @@ function getNextSeatIndex(room: BlackjackRoom): number {
 // ── Round Lifecycle ────────────────────────────────────────────────
 
 function clearTimers(room: BlackjackRoom) {
-  if (room.bettingTimer) { clearTimeout(room.bettingTimer); room.bettingTimer = null; }
-  if (room.resultsTimer) { clearTimeout(room.resultsTimer); room.resultsTimer = null; }
-  if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
-  if (room.insuranceTimer) { clearTimeout(room.insuranceTimer); room.insuranceTimer = null; }
+  if (room.bettingTimer) {
+    clearTimeout(room.bettingTimer);
+    room.bettingTimer = null;
+  }
+  if (room.resultsTimer) {
+    clearTimeout(room.resultsTimer);
+    room.resultsTimer = null;
+  }
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
+  if (room.insuranceTimer) {
+    clearTimeout(room.insuranceTimer);
+    room.insuranceTimer = null;
+  }
 }
 
 function startBettingPhase(room: BlackjackRoom) {
@@ -572,7 +600,10 @@ function advanceToNextPlayer(room: BlackjackRoom) {
 
   room.currentTurnUserId = null;
   room.turnDeadline = null;
-  if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
   room.phase = 'dealer_turn';
   dealerTurn(room);
 }
@@ -686,7 +717,9 @@ function dealerTurn(room: BlackjackRoom) {
   // Wait for the dealer's cards to finish flipping on every client before
   // revealing the result — the delay scales with how many cards the dealer drew.
   const revealSettleMs =
-    Math.max(0, room.dealerHand.length - 1) * DEAL_STAGGER_MS + CARD_FLIP_MS + REVEAL_SETTLE_BUFFER_MS;
+    Math.max(0, room.dealerHand.length - 1) * DEAL_STAGGER_MS +
+    CARD_FLIP_MS +
+    REVEAL_SETTLE_BUFFER_MS;
   setTimeout(() => resolvePayouts(room), revealSettleMs);
 }
 
@@ -698,10 +731,19 @@ async function resolvePayouts(room: BlackjackRoom) {
   const dealerVal = handValue(room.dealerHand).value;
   const dealerBJ = isBlackjack(room.dealerHand);
 
-  const payoutUpdates: { userId: string; amount: number; result: HandResult; insurancePayout: number }[] = [];
+  const payoutUpdates: {
+    userId: string;
+    amount: number;
+    result: HandResult;
+    insurancePayout: number;
+  }[] = [];
 
   // A split hand can never be a natural blackjack, so its 21 pays even money.
-  function resolveHand(hand: Card[], bet: number, isSplit: boolean): { result: HandResult; payout: number } {
+  function resolveHand(
+    hand: Card[],
+    bet: number,
+    isSplit: boolean,
+  ): { result: HandResult; payout: number } {
     const playerVal = handValue(hand).value;
     const playerBusted = playerVal > 21;
     const playerBJ = !isSplit && isBlackjack(hand);
@@ -750,7 +792,12 @@ async function resolvePayouts(room: BlackjackRoom) {
     if (mainResult.result === 'win' || mainResult.result === 'blackjack') p.sessionStats.handsWon++;
     if (mainResult.result === 'blackjack') p.sessionStats.blackjacks++;
 
-    payoutUpdates.push({ userId: p.userId, amount: totalPayout + insurancePayout, result: p.result, insurancePayout });
+    payoutUpdates.push({
+      userId: p.userId,
+      amount: totalPayout + insurancePayout,
+      result: p.result,
+      insurancePayout,
+    });
   }
 
   try {
@@ -807,7 +854,9 @@ async function resolvePayouts(room: BlackjackRoom) {
       if (p.pendingRemoval || !sock || !sock.connected) {
         room.players.delete(uid);
         userToRoom.delete(uid);
-        ioRef.to(roomKey(room.roomId)).emit(S2C.PLAYER_LEFT, { userId: uid, seatIndex: p.seatIndex });
+        ioRef
+          .to(roomKey(room.roomId))
+          .emit(S2C.PLAYER_LEFT, { userId: uid, seatIndex: p.seatIndex });
 
         if (room.ownerId === uid && room.players.size > 0) {
           const newOwner = room.players.values().next().value!;
@@ -885,11 +934,13 @@ function onCreateRoom(socket: Socket, payload: unknown) {
   }
 
   const data = payload as any;
-  const name = typeof data?.name === 'string' ? data.name.trim().slice(0, 30) : `${userName}'s Room`;
-  const maxPlayers = typeof data?.maxPlayers === 'number'
-    ? Math.min(Math.max(Math.floor(data.maxPlayers), 2), MAX_PLAYERS_CAP)
-    : DEFAULT_MAX_PLAYERS;
-  const privacy = data?.privacy === 'unlisted' ? 'unlisted' as const : 'public' as const;
+  const name =
+    typeof data?.name === 'string' ? data.name.trim().slice(0, 30) : `${userName}'s Room`;
+  const maxPlayers =
+    typeof data?.maxPlayers === 'number'
+      ? Math.min(Math.max(Math.floor(data.maxPlayers), 2), MAX_PLAYERS_CAP)
+      : DEFAULT_MAX_PLAYERS;
+  const privacy = data?.privacy === 'unlisted' ? ('unlisted' as const) : ('public' as const);
 
   const roomId = generateRoomId();
   const joinCode = generateRoomId();
@@ -1089,8 +1140,7 @@ function leaveRoom(userId: string, socketId: string) {
   // If the player leaves while a round is live and still has money at stake,
   // keep the seat so payouts settle; detach the socket and prune after results.
   const roundActive = room.phase !== 'idle' && room.phase !== 'betting';
-  const atStake = player.bet > 0 || player.insuranceBet > 0 ||
-    player.hands.some((h) => h.bet > 0);
+  const atStake = player.bet > 0 || player.insuranceBet > 0 || player.hands.some((h) => h.bet > 0);
   if (roundActive && atStake) {
     player.pendingRemoval = true;
     player.socketId = '';
@@ -1233,9 +1283,8 @@ async function onPlaceBet(socket: Socket, payload: unknown) {
     return;
   }
 
-  const amount = typeof (payload as any)?.amount === 'number'
-    ? Math.floor((payload as any).amount)
-    : 0;
+  const amount =
+    typeof (payload as any)?.amount === 'number' ? Math.floor((payload as any).amount) : 0;
 
   if (amount < MIN_BET) {
     socket.emit(S2C.ERROR, { message: `Bet must be at least ${MIN_BET}.` });

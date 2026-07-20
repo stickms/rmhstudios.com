@@ -2,7 +2,17 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Users, MessageSquare, Megaphone, Shield, ShieldOff, UserX, X, Send } from 'lucide-react';
+import {
+  ArrowLeft,
+  Users,
+  MessageSquare,
+  Megaphone,
+  Shield,
+  ShieldOff,
+  UserX,
+  X,
+  Send,
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { VirtualPostList } from './VirtualPostList';
 import { ComposeBox } from './ComposeBox';
@@ -95,10 +105,15 @@ export function CommunityColumn({
     const willJoin = !community.joined;
     runJoin({
       apply: () =>
-        setCommunity((c) => c && { ...c, joined: willJoin, memberCount: c.memberCount + (willJoin ? 1 : -1) }),
+        setCommunity(
+          (c) => c && { ...c, joined: willJoin, memberCount: c.memberCount + (willJoin ? 1 : -1) },
+        ),
       rollback: () =>
-        setCommunity((c) => c && { ...c, joined: !willJoin, memberCount: c.memberCount + (willJoin ? -1 : 1) }),
-      commit: () => fetch(`/api/communities/${slug}/join`, { method: 'POST', credentials: 'include' }),
+        setCommunity(
+          (c) => c && { ...c, joined: !willJoin, memberCount: c.memberCount + (willJoin ? -1 : 1) },
+        ),
+      commit: () =>
+        fetch(`/api/communities/${slug}/join`, { method: 'POST', credentials: 'include' }),
       reconcile: async (res) => {
         const data = await res.json().catch(() => ({}));
         // Trust the server's authoritative membership flag.
@@ -107,15 +122,24 @@ export function CommunityColumn({
       },
       onError: (_err, res) => {
         const fail = () =>
-          toast.error(t('could-not-update-membership', { defaultValue: 'Could not update membership' }));
-        if (res) res.json().catch(() => ({})).then((d: { error?: string }) => (d.error ? toast.error(d.error) : fail()));
+          toast.error(
+            t('could-not-update-membership', { defaultValue: 'Could not update membership' }),
+          );
+        if (res)
+          res
+            .json()
+            .catch(() => ({}))
+            .then((d: { error?: string }) => (d.error ? toast.error(d.error) : fail()));
         else fail();
       },
     });
   };
 
   const removeAnnouncement = async (id: string) => {
-    const res = await fetch(`/api/communities/${slug}/announcements/${id}`, { method: 'DELETE', credentials: 'include' });
+    const res = await fetch(`/api/communities/${slug}/announcements/${id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
     if (res.ok) {
       setCommunity((c) => c && { ...c, announcements: c.announcements.filter((a) => a.id !== id) });
     } else {
@@ -135,7 +159,11 @@ export function CommunityColumn({
     );
   }
   if (!community) {
-    return <EmptyState description={t('community-not-found', { defaultValue: 'Community not found.' })} />;
+    return (
+      <EmptyState
+        description={t('community-not-found', { defaultValue: 'Community not found.' })}
+      />
+    );
   }
 
   const isMod = canModerate(community.role);
@@ -143,7 +171,11 @@ export function CommunityColumn({
   return (
     <div className="min-h-screen">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
-        <Link to="/communities" className="text-site-text-muted hover:text-site-text" aria-label={t('back-to-communities', { defaultValue: 'Back to communities' })}>
+        <Link
+          to="/communities"
+          className="text-site-text-muted hover:text-site-text"
+          aria-label={t('back-to-communities', { defaultValue: 'Back to communities' })}
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="truncate text-lg font-bold text-site-text">{community.name}</h1>
@@ -161,10 +193,20 @@ export function CommunityColumn({
             <h2 className="text-xl font-bold text-site-text">{community.name}</h2>
             <div className="mt-0.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-site-text-muted">
               <span className="inline-flex items-center gap-1">
-                <Users className="h-3.5 w-3.5" /> {t('members-stat', { count: community.memberCount, formatted: community.memberCount, defaultValue: '{{formatted}} members' })}
+                <Users className="h-3.5 w-3.5" />{' '}
+                {t('members-stat', {
+                  count: community.memberCount,
+                  formatted: community.memberCount,
+                  defaultValue: '{{formatted}} members',
+                })}
               </span>
               <span className="inline-flex items-center gap-1">
-                <MessageSquare className="h-3.5 w-3.5" /> {t('posts-stat', { count: community.postCount, formatted: community.postCount, defaultValue: '{{formatted}} posts' })}
+                <MessageSquare className="h-3.5 w-3.5" />{' '}
+                {t('posts-stat', {
+                  count: community.postCount,
+                  formatted: community.postCount,
+                  defaultValue: '{{formatted}} posts',
+                })}
               </span>
             </div>
           </div>
@@ -181,12 +223,16 @@ export function CommunityColumn({
                 disabled={joining}
                 onClick={toggleJoin}
               >
-                {community.joined ? t('joined', { defaultValue: 'Joined' }) : t('join', { defaultValue: 'Join' })}
+                {community.joined
+                  ? t('joined', { defaultValue: 'Joined' })
+                  : t('join', { defaultValue: 'Join' })}
               </Button>
             )}
           </div>
         </div>
-        {community.description && <p className="mt-2 text-sm text-site-text-muted">{community.description}</p>}
+        {community.description && (
+          <p className="mt-2 text-sm text-site-text-muted">{community.description}</p>
+        )}
       </Reveal>
 
       {/* Pinned announcements */}
@@ -194,7 +240,8 @@ export function CommunityColumn({
         <Reveal delay={0.06} className="border-b border-site-border bg-site-accent-dim/30 p-4">
           <div className="mb-2 flex items-center justify-between">
             <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
-              <Megaphone className="h-4 w-4 text-site-accent" /> {t('announcements', { defaultValue: 'Announcements' })}
+              <Megaphone className="h-4 w-4 text-site-accent" />{' '}
+              {t('announcements', { defaultValue: 'Announcements' })}
             </h3>
             {isMod && (
               <Button size="sm" variant="ghost" onClick={() => setAnnounceOpen(true)}>
@@ -203,20 +250,40 @@ export function CommunityColumn({
             )}
           </div>
           {community.announcements.length === 0 ? (
-            <p className="text-xs text-site-text-dim">{t('no-announcements', { defaultValue: 'No announcements yet.' })}</p>
+            <p className="text-xs text-site-text-dim">
+              {t('no-announcements', { defaultValue: 'No announcements yet.' })}
+            </p>
           ) : (
             <ul className="flex flex-col gap-2">
               {community.announcements.map((a) => (
-                <li key={a.id} className="rounded-site border border-site-border bg-site-surface p-3">
+                <li
+                  key={a.id}
+                  className="rounded-site border border-site-border bg-site-surface p-3"
+                >
                   <div className="flex items-start gap-2">
-                    <UserAvatar src={a.author.image} alt={a.author.name ?? ''} size={28} fallbackName={a.author.name ?? undefined} className="mt-0.5 rounded-full" />
+                    <UserAvatar
+                      src={a.author.image}
+                      alt={a.author.name ?? ''}
+                      size={28}
+                      fallbackName={a.author.name ?? undefined}
+                      className="mt-0.5 rounded-full"
+                    />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 text-xs text-site-text-muted">
-                        <span className="font-medium text-site-text">{a.author.name ?? (a.author.handle ? `@${a.author.handle}` : t('someone', { defaultValue: 'Someone' }))}</span>
+                        <span className="font-medium text-site-text">
+                          {a.author.name ??
+                            (a.author.handle
+                              ? `@${a.author.handle}`
+                              : t('someone', { defaultValue: 'Someone' }))}
+                        </span>
                         <span>·</span>
-                        <span>{formatDistanceToNow(new Date(a.createdAt), { addSuffix: true })}</span>
+                        <span>
+                          {formatDistanceToNow(new Date(a.createdAt), { addSuffix: true })}
+                        </span>
                       </div>
-                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-site-text">{a.body}</p>
+                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-site-text">
+                        {a.body}
+                      </p>
                     </div>
                     {isMod && (
                       <button
@@ -245,7 +312,9 @@ export function CommunityColumn({
       )}
 
       {items.length === 0 ? (
-        <EmptyState description={t('no-posts-yet', { defaultValue: 'No posts yet. Be the first!' })} />
+        <EmptyState
+          description={t('no-posts-yet', { defaultValue: 'No posts yet. Be the first!' })}
+        />
       ) : (
         <VirtualPostList items={items} />
       )}
@@ -254,13 +323,25 @@ export function CommunityColumn({
         <AnnounceDialog slug={slug} onClose={() => setAnnounceOpen(false)} onPosted={onAnnounced} />
       )}
       {membersOpen && (
-        <MembersDialog slug={slug} viewerId={session?.user?.id ?? null} onClose={() => setMembersOpen(false)} />
+        <MembersDialog
+          slug={slug}
+          viewerId={session?.user?.id ?? null}
+          onClose={() => setMembersOpen(false)}
+        />
       )}
     </div>
   );
 }
 
-function AnnounceDialog({ slug, onClose, onPosted }: { slug: string; onClose: () => void; onPosted: (a: Announcement) => void }) {
+function AnnounceDialog({
+  slug,
+  onClose,
+  onPosted,
+}: {
+  slug: string;
+  onClose: () => void;
+  onPosted: (a: Announcement) => void;
+}) {
   const { t } = useTranslation('feed');
   const [body, setBody] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -291,7 +372,9 @@ function AnnounceDialog({ slug, onClose, onPosted }: { slug: string; onClose: ()
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t('post-announcement-title', { defaultValue: 'Post an announcement' })}</DialogTitle>
+          <DialogTitle>
+            {t('post-announcement-title', { defaultValue: 'Post an announcement' })}
+          </DialogTitle>
         </DialogHeader>
         <textarea
           autoFocus
@@ -299,13 +382,20 @@ function AnnounceDialog({ slug, onClose, onPosted }: { slug: string; onClose: ()
           maxLength={2000}
           rows={4}
           onChange={(e) => setBody(e.target.value)}
-          placeholder={t('announcement-placeholder', { defaultValue: 'Share an update with the community…' })}
+          placeholder={t('announcement-placeholder', {
+            defaultValue: 'Share an update with the community…',
+          })}
           className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
         />
         <div className="flex justify-end gap-2">
-          <Button variant="ghost" onClick={onClose} disabled={submitting}>{t('cancel-button', { defaultValue: 'Cancel' })}</Button>
+          <Button variant="ghost" onClick={onClose} disabled={submitting}>
+            {t('cancel-button', { defaultValue: 'Cancel' })}
+          </Button>
           <Button variant="accent" onClick={submit} disabled={submitting || !body.trim()}>
-            <Send className="h-4 w-4" /> {submitting ? t('posting', { defaultValue: 'Posting…' }) : t('post-button', { defaultValue: 'Post' })}
+            <Send className="h-4 w-4" />{' '}
+            {submitting
+              ? t('posting', { defaultValue: 'Posting…' })
+              : t('post-button', { defaultValue: 'Post' })}
           </Button>
         </div>
       </DialogContent>
@@ -313,7 +403,15 @@ function AnnounceDialog({ slug, onClose, onPosted }: { slug: string; onClose: ()
   );
 }
 
-function MembersDialog({ slug, viewerId, onClose }: { slug: string; viewerId: string | null; onClose: () => void }) {
+function MembersDialog({
+  slug,
+  viewerId,
+  onClose,
+}: {
+  slug: string;
+  viewerId: string | null;
+  onClose: () => void;
+}) {
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
   const [members, setMembers] = useState<Member[]>([]);
@@ -355,10 +453,22 @@ function MembersDialog({ slug, viewerId, onClose }: { slug: string; viewerId: st
   };
 
   const kick = async (m: Member) => {
-    if (!(await confirm({ title: t('kick-confirm', { name: m.name ?? m.handle ?? 'this member', defaultValue: 'Remove {{name}} from the community?' }), danger: true }))) return;
+    if (
+      !(await confirm({
+        title: t('kick-confirm', {
+          name: m.name ?? m.handle ?? 'this member',
+          defaultValue: 'Remove {{name}} from the community?',
+        }),
+        danger: true,
+      }))
+    )
+      return;
     setBusy(m.id);
     try {
-      const res = await fetch(`/api/communities/${slug}/members/${m.id}`, { method: 'DELETE', credentials: 'include' });
+      const res = await fetch(`/api/communities/${slug}/members/${m.id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
       const data = await res.json().catch(() => ({}));
       if (res.ok) setMembers((prev) => prev.filter((x) => x.id !== m.id));
       else toast.error(data.error || t('action-failed', { defaultValue: 'Action failed' }));
@@ -384,7 +494,9 @@ function MembersDialog({ slug, viewerId, onClose }: { slug: string; viewerId: st
           <DialogTitle>{t('members-title', { defaultValue: 'Members' })}</DialogTitle>
         </DialogHeader>
         {loading ? (
-          <div className="flex justify-center py-10"><Spinner size={20} /></div>
+          <div className="flex justify-center py-10">
+            <Spinner size={20} />
+          </div>
         ) : (
           <ul className="max-h-[60vh] divide-y divide-site-border overflow-y-auto">
             {members.map((m) => {
@@ -394,9 +506,18 @@ function MembersDialog({ slug, viewerId, onClose }: { slug: string; viewerId: st
               const canAlterMod = canTouch && (isAdmin || m.role === 'MEMBER');
               return (
                 <li key={m.id} className="flex items-center gap-3 py-2.5">
-                  <UserAvatar src={m.image} alt={m.name ?? ''} size={32} fallbackName={m.name ?? undefined} className="rounded-full" />
+                  <UserAvatar
+                    src={m.image}
+                    alt={m.name ?? ''}
+                    size={32}
+                    fallbackName={m.name ?? undefined}
+                    className="rounded-full"
+                  />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-site-text">{m.name ?? (m.handle ? `@${m.handle}` : t('someone', { defaultValue: 'Someone' }))}</p>
+                    <p className="truncate text-sm font-medium text-site-text">
+                      {m.name ??
+                        (m.handle ? `@${m.handle}` : t('someone', { defaultValue: 'Someone' }))}
+                    </p>
                     <p className="text-xs text-site-text-dim">{roleLabel(m.role)}</p>
                   </div>
                   {canAlterMod && (
@@ -405,9 +526,17 @@ function MembersDialog({ slug, viewerId, onClose }: { slug: string; viewerId: st
                       disabled={busy === m.id}
                       onClick={() => setRole(m, m.role === 'MOD' ? 'MEMBER' : 'MOD')}
                       className="rounded-site-sm p-1.5 text-site-text-muted hover:bg-site-surface-hover hover:text-site-text disabled:opacity-50"
-                      title={m.role === 'MOD' ? t('remove-mod', { defaultValue: 'Remove mod' }) : t('make-mod', { defaultValue: 'Make mod' })}
+                      title={
+                        m.role === 'MOD'
+                          ? t('remove-mod', { defaultValue: 'Remove mod' })
+                          : t('make-mod', { defaultValue: 'Make mod' })
+                      }
                     >
-                      {m.role === 'MOD' ? <ShieldOff className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
+                      {m.role === 'MOD' ? (
+                        <ShieldOff className="h-4 w-4" />
+                      ) : (
+                        <Shield className="h-4 w-4" />
+                      )}
                     </button>
                   )}
                   {canTouch && (m.role === 'MEMBER' || isAdmin) && (

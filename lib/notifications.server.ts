@@ -77,7 +77,7 @@ export interface NotificationListItem {
  */
 export async function listNotifications(
   userId: string,
-  opts: { cursor?: string | null; limit?: number } = {}
+  opts: { cursor?: string | null; limit?: number } = {},
 ): Promise<{ items: NotificationListItem[]; nextCursor: string | null }> {
   const limit = Math.min(Math.max(opts.limit ?? 20, 1), 50);
   const rows = await prisma.notification.findMany({
@@ -99,7 +99,7 @@ export async function listNotifications(
     createdAt: n.createdAt.toISOString(),
     actor: n.actor ? resolveUser(n.actor) : null,
   }));
-  return { items, nextCursor: hasMore ? items[items.length - 1]?.id ?? null : null };
+  return { items, nextCursor: hasMore ? (items[items.length - 1]?.id ?? null) : null };
 }
 
 export interface CreateNotificationInput {
@@ -121,7 +121,10 @@ export interface CreateNotificationInput {
 }
 
 /** Which preference column governs each notification type. */
-const PREF_FIELD: Record<NotificationType, 'likes' | 'comments' | 'follows' | 'mentions' | 'reposts' | 'system'> = {
+const PREF_FIELD: Record<
+  NotificationType,
+  'likes' | 'comments' | 'follows' | 'mentions' | 'reposts' | 'system'
+> = {
   LIKE: 'likes',
   COMMENT: 'comments',
   REPLY: 'comments',

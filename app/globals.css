@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 /* Self-hosted Inter (the body/display font) — served same-origin from the build
    output instead of Google Fonts, so first paint no longer depends on a
    third-party origin (perf audit §6.3). `wght.css` is the weight-axis-only,
@@ -6,7 +6,7 @@
    browser fetches only the subset it needs (latin for most) and text paints
    immediately in the system fallback until it arrives. Decorative/theme fonts
    stay on idle-deferred Google Fonts (off the critical path — see __root.tsx). */
-@import "@fontsource-variable/inter/wght.css";
+@import '@fontsource-variable/inter/wght.css';
 
 /* Scope Tailwind's content scanning to code that actually renders in the browser.
    Without this, auto-detection also scans build/test/infra/docs directories and
@@ -29,20 +29,20 @@
 /* Inter is self-hosted (@fontsource-variable/inter, imported above); the rest
    load via the idle-deferred Google Fonts CSS link in __root.tsx. */
 :root {
-  --font-nunito: "Nunito", sans-serif;
-  --font-inter: "Inter Variable", "Inter", sans-serif;
-  --font-jetbrains-mono: "JetBrains Mono", monospace;
-  --font-playfair: "Playfair Display", serif;
-  --font-bangers: "Bangers", cursive;
-  --font-bebas-neue: "Bebas Neue", sans-serif;
-  --font-orbitron: "Orbitron", sans-serif;
-  --font-cinzel: "Cinzel", serif;
-  --font-pacifico: "Pacifico", cursive;
-  --font-space-grotesk: "Space Grotesk", sans-serif;
-  --font-permanent-marker: "Permanent Marker", cursive;
-  --font-caveat: "Caveat", cursive;
-  --font-dancing-script: "Dancing Script", cursive;
-  --font-patrick-hand: "Patrick Hand", cursive;
+  --font-nunito: 'Nunito', sans-serif;
+  --font-inter: 'Inter Variable', 'Inter', sans-serif;
+  --font-jetbrains-mono: 'JetBrains Mono', monospace;
+  --font-playfair: 'Playfair Display', serif;
+  --font-bangers: 'Bangers', cursive;
+  --font-bebas-neue: 'Bebas Neue', sans-serif;
+  --font-orbitron: 'Orbitron', sans-serif;
+  --font-cinzel: 'Cinzel', serif;
+  --font-pacifico: 'Pacifico', cursive;
+  --font-space-grotesk: 'Space Grotesk', sans-serif;
+  --font-permanent-marker: 'Permanent Marker', cursive;
+  --font-caveat: 'Caveat', cursive;
+  --font-dancing-script: 'Dancing Script', cursive;
+  --font-patrick-hand: 'Patrick Hand', cursive;
 }
 
 /* Tailwind utility for the default body font */
@@ -57,10 +57,23 @@
 
 /* Dream Rift floating particle animation */
 @keyframes dreamrift-float {
-  0%, 100% { transform: translateY(0) translateX(0); opacity: 0.2; }
-  25% { transform: translateY(-20px) translateX(5px); opacity: 0.5; }
-  50% { transform: translateY(-8px) translateX(-3px); opacity: 0.3; }
-  75% { transform: translateY(-25px) translateX(8px); opacity: 0.6; }
+  0%,
+  100% {
+    transform: translateY(0) translateX(0);
+    opacity: 0.2;
+  }
+  25% {
+    transform: translateY(-20px) translateX(5px);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-8px) translateX(-3px);
+    opacity: 0.3;
+  }
+  75% {
+    transform: translateY(-25px) translateX(8px);
+    opacity: 0.6;
+  }
 }
 
 :root {
@@ -100,7 +113,7 @@
 
   /* ── Glass material contract (§3.2) — every theme re-tints these ────────── */
   /* Tint plates */
-  --site-glass-tint: rgba(255, 255, 255, 0.1);        /* L1/L2 resting fill */
+  --site-glass-tint: rgba(255, 255, 255, 0.1); /* L1/L2 resting fill */
   --site-glass-tint-strong: rgba(255, 255, 255, 0.17); /* hover / raised */
   --site-glass-ink: color-mix(in srgb, var(--site-bg) 45%, transparent); /* recessed wells */
   /* Backdrop treatment, by elevation tier */
@@ -113,9 +126,9 @@
   --site-glass-blur-overlay: 28px;
   --site-glass-saturate: 160%;
   /* Lighting — one sun, top-slightly-left (§4.2) */
-  --site-glass-rim: rgba(255, 255, 255, 0.28);      /* top specular edge */
-  --site-glass-rim-soft: rgba(255, 255, 255, 0.1);  /* hairline all-round */
-  --site-glass-light: rgba(255, 255, 255, 0.14);    /* pointer highlight */
+  --site-glass-rim: rgba(255, 255, 255, 0.28); /* top specular edge */
+  --site-glass-rim-soft: rgba(255, 255, 255, 0.1); /* hairline all-round */
+  --site-glass-light: rgba(255, 255, 255, 0.14); /* pointer highlight */
   /* Depth shadows — blur radius & tint grow together with elevation (§4.1.5) */
   --site-glass-depth: 0 24px 64px rgba(2, 10, 28, 0.6);
   --site-glass-depth-sm: 0 4px 16px rgba(2, 10, 28, 0.28);
@@ -123,17 +136,17 @@
   /* Elevation tokens — the rim lives in the shadow so Card/Dialog/etc. pick it
      up through shadow-site / shadow-site-sm with zero component changes. */
   --site-shadow:
-    inset 0 1px 0 var(--site-glass-rim),
-    inset 0 0 0 0.5px var(--site-glass-rim-soft),
+    inset 0 1px 0 var(--site-glass-rim), inset 0 0 0 0.5px var(--site-glass-rim-soft),
     var(--site-glass-depth);
   --site-shadow-sm:
-    inset 0 1px 0 var(--site-glass-rim-soft),
-    inset 0 0 0 0.5px var(--site-glass-rim-soft),
+    inset 0 1px 0 var(--site-glass-rim-soft), inset 0 0 0 0.5px var(--site-glass-rim-soft),
     var(--site-glass-depth-sm);
   --site-radius: 22px;
   --site-radius-sm: 14px;
-  --site-font-display: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
-  --site-font-body: var(--font-inter), -apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif;
+  --site-font-display:
+    var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  --site-font-body:
+    var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
   --site-font-mono: var(--font-jetbrains-mono), 'Cascadia Code', monospace;
   --site-border-width: 1px;
   --site-card-transform: translateY(-2px);
@@ -516,7 +529,7 @@
    paints the opaque base inline (no-flash script + Providers) so overscroll /
    pre-paint frames stay solid — this only layers colour on top. */
 html:not(.app-route) body::before {
-  content: "";
+  content: '';
   position: fixed;
   /* iOS 26 clips position:fixed to the VISUAL viewport (verified on-device: a
      fixed inset:0 box, and a fixed 100lvh+25vh box, both render only between the
@@ -542,7 +555,8 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
    hover cards not yet migrated to .glass-overlay) reads as frosted glass so
    content never ghosts through. Leaf elements → the containing block that
    backdrop-filter creates is harmless. Removed as consumers adopt .glass-overlay. */
-html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg:not(.fixed):not([data-drawer-active]) {
+html:not(.style-high-contrast)
+  :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg:not(.fixed):not([data-drawer-active]) {
   background-color: color-mix(in srgb, var(--site-bg) 80%, transparent);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   backdrop-filter: blur(20px) saturate(160%);
@@ -588,7 +602,7 @@ html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-b
     background: color-mix(in srgb, var(--site-bg) 40%, transparent);
   }
   .glass-chrome--aside::before {
-    content: "";
+    content: '';
     position: absolute;
     inset: 0;
     z-index: -1;
@@ -622,7 +636,9 @@ html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-b
     background: var(--site-glass-ink);
     border: var(--site-border-width) solid var(--site-border);
     border-radius: var(--site-radius-sm);
-    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.35), inset 0 -1px 0 var(--site-glass-rim-soft);
+    box-shadow:
+      inset 0 1px 2px rgb(0 0 0 / 0.35),
+      inset 0 -1px 0 var(--site-glass-rim-soft);
   }
 
   /* Full-screen fixed takeovers that must hide the page beneath (§3.3.2). */
@@ -651,7 +667,7 @@ html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-b
      --glass-px/--glass-py on the hovered [data-glass-light] element. */
   @media (hover: hover) and (pointer: fine) {
     .glass-interactive::after {
-      content: "";
+      content: '';
       position: absolute;
       inset: 0;
       z-index: 1;
@@ -677,7 +693,7 @@ html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-b
     position: relative;
   }
   .glass-refract::before {
-    content: "";
+    content: '';
     position: absolute;
     inset: 0;
     z-index: 0;
@@ -686,8 +702,12 @@ html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-b
     padding: 14px;
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
-    -webkit-mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-    mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
   }
   @supports (backdrop-filter: url(#glass-distortion)) {
     .glass-refract::before {
@@ -697,13 +717,15 @@ html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-b
   }
   /* Optional chromatic fringe on the rim — featured tier + design lab only. */
   .glass-refract--prism::after {
-    content: "";
+    content: '';
     position: absolute;
     inset: 0;
     z-index: 1;
     border-radius: inherit;
     pointer-events: none;
-    box-shadow: inset 0 0 0 1px rgba(255, 80, 120, 0.14), inset 0 0 0 2px rgba(80, 160, 255, 0.12);
+    box-shadow:
+      inset 0 0 0 1px rgba(255, 80, 120, 0.14),
+      inset 0 0 0 2px rgba(80, 160, 255, 0.12);
   }
 }
 
@@ -726,7 +748,8 @@ html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-b
 /* High Contrast: no glass at all. Neutralise every glass class to an opaque
    surface with no blur (§10); 2px borders and the yellow accent come from the
    theme tokens. */
-.style-high-contrast :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
+.style-high-contrast
+  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
   background: var(--site-surface) !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
@@ -758,7 +781,8 @@ html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-b
     display: none;
   }
 }
-html.reduce-transparency :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
+html.reduce-transparency
+  :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
   background: var(--site-surface-opaque, var(--site-surface));
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -1084,17 +1108,19 @@ html.perf-lite .glass-interactive::after {
 }
 
 .rainbow-text {
-  background: linear-gradient(90deg,
-      var(--rainbow-1),
-      var(--rainbow-2),
-      var(--rainbow-3),
-      var(--rainbow-4),
-      var(--rainbow-5),
-      var(--rainbow-6),
-      var(--rainbow-7),
-      var(--rainbow-1),
-      var(--rainbow-2),
-      var(--rainbow-3));
+  background: linear-gradient(
+    90deg,
+    var(--rainbow-1),
+    var(--rainbow-2),
+    var(--rainbow-3),
+    var(--rainbow-4),
+    var(--rainbow-5),
+    var(--rainbow-6),
+    var(--rainbow-7),
+    var(--rainbow-1),
+    var(--rainbow-2),
+    var(--rainbow-3)
+  );
   background-size: 200% 100%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -1104,7 +1130,6 @@ html.perf-lite .glass-interactive::after {
 
 /* INTENSE Glitch effect - more frequent */
 @keyframes glitch {
-
   0%,
   85%,
   100% {
@@ -1114,27 +1139,37 @@ html.perf-lite .glass-interactive::after {
 
   86% {
     transform: translate(-8px, 3px) skewX(-5deg);
-    text-shadow: 4px 0 var(--neon-cyan), -4px 0 var(--neon-pink);
+    text-shadow:
+      4px 0 var(--neon-cyan),
+      -4px 0 var(--neon-pink);
   }
 
   87% {
     transform: translate(8px, -3px) skewX(5deg);
-    text-shadow: -4px 0 var(--neon-cyan), 4px 0 var(--neon-pink);
+    text-shadow:
+      -4px 0 var(--neon-cyan),
+      4px 0 var(--neon-pink);
   }
 
   88% {
     transform: translate(-5px, 2px) skewX(-3deg);
-    text-shadow: 2px 0 var(--neon-yellow), -2px 0 var(--neon-purple);
+    text-shadow:
+      2px 0 var(--neon-yellow),
+      -2px 0 var(--neon-purple);
   }
 
   89% {
     transform: translate(5px, -2px) skewX(3deg);
-    text-shadow: -2px 0 var(--neon-green), 2px 0 var(--neon-red);
+    text-shadow:
+      -2px 0 var(--neon-green),
+      2px 0 var(--neon-red);
   }
 
   90% {
     transform: translate(-3px, 1px);
-    text-shadow: 3px 0 var(--neon-orange), -3px 0 var(--neon-blue);
+    text-shadow:
+      3px 0 var(--neon-orange),
+      -3px 0 var(--neon-blue);
   }
 }
 
@@ -1142,10 +1177,8 @@ html.perf-lite .glass-interactive::after {
   animation: glitch 2s infinite;
 }
 
-
 /* SHAKE animation */
 @keyframes shake {
-
   0%,
   100% {
     transform: translateX(0);
@@ -1192,7 +1225,6 @@ html.perf-lite .glass-interactive::after {
   animation: shake 0.5s ease-in-out infinite;
 }
 
-
 /* Neon glow effect */
 .neon-glow {
   text-shadow:
@@ -1228,24 +1260,28 @@ html.perf-lite .glass-interactive::after {
     inset 0 0 8px rgba(255, 0, 255, 0.15);
 }
 
-
 /* RAINBOW GLOW - animated box shadow cycling through rainbow colors */
 @keyframes rainbow-glow {
-
   0%,
   100% {
     border-color: #ff0000 !important;
-    box-shadow: 0 0 12px #ff0000, 0 0 30px #ff0000 !important;
+    box-shadow:
+      0 0 12px #ff0000,
+      0 0 30px #ff0000 !important;
   }
 
   33% {
     border-color: #00ff00 !important;
-    box-shadow: 0 0 12px #00ff00, 0 0 30px #00ff00 !important;
+    box-shadow:
+      0 0 12px #00ff00,
+      0 0 30px #00ff00 !important;
   }
 
   66% {
     border-color: #0000ff !important;
-    box-shadow: 0 0 12px #0000ff, 0 0 30px #0000ff !important;
+    box-shadow:
+      0 0 12px #0000ff,
+      0 0 30px #0000ff !important;
   }
 }
 
@@ -1255,7 +1291,6 @@ html.perf-lite .glass-interactive::after {
 
 /* Inner rainbow glow for cards - simplified for performance */
 @keyframes rainbow-glow-inner {
-
   0%,
   100% {
     border-color: rgba(255, 255, 255, 0.6) !important;
@@ -1286,10 +1321,8 @@ html.perf-lite .glass-interactive::after {
   animation: rainbow-glow-inner 2s linear infinite !important;
 }
 
-
 /* ==================== REDUCED MOTION ==================== */
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {
@@ -1304,10 +1337,7 @@ html.perf-lite .glass-interactive::after {
   }
 
   .rainbow-text {
-    background: linear-gradient(90deg,
-        var(--neon-pink),
-        var(--neon-cyan),
-        var(--neon-purple));
+    background: linear-gradient(90deg, var(--neon-pink), var(--neon-cyan), var(--neon-purple));
     background-size: 100% 100%;
   }
 
@@ -1327,7 +1357,6 @@ html.perf-lite .glass-interactive::after {
     animation: none !important;
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.2) !important;
   }
-
 }
 
 /* ==================== BASE STYLES ==================== */
@@ -1432,16 +1461,16 @@ select:-webkit-autofill:focus {
    mouse/tap). The design-system Button already draws its own ring, so it's
    excluded to avoid doubling up. */
 a:focus-visible,
-button:not([data-slot="button"]):focus-visible,
+button:not([data-slot='button']):focus-visible,
 select:focus-visible,
 textarea:focus-visible,
 input:focus-visible,
 summary:focus-visible,
-[role="button"]:focus-visible,
-[role="tab"]:focus-visible,
-[role="link"]:focus-visible,
-[role="menuitem"]:focus-visible,
-[tabindex]:not([tabindex="-1"]):focus-visible {
+[role='button']:focus-visible,
+[role='tab']:focus-visible,
+[role='link']:focus-visible,
+[role='menuitem']:focus-visible,
+[tabindex]:not([tabindex='-1']):focus-visible {
   outline: 2px solid var(--site-accent);
   outline-offset: 2px;
 }
@@ -1452,15 +1481,15 @@ summary:focus-visible,
    ring still applies to buttons, checkboxes, radios, links, etc. */
 textarea:focus-visible,
 input:not([type]):focus-visible,
-input[type="text"]:focus-visible,
-input[type="search"]:focus-visible,
-input[type="email"]:focus-visible,
-input[type="password"]:focus-visible,
-input[type="url"]:focus-visible,
-input[type="tel"]:focus-visible,
-input[type="number"]:focus-visible,
-[contenteditable="true"]:focus-visible,
-[contenteditable=""]:focus-visible {
+input[type='text']:focus-visible,
+input[type='search']:focus-visible,
+input[type='email']:focus-visible,
+input[type='password']:focus-visible,
+input[type='url']:focus-visible,
+input[type='tel']:focus-visible,
+input[type='number']:focus-visible,
+[contenteditable='true']:focus-visible,
+[contenteditable='']:focus-visible {
   outline: none;
 }
 
@@ -1488,19 +1517,19 @@ summary,
 input,
 select,
 textarea,
-[role="button"],
-[role="tab"],
-[role="menuitem"] {
+[role='button'],
+[role='tab'],
+[role='menuitem'] {
   -webkit-tap-highlight-color: transparent;
 }
 
 /* Press feedback on tap/click — opacity only, so there's never a layout
    shift, and it reads on both touch and mouse. Disabled controls stay inert. */
 a:active,
-button:not(:disabled):not([aria-disabled="true"]):active,
-[role="button"]:not([aria-disabled="true"]):active,
-[role="tab"]:active,
-[role="menuitem"]:active,
+button:not(:disabled):not([aria-disabled='true']):active,
+[role='button']:not([aria-disabled='true']):active,
+[role='tab']:active,
+[role='menuitem']:active,
 summary:active {
   opacity: 0.6;
   transition: opacity 60ms ease;
@@ -1513,8 +1542,8 @@ summary:active {
 
 /* A consistent pointer cursor for things that behave like buttons but aren't
    <button>/<a> (e.g. role="button" divs). */
-[role="button"]:not(:disabled),
-[role="tab"]:not([aria-disabled="true"]),
+[role='button']:not(:disabled),
+[role='tab']:not([aria-disabled='true']),
 summary {
   cursor: pointer;
 }
@@ -1533,13 +1562,17 @@ summary {
   textarea,
   label,
   summary,
-  [role="button"],
-  [role="tab"],
-  [role="menuitem"],
-  [role="switch"],
-  [role="checkbox"] {
-    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease,
-      box-shadow 0.15s ease, opacity 0.15s ease;
+  [role='button'],
+  [role='tab'],
+  [role='menuitem'],
+  [role='switch'],
+  [role='checkbox'] {
+    transition:
+      color 0.15s ease,
+      background-color 0.15s ease,
+      border-color 0.15s ease,
+      box-shadow 0.15s ease,
+      opacity 0.15s ease;
   }
 }
 
@@ -1578,29 +1611,49 @@ img.emoji {
 
 /* Profile song vinyl record */
 @keyframes vinyl-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* News carousel progress fill */
 @keyframes progress-fill {
-  from { transform: scaleX(0); }
-  to { transform: scaleX(1); }
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
 }
 
 /* Radix Popover Animations */
 @keyframes radix-popover-content-show {
-  from { opacity: 0; transform: translateY(-4px) scale(0.96); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 @keyframes radix-popover-content-hide {
-  from { opacity: 1; transform: translateY(0) scale(1); }
-  to { opacity: 0; transform: translateY(-4px) scale(0.96); }
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
 }
-.radix-popover-animate[data-state="open"] {
+.radix-popover-animate[data-state='open'] {
   animation: radix-popover-content-show 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-.radix-popover-animate[data-state="closed"] {
+.radix-popover-animate[data-state='closed'] {
   animation: radix-popover-content-hide 150ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -1610,83 +1663,93 @@ img.emoji {
 
 :root {
   /* Doctrine Design Tokens */
-  --doctrine-bg-primary: #0A0A0B;
+  --doctrine-bg-primary: #0a0a0b;
   --doctrine-bg-secondary: #141416;
-  --doctrine-bg-tertiary: #1C1C20;
+  --doctrine-bg-tertiary: #1c1c20;
   --doctrine-bg-elevated: #232328;
-  --doctrine-text-primary: #F5F5F5;
-  --doctrine-text-secondary: #A1A1AA;
-  --doctrine-text-muted: #52525B;
-  --doctrine-accent: #F97316;
+  --doctrine-text-primary: #f5f5f5;
+  --doctrine-text-secondary: #a1a1aa;
+  --doctrine-text-muted: #52525b;
+  --doctrine-accent: #f97316;
   --doctrine-accent-muted: rgba(249, 115, 22, 0.2);
-  --doctrine-success: #22C55E;
-  --doctrine-warning: #EAB308;
-  --doctrine-error: #EF4444;
+  --doctrine-success: #22c55e;
+  --doctrine-warning: #eab308;
+  --doctrine-error: #ef4444;
 
   /* Tier Colors */
-  --doctrine-tier-public: #6B7280;
-  --doctrine-tier-insider: #F59E0B;
-  --doctrine-tier-operator: #EF4444;
+  --doctrine-tier-public: #6b7280;
+  --doctrine-tier-insider: #f59e0b;
+  --doctrine-tier-operator: #ef4444;
 
   /* Reaction Colors */
-  --doctrine-reaction-fire: #F97316;
-  --doctrine-reaction-based: #22C55E;
-  --doctrine-reaction-mid: #6B7280;
-  --doctrine-reaction-cringe: #A855F7;
-  --doctrine-reaction-trash: #EF4444;
-  --doctrine-reaction-tung: #A16207;
+  --doctrine-reaction-fire: #f97316;
+  --doctrine-reaction-based: #22c55e;
+  --doctrine-reaction-mid: #6b7280;
+  --doctrine-reaction-cringe: #a855f7;
+  --doctrine-reaction-trash: #ef4444;
+  --doctrine-reaction-tung: #a16207;
 }
 
 /* ─── Safehouse Theme (Kiriakou) ─────────────────────────────────────────── */
-[data-theme="safehouse"] {
+[data-theme='safehouse'] {
   --doctrine-bg-primary: #030712;
-  --doctrine-bg-secondary: #0C1220;
+  --doctrine-bg-secondary: #0c1220;
   --doctrine-bg-tertiary: #111827;
-  --doctrine-accent: #22D3EE;
+  --doctrine-accent: #22d3ee;
   --doctrine-accent-muted: rgba(34, 211, 238, 0.2);
 }
 
 /* ─── Sahur Theme (Tung Tung Tung) ───────────────────────────────────────── */
-[data-theme="sahur"] {
-  --doctrine-bg-primary: #1A0F00;
-  --doctrine-bg-secondary: #2D1A00;
-  --doctrine-bg-tertiary: #3D2400;
-  --doctrine-accent: #F59E0B;
+[data-theme='sahur'] {
+  --doctrine-bg-primary: #1a0f00;
+  --doctrine-bg-secondary: #2d1a00;
+  --doctrine-bg-tertiary: #3d2400;
+  --doctrine-accent: #f59e0b;
   --doctrine-accent-muted: rgba(245, 158, 11, 0.2);
-  --doctrine-text-primary: #FDE68A;
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ctext y='20' font-size='20'%3E🪵%3C/text%3E%3C/svg%3E"), auto;
+  --doctrine-text-primary: #fde68a;
+  cursor:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Ctext y='20' font-size='20'%3E🪵%3C/text%3E%3C/svg%3E"),
+    auto;
 }
 
-[data-theme="sahur"] * {
+[data-theme='sahur'] * {
   cursor: inherit;
 }
 
 /* Sahur wood-grain background texture */
-[data-theme="sahur"]::before {
+[data-theme='sahur']::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: -1;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      transparent,
-      transparent 2px,
-      rgba(139, 92, 42, 0.04) 2px,
-      rgba(139, 92, 42, 0.04) 4px
-    );
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 2px,
+    rgba(139, 92, 42, 0.04) 2px,
+    rgba(139, 92, 42, 0.04) 4px
+  );
   pointer-events: none;
 }
 
 /* Sahur screen shake on button clicks */
 @keyframes doctrine-shake {
-  0%, 100% { transform: translate(0); }
-  25% { transform: translate(-2px, 1px); }
-  50% { transform: translate(2px, -1px); }
-  75% { transform: translate(-1px, 2px); }
+  0%,
+  100% {
+    transform: translate(0);
+  }
+  25% {
+    transform: translate(-2px, 1px);
+  }
+  50% {
+    transform: translate(2px, -1px);
+  }
+  75% {
+    transform: translate(-1px, 2px);
+  }
 }
 
-[data-theme="sahur"] button:active {
+[data-theme='sahur'] button:active {
   animation: doctrine-shake 0.15s ease-in-out;
 }
 
@@ -1704,10 +1767,18 @@ img.emoji {
 
 /* ─── Streak loss animation ──────────────────────────────────────────────── */
 @keyframes doctrine-streak-loss {
-  0% { filter: none; }
-  15% { filter: brightness(2) saturate(0); }
-  30% { filter: brightness(0.5); }
-  100% { filter: none; }
+  0% {
+    filter: none;
+  }
+  15% {
+    filter: brightness(2) saturate(0);
+  }
+  30% {
+    filter: brightness(0.5);
+  }
+  100% {
+    filter: none;
+  }
 }
 
 .doctrine-streak-lost {
@@ -1736,7 +1807,7 @@ img.emoji {
 .coming-soon-vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.7) 100%);
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.7) 100%);
   pointer-events: none;
 }
 
@@ -1754,43 +1825,61 @@ img.emoji {
 }
 
 .coming-soon-shape-a {
-  width: 400px; height: 400px;
+  width: 400px;
+  height: 400px;
   background: radial-gradient(circle, #6366f1, transparent 70%);
-  top: -100px; left: -100px;
+  top: -100px;
+  left: -100px;
   animation-duration: 22s;
 }
 .coming-soon-shape-b {
-  width: 300px; height: 300px;
+  width: 300px;
+  height: 300px;
   background: radial-gradient(circle, #8b5cf6, transparent 70%);
-  bottom: -80px; right: -80px;
+  bottom: -80px;
+  right: -80px;
   animation-duration: 28s;
   animation-direction: reverse;
 }
 .coming-soon-shape-c {
-  width: 200px; height: 200px;
+  width: 200px;
+  height: 200px;
   background: radial-gradient(circle, #a78bfa, transparent 70%);
-  top: 30%; left: 60%;
+  top: 30%;
+  left: 60%;
   animation-duration: 18s;
 }
 .coming-soon-shape-d {
-  width: 250px; height: 250px;
+  width: 250px;
+  height: 250px;
   background: radial-gradient(circle, #4f46e5, transparent 70%);
-  top: 60%; left: 20%;
+  top: 60%;
+  left: 20%;
   animation-duration: 25s;
   animation-direction: reverse;
 }
 .coming-soon-shape-e {
-  width: 180px; height: 180px;
+  width: 180px;
+  height: 180px;
   background: radial-gradient(circle, #7c3aed, transparent 70%);
-  top: 10%; right: 25%;
+  top: 10%;
+  right: 25%;
   animation-duration: 20s;
 }
 
 @keyframes coming-soon-drift {
-  0%   { transform: translate(0, 0) scale(1); }
-  33%  { transform: translate(40px, -30px) scale(1.1); }
-  66%  { transform: translate(-20px, 40px) scale(0.95); }
-  100% { transform: translate(0, 0) scale(1); }
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(40px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 40px) scale(0.95);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
 }
 
 .coming-soon-center {
@@ -1832,7 +1921,7 @@ img.emoji {
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
   background: rgba(255, 255, 255, 0.04);
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   transition: border-color 0.2s;
 }
 
@@ -1853,7 +1942,7 @@ img.emoji {
 }
 
 .coming-soon-input-shell input::placeholder {
-  color: rgba(255,255,255,0.25);
+  color: rgba(255, 255, 255, 0.25);
 }
 
 .coming-soon-input-shell button {
@@ -1873,7 +1962,7 @@ img.emoji {
 
 .coming-soon-message {
   font-size: 0.75rem;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255, 255, 255, 0.4);
   min-height: 1.2em;
 }
 
@@ -1893,31 +1982,66 @@ input[type='number'] {
 }
 
 /* ----- RTL support (Arabic) ----- */
-[dir="rtl"] body { text-align: right; }
+[dir='rtl'] body {
+  text-align: right;
+}
 /* Flip directional chevron/arrow icons that imply forward/back. */
-[dir="rtl"] .rtl-flip { transform: scaleX(-1); }
+[dir='rtl'] .rtl-flip {
+  transform: scaleX(-1);
+}
 
 /* ─── Dream Rift menu animations ─────────────────────────────────────────
  * Staggered entrance for menu items and a gentle title float. Respects the
  * user's reduced-motion preference. */
 @keyframes dr-rise {
-  from { opacity: 0; transform: translateY(14px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes dr-float {
-  0%, 100% { transform: translateY(0); }
-  50%      { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 @keyframes dr-title-glow {
-  0%, 100% { filter: drop-shadow(0 0 18px rgba(212,64,90,0.5)) drop-shadow(0 0 6px rgba(231,205,140,0.55)); }
-  50%      { filter: drop-shadow(0 0 30px rgba(231,205,140,0.6)) drop-shadow(0 0 10px rgba(212,64,90,0.5)); }
+  0%,
+  100% {
+    filter: drop-shadow(0 0 18px rgba(212, 64, 90, 0.5))
+      drop-shadow(0 0 6px rgba(231, 205, 140, 0.55));
+  }
+  50% {
+    filter: drop-shadow(0 0 30px rgba(231, 205, 140, 0.6))
+      drop-shadow(0 0 10px rgba(212, 64, 90, 0.5));
+  }
 }
-.dr-rise { opacity: 0; animation: dr-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; }
-.dr-float { animation: dr-float 4.5s ease-in-out infinite; }
-.dr-title-glow { animation: dr-title-glow 5s ease-in-out infinite; }
+.dr-rise {
+  opacity: 0;
+  animation: dr-rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+.dr-float {
+  animation: dr-float 4.5s ease-in-out infinite;
+}
+.dr-title-glow {
+  animation: dr-title-glow 5s ease-in-out infinite;
+}
 @media (prefers-reduced-motion: reduce) {
-  .dr-rise { opacity: 1; animation: none; }
-  .dr-float, .dr-title-glow { animation: none; }
+  .dr-rise {
+    opacity: 1;
+    animation: none;
+  }
+  .dr-float,
+  .dr-title-glow {
+    animation: none;
+  }
 }
 
 /* ─── Dream Rift — authentic Touhou STG skin ─────────────────────────────
@@ -1944,8 +2068,7 @@ input[type='number'] {
 /* Ornate brass double-frame on a smoked-indigo ground — the base panel. */
 .dr-frame {
   position: relative;
-  background:
-    linear-gradient(180deg, rgba(29, 20, 48, 0.94), rgba(11, 7, 18, 0.96));
+  background: linear-gradient(180deg, rgba(29, 20, 48, 0.94), rgba(11, 7, 18, 0.96));
   border: 1px solid rgba(231, 205, 140, 0.42);
   box-shadow:
     inset 0 0 0 1px rgba(11, 7, 18, 0.9),
@@ -1963,8 +2086,18 @@ input[type='number'] {
   border: 1px solid rgba(231, 205, 140, 0.55);
   pointer-events: none;
 }
-.dr-frame::before { top: 5px; left: 5px; border-right: 0; border-bottom: 0; }
-.dr-frame::after { bottom: 5px; right: 5px; border-left: 0; border-top: 0; }
+.dr-frame::before {
+  top: 5px;
+  left: 5px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.dr-frame::after {
+  bottom: 5px;
+  right: 5px;
+  border-left: 0;
+  border-top: 0;
+}
 
 /* A thinner inset panel for stat blocks / list rows inside a frame. */
 .dr-inset {
@@ -1983,7 +2116,11 @@ input[type='number'] {
   background: linear-gradient(180deg, rgba(29, 20, 48, 0.85), rgba(13, 8, 22, 0.9));
   border: 1px solid rgba(231, 205, 140, 0.3);
   box-shadow: inset 0 1px 0 rgba(231, 205, 140, 0.12);
-  transition: color 0.16s ease, border-color 0.16s ease, background 0.16s ease, transform 0.16s ease;
+  transition:
+    color 0.16s ease,
+    border-color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
 }
 .dr-plaque:hover:not(:disabled),
 .dr-plaque:focus-visible {
@@ -1992,7 +2129,9 @@ input[type='number'] {
   background: linear-gradient(180deg, rgba(140, 36, 56, 0.5), rgba(13, 8, 22, 0.92));
   transform: translateY(-1px);
 }
-.dr-plaque:disabled { opacity: 0.4; }
+.dr-plaque:disabled {
+  opacity: 0.4;
+}
 /* Crimson cursor sigil slides in on focus, the Touhou menu pointer. */
 .dr-plaque::before {
   content: '❖';
@@ -2003,7 +2142,9 @@ input[type='number'] {
   color: var(--dr-crimson);
   font-size: 0.7em;
   opacity: 0;
-  transition: opacity 0.16s ease, transform 0.16s ease;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
 }
 .dr-plaque:hover:not(:disabled)::before,
 .dr-plaque:focus-visible::before {
@@ -2017,7 +2158,9 @@ input[type='number'] {
   background: linear-gradient(180deg, #c5364e, #8c2438);
   border-color: rgba(231, 205, 140, 0.65);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
-  box-shadow: inset 0 1px 0 rgba(255, 222, 196, 0.28), 0 6px 18px rgba(140, 36, 56, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 222, 196, 0.28),
+    0 6px 18px rgba(140, 36, 56, 0.35);
 }
 .dr-plaque-primary:hover:not(:disabled),
 .dr-plaque-primary:focus-visible {
@@ -2032,9 +2175,12 @@ input[type='number'] {
 }
 
 /* Serif lettering helpers (Cinzel display caps + Playfair body). */
-.dr-serif { font-family: var(--dr-serif); }
-.dr-serif-body { font-family: var(--dr-serif-body); }
-
+.dr-serif {
+  font-family: var(--dr-serif);
+}
+.dr-serif-body {
+  font-family: var(--dr-serif-body);
+}
 
 /* ─── Per-page content transition ────────────────────────────────────────
  * Only the content column(s) animate on navigation — the left nav rail lives
@@ -2044,8 +2190,14 @@ input[type='number'] {
  * and leaves NO lingering transform afterward (so `position: fixed`
  * descendants are unaffected once the animation settles). */
 @keyframes page-enter {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .page-root > * {
   animation: page-enter 0.22s ease-out backwards;
@@ -2115,8 +2267,14 @@ html.nav-restoring .feed-card-cv {
  * popping. `backwards` applies the start frame immediately so there's no flash
  * before the animation runs. */
 @keyframes feed-item-enter {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 .feed-item-enter {
   animation: feed-item-enter 0.35s ease-out backwards;
@@ -2136,8 +2294,12 @@ html.nav-restoring .feed-card-cv {
  * `--site-text` at low alpha keeps the highlight subtle on both light and dark
  * themes. */
 @keyframes shimmer {
-  from { background-position: 200% 0; }
-  to   { background-position: -200% 0; }
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
 }
 .animate-shimmer {
   background-image: linear-gradient(

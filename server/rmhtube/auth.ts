@@ -100,7 +100,11 @@ export async function authMiddleware(
 
     // Cache hit: reuse a recently-validated, still-unexpired session, skip the DB.
     const cached = authCache.get(token);
-    if (cached && now - cached.cachedAt < AUTH_CACHE_TTL_MS && cached.session.expiresAt.getTime() > now) {
+    if (
+      cached &&
+      now - cached.cachedAt < AUTH_CACHE_TTL_MS &&
+      cached.session.expiresAt.getTime() > now
+    ) {
       socket.data.userId = cached.session.userId;
       socket.data.userName = cached.session.userName;
       socket.data.avatarUrl = cached.session.avatarUrl;
@@ -132,13 +136,15 @@ export async function authMiddleware(
 
     next();
   } catch (err) {
-    console.error(JSON.stringify({
-      level: 'error',
-      service: 'rmhtube',
-      timestamp: new Date().toISOString(),
-      event: 'auth_validation_error',
-      error: String(err),
-    }));
+    console.error(
+      JSON.stringify({
+        level: 'error',
+        service: 'rmhtube',
+        timestamp: new Date().toISOString(),
+        event: 'auth_validation_error',
+        error: String(err),
+      }),
+    );
     next(new Error('AUTH_FAILED'));
   }
 }

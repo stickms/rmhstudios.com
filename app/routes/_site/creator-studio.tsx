@@ -44,7 +44,11 @@ function StudioPage() {
   const [tab, setTab] = useState<StudioTab>('overview');
 
   const tabs: { id: StudioTab; label: string; icon: typeof LayoutDashboard }[] = [
-    { id: 'overview', label: t('studio-overview', { defaultValue: 'Overview' }), icon: LayoutDashboard },
+    {
+      id: 'overview',
+      label: t('studio-overview', { defaultValue: 'Overview' }),
+      icon: LayoutDashboard,
+    },
     { id: 'tiers', label: t('studio-tiers', { defaultValue: 'Tiers' }), icon: Layers },
   ];
 
@@ -127,7 +131,15 @@ function StudioPage() {
   );
 }
 
-function StatTile({ label, value, icon: Icon }: { label: string; value: number; icon?: typeof Coins }) {
+function StatTile({
+  label,
+  value,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  icon?: typeof Coins;
+}) {
   return (
     <Card className="p-4" pane>
       <div className="text-xs uppercase tracking-wide text-site-text-dim">{label}</div>
@@ -156,7 +168,11 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
 
   const sources: { key: keyof typeof bySource; label: string; bar: string }[] = [
     { key: 'tips', label: t('tips', { defaultValue: 'Tips' }), bar: 'bg-site-accent' },
-    { key: 'memberships', label: t('memberships', { defaultValue: 'Memberships' }), bar: 'bg-site-success' },
+    {
+      key: 'memberships',
+      label: t('memberships', { defaultValue: 'Memberships' }),
+      bar: 'bg-site-success',
+    },
     { key: 'sales', label: t('sales', { defaultValue: 'Sales' }), bar: 'bg-site-warning' },
   ];
 
@@ -164,10 +180,26 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
     <div className="space-y-6">
       {/* Headline stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatTile label={t('supporters', { defaultValue: 'Supporters' })} value={supporterCount} icon={Users} />
-        <StatTile label={t('redeemable', { defaultValue: 'Redeemable' })} value={earnings.redeemable} icon={Coins} />
-        <StatTile label={t('lifetime-earned', { defaultValue: 'Lifetime earned' })} value={earnings.lifetimeEarned} icon={Sparkles} />
-        <StatTile label={t('coin-balance', { defaultValue: 'Coin balance' })} value={earnings.spendable} icon={Coins} />
+        <StatTile
+          label={t('supporters', { defaultValue: 'Supporters' })}
+          value={supporterCount}
+          icon={Users}
+        />
+        <StatTile
+          label={t('redeemable', { defaultValue: 'Redeemable' })}
+          value={earnings.redeemable}
+          icon={Coins}
+        />
+        <StatTile
+          label={t('lifetime-earned', { defaultValue: 'Lifetime earned' })}
+          value={earnings.lifetimeEarned}
+          icon={Sparkles}
+        />
+        <StatTile
+          label={t('coin-balance', { defaultValue: 'Coin balance' })}
+          value={earnings.spendable}
+          icon={Coins}
+        />
       </div>
 
       {/* Per-source split (window) */}
@@ -200,14 +232,22 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
           <div className="space-y-2 pt-1">
             {monthly.map((m) => {
               const [y, mo] = m.month.split('-');
-              const monthLabel = new Date(Date.UTC(Number(y), Number(mo) - 1, 1)).toLocaleString(undefined, {
-                month: 'short',
-              });
+              const monthLabel = new Date(Date.UTC(Number(y), Number(mo) - 1, 1)).toLocaleString(
+                undefined,
+                {
+                  month: 'short',
+                },
+              );
               return (
                 <div key={m.month} className="flex items-center gap-3">
-                  <span className="w-9 shrink-0 text-xs text-site-text-dim tabular-nums">{monthLabel}</span>
+                  <span className="w-9 shrink-0 text-xs text-site-text-dim tabular-nums">
+                    {monthLabel}
+                  </span>
                   <div className="flex h-3 flex-1 overflow-hidden rounded-full bg-site-surface">
-                    <div className="flex h-full" style={{ width: `${(m.total / maxMonth) * 100}%` }}>
+                    <div
+                      className="flex h-full"
+                      style={{ width: `${(m.total / maxMonth) * 100}%` }}
+                    >
                       {sources.map(({ key, bar }) =>
                         m[key] > 0 ? (
                           <div
@@ -240,7 +280,9 @@ function OverviewSection({ overview }: { overview: StudioOverview | null }) {
         </h2>
         {recentTips.length === 0 ? (
           <p className="text-sm text-site-text-dim">
-            {t('no-tips-yet', { defaultValue: 'No tips yet — supporters who tip will show up here.' })}
+            {t('no-tips-yet', {
+              defaultValue: 'No tips yet — supporters who tip will show up here.',
+            })}
           </p>
         ) : (
           <div className="space-y-2">

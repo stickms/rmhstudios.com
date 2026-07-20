@@ -92,7 +92,11 @@ export interface ListItemInput {
  * (its `inventoryId` is unique, so a second row can't exist): a terminal
  * (SOLD/CANCELED) listing for the row is reset back to ACTIVE for the new seller.
  */
-export async function listItem({ sellerId, itemId, priceCoins }: ListItemInput): Promise<MarketListing> {
+export async function listItem({
+  sellerId,
+  itemId,
+  priceCoins,
+}: ListItemInput): Promise<MarketListing> {
   if (!isTradable(itemId)) {
     throw new MarketError('NOT_TRADABLE', 'This item cannot be traded');
   }
@@ -111,7 +115,11 @@ export async function listItem({ sellerId, itemId, priceCoins }: ListItemInput):
   if (!user) throw new MarketError('NOT_FOUND', 'Seller not found', 404);
   const ageDays = (Date.now() - user.createdAt.getTime()) / (24 * 60 * 60 * 1000);
   if (ageDays < MIN_ACCOUNT_AGE_DAYS) {
-    throw new MarketError('ACCOUNT_TOO_NEW', `Your account must be at least ${MIN_ACCOUNT_AGE_DAYS} days old to sell`, 403);
+    throw new MarketError(
+      'ACCOUNT_TOO_NEW',
+      `Your account must be at least ${MIN_ACCOUNT_AGE_DAYS} days old to sell`,
+      403,
+    );
   }
   if (levelFromXp(profile?.xp ?? 0) < MIN_SELLER_LEVEL) {
     throw new MarketError('LEVEL_TOO_LOW', `You must be level ${MIN_SELLER_LEVEL}+ to sell`, 403);
@@ -127,7 +135,10 @@ export async function listItem({ sellerId, itemId, priceCoins }: ListItemInput):
 
     const activeCount = await tx.marketListing.count({ where: { sellerId, status: 'ACTIVE' } });
     if (activeCount >= MAX_ACTIVE_LISTINGS) {
-      throw new MarketError('TOO_MANY_LISTINGS', `You can have at most ${MAX_ACTIVE_LISTINGS} active listings`);
+      throw new MarketError(
+        'TOO_MANY_LISTINGS',
+        `You can have at most ${MAX_ACTIVE_LISTINGS} active listings`,
+      );
     }
 
     // The inventory row can carry at most one listing (unique). A live one blocks
@@ -179,12 +190,20 @@ export interface BuyResult {
  * listing is frozen (ACTIVE→HELD) and **no funds move**; admins are notified to
  * review it. The buyer is told it's under review.
  */
-export async function buyListing({ buyerId, listingId }: { buyerId: string; listingId: string }): Promise<BuyResult> {
+export async function buyListing({
+  buyerId,
+  listingId,
+}: {
+  buyerId: string;
+  listingId: string;
+}): Promise<BuyResult> {
   const result = await prisma.$transaction(async (tx) => {
     const listing = await tx.marketListing.findUnique({ where: { id: listingId } });
     if (!listing) throw new MarketError('NOT_FOUND', 'Listing not found', 404);
-    if (listing.status !== 'ACTIVE') throw new MarketError('NOT_AVAILABLE', 'This listing is no longer available', 409);
-    if (listing.sellerId === buyerId) throw new MarketError('SELF_BUY', "You can't buy your own listing");
+    if (listing.status !== 'ACTIVE')
+      throw new MarketError('NOT_AVAILABLE', 'This listing is no longer available', 409);
+    if (listing.sellerId === buyerId)
+      throw new MarketError('SELF_BUY', "You can't buy your own listing");
 
     // Buyer must not already own this itemId — inventory is unique per (user,item),
     // so re-parenting would collide. Reject gracefully instead of exploding.
@@ -196,19 +215,36 @@ export async function buyListing({ buyerId, listingId }: { buyerId: string; list
 
     // Anomaly guard: freeze suspiciously-priced buys before any money moves.
     const recentSold = await tx.marketListing.findMany({
-      where: { itemId: listing.itemId, status: 'SOLD', closedAt: { gte: new Date(Date.now() - THIRTY_DAYS_MS) } },
+      where: {
+        itemId: listing.itemId,
+        status: 'SOLD',
+        closedAt: { gte: new Date(Date.now() - THIRTY_DAYS_MS) },
+      },
       select: { priceCoins: true },
       orderBy: { closedAt: 'desc' },
       take: 500,
     });
-    if (isAnomalousPrice(listing.priceCoins, recentSold.map((r) => r.priceCoins))) {
+    if (
+      isAnomalousPrice(
+        listing.priceCoins,
+        recentSold.map((r) => r.priceCoins),
+      )
+    ) {
       const held = await tx.marketListing.updateMany({
         where: { id: listingId, status: 'ACTIVE' },
         data: { status: 'HELD' },
       });
-      if (held.count === 0) throw new MarketError('NOT_AVAILABLE', 'This listing is no longer available', 409);
+      if (held.count === 0)
+        throw new MarketError('NOT_AVAILABLE', 'This listing is no longer available', 409);
       const { fee, proceeds } = marketFee(listing.priceCoins);
-      return { status: 'HELD' as const, listingId, itemId: listing.itemId, price: listing.priceCoins, proceeds, fee };
+      return {
+        status: 'HELD' as const,
+        listingId,
+        itemId: listing.itemId,
+        price: listing.priceCoins,
+        proceeds,
+        fee,
+      };
     }
 
     // Atomic claim — the double-buy guard. A concurrent buyer that already flipped
@@ -217,7 +253,8 @@ export async function buyListing({ buyerId, listingId }: { buyerId: string; list
       where: { id: listingId, status: 'ACTIVE' },
       data: { status: 'SOLD', buyerId, closedAt: new Date() },
     });
-    if (claim.count === 0) throw new MarketError('NOT_AVAILABLE', 'This listing was just purchased', 409);
+    if (claim.count === 0)
+      throw new MarketError('NOT_AVAILABLE', 'This listing was just purchased', 409);
 
     const { fee, proceeds } = marketFee(listing.priceCoins);
 
@@ -261,7 +298,14 @@ export async function buyListing({ buyerId, listingId }: { buyerId: string; list
       data: { userId: buyerId, equipped: false, acquiredAt: new Date() },
     });
 
-    return { status: 'SOLD' as const, listingId, itemId: listing.itemId, price: listing.priceCoins, proceeds, fee };
+    return {
+      status: 'SOLD' as const,
+      listingId,
+      itemId: listing.itemId,
+      price: listing.priceCoins,
+      proceeds,
+      fee,
+    };
   });
 
   // Side effects AFTER the tx commits (never inside): queue anomaly review.
@@ -309,7 +353,9 @@ export interface BrowseInput {
 }
 
 /** Browse ACTIVE listings, optionally filtered by item, with a sort. Public. */
-export async function browse({ itemId, sort = 'recent', limit = 60 }: BrowseInput = {}): Promise<BrowseListing[]> {
+export async function browse({ itemId, sort = 'recent', limit = 60 }: BrowseInput = {}): Promise<
+  BrowseListing[]
+> {
   const orderBy: Prisma.MarketListingOrderByWithRelationInput =
     sort === 'price_asc'
       ? { priceCoins: 'asc' }
@@ -331,7 +377,9 @@ export async function browse({ itemId, sort = 'recent', limit = 60 }: BrowseInpu
       itemId: r.itemId,
       priceCoins: r.priceCoins,
       createdAt: r.createdAt.toISOString(),
-      item: item ? { id: item.id, name: item.name, kind: item.kind, rarity: item.rarity, data: item.data } : null,
+      item: item
+        ? { id: item.id, name: item.name, kind: item.kind, rarity: item.rarity, data: item.data }
+        : null,
       seller: resolveUser(r.seller),
     };
   });

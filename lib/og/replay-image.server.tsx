@@ -38,7 +38,8 @@ async function fetchFont(url: string): Promise<ArrayBuffer> {
 function loadFonts(): Promise<void> {
   if (fontRegular && fontBold) return Promise.resolve();
   if (fontsLoading) return fontsLoading;
-  if (Date.now() < fontFailUntil) return Promise.reject(new Error('Fonts unavailable (cooling down)'));
+  if (Date.now() < fontFailUntil)
+    return Promise.reject(new Error('Fonts unavailable (cooling down)'));
   fontsLoading = Promise.all([fetchFont(FONT_REGULAR_URL), fetchFont(FONT_BOLD_URL)])
     .then(([reg, bold]) => {
       fontRegular = reg;
@@ -100,14 +101,26 @@ export async function renderReplayOgImage(data: ReplayOgData): Promise<Buffer> {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <div style={{ display: 'flex', width: 40, height: 40, borderRadius: 10, backgroundColor: ACCENT }} />
+        <div
+          style={{
+            display: 'flex',
+            width: 40,
+            height: 40,
+            borderRadius: 10,
+            backgroundColor: ACCENT,
+          }}
+        />
         <span style={{ fontSize: 30, fontWeight: 700, color: TEXT }}>RMH Studios · Replay</span>
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
-        <span style={{ fontSize: 64, fontWeight: 700, color: TEXT }}>{truncate(data.gameTitle, 40)}</span>
+        <span style={{ fontSize: 64, fontWeight: 700, color: TEXT }}>
+          {truncate(data.gameTitle, 40)}
+        </span>
         {data.subtitle && (
-          <span style={{ fontSize: 32, color: MUTED, marginTop: 8 }}>{truncate(data.subtitle, 60)}</span>
+          <span style={{ fontSize: 32, color: MUTED, marginTop: 8 }}>
+            {truncate(data.subtitle, 60)}
+          </span>
         )}
       </div>
 
@@ -124,7 +137,9 @@ export async function renderReplayOgImage(data: ReplayOgData): Promise<Buffer> {
           <span style={{ fontSize: 26, color: MUTED }}>Score</span>
           <span style={{ fontSize: 72, fontWeight: 700, color: ACCENT }}>{scoreLabel}</span>
         </div>
-        <span style={{ fontSize: 30, color: MUTED }}>by {truncate(data.authorName || 'Someone', 28)}</span>
+        <span style={{ fontSize: 30, color: MUTED }}>
+          by {truncate(data.authorName || 'Someone', 28)}
+        </span>
       </div>
     </div>
   );

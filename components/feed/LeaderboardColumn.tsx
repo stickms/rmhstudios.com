@@ -57,7 +57,9 @@ export function LeaderboardColumn({
     }
     setLoading(true);
     try {
-      const res = await fetch(`/api/leaderboards/players?scope=${next}`, { credentials: 'include' });
+      const res = await fetch(`/api/leaderboards/players?scope=${next}`, {
+        credentials: 'include',
+      });
       if (res.ok) {
         const data = (await res.json()) as LeaderboardData;
         cache.current[next] = data.entries;
@@ -101,7 +103,9 @@ export function LeaderboardColumn({
         </div>
 
         <p className="text-xs text-site-text-dim">
-          {t('leaderboard-subtitle', { defaultValue: 'Ranked by lifetime XP. Earn XP by posting, playing, studying, and more.' })}
+          {t('leaderboard-subtitle', {
+            defaultValue: 'Ranked by lifetime XP. Earn XP by posting, playing, studying, and more.',
+          })}
         </p>
 
         {loading ? (
@@ -111,7 +115,9 @@ export function LeaderboardColumn({
         ) : entries.length === 0 ? (
           <p className="py-16 text-center text-sm text-site-text-muted">
             {scope === 'friends'
-              ? t('leaderboard-empty-friends', { defaultValue: 'Follow some people to see how you stack up.' })
+              ? t('leaderboard-empty-friends', {
+                  defaultValue: 'Follow some people to see how you stack up.',
+                })
               : t('leaderboard-empty', { defaultValue: 'No ranked players yet.' })}
           </p>
         ) : (
@@ -121,20 +127,29 @@ export function LeaderboardColumn({
                 as="div"
                 key={e.userId}
                 className={`flex items-center gap-3 rounded-site border p-2.5 ${LIFT_CARD} ${
-                  e.isViewer ? 'border-site-accent bg-site-accent-dim' : 'border-site-border bg-site-surface'
+                  e.isViewer
+                    ? 'border-site-accent bg-site-accent-dim'
+                    : 'border-site-border bg-site-surface'
                 }`}
               >
-                <span className={`w-6 text-center text-sm font-bold ${rankClass(e.rank)}`}>{e.rank}</span>
+                <span className={`w-6 text-center text-sm font-bold ${rankClass(e.rank)}`}>
+                  {e.rank}
+                </span>
                 <UserAvatar user={e.user} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-site-text">
-                    {e.user.name || e.user.handle || t('player-fallback', { defaultValue: 'Player' })}
+                    {e.user.name ||
+                      e.user.handle ||
+                      t('player-fallback', { defaultValue: 'Player' })}
                   </p>
                   <p className="flex items-center gap-2 text-[11px] text-site-text-dim">
                     <span className="inline-flex items-center gap-1 rounded-full bg-site-bg px-1.5 py-0.5 font-bold text-site-accent">
-                      <Zap className="h-3 w-3" aria-hidden /> {t('leaderboard-level', { defaultValue: 'Lv {{n}}', n: e.level })}
+                      <Zap className="h-3 w-3" aria-hidden />{' '}
+                      {t('leaderboard-level', { defaultValue: 'Lv {{n}}', n: e.level })}
                     </span>
-                    <span>{fmt(e.xp)} {t('leaderboard-xp', { defaultValue: 'XP' })}</span>
+                    <span>
+                      {fmt(e.xp)} {t('leaderboard-xp', { defaultValue: 'XP' })}
+                    </span>
                   </p>
                 </div>
                 <span className="flex items-center gap-1 text-sm font-semibold text-site-text">

@@ -28,7 +28,7 @@ export function GroupChatsColumn({
   /** Group list prefetched by the route loader; `null` when signed out. */
   initialData?: { groups: GroupRow[]; signedIn: boolean } | null;
 } = {}) {
-  const { t } = useTranslation("feed");
+  const { t } = useTranslation('feed');
   const navigate = useNavigate();
   const seeded = useRef(initialData !== undefined && initialData !== null);
   const [groups, setGroups] = useState<GroupRow[]>(initialData?.groups ?? []);
@@ -81,7 +81,7 @@ export function GroupChatsColumn({
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.error ?? t("could-not-create", { defaultValue: "Could not create" }));
+        setError(data.error ?? t('could-not-create', { defaultValue: 'Could not create' }));
         return;
       }
       navigate({ to: `/groups/${data.id}` as string });
@@ -95,7 +95,7 @@ export function GroupChatsColumn({
   // drawer button at all. Skipped when embedded: the host page (InboxColumn)
   // already renders a header carrying that button.
   const gateHeader = embedded ? null : (
-    <ColumnHeader icon={Users} title={t("group-chats", { defaultValue: "Group chats" })} />
+    <ColumnHeader icon={Users} title={t('group-chats', { defaultValue: 'Group chats' })} />
   );
 
   if (loading) {
@@ -114,9 +114,11 @@ export function GroupChatsColumn({
       <>
         {gateHeader}
         <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-          <p className="font-medium text-site-text">{t("sign-in-to-use-group-chats", { defaultValue: "Sign in to use group chats" })}</p>
+          <p className="font-medium text-site-text">
+            {t('sign-in-to-use-group-chats', { defaultValue: 'Sign in to use group chats' })}
+          </p>
           <Link to="/login" search={{ callbackURL: '/groups' }}>
-            <Button variant="accent">{t("sign-in", { defaultValue: "Sign in" })}</Button>
+            <Button variant="accent">{t('sign-in', { defaultValue: 'Sign in' })}</Button>
           </Link>
         </div>
       </>
@@ -132,14 +134,14 @@ export function GroupChatsColumn({
         sticky={!embedded}
         showMenuButton={!embedded}
         icon={embedded ? undefined : Users}
-        title={embedded ? undefined : t("group-chats", { defaultValue: "Group chats" })}
+        title={embedded ? undefined : t('group-chats', { defaultValue: 'Group chats' })}
         actions={
           <button
             type="button"
             onClick={() => setShowForm((v) => !v)}
             className="flex shrink-0 items-center justify-center rounded-full bg-site-accent p-2 text-site-bg transition-opacity hover:opacity-90"
-            title={t("new-group", { defaultValue: "New group" })}
-            aria-label={t("new-group", { defaultValue: "New group" })}
+            title={t('new-group', { defaultValue: 'New group' })}
+            aria-label={t('new-group', { defaultValue: 'New group' })}
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -152,8 +154,8 @@ export function GroupChatsColumn({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={t("search-groups-placeholder", { defaultValue: "Search groups…" })}
-            aria-label={t("search-groups", { defaultValue: "Search groups" })}
+            placeholder={t('search-groups-placeholder', { defaultValue: 'Search groups…' })}
+            aria-label={t('search-groups', { defaultValue: 'Search groups' })}
             className="w-full rounded-full border border-site-border bg-site-surface py-2 pl-9 pr-9 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
           />
           {query && (
@@ -161,7 +163,7 @@ export function GroupChatsColumn({
               type="button"
               onClick={() => setQuery('')}
               className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-site-text-dim hover:text-site-text"
-              aria-label={t("clear-search", { defaultValue: "Clear search" })}
+              aria-label={t('clear-search', { defaultValue: 'Clear search' })}
             >
               <X className="h-4 w-4" />
             </button>
@@ -172,8 +174,14 @@ export function GroupChatsColumn({
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-site-text">{t("new-group", { defaultValue: "New group" })}</h2>
-            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label={t("close", { defaultValue: "Close" })}>
+            <h2 className="text-sm font-semibold text-site-text">
+              {t('new-group', { defaultValue: 'New group' })}
+            </h2>
+            <button
+              onClick={() => setShowForm(false)}
+              className="text-site-text-dim hover:text-site-text"
+              aria-label={t('close', { defaultValue: 'Close' })}
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -181,7 +189,7 @@ export function GroupChatsColumn({
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={t("group-name-placeholder", { defaultValue: "Group name" })}
+              placeholder={t('group-name-placeholder', { defaultValue: 'Group name' })}
               maxLength={60}
               className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
@@ -189,13 +197,24 @@ export function GroupChatsColumn({
               value={members}
               onChange={setMembers}
               multiple
-              placeholder={t("members-placeholder", { defaultValue: "Members by @handle, comma-separated" })}
+              placeholder={t('members-placeholder', {
+                defaultValue: 'Members by @handle, comma-separated',
+              })}
               className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
             />
             {error && <p className="text-xs text-site-danger">{error}</p>}
             <div className="flex justify-end">
-              <Button size="sm" variant="accent" disabled={busy || name.trim().length < 1 || !members.trim()} onClick={create}>
-                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t("create-group", { defaultValue: "Create group" })}
+              <Button
+                size="sm"
+                variant="accent"
+                disabled={busy || name.trim().length < 1 || !members.trim()}
+                onClick={create}
+              >
+                {busy ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  t('create-group', { defaultValue: 'Create group' })
+                )}
               </Button>
             </div>
           </div>
@@ -203,9 +222,13 @@ export function GroupChatsColumn({
       )}
 
       {groups.length === 0 ? (
-        <EmptyState description={t("no-group-chats-yet", { defaultValue: "No group chats yet." })} />
+        <EmptyState
+          description={t('no-group-chats-yet', { defaultValue: 'No group chats yet.' })}
+        />
       ) : visibleGroups.length === 0 ? (
-        <EmptyState description={t("no-groups-match", { defaultValue: "No groups match your search." })} />
+        <EmptyState
+          description={t('no-groups-match', { defaultValue: 'No groups match your search.' })}
+        />
       ) : (
         <Reveal className="divide-y divide-site-border/60">
           {visibleGroups.map((g) => (
@@ -223,7 +246,8 @@ export function GroupChatsColumn({
                   {g.unread && <span className="h-2 w-2 shrink-0 rounded-full bg-site-accent" />}
                 </div>
                 <p className="truncate text-xs text-site-text-dim">
-                  {g.lastMessage ?? t("member-count", { count: g.memberCount, defaultValue: "{{count}} members" })}
+                  {g.lastMessage ??
+                    t('member-count', { count: g.memberCount, defaultValue: '{{count}} members' })}
                 </p>
               </div>
             </Link>

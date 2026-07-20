@@ -109,7 +109,7 @@ export interface ProfilePayload {
  */
 export async function getProfile(
   id: string,
-  viewer: { id: string | null; isAdmin: boolean }
+  viewer: { id: string | null; isAdmin: boolean },
 ): Promise<ProfilePayload | null> {
   const viewerId = viewer.id;
   const followerFilter = viewerId
@@ -140,7 +140,12 @@ export async function getProfile(
     getEquippedCosmetics(user.id),
     wantsTipGoal
       ? prisma.coinTransaction.aggregate({
-          where: { recipientId: user.id, type: 'TIP', amount: { gt: 0 }, createdAt: { gte: monthStart } },
+          where: {
+            recipientId: user.id,
+            type: 'TIP',
+            amount: { gt: 0 },
+            createdAt: { gte: monthStart },
+          },
           _sum: { amount: true },
         })
       : Promise.resolve(null),

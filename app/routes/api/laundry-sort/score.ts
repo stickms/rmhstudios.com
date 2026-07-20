@@ -8,102 +8,111 @@ import { reportGameResult } from '@/lib/game/results.server';
 export const Route = createFileRoute('/api/laundry-sort/score')({
   server: {
     handlers: {
-  POST: async ({ request }) => {
-    const ip = getClientIp(request);
-    const { allowed, retryAfter } = rateLimit(ip, { limit: 5, windowMs: 60_000, prefix: 'laundry-score' });
-    if (!allowed) {
-        return Response.json({ error: 'Too many requests' }, {
-            status: 429,
-            headers: { 'Retry-After': String(retryAfter) }
+      POST: async ({ request }) => {
+        const ip = getClientIp(request);
+        const { allowed, retryAfter } = rateLimit(ip, {
+          limit: 5,
+          windowMs: 60_000,
+          prefix: 'laundry-score',
         });
-    }
-
-    try {
-        const { username, score } = await request.json();
-
-        if (!username || typeof username !== 'string') {
-            return Response.json({ error: 'Invalid username' }, { status: 400 });
+        if (!allowed) {
+          return Response.json(
+            { error: 'Too many requests' },
+            {
+              status: 429,
+              headers: { 'Retry-After': String(retryAfter) },
+            },
+          );
         }
-        const cleanUsername = username.trim().replace(/[^a-zA-Z0-9_\-. ]/g, '').slice(0, 24);
-        if (cleanUsername.length < 2) {
+
+        try {
+          const { username, score } = await request.json();
+
+          if (!username || typeof username !== 'string') {
             return Response.json({ error: 'Invalid username' }, { status: 400 });
-        }
-        if (typeof score !== 'number' || score < 0 || score > 1_000_000) {
+          }
+          const cleanUsername = username
+            .trim()
+            .replace(/[^a-zA-Z0-9_\-. ]/g, '')
+            .slice(0, 24);
+          if (cleanUsername.length < 2) {
+            return Response.json({ error: 'Invalid username' }, { status: 400 });
+          }
+          if (typeof score !== 'number' || score < 0 || score > 1_000_000) {
             return Response.json({ error: 'Invalid score' }, { status: 400 });
-        }
+          }
 
-        // Check Auth using headers
-        const session = await auth.api.getSession({
-            headers: request.headers
-        });
+          // Check Auth using headers
+          const session = await auth.api.getSession({
+            headers: request.headers,
+          });
 
-        const userId = session?.user?.id;
+          const userId = session?.user?.id;
 
-        // Logic:
-        // 1. If Logged In:
-        //    - Check if User has a profile (by userId).
-        //    - If yes -> Update it.
-        //    - If no -> Check if username exists.
-        //      - If user exists but is guest (no userId) -> Claim it (Update userId).
-        //      - If user exists and has userId -> Error (Username taken).
-        //      - If user doesn't exist -> Create.
-        // 2. If Guest:
-        //    - Check if username exists.
-        //    - If user exists and has userId -> Error (Username taken by registered user).
-        //    - If user exists and no userId -> Update.
-        //    - If user doesn't exist -> Create.
+          // Logic:
+          // 1. If Logged In:
+          //    - Check if User has a profile (by userId).
+          //    - If yes -> Update it.
+          //    - If no -> Check if username exists.
+          //      - If user exists but is guest (no userId) -> Claim it (Update userId).
+          //      - If user exists and has userId -> Error (Username taken).
+          //      - If user doesn't exist -> Create.
+          // 2. If Guest:
+          //    - Check if username exists.
+          //    - If user exists and has userId -> Error (Username taken by registered user).
+          //    - If user exists and no userId -> Update.
+          //    - If user doesn't exist -> Create.
 
-        if (!userId) {
+          if (!userId) {
             return Response.json({ error: 'Unauthorized' }, { status: 401 });
-        }
+          }
 
-        // Check for existing profile linked to this user
-        const existingProfile = await prisma.laundryPlayer.findUnique({
-            where: { userId }
-        });
+          // Check for existing profile linked to this user
+          const existingProfile = await prisma.laundryPlayer.findUnique({
+            where: { userId },
+          });
 
-        if (existingProfile) {
+          if (existingProfile) {
             // Update existing profile
             await prisma.laundryPlayer.update({
-                where: { id: existingProfile.id },
-                data: {
-                    highScore: Math.max(existingProfile.highScore, score),
-                    gamesPlayed: { increment: 1 },
-                    updatedAt: new Date(),
-                    username: cleanUsername
-                }
+              where: { id: existingProfile.id },
+              data: {
+                highScore: Math.max(existingProfile.highScore, score),
+                gamesPlayed: { increment: 1 },
+                updatedAt: new Date(),
+                username: cleanUsername,
+              },
             });
             await recordGamePlay(userId);
             await reportGameResult(userId, { game: 'laundry-sort', score });
             return Response.json({ success: true, linked: true });
-        }
-        
-        // No profile yet, check username availability
-        const usernameConfig = await prisma.laundryPlayer.findUnique({
-                where: { username: cleanUsername }
-        });
+          }
 
-        if (usernameConfig) {
+          // No profile yet, check username availability
+          const usernameConfig = await prisma.laundryPlayer.findUnique({
+            where: { username: cleanUsername },
+          });
+
+          if (usernameConfig) {
             return Response.json({ error: 'Username already taken.' }, { status: 409 });
-        }
+          }
 
-        // Create new linked profile
-        await prisma.laundryPlayer.create({
+          // Create new linked profile
+          await prisma.laundryPlayer.create({
             data: {
-                userId,
-                username: cleanUsername,
-                highScore: score,
-                gamesPlayed: 1
-            }
-        });
-        await recordGamePlay(userId);
-        return Response.json({ success: true, created: true });
-
-    } catch (e) {
-        console.error('Failed to submit score:', e);
-        return Response.json({ error: 'Internal Server Error' }, { status: 500 });
-    }
-},
+              userId,
+              username: cleanUsername,
+              highScore: score,
+              gamesPlayed: 1,
+            },
+          });
+          await recordGamePlay(userId);
+          return Response.json({ success: true, created: true });
+        } catch (e) {
+          console.error('Failed to submit score:', e);
+          return Response.json({ error: 'Internal Server Error' }, { status: 500 });
+        }
+      },
     },
   },
 });

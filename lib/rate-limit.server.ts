@@ -51,12 +51,10 @@ export interface CheckRateLimitOptions {
  */
 export async function checkRateLimit(
   identity: string,
-  opts: CheckRateLimitOptions
+  opts: CheckRateLimitOptions,
 ): Promise<RateLimitResult> {
   const applyMult = opts.applyMultiplier !== false;
-  const effectiveLimit = applyMult
-    ? Math.ceil(opts.limit * RATE_LIMIT_MULTIPLIER)
-    : opts.limit;
+  const effectiveLimit = applyMult ? Math.ceil(opts.limit * RATE_LIMIT_MULTIPLIER) : opts.limit;
   const key = `${opts.prefix ?? 'rl'}:${identity}`;
 
   const viaRedis = await redisRateLimit(key, effectiveLimit, opts.windowMs);

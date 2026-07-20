@@ -4,7 +4,16 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { toast } from 'sonner';
-import { ListMusic, Plus, Trash2, Pencil, ChevronDown, ChevronRight, Music2, ExternalLink } from 'lucide-react';
+import {
+  ListMusic,
+  Plus,
+  Trash2,
+  Pencil,
+  ChevronDown,
+  ChevronRight,
+  Music2,
+  ExternalLink,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -57,7 +66,9 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error ?? t('playlist-create-failed', { defaultValue: 'Could not create playlist.' }));
+        toast.error(
+          data.error ?? t('playlist-create-failed', { defaultValue: 'Could not create playlist.' }),
+        );
         return;
       }
       setNewName('');
@@ -88,7 +99,10 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
   };
 
   const rename = async (pl: Summary) => {
-    const name = window.prompt(t('playlist-rename-prompt', { defaultValue: 'Rename playlist' }), pl.name);
+    const name = window.prompt(
+      t('playlist-rename-prompt', { defaultValue: 'Rename playlist' }),
+      pl.name,
+    );
     if (name == null) return;
     const trimmed = name.trim();
     if (!trimmed || trimmed === pl.name) return;
@@ -109,7 +123,10 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
       danger: true,
     });
     if (!ok) return;
-    const res = await fetch(`/api/playlists/${pl.id}`, { method: 'DELETE', credentials: 'include' });
+    const res = await fetch(`/api/playlists/${pl.id}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
     if (res.ok) {
       setPlaylists((ps) => ps.filter((p) => p.id !== pl.id));
       if (openId === pl.id) setOpenId(null);
@@ -119,10 +136,20 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
   };
 
   const removeItem = async (playlistId: string, itemId: string) => {
-    const res = await fetch(`/api/playlists/${playlistId}/items/${itemId}`, { method: 'DELETE', credentials: 'include' });
+    const res = await fetch(`/api/playlists/${playlistId}/items/${itemId}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
     if (res.ok) {
-      setItems((m) => ({ ...m, [playlistId]: (m[playlistId] ?? []).filter((i) => i.id !== itemId) }));
-      setPlaylists((ps) => ps.map((p) => (p.id === playlistId ? { ...p, itemCount: Math.max(0, p.itemCount - 1) } : p)));
+      setItems((m) => ({
+        ...m,
+        [playlistId]: (m[playlistId] ?? []).filter((i) => i.id !== itemId),
+      }));
+      setPlaylists((ps) =>
+        ps.map((p) =>
+          p.id === playlistId ? { ...p, itemCount: Math.max(0, p.itemCount - 1) } : p,
+        ),
+      );
     } else {
       toast.error(t('playlist-item-remove-failed', { defaultValue: 'Could not remove item.' }));
     }
@@ -137,10 +164,14 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
           <EmptyState
             icon={ListMusic}
             title={t('playlists-signin-title', { defaultValue: 'Sign in to build playlists' })}
-            description={t('playlists-signin-desc', { defaultValue: 'Save tracks and videos into your own persistent playlists.' })}
+            description={t('playlists-signin-desc', {
+              defaultValue: 'Save tracks and videos into your own persistent playlists.',
+            })}
             action={
               <Link to="/login" search={{ callbackURL: '/playlists' }}>
-                <Button variant="accent" size="sm">{t('sign-in', { defaultValue: 'Sign in' })}</Button>
+                <Button variant="accent" size="sm">
+                  {t('sign-in', { defaultValue: 'Sign in' })}
+                </Button>
               </Link>
             }
           />
@@ -163,8 +194,16 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
               aria-label={t('playlist-new-label', { defaultValue: 'New playlist name' })}
               className="flex-1"
             />
-            <Button variant="accent" size="sm" onClick={create} loading={creating} disabled={!newName.trim()} className="gap-1">
-              <Plus className="h-4 w-4" aria-hidden /> {t('playlist-create', { defaultValue: 'Create' })}
+            <Button
+              variant="accent"
+              size="sm"
+              onClick={create}
+              loading={creating}
+              disabled={!newName.trim()}
+              className="gap-1"
+            >
+              <Plus className="h-4 w-4" aria-hidden />{' '}
+              {t('playlist-create', { defaultValue: 'Create' })}
             </Button>
           </div>
 
@@ -172,14 +211,19 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
             <EmptyState
               icon={Music2}
               title={t('playlists-empty-title', { defaultValue: 'No playlists yet' })}
-              description={t('playlists-empty-desc', { defaultValue: 'Create one above, then add tracks from RMHMusic.' })}
+              description={t('playlists-empty-desc', {
+                defaultValue: 'Create one above, then add tracks from RMHMusic.',
+              })}
             />
           ) : (
             <div className="space-y-2">
               {playlists.map((pl) => {
                 const open = openId === pl.id;
                 return (
-                  <div key={pl.id} className="rounded-site border border-site-border bg-site-surface">
+                  <div
+                    key={pl.id}
+                    className="rounded-site border border-site-border bg-site-surface"
+                  >
                     <div className="flex items-center gap-2 p-3">
                       <button
                         type="button"
@@ -188,14 +232,26 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
                         className="flex min-w-0 flex-1 items-center gap-2 text-left"
                       >
                         {open ? (
-                          <ChevronDown className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+                          <ChevronDown
+                            className="h-4 w-4 shrink-0 text-site-text-dim"
+                            aria-hidden
+                          />
                         ) : (
-                          <ChevronRight className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+                          <ChevronRight
+                            className="h-4 w-4 shrink-0 text-site-text-dim"
+                            aria-hidden
+                          />
                         )}
                         <span className="min-w-0">
-                          <span className="block truncate text-sm font-semibold text-site-text">{pl.name}</span>
+                          <span className="block truncate text-sm font-semibold text-site-text">
+                            {pl.name}
+                          </span>
                           <span className="block text-[11px] text-site-text-dim">
-                            {t('playlist-item-count', { defaultValue: '{{n}} items', n: pl.itemCount })} · {pl.kind}
+                            {t('playlist-item-count', {
+                              defaultValue: '{{n}} items',
+                              n: pl.itemCount,
+                            })}{' '}
+                            · {pl.kind}
                           </span>
                         </span>
                       </button>
@@ -220,15 +276,26 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
                     {open && (
                       <div className="border-t border-site-border p-2">
                         {loadingItems && !items[pl.id] ? (
-                          <p className="py-4 text-center text-sm text-site-text-muted">{t('loading', { defaultValue: 'Loading…' })}</p>
+                          <p className="py-4 text-center text-sm text-site-text-muted">
+                            {t('loading', { defaultValue: 'Loading…' })}
+                          </p>
                         ) : (items[pl.id] ?? []).length === 0 ? (
-                          <p className="py-4 text-center text-sm text-site-text-dim">{t('playlist-no-items', { defaultValue: 'Nothing here yet.' })}</p>
+                          <p className="py-4 text-center text-sm text-site-text-dim">
+                            {t('playlist-no-items', { defaultValue: 'Nothing here yet.' })}
+                          </p>
                         ) : (
                           <ul className="space-y-1">
                             {(items[pl.id] ?? []).map((it) => (
-                              <li key={it.id} className="flex items-center gap-2 rounded-site-sm px-2 py-1.5 hover:bg-site-surface-hover">
+                              <li
+                                key={it.id}
+                                className="flex items-center gap-2 rounded-site-sm px-2 py-1.5 hover:bg-site-surface-hover"
+                              >
                                 {it.thumbnail ? (
-                                  <img src={it.thumbnail} alt="" className="h-9 w-9 shrink-0 rounded object-cover" />
+                                  <img
+                                    src={it.thumbnail}
+                                    alt=""
+                                    className="h-9 w-9 shrink-0 rounded object-cover"
+                                  />
                                 ) : (
                                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-site-bg">
                                     <Music2 className="h-4 w-4 text-site-text-dim" aria-hidden />
@@ -236,7 +303,11 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
                                 )}
                                 <div className="min-w-0 flex-1">
                                   <p className="truncate text-sm text-site-text">{it.title}</p>
-                                  {it.subtitle && <p className="truncate text-[11px] text-site-text-dim">{it.subtitle}</p>}
+                                  {it.subtitle && (
+                                    <p className="truncate text-[11px] text-site-text-dim">
+                                      {it.subtitle}
+                                    </p>
+                                  )}
                                 </div>
                                 {it.url && (
                                   <a
@@ -252,7 +323,9 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
                                 <button
                                   type="button"
                                   onClick={() => removeItem(pl.id, it.id)}
-                                  aria-label={t('playlist-remove-item', { defaultValue: 'Remove from playlist' })}
+                                  aria-label={t('playlist-remove-item', {
+                                    defaultValue: 'Remove from playlist',
+                                  })}
                                   className="rounded-site-sm p-1.5 text-site-text-dim hover:text-site-danger"
                                 >
                                   <Trash2 className="h-4 w-4" aria-hidden />

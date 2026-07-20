@@ -72,7 +72,11 @@ export const Route = createFileRoute('/_site/library/')({
   head: () => ({
     meta: [
       { title: 'Library | RMH Studios' },
-      { name: 'description', content: 'Browse and read the RMH Studios library — a shelf of documents, theses, and plans.' },
+      {
+        name: 'description',
+        content:
+          'Browse and read the RMH Studios library — a shelf of documents, theses, and plans.',
+      },
     ],
   }),
   // perf audit §4.2: the four server fns were awaited sequentially — 4 serial
@@ -100,9 +104,15 @@ function formatCount(value: number): string {
 function Library() {
   const { t } = useTranslation('library');
   const { open: openSidebar } = useMobileSidebar();
-  const { books: initialBooks, posts: blogPosts, collections: initialCollections, albums } = Route.useLoaderData();
+  const {
+    books: initialBooks,
+    posts: blogPosts,
+    collections: initialCollections,
+    albums,
+  } = Route.useLoaderData();
   const session = useSession();
-  const sessionUser = session.data?.user as { isAdmin?: boolean; handle?: string | null } | undefined;
+  const sessionUser = session.data?.user as
+    { isAdmin?: boolean; handle?: string | null } | undefined;
   const isAdmin = Boolean(sessionUser?.isAdmin);
   const myHandle = sessionUser?.handle ?? null;
   const [books, setBooks] = useState<LibraryBook[]>(initialBooks);
@@ -198,7 +208,9 @@ function Library() {
   function commitOrder(section: LibraryBook[], nextManaged: LibraryBook[]) {
     const isCurated = section === curated;
     const curatedIds = (isCurated ? nextManaged : curated).filter((b) => b.id).map((b) => b.id!);
-    const communityIds = (isCurated ? community : nextManaged).filter((b) => b.id).map((b) => b.id!);
+    const communityIds = (isCurated ? community : nextManaged)
+      .filter((b) => b.id)
+      .map((b) => b.id!);
     void applyOrder([...curatedIds, ...communityIds]);
   }
 
@@ -238,9 +250,10 @@ function Library() {
           failed: summary.failed,
           defaultValue: 'Migrated {{migrated}}, skipped {{skipped}}, failed {{failed}}.',
         });
-        const reasons = Array.isArray(summary.errors) && summary.errors.length
-          ? `\n\n${summary.errors.join('\n')}`
-          : '';
+        const reasons =
+          Array.isArray(summary.errors) && summary.errors.length
+            ? `\n\n${summary.errors.join('\n')}`
+            : '';
         window.alert(base + reasons);
       }
       void refresh();
@@ -256,112 +269,167 @@ function Library() {
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <LibraryRevealProvider>
-        <header className="lib-head">
-          <span className="md:hidden">
-            <button type="button" onClick={openSidebar} aria-label={t('open-menu', { defaultValue: 'Open menu' })} className="vibe-toolbar__icon">
-              <Menu size={18} />
-            </button>
-          </span>
-          <div className="lib-head__brand">
-            <MobileBrandPrefix />
-            <BookOpen size={17} aria-hidden="true" />
-            <span>{t('library-heading', { defaultValue: 'Library' })}</span>
-          </div>
-          {session.data && (
-            <button
-              type="button"
-              className="lib-upload__open"
-              onClick={() => setUploadOpen(true)}
-              aria-label={t('upload-label', { defaultValue: 'Upload a PDF' })}
-            >
-              <Upload size={15} aria-hidden="true" />
-              <span className="lib-upload__open-label">{t('upload-button', { defaultValue: 'Add a book' })}</span>
-            </button>
-          )}
-        </header>
-
-        <section className="lib-hero" aria-labelledby="library-title">
-          <div className="lib-hero__copy">
-            <p className="lib-hero__eyebrow">{t('archive-eyebrow', { defaultValue: 'RMH Studios archive' })}</p>
-            <h1 id="library-title">{t('archive-title', { defaultValue: 'A home for long-form thinking.' })}</h1>
-            <p className="lib-hero__lede">
-              {t('archive-description', { defaultValue: 'Stories, original research, technical field notes, operating plans, and strange ideas—collected in one quiet reading room.' })}
-            </p>
-          </div>
-          <dl className="lib-stats" aria-label={t('library-totals', { defaultValue: 'Library totals' })}>
-            <div><dt>{t('stat-volumes', { defaultValue: 'Volumes' })}</dt><dd>{publicBooks.length.toLocaleString()}</dd></div>
-            <div><dt>{t('stat-pages', { defaultValue: 'Pages' })}</dt><dd>{formatCount(totalPages)}</dd></div>
-            <div><dt>{t('stat-albums', { defaultValue: 'Albums' })}</dt><dd>{albums.length.toLocaleString()}</dd></div>
-            <div><dt>{t('stat-collections', { defaultValue: 'Collections' })}</dt><dd>{collections.length.toLocaleString()}</dd></div>
-          </dl>
-          <label className="lib-search">
-            <Search size={18} aria-hidden="true" />
-            <span className="sr-only">{t('search-label', { defaultValue: 'Search the library' })}</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder={t('search-placeholder', { defaultValue: 'Search books and albums' })}
-            />
-            {query && (
-              <button type="button" onClick={() => setQuery('')} aria-label={t('clear-search', { defaultValue: 'Clear search' })}><X size={16} /></button>
+          <header className="lib-head">
+            <span className="md:hidden">
+              <button
+                type="button"
+                onClick={openSidebar}
+                aria-label={t('open-menu', { defaultValue: 'Open menu' })}
+                className="vibe-toolbar__icon"
+              >
+                <Menu size={18} />
+              </button>
+            </span>
+            <div className="lib-head__brand">
+              <MobileBrandPrefix />
+              <BookOpen size={17} aria-hidden="true" />
+              <span>{t('library-heading', { defaultValue: 'Library' })}</span>
+            </div>
+            {session.data && (
+              <button
+                type="button"
+                className="lib-upload__open"
+                onClick={() => setUploadOpen(true)}
+                aria-label={t('upload-label', { defaultValue: 'Upload a PDF' })}
+              >
+                <Upload size={15} aria-hidden="true" />
+                <span className="lib-upload__open-label">
+                  {t('upload-button', { defaultValue: 'Add a book' })}
+                </span>
+              </button>
             )}
-          </label>
-        </section>
+          </header>
 
-        <LibraryBlogRow posts={blogPosts} />
+          <section className="lib-hero" aria-labelledby="library-title">
+            <div className="lib-hero__copy">
+              <p className="lib-hero__eyebrow">
+                {t('archive-eyebrow', { defaultValue: 'RMH Studios archive' })}
+              </p>
+              <h1 id="library-title">
+                {t('archive-title', { defaultValue: 'A home for long-form thinking.' })}
+              </h1>
+              <p className="lib-hero__lede">
+                {t('archive-description', {
+                  defaultValue:
+                    'Stories, original research, technical field notes, operating plans, and strange ideas—collected in one quiet reading room.',
+                })}
+              </p>
+            </div>
+            <dl
+              className="lib-stats"
+              aria-label={t('library-totals', { defaultValue: 'Library totals' })}
+            >
+              <div>
+                <dt>{t('stat-volumes', { defaultValue: 'Volumes' })}</dt>
+                <dd>{publicBooks.length.toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt>{t('stat-pages', { defaultValue: 'Pages' })}</dt>
+                <dd>{formatCount(totalPages)}</dd>
+              </div>
+              <div>
+                <dt>{t('stat-albums', { defaultValue: 'Albums' })}</dt>
+                <dd>{albums.length.toLocaleString()}</dd>
+              </div>
+              <div>
+                <dt>{t('stat-collections', { defaultValue: 'Collections' })}</dt>
+                <dd>{collections.length.toLocaleString()}</dd>
+              </div>
+            </dl>
+            <label className="lib-search">
+              <Search size={18} aria-hidden="true" />
+              <span className="sr-only">
+                {t('search-label', { defaultValue: 'Search the library' })}
+              </span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder={t('search-placeholder', { defaultValue: 'Search books and albums' })}
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  aria-label={t('clear-search', { defaultValue: 'Clear search' })}
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </label>
+          </section>
 
-        {isAdmin && hasUnmigrated && (
-          <div className="lib-edit__migrate">
-            <span>{t('migrate-prompt', { defaultValue: 'Some books are still bundled on disk. Move them to object storage to manage them.' })}</span>
-            <button type="button" className="lib-upload__btn lib-upload__btn--primary" onClick={runMigration} disabled={migrating}>
-              <CloudUpload size={14} aria-hidden="true" />
-              {migrating ? t('migrate-running', { defaultValue: 'Migrating…' }) : t('migrate-button', { defaultValue: 'Migrate to S3' })}
-            </button>
-          </div>
-        )}
+          <LibraryBlogRow posts={blogPosts} />
 
-        <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />
+          {isAdmin && hasUnmigrated && (
+            <div className="lib-edit__migrate">
+              <span>
+                {t('migrate-prompt', {
+                  defaultValue:
+                    'Some books are still bundled on disk. Move them to object storage to manage them.',
+                })}
+              </span>
+              <button
+                type="button"
+                className="lib-upload__btn lib-upload__btn--primary"
+                onClick={runMigration}
+                disabled={migrating}
+              >
+                <CloudUpload size={14} aria-hidden="true" />
+                {migrating
+                  ? t('migrate-running', { defaultValue: 'Migrating…' })
+                  : t('migrate-button', { defaultValue: 'Migrate to S3' })}
+              </button>
+            </div>
+          )}
 
-        <LibraryCollections
-          books={books}
-          collections={collections}
-          onChanged={refreshCollections}
-          isAdmin={isAdmin}
-          myHandle={myHandle}
-          canCreate={Boolean(session.data)}
-        />
+          <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />
 
-        {filtered.length === 0 ? (
-          <p className="vibe-hint lib__empty">{t('no-results', { defaultValue: 'No books match that search.' })}</p>
-        ) : (
-          <>
-            <Section
-              title={t('section-curated', { defaultValue: 'Curated' })}
-              books={curated}
-              isAdmin={isAdmin}
-              onEdit={setEditing}
-              onMove={(book, dir) => move(curated, book, dir)}
-              onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
-              onChanged={refresh}
-            />
-            <Section
-              title={t('section-community', { defaultValue: 'Community uploads' })}
-              books={community}
-              isAdmin={isAdmin}
-              onEdit={setEditing}
-              onMove={(book, dir) => move(community, book, dir)}
-              onReorder={(draggedId, targetId) => reorderWithin(community, draggedId, targetId)}
-              onChanged={refresh}
-              showAttribution
-            />
-          </>
-        )}
+          <LibraryCollections
+            books={books}
+            collections={collections}
+            onChanged={refreshCollections}
+            isAdmin={isAdmin}
+            myHandle={myHandle}
+            canCreate={Boolean(session.data)}
+          />
+
+          {filtered.length === 0 ? (
+            <p className="vibe-hint lib__empty">
+              {t('no-results', { defaultValue: 'No books match that search.' })}
+            </p>
+          ) : (
+            <>
+              <Section
+                title={t('section-curated', { defaultValue: 'Curated' })}
+                books={curated}
+                isAdmin={isAdmin}
+                onEdit={setEditing}
+                onMove={(book, dir) => move(curated, book, dir)}
+                onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
+                onChanged={refresh}
+              />
+              <Section
+                title={t('section-community', { defaultValue: 'Community uploads' })}
+                books={community}
+                isAdmin={isAdmin}
+                onEdit={setEditing}
+                onMove={(book, dir) => move(community, book, dir)}
+                onReorder={(draggedId, targetId) => reorderWithin(community, draggedId, targetId)}
+                onChanged={refresh}
+                showAttribution
+              />
+            </>
+          )}
         </LibraryRevealProvider>
       </AnimatedMain>
       <div className="hidden lg:block w-4 shrink-0" />
-      {uploadOpen && <UploadModal isAdmin={isAdmin} onClose={() => setUploadOpen(false)} onUploaded={refresh} />}
-      {editing && <LibraryEditModal book={editing} onClose={() => setEditing(null)} onSaved={refresh} />}
+      {uploadOpen && (
+        <UploadModal isAdmin={isAdmin} onClose={() => setUploadOpen(false)} onUploaded={refresh} />
+      )}
+      {editing && (
+        <LibraryEditModal book={editing} onClose={() => setEditing(null)} onSaved={refresh} />
+      )}
     </>
   );
 }
@@ -431,7 +499,9 @@ function Section({
     <section className="lib__section lib__section--catalog">
       <div className="lib__section-head">
         <h2 className="lib__section-title">{title}</h2>
-        <span className="lib__section-count">{t('book-count', { count: books.length, defaultValue: '{{count}} books' })}</span>
+        <span className="lib__section-count">
+          {t('book-count', { count: books.length, defaultValue: '{{count}} books' })}
+        </span>
       </div>
       <div className="lib__shelf lib__shelf--catalog" role="list">
         {books.map((book) => {
@@ -486,7 +556,7 @@ function BookSpine({
 
   const uploader = book.uploadedBy?.handle
     ? `@${book.uploadedBy.handle}`
-    : book.uploadedBy?.name ?? null;
+    : (book.uploadedBy?.name ?? null);
   const date = book.createdAt ? new Date(book.createdAt).toLocaleDateString() : null;
 
   const wrapClass = [
@@ -539,19 +609,36 @@ function BookSpine({
             ) : (
               <span className="lib-book__title">{book.title}</span>
             )}
-            {book.pages > 0 && <span className="lib-book__pages-badge">{book.pages.toLocaleString()} pp</span>}
+            {book.pages > 0 && (
+              <span className="lib-book__pages-badge">{book.pages.toLocaleString()} pp</span>
+            )}
             {!book.coverUrl && <span className="lib-book__mark">RMH</span>}
-            {book.reported && isAdmin && <span className="lib-book__reported" title={t('reported', { defaultValue: 'Reported' })}>!</span>}
+            {book.reported && isAdmin && (
+              <span
+                className="lib-book__reported"
+                title={t('reported', { defaultValue: 'Reported' })}
+              >
+                !
+              </span>
+            )}
           </div>
         </div>
         <div className="lib-book__meta">
           <div className="lib-book__facts">
-            <span><FileText size={12} aria-hidden="true" />{book.pages > 0 ? t('page-count', { count: book.pages, defaultValue: '{{count}} pages' }) : book.format.toUpperCase()}</span>
+            <span>
+              <FileText size={12} aria-hidden="true" />
+              {book.pages > 0
+                ? t('page-count', { count: book.pages, defaultValue: '{{count}} pages' })
+                : book.format.toUpperCase()}
+            </span>
             <span>{book.format.toUpperCase()}</span>
           </div>
           <p className="lib-book__name">{book.title}</p>
           <p className={`lib-book__description${book.description ? '' : ' is-muted'}`}>
-            {book.description || t('book-description-fallback', { defaultValue: 'Open this volume to explore the full document.' })}
+            {book.description ||
+              t('book-description-fallback', {
+                defaultValue: 'Open this volume to explore the full document.',
+              })}
           </p>
           {showAttribution && (uploader || date) && (
             <p className="lib-book__by">

@@ -5,7 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { useRouletteStore } from '@/lib/roulette/store';
 import { getRouletteSocket } from '@/lib/roulette/socket';
 import { C2S } from '@/lib/roulette/events';
-import { getNumberColor, getOutsideBetNumbers, WHEEL_ORDER, DOUBLE_ZERO, numberLabel } from '@/lib/roulette/logic';
+import {
+  getNumberColor,
+  getOutsideBetNumbers,
+  WHEEL_ORDER,
+  DOUBLE_ZERO,
+  numberLabel,
+} from '@/lib/roulette/logic';
 import type { BetType } from '@/lib/roulette/logic';
 import { CoinIcon } from './CoinIcon';
 
@@ -31,7 +37,10 @@ const NUMBER_BG_WIN: Record<string, string> = {
 
 const CELL_W = 64;
 const REPEATS = 10;
-const STRIP = Array.from({ length: WHEEL_ORDER.length * REPEATS }, (_, i) => WHEEL_ORDER[i % WHEEL_ORDER.length]);
+const STRIP = Array.from(
+  { length: WHEEL_ORDER.length * REPEATS },
+  (_, i) => WHEEL_ORDER[i % WHEEL_ORDER.length],
+);
 
 function getCellBg(n: number) {
   const c = getNumberColor(n);
@@ -53,7 +62,10 @@ function SpinningWheel({ result }: { result: number | null }) {
     const midStart = Math.floor(REPEATS / 2) * WHEEL_ORDER.length;
     let targetIdx = midStart;
     for (let i = midStart; i < midStart + WHEEL_ORDER.length; i++) {
-      if (STRIP[i] === result) { targetIdx = i; break; }
+      if (STRIP[i] === result) {
+        targetIdx = i;
+        break;
+      }
     }
 
     const viewportW = stripRef.current.parentElement?.clientWidth ?? 320;
@@ -76,16 +88,23 @@ function SpinningWheel({ result }: { result: number | null }) {
 
   return (
     <div className="flex flex-col items-center gap-1 w-full">
-      <div className="w-0 h-0" style={{
-        borderLeft: '10px solid transparent',
-        borderRight: '10px solid transparent',
-        borderTop: '14px solid var(--site-accent)',
-      }} />
+      <div
+        className="w-0 h-0"
+        style={{
+          borderLeft: '10px solid transparent',
+          borderRight: '10px solid transparent',
+          borderTop: '14px solid var(--site-accent)',
+        }}
+      />
       <div
         className="relative overflow-hidden rounded-xl border-2 border-site-accent/60"
         style={{ width: '100%', maxWidth: 420, height: 72 }}
       >
-        <div ref={stripRef} className="flex absolute top-0 left-0 h-full" style={{ willChange: 'transform' }}>
+        <div
+          ref={stripRef}
+          className="flex absolute top-0 left-0 h-full"
+          style={{ willChange: 'transform' }}
+        >
           {STRIP.map((n, i) => {
             const isHighlight = landed && highlightIdx === i;
             return (
@@ -107,11 +126,14 @@ function SpinningWheel({ result }: { result: number | null }) {
           })}
         </div>
       </div>
-      <div className="w-0 h-0" style={{
-        borderLeft: '10px solid transparent',
-        borderRight: '10px solid transparent',
-        borderBottom: '14px solid var(--site-accent)',
-      }} />
+      <div
+        className="w-0 h-0"
+        style={{
+          borderLeft: '10px solid transparent',
+          borderRight: '10px solid transparent',
+          borderBottom: '14px solid var(--site-accent)',
+        }}
+      />
     </div>
   );
 }
@@ -119,13 +141,15 @@ function SpinningWheel({ result }: { result: number | null }) {
 // ── Winning Number Display ──────────────────────────────────────
 
 function WinningNumberDisplay({ number: num }: { number: number }) {
-  const { t } = useTranslation("c-rmhcoins");
+  const { t } = useTranslation('c-rmhcoins');
   const color = getNumberColor(num);
   const bg = color === 'red' ? '#dc2626' : color === 'green' ? '#059669' : '#1f2937';
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <span className="text-xs text-site-text-dim uppercase tracking-wider font-bold">{t("winning-number", { defaultValue: "Winning Number" })}</span>
+      <span className="text-xs text-site-text-dim uppercase tracking-wider font-bold">
+        {t('winning-number', { defaultValue: 'Winning Number' })}
+      </span>
       <div
         className="flex items-center justify-center rounded-full text-white font-black text-2xl sm:text-3xl shadow-2xl"
         style={{
@@ -143,7 +167,8 @@ function WinningNumberDisplay({ number: num }: { number: number }) {
 
 // ── Bet dot styles ──────────────────────────────────────────────
 
-const DOT_BASE = 'absolute z-20 rounded-full transition-all opacity-0 hover:opacity-100 hover:scale-125';
+const DOT_BASE =
+  'absolute z-20 rounded-full transition-all opacity-0 hover:opacity-100 hover:scale-125';
 const DOT_IDLE = `${DOT_BASE} bg-site-accent/70 border border-site-accent shadow-sm`;
 const DOT_SIZE = 'w-5 h-5 sm:w-4 sm:h-4';
 
@@ -153,7 +178,15 @@ interface Props {
   coins: number;
 }
 
-function ChipOverlay({ type, numbers, getChipAmount }: { type: BetType; numbers: number[]; getChipAmount: (type: BetType, numbers: number[]) => number }) {
+function ChipOverlay({
+  type,
+  numbers,
+  getChipAmount,
+}: {
+  type: BetType;
+  numbers: number[];
+  getChipAmount: (type: BetType, numbers: number[]) => number;
+}) {
   const amount = getChipAmount(type, numbers);
   if (amount <= 0) return null;
   return (
@@ -165,7 +198,17 @@ function ChipOverlay({ type, numbers, getChipAmount }: { type: BetType; numbers:
 }
 
 // Chip overlay positioned at a specific edge/corner (for split/corner bets on the board)
-function EdgeChip({ type, numbers, style, getChipAmount }: { type: BetType; numbers: number[]; style: React.CSSProperties; getChipAmount: (type: BetType, numbers: number[]) => number }) {
+function EdgeChip({
+  type,
+  numbers,
+  style,
+  getChipAmount,
+}: {
+  type: BetType;
+  numbers: number[];
+  style: React.CSSProperties;
+  getChipAmount: (type: BetType, numbers: number[]) => number;
+}) {
   const amount = getChipAmount(type, numbers);
   if (amount <= 0) return null;
   return (
@@ -179,17 +222,10 @@ function EdgeChip({ type, numbers, style, getChipAmount }: { type: BetType; numb
 }
 
 export function RouletteTable({ coins }: Props) {
-  const {
-    tablePhase,
-    stagedBets,
-    spinResult,
-    history,
-    players,
-    myUserId,
-    lastRoundResult,
-  } = useRouletteStore();
+  const { tablePhase, stagedBets, spinResult, history, players, myUserId, lastRoundResult } =
+    useRouletteStore();
 
-  const { t } = useTranslation("c-rmhcoins");
+  const { t } = useTranslation('c-rmhcoins');
   const addStagedBet = useRouletteStore((s) => s.addStagedBet);
 
   const isBetting = tablePhase === 'betting';
@@ -216,30 +252,34 @@ export function RouletteTable({ coins }: Props) {
     return map;
   }, [stagedBets, isBetting, players, myUserId]);
 
-  const getChipAmount = useCallback((type: BetType, numbers: number[]) => {
-    const key = type + ':' + [...numbers].sort((a, b) => a - b).join(',');
-    return chipMap.get(key) ?? 0;
-  }, [chipMap]);
+  const getChipAmount = useCallback(
+    (type: BetType, numbers: number[]) => {
+      const key = type + ':' + [...numbers].sort((a, b) => a - b).join(',');
+      return chipMap.get(key) ?? 0;
+    },
+    [chipMap],
+  );
 
-  const handlePlaceBet = useCallback((type: BetType, numbers: number[]) => {
-    if (!isBetting) return;
-    const chipValue = getSelectedChipValue();
-    if (chipValue > coins) return;
+  const handlePlaceBet = useCallback(
+    (type: BetType, numbers: number[]) => {
+      if (!isBetting) return;
+      const chipValue = getSelectedChipValue();
+      if (chipValue > coins) return;
 
-    addStagedBet({ type, numbers, amount: chipValue });
+      addStagedBet({ type, numbers, amount: chipValue });
 
-    const sock = getRouletteSocket();
-    if (sock) {
-      sock.emit(C2S.PLACE_BET, { type, numbers, amount: chipValue });
-    }
-  }, [isBetting, coins, addStagedBet]);
+      const sock = getRouletteSocket();
+      if (sock) {
+        sock.emit(C2S.PLACE_BET, { type, numbers, amount: chipValue });
+      }
+    },
+    [isBetting, coins, addStagedBet],
+  );
 
   return (
     <div className="flex flex-col items-center gap-2">
       {/* Spinning animation */}
-      {tablePhase === 'spinning' && (
-        <SpinningWheel result={spinResult} />
-      )}
+      {tablePhase === 'spinning' && <SpinningWheel result={spinResult} />}
 
       {/* Results - show winning number prominently */}
       {tablePhase === 'results' && spinResult !== null && (
@@ -272,8 +312,12 @@ export function RouletteTable({ coins }: Props) {
               onClick={() => handlePlaceBet('topline', [0, DOUBLE_ZERO, 1, 2, 3])}
               className="w-full min-h-7 bg-site-surface border border-site-border text-site-text text-[10px] font-bold rounded transition-all hover:bg-site-surface-hover active:scale-[0.98] relative"
             >
-              {t("top-line-bet", { defaultValue: "Top Line (0, 00, 1-3) 6:1" })}
-              <ChipOverlay type="topline" numbers={[0, DOUBLE_ZERO, 1, 2, 3]} getChipAmount={getChipAmount} />
+              {t('top-line-bet', { defaultValue: 'Top Line (0, 00, 1-3) 6:1' })}
+              <ChipOverlay
+                type="topline"
+                numbers={[0, DOUBLE_ZERO, 1, 2, 3]}
+                getChipAmount={getChipAmount}
+              />
             </button>
           )}
 
@@ -304,12 +348,20 @@ export function RouletteTable({ coins }: Props) {
                     {isBetting && hasRight && (
                       <>
                         <button
-                          onClick={(e) => { e.stopPropagation(); handlePlaceBet('split', [n, n + 1]); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlaceBet('split', [n, n + 1]);
+                          }}
                           className={`${DOT_IDLE} ${DOT_SIZE}`}
                           style={{ top: '50%', right: -3, transform: 'translate(50%, -50%)' }}
                           title={`Split ${n}/${n + 1}`}
                         />
-                        <EdgeChip type="split" numbers={[n, n + 1]} style={{ top: '50%', right: -3, transform: 'translate(50%, -50%)' }} getChipAmount={getChipAmount} />
+                        <EdgeChip
+                          type="split"
+                          numbers={[n, n + 1]}
+                          style={{ top: '50%', right: -3, transform: 'translate(50%, -50%)' }}
+                          getChipAmount={getChipAmount}
+                        />
                       </>
                     )}
 
@@ -317,12 +369,20 @@ export function RouletteTable({ coins }: Props) {
                     {isBetting && hasBelow && (
                       <>
                         <button
-                          onClick={(e) => { e.stopPropagation(); handlePlaceBet('split', [n, n + 3]); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlaceBet('split', [n, n + 3]);
+                          }}
                           className={`${DOT_IDLE} ${DOT_SIZE}`}
                           style={{ bottom: -3, left: '50%', transform: 'translate(-50%, 50%)' }}
                           title={`Split ${n}/${n + 3}`}
                         />
-                        <EdgeChip type="split" numbers={[n, n + 3]} style={{ bottom: -3, left: '50%', transform: 'translate(-50%, 50%)' }} getChipAmount={getChipAmount} />
+                        <EdgeChip
+                          type="split"
+                          numbers={[n, n + 3]}
+                          style={{ bottom: -3, left: '50%', transform: 'translate(-50%, 50%)' }}
+                          getChipAmount={getChipAmount}
+                        />
                       </>
                     )}
 
@@ -330,12 +390,20 @@ export function RouletteTable({ coins }: Props) {
                     {isBetting && hasRight && hasBelow && (
                       <>
                         <button
-                          onClick={(e) => { e.stopPropagation(); handlePlaceBet('corner', [n, n + 1, n + 3, n + 4]); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlaceBet('corner', [n, n + 1, n + 3, n + 4]);
+                          }}
                           className={`${DOT_IDLE} ${DOT_SIZE}`}
                           style={{ bottom: -3, right: -3, transform: 'translate(50%, 50%)' }}
                           title={`Corner ${n}/${n + 1}/${n + 3}/${n + 4}`}
                         />
-                        <EdgeChip type="corner" numbers={[n, n + 1, n + 3, n + 4]} style={{ bottom: -3, right: -3, transform: 'translate(50%, 50%)' }} getChipAmount={getChipAmount} />
+                        <EdgeChip
+                          type="corner"
+                          numbers={[n, n + 1, n + 3, n + 4]}
+                          style={{ bottom: -3, right: -3, transform: 'translate(50%, 50%)' }}
+                          getChipAmount={getChipAmount}
+                        />
                       </>
                     )}
 
@@ -343,12 +411,20 @@ export function RouletteTable({ coins }: Props) {
                     {isBetting && colIdx === 0 && (
                       <>
                         <button
-                          onClick={(e) => { e.stopPropagation(); handlePlaceBet('street', [n, n + 1, n + 2]); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlaceBet('street', [n, n + 1, n + 2]);
+                          }}
                           className={`${DOT_IDLE} ${DOT_SIZE}`}
                           style={{ top: '50%', left: -3, transform: 'translate(-50%, -50%)' }}
                           title={`Street ${n}-${n + 2}`}
                         />
-                        <EdgeChip type="street" numbers={[n, n + 1, n + 2]} style={{ top: '50%', left: -3, transform: 'translate(-50%, -50%)' }} getChipAmount={getChipAmount} />
+                        <EdgeChip
+                          type="street"
+                          numbers={[n, n + 1, n + 2]}
+                          style={{ top: '50%', left: -3, transform: 'translate(-50%, -50%)' }}
+                          getChipAmount={getChipAmount}
+                        />
                       </>
                     )}
 
@@ -356,17 +432,25 @@ export function RouletteTable({ coins }: Props) {
                     {isBetting && colIdx === 0 && hasBelow && (
                       <>
                         <button
-                          onClick={(e) => { e.stopPropagation(); handlePlaceBet('line', [n, n + 1, n + 2, n + 3, n + 4, n + 5]); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePlaceBet('line', [n, n + 1, n + 2, n + 3, n + 4, n + 5]);
+                          }}
                           className={`${DOT_IDLE} ${DOT_SIZE}`}
                           style={{ bottom: -3, left: -3, transform: 'translate(-50%, 50%)' }}
                           title={`Line ${n}-${n + 5}`}
                         />
-                        <EdgeChip type="line" numbers={[n, n + 1, n + 2, n + 3, n + 4, n + 5]} style={{ bottom: -3, left: -3, transform: 'translate(-50%, 50%)' }} getChipAmount={getChipAmount} />
+                        <EdgeChip
+                          type="line"
+                          numbers={[n, n + 1, n + 2, n + 3, n + 4, n + 5]}
+                          style={{ bottom: -3, left: -3, transform: 'translate(-50%, 50%)' }}
+                          getChipAmount={getChipAmount}
+                        />
                       </>
                     )}
                   </div>
                 );
-              })
+              }),
             )}
           </div>
 
@@ -381,8 +465,12 @@ export function RouletteTable({ coins }: Props) {
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 }`}
               >
-                {t("col-n", { defaultValue: "Col {{col}}", col: i + 1 })}
-                <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} getChipAmount={getChipAmount} />
+                {t('col-n', { defaultValue: 'Col {{col}}', col: i + 1 })}
+                <ChipOverlay
+                  type={type}
+                  numbers={getOutsideBetNumbers(type)}
+                  getChipAmount={getChipAmount}
+                />
               </button>
             ))}
           </div>
@@ -398,22 +486,30 @@ export function RouletteTable({ coins }: Props) {
                   isBetting ? 'cursor-pointer' : 'cursor-default'
                 }`}
               >
-                {i === 0 ? t("dozen-1st", { defaultValue: "1st 12" }) : i === 1 ? t("dozen-2nd", { defaultValue: "2nd 12" }) : t("dozen-3rd", { defaultValue: "3rd 12" })}
-                <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} getChipAmount={getChipAmount} />
+                {i === 0
+                  ? t('dozen-1st', { defaultValue: '1st 12' })
+                  : i === 1
+                    ? t('dozen-2nd', { defaultValue: '2nd 12' })
+                    : t('dozen-3rd', { defaultValue: '3rd 12' })}
+                <ChipOverlay
+                  type={type}
+                  numbers={getOutsideBetNumbers(type)}
+                  getChipAmount={getChipAmount}
+                />
               </button>
             ))}
           </div>
 
           {/* Outside bets — 3 columns on mobile for bigger targets, 6 on desktop */}
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-0.5">
-            {([
+            {[
               { type: 'low' as BetType, label: '1-18', key: 'low' },
               { type: 'even' as BetType, label: 'Even', key: 'even' },
               { type: 'red' as BetType, label: 'Red', key: 'red' },
               { type: 'black' as BetType, label: 'Black', key: 'black' },
               { type: 'odd' as BetType, label: 'Odd', key: 'odd' },
               { type: 'high' as BetType, label: '19-36', key: 'high' },
-            ]).map(({ type, label, key }) => (
+            ].map(({ type, label, key }) => (
               <button
                 key={type}
                 onClick={() => handlePlaceBet(type, getOutsideBetNumbers(type))}
@@ -424,12 +520,16 @@ export function RouletteTable({ coins }: Props) {
                   type === 'red'
                     ? 'bg-red-600 hover:bg-red-500 text-white'
                     : type === 'black'
-                    ? 'bg-gray-800 hover:bg-gray-700 text-white'
-                    : 'bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover'
+                      ? 'bg-gray-800 hover:bg-gray-700 text-white'
+                      : 'bg-site-surface border border-site-border text-site-text hover:bg-site-surface-hover'
                 }`}
               >
                 {t(`outside-${key}`, { defaultValue: label })}
-                <ChipOverlay type={type} numbers={getOutsideBetNumbers(type)} getChipAmount={getChipAmount} />
+                <ChipOverlay
+                  type={type}
+                  numbers={getOutsideBetNumbers(type)}
+                  getChipAmount={getChipAmount}
+                />
               </button>
             ))}
           </div>
@@ -439,7 +539,9 @@ export function RouletteTable({ coins }: Props) {
       {/* History */}
       {history.length > 0 && (
         <div className="flex flex-col items-center gap-1 w-full">
-          <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold">{t("history", { defaultValue: "History" })}</span>
+          <span className="text-[10px] text-site-text-dim uppercase tracking-wider font-bold">
+            {t('history', { defaultValue: 'History' })}
+          </span>
           <div className="flex gap-1 flex-wrap justify-center">
             {history.slice(-15).map((n, i) => {
               const color = getNumberColor(n);
@@ -447,9 +549,11 @@ export function RouletteTable({ coins }: Props) {
                 <span
                   key={`${n}-${i}`}
                   className={`inline-flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full text-[9px] sm:text-[10px] font-bold text-white ${
-                    color === 'red' ? 'bg-red-600'
-                    : color === 'green' ? 'bg-emerald-600'
-                    : 'bg-gray-800'
+                    color === 'red'
+                      ? 'bg-red-600'
+                      : color === 'green'
+                        ? 'bg-emerald-600'
+                        : 'bg-gray-800'
                   }`}
                 >
                   {numberLabel(n)}
@@ -477,21 +581,29 @@ export function RouletteTable({ coins }: Props) {
                     {player.avatarUrl ? (
                       <img src={player.avatarUrl} alt="" className="w-4 h-4 rounded-full" />
                     ) : null}
-                    <span className={`text-xs font-bold truncate max-w-15 ${isMe ? 'text-site-accent' : 'text-site-text'}`}>
-                      {isMe ? t("you", { defaultValue: "You" }) : player.userName}
+                    <span
+                      className={`text-xs font-bold truncate max-w-15 ${isMe ? 'text-site-accent' : 'text-site-text'}`}
+                    >
+                      {isMe ? t('you', { defaultValue: 'You' }) : player.userName}
                     </span>
                   </div>
                   {player.totalBetThisRound > 0 && (
                     <div className="flex items-center gap-0.5">
                       <CoinIcon className="w-3 h-3" />
-                      <span className="text-[10px] text-yellow-500 font-bold">{player.totalBetThisRound}</span>
+                      <span className="text-[10px] text-yellow-500 font-bold">
+                        {player.totalBetThisRound}
+                      </span>
                     </div>
                   )}
                   {tablePhase === 'results' && myPayout && myPayout.netGain > 0 && (
-                    <span className="text-[10px] text-site-success font-bold animate-bounce">+{myPayout.payout}</span>
+                    <span className="text-[10px] text-site-success font-bold animate-bounce">
+                      +{myPayout.payout}
+                    </span>
                   )}
                   {tablePhase === 'results' && myPayout && myPayout.netGain < 0 && (
-                    <span className="text-[10px] text-site-danger font-bold">{myPayout.netGain}</span>
+                    <span className="text-[10px] text-site-danger font-bold">
+                      {myPayout.netGain}
+                    </span>
                   )}
                 </div>
               );
