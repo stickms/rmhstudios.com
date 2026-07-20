@@ -13,12 +13,9 @@ on:
       - "lib/**"
       - "tsconfig.server.json"
       - ".github/workflows/typecheck-server.yml"
-  push:
-    branches: [main]
-    paths:
-      - "server/**"
-      - "lib/**"
-      - "tsconfig.server.json"
+  # No `push:` trigger: main is reached only via PR, so this server-tier typecheck
+  # already ran on the PR head. Dropping the per-push run trims a redundant runner
+  # (it was the ONE unique check on push, but a duplicate of the PR gate).
   workflow_dispatch: {}
 
 concurrency:

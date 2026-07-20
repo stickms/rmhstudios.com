@@ -152,5 +152,14 @@ target "full" {
     "type=registry,ref=${IMAGE_FULL}:buildcache",
     "type=registry,ref=${IMAGE_WEB}:buildcache",
   ]
-  cache-to = ["type=registry,ref=${IMAGE_FULL}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true"]
+  # mode=min (not max): only export the final-image layers, not every intermediate
+  # stage. The `web` target above already exports the whole SHARED graph (deps,
+  # prisma, the ~137s vite-builder, server-builder) at mode=max, and `full` reads
+  # it via cache-from — so the only stages min drops here are `full`'s own extras:
+  # go-builder (go mod download + build, ~30s) and the Chromium apk layer (~8s).
+  # Both run in PARALLEL with the vite build (off the critical path), so letting
+  # them rebuild is nearly free — whereas exporting them at mode=max cost ~25s of
+  # cache-export that runs AFTER the push and blocks deploy-gate from firing the
+  # webhook. Trading ~25s of on-critical-path export for ~0s of off-path rebuild.
+  cache-to = ["type=registry,ref=${IMAGE_FULL}:buildcache,mode=min,image-manifest=true,oci-mediatypes=true"]
 }

@@ -10,6 +10,15 @@ node_modules
 .tanstack
 dist-server
 .pnpm-store
+# CI incremental caches (tsc/eslint) — never part of the image, and keeping a
+# stray local copy out of the context avoids busting the vite COPY layer.
+.cache
+# buildkit-cache-dance staging dirs (deploy.yml persists the vite cache mounts
+# through these). They exist in the CI workspace DURING the build, so they MUST be
+# excluded or the `COPY --exclude … . .` layer would ingest them and bust the very
+# vite cache we're trying to warm. Removing #2 from deploy.yml? Drop these too.
+.buildkit-cache
+.buildkit-scratch
 # Deploy state written on the HOST by deploy.sh (the content-hash file + the
 # build-timing progress log). Not part of the image — and critically, the
 # progress log is appended DURING the build via `tee`, so leaving .deploy/ in the
@@ -115,3 +124,17 @@ deploy
 testing
 specs
 vitest.config.ts
+# Co-located unit tests + mocks live throughout app/, components/, lib/, etc.
+# Nothing in the runtime image imports them (vite builds from the route tree +
+# server entry, never *.test.*), but they ARE inside the `COPY --exclude … . .`
+# context — so touching any of ~185 test files (a test-only or CI-only commit)
+# otherwise busts the expensive vite-builder layer and forces a full frontend
+# rebuild. Excluding them lets those commits land on the warm-cache fast path.
+**/*.test.ts
+**/*.test.tsx
+**/*.test.js
+**/*.test.mjs
+**/*.spec.ts
+**/*.spec.tsx
+**/__tests__
+**/__mocks__

@@ -50,6 +50,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 
+# CI incremental caches (tsc .tsbuildinfo + eslint result cache; see web-ci.yml)
+.cache/
+
 # claude
 .claude
 
