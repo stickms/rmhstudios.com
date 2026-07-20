@@ -340,6 +340,7 @@ model User {
   gameReviews        GameReview[]
   gameReviewVotes    GameReviewVote[]
   gameGuides         GameGuide[]
+  userThemes         UserTheme[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -5897,4 +5898,32 @@ model GameGuideRevision {
 
   @@index([guideId, createdAt(sort: Desc)])
   @@map("game_guide_revision")
+}
+
+// Theme Studio (§14): user-authored site themes as a marketplace cosmetic.
+// `tokens` is a closed, versioned token map (lib/themes/tokens.ts) — never CSS
+// strings — so publishing a theme can't inject styles. Ownership rides
+// UserInventory (kind THEME, itemId "user:<themeId>").
+enum UserThemeStatus {
+  DRAFT
+  PUBLISHED
+  DELISTED
+}
+
+model UserTheme {
+  id         String          @id @default(cuid())
+  authorId   String
+  name       String          @db.VarChar(40)
+  tokens     Json // { v: 1, ...closed key set }
+  status     UserThemeStatus @default(DRAFT)
+  priceCoins Int? // null while draft; 200–5000 published
+  sales      Int             @default(0)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([status, sales(sort: Desc)])
+  @@index([authorId])
+  @@map("user_theme")
 }

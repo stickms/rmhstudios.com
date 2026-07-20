@@ -186,6 +186,7 @@ import { Route as ApiWishlistIndexRouteImport } from './routes/api/wishlist/inde
 import { Route as ApiWheelIndexRouteImport } from './routes/api/wheel/index'
 import { Route as ApiWagerIndexRouteImport } from './routes/api/wager/index'
 import { Route as ApiTournamentsIndexRouteImport } from './routes/api/tournaments/index'
+import { Route as ApiThemesIndexRouteImport } from './routes/api/themes/index'
 import { Route as ApiStakingIndexRouteImport } from './routes/api/staking/index'
 import { Route as ApiSpacesIndexRouteImport } from './routes/api/spaces/index'
 import { Route as ApiShopIndexRouteImport } from './routes/api/shop/index'
@@ -271,6 +272,8 @@ import { Route as ApiUserBuildsCategoriesRouteImport } from './routes/api/user-b
 import { Route as ApiUserBuildsIdRouteImport } from './routes/api/user-builds/$id'
 import { Route as ApiTournamentsIdRouteImport } from './routes/api/tournaments/$id'
 import { Route as ApiTipsLeaderboardRouteImport } from './routes/api/tips/leaderboard'
+import { Route as ApiThemesShopRouteImport } from './routes/api/themes/shop'
+import { Route as ApiThemesIdRouteImport } from './routes/api/themes/$id'
 import { Route as ApiTempleOfJoySaveRouteImport } from './routes/api/temple-of-joy/save'
 import { Route as ApiTagsTagRouteImport } from './routes/api/tags/$tag'
 import { Route as ApiStudyTutorRouteImport } from './routes/api/study/tutor'
@@ -432,6 +435,7 @@ import { Route as SiteThreadRootIdRouteImport } from './routes/_site/thread/$roo
 import { Route as SiteTagTagRouteImport } from './routes/_site/tag.$tag'
 import { Route as SiteStudyBrowseRouteImport } from './routes/_site/study/browse'
 import { Route as SiteStudyDeckIdRouteImport } from './routes/_site/study/$deckId'
+import { Route as SiteStudioThemesRouteImport } from './routes/_site/studio/themes'
 import { Route as SiteStoreUseridRouteImport } from './routes/_site/store/$userid'
 import { Route as SiteSpacesIdRouteImport } from './routes/_site/spaces.$id'
 import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
@@ -524,6 +528,8 @@ import { Route as ApiTournamentsIdWithdrawRouteImport } from './routes/api/tourn
 import { Route as ApiTournamentsIdStartRouteImport } from './routes/api/tournaments/$id/start'
 import { Route as ApiTournamentsIdRegisterRouteImport } from './routes/api/tournaments/$id/register'
 import { Route as ApiTournamentsIdCancelRouteImport } from './routes/api/tournaments/$id/cancel'
+import { Route as ApiThemesIdPublishRouteImport } from './routes/api/themes/$id.publish'
+import { Route as ApiThemesIdBuyRouteImport } from './routes/api/themes/$id.buy'
 import { Route as ApiStorefrontCreatorUseridRouteImport } from './routes/api/storefront/creator/$userid'
 import { Route as ApiSpacesIdStartRouteImport } from './routes/api/spaces/$id/start'
 import { Route as ApiSpacesIdEndRouteImport } from './routes/api/spaces/$id/end'
@@ -1586,6 +1592,11 @@ const ApiTournamentsIndexRoute = ApiTournamentsIndexRouteImport.update({
   path: '/api/tournaments/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiThemesIndexRoute = ApiThemesIndexRouteImport.update({
+  id: '/api/themes/',
+  path: '/api/themes/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStakingIndexRoute = ApiStakingIndexRouteImport.update({
   id: '/api/staking/',
   path: '/api/staking/',
@@ -2016,6 +2027,16 @@ const ApiTournamentsIdRoute = ApiTournamentsIdRouteImport.update({
 const ApiTipsLeaderboardRoute = ApiTipsLeaderboardRouteImport.update({
   id: '/api/tips/leaderboard',
   path: '/api/tips/leaderboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiThemesShopRoute = ApiThemesShopRouteImport.update({
+  id: '/api/themes/shop',
+  path: '/api/themes/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiThemesIdRoute = ApiThemesIdRouteImport.update({
+  id: '/api/themes/$id',
+  path: '/api/themes/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiTempleOfJoySaveRoute = ApiTempleOfJoySaveRouteImport.update({
@@ -2835,6 +2856,11 @@ const SiteStudyDeckIdRoute = SiteStudyDeckIdRouteImport.update({
   path: '/study/$deckId',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteStudioThemesRoute = SiteStudioThemesRouteImport.update({
+  id: '/studio/themes',
+  path: '/studio/themes',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteStoreUseridRoute = SiteStoreUseridRouteImport.update({
   id: '/store/$userid',
   path: '/store/$userid',
@@ -3304,6 +3330,16 @@ const ApiTournamentsIdCancelRoute = ApiTournamentsIdCancelRouteImport.update({
   id: '/cancel',
   path: '/cancel',
   getParentRoute: () => ApiTournamentsIdRoute,
+} as any)
+const ApiThemesIdPublishRoute = ApiThemesIdPublishRouteImport.update({
+  id: '/publish',
+  path: '/publish',
+  getParentRoute: () => ApiThemesIdRoute,
+} as any)
+const ApiThemesIdBuyRoute = ApiThemesIdBuyRouteImport.update({
+  id: '/buy',
+  path: '/buy',
+  getParentRoute: () => ApiThemesIdRoute,
 } as any)
 const ApiStorefrontCreatorUseridRoute =
   ApiStorefrontCreatorUseridRouteImport.update({
@@ -4451,6 +4487,7 @@ export interface FileRoutesByFullPath {
   '/settings/security': typeof SiteSettingsSecurityRoute
   '/spaces/$id': typeof SiteSpacesIdRoute
   '/store/$userid': typeof SiteStoreUseridRoute
+  '/studio/themes': typeof SiteStudioThemesRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
@@ -4612,6 +4649,8 @@ export interface FileRoutesByFullPath {
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
+  '/api/themes/shop': typeof ApiThemesShopRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
   '/api/tournaments/$id': typeof ApiTournamentsIdRouteWithChildren
   '/api/user-builds/$id': typeof ApiUserBuildsIdRouteWithChildren
@@ -4697,6 +4736,7 @@ export interface FileRoutesByFullPath {
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/spaces/': typeof ApiSpacesIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
+  '/api/themes/': typeof ApiThemesIndexRoute
   '/api/tournaments/': typeof ApiTournamentsIndexRoute
   '/api/wager/': typeof ApiWagerIndexRoute
   '/api/wheel/': typeof ApiWheelIndexRoute
@@ -4823,6 +4863,8 @@ export interface FileRoutesByFullPath {
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
   '/api/spaces/$id/start': typeof ApiSpacesIdStartRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
+  '/api/themes/$id/publish': typeof ApiThemesIdPublishRoute
   '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
   '/api/tournaments/$id/register': typeof ApiTournamentsIdRegisterRoute
   '/api/tournaments/$id/start': typeof ApiTournamentsIdStartRoute
@@ -5116,6 +5158,7 @@ export interface FileRoutesByTo {
   '/settings/security': typeof SiteSettingsSecurityRoute
   '/spaces/$id': typeof SiteSpacesIdRoute
   '/store/$userid': typeof SiteStoreUseridRoute
+  '/studio/themes': typeof SiteStudioThemesRoute
   '/study/$deckId': typeof SiteStudyDeckIdRoute
   '/study/browse': typeof SiteStudyBrowseRoute
   '/tag/$tag': typeof SiteTagTagRoute
@@ -5277,6 +5320,8 @@ export interface FileRoutesByTo {
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
+  '/api/themes/shop': typeof ApiThemesShopRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
   '/api/tournaments/$id': typeof ApiTournamentsIdRouteWithChildren
   '/api/user-builds/$id': typeof ApiUserBuildsIdRouteWithChildren
@@ -5362,6 +5407,7 @@ export interface FileRoutesByTo {
   '/api/shop': typeof ApiShopIndexRoute
   '/api/spaces': typeof ApiSpacesIndexRoute
   '/api/staking': typeof ApiStakingIndexRoute
+  '/api/themes': typeof ApiThemesIndexRoute
   '/api/tournaments': typeof ApiTournamentsIndexRoute
   '/api/wager': typeof ApiWagerIndexRoute
   '/api/wheel': typeof ApiWheelIndexRoute
@@ -5488,6 +5534,8 @@ export interface FileRoutesByTo {
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
   '/api/spaces/$id/start': typeof ApiSpacesIdStartRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
+  '/api/themes/$id/publish': typeof ApiThemesIdPublishRoute
   '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
   '/api/tournaments/$id/register': typeof ApiTournamentsIdRegisterRoute
   '/api/tournaments/$id/start': typeof ApiTournamentsIdStartRoute
@@ -5808,6 +5856,7 @@ export interface FileRoutesById {
   '/_site/settings/security': typeof SiteSettingsSecurityRoute
   '/_site/spaces/$id': typeof SiteSpacesIdRoute
   '/_site/store/$userid': typeof SiteStoreUseridRoute
+  '/_site/studio/themes': typeof SiteStudioThemesRoute
   '/_site/study/$deckId': typeof SiteStudyDeckIdRoute
   '/_site/study/browse': typeof SiteStudyBrowseRoute
   '/_site/tag/$tag': typeof SiteTagTagRoute
@@ -5969,6 +6018,8 @@ export interface FileRoutesById {
   '/api/study/tutor': typeof ApiStudyTutorRoute
   '/api/tags/$tag': typeof ApiTagsTagRoute
   '/api/temple-of-joy/save': typeof ApiTempleOfJoySaveRoute
+  '/api/themes/$id': typeof ApiThemesIdRouteWithChildren
+  '/api/themes/shop': typeof ApiThemesShopRoute
   '/api/tips/leaderboard': typeof ApiTipsLeaderboardRoute
   '/api/tournaments/$id': typeof ApiTournamentsIdRouteWithChildren
   '/api/user-builds/$id': typeof ApiUserBuildsIdRouteWithChildren
@@ -6054,6 +6105,7 @@ export interface FileRoutesById {
   '/api/shop/': typeof ApiShopIndexRoute
   '/api/spaces/': typeof ApiSpacesIndexRoute
   '/api/staking/': typeof ApiStakingIndexRoute
+  '/api/themes/': typeof ApiThemesIndexRoute
   '/api/tournaments/': typeof ApiTournamentsIndexRoute
   '/api/wager/': typeof ApiWagerIndexRoute
   '/api/wheel/': typeof ApiWheelIndexRoute
@@ -6180,6 +6232,8 @@ export interface FileRoutesById {
   '/api/spaces/$id/end': typeof ApiSpacesIdEndRoute
   '/api/spaces/$id/start': typeof ApiSpacesIdStartRoute
   '/api/storefront/creator/$userid': typeof ApiStorefrontCreatorUseridRoute
+  '/api/themes/$id/buy': typeof ApiThemesIdBuyRoute
+  '/api/themes/$id/publish': typeof ApiThemesIdPublishRoute
   '/api/tournaments/$id/cancel': typeof ApiTournamentsIdCancelRoute
   '/api/tournaments/$id/register': typeof ApiTournamentsIdRegisterRoute
   '/api/tournaments/$id/start': typeof ApiTournamentsIdStartRoute
@@ -6500,6 +6554,7 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/spaces/$id'
     | '/store/$userid'
+    | '/studio/themes'
     | '/study/$deckId'
     | '/study/browse'
     | '/tag/$tag'
@@ -6661,6 +6716,8 @@ export interface FileRouteTypes {
     | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
+    | '/api/themes/$id'
+    | '/api/themes/shop'
     | '/api/tips/leaderboard'
     | '/api/tournaments/$id'
     | '/api/user-builds/$id'
@@ -6746,6 +6803,7 @@ export interface FileRouteTypes {
     | '/api/shop/'
     | '/api/spaces/'
     | '/api/staking/'
+    | '/api/themes/'
     | '/api/tournaments/'
     | '/api/wager/'
     | '/api/wheel/'
@@ -6872,6 +6930,8 @@ export interface FileRouteTypes {
     | '/api/spaces/$id/end'
     | '/api/spaces/$id/start'
     | '/api/storefront/creator/$userid'
+    | '/api/themes/$id/buy'
+    | '/api/themes/$id/publish'
     | '/api/tournaments/$id/cancel'
     | '/api/tournaments/$id/register'
     | '/api/tournaments/$id/start'
@@ -7165,6 +7225,7 @@ export interface FileRouteTypes {
     | '/settings/security'
     | '/spaces/$id'
     | '/store/$userid'
+    | '/studio/themes'
     | '/study/$deckId'
     | '/study/browse'
     | '/tag/$tag'
@@ -7326,6 +7387,8 @@ export interface FileRouteTypes {
     | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
+    | '/api/themes/$id'
+    | '/api/themes/shop'
     | '/api/tips/leaderboard'
     | '/api/tournaments/$id'
     | '/api/user-builds/$id'
@@ -7411,6 +7474,7 @@ export interface FileRouteTypes {
     | '/api/shop'
     | '/api/spaces'
     | '/api/staking'
+    | '/api/themes'
     | '/api/tournaments'
     | '/api/wager'
     | '/api/wheel'
@@ -7537,6 +7601,8 @@ export interface FileRouteTypes {
     | '/api/spaces/$id/end'
     | '/api/spaces/$id/start'
     | '/api/storefront/creator/$userid'
+    | '/api/themes/$id/buy'
+    | '/api/themes/$id/publish'
     | '/api/tournaments/$id/cancel'
     | '/api/tournaments/$id/register'
     | '/api/tournaments/$id/start'
@@ -7856,6 +7922,7 @@ export interface FileRouteTypes {
     | '/_site/settings/security'
     | '/_site/spaces/$id'
     | '/_site/store/$userid'
+    | '/_site/studio/themes'
     | '/_site/study/$deckId'
     | '/_site/study/browse'
     | '/_site/tag/$tag'
@@ -8017,6 +8084,8 @@ export interface FileRouteTypes {
     | '/api/study/tutor'
     | '/api/tags/$tag'
     | '/api/temple-of-joy/save'
+    | '/api/themes/$id'
+    | '/api/themes/shop'
     | '/api/tips/leaderboard'
     | '/api/tournaments/$id'
     | '/api/user-builds/$id'
@@ -8102,6 +8171,7 @@ export interface FileRouteTypes {
     | '/api/shop/'
     | '/api/spaces/'
     | '/api/staking/'
+    | '/api/themes/'
     | '/api/tournaments/'
     | '/api/wager/'
     | '/api/wheel/'
@@ -8228,6 +8298,8 @@ export interface FileRouteTypes {
     | '/api/spaces/$id/end'
     | '/api/spaces/$id/start'
     | '/api/storefront/creator/$userid'
+    | '/api/themes/$id/buy'
+    | '/api/themes/$id/publish'
     | '/api/tournaments/$id/cancel'
     | '/api/tournaments/$id/register'
     | '/api/tournaments/$id/start'
@@ -8552,6 +8624,8 @@ export interface RootRouteChildren {
   ApiStudyTutorRoute: typeof ApiStudyTutorRoute
   ApiTagsTagRoute: typeof ApiTagsTagRoute
   ApiTempleOfJoySaveRoute: typeof ApiTempleOfJoySaveRoute
+  ApiThemesIdRoute: typeof ApiThemesIdRouteWithChildren
+  ApiThemesShopRoute: typeof ApiThemesShopRoute
   ApiTipsLeaderboardRoute: typeof ApiTipsLeaderboardRoute
   ApiTournamentsIdRoute: typeof ApiTournamentsIdRouteWithChildren
   ApiUsersSearchRoute: typeof ApiUsersSearchRoute
@@ -8603,6 +8677,7 @@ export interface RootRouteChildren {
   ApiShopIndexRoute: typeof ApiShopIndexRoute
   ApiSpacesIndexRoute: typeof ApiSpacesIndexRoute
   ApiStakingIndexRoute: typeof ApiStakingIndexRoute
+  ApiThemesIndexRoute: typeof ApiThemesIndexRoute
   ApiTournamentsIndexRoute: typeof ApiTournamentsIndexRoute
   ApiWagerIndexRoute: typeof ApiWagerIndexRoute
   ApiWheelIndexRoute: typeof ApiWheelIndexRoute
@@ -9963,6 +10038,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTournamentsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/themes/': {
+      id: '/api/themes/'
+      path: '/api/themes'
+      fullPath: '/api/themes/'
+      preLoaderRoute: typeof ApiThemesIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/staking/': {
       id: '/api/staking/'
       path: '/api/staking'
@@ -10556,6 +10638,20 @@ declare module '@tanstack/react-router' {
       path: '/api/tips/leaderboard'
       fullPath: '/api/tips/leaderboard'
       preLoaderRoute: typeof ApiTipsLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/themes/shop': {
+      id: '/api/themes/shop'
+      path: '/api/themes/shop'
+      fullPath: '/api/themes/shop'
+      preLoaderRoute: typeof ApiThemesShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/themes/$id': {
+      id: '/api/themes/$id'
+      path: '/api/themes/$id'
+      fullPath: '/api/themes/$id'
+      preLoaderRoute: typeof ApiThemesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/temple-of-joy/save': {
@@ -11685,6 +11781,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteStudyDeckIdRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/studio/themes': {
+      id: '/_site/studio/themes'
+      path: '/studio/themes'
+      fullPath: '/studio/themes'
+      preLoaderRoute: typeof SiteStudioThemesRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/store/$userid': {
       id: '/_site/store/$userid'
       path: '/store/$userid'
@@ -12328,6 +12431,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/tournaments/$id/cancel'
       preLoaderRoute: typeof ApiTournamentsIdCancelRouteImport
       parentRoute: typeof ApiTournamentsIdRoute
+    }
+    '/api/themes/$id/publish': {
+      id: '/api/themes/$id/publish'
+      path: '/publish'
+      fullPath: '/api/themes/$id/publish'
+      preLoaderRoute: typeof ApiThemesIdPublishRouteImport
+      parentRoute: typeof ApiThemesIdRoute
+    }
+    '/api/themes/$id/buy': {
+      id: '/api/themes/$id/buy'
+      path: '/buy'
+      fullPath: '/api/themes/$id/buy'
+      preLoaderRoute: typeof ApiThemesIdBuyRouteImport
+      parentRoute: typeof ApiThemesIdRoute
     }
     '/api/storefront/creator/$userid': {
       id: '/api/storefront/creator/$userid'
@@ -13720,6 +13837,7 @@ interface SiteRouteChildren {
   SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
   SiteSpacesIdRoute: typeof SiteSpacesIdRoute
   SiteStoreUseridRoute: typeof SiteStoreUseridRoute
+  SiteStudioThemesRoute: typeof SiteStudioThemesRoute
   SiteStudyDeckIdRoute: typeof SiteStudyDeckIdRoute
   SiteStudyBrowseRoute: typeof SiteStudyBrowseRoute
   SiteTagTagRoute: typeof SiteTagTagRoute
@@ -13810,6 +13928,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,
   SiteSpacesIdRoute: SiteSpacesIdRoute,
   SiteStoreUseridRoute: SiteStoreUseridRoute,
+  SiteStudioThemesRoute: SiteStudioThemesRoute,
   SiteStudyDeckIdRoute: SiteStudyDeckIdRoute,
   SiteStudyBrowseRoute: SiteStudyBrowseRoute,
   SiteTagTagRoute: SiteTagTagRoute,
@@ -14650,6 +14769,20 @@ const ApiSliceItSongsRouteWithChildren = ApiSliceItSongsRoute._addFileChildren(
   ApiSliceItSongsRouteChildren,
 )
 
+interface ApiThemesIdRouteChildren {
+  ApiThemesIdBuyRoute: typeof ApiThemesIdBuyRoute
+  ApiThemesIdPublishRoute: typeof ApiThemesIdPublishRoute
+}
+
+const ApiThemesIdRouteChildren: ApiThemesIdRouteChildren = {
+  ApiThemesIdBuyRoute: ApiThemesIdBuyRoute,
+  ApiThemesIdPublishRoute: ApiThemesIdPublishRoute,
+}
+
+const ApiThemesIdRouteWithChildren = ApiThemesIdRoute._addFileChildren(
+  ApiThemesIdRouteChildren,
+)
+
 interface ApiTournamentsIdRouteChildren {
   ApiTournamentsIdCancelRoute: typeof ApiTournamentsIdCancelRoute
   ApiTournamentsIdRegisterRoute: typeof ApiTournamentsIdRegisterRoute
@@ -15142,6 +15275,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiStudyTutorRoute: ApiStudyTutorRoute,
   ApiTagsTagRoute: ApiTagsTagRoute,
   ApiTempleOfJoySaveRoute: ApiTempleOfJoySaveRoute,
+  ApiThemesIdRoute: ApiThemesIdRouteWithChildren,
+  ApiThemesShopRoute: ApiThemesShopRoute,
   ApiTipsLeaderboardRoute: ApiTipsLeaderboardRoute,
   ApiTournamentsIdRoute: ApiTournamentsIdRouteWithChildren,
   ApiUsersSearchRoute: ApiUsersSearchRoute,
@@ -15193,6 +15328,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiShopIndexRoute: ApiShopIndexRoute,
   ApiSpacesIndexRoute: ApiSpacesIndexRoute,
   ApiStakingIndexRoute: ApiStakingIndexRoute,
+  ApiThemesIndexRoute: ApiThemesIndexRoute,
   ApiTournamentsIndexRoute: ApiTournamentsIndexRoute,
   ApiWagerIndexRoute: ApiWagerIndexRoute,
   ApiWheelIndexRoute: ApiWheelIndexRoute,
