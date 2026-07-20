@@ -26,4 +26,4 @@ the checklist. Delete any section that doesn't apply.
 - [ ] New server/API input is validated (zod) and rate-limited where it writes or costs money.
 - [ ] User-facing strings go through i18n (`t(...)`), not hardcoded English.
 - [ ] Data-heavy views have a layout-matched skeleton/empty state.
-- [ ] Security headers / CSP unaffected, or intentionally updated in **both** serving paths (Apache + Helm/Traefik).
+- [ ] Security headers / CSP unaffected, or intentionally updated in the Apache vhost (`deploy/apache/rmhstudios.conf`) and the Nitro `security-headers` plugin.

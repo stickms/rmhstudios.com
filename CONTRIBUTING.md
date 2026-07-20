@@ -31,6 +31,9 @@ pnpm format              # Prettier (optional but appreciated for files you touc
 > bar for a PR is **don't add new ones** in the files you change — not to fix the
 > whole backlog.
 
+Run the relevant tests too (`pnpm exec vitest run`, or `make test` for Go). See
+[`docs/testing.md`](docs/testing.md) for the suites and how CI gates them.
+
 ## Conventions
 
 - **Routing.** Add routes as files under `app/routes/`. After adding an **API**
