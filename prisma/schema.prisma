@@ -331,6 +331,7 @@ model User {
   savedItems         SavedItem[]
   historyEntries     HistoryEntry[]
   contentAwardsGiven ContentAward[]
+  wishlistEntries    WishlistEntry[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -1732,6 +1733,9 @@ model UserProfile {
 
   // History & resume (§5): when true, no new HistoryEntry rows are recorded.
   historyPaused Boolean @default(false)
+
+  // Wishlists (§8): public-by-default so friends can see what you want (gifting).
+  wishlistPublic Boolean @default(true)
 
   // RMH Coins
   coins          Int     @default(10)
@@ -5736,4 +5740,21 @@ model ContentAward {
   @@index([entityType, entityId])
   @@index([giverId, createdAt(sort: Desc)])
   @@map("content_award")
+}
+
+// Wishlists (§8): what a user wants — shop items, market cosmetics, or a
+// creator's future builds. Powers price/publish alerts and gifting.
+model WishlistEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  entityType  String   @db.VarChar(24) // 'shop_item' | 'market_cosmetic' | 'creator_builds'
+  entityId    String // catalog key | itemId | creatorId
+  targetPrice Int? // coins; market alerts only
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@index([entityType, entityId]) // reverse index: who wants this?
+  @@map("wishlist_entry")
 }

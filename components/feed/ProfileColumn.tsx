@@ -43,6 +43,7 @@ import { safeHref } from '@/lib/url-safety';
 import { StatusBadge } from './StatusBadge';
 import { StatusEditor } from './StatusEditor';
 import type { UserStatus } from '@/lib/profile/status';
+import { WishButton } from '@/components/wishlist/WishButton';
 
 interface ProfileData {
   id: string;
@@ -810,6 +811,17 @@ export function ProfileColumn({
             <StatusBadge status={profile.status} />
           ) : null}
         </div>
+
+        {/* Wishlist follow (§8): get notified when this creator publishes a build. */}
+        {!profile.isOwnProfile ? (
+          <div className="mb-3">
+            <WishButton
+              entityType="creator_builds"
+              entityId={profile.id}
+              label={t('notify-builds', { defaultValue: 'Notify me about builds' })}
+            />
+          </div>
+        ) : null}
 
         {profile.bio && (
           <p className="text-site-text text-[15px] whitespace-pre-wrap break-words mb-3">

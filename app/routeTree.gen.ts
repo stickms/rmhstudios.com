@@ -143,6 +143,7 @@ import { Route as ApiAssistantRouteImport } from './routes/api/assistant'
 import { Route as ApiAnnouncementsRouteImport } from './routes/api/announcements'
 import { Route as AltairMultiplayerRouteImport } from './routes/altair/multiplayer'
 import { Route as SiteWrappedRouteImport } from './routes/_site/wrapped'
+import { Route as SiteWishlistRouteImport } from './routes/_site/wishlist'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteShopRouteImport } from './routes/_site/shop'
 import { Route as SiteShareRouteImport } from './routes/_site/share'
@@ -180,6 +181,7 @@ import { Route as StrategiesPuzzlesIndexRouteImport } from './routes/strategies/
 import { Route as StrategiesProfileIndexRouteImport } from './routes/strategies/profile/index'
 import { Route as SecretCursedLogicIndexRouteImport } from './routes/secret/cursed-logic/index'
 import { Route as RmhboxMinigamesIndexRouteImport } from './routes/rmhbox/minigames/index'
+import { Route as ApiWishlistIndexRouteImport } from './routes/api/wishlist/index'
 import { Route as ApiWheelIndexRouteImport } from './routes/api/wheel/index'
 import { Route as ApiWagerIndexRouteImport } from './routes/api/wager/index'
 import { Route as ApiTournamentsIndexRouteImport } from './routes/api/tournaments/index'
@@ -502,6 +504,7 @@ import { Route as ApiV1MeBookmarksRouteImport } from './routes/api/v1/me/bookmar
 import { Route as ApiV1LeaderboardsGameRouteImport } from './routes/api/v1/leaderboards/$game'
 import { Route as ApiV1BuildsSlugRouteImport } from './routes/api/v1/builds/$slug'
 import { Route as ApiV1BlogSlugRouteImport } from './routes/api/v1/blog/$slug'
+import { Route as ApiUsersIdWishlistRouteImport } from './routes/api/users/$id.wishlist'
 import { Route as ApiUserBuildsIdViewRouteImport } from './routes/api/user-builds/$id/view'
 import { Route as ApiUserBuildsIdUnlockRouteImport } from './routes/api/user-builds/$id/unlock'
 import { Route as ApiUserBuildsIdLikeRouteImport } from './routes/api/user-builds/$id/like'
@@ -1346,6 +1349,11 @@ const SiteWrappedRoute = SiteWrappedRouteImport.update({
   path: '/wrapped',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteWishlistRoute = SiteWishlistRouteImport.update({
+  id: '/wishlist',
+  path: '/wishlist',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteWalletRoute = SiteWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -1533,6 +1541,11 @@ const RmhboxMinigamesIndexRoute = RmhboxMinigamesIndexRouteImport.update({
   id: '/minigames/',
   path: '/minigames/',
   getParentRoute: () => RmhboxRoute,
+} as any)
+const ApiWishlistIndexRoute = ApiWishlistIndexRouteImport.update({
+  id: '/api/wishlist/',
+  path: '/api/wishlist/',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiWheelIndexRoute = ApiWheelIndexRouteImport.update({
   id: '/api/wheel/',
@@ -3171,6 +3184,11 @@ const ApiV1BlogSlugRoute = ApiV1BlogSlugRouteImport.update({
   path: '/$slug',
   getParentRoute: () => ApiV1BlogRoute,
 } as any)
+const ApiUsersIdWishlistRoute = ApiUsersIdWishlistRouteImport.update({
+  id: '/api/users/$id/wishlist',
+  path: '/api/users/$id/wishlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiUserBuildsIdViewRoute = ApiUserBuildsIdViewRouteImport.update({
   id: '/view',
   path: '/view',
@@ -4184,6 +4202,7 @@ export interface FileRoutesByFullPath {
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
   '/wallet': typeof SiteWalletRoute
+  '/wishlist': typeof SiteWishlistRoute
   '/wrapped': typeof SiteWrappedRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
@@ -4555,6 +4574,7 @@ export interface FileRoutesByFullPath {
   '/api/tournaments/': typeof ApiTournamentsIndexRoute
   '/api/wager/': typeof ApiWagerIndexRoute
   '/api/wheel/': typeof ApiWheelIndexRoute
+  '/api/wishlist/': typeof ApiWishlistIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
@@ -4678,6 +4698,7 @@ export interface FileRoutesByFullPath {
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/users/$id/wishlist': typeof ApiUsersIdWishlistRoute
   '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
   '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
   '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
@@ -4829,6 +4850,7 @@ export interface FileRoutesByTo {
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
   '/wallet': typeof SiteWalletRoute
+  '/wishlist': typeof SiteWishlistRoute
   '/wrapped': typeof SiteWrappedRoute
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/assistant': typeof ApiAssistantRoute
@@ -5198,6 +5220,7 @@ export interface FileRoutesByTo {
   '/api/tournaments': typeof ApiTournamentsIndexRoute
   '/api/wager': typeof ApiWagerIndexRoute
   '/api/wheel': typeof ApiWheelIndexRoute
+  '/api/wishlist': typeof ApiWishlistIndexRoute
   '/rmhbox/minigames': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic': typeof SecretCursedLogicIndexRoute
   '/strategies/profile': typeof StrategiesProfileIndexRoute
@@ -5321,6 +5344,7 @@ export interface FileRoutesByTo {
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/users/$id/wishlist': typeof ApiUsersIdWishlistRoute
   '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
   '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
   '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
@@ -5496,6 +5520,7 @@ export interface FileRoutesById {
   '/_site/share': typeof SiteShareRoute
   '/_site/shop': typeof SiteShopRoute
   '/_site/wallet': typeof SiteWalletRoute
+  '/_site/wishlist': typeof SiteWishlistRoute
   '/_site/wrapped': typeof SiteWrappedRoute
   '/altair/multiplayer': typeof AltairMultiplayerRouteWithChildren
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
@@ -5868,6 +5893,7 @@ export interface FileRoutesById {
   '/api/tournaments/': typeof ApiTournamentsIndexRoute
   '/api/wager/': typeof ApiWagerIndexRoute
   '/api/wheel/': typeof ApiWheelIndexRoute
+  '/api/wishlist/': typeof ApiWishlistIndexRoute
   '/rmhbox/minigames/': typeof RmhboxMinigamesIndexRoute
   '/secret/cursed-logic/': typeof SecretCursedLogicIndexRoute
   '/strategies/profile/': typeof StrategiesProfileIndexRoute
@@ -5991,6 +6017,7 @@ export interface FileRoutesById {
   '/api/user-builds/$id/like': typeof ApiUserBuildsIdLikeRoute
   '/api/user-builds/$id/unlock': typeof ApiUserBuildsIdUnlockRoute
   '/api/user-builds/$id/view': typeof ApiUserBuildsIdViewRoute
+  '/api/users/$id/wishlist': typeof ApiUsersIdWishlistRoute
   '/api/v1/blog/$slug': typeof ApiV1BlogSlugRoute
   '/api/v1/builds/$slug': typeof ApiV1BuildsSlugRoute
   '/api/v1/leaderboards/$game': typeof ApiV1LeaderboardsGameRoute
@@ -6167,6 +6194,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/shop'
     | '/wallet'
+    | '/wishlist'
     | '/wrapped'
     | '/altair/multiplayer'
     | '/api/announcements'
@@ -6538,6 +6566,7 @@ export interface FileRouteTypes {
     | '/api/tournaments/'
     | '/api/wager/'
     | '/api/wheel/'
+    | '/api/wishlist/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
@@ -6661,6 +6690,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
+    | '/api/users/$id/wishlist'
     | '/api/v1/blog/$slug'
     | '/api/v1/builds/$slug'
     | '/api/v1/leaderboards/$game'
@@ -6812,6 +6842,7 @@ export interface FileRouteTypes {
     | '/share'
     | '/shop'
     | '/wallet'
+    | '/wishlist'
     | '/wrapped'
     | '/api/announcements'
     | '/api/assistant'
@@ -7181,6 +7212,7 @@ export interface FileRouteTypes {
     | '/api/tournaments'
     | '/api/wager'
     | '/api/wheel'
+    | '/api/wishlist'
     | '/rmhbox/minigames'
     | '/secret/cursed-logic'
     | '/strategies/profile'
@@ -7304,6 +7336,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
+    | '/api/users/$id/wishlist'
     | '/api/v1/blog/$slug'
     | '/api/v1/builds/$slug'
     | '/api/v1/leaderboards/$game'
@@ -7478,6 +7511,7 @@ export interface FileRouteTypes {
     | '/_site/share'
     | '/_site/shop'
     | '/_site/wallet'
+    | '/_site/wishlist'
     | '/_site/wrapped'
     | '/altair/multiplayer'
     | '/api/announcements'
@@ -7850,6 +7884,7 @@ export interface FileRouteTypes {
     | '/api/tournaments/'
     | '/api/wager/'
     | '/api/wheel/'
+    | '/api/wishlist/'
     | '/rmhbox/minigames/'
     | '/secret/cursed-logic/'
     | '/strategies/profile/'
@@ -7973,6 +8008,7 @@ export interface FileRouteTypes {
     | '/api/user-builds/$id/like'
     | '/api/user-builds/$id/unlock'
     | '/api/user-builds/$id/view'
+    | '/api/users/$id/wishlist'
     | '/api/v1/blog/$slug'
     | '/api/v1/builds/$slug'
     | '/api/v1/leaderboards/$game'
@@ -8335,6 +8371,7 @@ export interface RootRouteChildren {
   ApiTournamentsIndexRoute: typeof ApiTournamentsIndexRoute
   ApiWagerIndexRoute: typeof ApiWagerIndexRoute
   ApiWheelIndexRoute: typeof ApiWheelIndexRoute
+  ApiWishlistIndexRoute: typeof ApiWishlistIndexRoute
   ApiAdminAlbumsIdRoute: typeof ApiAdminAlbumsIdRouteWithChildren
   ApiAdminAlbumsReorderRoute: typeof ApiAdminAlbumsReorderRoute
   ApiAdminCuratedBuildsImageRoute: typeof ApiAdminCuratedBuildsImageRouteWithChildren
@@ -8405,6 +8442,7 @@ export interface RootRouteChildren {
   ApiSpacesIdEndRoute: typeof ApiSpacesIdEndRoute
   ApiSpacesIdStartRoute: typeof ApiSpacesIdStartRoute
   ApiStorefrontCreatorUseridRoute: typeof ApiStorefrontCreatorUseridRoute
+  ApiUsersIdWishlistRoute: typeof ApiUsersIdWishlistRoute
   ApiV1LeaderboardsGameRoute: typeof ApiV1LeaderboardsGameRoute
   ApiV1UsersHandleRoute: typeof ApiV1UsersHandleRouteWithChildren
   ApiVibePkgFileRoute: typeof ApiVibePkgFileRoute
@@ -9385,6 +9423,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteWrappedRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/wishlist': {
+      id: '/_site/wishlist'
+      path: '/wishlist'
+      fullPath: '/wishlist'
+      preLoaderRoute: typeof SiteWishlistRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/wallet': {
       id: '/_site/wallet'
       path: '/wallet'
@@ -9643,6 +9688,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/rmhbox/minigames/'
       preLoaderRoute: typeof RmhboxMinigamesIndexRouteImport
       parentRoute: typeof RmhboxRoute
+    }
+    '/api/wishlist/': {
+      id: '/api/wishlist/'
+      path: '/api/wishlist'
+      fullPath: '/api/wishlist/'
+      preLoaderRoute: typeof ApiWishlistIndexRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/wheel/': {
       id: '/api/wheel/'
@@ -11898,6 +11950,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiV1BlogSlugRouteImport
       parentRoute: typeof ApiV1BlogRoute
     }
+    '/api/users/$id/wishlist': {
+      id: '/api/users/$id/wishlist'
+      path: '/api/users/$id/wishlist'
+      fullPath: '/api/users/$id/wishlist'
+      preLoaderRoute: typeof ApiUsersIdWishlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/user-builds/$id/view': {
       id: '/api/user-builds/$id/view'
       path: '/view'
@@ -13264,6 +13323,7 @@ interface SiteRouteChildren {
   SiteShareRoute: typeof SiteShareRoute
   SiteShopRoute: typeof SiteShopRoute
   SiteWalletRoute: typeof SiteWalletRoute
+  SiteWishlistRoute: typeof SiteWishlistRoute
   SiteWrappedRoute: typeof SiteWrappedRoute
   SiteIndexRoute: typeof SiteIndexRoute
   SiteCSlugRoute: typeof SiteCSlugRoute
@@ -13347,6 +13407,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteShareRoute: SiteShareRoute,
   SiteShopRoute: SiteShopRoute,
   SiteWalletRoute: SiteWalletRoute,
+  SiteWishlistRoute: SiteWishlistRoute,
   SiteWrappedRoute: SiteWrappedRoute,
   SiteIndexRoute: SiteIndexRoute,
   SiteCSlugRoute: SiteCSlugRoute,
@@ -14719,6 +14780,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTournamentsIndexRoute: ApiTournamentsIndexRoute,
   ApiWagerIndexRoute: ApiWagerIndexRoute,
   ApiWheelIndexRoute: ApiWheelIndexRoute,
+  ApiWishlistIndexRoute: ApiWishlistIndexRoute,
   ApiAdminAlbumsIdRoute: ApiAdminAlbumsIdRouteWithChildren,
   ApiAdminAlbumsReorderRoute: ApiAdminAlbumsReorderRoute,
   ApiAdminCuratedBuildsImageRoute: ApiAdminCuratedBuildsImageRouteWithChildren,
@@ -14790,6 +14852,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiSpacesIdEndRoute: ApiSpacesIdEndRoute,
   ApiSpacesIdStartRoute: ApiSpacesIdStartRoute,
   ApiStorefrontCreatorUseridRoute: ApiStorefrontCreatorUseridRoute,
+  ApiUsersIdWishlistRoute: ApiUsersIdWishlistRoute,
   ApiV1LeaderboardsGameRoute: ApiV1LeaderboardsGameRoute,
   ApiV1UsersHandleRoute: ApiV1UsersHandleRouteWithChildren,
   ApiVibePkgFileRoute: ApiVibePkgFileRoute,
