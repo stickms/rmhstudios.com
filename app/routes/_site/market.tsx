@@ -32,7 +32,10 @@ const fetchMarket = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
   const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
   const listings = await browse({ sort: 'recent' });
-  return { listings: listings as unknown as MarketListingView[], viewerId: session?.user.id ?? null };
+  return {
+    listings: listings as unknown as MarketListingView[],
+    viewerId: session?.user.id ?? null,
+  };
 });
 
 export const Route = createFileRoute('/_site/market')({
@@ -159,8 +162,12 @@ function MarketPage() {
             className="h-9 w-auto min-w-[9rem]"
           >
             <option value="recent">{t('market-sort-recent', { defaultValue: 'Newest' })}</option>
-            <option value="price_asc">{t('market-sort-price-asc', { defaultValue: 'Price: low to high' })}</option>
-            <option value="price_desc">{t('market-sort-price-desc', { defaultValue: 'Price: high to low' })}</option>
+            <option value="price_asc">
+              {t('market-sort-price-asc', { defaultValue: 'Price: low to high' })}
+            </option>
+            <option value="price_desc">
+              {t('market-sort-price-desc', { defaultValue: 'Price: high to low' })}
+            </option>
           </Select>
         </div>
 
@@ -168,7 +175,10 @@ function MarketPage() {
           <div className="flex items-center justify-between gap-3 border-b border-site-border px-4 py-3">
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold uppercase tracking-wider text-site-text-dim">
-                {t('market-history-heading', { name: filteredName, defaultValue: '{{name}} · recent sales' })}
+                {t('market-history-heading', {
+                  name: filteredName,
+                  defaultValue: '{{name}} · recent sales',
+                })}
               </p>
               <p className="text-xs text-site-text-muted">
                 {t('market-history-stats', {

@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import type { FeedItemUser } from "@/lib/feed-types";
+import { create } from 'zustand';
+import type { FeedItemUser } from '@/lib/feed-types';
 
 interface UserDisplayState {
   /** userId -> latest known display data */

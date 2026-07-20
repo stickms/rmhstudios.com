@@ -162,7 +162,11 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
     );
   }
   if (!data) {
-    return <EmptyState description={t('could-not-load-progress', { defaultValue: 'Could not load progress.' })} />;
+    return (
+      <EmptyState
+        description={t('could-not-load-progress', { defaultValue: 'Could not load progress.' })}
+      />
+    );
   }
 
   const lvl = data.level;
@@ -187,8 +191,12 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
                 <span className="text-lg font-extrabold">{lvl.level}</span>
               </div>
               <div>
-                <p className="text-sm font-semibold text-site-text">{t('level-number', { level: lvl.level, defaultValue: 'Level {{level}}' })}</p>
-                <p className="text-xs text-site-text-muted">{t('total-xp', { xp: lvl.xp.toLocaleString(), defaultValue: '{{xp}} total XP' })}</p>
+                <p className="text-sm font-semibold text-site-text">
+                  {t('level-number', { level: lvl.level, defaultValue: 'Level {{level}}' })}
+                </p>
+                <p className="text-xs text-site-text-muted">
+                  {t('total-xp', { xp: lvl.xp.toLocaleString(), defaultValue: '{{xp}} total XP' })}
+                </p>
               </div>
             </div>
             <div className="inline-flex items-center gap-1.5 rounded-site-sm bg-site-bg px-2.5 py-1.5 text-sm font-semibold text-site-text">
@@ -198,10 +206,18 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
           </div>
           <div className="mt-3">
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-site-bg">
-              <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${lvlPct}%` }} />
+              <div
+                className="h-full rounded-full bg-site-accent transition-all"
+                style={{ width: `${lvlPct}%` }}
+              />
             </div>
             <p className="mt-1 text-[11px] text-site-text-dim">
-              {t('xp-to-next-level', { xpIntoLevel: lvl.xpIntoLevel.toLocaleString(), xpForNextLevel: lvl.xpForNextLevel.toLocaleString(), nextLevel: lvl.level + 1, defaultValue: '{{xpIntoLevel}} / {{xpForNextLevel}} XP to level {{nextLevel}}' })}
+              {t('xp-to-next-level', {
+                xpIntoLevel: lvl.xpIntoLevel.toLocaleString(),
+                xpForNextLevel: lvl.xpForNextLevel.toLocaleString(),
+                nextLevel: lvl.level + 1,
+                defaultValue: '{{xpIntoLevel}} / {{xpForNextLevel}} XP to level {{nextLevel}}',
+              })}
             </p>
           </div>
         </section>
@@ -238,7 +254,8 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
               </div>
               {pass.premium ? (
                 <span className="inline-flex items-center gap-1 rounded-full bg-site-warning/15 px-2.5 py-1 text-[11px] font-semibold text-site-warning">
-                  <Crown className="h-3.5 w-3.5" /> {t('premium-unlocked', { defaultValue: 'Premium unlocked' })}
+                  <Crown className="h-3.5 w-3.5" />{' '}
+                  {t('premium-unlocked', { defaultValue: 'Premium unlocked' })}
                 </span>
               ) : (
                 <Button
@@ -262,7 +279,12 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
               )}
             </div>
             <p className="mb-3 text-xs text-site-text-muted">
-              {t('tier-progress', { currentTier: pass.currentTier, totalTiers: pass.tiers.length, seasonXp: pass.seasonXp.toLocaleString(), defaultValue: 'Tier {{currentTier}} / {{totalTiers}} · {{seasonXp}} season XP' })}
+              {t('tier-progress', {
+                currentTier: pass.currentTier,
+                totalTiers: pass.tiers.length,
+                seasonXp: pass.seasonXp.toLocaleString(),
+                defaultValue: 'Tier {{currentTier}} / {{totalTiers}} · {{seasonXp}} season XP',
+              })}
             </p>
 
             <div className="space-y-2">
@@ -321,7 +343,10 @@ function QuestSection({
                 <p className="text-sm font-semibold text-site-text">{q.name}</p>
                 <p className="mt-0.5 text-xs text-site-text-muted">{q.description}</p>
                 <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-site-bg">
-                  <div className="h-full rounded-full bg-site-accent" style={{ width: `${pct}%` }} />
+                  <div
+                    className="h-full rounded-full bg-site-accent"
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
                 <div className="mt-1 flex items-center gap-2 text-[11px] text-site-text-dim">
                   <span>
@@ -402,7 +427,9 @@ function TierRow({
   return (
     <div
       className={`grid grid-cols-[auto_1fr_1fr] items-center gap-3 rounded-site border p-3 ${
-        reached ? 'border-site-border bg-site-surface' : 'border-site-border/60 bg-site-bg opacity-70'
+        reached
+          ? 'border-site-border bg-site-surface'
+          : 'border-site-border/60 bg-site-bg opacity-70'
       }`}
     >
       <div
@@ -489,7 +516,11 @@ function TierCell({
               onClick={onClaim}
               className="h-7 gap-1 px-2 text-xs"
             >
-              {busy === busyKey ? <Loader2 className="h-3 w-3 animate-spin" /> : <Gift className="h-3 w-3" />}
+              {busy === busyKey ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Gift className="h-3 w-3" />
+              )}
               {t('claim', { defaultValue: 'Claim' })}
             </Button>
           ) : null)}

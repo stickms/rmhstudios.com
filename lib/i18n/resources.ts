@@ -21,8 +21,8 @@
 // client bundle), which reuses the LOCALE_LOADERS below to load ONLY the active
 // language on demand (no longer all 32 statically at boot — cold-start win) and
 // caches it for the synchronous SSR i18n init.
-import type { Locale } from "@/lib/i18n/config";
-import enCore from "@/lib/i18n/resources.en-core";
+import type { Locale } from '@/lib/i18n/config';
+import enCore from '@/lib/i18n/resources.en-core';
 
 /** A JSON-serializable value — keeps LocaleBundle valid as TanStack loader/server-fn
  *  output (a bare `Record<string, unknown>` is rejected by its serializer checks). */
@@ -40,7 +40,7 @@ export const EN_CORE_RESOURCES: LocaleBundle = enCore as LocaleBundle;
  *  dedupes the core JSON already in the entry, so this chunk carries only the
  *  extra (game/app) namespaces. */
 export const loadEnResources = (): Promise<LocaleBundle> =>
-  import("@/lib/i18n/resources.en").then((m) => m.default as LocaleBundle);
+  import('@/lib/i18n/resources.en').then((m) => m.default as LocaleBundle);
 
 /**
  * Lazy loader per language. `en` resolves to its full-catalog chunk (loaded once
@@ -49,35 +49,35 @@ export const loadEnResources = (): Promise<LocaleBundle> =>
  */
 export const LOCALE_LOADERS: Record<Locale, () => Promise<LocaleBundle>> = {
   en: loadEnResources,
-  zh: () => import("@/lib/i18n/resources.zh").then((m) => m.default as LocaleBundle),
-  ar: () => import("@/lib/i18n/resources.ar").then((m) => m.default as LocaleBundle),
-  hi: () => import("@/lib/i18n/resources.hi").then((m) => m.default as LocaleBundle),
-  es: () => import("@/lib/i18n/resources.es").then((m) => m.default as LocaleBundle),
-  fr: () => import("@/lib/i18n/resources.fr").then((m) => m.default as LocaleBundle),
-  pt: () => import("@/lib/i18n/resources.pt").then((m) => m.default as LocaleBundle),
-  ru: () => import("@/lib/i18n/resources.ru").then((m) => m.default as LocaleBundle),
-  de: () => import("@/lib/i18n/resources.de").then((m) => m.default as LocaleBundle),
-  ja: () => import("@/lib/i18n/resources.ja").then((m) => m.default as LocaleBundle),
-  ko: () => import("@/lib/i18n/resources.ko").then((m) => m.default as LocaleBundle),
-  it: () => import("@/lib/i18n/resources.it").then((m) => m.default as LocaleBundle),
-  id: () => import("@/lib/i18n/resources.id").then((m) => m.default as LocaleBundle),
-  vi: () => import("@/lib/i18n/resources.vi").then((m) => m.default as LocaleBundle),
-  tr: () => import("@/lib/i18n/resources.tr").then((m) => m.default as LocaleBundle),
-  ur: () => import("@/lib/i18n/resources.ur").then((m) => m.default as LocaleBundle),
-  bn: () => import("@/lib/i18n/resources.bn").then((m) => m.default as LocaleBundle),
-  pa: () => import("@/lib/i18n/resources.pa").then((m) => m.default as LocaleBundle),
-  ta: () => import("@/lib/i18n/resources.ta").then((m) => m.default as LocaleBundle),
-  te: () => import("@/lib/i18n/resources.te").then((m) => m.default as LocaleBundle),
-  mr: () => import("@/lib/i18n/resources.mr").then((m) => m.default as LocaleBundle),
-  fa: () => import("@/lib/i18n/resources.fa").then((m) => m.default as LocaleBundle),
-  th: () => import("@/lib/i18n/resources.th").then((m) => m.default as LocaleBundle),
-  pl: () => import("@/lib/i18n/resources.pl").then((m) => m.default as LocaleBundle),
-  uk: () => import("@/lib/i18n/resources.uk").then((m) => m.default as LocaleBundle),
-  nl: () => import("@/lib/i18n/resources.nl").then((m) => m.default as LocaleBundle),
-  fil: () => import("@/lib/i18n/resources.fil").then((m) => m.default as LocaleBundle),
-  ms: () => import("@/lib/i18n/resources.ms").then((m) => m.default as LocaleBundle),
-  ro: () => import("@/lib/i18n/resources.ro").then((m) => m.default as LocaleBundle),
-  el: () => import("@/lib/i18n/resources.el").then((m) => m.default as LocaleBundle),
-  cs: () => import("@/lib/i18n/resources.cs").then((m) => m.default as LocaleBundle),
-  sv: () => import("@/lib/i18n/resources.sv").then((m) => m.default as LocaleBundle),
+  zh: () => import('@/lib/i18n/resources.zh').then((m) => m.default as LocaleBundle),
+  ar: () => import('@/lib/i18n/resources.ar').then((m) => m.default as LocaleBundle),
+  hi: () => import('@/lib/i18n/resources.hi').then((m) => m.default as LocaleBundle),
+  es: () => import('@/lib/i18n/resources.es').then((m) => m.default as LocaleBundle),
+  fr: () => import('@/lib/i18n/resources.fr').then((m) => m.default as LocaleBundle),
+  pt: () => import('@/lib/i18n/resources.pt').then((m) => m.default as LocaleBundle),
+  ru: () => import('@/lib/i18n/resources.ru').then((m) => m.default as LocaleBundle),
+  de: () => import('@/lib/i18n/resources.de').then((m) => m.default as LocaleBundle),
+  ja: () => import('@/lib/i18n/resources.ja').then((m) => m.default as LocaleBundle),
+  ko: () => import('@/lib/i18n/resources.ko').then((m) => m.default as LocaleBundle),
+  it: () => import('@/lib/i18n/resources.it').then((m) => m.default as LocaleBundle),
+  id: () => import('@/lib/i18n/resources.id').then((m) => m.default as LocaleBundle),
+  vi: () => import('@/lib/i18n/resources.vi').then((m) => m.default as LocaleBundle),
+  tr: () => import('@/lib/i18n/resources.tr').then((m) => m.default as LocaleBundle),
+  ur: () => import('@/lib/i18n/resources.ur').then((m) => m.default as LocaleBundle),
+  bn: () => import('@/lib/i18n/resources.bn').then((m) => m.default as LocaleBundle),
+  pa: () => import('@/lib/i18n/resources.pa').then((m) => m.default as LocaleBundle),
+  ta: () => import('@/lib/i18n/resources.ta').then((m) => m.default as LocaleBundle),
+  te: () => import('@/lib/i18n/resources.te').then((m) => m.default as LocaleBundle),
+  mr: () => import('@/lib/i18n/resources.mr').then((m) => m.default as LocaleBundle),
+  fa: () => import('@/lib/i18n/resources.fa').then((m) => m.default as LocaleBundle),
+  th: () => import('@/lib/i18n/resources.th').then((m) => m.default as LocaleBundle),
+  pl: () => import('@/lib/i18n/resources.pl').then((m) => m.default as LocaleBundle),
+  uk: () => import('@/lib/i18n/resources.uk').then((m) => m.default as LocaleBundle),
+  nl: () => import('@/lib/i18n/resources.nl').then((m) => m.default as LocaleBundle),
+  fil: () => import('@/lib/i18n/resources.fil').then((m) => m.default as LocaleBundle),
+  ms: () => import('@/lib/i18n/resources.ms').then((m) => m.default as LocaleBundle),
+  ro: () => import('@/lib/i18n/resources.ro').then((m) => m.default as LocaleBundle),
+  el: () => import('@/lib/i18n/resources.el').then((m) => m.default as LocaleBundle),
+  cs: () => import('@/lib/i18n/resources.cs').then((m) => m.default as LocaleBundle),
+  sv: () => import('@/lib/i18n/resources.sv').then((m) => m.default as LocaleBundle),
 };

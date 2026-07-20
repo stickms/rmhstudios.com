@@ -53,7 +53,11 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
     );
   }
   if (!streak) {
-    return <EmptyState description={t('streak-load-error', { defaultValue: 'Could not load your streak.' })} />;
+    return (
+      <EmptyState
+        description={t('streak-load-error', { defaultValue: 'Could not load your streak.' })}
+      />
+    );
   }
 
   const next = MILESTONES.find((m) => m.day > streak.current);
@@ -67,7 +71,9 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
         <ColumnHeader>
           <div className="flex items-center gap-2">
             <Flame className="h-5 w-5 text-site-warning" />
-            <h1 className="text-lg font-bold text-site-text">{t('streak-title', { defaultValue: 'Streak' })}</h1>
+            <h1 className="text-lg font-bold text-site-text">
+              {t('streak-title', { defaultValue: 'Streak' })}
+            </h1>
           </div>
         </ColumnHeader>
       )}
@@ -81,15 +87,21 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
             </div>
             <div>
               <p className="text-4xl font-extrabold text-site-text">{streak.current}</p>
-              <p className="text-sm text-site-text-muted">{streak.current === 1 ? t('streak-day-in-a-row', { defaultValue: 'day in a row' }) : t('streak-days-in-a-row', { defaultValue: 'days in a row' })}</p>
+              <p className="text-sm text-site-text-muted">
+                {streak.current === 1
+                  ? t('streak-day-in-a-row', { defaultValue: 'day in a row' })
+                  : t('streak-days-in-a-row', { defaultValue: 'days in a row' })}
+              </p>
             </div>
             {streak.checkedInToday ? (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-site-success/15 px-3 py-1.5 text-sm font-semibold text-site-success">
-                <Check className="h-4 w-4" /> {t('checked-in-today', { defaultValue: 'Checked in today' })}
+                <Check className="h-4 w-4" />{' '}
+                {t('checked-in-today', { defaultValue: 'Checked in today' })}
               </span>
             ) : (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-site-warning/15 px-3 py-1.5 text-sm font-semibold text-site-warning">
-                <Flame className="h-4 w-4" /> {t('visit-today-to-keep-alive', { defaultValue: 'Visit today to keep it alive' })}
+                <Flame className="h-4 w-4" />{' '}
+                {t('visit-today-to-keep-alive', { defaultValue: 'Visit today to keep it alive' })}
               </span>
             )}
           </section>
@@ -99,21 +111,33 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
         <Reveal>
           <RevealGroup as="div" className="grid grid-cols-2 gap-3">
             <RevealItem>
-              <div className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}>
+              <div
+                className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}
+              >
                 <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-                  <Trophy className="h-3.5 w-3.5" /> {t('longest-label', { defaultValue: 'Longest' })}
+                  <Trophy className="h-3.5 w-3.5" />{' '}
+                  {t('longest-label', { defaultValue: 'Longest' })}
                 </div>
                 <p className="mt-1 text-2xl font-bold text-site-text">{streak.longest}</p>
-                <p className="text-xs text-site-text-muted">{streak.longest === 1 ? t('day-unit', { defaultValue: 'day' }) : t('days-unit', { defaultValue: 'days' })}</p>
+                <p className="text-xs text-site-text-muted">
+                  {streak.longest === 1
+                    ? t('day-unit', { defaultValue: 'day' })
+                    : t('days-unit', { defaultValue: 'days' })}
+                </p>
               </div>
             </RevealItem>
             <RevealItem>
-              <div className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}>
+              <div
+                className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}
+              >
                 <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-                  <CalendarCheck className="h-3.5 w-3.5" /> {t('total-check-ins-label', { defaultValue: 'Total check-ins' })}
+                  <CalendarCheck className="h-3.5 w-3.5" />{' '}
+                  {t('total-check-ins-label', { defaultValue: 'Total check-ins' })}
                 </div>
                 <p className="mt-1 text-2xl font-bold text-site-text">{streak.totalCheckIns}</p>
-                <p className="text-xs text-site-text-muted">{t('all-time', { defaultValue: 'all time' })}</p>
+                <p className="text-xs text-site-text-muted">
+                  {t('all-time', { defaultValue: 'all time' })}
+                </p>
               </div>
             </RevealItem>
           </RevealGroup>
@@ -124,18 +148,31 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
           <Reveal>
             <section className="rounded-site border border-site-border bg-site-surface p-4">
               <div className="mb-2 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-site-text">{t('next-milestone', { defaultValue: 'Next milestone' })}</h2>
+                <h2 className="text-sm font-semibold text-site-text">
+                  {t('next-milestone', { defaultValue: 'Next milestone' })}
+                </h2>
                 <span className="text-xs text-site-text-muted">
                   {streak.current} / {next.day} days
                 </span>
               </div>
               <div className="h-2.5 w-full overflow-hidden rounded-full bg-site-bg">
-                <div className="h-full rounded-full bg-site-warning transition-all" style={{ width: `${nextPct}%` }} />
+                <div
+                  className="h-full rounded-full bg-site-warning transition-all"
+                  style={{ width: `${nextPct}%` }}
+                />
               </div>
               <p className="mt-1.5 text-xs text-site-text-dim">
                 {next.day - streak.current === 1
-                  ? t('more-day-to-milestone', { label: next.label, defaultValue: '{{count}} more day to reach the {{label}}.', count: next.day - streak.current })
-                  : t('more-days-to-milestone', { label: next.label, defaultValue: '{{count}} more days to reach the {{label}}.', count: next.day - streak.current })}
+                  ? t('more-day-to-milestone', {
+                      label: next.label,
+                      defaultValue: '{{count}} more day to reach the {{label}}.',
+                      count: next.day - streak.current,
+                    })
+                  : t('more-days-to-milestone', {
+                      label: next.label,
+                      defaultValue: '{{count}} more days to reach the {{label}}.',
+                      count: next.day - streak.current,
+                    })}
               </p>
             </section>
           </Reveal>
@@ -144,7 +181,9 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
         {/* Milestones list */}
         <Reveal>
           <section>
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('milestones-heading', { defaultValue: 'Milestones' })}</h2>
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+              {t('milestones-heading', { defaultValue: 'Milestones' })}
+            </h2>
             <div className="space-y-2">
               {MILESTONES.map((m) => {
                 const reached = streak.current >= m.day || streak.longest >= m.day;
@@ -152,19 +191,28 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
                   <div
                     key={m.day}
                     className={`flex items-center gap-3 rounded-site border p-3 transition-[transform,border-color] duration-200 ${
-                      reached ? 'border-site-border bg-site-surface' : 'border-site-border/60 bg-site-bg opacity-70'
+                      reached
+                        ? 'border-site-border bg-site-surface'
+                        : 'border-site-border/60 bg-site-bg opacity-70'
                     }`}
                   >
                     <div
                       className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-site-sm ${
-                        reached ? 'bg-site-warning/15 text-site-warning' : 'bg-site-surface text-site-text-dim'
+                        reached
+                          ? 'bg-site-warning/15 text-site-warning'
+                          : 'bg-site-surface text-site-text-dim'
                       }`}
                     >
                       <Flame className={`h-4 w-4 ${reached ? 'fill-site-warning/30' : ''}`} />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-site-text">{m.label}</p>
-                      <p className="text-xs text-site-text-muted">{t('reach-day-streak', { day: m.day, defaultValue: 'Reach a {{day}}-day check-in streak.' })}</p>
+                      <p className="text-xs text-site-text-muted">
+                        {t('reach-day-streak', {
+                          day: m.day,
+                          defaultValue: 'Reach a {{day}}-day check-in streak.',
+                        })}
+                      </p>
                     </div>
                     {reached && <Check className="h-4 w-4 shrink-0 text-site-success" />}
                   </div>
@@ -175,7 +223,10 @@ export function StreakColumn({ hideHeader = false }: { hideHeader?: boolean } = 
         </Reveal>
 
         <p className="flex items-center justify-center gap-1.5 text-center text-xs text-site-text-dim">
-          <CoinIcon className="h-3.5 w-3.5" /> {t('check-in-daily-earn-coins', { defaultValue: 'Check in daily to earn coins — rewards grow as your streak does.' })}
+          <CoinIcon className="h-3.5 w-3.5" />{' '}
+          {t('check-in-daily-earn-coins', {
+            defaultValue: 'Check in daily to earn coins — rewards grow as your streak does.',
+          })}
         </p>
       </div>
     </div>

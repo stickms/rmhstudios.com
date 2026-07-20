@@ -18,11 +18,7 @@ import { userDisplaySelect, resolveUserDisplay } from '@/lib/user-display';
 
 /** Typed failure modes so API routes can map to precise HTTP statuses. */
 export type ReplayErrorCode =
-  | 'UNKNOWN_GAME'
-  | 'INVALID_DATA'
-  | 'TOO_LARGE'
-  | 'VERIFY_FAILED'
-  | 'FORBIDDEN';
+  'UNKNOWN_GAME' | 'INVALID_DATA' | 'TOO_LARGE' | 'VERIFY_FAILED' | 'FORBIDDEN';
 
 export class ReplayError extends Error {
   constructor(public code: ReplayErrorCode) {

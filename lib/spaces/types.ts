@@ -52,7 +52,13 @@ export interface SpaceView {
   recordChat: boolean;
   createdAt: string;
   host: SpaceUser;
-  community: { id: string; slug: string; name: string; icon: string | null; color: string | null } | null;
+  community: {
+    id: string;
+    slug: string;
+    name: string;
+    icon: string | null;
+    color: string | null;
+  } | null;
   /** Only present (and non-null) for ENDED spaces with `recordChat`. */
   transcript?: SpaceMessageView[] | null;
   /**

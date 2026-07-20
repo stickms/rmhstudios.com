@@ -20,7 +20,7 @@
  * Run on a cron:  e.g. every 15–60 minutes (alongside the cleanup worker).
  */
 
-import { prisma } from "@/lib/prisma.server";
+import { prisma } from '@/lib/prisma.server';
 
 async function main() {
   const startedAt = Date.now();
@@ -83,13 +83,13 @@ async function main() {
   const ms = Date.now() - startedAt;
   console.log(
     `[reconcile-social-counts] corrected users=${users} pollOptions=${pollOptions} ` +
-      `comments=${comments} hashtags=${hashtags} in ${ms}ms`
+      `comments=${comments} hashtags=${hashtags} in ${ms}ms`,
   );
 }
 
 main()
   .catch((e) => {
-    console.error("[reconcile-social-counts] failed:", e);
+    console.error('[reconcile-social-counts] failed:', e);
     process.exitCode = 1;
   })
   .finally(async () => {

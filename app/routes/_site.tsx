@@ -27,7 +27,9 @@ const WelcomeModal = lazy(() =>
   import('@/components/feed/WelcomeModal').then((m) => ({ default: m.WelcomeModal })),
 );
 const LanguageFirstRunModal = lazy(() =>
-  import('@/components/site/LanguageFirstRunModal').then((m) => ({ default: m.LanguageFirstRunModal })),
+  import('@/components/site/LanguageFirstRunModal').then((m) => ({
+    default: m.LanguageFirstRunModal,
+  })),
 );
 const WhatsNewModal = lazy(() =>
   import('@/components/feed/WhatsNewModal').then((m) => ({ default: m.WhatsNewModal })),

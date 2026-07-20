@@ -28,7 +28,10 @@ export const Route = createFileRoute('/api/settings/email-digest')({
             prefix: 'email-digest-toggle',
           });
           if (!allowed) {
-            return Response.json({ error: 'Too many requests' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
+            return Response.json(
+              { error: 'Too many requests' },
+              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+            );
           }
 
           const body = await request.json().catch(() => ({}));

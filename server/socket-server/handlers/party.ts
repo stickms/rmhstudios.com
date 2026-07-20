@@ -134,7 +134,9 @@ export function registerPartyHandlers(io: Server, socket: Socket, _ctx?: unknown
     const party: Party = {
       id,
       leaderId: userId,
-      members: new Map([[userId, { userId, name: selfName(), image: selfImage(), socketId: socket.id }]]),
+      members: new Map([
+        [userId, { userId, name: selfName(), image: selfImage(), socketId: socket.id }],
+      ]),
       createdAt: Date.now(),
     };
     parties.set(id, party);
@@ -176,7 +178,9 @@ export function registerPartyHandlers(io: Server, socket: Socket, _ctx?: unknown
       })
       .catch(() => null);
     if (!rel) {
-      socket.emit(PARTY_S2C.ERROR, { message: 'You can only invite people you follow or who follow you' });
+      socket.emit(PARTY_S2C.ERROR, {
+        message: 'You can only invite people you follow or who follow you',
+      });
       return;
     }
 
@@ -223,7 +227,12 @@ export function registerPartyHandlers(io: Server, socket: Socket, _ctx?: unknown
     const current = userToParty.get(userId);
     if (current && current !== partyId) leaveParty(io, userId, socket);
 
-    party.members.set(userId, { userId, name: selfName(), image: selfImage(), socketId: socket.id });
+    party.members.set(userId, {
+      userId,
+      name: selfName(),
+      image: selfImage(),
+      socketId: socket.id,
+    });
     userToParty.set(userId, partyId);
     socket.join(roomName(partyId));
     emitState(io, party);
@@ -310,7 +319,12 @@ export function registerPartyHandlers(io: Server, socket: Socket, _ctx?: unknown
 
     // Hand every member a single-use ticket to the same room.
     for (const m of party.members.values()) {
-      const token = mintPartyTicket({ partyId: party.id, userId: m.userId, game, roomId: ref.roomId });
+      const token = mintPartyTicket({
+        partyId: party.id,
+        userId: m.userId,
+        game,
+        roomId: ref.roomId,
+      });
       const msg = { game, roomId: ref.roomId, token };
       for (const s of socketsForUser(io, m.userId)) s.emit(PARTY_S2C.TICKET, msg);
     }

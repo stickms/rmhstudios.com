@@ -22,12 +22,48 @@ interface EventComposerProps {
   onCreated?: (event: EventDTO) => void;
 }
 
-const VENUE_KINDS: { value: EventVenueKindValue; labelKey: string; label: string; refLabel: string; refPlaceholder: string }[] = [
-  { value: 'IRL', labelKey: 'venue-irl', label: 'In person', refLabel: 'Location', refPlaceholder: 'Where is it?' },
-  { value: 'URL', labelKey: 'venue-url', label: 'Online link', refLabel: 'URL', refPlaceholder: 'https://…' },
-  { value: 'SPACE', labelKey: 'venue-space', label: 'Space', refLabel: 'Space ID', refPlaceholder: 'Space ID (optional)' },
-  { value: 'TOURNAMENT', labelKey: 'venue-tournament', label: 'Tournament', refLabel: 'Tournament ID', refPlaceholder: 'Tournament ID (optional)' },
-  { value: 'GAME', labelKey: 'venue-game', label: 'Game', refLabel: 'Game', refPlaceholder: 'Game id / room (optional)' },
+const VENUE_KINDS: {
+  value: EventVenueKindValue;
+  labelKey: string;
+  label: string;
+  refLabel: string;
+  refPlaceholder: string;
+}[] = [
+  {
+    value: 'IRL',
+    labelKey: 'venue-irl',
+    label: 'In person',
+    refLabel: 'Location',
+    refPlaceholder: 'Where is it?',
+  },
+  {
+    value: 'URL',
+    labelKey: 'venue-url',
+    label: 'Online link',
+    refLabel: 'URL',
+    refPlaceholder: 'https://…',
+  },
+  {
+    value: 'SPACE',
+    labelKey: 'venue-space',
+    label: 'Space',
+    refLabel: 'Space ID',
+    refPlaceholder: 'Space ID (optional)',
+  },
+  {
+    value: 'TOURNAMENT',
+    labelKey: 'venue-tournament',
+    label: 'Tournament',
+    refLabel: 'Tournament ID',
+    refPlaceholder: 'Tournament ID (optional)',
+  },
+  {
+    value: 'GAME',
+    labelKey: 'venue-game',
+    label: 'Game',
+    refLabel: 'Game',
+    refPlaceholder: 'Game id / room (optional)',
+  },
 ];
 
 const inputCls =
@@ -45,7 +81,10 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
   const [submitting, setSubmitting] = useState(false);
 
   const venue = VENUE_KINDS.find((v) => v.value === venueKind)!;
-  const valid = title.trim().length >= 3 && startsAt.length > 0 && (venueKind !== 'URL' || venueRef.trim().length > 0);
+  const valid =
+    title.trim().length >= 3 &&
+    startsAt.length > 0 &&
+    (venueKind !== 'URL' || venueRef.trim().length > 0);
 
   const reset = () => {
     setTitle('');
@@ -87,7 +126,9 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
         reset();
         onOpenChange(false);
       } else {
-        toast.error(data.error || t('event-create-error', { defaultValue: 'Could not create event' }));
+        toast.error(
+          data.error || t('event-create-error', { defaultValue: 'Could not create event' }),
+        );
       }
     } finally {
       setSubmitting(false);
@@ -114,7 +155,9 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
           />
           <textarea
             className={inputCls}
-            placeholder={t('event-description-placeholder', { defaultValue: 'Description (optional)' })}
+            placeholder={t('event-description-placeholder', {
+              defaultValue: 'Description (optional)',
+            })}
             rows={3}
             maxLength={2000}
             value={description}
@@ -172,7 +215,9 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
           </div>
 
           <label className="flex flex-col gap-1 text-xs font-medium text-site-text-muted">
-            {t(venue.refLabel === 'URL' ? 'event-venue-url' : 'event-venue-ref', { defaultValue: venue.refLabel })}
+            {t(venue.refLabel === 'URL' ? 'event-venue-url' : 'event-venue-ref', {
+              defaultValue: venue.refLabel,
+            })}
             <input
               className={inputCls}
               type={venueKind === 'URL' ? 'url' : 'text'}

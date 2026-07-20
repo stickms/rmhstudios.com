@@ -5,7 +5,12 @@ import { Trophy, Users, Gamepad2, Coins, Hammer, Sparkles, Lock } from 'lucide-r
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
-import { TIER_COLORS, CATEGORY_LABELS, type AchievementCategory, type AchievementTier } from '@/lib/achievements/catalog';
+import {
+  TIER_COLORS,
+  CATEGORY_LABELS,
+  type AchievementCategory,
+  type AchievementTier,
+} from '@/lib/achievements/catalog';
 import { ColumnHeader } from './ColumnHeader';
 
 // Library icons per achievement category (replaces emoji badges).
@@ -49,7 +54,7 @@ export function AchievementsColumn({
   /** Achievement payload prefetched by the route loader; `null` when signed out. */
   initialData?: Payload | null;
 }) {
-  const { t } = useTranslation("feed");
+  const { t } = useTranslation('feed');
   // Seed from the loader when provided so the grid paints immediately.
   const seeded = useRef(initialData != null);
   const [data, setData] = useState<Payload | null>(initialData ?? null);
@@ -60,7 +65,9 @@ export function AchievementsColumn({
     let active = true;
     (async () => {
       try {
-        const res = await fetch(`/api/achievements/${encodeURIComponent(userId)}`, { credentials: 'include' });
+        const res = await fetch(`/api/achievements/${encodeURIComponent(userId)}`, {
+          credentials: 'include',
+        });
         if (res.ok && active) setData(await res.json());
       } finally {
         if (active) setLoading(false);
@@ -79,7 +86,13 @@ export function AchievementsColumn({
     );
   }
   if (!data) {
-    return <EmptyState description={t("could-not-load-achievements", { defaultValue: "Could not load achievements." })} />;
+    return (
+      <EmptyState
+        description={t('could-not-load-achievements', {
+          defaultValue: 'Could not load achievements.',
+        })}
+      />
+    );
   }
 
   const pct = data.stats.total ? Math.round((data.stats.unlocked / data.stats.total) * 100) : 0;
@@ -88,13 +101,20 @@ export function AchievementsColumn({
     <>
       <div className="flex items-center gap-3 text-sm text-site-text-muted">
         <span>
-          <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total} {t("unlocked", { defaultValue: "unlocked" })}
+          <strong className="text-site-text">{data.stats.unlocked}</strong> / {data.stats.total}{' '}
+          {t('unlocked', { defaultValue: 'unlocked' })}
         </span>
         <span aria-hidden>·</span>
-        <span className="inline-flex items-center gap-1"><Coins className="h-3.5 w-3.5 text-site-warning" /> {data.stats.coinsEarned} {t("earned", { defaultValue: "earned" })}</span>
+        <span className="inline-flex items-center gap-1">
+          <Coins className="h-3.5 w-3.5 text-site-warning" /> {data.stats.coinsEarned}{' '}
+          {t('earned', { defaultValue: 'earned' })}
+        </span>
       </div>
       <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-site-surface">
-        <div className="h-full rounded-full bg-site-accent transition-all" style={{ width: `${pct}%` }} />
+        <div
+          className="h-full rounded-full bg-site-accent transition-all"
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </>
   );
@@ -111,7 +131,7 @@ export function AchievementsColumn({
             sticky={false}
             className="border-b-0 pb-0"
             icon={Trophy}
-            title={t("achievements-header", { defaultValue: "Achievements" })}
+            title={t('achievements-header', { defaultValue: 'Achievements' })}
           />
           <div className="px-4 pb-3 pt-2">{Stats}</div>
         </div>
@@ -143,11 +163,17 @@ export function AchievementsColumn({
                         return (
                           <div
                             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-site-sm"
-                            style={{ background: a.unlocked ? `${TIER_COLORS[a.tier]}22` : 'var(--site-surface)' }}
+                            style={{
+                              background: a.unlocked
+                                ? `${TIER_COLORS[a.tier]}22`
+                                : 'var(--site-surface)',
+                            }}
                           >
                             <Icon
                               className="h-5 w-5"
-                              style={{ color: a.unlocked ? TIER_COLORS[a.tier] : 'var(--site-text-dim)' }}
+                              style={{
+                                color: a.unlocked ? TIER_COLORS[a.tier] : 'var(--site-text-dim)',
+                              }}
                             />
                           </div>
                         );
@@ -157,7 +183,10 @@ export function AchievementsColumn({
                           <p className="truncate text-sm font-semibold text-site-text">{a.name}</p>
                           <span
                             className="rounded px-1.5 py-0.5 text-[10px] font-bold uppercase"
-                            style={{ background: `${TIER_COLORS[a.tier]}22`, color: TIER_COLORS[a.tier] }}
+                            style={{
+                              background: `${TIER_COLORS[a.tier]}22`,
+                              color: TIER_COLORS[a.tier],
+                            }}
                           >
                             {a.tier}
                           </span>
@@ -168,7 +197,9 @@ export function AchievementsColumn({
                             <div className="h-1.5 w-full overflow-hidden rounded-full bg-site-surface">
                               <div
                                 className="h-full rounded-full bg-site-accent"
-                                style={{ width: `${Math.min(100, (a.progress / a.target) * 100)}%` }}
+                                style={{
+                                  width: `${Math.min(100, (a.progress / a.target) * 100)}%`,
+                                }}
                               />
                             </div>
                             <p className="mt-0.5 text-[10px] text-site-text-dim">

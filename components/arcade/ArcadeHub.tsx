@@ -86,7 +86,9 @@ export function ArcadeHub({ initialState }: { initialState: ArcadeState | null }
         coins?: number;
       };
       if (!res.ok) {
-        toast.error(data.error ?? t('arcade-claim-failed', { defaultValue: 'Could not claim reward' }));
+        toast.error(
+          data.error ?? t('arcade-claim-failed', { defaultValue: 'Could not claim reward' }),
+        );
         return;
       }
       toast.success(
@@ -148,7 +150,9 @@ export function ArcadeHub({ initialState }: { initialState: ArcadeState | null }
             <Clock className="h-4 w-4 text-site-text-dim" aria-hidden />
             <span>
               {t('arcade-resets-in', { defaultValue: 'Resets in' })}{' '}
-              <span className="font-mono tabular-nums text-site-text">{countdown ?? '--:--:--'}</span>
+              <span className="font-mono tabular-nums text-site-text">
+                {countdown ?? '--:--:--'}
+              </span>
             </span>
           </div>
         </div>
@@ -246,7 +250,8 @@ function ChallengeCard({
       <div className="flex shrink-0 flex-col items-end justify-center gap-2">
         {challenge.claimed ? (
           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-site-text-dim">
-            <Check className="h-3.5 w-3.5" aria-hidden /> {t('arcade-claimed-label', { defaultValue: 'Claimed' })}
+            <Check className="h-3.5 w-3.5" aria-hidden />{' '}
+            {t('arcade-claimed-label', { defaultValue: 'Claimed' })}
           </span>
         ) : claimable ? (
           <Button size="sm" variant="accent" loading={busy} onClick={onClaim} className="gap-1">

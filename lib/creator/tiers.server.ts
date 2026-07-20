@@ -68,7 +68,11 @@ function normalizePerks(raw: unknown): PerkKey[] {
   if (!Array.isArray(raw)) return [];
   const out: PerkKey[] = [];
   for (const p of raw) {
-    if (typeof p === 'string' && (PERK_KEYS as string[]).includes(p) && !out.includes(p as PerkKey)) {
+    if (
+      typeof p === 'string' &&
+      (PERK_KEYS as string[]).includes(p) &&
+      !out.includes(p as PerkKey)
+    ) {
       out.push(p as PerkKey);
     }
   }
@@ -138,7 +142,9 @@ export async function saveTiers(creatorId: string, tiers: TierInput[]): Promise<
   const saved = await prisma.$transaction(async (tx) => {
     const existing = await tx.creatorTier.findMany({ where: { creatorId } });
     const existingIds = new Set(existing.map((e) => e.id));
-    const keepIds = new Set(cleaned.filter((c) => c.id && existingIds.has(c.id)).map((c) => c.id as string));
+    const keepIds = new Set(
+      cleaned.filter((c) => c.id && existingIds.has(c.id)).map((c) => c.id as string),
+    );
 
     // Retire tiers the editor dropped. Keep the row (deactivated) if a
     // membership still points at it so the FK/history survives; else delete.
@@ -238,7 +244,14 @@ export async function joinTier(
 
       await tx.creatorMembership.upsert({
         where: { creatorId_supporterId: { creatorId, supporterId } },
-        create: { creatorId, supporterId, priceCoins: price, tierId, startedAt: now, expiresAt: nextExpiry },
+        create: {
+          creatorId,
+          supporterId,
+          priceCoins: price,
+          tierId,
+          startedAt: now,
+          expiresAt: nextExpiry,
+        },
         update: { priceCoins: price, tierId, expiresAt: nextExpiry },
       });
       return nextExpiry;

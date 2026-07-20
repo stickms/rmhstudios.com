@@ -1,7 +1,12 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { prisma } from '@/lib/prisma.server';
 import { withDeveloperApi, apiOptions } from '@/lib/api/with-developer-api.server';
-import { apiAuthorSelect, parsePage, page, serializePublicPost } from '@/lib/api/serializers.server';
+import {
+  apiAuthorSelect,
+  parsePage,
+  page,
+  serializePublicPost,
+} from '@/lib/api/serializers.server';
 
 /**
  * GET /api/v1/feed — the public global feed (keyset by ?cursor=<ISO createdAt>).
@@ -29,14 +34,23 @@ export const Route = createFileRoute('/api/v1/feed')({
               orderBy: { createdAt: 'desc' },
               take: limit,
               select: {
-                id: true, content: true, createdAt: true, likeCount: true, commentCount: true,
-                repostCount: true, viewCount: true, imageUrls: true, user: { select: apiAuthorSelect },
+                id: true,
+                content: true,
+                createdAt: true,
+                likeCount: true,
+                commentCount: true,
+                repostCount: true,
+                viewCount: true,
+                imageUrls: true,
+                user: { select: apiAuthorSelect },
               },
             });
-            return json(page(posts.map(serializePublicPost), limit, (p) => p.createdAt.toISOString()));
+            return json(
+              page(posts.map(serializePublicPost), limit, (p) => p.createdAt.toISOString()),
+            );
           },
           // Feed assembly is heavier than a single-row read; weight it modestly.
-          { scope: 'read:feed', cost: 2 }
+          { scope: 'read:feed', cost: 2 },
         ),
     },
   },

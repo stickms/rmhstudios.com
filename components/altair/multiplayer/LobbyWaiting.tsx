@@ -10,7 +10,20 @@
 
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Crown, Copy, UserMinus, Play, Users, Zap, MessageSquare, Check, Settings, ArrowRightLeft, ChevronDown, Swords } from 'lucide-react';
+import {
+  Crown,
+  Copy,
+  UserMinus,
+  Play,
+  Users,
+  Zap,
+  MessageSquare,
+  Check,
+  Settings,
+  ArrowRightLeft,
+  ChevronDown,
+  Swords,
+} from 'lucide-react';
 import { useAltairMultiplayerStore } from '@/lib/altair/multiplayer/store';
 import { useAltairMetaStore } from '@/lib/altair/stores/meta-store';
 import { emit } from '@/lib/altair/multiplayer/socket';
@@ -20,7 +33,11 @@ import { CLASSES } from '@/lib/altair/data/classes';
 import ChatPanel, { type ChatPanelMessage } from '@/components/shared/ChatPanel';
 import SpriteIcon from '@/components/altair/hud/SpriteIcon';
 import { asset } from '@/lib/storage/asset';
-import type { AltairClientPlayer, ChatMessage, AltairLobbySettings } from '@/lib/altair/multiplayer/types';
+import type {
+  AltairClientPlayer,
+  ChatMessage,
+  AltairLobbySettings,
+} from '@/lib/altair/multiplayer/types';
 
 const CLASS_MAP = new Map(CLASSES.map((c) => [c.id, c]));
 
@@ -30,7 +47,7 @@ interface LobbyWaitingProps {
 }
 
 export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
-  const { t } = useTranslation("c-altair");
+  const { t } = useTranslation('c-altair');
   const lobby = useAltairMultiplayerStore((s) => s.lobby);
   const classSelections = useAltairMultiplayerStore((s) => s.classSelections);
   const [codeCopied, setCodeCopied] = useState(false);
@@ -93,15 +110,25 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
       {/* Room Code Banner */}
       <div className="flex items-center justify-between p-4 rounded-xl bg-(--altair-surface) border border-(--altair-border)">
         <div>
-          <div className="text-xs text-(--altair-text-muted) uppercase tracking-wider mb-1">{t("room-code", { defaultValue: "Room Code" })}</div>
-          <div className="text-3xl font-mono font-black tracking-[0.2em] text-(--altair-accent)">{lobbyId}</div>
+          <div className="text-xs text-(--altair-text-muted) uppercase tracking-wider mb-1">
+            {t('room-code', { defaultValue: 'Room Code' })}
+          </div>
+          <div className="text-3xl font-mono font-black tracking-[0.2em] text-(--altair-accent)">
+            {lobbyId}
+          </div>
         </div>
         <button
           onClick={handleCopyCode}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-(--altair-bg) text-(--altair-text-muted) hover:text-(--altair-text) transition-colors border border-(--altair-border)"
         >
-          {codeCopied ? <Check size={16} className="text-(--altair-success)" /> : <Copy size={16} />}
-          {codeCopied ? t("copied", { defaultValue: "Copied!" }) : t("copy-invite", { defaultValue: "Copy Invite" })}
+          {codeCopied ? (
+            <Check size={16} className="text-(--altair-success)" />
+          ) : (
+            <Copy size={16} />
+          )}
+          {codeCopied
+            ? t('copied', { defaultValue: 'Copied!' })
+            : t('copy-invite', { defaultValue: 'Copy Invite' })}
         </button>
       </div>
 
@@ -112,7 +139,11 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
           <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) p-4">
             <h3 className="text-sm font-bold text-(--altair-text-muted) uppercase tracking-wider mb-3 flex items-center gap-2">
               <Users size={16} />
-              {t("players-count", { defaultValue: "Players ({{current}}/{{max}})", current: players.length, max: lobby.settings.maxPlayers })}
+              {t('players-count', {
+                defaultValue: 'Players ({{current}}/{{max}})',
+                current: players.length,
+                max: lobby.settings.maxPlayers,
+              })}
             </h3>
             <div className="space-y-2">
               {players.map((player) => (
@@ -133,7 +164,9 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
                   className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-(--altair-border) opacity-40"
                 >
                   <div className="w-8 h-8 rounded-full bg-(--altair-surface-hover)" />
-                  <span className="text-sm text-(--altair-text-dim) italic">{t("waiting-for-player", { defaultValue: "Waiting for player..." })}</span>
+                  <span className="text-sm text-(--altair-text-dim) italic">
+                    {t('waiting-for-player', { defaultValue: 'Waiting for player...' })}
+                  </span>
                 </div>
               ))}
             </div>
@@ -142,21 +175,29 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
           {/* Class Selection */}
           <ClassPicker
             lobbyId={lobbyId}
-            currentClassId={classSelections[lobby.myUserId] ?? players.find((p) => p.userId === lobby.myUserId)?.classId ?? null}
+            currentClassId={
+              classSelections[lobby.myUserId] ??
+              players.find((p) => p.userId === lobby.myUserId)?.classId ??
+              null
+            }
             onSelect={handleSelectClass}
           />
 
           {/* Lobby Settings */}
           <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) p-4">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-bold text-(--altair-text-muted) uppercase tracking-wider">{t("settings", { defaultValue: "Settings" })}</h3>
+              <h3 className="text-sm font-bold text-(--altair-text-muted) uppercase tracking-wider">
+                {t('settings', { defaultValue: 'Settings' })}
+              </h3>
               {isHost && (
                 <button
                   onClick={() => setEditingSettings(!editingSettings)}
                   className="flex items-center gap-1 text-xs text-(--altair-text-dim) hover:text-(--altair-text) transition-colors"
                 >
                   <Settings size={14} />
-                  {editingSettings ? t("done", { defaultValue: "Done" }) : t("edit", { defaultValue: "Edit" })}
+                  {editingSettings
+                    ? t('done', { defaultValue: 'Done' })
+                    : t('edit', { defaultValue: 'Edit' })}
                 </button>
               )}
             </div>
@@ -165,7 +206,9 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
               <div className="space-y-3">
                 {/* Max Players */}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-(--altair-text-muted)">{t("max-players", { defaultValue: "Max Players" })}</span>
+                  <span className="text-xs text-(--altair-text-muted)">
+                    {t('max-players', { defaultValue: 'Max Players' })}
+                  </span>
                   <div className="flex gap-1">
                     {[2, 3, 4].map((n) => (
                       <button
@@ -185,7 +228,9 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
 
                 {/* Visibility */}
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-(--altair-text-muted)">{t("visibility", { defaultValue: "Visibility" })}</span>
+                  <span className="text-xs text-(--altair-text-muted)">
+                    {t('visibility', { defaultValue: 'Visibility' })}
+                  </span>
                   <div className="flex gap-1">
                     {(['public', 'private'] as const).map((v) => (
                       <button
@@ -206,7 +251,7 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
                 {/* Double Time */}
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-(--altair-text-muted) flex items-center gap-1">
-                    <Zap size={12} /> {t("double-time", { defaultValue: "Double Time" })}
+                    <Zap size={12} /> {t('double-time', { defaultValue: 'Double Time' })}
                   </span>
                   <button
                     onClick={() => handleUpdateSettings({ doubleTime: !lobby.settings.doubleTime })}
@@ -216,7 +261,9 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
                         : 'bg-(--altair-bg) text-(--altair-text-muted) hover:bg-(--altair-surface-hover)'
                     }`}
                   >
-                    {lobby.settings.doubleTime ? t("on", { defaultValue: "ON" }) : t("off", { defaultValue: "OFF" })}
+                    {lobby.settings.doubleTime
+                      ? t('on', { defaultValue: 'ON' })
+                      : t('off', { defaultValue: 'OFF' })}
                   </button>
                 </div>
               </div>
@@ -230,12 +277,13 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
                 </span>
                 {lobby.settings.doubleTime && (
                   <span className="px-2 py-1 rounded-md bg-(--altair-warning-dim) text-(--altair-warning) flex items-center gap-1">
-                    <Zap size={12} /> {t("double-time", { defaultValue: "Double Time" })}
+                    <Zap size={12} /> {t('double-time', { defaultValue: 'Double Time' })}
                   </span>
                 )}
                 {lobby.settings.dropInAllowed && (
                   <span className="px-2 py-1 rounded-md bg-(--altair-bg) text-(--altair-text-muted)">
-                    Drop-in: {lobby.settings.dropInWindow.replace('first_', '').replace('min', ' min')}
+                    Drop-in:{' '}
+                    {lobby.settings.dropInWindow.replace('first_', '').replace('min', ' min')}
                   </span>
                 )}
               </div>
@@ -250,13 +298,13 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
               className="w-full py-4 rounded-xl font-bold text-white text-lg tracking-wider transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-(--altair-accent) hover:bg-(--altair-accent-hover) shadow-lg flex items-center justify-center gap-2"
             >
               <Play size={22} />
-              {t("start-game", { defaultValue: "Start Game" })}
+              {t('start-game', { defaultValue: 'Start Game' })}
             </button>
           )}
 
           {!isHost && (
             <div className="text-center text-sm text-(--altair-text-muted) py-4">
-              {t("waiting-for-host", { defaultValue: "Waiting for host to start the game..." })}
+              {t('waiting-for-host', { defaultValue: 'Waiting for host to start the game...' })}
             </div>
           )}
         </div>
@@ -265,7 +313,9 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
         <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) flex flex-col h-80 md:h-auto overflow-hidden">
           <div className="px-4 py-3 border-b border-(--altair-border) flex items-center gap-2">
             <MessageSquare size={16} className="text-(--altair-text-muted)" />
-            <h3 className="text-sm font-bold text-(--altair-text-muted) uppercase tracking-wider">{t("chat", { defaultValue: "Chat" })}</h3>
+            <h3 className="text-sm font-bold text-(--altair-text-muted) uppercase tracking-wider">
+              {t('chat', { defaultValue: 'Chat' })}
+            </h3>
           </div>
           <ChatPanel
             messages={chatMessages}
@@ -275,7 +325,7 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
             themePrefix="altair"
             showReactions={false}
             showMediaEmbeds={false}
-            placeholder={t("type-a-message", { defaultValue: "Type a message..." })}
+            placeholder={t('type-a-message', { defaultValue: 'Type a message...' })}
             className="flex-1 min-h-0"
           />
         </div>
@@ -286,7 +336,7 @@ export default function LobbyWaiting({ lobbyId, onLeave }: LobbyWaitingProps) {
         onClick={onLeave}
         className="w-full py-3 rounded-xl font-semibold text-(--altair-text-muted) bg-(--altair-surface) border border-(--altair-border) hover:bg-(--altair-surface-hover) hover:text-(--altair-danger) transition-colors"
       >
-        {t("leave-lobby", { defaultValue: "Leave Lobby" })}
+        {t('leave-lobby', { defaultValue: 'Leave Lobby' })}
       </button>
     </div>
   );
@@ -309,13 +359,15 @@ function PlayerRow({
   onKick: () => void;
   onTransferHost: () => void;
 }) {
-  const { t } = useTranslation("c-altair");
+  const { t } = useTranslation('c-altair');
   const classDef = resolvedClassId ? CLASS_MAP.get(resolvedClassId) : null;
 
   return (
     <div
       className={`flex items-center gap-3 p-3 rounded-lg transition-colors ${
-        isLocalPlayer ? 'bg-(--altair-accent)/10 border border-(--altair-accent)/30' : 'bg-(--altair-bg)'
+        isLocalPlayer
+          ? 'bg-(--altair-accent)/10 border border-(--altair-accent)/30'
+          : 'bg-(--altair-bg)'
       }`}
     >
       {/* Color dot */}
@@ -329,11 +381,17 @@ function PlayerRow({
       {/* Name + class */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className={`text-sm font-semibold truncate ${isLocalPlayer ? 'text-(--altair-accent)' : 'text-(--altair-text)'}`}>
+          <span
+            className={`text-sm font-semibold truncate ${isLocalPlayer ? 'text-(--altair-accent)' : 'text-(--altair-text)'}`}
+          >
             {player.userName}
           </span>
           {player.isHost && <Crown size={14} className="text-(--altair-warning) shrink-0" />}
-          {isLocalPlayer && <span className="text-[10px] text-(--altair-text-dim)">{t("you", { defaultValue: "(you)" })}</span>}
+          {isLocalPlayer && (
+            <span className="text-[10px] text-(--altair-text-dim)">
+              {t('you', { defaultValue: '(you)' })}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-1.5 mt-0.5">
           {classDef ? (
@@ -348,10 +406,14 @@ function PlayerRow({
               </span>
             </>
           ) : (
-            <span className="text-[10px] text-(--altair-text-dim) italic">{t("no-class-selected", { defaultValue: "No class selected" })}</span>
+            <span className="text-[10px] text-(--altair-text-dim) italic">
+              {t('no-class-selected', { defaultValue: 'No class selected' })}
+            </span>
           )}
           {!player.isConnected && (
-            <span className="text-[10px] text-(--altair-danger) ml-1">{t("disconnected", { defaultValue: "Disconnected" })}</span>
+            <span className="text-[10px] text-(--altair-danger) ml-1">
+              {t('disconnected', { defaultValue: 'Disconnected' })}
+            </span>
           )}
         </div>
       </div>
@@ -362,14 +424,14 @@ function PlayerRow({
           <button
             onClick={onTransferHost}
             className="p-1.5 rounded-md text-(--altair-text-dim) hover:text-(--altair-warning) hover:bg-(--altair-surface-hover) transition-colors"
-            title={t("transfer-host", { defaultValue: "Transfer host" })}
+            title={t('transfer-host', { defaultValue: 'Transfer host' })}
           >
             <ArrowRightLeft size={14} />
           </button>
           <button
             onClick={onKick}
             className="p-1.5 rounded-md text-(--altair-text-dim) hover:text-(--altair-danger) hover:bg-(--altair-surface-hover) transition-colors"
-            title={t("kick-player", { defaultValue: "Kick player" })}
+            title={t('kick-player', { defaultValue: 'Kick player' })}
           >
             <UserMinus size={16} />
           </button>
@@ -390,7 +452,7 @@ function ClassPicker({
   currentClassId: string | null;
   onSelect: (classId: string) => void;
 }) {
-  const { t } = useTranslation("c-altair");
+  const { t } = useTranslation('c-altair');
   const [expanded, setExpanded] = useState(false);
   const unlockedClasses = useAltairMetaStore((s) => s.unlockedClasses);
   const currentClass = currentClassId ? CLASS_MAP.get(currentClassId) : null;
@@ -399,7 +461,7 @@ function ClassPicker({
     <div className="rounded-xl border border-(--altair-border) bg-(--altair-surface) p-4">
       <h3 className="text-sm font-bold text-(--altair-text-muted) uppercase tracking-wider mb-3 flex items-center gap-2">
         <Swords size={16} />
-        {t("your-class", { defaultValue: "Your Class" })}
+        {t('your-class', { defaultValue: 'Your Class' })}
       </h3>
 
       {/* Current selection / toggle */}
@@ -410,17 +472,22 @@ function ClassPicker({
         {currentClass ? (
           <>
             <SpriteIcon
-              sheetSrc={asset(`/sprites/altair/characters/${currentClass.id.replace('_', '-')}.png`)}
+              sheetSrc={asset(
+                `/sprites/altair/characters/${currentClass.id.replace('_', '-')}.png`,
+              )}
               frameIndex={0}
               size={28}
             />
-            <span className="text-sm font-bold flex-1 text-left" style={{ color: currentClass.color }}>
+            <span
+              className="text-sm font-bold flex-1 text-left"
+              style={{ color: currentClass.color }}
+            >
               {currentClass.name}
             </span>
           </>
         ) : (
           <span className="text-sm text-(--altair-text-dim) italic flex-1 text-left">
-            {t("select-a-class", { defaultValue: "Select a class..." })}
+            {t('select-a-class', { defaultValue: 'Select a class...' })}
           </span>
         )}
         <ChevronDown
@@ -450,7 +517,9 @@ function ClassPicker({
                       ? 'border-(--altair-border) hover:bg-(--altair-surface-hover)'
                       : 'border-(--altair-border) opacity-35 cursor-not-allowed'
                 } bg-(--altair-bg)`}
-                style={isActive ? { borderColor: cls.color, boxShadow: `0 0 12px ${cls.color}25` } : {}}
+                style={
+                  isActive ? { borderColor: cls.color, boxShadow: `0 0 12px ${cls.color}25` } : {}
+                }
               >
                 <SpriteIcon
                   sheetSrc={asset(`/sprites/altair/characters/${cls.id.replace('_', '-')}.png`)}
@@ -458,7 +527,10 @@ function ClassPicker({
                   size={24}
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="text-xs font-bold truncate" style={{ color: isUnlocked ? cls.color : undefined }}>
+                  <div
+                    className="text-xs font-bold truncate"
+                    style={{ color: isUnlocked ? cls.color : undefined }}
+                  >
                     {cls.name}
                   </div>
                   <div className="text-[9px] text-(--altair-text-dim)">{cls.difficulty}</div>

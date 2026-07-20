@@ -106,7 +106,9 @@ export function SellSheet({
         setItems((prev) => (prev ? prev.filter((i) => i.id !== item.id) : prev));
         onListed?.();
       } else {
-        toast.error(data.error || t('market-list-failed', { defaultValue: "Couldn't list that item" }));
+        toast.error(
+          data.error || t('market-list-failed', { defaultValue: "Couldn't list that item" }),
+        );
       }
     } finally {
       setBusy(null);
@@ -149,7 +151,10 @@ export function SellSheet({
                 <MarketItemPreview kind={item.kind} data={item.data} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-site-text">{item.name}</p>
-                  <span className="text-[10px] font-bold uppercase" style={{ color: RARITY_COLORS[item.rarity] }}>
+                  <span
+                    className="text-[10px] font-bold uppercase"
+                    style={{ color: RARITY_COLORS[item.rarity] }}
+                  >
                     {item.rarity}
                   </span>
                 </div>
@@ -163,13 +168,21 @@ export function SellSheet({
                       max={MAX_PRICE}
                       step={1}
                       placeholder={String(minPriceFor(item.id))}
-                      aria-label={t('market-price-label', { name: item.name, defaultValue: 'Price for {{name}}' })}
+                      aria-label={t('market-price-label', {
+                        name: item.name,
+                        defaultValue: 'Price for {{name}}',
+                      })}
                       value={prices[item.id] ?? ''}
                       onChange={(e) => setPrices((p) => ({ ...p, [item.id]: e.target.value }))}
                       className="h-9 w-28 pl-8"
                     />
                   </div>
-                  <Button size="sm" variant="accent" loading={busy === item.id} onClick={() => list(item)}>
+                  <Button
+                    size="sm"
+                    variant="accent"
+                    loading={busy === item.id}
+                    onClick={() => list(item)}
+                  >
                     {t('market-list-action', { defaultValue: 'List' })}
                   </Button>
                 </div>

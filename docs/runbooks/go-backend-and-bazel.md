@@ -22,7 +22,7 @@ gateway cutover.
    - Apache front door: replace `Alias /models …` + `ProxyPass /models !` with
      `ProxyPass /models http://<assets-host>:7007/models` (+ `ProxyPassReverse`),
      then `apachectl configtest && systemctl reload apache2`.
-   Verify behind Cloudflare; watch error rate, latency, and range behavior.
+     Verify behind Cloudflare; watch error rate, latency, and range behavior.
 5. **Roll the rest** one at a time: `music` → `sprites` → `library`.
 6. **Phase 4 — slim the image:** activate the `.dockerignore` exclusion for
    `public/library` (uncomment it in the "Assets/CDN cutover — Phase 4" block).

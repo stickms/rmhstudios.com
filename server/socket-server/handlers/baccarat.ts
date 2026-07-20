@@ -135,9 +135,15 @@ function emptyBets(): PlayerBets {
 }
 
 function totalBets(bets: PlayerBets): number {
-  return bets.player + bets.banker + bets.tie +
-    bets.playerPair + bets.bankerPair +
-    bets.playerDragon + bets.bankerDragon;
+  return (
+    bets.player +
+    bets.banker +
+    bets.tie +
+    bets.playerPair +
+    bets.bankerPair +
+    bets.playerDragon +
+    bets.bankerDragon
+  );
 }
 
 function hasBets(bets: PlayerBets): boolean {
@@ -204,8 +210,14 @@ function getNextSeatIndex(room: BaccaratRoom): number {
 // ── Timer Helpers ──────────────────────────────────────────────────
 
 function clearTimers(room: BaccaratRoom) {
-  if (room.bettingTimer) { clearTimeout(room.bettingTimer); room.bettingTimer = null; }
-  if (room.resultsTimer) { clearTimeout(room.resultsTimer); room.resultsTimer = null; }
+  if (room.bettingTimer) {
+    clearTimeout(room.bettingTimer);
+    room.bettingTimer = null;
+  }
+  if (room.resultsTimer) {
+    clearTimeout(room.resultsTimer);
+    room.resultsTimer = null;
+  }
 }
 
 // ── Async Delay ────────────────────────────────────────────────────
@@ -344,7 +356,12 @@ async function dealCards(room: BaccaratRoom) {
   resolveRound(room);
 }
 
-async function revealCard(room: BaccaratRoom, target: 'player' | 'banker', card: Card, cardIndex: number) {
+async function revealCard(
+  room: BaccaratRoom,
+  target: 'player' | 'banker',
+  card: Card,
+  cardIndex: number,
+) {
   // Track revealed cards
   if (target === 'player') {
     room.revealedPlayerCards.push(card);
@@ -496,7 +513,9 @@ async function resolveRound(room: BaccaratRoom) {
       if (p.pendingRemoval || !sock || !sock.connected) {
         room.players.delete(uid);
         userToRoom.delete(uid);
-        ioRef.to(roomKey(room.roomId)).emit(S2C.PLAYER_LEFT, { userId: uid, seatIndex: p.seatIndex });
+        ioRef
+          .to(roomKey(room.roomId))
+          .emit(S2C.PLAYER_LEFT, { userId: uid, seatIndex: p.seatIndex });
 
         // Transfer ownership if the owner departed.
         if (room.ownerId === uid && room.players.size > 0) {
@@ -575,11 +594,13 @@ function onCreateRoom(socket: Socket, payload: unknown) {
   }
 
   const data = payload as any;
-  const name = typeof data?.name === 'string' ? data.name.trim().slice(0, 30) : `${userName}'s Room`;
-  const maxPlayers = typeof data?.maxPlayers === 'number'
-    ? Math.min(Math.max(Math.floor(data.maxPlayers), 2), MAX_PLAYERS_CAP)
-    : DEFAULT_MAX_PLAYERS;
-  const privacy = data?.privacy === 'unlisted' ? 'unlisted' as const : 'public' as const;
+  const name =
+    typeof data?.name === 'string' ? data.name.trim().slice(0, 30) : `${userName}'s Room`;
+  const maxPlayers =
+    typeof data?.maxPlayers === 'number'
+      ? Math.min(Math.max(Math.floor(data.maxPlayers), 2), MAX_PLAYERS_CAP)
+      : DEFAULT_MAX_PLAYERS;
+  const privacy = data?.privacy === 'unlisted' ? ('unlisted' as const) : ('public' as const);
 
   const roomId = generateRoomId();
   const joinCode = generateRoomId();
@@ -766,7 +787,8 @@ function leaveRoom(userId: string, socketId: string) {
   // If the player leaves while a round is in progress and still has an active
   // bet, keep the seat so the pending payout still settles. Detach the socket
   // now; the seat is pruned once the round resolves.
-  const roundActive = room.phase === 'dealing' || room.phase === 'drawing' || room.phase === 'results';
+  const roundActive =
+    room.phase === 'dealing' || room.phase === 'drawing' || room.phase === 'results';
   if (roundActive && player.totalBetThisRound > 0) {
     player.pendingRemoval = true;
     player.socketId = '';
@@ -818,7 +840,6 @@ function leaveRoom(userId: string, socketId: string) {
 
   broadcastTableState(room);
   broadcastRoomList();
-
 }
 
 function onUpdateRoom(socket: Socket, payload: unknown) {
@@ -868,7 +889,15 @@ function onUpdateRoom(socket: Socket, payload: unknown) {
 
 // ── Player Action Handlers ─────────────────────────────────────────
 
-const VALID_BET_TYPES: BetType[] = ['player', 'banker', 'tie', 'playerPair', 'bankerPair', 'playerDragon', 'bankerDragon'];
+const VALID_BET_TYPES: BetType[] = [
+  'player',
+  'banker',
+  'tie',
+  'playerPair',
+  'bankerPair',
+  'playerDragon',
+  'bankerDragon',
+];
 
 async function onPlaceBet(socket: Socket, payload: unknown) {
   const userId = socketToUserId.get(socket.id);

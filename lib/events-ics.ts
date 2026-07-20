@@ -49,7 +49,10 @@ function escapeText(value: string): string {
 /** Format a Date/ISO string as a UTC `YYYYMMDDTHHMMSSZ` stamp. */
 function toUtcStamp(value: Date | string): string {
   const date = value instanceof Date ? value : new Date(value);
-  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  return date
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, 'Z');
 }
 
 /**

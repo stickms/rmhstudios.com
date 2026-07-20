@@ -119,7 +119,10 @@ function AISearchPanel({ query }: { query: string }) {
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-site-text">{answer}</p>
               {sourceCount > 0 && (
                 <p className="mt-2 text-xs text-site-text-dim">
-                  {t('ai-based-on', { count: sourceCount, defaultValue: 'Based on {{count}} results below' })}
+                  {t('ai-based-on', {
+                    count: sourceCount,
+                    defaultValue: 'Based on {{count}} results below',
+                  })}
                 </p>
               )}
             </>
@@ -156,7 +159,11 @@ export function SearchColumn({
   const setTab = useCallback(
     (next: Tab) => {
       setTabState(next);
-      void navigate({ to: '/search', search: (prev) => ({ ...prev, q: prev.q ?? '', tab: next }), replace: true });
+      void navigate({
+        to: '/search',
+        search: (prev) => ({ ...prev, q: prev.q ?? '', tab: next }),
+        replace: true,
+      });
     },
     [navigate],
   );
@@ -169,7 +176,9 @@ export function SearchColumn({
     setLoading(true);
     try {
       const apiType = type === 'top' ? 'all' : type;
-      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&type=${apiType}`, { credentials: 'include' });
+      const res = await fetch(`/api/search?q=${encodeURIComponent(q)}&type=${apiType}`, {
+        credentials: 'include',
+      });
       if (res.ok) setResults(await res.json());
     } finally {
       setLoading(false);
@@ -202,16 +211,24 @@ export function SearchColumn({
             <input
               autoFocus
               type="search"
-              aria-label={t('search-input-aria-label', { defaultValue: 'Search people, posts, builds, and blog' })}
+              aria-label={t('search-input-aria-label', {
+                defaultValue: 'Search people, posts, builds, and blog',
+              })}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={t('search-placeholder', { defaultValue: 'Search people, posts, builds…' })}
+              placeholder={t('search-placeholder', {
+                defaultValue: 'Search people, posts, builds…',
+              })}
               className="w-full bg-transparent text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
             />
             {loading && <Spinner size={16} className="text-site-text-muted" />}
           </div>
         </ColumnHeader>
-        <div className="flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}>
+        <div
+          className="flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          role="tablist"
+          aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
+        >
           {TABS.map((tab_item) => (
             <button
               key={tab_item.id}
@@ -242,22 +259,37 @@ export function SearchColumn({
       ) : loading && !hasResults ? (
         <PostListSkeleton count={6} />
       ) : !hasResults && !loading ? (
-        <EmptyState description={t('no-results', { query, defaultValue: 'No results for "{{query}}".' })} />
+        <EmptyState
+          description={t('no-results', { query, defaultValue: 'No results for "{{query}}".' })}
+        />
       ) : (
         <div className="divide-y divide-site-border">
           {showPeople && results.people.length > 0 && (
             <section className="py-2">
-              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">{t('tab-people', { defaultValue: 'People' })}</h2>}
+              {tab === 'top' && (
+                <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">
+                  {t('tab-people', { defaultValue: 'People' })}
+                </h2>
+              )}
               {results.people.map((u) => (
                 <Link
                   key={u.id}
                   to={`/u/${u.handle || u.id}` as string}
                   className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-site-surface-hover"
                 >
-                  <UserAvatar src={u.image} alt={u.name || 'User'} size={40} fallbackName={u.name || 'U'} />
+                  <UserAvatar
+                    src={u.image}
+                    alt={u.name || 'User'}
+                    size={40}
+                    fallbackName={u.name || 'U'}
+                  />
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-site-text">{u.name || u.handle}</p>
-                    {u.handle && <p className="truncate text-xs text-site-text-muted">@{u.handle}</p>}
+                    <p className="truncate text-sm font-semibold text-site-text">
+                      {u.name || u.handle}
+                    </p>
+                    {u.handle && (
+                      <p className="truncate text-xs text-site-text-muted">@{u.handle}</p>
+                    )}
                   </div>
                 </Link>
               ))}
@@ -266,16 +298,29 @@ export function SearchColumn({
 
           {showPosts && results.posts.length > 0 && (
             <section className="py-2">
-              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">{t('tab-posts', { defaultValue: 'Posts' })}</h2>}
+              {tab === 'top' && (
+                <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">
+                  {t('tab-posts', { defaultValue: 'Posts' })}
+                </h2>
+              )}
               {results.posts.map((p) => (
                 <button
                   key={p.id}
-                  onClick={() => p.user.handle && navigate({ to: `/u/${p.user.handle}/post/${p.id}` as string })}
+                  onClick={() =>
+                    p.user.handle && navigate({ to: `/u/${p.user.handle}/post/${p.id}` as string })
+                  }
                   className="block w-full px-4 py-2.5 text-left transition-colors hover:bg-site-surface-hover"
                 >
                   <div className="flex items-center gap-2">
-                    <UserAvatar src={p.user.image} alt={p.user.name || 'User'} size={20} fallbackName={p.user.name || 'U'} />
-                    <span className="text-sm font-medium text-site-text">{p.user.name || p.user.handle}</span>
+                    <UserAvatar
+                      src={p.user.image}
+                      alt={p.user.name || 'User'}
+                      size={20}
+                      fallbackName={p.user.name || 'U'}
+                    />
+                    <span className="text-sm font-medium text-site-text">
+                      {p.user.name || p.user.handle}
+                    </span>
                   </div>
                   <p className="mt-1 line-clamp-2 text-sm text-site-text-muted">{p.content}</p>
                 </button>
@@ -285,7 +330,11 @@ export function SearchColumn({
 
           {showBuilds && results.builds.length > 0 && (
             <section className="py-2">
-              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">{t('tab-builds', { defaultValue: 'Builds' })}</h2>}
+              {tab === 'top' && (
+                <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">
+                  {t('tab-builds', { defaultValue: 'Builds' })}
+                </h2>
+              )}
               {results.builds.map((b) => (
                 <Link
                   key={b.slug}
@@ -304,7 +353,11 @@ export function SearchColumn({
 
           {showBlog && results.blog.length > 0 && (
             <section className="py-2">
-              {tab === 'top' && <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">{t('tab-blog', { defaultValue: 'Blog' })}</h2>}
+              {tab === 'top' && (
+                <h2 className="px-4 py-1 text-xs font-semibold uppercase text-site-text-dim">
+                  {t('tab-blog', { defaultValue: 'Blog' })}
+                </h2>
+              )}
               {results.blog.map((b) => (
                 <Link
                   key={b.slug}

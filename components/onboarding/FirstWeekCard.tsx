@@ -121,7 +121,10 @@ export function FirstWeekCard({ status, onDismiss, className }: FirstWeekCardPro
           const row = (
             <span className="flex items-start gap-2.5 py-0.5 text-sm">
               {step.done ? (
-                <CheckCircle2 className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-success" aria-hidden />
+                <CheckCircle2
+                  className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-success"
+                  aria-hidden
+                />
               ) : locked ? (
                 <Lock className="mt-0.5 h-4.5 w-4.5 shrink-0 text-site-text-dim" aria-hidden />
               ) : (

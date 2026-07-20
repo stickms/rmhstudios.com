@@ -233,7 +233,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       const atBottom = nav.scrollTop >= nav.scrollHeight - nav.clientHeight - 1;
       // Let the wheel through only when it's over the nav and the nav can still
       // scroll that way; otherwise it would fall through to the page, so cancel it.
-      const navAbsorbs = overNav && canScroll && !(e.deltaY > 0 ? atBottom : e.deltaY < 0 ? atTop : true);
+      const navAbsorbs =
+        overNav && canScroll && !(e.deltaY > 0 ? atBottom : e.deltaY < 0 ? atTop : true);
       if (!navAbsorbs && e.cancelable) e.preventDefault();
     }
     rootEl.addEventListener('wheel', onWheel, { passive: false });
@@ -645,14 +646,21 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           // reachable without an account. The gear sits next to the button when
           // there's room (mobile drawer / xl rail) and stacks under it in the
           // narrow icon rail.
-          <div className={`flex gap-2 ${expanded ? 'items-center' : 'flex-col xl:flex-row xl:items-center'}`}>
+          <div
+            className={`flex gap-2 ${expanded ? 'items-center' : 'flex-col xl:flex-row xl:items-center'}`}
+          >
             <Link
               to="/login"
               search={{ callbackURL: undefined }}
               aria-label={t('sign-in', { defaultValue: 'Sign In' })}
               className={expanded ? 'min-w-0 flex-1' : 'xl:min-w-0 xl:flex-1'}
             >
-              <Button variant="accent" size="sm" className="w-full" aria-label={t('sign-in', { defaultValue: 'Sign In' })}>
+              <Button
+                variant="accent"
+                size="sm"
+                className="w-full"
+                aria-label={t('sign-in', { defaultValue: 'Sign In' })}
+              >
                 <User className={`w-4 h-4 ${iconMrClass}`} aria-hidden />
                 <span className={labelClass}>{t('sign-in', { defaultValue: 'Sign In' })}</span>
               </Button>

@@ -55,7 +55,15 @@ async function loadExploreBase(): Promise<ExploreBase> {
       where: { isPrivate: false },
       orderBy: { memberCount: 'desc' },
       take: 6,
-      select: { id: true, slug: true, name: true, description: true, icon: true, color: true, memberCount: true },
+      select: {
+        id: true,
+        slug: true,
+        name: true,
+        description: true,
+        icon: true,
+        color: true,
+        memberCount: true,
+      },
     }),
     // Popular real users; the per-viewer exclude (self/followed/hidden) is a
     // small filter applied after, so we cache a slightly larger pool than we
@@ -144,7 +152,8 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
       })
     : [];
   hotRows.sort(
-    (a, b) => (b.likeCount ?? 0) - (a.likeCount ?? 0) || (b.createdAt.getTime() - a.createdAt.getTime()),
+    (a, b) =>
+      (b.likeCount ?? 0) - (a.likeCount ?? 0) || b.createdAt.getTime() - a.createdAt.getTime(),
   );
 
   // Apply the viewer's muted words to hot posts too (the timeline already does;
@@ -157,11 +166,7 @@ export async function listExplore(viewerId: string | null): Promise<ExploreResul
   );
 
   // People to follow: the cached pool minus self/followed/hidden.
-  const excludeIds = new Set<string>([
-    ...(viewerId ? [viewerId] : []),
-    ...followingIds,
-    ...hidden,
-  ]);
+  const excludeIds = new Set<string>([...(viewerId ? [viewerId] : []), ...followingIds, ...hidden]);
   const suggestedUsers = base.userPool
     .filter((u) => !excludeIds.has(u.id))
     .slice(0, SUGGESTED_TAKE);

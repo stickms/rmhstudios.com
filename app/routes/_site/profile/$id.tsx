@@ -27,7 +27,13 @@ const fetchProfileData = createServerFn({ method: 'GET' })
     // client-side after mount.
     const [sidebar, profile] = await Promise.all([getSidebarData(), getProfile(id, viewer)]);
 
-    let meta = { title: 'User Not Found | RMH', description: '', ogType: 'profile' as const, ogUrl: '', ogImage: '' };
+    let meta = {
+      title: 'User Not Found | RMH',
+      description: '',
+      ogType: 'profile' as const,
+      ogUrl: '',
+      ogImage: '',
+    };
     if (profile) {
       const name = profile.name || 'Unknown';
       const handle = profile.handle || profile.username;
@@ -56,11 +62,15 @@ export const Route = createFileRoute('/_site/profile/$id')({
       { property: 'og:description', content: loaderData?.meta.description ?? '' },
       { property: 'og:site_name', content: 'RMH' },
       { property: 'og:url', content: loaderData?.meta.ogUrl ?? '' },
-      ...(loaderData?.meta.ogImage ? [{ property: 'og:image', content: loaderData.meta.ogImage }] : []),
+      ...(loaderData?.meta.ogImage
+        ? [{ property: 'og:image', content: loaderData.meta.ogImage }]
+        : []),
       { name: 'twitter:card', content: 'summary' },
       { name: 'twitter:title', content: loaderData?.meta.title ?? '' },
       { name: 'twitter:description', content: loaderData?.meta.description ?? '' },
-      ...(loaderData?.meta.ogImage ? [{ name: 'twitter:image', content: loaderData.meta.ogImage }] : []),
+      ...(loaderData?.meta.ogImage
+        ? [{ name: 'twitter:image', content: loaderData.meta.ogImage }]
+        : []),
     ],
   }),
   component: ProfilePage,

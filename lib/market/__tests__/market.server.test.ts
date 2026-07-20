@@ -39,7 +39,15 @@ interface State {
   inventory: Map<string, InvRow>;
   profiles: Map<string, { coins: number; xp: number }>;
   users: Map<string, { id: string; createdAt: Date }>;
-  ledger: Array<{ senderId: string | null; recipientId: string; amount: number; type: string; entityType: string | null; entityId: string | null; note: string | null }>;
+  ledger: Array<{
+    senderId: string | null;
+    recipientId: string;
+    amount: number;
+    type: string;
+    entityType: string | null;
+    entityId: string | null;
+    note: string | null;
+  }>;
   seq: number;
 }
 
@@ -71,7 +79,8 @@ const db: any = {
       const s = store.state;
       if (where.id) return clone(s.listings.get(where.id));
       if (where.inventoryId) {
-        for (const l of s.listings.values()) if (l.inventoryId === where.inventoryId) return clone(l);
+        for (const l of s.listings.values())
+          if (l.inventoryId === where.inventoryId) return clone(l);
       }
       return null;
     },
@@ -128,7 +137,8 @@ const db: any = {
       const s = store.state;
       let row: ListingRow | undefined;
       if (where.id) row = s.listings.get(where.id);
-      else if (where.inventoryId) for (const l of s.listings.values()) if (l.inventoryId === where.inventoryId) row = l;
+      else if (where.inventoryId)
+        for (const l of s.listings.values()) if (l.inventoryId === where.inventoryId) row = l;
       if (!row) throw new Error('listing not found');
       Object.assign(row, data);
       return clone(row);
@@ -139,7 +149,8 @@ const db: any = {
       const s = store.state;
       if (where.userId_itemId) {
         const { userId, itemId } = where.userId_itemId;
-        for (const inv of s.inventory.values()) if (inv.userId === userId && inv.itemId === itemId) return clone(inv);
+        for (const inv of s.inventory.values())
+          if (inv.userId === userId && inv.itemId === itemId) return clone(inv);
         return null;
       }
       if (where.id) return clone(s.inventory.get(where.id));
@@ -202,11 +213,7 @@ function clone<T>(v: T): T {
 vi.mock('@/lib/prisma.server', () => ({ prisma: db }));
 
 // Import AFTER the mocks are registered.
-const {
-  listItem,
-  buyListing,
-  cancelListing,
-} = await import('@/lib/market/market.server');
+const { listItem, buyListing, cancelListing } = await import('@/lib/market/market.server');
 const {
   isTradable,
   marketFee,
@@ -230,7 +237,13 @@ function seedTradeable(price = 1000) {
   s.users.set(BUYER, { id: BUYER, createdAt: OLD });
   s.profiles.set(SELLER, { coins: 10, xp: 100_000 }); // high level
   s.profiles.set(BUYER, { coins: 5000, xp: 100_000 });
-  s.inventory.set('inv-1', { id: 'inv-1', userId: SELLER, itemId: TRADABLE_ITEM, equipped: false, acquiredAt: OLD });
+  s.inventory.set('inv-1', {
+    id: 'inv-1',
+    userId: SELLER,
+    itemId: TRADABLE_ITEM,
+    equipped: false,
+    acquiredAt: OLD,
+  });
   s.listings.set('L1', {
     id: 'L1',
     sellerId: SELLER,
@@ -314,7 +327,12 @@ describe('buyListing', () => {
     const purchase = s.ledger.find((t) => t.type === 'PURCHASE');
     const marketCredit = s.ledger.find((t) => t.type === 'MARKET');
     expect(purchase).toMatchObject({ recipientId: BUYER, amount: -1000, entityType: 'market' });
-    expect(marketCredit).toMatchObject({ recipientId: SELLER, senderId: BUYER, amount: 900, type: 'MARKET' });
+    expect(marketCredit).toMatchObject({
+      recipientId: SELLER,
+      senderId: BUYER,
+      amount: 900,
+      type: 'MARKET',
+    });
     // The burn: total market debits − credits = 100.
     const net = s.ledger.filter((t) => t.entityType === 'market').reduce((a, t) => a + t.amount, 0);
     expect(net).toBe(-100);
@@ -377,15 +395,25 @@ describe('buyListing', () => {
 
   it('(d) rejects buying your own listing', async () => {
     seedTradeable(1000);
-    await expect(buyListing({ buyerId: SELLER, listingId: 'L1' })).rejects.toMatchObject({ code: 'SELF_BUY' });
+    await expect(buyListing({ buyerId: SELLER, listingId: 'L1' })).rejects.toMatchObject({
+      code: 'SELF_BUY',
+    });
     expect(store.state.listings.get('L1')!.status).toBe('ACTIVE');
     expect(store.state.ledger).toHaveLength(0);
   });
 
   it('rejects when the buyer already owns the item (unique inventory)', async () => {
     seedTradeable(1000);
-    store.state.inventory.set('inv-b', { id: 'inv-b', userId: BUYER, itemId: TRADABLE_ITEM, equipped: false, acquiredAt: OLD });
-    await expect(buyListing({ buyerId: BUYER, listingId: 'L1' })).rejects.toMatchObject({ code: 'ALREADY_OWNED' });
+    store.state.inventory.set('inv-b', {
+      id: 'inv-b',
+      userId: BUYER,
+      itemId: TRADABLE_ITEM,
+      equipped: false,
+      acquiredAt: OLD,
+    });
+    await expect(buyListing({ buyerId: BUYER, listingId: 'L1' })).rejects.toMatchObject({
+      code: 'ALREADY_OWNED',
+    });
     expect(store.state.inventory.get('inv-1')!.userId).toBe(SELLER);
     expect(store.state.ledger).toHaveLength(0);
   });
@@ -424,7 +452,13 @@ describe('listItem', () => {
     const s = store.state;
     s.users.set(SELLER, { id: SELLER, createdAt: OLD });
     s.profiles.set(SELLER, { coins: 10, xp: 100_000 });
-    s.inventory.set('inv-1', { id: 'inv-1', userId: SELLER, itemId: TRADABLE_ITEM, equipped: false, acquiredAt: OLD });
+    s.inventory.set('inv-1', {
+      id: 'inv-1',
+      userId: SELLER,
+      itemId: TRADABLE_ITEM,
+      equipped: false,
+      acquiredAt: OLD,
+    });
   }
 
   it('creates an ACTIVE listing for an owned, unequipped, tradable item', async () => {
@@ -437,28 +471,42 @@ describe('listItem', () => {
 
   it('rejects untradable items, equipped items, and below-floor prices', async () => {
     seedSellerOnly();
-    await expect(listItem({ sellerId: SELLER, itemId: 'theme.vapor', priceCoins: 500 })).rejects.toMatchObject({ code: 'NOT_TRADABLE' });
-    await expect(listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 5 })).rejects.toMatchObject({ code: 'BAD_PRICE' });
-    await expect(listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 62 })).rejects.toMatchObject({ code: 'BELOW_FLOOR' });
+    await expect(
+      listItem({ sellerId: SELLER, itemId: 'theme.vapor', priceCoins: 500 }),
+    ).rejects.toMatchObject({ code: 'NOT_TRADABLE' });
+    await expect(
+      listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 5 }),
+    ).rejects.toMatchObject({ code: 'BAD_PRICE' });
+    await expect(
+      listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 62 }),
+    ).rejects.toMatchObject({ code: 'BELOW_FLOOR' });
 
     store.state.inventory.get('inv-1')!.equipped = true;
-    await expect(listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 500 })).rejects.toMatchObject({ code: 'EQUIPPED' });
+    await expect(
+      listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 500 }),
+    ).rejects.toMatchObject({ code: 'EQUIPPED' });
   });
 
   it('gates on account age and level', async () => {
     seedSellerOnly();
     store.state.users.get(SELLER)!.createdAt = new Date(); // brand new
-    await expect(listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 500 })).rejects.toMatchObject({ code: 'ACCOUNT_TOO_NEW' });
+    await expect(
+      listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 500 }),
+    ).rejects.toMatchObject({ code: 'ACCOUNT_TOO_NEW' });
 
     store.state.users.get(SELLER)!.createdAt = OLD;
     store.state.profiles.get(SELLER)!.xp = 0; // level 0
-    await expect(listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 500 })).rejects.toMatchObject({ code: 'LEVEL_TOO_LOW' });
+    await expect(
+      listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 500 }),
+    ).rejects.toMatchObject({ code: 'LEVEL_TOO_LOW' });
   });
 
   it('rejects a second active listing for the same inventory row', async () => {
     seedSellerOnly();
     await listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 500 });
-    await expect(listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 600 })).rejects.toMatchObject({ code: 'ALREADY_LISTED' });
+    await expect(
+      listItem({ sellerId: SELLER, itemId: TRADABLE_ITEM, priceCoins: 600 }),
+    ).rejects.toMatchObject({ code: 'ALREADY_LISTED' });
   });
 });
 
@@ -471,7 +519,9 @@ describe('cancelListing', () => {
 
   it('refuses to cancel a listing you do not own', async () => {
     seedTradeable(1000);
-    await expect(cancelListing('L1', 'someone-else')).rejects.toMatchObject({ code: 'NOT_AVAILABLE' });
+    await expect(cancelListing('L1', 'someone-else')).rejects.toMatchObject({
+      code: 'NOT_AVAILABLE',
+    });
     expect(store.state.listings.get('L1')!.status).toBe('ACTIVE');
   });
 });
@@ -480,17 +530,23 @@ describe('cancelListing', () => {
 describe('creator earnings exclusion', () => {
   // Faithful fake db for getCreatorEarnings: interprets the exact where-shapes
   // the derivation uses against an in-memory ledger.
-  function fakeEarningsDb(txns: Array<{ recipientId: string; amount: number; type: string; entityType?: string | null }>, coins = 0) {
+  function fakeEarningsDb(
+    txns: Array<{ recipientId: string; amount: number; type: string; entityType?: string | null }>,
+    coins = 0,
+  ) {
     const sumWhere = (where: any) => {
       let rows = txns.filter((t) => t.recipientId === where.recipientId);
       if (where.amount?.gt !== undefined) rows = rows.filter((t) => t.amount > where.amount.gt);
       if (where.type?.in) rows = rows.filter((t) => where.type.in.includes(t.type));
       else if (typeof where.type === 'string') rows = rows.filter((t) => t.type === where.type);
-      if (where.entityType?.in) rows = rows.filter((t) => t.entityType && where.entityType.in.includes(t.entityType));
+      if (where.entityType?.in)
+        rows = rows.filter((t) => t.entityType && where.entityType.in.includes(t.entityType));
       return rows.reduce((sum, t) => sum + t.amount, 0);
     };
     return {
-      coinTransaction: { aggregate: async ({ where }: any) => ({ _sum: { amount: sumWhere(where) } }) },
+      coinTransaction: {
+        aggregate: async ({ where }: any) => ({ _sum: { amount: sumWhere(where) } }),
+      },
       redemptionRequest: { aggregate: async () => ({ _sum: { amountCoins: 0 } }) },
       userProfile: { findUnique: async () => ({ coins }) },
     };
@@ -512,7 +568,10 @@ describe('creator earnings exclusion', () => {
 
   it('a market-only seller has zero redeemable earned coins', async () => {
     const { getCreatorEarnings } = await import('@/lib/creator/earnings.server');
-    const db2 = fakeEarningsDb([{ recipientId: SELLER, amount: 5000, type: 'MARKET', entityType: 'market' }], 5000) as any;
+    const db2 = fakeEarningsDb(
+      [{ recipientId: SELLER, amount: 5000, type: 'MARKET', entityType: 'market' }],
+      5000,
+    ) as any;
     const earnings = await getCreatorEarnings(SELLER, db2);
     expect(earnings.lifetimeEarned).toBe(0);
     expect(earnings.redeemable).toBe(0);

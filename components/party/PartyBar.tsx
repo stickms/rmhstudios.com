@@ -81,7 +81,12 @@ export function PartyBar() {
             </span>
 
             <div className="relative">
-              <Button size="sm" variant="outline" onClick={() => setMenuOpen((o) => !o)} className="gap-1.5">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setMenuOpen((o) => !o)}
+                className="gap-1.5"
+              >
                 <Gamepad2 className="h-4 w-4" aria-hidden />
                 {t('party-choose-game', { defaultValue: 'Choose game' })}
               </Button>

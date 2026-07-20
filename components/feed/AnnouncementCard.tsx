@@ -11,23 +11,35 @@ interface AnnouncementCardProps {
 
 function getTypeLabel(type: FeedItem['type']): string {
   switch (type) {
-    case 'game_announcement': return 'Game';
-    case 'app_announcement': return 'App';
-    case 'news': return 'News';
-    case 'blog': return 'Blog';
-    case 'research': return 'Research';
-    default: return '';
+    case 'game_announcement':
+      return 'Game';
+    case 'app_announcement':
+      return 'App';
+    case 'news':
+      return 'News';
+    case 'blog':
+      return 'Blog';
+    case 'research':
+      return 'Research';
+    default:
+      return '';
   }
 }
 
 function TypeIcon({ type, className }: { type: FeedItem['type']; className?: string }) {
   switch (type) {
-    case 'game_announcement': return <Gamepad2 className={className} />;
-    case 'app_announcement': return <AppWindow className={className} />;
-    case 'news': return <Newspaper className={className} />;
-    case 'blog': return <BookOpen className={className} />;
-    case 'research': return <FlaskConical className={className} />;
-    default: return <Newspaper className={className} />;
+    case 'game_announcement':
+      return <Gamepad2 className={className} />;
+    case 'app_announcement':
+      return <AppWindow className={className} />;
+    case 'news':
+      return <Newspaper className={className} />;
+    case 'blog':
+      return <BookOpen className={className} />;
+    case 'research':
+      return <FlaskConical className={className} />;
+    default:
+      return <Newspaper className={className} />;
   }
 }
 
@@ -44,7 +56,9 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
 
       <div className="flex gap-3">
         {/* Icon avatar */}
-        <div className={`w-10 h-10 rounded-full bg-linear-to-br ${item.gradient || 'from-site-accent to-site-accent-hover'} flex items-center justify-center shrink-0`}>
+        <div
+          className={`w-10 h-10 rounded-full bg-linear-to-br ${item.gradient || 'from-site-accent to-site-accent-hover'} flex items-center justify-center shrink-0`}
+        >
           <TypeIcon type={item.type} className="w-5 h-5 text-white" />
         </div>
 
@@ -62,9 +76,7 @@ export function AnnouncementCard({ item, variant }: AnnouncementCardProps) {
 
           {/* Description */}
           {item.description && (
-            <p className="text-sm text-site-text-muted mt-1 line-clamp-3">
-              {item.description}
-            </p>
+            <p className="text-sm text-site-text-muted mt-1 line-clamp-3">{item.description}</p>
           )}
 
           {/* Image preview */}

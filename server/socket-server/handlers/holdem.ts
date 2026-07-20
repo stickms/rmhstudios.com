@@ -9,43 +9,50 @@ import type { Server, Socket } from 'socket.io';
 import { getPrismaClient } from '../prisma-client';
 import { checkRateLimit } from '../rate-limit';
 import { logger } from '../logger';
-import { type Card, type HandRank, createDeck, evaluateBestHand, compareHands, type EvaluatedHand } from '../../../lib/holdem/logic';
+import {
+  type Card,
+  type HandRank,
+  createDeck,
+  evaluateBestHand,
+  compareHands,
+  type EvaluatedHand,
+} from '../../../lib/holdem/logic';
 
 // ── Event Constants ────────────────────────────────────────────────
 
 const C2S = {
-  LIST_ROOMS:    'holdem:list_rooms',
-  CREATE_ROOM:   'holdem:create_room',
-  JOIN_ROOM:     'holdem:join_room',
-  LEAVE_ROOM:    'holdem:leave_room',
-  UPDATE_ROOM:   'holdem:update_room',
-  FOLD:          'holdem:fold',
-  CHECK:         'holdem:check',
-  CALL:          'holdem:call',
-  RAISE:         'holdem:raise',
-  ALL_IN:        'holdem:all_in',
-  SIT_IN:        'holdem:sit_in',
-  SIT_OUT:       'holdem:sit_out',
-  REBUY:         'holdem:rebuy',
-  SHOW_CARDS:    'holdem:show_cards',
+  LIST_ROOMS: 'holdem:list_rooms',
+  CREATE_ROOM: 'holdem:create_room',
+  JOIN_ROOM: 'holdem:join_room',
+  LEAVE_ROOM: 'holdem:leave_room',
+  UPDATE_ROOM: 'holdem:update_room',
+  FOLD: 'holdem:fold',
+  CHECK: 'holdem:check',
+  CALL: 'holdem:call',
+  RAISE: 'holdem:raise',
+  ALL_IN: 'holdem:all_in',
+  SIT_IN: 'holdem:sit_in',
+  SIT_OUT: 'holdem:sit_out',
+  REBUY: 'holdem:rebuy',
+  SHOW_CARDS: 'holdem:show_cards',
 } as const;
 
 const S2C = {
-  ROOM_LIST:       'holdem:room_list',
-  ROOM_CREATED:    'holdem:room_created',
-  ROOM_JOINED:     'holdem:room_joined',
-  ROOM_LEFT:       'holdem:room_left',
-  ROOM_UPDATED:    'holdem:room_updated',
-  TABLE_STATE:     'holdem:table_state',
-  PLAYER_JOINED:   'holdem:player_joined',
-  PLAYER_LEFT:     'holdem:player_left',
-  NEW_HAND:        'holdem:new_hand',
-  TURN:            'holdem:turn',
+  ROOM_LIST: 'holdem:room_list',
+  ROOM_CREATED: 'holdem:room_created',
+  ROOM_JOINED: 'holdem:room_joined',
+  ROOM_LEFT: 'holdem:room_left',
+  ROOM_UPDATED: 'holdem:room_updated',
+  TABLE_STATE: 'holdem:table_state',
+  PLAYER_JOINED: 'holdem:player_joined',
+  PLAYER_LEFT: 'holdem:player_left',
+  NEW_HAND: 'holdem:new_hand',
+  TURN: 'holdem:turn',
   COMMUNITY_CARDS: 'holdem:community_cards',
-  SHOWDOWN:        'holdem:showdown',
-  HAND_RESULT:     'holdem:hand_result',
-  BALANCE_UPDATE:  'holdem:balance_update',
-  ERROR:           'holdem:error',
+  SHOWDOWN: 'holdem:showdown',
+  HAND_RESULT: 'holdem:hand_result',
+  BALANCE_UPDATE: 'holdem:balance_update',
+  ERROR: 'holdem:error',
 } as const;
 
 // ── Types ──────────────────────────────────────────────────────────
@@ -176,7 +183,11 @@ function getSeatedPlayers(room: HoldemRoom): PlayerSeat[] {
 
 // ── Serialization ──────────────────────────────────────────────────
 
-function getVisibleHoleCards(p: PlayerSeat, forUserId?: string, isShowdown?: boolean): (Card | null)[] | null {
+function getVisibleHoleCards(
+  p: PlayerSeat,
+  forUserId?: string,
+  isShowdown?: boolean,
+): (Card | null)[] | null {
   // Always show your own cards
   if (p.userId === forUserId && !p.sittingOut) return p.holeCards;
   // During showdown/results, show cards the player opted to reveal
@@ -184,7 +195,7 @@ function getVisibleHoleCards(p: PlayerSeat, forUserId?: string, isShowdown?: boo
     if (p.showCards.size === 2) return p.holeCards;
     if (p.showCards.size === 0) return null;
     // Partial reveal: show selected cards, null for hidden ones
-    return p.holeCards.map((card, i) => p.showCards.has(i) ? card : null);
+    return p.holeCards.map((card, i) => (p.showCards.has(i) ? card : null));
   }
   return null;
 }
@@ -235,12 +246,15 @@ function serializeTableState(room: HoldemRoom, forUserId?: string) {
     currentTurnUserId: room.currentTurnUserId,
     currentBet: room.currentBet,
     minRaise: room.minRaise,
-    turnTimeout: room.currentTurnUserId && room.turnDeadline
-      ? Math.max(0, Math.ceil((room.turnDeadline - Date.now()) / 1000))
-      : null,
+    turnTimeout:
+      room.currentTurnUserId && room.turnDeadline
+        ? Math.max(0, Math.ceil((room.turnDeadline - Date.now()) / 1000))
+        : null,
     smallBlind: room.smallBlind,
     bigBlind: room.bigBlind,
-    resultsCountdown: room.resultsEndTime ? Math.max(0, Math.ceil((room.resultsEndTime - Date.now()) / 1000)) : null,
+    resultsCountdown: room.resultsEndTime
+      ? Math.max(0, Math.ceil((room.resultsEndTime - Date.now()) / 1000))
+      : null,
   };
 }
 
@@ -282,8 +296,14 @@ function getNextSeatIndex(room: HoldemRoom): number {
 // ── Hand Lifecycle ────────────────────────────────────────────────
 
 function clearTimers(room: HoldemRoom) {
-  if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
-  if (room.resultsTimer) { clearTimeout(room.resultsTimer); room.resultsTimer = null; }
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
+  if (room.resultsTimer) {
+    clearTimeout(room.resultsTimer);
+    room.resultsTimer = null;
+  }
 }
 
 function startNewHand(room: HoldemRoom) {
@@ -320,8 +340,12 @@ function startNewHand(room: HoldemRoom) {
   room.dealerIndex = (room.dealerIndex + 1) % seated.length;
 
   // Post blinds
-  const sbIdx = seated.length === 2 ? room.dealerIndex % seated.length : (room.dealerIndex + 1) % seated.length;
-  const bbIdx = seated.length === 2 ? (room.dealerIndex + 1) % seated.length : (room.dealerIndex + 2) % seated.length;
+  const sbIdx =
+    seated.length === 2 ? room.dealerIndex % seated.length : (room.dealerIndex + 1) % seated.length;
+  const bbIdx =
+    seated.length === 2
+      ? (room.dealerIndex + 1) % seated.length
+      : (room.dealerIndex + 2) % seated.length;
 
   const sbPlayer = seated[sbIdx];
   const bbPlayer = seated[bbIdx];
@@ -454,7 +478,10 @@ function allBetsEqual(room: HoldemRoom): boolean {
 function nextPhase(room: HoldemRoom) {
   room.currentTurnUserId = null;
   room.turnDeadline = null;
-  if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
 
   // Reset bets for new betting round
   for (const p of room.players.values()) {
@@ -530,7 +557,10 @@ function endHand(room: HoldemRoom) {
   room.phase = 'showdown';
   room.currentTurnUserId = null;
   room.turnDeadline = null;
-  if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
 
   const active = activePlayers(room);
 
@@ -552,7 +582,10 @@ function endHand(room: HoldemRoom) {
       netGain: p.userId === winner.userId ? netGain : -p.totalBetThisHand,
       handRank: null as HandRank | null,
       bestHand: null as Card[] | null,
-      holeCards: p.userId === winner.userId ? p.holeCards.map((card, i) => p.showCards.has(i) ? card : null) : [],
+      holeCards:
+        p.userId === winner.userId
+          ? p.holeCards.map((card, i) => (p.showCards.has(i) ? card : null))
+          : [],
     }));
 
     // Everyone else folded — no cards to flip, so reveal the result right away.
@@ -628,7 +661,9 @@ function endHand(room: HoldemRoom) {
           netGain: payout > 0 ? payout - p.totalBetThisHand : -p.totalBetThisHand,
           handRank: handRanks.get(p.userId) ?? null,
           bestHand: null as Card[] | null,
-          holeCards: p.folded ? [] : p.holeCards.map((card, i) => p.showCards.has(i) ? card : null),
+          holeCards: p.folded
+            ? []
+            : p.holeCards.map((card, i) => (p.showCards.has(i) ? card : null)),
         };
       });
 
@@ -708,7 +743,9 @@ function calculateSidePots(room: HoldemRoom) {
   }
 
   // Get unique contribution levels from all-in players
-  const allInLevels = [...new Set(allInPlayers.map((p) => p.totalBetThisHand))].sort((a, b) => a - b);
+  const allInLevels = [...new Set(allInPlayers.map((p) => p.totalBetThisHand))].sort(
+    (a, b) => a - b,
+  );
 
   const pots: SidePot[] = [];
   let prevLevel = 0;
@@ -754,7 +791,8 @@ function calculateSidePots(room: HoldemRoom) {
   // If only one player in the remaining pot, they get it back (uncalled bet)
   // This is handled naturally by the payout loop
 
-  room.sidePots = pots.length > 0 ? pots : [{ amount: room.pot, eligible: active.map((p) => p.userId) }];
+  room.sidePots =
+    pots.length > 0 ? pots : [{ amount: room.pot, eligible: active.map((p) => p.userId) }];
 }
 
 async function cashOutPlayer(room: HoldemRoom, player: PlayerSeat) {
@@ -826,16 +864,22 @@ async function onCreateRoom(socket: Socket, payload: unknown) {
   }
 
   const data = payload as any;
-  const name = typeof data?.name === 'string' ? data.name.trim().slice(0, 30) : `${userName}'s Table`;
-  const maxPlayers = typeof data?.maxPlayers === 'number'
-    ? Math.min(Math.max(Math.floor(data.maxPlayers), 2), MAX_PLAYERS_CAP)
-    : DEFAULT_MAX_PLAYERS;
-  const smallBlind = typeof data?.smallBlind === 'number' && data.smallBlind >= 1
-    ? Math.floor(data.smallBlind) : DEFAULT_SMALL_BLIND;
+  const name =
+    typeof data?.name === 'string' ? data.name.trim().slice(0, 30) : `${userName}'s Table`;
+  const maxPlayers =
+    typeof data?.maxPlayers === 'number'
+      ? Math.min(Math.max(Math.floor(data.maxPlayers), 2), MAX_PLAYERS_CAP)
+      : DEFAULT_MAX_PLAYERS;
+  const smallBlind =
+    typeof data?.smallBlind === 'number' && data.smallBlind >= 1
+      ? Math.floor(data.smallBlind)
+      : DEFAULT_SMALL_BLIND;
   const bigBlind = smallBlind * 2;
-  const buyIn = typeof data?.buyIn === 'number' && data.buyIn >= bigBlind
-    ? Math.floor(data.buyIn) : Math.max(bigBlind * 10, DEFAULT_BUY_IN);
-  const privacy = data?.privacy === 'unlisted' ? 'unlisted' as const : 'public' as const;
+  const buyIn =
+    typeof data?.buyIn === 'number' && data.buyIn >= bigBlind
+      ? Math.floor(data.buyIn)
+      : Math.max(bigBlind * 10, DEFAULT_BUY_IN);
+  const privacy = data?.privacy === 'unlisted' ? ('unlisted' as const) : ('public' as const);
 
   const roomId = generateRoomId();
   const joinCode = generateRoomId(); // separate code for invites
@@ -878,7 +922,16 @@ async function onCreateRoom(socket: Socket, payload: unknown) {
 
   // Only emit ROOM_CREATED after successful join (joinRoom handles errors internally)
   if (room.players.has(userId)) {
-    socket.emit(S2C.ROOM_CREATED, { roomId, name, maxPlayers, smallBlind, bigBlind, buyIn, privacy, joinCode });
+    socket.emit(S2C.ROOM_CREATED, {
+      roomId,
+      name,
+      maxPlayers,
+      smallBlind,
+      bigBlind,
+      buyIn,
+      privacy,
+      joinCode,
+    });
     broadcastRoomList();
   } else {
     // Join failed (e.g., insufficient coins) — clean up the empty room
@@ -1003,7 +1056,13 @@ async function joinRoom(room: HoldemRoom, socket: Socket) {
       lastAction: null,
       sittingOut: true, // always start sitting out — player opts in
       showCards: new Set(),
-      sessionStats: { totalBuyIn: room.buyIn, totalCashOut: 0, handsPlayed: 0, handsWon: 0, biggestPot: 0 },
+      sessionStats: {
+        totalBuyIn: room.buyIn,
+        totalCashOut: 0,
+        handsPlayed: 0,
+        handsWon: 0,
+        biggestPot: 0,
+      },
     };
 
     room.players.set(userId, player);
@@ -1014,7 +1073,14 @@ async function joinRoom(room: HoldemRoom, socket: Socket) {
 
     socket.emit(S2C.BALANCE_UPDATE, { coins: result });
 
-    logger.info({ event: 'holdem_player_joined', roomId: room.roomId, userId, userName, seatIndex, buyIn: room.buyIn });
+    logger.info({
+      event: 'holdem_player_joined',
+      roomId: room.roomId,
+      userId,
+      userName,
+      seatIndex,
+      buyIn: room.buyIn,
+    });
 
     socket.emit(S2C.ROOM_JOINED, {
       roomId: room.roomId,
@@ -1213,7 +1279,10 @@ function onFold(room: HoldemRoom, userId: string) {
   player.lastAction = 'fold';
   room.turnIdx++;
 
-  if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
 
   advanceToNextPlayer(room);
 }
@@ -1232,7 +1301,10 @@ function onCheck(room: HoldemRoom, socket: Socket, userId: string) {
   player.lastAction = 'check';
   room.turnIdx++;
 
-  if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
 
   advanceToNextPlayer(room);
 }
@@ -1260,7 +1332,10 @@ function onCall(room: HoldemRoom, userId: string) {
   }
 
   room.turnIdx++;
-  if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
 
   advanceToNextPlayer(room);
 }
@@ -1305,7 +1380,10 @@ function onRaise(room: HoldemRoom, socket: Socket, userId: string, amount: numbe
   // Skip raiser in the new order
   room.turnOrder = room.turnOrder.filter((id) => id !== userId);
 
-  if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
 
   advanceToNextPlayer(room);
 }
@@ -1340,7 +1418,10 @@ function onAllIn(room: HoldemRoom, userId: string) {
     room.turnIdx++;
   }
 
-  if (room.turnTimer) { clearTimeout(room.turnTimer); room.turnTimer = null; }
+  if (room.turnTimer) {
+    clearTimeout(room.turnTimer);
+    room.turnTimer = null;
+  }
 
   advanceToNextPlayer(room);
 }
@@ -1356,9 +1437,21 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
   ioRef = io;
 
   socket.on(C2S.LIST_ROOMS, () => onListRooms(socket));
-  socket.on(C2S.CREATE_ROOM, (payload) => { onCreateRoom(socket, payload).catch((err) => logger.error({ event: 'holdem_create_room_error', error: String(err) })); });
-  socket.on(C2S.JOIN_ROOM, (payload) => { onJoinRoom(socket, payload).catch((err) => logger.error({ event: 'holdem_join_room_error', error: String(err) })); });
-  socket.on(C2S.LEAVE_ROOM, () => { onLeaveRoom(socket).catch((err) => logger.error({ event: 'holdem_leave_room_error', error: String(err) })); });
+  socket.on(C2S.CREATE_ROOM, (payload) => {
+    onCreateRoom(socket, payload).catch((err) =>
+      logger.error({ event: 'holdem_create_room_error', error: String(err) }),
+    );
+  });
+  socket.on(C2S.JOIN_ROOM, (payload) => {
+    onJoinRoom(socket, payload).catch((err) =>
+      logger.error({ event: 'holdem_join_room_error', error: String(err) }),
+    );
+  });
+  socket.on(C2S.LEAVE_ROOM, () => {
+    onLeaveRoom(socket).catch((err) =>
+      logger.error({ event: 'holdem_leave_room_error', error: String(err) }),
+    );
+  });
   socket.on(C2S.UPDATE_ROOM, (payload) => onUpdateRoom(socket, payload));
 
   socket.on(C2S.FOLD, () => {
@@ -1402,7 +1495,8 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
     if (!roomId) return;
     const room = rooms.get(roomId);
     if (!room) return;
-    const amount = typeof (payload as any)?.amount === 'number' ? Math.floor((payload as any).amount) : 0;
+    const amount =
+      typeof (payload as any)?.amount === 'number' ? Math.floor((payload as any).amount) : 0;
     onRaise(room, socket, userId, amount);
   });
 
@@ -1428,7 +1522,9 @@ export function registerHoldemHandlers(io: Server, socket: Socket): void {
     if (!player || !player.sittingOut) return;
     // Must rebuy first if busted
     if (player.totalChips === 0) {
-      socket.emit(S2C.ERROR, { message: `You need to rebuy first. Buy-in is ${room.buyIn} coins.` });
+      socket.emit(S2C.ERROR, {
+        message: `You need to rebuy first. Buy-in is ${room.buyIn} coins.`,
+      });
       return;
     }
     player.sittingOut = false;
@@ -1562,6 +1658,6 @@ export function handleHoldemDisconnect(_io: Server, socket: Socket): void {
 
   // Auto-fold and cash out immediately
   leaveRoom(userId, socket.id).catch((err) =>
-    logger.error({ event: 'holdem_disconnect_leave_error', userId, error: String(err) })
+    logger.error({ event: 'holdem_disconnect_leave_error', userId, error: String(err) }),
   );
 }

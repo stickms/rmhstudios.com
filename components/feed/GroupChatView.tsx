@@ -2,9 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { m as motion } from 'framer-motion';
-import { useTranslation } from "react-i18next";
+import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from '@tanstack/react-router';
-import { Loader2, ArrowLeft, Send, Users, LogOut, ImagePlus, ImagePlay, X, BarChart3, Plus } from 'lucide-react';
+import {
+  Loader2,
+  ArrowLeft,
+  Send,
+  Users,
+  LogOut,
+  ImagePlus,
+  ImagePlay,
+  X,
+  BarChart3,
+  Plus,
+} from 'lucide-react';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { EASE_OUT_EXPO } from '@/components/motion';
 import { Button } from '@/components/ui/button';
@@ -54,7 +65,7 @@ interface Group {
 const MAX_IMAGES = 4;
 
 export function GroupChatView({ id, currentUserId }: { id: string; currentUserId: string }) {
-  const { t } = useTranslation("feed");
+  const { t } = useTranslation('feed');
   const confirm = useConfirm();
   const navigate = useNavigate();
   const [group, setGroup] = useState<Group | null>(null);
@@ -69,7 +80,11 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [pollDraft, setPollDraft] = useState<{ question: string; options: string[] } | null>(null);
   const [attachOpen, setAttachOpen] = useState(false);
-  const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number; messageId: string } | null>(null);
+  const [reactionMenu, setReactionMenu] = useState<{
+    x: number;
+    y: number;
+    messageId: string;
+  } | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const attachRef = useRef<HTMLDivElement>(null);
@@ -80,7 +95,9 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   const historyIds = useRef<Set<string>>(new Set());
   const reducedMotion = useReducedMotion();
   const insertEmoji = useEmojiInsert(inputRef, input, setInput);
-  const reactionTriggerFor = useItemReactionTrigger((x, y, messageId) => setReactionMenu({ x, y, messageId }));
+  const reactionTriggerFor = useItemReactionTrigger((x, y, messageId) =>
+    setReactionMenu({ x, y, messageId }),
+  );
 
   // Close the attach (+) menu on outside click.
   useEffect(() => {
@@ -117,42 +134,50 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   }, []);
 
   // Toggle the viewer's reaction row on a message (optimistic on raw rows).
-  const applyRowToggle = useCallback((messageId: string, emoji: string) => {
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== messageId) return m;
-        const rows = m.reactions ?? [];
-        const mine = rows.some((r) => r.emoji === emoji && r.userId === currentUserId);
-        return {
-          ...m,
-          reactions: mine
-            ? rows.filter((r) => !(r.emoji === emoji && r.userId === currentUserId))
-            : [...rows, { emoji, userId: currentUserId }],
-        };
-      }),
-    );
-  }, [currentUserId]);
+  const applyRowToggle = useCallback(
+    (messageId: string, emoji: string) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== messageId) return m;
+          const rows = m.reactions ?? [];
+          const mine = rows.some((r) => r.emoji === emoji && r.userId === currentUserId);
+          return {
+            ...m,
+            reactions: mine
+              ? rows.filter((r) => !(r.emoji === emoji && r.userId === currentUserId))
+              : [...rows, { emoji, userId: currentUserId }],
+          };
+        }),
+      );
+    },
+    [currentUserId],
+  );
 
-  const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
-    applyRowToggle(messageId, emoji);
-    try {
-      const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/react`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageId, emoji }),
-      });
-      if (!res.ok) throw new Error('react failed');
-    } catch {
-      // Roll back the optimistic toggle (toggling again is its own inverse).
+  const toggleReaction = useCallback(
+    async (messageId: string, emoji: string) => {
       applyRowToggle(messageId, emoji);
-    }
-  }, [id, applyRowToggle]);
+      try {
+        const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/react`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messageId, emoji }),
+        });
+        if (!res.ok) throw new Error('react failed');
+      } catch {
+        // Roll back the optimistic toggle (toggling again is its own inverse).
+        applyRowToggle(messageId, emoji);
+      }
+    },
+    [id, applyRowToggle],
+  );
 
   useEffect(() => {
     let active = true;
     (async () => {
-      const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}`, { credentials: 'include' });
+      const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}`, {
+        credentials: 'include',
+      });
       if (!active) return;
       if (res.status === 404) {
         setNotFound(true);
@@ -185,7 +210,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
       try {
         const res = await fetch(
           `/api/group-chats/${encodeURIComponent(id)}/messages?after=${encodeURIComponent(lastAtRef.current)}`,
-          { credentials: 'include' }
+          { credentials: 'include' },
         );
         if (res.ok) {
           const data = await res.json();
@@ -207,7 +232,9 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
     };
 
     if (typeof EventSource !== 'undefined') {
-      es = new EventSource(`/api/group-chats/${encodeURIComponent(id)}/stream`, { withCredentials: true });
+      es = new EventSource(`/api/group-chats/${encodeURIComponent(id)}/stream`, {
+        withCredentials: true,
+      });
       es.addEventListener('open', () => {
         connected = true;
         stopPolling();
@@ -287,11 +314,14 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
     setUploading(true);
     try {
       const form = new FormData();
-      Array.from(files).slice(0, remaining).forEach((f) => form.append('images', f));
+      Array.from(files)
+        .slice(0, remaining)
+        .forEach((f) => form.append('images', f));
       const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data.urls)) setImageUrls((prev) => [...prev, ...data.urls].slice(0, MAX_IMAGES));
+        if (Array.isArray(data.urls))
+          setImageUrls((prev) => [...prev, ...data.urls].slice(0, MAX_IMAGES));
       }
     } finally {
       setUploading(false);
@@ -302,8 +332,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   async function send() {
     const text = input.trim();
     const poll =
-      pollDraft && pollDraft.question.trim() && pollDraft.options.filter((o) => o.trim()).length >= 2
-        ? { question: pollDraft.question.trim(), options: pollDraft.options.map((o) => o.trim()).filter(Boolean) }
+      pollDraft &&
+      pollDraft.question.trim() &&
+      pollDraft.options.filter((o) => o.trim()).length >= 2
+        ? {
+            question: pollDraft.question.trim(),
+            options: pollDraft.options.map((o) => o.trim()).filter(Boolean),
+          }
         : null;
     const hasMedia = !!gifUrl || imageUrls.length > 0;
     if ((!text && !hasMedia && !poll) || sending) return;
@@ -359,12 +394,15 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
       }),
     );
     try {
-      const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}/vote`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ optionIdx }),
-      });
+      const res = await fetch(
+        `/api/group-chats/${encodeURIComponent(id)}/messages/${encodeURIComponent(messageId)}/vote`,
+        {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ optionIdx }),
+        },
+      );
       if (res.ok) {
         const data = await res.json();
         if (data.poll) patchMessage(messageId, { poll: data.poll });
@@ -375,8 +413,17 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   }
 
   async function leave() {
-    if (!(await confirm({ title: t("leave-group-confirm", { defaultValue: "Leave this group?" }), danger: true }))) return;
-    const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/leave`, { method: 'POST', credentials: 'include' });
+    if (
+      !(await confirm({
+        title: t('leave-group-confirm', { defaultValue: 'Leave this group?' }),
+        danger: true,
+      }))
+    )
+      return;
+    const res = await fetch(`/api/group-chats/${encodeURIComponent(id)}/leave`, {
+      method: 'POST',
+      credentials: 'include',
+    });
     if (res.ok) navigate({ to: '/messages', search: { tab: 'groups' } });
   }
 
@@ -390,9 +437,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   if (notFound || !group) {
     return (
       <div className="flex flex-col items-center gap-3 px-6 py-24 text-center">
-        <p className="font-medium text-site-text">{t("group-not-found", { defaultValue: "Group not found" })}</p>
+        <p className="font-medium text-site-text">
+          {t('group-not-found', { defaultValue: 'Group not found' })}
+        </p>
         <Link to="/messages" search={{ tab: 'groups' }}>
-          <Button variant="outline">{t("back-to-groups", { defaultValue: "Back to groups" })}</Button>
+          <Button variant="outline">
+            {t('back-to-groups', { defaultValue: 'Back to groups' })}
+          </Button>
         </Link>
       </div>
     );
@@ -403,7 +454,11 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   return (
     <div className="flex h-screen flex-col">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-site-border glass-chrome px-4 py-3">
-        <Link to="/messages" search={{ tab: 'groups' }} className="text-site-text-dim hover:text-site-text">
+        <Link
+          to="/messages"
+          search={{ tab: 'groups' }}
+          className="text-site-text-dim hover:text-site-text"
+        >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-site-accent/12 text-site-accent">
@@ -411,9 +466,16 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold text-site-text">{group.name}</p>
-          <p className="truncate text-xs text-site-text-dim">{t("member-count", { count: group.members.length, defaultValue: "{{count}} members" })}</p>
+          <p className="truncate text-xs text-site-text-dim">
+            {t('member-count', { count: group.members.length, defaultValue: '{{count}} members' })}
+          </p>
         </div>
-        <button onClick={leave} className="text-site-text-dim hover:text-site-danger" title={t("leave-group", { defaultValue: "Leave group" })} aria-label={t("leave-group", { defaultValue: "Leave group" })}>
+        <button
+          onClick={leave}
+          className="text-site-text-dim hover:text-site-danger"
+          title={t('leave-group', { defaultValue: 'Leave group' })}
+          aria-label={t('leave-group', { defaultValue: 'Leave group' })}
+        >
           <LogOut className="h-4 w-4" />
         </button>
       </header>
@@ -433,24 +495,37 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               {/* Show the sender's avatar on every message — including your own
                   (right-aligned), matching the 1:1 chat layout. */}
               <UserAvatar user={m.sender} />
-              <div
-                className="max-w-[78%]"
-                {...reactionTriggerFor(m.id)}
-              >
-                {!mine && <p className="mb-0.5 px-1 text-[11px] text-site-text-dim">{m.sender.name || m.sender.handle || t("member-fallback", { defaultValue: "Member" })}</p>}
+              <div className="max-w-[78%]" {...reactionTriggerFor(m.id)}>
+                {!mine && (
+                  <p className="mb-0.5 px-1 text-[11px] text-site-text-dim">
+                    {m.sender.name ||
+                      m.sender.handle ||
+                      t('member-fallback', { defaultValue: 'Member' })}
+                  </p>
+                )}
                 {m.content && (
                   // Received bubbles use a high-contrast light fill so they read
                   // clearly against the black chat background; sent bubbles keep
                   // the accent colour. (`bg-site-text` is theme-adaptive.)
-                  <div className={`whitespace-pre-wrap break-words rounded-site px-3 py-2 text-sm ${mine ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-text text-site-bg'}`}>
+                  <div
+                    className={`whitespace-pre-wrap break-words rounded-site px-3 py-2 text-sm ${mine ? 'bg-site-accent text-(--site-accent-fg)' : 'bg-site-text text-site-bg'}`}
+                  >
                     {m.content}
                   </div>
                 )}
                 {m.imageUrls && m.imageUrls.length > 0 && (
-                  <PostImageGrid urls={m.imageUrls} className="mt-1.5 overflow-hidden rounded-site-sm" />
+                  <PostImageGrid
+                    urls={m.imageUrls}
+                    className="mt-1.5 overflow-hidden rounded-site-sm"
+                  />
                 )}
                 {m.gifUrl && (
-                  <img src={m.gifUrl} alt="" className="mt-1.5 max-h-60 w-auto rounded-site-sm" loading="lazy" />
+                  <img
+                    src={m.gifUrl}
+                    alt=""
+                    className="mt-1.5 max-h-60 w-auto rounded-site-sm"
+                    loading="lazy"
+                  />
                 )}
                 {m.poll && <PollView poll={m.poll} onVote={(idx) => vote(m.id, idx)} t={t} />}
                 {(m.reactions?.length ?? 0) > 0 && (
@@ -469,7 +544,13 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
       {/* GIF picker */}
       {showGifPicker && (
         <div className="border-t border-site-border p-2">
-          <GifPicker onSelect={(url) => { setGifUrl(url); setShowGifPicker(false); }} onClose={() => setShowGifPicker(false)} />
+          <GifPicker
+            onSelect={(url) => {
+              setGifUrl(url);
+              setShowGifPicker(false);
+            }}
+            onClose={() => setShowGifPicker(false)}
+          />
         </div>
       )}
 
@@ -535,31 +616,47 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               className="flex h-9 w-9 items-center justify-center rounded-full text-site-text-dim hover:bg-site-accent/10 hover:text-site-accent disabled:opacity-40"
               disabled={uploading}
             >
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-5 w-5" />
+              )}
             </button>
             {attachOpen && (
               <div className="absolute bottom-full left-0 z-30 mb-1 w-40 rounded-site border border-site-border bg-site-bg py-1 shadow-xl">
                 <button
                   type="button"
                   disabled={imageUrls.length >= MAX_IMAGES}
-                  onClick={() => { setAttachOpen(false); imageInputRef.current?.click(); }}
+                  onClick={() => {
+                    setAttachOpen(false);
+                    imageInputRef.current?.click();
+                  }}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <ImagePlus className="h-4 w-4 text-site-text-dim" /> {t('menu-add-image', { defaultValue: 'Add Image' })}
+                  <ImagePlus className="h-4 w-4 text-site-text-dim" />{' '}
+                  {t('menu-add-image', { defaultValue: 'Add Image' })}
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setAttachOpen(false); setShowGifPicker((v) => !v); }}
+                  onClick={() => {
+                    setAttachOpen(false);
+                    setShowGifPicker((v) => !v);
+                  }}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface"
                 >
-                  <ImagePlay className="h-4 w-4 text-site-text-dim" /> {t('menu-add-gif', { defaultValue: 'Add GIF' })}
+                  <ImagePlay className="h-4 w-4 text-site-text-dim" />{' '}
+                  {t('menu-add-gif', { defaultValue: 'Add GIF' })}
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setAttachOpen(false); setPollDraft((p) => (p ? null : { question: '', options: ['', ''] })); }}
+                  onClick={() => {
+                    setAttachOpen(false);
+                    setPollDraft((p) => (p ? null : { question: '', options: ['', ''] }));
+                  }}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface"
                 >
-                  <BarChart3 className="h-4 w-4 text-site-text-dim" /> {t('menu-create-poll', { defaultValue: 'Create Poll' })}
+                  <BarChart3 className="h-4 w-4 text-site-text-dim" />{' '}
+                  {t('menu-create-poll', { defaultValue: 'Create Poll' })}
                 </button>
               </div>
             )}
@@ -581,7 +678,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
                   send();
                 }
               }}
-              placeholder={t("message-placeholder", { name: group.name, defaultValue: "Message…" })}
+              placeholder={t('message-placeholder', { name: group.name, defaultValue: 'Message…' })}
               rows={1}
               maxLength={2000}
               className="max-h-32 w-full resize-none rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
@@ -631,7 +728,11 @@ function PollView({ poll, onVote, t }: { poll: Poll; onVote: (idx: number) => vo
                 />
               )}
               <span className="relative flex items-center justify-between gap-2">
-                <span className={`truncate ${chosen ? 'font-semibold text-site-text' : 'text-site-text'}`}>{o.text}</span>
+                <span
+                  className={`truncate ${chosen ? 'font-semibold text-site-text' : 'text-site-text'}`}
+                >
+                  {o.text}
+                </span>
                 {voted && <span className="shrink-0 text-xs text-site-text-dim">{pct}%</span>}
               </span>
             </button>
@@ -664,8 +765,15 @@ function PollComposer({
   return (
     <div className="border-t border-site-border bg-site-surface/40 p-3">
       <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('poll', { defaultValue: 'Poll' })}</span>
-        <button type="button" onClick={onCancel} className="text-site-text-dim hover:text-site-text" aria-label={t('cancel-button', { defaultValue: 'Cancel' })}>
+        <span className="text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+          {t('poll', { defaultValue: 'Poll' })}
+        </span>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-site-text-dim hover:text-site-text"
+          aria-label={t('cancel-button', { defaultValue: 'Cancel' })}
+        >
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -683,7 +791,10 @@ function PollComposer({
             value={o}
             onChange={(e) => setOption(i, e.target.value)}
             maxLength={100}
-            placeholder={t('poll-option-placeholder', { index: i + 1, defaultValue: 'Option {{index}}' })}
+            placeholder={t('poll-option-placeholder', {
+              index: i + 1,
+              defaultValue: 'Option {{index}}',
+            })}
             className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-1.5 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
           />
         ))}

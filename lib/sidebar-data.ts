@@ -57,10 +57,10 @@ type SidebarPost = {
 
 function getOfficialBuilds(): SidebarOfficialBuild[] {
   const allBuilds = [
-    ...games.filter(g => !g.unlisted).slice(0, 2),
-    ...apps.filter(a => !a.hidden && !a.unlisted).slice(0, 2),
+    ...games.filter((g) => !g.unlisted).slice(0, 2),
+    ...apps.filter((a) => !a.hidden && !a.unlisted).slice(0, 2),
   ];
-  return allBuilds.map(b => ({
+  return allBuilds.map((b) => ({
     id: b.id,
     title: b.title,
     thumbnailUrl: b.imagePath || null,
@@ -78,11 +78,7 @@ async function getUserBuilds(): Promise<SidebarBuild[]> {
         isCurated: false,
         visibility: 'PUBLIC',
       },
-      orderBy: [
-        { likeCount: 'desc' },
-        { viewCount: 'desc' },
-        { publishedAt: 'desc' },
-      ],
+      orderBy: [{ likeCount: 'desc' }, { viewCount: 'desc' }, { publishedAt: 'desc' }],
       take: 4,
       select: {
         id: true,
@@ -213,12 +209,11 @@ export async function getSidebarData() {
   const session = await getRequestSession();
   const viewerId: string | null = session?.user?.id ?? null;
 
-  const [userBuilds, recommendedUsers, blogPosts] =
-    await Promise.all([
-      getUserBuilds(),
-      getRecommendedUsers(viewerId),
-      getBlogPosts(),
-    ]);
+  const [userBuilds, recommendedUsers, blogPosts] = await Promise.all([
+    getUserBuilds(),
+    getRecommendedUsers(viewerId),
+    getBlogPosts(),
+  ]);
 
   return {
     officialBuilds: getOfficialBuilds(),

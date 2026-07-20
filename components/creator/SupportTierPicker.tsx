@@ -90,14 +90,17 @@ export function SupportTierPicker({
           </DialogTitle>
           <DialogDescription>
             {t('support-picker-desc', {
-              defaultValue: 'Pick a tier to unlock its perks. Membership renews every 30 days with coins.',
+              defaultValue:
+                'Pick a tier to unlock its perks. Membership renews every 30 days with coins.',
             })}
           </DialogDescription>
         </DialogHeader>
 
         {tiers.length === 0 ? (
           <p className="py-6 text-center text-sm text-site-text-dim">
-            {t('no-tiers-available', { defaultValue: 'This creator is not offering memberships yet.' })}
+            {t('no-tiers-available', {
+              defaultValue: 'This creator is not offering memberships yet.',
+            })}
           </p>
         ) : (
           <div className="space-y-3">
@@ -116,7 +119,10 @@ export function SupportTierPicker({
                 {tier.perks.length > 0 && (
                   <ul className="space-y-1">
                     {tier.perks.map((perk) => (
-                      <li key={perk} className="flex items-center gap-2 text-sm text-site-text-muted">
+                      <li
+                        key={perk}
+                        className="flex items-center gap-2 text-sm text-site-text-muted"
+                      >
                         <Check className="size-4 shrink-0 text-site-success" aria-hidden />
                         {perkLabel(perk)}
                       </li>
@@ -129,7 +135,10 @@ export function SupportTierPicker({
                   loading={joining === tier.id}
                   disabled={joining !== null}
                 >
-                  {t('join-tier', { defaultValue: 'Join for {{price}} coins', price: tier.priceCoins })}
+                  {t('join-tier', {
+                    defaultValue: 'Join for {{price}} coins',
+                    price: tier.priceCoins,
+                  })}
                 </Button>
               </div>
             ))}

@@ -133,183 +133,200 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
 
   return (
     <PullToRefresh onRefresh={refreshFeed}>
-    <div className="flex flex-col">
-      {/* Header */}
-      <div className="sticky top-0 z-10 glass-chrome border-b border-site-border">
-        <div className="flex items-center justify-between px-4 py-3">
-          {/* Mobile: sandwich menu left, RMH center, filters right. This used to
+      <div className="flex flex-col">
+        {/* Header */}
+        <div className="sticky top-0 z-10 glass-chrome border-b border-site-border">
+          <div className="flex items-center justify-between px-4 py-3">
+            {/* Mobile: sandwich menu left, RMH center, filters right. This used to
               be a hand-rolled copy of MobileMenuButton that had drifted — it was
               missing the canonical 44px (min-h-11/min-w-11) touch target. */}
-          <MobileMenuButton />
+            <MobileMenuButton />
 
-          {/* Desktop: For You / Following tabs inline */}
-          <div className="hidden md:flex items-center gap-1">
-            <button
-              onClick={() => handleModeChange('feed')}
-              className={`relative px-3 py-1.5 text-sm font-bold transition-colors rounded-sm ${
-                mode === 'feed'
-                  ? 'text-site-text'
-                  : 'text-site-text-muted hover:text-site-text'
-              }`}
-            >
-              {t("for-you", { defaultValue: "For You" })}
-              {mode === 'feed' && (
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
-              )}
-            </button>
-            <button
-              onClick={() => handleModeChange('friends')}
-              className={`relative px-3 py-1.5 text-sm font-bold transition-colors rounded-sm ${
-                mode === 'friends'
-                  ? 'text-site-text'
-                  : 'text-site-text-muted hover:text-site-text'
-              }`}
-            >
-              {t("following", { defaultValue: "Following" })}
-              {mode === 'friends' && (
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
-              )}
-            </button>
-          </div>
-
-          {/* Mobile: centered RMH branding */}
-          <span className="md:hidden text-site-accent font-(family-name:--site-font-display) font-bold text-lg">
-            RMH
-          </span>
-
-          <button
-            onClick={() => setFiltersOpen(!filtersOpen)}
-            className={`p-2 rounded-site-sm transition-colors ${
-              filtersOpen
-                ? 'text-site-accent bg-site-accent-dim'
-                : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-            }`}
-            title={t("toggle-feed-filters", { defaultValue: "Toggle feed filters" })}
-          >
-            <SlidersHorizontal className="w-5 h-5" />
-          </button>
-        </div>
-        {/* Animated open/close — grid-rows fr transition collapses height
-            smoothly without needing to measure the content. */}
-        <div
-          className={`grid transition-[grid-template-rows] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
-            filtersOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-          }`}
-        >
-          <div className="overflow-hidden">
-            <FeedTabs mode={mode} onModeChange={handleModeChange} />
-          </div>
-        </div>
-
-        {/* Search bar */}
-        <div className="px-4 py-2 border-t border-site-border">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim" />
-            <input
-              ref={searchRef}
-              type="text"
-              value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder={t("search-placeholder", { defaultValue: "Search..." })}
-              className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm pl-9 pr-9 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
-              onKeyDown={(e) => {
-                if (e.key === 'Escape') clearSearch();
-              }}
-            />
-            {searchInput && (
+            {/* Desktop: For You / Following tabs inline */}
+            <div className="hidden md:flex items-center gap-1">
               <button
-                onClick={clearSearch}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-site-text-dim hover:text-site-text transition-colors"
+                onClick={() => handleModeChange('feed')}
+                className={`relative px-3 py-1.5 text-sm font-bold transition-colors rounded-sm ${
+                  mode === 'feed' ? 'text-site-text' : 'text-site-text-muted hover:text-site-text'
+                }`}
               >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* User search results */}
-      {userResults.length > 0 && (
-        <div className="border-b border-site-border">
-          <div className="px-4 py-2">
-            <p className="text-xs font-semibold text-site-text-dim uppercase tracking-wide mb-1">{t("people", { defaultValue: "People" })}</p>
-          </div>
-          {userResults.map((user) => (
-            <Link
-              key={user.id}
-              to={`/u/${user.handle || user.id}` as string}
-              className="flex items-center gap-3 px-4 py-2.5 hover:bg-site-surface transition-colors"
-            >
-              <UserAvatar src={user.image ?? undefined} alt={user.name || t("user-alt", { defaultValue: "User" })} size={32} fallbackName={user.name ?? undefined} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1">
-                  <span className="font-semibold text-sm text-site-text truncate">{user.name || t("unknown-user", { defaultValue: "Unknown" })}</span>
-                  {user.isVerified && <BadgeCheck className="w-3.5 h-3.5 text-site-success shrink-0" />}
-                  {user.isAdmin && <ShieldCheck className="w-3.5 h-3.5 text-site-accent shrink-0" />}
-                </div>
-                {user.handle && (
-                  <span className="text-xs text-site-text-dim">@{user.handle}</span>
+                {t('for-you', { defaultValue: 'For You' })}
+                {mode === 'feed' && (
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
                 )}
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+              </button>
+              <button
+                onClick={() => handleModeChange('friends')}
+                className={`relative px-3 py-1.5 text-sm font-bold transition-colors rounded-sm ${
+                  mode === 'friends'
+                    ? 'text-site-text'
+                    : 'text-site-text-muted hover:text-site-text'
+                }`}
+              >
+                {t('following', { defaultValue: 'Following' })}
+                {mode === 'friends' && (
+                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
+                )}
+              </button>
+            </div>
 
-      {/* Admin announcements, pinned above the composer */}
-      {!search && <FeedAnnouncements />}
+            {/* Mobile: centered RMH branding */}
+            <span className="md:hidden text-site-accent font-(family-name:--site-font-display) font-bold text-lg">
+              RMH
+            </span>
 
-      {/* First-run onboarding checklist (new accounts only) */}
-      {!search && <OnboardingChecklist />}
-
-      {/* Resume rail — recently played games/apps (device-local) */}
-      {!search && <JumpBackIn />}
-
-      {/* Compose — deferred out of the feed route's initial chunk (see ComposeBoxLazy) */}
-      {!search && <ComposeBoxLazy />}
-
-      {/* Authored-thread composer (chain several of your own posts) */}
-      {!search && session && (
-        <Suspense fallback={null}>
-          <ThreadComposer />
-        </Suspense>
-      )}
-
-      {/* Feed */}
-      {mode === 'friends' && !session ? (
-        <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-          <p className="text-lg font-medium text-site-text mb-2">{t("sign-in-to-see-following", { defaultValue: "Sign in to see who you follow" })}</p>
-          <p className="text-sm text-site-text-muted mb-6">{t("follow-people-hint", { defaultValue: "Follow people and their posts will appear here." })}</p>
-          <Link
-            to="/login"
-            search={{ callbackURL: undefined }}
-            className="px-5 py-2 rounded-site-sm bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
+            <button
+              onClick={() => setFiltersOpen(!filtersOpen)}
+              className={`p-2 rounded-site-sm transition-colors ${
+                filtersOpen
+                  ? 'text-site-accent bg-site-accent-dim'
+                  : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+              }`}
+              title={t('toggle-feed-filters', { defaultValue: 'Toggle feed filters' })}
+            >
+              <SlidersHorizontal className="w-5 h-5" />
+            </button>
+          </div>
+          {/* Animated open/close — grid-rows fr transition collapses height
+            smoothly without needing to measure the content. */}
+          <div
+            className={`grid transition-[grid-template-rows] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
+              filtersOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+            }`}
           >
-            {t("sign-in", { defaultValue: "Sign in" })}
-          </Link>
-        </div>
-      ) : mode === 'friends' ? (
-        <FeedList following onSwitchToForYou={() => handleModeChange('feed')} />
-      ) : initialFeed ? (
-        // For You initial load: the shell has already streamed to the client;
-        // the feed streams into this Suspense slot when the server resolves it.
-        <Suspense fallback={<PostListSkeleton count={6} />}>
-          <Await promise={initialFeed}>
-            {(feed) => (
-              <FeedList
-                onSwitchToForYou={() => handleModeChange('feed')}
-                initialItems={feed.items}
-                initialCursor={feed.nextCursor}
-                initialHasMore={feed.hasMore}
-                initialMutedWords={feed.mutedWords}
+            <div className="overflow-hidden">
+              <FeedTabs mode={mode} onModeChange={handleModeChange} />
+            </div>
+          </div>
+
+          {/* Search bar */}
+          <div className="px-4 py-2 border-t border-site-border">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim" />
+              <input
+                ref={searchRef}
+                type="text"
+                value={searchInput}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                placeholder={t('search-placeholder', { defaultValue: 'Search...' })}
+                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm pl-9 pr-9 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') clearSearch();
+                }}
               />
-            )}
-          </Await>
-        </Suspense>
-      ) : (
-        <FeedList onSwitchToForYou={() => handleModeChange('feed')} />
-      )}
-    </div>
+              {searchInput && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-site-text-dim hover:text-site-text transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* User search results */}
+        {userResults.length > 0 && (
+          <div className="border-b border-site-border">
+            <div className="px-4 py-2">
+              <p className="text-xs font-semibold text-site-text-dim uppercase tracking-wide mb-1">
+                {t('people', { defaultValue: 'People' })}
+              </p>
+            </div>
+            {userResults.map((user) => (
+              <Link
+                key={user.id}
+                to={`/u/${user.handle || user.id}` as string}
+                className="flex items-center gap-3 px-4 py-2.5 hover:bg-site-surface transition-colors"
+              >
+                <UserAvatar
+                  src={user.image ?? undefined}
+                  alt={user.name || t('user-alt', { defaultValue: 'User' })}
+                  size={32}
+                  fallbackName={user.name ?? undefined}
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1">
+                    <span className="font-semibold text-sm text-site-text truncate">
+                      {user.name || t('unknown-user', { defaultValue: 'Unknown' })}
+                    </span>
+                    {user.isVerified && (
+                      <BadgeCheck className="w-3.5 h-3.5 text-site-success shrink-0" />
+                    )}
+                    {user.isAdmin && (
+                      <ShieldCheck className="w-3.5 h-3.5 text-site-accent shrink-0" />
+                    )}
+                  </div>
+                  {user.handle && (
+                    <span className="text-xs text-site-text-dim">@{user.handle}</span>
+                  )}
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* Admin announcements, pinned above the composer */}
+        {!search && <FeedAnnouncements />}
+
+        {/* First-run onboarding checklist (new accounts only) */}
+        {!search && <OnboardingChecklist />}
+
+        {/* Resume rail — recently played games/apps (device-local) */}
+        {!search && <JumpBackIn />}
+
+        {/* Compose — deferred out of the feed route's initial chunk (see ComposeBoxLazy) */}
+        {!search && <ComposeBoxLazy />}
+
+        {/* Authored-thread composer (chain several of your own posts) */}
+        {!search && session && (
+          <Suspense fallback={null}>
+            <ThreadComposer />
+          </Suspense>
+        )}
+
+        {/* Feed */}
+        {mode === 'friends' && !session ? (
+          <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
+            <p className="text-lg font-medium text-site-text mb-2">
+              {t('sign-in-to-see-following', { defaultValue: 'Sign in to see who you follow' })}
+            </p>
+            <p className="text-sm text-site-text-muted mb-6">
+              {t('follow-people-hint', {
+                defaultValue: 'Follow people and their posts will appear here.',
+              })}
+            </p>
+            <Link
+              to="/login"
+              search={{ callbackURL: undefined }}
+              className="px-5 py-2 rounded-site-sm bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
+            >
+              {t('sign-in', { defaultValue: 'Sign in' })}
+            </Link>
+          </div>
+        ) : mode === 'friends' ? (
+          <FeedList following onSwitchToForYou={() => handleModeChange('feed')} />
+        ) : initialFeed ? (
+          // For You initial load: the shell has already streamed to the client;
+          // the feed streams into this Suspense slot when the server resolves it.
+          <Suspense fallback={<PostListSkeleton count={6} />}>
+            <Await promise={initialFeed}>
+              {(feed) => (
+                <FeedList
+                  onSwitchToForYou={() => handleModeChange('feed')}
+                  initialItems={feed.items}
+                  initialCursor={feed.nextCursor}
+                  initialHasMore={feed.hasMore}
+                  initialMutedWords={feed.mutedWords}
+                />
+              )}
+            </Await>
+          </Suspense>
+        ) : (
+          <FeedList onSwitchToForYou={() => handleModeChange('feed')} />
+        )}
+      </div>
     </PullToRefresh>
   );
 }

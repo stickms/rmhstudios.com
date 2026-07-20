@@ -118,8 +118,20 @@ describe('REST API — Leaderboard (§3.1)', () => {
 
   it('should return leaderboard entries sorted by score', async () => {
     mockPrisma.rMHboxProfile.findMany.mockResolvedValue([
-      { userId: 'user-1', totalScore: 1000, totalWins: 5, totalGamesPlayed: 10, user: { name: 'Alice', image: null } },
-      { userId: 'user-2', totalScore: 800, totalWins: 3, totalGamesPlayed: 8, user: { name: 'Bob', image: null } },
+      {
+        userId: 'user-1',
+        totalScore: 1000,
+        totalWins: 5,
+        totalGamesPlayed: 10,
+        user: { name: 'Alice', image: null },
+      },
+      {
+        userId: 'user-2',
+        totalScore: 800,
+        totalWins: 3,
+        totalGamesPlayed: 8,
+        user: { name: 'Bob', image: null },
+      },
     ]);
     mockPrisma.rMHboxProfile.count.mockResolvedValue(2);
 
@@ -242,7 +254,14 @@ describe('REST API — History (§3.3)', () => {
       gameLog: { events: [] },
       results: [],
       players: [
-        { userId: 'user-alice', userName: 'Alice', rank: 1, score: 200, wasWinner: true, stats: {} },
+        {
+          userId: 'user-alice',
+          userName: 'Alice',
+          rank: 1,
+          score: 200,
+          wasWinner: true,
+          stats: {},
+        },
         { userId: 'user-bob', userName: 'Bob', rank: 2, score: 100, wasWinner: false, stats: {} },
       ],
     });
@@ -261,10 +280,18 @@ describe('REST API — History (§3.3)', () => {
   it('should return paginated match list when userId is provided', async () => {
     mockPrisma.rMHboxMatch.findMany.mockResolvedValue([
       {
-        id: 'match-1', minigameId: 'rhyme-time', lobbyId: 'L1',
-        startedAt: new Date(), endedAt: new Date(), durationMs: 5000,
-        winnerUserId: 'user-alice', playerCount: 2, gameLog: null,
-        players: [{ userId: 'user-alice', userName: 'Alice', rank: 1, score: 200, wasWinner: true }],
+        id: 'match-1',
+        minigameId: 'rhyme-time',
+        lobbyId: 'L1',
+        startedAt: new Date(),
+        endedAt: new Date(),
+        durationMs: 5000,
+        winnerUserId: 'user-alice',
+        playerCount: 2,
+        gameLog: null,
+        players: [
+          { userId: 'user-alice', userName: 'Alice', rank: 1, score: 200, wasWinner: true },
+        ],
       },
     ]);
     mockPrisma.rMHboxMatch.count.mockResolvedValue(1);

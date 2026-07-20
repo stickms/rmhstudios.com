@@ -27,9 +27,7 @@ import { readComposeDraft } from '@/hooks/useComposeDraft';
  * The placeholder and the real composer share the same wrapper/avatar/spacing, so
  * the swap is invisible.
  */
-const ComposeBox = lazy(() =>
-  import('./ComposeBox').then((m) => ({ default: m.ComposeBox })),
-);
+const ComposeBox = lazy(() => import('./ComposeBox').then((m) => ({ default: m.ComposeBox })));
 
 interface ComposeBoxLazyProps {
   communityId?: string;

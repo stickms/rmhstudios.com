@@ -17,30 +17,64 @@ import { cleanupRateLimits } from './rate-limit';
 
 // ─── Game Handlers ──────────────────────────────────────────────
 import { registerSliceItHandlers, handleSliceItDisconnect } from './handlers/slice-it';
-import { registerNeonDriftwayHandlers, handleNeonDriftwayDisconnect } from './handlers/neon-driftway';
-import { registerSynapseStormHandlers, handleSynapseStormDisconnect } from './handlers/synapse-storm';
+import {
+  registerNeonDriftwayHandlers,
+  handleNeonDriftwayDisconnect,
+} from './handlers/neon-driftway';
+import {
+  registerSynapseStormHandlers,
+  handleSynapseStormDisconnect,
+} from './handlers/synapse-storm';
 import { registerRmhTypeHandlers, handleRmhTypeDisconnect } from './handlers/rmhtype';
 import { registerRmhStudyHandlers, handleRmhStudyDisconnect } from './handlers/rmhstudy';
 import { registerAltairHandlers, handleAltairDisconnect } from './handlers/altair';
-import { registerKowloonKnockoutHandlers, handleKowloonKnockoutDisconnect } from './handlers/kowloon-knockout';
-import { registerRochesterOffensiveHandlers, handleRochesterOffensiveDisconnect } from './handlers/rochester-offensive';
+import {
+  registerKowloonKnockoutHandlers,
+  handleKowloonKnockoutDisconnect,
+} from './handlers/kowloon-knockout';
+import {
+  registerRochesterOffensiveHandlers,
+  handleRochesterOffensiveDisconnect,
+} from './handlers/rochester-offensive';
 import { registerRmhMusicHandlers, handleRmhMusicDisconnect } from './handlers/rmhmusic';
-import { registerBlackjackHandlers, handleBlackjackDisconnect, initializeBlackjackPublicTable } from './handlers/blackjack';
-import { registerHoldemHandlers, handleHoldemDisconnect, initializeHoldem } from './handlers/holdem';
-import { registerBaccaratHandlers, handleBaccaratDisconnect, initializeBaccarat } from './handlers/baccarat';
-import { registerRouletteHandlers, handleRouletteDisconnect, initializeRoulette } from './handlers/roulette';
+import {
+  registerBlackjackHandlers,
+  handleBlackjackDisconnect,
+  initializeBlackjackPublicTable,
+} from './handlers/blackjack';
+import {
+  registerHoldemHandlers,
+  handleHoldemDisconnect,
+  initializeHoldem,
+} from './handlers/holdem';
+import {
+  registerBaccaratHandlers,
+  handleBaccaratDisconnect,
+  initializeBaccarat,
+} from './handlers/baccarat';
+import {
+  registerRouletteHandlers,
+  handleRouletteDisconnect,
+  initializeRoulette,
+} from './handlers/roulette';
 import { registerLightsOutHandlers, handleLightsOutDisconnect } from './handlers/lights-out';
 import { registerDoctrineHandlers, handleDoctrineDisconnect } from './handlers/doctrine';
 import { registerVelumHandlers, handleVelumDisconnect } from './handlers/velum';
 import { registerDreamRiftHandlers, handleDreamRiftDisconnect } from './handlers/dream-rift';
-import { registerRmhFarmingSimHandlers, handleRmhFarmingSimDisconnect } from './handlers/rmh-farming-sim';
+import {
+  registerRmhFarmingSimHandlers,
+  handleRmhFarmingSimDisconnect,
+} from './handlers/rmh-farming-sim';
 import { registerSpacesHandlers, handleSpacesDisconnect } from './handlers/spaces';
 import { registerPartyHandlers, handlePartyDisconnect } from './handlers/party';
 
 // ─── Startup validation ─────────────────────────────────────────
 
 if (!config.CORS_ORIGIN) {
-  logger.error({ event: 'fatal_missing_cors', message: 'SOCKET_CORS_ORIGIN environment variable is required' });
+  logger.error({
+    event: 'fatal_missing_cors',
+    message: 'SOCKET_CORS_ORIGIN environment variable is required',
+  });
   process.exit(1);
 }
 

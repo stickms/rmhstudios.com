@@ -163,7 +163,7 @@ async function classify(text: string): Promise<Classification | null> {
         temperature: 0,
         stream: false,
       },
-      { timeout: CLASSIFY_TIMEOUT_MS }
+      { timeout: CLASSIFY_TIMEOUT_MS },
     );
     raw = res.choices[0]?.message?.content?.trim() ?? '';
   } catch {

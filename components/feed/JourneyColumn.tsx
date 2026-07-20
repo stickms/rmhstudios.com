@@ -15,7 +15,12 @@ export type JourneyTab = 'streaks' | 'progress' | 'achievements';
 const TABS: { id: JourneyTab; labelKey: string; defaultLabel: string; icon: typeof Flame }[] = [
   { id: 'streaks', labelKey: 'journey-tab-streaks', defaultLabel: 'Streaks', icon: Flame },
   { id: 'progress', labelKey: 'journey-tab-progress', defaultLabel: 'Progress', icon: Zap },
-  { id: 'achievements', labelKey: 'journey-tab-achievements', defaultLabel: 'Achievements', icon: Trophy },
+  {
+    id: 'achievements',
+    labelKey: 'journey-tab-achievements',
+    defaultLabel: 'Achievements',
+    icon: Trophy,
+  },
 ];
 
 /**
@@ -37,7 +42,7 @@ export function JourneyColumn({
   /** Achievements payload prefetched by the `/achievements` route loader, forwarded to the embedded column. */
   achievementsInitialData?: AchievementsPayload | null;
 }) {
-  const { t } = useTranslation("feed");
+  const { t } = useTranslation('feed');
   const [tab, setTab] = useState<JourneyTab>(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash.replace('#', '');
@@ -60,7 +65,11 @@ export function JourneyColumn({
         {/* The tab bar *is* this page's header: no title, so the nav fills the
             row. Padding is mobile-only, to make room for the drawer button. */}
         <ColumnHeader className="px-4 py-0 md:px-0">
-          <nav className="flex" role="tablist" aria-label={t("journey-sections-label", { defaultValue: "Journey sections" })}>
+          <nav
+            className="flex"
+            role="tablist"
+            aria-label={t('journey-sections-label', { defaultValue: 'Journey sections' })}
+          >
             {TABS.map(({ id, labelKey, defaultLabel, icon: Icon }) => {
               const active = tab === id;
               return (
@@ -76,7 +85,9 @@ export function JourneyColumn({
                       : 'border-transparent text-site-text-muted hover:text-site-text'
                   }`}
                 >
-                  <Icon className={`h-4 w-4 ${id === 'streaks' && active ? 'text-site-warning' : ''}`} />
+                  <Icon
+                    className={`h-4 w-4 ${id === 'streaks' && active ? 'text-site-warning' : ''}`}
+                  />
                   <span>{t(labelKey, { defaultValue: defaultLabel })}</span>
                 </button>
               );
@@ -87,7 +98,9 @@ export function JourneyColumn({
 
       {tab === 'streaks' && <StreakColumn hideHeader />}
       {tab === 'progress' && <ProgressColumn hideHeader />}
-      {tab === 'achievements' && <AchievementsColumn userId={userId} hideHeader initialData={achievementsInitialData} />}
+      {tab === 'achievements' && (
+        <AchievementsColumn userId={userId} hideHeader initialData={achievementsInitialData} />
+      )}
     </div>
   );
 }

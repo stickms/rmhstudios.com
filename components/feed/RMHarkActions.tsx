@@ -9,7 +9,9 @@ import type { FeedItem } from '@/lib/feed-types';
 
 // Quote-compose modal — only opens on the "quote" repost action, so it's
 // code-split out of the initial feed chunk and imported on first open.
-const ComposeModal = lazy(() => import('./ComposeModal').then((m) => ({ default: m.ComposeModal })));
+const ComposeModal = lazy(() =>
+  import('./ComposeModal').then((m) => ({ default: m.ComposeModal })),
+);
 import { useTranslation } from 'react-i18next';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
@@ -102,13 +104,21 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
         className="flex items-center gap-1.5 px-2 py-1 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent-dim/50 transition-[color,background-color,transform] duration-150 group active:scale-95"
       >
         <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" aria-hidden />
-        <AnimatedCount value={item.commentCount} format={formatCount} hideZero className="text-xs" />
+        <AnimatedCount
+          value={item.commentCount}
+          format={formatCount}
+          hideZero
+          className="text-xs"
+        />
       </button>
 
       {/* reRMHark */}
       <div className="relative" ref={repostRef}>
         <button
-          onClick={(e) => { e.stopPropagation(); setRepostMenu((v) => !v); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            setRepostMenu((v) => !v);
+          }}
           className={`flex items-center gap-1.5 px-2 py-1 rounded-full transition-[color,background-color,transform] duration-150 group active:scale-95 ${
             item.reposted
               ? 'text-site-success'
@@ -118,19 +128,33 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
           aria-label="reRMHark"
         >
           <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" aria-hidden />
-          <AnimatedCount value={item.repostCount} format={formatCount} hideZero className="text-xs" />
+          <AnimatedCount
+            value={item.repostCount}
+            format={formatCount}
+            hideZero
+            className="text-xs"
+          />
         </button>
         {repostMenu && (
-          <div className="absolute left-0 top-full mt-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="absolute left-0 top-full mt-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
-              onClick={() => { setRepostMenu(false); toggleRepost(); }}
+              onClick={() => {
+                setRepostMenu(false);
+                toggleRepost();
+              }}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
             >
               <Repeat className="w-4 h-4 text-site-text-dim" />
               {item.reposted ? 'Undo reRMHark' : 'reRMHark'}
             </button>
             <button
-              onClick={() => { setRepostMenu(false); setQuoteOpen(true); }}
+              onClick={() => {
+                setRepostMenu(false);
+                setQuoteOpen(true);
+              }}
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"
             >
               <PenSquare className="w-4 h-4 text-site-text-dim" />
@@ -161,7 +185,10 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
         title={t('like', { defaultValue: 'Like' })}
         aria-label={t('like', { defaultValue: 'Like' })}
       >
-        <Heart className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`} aria-hidden />
+        <Heart
+          className={`w-4 h-4 group-hover:scale-110 transition-transform ${item.liked ? 'fill-current' : ''}`}
+          aria-hidden
+        />
         <AnimatedCount value={item.likeCount} format={formatCount} hideZero className="text-xs" />
       </button>
 

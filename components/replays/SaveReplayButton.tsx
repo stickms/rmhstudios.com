@@ -72,7 +72,9 @@ export function SaveReplayButton({
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(json?.error ?? t('replay-save-failed', { defaultValue: 'Could not save replay.' }));
+        toast.error(
+          json?.error ?? t('replay-save-failed', { defaultValue: 'Could not save replay.' }),
+        );
         return;
       }
       setSavedId(json.id);

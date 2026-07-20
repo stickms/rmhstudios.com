@@ -120,7 +120,9 @@ function ReplayPage() {
                       {replay.author.name ?? replay.author.handle}
                     </Link>
                   ) : (
-                    <span className="font-semibold text-site-text">{replay.author.name ?? 'Someone'}</span>
+                    <span className="font-semibold text-site-text">
+                      {replay.author.name ?? 'Someone'}
+                    </span>
                   )}
                 </span>
               </div>

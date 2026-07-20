@@ -23,7 +23,13 @@ import { redisRateLimit, redisIncrBy } from '@/lib/redis.server';
 import { prisma } from '@/lib/prisma.server';
 import type { Tier } from '@/lib/entitlements';
 
-interface LimitResult { allowed: boolean; retryAfter: number; limit: number; remaining: number; reset: number }
+interface LimitResult {
+  allowed: boolean;
+  retryAfter: number;
+  limit: number;
+  remaining: number;
+  reset: number;
+}
 
 /**
  * Cross-instance rate limit when Redis is configured, else the per-instance
@@ -58,7 +64,12 @@ export interface ApiContext {
   /** JSON success response with all standard headers applied. */
   json: (data: unknown, status?: number, extraHeaders?: Record<string, string>) => Response;
   /** Standardized error response: `{ error: { type, code, message, request_id } }`. */
-  error: (code: string, message: string, status?: number, extraHeaders?: Record<string, string>) => Response;
+  error: (
+    code: string,
+    message: string,
+    status?: number,
+    extraHeaders?: Record<string, string>,
+  ) => Response;
   /** 204 No Content with standard headers (used by DELETE / toggles). */
   noContent: (extraHeaders?: Record<string, string>) => Response;
 }
@@ -118,7 +129,12 @@ export function apiOptions(): Response {
 
 /** Build the response helpers bound to a request id + the current rate headers. */
 function makeResponder(requestId: string, headers: Record<string, string>) {
-  const base = { 'Content-Type': 'application/json', 'X-Request-Id': requestId, ...CORS_HEADERS, ...headers };
+  const base = {
+    'Content-Type': 'application/json',
+    'X-Request-Id': requestId,
+    ...CORS_HEADERS,
+    ...headers,
+  };
   return {
     json: (data: unknown, status = 200, extra?: Record<string, string>) =>
       new Response(JSON.stringify(data), { status, headers: { ...base, ...extra } }),
@@ -128,14 +144,17 @@ function makeResponder(requestId: string, headers: Record<string, string>) {
         headers: { ...base, ...extra },
       }),
     noContent: (extra?: Record<string, string>) =>
-      new Response(null, { status: 204, headers: { 'X-Request-Id': requestId, ...CORS_HEADERS, ...headers, ...extra } }),
+      new Response(null, {
+        status: 204,
+        headers: { 'X-Request-Id': requestId, ...CORS_HEADERS, ...headers, ...extra },
+      }),
   };
 }
 
 export async function withDeveloperApi(
   request: Request,
   handler: (ctx: ApiContext) => Promise<Response>,
-  options: ApiHandlerOptions = {}
+  options: ApiHandlerOptions = {},
 ): Promise<Response> {
   const requestId = newRequestId();
 
@@ -146,7 +165,9 @@ export async function withDeveloperApi(
   // can't hammer the DB. Valid traffic is governed by the per-key limit below.
   const ipGate = await limit(`dev-api-ip:${getClientIp(request)}`, 300, 60_000);
   if (!ipGate.allowed) {
-    return pre.error('rate_limited', 'Too many requests from this address.', 429, { 'Retry-After': String(ipGate.retryAfter) });
+    return pre.error('rate_limited', 'Too many requests from this address.', 429, {
+      'Retry-After': String(ipGate.retryAfter),
+    });
   }
 
   // 2. Authenticate.
@@ -159,7 +180,10 @@ export async function withDeveloperApi(
   const minuteHeaders = rateHeaders(rl);
   if (!rl.allowed) {
     return makeResponder(requestId, minuteHeaders).error(
-      'rate_limited', 'Too many requests. Slow down.', 429, { 'Retry-After': String(rl.retryAfter) }
+      'rate_limited',
+      'Too many requests. Slow down.',
+      429,
+      { 'Retry-After': String(rl.retryAfter) },
     );
   }
 
@@ -171,7 +195,11 @@ export async function withDeveloperApi(
   // headers, whenever the counter is live.
   const cost = Math.max(1, Math.floor(options.cost ?? 1));
   const dailyMax = DAILY_LIMITS[auth.tier] ?? DAILY_LIMITS.starter;
-  const dailyUsed = await redisIncrBy(`devapi:daily:${auth.keyId}:${utcDayKey()}`, cost, DAILY_TTL_MS);
+  const dailyUsed = await redisIncrBy(
+    `devapi:daily:${auth.keyId}:${utcDayKey()}`,
+    cost,
+    DAILY_TTL_MS,
+  );
   const dailyHeaders: Record<string, string> =
     dailyUsed === null
       ? {}
@@ -188,7 +216,7 @@ export async function withDeveloperApi(
       'quota_exceeded',
       `Daily quota of ${dailyMax} request units for this API key is exhausted. It resets at 00:00 UTC.`,
       429,
-      { 'Retry-After': String(retryAfter) }
+      { 'Retry-After': String(retryAfter) },
     );
   }
 
@@ -198,7 +226,7 @@ export async function withDeveloperApi(
       'insufficient_scope',
       `This endpoint requires the "${options.scope}" scope, which this key does not have.`,
       403,
-      { 'X-Accepted-Scope': options.scope }
+      { 'X-Accepted-Scope': options.scope },
     );
   }
 
@@ -222,18 +250,30 @@ export async function withDeveloperApi(
       return res.error('invalid_request', 'Idempotency-Key must be at most 255 characters.', 400);
     }
     const bodyText = await request.clone().text();
-    requestHash = createHash('sha256').update(`${request.method}:${new URL(request.url).pathname}:${bodyText}`).digest('hex');
+    requestHash = createHash('sha256')
+      .update(`${request.method}:${new URL(request.url).pathname}:${bodyText}`)
+      .digest('hex');
 
     const prior = await prisma.apiIdempotencyKey
       .findUnique({ where: { keyId_idempotency: { keyId: auth.keyId, idempotency: idemKey } } })
       .catch(() => null);
     if (prior) {
       if (prior.requestHash !== requestHash) {
-        return res.error('idempotency_conflict', 'This Idempotency-Key was already used with a different request body.', 409);
+        return res.error(
+          'idempotency_conflict',
+          'This Idempotency-Key was already used with a different request body.',
+          409,
+        );
       }
       return new Response(prior.responseBody, {
         status: prior.statusCode,
-        headers: { 'Content-Type': 'application/json', 'X-Request-Id': requestId, 'Idempotency-Replayed': 'true', ...CORS_HEADERS, ...headers },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Request-Id': requestId,
+          'Idempotency-Replayed': 'true',
+          ...CORS_HEADERS,
+          ...headers,
+        },
       });
     }
   }
@@ -268,7 +308,12 @@ export async function withDeveloperApi(
         .catch(() => {});
     } catch (e) {
       // A concurrent request may have stored first (unique violation) — ignore.
-      if (!(e && typeof e === 'object' && 'code' in e && (e as { code: string }).code === 'P2002')) {
+      if (!(
+        e &&
+        typeof e === 'object' &&
+        'code' in e &&
+        (e as { code: string }).code === 'P2002'
+      )) {
         console.error(`[dev-api] idempotency store failed (req ${requestId}):`, e);
       }
     }

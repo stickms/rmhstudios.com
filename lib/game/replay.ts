@@ -28,12 +28,7 @@ import { generatePuzzle, toggleCellInGrid, isSolved, type Grid } from '@/lib/lig
  * through server-function loaders, so the element type must be serializable
  * (TanStack's `ValidateSerializableMapped` rejects `unknown`). */
 export type ReplayJsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | ReplayJsonValue[]
-  | { [key: string]: ReplayJsonValue };
+  string | number | boolean | null | ReplayJsonValue[] | { [key: string]: ReplayJsonValue };
 
 /** Loose base shape every replay payload conforms to. Per-game schemas narrow it. */
 export interface ReplayData {
@@ -73,10 +68,7 @@ export const REPLAY_SIZE_CAP = 256 * 1024;
 export const LIGHTS_OUT_VERSION = 'lo-1';
 
 /** A move is a clicked cell [row, col]. Bounds are generous but finite (anti-DoS). */
-const lightsOutMove = z.tuple([
-  z.number().int().min(0).max(31),
-  z.number().int().min(0).max(31),
-]);
+const lightsOutMove = z.tuple([z.number().int().min(0).max(31), z.number().int().min(0).max(31)]);
 
 const lightsOutSchema = z.object({
   // Non-negative because getDailyShape uses `seed % SHAPES.length`; a negative
@@ -88,7 +80,10 @@ const lightsOutSchema = z.object({
 export type LightsOutReplay = z.infer<typeof lightsOutSchema>;
 
 /** Reconstruct the exact starting board a given seed produces. */
-export function lightsOutInitialGrid(seed: number): { grid: Grid; shape: ReturnType<typeof getDailyShape> } {
+export function lightsOutInitialGrid(seed: number): {
+  grid: Grid;
+  shape: ReturnType<typeof getDailyShape>;
+} {
   const shape = getDailyShape(seed);
   const grid = generatePuzzle(createSeededRng(seed), shape);
   return { grid, shape };
@@ -141,7 +136,10 @@ const sliceItSchema = z.object({
   inputs: z
     .array(
       z.object({
-        t: z.number().min(0).max(60 * 60 * 1000), // ms into the track (≤ 1h)
+        t: z
+          .number()
+          .min(0)
+          .max(60 * 60 * 1000), // ms into the track (≤ 1h)
         lane: z.number().int().min(0).max(7).optional(),
         judgment: sliceItJudgment,
       }),

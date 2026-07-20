@@ -55,7 +55,8 @@ function EmbedReplay() {
             <p className="truncate text-sm font-bold text-site-text">{gameTitle(replay.game)}</p>
             <p className="truncate text-xs text-site-text-dim">
               {t('replay-by', { defaultValue: 'by' })} {replay.author.name ?? 'Someone'}
-              {replay.score != null && ` · ${t('replay-score', { defaultValue: 'Score' })} ${replay.score}`}
+              {replay.score != null &&
+                ` · ${t('replay-score', { defaultValue: 'Score' })} ${replay.score}`}
             </p>
           </div>
           <a

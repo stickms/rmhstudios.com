@@ -58,7 +58,10 @@ export const Route = createFileRoute('/api/rmharks/thread')({
           const body = await request.json().catch(() => ({}));
           const parsed = schema.safeParse(body);
           if (!parsed.success) {
-            return Response.json({ error: parsed.error.issues[0]?.message ?? 'Invalid input' }, { status: 400 });
+            return Response.json(
+              { error: parsed.error.issues[0]?.message ?? 'Invalid input' },
+              { status: 400 },
+            );
           }
 
           const segments = parsed.data.segments.map((s) => s.trim()).filter(Boolean);

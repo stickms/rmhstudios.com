@@ -79,17 +79,16 @@ export function ConciergePanel({ className }: { className?: string }) {
         });
         const data = (await res.json().catch(() => ({}))) as AssistantResponse;
         if (!res.ok || !data.answer) {
-          const msg = data.error || t('concierge-error', { defaultValue: "Couldn't reach the guide. Try again." });
+          const msg =
+            data.error ||
+            t('concierge-error', { defaultValue: "Couldn't reach the guide. Try again." });
           if (res.status === 429) {
             toast.error(t('concierge-slow', { defaultValue: 'Slow down a moment and try again.' }));
           } else {
             toast.error(msg);
           }
           // Drop the optimistic user turn's expectation by adding an error bubble.
-          setMessages((prev) => [
-            ...prev,
-            { id: nextId(), role: 'assistant', content: msg },
-          ]);
+          setMessages((prev) => [...prev, { id: nextId(), role: 'assistant', content: msg }]);
           return;
         }
         setMessages((prev) => [
@@ -100,7 +99,11 @@ export function ConciergePanel({ className }: { className?: string }) {
         toast.error(t('concierge-error', { defaultValue: "Couldn't reach the guide. Try again." }));
         setMessages((prev) => [
           ...prev,
-          { id: nextId(), role: 'assistant', content: t('concierge-error', { defaultValue: "Couldn't reach the guide. Try again." }) },
+          {
+            id: nextId(),
+            role: 'assistant',
+            content: t('concierge-error', { defaultValue: "Couldn't reach the guide. Try again." }),
+          },
         ]);
       } finally {
         setLoading(false);
@@ -138,7 +141,8 @@ export function ConciergePanel({ className }: { className?: string }) {
             </h2>
             <p className="mt-1.5 text-sm text-site-text-muted">
               {t('concierge-subtitle', {
-                defaultValue: 'Questions about games, apps, coins, or where to find something? Ask away.',
+                defaultValue:
+                  'Questions about games, apps, coins, or where to find something? Ask away.',
               })}
             </p>
           </div>
@@ -147,7 +151,10 @@ export function ConciergePanel({ className }: { className?: string }) {
             {messages.map((m) => (
               <div
                 key={m.id}
-                className={cn('flex flex-col gap-2', m.role === 'user' ? 'items-end' : 'items-start')}
+                className={cn(
+                  'flex flex-col gap-2',
+                  m.role === 'user' ? 'items-end' : 'items-start',
+                )}
               >
                 <div
                   className={cn(
@@ -178,7 +185,9 @@ export function ConciergePanel({ className }: { className?: string }) {
             {loading && (
               <div className="flex items-center gap-2 text-site-text-muted">
                 <Spinner className="size-4" />
-                <span className="text-sm">{t('concierge-thinking', { defaultValue: 'Thinking…' })}</span>
+                <span className="text-sm">
+                  {t('concierge-thinking', { defaultValue: 'Thinking…' })}
+                </span>
               </div>
             )}
           </div>
@@ -211,7 +220,9 @@ export function ConciergePanel({ className }: { className?: string }) {
               maxLength={500}
               placeholder={t('concierge-placeholder', { defaultValue: 'Ask about RMH Studios…' })}
               className="min-h-[44px] max-h-32 resize-none rounded-site"
-              aria-label={t('concierge-input-label', { defaultValue: 'Your question for the concierge' })}
+              aria-label={t('concierge-input-label', {
+                defaultValue: 'Your question for the concierge',
+              })}
             />
             <Button
               type="submit"
@@ -225,7 +236,8 @@ export function ConciergePanel({ className }: { className?: string }) {
           </form>
           <p className="mt-2 text-center text-[11px] text-site-text-dim">
             {t('concierge-disclaimer', {
-              defaultValue: 'The concierge answers questions about RMH Studios. It can be wrong — verify anything important.',
+              defaultValue:
+                'The concierge answers questions about RMH Studios. It can be wrong — verify anything important.',
             })}
           </p>
         </div>

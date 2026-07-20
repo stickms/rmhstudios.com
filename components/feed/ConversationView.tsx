@@ -13,8 +13,11 @@ import { Button } from '@/components/ui/button';
 import { GhostTextArea } from './GhostTextArea';
 import { PostImageGrid } from './PostImageGrid';
 import { useMessageSuggestion } from '@/lib/useMessageSuggestion';
-import { useTranslation } from "react-i18next";
-import ChatMediaEmbed, { stripEmbedUrls, extractMediaEmbeds } from '@/components/shared/ChatMediaEmbed';
+import { useTranslation } from 'react-i18next';
+import ChatMediaEmbed, {
+  stripEmbedUrls,
+  extractMediaEmbeds,
+} from '@/components/shared/ChatMediaEmbed';
 import { GifPicker } from '@/components/feed/GifPicker';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
@@ -71,7 +74,11 @@ export function ConversationView({
   const [gifUrl, setGifUrl] = useState<string | null>(null);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
-  const [reactionMenu, setReactionMenu] = useState<{ x: number; y: number; messageId: string } | null>(null);
+  const [reactionMenu, setReactionMenu] = useState<{
+    x: number;
+    y: number;
+    messageId: string;
+  } | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -89,12 +96,14 @@ export function ConversationView({
   const typingStopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const otherTypingTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { t } = useTranslation("feed");
+  const { t } = useTranslation('feed');
   const { data: session } = useSession();
   const { resolved: resolvedUser } = useResolvedUser();
   const insertEmoji = useEmojiInsert(inputRef, input, setInput);
   const shortcodes = useEmojiShortcodes({ ref: inputRef, value: input, onChange: setInput });
-  const reactionTriggerFor = useItemReactionTrigger((x, y, messageId) => setReactionMenu({ x, y, messageId }));
+  const reactionTriggerFor = useItemReactionTrigger((x, y, messageId) =>
+    setReactionMenu({ x, y, messageId }),
+  );
 
   // Close the attach (+) menu on outside click.
   useEffect(() => {
@@ -125,9 +134,7 @@ export function ConversationView({
       const res = await fetch('/api/messages');
       if (!res.ok) return;
       const data = await res.json();
-      const conv = data.conversations.find(
-        (c: { id: string }) => c.id === conversationId
-      );
+      const conv = data.conversations.find((c: { id: string }) => c.id === conversationId);
       if (conv) {
         setOtherUser(conv.otherUser);
       }
@@ -136,41 +143,44 @@ export function ConversationView({
     }
   }, [conversationId]);
 
-  const fetchMessages = useCallback(async (isInitial = false) => {
-    try {
-      const params = new URLSearchParams();
-      if (!isInitial && olderCursor) params.set('cursor', olderCursor);
-      const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}?${params}`);
-      if (res.status === 404) {
-        setNotFound(true);
-        return;
-      }
-      if (!res.ok) return;
-      const data = await res.json();
+  const fetchMessages = useCallback(
+    async (isInitial = false) => {
+      try {
+        const params = new URLSearchParams();
+        if (!isInitial && olderCursor) params.set('cursor', olderCursor);
+        const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}?${params}`);
+        if (res.status === 404) {
+          setNotFound(true);
+          return;
+        }
+        if (!res.ok) return;
+        const data = await res.json();
 
-      // Everything fetched here is existing history — mark it so it renders
-      // in place without an entrance animation.
-      for (const m of data.messages as Message[]) historyIds.current.add(m.id);
+        // Everything fetched here is existing history — mark it so it renders
+        // in place without an entrance animation.
+        for (const m of data.messages as Message[]) historyIds.current.add(m.id);
 
-      if (isInitial) {
-        setMessages(data.messages);
-        setHasOlder(data.hasMore);
-        setOlderCursor(data.nextCursor);
-        // Scroll to bottom after initial load
-        setTimeout(scrollToBottom, 100);
-      } else {
-        // Prepend older messages
-        setMessages((prev) => [...data.messages, ...prev]);
-        setHasOlder(data.hasMore);
-        setOlderCursor(data.nextCursor);
+        if (isInitial) {
+          setMessages(data.messages);
+          setHasOlder(data.hasMore);
+          setOlderCursor(data.nextCursor);
+          // Scroll to bottom after initial load
+          setTimeout(scrollToBottom, 100);
+        } else {
+          // Prepend older messages
+          setMessages((prev) => [...data.messages, ...prev]);
+          setHasOlder(data.hasMore);
+          setOlderCursor(data.nextCursor);
+        }
+      } catch (err) {
+        console.error('Fetch messages error:', err);
+      } finally {
+        setLoading(false);
+        setLoadingOlder(false);
       }
-    } catch (err) {
-      console.error('Fetch messages error:', err);
-    } finally {
-      setLoading(false);
-      setLoadingOlder(false);
-    }
-  }, [conversationId, olderCursor, scrollToBottom]);
+    },
+    [conversationId, olderCursor, scrollToBottom],
+  );
 
   const markAsRead = useCallback(() => {
     fetch(`/api/messages/${encodeURIComponent(conversationId)}/read`, {
@@ -179,39 +189,48 @@ export function ConversationView({
   }, [conversationId]);
 
   // Handle incoming SSE message
-  const handleIncomingMessage = useCallback((msg: Message) => {
-    // A delivered message means the other side is no longer typing.
-    setOtherTyping(false);
-    if (otherTypingTimer.current) clearTimeout(otherTypingTimer.current);
-    setMessages((prev) => {
-      // Skip if we already have this message (e.g. optimistic send)
-      if (prev.some((m) => m.id === msg.id)) return prev;
-      setTimeout(scrollToBottom, 100);
-      return [...prev, msg];
-    });
-    // Mark as read since the conversation is open
-    markAsRead();
-  }, [scrollToBottom, markAsRead]);
+  const handleIncomingMessage = useCallback(
+    (msg: Message) => {
+      // A delivered message means the other side is no longer typing.
+      setOtherTyping(false);
+      if (otherTypingTimer.current) clearTimeout(otherTypingTimer.current);
+      setMessages((prev) => {
+        // Skip if we already have this message (e.g. optimistic send)
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        setTimeout(scrollToBottom, 100);
+        return [...prev, msg];
+      });
+      // Mark as read since the conversation is open
+      markAsRead();
+    },
+    [scrollToBottom, markAsRead],
+  );
 
   // Show/hide the other participant's typing indicator (with a safety timeout
   // in case the matching "stopped typing" event never arrives).
-  const handleTypingEvent = useCallback((isTyping: boolean) => {
-    if (otherTypingTimer.current) clearTimeout(otherTypingTimer.current);
-    setOtherTyping(isTyping);
-    if (isTyping) {
-      setTimeout(scrollToBottom, 100);
-      otherTypingTimer.current = setTimeout(() => setOtherTyping(false), 10000);
-    }
-  }, [scrollToBottom]);
+  const handleTypingEvent = useCallback(
+    (isTyping: boolean) => {
+      if (otherTypingTimer.current) clearTimeout(otherTypingTimer.current);
+      setOtherTyping(isTyping);
+      if (isTyping) {
+        setTimeout(scrollToBottom, 100);
+        otherTypingTimer.current = setTimeout(() => setOtherTyping(false), 10000);
+      }
+    },
+    [scrollToBottom],
+  );
 
   // POST our own typing state to the other participant (debounced stop).
-  const sendTyping = useCallback((isTyping: boolean) => {
-    fetch(`/api/messages/${encodeURIComponent(conversationId)}/typing`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isTyping }),
-    }).catch(() => {});
-  }, [conversationId]);
+  const sendTyping = useCallback(
+    (isTyping: boolean) => {
+      fetch(`/api/messages/${encodeURIComponent(conversationId)}/typing`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isTyping }),
+      }).catch(() => {});
+    },
+    [conversationId],
+  );
 
   const handleTyping = useCallback(() => {
     if (!typingActiveRef.current) {
@@ -234,40 +253,46 @@ export function ConversationView({
   }, [sendTyping]);
 
   // Toggle the viewer's reaction row on a message (optimistic on raw rows).
-  const applyRowToggle = useCallback((messageId: string, emoji: string) => {
-    const myId = session?.user.id;
-    if (!myId) return;
-    setMessages((prev) =>
-      prev.map((m) => {
-        if (m.id !== messageId) return m;
-        const rows = m.reactions ?? [];
-        const mine = rows.some((r) => r.emoji === emoji && r.userId === myId);
-        return {
-          ...m,
-          reactions: mine
-            ? rows.filter((r) => !(r.emoji === emoji && r.userId === myId))
-            : [...rows, { emoji, userId: myId }],
-        };
-      }),
-    );
-  }, [session?.user.id]);
+  const applyRowToggle = useCallback(
+    (messageId: string, emoji: string) => {
+      const myId = session?.user.id;
+      if (!myId) return;
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.id !== messageId) return m;
+          const rows = m.reactions ?? [];
+          const mine = rows.some((r) => r.emoji === emoji && r.userId === myId);
+          return {
+            ...m,
+            reactions: mine
+              ? rows.filter((r) => !(r.emoji === emoji && r.userId === myId))
+              : [...rows, { emoji, userId: myId }],
+          };
+        }),
+      );
+    },
+    [session?.user.id],
+  );
 
-  const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
-    if (!session) return;
-    applyRowToggle(messageId, emoji);
-    try {
-      const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}/react`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messageId, emoji }),
-      });
-      if (!res.ok) throw new Error('react failed');
-    } catch {
-      // Roll back the optimistic toggle (toggling again is its own inverse).
+  const toggleReaction = useCallback(
+    async (messageId: string, emoji: string) => {
+      if (!session) return;
       applyRowToggle(messageId, emoji);
-    }
-  }, [session, conversationId, applyRowToggle]);
+      try {
+        const res = await fetch(`/api/messages/${encodeURIComponent(conversationId)}/react`, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messageId, emoji }),
+        });
+        if (!res.ok) throw new Error('react failed');
+      } catch {
+        // Roll back the optimistic toggle (toggling again is its own inverse).
+        applyRowToggle(messageId, emoji);
+      }
+    },
+    [session, conversationId, applyRowToggle],
+  );
 
   useEffect(() => {
     if (!initialFetched.current && session) {
@@ -307,8 +332,14 @@ export function ConversationView({
     return subscribeMessageStream((type, data) => {
       if (type === 'new-message') {
         const msg = data as {
-          id: string; conversationId: string; content: string; senderId: string;
-          read: boolean; createdAt: string; gifUrl?: string | null; imageUrls?: string[];
+          id: string;
+          conversationId: string;
+          content: string;
+          senderId: string;
+          read: boolean;
+          createdAt: string;
+          gifUrl?: string | null;
+          imageUrls?: string[];
         };
         // Only handle messages for this conversation
         if (msg.conversationId === conversationId && msg.senderId !== session.user.id) {
@@ -364,11 +395,15 @@ export function ConversationView({
     setError(null);
     try {
       const form = new FormData();
-      Array.from(files).slice(0, remaining).forEach((f) => form.append('images', f));
+      Array.from(files)
+        .slice(0, remaining)
+        .forEach((f) => form.append('images', f));
       const res = await fetch('/api/rmharks/image', { method: 'POST', body: form });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError(data.error || t('failed-to-upload-image', { defaultValue: 'Failed to upload image' }));
+        setError(
+          data.error || t('failed-to-upload-image', { defaultValue: 'Failed to upload image' }),
+        );
         return;
       }
       const data = await res.json();
@@ -425,7 +460,9 @@ export function ConversationView({
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || t("failed-to-send-message", { defaultValue: "Failed to send message" }));
+        setError(
+          data.error || t('failed-to-send-message', { defaultValue: 'Failed to send message' }),
+        );
         // Remove optimistic message and restore the draft + media.
         setMessages((prev) => prev.filter((m) => m.id !== tempId));
         setInput(content);
@@ -439,11 +476,9 @@ export function ConversationView({
       // remounts it, so mark the real id as history to avoid a second entrance.
       historyIds.current.add(data.message.id);
       // Replace optimistic message with real one
-      setMessages((prev) =>
-        prev.map((m) => (m.id === tempId ? data.message : m))
-      );
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? data.message : m)));
     } catch {
-      setError(t("failed-to-send-message", { defaultValue: "Failed to send message" }));
+      setError(t('failed-to-send-message', { defaultValue: 'Failed to send message' }));
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setInput(content);
       setGifUrl(pendingGif);
@@ -472,8 +507,9 @@ export function ConversationView({
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (d.toDateString() === today.toDateString()) return t("today", { defaultValue: "Today" });
-    if (d.toDateString() === yesterday.toDateString()) return t("yesterday", { defaultValue: "Yesterday" });
+    if (d.toDateString() === today.toDateString()) return t('today', { defaultValue: 'Today' });
+    if (d.toDateString() === yesterday.toDateString())
+      return t('yesterday', { defaultValue: 'Yesterday' });
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
@@ -487,9 +523,13 @@ export function ConversationView({
   if (!session) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-lg font-medium text-site-text mb-1">{t("sign-in-to-view-messages", { defaultValue: "Sign in to view messages" })}</p>
+        <p className="text-lg font-medium text-site-text mb-1">
+          {t('sign-in-to-view-messages', { defaultValue: 'Sign in to view messages' })}
+        </p>
         <Link to="/login" search={{ callbackURL: undefined }}>
-          <Button variant="accent" size="sm">{t("sign-in", { defaultValue: "Sign In" })}</Button>
+          <Button variant="accent" size="sm">
+            {t('sign-in', { defaultValue: 'Sign In' })}
+          </Button>
         </Link>
       </div>
     );
@@ -498,9 +538,13 @@ export function ConversationView({
   if (notFound) {
     return (
       <div className="flex flex-col items-center justify-center py-20 px-4 text-center">
-        <p className="text-lg font-medium text-site-text mb-1">{t("conversation-not-found", { defaultValue: "Conversation not found" })}</p>
+        <p className="text-lg font-medium text-site-text mb-1">
+          {t('conversation-not-found', { defaultValue: 'Conversation not found' })}
+        </p>
         <Link to="/messages">
-          <Button variant="accent" size="sm">{t("back-to-messages", { defaultValue: "Back to Messages" })}</Button>
+          <Button variant="accent" size="sm">
+            {t('back-to-messages', { defaultValue: 'Back to Messages' })}
+          </Button>
         </Link>
       </div>
     );
@@ -511,7 +555,10 @@ export function ConversationView({
       {/* Header */}
       <div className="sticky top-0 z-10 glass-chrome border-b border-site-border shrink-0">
         <div className="flex items-center gap-3 px-4 py-3">
-          <Link to="/messages" className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface transition-colors">
+          <Link
+            to="/messages"
+            className="p-1.5 -ml-1.5 rounded-site-sm hover:bg-site-surface transition-colors"
+          >
             <ArrowLeft className="w-5 h-5 text-site-text" />
           </Link>
           {otherUser && (
@@ -519,7 +566,13 @@ export function ConversationView({
               to={`/u/${(otherUser as any).handle || otherUser.id}` as string}
               className="flex items-center gap-2 hover:opacity-80 transition-opacity"
             >
-              <UserAvatar src={otherUser.image ?? undefined} alt={otherUser.name || 'User'} size={32} fallbackName={otherUser.name ?? undefined} className="ring-2 ring-site-bg" />
+              <UserAvatar
+                src={otherUser.image ?? undefined}
+                alt={otherUser.name || 'User'}
+                size={32}
+                fallbackName={otherUser.name ?? undefined}
+                className="ring-2 ring-site-bg"
+              />
               <div>
                 <p className="font-(family-name:--site-font-display) font-bold text-sm text-site-text">
                   {otherUser.name || 'Unknown'}
@@ -548,7 +601,9 @@ export function ConversationView({
                   disabled={loadingOlder}
                   className="text-sm text-site-accent hover:underline disabled:opacity-50"
                 >
-                  {loadingOlder ? t("loading", { defaultValue: "Loading..." }) : t("load-older-messages", { defaultValue: "Load older messages" })}
+                  {loadingOlder
+                    ? t('loading', { defaultValue: 'Loading...' })
+                    : t('load-older-messages', { defaultValue: 'Load older messages' })}
                 </button>
               </div>
             )}
@@ -556,7 +611,9 @@ export function ConversationView({
             {messages.length === 0 && (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-sm text-site-text-muted">
-                  {t("no-messages-yet", { defaultValue: "No messages yet. Send one to start the conversation!" })}
+                  {t('no-messages-yet', {
+                    defaultValue: 'No messages yet. Send one to start the conversation!',
+                  })}
                 </p>
               </div>
             )}
@@ -568,10 +625,16 @@ export function ConversationView({
               const showDate = shouldShowDateSeparator(msg, prevMsg);
               // Show avatar on the last message in a consecutive group from the same sender
               const isFirstInGroup = !prevMsg || prevMsg.senderId !== msg.senderId || showDate;
-              const isLastInGroup = !nextMsg || nextMsg.senderId !== msg.senderId || shouldShowDateSeparator(nextMsg, msg);
+              const isLastInGroup =
+                !nextMsg ||
+                nextMsg.senderId !== msg.senderId ||
+                shouldShowDateSeparator(nextMsg, msg);
 
               const avatarUser = isSelf
-                ? { image: resolvedUser?.image || session.user.image, name: resolvedUser?.name || session.user.name }
+                ? {
+                    image: resolvedUser?.image || session.user.image,
+                    name: resolvedUser?.name || session.user.name,
+                  }
                 : { image: otherUser?.image, name: otherUser?.name };
 
               // Build per-corner rounding for grouped bubbles
@@ -611,18 +674,23 @@ export function ConversationView({
                       </span>
                     </div>
                   )}
-                  <div className={`flex items-end gap-2 ${isLastInGroup ? 'mb-3' : 'mb-0.5'} ${isSelf ? 'flex-row-reverse' : ''}`}>
+                  <div
+                    className={`flex items-end gap-2 ${isLastInGroup ? 'mb-3' : 'mb-0.5'} ${isSelf ? 'flex-row-reverse' : ''}`}
+                  >
                     {/* Avatar — visible only on last message in group */}
                     {isLastInGroup ? (
-                      <UserAvatar src={avatarUser.image ?? undefined} alt={avatarUser.name || 'User'} size={28} fallbackName={avatarUser.name ?? undefined} />
+                      <UserAvatar
+                        src={avatarUser.image ?? undefined}
+                        alt={avatarUser.name || 'User'}
+                        size={28}
+                        fallbackName={avatarUser.name ?? undefined}
+                      />
                     ) : (
                       <div className="w-7 shrink-0" />
                     )}
                     <div
                       className={`max-w-[75%] ${bubbleRounding} px-4 py-2.5 text-sm break-words ${
-                        isSelf
-                          ? 'bg-site-accent text-site-bg'
-                          : 'bg-site-text text-site-bg'
+                        isSelf ? 'bg-site-accent text-site-bg' : 'bg-site-text text-site-bg'
                       }`}
                       {...reactionTriggerFor(msg.id)}
                     >
@@ -635,7 +703,10 @@ export function ConversationView({
                       )}
                       {/* Structured rich media. */}
                       {msg.imageUrls && msg.imageUrls.length > 0 && (
-                        <PostImageGrid urls={msg.imageUrls} className="mt-1.5 rounded-site-sm overflow-hidden" />
+                        <PostImageGrid
+                          urls={msg.imageUrls}
+                          className="mt-1.5 rounded-site-sm overflow-hidden"
+                        />
                       )}
                       {msg.gifUrl && (
                         <img
@@ -645,7 +716,9 @@ export function ConversationView({
                           loading="lazy"
                         />
                       )}
-                      <p className={`text-[10px] mt-1 ${isSelf ? 'text-site-bg/60' : 'text-site-bg/55'}`}>
+                      <p
+                        className={`text-[10px] mt-1 ${isSelf ? 'text-site-bg/60' : 'text-site-bg/55'}`}
+                      >
                         {formatTime(msg.createdAt)}
                       </p>
                     </div>
@@ -670,7 +743,13 @@ export function ConversationView({
                   fallbackName={otherUser?.name ?? undefined}
                 />
                 <div className="bg-site-text text-site-bg rounded-tl-site-sm rounded-tr-site rounded-br-site rounded-bl-site-sm px-4 py-3">
-                  <div className="flex items-center gap-1" aria-label={t("user-is-typing", { name: otherUser?.name || t("user-fallback", { defaultValue: "User" }), defaultValue: "{{name}} is typing" })}>
+                  <div
+                    className="flex items-center gap-1"
+                    aria-label={t('user-is-typing', {
+                      name: otherUser?.name || t('user-fallback', { defaultValue: 'User' }),
+                      defaultValue: '{{name}} is typing',
+                    })}
+                  >
                     <span className="w-1.5 h-1.5 rounded-full bg-site-bg/50 animate-bounce [animation-delay:-0.3s]" />
                     <span className="w-1.5 h-1.5 rounded-full bg-site-bg/50 animate-bounce [animation-delay:-0.15s]" />
                     <span className="w-1.5 h-1.5 rounded-full bg-site-bg/50 animate-bounce" />
@@ -765,7 +844,7 @@ export function ConversationView({
                 if (shortcodes.onKeyDown(e)) return;
                 handleKeyDown(e);
               }}
-              placeholder={t("type-a-message", { defaultValue: "Type a message..." })}
+              placeholder={t('type-a-message', { defaultValue: 'Type a message...' })}
               rows={1}
               maxLength={2000}
               className="bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site px-4 py-2.5 border border-site-border outline-none focus:border-site-accent transition-colors resize-none max-h-32 overflow-y-auto"
@@ -782,30 +861,42 @@ export function ConversationView({
           <div className="relative shrink-0" ref={attachRef}>
             <button
               type="button"
-              aria-label={t("add-to-message", { defaultValue: "Add to message" })}
+              aria-label={t('add-to-message', { defaultValue: 'Add to message' })}
               aria-expanded={attachOpen}
               onClick={() => setAttachOpen((v) => !v)}
               disabled={uploading}
               className="h-[42px] rounded-site px-3 text-site-text-dim transition-colors hover:bg-site-surface hover:text-site-accent disabled:opacity-50"
             >
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="h-5 w-5" />
+              )}
             </button>
             {attachOpen && (
               <div className="absolute bottom-full right-0 z-30 mb-1 w-40 rounded-site border border-site-border bg-site-bg py-1 shadow-xl">
                 <button
                   type="button"
                   disabled={imageUrls.length >= MAX_DM_IMAGES}
-                  onClick={() => { setAttachOpen(false); imageInputRef.current?.click(); }}
+                  onClick={() => {
+                    setAttachOpen(false);
+                    imageInputRef.current?.click();
+                  }}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  <ImagePlus className="h-4 w-4 text-site-text-dim" /> {t("menu-add-image", { defaultValue: "Add Image" })}
+                  <ImagePlus className="h-4 w-4 text-site-text-dim" />{' '}
+                  {t('menu-add-image', { defaultValue: 'Add Image' })}
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setAttachOpen(false); setShowGifPicker((v) => !v); }}
+                  onClick={() => {
+                    setAttachOpen(false);
+                    setShowGifPicker((v) => !v);
+                  }}
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm text-site-text hover:bg-site-surface"
                 >
-                  <ImagePlay className="h-4 w-4 text-site-text-dim" /> {t("menu-add-gif", { defaultValue: "Add GIF" })}
+                  <ImagePlay className="h-4 w-4 text-site-text-dim" />{' '}
+                  {t('menu-add-gif', { defaultValue: 'Add GIF' })}
                 </button>
               </div>
             )}

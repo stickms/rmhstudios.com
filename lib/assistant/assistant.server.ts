@@ -79,7 +79,10 @@ async function bumpDailyCount(userId: string): Promise<number> {
 }
 
 // ─── Prompt + link handling ─────────────────────────────────────────────────
-function buildContext(entries: KnowledgeEntry[]): { context: string; allowedRoutes: Map<string, string> } {
+function buildContext(entries: KnowledgeEntry[]): {
+  context: string;
+  allowedRoutes: Map<string, string>;
+} {
   const allowedRoutes = new Map<string, string>(); // route -> suggested label (title)
   const lines = entries.map((e, i) => {
     if (e.route) allowedRoutes.set(e.route, e.title);
@@ -111,8 +114,13 @@ function parseModelOutput(raw: string, allowedRoutes: Map<string, string>): Assi
     const answer = typeof parsed.answer === 'string' ? parsed.answer.trim() : '';
     const links: AssistantLink[] = Array.isArray(parsed.links)
       ? parsed.links
-          .filter((l): l is { label?: unknown; to?: unknown } => Boolean(l) && typeof l === 'object')
-          .map((l) => ({ label: String((l as { label?: unknown }).label ?? ''), to: String((l as { to?: unknown }).to ?? '') }))
+          .filter(
+            (l): l is { label?: unknown; to?: unknown } => Boolean(l) && typeof l === 'object',
+          )
+          .map((l) => ({
+            label: String((l as { label?: unknown }).label ?? ''),
+            to: String((l as { to?: unknown }).to ?? ''),
+          }))
           // Allowlist: only routes we actually surfaced are permitted.
           .filter((l) => l.to && allowedRoutes.has(l.to))
           .map((l) => ({ label: l.label || allowedRoutes.get(l.to)!, to: l.to }))
@@ -139,14 +147,23 @@ function dedupeLinks(links: AssistantLink[]): AssistantLink[] {
 
 /** Fallback links: top retrieved entries that have a route. */
 function fallbackLinks(entries: KnowledgeEntry[]): AssistantLink[] {
-  return dedupeLinks(entries.filter((e) => e.route).slice(0, 3).map((e) => ({ label: e.title, to: e.route! }))).slice(0, 3);
+  return dedupeLinks(
+    entries
+      .filter((e) => e.route)
+      .slice(0, 3)
+      .map((e) => ({ label: e.title, to: e.route! })),
+  ).slice(0, 3);
 }
 
-function trimHistory(history: AssistantHistoryTurn[] | undefined): { role: 'user' | 'assistant'; content: string }[] {
+function trimHistory(
+  history: AssistantHistoryTurn[] | undefined,
+): { role: 'user' | 'assistant'; content: string }[] {
   if (!Array.isArray(history)) return [];
   return history
     .slice(-8)
-    .filter((t) => t && (t.role === 'user' || t.role === 'assistant') && typeof t.content === 'string')
+    .filter(
+      (t) => t && (t.role === 'user' || t.role === 'assistant') && typeof t.content === 'string',
+    )
     .map((t) => ({ role: t.role, content: t.content.slice(0, 1000) }));
 }
 
@@ -207,7 +224,9 @@ export async function answerQuestion(params: {
     const out = parseModelOutput(raw, allowedRoutes);
     // If the model produced prose but no links, offer retrieval-based ones.
     if (out.links.length === 0) out.links = fallbackLinks(entries);
-    if (!out.answer) out.answer = "I'm not sure about that one — try asking about a specific game, app, or feature.";
+    if (!out.answer)
+      out.answer =
+        "I'm not sure about that one — try asking about a specific game, app, or feature.";
     return { ...out, remaining };
   } catch (error) {
     console.error('[assistant] model call failed:', error instanceof Error ? error.message : error);

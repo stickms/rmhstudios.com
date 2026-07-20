@@ -25,7 +25,10 @@ export const Route = createFileRoute('/_site/spaces/')({
   head: () => ({
     meta: [
       { title: 'Live Spaces | RMH Studios' },
-      { name: 'description', content: 'Drop into live rooms — chat, listen, and hang out in real time.' },
+      {
+        name: 'description',
+        content: 'Drop into live rooms — chat, listen, and hang out in real time.',
+      },
     ],
   }),
   loader: () => fetchLiveSpaces(),
@@ -52,7 +55,9 @@ function SpacesIndexPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error ?? t('space-create-failed', { defaultValue: 'Could not start the Space.' }));
+        toast.error(
+          data.error ?? t('space-create-failed', { defaultValue: 'Could not start the Space.' }),
+        );
         return;
       }
       navigate({ to: '/spaces/$id', params: { id: data.space.id } });
@@ -76,7 +81,9 @@ function SpacesIndexPage() {
             {t('spaces-title', { defaultValue: 'Spaces' })}
           </h1>
           <p className="text-sm text-site-text-dim">
-            {t('spaces-subtitle', { defaultValue: 'Live rooms to chat, listen together, and hang out in real time.' })}
+            {t('spaces-subtitle', {
+              defaultValue: 'Live rooms to chat, listen together, and hang out in real time.',
+            })}
           </p>
 
           {session ? (
@@ -88,7 +95,9 @@ function SpacesIndexPage() {
                   if (e.key === 'Enter') void create();
                 }}
                 maxLength={120}
-                placeholder={t('spaces-create-placeholder', { defaultValue: 'Give your Space a title…' })}
+                placeholder={t('spaces-create-placeholder', {
+                  defaultValue: 'Give your Space a title…',
+                })}
                 className="min-w-0 flex-1 rounded-site border border-site-border bg-site-surface px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
               />
               <Button onClick={() => void create()} disabled={creating || !title.trim()}>
@@ -124,9 +133,13 @@ function SpacesIndexPage() {
                   >
                     <div className="flex items-center gap-1.5 text-xs text-site-text-dim">
                       <Radio className="h-3.5 w-3.5 text-site-accent" aria-hidden />
-                      {s.community?.name ?? s.host.name ?? t('space-fallback-host', { defaultValue: 'Space' })}
+                      {s.community?.name ??
+                        s.host.name ??
+                        t('space-fallback-host', { defaultValue: 'Space' })}
                     </div>
-                    <div className="line-clamp-2 text-sm font-semibold text-site-text">{s.title}</div>
+                    <div className="line-clamp-2 text-sm font-semibold text-site-text">
+                      {s.title}
+                    </div>
                   </Link>
                 </li>
               ))}

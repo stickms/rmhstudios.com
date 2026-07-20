@@ -38,7 +38,10 @@ export function LiveNowRail({ className }: { className?: string }) {
   if (spaces.length === 0) return null;
 
   return (
-    <section className={cn('border-b border-site-border px-4 py-3', className)} aria-label={t('live-now', { defaultValue: 'Live now' })}>
+    <section
+      className={cn('border-b border-site-border px-4 py-3', className)}
+      aria-label={t('live-now', { defaultValue: 'Live now' })}
+    >
       <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-danger">
         <span className="h-2 w-2 animate-pulse rounded-full bg-site-danger" aria-hidden />
         {t('live-now', { defaultValue: 'Live now' })}
@@ -53,7 +56,9 @@ export function LiveNowRail({ className }: { className?: string }) {
           >
             <div className="flex items-center gap-1.5 text-xs text-site-text-muted">
               <Radio className="h-3.5 w-3.5 text-site-accent" aria-hidden />
-              {s.community?.name ?? s.host.name ?? t('space-fallback-host', { defaultValue: 'Space' })}
+              {s.community?.name ??
+                s.host.name ??
+                t('space-fallback-host', { defaultValue: 'Space' })}
             </div>
             <div className="line-clamp-2 text-sm font-semibold text-site-text">{s.title}</div>
           </Link>

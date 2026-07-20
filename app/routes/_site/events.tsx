@@ -22,7 +22,9 @@ type EventTab = 'upcoming' | 'communities' | 'mine';
 // Single server function powering both the SSR loader and client-side tab
 // switches. On the client, TanStack Start turns this into an RPC.
 const loadEvents = createServerFn({ method: 'GET' })
-  .validator((tab: EventTab): EventTab => (tab === 'communities' || tab === 'mine' ? tab : 'upcoming'))
+  .validator((tab: EventTab): EventTab =>
+    tab === 'communities' || tab === 'mine' ? tab : 'upcoming',
+  )
   .handler(async ({ data: tab }): Promise<{ events: EventDTO[]; signedIn: boolean }> => {
     const request = getRequest();
     const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
@@ -40,7 +42,8 @@ export const Route = createFileRoute('/_site/events')({
       { title: 'Events | RMH Studios' },
       {
         name: 'description',
-        content: 'Upcoming community events, tournaments, watch parties, and game nights. RSVP and get reminders.',
+        content:
+          'Upcoming community events, tournaments, watch parties, and game nights. RSVP and get reminders.',
       },
     ],
   }),
@@ -82,8 +85,16 @@ function EventsPage() {
   }, [tab]);
 
   const tabs: { id: EventTab; label: string; requiresAuth: boolean }[] = [
-    { id: 'upcoming', label: t('events-tab-upcoming', { defaultValue: 'Upcoming' }), requiresAuth: false },
-    { id: 'communities', label: t('events-tab-communities', { defaultValue: 'My communities' }), requiresAuth: true },
+    {
+      id: 'upcoming',
+      label: t('events-tab-upcoming', { defaultValue: 'Upcoming' }),
+      requiresAuth: false,
+    },
+    {
+      id: 'communities',
+      label: t('events-tab-communities', { defaultValue: 'My communities' }),
+      requiresAuth: true,
+    },
     { id: 'mine', label: t('events-tab-mine', { defaultValue: "RSVP'd" }), requiresAuth: true },
   ];
 
@@ -149,10 +160,16 @@ function EventsPage() {
               icon={CalendarDays}
               description={
                 tab === 'mine'
-                  ? t('no-rsvp-events', { defaultValue: "You haven't RSVP'd to any upcoming events yet." })
+                  ? t('no-rsvp-events', {
+                      defaultValue: "You haven't RSVP'd to any upcoming events yet.",
+                    })
                   : tab === 'communities'
-                    ? t('no-community-events', { defaultValue: 'No upcoming events in your communities.' })
-                    : t('no-upcoming-events', { defaultValue: 'No upcoming events yet — create the first one!' })
+                    ? t('no-community-events', {
+                        defaultValue: 'No upcoming events in your communities.',
+                      })
+                    : t('no-upcoming-events', {
+                        defaultValue: 'No upcoming events yet — create the first one!',
+                      })
               }
             />
           ) : (
@@ -166,7 +183,9 @@ function EventsPage() {
       </AnimatedMain>
       <div className="hidden lg:block w-4 shrink-0" />
 
-      {signedIn && <EventComposer open={composerOpen} onOpenChange={setComposerOpen} onCreated={onCreated} />}
+      {signedIn && (
+        <EventComposer open={composerOpen} onOpenChange={setComposerOpen} onCreated={onCreated} />
+      )}
     </>
   );
 }

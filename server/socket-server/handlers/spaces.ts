@@ -185,7 +185,8 @@ export function registerSpacesHandlers(io: Server, socket: Socket, _ctx?: unknow
 
   // ─── Leave ───
   socket.on(SPACE_C2S.LEAVE, (payload: { spaceId?: string }) => {
-    const spaceId = typeof payload?.spaceId === 'string' ? payload.spaceId : socketToSpace.get(socket.id);
+    const spaceId =
+      typeof payload?.spaceId === 'string' ? payload.spaceId : socketToSpace.get(socket.id);
     if (spaceId) socket.leave(roomName(spaceId));
     removeSocketFromSpace(io, socket.id);
   });
@@ -227,7 +228,9 @@ export function registerSpacesHandlers(io: Server, socket: Socket, _ctx?: unknow
       const prisma = getPrismaClient();
       prisma.spaceMessage
         .create({ data: { spaceId, userId, body } })
-        .catch((err: Error) => logger.warn({ event: 'space_chat_persist_failed', spaceId, error: err.message }));
+        .catch((err: Error) =>
+          logger.warn({ event: 'space_chat_persist_failed', spaceId, error: err.message }),
+        );
     }
   });
 
@@ -260,7 +263,8 @@ export function registerSpacesHandlers(io: Server, socket: Socket, _ctx?: unknow
       return;
     }
 
-    const pinned = payload?.pinned == null ? null : isPinned(payload.pinned) ? payload.pinned : undefined;
+    const pinned =
+      payload?.pinned == null ? null : isPinned(payload.pinned) ? payload.pinned : undefined;
     if (pinned === undefined) return; // invalid shape
     space.pinned = pinned;
 
@@ -272,9 +276,13 @@ export function registerSpacesHandlers(io: Server, socket: Socket, _ctx?: unknow
     prisma.space
       .update({
         where: { id: spaceId },
-        data: { pinned: pinned === null ? Prisma.JsonNull : (pinned as unknown as Prisma.InputJsonValue) },
+        data: {
+          pinned: pinned === null ? Prisma.JsonNull : (pinned as unknown as Prisma.InputJsonValue),
+        },
       })
-      .catch((err: Error) => logger.warn({ event: 'space_pin_persist_failed', spaceId, error: err.message }));
+      .catch((err: Error) =>
+        logger.warn({ event: 'space_pin_persist_failed', spaceId, error: err.message }),
+      );
   });
 
   // ─── End (host only) ───
@@ -297,7 +305,9 @@ export function registerSpacesHandlers(io: Server, socket: Socket, _ctx?: unknow
     const prisma = getPrismaClient();
     prisma.space
       .update({ where: { id: spaceId }, data: { status: 'ENDED', endedAt: new Date() } })
-      .catch((err: Error) => logger.warn({ event: 'space_end_persist_failed', spaceId, error: err.message }));
+      .catch((err: Error) =>
+        logger.warn({ event: 'space_end_persist_failed', spaceId, error: err.message }),
+      );
 
     logger.info({ event: 'space_ended', spaceId, hostId: userId });
   });

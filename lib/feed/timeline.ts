@@ -14,24 +14,24 @@
  * path no longer does `_count` aggregation per item.
  */
 
-import { Prisma } from "@prisma/client";
-import { prisma } from "../prisma.server";
-import type { FeedItem, FeedFilter, FeedPoll } from "../feed-types";
-import type { ResolvedUser } from "../user-display";
-import { getUserDisplayMap } from "../user-display.server";
-import { getAllPosts } from "../blog";
-import { decodeCursor, encodeCursor, keysetWhere } from "./cursor";
-import { rankCandidates, type RankContext } from "./ranking";
-import { buildInterestProfile } from "./personalize.server";
-import { getHiddenAuthorIds } from "../moderation.server";
-import { getFollowingIds } from "../social/follow-graph.server";
-import { audienceWhere } from "./audience.server";
-import { applyLock } from "./map-feed-item.server";
-import type { ReactionSummary } from "../social/reactions";
-import { apiCache } from "../cache";
-import { cachedSWR } from "../cached.server";
+import { Prisma } from '@prisma/client';
+import { prisma } from '../prisma.server';
+import type { FeedItem, FeedFilter, FeedPoll } from '../feed-types';
+import type { ResolvedUser } from '../user-display';
+import { getUserDisplayMap } from '../user-display.server';
+import { getAllPosts } from '../blog';
+import { decodeCursor, encodeCursor, keysetWhere } from './cursor';
+import { rankCandidates, type RankContext } from './ranking';
+import { buildInterestProfile } from './personalize.server';
+import { getHiddenAuthorIds } from '../moderation.server';
+import { getFollowingIds } from '../social/follow-graph.server';
+import { audienceWhere } from './audience.server';
+import { applyLock } from './map-feed-item.server';
+import type { ReactionSummary } from '../social/reactions';
+import { apiCache } from '../cache';
+import { cachedSWR } from '../cached.server';
 
-export type FeedSurface = "following" | "foryou";
+export type FeedSurface = 'following' | 'foryou';
 
 export interface GetTimelineParams {
   /** Viewer id (for liked/reposted state and the follow graph); null = anon. */
@@ -109,7 +109,7 @@ function pollInclude(userId: string | null) {
   return {
     include: {
       options: {
-        orderBy: { position: "asc" as const },
+        orderBy: { position: 'asc' as const },
         // `voteCount` is the denormalized per-option tally column (maintained
         // atomically by the vote route), so the feed read no longer aggregates
         // `_count.votes` per option on every render. The scalar column is
@@ -127,7 +127,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
   if (!poll) return undefined;
   const totalVotes = poll.options.reduce(
     (sum: number, o: { voteCount?: number }) => sum + (o.voteCount ?? 0),
-    0
+    0,
   );
   return {
     id: poll.id,
@@ -140,9 +140,7 @@ function mapPoll(poll: any): FeedPoll | undefined {
       text: o.text,
       voteCount: o.voteCount ?? 0,
     })),
-    myVotes: poll.options
-      .filter((o: any) => o.votes?.length > 0)
-      .map((o: any) => o.id),
+    myVotes: poll.options.filter((o: any) => o.votes?.length > 0).map((o: any) => o.id),
   };
 }
 
@@ -252,7 +250,7 @@ async function loadReactionSummaries(
 
   const [grouped, mine] = await Promise.all([
     prisma.rMHarkReaction.groupBy({
-      by: ["rmheetId", "emoji"],
+      by: ['rmheetId', 'emoji'],
       where: { rmheetId: { in: ids } },
       _count: { _all: true },
     }),
@@ -282,7 +280,7 @@ async function loadReactionSummaries(
 /** Fill in each rmhark item's `reactions` from a pre-loaded summary map (mutates). */
 function attachReactions(items: FeedItem[], summaries: Map<string, ReactionSummary[]>): void {
   for (const item of items) {
-    if (item.type !== "rmhark") continue;
+    if (item.type !== 'rmhark') continue;
     // For a repost, the reactions belong to the underlying post (actualId).
     item.reactions = summaries.get(item.actualId ?? item.id) ?? [];
   }
@@ -290,8 +288,8 @@ function attachReactions(items: FeedItem[], summaries: Map<string, ReactionSumma
 
 function deletedMessageFor(record: { deletedByAdmin?: boolean }): string {
   return record.deletedByAdmin
-    ? "[This RMHark was deleted by an admin]"
-    : "[This RMHark was deleted by the user]";
+    ? '[This RMHark was deleted by an admin]'
+    : '[This RMHark was deleted by the user]';
 }
 
 function mapOriginal(o: any, displayMap: Map<string, ResolvedUser>): FeedItem | undefined {
@@ -299,10 +297,10 @@ function mapOriginal(o: any, displayMap: Map<string, ResolvedUser>): FeedItem | 
   const isDeleted = !!o.deletedAt;
   // Only free, public originals expose their media in the quote card —
   // paid/followers-only content must not leak through a quote.
-  const showMedia = !isDeleted && (o.unlockPrice ?? 0) === 0 && o.audience === "PUBLIC";
+  const showMedia = !isDeleted && (o.unlockPrice ?? 0) === 0 && o.audience === 'PUBLIC';
   return {
     id: o.id,
-    type: "rmhark",
+    type: 'rmhark',
     createdAt: o.createdAt.toISOString(),
     content: isDeleted ? deletedMessageFor(o) : o.content,
     user: displayUser(displayMap, o.userId),
@@ -322,7 +320,7 @@ function mapOwn(r: any, userId: string | null, displayMap: Map<string, ResolvedU
   const isDeleted = !!r.deletedAt;
   const item: FeedItem = {
     id: r.id,
-    type: "rmhark",
+    type: 'rmhark',
     createdAt: r.createdAt.toISOString(),
     content: isDeleted ? deletedMessageFor(r) : r.content,
     user: displayUser(displayMap, r.userId),
@@ -349,12 +347,16 @@ function mapOwn(r: any, userId: string | null, displayMap: Map<string, ResolvedU
   return isDeleted ? item : applyLock(item, r, userId);
 }
 
-function mapRepost(rp: any, userId: string | null, displayMap: Map<string, ResolvedUser>): FeedItem {
+function mapRepost(
+  rp: any,
+  userId: string | null,
+  displayMap: Map<string, ResolvedUser>,
+): FeedItem {
   const r = rp.rmhark;
   const isDeleted = !!r.deletedAt;
   const item: FeedItem = {
     id: `repost:${rp.id}`,
-    type: "rmhark",
+    type: 'rmhark',
     createdAt: rp.createdAt.toISOString(),
     actualId: r.id,
     content: isDeleted ? deletedMessageFor(r) : r.content,
@@ -386,7 +388,7 @@ function mapRepost(rp: any, userId: string | null, displayMap: Map<string, Resol
  * for reposts, otherwise the post id. Used to build the next-page cursor.
  */
 function keysetOf(item: FeedItem): { createdAt: string; id: string } {
-  const id = item.id.startsWith("repost:") ? item.id.slice("repost:".length) : item.id;
+  const id = item.id.startsWith('repost:') ? item.id.slice('repost:'.length) : item.id;
   return { createdAt: item.createdAt, id };
 }
 
@@ -403,17 +405,17 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
   const cached = apiCache.get<FeedItem[]>(cacheKey);
   if (cached) return cached;
 
-  const { games } = await import("../games");
-  const { apps } = await import("../apps");
+  const { games } = await import('../games');
+  const { apps } = await import('../apps');
   const items: FeedItem[] = [];
 
-  if (filter === "all" || filter === "app" || filter === "game") {
-    if (filter === "all" || filter === "game") {
+  if (filter === 'all' || filter === 'app' || filter === 'game') {
+    if (filter === 'all' || filter === 'game') {
       for (const g of games) {
         items.push({
           id: `build:${g.id}`,
-          type: "game_announcement",
-          createdAt: "2025-01-01T00:00:00.000Z",
+          type: 'game_announcement',
+          createdAt: '2025-01-01T00:00:00.000Z',
           title: g.title,
           description: g.description,
           href: g.href,
@@ -424,13 +426,13 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
         });
       }
     }
-    if (filter === "all" || filter === "app") {
+    if (filter === 'all' || filter === 'app') {
       for (const a of apps) {
         if (a.hidden) continue;
         items.push({
           id: `build:${a.id}`,
-          type: "app_announcement",
-          createdAt: "2025-01-01T00:00:00.000Z",
+          type: 'app_announcement',
+          createdAt: '2025-01-01T00:00:00.000Z',
           title: a.title,
           description: a.description,
           href: a.href,
@@ -443,13 +445,13 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
     }
   }
 
-  if (filter === "all" || filter === "blog") {
-    const posts = await getAllPosts(["title", "date", "slug", "description", "image", "tags"]);
+  if (filter === 'all' || filter === 'blog') {
+    const posts = await getAllPosts(['title', 'date', 'slug', 'description', 'image', 'tags']);
     for (const p of posts) {
       items.push({
         id: `blog:${p.slug}`,
-        type: "blog",
-        createdAt: p.date ? new Date(p.date).toISOString() : "2025-01-01T00:00:00.000Z",
+        type: 'blog',
+        createdAt: p.date ? new Date(p.date).toISOString() : '2025-01-01T00:00:00.000Z',
         title: p.title,
         description: p.description,
         href: `/blog/${p.slug}`,
@@ -467,9 +469,7 @@ async function getAnnouncementItems(filter: FeedFilter): Promise<FeedItem[]> {
 /*  Following surface (follow-graph home, strict reverse-chron)         */
 /* ------------------------------------------------------------------ */
 
-async function getFollowingTimeline(
-  params: GetTimelineParams
-): Promise<TimelineResult> {
+async function getFollowingTimeline(params: GetTimelineParams): Promise<TimelineResult> {
   const { userId, cursor, limit, search } = params;
   if (!userId) {
     return { items: [], nextCursor: null, hasMore: false, empty: true };
@@ -500,7 +500,7 @@ async function getFollowingTimeline(
       where: {
         userId: { in: followingIds },
         deletedAt: null,
-        audience: { not: "PRIVATE" },
+        audience: { not: 'PRIVATE' },
         communityId: null,
         // Only thread roots + standalone posts in the feed; follow-up segments
         // (threadRootId set) are read on the thread page.
@@ -508,7 +508,7 @@ async function getFollowingTimeline(
         ...contentWhere,
         ...keyset,
       },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limit,
       include,
     }),
@@ -522,7 +522,7 @@ async function getFollowingTimeline(
         },
         ...keyset,
       },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       take: limit,
       include: {
         rmhark: { include },
@@ -541,7 +541,13 @@ async function getFollowingTimeline(
 
   const items = deduplicateReposts(merged).slice(0, limit);
 
-  attachReactions(items, await loadReactionSummaries(items.map((i) => i.actualId ?? i.id), userId));
+  attachReactions(
+    items,
+    await loadReactionSummaries(
+      items.map((i) => i.actualId ?? i.id),
+      userId,
+    ),
+  );
 
   const nextCursor =
     items.length === limit
@@ -558,9 +564,7 @@ async function getFollowingTimeline(
 /*  For-You surface (global; chrono + announcements, ranking seam)      */
 /* ------------------------------------------------------------------ */
 
-async function getForYouTimeline(
-  params: GetTimelineParams
-): Promise<TimelineResult> {
+async function getForYouTimeline(params: GetTimelineParams): Promise<TimelineResult> {
   const { userId, cursor, limit, search, filter } = params;
   const decoded = decodeCursor(cursor);
   const keyset = keysetWhere(decoded);
@@ -570,7 +574,7 @@ async function getForYouTimeline(
   const contentWhere = await searchContentWhere(search);
   const include = rmharkInclude(userId);
 
-  const shouldFetchRmharks = filter === "all" || filter === "rmhark" || !!search;
+  const shouldFetchRmharks = filter === 'all' || filter === 'rmhark' || !!search;
 
   // Only the hidden-author set + follow graph gate the main feed query (they shape
   // its WHERE), so resolve just those before it. Everything else is NOT an input to
@@ -603,8 +607,16 @@ async function getForYouTimeline(
       prisma.rMHark.findMany({
         // threadRootId:null keeps only thread roots + standalone posts in the
         // feed; follow-up segments are read on the thread page.
-        where: { deletedAt: null, communityId: null, threadRootId: null, ...contentWhere, ...authorWhere, ...audWhere, ...keyset },
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        where: {
+          deletedAt: null,
+          communityId: null,
+          threadRootId: null,
+          ...contentWhere,
+          ...authorWhere,
+          ...audWhere,
+          ...keyset,
+        },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         take: limit,
         include,
       }),
@@ -614,7 +626,7 @@ async function getForYouTimeline(
           ...(hiddenIds.length ? { userId: { notIn: hiddenIds } } : {}),
           ...keyset,
         },
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         take: limit,
         include: {
           rmhark: { include },
@@ -635,7 +647,7 @@ async function getForYouTimeline(
       [
         ...rmharks.map((r) => mapOwn(r, userId, displayMap)),
         ...repostRecords.map((rp) => mapRepost(rp, userId, displayMap)),
-      ].sort(compareKeysetDesc)
+      ].sort(compareKeysetDesc),
     ).slice(0, limit);
 
     const interest = await interestPromise;
@@ -657,11 +669,11 @@ async function getForYouTimeline(
 
   let paginatedItems: FeedItem[];
 
-  if (filter === "all") {
+  if (filter === 'all') {
     // Interleave: 3 RMHarks per 1 announcement to prioritize user content.
     // Copy before sorting — `announcements` may be a shared cached array.
     const sortedAnnouncements = [...announcements].sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
     const result: FeedItem[] = [];
     let ri = 0;
@@ -683,7 +695,7 @@ async function getForYouTimeline(
 
   // Cursor is anchored to the last real DB item (RMHark) — announcements have
   // static dates that would break keyset pagination.
-  const lastDbItem = [...paginatedItems].reverse().find((i) => i.type === "rmhark");
+  const lastDbItem = [...paginatedItems].reverse().find((i) => i.type === 'rmhark');
   const nextCursor =
     paginatedItems.length === limit && lastDbItem
       ? (() => {
@@ -750,8 +762,8 @@ export function applyMutedWords(items: FeedItem[], muted: string[]): FeedItem[] 
   if (!muted.length) return items;
   return items.filter(
     (it) =>
-      it.type !== "rmhark" ||
-      !(contentIsMuted(it.content, muted) || contentIsMuted(it.original?.content, muted))
+      it.type !== 'rmhark' ||
+      !(contentIsMuted(it.content, muted) || contentIsMuted(it.original?.content, muted)),
   );
 }
 
@@ -788,9 +800,7 @@ async function assembleTimeline(params: GetTimelineParams): Promise<TimelineResu
   // id, so run it alongside the timeline assembly rather than after it — one
   // fewer serial round-trip on the hot path. Skipped for signed-out viewers.
   const [result, muted] = await Promise.all([
-    params.surface === "following"
-      ? getFollowingTimeline(params)
-      : getForYouTimeline(params),
+    params.surface === 'following' ? getFollowingTimeline(params) : getForYouTimeline(params),
     params.userId ? getMutedWords(params.userId) : Promise.resolve([] as string[]),
   ]);
 
@@ -811,8 +821,8 @@ export async function getTimeline(params: GetTimelineParams): Promise<TimelineRe
   // burst of visitors into ONE assemble instead of one-per-request.
   const anonCacheable =
     !params.userId &&
-    params.surface === "foryou" &&
-    params.filter === "all" &&
+    params.surface === 'foryou' &&
+    params.filter === 'all' &&
     !params.cursor &&
     !params.search;
   if (anonCacheable) {

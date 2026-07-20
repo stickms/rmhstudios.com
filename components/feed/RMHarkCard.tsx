@@ -70,7 +70,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const displayUser = useMemo(() => {
     if (!cachedUser) return item.user;
     if (isAuthor && resolvedUser) {
-      return { ...cachedUser, image: resolvedUser.image, name: resolvedUser.name ?? cachedUser.name };
+      return {
+        ...cachedUser,
+        image: resolvedUser.image,
+        name: resolvedUser.name ?? cachedUser.name,
+      };
     }
     return cachedUser;
   }, [cachedUser, item.user, isAuthor, resolvedUser]);
@@ -111,7 +115,10 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     }
     setTranslating(true);
     try {
-      const res = await fetch(`/api/rmharks/${actualId}/translate?to=${encodeURIComponent(LOCALE_TO_LANGUAGE_NAME[locale])}`, { credentials: 'include' });
+      const res = await fetch(
+        `/api/rmharks/${actualId}/translate?to=${encodeURIComponent(LOCALE_TO_LANGUAGE_NAME[locale])}`,
+        { credentials: 'include' },
+      );
       if (!res.ok) {
         toast.error(t('translate-error', { defaultValue: 'Could not translate this post.' }));
         return;
@@ -127,7 +134,8 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   };
 
   const linkPreviewUrl = useMemo(() => {
-    if (item.poll || item.gifUrl || (item.imageUrls && item.imageUrls.length > 0) || !item.content) return null;
+    if (item.poll || item.gifUrl || (item.imageUrls && item.imageUrls.length > 0) || !item.content)
+      return null;
     return extractFirstUrl(item.content);
   }, [item.poll, item.gifUrl, item.imageUrls, item.content]);
 
@@ -243,11 +251,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       {freshRepostedBy && (
         <div className="flex items-center gap-1.5 text-xs text-site-text-dim mb-2 ml-12">
           <Repeat2 className="w-3.5 h-3.5" />
-          <Link
-            to={userProfileHref(freshRepostedBy)}
-            className="hover:underline"
-          >
-            {freshRepostedBy.name || freshRepostedBy.handle || t('someone', { defaultValue: 'Someone' })} reRMHark&apos;d
+          <Link to={userProfileHref(freshRepostedBy)} className="hover:underline">
+            {freshRepostedBy.name ||
+              freshRepostedBy.handle ||
+              t('someone', { defaultValue: 'Someone' })}{' '}
+            reRMHark&apos;d
           </Link>
         </div>
       )}
@@ -255,7 +263,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
       <div className="flex gap-3">
         {item.user ? (
           <ProfileHoverCard userId={item.user.handle || item.user.id}>
-            <span className="shrink-0 self-start"><UserAvatar user={displayUser} /></span>
+            <span className="shrink-0 self-start">
+              <UserAvatar user={displayUser} />
+            </span>
           </ProfileHoverCard>
         ) : (
           <UserAvatar user={displayUser} />
@@ -266,36 +276,44 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           <div className="flex items-center gap-1.5 text-sm pr-6">
             {item.user ? (
               <ProfileHoverCard userId={item.user.handle || item.user.id}>
-              <Link to={userProfileHref(item.user)} className="flex items-center gap-1.5 min-w-0 hover:underline">
-              <span
-                className="font-bold text-site-text truncate"
-                style={
-                  displayUser?.cosmetics?.nameColor?.gradient
-                    ? { background: displayUser.cosmetics.nameColor.gradient, WebkitBackgroundClip: 'text', backgroundClip: 'text', color: 'transparent' }
-                    : displayUser?.cosmetics?.nameColor?.color
-                    ? { color: displayUser.cosmetics.nameColor.color }
-                    : undefined
-                }
-              >
-                {displayUser?.name || t('unknown-user', { defaultValue: 'Unknown' })}
-              </span>
-              {displayUser?.cosmetics?.badge?.emoji && (
-                <span className="shrink-0" title="Equipped badge">{displayUser.cosmetics.badge.emoji}</span>
-              )}
-              {item.user.isVerified && (
-                <BadgeCheck className="w-4 h-4 text-site-success shrink-0" />
-              )}
-              {item.user.isAdmin && (
-                <span title="Admin" className="inline-flex items-center shrink-0">
-                  <ShieldCheck className="w-4 h-4 text-site-accent" />
-                </span>
-              )}
-              {item.user.handle && (
-                <span className="text-site-text-dim truncate">
-                  @{item.user.handle}
-                </span>
-              )}
-            </Link>
+                <Link
+                  to={userProfileHref(item.user)}
+                  className="flex items-center gap-1.5 min-w-0 hover:underline"
+                >
+                  <span
+                    className="font-bold text-site-text truncate"
+                    style={
+                      displayUser?.cosmetics?.nameColor?.gradient
+                        ? {
+                            background: displayUser.cosmetics.nameColor.gradient,
+                            WebkitBackgroundClip: 'text',
+                            backgroundClip: 'text',
+                            color: 'transparent',
+                          }
+                        : displayUser?.cosmetics?.nameColor?.color
+                          ? { color: displayUser.cosmetics.nameColor.color }
+                          : undefined
+                    }
+                  >
+                    {displayUser?.name || t('unknown-user', { defaultValue: 'Unknown' })}
+                  </span>
+                  {displayUser?.cosmetics?.badge?.emoji && (
+                    <span className="shrink-0" title="Equipped badge">
+                      {displayUser.cosmetics.badge.emoji}
+                    </span>
+                  )}
+                  {item.user.isVerified && (
+                    <BadgeCheck className="w-4 h-4 text-site-success shrink-0" />
+                  )}
+                  {item.user.isAdmin && (
+                    <span title="Admin" className="inline-flex items-center shrink-0">
+                      <ShieldCheck className="w-4 h-4 text-site-accent" />
+                    </span>
+                  )}
+                  {item.user.handle && (
+                    <span className="text-site-text-dim truncate">@{item.user.handle}</span>
+                  )}
+                </Link>
               </ProfileHoverCard>
             ) : (
               <span className="font-bold text-site-text truncate">
@@ -310,7 +328,9 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
               · {timeAgoShort(item.createdAt)}
             </span>
             {item.edited && (
-              <span className="text-site-text-dim shrink-0" title="Edited">· {t('edited', { defaultValue: 'edited' })}</span>
+              <span className="text-site-text-dim shrink-0" title="Edited">
+                · {t('edited', { defaultValue: 'edited' })}
+              </span>
             )}
           </div>
 
@@ -319,58 +339,67 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
             <PostLockedCard
               postId={actualId}
               price={item.unlockPrice ?? 0}
-              onUnlocked={(content) => updateItem(item.id, { content, locked: false, unlockPrice: undefined })}
+              onUnlocked={(content) =>
+                updateItem(item.id, { content, locked: false, unlockPrice: undefined })
+              }
             />
           ) : (
-          <>
-          {/* Content */}
-          {item.content && (
-            <RMHarkContent text={item.content} className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words" />
-          )}
-          {/* AI translation (toggled from the ⋯ menu) */}
-          {showTranslated && translatedText && (
-            <p className="mt-1 whitespace-pre-wrap break-words rounded-site-sm bg-site-surface/50 p-2 text-[15px] text-site-text">
-              {translatedText}
-            </p>
-          )}
-
-          {/* Authored thread: this post is the root of a multi-post thread. */}
-          {item.threadReplyCount ? (
-            <Link
-              to="/thread/$rootId"
-              params={{ rootId: item.id }}
-              onClick={(e) => e.stopPropagation()}
-              className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-site-accent hover:underline"
-            >
-              {t('show-thread', { defaultValue: 'Show this thread' })}
-              <span className="text-site-text-dim">
-                · {t('thread-more', { defaultValue: '{{n}} more', n: item.threadReplyCount })}
-              </span>
-            </Link>
-          ) : null}
-
-          {/* Poll */}
-          {item.poll && (
-            <PollDisplay
-              poll={item.poll}
-              postId={item.actualId ?? item.id}
-              onUpdate={(updatedPoll) => updateItem(item.id, { poll: updatedPoll })}
-            />
-          )}
-
-          {/* Image / GIF — hidden behind a content warning when marked sensitive */}
-          {(item.gifUrl || (item.imageUrls && item.imageUrls.length > 0)) && (
-            <SensitiveMedia sensitive={item.isSensitive} className="mt-2">
-              {item.gifUrl && <GifEmbed url={item.gifUrl} className="mt-1" />}
-              {item.imageUrls && item.imageUrls.length > 0 && (
-                <PostImageGrid urls={item.imageUrls} alts={item.imageAlts} heroName={postMediaVTName(actualId)} />
+            <>
+              {/* Content */}
+              {item.content && (
+                <RMHarkContent
+                  text={item.content}
+                  className="text-site-text text-[15px] mt-1 whitespace-pre-wrap break-words"
+                />
               )}
-            </SensitiveMedia>
-          )}
+              {/* AI translation (toggled from the ⋯ menu) */}
+              {showTranslated && translatedText && (
+                <p className="mt-1 whitespace-pre-wrap break-words rounded-site-sm bg-site-surface/50 p-2 text-[15px] text-site-text">
+                  {translatedText}
+                </p>
+              )}
 
-          {/* Link preview — only when no poll, gif, or image */}
-          {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
-          </>
+              {/* Authored thread: this post is the root of a multi-post thread. */}
+              {item.threadReplyCount ? (
+                <Link
+                  to="/thread/$rootId"
+                  params={{ rootId: item.id }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-site-accent hover:underline"
+                >
+                  {t('show-thread', { defaultValue: 'Show this thread' })}
+                  <span className="text-site-text-dim">
+                    · {t('thread-more', { defaultValue: '{{n}} more', n: item.threadReplyCount })}
+                  </span>
+                </Link>
+              ) : null}
+
+              {/* Poll */}
+              {item.poll && (
+                <PollDisplay
+                  poll={item.poll}
+                  postId={item.actualId ?? item.id}
+                  onUpdate={(updatedPoll) => updateItem(item.id, { poll: updatedPoll })}
+                />
+              )}
+
+              {/* Image / GIF — hidden behind a content warning when marked sensitive */}
+              {(item.gifUrl || (item.imageUrls && item.imageUrls.length > 0)) && (
+                <SensitiveMedia sensitive={item.isSensitive} className="mt-2">
+                  {item.gifUrl && <GifEmbed url={item.gifUrl} className="mt-1" />}
+                  {item.imageUrls && item.imageUrls.length > 0 && (
+                    <PostImageGrid
+                      urls={item.imageUrls}
+                      alts={item.imageAlts}
+                      heroName={postMediaVTName(actualId)}
+                    />
+                  )}
+                </SensitiveMedia>
+              )}
+
+              {/* Link preview — only when no poll, gif, or image */}
+              {linkPreviewUrl && <LinkPreview url={linkPreviewUrl} className="mt-3" />}
+            </>
           )}
 
           {/* Quoted original (if repost) — clicks through to the original post */}
@@ -383,21 +412,30 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                 if (window.getSelection()?.toString()) return;
                 if ((e.target as HTMLElement).closest('a, button')) return;
                 if (freshOriginalUser && item.original) {
-                  navigate({ to: postHref(freshOriginalUser, item.original.id), resetScroll: false });
+                  navigate({
+                    to: postHref(freshOriginalUser, item.original.id),
+                    resetScroll: false,
+                  });
                 }
               }}
               onKeyDown={(e) => {
                 if ((e.key === 'Enter' || e.key === ' ') && freshOriginalUser && item.original) {
                   e.preventDefault();
                   e.stopPropagation();
-                  navigate({ to: postHref(freshOriginalUser, item.original.id), resetScroll: false });
+                  navigate({
+                    to: postHref(freshOriginalUser, item.original.id),
+                    resetScroll: false,
+                  });
                 }
               }}
               className="mt-3 border border-site-border rounded-site p-3 bg-site-surface/30 cursor-pointer transition-colors hover:bg-site-surface/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/40"
             >
               <div className="flex items-center gap-1.5 text-sm mb-1">
                 {freshOriginalUser ? (
-                  <Link to={userProfileHref(freshOriginalUser)} className="flex items-center gap-1.5 min-w-0 hover:underline">
+                  <Link
+                    to={userProfileHref(freshOriginalUser)}
+                    className="flex items-center gap-1.5 min-w-0 hover:underline"
+                  >
                     <span className="font-bold text-site-text truncate">
                       {freshOriginalUser.name || t('unknown-user', { defaultValue: 'Unknown' })}
                     </span>
@@ -416,22 +454,33 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
                     )}
                   </Link>
                 ) : (
-                  <span className="font-bold text-site-text truncate">
-                    Unknown
-                  </span>
+                  <span className="font-bold text-site-text truncate">Unknown</span>
                 )}
               </div>
-              <RMHarkContent text={item.original.content ?? ''} className="text-site-text text-sm whitespace-pre-wrap break-words" />
+              <RMHarkContent
+                text={item.original.content ?? ''}
+                className="text-site-text text-sm whitespace-pre-wrap break-words"
+              />
               {/* Original's media (server omits these for paid/non-public posts) */}
               {item.original.gifUrl && <GifEmbed url={item.original.gifUrl} className="mt-2" />}
-              {!item.original.gifUrl && item.original.imageUrls && item.original.imageUrls.length > 0 && (
-                <PostImageGrid urls={item.original.imageUrls} alts={item.original.imageAlts} className="mt-2" />
-              )}
+              {!item.original.gifUrl &&
+                item.original.imageUrls &&
+                item.original.imageUrls.length > 0 && (
+                  <PostImageGrid
+                    urls={item.original.imageUrls}
+                    alts={item.original.imageAlts}
+                    className="mt-2"
+                  />
+                )}
             </div>
           )}
 
           {!item.deletedAt && !item.pending && (
-            <ReactionChips reactions={item.reactions ?? []} onToggle={toggleReaction} className="mt-2" />
+            <ReactionChips
+              reactions={item.reactions ?? []}
+              onToggle={toggleReaction}
+              className="mt-2"
+            />
           )}
 
           {/* Actions */}

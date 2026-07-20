@@ -2,7 +2,13 @@ import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { auth } from '@/lib/auth';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
-import { listItem, browse, priceHistory, MarketError, type BrowseSort } from '@/lib/market/market.server';
+import {
+  listItem,
+  browse,
+  priceHistory,
+  MarketError,
+  type BrowseSort,
+} from '@/lib/market/market.server';
 import { MIN_PRICE, MAX_PRICE } from '@/lib/market/tradable';
 
 /**
@@ -22,13 +28,19 @@ export const Route = createFileRoute('/api/market/listings/')({
       GET: async ({ request }) => {
         try {
           const ip = getClientIp(request);
-          const { allowed } = rateLimit(ip, { limit: 60, windowMs: 60_000, prefix: 'market-browse' });
+          const { allowed } = rateLimit(ip, {
+            limit: 60,
+            windowMs: 60_000,
+            prefix: 'market-browse',
+          });
           if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
           const url = new URL(request.url);
           const item = url.searchParams.get('item');
           const sortParam = url.searchParams.get('sort');
-          const sort = SORTS.includes(sortParam as BrowseSort) ? (sortParam as BrowseSort) : 'recent';
+          const sort = SORTS.includes(sortParam as BrowseSort)
+            ? (sortParam as BrowseSort)
+            : 'recent';
           const itemId = item && item.length <= 64 ? item : null;
 
           // When filtered to one item, include its SOLD-price history for the sparkline.
@@ -64,7 +76,10 @@ export const Route = createFileRoute('/api/market/listings/')({
           return Response.json({ success: true, listing });
         } catch (error) {
           if (error instanceof MarketError) {
-            return Response.json({ error: error.message, code: error.code }, { status: error.status });
+            return Response.json(
+              { error: error.message, code: error.code },
+              { status: error.status },
+            );
           }
           console.error('market list error:', error);
           return Response.json({ error: 'Internal Server Error' }, { status: 500 });

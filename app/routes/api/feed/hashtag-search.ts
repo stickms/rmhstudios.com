@@ -16,8 +16,13 @@ export const Route = createFileRoute('/api/feed/hashtag-search')({
     handlers: {
       GET: async ({ request }) => {
         const ip = getClientIp(request);
-        const { allowed } = rateLimit(ip, { limit: 40, windowMs: 60_000, prefix: 'hashtag-search' });
-        if (!allowed) return new Response(JSON.stringify({ error: 'Rate limited' }), { status: 429 });
+        const { allowed } = rateLimit(ip, {
+          limit: 40,
+          windowMs: 60_000,
+          prefix: 'hashtag-search',
+        });
+        if (!allowed)
+          return new Response(JSON.stringify({ error: 'Rate limited' }), { status: 429 });
 
         const q = new URL(request.url).searchParams.get('q')?.trim().toLowerCase() ?? '';
 

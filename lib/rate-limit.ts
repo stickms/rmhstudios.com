@@ -9,8 +9,8 @@
  */
 
 interface RateLimitEntry {
-    count: number;
-    resetAt: number;
+  count: number;
+  resetAt: number;
 }
 
 const MAX_STORE_SIZE = 10_000;
@@ -18,22 +18,22 @@ const store = new Map<string, RateLimitEntry>();
 
 // Sweep expired entries every 60s
 const gcTimer = setInterval(() => {
-    const now = Date.now();
-    for (const [key, entry] of store) {
-        if (entry.resetAt < now) store.delete(key);
-    }
+  const now = Date.now();
+  for (const [key, entry] of store) {
+    if (entry.resetAt < now) store.delete(key);
+  }
 }, 60_000);
 if (gcTimer && typeof gcTimer === 'object' && 'unref' in gcTimer) {
-    gcTimer.unref();
+  gcTimer.unref();
 }
 
 interface RateLimitOptions {
-    /** Max requests per window */
-    limit: number;
-    /** Window size in milliseconds */
-    windowMs: number;
-    /** Key prefix to namespace different limiters */
-    prefix?: string;
+  /** Max requests per window */
+  limit: number;
+  /** Window size in milliseconds */
+  windowMs: number;
+  /** Key prefix to namespace different limiters */
+  prefix?: string;
 }
 
 /**
@@ -43,9 +43,9 @@ interface RateLimitOptions {
  * stopping runaway abuse. Tunable via RATE_LIMIT_MULTIPLIER (clamped 1–20).
  */
 export const RATE_LIMIT_MULTIPLIER = (() => {
-    const raw = Number(process.env.RATE_LIMIT_MULTIPLIER);
-    if (!Number.isFinite(raw) || raw <= 0) return 4;
-    return Math.min(20, Math.max(1, raw));
+  const raw = Number(process.env.RATE_LIMIT_MULTIPLIER);
+  if (!Number.isFinite(raw) || raw <= 0) return 4;
+  return Math.min(20, Math.max(1, raw));
 })();
 
 /**
@@ -54,48 +54,48 @@ export const RATE_LIMIT_MULTIPLIER = (() => {
  * `X-RateLimit-*` headers. `reset` is an epoch-ms timestamp for the window end.
  */
 export interface RateLimitResult {
-    allowed: boolean;
-    retryAfter: number;
-    limit: number;
-    remaining: number;
-    reset: number;
+  allowed: boolean;
+  retryAfter: number;
+  limit: number;
+  remaining: number;
+  reset: number;
 }
 
 export function rateLimit(ip: string, opts: RateLimitOptions): RateLimitResult {
-    const key = `${opts.prefix ?? 'rl'}:${ip}`;
-    const limit = Math.ceil(opts.limit * RATE_LIMIT_MULTIPLIER);
-    const now = Date.now();
-    const entry = store.get(key);
+  const key = `${opts.prefix ?? 'rl'}:${ip}`;
+  const limit = Math.ceil(opts.limit * RATE_LIMIT_MULTIPLIER);
+  const now = Date.now();
+  const entry = store.get(key);
 
-    if (!entry || entry.resetAt < now) {
-        // Evict the entry whose window ends soonest (already-expired or
-        // expiring-first) rather than the oldest-INSERTED one. FIFO could drop a
-        // key with a live, still-counting window while keeping a long-since
-        // expired one, effectively resetting an active limiter under abuse.
-        if (store.size >= MAX_STORE_SIZE) {
-            let soonestKey: string | undefined;
-            let soonestResetAt = Infinity;
-            for (const [k, e] of store) {
-                if (e.resetAt < soonestResetAt) {
-                    soonestResetAt = e.resetAt;
-                    soonestKey = k;
-                }
-            }
-            if (soonestKey !== undefined) store.delete(soonestKey);
+  if (!entry || entry.resetAt < now) {
+    // Evict the entry whose window ends soonest (already-expired or
+    // expiring-first) rather than the oldest-INSERTED one. FIFO could drop a
+    // key with a live, still-counting window while keeping a long-since
+    // expired one, effectively resetting an active limiter under abuse.
+    if (store.size >= MAX_STORE_SIZE) {
+      let soonestKey: string | undefined;
+      let soonestResetAt = Infinity;
+      for (const [k, e] of store) {
+        if (e.resetAt < soonestResetAt) {
+          soonestResetAt = e.resetAt;
+          soonestKey = k;
         }
-        const reset = now + opts.windowMs;
-        store.set(key, { count: 1, resetAt: reset });
-        return { allowed: true, retryAfter: 0, limit, remaining: limit - 1, reset };
+      }
+      if (soonestKey !== undefined) store.delete(soonestKey);
     }
+    const reset = now + opts.windowMs;
+    store.set(key, { count: 1, resetAt: reset });
+    return { allowed: true, retryAfter: 0, limit, remaining: limit - 1, reset };
+  }
 
-    entry.count++;
-    const remaining = Math.max(0, limit - entry.count);
-    if (entry.count > limit) {
-        const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-        return { allowed: false, retryAfter, limit, remaining: 0, reset: entry.resetAt };
-    }
+  entry.count++;
+  const remaining = Math.max(0, limit - entry.count);
+  if (entry.count > limit) {
+    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
+    return { allowed: false, retryAfter, limit, remaining: 0, reset: entry.resetAt };
+  }
 
-    return { allowed: true, retryAfter: 0, limit, remaining, reset: entry.resetAt };
+  return { allowed: true, retryAfter: 0, limit, remaining, reset: entry.resetAt };
 }
 
 /**
@@ -107,19 +107,21 @@ export function rateLimit(ip: string, opts: RateLimitOptions): RateLimitResult {
  * value. The origin firewall must still reject direct public traffic.
  */
 export function getClientIp(req: Request): string {
-    const headers = req.headers;
-    const cf = headers.get('cf-connecting-ip')?.trim();
-    if (cf) return cf;
+  const headers = req.headers;
+  const cf = headers.get('cf-connecting-ip')?.trim();
+  if (cf) return cf;
 
-    const forwarded = headers.get('x-forwarded-for')
-        ?.split(',')
-        .map((part) => part.trim())
-        .filter(Boolean) ?? [];
-    const configuredHops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? '1', 10);
-    const trustedHops = Number.isFinite(configuredHops) ? Math.max(1, configuredHops) : 1;
-    if (forwarded.length > 0) {
-        return forwarded[Math.max(0, forwarded.length - trustedHops)] ?? '127.0.0.1';
-    }
+  const forwarded =
+    headers
+      .get('x-forwarded-for')
+      ?.split(',')
+      .map((part) => part.trim())
+      .filter(Boolean) ?? [];
+  const configuredHops = Number.parseInt(process.env.TRUST_PROXY_HOPS ?? '1', 10);
+  const trustedHops = Number.isFinite(configuredHops) ? Math.max(1, configuredHops) : 1;
+  if (forwarded.length > 0) {
+    return forwarded[Math.max(0, forwarded.length - trustedHops)] ?? '127.0.0.1';
+  }
 
-    return headers.get('x-real-ip')?.trim() || '127.0.0.1';
+  return headers.get('x-real-ip')?.trim() || '127.0.0.1';
 }

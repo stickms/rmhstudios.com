@@ -233,9 +233,18 @@ export function cleanupOptionsFromEnv(log: CleanupOptions['log']): CleanupOption
   };
   const d = DEFAULT_CLEANUP_OPTIONS;
   return {
-    notificationRetentionDays: int(process.env.CLEANUP_NOTIFICATION_RETENTION_DAYS, d.notificationRetentionDays),
-    notificationMaxPerUser: int(process.env.CLEANUP_NOTIFICATION_MAX_PER_USER, d.notificationMaxPerUser),
-    commentViewRetentionDays: int(process.env.CLEANUP_COMMENT_VIEW_RETENTION_DAYS, d.commentViewRetentionDays),
+    notificationRetentionDays: int(
+      process.env.CLEANUP_NOTIFICATION_RETENTION_DAYS,
+      d.notificationRetentionDays,
+    ),
+    notificationMaxPerUser: int(
+      process.env.CLEANUP_NOTIFICATION_MAX_PER_USER,
+      d.notificationMaxPerUser,
+    ),
+    commentViewRetentionDays: int(
+      process.env.CLEANUP_COMMENT_VIEW_RETENTION_DAYS,
+      d.commentViewRetentionDays,
+    ),
     softDeleteGraceDays: int(process.env.CLEANUP_SOFT_DELETE_GRACE_DAYS, d.softDeleteGraceDays),
     // Destructive + irreversible: opt-in only.
     hardDeletePosts: process.env.CLEANUP_HARD_DELETE_POSTS === 'true',
@@ -271,7 +280,9 @@ export async function runCleanup(
     try {
       return await fn();
     } catch (error) {
-      options.log(`[cleanup] ${label} failed: ${error instanceof Error ? error.message : String(error)}`);
+      options.log(
+        `[cleanup] ${label} failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
       return 0;
     }
   }

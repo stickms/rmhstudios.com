@@ -24,13 +24,7 @@ import {
 } from '@/components/ui/dialog';
 
 export type ShareMomentKind =
-  | 'achievement'
-  | 'rank'
-  | 'streak'
-  | 'pass_tier'
-  | 'arcade'
-  | 'wrapped_stat'
-  | 'market';
+  'achievement' | 'rank' | 'streak' | 'pass_tier' | 'arcade' | 'wrapped_stat' | 'market';
 
 export interface ShareMomentPayload {
   title?: string;
@@ -74,7 +68,9 @@ export function ShareMomentSheet({ open, onOpenChange, kind, payload }: ShareMom
         toast.error(t('share-moment-sign-in', { defaultValue: 'Please sign in to share.' }));
         onOpenChange(false);
       } else {
-        toast.error(data.error || t('share-moment-error', { defaultValue: 'Could not create share link' }));
+        toast.error(
+          data.error || t('share-moment-error', { defaultValue: 'Could not create share link' }),
+        );
         onOpenChange(false);
       }
     } catch {

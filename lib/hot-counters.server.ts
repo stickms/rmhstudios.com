@@ -42,7 +42,7 @@ function ensureFlusher(): void {
   if (flushTimer || !redisEnabled()) return;
   flushTimer = setInterval(() => {
     void flushBufferedViews().catch((e) =>
-      console.error('[hot-counters] view flush failed:', (e as Error)?.message)
+      console.error('[hot-counters] view flush failed:', (e as Error)?.message),
     );
   }, FLUSH_INTERVAL_MS);
   if (flushTimer && typeof flushTimer === 'object' && 'unref' in flushTimer) {

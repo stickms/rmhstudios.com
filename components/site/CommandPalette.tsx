@@ -16,10 +16,36 @@ import * as DialogPrimitive from '@radix-ui/react-dialog';
 import Fuse from 'fuse.js';
 import { useTranslation } from 'react-i18next';
 import {
-  Home, Compass, Inbox, Bell, Bookmark, Library, Users, ShoppingBag,
-  TrendingUp, Wand2, Trophy, Wallet, Puzzle, Newspaper, BookOpen,
-  Map as MapIcon, Gem, Gamepad2, Keyboard, LayoutGrid, PenSquare, Flame, LogOut, User,
-  KeyRound, ShieldUser, Search, SlidersHorizontal, CornerDownLeft, type LucideIcon,
+  Home,
+  Compass,
+  Inbox,
+  Bell,
+  Bookmark,
+  Library,
+  Users,
+  ShoppingBag,
+  TrendingUp,
+  Wand2,
+  Trophy,
+  Wallet,
+  Puzzle,
+  Newspaper,
+  BookOpen,
+  Map as MapIcon,
+  Gem,
+  Gamepad2,
+  Keyboard,
+  LayoutGrid,
+  PenSquare,
+  Flame,
+  LogOut,
+  User,
+  KeyRound,
+  ShieldUser,
+  Search,
+  SlidersHorizontal,
+  CornerDownLeft,
+  type LucideIcon,
 } from 'lucide-react';
 import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
@@ -32,7 +58,7 @@ import { cn } from '@/lib/utils';
 // Loaded on demand so the palette (mounted on every route, including games)
 // doesn't pull the compose stack into the initial bundle.
 const ComposeModal = lazy(() =>
-  import('@/components/feed/ComposeModal').then((m) => ({ default: m.ComposeModal }))
+  import('@/components/feed/ComposeModal').then((m) => ({ default: m.ComposeModal })),
 );
 
 // The open event + opener live in a dependency-free module so callers can trigger
@@ -63,27 +89,154 @@ interface Command {
 
 const PAGES: Array<Omit<Command, 'section'>> = [
   { id: 'page-home', label: 'Home', href: '/', icon: Home, keywords: 'feed timeline' },
-  { id: 'page-explore', label: 'Explore & Search', href: '/search', icon: Compass, keywords: 'search find discover trending' },
-  { id: 'page-messages', label: 'Messages', href: '/messages', icon: Inbox, keywords: 'inbox dm chat conversations', requiresAuth: true },
-  { id: 'page-notifications', label: 'Notifications', href: '/notifications', icon: Bell, keywords: 'alerts mentions activity', requiresAuth: true },
-  { id: 'page-bookmarks', label: 'Bookmarks', href: '/bookmarks', icon: Bookmark, keywords: 'saved posts', requiresAuth: true },
-  { id: 'page-library', label: 'Library', href: '/library', icon: Library, keywords: 'books reading documents' },
-  { id: 'page-communities', label: 'Communities', href: '/communities', icon: Users, keywords: 'groups clubs' },
-  { id: 'page-store', label: 'Store', href: '/store', icon: ShoppingBag, keywords: 'shop marketplace buy' },
-  { id: 'page-predictions', label: 'Predictions', href: '/predictions', icon: TrendingUp, keywords: 'bets markets coins' },
-  { id: 'page-create', label: 'Creator Studio', href: '/create', icon: Wand2, keywords: 'vibe build ai generate' },
-  { id: 'page-achievements', label: 'Achievements', href: '/achievements', icon: Trophy, keywords: 'badges progress streaks journey', requiresAuth: true },
-  { id: 'page-wallet', label: 'Wallet', href: '/wallet', icon: Wallet, keywords: 'coins balance transactions', requiresAuth: true },
-  { id: 'page-daily', label: 'Daily Puzzles', href: '/daily', icon: Puzzle, keywords: 'lights out alibi spectrum outcast chainlink impostor' },
-  { id: 'page-blog', label: 'Blog', href: '/blog', icon: Newspaper, keywords: 'articles research posts' },
+  {
+    id: 'page-explore',
+    label: 'Explore & Search',
+    href: '/search',
+    icon: Compass,
+    keywords: 'search find discover trending',
+  },
+  {
+    id: 'page-messages',
+    label: 'Messages',
+    href: '/messages',
+    icon: Inbox,
+    keywords: 'inbox dm chat conversations',
+    requiresAuth: true,
+  },
+  {
+    id: 'page-notifications',
+    label: 'Notifications',
+    href: '/notifications',
+    icon: Bell,
+    keywords: 'alerts mentions activity',
+    requiresAuth: true,
+  },
+  {
+    id: 'page-bookmarks',
+    label: 'Bookmarks',
+    href: '/bookmarks',
+    icon: Bookmark,
+    keywords: 'saved posts',
+    requiresAuth: true,
+  },
+  {
+    id: 'page-library',
+    label: 'Library',
+    href: '/library',
+    icon: Library,
+    keywords: 'books reading documents',
+  },
+  {
+    id: 'page-communities',
+    label: 'Communities',
+    href: '/communities',
+    icon: Users,
+    keywords: 'groups clubs',
+  },
+  {
+    id: 'page-store',
+    label: 'Store',
+    href: '/store',
+    icon: ShoppingBag,
+    keywords: 'shop marketplace buy',
+  },
+  {
+    id: 'page-predictions',
+    label: 'Predictions',
+    href: '/predictions',
+    icon: TrendingUp,
+    keywords: 'bets markets coins',
+  },
+  {
+    id: 'page-create',
+    label: 'Creator Studio',
+    href: '/create',
+    icon: Wand2,
+    keywords: 'vibe build ai generate',
+  },
+  {
+    id: 'page-achievements',
+    label: 'Achievements',
+    href: '/achievements',
+    icon: Trophy,
+    keywords: 'badges progress streaks journey',
+    requiresAuth: true,
+  },
+  {
+    id: 'page-wallet',
+    label: 'Wallet',
+    href: '/wallet',
+    icon: Wallet,
+    keywords: 'coins balance transactions',
+    requiresAuth: true,
+  },
+  {
+    id: 'page-daily',
+    label: 'Daily Puzzles',
+    href: '/daily',
+    icon: Puzzle,
+    keywords: 'lights out alibi spectrum outcast chainlink impostor',
+  },
+  {
+    id: 'page-blog',
+    label: 'Blog',
+    href: '/blog',
+    icon: Newspaper,
+    keywords: 'articles research posts',
+  },
   { id: 'page-news', label: 'News', href: '/news', icon: Newspaper, keywords: 'headlines updates' },
-  { id: 'page-study', label: 'Study Decks', href: '/study', icon: BookOpen, keywords: 'flashcards learn revision' },
-  { id: 'page-roadmap', label: 'Roadmap', href: '/roadmap', icon: MapIcon, keywords: 'plans upcoming features' },
-  { id: 'page-pricing', label: 'Pricing', href: '/pricing', icon: Gem, keywords: 'subscription membership plans upgrade' },
-  { id: 'page-ranked', label: 'Ranked', href: '/ranked', icon: Trophy, keywords: 'leaderboard elo competitive' },
-  { id: 'page-settings', label: 'Settings', href: '/settings', icon: SlidersHorizontal, keywords: 'settings preferences appearance theme language locale notifications account' },
-  { id: 'page-security', label: 'Passkeys & Security', href: '/settings/security', icon: KeyRound, keywords: 'passkey webauthn password sign-in settings account sessions devices', requiresAuth: true },
-  { id: 'page-privacy', label: 'Privacy & Data', href: '/settings/privacy', icon: ShieldUser, keywords: 'privacy data export download gdpr delete account erasure settings', requiresAuth: true },
+  {
+    id: 'page-study',
+    label: 'Study Decks',
+    href: '/study',
+    icon: BookOpen,
+    keywords: 'flashcards learn revision',
+  },
+  {
+    id: 'page-roadmap',
+    label: 'Roadmap',
+    href: '/roadmap',
+    icon: MapIcon,
+    keywords: 'plans upcoming features',
+  },
+  {
+    id: 'page-pricing',
+    label: 'Pricing',
+    href: '/pricing',
+    icon: Gem,
+    keywords: 'subscription membership plans upgrade',
+  },
+  {
+    id: 'page-ranked',
+    label: 'Ranked',
+    href: '/ranked',
+    icon: Trophy,
+    keywords: 'leaderboard elo competitive',
+  },
+  {
+    id: 'page-settings',
+    label: 'Settings',
+    href: '/settings',
+    icon: SlidersHorizontal,
+    keywords: 'settings preferences appearance theme language locale notifications account',
+  },
+  {
+    id: 'page-security',
+    label: 'Passkeys & Security',
+    href: '/settings/security',
+    icon: KeyRound,
+    keywords: 'passkey webauthn password sign-in settings account sessions devices',
+    requiresAuth: true,
+  },
+  {
+    id: 'page-privacy',
+    label: 'Privacy & Data',
+    href: '/settings/privacy',
+    icon: ShieldUser,
+    keywords: 'privacy data export download gdpr delete account erasure settings',
+    requiresAuth: true,
+  },
 ];
 
 const SECTION_LABELS: Record<Section, { key: string; fallback: string }> = {
@@ -214,7 +367,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
         navigate({ to: href });
       }
     },
-    [navigate]
+    [navigate],
   );
 
   const commands = useMemo<Command[]>(() => {
@@ -346,7 +499,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
         threshold: 0.35,
         ignoreLocation: true,
       }),
-    [commands]
+    [commands],
   );
 
   const results = useMemo(() => {
@@ -394,7 +547,7 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
       if (cmd.run) void cmd.run();
       else if (cmd.href) go(cmd.href, cmd.external);
     },
-    [go]
+    [go],
   );
 
   const onInputKeyDown = (e: React.KeyboardEvent) => {
@@ -413,115 +566,127 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
 
   return (
     <>
-    {composeOpen && (
-      <Suspense fallback={null}>
-        <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
-      </Suspense>
-    )}
-    <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
-      <DialogPrimitive.Portal>
-        <DialogPrimitive.Overlay className="fixed inset-0 z-[90] glass-scrim data-[state=open]:animate-in data-[state=open]:fade-in-0" />
-        <DialogPrimitive.Content
-          className="glass-overlay fixed left-1/2 top-[12dvh] z-[91] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
-          aria-describedby={undefined}
-        >
-          <DialogPrimitive.Title className="sr-only">
-            {t('palette-title', { defaultValue: 'Command palette' })}
-          </DialogPrimitive.Title>
-          <div className="glass-inset m-2 flex items-center gap-2 px-3">
-            <Search className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
-            <input
-              ref={inputRef}
-              autoFocus
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setActiveIndex(0);
-              }}
-              onKeyDown={onInputKeyDown}
-              role="combobox"
-              aria-expanded="true"
-              aria-controls="command-palette-list"
-              aria-activedescendant={flat[activeIndex]?.id}
-              aria-label={t('palette-input-label', { defaultValue: 'Search pages, games, apps, and actions' })}
-              placeholder={t('palette-placeholder', { defaultValue: 'Search pages, people, posts, games…' })}
-              className="w-full bg-transparent py-3.5 text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
-            />
-            <kbd className="hidden shrink-0 rounded border border-site-border px-1.5 py-0.5 text-[10px] text-site-text-dim sm:block">
-              esc
-            </kbd>
-          </div>
-          <div
-            ref={listRef}
-            id="command-palette-list"
-            role="listbox"
-            aria-label={t('palette-title', { defaultValue: 'Command palette' })}
-            className="max-h-[50dvh] overflow-y-auto p-2"
+      {composeOpen && (
+        <Suspense fallback={null}>
+          <ComposeModal open={composeOpen} onClose={() => setComposeOpen(false)} />
+        </Suspense>
+      )}
+      <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-[90] glass-scrim data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+          <DialogPrimitive.Content
+            className="glass-overlay fixed left-1/2 top-[12dvh] z-[91] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+            aria-describedby={undefined}
           >
-            {flat.length === 0 && (
-              <p className="px-3 py-8 text-center text-sm text-site-text-dim">
-                {t('palette-no-results', { defaultValue: 'No results. Try a different search.' })}
-              </p>
-            )}
-            {grouped.map((group) => (
-              <div key={group.section} className="mb-1">
-                <p className="px-3 pb-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-site-text-dim">
-                  {t(SECTION_LABELS[group.section].key, { defaultValue: SECTION_LABELS[group.section].fallback })}
-                </p>
-                {group.items.map((cmd) => {
-                  const index = flat.indexOf(cmd);
-                  const active = index === activeIndex;
-                  const Icon = cmd.icon;
-                  return (
-                    <button
-                      key={cmd.id}
-                      id={cmd.id}
-                      data-index={index}
-                      role="option"
-                      aria-selected={active}
-                      data-glass-light=""
-                      onMouseMove={() => setActiveIndex(index)}
-                      onClick={() => runCommand(cmd)}
-                      className={cn(
-                        'glass-interactive flex w-full items-center gap-3 rounded-site-sm px-3 py-2 text-left text-sm',
-                        active
-                          ? 'bg-site-accent-dim text-site-accent'
-                          : 'text-site-text-muted'
-                      )}
-                    >
-                      {cmd.section === 'people' ? (
-                        <UserAvatar
-                          src={cmd.image}
-                          alt=""
-                          size={20}
-                          fallbackName={cmd.label}
-                          className="shrink-0"
-                        />
-                      ) : Icon ? (
-                        <Icon className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
-                      ) : cmd.emoji ? (
-                        <span className="w-4 shrink-0 text-center text-sm leading-none" aria-hidden>
-                          {cmd.emoji}
-                        </span>
-                      ) : null}
-                      <span className="min-w-0 flex-1 truncate">
-                        {cmd.label}
-                        {cmd.sublabel && (
-                          <span className="ml-1.5 text-xs text-site-text-dim">{cmd.sublabel}</span>
-                        )}
-                      </span>
-                      {active && (
-                        <CornerDownLeft className="h-3.5 w-3.5 shrink-0 text-site-text-dim" aria-hidden />
-                      )}
-                    </button>
-                  );
+            <DialogPrimitive.Title className="sr-only">
+              {t('palette-title', { defaultValue: 'Command palette' })}
+            </DialogPrimitive.Title>
+            <div className="glass-inset m-2 flex items-center gap-2 px-3">
+              <Search className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+              <input
+                ref={inputRef}
+                autoFocus
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setActiveIndex(0);
+                }}
+                onKeyDown={onInputKeyDown}
+                role="combobox"
+                aria-expanded="true"
+                aria-controls="command-palette-list"
+                aria-activedescendant={flat[activeIndex]?.id}
+                aria-label={t('palette-input-label', {
+                  defaultValue: 'Search pages, games, apps, and actions',
                 })}
-              </div>
-            ))}
-          </div>
-        </DialogPrimitive.Content>
-      </DialogPrimitive.Portal>
-    </DialogPrimitive.Root>
+                placeholder={t('palette-placeholder', {
+                  defaultValue: 'Search pages, people, posts, games…',
+                })}
+                className="w-full bg-transparent py-3.5 text-sm text-site-text placeholder:text-site-text-dim focus:outline-none"
+              />
+              <kbd className="hidden shrink-0 rounded border border-site-border px-1.5 py-0.5 text-[10px] text-site-text-dim sm:block">
+                esc
+              </kbd>
+            </div>
+            <div
+              ref={listRef}
+              id="command-palette-list"
+              role="listbox"
+              aria-label={t('palette-title', { defaultValue: 'Command palette' })}
+              className="max-h-[50dvh] overflow-y-auto p-2"
+            >
+              {flat.length === 0 && (
+                <p className="px-3 py-8 text-center text-sm text-site-text-dim">
+                  {t('palette-no-results', { defaultValue: 'No results. Try a different search.' })}
+                </p>
+              )}
+              {grouped.map((group) => (
+                <div key={group.section} className="mb-1">
+                  <p className="px-3 pb-1 pt-2 text-[11px] font-bold uppercase tracking-wider text-site-text-dim">
+                    {t(SECTION_LABELS[group.section].key, {
+                      defaultValue: SECTION_LABELS[group.section].fallback,
+                    })}
+                  </p>
+                  {group.items.map((cmd) => {
+                    const index = flat.indexOf(cmd);
+                    const active = index === activeIndex;
+                    const Icon = cmd.icon;
+                    return (
+                      <button
+                        key={cmd.id}
+                        id={cmd.id}
+                        data-index={index}
+                        role="option"
+                        aria-selected={active}
+                        data-glass-light=""
+                        onMouseMove={() => setActiveIndex(index)}
+                        onClick={() => runCommand(cmd)}
+                        className={cn(
+                          'glass-interactive flex w-full items-center gap-3 rounded-site-sm px-3 py-2 text-left text-sm',
+                          active ? 'bg-site-accent-dim text-site-accent' : 'text-site-text-muted',
+                        )}
+                      >
+                        {cmd.section === 'people' ? (
+                          <UserAvatar
+                            src={cmd.image}
+                            alt=""
+                            size={20}
+                            fallbackName={cmd.label}
+                            className="shrink-0"
+                          />
+                        ) : Icon ? (
+                          <Icon className="h-4 w-4 shrink-0 text-site-text-dim" aria-hidden />
+                        ) : cmd.emoji ? (
+                          <span
+                            className="w-4 shrink-0 text-center text-sm leading-none"
+                            aria-hidden
+                          >
+                            {cmd.emoji}
+                          </span>
+                        ) : null}
+                        <span className="min-w-0 flex-1 truncate">
+                          {cmd.label}
+                          {cmd.sublabel && (
+                            <span className="ml-1.5 text-xs text-site-text-dim">
+                              {cmd.sublabel}
+                            </span>
+                          )}
+                        </span>
+                        {active && (
+                          <CornerDownLeft
+                            className="h-3.5 w-3.5 shrink-0 text-site-text-dim"
+                            aria-hidden
+                          />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
     </>
   );
 }

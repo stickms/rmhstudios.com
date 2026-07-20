@@ -7,16 +7,55 @@ import { useGameStore } from '@/lib/versecraft/store';
 import { CHARACTERS, getCharacterFirstName } from '@/lib/versecraft/characters';
 import type { Grade } from '@/lib/versecraft/types';
 
-const GRADE_STYLES: Record<Grade, { color: string; labelKey: string; labelDefault: string; bg: string }> = {
-  S: { color: '#FFD700', labelKey: 'grade-masterpiece', labelDefault: 'Masterpiece', bg: 'rgba(255, 215, 0, 0.15)' },
-  A: { color: '#4CAF50', labelKey: 'grade-excellent', labelDefault: 'Excellent', bg: 'rgba(76, 175, 80, 0.15)' },
-  B: { color: '#2196F3', labelKey: 'grade-good', labelDefault: 'Good', bg: 'rgba(33, 150, 243, 0.15)' },
-  C: { color: '#FF9800', labelKey: 'grade-decent', labelDefault: 'Decent', bg: 'rgba(255, 152, 0, 0.15)' },
-  D: { color: '#F44336', labelKey: 'grade-needs-work', labelDefault: 'Needs Work', bg: 'rgba(244, 67, 54, 0.15)' },
-  F: { color: '#666666', labelKey: 'grade-rough-draft', labelDefault: 'Rough Draft', bg: 'rgba(102, 102, 102, 0.15)' },
+const GRADE_STYLES: Record<
+  Grade,
+  { color: string; labelKey: string; labelDefault: string; bg: string }
+> = {
+  S: {
+    color: '#FFD700',
+    labelKey: 'grade-masterpiece',
+    labelDefault: 'Masterpiece',
+    bg: 'rgba(255, 215, 0, 0.15)',
+  },
+  A: {
+    color: '#4CAF50',
+    labelKey: 'grade-excellent',
+    labelDefault: 'Excellent',
+    bg: 'rgba(76, 175, 80, 0.15)',
+  },
+  B: {
+    color: '#2196F3',
+    labelKey: 'grade-good',
+    labelDefault: 'Good',
+    bg: 'rgba(33, 150, 243, 0.15)',
+  },
+  C: {
+    color: '#FF9800',
+    labelKey: 'grade-decent',
+    labelDefault: 'Decent',
+    bg: 'rgba(255, 152, 0, 0.15)',
+  },
+  D: {
+    color: '#F44336',
+    labelKey: 'grade-needs-work',
+    labelDefault: 'Needs Work',
+    bg: 'rgba(244, 67, 54, 0.15)',
+  },
+  F: {
+    color: '#666666',
+    labelKey: 'grade-rough-draft',
+    labelDefault: 'Rough Draft',
+    bg: 'rgba(102, 102, 102, 0.15)',
+  },
 };
 
-function AffinityBar({ characterId, score, affinityChange, reaction, delay }: {
+function AffinityBar({
+  characterId,
+  score,
+  affinityChange,
+  reaction,
+  delay,
+}: {
   characterId: string;
   score: number;
   affinityChange: number;
@@ -24,14 +63,25 @@ function AffinityBar({ characterId, score, affinityChange, reaction, delay }: {
   delay: number;
 }) {
   const char = CHARACTERS[characterId];
-  const settings = useGameStore(s => s.settings);
-  const affinity = useGameStore(s => s.affinity[characterId]);
-  const { t } = useTranslation("c-versecraft");
+  const settings = useGameStore((s) => s.settings);
+  const affinity = useGameStore((s) => s.affinity[characterId]);
+  const { t } = useTranslation('c-versecraft');
 
   if (!char || !affinity) return null;
 
   const name = getCharacterFirstName(characterId, settings.characterPresentations);
-  const grade = score >= 90 ? 'S' : score >= 75 ? 'A' : score >= 60 ? 'B' : score >= 45 ? 'C' : score >= 30 ? 'D' : 'F';
+  const grade =
+    score >= 90
+      ? 'S'
+      : score >= 75
+        ? 'A'
+        : score >= 60
+          ? 'B'
+          : score >= 45
+            ? 'C'
+            : score >= 30
+              ? 'D'
+              : 'F';
   const gs = GRADE_STYLES[grade];
 
   return (
@@ -45,7 +95,11 @@ function AffinityBar({ characterId, score, affinityChange, reaction, delay }: {
       {/* Character icon */}
       <div
         className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-        style={{ backgroundColor: `${char.color}40`, color: char.accentColor, border: `1px solid ${char.color}` }}
+        style={{
+          backgroundColor: `${char.color}40`,
+          color: char.accentColor,
+          border: `1px solid ${char.color}`,
+        }}
       >
         {name[0]}
       </div>
@@ -53,21 +107,34 @@ function AffinityBar({ characterId, score, affinityChange, reaction, delay }: {
       {/* Info */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold" style={{ color: '#e8e0d0' }}>{name}</span>
-          <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: gs.bg, color: gs.color }}>
+          <span className="text-sm font-semibold" style={{ color: '#e8e0d0' }}>
+            {name}
+          </span>
+          <span
+            className="text-xs px-1.5 py-0.5 rounded"
+            style={{ backgroundColor: gs.bg, color: gs.color }}
+          >
             {grade}
           </span>
           <span className="text-xs" style={{ color: affinityChange >= 0 ? '#5cb85c' : '#d9534f' }}>
-            {affinityChange >= 0 ? '+' : ''}{affinityChange}
+            {affinityChange >= 0 ? '+' : ''}
+            {affinityChange}
           </span>
         </div>
         <p className="text-xs truncate" style={{ color: '#a89888' }}>
-          {t("character-reaction", { defaultValue: "{{name}} {{reaction}} this poem", name, reaction })}
+          {t('character-reaction', {
+            defaultValue: '{{name}} {{reaction}} this poem',
+            name,
+            reaction,
+          })}
         </p>
       </div>
 
       {/* Score bar */}
-      <div className="w-20 h-2 rounded-full overflow-hidden flex-shrink-0" style={{ backgroundColor: 'rgba(26, 21, 32, 0.8)' }}>
+      <div
+        className="w-20 h-2 rounded-full overflow-hidden flex-shrink-0"
+        style={{ backgroundColor: 'rgba(26, 21, 32, 0.8)' }}
+      >
         <motion.div
           className="h-full rounded-full"
           style={{ backgroundColor: char.color }}
@@ -81,10 +148,10 @@ function AffinityBar({ characterId, score, affinityChange, reaction, delay }: {
 }
 
 export function PoemPresentation() {
-  const { t } = useTranslation("c-versecraft");
-  const currentPoemScore = useGameStore(s => s.currentPoemScore);
-  const poemHistory = useGameStore(s => s.poemHistory);
-  const closePoemPresentation = useGameStore(s => s.closePoemPresentation);
+  const { t } = useTranslation('c-versecraft');
+  const currentPoemScore = useGameStore((s) => s.currentPoemScore);
+  const poemHistory = useGameStore((s) => s.poemHistory);
+  const closePoemPresentation = useGameStore((s) => s.closePoemPresentation);
   const [phase, setPhase] = useState<'poem' | 'grade' | 'reactions'>('poem');
 
   const latestPoem = poemHistory[poemHistory.length - 1];
@@ -92,13 +159,16 @@ export function PoemPresentation() {
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('grade'), 2000);
     const t2 = setTimeout(() => setPhase('reactions'), 3500);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
 
   if (!currentPoemScore || !latestPoem) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p style={{ color: '#a89888' }}>{t("no-poem", { defaultValue: "No poem to display." })}</p>
+        <p style={{ color: '#a89888' }}>{t('no-poem', { defaultValue: 'No poem to display.' })}</p>
       </div>
     );
   }
@@ -148,7 +218,10 @@ export function PoemPresentation() {
                   border: `2px solid ${gs.color}`,
                 }}
               >
-                <span className="text-4xl font-bold" style={{ color: gs.color, fontFamily: 'var(--font-cinzel, serif)' }}>
+                <span
+                  className="text-4xl font-bold"
+                  style={{ color: gs.color, fontFamily: 'var(--font-cinzel, serif)' }}
+                >
                   {currentPoemScore.grade}
                 </span>
                 <p className="text-sm mt-1" style={{ color: gs.color }}>
@@ -167,7 +240,7 @@ export function PoemPresentation() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            {currentPoemScore.bonuses.map(bonus => (
+            {currentPoemScore.bonuses.map((bonus) => (
               <span
                 key={bonus}
                 className="text-xs px-2 py-1 rounded-full"
@@ -220,7 +293,7 @@ export function PoemPresentation() {
           whileHover={{ backgroundColor: 'rgba(196, 163, 90, 0.4)' }}
           onClick={closePoemPresentation}
         >
-          {t("continue", { defaultValue: "Continue" })}
+          {t('continue', { defaultValue: 'Continue' })}
         </motion.button>
       )}
     </div>

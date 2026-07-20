@@ -31,9 +31,40 @@ interface IndexedEntry {
 // Very small stopword list — enough to stop "how do i" style filler from
 // dominating the overlap score.
 const STOPWORDS = new Set([
-  'the', 'a', 'an', 'and', 'or', 'to', 'of', 'in', 'on', 'for', 'is', 'are', 'do', 'does',
-  'how', 'what', 'where', 'when', 'can', 'i', 'my', 'me', 'you', 'your', 'it', 'this', 'that',
-  'with', 'at', 'be', 'get', 'find', 'use', 'am',
+  'the',
+  'a',
+  'an',
+  'and',
+  'or',
+  'to',
+  'of',
+  'in',
+  'on',
+  'for',
+  'is',
+  'are',
+  'do',
+  'does',
+  'how',
+  'what',
+  'where',
+  'when',
+  'can',
+  'i',
+  'my',
+  'me',
+  'you',
+  'your',
+  'it',
+  'this',
+  'that',
+  'with',
+  'at',
+  'be',
+  'get',
+  'find',
+  'use',
+  'am',
 ]);
 
 function tokenize(value: string): string[] {
@@ -54,7 +85,10 @@ function loadIndex(): IndexedEntry[] {
     const parsed = JSON.parse(raw) as { entries?: KnowledgeEntry[] };
     entries = Array.isArray(parsed.entries) ? parsed.entries : [];
   } catch (error) {
-    console.error('[assistant] failed to load site-knowledge.json:', error instanceof Error ? error.message : error);
+    console.error(
+      '[assistant] failed to load site-knowledge.json:',
+      error instanceof Error ? error.message : error,
+    );
     entries = [];
   }
   indexCache = entries.map((entry) => ({

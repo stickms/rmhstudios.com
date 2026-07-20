@@ -34,7 +34,10 @@ export const Route = createFileRoute('/api/assistant')({
             prefix: 'assistant',
           });
           if (!allowed) {
-            return Response.json({ error: 'Slow down a moment' }, { status: 429, headers: { 'Retry-After': String(retryAfter) } });
+            return Response.json(
+              { error: 'Slow down a moment' },
+              { status: 429, headers: { 'Retry-After': String(retryAfter) } },
+            );
           }
 
           const body = await request.json().catch(() => ({}));

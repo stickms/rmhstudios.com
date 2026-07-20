@@ -205,10 +205,7 @@ function LightsOutStage({ data, step }: { data: ReplayData; step: number }) {
 
   // The expensive puzzle generation (seed → board) runs once per seed; scrubbing
   // only replays the cheap toggles on top of it.
-  const base = useMemo(
-    () => (Number.isFinite(seed) ? lightsOutInitialGrid(seed) : null),
-    [seed],
-  );
+  const base = useMemo(() => (Number.isFinite(seed) ? lightsOutInitialGrid(seed) : null), [seed]);
 
   const view = useMemo(() => {
     if (!base) return null;
@@ -232,7 +229,10 @@ function LightsOutStage({ data, step }: { data: ReplayData; step: number }) {
   const { grid, shape, current } = view;
 
   return (
-    <div className="flex flex-col items-center gap-1.5" aria-label={t('replay-board', { defaultValue: 'Replay board' })}>
+    <div
+      className="flex flex-col items-center gap-1.5"
+      aria-label={t('replay-board', { defaultValue: 'Replay board' })}
+    >
       {grid.map((row, r) => (
         <div key={r} className="flex gap-1.5">
           {row.map((cell, c) => {

@@ -6,30 +6,30 @@ import {
   createRootRoute,
   useRouterState,
   useNavigate,
-} from "@tanstack/react-router";
-import { type ReactNode, useEffect } from "react";
-import { createServerFn } from "@tanstack/react-start";
-import { getRequest } from "@tanstack/react-start/server";
-import { isDiscordActivity } from "@/lib/discord-sdk";
-import { Providers, THEME_EXCLUDED_ROUTES } from "@/components/Providers";
-import { TwemojiProvider } from "@/components/ui/TwemojiProvider";
-import { NavigationProgress } from "@/components/ui/NavigationProgress";
-import { BackNavAnimation } from "@/components/ui/BackNavAnimation";
-import { useScrollRestoration } from "@/hooks/useScrollRestoration";
-import { RouteErrorFallback } from "@/components/errors/RouteErrorFallback";
-import { NotFound } from "@/components/errors/NotFound";
-import { installGlobalErrorHandlers } from "@/lib/client-errors";
-import { initWebVitals } from "@/lib/rum";
-import { registerServiceWorker } from "@/lib/sw-register";
-import { organizationSchema, websiteSchema, jsonLdScript } from "@/lib/schema";
-import { GlassFilter } from "@/components/ui/liquid-glass";
-import { getRequestSession } from "@/lib/auth-session.server";
-import { THEME_BG, DEFAULT_STYLE } from "@/stores/themeStore";
-import { ACCENT_MAP } from "@/lib/appearance";
-import appCss from "@/app/globals.css?url";
-import { resolveLocale, parseLocaleCookie } from "@/lib/i18n/resolve";
-import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from "@/lib/i18n/config";
-import { localeCoreResources, preloadLocale } from "@/lib/i18n/resources.server";
+} from '@tanstack/react-router';
+import { type ReactNode, useEffect } from 'react';
+import { createServerFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
+import { isDiscordActivity } from '@/lib/discord-sdk';
+import { Providers, THEME_EXCLUDED_ROUTES } from '@/components/Providers';
+import { TwemojiProvider } from '@/components/ui/TwemojiProvider';
+import { NavigationProgress } from '@/components/ui/NavigationProgress';
+import { BackNavAnimation } from '@/components/ui/BackNavAnimation';
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
+import { RouteErrorFallback } from '@/components/errors/RouteErrorFallback';
+import { NotFound } from '@/components/errors/NotFound';
+import { installGlobalErrorHandlers } from '@/lib/client-errors';
+import { initWebVitals } from '@/lib/rum';
+import { registerServiceWorker } from '@/lib/sw-register';
+import { organizationSchema, websiteSchema, jsonLdScript } from '@/lib/schema';
+import { GlassFilter } from '@/components/ui/liquid-glass';
+import { getRequestSession } from '@/lib/auth-session.server';
+import { THEME_BG, DEFAULT_STYLE } from '@/stores/themeStore';
+import { ACCENT_MAP } from '@/lib/appearance';
+import appCss from '@/app/globals.css?url';
+import { resolveLocale, parseLocaleCookie } from '@/lib/i18n/resolve';
+import { dirFor, DEFAULT_LOCALE, LOCALES, RTL_LOCALES, type Locale } from '@/lib/i18n/config';
+import { localeCoreResources, preloadLocale } from '@/lib/i18n/resources.server';
 
 /**
  * Cap how long the root loader will block on the session lookup before it gives
@@ -62,8 +62,14 @@ function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
   return new Promise<T>((resolve) => {
     const timer = setTimeout(() => resolve(fallback), ms);
     p.then(
-      (value) => { clearTimeout(timer); resolve(value); },
-      () => { clearTimeout(timer); resolve(fallback); },
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(fallback);
+      },
     );
   });
 }
@@ -73,7 +79,7 @@ function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
  * root loader so the shell can render signed-in on the first paint instead of
  * flashing "signed out" while better-auth's client session loads after hydration.
  */
-const getInitialUser = createServerFn({ method: "GET" }).handler(async () => {
+const getInitialUser = createServerFn({ method: 'GET' }).handler(async () => {
   try {
     // Request-scoped so this shares one session resolution with the page loader
     // and getSidebarData instead of each re-querying Better Auth + entitlements.
@@ -112,7 +118,6 @@ const themeScript = `(function(){try{var m=${JSON.stringify(THEME_BG)};var D=${J
  */
 const localeScript = `(function(){try{var m=document.cookie.match(/(?:^|; )rmh-lang=([^;]+)/);var l=m?decodeURIComponent(m[1]):"en";var S=${JSON.stringify([...LOCALES])};var R=${JSON.stringify([...RTL_LOCALES])};if(S.indexOf(l)<0)l="en";document.documentElement.lang=l;document.documentElement.setAttribute("dir",R.indexOf(l)>=0?"rtl":"ltr")}catch(e){}})()`;
 
-
 const bodyThemeScript = `if(window.__themeBg)document.body.style.backgroundColor=window.__themeBg`;
 
 /**
@@ -128,10 +133,10 @@ const deferredFontsScript = `(function(){var u="https://fonts.googleapis.com/css
  * Accept-Language header (browser default) on the server, so SSR renders in
  * the correct language on the very first paint.
  */
-const getInitialI18n = createServerFn({ method: "GET" }).handler(async () => {
+const getInitialI18n = createServerFn({ method: 'GET' }).handler(async () => {
   const request = getRequest();
-  const cookie = parseLocaleCookie(request.headers.get("cookie"));
-  const locale = resolveLocale({ cookie, acceptLanguage: request.headers.get("accept-language") });
+  const cookie = parseLocaleCookie(request.headers.get('cookie'));
+  const locale = resolveLocale({ cookie, acceptLanguage: request.headers.get('accept-language') });
   // en is bundled on the client and needs nothing here. For non-en we lazily load
   // ONLY the active language's bundle (its own async chunk) — the server no longer
   // imports all 32 catalogs at boot (cold-start win; see lib/i18n/resources.server.ts)
@@ -174,39 +179,38 @@ export const Route = createRootRoute({
     return { user, locale: i18n.locale, i18nResources: i18n.resources };
   },
   head: (ctx) => {
-    const discord = ctx.matches?.some(m =>
-      m.fullPath?.startsWith('/discord')
-    );
+    const discord = ctx.matches?.some((m) => m.fullPath?.startsWith('/discord'));
 
     if (discord) {
       // Minimal head for Discord Activity — no inline scripts or external fonts
       // (Discord's CSP blocks them, causing hydration mismatch)
       return {
         meta: [
-          { charSet: "utf-8" },
-          { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-          { title: "RMHBox" },
+          { charSet: 'utf-8' },
+          { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+          { title: 'RMHBox' },
         ],
-        links: [
-          { rel: "stylesheet", href: appCss },
-        ],
+        links: [{ rel: 'stylesheet', href: appCss }],
         scripts: [],
       };
     }
 
     return {
       meta: [
-        { charSet: "utf-8" },
-        { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-        { title: "RMH Studios — The everything platform." },
-        { name: "description", content: "Type a prompt and get an instant, shareable, collaboratively-editable webpage." },
+        { charSet: 'utf-8' },
+        { name: 'viewport', content: 'width=device-width, initial-scale=1, viewport-fit=cover' },
+        { title: 'RMH Studios — The everything platform.' },
+        {
+          name: 'description',
+          content: 'Type a prompt and get an instant, shareable, collaboratively-editable webpage.',
+        },
       ],
       links: [
-        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
-        { rel: "manifest", href: "/manifest.webmanifest" },
-        { rel: "preconnect", href: "https://fonts.googleapis.com" },
-        { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-        { rel: "stylesheet", href: appCss },
+        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        { rel: 'manifest', href: '/manifest.webmanifest' },
+        { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
+        { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossOrigin: 'anonymous' },
+        { rel: 'stylesheet', href: appCss },
       ],
       scripts: [
         { children: themeScript },
@@ -232,10 +236,10 @@ function RootDocument({ children }: { children: ReactNode }) {
   // inline guard (runs in <head> before body paint) will correct lang/dir
   // client-side for any mismatch, and RootComponent always passes the real
   // resolved locale down to AppI18nProvider.
-  let locale: Locale = "en";
+  let locale: Locale = 'en';
   try {
     const data = Route.useLoaderData();
-    locale = (data?.locale ?? "en") as Locale;
+    locale = (data?.locale ?? 'en') as Locale;
   } catch {
     // shell component cannot access loader data — inline guard handles correction
   }
@@ -244,10 +248,7 @@ function RootDocument({ children }: { children: ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body
-        className="font-body antialiased"
-        suppressHydrationWarning
-      >
+      <body className="font-body antialiased" suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: bodyThemeScript }} />
         {/* SVG displacement filter sampled by the liquid-glass primitives
             (components/ui/liquid-glass.tsx) via url(#glass-distortion).
@@ -292,7 +293,11 @@ function RootComponent() {
   }, [pathname, navigate]);
 
   return (
-    <Providers initialUser={initialUser} locale={(locale ?? "en") as Locale} i18nResources={i18nResources}>
+    <Providers
+      initialUser={initialUser}
+      locale={(locale ?? 'en') as Locale}
+      i18nResources={i18nResources}
+    >
       <NavigationProgress />
       <BackNavAnimation />
       <TwemojiProvider>

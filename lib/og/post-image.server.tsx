@@ -44,7 +44,8 @@ function loadFonts(): Promise<void> {
   if (fontRegular && fontBold) return Promise.resolve();
   if (fontsLoading) return fontsLoading;
   // Negative cache: fail fast during the cooldown window rather than retrying.
-  if (Date.now() < fontFailUntil) return Promise.reject(new Error('Fonts unavailable (cooling down)'));
+  if (Date.now() < fontFailUntil)
+    return Promise.reject(new Error('Fonts unavailable (cooling down)'));
   fontsLoading = Promise.all([fetchFont(FONT_REGULAR_URL), fetchFont(FONT_BOLD_URL)])
     .then(([reg, bold]) => {
       fontRegular = reg;
@@ -159,8 +160,12 @@ export async function renderPostOgImage(data: PostOgData): Promise<Buffer> {
           </div>
         )}
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span style={{ fontSize: 36, fontWeight: 700, color: TEXT }}>{truncate(data.authorName, 28)}</span>
-          {data.authorHandle && <span style={{ fontSize: 26, color: MUTED }}>@{data.authorHandle}</span>}
+          <span style={{ fontSize: 36, fontWeight: 700, color: TEXT }}>
+            {truncate(data.authorName, 28)}
+          </span>
+          {data.authorHandle && (
+            <span style={{ fontSize: 26, color: MUTED }}>@{data.authorHandle}</span>
+          )}
         </div>
       </div>
 
@@ -178,14 +183,29 @@ export async function renderPostOgImage(data: PostOgData): Promise<Buffer> {
         {body || 'View this post on RMH Studios'}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: 'auto',
+        }}
+      >
         <div style={{ display: 'flex', gap: 32, fontSize: 28, color: MUTED }}>
           <span>♥ {data.likeCount}</span>
           <span>↺ {data.repostCount}</span>
           <span>💬 {data.commentCount}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ display: 'flex', width: 28, height: 28, borderRadius: 8, backgroundColor: ACCENT }} />
+          <div
+            style={{
+              display: 'flex',
+              width: 28,
+              height: 28,
+              borderRadius: 8,
+              backgroundColor: ACCENT,
+            }}
+          />
           <span style={{ fontSize: 30, fontWeight: 700, color: TEXT }}>RMH Studios</span>
         </div>
       </div>

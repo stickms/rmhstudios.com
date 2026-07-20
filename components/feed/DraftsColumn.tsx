@@ -2,7 +2,17 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FileText, CalendarClock, Send, Trash2, Globe, Users, Lock, BarChart3, Image as ImageIcon } from 'lucide-react';
+import {
+  FileText,
+  CalendarClock,
+  Send,
+  Trash2,
+  Globe,
+  Users,
+  Lock,
+  BarChart3,
+  Image as ImageIcon,
+} from 'lucide-react';
 import { ColumnHeader } from './ColumnHeader';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -113,11 +123,19 @@ export function DraftsColumn({
 
   return (
     <div className="min-h-screen">
-      <ColumnHeader icon={FileText} title={t('drafts-and-scheduled', { defaultValue: 'Drafts & Scheduled' })} />
+      <ColumnHeader
+        icon={FileText}
+        title={t('drafts-and-scheduled', { defaultValue: 'Drafts & Scheduled' })}
+      />
 
       {empty ? (
         <Reveal className="flex flex-col items-center justify-center gap-3 px-6 py-24 text-center">
-          <EmptyState description={t('no-drafts-yet', { defaultValue: 'No drafts yet. Use the "Save as draft" or "Schedule" options in the composer.' })} />
+          <EmptyState
+            description={t('no-drafts-yet', {
+              defaultValue:
+                'No drafts yet. Use the "Save as draft" or "Schedule" options in the composer.',
+            })}
+          />
         </Reveal>
       ) : (
         <div className="space-y-8 p-4">
@@ -169,9 +187,16 @@ function Section({
         {rows.map((r) => {
           const AudienceIcon = AUDIENCE_ICON[r.audience];
           return (
-            <div key={r.id} className={`rounded-site border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}>
+            <div
+              key={r.id}
+              className={`rounded-site border border-site-border bg-site-surface p-3 ${LIFT_CARD}`}
+            >
               <p className="whitespace-pre-wrap break-words text-sm text-site-text">
-                {r.content || <span className="text-site-text-dim">{t('no-text', { defaultValue: '(no text)' })}</span>}
+                {r.content || (
+                  <span className="text-site-text-dim">
+                    {t('no-text', { defaultValue: '(no text)' })}
+                  </span>
+                )}
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-site-text-dim">
                 {r.scheduledAt && (

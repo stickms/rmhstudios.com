@@ -28,7 +28,7 @@
  * For-You feed for anon (the origin already caches that assembly). Keep this
  * list tiny and audited — never add a path that varies per anon visitor.
  */
-const CACHEABLE_ANON_PATHS = new Set<string>(["/"]);
+const CACHEABLE_ANON_PATHS = new Set<string>(['/']);
 
 /** Shared-cache freshness (s) — matches the anon feed assembly TTL. */
 const S_MAXAGE = 30;
@@ -44,7 +44,7 @@ const SWR = 120;
  */
 function isAuthenticated(cookieHeader: string | null | undefined): boolean {
   if (!cookieHeader) return false;
-  return cookieHeader.includes("session_token") || cookieHeader.includes("session_data");
+  return cookieHeader.includes('session_token') || cookieHeader.includes('session_data');
 }
 
 /**
@@ -54,13 +54,13 @@ function isAuthenticated(cookieHeader: string | null | undefined): boolean {
  */
 function hasLocalePreference(cookieHeader: string | null | undefined): boolean {
   if (!cookieHeader) return false;
-  return cookieHeader.includes("rmh-lang=");
+  return cookieHeader.includes('rmh-lang=');
 }
 
 export default function anonHtmlCachePlugin(nitroApp: {
   hooks: { hook: (name: string, fn: (res: unknown, event: unknown) => void) => void };
 }): void {
-  nitroApp.hooks.hook("response", (res: unknown, event: unknown) => {
+  nitroApp.hooks.hook('response', (res: unknown, event: unknown) => {
     try {
       const req = (event as { req?: { url?: string; method?: string; headers?: Headers } })?.req;
       const headers =
@@ -69,34 +69,34 @@ export default function anonHtmlCachePlugin(nitroApp: {
       if (
         !req ||
         !headers ||
-        typeof headers.set !== "function" ||
-        typeof headers.get !== "function"
+        typeof headers.set !== 'function' ||
+        typeof headers.get !== 'function'
       ) {
         return;
       }
 
       // Only ever touch document (HTML) responses — never assets/API/JSON.
-      const contentType = headers.get("content-type") || "";
-      if (!contentType.includes("text/html")) return;
+      const contentType = headers.get('content-type') || '';
+      if (!contentType.includes('text/html')) return;
 
       // Document renders are GETs; treat a missing method as GET, never cache
       // non-GET/HEAD.
-      const method = (req.method || "GET").toUpperCase();
-      if (method !== "GET" && method !== "HEAD") return;
+      const method = (req.method || 'GET').toUpperCase();
+      if (method !== 'GET' && method !== 'HEAD') return;
 
-      let pathname = "";
+      let pathname = '';
       try {
-        pathname = new URL(req.url ?? "/", "http://localhost").pathname;
+        pathname = new URL(req.url ?? '/', 'http://localhost').pathname;
       } catch {
         return;
       }
 
-      const cookie = req.headers?.get?.("cookie") ?? null;
+      const cookie = req.headers?.get?.('cookie') ?? null;
 
       // Authenticated → guarantee no shared cache ever stores this personalized
       // HTML. Defense-in-depth beneath the edge rule's cookie bypass.
       if (isAuthenticated(cookie)) {
-        headers.set("Cache-Control", "private, no-store");
+        headers.set('Cache-Control', 'private, no-store');
         return;
       }
 
@@ -106,15 +106,15 @@ export default function anonHtmlCachePlugin(nitroApp: {
       if (
         CACHEABLE_ANON_PATHS.has(pathname) &&
         !hasLocalePreference(cookie) &&
-        !headers.get("Cache-Control")
+        !headers.get('Cache-Control')
       ) {
         headers.set(
-          "Cache-Control",
+          'Cache-Control',
           `public, max-age=0, s-maxage=${S_MAXAGE}, stale-while-revalidate=${SWR}`,
         );
         // Backstop for compliant shared caches that key on it; the edge rule's
         // cookie bypass is the primary language/identity separator.
-        if (!headers.get("Vary")) headers.set("Vary", "Accept-Language");
+        if (!headers.get('Vary')) headers.set('Vary', 'Accept-Language');
       }
     } catch {
       // Never let cache logic break a response.

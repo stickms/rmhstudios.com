@@ -50,11 +50,14 @@ export const Route = createFileRoute('/api/rmharks/$id/similar')({
           const ranked = rankSimilar(
             source.content,
             candidates.map((c) => ({ doc: c, text: c.content })),
-            5
+            5,
           );
 
           return Response.json({
-            items: await mapRmharksWithBoundedReactions(ranked.map((r) => r.doc), viewerId),
+            items: await mapRmharksWithBoundedReactions(
+              ranked.map((r) => r.doc),
+              viewerId,
+            ),
           });
         } catch (error) {
           console.error('Similar posts error:', error);

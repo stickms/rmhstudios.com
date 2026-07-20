@@ -34,13 +34,22 @@ export interface CommunityDetail {
  */
 export async function getCommunity(
   slug: string,
-  viewerId: string | null
+  viewerId: string | null,
 ): Promise<CommunityDetail | null> {
   const community = await prisma.community.findUnique({
     where: { slug },
     select: {
-      id: true, slug: true, name: true, description: true, icon: true, color: true,
-      isPrivate: true, memberCount: true, postCount: true, createdById: true, createdAt: true,
+      id: true,
+      slug: true,
+      name: true,
+      description: true,
+      icon: true,
+      color: true,
+      isPrivate: true,
+      memberCount: true,
+      postCount: true,
+      createdById: true,
+      createdAt: true,
     },
   });
   if (!community) return null;
@@ -91,7 +100,7 @@ export interface CommunityFeedResult {
 export async function getCommunityFeed(
   slug: string,
   viewerId: string | null,
-  opts: { cursor?: string | null; limit?: number } = {}
+  opts: { cursor?: string | null; limit?: number } = {},
 ): Promise<CommunityFeedResult | null> {
   const community = await prisma.community.findUnique({ where: { slug }, select: { id: true } });
   if (!community) return null;
@@ -115,7 +124,7 @@ export async function getCommunityFeed(
   const page = hasMore ? rows.slice(0, limit) : rows;
   return {
     items: await mapRmharksWithBoundedReactions(page, viewerId),
-    nextCursor: hasMore ? page[page.length - 1]?.id ?? null : null,
+    nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
     hasMore,
   };
 }

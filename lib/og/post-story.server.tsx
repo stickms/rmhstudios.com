@@ -41,7 +41,8 @@ async function fetchFont(url: string): Promise<ArrayBuffer> {
 function loadFonts(): Promise<void> {
   if (fontRegular && fontBold) return Promise.resolve();
   if (fontsLoading) return fontsLoading;
-  if (Date.now() < fontFailUntil) return Promise.reject(new Error('Fonts unavailable (cooling down)'));
+  if (Date.now() < fontFailUntil)
+    return Promise.reject(new Error('Fonts unavailable (cooling down)'));
   fontsLoading = Promise.all([fetchFont(FONT_REGULAR_URL), fetchFont(FONT_BOLD_URL)])
     .then(([reg, bold]) => {
       fontRegular = reg;
@@ -97,7 +98,9 @@ export interface PostStoryData {
 // The Inter font used by satori has no emoji glyphs, so emoji would render as
 // "tofu" boxes. Strip emoji/pictographs (plus variation selectors + ZWJ) first.
 function stripEmoji(s: string): string {
-  return s.replace(/[\p{Extended_Pictographic}\u{FE00}-\u{FE0F}\u{200D}]/gu, '').replace(/\s{2,}/g, ' ');
+  return s
+    .replace(/[\p{Extended_Pictographic}\u{FE00}-\u{FE0F}\u{200D}]/gu, '')
+    .replace(/\s{2,}/g, ' ');
 }
 
 function truncate(s: string, n: number): string {
@@ -162,8 +165,12 @@ export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer>
             </div>
           )}
           <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 46, fontWeight: 700, color: TEXT }}>{truncate(data.authorName, 22)}</span>
-            {data.authorHandle && <span style={{ fontSize: 34, color: MUTED }}>@{data.authorHandle}</span>}
+            <span style={{ fontSize: 46, fontWeight: 700, color: TEXT }}>
+              {truncate(data.authorName, 22)}
+            </span>
+            {data.authorHandle && (
+              <span style={{ fontSize: 34, color: MUTED }}>@{data.authorHandle}</span>
+            )}
           </div>
         </div>
 
@@ -181,8 +188,24 @@ export async function renderPostStoryImage(data: PostStoryData): Promise<Buffer>
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 64 }}>
-        <div style={{ display: 'flex', width: 40, height: 40, borderRadius: 12, backgroundColor: ACCENT }} />
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 16,
+          marginTop: 64,
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            backgroundColor: ACCENT,
+          }}
+        />
         <span style={{ fontSize: 44, fontWeight: 700, color: TEXT }}>RMH Studios</span>
       </div>
     </div>

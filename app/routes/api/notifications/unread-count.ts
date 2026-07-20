@@ -15,9 +15,12 @@ export const Route = createFileRoute('/api/notifications/unread-count')({
           // Reads the denormalized Redis counter (kept warm by notification
           // create/remove), falling back to a COUNT on a miss / without Redis.
           const count = await getUnreadNotificationCount(session.user.id);
-          return Response.json({ count }, {
-            headers: { 'Cache-Control': 'no-store' },
-          });
+          return Response.json(
+            { count },
+            {
+              headers: { 'Cache-Control': 'no-store' },
+            },
+          );
         } catch (error) {
           console.error('Unread notifications count error:', error);
           return Response.json({ count: 0 });

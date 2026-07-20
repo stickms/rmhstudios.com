@@ -1,5 +1,11 @@
 import { useEffect, useRef } from 'react';
-import { EditorView, keymap, drawSelection, highlightActiveLine, placeholder as cmPlaceholder } from '@codemirror/view';
+import {
+  EditorView,
+  keymap,
+  drawSelection,
+  highlightActiveLine,
+  placeholder as cmPlaceholder,
+} from '@codemirror/view';
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language';
 import { markdown } from '@codemirror/lang-markdown';

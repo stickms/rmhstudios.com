@@ -97,7 +97,7 @@ async function readBytesLimited(request: Request, maxBytes: number): Promise<Uin
  */
 export async function readJsonLimited<T = unknown>(
   request: Request,
-  maxBytes: number = DEFAULT_JSON_LIMIT
+  maxBytes: number = DEFAULT_JSON_LIMIT,
 ): Promise<T> {
   // 1. Fast path: an honest, oversize Content-Length is rejected without reading.
   const declared = Number(request.headers.get('content-length'));

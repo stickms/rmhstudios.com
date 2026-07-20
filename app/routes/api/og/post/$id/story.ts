@@ -33,7 +33,7 @@ export const Route = createFileRoute('/api/og/post/$id/story')({
 
           const png = await renderPostStoryImage({
             id: params.id,
-            content: hideContent ? '' : post?.content ?? '',
+            content: hideContent ? '' : (post?.content ?? ''),
             authorName: post?.user?.name ?? 'RMH Studios',
             authorHandle: post?.user?.handle ?? null,
             authorImage: post?.user?.image ?? null,

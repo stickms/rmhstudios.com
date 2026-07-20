@@ -23,7 +23,11 @@ const createSchema = z
       ctx.addIssue({ code: 'custom', message: 'End must be after start', path: ['endsAt'] });
     }
     if (d.venueKind === 'URL' && !httpUrl(191).safeParse(d.venueRef ?? '').success) {
-      ctx.addIssue({ code: 'custom', message: 'A valid http(s) URL is required', path: ['venueRef'] });
+      ctx.addIssue({
+        code: 'custom',
+        message: 'A valid http(s) URL is required',
+        path: ['venueRef'],
+      });
     }
   });
 

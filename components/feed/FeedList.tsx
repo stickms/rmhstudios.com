@@ -48,10 +48,27 @@ interface FeedListProps {
   initialMutedWords?: string[];
 }
 
-export function FeedList({ following = false, onSwitchToForYou, initialItems, initialCursor = null, initialHasMore = false, initialMutedWords }: FeedListProps) {
+export function FeedList({
+  following = false,
+  onSwitchToForYou,
+  initialItems,
+  initialCursor = null,
+  initialHasMore = false,
+  initialMutedWords,
+}: FeedListProps) {
   const { t } = useTranslation('feed');
-  const { items, loading, initialized, error, hasMore, fetchNextPage, retry, hydrate, pendingItems, flushPending } =
-    useFeedStore();
+  const {
+    items,
+    loading,
+    initialized,
+    error,
+    hasMore,
+    fetchNextPage,
+    retry,
+    hydrate,
+    pendingItems,
+    flushPending,
+  } = useFeedStore();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const initialFetched = useRef(false);
   // Ids of posts just flushed from the "N new" pill, so they can ease in rather
@@ -72,7 +89,9 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
   // SSR HTML has content and hydration matches, then flip to virtualized after
   // mount. A back-nav remount (hasClientMounted already true) starts virtualized
   // immediately so scroll restoration lands without a flash of the top.
-  const [virtualized, setVirtualized] = useState(() => typeof window !== 'undefined' && hasClientMounted);
+  const [virtualized, setVirtualized] = useState(
+    () => typeof window !== 'undefined' && hasClientMounted,
+  );
   useEffect(() => {
     hasClientMounted = true;
     if (!virtualized) setVirtualized(true);
@@ -157,7 +176,15 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
         }
       }
     }
-  }, [fetchNextPage, hydrate, items.length, initialItems, initialCursor, initialHasMore, initialMutedWords]);
+  }, [
+    fetchNextPage,
+    hydrate,
+    items.length,
+    initialItems,
+    initialCursor,
+    initialHasMore,
+    initialMutedWords,
+  ]);
 
   // Self-heal the feed when the environment recovers. Mobile browsers suspend
   // backgrounded tabs (killing an in-flight fetch), and networks drop — either
@@ -195,7 +222,7 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
         fetchNextPage();
       }
     },
-    [hasMore, loading, error, fetchNextPage]
+    [hasMore, loading, error, fetchNextPage],
   );
 
   useEffect(() => {
@@ -234,7 +261,11 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
             className="pointer-events-auto flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-site-accent text-site-bg text-sm font-bold shadow-lg hover:bg-site-accent-hover transition-[transform,background-color] duration-150 active:scale-95"
           >
             <ArrowUp className="w-4 h-4" />
-            {t('new-posts', { count: pendingItems.length, defaultValue: '{{count}} new post', defaultValue_plural: '{{count}} new posts' })}
+            {t('new-posts', {
+              count: pendingItems.length,
+              defaultValue: '{{count}} new post',
+              defaultValue_plural: '{{count}} new posts',
+            })}
           </button>
         </div>
       )}
@@ -246,7 +277,11 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
         // virtualizer already culls off-screen rows, and `content-visibility` would
         // report the intrinsic-size estimate for overscan rows instead of their
         // real height, corrupting measurement.
-        <div ref={parentRef} className="relative w-full" style={{ height: `${virtualizer.getTotalSize()}px` }}>
+        <div
+          ref={parentRef}
+          className="relative w-full"
+          style={{ height: `${virtualizer.getTotalSize()}px` }}
+        >
           {virtualizer.getVirtualItems().map((vRow) => {
             const item = displayItems[vRow.index];
             if (!item) return null;
@@ -283,7 +318,10 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
           const entering = enteringIds.has(item.id);
           const cv = item.pending || entering ? '' : 'feed-card-cv';
           return (
-            <div key={item.id} className={`${cv} ${entering ? 'feed-item-enter' : ''}`.trim() || undefined}>
+            <div
+              key={item.id}
+              className={`${cv} ${entering ? 'feed-item-enter' : ''}`.trim() || undefined}
+            >
               <FeedItem item={item} />
             </div>
           );
@@ -306,9 +344,13 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
           the reader stranded on skeletons or a misleading "empty" state. */}
       {error && items.length === 0 && (
         <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-          <p className="text-lg font-medium text-site-text mb-1">{t('load-error-title', { defaultValue: "Couldn't load your feed" })}</p>
+          <p className="text-lg font-medium text-site-text mb-1">
+            {t('load-error-title', { defaultValue: "Couldn't load your feed" })}
+          </p>
           <p className="text-sm text-site-text-muted mb-6">
-            {t('load-error-subtitle', { defaultValue: 'Something went wrong. Check your connection and try again.' })}
+            {t('load-error-subtitle', {
+              defaultValue: 'Something went wrong. Check your connection and try again.',
+            })}
           </p>
           <button
             onClick={retry}
@@ -320,12 +362,19 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
       )}
 
       {/* Empty state — only after the first fetch has actually completed */}
-      {initialized && !loading && !error && items.length === 0 && (
-        following ? (
+      {initialized &&
+        !loading &&
+        !error &&
+        items.length === 0 &&
+        (following ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <p className="text-lg font-medium text-site-text mb-1">{t('following-empty-title', { defaultValue: 'Your Following feed is quiet' })}</p>
+            <p className="text-lg font-medium text-site-text mb-1">
+              {t('following-empty-title', { defaultValue: 'Your Following feed is quiet' })}
+            </p>
             <p className="text-sm text-site-text-muted mb-6">
-              {t('following-empty-subtitle', { defaultValue: 'Follow some people and their posts will show up here.' })}
+              {t('following-empty-subtitle', {
+                defaultValue: 'Follow some people and their posts will show up here.',
+              })}
             </p>
             {onSwitchToForYou && (
               <button
@@ -338,13 +387,16 @@ export function FeedList({ following = false, onSwitchToForYou, initialItems, in
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <p className="text-lg font-medium text-site-text mb-1">{t('for-you-empty-title', { defaultValue: 'Nothing here yet' })}</p>
+            <p className="text-lg font-medium text-site-text mb-1">
+              {t('for-you-empty-title', { defaultValue: 'Nothing here yet' })}
+            </p>
             <p className="text-sm text-site-text-muted">
-              {t('for-you-empty-subtitle', { defaultValue: 'Be the first to post an RMHark, or check back later!' })}
+              {t('for-you-empty-subtitle', {
+                defaultValue: 'Be the first to post an RMHark, or check back later!',
+              })}
             </p>
           </div>
-        )
-      )}
+        ))}
 
       {/* Pagination failed but we already have posts — let the reader pull the
           next page again rather than silently stalling the infinite scroll. */}

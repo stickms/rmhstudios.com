@@ -55,7 +55,11 @@ export async function loadBoundedReactionSummaries(
   const mineSet = new Set(mine.map((m) => `${m.rmheetId} ${m.emoji}`));
   for (const g of grouped) {
     const list = result.get(g.rmheetId) ?? [];
-    list.push({ emoji: g.emoji, count: g._count._all, reactedByMe: mineSet.has(`${g.rmheetId} ${g.emoji}`) });
+    list.push({
+      emoji: g.emoji,
+      count: g._count._all,
+      reactedByMe: mineSet.has(`${g.rmheetId} ${g.emoji}`),
+    });
     result.set(g.rmheetId, list);
   }
   for (const list of result.values()) list.sort((a, b) => b.count - a.count);
@@ -129,7 +133,9 @@ export function rmharkInclude(viewerId: string | null) {
           orderBy: { position: 'asc' as const },
           include: {
             _count: { select: { votes: true } },
-            ...(viewerId ? { votes: { where: { userId: viewerId }, select: { id: true, optionId: true } } } : {}),
+            ...(viewerId
+              ? { votes: { where: { userId: viewerId }, select: { id: true, optionId: true } } }
+              : {}),
           },
         },
       },
@@ -147,7 +153,11 @@ function mapPoll(poll: any): FeedPoll | undefined {
     multiSelect: poll.multiSelect,
     closesAt: poll.closesAt ? poll.closesAt.toISOString() : null,
     totalVotes,
-    options: poll.options.map((o: any) => ({ id: o.id, text: o.text, voteCount: o._count?.votes ?? 0 })),
+    options: poll.options.map((o: any) => ({
+      id: o.id,
+      text: o.text,
+      voteCount: o._count?.votes ?? 0,
+    })),
     myVotes: poll.options.filter((o: any) => o.votes?.length > 0).map((o: any) => o.id),
   };
 }

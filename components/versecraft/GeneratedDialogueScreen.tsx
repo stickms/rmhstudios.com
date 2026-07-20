@@ -22,7 +22,12 @@ function preloadPack(packId: string) {
 }
 import { asset } from '@/lib/storage/asset';
 import { makePersonalizer } from '@/lib/versecraft/gen/personalize';
-import { MC_SPEAKER, type GenNode, type GenScene, type Emotion } from '@/lib/versecraft/gen/world-types';
+import {
+  MC_SPEAKER,
+  type GenNode,
+  type GenScene,
+  type Emotion,
+} from '@/lib/versecraft/gen/world-types';
 
 const BG_BASE = asset('/sprites/versecraft/backgrounds');
 
@@ -40,53 +45,93 @@ const TIME_FILTERS: Record<string, string> = {
 /** Lighten a hex toward white so name chips stay legible whatever the accent. */
 function lighten(hex: string, amt = 0.45): string {
   const h = hex.replace('#', '');
-  const n = h.length === 3 ? h.split('').map(c => c + c).join('') : h;
-  const r = parseInt(n.slice(0, 2), 16), g = parseInt(n.slice(2, 4), 16), b = parseInt(n.slice(4, 6), 16);
-  const mix = (c: number) => Math.round(c + (255 - c) * amt).toString(16).padStart(2, '0');
+  const n =
+    h.length === 3
+      ? h
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : h;
+  const r = parseInt(n.slice(0, 2), 16),
+    g = parseInt(n.slice(2, 4), 16),
+    b = parseInt(n.slice(4, 6), 16);
+  const mix = (c: number) =>
+    Math.round(c + (255 - c) * amt)
+      .toString(16)
+      .padStart(2, '0');
   return `#${mix(r)}${mix(g)}${mix(b)}`;
 }
 
 function bgImage(env: string, time: string): string {
   // Existing assets are named "<env>_day.webp" with some evening/night variants.
-  const variant = (time === 'evening' || time === 'night') ? time : 'day';
+  const variant = time === 'evening' || time === 'night' ? time : 'day';
   return `${BG_BASE}/${env}_${variant}.webp`;
 }
 
-function Typewriter({ text, speed, onDone, skipRef }: {
-  text: string; speed: number; onDone: () => void;
+function Typewriter({
+  text,
+  speed,
+  onDone,
+  skipRef,
+}: {
+  text: string;
+  speed: number;
+  onDone: () => void;
   skipRef: React.MutableRefObject<(() => boolean) | null>;
 }) {
   const [n, setN] = useState(0);
   const [done, setDone] = useState(false);
-  useEffect(() => { setN(0); setDone(false); }, [text]);
   useEffect(() => {
-    if (n >= text.length) { if (!done) { setDone(true); onDone(); } return; }
-    const t = setTimeout(() => setN(v => v + 1), speed);
+    setN(0);
+    setDone(false);
+  }, [text]);
+  useEffect(() => {
+    if (n >= text.length) {
+      if (!done) {
+        setDone(true);
+        onDone();
+      }
+      return;
+    }
+    const t = setTimeout(() => setN((v) => v + 1), speed);
     return () => clearTimeout(t);
   }, [n, text, speed, onDone, done]);
   useEffect(() => {
-    skipRef.current = () => { if (!done) { setN(text.length); return true; } return false; };
-    return () => { skipRef.current = null; };
+    skipRef.current = () => {
+      if (!done) {
+        setN(text.length);
+        return true;
+      }
+      return false;
+    };
+    return () => {
+      skipRef.current = null;
+    };
   }, [done, text.length, skipRef]);
-  return <span>{text.slice(0, n)}{!done && <span className="animate-pulse">|</span>}</span>;
+  return (
+    <span>
+      {text.slice(0, n)}
+      {!done && <span className="animate-pulse">|</span>}
+    </span>
+  );
 }
 
 export function GeneratedDialogueScreen() {
-  const world = useGameStore(s => s.world);
-  const chapters = useGameStore(s => s.generatedChapters);
-  const chapterIndex = useGameStore(s => s.currentChapterIndex);
-  const sceneIndex = useGameStore(s => s.currentSceneIndex);
-  const dialogueIndex = useGameStore(s => s.currentDialogueIndex);
-  const settings = useGameStore(s => s.settings);
-  const advanceDialogue = useGameStore(s => s.advanceDialogue);
-  const setSceneIndex = useGameStore(s => s.setSceneIndex);
-  const genApplyChoice = useGameStore(s => s.genApplyChoice);
-  const advanceGeneratedChapter = useGameStore(s => s.advanceGeneratedChapter);
-  const prefetchChapter = useGameStore(s => s.prefetchChapter);
-  const shouldRunPoem = useGameStore(s => s.shouldRunPoem);
-  const openGenPoem = useGameStore(s => s.openGenPoem);
-  const genLoading = useGameStore(s => s.genLoading);
-  const setScreen = useGameStore(s => s.setScreen);
+  const world = useGameStore((s) => s.world);
+  const chapters = useGameStore((s) => s.generatedChapters);
+  const chapterIndex = useGameStore((s) => s.currentChapterIndex);
+  const sceneIndex = useGameStore((s) => s.currentSceneIndex);
+  const dialogueIndex = useGameStore((s) => s.currentDialogueIndex);
+  const settings = useGameStore((s) => s.settings);
+  const advanceDialogue = useGameStore((s) => s.advanceDialogue);
+  const setSceneIndex = useGameStore((s) => s.setSceneIndex);
+  const genApplyChoice = useGameStore((s) => s.genApplyChoice);
+  const advanceGeneratedChapter = useGameStore((s) => s.advanceGeneratedChapter);
+  const prefetchChapter = useGameStore((s) => s.prefetchChapter);
+  const shouldRunPoem = useGameStore((s) => s.shouldRunPoem);
+  const openGenPoem = useGameStore((s) => s.openGenPoem);
+  const genLoading = useGameStore((s) => s.genLoading);
+  const setScreen = useGameStore((s) => s.setScreen);
 
   const [textComplete, setTextComplete] = useState(false);
   const [waitingScene, setWaitingScene] = useState(false);
@@ -132,14 +177,14 @@ export function GeneratedDialogueScreen() {
   // are instant (no flicker). Also warm the whole cast once we have a world.
   useEffect(() => {
     if (!world) return;
-    scene?.charactersPresent.forEach(id => {
-      const c = world.characters.find(x => x.id === id);
+    scene?.charactersPresent.forEach((id) => {
+      const c = world.characters.find((x) => x.id === id);
       if (c) preloadPack(c.packId);
     });
   }, [scene, world]);
 
   useEffect(() => {
-    world?.characters.forEach(c => preloadPack(c.packId));
+    world?.characters.forEach((c) => preloadPack(c.packId));
   }, [world]);
 
   // Recovery: if we land on an invalid position (empty scene/node from a bad
@@ -157,8 +202,10 @@ export function GeneratedDialogueScreen() {
     }
   }, [chapter, scene, node, sceneIndex, advanceGeneratedChapter, setSceneIndex]);
 
-  const charById = useCallback((id: string | null) =>
-    id ? world?.characters.find(c => c.id === id) ?? null : null, [world]);
+  const charById = useCallback(
+    (id: string | null) => (id ? (world?.characters.find((c) => c.id === id) ?? null) : null),
+    [world],
+  );
 
   // Replace {mc}/{they}/… tokens with THIS player's name and pronouns at render,
   // so shared/cached worlds still address everyone personally.
@@ -167,9 +214,14 @@ export function GeneratedDialogueScreen() {
     [settings.playerName, settings.playerPronouns, settings.customPronouns],
   );
 
-  const textSpeed = settings.textSpeed === 'instant' ? 0
-    : settings.textSpeed === 'fast' ? 12
-    : settings.textSpeed === 'slow' ? 48 : 26;
+  const textSpeed =
+    settings.textSpeed === 'instant'
+      ? 0
+      : settings.textSpeed === 'fast'
+        ? 12
+        : settings.textSpeed === 'slow'
+          ? 48
+          : 26;
 
   const handleClick = useCallback(() => {
     if (!scene || !node || node.choices) return;
@@ -192,7 +244,19 @@ export function GeneratedDialogueScreen() {
       void advanceGeneratedChapter();
       setTextComplete(false);
     }
-  }, [scene, node, dialogueIndex, sceneIndex, chapter, textComplete, advanceDialogue, setSceneIndex, advanceGeneratedChapter, shouldRunPoem, openGenPoem]);
+  }, [
+    scene,
+    node,
+    dialogueIndex,
+    sceneIndex,
+    chapter,
+    textComplete,
+    advanceDialogue,
+    setSceneIndex,
+    advanceGeneratedChapter,
+    shouldRunPoem,
+    openGenPoem,
+  ]);
 
   // When the streamed remainder of a partial chapter arrives, continue.
   useEffect(() => {
@@ -208,11 +272,22 @@ export function GeneratedDialogueScreen() {
       if (shouldRunPoem()) openGenPoem();
       else void advanceGeneratedChapter();
     }
-  }, [waitingScene, chapter, sceneIndex, setSceneIndex, shouldRunPoem, openGenPoem, advanceGeneratedChapter]);
+  }, [
+    waitingScene,
+    chapter,
+    sceneIndex,
+    setSceneIndex,
+    shouldRunPoem,
+    openGenPoem,
+    advanceGeneratedChapter,
+  ]);
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
-      if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); handleClick(); }
+      if (e.code === 'Space' || e.code === 'Enter') {
+        e.preventDefault();
+        handleClick();
+      }
     };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
@@ -230,7 +305,11 @@ export function GeneratedDialogueScreen() {
       <GeneratingState
         title="Composing your story…"
         note="Setting the stage for your opening scene."
-        steps={['Opening the first page…', 'Bringing the cast into the room…', 'Setting the scene…']}
+        steps={[
+          'Opening the first page…',
+          'Bringing the cast into the room…',
+          'Setting the scene…',
+        ]}
       />
     );
   }
@@ -238,11 +317,21 @@ export function GeneratedDialogueScreen() {
   const filter = TIME_FILTERS[scene.timeOfDay] ?? '';
 
   return (
-    <div className="relative w-full min-h-[100dvh] overflow-hidden cursor-pointer" onClick={handleClick}>
+    <div
+      className="relative w-full min-h-[100dvh] overflow-hidden cursor-pointer"
+      onClick={handleClick}
+    >
       {/* Top progress chip */}
       <div className="absolute top-3 right-3 z-30 pointer-events-none">
-        <span className="px-2.5 py-1 rounded-full text-[11px]"
-          style={{ backgroundColor: 'rgba(26,21,32,0.7)', border: '1px solid rgba(196,163,90,0.18)', color: '#c4a35a', backdropFilter: 'blur(4px)' }}>
+        <span
+          className="px-2.5 py-1 rounded-full text-[11px]"
+          style={{
+            backgroundColor: 'rgba(26,21,32,0.7)',
+            border: '1px solid rgba(196,163,90,0.18)',
+            color: '#c4a35a',
+            backdropFilter: 'blur(4px)',
+          }}
+        >
           Ch.{chapterIndex + 1}/{world.routePlan.totalChapters}
         </span>
       </div>
@@ -252,34 +341,41 @@ export function GeneratedDialogueScreen() {
           <motion.div
             className="absolute inset-0 z-40"
             style={{ backgroundColor: 'rgba(19,16,26,0.88)', backdropFilter: 'blur(4px)' }}
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
             <GeneratingState
               fill={false}
               title={waitingScene ? 'Writing the next scene…' : 'Turning the page…'}
               note="Shaped by your choices — just a moment."
-              steps={waitingScene ? [
-                'Following the thread of the scene…',
-                'Letting it breathe…',
-                'Almost ready…',
-              ] : [
-                'Picking up where you left off…',
-                'Letting the characters react to you…',
-                'Setting the next scene…',
-                'Finding the right words…',
-              ]}
+              steps={
+                waitingScene
+                  ? ['Following the thread of the scene…', 'Letting it breathe…', 'Almost ready…']
+                  : [
+                      'Picking up where you left off…',
+                      'Letting the characters react to you…',
+                      'Setting the next scene…',
+                      'Finding the right words…',
+                    ]
+              }
             />
           </motion.div>
         )}
       </AnimatePresence>
       {/* Background */}
-      <div className="absolute inset-0 z-0 transition-all duration-1000" style={{ backgroundColor: '#1a1520', filter }}>
+      <div
+        className="absolute inset-0 z-0 transition-all duration-1000"
+        style={{ backgroundColor: '#1a1520', filter }}
+      >
         <img
           src={bgImage(scene.environment, scene.timeOfDay)}
           alt=""
           className="absolute inset-0 w-full h-full object-cover"
           loading="eager"
-          onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = 'none';
+          }}
         />
       </div>
 
@@ -289,9 +385,14 @@ export function GeneratedDialogueScreen() {
           {scene.charactersPresent.map((id, i) => {
             const c = charById(id);
             if (!c) return null;
-            const position = scene.charactersPresent.length === 1
-              ? 'center' as const
-              : i === 0 ? 'left' as const : i === 1 ? 'right' as const : 'center' as const;
+            const position =
+              scene.charactersPresent.length === 1
+                ? ('center' as const)
+                : i === 0
+                  ? ('left' as const)
+                  : i === 1
+                    ? ('right' as const)
+                    : ('center' as const);
             const speaking = node.speaker === id;
             const emotion: Emotion = speaking && node.emotion ? node.emotion : c.emotionalDefault;
             return (
@@ -310,8 +411,13 @@ export function GeneratedDialogueScreen() {
       </div>
 
       {/* Readability scrim — guarantees the dialogue box reads on ANY background */}
-      <div className="absolute inset-x-0 bottom-0 h-2/3 z-[15] pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(12,10,18,0.96) 0%, rgba(12,10,18,0.8) 30%, rgba(12,10,18,0.35) 60%, transparent 100%)' }} />
+      <div
+        className="absolute inset-x-0 bottom-0 h-2/3 z-[15] pointer-events-none"
+        style={{
+          background:
+            'linear-gradient(to top, rgba(12,10,18,0.96) 0%, rgba(12,10,18,0.8) 30%, rgba(12,10,18,0.35) 60%, transparent 100%)',
+        }}
+      />
 
       {/* Dialogue box */}
       <div ref={boxRef} className="absolute bottom-0 left-0 right-0 z-20 p-4 md:p-6">
@@ -323,7 +429,9 @@ export function GeneratedDialogueScreen() {
             boxShadow: '0 8px 40px rgba(0,0,0,0.55)',
             backdropFilter: 'blur(8px)',
           }}
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} key={node.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          key={node.id}
         >
           {isSpeech && chipName && (
             <div
@@ -346,30 +454,59 @@ export function GeneratedDialogueScreen() {
             style={{
               // Speech (cast or player) is upright sans-serif; narration / inner
               // thought is italic serif — so "talking" never looks like "thinking".
-              fontFamily: isSpeech ? 'var(--font-nunito, sans-serif)' : 'var(--font-eb-garamond, serif)',
+              fontFamily: isSpeech
+                ? 'var(--font-nunito, sans-serif)'
+                : 'var(--font-eb-garamond, serif)',
               color: isMC ? '#dfe9f5' : speaker ? '#f1ebdd' : '#c2b6a4',
               fontStyle: isSpeech ? 'normal' : 'italic',
               borderLeft: isMC ? `2px solid ${PLAYER_COLOR}66` : undefined,
               textShadow: '0 1px 3px rgba(0,0,0,0.6)',
             }}
           >
-            <Typewriter text={personalize(node.text)} speed={textSpeed} onDone={() => setTextComplete(true)} skipRef={skipRef} />
+            <Typewriter
+              text={personalize(node.text)}
+              speed={textSpeed}
+              onDone={() => setTextComplete(true)}
+              skipRef={skipRef}
+            />
           </div>
 
           <AnimatePresence>
             {node.choices && textComplete && (
-              <motion.div className="mt-4 space-y-2" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              <motion.div
+                className="mt-4 space-y-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+              >
                 {node.choices.map((choice, i) => (
                   <motion.button
                     key={i}
                     className="w-full text-left px-4 py-3 rounded transition-all text-sm md:text-base active:scale-[0.99]"
-                    style={{ minHeight: 48, backgroundColor: 'rgba(42, 34, 53, 0.6)', border: '1px solid rgba(196, 163, 90, 0.15)', color: '#e8e0d0' }}
-                    initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.25 + i * 0.08 }}
-                    whileHover={{ backgroundColor: 'rgba(196, 163, 90, 0.15)', borderColor: 'rgba(196, 163, 90, 0.4)', x: 5 }}
-                    onClick={(e) => { e.stopPropagation(); genApplyChoice(choice); setTextComplete(false); }}
+                    style={{
+                      minHeight: 48,
+                      backgroundColor: 'rgba(42, 34, 53, 0.6)',
+                      border: '1px solid rgba(196, 163, 90, 0.15)',
+                      color: '#e8e0d0',
+                    }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.25 + i * 0.08 }}
+                    whileHover={{
+                      backgroundColor: 'rgba(196, 163, 90, 0.15)',
+                      borderColor: 'rgba(196, 163, 90, 0.4)',
+                      x: 5,
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      genApplyChoice(choice);
+                      setTextComplete(false);
+                    }}
                   >
                     {choice.tone === 'flirt' && <span className="mr-2 text-pink-400">♥</span>}
-                    <span className="mr-2" style={{ color: '#c4a35a' }}>▸</span>
+                    <span className="mr-2" style={{ color: '#c4a35a' }}>
+                      ▸
+                    </span>
                     {personalize(choice.text)}
                   </motion.button>
                 ))}
@@ -380,7 +517,12 @@ export function GeneratedDialogueScreen() {
           {!node.choices && (
             <div className="text-right mt-2 h-5">
               {textComplete && (
-                <motion.span className="text-xs" style={{ color: '#c4a35a' }} animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                <motion.span
+                  className="text-xs"
+                  style={{ color: '#c4a35a' }}
+                  animate={{ opacity: [0.3, 0.8, 0.3] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
                   ▸ Click to continue
                 </motion.span>
               )}
@@ -389,18 +531,29 @@ export function GeneratedDialogueScreen() {
         </motion.div>
 
         {/* Action HUD — touch-friendly, wraps on small screens */}
-        <div className="max-w-4xl mx-auto mt-2 flex gap-2 justify-end items-center flex-wrap" onClick={(e) => e.stopPropagation()}>
-          {([
+        <div
+          className="max-w-4xl mx-auto mt-2 flex gap-2 justify-end items-center flex-wrap"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {[
             { k: 'menu' as const, icon: '☰', label: 'Menu' },
             { k: 'cast' as const, icon: '♥', label: 'Cast' },
             { k: 'settings' as const, icon: '⚙', label: 'Settings' },
-          ]).map(({ k, icon, label }) => (
+          ].map(({ k, icon, label }) => (
             <button
               key={k}
               onClick={() => setScreen(k)}
               aria-label={label}
               className="flex items-center gap-1.5 rounded transition-all active:scale-95"
-              style={{ minHeight: 40, padding: '6px 12px', backgroundColor: 'rgba(26,21,32,0.72)', border: '1px solid rgba(196,163,90,0.15)', color: '#cbbfae', fontSize: 12, backdropFilter: 'blur(4px)' }}
+              style={{
+                minHeight: 40,
+                padding: '6px 12px',
+                backgroundColor: 'rgba(26,21,32,0.72)',
+                border: '1px solid rgba(196,163,90,0.15)',
+                color: '#cbbfae',
+                fontSize: 12,
+                backdropFilter: 'blur(4px)',
+              }}
             >
               <span style={{ color: '#c4a35a' }}>{icon}</span>
               <span className="hidden sm:inline">{label}</span>

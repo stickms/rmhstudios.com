@@ -11,7 +11,11 @@ const schema = z.object({
   // schema; here we only need it to be a JSON object.
   data: z.record(z.string(), z.unknown()),
   score: z.number().finite().optional(),
-  durationMs: z.number().int().min(0).max(24 * 60 * 60 * 1000),
+  durationMs: z
+    .number()
+    .int()
+    .min(0)
+    .max(24 * 60 * 60 * 1000),
   visibility: z.enum(['public', 'unlisted']).optional(),
 });
 

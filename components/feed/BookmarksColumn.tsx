@@ -54,7 +54,7 @@ export function BookmarksColumn({
 
   return (
     <div className="min-h-screen">
-      <ColumnHeader icon={Bookmark} title={t("bookmarks-title", { defaultValue: "Bookmarks" })} />
+      <ColumnHeader icon={Bookmark} title={t('bookmarks-title', { defaultValue: 'Bookmarks' })} />
 
       {loading ? (
         <div className="flex justify-center py-20">
@@ -65,9 +65,13 @@ export function BookmarksColumn({
           <div className="rounded-site border border-site-border bg-site-surface p-4">
             <Bookmark className="h-8 w-8 text-site-text-muted" />
           </div>
-          <p className="font-medium text-site-text">{t("no-bookmarks-yet", { defaultValue: "No bookmarks yet" })}</p>
+          <p className="font-medium text-site-text">
+            {t('no-bookmarks-yet', { defaultValue: 'No bookmarks yet' })}
+          </p>
           <p className="max-w-xs text-sm text-site-text-muted">
-            {t("no-bookmarks-hint", { defaultValue: "Save posts from the “…” menu and they’ll show up here." })}
+            {t('no-bookmarks-hint', {
+              defaultValue: 'Save posts from the “…” menu and they’ll show up here.',
+            })}
           </p>
         </Reveal>
       ) : (
@@ -77,7 +81,11 @@ export function BookmarksColumn({
       {hasMore && (
         <div className="flex justify-center py-4">
           <Button variant="secondary" size="sm" onClick={loadMore} disabled={loadingMore}>
-            {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : t("load-more", { defaultValue: "Load more" })}
+            {loadingMore ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              t('load-more', { defaultValue: 'Load more' })
+            )}
           </Button>
         </div>
       )}

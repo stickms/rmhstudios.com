@@ -53,7 +53,10 @@ export const Route = createFileRoute('/api/moments/')({
 
           return Response.json({ id, url: `${SITE_URL}/moments/${id}` });
         } catch (error) {
-          if (error instanceof Error && (error.message === 'INVALID_KIND' || error.message === 'INVALID_PAYLOAD')) {
+          if (
+            error instanceof Error &&
+            (error.message === 'INVALID_KIND' || error.message === 'INVALID_PAYLOAD')
+          ) {
             return Response.json({ error: 'Invalid input' }, { status: 400 });
           }
           console.error('Create moment error:', error);

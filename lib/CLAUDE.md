@@ -25,27 +25,27 @@ bundle only**. SSR/server builds get the real module.
 
 ## Load-bearing modules (know these ~20)
 
-| Module | What it is |
-|---|---|
-| `prisma.server.ts` | `prisma` singleton (`@prisma/adapter-pg`, pool via `DATABASE_POOL_SIZE`, default 10) |
-| `auth.ts` | Better Auth server config: Discord/Google/GitHub + email/password, passkey + Stripe + customSession plugins, custom user fields `username/handle/isAdmin/isVerified`, auto-handle on signup |
-| `auth-client.ts` | `authClient` for the browser |
-| `entitlements.ts` | `getUserTier(userId)`, tier ranks, `hasApiAccess/...` — resolves Stripe subscription + gift membership |
-| `rate-limit.ts` | `rateLimit(ip, opts)`, `getClientIp` — in-memory, per-process, × `RATE_LIMIT_MULTIPLIER` (default 4) |
-| `cache.ts` | `apiCache` in-memory TTL cache (`invalidatePrefix` supported) |
-| `redis.server.ts` | optional ioredis backplane — `redisPublish/Subscribe/RateLimit/GetJSON/SetJSON`; **no-ops when `REDIS_URL` unset** |
-| `realtime-bus.server.ts` | `createBus<T>(namespace)` — EventEmitter + Redis fan-out; the seam under all SSE |
-| `feed-sse.ts` / `feed-types.ts` | feed event bus + the `FeedItem` client contract |
-| `notifications.server.ts` | `createNotification/...` — respects preferences, mirrors to web push (`push/send.server.ts`) |
-| `coins.server.ts` | `awardCoins()` — the **only** correct way to grant coins (ledger + profile update) |
-| `user-display.ts` | `userDisplaySelect` + `resolveUser` — shared user shape incl. cosmetics |
-| `storage/s3.server.ts` + `storage/keys.ts` | R2/S3 object store with local-FS fallback; key builders + filename safety |
-| `seo.ts` / `schema.ts` | `buildMeta`, `buildCanonical`, `SITE_URL`; JSON-LD builders + `jsonLdScript` |
-| `rum.ts` / `client-errors.ts` | Web Vitals + client error beacons (installed in `__root.tsx`) |
-| `games.ts` / `apps.ts` | the catalog: single source of truth for game/app cards |
-| `internal-auth.ts` | shared-secret server-to-server auth (`authorizeInternalRequest`) |
-| `ssrf-guard.server.ts` | `safeFetch` — required for any user-supplied URL fetch |
-| `utils.ts` | `cn()` (twMerge+clsx), `formatCount`, `timeAgoShort`, `formatRelativeTime` |
+| Module                                     | What it is                                                                                                                                                                                  |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `prisma.server.ts`                         | `prisma` singleton (`@prisma/adapter-pg`, pool via `DATABASE_POOL_SIZE`, default 10)                                                                                                        |
+| `auth.ts`                                  | Better Auth server config: Discord/Google/GitHub + email/password, passkey + Stripe + customSession plugins, custom user fields `username/handle/isAdmin/isVerified`, auto-handle on signup |
+| `auth-client.ts`                           | `authClient` for the browser                                                                                                                                                                |
+| `entitlements.ts`                          | `getUserTier(userId)`, tier ranks, `hasApiAccess/...` — resolves Stripe subscription + gift membership                                                                                      |
+| `rate-limit.ts`                            | `rateLimit(ip, opts)`, `getClientIp` — in-memory, per-process, × `RATE_LIMIT_MULTIPLIER` (default 4)                                                                                        |
+| `cache.ts`                                 | `apiCache` in-memory TTL cache (`invalidatePrefix` supported)                                                                                                                               |
+| `redis.server.ts`                          | optional ioredis backplane — `redisPublish/Subscribe/RateLimit/GetJSON/SetJSON`; **no-ops when `REDIS_URL` unset**                                                                          |
+| `realtime-bus.server.ts`                   | `createBus<T>(namespace)` — EventEmitter + Redis fan-out; the seam under all SSE                                                                                                            |
+| `feed-sse.ts` / `feed-types.ts`            | feed event bus + the `FeedItem` client contract                                                                                                                                             |
+| `notifications.server.ts`                  | `createNotification/...` — respects preferences, mirrors to web push (`push/send.server.ts`)                                                                                                |
+| `coins.server.ts`                          | `awardCoins()` — the **only** correct way to grant coins (ledger + profile update)                                                                                                          |
+| `user-display.ts`                          | `userDisplaySelect` + `resolveUser` — shared user shape incl. cosmetics                                                                                                                     |
+| `storage/s3.server.ts` + `storage/keys.ts` | R2/S3 object store with local-FS fallback; key builders + filename safety                                                                                                                   |
+| `seo.ts` / `schema.ts`                     | `buildMeta`, `buildCanonical`, `SITE_URL`; JSON-LD builders + `jsonLdScript`                                                                                                                |
+| `rum.ts` / `client-errors.ts`              | Web Vitals + client error beacons (installed in `__root.tsx`)                                                                                                                               |
+| `games.ts` / `apps.ts`                     | the catalog: single source of truth for game/app cards                                                                                                                                      |
+| `internal-auth.ts`                         | shared-secret server-to-server auth (`authorizeInternalRequest`)                                                                                                                            |
+| `ssrf-guard.server.ts`                     | `safeFetch` — required for any user-supplied URL fetch                                                                                                                                      |
+| `utils.ts`                                 | `cn()` (twMerge+clsx), `formatCount`, `timeAgoShort`, `formatRelativeTime`                                                                                                                  |
 
 ## Domain map
 
@@ -86,9 +86,10 @@ bundle only**. SSR/server builds get the real module.
 ```ts
 // API route
 const session = await auth.api.getSession({ headers: request.headers });
-if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 // admin:
-if (!(session.user as { isAdmin?: boolean }).isAdmin) return Response.json({ error: "Forbidden" }, { status: 403 });
+if (!(session.user as { isAdmin?: boolean }).isAdmin)
+  return Response.json({ error: 'Forbidden' }, { status: 403 });
 ```
 
 Session `tier` is injected by the `customSession` plugin from
@@ -118,7 +119,7 @@ don't remove that plugin.
 - 32 locales, 66 namespaces (`lib/i18n/config.ts`); RTL: `ar`, `ur`, `fa`.
 - **Only `en` is statically bundled**; other locales are code-split chunks in
   the auto-generated `lib/i18n/resources.<locale>.ts` files. SSR lazily loads
-  only the *active* locale on demand via `resources.server.ts`
+  only the _active_ locale on demand via `resources.server.ts`
   (`preloadLocale()` is awaited in the `__root.tsx` root loader before render;
   the sync `getServerI18n` path then reads the warmed cache) — it no longer
   imports all 32 catalogs at boot.

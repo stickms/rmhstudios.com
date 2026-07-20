@@ -36,7 +36,12 @@ export function FlashcardsColumn({
   const [showForm, setShowForm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({ title: '', description: '', isPublic: false, generateTopic: '' });
+  const [form, setForm] = useState({
+    title: '',
+    description: '',
+    isPublic: false,
+    generateTopic: '',
+  });
 
   const load = useCallback(async () => {
     const res = await fetch('/api/study/decks', { credentials: 'include' });
@@ -110,8 +115,17 @@ export function FlashcardsColumn({
         <p className="truncate text-sm font-semibold text-site-text">{d.title}</p>
         {d.description && <p className="truncate text-xs text-site-text-muted">{d.description}</p>}
         <p className="mt-0.5 text-[11px] text-site-text-dim">
-          {t('card-count', { count: d.cardCount, defaultValue: '{{count}} card', defaultValue_other: '{{count}} cards' })}
-          {showOwner && d.user ? t('deck-by-owner', { owner: d.user.name || d.user.handle || t('someone', { defaultValue: 'someone' }), defaultValue: ' · by {{owner}}' }) : ''}
+          {t('card-count', {
+            count: d.cardCount,
+            defaultValue: '{{count}} card',
+            defaultValue_other: '{{count}} cards',
+          })}
+          {showOwner && d.user
+            ? t('deck-by-owner', {
+                owner: d.user.name || d.user.handle || t('someone', { defaultValue: 'someone' }),
+                defaultValue: ' · by {{owner}}',
+              })
+            : ''}
           {d.isPublic ? t('deck-public-suffix', { defaultValue: ' · public' }) : ''}
         </p>
       </div>
@@ -132,7 +146,12 @@ export function FlashcardsColumn({
               <Layers className="h-3.5 w-3.5" /> {t('deck-browse', { defaultValue: 'Browse' })}
             </Link>
             {signedIn && (
-              <Button size="sm" variant="accent" className="gap-1" onClick={() => setShowForm((v) => !v)}>
+              <Button
+                size="sm"
+                variant="accent"
+                className="gap-1"
+                onClick={() => setShowForm((v) => !v)}
+              >
                 <Plus className="h-3.5 w-3.5" /> {t('new-deck', { defaultValue: 'New deck' })}
               </Button>
             )}
@@ -143,8 +162,14 @@ export function FlashcardsColumn({
       {showForm && (
         <div className="border-b border-site-border bg-site-surface/30 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-site-text">{t('new-deck', { defaultValue: 'New deck' })}</h2>
-            <button onClick={() => setShowForm(false)} className="text-site-text-dim hover:text-site-text" aria-label={t('close', { defaultValue: 'Close' })}>
+            <h2 className="text-sm font-semibold text-site-text">
+              {t('new-deck', { defaultValue: 'New deck' })}
+            </h2>
+            <button
+              onClick={() => setShowForm(false)}
+              className="text-site-text-dim hover:text-site-text"
+              aria-label={t('close', { defaultValue: 'Close' })}
+            >
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -165,12 +190,15 @@ export function FlashcardsColumn({
             />
             <div className="rounded-site-sm border border-site-accent/30 bg-site-accent/5 p-2">
               <label className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-site-accent">
-                <Sparkles className="h-3 w-3" /> {t('ai-tutor-label', { defaultValue: 'AI tutor — auto-generate cards' })}
+                <Sparkles className="h-3 w-3" />{' '}
+                {t('ai-tutor-label', { defaultValue: 'AI tutor — auto-generate cards' })}
               </label>
               <input
                 value={form.generateTopic}
                 onChange={(e) => setForm((f) => ({ ...f, generateTopic: e.target.value }))}
-                placeholder={t('generate-topic-placeholder', { defaultValue: "Topic, e.g. 'French Revolution causes' (optional)" })}
+                placeholder={t('generate-topic-placeholder', {
+                  defaultValue: "Topic, e.g. 'French Revolution causes' (optional)",
+                })}
                 maxLength={200}
                 className="w-full rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text outline-none focus:border-site-accent"
               />
@@ -181,12 +209,27 @@ export function FlashcardsColumn({
                 onClick={() => setForm((f) => ({ ...f, isPublic: !f.isPublic }))}
                 className="inline-flex items-center gap-1.5 rounded-site-sm border border-site-border px-2.5 py-1.5 text-xs font-medium text-site-text-muted hover:text-site-text"
               >
-                {form.isPublic ? <Globe className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-                {form.isPublic ? t('public', { defaultValue: 'Public' }) : t('private', { defaultValue: 'Private' })}
+                {form.isPublic ? (
+                  <Globe className="h-3.5 w-3.5" />
+                ) : (
+                  <Lock className="h-3.5 w-3.5" />
+                )}
+                {form.isPublic
+                  ? t('public', { defaultValue: 'Public' })
+                  : t('private', { defaultValue: 'Private' })}
               </button>
               {error && <p className="text-xs text-site-danger">{error}</p>}
-              <Button size="sm" variant="accent" disabled={busy || form.title.trim().length < 1} onClick={create}>
-                {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : t('create-deck', { defaultValue: 'Create deck' })}
+              <Button
+                size="sm"
+                variant="accent"
+                disabled={busy || form.title.trim().length < 1}
+                onClick={create}
+              >
+                {busy ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  t('create-deck', { defaultValue: 'Create deck' })
+                )}
               </Button>
             </div>
           </div>
@@ -196,14 +239,20 @@ export function FlashcardsColumn({
       <div className="space-y-6 p-4">
         {mine.length > 0 && (
           <Reveal as="section">
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('your-decks', { defaultValue: 'Your decks' })}</h2>
+            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+              {t('your-decks', { defaultValue: 'Your decks' })}
+            </h2>
             <div className="space-y-2">{mine.map((d) => DeckCard(d))}</div>
           </Reveal>
         )}
         <Reveal as="section">
-          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('public-decks', { defaultValue: 'Public decks' })}</h2>
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+            {t('public-decks', { defaultValue: 'Public decks' })}
+          </h2>
           {popular.length === 0 ? (
-            <p className="py-10 text-center text-sm text-site-text-muted">{t('no-public-decks', { defaultValue: 'No public decks yet.' })}</p>
+            <p className="py-10 text-center text-sm text-site-text-muted">
+              {t('no-public-decks', { defaultValue: 'No public decks yet.' })}
+            </p>
           ) : (
             <div className="space-y-2">{popular.map((d) => DeckCard(d, true))}</div>
           )}

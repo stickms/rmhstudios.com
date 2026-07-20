@@ -16,7 +16,13 @@ import { LIFT_CARD } from '@/components/feed/motionHelpers';
 interface ExploreData {
   trendingTags: { tag: string; count: number }[];
   hotPosts: FeedItem[];
-  suggestedUsers: { id: string; name: string | null; image: string | null; handle: string | null; followerCount: number }[];
+  suggestedUsers: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    handle: string | null;
+    followerCount: number;
+  }[];
 }
 
 export function ExploreColumn({
@@ -30,7 +36,12 @@ export function ExploreColumn({
   const seeded = useRef(initialData !== undefined && initialData !== null);
   const [data, setData] = useState<ExploreData | null>(initialData ?? null);
   const [loading, setLoading] = useState(!seeded.current);
-  const [tipLeaders, setTipLeaders] = useState<{ user: { id: string; name: string | null; image: string | null; handle: string | null }; total: number }[]>([]);
+  const [tipLeaders, setTipLeaders] = useState<
+    {
+      user: { id: string; name: string | null; image: string | null; handle: string | null };
+      total: number;
+    }[]
+  >([]);
 
   // Ask-the-feed widget state
   const { t } = useTranslation('feed');
@@ -71,7 +82,8 @@ export function ExploreColumn({
       });
       const d = await res.json().catch(() => ({}));
       if (res.ok) setAnswer(d.answer);
-      else if (res.status === 401) setAnswer(t('ask-sign-in', { defaultValue: 'Sign in to ask the feed.' }));
+      else if (res.status === 401)
+        setAnswer(t('ask-sign-in', { defaultValue: 'Sign in to ask the feed.' }));
       else setAnswer(d.error || t('ask-error', { defaultValue: 'Could not answer.' }));
     } finally {
       setAsking(false);
@@ -84,8 +96,12 @@ export function ExploreColumn({
 
       {/* Ask the feed */}
       <section className="border-b border-site-border p-4">
-        <label htmlFor="ask-feed" className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-site-text">
-          <Sparkles className="h-4 w-4 text-site-accent" /> {t('ask-the-feed', { defaultValue: 'Ask the feed' })}
+        <label
+          htmlFor="ask-feed"
+          className="mb-2 flex items-center gap-1.5 text-sm font-semibold text-site-text"
+        >
+          <Sparkles className="h-4 w-4 text-site-accent" />{' '}
+          {t('ask-the-feed', { defaultValue: 'Ask the feed' })}
         </label>
         <div className="flex gap-2">
           <input
@@ -96,11 +112,20 @@ export function ExploreColumn({
             placeholder={t('ask-placeholder', { defaultValue: "What's everyone talking about?" })}
             className="flex-1 rounded-site-sm border border-site-border bg-site-bg px-3 py-2 text-sm text-site-text placeholder:text-site-text-dim focus:border-site-accent focus:outline-none"
           />
-          <Button variant="accent" onClick={ask} loading={asking} disabled={question.trim().length < 3}>
+          <Button
+            variant="accent"
+            onClick={ask}
+            loading={asking}
+            disabled={question.trim().length < 3}
+          >
             {t('ask-button', { defaultValue: 'Ask' })}
           </Button>
         </div>
-        {answer && <p className="mt-3 whitespace-pre-line rounded-site-sm bg-site-surface p-3 text-sm text-site-text">{answer}</p>}
+        {answer && (
+          <p className="mt-3 whitespace-pre-line rounded-site-sm bg-site-surface p-3 text-sm text-site-text">
+            {answer}
+          </p>
+        )}
       </section>
 
       {loading ? (
@@ -134,7 +159,9 @@ export function ExploreColumn({
           {/* Who to follow */}
           {data && data.suggestedUsers.length > 0 && (
             <RevealItem as="section" className="border-b border-site-border p-4">
-              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('who-to-follow', { defaultValue: 'Who to follow' })}</h2>
+              <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+                {t('who-to-follow', { defaultValue: 'Who to follow' })}
+              </h2>
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {data.suggestedUsers.map((u) => (
                   <Link
@@ -142,10 +169,22 @@ export function ExploreColumn({
                     to={`/u/${u.handle || u.id}` as string}
                     className={`flex items-center gap-3 rounded-site border border-site-border bg-site-surface p-2.5 ${LIFT_CARD}`}
                   >
-                    <UserAvatar src={u.image} alt={u.name || t('user-fallback', { defaultValue: 'User' })} size={36} fallbackName={u.name || 'U'} />
+                    <UserAvatar
+                      src={u.image}
+                      alt={u.name || t('user-fallback', { defaultValue: 'User' })}
+                      size={36}
+                      fallbackName={u.name || 'U'}
+                    />
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-site-text">{u.name || u.handle}</p>
-                      <p className="truncate text-xs text-site-text-muted">{t('follower-count', { count: u.followerCount, defaultValue: '{{count}} followers' })}</p>
+                      <p className="truncate text-sm font-semibold text-site-text">
+                        {u.name || u.handle}
+                      </p>
+                      <p className="truncate text-xs text-site-text-muted">
+                        {t('follower-count', {
+                          count: u.followerCount,
+                          defaultValue: '{{count}} followers',
+                        })}
+                      </p>
                     </div>
                   </Link>
                 ))}
@@ -157,7 +196,8 @@ export function ExploreColumn({
           {tipLeaders.length > 0 && (
             <RevealItem as="section" className="border-b border-site-border p-4">
               <h2 className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
-                <Coins className="h-3.5 w-3.5 text-site-warning" /> {t('top-supported-this-week', { defaultValue: 'Top supported this week' })}
+                <Coins className="h-3.5 w-3.5 text-site-warning" />{' '}
+                {t('top-supported-this-week', { defaultValue: 'Top supported this week' })}
               </h2>
               <div className="space-y-1.5">
                 {tipLeaders.slice(0, 5).map((l, i) => (
@@ -166,9 +206,18 @@ export function ExploreColumn({
                     to={`/u/${l.user.handle || l.user.id}` as string}
                     className="flex items-center gap-3 rounded-site-sm px-2 py-1.5 hover:bg-site-surface"
                   >
-                    <span className="w-5 text-center text-sm font-bold text-site-text-dim">{i + 1}</span>
-                    <UserAvatar src={l.user.image} alt={l.user.name || t('user-fallback', { defaultValue: 'User' })} size={28} fallbackName={l.user.name || 'U'} />
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-site-text">{l.user.name || l.user.handle}</span>
+                    <span className="w-5 text-center text-sm font-bold text-site-text-dim">
+                      {i + 1}
+                    </span>
+                    <UserAvatar
+                      src={l.user.image}
+                      alt={l.user.name || t('user-fallback', { defaultValue: 'User' })}
+                      size={28}
+                      fallbackName={l.user.name || 'U'}
+                    />
+                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-site-text">
+                      {l.user.name || l.user.handle}
+                    </span>
                     <span className="inline-flex items-center gap-1 text-sm font-semibold text-site-warning">
                       <Coins className="h-3.5 w-3.5" /> {l.total.toLocaleString()}
                     </span>
@@ -182,7 +231,9 @@ export function ExploreColumn({
               block reveals once as a unit (no per-card reveal). */}
           {data && data.hotPosts.length > 0 && (
             <RevealItem as="section">
-              <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-dim">{t('hot-this-week', { defaultValue: 'Hot this week' })}</h2>
+              <h2 className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+                {t('hot-this-week', { defaultValue: 'Hot this week' })}
+              </h2>
               {/* Short teaser list nested in animated sections — a memoized row +
                   content-visibility rather than full windowing (which would be
                   low-reward and finicky against the reveal transforms above). */}
