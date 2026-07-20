@@ -1709,6 +1709,15 @@ model UserProfile {
   profileSongPreviewUrl String?   @db.VarChar(500)
   profileSongAlbumArt   String?   @db.VarChar(500)
 
+  // Custom status (parity/QOL spec §10): a short emoji + text presence line
+  // shown on the profile, hover cards, DMs, and (later) the friends rail.
+  // `statusExpires` is enforced at read time (past = no status); `statusAuto`
+  // mirrors rich presence as a now-playing line when no manual status is set.
+  statusEmoji   String?   @db.VarChar(16)
+  statusText    String?   @db.VarChar(80)
+  statusExpires DateTime?
+  statusAuto    Boolean   @default(false)
+
   // RMH Coins
   coins          Int     @default(10)
   hasProfilePet  Boolean @default(false)

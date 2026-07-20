@@ -40,6 +40,9 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { safeHref } from '@/lib/url-safety';
+import { StatusBadge } from './StatusBadge';
+import { StatusEditor } from './StatusEditor';
+import type { UserStatus } from '@/lib/profile/status';
 
 interface ProfileData {
   id: string;
@@ -62,6 +65,7 @@ interface ProfileData {
   profileSongArtist: string | null;
   profileSongPreviewUrl: string | null;
   profileSongAlbumArt: string | null;
+  status?: UserStatus | null;
   followerCount: number;
   followingCount: number;
   rmharkCount: number;
@@ -796,6 +800,15 @@ export function ProfileColumn({
               </>
             ) : null}
           </div>
+        </div>
+
+        {/* Custom status (§10): own profile gets the editor; others see the badge. */}
+        <div className="mb-3">
+          {profile.isOwnProfile ? (
+            <StatusEditor initial={profile.status ?? null} />
+          ) : profile.status ? (
+            <StatusBadge status={profile.status} />
+          ) : null}
         </div>
 
         {profile.bio && (

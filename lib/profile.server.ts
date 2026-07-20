@@ -4,6 +4,7 @@ import { handleCooldownRemaining } from '@/lib/handle';
 import { getEquippedCosmetics } from '@/lib/shop/equipped.server';
 import { profileLinkSchema, type ProfileLink } from '@/lib/profile-schema';
 import { getMembershipStatus } from '@/lib/memberships.server';
+import { resolveStatus, type UserStatus } from '@/lib/profile/status';
 
 /**
  * Coerce the JSON `links` column into a validated ProfileLink[]. Defends the
@@ -45,6 +46,9 @@ const profileSelect = {
       profileSongArtist: true,
       profileSongPreviewUrl: true,
       profileSongAlbumArt: true,
+      statusEmoji: true,
+      statusText: true,
+      statusExpires: true,
       tipGoal: true,
       tipGoalLabel: true,
       membershipPriceCoins: true,
@@ -88,6 +92,7 @@ export interface ProfilePayload {
   profileSongArtist: string | null;
   profileSongPreviewUrl: string | null;
   profileSongAlbumArt: string | null;
+  status: UserStatus | null;
   coins: number;
   followerCount: number;
   followingCount: number;
@@ -184,6 +189,7 @@ export async function getProfile(
     profileSongArtist: user.profile?.profileSongArtist ?? null,
     profileSongPreviewUrl: user.profile?.profileSongPreviewUrl ?? null,
     profileSongAlbumArt: user.profile?.profileSongAlbumArt ?? null,
+    status: resolveStatus(user.profile),
     coins: user.profile?.coins ?? 10,
     followerCount: user.followerCount,
     followingCount: user.followingCount,

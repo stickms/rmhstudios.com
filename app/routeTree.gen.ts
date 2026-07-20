@@ -311,6 +311,7 @@ import { Route as ApiReferralsClaimRouteImport } from './routes/api/referrals/cl
 import { Route as ApiPushSubscribeRouteImport } from './routes/api/push/subscribe'
 import { Route as ApiPushPublicKeyRouteImport } from './routes/api/push/public-key'
 import { Route as ApiPromoFreeMonthRouteImport } from './routes/api/promo/free-month'
+import { Route as ApiProfileStatusRouteImport } from './routes/api/profile/status'
 import { Route as ApiProfileMeRouteImport } from './routes/api/profile/me'
 import { Route as ApiProfileBannerRouteImport } from './routes/api/profile/banner'
 import { Route as ApiProfileAvatarRouteImport } from './routes/api/profile/avatar'
@@ -2184,6 +2185,11 @@ const ApiPromoFreeMonthRoute = ApiPromoFreeMonthRouteImport.update({
   id: '/api/promo/free-month',
   path: '/api/promo/free-month',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiProfileStatusRoute = ApiProfileStatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => ApiProfileRoute,
 } as any)
 const ApiProfileMeRoute = ApiProfileMeRouteImport.update({
   id: '/me',
@@ -4341,6 +4347,7 @@ export interface FileRoutesByFullPath {
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/banner': typeof ApiProfileBannerRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
+  '/api/profile/status': typeof ApiProfileStatusRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
@@ -4972,6 +4979,7 @@ export interface FileRoutesByTo {
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/banner': typeof ApiProfileBannerRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
+  '/api/profile/status': typeof ApiProfileStatusRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
@@ -5630,6 +5638,7 @@ export interface FileRoutesById {
   '/api/profile/avatar': typeof ApiProfileAvatarRouteWithChildren
   '/api/profile/banner': typeof ApiProfileBannerRouteWithChildren
   '/api/profile/me': typeof ApiProfileMeRoute
+  '/api/profile/status': typeof ApiProfileStatusRoute
   '/api/promo/free-month': typeof ApiPromoFreeMonthRoute
   '/api/push/public-key': typeof ApiPushPublicKeyRoute
   '/api/push/subscribe': typeof ApiPushSubscribeRoute
@@ -6288,6 +6297,7 @@ export interface FileRouteTypes {
     | '/api/profile/avatar'
     | '/api/profile/banner'
     | '/api/profile/me'
+    | '/api/profile/status'
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
@@ -6919,6 +6929,7 @@ export interface FileRouteTypes {
     | '/api/profile/avatar'
     | '/api/profile/banner'
     | '/api/profile/me'
+    | '/api/profile/status'
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
@@ -7576,6 +7587,7 @@ export interface FileRouteTypes {
     | '/api/profile/avatar'
     | '/api/profile/banner'
     | '/api/profile/me'
+    | '/api/profile/status'
     | '/api/promo/free-month'
     | '/api/push/public-key'
     | '/api/push/subscribe'
@@ -10409,6 +10421,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/promo/free-month'
       preLoaderRoute: typeof ApiPromoFreeMonthRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/profile/status': {
+      id: '/api/profile/status'
+      path: '/status'
+      fullPath: '/api/profile/status'
+      preLoaderRoute: typeof ApiProfileStatusRouteImport
+      parentRoute: typeof ApiProfileRoute
     }
     '/api/profile/me': {
       id: '/api/profile/me'
@@ -13615,6 +13634,7 @@ interface ApiProfileRouteChildren {
   ApiProfileAvatarRoute: typeof ApiProfileAvatarRouteWithChildren
   ApiProfileBannerRoute: typeof ApiProfileBannerRouteWithChildren
   ApiProfileMeRoute: typeof ApiProfileMeRoute
+  ApiProfileStatusRoute: typeof ApiProfileStatusRoute
 }
 
 const ApiProfileRouteChildren: ApiProfileRouteChildren = {
@@ -13623,6 +13643,7 @@ const ApiProfileRouteChildren: ApiProfileRouteChildren = {
   ApiProfileAvatarRoute: ApiProfileAvatarRouteWithChildren,
   ApiProfileBannerRoute: ApiProfileBannerRouteWithChildren,
   ApiProfileMeRoute: ApiProfileMeRoute,
+  ApiProfileStatusRoute: ApiProfileStatusRoute,
 }
 
 const ApiProfileRouteWithChildren = ApiProfileRoute._addFileChildren(
