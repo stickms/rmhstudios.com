@@ -314,6 +314,9 @@ model User {
   // Appearance preferences (theme + accent), synced across devices
   appearancePreference AppearancePreference?
 
+  // Layout preferences (sidebar pin/hide + home widget stack), synced (§15)
+  layoutPreference LayoutPreference?
+
   // ─── Platform expansion (2026-07-19 design) ──────────────────────────────
   arcadeStreak         ArcadeStreak?
   creatorTiers         CreatorTier[]
@@ -401,6 +404,23 @@ model AppearancePreference {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("appearance_preference")
+}
+
+// Home dashboard & sidebar customization (§15) — "your daily surfaces, your
+// order". Deliberately separate from AppearancePreference (looks vs where;
+// different churn). `sidebar` holds { pinned: string[], hidden: string[] } of
+// nav item ids; `homeStack` is an ordered list of widget config
+// ({ kind, collapsed? }); [] / {} both mean "use the defaults". Unknown ids are
+// dropped at read time by parseLayoutPref (forward-safe across removed apps).
+model LayoutPreference {
+  userId    String   @id
+  sidebar   Json     @default("{}")
+  homeStack Json     @default("[]")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("layout_preference")
 }
 
 // One row per successfully attributed invite. `rewardedAt` is set when the

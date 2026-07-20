@@ -339,6 +339,7 @@ import { Route as ApiPresenceHeartbeatRouteImport } from './routes/api/presence/
 import { Route as ApiPresenceFriendsRouteImport } from './routes/api/presence/friends'
 import { Route as ApiPreferencesNotificationsRouteImport } from './routes/api/preferences/notifications'
 import { Route as ApiPreferencesMutedWordsRouteImport } from './routes/api/preferences/muted-words'
+import { Route as ApiPreferencesLayoutRouteImport } from './routes/api/preferences/layout'
 import { Route as ApiPreferencesAppearanceRouteImport } from './routes/api/preferences/appearance'
 import { Route as ApiPredictionsIdRouteImport } from './routes/api/predictions/$id'
 import { Route as ApiOnboardingFirstWeekRouteImport } from './routes/api/onboarding/first-week'
@@ -445,6 +446,7 @@ import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/setting
 import { Route as SiteSettingsProfileRouteImport } from './routes/_site/settings/profile'
 import { Route as SiteSettingsPrivacyRouteImport } from './routes/_site/settings/privacy'
 import { Route as SiteSettingsNotificationsRouteImport } from './routes/_site/settings/notifications'
+import { Route as SiteSettingsLayoutRouteImport } from './routes/_site/settings/layout'
 import { Route as SiteSettingsContentRouteImport } from './routes/_site/settings/content'
 import { Route as SiteSettingsCircleRouteImport } from './routes/_site/settings/circle'
 import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/settings/appearance'
@@ -2372,6 +2374,11 @@ const ApiPreferencesMutedWordsRoute =
     path: '/api/preferences/muted-words',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPreferencesLayoutRoute = ApiPreferencesLayoutRouteImport.update({
+  id: '/api/preferences/layout',
+  path: '/api/preferences/layout',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPreferencesAppearanceRoute =
   ApiPreferencesAppearanceRouteImport.update({
     id: '/api/preferences/appearance',
@@ -2913,6 +2920,11 @@ const SiteSettingsNotificationsRoute =
     path: '/settings/notifications',
     getParentRoute: () => SiteRoute,
   } as any)
+const SiteSettingsLayoutRoute = SiteSettingsLayoutRouteImport.update({
+  id: '/settings/layout',
+  path: '/settings/layout',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteSettingsContentRoute = SiteSettingsContentRouteImport.update({
   id: '/settings/content',
   path: '/settings/content',
@@ -4514,6 +4526,7 @@ export interface FileRoutesByFullPath {
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
   '/settings/content': typeof SiteSettingsContentRoute
+  '/settings/layout': typeof SiteSettingsLayoutRoute
   '/settings/notifications': typeof SiteSettingsNotificationsRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
@@ -4620,6 +4633,7 @@ export interface FileRoutesByFullPath {
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
+  '/api/preferences/layout': typeof ApiPreferencesLayoutRoute
   '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
@@ -5190,6 +5204,7 @@ export interface FileRoutesByTo {
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/circle': typeof SiteSettingsCircleRoute
   '/settings/content': typeof SiteSettingsContentRoute
+  '/settings/layout': typeof SiteSettingsLayoutRoute
   '/settings/notifications': typeof SiteSettingsNotificationsRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
@@ -5296,6 +5311,7 @@ export interface FileRoutesByTo {
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
+  '/api/preferences/layout': typeof ApiPreferencesLayoutRoute
   '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
@@ -5893,6 +5909,7 @@ export interface FileRoutesById {
   '/_site/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/_site/settings/circle': typeof SiteSettingsCircleRoute
   '/_site/settings/content': typeof SiteSettingsContentRoute
+  '/_site/settings/layout': typeof SiteSettingsLayoutRoute
   '/_site/settings/notifications': typeof SiteSettingsNotificationsRoute
   '/_site/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/_site/settings/profile': typeof SiteSettingsProfileRoute
@@ -5999,6 +6016,7 @@ export interface FileRoutesById {
   '/api/onboarding/first-week': typeof ApiOnboardingFirstWeekRoute
   '/api/predictions/$id': typeof ApiPredictionsIdRouteWithChildren
   '/api/preferences/appearance': typeof ApiPreferencesAppearanceRoute
+  '/api/preferences/layout': typeof ApiPreferencesLayoutRoute
   '/api/preferences/muted-words': typeof ApiPreferencesMutedWordsRoute
   '/api/preferences/notifications': typeof ApiPreferencesNotificationsRoute
   '/api/presence/friends': typeof ApiPresenceFriendsRoute
@@ -6596,6 +6614,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/circle'
     | '/settings/content'
+    | '/settings/layout'
     | '/settings/notifications'
     | '/settings/privacy'
     | '/settings/profile'
@@ -6702,6 +6721,7 @@ export interface FileRouteTypes {
     | '/api/onboarding/first-week'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
+    | '/api/preferences/layout'
     | '/api/preferences/muted-words'
     | '/api/preferences/notifications'
     | '/api/presence/friends'
@@ -7272,6 +7292,7 @@ export interface FileRouteTypes {
     | '/settings/appearance'
     | '/settings/circle'
     | '/settings/content'
+    | '/settings/layout'
     | '/settings/notifications'
     | '/settings/privacy'
     | '/settings/profile'
@@ -7378,6 +7399,7 @@ export interface FileRouteTypes {
     | '/api/onboarding/first-week'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
+    | '/api/preferences/layout'
     | '/api/preferences/muted-words'
     | '/api/preferences/notifications'
     | '/api/presence/friends'
@@ -7974,6 +7996,7 @@ export interface FileRouteTypes {
     | '/_site/settings/appearance'
     | '/_site/settings/circle'
     | '/_site/settings/content'
+    | '/_site/settings/layout'
     | '/_site/settings/notifications'
     | '/_site/settings/privacy'
     | '/_site/settings/profile'
@@ -8080,6 +8103,7 @@ export interface FileRouteTypes {
     | '/api/onboarding/first-week'
     | '/api/predictions/$id'
     | '/api/preferences/appearance'
+    | '/api/preferences/layout'
     | '/api/preferences/muted-words'
     | '/api/preferences/notifications'
     | '/api/presence/friends'
@@ -8636,6 +8660,7 @@ export interface RootRouteChildren {
   ApiOnboardingFirstWeekRoute: typeof ApiOnboardingFirstWeekRoute
   ApiPredictionsIdRoute: typeof ApiPredictionsIdRouteWithChildren
   ApiPreferencesAppearanceRoute: typeof ApiPreferencesAppearanceRoute
+  ApiPreferencesLayoutRoute: typeof ApiPreferencesLayoutRoute
   ApiPreferencesMutedWordsRoute: typeof ApiPreferencesMutedWordsRoute
   ApiPreferencesNotificationsRoute: typeof ApiPreferencesNotificationsRoute
   ApiPresenceFriendsRoute: typeof ApiPresenceFriendsRoute
@@ -11172,6 +11197,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPreferencesMutedWordsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/preferences/layout': {
+      id: '/api/preferences/layout'
+      path: '/api/preferences/layout'
+      fullPath: '/api/preferences/layout'
+      preLoaderRoute: typeof ApiPreferencesLayoutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/preferences/appearance': {
       id: '/api/preferences/appearance'
       path: '/api/preferences/appearance'
@@ -11912,6 +11944,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/notifications'
       fullPath: '/settings/notifications'
       preLoaderRoute: typeof SiteSettingsNotificationsRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/settings/layout': {
+      id: '/_site/settings/layout'
+      path: '/settings/layout'
+      fullPath: '/settings/layout'
+      preLoaderRoute: typeof SiteSettingsLayoutRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/settings/content': {
@@ -13930,6 +13969,7 @@ interface SiteRouteChildren {
   SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
   SiteSettingsCircleRoute: typeof SiteSettingsCircleRoute
   SiteSettingsContentRoute: typeof SiteSettingsContentRoute
+  SiteSettingsLayoutRoute: typeof SiteSettingsLayoutRoute
   SiteSettingsNotificationsRoute: typeof SiteSettingsNotificationsRoute
   SiteSettingsPrivacyRoute: typeof SiteSettingsPrivacyRoute
   SiteSettingsProfileRoute: typeof SiteSettingsProfileRoute
@@ -14022,6 +14062,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
   SiteSettingsCircleRoute: SiteSettingsCircleRoute,
   SiteSettingsContentRoute: SiteSettingsContentRoute,
+  SiteSettingsLayoutRoute: SiteSettingsLayoutRoute,
   SiteSettingsNotificationsRoute: SiteSettingsNotificationsRoute,
   SiteSettingsPrivacyRoute: SiteSettingsPrivacyRoute,
   SiteSettingsProfileRoute: SiteSettingsProfileRoute,
@@ -15351,6 +15392,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOnboardingFirstWeekRoute: ApiOnboardingFirstWeekRoute,
   ApiPredictionsIdRoute: ApiPredictionsIdRouteWithChildren,
   ApiPreferencesAppearanceRoute: ApiPreferencesAppearanceRoute,
+  ApiPreferencesLayoutRoute: ApiPreferencesLayoutRoute,
   ApiPreferencesMutedWordsRoute: ApiPreferencesMutedWordsRoute,
   ApiPreferencesNotificationsRoute: ApiPreferencesNotificationsRoute,
   ApiPresenceFriendsRoute: ApiPresenceFriendsRoute,
