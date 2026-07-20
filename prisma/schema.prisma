@@ -341,6 +341,7 @@ model User {
   gameReviewVotes    GameReviewVote[]
   gameGuides         GameGuide[]
   userThemes         UserTheme[]
+  profileLayout      ProfileLayout?
 
   @@index([isBot])
   @@index([followerCount])
@@ -5926,4 +5927,17 @@ model UserTheme {
   @@index([status, sales(sort: Desc)])
   @@index([authorId])
   @@map("user_theme")
+}
+
+// Profile v2 (§12): a composable profile showcase. `modules` is an ordered,
+// zod-validated list of { kind, config } blocks (lib/profile/modules.ts).
+// Empty = the classic profile (unedited profiles are unchanged).
+model ProfileLayout {
+  userId    String   @id
+  modules   Json     @default("[]")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profile_layout")
 }

@@ -45,6 +45,8 @@ import { StatusEditor } from './StatusEditor';
 import type { UserStatus } from '@/lib/profile/status';
 import { WishButton } from '@/components/wishlist/WishButton';
 import { AddToListSheet } from '@/components/lists/AddToListSheet';
+import { ProfileShowcase } from '@/components/profile/ProfileShowcase';
+import type { ProfileModule } from '@/lib/profile/modules';
 
 interface ProfileData {
   id: string;
@@ -68,6 +70,7 @@ interface ProfileData {
   profileSongPreviewUrl: string | null;
   profileSongAlbumArt: string | null;
   status?: UserStatus | null;
+  modules?: ProfileModule[];
   followerCount: number;
   followingCount: number;
   rmharkCount: number;
@@ -830,6 +833,19 @@ export function ProfileColumn({
             {profile.bio}
           </p>
         )}
+
+        {/* Profile v2 showcase (§12): owner-configured module blocks. */}
+        <ProfileShowcase
+          modules={profile.modules ?? []}
+          isOwner={profile.isOwnProfile}
+          profile={{
+            id: profile.id,
+            followerCount: profile.followerCount,
+            followingCount: profile.followingCount,
+            rmharkCount: profile.rmharkCount,
+            status: profile.status ?? null,
+          }}
+        />
 
         {/* Per-creator membership CTA (coin-funded). Own profile just sees the count. */}
         {!profile.isOwnProfile &&

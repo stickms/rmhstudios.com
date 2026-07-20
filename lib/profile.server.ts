@@ -5,6 +5,7 @@ import { getEquippedCosmetics } from '@/lib/shop/equipped.server';
 import { profileLinkSchema, type ProfileLink } from '@/lib/profile-schema';
 import { getMembershipStatus } from '@/lib/memberships.server';
 import { resolveStatus, type UserStatus } from '@/lib/profile/status';
+import { parseLayout, type ProfileModule } from '@/lib/profile/modules';
 
 /**
  * Coerce the JSON `links` column into a validated ProfileLink[]. Defends the
@@ -61,6 +62,8 @@ const profileSelect = {
   followerCount: true,
   followingCount: true,
   postCount: true,
+  // Profile v2 (§12): the showcase module layout (empty = classic profile).
+  profileLayout: { select: { modules: true } },
 } as const;
 
 export interface ProfilePayload {
@@ -93,6 +96,7 @@ export interface ProfilePayload {
   profileSongPreviewUrl: string | null;
   profileSongAlbumArt: string | null;
   status: UserStatus | null;
+  modules: ProfileModule[];
   coins: number;
   followerCount: number;
   followingCount: number;
@@ -190,6 +194,7 @@ export async function getProfile(
     profileSongPreviewUrl: user.profile?.profileSongPreviewUrl ?? null,
     profileSongAlbumArt: user.profile?.profileSongAlbumArt ?? null,
     status: resolveStatus(user.profile),
+    modules: parseLayout(user.profileLayout?.modules),
     coins: user.profile?.coins ?? 10,
     followerCount: user.followerCount,
     followingCount: user.followingCount,
