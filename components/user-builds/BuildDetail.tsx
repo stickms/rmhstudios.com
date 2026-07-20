@@ -13,6 +13,7 @@ import { authClient } from '@/lib/auth-client';
 import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
 import { BuildComments } from './BuildComments';
+import { PostAwards } from '@/components/awards/PostAwards';
 import { formatCount } from '@/lib/utils';
 import { safeHref } from '@/lib/url-safety';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
@@ -201,6 +202,11 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
               </button>
             </div>
           )}
+        </div>
+
+        {/* Post awards (§7): public paid recognition on the build. */}
+        <div className="mb-5">
+          <PostAwards entityType="build" entityId={build.id} canGive={!isOwner} />
         </div>
 
         {/* Description */}

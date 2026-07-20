@@ -327,9 +327,10 @@ model User {
   sharedMoments        SharedMoment[]
 
   // ─── Parity / QOL / customization (2026-07-20 design) ────────────────────
-  saveFolders    SaveFolder[]
-  savedItems     SavedItem[]
-  historyEntries HistoryEntry[]
+  saveFolders        SaveFolder[]
+  savedItems         SavedItem[]
+  historyEntries     HistoryEntry[]
+  contentAwardsGiven ContentAward[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -5715,4 +5716,24 @@ model HistoryEntry {
   @@unique([userId, entityType, entityId])
   @@index([userId, updatedAt(sort: Desc)])
   @@map("history_entry")
+}
+
+// Post awards (§7): a public, paid recognition badge pinned to content. The
+// coin flow lands in the existing ledger (recipient share as TIP, giver spend
+// as PURCHASE) — no new CoinTxnType.
+model ContentAward {
+  id         String   @id @default(cuid())
+  awardId    String   @db.VarChar(32) // catalog key (lib/awards/catalog.ts)
+  giverId    String
+  anonymous  Boolean  @default(false)
+  hidden     Boolean  @default(false) // recipient hid it
+  entityType String   @db.VarChar(24) // 'rmhark' | 'comment' | 'build' | 'guide'
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  giver User @relation(fields: [giverId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([giverId, createdAt(sort: Desc)])
+  @@map("content_award")
 }

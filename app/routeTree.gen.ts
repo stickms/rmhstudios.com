@@ -202,6 +202,7 @@ import { Route as ApiEventsIndexRouteImport } from './routes/api/events/index'
 import { Route as ApiCommunitiesIndexRouteImport } from './routes/api/communities/index'
 import { Route as ApiCoinsIndexRouteImport } from './routes/api/coins/index'
 import { Route as ApiBattlepassIndexRouteImport } from './routes/api/battlepass/index'
+import { Route as ApiAwardsIndexRouteImport } from './routes/api/awards/index'
 import { Route as ApiArcadeIndexRouteImport } from './routes/api/arcade/index'
 import { Route as AltairMultiplayerIndexRouteImport } from './routes/altair/multiplayer/index'
 import { Route as SiteWagerIndexRouteImport } from './routes/_site/wager.index'
@@ -597,6 +598,7 @@ import { Route as ApiCommunitiesSlugAnnouncementsRouteImport } from './routes/ap
 import { Route as ApiCommentsCommentIdTranslateRouteImport } from './routes/api/comments/$commentId/translate'
 import { Route as ApiCommentsCommentIdReactRouteImport } from './routes/api/comments/$commentId/react'
 import { Route as ApiBuildsCoverFileRouteImport } from './routes/api/builds/cover/$file'
+import { Route as ApiAwardsIdHideRouteImport } from './routes/api/awards/$id.hide'
 import { Route as ApiAnnouncementsIdVoteRouteImport } from './routes/api/announcements/$id/vote'
 import { Route as ApiAlbumsAssetSplatRouteImport } from './routes/api/albums/asset/$'
 import { Route as ApiAdminVibeBackfillThumbsRouteImport } from './routes/api/admin/vibe/backfill-thumbs'
@@ -1640,6 +1642,11 @@ const ApiCoinsIndexRoute = ApiCoinsIndexRouteImport.update({
 const ApiBattlepassIndexRoute = ApiBattlepassIndexRouteImport.update({
   id: '/api/battlepass/',
   path: '/api/battlepass/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAwardsIndexRoute = ApiAwardsIndexRouteImport.update({
+  id: '/api/awards/',
+  path: '/api/awards/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiArcadeIndexRoute = ApiArcadeIndexRouteImport.update({
@@ -3673,6 +3680,11 @@ const ApiBuildsCoverFileRoute = ApiBuildsCoverFileRouteImport.update({
   path: '/api/builds/cover/$file',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAwardsIdHideRoute = ApiAwardsIdHideRouteImport.update({
+  id: '/api/awards/$id/hide',
+  path: '/api/awards/$id/hide',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAnnouncementsIdVoteRoute = ApiAnnouncementsIdVoteRouteImport.update({
   id: '/$id/vote',
   path: '/$id/vote',
@@ -4520,6 +4532,7 @@ export interface FileRoutesByFullPath {
   '/wager/': typeof SiteWagerIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/arcade/': typeof ApiArcadeIndexRoute
+  '/api/awards/': typeof ApiAwardsIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
@@ -4568,6 +4581,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
+  '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -5161,6 +5175,7 @@ export interface FileRoutesByTo {
   '/wager': typeof SiteWagerIndexRoute
   '/altair/multiplayer': typeof AltairMultiplayerIndexRoute
   '/api/arcade': typeof ApiArcadeIndexRoute
+  '/api/awards': typeof ApiAwardsIndexRoute
   '/api/battlepass': typeof ApiBattlepassIndexRoute
   '/api/coins': typeof ApiCoinsIndexRoute
   '/api/communities': typeof ApiCommunitiesIndexRoute
@@ -5209,6 +5224,7 @@ export interface FileRoutesByTo {
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
+  '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -5829,6 +5845,7 @@ export interface FileRoutesById {
   '/_site/wager/': typeof SiteWagerIndexRoute
   '/altair/multiplayer/': typeof AltairMultiplayerIndexRoute
   '/api/arcade/': typeof ApiArcadeIndexRoute
+  '/api/awards/': typeof ApiAwardsIndexRoute
   '/api/battlepass/': typeof ApiBattlepassIndexRoute
   '/api/coins/': typeof ApiCoinsIndexRoute
   '/api/communities/': typeof ApiCommunitiesIndexRoute
@@ -5877,6 +5894,7 @@ export interface FileRoutesById {
   '/api/admin/vibe/backfill-thumbs': typeof ApiAdminVibeBackfillThumbsRoute
   '/api/albums/asset/$': typeof ApiAlbumsAssetSplatRoute
   '/api/announcements/$id/vote': typeof ApiAnnouncementsIdVoteRoute
+  '/api/awards/$id/hide': typeof ApiAwardsIdHideRoute
   '/api/builds/cover/$file': typeof ApiBuildsCoverFileRoute
   '/api/comments/$commentId/react': typeof ApiCommentsCommentIdReactRoute
   '/api/comments/$commentId/translate': typeof ApiCommentsCommentIdTranslateRoute
@@ -6497,6 +6515,7 @@ export interface FileRouteTypes {
     | '/wager/'
     | '/altair/multiplayer/'
     | '/api/arcade/'
+    | '/api/awards/'
     | '/api/battlepass/'
     | '/api/coins/'
     | '/api/communities/'
@@ -6545,6 +6564,7 @@ export interface FileRouteTypes {
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
+    | '/api/awards/$id/hide'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/react'
     | '/api/comments/$commentId/translate'
@@ -7138,6 +7158,7 @@ export interface FileRouteTypes {
     | '/wager'
     | '/altair/multiplayer'
     | '/api/arcade'
+    | '/api/awards'
     | '/api/battlepass'
     | '/api/coins'
     | '/api/communities'
@@ -7186,6 +7207,7 @@ export interface FileRouteTypes {
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
+    | '/api/awards/$id/hide'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/react'
     | '/api/comments/$commentId/translate'
@@ -7805,6 +7827,7 @@ export interface FileRouteTypes {
     | '/_site/wager/'
     | '/altair/multiplayer/'
     | '/api/arcade/'
+    | '/api/awards/'
     | '/api/battlepass/'
     | '/api/coins/'
     | '/api/communities/'
@@ -7853,6 +7876,7 @@ export interface FileRouteTypes {
     | '/api/admin/vibe/backfill-thumbs'
     | '/api/albums/asset/$'
     | '/api/announcements/$id/vote'
+    | '/api/awards/$id/hide'
     | '/api/builds/cover/$file'
     | '/api/comments/$commentId/react'
     | '/api/comments/$commentId/translate'
@@ -8288,6 +8312,7 @@ export interface RootRouteChildren {
   EmbedReplayIdRoute: typeof EmbedReplayIdRoute
   LibraryAlbumsAlbumIdRoute: typeof LibraryAlbumsAlbumIdRoute
   ApiArcadeIndexRoute: typeof ApiArcadeIndexRoute
+  ApiAwardsIndexRoute: typeof ApiAwardsIndexRoute
   ApiBattlepassIndexRoute: typeof ApiBattlepassIndexRoute
   ApiCoinsIndexRoute: typeof ApiCoinsIndexRoute
   ApiCommunitiesIndexRoute: typeof ApiCommunitiesIndexRoute
@@ -8323,6 +8348,7 @@ export interface RootRouteChildren {
   ApiAdminRideshareRidesRoute: typeof ApiAdminRideshareRidesRoute
   ApiAdminVibeBackfillThumbsRoute: typeof ApiAdminVibeBackfillThumbsRoute
   ApiAlbumsAssetSplatRoute: typeof ApiAlbumsAssetSplatRoute
+  ApiAwardsIdHideRoute: typeof ApiAwardsIdHideRoute
   ApiBuildsCoverFileRoute: typeof ApiBuildsCoverFileRoute
   ApiCommentsCommentIdReactRoute: typeof ApiCommentsCommentIdReactRoute
   ApiCommentsCommentIdTranslateRoute: typeof ApiCommentsCommentIdTranslateRoute
@@ -9770,6 +9796,13 @@ declare module '@tanstack/react-router' {
       path: '/api/battlepass'
       fullPath: '/api/battlepass/'
       preLoaderRoute: typeof ApiBattlepassIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/awards/': {
+      id: '/api/awards/'
+      path: '/api/awards'
+      fullPath: '/api/awards/'
+      preLoaderRoute: typeof ApiAwardsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/arcade/': {
@@ -12537,6 +12570,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBuildsCoverFileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/awards/$id/hide': {
+      id: '/api/awards/$id/hide'
+      path: '/api/awards/$id/hide'
+      fullPath: '/api/awards/$id/hide'
+      preLoaderRoute: typeof ApiAwardsIdHideRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/announcements/$id/vote': {
       id: '/api/announcements/$id/vote'
       path: '/$id/vote'
@@ -14656,6 +14696,7 @@ const rootRouteChildren: RootRouteChildren = {
   EmbedReplayIdRoute: EmbedReplayIdRoute,
   LibraryAlbumsAlbumIdRoute: LibraryAlbumsAlbumIdRoute,
   ApiArcadeIndexRoute: ApiArcadeIndexRoute,
+  ApiAwardsIndexRoute: ApiAwardsIndexRoute,
   ApiBattlepassIndexRoute: ApiBattlepassIndexRoute,
   ApiCoinsIndexRoute: ApiCoinsIndexRoute,
   ApiCommunitiesIndexRoute: ApiCommunitiesIndexRoute,
@@ -14691,6 +14732,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminRideshareRidesRoute: ApiAdminRideshareRidesRoute,
   ApiAdminVibeBackfillThumbsRoute: ApiAdminVibeBackfillThumbsRoute,
   ApiAlbumsAssetSplatRoute: ApiAlbumsAssetSplatRoute,
+  ApiAwardsIdHideRoute: ApiAwardsIdHideRoute,
   ApiBuildsCoverFileRoute: ApiBuildsCoverFileRoute,
   ApiCommentsCommentIdReactRoute: ApiCommentsCommentIdReactRoute,
   ApiCommentsCommentIdTranslateRoute: ApiCommentsCommentIdTranslateRoute,
