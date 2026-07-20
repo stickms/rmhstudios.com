@@ -20,13 +20,13 @@ on:
       - "deploy/**"
       - "docs/**"
       - "**/*.md"
-  push:
-    branches: [main]
-    paths-ignore:
-      - "go-services/**"
-      - "deploy/**"
-      - "docs/**"
-      - "**/*.md"
+  # NOTE: intentionally NO `push:` trigger. On a push to main, deploy.yml already
+  # runs the SAME typecheck/lint/test as its in-workflow `ci` job AND builds the
+  # real Docker image (which catches any build-time breakage) — so a push-run of
+  # web-ci here was a pure duplicate of ~3 jobs. Under the account-wide concurrent
+  # runner cap that duplicate could queue AHEAD of deploy's `build`, delaying the
+  # release. PRs are still fully gated below; main is reached only via PR, so the
+  # checks have already run on the PR head. (`audit` likewise ran on the PR.)
   workflow_dispatch: {}
 
 # Newer pushes to the same ref cancel older in-progress runs.
@@ -61,10 +61,31 @@ jobs:
       # postinstall runs `prisma generate` (schema-only, no DB needed).
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      # Persist tsc's incremental program graph (.tsbuildinfo) and eslint's result
+      # cache across runs so warm runs only re-check files that actually changed.
+      # Keyed per-commit with a prefix restore-key, so each run restores the most
+      # recent cache and saves a fresh one. Both tools invalidate entries by file
+      # CONTENT (tsc hashes; eslint --cache-strategy content), so a restored cache
+      # can only ever make a check FASTER, never wrong.
+      - name: Restore typecheck/lint caches
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: |
+            .cache/tsc
+            .cache/eslint
+          key: tsc-eslint-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            tsc-eslint-${{ runner.os }}-
+      # `mkdir -p` so a cold cache (miss on the restore above) still has the dirs
+      # tsc/eslint write their cache files into.
       - name: Typecheck
-        run: pnpm exec tsc --noEmit
+        run: |
+          mkdir -p .cache/tsc
+          pnpm exec tsc --noEmit --incremental --tsBuildInfoFile .cache/tsc/app.tsbuildinfo
       - name: Lint
-        run: pnpm lint
+        run: |
+          mkdir -p .cache/eslint
+          pnpm exec eslint --cache --cache-location .cache/eslint/eslintcache --cache-strategy content
       # Advisory (warn, don't block): a red test surfaces in the step summary and
       # turns this step's own annotation red, but no longer fails the `check` job
       # — typecheck + lint above remain hard gates. Keep real regressions honest

@@ -11,11 +11,9 @@ on:
     paths-ignore:
       - "go-services/**"
       - "deploy/**"
-  push:
-    branches: [main]
-    paths-ignore:
-      - "go-services/**"
-      - "deploy/**"
+  # No `push:` trigger: this only checks the files a change touched, so on a push
+  # to main it re-checks what already passed on the PR (main is PR-only). Dropping
+  # it trims a redundant per-push runner without any loss of enforcement.
   workflow_dispatch: {}
 
 concurrency:

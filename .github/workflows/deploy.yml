@@ -226,6 +226,49 @@ jobs:
           set -euo pipefail
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
+      # ── Persist the vite-builder cache mounts across CI runs (audit §2) ───────
+      # BuildKit `--mount=type=cache` dirs are builder-local scratch: the GHCR
+      # registry LAYER cache does not carry them, and setup-buildx spins up a FRESH,
+      # empty builder every run — so the always-re-run vite-builder stage starts its
+      # `.vinxi` module-graph cache and its build-vibe-packages output cache COLD
+      # each build. These two steps extract those mounts to the workspace after the
+      # build and restore them before the next one, so the incremental caches
+      # survive between runs.
+      #
+      # SAFETY (this is on the production deploy path): the inject step is
+      # `continue-on-error`, and the dance action's extraction runs as a
+      # `post-if: success()` hook — it NEVER runs on a failed build and cannot turn
+      # a green build red. Worst case it no-ops and we are back to today's cold
+      # mounts; it can never block a deploy.
+      #
+      # CORRECTNESS: BuildKit keys cache mounts by `id`, not target path, so the ids
+      # below MUST equal the Dockerfile's `id=vinxi-cache-${COMPOSE_PROJECT_NAME}` /
+      # `id=vibe-pkgs-${COMPOSE_PROJECT_NAME}` with COMPOSE_PROJECT_NAME=rmhstudios-prod
+      # (the bake env below). A mismatch makes this silently cache nothing (still safe).
+      #
+      # TO REVERT (if a measured before/after doesn't beat the dance's own extract
+      # overhead): delete these two steps — nothing else depends on them — and drop
+      # the `.buildkit-cache` / `.buildkit-scratch` entries from .dockerignore.
+      - name: Restore vite build-cache mounts
+        id: vite-cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .buildkit-cache
+          key: buildkit-vite-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            buildkit-vite-${{ runner.os }}-
+      - name: Inject vite build-cache into BuildKit
+        uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723 # v3.4.0
+        continue-on-error: true
+        with:
+          scratch-dir: .buildkit-scratch
+          skip-extraction: ${{ steps.vite-cache.outputs.cache-hit }}
+          cache-map: |
+            {
+              ".buildkit-cache/vinxi": { "target": "/app/.vinxi", "id": "vinxi-cache-rmhstudios-prod" },
+              ".buildkit-cache/vibe-packages": { "target": "/app/.cache/vibe-packages", "id": "vibe-pkgs-rmhstudios-prod" }
+            }
+
       # Build + push BOTH images in a single BuildKit graph (docker-bake.hcl).
       # Vite (the ~5 min long pole) is a shared stage built once; the Go build +
       # Chromium layer for runner-full run in parallel with it. Registry-backed
@@ -291,7 +334,14 @@ jobs:
       # no-op with "discord-notify.sh: No such file or directory" (the `|| true`
       # masks it) — so a BLOCKED deploy never turns the pipeline embed 🔴 and no
       # Discord alert is sent, which is exactly the failure this job exists to report.
+      #
+      # Sparse-checkout ONLY .github/scripts (all this job touches — discord-notify.sh
+      # is self-contained) instead of the full tree. This job sits on the deploy's
+      # critical path (it fires the VPS webhook), so trimming its checkout from the
+      # whole repo to one dir shaves several seconds off time-to-webhook.
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          sparse-checkout: .github/scripts
 
       - name: Gate failed — CI, build, or a stall blocked the deploy
         # `!= 'success'` (not `== 'failure'`) so a CANCELLED or TIMED-OUT job — i.e. a

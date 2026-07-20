@@ -536,12 +536,29 @@ else
     log "No GHCR_TOKEN/GITHUB_TOKEN set — attempting an unauthenticated pull (works only if the package is public)."
 fi
 
-if ! "$DOCKER_BIN" pull "${GHCR_IMAGE}:${GIT_SHA_FULL}"; then
+# Pull both images CONCURRENTLY. They are separate repos but share most base
+# layers; the full image's unique layers (Chromium ~300 MB, Go bins) can transfer
+# while the web image's layers extract, instead of strictly after. Docker's
+# per-layer locking makes shared-layer pulls safe to overlap. Each pull's log is
+# captured to its own file so a failure still reports WHICH image and why, exactly
+# as the old serial version did.
+WEB_PULL_LOG=$(mktemp /tmp/pull-web.XXXXXX)
+FULL_PULL_LOG=$(mktemp /tmp/pull-full.XXXXXX)
+"$DOCKER_BIN" pull "${GHCR_IMAGE}:${GIT_SHA_FULL}"      > "$WEB_PULL_LOG"  2>&1 & pull_web=$!
+"$DOCKER_BIN" pull "${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}" > "$FULL_PULL_LOG" 2>&1 & pull_full=$!
+
+web_pull_ok=0; full_pull_ok=0
+wait "$pull_web"  || web_pull_ok=1
+wait "$pull_full" || full_pull_ok=1
+cat "$WEB_PULL_LOG" "$FULL_PULL_LOG"
+rm -f "$WEB_PULL_LOG" "$FULL_PULL_LOG"
+
+if [ "$web_pull_ok" -ne 0 ]; then
     log "ERROR: failed to pull ${GHCR_IMAGE}:${GIT_SHA_FULL}."
     update_deploy_status fail "image pull failed (web)"
     exit 1
 fi
-if ! "$DOCKER_BIN" pull "${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}"; then
+if [ "$full_pull_ok" -ne 0 ]; then
     log "ERROR: failed to pull ${GHCR_IMAGE_FULL}:${GIT_SHA_FULL}."
     update_deploy_status fail "image pull failed (full)"
     exit 1
