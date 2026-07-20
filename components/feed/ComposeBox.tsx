@@ -11,6 +11,7 @@ import {
   Globe,
   Users,
   Lock,
+  Star,
   Coins,
   Type,
   FileText,
@@ -67,7 +68,7 @@ export function ComposeBox({
   onPosted,
 }: { communityId?: string; onPosted?: (item: any) => void } = {}) {
   const [content, setContent] = useState('');
-  const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE'>('PUBLIC');
+  const [audience, setAudience] = useState<'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'CIRCLE'>('PUBLIC');
   const [replyControl, setReplyControl] = useState<'EVERYONE' | 'FOLLOWING' | 'MENTIONED'>(
     'EVERYONE',
   );
@@ -416,6 +417,11 @@ export function ComposeBox({
       value: 'FOLLOWERS',
       label: t('audience-followers', { defaultValue: 'Followers' }),
       icon: Users,
+    },
+    {
+      value: 'CIRCLE',
+      label: t('audience-circle', { defaultValue: 'Close friends' }),
+      icon: Star,
     },
     { value: 'PRIVATE', label: t('audience-only-me', { defaultValue: 'Only me' }), icon: Lock },
   ] as const;

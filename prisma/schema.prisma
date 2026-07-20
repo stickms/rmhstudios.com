@@ -332,6 +332,8 @@ model User {
   historyEntries     HistoryEntry[]
   contentAwardsGiven ContentAward[]
   wishlistEntries    WishlistEntry[]
+  closeFriendsOwned  CloseFriend[]  @relation("CircleOwner")
+  closeFriendOf      CloseFriend[]  @relation("CircleMember")
 
   @@index([isBot])
   @@index([followerCount])
@@ -4380,6 +4382,7 @@ enum RMHarkAudience {
   FOLLOWERS // the author's followers only
   PRIVATE // only the author
   SUPPORTERS // active members of the author (any creator tier)
+  CIRCLE // the author's close-friends circle (§11)
 }
 
 enum RMHarkReplyControl {
@@ -5757,4 +5760,20 @@ model WishlistEntry {
   @@unique([userId, entityType, entityId])
   @@index([entityType, entityId]) // reverse index: who wants this?
   @@map("wishlist_entry")
+}
+
+// Close Friends circle (§11): one private circle per owner. Membership is
+// silent (no notifications) and never publicly visible. CIRCLE-audience posts
+// are visible only to the owner and their circle members.
+model CloseFriend {
+  ownerId  String
+  memberId String
+  addedAt  DateTime @default(now())
+
+  owner  User @relation("CircleOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  member User @relation("CircleMember", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, memberId])
+  @@index([memberId]) // viewer-side feed predicate: circles I'm in
+  @@map("close_friend")
 }

@@ -20,6 +20,7 @@ export function audienceWhere(
   viewerId: string | null,
   followingIds: string[],
   supportedCreatorIds: string[] = [],
+  circleOwnerIds: string[] = [],
 ) {
   if (!viewerId) return { audience: 'PUBLIC' as const };
   return {
@@ -28,6 +29,8 @@ export function audienceWhere(
       { userId: viewerId },
       { audience: 'FOLLOWERS' as const, userId: { in: followingIds } },
       { audience: 'SUPPORTERS' as const, userId: { in: supportedCreatorIds } },
+      // CIRCLE (§11): visible to members of the author's close-friends circle.
+      { audience: 'CIRCLE' as const, userId: { in: circleOwnerIds } },
     ],
   };
 }
@@ -42,15 +45,32 @@ export async function supportedCreatorIds(viewerId: string | null): Promise<stri
   return rows.map((r) => r.creatorId);
 }
 
+/** Owner ids whose close-friends circle the viewer is in (for `audienceWhere`). */
+export async function circleOwnerIds(viewerId: string | null): Promise<string[]> {
+  if (!viewerId) return [];
+  const rows = await prisma.closeFriend.findMany({
+    where: { memberId: viewerId },
+    select: { ownerId: true },
+  });
+  return rows.map((r) => r.ownerId);
+}
+
 /** Whether a single post is visible to a viewer (used on the post-detail route). */
 export async function canViewPost(
-  post: { userId: string; audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'SUPPORTERS' },
+  post: { userId: string; audience: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE' | 'SUPPORTERS' | 'CIRCLE' },
   viewerId: string | null,
 ): Promise<boolean> {
   if (post.audience === 'PUBLIC') return true;
   if (!viewerId) return false;
   if (post.userId === viewerId) return true;
   if (post.audience === 'PRIVATE') return false;
+  if (post.audience === 'CIRCLE') {
+    const member = await prisma.closeFriend.findUnique({
+      where: { ownerId_memberId: { ownerId: post.userId, memberId: viewerId } },
+      select: { ownerId: true },
+    });
+    return !!member;
+  }
   if (post.audience === 'SUPPORTERS') {
     // Active membership of the author (any tier).
     const membership = await prisma.creatorMembership.findUnique({

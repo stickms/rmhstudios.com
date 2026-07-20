@@ -138,6 +138,7 @@ import { Route as ApiGiftSubRouteImport } from './routes/api/gift-sub'
 import { Route as ApiFeedbackRouteImport } from './routes/api/feedback'
 import { Route as ApiExploreRouteImport } from './routes/api/explore'
 import { Route as ApiClientErrorRouteImport } from './routes/api/client-error'
+import { Route as ApiCircleRouteImport } from './routes/api/circle'
 import { Route as ApiBookmarksRouteImport } from './routes/api/bookmarks'
 import { Route as ApiAssistantRouteImport } from './routes/api/assistant'
 import { Route as ApiAnnouncementsRouteImport } from './routes/api/announcements'
@@ -430,6 +431,7 @@ import { Route as SiteSpacesIdRouteImport } from './routes/_site/spaces.$id'
 import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
 import { Route as SiteSettingsProfileRouteImport } from './routes/_site/settings/profile'
 import { Route as SiteSettingsPrivacyRouteImport } from './routes/_site/settings/privacy'
+import { Route as SiteSettingsCircleRouteImport } from './routes/_site/settings/circle'
 import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/settings/appearance'
 import { Route as SiteRmhladderSettingsRouteImport } from './routes/_site/rmhladder/settings'
 import { Route as SiteRmhladderReviewRouteImport } from './routes/_site/rmhladder/review'
@@ -1322,6 +1324,11 @@ const ApiExploreRoute = ApiExploreRouteImport.update({
 const ApiClientErrorRoute = ApiClientErrorRouteImport.update({
   id: '/api/client-error',
   path: '/api/client-error',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiCircleRoute = ApiCircleRouteImport.update({
+  id: '/api/circle',
+  path: '/api/circle',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiBookmarksRoute = ApiBookmarksRouteImport.update({
@@ -2806,6 +2813,11 @@ const SiteSettingsPrivacyRoute = SiteSettingsPrivacyRouteImport.update({
   path: '/settings/privacy',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteSettingsCircleRoute = SiteSettingsCircleRouteImport.update({
+  id: '/settings/circle',
+  path: '/settings/circle',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteSettingsAppearanceRoute = SiteSettingsAppearanceRouteImport.update({
   id: '/settings/appearance',
   path: '/settings/appearance',
@@ -4208,6 +4220,7 @@ export interface FileRoutesByFullPath {
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/assistant': typeof ApiAssistantRoute
   '/api/bookmarks': typeof ApiBookmarksRoute
+  '/api/circle': typeof ApiCircleRoute
   '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
@@ -4326,6 +4339,7 @@ export interface FileRoutesByFullPath {
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/settings/circle': typeof SiteSettingsCircleRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
@@ -4855,6 +4869,7 @@ export interface FileRoutesByTo {
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/assistant': typeof ApiAssistantRoute
   '/api/bookmarks': typeof ApiBookmarksRoute
+  '/api/circle': typeof ApiCircleRoute
   '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
@@ -4972,6 +4987,7 @@ export interface FileRoutesByTo {
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
   '/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/settings/circle': typeof SiteSettingsCircleRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
@@ -5526,6 +5542,7 @@ export interface FileRoutesById {
   '/api/announcements': typeof ApiAnnouncementsRouteWithChildren
   '/api/assistant': typeof ApiAssistantRoute
   '/api/bookmarks': typeof ApiBookmarksRoute
+  '/api/circle': typeof ApiCircleRoute
   '/api/client-error': typeof ApiClientErrorRoute
   '/api/explore': typeof ApiExploreRoute
   '/api/feedback': typeof ApiFeedbackRoute
@@ -5645,6 +5662,7 @@ export interface FileRoutesById {
   '/_site/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/_site/rmhladder/settings': typeof SiteRmhladderSettingsRoute
   '/_site/settings/appearance': typeof SiteSettingsAppearanceRoute
+  '/_site/settings/circle': typeof SiteSettingsCircleRoute
   '/_site/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/_site/settings/profile': typeof SiteSettingsProfileRoute
   '/_site/settings/security': typeof SiteSettingsSecurityRoute
@@ -6200,6 +6218,7 @@ export interface FileRouteTypes {
     | '/api/announcements'
     | '/api/assistant'
     | '/api/bookmarks'
+    | '/api/circle'
     | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
@@ -6318,6 +6337,7 @@ export interface FileRouteTypes {
     | '/rmhladder/review'
     | '/rmhladder/settings'
     | '/settings/appearance'
+    | '/settings/circle'
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
@@ -6847,6 +6867,7 @@ export interface FileRouteTypes {
     | '/api/announcements'
     | '/api/assistant'
     | '/api/bookmarks'
+    | '/api/circle'
     | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
@@ -6964,6 +6985,7 @@ export interface FileRouteTypes {
     | '/rmhladder/review'
     | '/rmhladder/settings'
     | '/settings/appearance'
+    | '/settings/circle'
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
@@ -7517,6 +7539,7 @@ export interface FileRouteTypes {
     | '/api/announcements'
     | '/api/assistant'
     | '/api/bookmarks'
+    | '/api/circle'
     | '/api/client-error'
     | '/api/explore'
     | '/api/feedback'
@@ -7636,6 +7659,7 @@ export interface FileRouteTypes {
     | '/_site/rmhladder/review'
     | '/_site/rmhladder/settings'
     | '/_site/settings/appearance'
+    | '/_site/settings/circle'
     | '/_site/settings/privacy'
     | '/_site/settings/profile'
     | '/_site/settings/security'
@@ -8157,6 +8181,7 @@ export interface RootRouteChildren {
   ApiAnnouncementsRoute: typeof ApiAnnouncementsRouteWithChildren
   ApiAssistantRoute: typeof ApiAssistantRoute
   ApiBookmarksRoute: typeof ApiBookmarksRoute
+  ApiCircleRoute: typeof ApiCircleRoute
   ApiClientErrorRoute: typeof ApiClientErrorRoute
   ApiExploreRoute: typeof ApiExploreRoute
   ApiFeedbackRoute: typeof ApiFeedbackRoute
@@ -9386,6 +9411,13 @@ declare module '@tanstack/react-router' {
       path: '/api/client-error'
       fullPath: '/api/client-error'
       preLoaderRoute: typeof ApiClientErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/circle': {
+      id: '/api/circle'
+      path: '/api/circle'
+      fullPath: '/api/circle'
+      preLoaderRoute: typeof ApiCircleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/bookmarks': {
@@ -11432,6 +11464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteSettingsPrivacyRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/settings/circle': {
+      id: '/_site/settings/circle'
+      path: '/settings/circle'
+      fullPath: '/settings/circle'
+      preLoaderRoute: typeof SiteSettingsCircleRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/settings/appearance': {
       id: '/_site/settings/appearance'
       path: '/settings/appearance'
@@ -13339,6 +13378,7 @@ interface SiteRouteChildren {
   SiteRideshareDriveRoute: typeof SiteRideshareDriveRoute
   SiteRideshareRideRoute: typeof SiteRideshareRideRoute
   SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
+  SiteSettingsCircleRoute: typeof SiteSettingsCircleRoute
   SiteSettingsPrivacyRoute: typeof SiteSettingsPrivacyRoute
   SiteSettingsProfileRoute: typeof SiteSettingsProfileRoute
   SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
@@ -13423,6 +13463,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRideshareDriveRoute: SiteRideshareDriveRoute,
   SiteRideshareRideRoute: SiteRideshareRideRoute,
   SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
+  SiteSettingsCircleRoute: SiteSettingsCircleRoute,
   SiteSettingsPrivacyRoute: SiteSettingsPrivacyRoute,
   SiteSettingsProfileRoute: SiteSettingsProfileRoute,
   SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,
@@ -14566,6 +14607,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAnnouncementsRoute: ApiAnnouncementsRouteWithChildren,
   ApiAssistantRoute: ApiAssistantRoute,
   ApiBookmarksRoute: ApiBookmarksRoute,
+  ApiCircleRoute: ApiCircleRoute,
   ApiClientErrorRoute: ApiClientErrorRoute,
   ApiExploreRoute: ApiExploreRoute,
   ApiFeedbackRoute: ApiFeedbackRoute,
