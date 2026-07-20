@@ -21,7 +21,16 @@ import {
   SiteStyle,
   REDUCE_TRANSPARENCY_KEY,
 } from '@/stores/themeStore';
-import { applyAccent, isAccentId, ACCENT_STORAGE_KEY } from '@/lib/appearance';
+import { applyAccent, isAccentId, ACCENT_STORAGE_KEY, accentCssVars } from '@/lib/appearance';
+import { ensureReadableAccent } from '@/lib/appearance/contrast';
+import {
+  HEX_RE,
+  FONT_SCALE_KEY,
+  DENSITY_KEY,
+  READABLE_FONT_KEY,
+  CUSTOM_ACCENT_KEY,
+  REDUCE_MOTION_KEY,
+} from '@/lib/appearance/prefs';
 import { useGlassLight } from '@/hooks/useGlassLight';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useLocaleStore, writeLocaleCookie } from '@/stores/localeStore';
@@ -202,6 +211,11 @@ export function Providers({
   const preview = useThemeStore((s) => s.preview);
   const accent = useThemeStore((s) => s.accent);
   const reduceTransparency = useThemeStore((s) => s.reduceTransparency);
+  const fontScale = useThemeStore((s) => s.fontScale);
+  const density = useThemeStore((s) => s.density);
+  const readableFont = useThemeStore((s) => s.readableFont);
+  const customAccent = useThemeStore((s) => s.customAccent);
+  const reduceMotion = useThemeStore((s) => s.reduceMotion);
   const { pathname } = useLocation();
   const isFirstRun = useRef(true);
 
@@ -379,6 +393,15 @@ export function Providers({
     if (localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1') {
       useThemeStore.getState().setReduceTransparency(true);
     }
+    // Comfort suite (§13) — hydrate from the no-flash localStorage cache.
+    const st = useThemeStore.getState();
+    const fs = Number(localStorage.getItem(FONT_SCALE_KEY));
+    if ([875, 1000, 1125, 1250].includes(fs)) st.setFontScale(fs);
+    if (localStorage.getItem(DENSITY_KEY) === 'compact') st.setDensity('compact');
+    if (localStorage.getItem(READABLE_FONT_KEY) === '1') st.setReadableFont(true);
+    if (localStorage.getItem(REDUCE_MOTION_KEY) === '1') st.setReduceMotion(true);
+    const ca = localStorage.getItem(CUSTOM_ACCENT_KEY);
+    if (ca && HEX_RE.test(ca)) st.setCustomAccent(ca);
   }, []);
 
   // Sync style class + accent override to <html> and persist. `preview` (the
@@ -420,6 +443,37 @@ export function Providers({
     if (isAccentId(accent)) localStorage.setItem(ACCENT_STORAGE_KEY, accent);
     else localStorage.removeItem(ACCENT_STORAGE_KEY);
 
+    // ── Comfort suite (§13) ──────────────────────────────────────────────
+    if (fontScale && fontScale !== 1000) {
+      html.style.fontSize = `${fontScale / 10}%`;
+      localStorage.setItem(FONT_SCALE_KEY, String(fontScale));
+    } else {
+      html.style.removeProperty('font-size');
+      localStorage.removeItem(FONT_SCALE_KEY);
+    }
+    if (density === 'compact') {
+      html.setAttribute('data-density', 'compact');
+      localStorage.setItem(DENSITY_KEY, 'compact');
+    } else {
+      html.removeAttribute('data-density');
+      localStorage.removeItem(DENSITY_KEY);
+    }
+    html.classList.toggle('readable-font', readableFont);
+    if (readableFont) localStorage.setItem(READABLE_FONT_KEY, '1');
+    else localStorage.removeItem(READABLE_FONT_KEY);
+    html.classList.toggle('reduce-motion', reduceMotion);
+    if (reduceMotion) localStorage.setItem(REDUCE_MOTION_KEY, '1');
+    else localStorage.removeItem(REDUCE_MOTION_KEY);
+    // Custom accent (raw hex) overrides the preset accent applied just above.
+    if (customAccent && HEX_RE.test(customAccent) && !isAppRoute) {
+      const { hex, fg } = ensureReadableAccent(customAccent);
+      for (const [name, val] of Object.entries(accentCssVars(hex, fg)))
+        html.style.setProperty(name, val);
+      localStorage.setItem(CUSTOM_ACCENT_KEY, customAccent);
+    } else {
+      localStorage.removeItem(CUSTOM_ACCENT_KEY);
+    }
+
     // Excluded app/game routes keep the base (dark) document background so the
     // browser bar tint and overscroll match their :root-token chrome — same
     // gate as the inline themeScript in app/routes/__root.tsx.
@@ -437,7 +491,18 @@ export function Providers({
       meta.content = bg;
       document.head.appendChild(meta);
     }
-  }, [style, preview, accent, isAppRoute, reduceTransparency]);
+  }, [
+    style,
+    preview,
+    accent,
+    isAppRoute,
+    reduceTransparency,
+    fontScale,
+    density,
+    readableFont,
+    customAccent,
+    reduceMotion,
+  ]);
 
   // ── Account sync ─────────────────────────────────────────────────────────
   // Appearance follows the signed-in user across devices. On sign-in we pull the
@@ -520,6 +585,22 @@ export function Providers({
           store.setStyle(nextStyle);
           store.setAccent(nextAccent);
           store.setReduceTransparency(nextReduce);
+          // Comfort suite (§13): apply account values on this device (account
+          // wins where set; the settings panel persists device changes).
+          const r = remote as typeof remote & {
+            fontScale?: number | null;
+            density?: string | null;
+            readableFont?: boolean | null;
+            customAccent?: string | null;
+            reduceMotion?: boolean | null;
+          };
+          if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
+            store.setFontScale(Number(r.fontScale));
+          if (r.density === 'compact' || r.density === 'cozy') store.setDensity(r.density);
+          if (typeof r.readableFont === 'boolean') store.setReadableFont(r.readableFont);
+          if (typeof r.reduceMotion === 'boolean') store.setReduceMotion(r.reduceMotion);
+          if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
+            store.setCustomAccent(r.customAccent);
           appearanceSyncedRef.current = true;
         },
       )
@@ -550,8 +631,8 @@ export function Providers({
       <AppI18nProvider locale={locale} resources={i18nResources}>
         {/* Load framer-motion features lazily so they're off the initial bundle. */}
         <LazyMotion features={loadMotionFeatures}>
-          {/* Honor the OS "reduce motion" setting across all framer-motion animations. */}
-          <MotionConfig reducedMotion="user">
+          {/* Honor OS reduce-motion, and the account-level toggle (§13) when set. */}
+          <MotionConfig reducedMotion={reduceMotion ? 'always' : 'user'}>
             <SessionCtx.Provider value={effectiveSession}>
               <ResolvedUserCtx.Provider
                 value={{ resolved: resolvedUser, refresh: fetchResolvedUser }}

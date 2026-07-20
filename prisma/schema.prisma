@@ -369,6 +369,12 @@ model AppearancePreference {
   style               String? // site theme id (see SITE_STYLES); null → DEFAULT_STYLE (Glass Dark)
   accent              String? // accent preset id (see ACCENT_PRESETS); null → theme's own accent
   reduceTransparency  Boolean @default(false) // collapse the glass to opaque surfaces
+  // Appearance & accessibility suite (§13). Null = built-in default.
+  fontScale    Int? // 875 | 1000 | 1125 | 1250 (per-mille; avoids floats)
+  density      String? @db.VarChar(8) // 'cozy' | 'compact'
+  readableFont Boolean @default(false)
+  customAccent String? @db.VarChar(7) // '#rrggbb'; wins over `accent` preset
+  reduceMotion Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

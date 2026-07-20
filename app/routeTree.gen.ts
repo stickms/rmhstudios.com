@@ -427,6 +427,7 @@ import { Route as SiteSpacesIdRouteImport } from './routes/_site/spaces.$id'
 import { Route as SiteSettingsSecurityRouteImport } from './routes/_site/settings/security'
 import { Route as SiteSettingsProfileRouteImport } from './routes/_site/settings/profile'
 import { Route as SiteSettingsPrivacyRouteImport } from './routes/_site/settings/privacy'
+import { Route as SiteSettingsAppearanceRouteImport } from './routes/_site/settings/appearance'
 import { Route as SiteRmhladderSettingsRouteImport } from './routes/_site/rmhladder/settings'
 import { Route as SiteRmhladderReviewRouteImport } from './routes/_site/rmhladder/review'
 import { Route as SiteRmhladderResumeRouteImport } from './routes/_site/rmhladder/resume'
@@ -2785,6 +2786,11 @@ const SiteSettingsPrivacyRoute = SiteSettingsPrivacyRouteImport.update({
   path: '/settings/privacy',
   getParentRoute: () => SiteRoute,
 } as any)
+const SiteSettingsAppearanceRoute = SiteSettingsAppearanceRouteImport.update({
+  id: '/settings/appearance',
+  path: '/settings/appearance',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteRmhladderSettingsRoute = SiteRmhladderSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -4288,6 +4294,7 @@ export interface FileRoutesByFullPath {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
@@ -4928,6 +4935,7 @@ export interface FileRoutesByTo {
   '/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/settings/profile': typeof SiteSettingsProfileRoute
   '/settings/security': typeof SiteSettingsSecurityRoute
@@ -5595,6 +5603,7 @@ export interface FileRoutesById {
   '/_site/rmhladder/resume': typeof SiteRmhladderResumeRoute
   '/_site/rmhladder/review': typeof SiteRmhladderReviewRoute
   '/_site/rmhladder/settings': typeof SiteRmhladderSettingsRoute
+  '/_site/settings/appearance': typeof SiteSettingsAppearanceRoute
   '/_site/settings/privacy': typeof SiteSettingsPrivacyRoute
   '/_site/settings/profile': typeof SiteSettingsProfileRoute
   '/_site/settings/security': typeof SiteSettingsSecurityRoute
@@ -6262,6 +6271,7 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
+    | '/settings/appearance'
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
@@ -6902,6 +6912,7 @@ export interface FileRouteTypes {
     | '/rmhladder/resume'
     | '/rmhladder/review'
     | '/rmhladder/settings'
+    | '/settings/appearance'
     | '/settings/privacy'
     | '/settings/profile'
     | '/settings/security'
@@ -7568,6 +7579,7 @@ export interface FileRouteTypes {
     | '/_site/rmhladder/resume'
     | '/_site/rmhladder/review'
     | '/_site/rmhladder/settings'
+    | '/_site/settings/appearance'
     | '/_site/settings/privacy'
     | '/_site/settings/profile'
     | '/_site/settings/security'
@@ -11335,6 +11347,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SiteSettingsPrivacyRouteImport
       parentRoute: typeof SiteRoute
     }
+    '/_site/settings/appearance': {
+      id: '/_site/settings/appearance'
+      path: '/settings/appearance'
+      fullPath: '/settings/appearance'
+      preLoaderRoute: typeof SiteSettingsAppearanceRouteImport
+      parentRoute: typeof SiteRoute
+    }
     '/_site/rmhladder/settings': {
       id: '/_site/rmhladder/settings'
       path: '/settings'
@@ -13219,6 +13238,7 @@ interface SiteRouteChildren {
   SiteProfileIdRoute: typeof SiteProfileIdRoute
   SiteRideshareDriveRoute: typeof SiteRideshareDriveRoute
   SiteRideshareRideRoute: typeof SiteRideshareRideRoute
+  SiteSettingsAppearanceRoute: typeof SiteSettingsAppearanceRoute
   SiteSettingsPrivacyRoute: typeof SiteSettingsPrivacyRoute
   SiteSettingsProfileRoute: typeof SiteSettingsProfileRoute
   SiteSettingsSecurityRoute: typeof SiteSettingsSecurityRoute
@@ -13301,6 +13321,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteProfileIdRoute: SiteProfileIdRoute,
   SiteRideshareDriveRoute: SiteRideshareDriveRoute,
   SiteRideshareRideRoute: SiteRideshareRideRoute,
+  SiteSettingsAppearanceRoute: SiteSettingsAppearanceRoute,
   SiteSettingsPrivacyRoute: SiteSettingsPrivacyRoute,
   SiteSettingsProfileRoute: SiteSettingsProfileRoute,
   SiteSettingsSecurityRoute: SiteSettingsSecurityRoute,

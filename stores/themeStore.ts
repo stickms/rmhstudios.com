@@ -64,6 +64,23 @@ interface ThemeStore {
    */
   reduceTransparency: boolean;
   setReduceTransparency: (value: boolean) => void;
+
+  // ── Appearance & accessibility comfort suite (§13) ──────────────────────
+  /** Root font scale in per-mille (875|1000|1125|1250); null = default (1000). */
+  fontScale: number | null;
+  setFontScale: (value: number | null) => void;
+  /** 'cozy' (default) | 'compact'; null = cozy. */
+  density: "cozy" | "compact" | null;
+  setDensity: (value: "cozy" | "compact" | null) => void;
+  /** Legible body-font stack for dyslexia-friendly reading. */
+  readableFont: boolean;
+  setReadableFont: (value: boolean) => void;
+  /** Custom accent hex (#rrggbb); wins over the `accent` preset. null = none. */
+  customAccent: string | null;
+  setCustomAccent: (value: string | null) => void;
+  /** Account-level reduce-motion, OR-ed with the OS media query. */
+  reduceMotion: boolean;
+  setReduceMotion: (value: boolean) => void;
 }
 
 export const useThemeStore = create<ThemeStore>((set) => ({
@@ -75,6 +92,16 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   setAccent: (accent) => set({ accent }),
   reduceTransparency: false,
   setReduceTransparency: (reduceTransparency) => set({ reduceTransparency }),
+  fontScale: null,
+  setFontScale: (fontScale) => set({ fontScale }),
+  density: null,
+  setDensity: (density) => set({ density }),
+  readableFont: false,
+  setReadableFont: (readableFont) => set({ readableFont }),
+  customAccent: null,
+  setCustomAccent: (customAccent) => set({ customAccent }),
+  reduceMotion: false,
+  setReduceMotion: (reduceMotion) => set({ reduceMotion }),
 }));
 
 /** localStorage key for the reduce-transparency preference (no-flash cache). */
