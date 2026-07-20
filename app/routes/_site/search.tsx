@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { SearchColumn } from '@/components/feed/SearchColumn';
+import { SavedSearches } from '@/components/search/SavedSearches';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { RightSidebar } from '@/components/feed/RightSidebar';
 import { getSidebarData } from '@/lib/sidebar-data';
@@ -29,6 +30,7 @@ function SearchPage() {
   return (
     <>
       <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-dock">
+        <SavedSearches currentQuery={q} />
         <SearchColumn
           initialQuery={q}
           initialTab={tab}

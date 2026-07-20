@@ -40,6 +40,13 @@ import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
 import { safeHref } from '@/lib/url-safety';
+import { StatusBadge } from './StatusBadge';
+import { StatusEditor } from './StatusEditor';
+import type { UserStatus } from '@/lib/profile/status';
+import { WishButton } from '@/components/wishlist/WishButton';
+import { AddToListSheet } from '@/components/lists/AddToListSheet';
+import { ProfileShowcase } from '@/components/profile/ProfileShowcase';
+import type { ProfileModule } from '@/lib/profile/modules';
 
 interface ProfileData {
   id: string;
@@ -62,6 +69,8 @@ interface ProfileData {
   profileSongArtist: string | null;
   profileSongPreviewUrl: string | null;
   profileSongAlbumArt: string | null;
+  status?: UserStatus | null;
+  modules?: ProfileModule[];
   followerCount: number;
   followingCount: number;
   rmharkCount: number;
@@ -798,11 +807,45 @@ export function ProfileColumn({
           </div>
         </div>
 
+        {/* Custom status (§10): own profile gets the editor; others see the badge. */}
+        <div className="mb-3">
+          {profile.isOwnProfile ? (
+            <StatusEditor initial={profile.status ?? null} />
+          ) : profile.status ? (
+            <StatusBadge status={profile.status} />
+          ) : null}
+        </div>
+
+        {/* Wishlist follow (§8) + add-to-list (§3) for other accounts. */}
+        {!profile.isOwnProfile ? (
+          <div className="mb-3 flex flex-wrap gap-2">
+            <WishButton
+              entityType="creator_builds"
+              entityId={profile.id}
+              label={t('notify-builds', { defaultValue: 'Notify me about builds' })}
+            />
+            <AddToListSheet targetUserId={profile.id} />
+          </div>
+        ) : null}
+
         {profile.bio && (
           <p className="text-site-text text-[15px] whitespace-pre-wrap break-words mb-3">
             {profile.bio}
           </p>
         )}
+
+        {/* Profile v2 showcase (§12): owner-configured module blocks. */}
+        <ProfileShowcase
+          modules={profile.modules ?? []}
+          isOwner={profile.isOwnProfile}
+          profile={{
+            id: profile.id,
+            followerCount: profile.followerCount,
+            followingCount: profile.followingCount,
+            rmharkCount: profile.rmharkCount,
+            status: profile.status ?? null,
+          }}
+        />
 
         {/* Per-creator membership CTA (coin-funded). Own profile just sees the count. */}
         {!profile.isOwnProfile &&

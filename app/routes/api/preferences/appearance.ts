@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma.server';
 import { rateLimit, getClientIp } from '@/lib/rate-limit';
 import { SITE_STYLES } from '@/stores/themeStore';
 import { ACCENT_PRESETS } from '@/lib/appearance';
+import { appearanceComfortSchema } from '@/lib/appearance/prefs';
+import { ensureReadableAccent } from '@/lib/appearance/contrast';
 
 /**
  * GET  /api/preferences/appearance — the caller's saved theme + accent (nulls
@@ -31,7 +33,7 @@ const schema = z.object({
     .optional()
     .refine((v) => v == null || ACCENT_IDS.has(v), { message: 'Unknown accent' }),
   reduceTransparency: z.boolean().optional(),
-});
+}).and(appearanceComfortSchema);
 
 export const Route = createFileRoute('/api/preferences/appearance')({
   server: {
@@ -49,6 +51,11 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             style: row?.style ?? null,
             accent: row?.accent ?? null,
             reduceTransparency: row?.reduceTransparency ?? false,
+            fontScale: row?.fontScale ?? null,
+            density: row?.density ?? null,
+            readableFont: row?.readableFont ?? false,
+            customAccent: row?.customAccent ?? null,
+            reduceMotion: row?.reduceMotion ?? false,
           });
         } catch (error) {
           console.error('Appearance prefs fetch error:', error);
@@ -80,16 +87,40 @@ export const Route = createFileRoute('/api/preferences/appearance')({
 
           // Undefined fields are omitted by Prisma (left unchanged); explicit null
           // clears the column back to the default.
-          const { style, accent, reduceTransparency } = parsed.data;
+          const { style, accent, reduceTransparency, fontScale, density, readableFont, reduceMotion } =
+            parsed.data;
+          // Custom accent is normalized/nudged through the contrast guard so the
+          // stored value is guaranteed to carry a legible label (AA).
+          let customAccent = parsed.data.customAccent;
+          if (customAccent) customAccent = ensureReadableAccent(customAccent).hex;
+
+          const comfort = {
+            ...(fontScale !== undefined ? { fontScale } : {}),
+            ...(density !== undefined ? { density } : {}),
+            ...(readableFont !== undefined ? { readableFont } : {}),
+            ...(customAccent !== undefined ? { customAccent } : {}),
+            ...(reduceMotion !== undefined ? { reduceMotion } : {}),
+          };
           const row = await prisma.appearancePreference.upsert({
             where: { userId: session.user.id },
-            create: { userId: session.user.id, style, accent, reduceTransparency: reduceTransparency ?? false },
-            update: { style, accent, reduceTransparency },
+            create: {
+              userId: session.user.id,
+              style,
+              accent,
+              reduceTransparency: reduceTransparency ?? false,
+              ...comfort,
+            },
+            update: { style, accent, reduceTransparency, ...comfort },
           });
           return Response.json({
             style: row.style ?? null,
             accent: row.accent ?? null,
             reduceTransparency: row.reduceTransparency ?? false,
+            fontScale: row.fontScale ?? null,
+            density: row.density ?? null,
+            readableFont: row.readableFont ?? false,
+            customAccent: row.customAccent ?? null,
+            reduceMotion: row.reduceMotion ?? false,
           });
         } catch (error) {
           console.error('Appearance prefs save error:', error);

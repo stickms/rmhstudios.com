@@ -77,7 +77,7 @@ export const createRMHarkSchema = z
     // Quote-repost: id of the post being quoted.
     originalId: z.string().max(64).optional(),
     // Audience visibility.
-    audience: z.enum(["PUBLIC", "FOLLOWERS", "PRIVATE"]).optional(),
+    audience: z.enum(["PUBLIC", "FOLLOWERS", "PRIVATE", "CIRCLE"]).optional(),
     // Content warning: hide media/text behind a click-to-reveal overlay.
     isSensitive: z.boolean().optional(),
     // Who is allowed to reply.

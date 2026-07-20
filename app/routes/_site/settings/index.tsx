@@ -17,6 +17,8 @@ import {
   Zap,
   ChevronRight,
   Sparkles,
+  LayoutDashboard,
+  SlidersHorizontal,
   type LucideIcon,
 } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
@@ -209,6 +211,36 @@ function SettingsPage() {
           })}
         >
           <LanguageSwitcher />
+        </SectionCard>
+
+        <SectionCard
+          id="personalization"
+          icon={LayoutDashboard}
+          title={t('settings-personalization', { defaultValue: 'Personalization' })}
+          subtitle={t('settings-personalization-hint', {
+            defaultValue: 'Arrange your home widgets and sidebar.',
+          })}
+        >
+          <div className="-mx-3 flex flex-col">
+            <AccountLink
+              to="/settings/layout"
+              icon={SlidersHorizontal}
+              label={t('settings-layout', { defaultValue: 'Home & sidebar layout' })}
+              hint={t('settings-layout-hint', {
+                defaultValue: 'Reorder home widgets; pin or hide sidebar items',
+              })}
+            />
+            <AccountLink
+              to="/settings/notifications"
+              icon={Bell}
+              label={t('settings-notifications-advanced', {
+                defaultValue: 'Notification channels & quiet hours',
+              })}
+              hint={t('settings-notifications-advanced-hint', {
+                defaultValue: 'Per-category push, in-app, and email',
+              })}
+            />
+          </div>
         </SectionCard>
 
         <SectionCard

@@ -1,0 +1,10 @@
+{
+  "error": "Couldn't save your circle",
+  "intro": "Pick close friends from the people you follow. No one is told they were added.",
+  "limit": "You've reached the close-friends limit",
+  "none-desc": "Follow people to add them here.",
+  "none-title": "No one to add yet",
+  "save": "Save",
+  "saved": "Close friends updated",
+  "search": "Search people you follow"
+}

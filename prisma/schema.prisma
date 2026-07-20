@@ -314,6 +314,9 @@ model User {
   // Appearance preferences (theme + accent), synced across devices
   appearancePreference AppearancePreference?
 
+  // Layout preferences (sidebar pin/hide + home widget stack), synced (§15)
+  layoutPreference LayoutPreference?
+
   // ─── Platform expansion (2026-07-19 design) ──────────────────────────────
   arcadeStreak         ArcadeStreak?
   creatorTiers         CreatorTier[]
@@ -325,6 +328,24 @@ model User {
   marketListingsSold   MarketListing[]  @relation("MarketSeller")
   marketListingsBought MarketListing[]  @relation("MarketBuyer")
   sharedMoments        SharedMoment[]
+
+  // ─── Parity / QOL / customization (2026-07-20 design) ────────────────────
+  saveFolders        SaveFolder[]
+  savedItems         SavedItem[]
+  historyEntries     HistoryEntry[]
+  contentAwardsGiven ContentAward[]
+  wishlistEntries    WishlistEntry[]
+  closeFriendsOwned  CloseFriend[]  @relation("CircleOwner")
+  closeFriendOf      CloseFriend[]  @relation("CircleMember")
+  userLists          UserList[]
+  userListMemberships UserListMember[]
+  feedSignals        FeedSignal[]
+  gameReviews        GameReview[]
+  gameReviewVotes    GameReviewVote[]
+  gameGuides         GameGuide[]
+  userThemes         UserTheme[]
+  profileLayout      ProfileLayout?
+  savedSearches      SavedSearch[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -349,6 +370,15 @@ model NotificationPreference {
   // in settings. Kept opt-in for deliverability + consent hygiene.
   emailDigest Boolean @default(false)
 
+  // Notification center v2 (§16): per-category × per-channel matrix
+  // ({ [category]: { inapp, push, email } }; missing = category default) plus
+  // quiet hours. The booleans above stay until every notifier is migrated onto
+  // lib/notify/dispatch.server.ts.
+  matrix     Json    @default("{}")
+  quietStart Int? // minutes from midnight, user tz
+  quietEnd   Int?
+  tz         String? @db.VarChar(40)
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("notification_preference")
@@ -364,10 +394,33 @@ model AppearancePreference {
   style               String? // site theme id (see SITE_STYLES); null → DEFAULT_STYLE (Glass Dark)
   accent              String? // accent preset id (see ACCENT_PRESETS); null → theme's own accent
   reduceTransparency  Boolean @default(false) // collapse the glass to opaque surfaces
+  // Appearance & accessibility suite (§13). Null = built-in default.
+  fontScale    Int? // 875 | 1000 | 1125 | 1250 (per-mille; avoids floats)
+  density      String? @db.VarChar(8) // 'cozy' | 'compact'
+  readableFont Boolean @default(false)
+  customAccent String? @db.VarChar(7) // '#rrggbb'; wins over `accent` preset
+  reduceMotion Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("appearance_preference")
+}
+
+// Home dashboard & sidebar customization (§15) — "your daily surfaces, your
+// order". Deliberately separate from AppearancePreference (looks vs where;
+// different churn). `sidebar` holds { pinned: string[], hidden: string[] } of
+// nav item ids; `homeStack` is an ordered list of widget config
+// ({ kind, collapsed? }); [] / {} both mean "use the defaults". Unknown ids are
+// dropped at read time by parseLayoutPref (forward-safe across removed apps).
+model LayoutPreference {
+  userId    String   @id
+  sidebar   Json     @default("{}")
+  homeStack Json     @default("[]")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("layout_preference")
 }
 
 // One row per successfully attributed invite. `rewardedAt` is set when the
@@ -1700,6 +1753,12 @@ model UserProfile {
   bannerSizeBytes       Int?
   showLikes             Boolean   @default(false)
   dmPrivacy             DmPrivacy @default(EVERYONE)
+  // Rich presence & Friends rail (§9). Who may see this user in the rail /
+  // activity line: 'mutuals' (default, Discord-like), 'followers', or 'nobody'.
+  // presenceDetail=false → online/offline only, activity hidden. Presence
+  // activity itself is ephemeral (expires with the heartbeat) — no column.
+  presenceVisibility    String    @default("mutuals") @db.VarChar(12)
+  presenceDetail        Boolean   @default(true)
   // Reader content control: feed posts whose text contains any of these words
   // are hidden from this user (case-insensitive substring match). Opt-in.
   mutedWords            String[]  @default([])
@@ -1708,6 +1767,21 @@ model UserProfile {
   profileSongArtist     String?   @db.VarChar(200)
   profileSongPreviewUrl String?   @db.VarChar(500)
   profileSongAlbumArt   String?   @db.VarChar(500)
+
+  // Custom status (parity/QOL spec §10): a short emoji + text presence line
+  // shown on the profile, hover cards, DMs, and (later) the friends rail.
+  // `statusExpires` is enforced at read time (past = no status); `statusAuto`
+  // mirrors rich presence as a now-playing line when no manual status is set.
+  statusEmoji   String?   @db.VarChar(16)
+  statusText    String?   @db.VarChar(80)
+  statusExpires DateTime?
+  statusAuto    Boolean   @default(false)
+
+  // History & resume (§5): when true, no new HistoryEntry rows are recorded.
+  historyPaused Boolean @default(false)
+
+  // Wishlists (§8): public-by-default so friends can see what you want (gifting).
+  wishlistPublic Boolean @default(true)
 
   // RMH Coins
   coins          Int     @default(10)
@@ -4025,6 +4099,9 @@ model Notification {
   preview    String?          @db.VarChar(280) // short snapshot of the content
   link       String?          @db.VarChar(500) // where clicking should take the user
   read       Boolean          @default(false)
+  // §16 batching: rows sharing a groupKey collapse in the list/badge ("12 people
+  // liked your post"). Null = ungrouped (rendered individually, as today).
+  groupKey   String?          @db.VarChar(80)
   createdAt  DateTime         @default(now())
 
   user  User  @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
@@ -4032,6 +4109,7 @@ model Notification {
 
   @@index([userId, read, createdAt(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, groupKey])
   @@map("notification")
 }
 
@@ -4352,6 +4430,7 @@ enum RMHarkAudience {
   FOLLOWERS // the author's followers only
   PRIVATE // only the author
   SUPPORTERS // active members of the author (any creator tier)
+  CIRCLE // the author's close-friends circle (§11)
 }
 
 enum RMHarkReplyControl {
@@ -5638,4 +5717,284 @@ model SharedMoment {
 
   @@index([userId, createdAt(sort: Desc)])
   @@map("shared_moment")
+}
+
+// ─── Parity / QOL / customization (2026-07-20 design) ───────────────────────
+
+// Unified Saves (§4): user-created folders holding polymorphic saved items
+// (posts, builds, songs, …). Addressing reuses the ledger's
+// entityType/entityId convention. Replaces the flat, posts-only bookmark.
+model SaveFolder {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String   @db.VarChar(40)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items SavedItem[]
+
+  @@index([userId, sortOrder])
+  @@map("save_folder")
+}
+
+model SavedItem {
+  id         String   @id @default(cuid())
+  userId     String
+  folderId   String? // null = default "Saved"
+  entityType String   @db.VarChar(24) // see SAVE_ENTITY_TYPES in lib/saves/types.ts
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  folder SaveFolder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId, folderId, createdAt(sort: Desc)])
+  @@map("saved_item")
+}
+
+// History & resume (§5): most-recent visit per (user, entity), with an optional
+// playback `position` for resume. Upserted by a throttled client heartbeat;
+// swept after HISTORY_RETENTION_DAYS.
+model HistoryEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  entityType String   @db.VarChar(24) // 'tube_video' | 'song' | 'game' | 'library_doc' | 'news' | ...
+  entityId   String
+  position   Int? // seconds (media) | percent*100 (docs) | null (games)
+  duration   Int?
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId, updatedAt(sort: Desc)])
+  @@map("history_entry")
+}
+
+// Post awards (§7): a public, paid recognition badge pinned to content. The
+// coin flow lands in the existing ledger (recipient share as TIP, giver spend
+// as PURCHASE) — no new CoinTxnType.
+model ContentAward {
+  id         String   @id @default(cuid())
+  awardId    String   @db.VarChar(32) // catalog key (lib/awards/catalog.ts)
+  giverId    String
+  anonymous  Boolean  @default(false)
+  hidden     Boolean  @default(false) // recipient hid it
+  entityType String   @db.VarChar(24) // 'rmhark' | 'comment' | 'build' | 'guide'
+  entityId   String
+  createdAt  DateTime @default(now())
+
+  giver User @relation(fields: [giverId], references: [id], onDelete: Cascade)
+
+  @@index([entityType, entityId])
+  @@index([giverId, createdAt(sort: Desc)])
+  @@map("content_award")
+}
+
+// Wishlists (§8): what a user wants — shop items, market cosmetics, or a
+// creator's future builds. Powers price/publish alerts and gifting.
+model WishlistEntry {
+  id          String   @id @default(cuid())
+  userId      String
+  entityType  String   @db.VarChar(24) // 'shop_item' | 'market_cosmetic' | 'creator_builds'
+  entityId    String // catalog key | itemId | creatorId
+  targetPrice Int? // coins; market alerts only
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, entityType, entityId])
+  @@index([entityType, entityId]) // reverse index: who wants this?
+  @@map("wishlist_entry")
+}
+
+// Close Friends circle (§11): one private circle per owner. Membership is
+// silent (no notifications) and never publicly visible. CIRCLE-audience posts
+// are visible only to the owner and their circle members.
+model CloseFriend {
+  ownerId  String
+  memberId String
+  addedAt  DateTime @default(now())
+
+  owner  User @relation("CircleOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  member User @relation("CircleMember", fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@id([ownerId, memberId])
+  @@index([memberId]) // viewer-side feed predicate: circles I'm in
+  @@map("close_friend")
+}
+
+// Lists & custom feeds (§3): user-curated lists of accounts, read as their own
+// chronological timeline. PRIVATE by default; UNLISTED is link-shareable;
+// PUBLIC is discoverable (phase 2 — schema-ready, UI-gated).
+enum ListVisibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+model UserList {
+  id         String         @id @default(cuid())
+  ownerId    String
+  name       String         @db.VarChar(50)
+  bio        String?        @db.VarChar(200)
+  visibility ListVisibility @default(PRIVATE)
+  pinned     Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+
+  owner   User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members UserListMember[]
+
+  @@index([ownerId])
+  @@map("user_list")
+}
+
+model UserListMember {
+  listId  String
+  userId  String
+  addedAt DateTime @default(now())
+
+  list UserList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([listId, userId])
+  @@index([userId]) // "lists you're on"
+  @@map("user_list_member")
+}
+
+// Feed controls (§17): reader tuning signals. 'mute_tag' filters a hashtag out;
+// 'less_author' demotes an author (applied in ranking — recorded here);
+// 'follow_tag' boosts a topic. Every signal is inspectable + reversible in
+// settings (the transparency half).
+model FeedSignal {
+  userId    String
+  kind      String   @db.VarChar(16) // 'less_author' | 'mute_tag' | 'follow_tag'
+  targetId  String   @db.VarChar(64) // authorId | tag (lowercase, no '#')
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, kind, targetId])
+  @@index([userId, kind])
+  @@map("feed_signal")
+}
+
+// Game hubs (§6): per-game reviews, ratings, and player guides.
+model GameReview {
+  id        String   @id @default(cuid())
+  userId    String
+  gameId    String   @db.VarChar(40) // key from lib/games.ts
+  stars     Int // 1..5 (zod)
+  body      String?  @db.VarChar(2000)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  votes GameReviewVote[]
+
+  @@unique([userId, gameId])
+  @@index([gameId, createdAt(sort: Desc)])
+  @@map("game_review")
+}
+
+model GameReviewVote {
+  reviewId String
+  userId   String
+  helpful  Boolean
+
+  review GameReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([reviewId, userId])
+  @@map("game_review_vote")
+}
+
+model GameGuide {
+  id        String   @id @default(cuid())
+  authorId  String
+  gameId    String   @db.VarChar(40)
+  title     String   @db.VarChar(120)
+  body      String // markdown, current revision
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author    User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  revisions GameGuideRevision[]
+
+  @@index([gameId, published, updatedAt(sort: Desc)])
+  @@map("game_guide")
+}
+
+model GameGuideRevision {
+  id        String   @id @default(cuid())
+  guideId   String
+  body      String
+  note      String?  @db.VarChar(120)
+  createdAt DateTime @default(now())
+
+  guide GameGuide @relation(fields: [guideId], references: [id], onDelete: Cascade)
+
+  @@index([guideId, createdAt(sort: Desc)])
+  @@map("game_guide_revision")
+}
+
+// Theme Studio (§14): user-authored site themes as a marketplace cosmetic.
+// `tokens` is a closed, versioned token map (lib/themes/tokens.ts) — never CSS
+// strings — so publishing a theme can't inject styles. Ownership rides
+// UserInventory (kind THEME, itemId "user:<themeId>").
+enum UserThemeStatus {
+  DRAFT
+  PUBLISHED
+  DELISTED
+}
+
+model UserTheme {
+  id         String          @id @default(cuid())
+  authorId   String
+  name       String          @db.VarChar(40)
+  tokens     Json // { v: 1, ...closed key set }
+  status     UserThemeStatus @default(DRAFT)
+  priceCoins Int? // null while draft; 200–5000 published
+  sales      Int             @default(0)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([status, sales(sort: Desc)])
+  @@index([authorId])
+  @@map("user_theme")
+}
+
+// Profile v2 (§12): a composable profile showcase. `modules` is an ordered,
+// zod-validated list of { kind, config } blocks (lib/profile/modules.ts).
+// Empty = the classic profile (unedited profiles are unchanged).
+model ProfileLayout {
+  userId    String   @id
+  modules   Json     @default("[]")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profile_layout")
+}
+
+// Universal search v2 (§18): site-wide saved searches (promotes the
+// ladder-only pattern). Optional weekly new-result alerts.
+model SavedSearch {
+  id        String    @id @default(cuid())
+  userId    String
+  query     String    @db.VarChar(200) // raw query incl. operators
+  types     Json      @default("[]") // entity-type chips
+  alerts    Boolean   @default(false)
+  lastRunAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("saved_search")
 }

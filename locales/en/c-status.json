@@ -1,0 +1,23 @@
+{
+  "clear": "Clear status",
+  "clear-after": "Clear after",
+  "cleared": "Status cleared",
+  "edit-status": "Edit your status",
+  "emoji": "Emoji",
+  "expiry-1h": "1 hour",
+  "expiry-30m": "30 min",
+  "expiry-none": "Don't clear",
+  "expiry-today": "Today",
+  "placeholder": "What's up?",
+  "preset-afk": "AFK",
+  "preset-building": "Building something",
+  "preset-gaming": "Grinding the pass",
+  "preset-studying": "Studying",
+  "preset-vibing": "Vibing",
+  "save": "Save",
+  "save-error": "Couldn't update your status",
+  "saved": "Status updated",
+  "set-status": "Set a status",
+  "status-text": "Status",
+  "title": "Set a status"
+}
