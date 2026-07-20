@@ -44,6 +44,7 @@ import { StatusBadge } from './StatusBadge';
 import { StatusEditor } from './StatusEditor';
 import type { UserStatus } from '@/lib/profile/status';
 import { WishButton } from '@/components/wishlist/WishButton';
+import { AddToListSheet } from '@/components/lists/AddToListSheet';
 
 interface ProfileData {
   id: string;
@@ -812,14 +813,15 @@ export function ProfileColumn({
           ) : null}
         </div>
 
-        {/* Wishlist follow (§8): get notified when this creator publishes a build. */}
+        {/* Wishlist follow (§8) + add-to-list (§3) for other accounts. */}
         {!profile.isOwnProfile ? (
-          <div className="mb-3">
+          <div className="mb-3 flex flex-wrap gap-2">
             <WishButton
               entityType="creator_builds"
               entityId={profile.id}
               label={t('notify-builds', { defaultValue: 'Notify me about builds' })}
             />
+            <AddToListSheet targetUserId={profile.id} />
           </div>
         ) : null}
 

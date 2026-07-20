@@ -199,6 +199,7 @@ import { Route as ApiPersonasIndexRouteImport } from './routes/api/personas/inde
 import { Route as ApiOnboardingIndexRouteImport } from './routes/api/onboarding/index'
 import { Route as ApiNotificationsIndexRouteImport } from './routes/api/notifications/index'
 import { Route as ApiMomentsIndexRouteImport } from './routes/api/moments/index'
+import { Route as ApiListsIndexRouteImport } from './routes/api/lists/index'
 import { Route as ApiHistoryIndexRouteImport } from './routes/api/history/index'
 import { Route as ApiGroupChatsIndexRouteImport } from './routes/api/group-chats/index'
 import { Route as ApiEventsIndexRouteImport } from './routes/api/events/index'
@@ -222,6 +223,7 @@ import { Route as SiteRideshareIndexRouteImport } from './routes/_site/rideshare
 import { Route as SitePersonasIndexRouteImport } from './routes/_site/personas/index'
 import { Route as SiteNewsIndexRouteImport } from './routes/_site/news/index'
 import { Route as SiteMessagesIndexRouteImport } from './routes/_site/messages/index'
+import { Route as SiteListsIndexRouteImport } from './routes/_site/lists/index'
 import { Route as SiteLibraryIndexRouteImport } from './routes/_site/library/index'
 import { Route as SiteHomesIndexRouteImport } from './routes/_site/homes/index'
 import { Route as SiteGroupsIndexRouteImport } from './routes/_site/groups/index'
@@ -349,6 +351,7 @@ import { Route as ApiMessagesSidebarRouteImport } from './routes/api/messages/si
 import { Route as ApiMessagesSearchRouteImport } from './routes/api/messages/search'
 import { Route as ApiMessagesReadAllRouteImport } from './routes/api/messages/read-all'
 import { Route as ApiMessagesConversationIdRouteImport } from './routes/api/messages/$conversationId'
+import { Route as ApiListsIdRouteImport } from './routes/api/lists/$id'
 import { Route as ApiLibraryUploadRouteImport } from './routes/api/library/upload'
 import { Route as ApiLibraryQuotaRouteImport } from './routes/api/library/quota'
 import { Route as ApiLibraryDraftRouteImport } from './routes/api/library/draft'
@@ -447,6 +450,7 @@ import { Route as SiteProfileIdRouteImport } from './routes/_site/profile/$id'
 import { Route as SitePersonasIdRouteImport } from './routes/_site/personas/$id'
 import { Route as SiteMomentsIdRouteImport } from './routes/_site/moments.$id'
 import { Route as SiteMessagesConversationIdRouteImport } from './routes/_site/messages/$conversationId'
+import { Route as SiteListsIdRouteImport } from './routes/_site/lists/$id'
 import { Route as SiteHomesWatchesRouteImport } from './routes/_site/homes/watches'
 import { Route as SiteHomesSubmitRouteImport } from './routes/_site/homes/submit'
 import { Route as SiteHomesSavedRouteImport } from './routes/_site/homes/saved'
@@ -566,6 +570,8 @@ import { Route as ApiOgMomentIdRouteImport } from './routes/api/og/moment/$id'
 import { Route as ApiMessagesConversationIdTypingRouteImport } from './routes/api/messages/$conversationId/typing'
 import { Route as ApiMessagesConversationIdReadRouteImport } from './routes/api/messages/$conversationId/read'
 import { Route as ApiMessagesConversationIdReactRouteImport } from './routes/api/messages/$conversationId/react'
+import { Route as ApiListsIdMembersRouteImport } from './routes/api/lists/$id.members'
+import { Route as ApiListsIdFeedRouteImport } from './routes/api/lists/$id.feed'
 import { Route as ApiLibraryFileIdRouteImport } from './routes/api/library/file/$id'
 import { Route as ApiLibraryCoverIdRouteImport } from './routes/api/library/cover/$id'
 import { Route as ApiLibraryCollectionIdRouteImport } from './routes/api/library/collection/$id'
@@ -1634,6 +1640,11 @@ const ApiMomentsIndexRoute = ApiMomentsIndexRouteImport.update({
   path: '/api/moments/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiListsIndexRoute = ApiListsIndexRouteImport.update({
+  id: '/api/lists/',
+  path: '/api/lists/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHistoryIndexRoute = ApiHistoryIndexRouteImport.update({
   id: '/api/history/',
   path: '/api/history/',
@@ -1747,6 +1758,11 @@ const SiteNewsIndexRoute = SiteNewsIndexRouteImport.update({
 const SiteMessagesIndexRoute = SiteMessagesIndexRouteImport.update({
   id: '/messages/',
   path: '/messages/',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteListsIndexRoute = SiteListsIndexRouteImport.update({
+  id: '/lists/',
+  path: '/lists/',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteLibraryIndexRoute = SiteLibraryIndexRouteImport.update({
@@ -2398,6 +2414,11 @@ const ApiMessagesConversationIdRoute =
     path: '/$conversationId',
     getParentRoute: () => ApiMessagesRoute,
   } as any)
+const ApiListsIdRoute = ApiListsIdRouteImport.update({
+  id: '/api/lists/$id',
+  path: '/api/lists/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiLibraryUploadRoute = ApiLibraryUploadRouteImport.update({
   id: '/api/library/upload',
   path: '/api/library/upload',
@@ -2894,6 +2915,11 @@ const SiteMessagesConversationIdRoute =
     path: '/messages/$conversationId',
     getParentRoute: () => SiteRoute,
   } as any)
+const SiteListsIdRoute = SiteListsIdRouteImport.update({
+  id: '/lists/$id',
+  path: '/lists/$id',
+  getParentRoute: () => SiteRoute,
+} as any)
 const SiteHomesWatchesRoute = SiteHomesWatchesRouteImport.update({
   id: '/homes/watches',
   path: '/homes/watches',
@@ -3508,6 +3534,16 @@ const ApiMessagesConversationIdReactRoute =
     path: '/react',
     getParentRoute: () => ApiMessagesConversationIdRoute,
   } as any)
+const ApiListsIdMembersRoute = ApiListsIdMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => ApiListsIdRoute,
+} as any)
+const ApiListsIdFeedRoute = ApiListsIdFeedRouteImport.update({
+  id: '/feed',
+  path: '/feed',
+  getParentRoute: () => ApiListsIdRoute,
+} as any)
 const ApiLibraryFileIdRoute = ApiLibraryFileIdRouteImport.update({
   id: '/api/library/file/$id',
   path: '/api/library/file/$id',
@@ -4324,6 +4360,7 @@ export interface FileRoutesByFullPath {
   '/homes/saved': typeof SiteHomesSavedRoute
   '/homes/submit': typeof SiteHomesSubmitRoute
   '/homes/watches': typeof SiteHomesWatchesRoute
+  '/lists/$id': typeof SiteListsIdRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/moments/$id': typeof SiteMomentsIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
@@ -4422,6 +4459,7 @@ export interface FileRoutesByFullPath {
   '/api/library/draft': typeof ApiLibraryDraftRoute
   '/api/library/quota': typeof ApiLibraryQuotaRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
+  '/api/lists/$id': typeof ApiListsIdRouteWithChildren
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/search': typeof ApiMessagesSearchRoute
@@ -4549,6 +4587,7 @@ export interface FileRoutesByFullPath {
   '/groups/': typeof SiteGroupsIndexRoute
   '/homes/': typeof SiteHomesIndexRoute
   '/library/': typeof SiteLibraryIndexRoute
+  '/lists/': typeof SiteListsIndexRoute
   '/messages/': typeof SiteMessagesIndexRoute
   '/news/': typeof SiteNewsIndexRoute
   '/personas/': typeof SitePersonasIndexRoute
@@ -4572,6 +4611,7 @@ export interface FileRoutesByFullPath {
   '/api/events/': typeof ApiEventsIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/history/': typeof ApiHistoryIndexRoute
+  '/api/lists/': typeof ApiListsIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
@@ -4653,6 +4693,8 @@ export interface FileRoutesByFullPath {
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
+  '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
+  '/api/lists/$id/members': typeof ApiListsIdMembersRoute
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
@@ -4972,6 +5014,7 @@ export interface FileRoutesByTo {
   '/homes/saved': typeof SiteHomesSavedRoute
   '/homes/submit': typeof SiteHomesSubmitRoute
   '/homes/watches': typeof SiteHomesWatchesRoute
+  '/lists/$id': typeof SiteListsIdRoute
   '/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/moments/$id': typeof SiteMomentsIdRoute
   '/personas/$id': typeof SitePersonasIdRoute
@@ -5070,6 +5113,7 @@ export interface FileRoutesByTo {
   '/api/library/draft': typeof ApiLibraryDraftRoute
   '/api/library/quota': typeof ApiLibraryQuotaRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
+  '/api/lists/$id': typeof ApiListsIdRouteWithChildren
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/search': typeof ApiMessagesSearchRoute
@@ -5197,6 +5241,7 @@ export interface FileRoutesByTo {
   '/groups': typeof SiteGroupsIndexRoute
   '/homes': typeof SiteHomesIndexRoute
   '/library': typeof SiteLibraryIndexRoute
+  '/lists': typeof SiteListsIndexRoute
   '/messages': typeof SiteMessagesIndexRoute
   '/news': typeof SiteNewsIndexRoute
   '/personas': typeof SitePersonasIndexRoute
@@ -5220,6 +5265,7 @@ export interface FileRoutesByTo {
   '/api/events': typeof ApiEventsIndexRoute
   '/api/group-chats': typeof ApiGroupChatsIndexRoute
   '/api/history': typeof ApiHistoryIndexRoute
+  '/api/lists': typeof ApiListsIndexRoute
   '/api/moments': typeof ApiMomentsIndexRoute
   '/api/notifications': typeof ApiNotificationsIndexRoute
   '/api/onboarding': typeof ApiOnboardingIndexRoute
@@ -5301,6 +5347,8 @@ export interface FileRoutesByTo {
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
+  '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
+  '/api/lists/$id/members': typeof ApiListsIdMembersRoute
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
@@ -5647,6 +5695,7 @@ export interface FileRoutesById {
   '/_site/homes/saved': typeof SiteHomesSavedRoute
   '/_site/homes/submit': typeof SiteHomesSubmitRoute
   '/_site/homes/watches': typeof SiteHomesWatchesRoute
+  '/_site/lists/$id': typeof SiteListsIdRoute
   '/_site/messages/$conversationId': typeof SiteMessagesConversationIdRoute
   '/_site/moments/$id': typeof SiteMomentsIdRoute
   '/_site/personas/$id': typeof SitePersonasIdRoute
@@ -5745,6 +5794,7 @@ export interface FileRoutesById {
   '/api/library/draft': typeof ApiLibraryDraftRoute
   '/api/library/quota': typeof ApiLibraryQuotaRoute
   '/api/library/upload': typeof ApiLibraryUploadRoute
+  '/api/lists/$id': typeof ApiListsIdRouteWithChildren
   '/api/messages/$conversationId': typeof ApiMessagesConversationIdRouteWithChildren
   '/api/messages/read-all': typeof ApiMessagesReadAllRoute
   '/api/messages/search': typeof ApiMessagesSearchRoute
@@ -5872,6 +5922,7 @@ export interface FileRoutesById {
   '/_site/groups/': typeof SiteGroupsIndexRoute
   '/_site/homes/': typeof SiteHomesIndexRoute
   '/_site/library/': typeof SiteLibraryIndexRoute
+  '/_site/lists/': typeof SiteListsIndexRoute
   '/_site/messages/': typeof SiteMessagesIndexRoute
   '/_site/news/': typeof SiteNewsIndexRoute
   '/_site/personas/': typeof SitePersonasIndexRoute
@@ -5895,6 +5946,7 @@ export interface FileRoutesById {
   '/api/events/': typeof ApiEventsIndexRoute
   '/api/group-chats/': typeof ApiGroupChatsIndexRoute
   '/api/history/': typeof ApiHistoryIndexRoute
+  '/api/lists/': typeof ApiListsIndexRoute
   '/api/moments/': typeof ApiMomentsIndexRoute
   '/api/notifications/': typeof ApiNotificationsIndexRoute
   '/api/onboarding/': typeof ApiOnboardingIndexRoute
@@ -5976,6 +6028,8 @@ export interface FileRoutesById {
   '/api/library/collection/$id': typeof ApiLibraryCollectionIdRouteWithChildren
   '/api/library/cover/$id': typeof ApiLibraryCoverIdRoute
   '/api/library/file/$id': typeof ApiLibraryFileIdRoute
+  '/api/lists/$id/feed': typeof ApiListsIdFeedRoute
+  '/api/lists/$id/members': typeof ApiListsIdMembersRoute
   '/api/messages/$conversationId/react': typeof ApiMessagesConversationIdReactRoute
   '/api/messages/$conversationId/read': typeof ApiMessagesConversationIdReadRoute
   '/api/messages/$conversationId/typing': typeof ApiMessagesConversationIdTypingRoute
@@ -6322,6 +6376,7 @@ export interface FileRouteTypes {
     | '/homes/saved'
     | '/homes/submit'
     | '/homes/watches'
+    | '/lists/$id'
     | '/messages/$conversationId'
     | '/moments/$id'
     | '/personas/$id'
@@ -6420,6 +6475,7 @@ export interface FileRouteTypes {
     | '/api/library/draft'
     | '/api/library/quota'
     | '/api/library/upload'
+    | '/api/lists/$id'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
     | '/api/messages/search'
@@ -6547,6 +6603,7 @@ export interface FileRouteTypes {
     | '/groups/'
     | '/homes/'
     | '/library/'
+    | '/lists/'
     | '/messages/'
     | '/news/'
     | '/personas/'
@@ -6570,6 +6627,7 @@ export interface FileRouteTypes {
     | '/api/events/'
     | '/api/group-chats/'
     | '/api/history/'
+    | '/api/lists/'
     | '/api/moments/'
     | '/api/notifications/'
     | '/api/onboarding/'
@@ -6651,6 +6709,8 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
+    | '/api/lists/$id/feed'
+    | '/api/lists/$id/members'
     | '/api/messages/$conversationId/react'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
@@ -6970,6 +7030,7 @@ export interface FileRouteTypes {
     | '/homes/saved'
     | '/homes/submit'
     | '/homes/watches'
+    | '/lists/$id'
     | '/messages/$conversationId'
     | '/moments/$id'
     | '/personas/$id'
@@ -7068,6 +7129,7 @@ export interface FileRouteTypes {
     | '/api/library/draft'
     | '/api/library/quota'
     | '/api/library/upload'
+    | '/api/lists/$id'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
     | '/api/messages/search'
@@ -7195,6 +7257,7 @@ export interface FileRouteTypes {
     | '/groups'
     | '/homes'
     | '/library'
+    | '/lists'
     | '/messages'
     | '/news'
     | '/personas'
@@ -7218,6 +7281,7 @@ export interface FileRouteTypes {
     | '/api/events'
     | '/api/group-chats'
     | '/api/history'
+    | '/api/lists'
     | '/api/moments'
     | '/api/notifications'
     | '/api/onboarding'
@@ -7299,6 +7363,8 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
+    | '/api/lists/$id/feed'
+    | '/api/lists/$id/members'
     | '/api/messages/$conversationId/react'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
@@ -7644,6 +7710,7 @@ export interface FileRouteTypes {
     | '/_site/homes/saved'
     | '/_site/homes/submit'
     | '/_site/homes/watches'
+    | '/_site/lists/$id'
     | '/_site/messages/$conversationId'
     | '/_site/moments/$id'
     | '/_site/personas/$id'
@@ -7742,6 +7809,7 @@ export interface FileRouteTypes {
     | '/api/library/draft'
     | '/api/library/quota'
     | '/api/library/upload'
+    | '/api/lists/$id'
     | '/api/messages/$conversationId'
     | '/api/messages/read-all'
     | '/api/messages/search'
@@ -7869,6 +7937,7 @@ export interface FileRouteTypes {
     | '/_site/groups/'
     | '/_site/homes/'
     | '/_site/library/'
+    | '/_site/lists/'
     | '/_site/messages/'
     | '/_site/news/'
     | '/_site/personas/'
@@ -7892,6 +7961,7 @@ export interface FileRouteTypes {
     | '/api/events/'
     | '/api/group-chats/'
     | '/api/history/'
+    | '/api/lists/'
     | '/api/moments/'
     | '/api/notifications/'
     | '/api/onboarding/'
@@ -7973,6 +8043,8 @@ export interface FileRouteTypes {
     | '/api/library/collection/$id'
     | '/api/library/cover/$id'
     | '/api/library/file/$id'
+    | '/api/lists/$id/feed'
+    | '/api/lists/$id/members'
     | '/api/messages/$conversationId/react'
     | '/api/messages/$conversationId/read'
     | '/api/messages/$conversationId/typing'
@@ -8281,6 +8353,7 @@ export interface RootRouteChildren {
   ApiLibraryDraftRoute: typeof ApiLibraryDraftRoute
   ApiLibraryQuotaRoute: typeof ApiLibraryQuotaRoute
   ApiLibraryUploadRoute: typeof ApiLibraryUploadRoute
+  ApiListsIdRoute: typeof ApiListsIdRouteWithChildren
   ApiModerationBlockRoute: typeof ApiModerationBlockRoute
   ApiModerationMuteRoute: typeof ApiModerationMuteRoute
   ApiModerationReportRoute: typeof ApiModerationReportRoute
@@ -8380,6 +8453,7 @@ export interface RootRouteChildren {
   ApiEventsIndexRoute: typeof ApiEventsIndexRoute
   ApiGroupChatsIndexRoute: typeof ApiGroupChatsIndexRoute
   ApiHistoryIndexRoute: typeof ApiHistoryIndexRoute
+  ApiListsIndexRoute: typeof ApiListsIndexRoute
   ApiMomentsIndexRoute: typeof ApiMomentsIndexRoute
   ApiNotificationsIndexRoute: typeof ApiNotificationsIndexRoute
   ApiOnboardingIndexRoute: typeof ApiOnboardingIndexRoute
@@ -9840,6 +9914,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMomentsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/lists/': {
+      id: '/api/lists/'
+      path: '/api/lists'
+      fullPath: '/api/lists/'
+      preLoaderRoute: typeof ApiListsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/history/': {
       id: '/api/history/'
       path: '/api/history'
@@ -9999,6 +10080,13 @@ declare module '@tanstack/react-router' {
       path: '/messages'
       fullPath: '/messages/'
       preLoaderRoute: typeof SiteMessagesIndexRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/lists/': {
+      id: '/_site/lists/'
+      path: '/lists'
+      fullPath: '/lists/'
+      preLoaderRoute: typeof SiteListsIndexRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/library/': {
@@ -10890,6 +10978,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMessagesConversationIdRouteImport
       parentRoute: typeof ApiMessagesRoute
     }
+    '/api/lists/$id': {
+      id: '/api/lists/$id'
+      path: '/api/lists/$id'
+      fullPath: '/api/lists/$id'
+      preLoaderRoute: typeof ApiListsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/library/upload': {
       id: '/api/library/upload'
       path: '/api/library/upload'
@@ -11574,6 +11669,13 @@ declare module '@tanstack/react-router' {
       path: '/messages/$conversationId'
       fullPath: '/messages/$conversationId'
       preLoaderRoute: typeof SiteMessagesConversationIdRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/lists/$id': {
+      id: '/_site/lists/$id'
+      path: '/lists/$id'
+      fullPath: '/lists/$id'
+      preLoaderRoute: typeof SiteListsIdRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/homes/watches': {
@@ -12408,6 +12510,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/messages/$conversationId/react'
       preLoaderRoute: typeof ApiMessagesConversationIdReactRouteImport
       parentRoute: typeof ApiMessagesConversationIdRoute
+    }
+    '/api/lists/$id/members': {
+      id: '/api/lists/$id/members'
+      path: '/members'
+      fullPath: '/api/lists/$id/members'
+      preLoaderRoute: typeof ApiListsIdMembersRouteImport
+      parentRoute: typeof ApiListsIdRoute
+    }
+    '/api/lists/$id/feed': {
+      id: '/api/lists/$id/feed'
+      path: '/feed'
+      fullPath: '/api/lists/$id/feed'
+      preLoaderRoute: typeof ApiListsIdFeedRouteImport
+      parentRoute: typeof ApiListsIdRoute
     }
     '/api/library/file/$id': {
       id: '/api/library/file/$id'
@@ -13371,6 +13487,7 @@ interface SiteRouteChildren {
   SiteHomesSavedRoute: typeof SiteHomesSavedRoute
   SiteHomesSubmitRoute: typeof SiteHomesSubmitRoute
   SiteHomesWatchesRoute: typeof SiteHomesWatchesRoute
+  SiteListsIdRoute: typeof SiteListsIdRoute
   SiteMessagesConversationIdRoute: typeof SiteMessagesConversationIdRoute
   SiteMomentsIdRoute: typeof SiteMomentsIdRoute
   SitePersonasIdRoute: typeof SitePersonasIdRoute
@@ -13398,6 +13515,7 @@ interface SiteRouteChildren {
   SiteGroupsIndexRoute: typeof SiteGroupsIndexRoute
   SiteHomesIndexRoute: typeof SiteHomesIndexRoute
   SiteLibraryIndexRoute: typeof SiteLibraryIndexRoute
+  SiteListsIndexRoute: typeof SiteListsIndexRoute
   SiteMessagesIndexRoute: typeof SiteMessagesIndexRoute
   SiteNewsIndexRoute: typeof SiteNewsIndexRoute
   SitePersonasIndexRoute: typeof SitePersonasIndexRoute
@@ -13456,6 +13574,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteHomesSavedRoute: SiteHomesSavedRoute,
   SiteHomesSubmitRoute: SiteHomesSubmitRoute,
   SiteHomesWatchesRoute: SiteHomesWatchesRoute,
+  SiteListsIdRoute: SiteListsIdRoute,
   SiteMessagesConversationIdRoute: SiteMessagesConversationIdRoute,
   SiteMomentsIdRoute: SiteMomentsIdRoute,
   SitePersonasIdRoute: SitePersonasIdRoute,
@@ -13483,6 +13602,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteGroupsIndexRoute: SiteGroupsIndexRoute,
   SiteHomesIndexRoute: SiteHomesIndexRoute,
   SiteLibraryIndexRoute: SiteLibraryIndexRoute,
+  SiteListsIndexRoute: SiteListsIndexRoute,
   SiteMessagesIndexRoute: SiteMessagesIndexRoute,
   SiteNewsIndexRoute: SiteNewsIndexRoute,
   SitePersonasIndexRoute: SitePersonasIndexRoute,
@@ -14174,6 +14294,20 @@ const ApiHomesListingsRouteChildren: ApiHomesListingsRouteChildren = {
 const ApiHomesListingsRouteWithChildren =
   ApiHomesListingsRoute._addFileChildren(ApiHomesListingsRouteChildren)
 
+interface ApiListsIdRouteChildren {
+  ApiListsIdFeedRoute: typeof ApiListsIdFeedRoute
+  ApiListsIdMembersRoute: typeof ApiListsIdMembersRoute
+}
+
+const ApiListsIdRouteChildren: ApiListsIdRouteChildren = {
+  ApiListsIdFeedRoute: ApiListsIdFeedRoute,
+  ApiListsIdMembersRoute: ApiListsIdMembersRoute,
+}
+
+const ApiListsIdRouteWithChildren = ApiListsIdRoute._addFileChildren(
+  ApiListsIdRouteChildren,
+)
+
 interface ApiPredictionsIdRouteChildren {
   ApiPredictionsIdTradeRoute: typeof ApiPredictionsIdTradeRoute
 }
@@ -14707,6 +14841,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiLibraryDraftRoute: ApiLibraryDraftRoute,
   ApiLibraryQuotaRoute: ApiLibraryQuotaRoute,
   ApiLibraryUploadRoute: ApiLibraryUploadRoute,
+  ApiListsIdRoute: ApiListsIdRouteWithChildren,
   ApiModerationBlockRoute: ApiModerationBlockRoute,
   ApiModerationMuteRoute: ApiModerationMuteRoute,
   ApiModerationReportRoute: ApiModerationReportRoute,
@@ -14806,6 +14941,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiEventsIndexRoute: ApiEventsIndexRoute,
   ApiGroupChatsIndexRoute: ApiGroupChatsIndexRoute,
   ApiHistoryIndexRoute: ApiHistoryIndexRoute,
+  ApiListsIndexRoute: ApiListsIndexRoute,
   ApiMomentsIndexRoute: ApiMomentsIndexRoute,
   ApiNotificationsIndexRoute: ApiNotificationsIndexRoute,
   ApiOnboardingIndexRoute: ApiOnboardingIndexRoute,

@@ -334,6 +334,8 @@ model User {
   wishlistEntries    WishlistEntry[]
   closeFriendsOwned  CloseFriend[]  @relation("CircleOwner")
   closeFriendOf      CloseFriend[]  @relation("CircleMember")
+  userLists          UserList[]
+  userListMemberships UserListMember[]
 
   @@index([isBot])
   @@index([followerCount])
@@ -5776,4 +5778,42 @@ model CloseFriend {
   @@id([ownerId, memberId])
   @@index([memberId]) // viewer-side feed predicate: circles I'm in
   @@map("close_friend")
+}
+
+// Lists & custom feeds (§3): user-curated lists of accounts, read as their own
+// chronological timeline. PRIVATE by default; UNLISTED is link-shareable;
+// PUBLIC is discoverable (phase 2 — schema-ready, UI-gated).
+enum ListVisibility {
+  PRIVATE
+  UNLISTED
+  PUBLIC
+}
+
+model UserList {
+  id         String         @id @default(cuid())
+  ownerId    String
+  name       String         @db.VarChar(50)
+  bio        String?        @db.VarChar(200)
+  visibility ListVisibility @default(PRIVATE)
+  pinned     Boolean        @default(false)
+  createdAt  DateTime       @default(now())
+
+  owner   User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members UserListMember[]
+
+  @@index([ownerId])
+  @@map("user_list")
+}
+
+model UserListMember {
+  listId  String
+  userId  String
+  addedAt DateTime @default(now())
+
+  list UserList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([listId, userId])
+  @@index([userId]) // "lists you're on"
+  @@map("user_list_member")
 }
