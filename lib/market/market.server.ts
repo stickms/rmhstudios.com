@@ -43,8 +43,6 @@ import {
   MAX_ACTIVE_LISTINGS,
 } from '@/lib/market/tradable';
 
-type Tx = Prisma.TransactionClient;
-
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 /** Typed marketplace error with an HTTP status the API layer maps directly. */

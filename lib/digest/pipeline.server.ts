@@ -98,7 +98,7 @@ export async function runWeeklyDigest(staggerMs = 150): Promise<DigestRunResult>
     if (staggerMs > 0) await sleep(staggerMs);
   }
 
-  console.info(`[digest] run complete: ${JSON.stringify(result)}`);
+  console.warn(`[digest] run complete: ${JSON.stringify(result)}`);
   return result;
 }
 

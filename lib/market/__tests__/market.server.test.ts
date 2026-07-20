@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- a stateful Prisma/tx mock is untyped by nature; `any` keeps the mock terse. */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // ── Isolate the module chain ────────────────────────────────────────────────
@@ -205,7 +206,6 @@ const {
   listItem,
   buyListing,
   cancelListing,
-  MarketError,
 } = await import('@/lib/market/market.server');
 const {
   isTradable,

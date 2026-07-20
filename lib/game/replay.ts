@@ -48,13 +48,13 @@ export interface ReplayableGame {
   /** Logic version (≤ 16 chars). Bump on any change to re-simulation/scoring. */
   version: string;
   /** Zod schema for this game's `data` payload. */
-  schema: z.ZodType<any>;
+  schema: z.ZodTypeAny;
   /**
    * Re-simulate the run from its log and return the derived score, or `null`
    * when the log is invalid/inconsistent. When present, its score is
    * authoritative (the client-submitted score is not trusted).
    */
-  verify?(data: any): { score: number } | null;
+  verify?(data: unknown): { score: number } | null;
 }
 
 /** Hard cap on stored payload size (`JSON.stringify` byte length). */
