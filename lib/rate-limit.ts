@@ -125,3 +125,78 @@ export function getClientIp(req: Request): string {
 
   return headers.get('x-real-ip')?.trim() || '127.0.0.1';
 }
+
+/**
+ * Named rate-limit policies. Limits are PRE-multiplier (the effective ceiling is
+ * `limit × RATE_LIMIT_MULTIPLIER`). Keep the buckets coarse — the point of
+ * consolidation is that most routes pick a category, not a bespoke number.
+ */
+export const RATE_LIMIT_POLICIES = {
+  read: { limit: 120, windowMs: 60_000 },
+  write: { limit: 30, windowMs: 60_000 },
+  ai: { limit: 20, windowMs: 60_000 },
+  upload: { limit: 10, windowMs: 60_000 },
+  auth: { limit: 10, windowMs: 60_000 },
+} as const;
+
+export type RateLimitPolicy = keyof typeof RATE_LIMIT_POLICIES;
+
+export interface WithRateLimitOptions {
+  /**
+   * Adds a per-subject dimension so the limit is per-subject-per-IP (e.g. pass a
+   * user id). The IP half is ALWAYS derived here — this is the only knob a
+   * caller gets, precisely so no route can substitute the wrong request field.
+   */
+  scope?: string;
+  /** Override the policy's limit (rare — prefer a named policy). */
+  limit?: number;
+  /** Override the policy's window (rare — prefer a named policy). */
+  windowMs?: number;
+  /** Bucket namespace; defaults to the policy name. Set when one route needs its own bucket. */
+  prefix?: string;
+}
+
+/**
+ * The one correct rate-limit entry point for API routes.
+ *
+ * The key is ALWAYS derived from `getClientIp(request)` — callers cannot pass a
+ * key, which is the whole point: the drift this consolidates was routes reaching
+ * for the wrong request field (`request.ip`, raw `x-forwarded-for`) and sharing
+ * one bucket behind the proxy. Returns a ready-to-return **429 `Response`** (with
+ * `Retry-After` + `X-RateLimit-*` headers) when the limit is exceeded, or `null`
+ * when the request may proceed:
+ *
+ * ```ts
+ * const limited = withRateLimit(request, 'write');
+ * if (limited) return limited;
+ * // per-user + per-IP:
+ * const limited = withRateLimit(request, 'ai', { scope: session.user.id });
+ * ```
+ */
+export function withRateLimit(
+  request: Request,
+  policy: RateLimitPolicy,
+  opts: WithRateLimitOptions = {},
+): Response | null {
+  const preset = RATE_LIMIT_POLICIES[policy];
+  const ip = getClientIp(request);
+  const key = opts.scope ? `${opts.scope}:${ip}` : ip;
+  const result = rateLimit(key, {
+    limit: opts.limit ?? preset.limit,
+    windowMs: opts.windowMs ?? preset.windowMs,
+    prefix: opts.prefix ?? policy,
+  });
+  if (result.allowed) return null;
+  return Response.json(
+    { error: 'Too many requests' },
+    {
+      status: 429,
+      headers: {
+        'Retry-After': String(result.retryAfter),
+        'X-RateLimit-Limit': String(result.limit),
+        'X-RateLimit-Remaining': String(result.remaining),
+        'X-RateLimit-Reset': String(Math.ceil(result.reset / 1000)),
+      },
+    },
+  );
+}

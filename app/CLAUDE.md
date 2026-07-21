@@ -30,16 +30,16 @@ There is **no `app/lib/`** — shared code is at repo root `lib/`, imported as
 
 ## File-naming rules (get these exactly right)
 
-| Pattern | Meaning | Example |
-|---|---|---|
-| `foo.tsx` | `/foo` | `wallet.tsx` |
-| `foo.$bar.tsx` | dot = path separator, `$bar` = param | `blog.$slug.tsx` → `/blog/$slug` |
-| `$.ts` | catch-all splat | `api/auth/$.ts` |
-| leading `_` | pathless layout (no URL segment) | `_site.tsx`, `_site/…` |
-| `index.tsx` | directory index route | `_site/index.tsx` = `/` (the feed) |
-| `route.tsx` | layout route for a directory (renders `<Outlet/>`, holds `beforeLoad` gates) | `_site/admin/route.tsx` |
-| trailing `_` | opt out of parent layout nesting | `builds_.$slug.tsx` → `/builds/$slug`, not nested under a builds layout |
-| `[.]` | escaped literal character | `sitemap[.]xml.ts` |
+| Pattern        | Meaning                                                                      | Example                                                                 |
+| -------------- | ---------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `foo.tsx`      | `/foo`                                                                       | `wallet.tsx`                                                            |
+| `foo.$bar.tsx` | dot = path separator, `$bar` = param                                         | `blog.$slug.tsx` → `/blog/$slug`                                        |
+| `$.ts`         | catch-all splat                                                              | `api/auth/$.ts`                                                         |
+| leading `_`    | pathless layout (no URL segment)                                             | `_site.tsx`, `_site/…`                                                  |
+| `index.tsx`    | directory index route                                                        | `_site/index.tsx` = `/` (the feed)                                      |
+| `route.tsx`    | layout route for a directory (renders `<Outlet/>`, holds `beforeLoad` gates) | `_site/admin/route.tsx`                                                 |
+| trailing `_`   | opt out of parent layout nesting                                             | `builds_.$slug.tsx` → `/builds/$slug`, not nested under a builds layout |
+| `[.]`          | escaped literal character                                                    | `sitemap[.]xml.ts`                                                      |
 
 **Placement decides chrome:** files under `_site/` get the sidebar shell;
 top-level files render full-screen. Games, `/login`, `secret/*`, `discord/*`,
@@ -52,15 +52,15 @@ standalone CLI for it.
 ## Adding a page route
 
 ```tsx
-export const Route = createFileRoute("/_site/example")({
-  head: () => ({ meta: [{ title: "Example | RMH Studios" }] }),
+export const Route = createFileRoute('/_site/example')({
+  head: () => ({ meta: [{ title: 'Example | RMH Studios' }] }),
   loader: ({ params }) => getExample({ data: params.id }), // optional
   component: ExamplePage,
 });
 ```
 
 - **head/SEO:** static/marketing pages use `buildMeta({title, description,
-  path, image})` + `buildCanonical(path)` from `@/lib/seo` (see
+path, image})` + `buildCanonical(path)` from `@/lib/seo` (see
   `rmh-capital/*`, `adaptive-intelligence.tsx`). Dynamic pages build meta
   arrays from `loaderData` (see `blog.$slug.tsx`). JSON-LD goes in
   `head().scripts` via `jsonLdScript(articleSchema({...}))` from
@@ -68,11 +68,11 @@ export const Route = createFileRoute("/_site/example")({
   (`jsonLdScript` escapes `<`). Site-wide Organization/WebSite JSON-LD is
   already emitted from `__root.tsx`.
 - **Loaders:** call a `createServerFn({ method: "GET" })
-  .validator(...).handler(...)` from `@tanstack/react-start`; read with
+.validator(...).handler(...)` from `@tanstack/react-start`; read with
   `Route.useLoaderData()` / `Route.useParams()`.
 - **404:** `throw notFound()` in the loader (renders
   `components/errors/NotFound`). **Auth gate:** `throw redirect({ to:
-  "/login", search: { callbackURL } })` in `beforeLoad`/loader.
+"/login", search: { callbackURL } })` in `beforeLoad`/loader.
 - **Errors:** `errorComponent`/`notFoundComponent` are set on `__root` and
   `_site` — leaf pages usually inherit; only override for special shells.
 
@@ -83,35 +83,37 @@ API routes are `.ts` files with `server.handlers` keyed by HTTP method
 validate → act), modeled on `api/ai/transform.ts`:
 
 ```ts
-import { createFileRoute } from "@tanstack/react-router";
-import { z } from "zod";
-import { auth } from "@/lib/auth";
-import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { createFileRoute } from '@tanstack/react-router';
+import { z } from 'zod';
+import { auth } from '@/lib/auth';
+import { rateLimit, getClientIp } from '@/lib/rate-limit';
 
 const schema = z.object({ text: z.string().min(1).max(1000) });
 
-export const Route = createFileRoute("/api/example")({
+export const Route = createFileRoute('/api/example')({
   server: {
     handlers: {
       POST: async ({ request }) => {
         try {
           const session = await auth.api.getSession({ headers: request.headers });
-          if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+          if (!session) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
           const { allowed } = rateLimit(getClientIp(request), {
-            limit: 20, windowMs: 60_000, prefix: "example",
+            limit: 20,
+            windowMs: 60_000,
+            prefix: 'example',
           });
-          if (!allowed) return Response.json({ error: "Too many requests" }, { status: 429 });
+          if (!allowed) return Response.json({ error: 'Too many requests' }, { status: 429 });
 
           const body = await request.json().catch(() => ({}));
           const parsed = schema.safeParse(body);
-          if (!parsed.success) return Response.json({ error: "Invalid input" }, { status: 400 });
+          if (!parsed.success) return Response.json({ error: 'Invalid input' }, { status: 400 });
 
           // ... use parsed.data and session.user.id
           return Response.json({ ok: true });
         } catch (error) {
-          console.error("example error:", error);
-          return Response.json({ error: "Internal server error" }, { status: 500 });
+          console.error('example error:', error);
+          return Response.json({ error: 'Internal server error' }, { status: 500 });
         }
       },
     },
@@ -122,12 +124,19 @@ export const Route = createFileRoute("/api/example")({
 Conventions:
 
 - **Responses:** `Response.json(data)` on success; `Response.json({ error },
-  { status })` on failure. Statuses in use: 400 invalid input, 401
+{ status })` on failure. Statuses in use: 400 invalid input, 401
   unauthorized, 403, 404, 429 rate-limited, 500, 502/503 upstream. Non-JSON
   (images/XML) uses `new Response(body, { headers })` with explicit
   `Content-Type`/`Cache-Control`.
 - **Admin gating:** `if (!session || !(session.user as { isAdmin?: boolean }).isAdmin) …`
   (the `isAdmin` field is a Better Auth custom user field).
+- **Rate limiting:** prefer `withRateLimit(request, policy)` from
+  `@/lib/rate-limit` — it derives the key via `getClientIp` internally (so no
+  route can key on the wrong request field) and returns a ready 429 `Response`
+  or `null`: `const limited = withRateLimit(request, "write"); if (limited)
+return limited;`. Named policies: `read`/`write`/`ai`/`upload`/`auth`; pass
+  `{ scope: userId }` for a per-user+IP limit. The lower-level
+  `rateLimit(getClientIp(request), …)` is still fine for bespoke limits.
 - **Rate limiter caveat:** `lib/rate-limit.ts` is in-memory and per-process,
   and every limit is multiplied by `RATE_LIMIT_MULTIPLIER` (default 4). It
   neither survives restarts nor spans instances.
