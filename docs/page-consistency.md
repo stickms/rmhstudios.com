@@ -144,6 +144,11 @@ Work through this for every new or edited page:
       `aria-hidden`.
 - [ ] Keyboard path works (focus-visible rings are global; don't suppress
       outlines).
+- [ ] Focus ring stays visible against the surface it lands on — the global
+      ring is `2px solid var(--site-accent)` (offset 2px), so any theme whose
+      `--site-accent` approaches its `--site-surface` must be checked. Tab to the
+      skip link (`_site.tsx`, the first focus stop) under `.style-high-contrast`
+      specifically: the ring vs. surface must clear WCAG 1.4.11 (≥3:1).
 - [ ] Check `.style-light` (Glass Light) and `.style-high-contrast` (glass off),
       plus reduced-transparency, not just default Glass Dark.
 - [ ] Mobile: bottom padding clears the floating dock
