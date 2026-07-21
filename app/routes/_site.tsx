@@ -87,7 +87,11 @@ function SiteLayout() {
             unchanged. */}
         <div className="hidden md:block md:w-16 xl:w-64 shrink-0 relative">
           <aside className="fixed top-0 md:w-16 xl:w-64 h-screen overflow-hidden z-30">
-            <div className="m-3 h-[calc(100%-1.5rem)] rounded-site glass-chrome--aside overflow-hidden flex flex-col">
+            {/* Rail inset: m-2 at the 64px collapsed width (md) so the icon pills
+                aren't crushed by a 12px gutter on both sides (§5.5x A.3 — a 64px
+                rail − 24px m-3 left only a ~14px track and clipped the pills);
+                m-3 returns at xl where the rail is 256px and the gutter is luxury. */}
+            <div className="m-2 xl:m-3 h-[calc(100%-1rem)] xl:h-[calc(100%-1.5rem)] rounded-site glass-chrome--aside overflow-hidden flex flex-col">
               <LeftSidebar />
             </div>
           </aside>

@@ -58,6 +58,10 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
         <motion.button
           type="button"
           onClick={scrollToTop}
+          // §5.5x A.1: part of the mobile floating-bottom stack. globals.css lifts
+          // this above the mini-player / cookie bar when either is present so no two
+          // ever overlap at bottom-above-dock.
+          data-floating="backtotop"
           aria-label={t('back-to-top', { defaultValue: 'Back to top' })}
           title={t('back-to-top', { defaultValue: 'Back to top' })}
           initial={{ opacity: 0, scale: 0.8, y: 8 }}

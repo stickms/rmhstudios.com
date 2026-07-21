@@ -191,8 +191,9 @@ export function ShopColumn({
       />
 
       {/* Category tabs → standalone glass sheet below the hero (§5.45). The pill
-          scrolls horizontally inside its own track; ARIA/state are unchanged. */}
-      <div className="mt-3 overflow-x-auto overscroll-x-contain px-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          scrolls horizontally in the shared tab-sheet track (overflow + edge fade,
+          §5.5x A.4); ARIA/state are unchanged. */}
+      <div className="mt-3 px-3 tab-sheet-scroll">
         <div
           className="glass-fill glass-bevel-sm flex w-fit flex-nowrap items-center gap-1 rounded-full p-1"
           role="tablist"

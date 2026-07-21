@@ -65,10 +65,17 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // fills the drawer to the bottom with no empty tinted band while the footer
   // still clears the home indicator once Safari's bottom bar collapses (env() is
   // 0 while that bar is shown).
-  const paddingClass = expanded ? 'px-4 pt-4' : 'p-3 xl:p-4';
+  // Collapsed rail (md, 64px): tighter padding so the icon pills breathe inside
+  // the m-2 rail panel instead of being crushed + clipped (§5.5x A.3). p-4 returns
+  // at xl where the rail is 256px and shows labels.
+  const paddingClass = expanded ? 'px-4 pt-4' : 'p-1.5 xl:p-4';
   const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
   const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
   const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
+  // Collapsed pills drop to px-2 at md (icon-only) so a ~40px rounded pill centres
+  // the icon without overflowing the tight rail track; px-3.5 returns at xl with
+  // labels (§5.5x A.3). Expanded (drawer) always keeps the roomy px-3.5.
+  const itemPadXClass = expanded ? 'px-3.5' : 'px-2 xl:px-3.5';
   // Both the mobile drawer (MobileSidebarShell's fixed `<aside>`) and the desktop
   // rail (fixed, `overflow-hidden` aside) fill the viewport height, so the nav
   // gets its own internal scroll region while the footer (notification bell,
@@ -218,7 +225,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     // (§5.2). Only one leaf is active at a time, so this stays within the ≤3
     // ambient-sheen budget. Inactive pills keep the pointer light via
     // .glass-interactive + data-glass-light.
-    const leafClass = `glass-interactive flex items-center gap-3 px-3.5 ${nested ? 'py-2' : 'py-3'} rounded-full text-sm font-medium transition-colors ${indent} ${
+    const leafClass = `glass-interactive flex items-center gap-3 ${itemPadXClass} ${nested ? 'py-2' : 'py-3'} rounded-full text-sm font-medium transition-colors ${indent} ${
       isActive
         ? 'glass-liquid text-site-accent bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]'
         : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -348,7 +355,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
 
       {/* Nav Links — its own scroll region on desktop; part of the drawer's
           scroll on mobile (see rootSizeClass/navScrollClass above). */}
-      <nav ref={navRef} className={`flex flex-col gap-1 ${navScrollClass} pr-1.5`}>
+      <nav ref={navRef} className={`flex flex-col gap-1 ${navScrollClass} xl:pr-1.5`}>
         {orderedNav.map((item) => {
           if (!isNavGroup(item)) {
             if (item.requiresAuth && !session) return null;
@@ -373,7 +380,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 type="button"
                 onClick={() => toggleGroup(item.group)}
                 aria-expanded={isOpen}
-                className={`flex items-center gap-3 px-3.5 py-3 rounded-full text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
+                className={`flex items-center gap-3 ${itemPadXClass} py-3 rounded-full text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
                   groupActive
                     ? 'text-site-accent bg-site-accent-dim'
                     : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
@@ -427,7 +434,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           <NotificationsPopover
             count={notificationCount}
             refreshCount={refreshNotificationCount}
-            className={`flex items-center gap-3 px-3.5 py-3 rounded-full text-sm font-medium transition-colors w-full text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
+            className={`flex items-center gap-3 ${itemPadXClass} py-3 rounded-full text-sm font-medium transition-colors w-full text-site-text-muted hover:text-site-text hover:bg-site-surface ${itemJustifyClass}`}
             labelClass={labelClass}
           />
         </div>

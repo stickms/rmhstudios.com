@@ -1081,10 +1081,22 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
 
 /* Touch / coarse pointers (§4.35): background-attachment: fixed is unreliable on
    iOS and there is no pointer to track — swap the whole glint layer to a static
-   element-anchored top-edge sun in the same border-box slot. Redefined on :root
-   (top-level, so it beats the base token) → every glass surface inherits it. */
+   element-anchored top-edge sun in the same border-box slot. Redefined on
+   html:not(.tilt-live) (beats the base :root token) → every glass surface inherits
+   the static sun AT REST.
+   §5.5x C — tilt light: while device-orientation events flow, useLiquidBackground
+   writes --light-x/--light-y from the tilt and sets html.tilt-live. That un-matches
+   this rule, so the base :root radial + `fixed` attachment return and the glint
+   tracks the tilt (the mobile counterpart of pointer tracking). One token flip, no
+   duplicated gradient. perf-lite/reduced-motion never set tilt-live (the hook
+   self-gates) and perf-lite re-forces the static sun below, so the degradations win.
+   iOS QA GATE (cannot verify on-device here, §5.5x C): background-attachment:fixed
+   is historically buggy in iOS Safari. If the tilt radial misregisters on a real
+   iOS device, keep iOS on the static sun by re-scoping this selector to
+   `html:not(.tilt-live), html.tilt-live.ios-safari` (set that class from UA) — i.e.
+   ship tilt for Android only. Left as a commented note per the spec. */
 @media not ((hover: hover) and (pointer: fine)) {
-  :root {
+  html:not(.tilt-live) {
     --glass-glint-attach: scroll;
     --glass-glint-layer: linear-gradient(
       180deg,
@@ -1572,6 +1584,89 @@ html.readable-font body {
     .bottom-above-dock {
       bottom: calc(var(--safe-bottom) + 92px);
     }
+
+    /* §5.5x A.1 — mobile floating-bottom stack. The cookie bar, mini-player and
+       back-to-top button can all be visible at once; without coordination the
+       mini-player and back-to-top both sat at bottom-above-dock and overlapped,
+       and either could collide with the cookie card. Each element declares
+       data-floating; when a LOWER-priority member is present (:has on the .vibe-app
+       shell that hosts all three), the ones above it are lifted clear by that
+       member's reserved height. Absent members contribute 0, so a lone element
+       keeps its natural bottom-above-dock position (no regression). Heights are
+       generous constants (CSS can't read a sibling's measured height) covering the
+       tallest state — the narrow flex-col cookie card, the mini-player bar. */
+    .vibe-app {
+      --float-lift-cookie: 0px;
+      --float-lift-miniplayer: 0px;
+    }
+    .vibe-app:has([data-floating='cookie']) {
+      --float-lift-cookie: 156px;
+    }
+    .vibe-app:has([data-floating='miniplayer']) {
+      --float-lift-miniplayer: 68px;
+    }
+    /* Mini-player rides above the cookie bar. */
+    .vibe-app:has([data-floating='cookie']) [data-floating='miniplayer'] {
+      bottom: calc(var(--safe-bottom) + 92px + var(--float-lift-cookie));
+    }
+    /* Back-to-top rides above whichever of the two are present (both vars add;
+       an absent one is 0). */
+    .vibe-app:has([data-floating='cookie']) [data-floating='backtotop'],
+    .vibe-app:has([data-floating='miniplayer']) [data-floating='backtotop'] {
+      bottom: calc(
+        var(--safe-bottom) + 92px + var(--float-lift-cookie) + var(--float-lift-miniplayer)
+      );
+    }
+  }
+
+  /* §5.5x B — touch target: the 16px slider thumb (clarity slider + every other
+     slider) needs a ≥44px hit area on coarse pointers (WCAG 2.5.8) without growing
+     its visual size. An invisible centred ::after expands the tap target; fine
+     pointers keep the precise 16px thumb and the ability to click the track. */
+  @media (pointer: coarse) {
+    [data-slot='slider-thumb'] {
+      position: relative;
+    }
+    [data-slot='slider-thumb']::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 44px;
+      height: 44px;
+      transform: translate(-50%, -50%);
+    }
+  }
+
+  /* §5.45 / §5.5x A.4 — horizontal scroll track for tab-strip sheets. Standardises
+     the ad-hoc `overflow-x-auto [scrollbar hidden]` wrappers that grew around the
+     LiquidTabs pills (§12.8 drift): scrolls when the pill exceeds the column, never
+     wraps, hides the scrollbar, and fades both edges so a clipped strip reads as
+     "more this way" instead of a hard cut (never colliding with headerRight). The
+     drawer gesture yields to it automatically (MobileSidebarShell.canScrollX keys
+     off overflow-x:auto + scrollWidth>clientWidth). */
+  .tab-sheet-scroll {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 14px,
+      #000 calc(100% - 14px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 14px,
+      #000 calc(100% - 14px),
+      transparent 100%
+    );
+  }
+  .tab-sheet-scroll::-webkit-scrollbar {
+    display: none;
   }
 
   /* 3D card flip utilities */

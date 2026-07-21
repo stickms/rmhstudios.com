@@ -230,8 +230,9 @@ export function SearchColumn({
       </div>
       {/* Result-type tabs → shared LiquidTabs sheet (§5.4/§5.45), below the search
           well. setTab keeps mirroring the selection to the URL. Labels are
-          pre-translated before handoff. The w-fit pill scrolls in its own track. */}
-      <div className="mt-3 overflow-x-auto overscroll-x-contain px-2 md:px-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          pre-translated before handoff. The w-fit pill scrolls in the shared
+          tab-sheet track (overflow + edge fade, §5.5x A.4). */}
+      <div className="mt-3 px-2 md:px-3 tab-sheet-scroll">
         <LiquidTabs
           tabs={TABS.map((tab_item) => ({
             id: tab_item.id,

@@ -12,6 +12,7 @@ import { useThemeStore } from '@/stores/themeStore';
 import { FONT_SCALES, HEX_RE, type FontScale } from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import { GlassClarityControl } from '@/components/settings/GlassClarityControl';
+import { TiltEffectsRow } from '@/components/settings/TiltEffectsRow';
 
 async function persist(body: Record<string, unknown>) {
   await fetch('/api/preferences/appearance', {
@@ -176,6 +177,9 @@ export function AppearancePanel() {
           checked={store.reduceMotion}
           onChange={setReduceMotion}
         />
+        {/* Tilt effects (§5.5x C.3): only renders on platforms that gate device
+            orientation behind a permission prompt (iOS). Self-contained consent. */}
+        <TiltEffectsRow />
       </Section>
 
       {/* Glass clarity (§5.46) — the frosted↔clear slider (stop 0 Opaque is the

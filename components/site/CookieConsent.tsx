@@ -64,6 +64,9 @@ export function CookieConsent() {
     <div
       role="dialog"
       aria-label={t('cookie-consent-label', { defaultValue: 'Cookie notice' })}
+      // §5.5x A.1: bottom-most member of the mobile floating stack — its presence
+      // lifts the mini-player / back-to-top clear of it (globals.css :has() rules).
+      data-floating="cookie"
       className="glass-chrome fixed inset-x-2 bottom-16 z-40 mx-auto max-w-2xl rounded-site border border-site-border p-4 shadow-site md:bottom-4"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
