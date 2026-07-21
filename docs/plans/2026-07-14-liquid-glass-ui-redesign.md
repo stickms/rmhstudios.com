@@ -1,7 +1,7 @@
 # Liquid Glass UI Redesign — Design Document
 
 **Date:** 2026-07-14
-**Status:** Proposed (design doc — implementation to follow)
+**Status:** Implemented — then extended/superseded in named areas (see the note below).
 **Scope:** Every non-game, non-app surface of rmhstudios.com — the entire `_site/`
 shell (all ~90 sidebar-layout pages, including every admin/backend page), the
 shared primitive layer, and the in-scope top-level pages (login, legal, blog/news
@@ -10,6 +10,18 @@ readers, offline, security).
 system), [`docs/page-consistency.md`](../page-consistency.md) (page recipes),
 [`docs/misc/UI_REDESIGN.md`](../misc/UI_REDESIGN.md) (the previous, superseded
 minimal-redesign vision).
+
+> **Status (2026-07-21): IMPLEMENTED, then extended.** This redesign shipped in
+> full. Several areas were subsequently reworked or superseded by
+> [`docs/plans/2026-07-21-liquid-glass-v2-optics.md`](./2026-07-21-liquid-glass-v2-optics.md)
+> — "Liquid Glass v2 — True Refraction, Reflection & Liquid Motion": the optics
+> (turbulence → lens refraction + a border-box rim glint), the floating-shell
+> layout restructure, `LiquidTabs` sheets placed below heroes, the five-stop
+> glass-clarity slider (replacing the reduce-transparency toggle), liquid
+> morph/open transitions, device-tilt light, and glass-native user themes.
+> **Where the two docs disagree, the v2 doc is authoritative and the code is
+> ground truth.** This doc is retained for its rationale and history; its body is
+> not rewritten.
 
 > **For the implementing agent:** read `docs/design-language.md` and
 > `docs/page-consistency.md` first — this redesign *evolves* that system, it does
