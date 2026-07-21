@@ -83,7 +83,7 @@ func runGroup(
 		logger.Info("drained cleanly", "workers", len(runs), "in", time.Since(start).Round(time.Millisecond).String())
 		// A signal-driven drain is a clean stop: swallow the context.Canceled the
 		// errgroup surfaces so main() exits 0 and Compose doesn't see a crash.
-		if err != nil && errgroupCausedBySignal(err, ctx) {
+		if err != nil && errgroupCausedBySignal(ctx, err) {
 			return nil
 		}
 		return err
@@ -110,6 +110,6 @@ func runGroup(
 // errgroupCausedBySignal reports whether the group's error is just the shutdown
 // propagating (the root context was cancelled), rather than a real worker
 // failure. On a signal-driven drain we don't want that to look like a crash.
-func errgroupCausedBySignal(err error, ctx context.Context) bool {
+func errgroupCausedBySignal(ctx context.Context, err error) bool {
 	return ctx.Err() != nil && (errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded))
 }
