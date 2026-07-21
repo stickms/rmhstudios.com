@@ -54,6 +54,7 @@
   "neural-collapse": "COLAPS NEURAL",
   "neural-lobby": "LOBBY NEURAL",
   "neural-operatives_one": "OPERAȚIUNI NEURALE ({{count}}/{{max}})",
+  "neural-operatives_few": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_other": "OPERAȚIUNI NEURALE ({{count}}/{{max}})",
   "no-scores-yet": "Niciun scor încă. Fii primul!",
   "not-ranked": "Nu ai intrat în clasament. Joacă o rundă!",

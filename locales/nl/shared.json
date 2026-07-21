@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "Chat...",
-  "error-boundary-message": "Er is een onverwachte fout opgetreden.",
-  "error-boundary-retry": "Opnieuw proberen",
-  "error-boundary-title": "Er is iets misgegaan",
   "failed-to-load-media": "Media laden mislukt",
   "game-crashed": "Spel gecrasht",
   "game-crashed-named": "{{gameName}} is gecrasht",

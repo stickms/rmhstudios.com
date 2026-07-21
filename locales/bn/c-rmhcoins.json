@@ -151,6 +151,8 @@
   "status-thinking": "চিন্তা করছে...",
   "streak_one": "ধারা: {{count}}",
   "streak_other": "ধারা: {{count}}",
+  "tab-games": "Games",
+  "tab-markets": "Markets",
   "table-name-placeholder": "টেবিলের নাম (ঐচ্ছিক)",
   "take-insurance": "নিন ({{cost}})",
   "texas-holdem-rooms": "টেক্সাস হোল্ডেম রুম",

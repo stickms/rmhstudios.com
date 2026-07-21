@@ -2,15 +2,11 @@
   "badge-app": "Приложение",
   "badge-game": "Игра",
   "build-details": "Сведения о сборке",
-  "build-source-label": "Исходник сборки",
-  "details-for": "Сведения о {{title}}",
   "empty-curated": "Нет сборок по этому запросу.",
   "empty-user-no-builds": "Пока нет пользовательских сборок — будьте первым, кто отправит свою.",
   "empty-user-search": "Нет пользовательских сборок по этому запросу.",
   "loading": "Загрузка…",
-  "open-build": "Открыть {{title}}",
-  "open-menu": "Открыть меню",
-  "page-title": "Сборки",
+  "open": "Open",
   "search-builds-label": "Поиск сборок",
   "search-builds-placeholder": "Поиск сборок...",
   "search-user-builds-placeholder": "Поиск пользовательских сборок...",
@@ -21,6 +17,8 @@
   "sort-name-az": "Название (А–Я)",
   "sort-recent": "Недавние",
   "submit": "Отправить",
-  "tab-curated": "Подборка",
-  "tab-user-builds": "Пользовательские сборки"
+  "views-count_one": "{{count}} views",
+  "views-count_few": "{{count}} views",
+  "views-count_many": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

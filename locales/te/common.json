@@ -1,3 +1,17 @@
 {
+  "cookie-consent-accept": "Accept all",
+  "cookie-consent-essential": "Essential only",
+  "cookie-consent-label": "Cookie notice",
+  "cookie-consent-learn": "Learn more",
+  "cookie-consent-learn-aria": "Learn more about our cookie policy",
+  "cookie-consent-text": "We use essential cookies to run the site and privacy-friendly analytics to improve it.",
+  "notFound.body": "The page you’re looking for doesn’t exist, moved, or never did. Let’s get you back on track.",
+  "notFound.explore": "Explore",
+  "notFound.home": "Go home",
+  "notFound.search": "Search",
+  "notFound.title": "Page not found",
+  "offline-body": "RMH Studios needs a connection for this page. Check your network and try again.",
+  "offline-retry": "Try again",
+  "offline-title": "You're offline",
   "skipToContent": "కంటెంట్కు దాటవేయి"
 }

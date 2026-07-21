@@ -9,6 +9,8 @@
   "edit-build": "Изменить сборку",
   "error-loading-build": "Ошибка загрузки сборки",
   "like-count_one": "{{count}} лайк",
+  "like-count_few": "{{count}} likes",
+  "like-count_many": "{{count}} likes",
   "like-count_other": "{{count}} лайков",
   "manage-subtitle": "Управляйте опубликованными сборками и черновиками",
   "my-builds": "Мои сборки",
@@ -25,5 +27,7 @@
   "update-build-details": "Обновите сведения о сборке ниже.",
   "view": "Просмотреть",
   "view-count_one": "{{count}} просмотр",
+  "view-count_few": "{{count}} views",
+  "view-count_many": "{{count}} views",
   "view-count_other": "{{count}} просмотров"
 }

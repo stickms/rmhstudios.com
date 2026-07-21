@@ -1,18 +1,5 @@
 {
-  "back-home": "Terug naar huis",
   "controls-hint": "WASD/← → Verplaatsen • Spatie Springen • Shift Dash • E Interactie • M Menu",
-  "controls-interact": "E — Interactie",
-  "controls-jump": "Spatie — Springen",
-  "controls-menu": "M — Menu",
-  "controls-move": "WASD / Pijltjes — Verplaatsen",
-  "debt": "SCHULD",
   "e-continue": "[E] Doorgaan",
-  "loading": "LADEN...",
-  "login-to-play": "Inloggen om te spelen",
-  "menu-title": "Menu",
-  "music-volume": "Muziekvolume",
-  "resume": "Hervatten [M]",
-  "sign-in-prompt": "Je moet inloggen voordat je het casino kunt betreden. Je schulden worden geregistreerd.",
-  "subtitle": "De tafel wacht",
-  "title": "Het Huis Wint Altijd"
+  "loading": "LADEN..."
 }

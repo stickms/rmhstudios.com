@@ -1,18 +1,5 @@
 {
-  "back-home": "తిరిగి హోమ్",
   "controls-hint": "WASD/← → తరలించు • Space జంప్ • Shift డాష్ • E ఇంటరాక్ట్ • M మెనూ",
-  "controls-interact": "E — ఇంటరాక్ట్",
-  "controls-jump": "Space — జంప్",
-  "controls-menu": "M — మెనూ",
-  "controls-move": "WASD / బాణాలు — తరలించు",
-  "debt": "రుణం",
   "e-continue": "[E] కొనసాగించు",
-  "loading": "లోడ్ అవుతోంది...",
-  "login-to-play": "ఆడటానికి లాగిన్ చేయండి",
-  "menu-title": "మెనూ",
-  "music-volume": "సంగీత వాల్యూమ్",
-  "resume": "పునఃప్రారంభించు [M]",
-  "sign-in-prompt": "మీరు కాసినోలో ప్రవేశించడానికి ముందు సైన్ ఇన్ చేయాలి. మీ రుణాలు నమోదు చేయబడతాయి.",
-  "subtitle": "టేబుల్ వేచి ఉంది",
-  "title": "హౌస్ ఆల్వేస్ విన్స్"
+  "loading": "లోడ్ అవుతోంది..."
 }

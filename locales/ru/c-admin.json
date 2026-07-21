@@ -4,6 +4,7 @@
   "back-to-admin-label": "Назад в админку",
   "changes-now-live": "Ваши изменения теперь опубликованы.",
   "content-label": "Содержание",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "Дата",
   "delete-confirm": "Вы уверены, что хотите удалить «{{title}}»? Это действие нельзя отменить.",
   "delete-failed": "Не удалось удалить пост",
@@ -18,9 +19,9 @@
   "generic-error": "Произошла ошибка",
   "hide-preview": "Скрыть предпросмотр",
   "image-url-label": "URL изображения",
-  "initializing-editor": "Инициализация редактора...",
   "live-preview": "Предпросмотр в реальном времени",
-  "loading-editor": "Загрузка редактора...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "Метаданные",
   "new-blog-post": "Новый пост в блоге",
   "post-created-successfully": "Пост успешно создан!",
@@ -37,5 +38,6 @@
   "title-label": "Заголовок",
   "title-placeholder": "Мой крутой пост",
   "untitled-post": "Пост без названия",
-  "update-post": "Обновить пост"
+  "update-post": "Обновить пост",
+  "upload-markdown": "Upload .md"
 }

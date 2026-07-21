@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Add to queue",
   "artist": "Artist",
   "correct-title": "Correct — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "HOST",
   "join-a-room": "Join a Room",
   "join-room": "Join Room",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} listener",
   "listener-count_other": "{{count}} listener",
+  "loading": "Loading…",
   "loading-rooms": "Loading rooms...",
   "mini-close": "Stop and close",
   "mini-open": "Open player",
@@ -20,14 +23,17 @@
   "mini-play": "Play",
   "mini-player": "Music mini-player",
   "new": "New",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "No puzzles yet.",
   "no-results": "No results found",
   "no-track-playing": "No track playing",
   "not-configured": "Music search isn't configured on this server.",
   "not-quite": "Not quite — try another hint or guess.",
   "open-player": "Open Player",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Public Rooms",
   "puzzles": "Puzzles",
+  "queue-action": "Queue",
   "queue-label": "Queue",
   "reveal-another-hint_one": "Reveal another hint ({{count}} left)",
   "reveal-another-hint_other": "Reveal another hint ({{count}} left)",
@@ -40,5 +46,6 @@
   "searching": "Searching...",
   "sign-in-to-guess": "Sign in to guess.",
   "solves-plays": "{{solves}} solved · {{plays}} plays",
-  "song-title-placeholder": "Song title..."
+  "song-title-placeholder": "Song title...",
+  "your-playlists": "Your playlists"
 }

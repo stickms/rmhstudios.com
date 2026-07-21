@@ -72,7 +72,7 @@
   "level-heading": "स्तर {{level}}",
   "level-up": "स्तर वाढला!",
   "light": "प्रकाश",
-  "loading-assets": "अ‍ॅसेट्स लोड होत आहेत... {{loaded}}/{{total}}",
+  "loading-assets": "अ\u200dॅसेट्स लोड होत आहेत... {{loaded}}/{{total}}",
   "lobby-label": "लॉबी",
   "locked": "लॉक केलेले",
   "lv10": "Lv.10",

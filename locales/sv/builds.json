@@ -2,15 +2,11 @@
   "badge-app": "App",
   "badge-game": "Spel",
   "build-details": "Byggdetaljer",
-  "build-source-label": "Byggkälla",
-  "details-for": "Detaljer för {{title}}",
   "empty-curated": "Inga bygg matchar den sökningen.",
   "empty-user-no-builds": "Inga användarbygg än — var den första att skicka in en.",
   "empty-user-search": "Inga användarbygg matchar den sökningen.",
   "loading": "Laddar…",
-  "open-build": "Öppna {{title}}",
-  "open-menu": "Öppna meny",
-  "page-title": "Bygg",
+  "open": "Open",
   "search-builds-label": "Sök bygg",
   "search-builds-placeholder": "Sök bygg...",
   "search-user-builds-placeholder": "Sök användarbygg...",
@@ -21,6 +17,6 @@
   "sort-name-az": "Namn (A–Ö)",
   "sort-recent": "Senaste",
   "submit": "Skicka in",
-  "tab-curated": "Utvalda",
-  "tab-user-builds": "Användarbygg"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

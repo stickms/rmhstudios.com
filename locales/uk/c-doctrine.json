@@ -2,6 +2,8 @@
   "access-required": "Потрібен доступ {{tierName}}",
   "active": "Активний",
   "attempt-count_one": "{{count}} спроба",
+  "attempt-count_few": "{{count}} attempt",
+  "attempt-count_many": "{{count}} attempt",
   "attempt-count_other": "{{count}} спроб",
   "attempts": "спроб",
   "best-streak": "найкраще: {{longestStreak}}",

@@ -2,15 +2,11 @@
   "badge-app": "Aplicație",
   "badge-game": "Joc",
   "build-details": "Detalii construcție",
-  "build-source-label": "Sursa construcției",
-  "details-for": "Detalii pentru {{title}}",
   "empty-curated": "Nicio construcție nu corespunde căutării.",
   "empty-user-no-builds": "Încă nu există construcții de utilizatori — fii primul care trimite una.",
   "empty-user-search": "Nicio construcție de utilizator nu corespunde căutării.",
   "loading": "Se încarcă…",
-  "open-build": "Deschide {{title}}",
-  "open-menu": "Deschide meniu",
-  "page-title": "Construcții",
+  "open": "Open",
   "search-builds-label": "Caută construcții",
   "search-builds-placeholder": "Caută construcții...",
   "search-user-builds-placeholder": "Caută construcțiile utilizatorilor...",
@@ -21,6 +17,7 @@
   "sort-name-az": "Nume (A–Z)",
   "sort-recent": "Recente",
   "submit": "Trimite",
-  "tab-curated": "Selectate",
-  "tab-user-builds": "Construcții utilizatori"
+  "views-count_one": "{{count}} views",
+  "views-count_few": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

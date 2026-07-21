@@ -4,6 +4,7 @@
   "back-to-admin-label": "प्रशासनाकडे परत जा",
   "changes-now-live": "तुमचे बदल आता लागू झाले आहेत.",
   "content-label": "सामग्री",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "तारीख",
   "delete-confirm": "तुम्हाला \"{{title}}\" हटवायचे आहे का? हे पूर्ववत करता येणार नाही.",
   "delete-failed": "पोस्ट हटवण्यात अयशस्वी",
@@ -18,9 +19,9 @@
   "generic-error": "एक त्रुटी आली",
   "hide-preview": "पूर्वावलोकन लपवा",
   "image-url-label": "प्रतिमा URL",
-  "initializing-editor": "संपादक सुरू करत आहे...",
   "live-preview": "लाइव्ह पूर्वावलोकन",
-  "loading-editor": "संपादक लोड करत आहे...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "मेटाडेटा",
   "new-blog-post": "नवीन ब्लॉग पोस्ट",
   "post-created-successfully": "पोस्ट यशस्वीरित्या तयार झाली!",
@@ -37,5 +38,6 @@
   "title-label": "शीर्षक",
   "title-placeholder": "माझी अप्रतिम पोस्ट",
   "untitled-post": "शीर्षक नसलेली पोस्ट",
-  "update-post": "पोस्ट अद्यतनित करा"
+  "update-post": "पोस्ट अद्यतनित करा",
+  "upload-markdown": "Upload .md"
 }

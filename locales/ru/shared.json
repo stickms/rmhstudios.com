@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "Чат...",
-  "error-boundary-message": "Произошла непредвиденная ошибка.",
-  "error-boundary-retry": "Попробовать снова",
-  "error-boundary-title": "Что-то пошло не так",
   "failed-to-load-media": "Не удалось загрузить медиа",
   "game-crashed": "Игра вылетела",
   "game-crashed-named": "{{gameName}} вылетела",

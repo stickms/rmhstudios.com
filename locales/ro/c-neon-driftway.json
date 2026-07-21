@@ -28,6 +28,7 @@
   "play": "Joacă",
   "play-again": "Joacă din nou",
   "players-count_one": "Jucători ({{count}}/6)",
+  "players-count_few": "Players ({{count}}/6)",
   "players-count_other": "Jucători ({{count}}/6)",
   "race-over": "CURSA S-A TERMINAT",
   "race-starting-in": "Cursa începe în",

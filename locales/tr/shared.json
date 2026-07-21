@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "Sohbet...",
-  "error-boundary-message": "Beklenmeyen bir hata oluştu.",
-  "error-boundary-retry": "Tekrar Dene",
-  "error-boundary-title": "Bir şeyler ters gitti",
   "failed-to-load-media": "Medya yüklenemedi",
   "game-crashed": "Oyun çöktü",
   "game-crashed-named": "{{gameName}} çöktü",

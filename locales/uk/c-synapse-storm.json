@@ -54,6 +54,8 @@
   "neural-collapse": "НЕЙРОННИЙ КОЛАПС",
   "neural-lobby": "НЕЙРОННЕ ЛОБІ",
   "neural-operatives_one": "НЕЙРОННІ ОПЕРАТИВНИКИ ({{count}}/{{max}})",
+  "neural-operatives_few": "NEURAL OPERATIVES ({{count}}/{{max}})",
+  "neural-operatives_many": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_other": "НЕЙРОННІ ОПЕРАТИВНИКИ ({{count}}/{{max}})",
   "no-scores-yet": "Результатів ще немає. Будь першим!",
   "not-ranked": "Ти ще не на місці. Зіграй раунд!",

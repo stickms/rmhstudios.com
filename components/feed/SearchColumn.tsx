@@ -203,10 +203,10 @@ export function SearchColumn({
 
   return (
     <div className="min-h-screen">
-      {/* The search field is the header, so it goes in ColumnHeader's `children`
-          slot; the category tabs sit under it inside the same sticky block. */}
-      {/* Floating L3 glass-chrome capsule (§8.2); bg/blur/glint clip to
-          rounded-site on their own (the tab row keeps its own overflow-x-auto). */}
+      {/* The search field is the header (its own sticky glass-chrome capsule,
+          §8.2); the category tabs are a standalone sheet BELOW the search well
+          (§5.45), never inside the sticky block. bg/blur/glint clip to
+          rounded-site on their own. */}
       <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
         <ColumnHeader sticky={false} className="border-b-0 pb-0">
           <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-4 py-2">
@@ -227,20 +227,21 @@ export function SearchColumn({
             {loading && <Spinner size={16} className="text-site-text-muted" />}
           </div>
         </ColumnHeader>
-        {/* Result-type tabs → shared LiquidTabs (§5.4). setTab keeps mirroring
-            the selection to the URL. Labels are pre-translated before handoff. */}
-        <div className="overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <LiquidTabs
-            tabs={TABS.map((tab_item) => ({
-              id: tab_item.id,
-              label: t(`tab-${tab_item.id}`, { defaultValue: tab_item.label }),
-            }))}
-            value={tab}
-            onChange={(id) => setTab(id as Tab)}
-            size="sm"
-            aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
-          />
-        </div>
+      </div>
+      {/* Result-type tabs → shared LiquidTabs sheet (§5.4/§5.45), below the search
+          well. setTab keeps mirroring the selection to the URL. Labels are
+          pre-translated before handoff. The w-fit pill scrolls in its own track. */}
+      <div className="mt-3 overflow-x-auto overscroll-x-contain px-2 md:px-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <LiquidTabs
+          tabs={TABS.map((tab_item) => ({
+            id: tab_item.id,
+            label: t(`tab-${tab_item.id}`, { defaultValue: tab_item.label }),
+          }))}
+          value={tab}
+          onChange={(id) => setTab(id as Tab)}
+          size="sm"
+          aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
+        />
       </div>
 
       {query.trim().length >= 2 && <AISearchPanel query={query.trim()} />}

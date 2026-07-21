@@ -24,11 +24,10 @@ import {
 import { PageLayout } from '@/components/feed/PageLayout';
 import { ThemeGallery } from '@/components/settings/ThemeGallery';
 import { AccentPicker } from '@/components/settings/AccentPicker';
+import { GlassClarityControl } from '@/components/settings/GlassClarityControl';
 import { NotificationPrefsPanel } from '@/components/settings/NotificationPrefsPanel';
 import { LanguageSwitcher } from '@/components/site/LanguageSwitcher';
 import { useSession } from '@/components/Providers';
-import { Switch } from '@/components/ui/switch';
-import { useThemeStore } from '@/stores/themeStore';
 
 export const Route = createFileRoute('/_site/settings/')({
   head: () => ({
@@ -100,8 +99,6 @@ function AccountLink({
 function SettingsPage() {
   const { t } = useTranslation('feed');
   const { data: session, isPending } = useSession();
-  const reduceTransparency = useThemeStore((s) => s.reduceTransparency);
-  const setReduceTransparency = useThemeStore((s) => s.setReduceTransparency);
   const signedIn = !!session?.user;
   const handle = (session?.user as { handle?: string | null } | undefined)?.handle;
 
@@ -160,28 +157,11 @@ function SettingsPage() {
             <AccentPicker />
           </div>
 
-          {/* Reduce transparency — collapse the glass to opaque surfaces. The
-                manual equivalent of the OS setting (and the only way Firefox
-                users can turn glass off). */}
-          <div className="mt-5 flex items-center justify-between gap-3 border-t border-site-border pt-4">
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-site-text">
-                {t('settings-reduce-transparency', { defaultValue: 'Reduce transparency' })}
-              </p>
-              <p className="text-xs text-site-text-muted">
-                {t('settings-reduce-transparency-hint', {
-                  defaultValue:
-                    'Turn off the frosted-glass blur for solid, higher-contrast surfaces.',
-                })}
-              </p>
-            </div>
-            <Switch
-              checked={reduceTransparency}
-              onCheckedChange={setReduceTransparency}
-              aria-label={t('settings-reduce-transparency', {
-                defaultValue: 'Reduce transparency',
-              })}
-            />
+          {/* Glass clarity slider (§5.46) — replaces the old reduce-transparency
+                toggle. Stop 0 (Opaque) is that same mechanism; the other stops tune
+                how much scene shows through. Applies live + follows the account. */}
+          <div className="mt-5 border-t border-site-border pt-4">
+            <GlassClarityControl />
           </div>
 
           <div className="mt-4 flex items-center gap-2 rounded-site border border-site-border bg-site-bg-subtle px-3 py-2.5">

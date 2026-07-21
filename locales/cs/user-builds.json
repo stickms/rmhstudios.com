@@ -9,6 +9,8 @@
   "edit-build": "Upravit sestavení",
   "error-loading-build": "Chyba při načítání sestavení",
   "like-count_one": "{{count}} like",
+  "like-count_few": "{{count}} likes",
+  "like-count_many": "{{count}} likes",
   "like-count_other": "{{count}} liků",
   "manage-subtitle": "Spravujte svá publikovaná a konceptová sestavení",
   "my-builds": "Moje sestavení",
@@ -25,5 +27,7 @@
   "update-build-details": "Aktualizujte podrobnosti svého sestavení níže.",
   "view": "Zobrazit",
   "view-count_one": "{{count}} zhlédnutí",
+  "view-count_few": "{{count}} views",
+  "view-count_many": "{{count}} views",
   "view-count_other": "{{count}} zhlédnutí"
 }

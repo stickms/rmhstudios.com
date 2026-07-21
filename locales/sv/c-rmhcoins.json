@@ -151,6 +151,8 @@
   "status-thinking": "Tänker...",
   "streak_one": "Svits: {{count}}",
   "streak_other": "Svits: {{count}}",
+  "tab-games": "Games",
+  "tab-markets": "Markets",
   "table-name-placeholder": "Bordsnamn (valfritt)",
   "take-insurance": "Ta ({{cost}})",
   "texas-holdem-rooms": "Texas Hold'em-rum",

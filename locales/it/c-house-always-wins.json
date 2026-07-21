@@ -1,18 +1,5 @@
 {
-  "back-home": "Torna alla Home",
   "controls-hint": "WASD/← → Muovi • Spazio Salta • Shift Scatta • E Interagisci • M Menu",
-  "controls-interact": "E — Interagisci",
-  "controls-jump": "Spazio — Salta",
-  "controls-menu": "M — Menu",
-  "controls-move": "WASD / Frecce — Muovi",
-  "debt": "DEBITO",
   "e-continue": "[E] Continua",
-  "loading": "CARICAMENTO...",
-  "login-to-play": "Accedi per Giocare",
-  "menu-title": "Menu",
-  "music-volume": "Volume Musica",
-  "resume": "Riprendi [M]",
-  "sign-in-prompt": "Devi accedere prima di entrare nel casinò. I tuoi debiti verranno registrati.",
-  "subtitle": "Il tavolo ti aspetta",
-  "title": "La Casa Vince Sempre"
+  "loading": "CARICAMENTO..."
 }

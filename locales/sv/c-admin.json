@@ -4,6 +4,7 @@
   "back-to-admin-label": "Tillbaka till Admin",
   "changes-now-live": "Dina ändringar är nu publicerade.",
   "content-label": "Innehåll",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "Datum",
   "delete-confirm": "Är du säker på att du vill ta bort \"{{title}}\"? Detta kan inte ångras.",
   "delete-failed": "Misslyckades med att ta bort inlägg",
@@ -18,9 +19,9 @@
   "generic-error": "Ett fel uppstod",
   "hide-preview": "Dölj förhandsvisning",
   "image-url-label": "Bild-URL",
-  "initializing-editor": "Initierar redigerare...",
   "live-preview": "Live-förhandsvisning",
-  "loading-editor": "Laddar redigerare...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "Metadata",
   "new-blog-post": "Nytt blogginlägg",
   "post-created-successfully": "Inlägg skapat!",
@@ -37,5 +38,6 @@
   "title-label": "Titel",
   "title-placeholder": "Mitt fantastiska inlägg",
   "untitled-post": "Namnlöst inlägg",
-  "update-post": "Uppdatera inlägg"
+  "update-post": "Uppdatera inlägg",
+  "upload-markdown": "Upload .md"
 }

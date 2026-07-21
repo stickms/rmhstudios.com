@@ -1,18 +1,5 @@
 {
-  "back-home": "Kembali ke Laman Utama",
   "controls-hint": "WASD/← → Gerak • Space Lompat • Shift Dasbor • E Interaksi • M Menu",
-  "controls-interact": "E — Interaksi",
-  "controls-jump": "Space — Lompat",
-  "controls-menu": "M — Menu",
-  "controls-move": "WASD / Anak Panah — Gerak",
-  "debt": "HUTANG",
   "e-continue": "[E] Teruskan",
-  "loading": "MEMUAT...",
-  "login-to-play": "Log Masuk untuk Bermain",
-  "menu-title": "Menu",
-  "music-volume": "Kelantangan Muzik",
-  "resume": "Sambung [M]",
-  "sign-in-prompt": "Anda perlu log masuk sebelum memasuki kasino. Hutang anda akan direkodkan.",
-  "subtitle": "Meja sedang menunggu",
-  "title": "Rumah Sentiasa Menang"
+  "loading": "MEMUAT..."
 }

@@ -54,6 +54,8 @@
   "neural-collapse": "NEURAL COLLAPSE",
   "neural-lobby": "NEURAL LOBBY",
   "neural-operatives_one": "NEURAL OPERATIVES ({{count}}/{{max}})",
+  "neural-operatives_few": "NEURAL OPERATIVES ({{count}}/{{max}})",
+  "neural-operatives_many": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_other": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "no-scores-yet": "Zatím žádné skóre. Buď první!",
   "not-ranked": "Zatím jsi neumístěn. Zahraj si kolo!",

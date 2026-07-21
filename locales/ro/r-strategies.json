@@ -43,6 +43,7 @@
   "loading": "Se încarcă...",
   "loading-puzzle": "Se încarcă puzzle-ul...",
   "min-remaining_one": "{{count}} min rămasă",
+  "min-remaining_few": "{{count}} min remaining",
   "min-remaining_other": "{{count}} min rămase",
   "next-sahur-mode": "Următorul Mod Sahur (3x XP)",
   "no-intelligence": "Nicio informație disponibilă la nivelul tău de autorizare.",

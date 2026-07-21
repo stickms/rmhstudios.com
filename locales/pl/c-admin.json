@@ -4,6 +4,7 @@
   "back-to-admin-label": "Powrót do panelu administracyjnego",
   "changes-now-live": "Twoje zmiany są już widoczne.",
   "content-label": "Treść",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "Data",
   "delete-confirm": "Czy na pewno chcesz usunąć „{{title}}”? Tej operacji nie można cofnąć.",
   "delete-failed": "Nie udało się usunąć posta",
@@ -18,9 +19,9 @@
   "generic-error": "Wystąpił błąd",
   "hide-preview": "Ukryj podgląd",
   "image-url-label": "URL obrazka",
-  "initializing-editor": "Inicjalizacja edytora...",
   "live-preview": "Podgląd na żywo",
-  "loading-editor": "Ładowanie edytora...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "Metadane",
   "new-blog-post": "Nowy post",
   "post-created-successfully": "Post utworzony pomyślnie!",
@@ -37,5 +38,6 @@
   "title-label": "Tytuł",
   "title-placeholder": "Mój niesamowity post",
   "untitled-post": "Post bez tytułu",
-  "update-post": "Aktualizuj post"
+  "update-post": "Aktualizuj post",
+  "upload-markdown": "Upload .md"
 }

@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "Chat...",
-  "error-boundary-message": "May hindi inaasahang error na nangyari.",
-  "error-boundary-retry": "Subukan Muli",
-  "error-boundary-title": "May nagawang mali",
   "failed-to-load-media": "Hindi na-load ang media",
   "game-crashed": "Nag-crash ang laro",
   "game-crashed-named": "Nag-crash ang {{gameName}}",

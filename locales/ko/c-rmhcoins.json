@@ -151,6 +151,8 @@
   "status-thinking": "생각 중...",
   "streak_one": "연승: {{count}}",
   "streak_other": "연승: {{count}}",
+  "tab-games": "Games",
+  "tab-markets": "Markets",
   "table-name-placeholder": "테이블 이름 (선택사항)",
   "take-insurance": "인슈어런스 ({{cost}})",
   "texas-holdem-rooms": "텍사스 홀덤 방",

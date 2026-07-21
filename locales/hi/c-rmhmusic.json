@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "कतार में जोड़ें",
   "artist": "कलाकार",
   "correct-title": "सही — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "मेज़बान",
   "join-a-room": "एक कक्ष में शामिल हों",
   "join-room": "कक्ष में शामिल हों",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} श्रोता",
   "listener-count_other": "{{count}} श्रोता",
+  "loading": "Loading…",
   "loading-rooms": "कक्ष लोड हो रहे हैं...",
   "mini-close": "रोकें और बंद करें",
   "mini-open": "प्लेयर खोलें",
@@ -20,14 +23,17 @@
   "mini-play": "चलाएँ",
   "mini-player": "म्यूज़िक मिनी-प्लेयर",
   "new": "नया",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "अभी तक कोई पहेली नहीं।",
   "no-results": "कोई परिणाम नहीं मिला",
   "no-track-playing": "कोई ट्रैक नहीं चल रहा",
   "not-configured": "इस सर्वर पर संगीत खोज कॉन्फ़िगर नहीं है।",
   "not-quite": "बिल्कुल सही नहीं — कोई और संकेत या अनुमान आज़माएँ।",
   "open-player": "प्लेयर खोलें",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "सार्वजनिक कक्ष",
   "puzzles": "पहेलियाँ",
+  "queue-action": "Queue",
   "queue-label": "कतार",
   "reveal-another-hint_one": "एक और संकेत प्रकट करें ({{count}} शेष)",
   "reveal-another-hint_other": "एक और संकेत प्रकट करें ({{count}} शेष)",
@@ -40,5 +46,6 @@
   "searching": "खोज रहे हैं...",
   "sign-in-to-guess": "अनुमान लगाने के लिए साइन इन करें।",
   "solves-plays": "{{solves}} हल · {{plays}} बार चला",
-  "song-title-placeholder": "गीत का शीर्षक..."
+  "song-title-placeholder": "गीत का शीर्षक...",
+  "your-playlists": "Your playlists"
 }

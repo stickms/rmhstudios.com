@@ -28,6 +28,8 @@
   "pagination-previous": "Poprzednia",
   "pagination-range": "{{from}}–{{to}} z {{total}}",
   "player-count_one": "{{count}} gracz",
+  "player-count_few": "{{count}} players",
+  "player-count_many": "{{count}} players",
   "player-count_other": "{{count}} graczy",
   "player-range": "{{minPlayers}}–{{maxPlayers}} graczy",
   "pts": "pkt",

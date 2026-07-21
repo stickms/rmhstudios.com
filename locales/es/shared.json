@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "Chat...",
-  "error-boundary-message": "Ocurrió un error inesperado.",
-  "error-boundary-retry": "Intentar de nuevo",
-  "error-boundary-title": "Algo salió mal",
   "failed-to-load-media": "No se pudo cargar el contenido multimedia",
   "game-crashed": "El juego se bloqueó",
   "game-crashed-named": "{{gameName}} se bloqueó",

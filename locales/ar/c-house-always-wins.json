@@ -1,18 +1,5 @@
 {
-  "back-home": "العودة إلى المنزل",
   "controls-hint": "WASD/← → تحرك • مسافة قفز • Shift اندفاع • E تفاعل • M قائمة",
-  "controls-interact": "هـ — تفاعل",
-  "controls-jump": "الفضاء — قفز",
-  "controls-menu": "م — القائمة",
-  "controls-move": "WASD / الأسهم — تحرك",
-  "debt": "دَيْن",
   "e-continue": "استمر",
-  "loading": "جارٍ التحميل...",
-  "login-to-play": "تسجيل الدخول إلى بلاي",
-  "menu-title": "القائمة",
-  "music-volume": "مستوى الصوت",
-  "resume": "السيرة الذاتية [م]",
-  "sign-in-prompt": "يجب عليك تسجيل الدخول قبل أن تتمكن من دخول الكازينو. سيتم تسجيل ديونك.",
-  "subtitle": "الطاولة في انتظار",
-  "title": "البيت يفوز دائمًا"
+  "loading": "جارٍ التحميل..."
 }

@@ -2,15 +2,11 @@
   "badge-app": "యాప్",
   "badge-game": "గేమ్",
   "build-details": "బిల్డ్ వివరాలు",
-  "build-source-label": "బిల్డ్ మూలం",
-  "details-for": "{{title}} కోసం వివరాలు",
   "empty-curated": "ఆ శోధనకు సరిపోయే బిల్డ్లు లేవు.",
   "empty-user-no-builds": "ఇంకా వినియోగదారు బిల్డ్లు లేవు — మొదటిదాన్ని సమర్పించండి.",
   "empty-user-search": "ఆ శోధనకు సరిపోయే వినియోగదారు బిల్డ్లు లేవు.",
   "loading": "లోడ్ అవుతోంది…",
-  "open-build": "{{title}}ని తెరవండి",
-  "open-menu": "మెనూ తెరవండి",
-  "page-title": "బిల్డ్లు",
+  "open": "Open",
   "search-builds-label": "బిల్డ్లను శోధించండి",
   "search-builds-placeholder": "బిల్డ్లను శోధించండి...",
   "search-user-builds-placeholder": "వినియోగదారు బిల్డ్లను శోధించండి...",
@@ -21,6 +17,6 @@
   "sort-name-az": "పేరు (A–Z)",
   "sort-recent": "ఇటీవలి",
   "submit": "సమర్పించు",
-  "tab-curated": "క్యూరేటెడ్",
-  "tab-user-builds": "వినియోగదారు బిల్డ్లు"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

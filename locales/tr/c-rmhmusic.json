@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Sıraya ekle",
   "artist": "Sanatçı",
   "correct-title": "Doğru — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "EV SAHİBİ",
   "join-a-room": "Bir Odaya Katıl",
   "join-room": "Odaya Katıl",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} dinleyici",
   "listener-count_other": "{{count}} dinleyici",
+  "loading": "Loading…",
   "loading-rooms": "Odalar yükleniyor...",
   "mini-close": "Durdur ve kapat",
   "mini-open": "Oynatıcıyı aç",
@@ -20,14 +23,17 @@
   "mini-play": "Oynat",
   "mini-player": "Müzik mini oynatıcısı",
   "new": "Yeni",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Henüz bulmaca yok.",
   "no-results": "Sonuç bulunamadı",
   "no-track-playing": "Çalan parça yok",
   "not-configured": "Bu sunucuda müzik arama yapılandırılmamış.",
   "not-quite": "Pek değil — başka bir ipucu veya tahmin dene.",
   "open-player": "Oynatıcıyı Aç",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Herkese Açık Odalar",
   "puzzles": "Bulmacalar",
+  "queue-action": "Queue",
   "queue-label": "Sıra",
   "reveal-another-hint_one": "Başka bir ipucu göster ({{count}} kaldı)",
   "reveal-another-hint_other": "Başka bir ipucu göster ({{count}} kaldı)",
@@ -40,5 +46,6 @@
   "searching": "Aranıyor...",
   "sign-in-to-guess": "Tahmin etmek için giriş yap.",
   "solves-plays": "{{solves}} çözüldü · {{plays}} oynandı",
-  "song-title-placeholder": "Şarkı adı..."
+  "song-title-placeholder": "Şarkı adı...",
+  "your-playlists": "Your playlists"
 }

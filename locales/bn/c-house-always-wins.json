@@ -1,18 +1,5 @@
 {
-  "back-home": "হোমে ফিরুন",
   "controls-hint": "WASD/← → সরান • Space লাফ • Shift ড্যাশ • E ইন্টারঅ্যাক্ট • M মেনু",
-  "controls-interact": "E — ইন্টারঅ্যাক্ট",
-  "controls-jump": "Space — লাফ",
-  "controls-menu": "M — মেনু",
-  "controls-move": "WASD / তীর চিহ্ন — সরান",
-  "debt": "ঋণ",
   "e-continue": "[E] চালিয়ে যান",
-  "loading": "লোড হচ্ছে...",
-  "login-to-play": "খেলতে লগইন করুন",
-  "menu-title": "মেনু",
-  "music-volume": "সঙ্গীতের ভলিউম",
-  "resume": "চালিয়ে যান [M]",
-  "sign-in-prompt": "ক্যাসিনোতে প্রবেশের আগে আপনাকে সাইন ইন করতে হবে। আপনার ঋণ রেকর্ড করা হবে।",
-  "subtitle": "টেবিল অপেক্ষা করছে",
-  "title": "হাউস সর্বদা জেতে"
+  "loading": "লোড হচ্ছে..."
 }

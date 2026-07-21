@@ -43,6 +43,7 @@
   "loading": "Carregando...",
   "loading-puzzle": "Carregando puzzle...",
   "min-remaining_one": "{{count}} min restante",
+  "min-remaining_many": "{{count}} min remaining",
   "min-remaining_other": "{{count}} min restantes",
   "next-sahur-mode": "Próximo Modo Sahur (3x XP)",
   "no-intelligence": "Nenhuma inteligência disponível no seu nível de autorização.",

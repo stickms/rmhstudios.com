@@ -400,6 +400,7 @@ model AppearancePreference {
   readableFont Boolean @default(false)
   customAccent String? @db.VarChar(7) // '#rrggbb'; wins over `accent` preset
   reduceMotion Boolean @default(false)
+  glassLevel   Int? // glass clarity slider (§5.46): 0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear; null → 2
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

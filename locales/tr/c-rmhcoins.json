@@ -151,6 +151,8 @@
   "status-thinking": "Düşünüyor...",
   "streak_one": "Seri: {{count}}",
   "streak_other": "Seri: {{count}}",
+  "tab-games": "Games",
+  "tab-markets": "Markets",
   "table-name-placeholder": "Masa adı (isteğe bağlı)",
   "take-insurance": "Sigorta al ({{cost}})",
   "texas-holdem-rooms": "Texas Hold'em Odaları",

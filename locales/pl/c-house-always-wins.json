@@ -1,18 +1,5 @@
 {
-  "back-home": "Powrót do domu",
   "controls-hint": "WASD/← → Ruch • Spacja Skok • Shift Sprint • E Interakcja • M Menu",
-  "controls-interact": "E — Interakcja",
-  "controls-jump": "Spacja — Skok",
-  "controls-menu": "M — Menu",
-  "controls-move": "WASD / Strzałki — Ruch",
-  "debt": "DŁUG",
   "e-continue": "[E] Kontynuuj",
-  "loading": "ŁADOWANIE...",
-  "login-to-play": "Zaloguj się, aby grać",
-  "menu-title": "Menu",
-  "music-volume": "Głośność muzyki",
-  "resume": "Wznów [M]",
-  "sign-in-prompt": "Musisz się zalogować, zanim wejdziesz do kasyna. Twoje długi zostaną odnotowane.",
-  "subtitle": "Stół czeka",
-  "title": "Dom zawsze wygrywa"
+  "loading": "ŁADOWANIE..."
 }

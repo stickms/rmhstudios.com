@@ -4,6 +4,7 @@
   "back-to-admin-label": "Retour à l'administration",
   "changes-now-live": "Vos modifications sont désormais en ligne.",
   "content-label": "Contenu",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "Date",
   "delete-confirm": "Êtes-vous sûr de vouloir supprimer « {{title}} » ? Cette action est irréversible.",
   "delete-failed": "Échec de la suppression de l'article",
@@ -18,9 +19,9 @@
   "generic-error": "Une erreur est survenue",
   "hide-preview": "Masquer l'aperçu",
   "image-url-label": "URL de l'image",
-  "initializing-editor": "Initialisation de l'éditeur...",
   "live-preview": "Aperçu en direct",
-  "loading-editor": "Chargement de l'éditeur...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "Métadonnées",
   "new-blog-post": "Nouvel article de blog",
   "post-created-successfully": "Article créé avec succès !",
@@ -37,5 +38,6 @@
   "title-label": "Titre",
   "title-placeholder": "Mon super article",
   "untitled-post": "Article sans titre",
-  "update-post": "Mettre à jour l'article"
+  "update-post": "Mettre à jour l'article",
+  "upload-markdown": "Upload .md"
 }

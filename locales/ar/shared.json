@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "دردشة...",
-  "error-boundary-message": "حدث خطأ غير متوقع.",
-  "error-boundary-retry": "حاول مرة أخرى",
-  "error-boundary-title": "حدث خطأ ما.",
   "failed-to-load-media": "فشل في تحميل الوسائط",
   "game-crashed": "تعطلت اللعبة",
   "game-crashed-named": "تعطلت {{gameName}}",

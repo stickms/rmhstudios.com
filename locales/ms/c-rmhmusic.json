@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Tambah ke baris gilir",
   "artist": "Artis",
   "correct-title": "Betul — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "HOS",
   "join-a-room": "Sertai Bilik",
   "join-room": "Sertai Bilik",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} pendengar",
   "listener-count_other": "{{count}} pendengar",
+  "loading": "Loading…",
   "loading-rooms": "Memuatkan bilik...",
   "mini-close": "Henti dan tutup",
   "mini-open": "Buka pemain",
@@ -20,14 +23,17 @@
   "mini-play": "Main",
   "mini-player": "Pemain mini muzik",
   "new": "Baru",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Belum ada teka-teki.",
   "no-results": "Tiada hasil ditemui",
   "no-track-playing": "Tiada trek dimainkan",
   "not-configured": "Carian muzik tidak dikonfigurasi pada pelayan ini.",
   "not-quite": "Hampir — cuba petunjuk atau tekaan lain.",
   "open-player": "Buka Pemain",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Bilik Awam",
   "puzzles": "Teka-teki",
+  "queue-action": "Queue",
   "queue-label": "Baris gilir",
   "reveal-another-hint_one": "Tunjukkan petunjuk lain ({{count}} lagi)",
   "reveal-another-hint_other": "Tunjukkan petunjuk lain ({{count}} lagi)",
@@ -40,5 +46,6 @@
   "searching": "Mencari...",
   "sign-in-to-guess": "Log masuk untuk meneka.",
   "solves-plays": "{{solves}} selesai · {{plays}} main",
-  "song-title-placeholder": "Tajuk lagu..."
+  "song-title-placeholder": "Tajuk lagu...",
+  "your-playlists": "Your playlists"
 }

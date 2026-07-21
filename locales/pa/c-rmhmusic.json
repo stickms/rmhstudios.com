@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "ਕਤਾਰ ਵਿੱਚ ਸ਼ਾਮਲ ਕਰੋ",
   "artist": "ਕਲਾਕਾਰ",
   "correct-title": "ਸਹੀ — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "HOST",
   "join-a-room": "ਇੱਕ ਕਮਰੇ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ",
   "join-room": "ਕਮਰੇ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} ਸੁਣਨ ਵਾਲਾ",
   "listener-count_other": "{{count}} ਸੁਣਨ ਵਾਲੇ",
+  "loading": "Loading…",
   "loading-rooms": "ਕਮਰੇ ਲੋਡ ਹੋ ਰਹੇ ਹਨ...",
   "mini-close": "ਰੋਕੋ ਅਤੇ ਬੰਦ ਕਰੋ",
   "mini-open": "ਪਲੇਅਰ ਖੋਲ੍ਹੋ",
@@ -20,14 +23,17 @@
   "mini-play": "ਚਲਾਓ",
   "mini-player": "ਸੰਗੀਤ ਮਿੰਨੀ-ਪਲੇਅਰ",
   "new": "ਨਵਾਂ",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "ਅਜੇ ਤੱਕ ਕੋਈ ਪਹੇਲੀ ਨਹੀਂ।",
   "no-results": "ਕੋਈ ਨਤੀਜਾ ਨਹੀਂ ਮਿਲਿਆ",
   "no-track-playing": "ਕੋਈ ਟਰੈਕ ਨਹੀਂ ਚੱਲ ਰਿਹਾ",
   "not-configured": "ਇਸ ਸਰਵਰ 'ਤੇ ਸੰਗੀਤ ਖੋਜ ਸੈੱਟ ਨਹੀਂ ਕੀਤੀ ਗਈ।",
   "not-quite": "ਬਿਲਕੁਲ ਨਹੀਂ — ਕੋਈ ਹੋਰ ਸੰਕੇਤ ਜਾਂ ਅੰਦਾਜ਼ਾ ਲਗਾਓ।",
   "open-player": "ਪਲੇਅਰ ਖੋਲ੍ਹੋ",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "ਜਨਤਕ ਕਮਰੇ",
   "puzzles": "ਪਹੇਲੀਆਂ",
+  "queue-action": "Queue",
   "queue-label": "ਕਤਾਰ",
   "reveal-another-hint_one": "ਇੱਕ ਹੋਰ ਸੰਕੇਤ ਦਿਖਾਓ ({{count}} ਬਾਕੀ)",
   "reveal-another-hint_other": "ਹੋਰ ਸੰਕੇਤ ਦਿਖਾਓ ({{count}} ਬਾਕੀ)",
@@ -40,5 +46,6 @@
   "searching": "ਖੋਜ ਰਿਹਾ ਹੈ...",
   "sign-in-to-guess": "ਅੰਦਾਜ਼ਾ ਲਗਾਉਣ ਲਈ ਸਾਈਨ ਇਨ ਕਰੋ।",
   "solves-plays": "{{solves}} ਹੱਲ · {{plays}} ਚੱਲੇ",
-  "song-title-placeholder": "ਗੀਤ ਦਾ ਸਿਰਲੇਖ..."
+  "song-title-placeholder": "ਗੀਤ ਦਾ ਸਿਰਲੇਖ...",
+  "your-playlists": "Your playlists"
 }

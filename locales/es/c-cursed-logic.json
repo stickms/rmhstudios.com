@@ -14,6 +14,7 @@
   "actions-heading": "Acciones",
   "active": "Activo",
   "brace-btn_one": "Frenar ({{count}})",
+  "brace-btn_many": "Brace ({{count}})",
   "brace-btn_other": "Frenar ({{count}})",
   "buy-cost": "Comprar ({{cost}} F)",
   "charge": "Cargar",
