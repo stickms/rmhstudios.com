@@ -404,12 +404,20 @@ export function Providers({
     if (localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1') {
       useThemeStore.getState().setReduceTransparency(true);
     }
-    // Glass clarity (§5.46): the stored stop, else map a legacy reduce-transparency
-    // flag to stop 0 (Opaque) so existing "reduce transparency" users keep it.
+    // Glass clarity (§5.46): the stored stop wins; unset means Default (2) —
+    // full glass. The launch-era migration mapped a legacy reduce-transparency
+    // flag to stop 0 (Opaque), which surprised users into an opaque site; that
+    // mapping is removed, and the exact state it produced (level 0 + legacy
+    // flag together) is healed back to Default once. Deliberate Opaque picks
+    // made after this fix never write the legacy key, so they are not healed.
+    // True accessibility needs stay covered by prefers-reduced-transparency.
     const gl = Number(localStorage.getItem(GLASS_LEVEL_KEY));
-    if (isGlassLevel(gl)) useThemeStore.getState().setGlassLevel(gl);
-    else if (localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1')
-      useThemeStore.getState().setGlassLevel(0);
+    if (gl === 0 && localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1') {
+      localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
+      localStorage.setItem(GLASS_LEVEL_KEY, '2');
+    } else if (isGlassLevel(gl)) {
+      useThemeStore.getState().setGlassLevel(gl);
+    }
     // Comfort suite (§13) — hydrate from the no-flash localStorage cache.
     const st = useThemeStore.getState();
     const fs = Number(localStorage.getItem(FONT_SCALE_KEY));
@@ -454,8 +462,11 @@ export function Providers({
     // or the no-flash fallback still turns glass off.
     applyGlassLevel(html, glassLevel);
     localStorage.setItem(GLASS_LEVEL_KEY, String(glassLevel));
-    if (glassLevel === 0) localStorage.setItem(REDUCE_TRANSPARENCY_KEY, '1');
-    else localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
+    // Never write the legacy reduce-transparency key here: the level-0 heal in
+    // the hydration effect keys on (level 0 + legacy flag) to identify the
+    // launch-era migration state, so a deliberate Opaque pick must not recreate
+    // that pair.
+    localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
 
     // Accent override: apply on content pages; clear on app/game routes (they own
     // their palette) and when no accent is chosen. applyAccent no-ops safely for a
@@ -626,8 +637,11 @@ export function Providers({
           // Glass clarity (§5.46): the account stop wins; otherwise map a legacy
           // reduce-transparency flag to stop 0 (Opaque). glassLevel is authoritative
           // for the reduce-transparency class going forward.
+          // An account without an explicit glassLevel means Default (2) — the
+          // legacy reduceTransparency boolean no longer forces Opaque (it
+          // surprised users into an opaque site; OS-level
+          // prefers-reduced-transparency still covers accessibility needs).
           if (isGlassLevel(r.glassLevel)) store.setGlassLevel(r.glassLevel);
-          else if (nextReduce) store.setGlassLevel(0);
           appearanceSyncedRef.current = true;
         },
       )
