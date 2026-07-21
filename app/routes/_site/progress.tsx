@@ -23,7 +23,7 @@ function ProgressPage() {
   return (
     <>
       <AnimatedMain
-        className="w-full min-w-0 border-r border-site-border pb-dock"
+        className="w-full min-w-0 pb-dock"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         {session && !isPending ? (

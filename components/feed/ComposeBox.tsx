@@ -398,7 +398,7 @@ export function ComposeBox({
 
   if (!session) {
     return (
-      <div className="px-4 py-6 border-b border-site-border text-center">
+      <div className="glass-pane rounded-site mx-3 px-4 py-6 text-center">
         <p className="text-sm text-site-text-muted mb-2">
           {t('sign-in-prompt', { defaultValue: 'Sign in to post RMHarks' })}
         </p>
@@ -452,9 +452,11 @@ export function ComposeBox({
   const CurrentReplyIcon = currentReply.icon;
 
   return (
-    // focus-within lifts the composer to a faint surface + brighter hairline
-    // while writing, then settles back — an activation cue, not a layout change.
-    <div className="px-4 py-3 border-b border-site-border transition-colors duration-200 focus-within:bg-site-surface/20 focus-within:border-site-border-bright">
+    // Floating composer slab (§8.3): its own L2 glass-pane over the aurora
+    // gutter (mx-3), separated from the first post by the feed gap; one L2 per
+    // page is in budget. focus-within lifts the pane's hairline while writing,
+    // then settles back — an activation cue, not a layout change.
+    <div className="glass-pane rounded-site mx-3 px-4 py-3 transition-colors duration-200 focus-within:bg-site-surface/20 focus-within:border-site-border-bright">
       {pendingDraft && !content && (
         <div className="mb-3 flex items-center gap-2 rounded-site border border-site-border bg-site-bg-subtle px-3 py-2">
           <History className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
@@ -519,7 +521,9 @@ export function ComposeBox({
             placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
             rows={3}
             maxLength={MAX_RMHARK_LENGTH}
-            className="w-full bg-transparent text-site-text placeholder:text-site-text-dim text-base resize-none border-none outline-none"
+            // Recessed text well (§8.3): .glass-inset carries the border, radius
+            // and inner shadow; accent border on focus is the input affordance.
+            className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 handleSubmit();
@@ -876,7 +880,7 @@ export function ComposeBox({
                 {menuOpen && (
                   <div
                     ref={menuPopRef}
-                    className="absolute bottom-full right-0 mb-1 w-56 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30"
+                    className="absolute bottom-full right-0 mb-1 w-56 glass-overlay py-1 z-30"
                   >
                     {/* Post visibility (audience) — opens a picker modal */}
                     <button
@@ -1042,7 +1046,7 @@ export function ComposeBox({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setAudienceOpen(false)}
           />
-          <div className="relative w-full max-w-xs rounded-site border border-site-border bg-site-bg p-2 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+          <div className="relative w-full max-w-xs p-2 glass-overlay animate-in zoom-in-95 fade-in duration-150">
             <div className="mb-1 flex items-center justify-between px-1 pt-1">
               <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
                 <CurrentAudienceIcon className="h-4 w-4 text-site-text-muted" />
@@ -1092,7 +1096,7 @@ export function ComposeBox({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setReplyOpen(false)}
           />
-          <div className="relative w-full max-w-xs rounded-site border border-site-border bg-site-bg p-2 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+          <div className="relative w-full max-w-xs p-2 glass-overlay animate-in zoom-in-95 fade-in duration-150">
             <div className="mb-1 flex items-center justify-between px-1 pt-1">
               <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
                 <CurrentReplyIcon className="h-4 w-4 text-site-text-muted" />
@@ -1139,7 +1143,7 @@ export function ComposeBox({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowPriceModal(false)}
           />
-          <div className="relative w-full max-w-xs rounded-site border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+          <div className="relative w-full max-w-xs p-4 glass-overlay animate-in zoom-in-95 fade-in duration-150">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
                 <Lock className="h-4 w-4 text-site-text-muted" />
@@ -1204,7 +1208,7 @@ export function ComposeBox({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowCheatSheet(false)}
           />
-          <div className="relative w-full max-w-sm rounded-site border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+          <div className="relative w-full max-w-sm p-4 glass-overlay animate-in zoom-in-95 fade-in duration-150">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="flex items-center gap-1.5 text-sm font-semibold text-site-text">
                 <Type className="h-4 w-4 text-site-text-muted" />
@@ -1283,7 +1287,7 @@ export function ComposeBox({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setAltEditIndex(null)}
           />
-          <div className="relative w-full max-w-md rounded-site border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+          <div className="relative w-full max-w-md p-4 glass-overlay animate-in zoom-in-95 fade-in duration-150">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-site-text">
                 {t('alt-text-heading', { defaultValue: 'Describe this image' })}

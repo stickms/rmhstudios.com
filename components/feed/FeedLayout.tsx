@@ -72,14 +72,18 @@ function RightSidebarSkeleton() {
 export function FeedLayout({ sidebar, initialFeed }: FeedLayoutProps) {
   return (
     <>
-      {/* Center Feed – width animates when arriving from a wide page */}
-      <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-dock">
+      {/* Center Feed – width animates when arriving from a wide page. The old
+          app-frame border-r is gone (§8.2): the column is a transparent track and
+          its content floats as glass cards over the aurora gutters. */}
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         <FeedColumn initialFeed={initialFeed} />
       </AnimatedMain>
 
       {/* Right Sidebar - hidden below lg, scrolls with page. Streamed in its own
-          Suspense slot so the sidebar's DB reads never delay the feed column. */}
-      <aside className="hidden lg:block w-80 shrink-0 self-start">
+          Suspense slot so the sidebar's DB reads never delay the feed column. No
+          self-start: the aside stretches to the row height so RightSidebar's inner
+          `sticky top-3` has room to engage on `/` (§8.2). */}
+      <aside className="hidden lg:block w-80 shrink-0">
         {sidebar ? (
           <Suspense fallback={<RightSidebarSkeleton />}>
             <Await promise={sidebar}>

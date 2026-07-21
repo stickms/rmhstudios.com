@@ -286,7 +286,7 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
 
         {isOpen && position && (
           <div
-            className="absolute z-50 w-64 max-h-64 overflow-y-auto bg-site-bg border border-site-border rounded-site shadow-xl py-1"
+            className="absolute z-50 w-64 max-h-64 overflow-y-auto glass-overlay py-1"
             style={{ top: position.top, left: Math.max(0, position.left) }}
             // Keep focus in the textarea when clicking a row.
             onMouseDown={(e) => e.preventDefault()}

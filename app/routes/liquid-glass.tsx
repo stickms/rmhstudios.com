@@ -1,15 +1,9 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-import { Droplets, Layers, MousePointerClick, Sparkles, Wind } from 'lucide-react';
+import { Aperture, Droplets, Layers, MousePointerClick, Sparkles, Waves, Wind } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buildMeta, buildCanonical } from '@/lib/seo';
-import {
-  GlassEffect,
-  GlassDock,
-  GlassButton,
-  GlassPane,
-  type DockIcon,
-} from '@/components/ui/liquid-glass';
+import { GlassPane } from '@/components/ui/liquid-glass';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -24,7 +18,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 const PATH = '/liquid-glass';
 const TITLE = 'Liquid Glass — Design Lab | RMH Studios';
 const DESC =
-  'The living reference for the Liquid Glass material system: elevation tiers, the one-sun lighting model, pointer-tracked speculars, edge refraction, and the shared UI primitives — all over the real aurora canvas.';
+  'The living reference for the Liquid Glass material system: elevation tiers, the scene light and rim glint, lens refraction and chromatic dispersion, the liquid sheen, and the shared UI primitives — all over the real aurora canvas.';
 
 export const Route = createFileRoute('/liquid-glass')({
   head: () => ({
@@ -34,47 +28,38 @@ export const Route = createFileRoute('/liquid-glass')({
   component: LiquidGlassLab,
 });
 
-/** Dock of RMH apps rendered as glass — icons are local static assets. */
-const DOCK_APPS = [
-  { src: '/images/games/rmhbox.webp', alt: 'RMHBox', href: '/rmhbox' },
-  { src: '/images/games/altair.webp', alt: 'Altair', href: '/altair' },
-  { src: '/images/games/rmhtube.webp', alt: 'RMHTube', href: '/rmhtube' },
-  { src: '/images/games/rmhmusic.webp', alt: 'RMHMusic', href: '/rmhmusic' },
-  { src: '/images/games/rmhtype.webp', alt: 'RMHType', href: '/rmhtype' },
-] as const;
-
-/** The elevation swatches (§3.3 / §4.4). Each swatch IS the glass surface so
- *  reviewers can read the material directly; the class name shows in mono. */
+/** The elevation swatches (§2). Each swatch IS the glass surface so reviewers
+ *  can read the material directly; the class name shows in mono. */
 const TIERS = [
   {
     cls: 'glass-fill',
     name: '.glass-fill',
     label: 'L1 · Fill',
-    note: 'Repeated content — cards, rows, tiles. Tint + rim, no blur. Cheap, unlimited per page.',
+    note: 'Repeated content — cards, rows, tiles. Tint + rim, no blur. No ring. Cheap, unlimited.',
   },
   {
     cls: 'glass-pane',
     name: '.glass-pane',
     label: 'L2 · Pane',
-    note: 'Singular panels — heroes, composer, settings sections. Blur + micro-noise. Budgeted.',
+    note: 'Singular panels — heroes, composer, settings. Blur + noise + optics ring. Budgeted.',
   },
   {
     cls: 'glass-chrome rounded-site border border-site-border',
     name: '.glass-chrome',
     label: 'L3 · Chrome',
-    note: 'Persistent chrome — sidebar, sticky headers, dock. More aurora shows through.',
+    note: 'Persistent chrome — sidebar, sticky headers, dock. Thinner bevel; brightens on scroll.',
   },
   {
     cls: 'glass-overlay',
     name: '.glass-overlay',
     label: 'L4 · Overlay',
-    note: 'Floating UI — dialogs, popovers, menus, palette, toasts. Opaque enough to hold text.',
+    note: 'Floating UI — dialogs, popovers, palette, toasts. Ring glint on; opaque enough for text.',
   },
   {
     cls: 'glass-inset',
     name: '.glass-inset',
     label: 'Inset',
-    note: 'Recessed wells — inputs, search fields. A hole in the glass, not a slab on it.',
+    note: 'Recessed wells — inputs, search fields. A hole in the glass — no ring, no slab.',
   },
 ] as const;
 
@@ -139,23 +124,19 @@ function Section({
 }
 
 function LiquidGlassLab() {
-  const navigate = useNavigate();
-
-  const dockIcons: DockIcon[] = DOCK_APPS.map((app) => ({
-    src: app.src,
-    alt: app.alt,
-    onClick: () => navigate({ to: app.href }),
-  }));
-
   return (
     // Full-screen top-level page (outside _site/): its own padding + document
-    // scroll. The body already paints --site-canvas (the aurora) behind us — no
-    // external image, every glass surface samples that real backdrop.
+    // scroll. The body already paints --site-canvas (the aurora, now two-layer
+    // depth) behind us — no external image, every glass surface samples that real
+    // backdrop and answers the one scene light.
     <div className="min-h-screen w-full">
       <div className="mx-auto flex max-w-6xl flex-col gap-14 px-4 py-10 sm:px-6 md:gap-20 lg:py-16">
-        {/* ── 1 · Hero ── L2 pane + the page's first (of two) refract slots, plus
-            the prism chromatic rim reserved for the design lab (§4.3.5). */}
-        <header className="glass-pane glass-refract glass-refract--prism relative overflow-hidden rounded-site px-6 py-14 sm:px-12 sm:py-20">
+        {/* ── 1 · Hero ── the page's prism slot: pane + lens refraction + chromatic
+            dispersion + the ambient liquid sheen, over the real aurora. */}
+        <header
+          data-glass-lens=""
+          className="glass-pane glass-refract glass-refract--prism glass-liquid relative overflow-hidden rounded-site px-6 py-14 sm:px-12 sm:py-20"
+        >
           <div className="relative z-10 flex flex-col items-center gap-4 text-center">
             <span className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.2em] text-site-accent">
               <Droplets className="h-4 w-4" aria-hidden />
@@ -166,13 +147,14 @@ function LiquidGlassLab() {
             </h1>
             <p className="max-w-2xl text-base text-site-text-muted sm:text-lg">
               The living reference for the site&apos;s glass material system — elevation tiers, the
-              one-sun lighting model, pointer-tracked speculars, and edge refraction, all rendered
-              over the real aurora canvas.
+              scene light and rim glint, true lens refraction with chromatic dispersion, and the
+              liquid sheen, all rendered over the real aurora canvas. Move your mouse: the rims
+              glint, the sheen drifts, the backdrop has depth.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
               <Badge variant="accent">L1–L4 elevation</Badge>
-              <Badge variant="default">pointer light</Badge>
-              <Badge variant="outline">edge refraction</Badge>
+              <Badge variant="default">rim glint</Badge>
+              <Badge variant="outline">lens refraction</Badge>
             </div>
           </div>
         </header>
@@ -180,13 +162,13 @@ function LiquidGlassLab() {
         {/* ── 2 · Elevation tiers ── */}
         <Section
           id="elevation"
-          eyebrow="§4.4"
+          eyebrow="§2"
           title="Elevation tiers"
           description={
             <>
-              Blur and shadow co-vary with height. Each swatch below is the named glass class
-              applied directly, over the aurora — read the material, then the <Mono>class</Mono>{' '}
-              beneath it.
+              Blur and shadow co-vary with height, and each tier declares whether it carries an
+              optics ring. Every swatch below is the named glass class applied directly, over the
+              aurora — read the material, then the <Mono>class</Mono> beneath it.
             </>
           }
         >
@@ -196,7 +178,9 @@ function LiquidGlassLab() {
                 <div
                   className={cn('flex h-28 items-center justify-center px-3 text-center', tier.cls)}
                 >
-                  <span className="text-sm font-medium text-site-text">{tier.label}</span>
+                  <span className="relative z-[1] text-sm font-medium text-site-text">
+                    {tier.label}
+                  </span>
                 </div>
                 <Mono>{tier.name}</Mono>
                 <p className="text-xs text-site-text-dim">{tier.note}</p>
@@ -205,17 +189,60 @@ function LiquidGlassLab() {
           </div>
         </Section>
 
-        {/* ── 3 · Lighting model / pointer light ── */}
+        {/* ── 3 · Scene light / rim glint ── */}
         <Section
-          id="lighting"
-          eyebrow="§4.2 / §5.1"
-          title="Lighting model & pointer light"
+          id="glint"
+          eyebrow="§4"
+          title="Scene light & rim glint"
           description={
             <>
-              One sun, top-slightly-left, sitewide. Interactive glass adds{' '}
-              <Mono>.glass-interactive</Mono> plus <Mono>data-glass-light</Mono>: a soft radial
-              specular that follows your cursor (fine-pointer devices only — touch never pays for
-              it). Hover a card.
+              One light, sitewide. On a fine pointer the light <em>is</em> the cursor (viewport
+              coords, written to <Mono>--light-x/--light-y</Mono>); on touch or under reduced
+              motion it rests at the scene&apos;s &ldquo;sun&rdquo; (top centre). Every pane, chrome
+              bar and overlay paints a viewport-anchored specular <strong>rim glint</strong> in its
+              optics ring, so as you sweep the cursor across the page each surface&apos;s rim
+              brightens on the side facing the light and dims as it passes — all three panes below
+              answer the same light at once, with zero per-element JS.
+            </>
+          }
+        >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {[
+              { label: 'Pane A', icon: Sparkles },
+              { label: 'Pane B', icon: Sparkles },
+              { label: 'Pane C', icon: Sparkles },
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.label}
+                  className="glass-pane relative flex h-32 flex-col items-center justify-center gap-2 overflow-hidden rounded-site p-4"
+                >
+                  <Icon className="relative z-[1] h-6 w-6 text-site-accent" aria-hidden />
+                  <span className="relative z-[1] text-sm font-medium text-site-text">
+                    {item.label}
+                  </span>
+                  <span className="relative z-[1] text-xs text-site-text-dim">
+                    watch the rim {i === 1 ? 'brighten' : 'track'}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </Section>
+
+        {/* ── 4 · Pointer light (interactive) ── */}
+        <Section
+          id="pointer"
+          eyebrow="§4.1"
+          title="Pointer light — interactive glass"
+          description={
+            <>
+              The glint is the surface&apos;s <em>specular</em> answer; the diffuse footprint is the{' '}
+              <Mono>.glass-interactive</Mono> + <Mono>data-glass-light</Mono> hotspot, a soft radial
+              that follows your cursor inside the hovered card only (fine pointers only — touch never
+              pays for it). Interactive cards also fade in their glint ring on hover, so at most one
+              card ring paints at a time. Hover a card.
             </>
           }
         >
@@ -232,41 +259,48 @@ function LiquidGlassLab() {
                   data-glass-light=""
                   className="glass-fill glass-interactive flex h-32 flex-col items-center justify-center gap-2 p-4"
                 >
-                  <Icon className="h-6 w-6 text-site-accent" aria-hidden />
-                  <span className="text-sm font-medium text-site-text">{item.label}</span>
-                  <span className="text-xs text-site-text-dim">hover me</span>
+                  <Icon className="relative z-[1] h-6 w-6 text-site-accent" aria-hidden />
+                  <span className="relative z-[1] text-sm font-medium text-site-text">
+                    {item.label}
+                  </span>
+                  <span className="relative z-[1] text-xs text-site-text-dim">hover me</span>
                 </div>
               );
             })}
           </div>
         </Section>
 
-        {/* ── 4 · Refraction on/off ── the page's second (and last) refract slot. */}
+        {/* ── 5 · Lens refraction on/off ── the page's second refract slot. */}
         <Section
           id="refraction"
-          eyebrow="§4.3"
-          title="Refraction — on vs off"
+          eyebrow="§3"
+          title="Lens refraction — on vs off"
           description={
             <>
-              <Mono>.glass-refract</Mono> displaces the backdrop in a ~14px edge band so the aurora
-              bends at the pane&apos;s rim (Chromium upgrades to the <Mono>#glass-distortion</Mono>{' '}
-              displacement map; other engines keep the plain edge blur). Rationed to ≤ 2 hero/chrome
-              elements per page — the hero and this comparison are this page&apos;s two.
+              <Mono>.glass-refract</Mono> + <Mono>data-glass-lens</Mono> bends the aurora in the
+              pane&apos;s edge bevel using a physically-derived displacement map (smooth edge bevel,
+              not turbulence) — the centre stays optically flat. Chromium samples the SVG lens
+              (per-element size from <Mono>lib/glass-lens.ts</Mono>, falling back to the static{' '}
+              <Mono>#glass-lens</Mono>); other engines keep a plain edge blur. Rationed to hero /
+              chrome only, never in scroll containers.
             </>
           }
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="glass-pane glass-refract relative flex h-44 items-center justify-center overflow-hidden rounded-site p-6">
+            <div
+              data-glass-lens=""
+              className="glass-pane glass-refract relative flex h-44 items-center justify-center overflow-hidden rounded-site p-6"
+            >
               <div className="relative z-10 flex flex-col items-center gap-1 text-center">
                 <span className="text-base font-semibold text-site-text">Refraction on</span>
                 <Mono>.glass-pane .glass-refract</Mono>
                 <span className="text-xs text-site-text-dim">
-                  watch the edge band bend the aurora
+                  watch the edge band bend the aurora inward
                 </span>
               </div>
             </div>
             <div className="glass-pane relative flex h-44 items-center justify-center overflow-hidden rounded-site p-6">
-              <div className="flex flex-col items-center gap-1 text-center">
+              <div className="relative z-10 flex flex-col items-center gap-1 text-center">
                 <span className="text-base font-semibold text-site-text">Refraction off</span>
                 <Mono>.glass-pane</Mono>
                 <span className="text-xs text-site-text-dim">clean, optically flat edge</span>
@@ -275,81 +309,97 @@ function LiquidGlassLab() {
           </div>
         </Section>
 
-        {/* ── 4b · Liquid sheen ── ambient specular drift; pairs with the flowing
-            aurora canvas and the pointer light for the full "liquid" read. */}
+        {/* ── 6 · Liquid sheen ── */}
         <Section
-          id="liquid-sheen"
-          eyebrow="§5.4"
+          id="sheen"
+          eyebrow="§5.2"
           title="Liquid sheen — living material"
           description={
             <>
               <Mono>.glass-liquid</Mono> (or <Mono>&lt;GlassPane liquid&gt;</Mono>) drifts a slow
-              specular band across the surface like light travelling over wet glass — layered over
-              the pointer-tracked light and the whole aurora canvas, which now gently flows and
-              parallaxes to your cursor behind every pane. Signature surfaces only; ration it like
-              refraction. Hover the left pane.
+              specular band across the surface like light travelling over wet glass — now a
+              background layer, so it composes freely with refraction and the pointer light on the
+              same pane. Signature surfaces only; ration it. The right card uses{' '}
+              <Mono>.glass-sheen-hover</Mono>, the one-shot sweep signature CTAs (and{' '}
+              <Mono>Button</Mono> <Mono>default</Mono>/<Mono>accent</Mono>) fire on hover.
             </>
           }
         >
           <div className="grid gap-4 sm:grid-cols-2">
             <GlassPane
               liquid
-              interactive
               className="relative flex h-44 items-center justify-center overflow-hidden p-6"
             >
               <div className="relative z-10 flex flex-col items-center gap-1 text-center">
-                <span className="text-base font-semibold text-site-text">Sheen on</span>
+                <Waves className="mx-auto h-6 w-6 text-site-accent" aria-hidden />
+                <span className="text-base font-semibold text-site-text">Ambient sheen</span>
                 <Mono>.glass-liquid</Mono>
-                <span className="text-xs text-site-text-dim">watch the light travel across</span>
+                <span className="text-xs text-site-text-dim">a band drifts across every ~9s</span>
               </div>
             </GlassPane>
-            <GlassPane className="relative flex h-44 items-center justify-center overflow-hidden p-6">
-              <div className="flex flex-col items-center gap-1 text-center">
-                <span className="text-base font-semibold text-site-text">Sheen off</span>
-                <Mono>.glass-pane</Mono>
-                <span className="text-xs text-site-text-dim">the resting L2 pane</span>
+            <div className="glass-pane glass-sheen-hover relative flex h-44 items-center justify-center overflow-hidden rounded-site p-6">
+              <div className="relative z-10 flex flex-col items-center gap-1 text-center">
+                <Aperture className="mx-auto h-6 w-6 text-site-accent" aria-hidden />
+                <span className="text-base font-semibold text-site-text">Hover sweep</span>
+                <Mono>.glass-sheen-hover</Mono>
+                <span className="text-xs text-site-text-dim">one pass, per hover</span>
               </div>
-            </GlassPane>
+            </div>
           </div>
         </Section>
 
-        {/* ── 5 · GlassEffect / GlassDock / GlassButton showcase (trimmed) ── */}
+        {/* ── 7 · GlassPane gallery ── */}
         <Section
-          id="primitives-glass"
+          id="glasspane"
           eyebrow="components/ui/liquid-glass.tsx"
-          title="GlassEffect · Dock · Button"
+          title="GlassPane — the pane helper"
           description={
             <>
-              The standalone glass primitives (refract → tint → rim → content layer stack).{' '}
-              <Mono>GlassDock</Mono> and <Mono>GlassButton</Mono> are built on{' '}
-              <Mono>GlassEffect</Mono>; site buttons use the <Mono>Button</Mono> primitive below
-              instead.
+              <Mono>GlassPane</Mono> wraps the L2 <Mono>.glass-pane</Mono> class with opt-in{' '}
+              <Mono>interactive</Mono>, <Mono>refract</Mono> (sets <Mono>data-glass-lens</Mono>),
+              and <Mono>liquid</Mono> props — all composable on one pane. Site chrome uses the raw
+              classes; this helper is for one-off panes.
             </>
           }
         >
-          <div className="flex flex-col items-center gap-8 py-4">
-            <GlassDock icons={dockIcons} />
-            <GlassButton>
-              <span className="text-lg text-site-text">How can I help you today?</span>
-            </GlassButton>
-            <GlassEffect className="rounded-3xl px-8 py-5">
-              <span className="text-sm text-site-text">GlassEffect · one-off panel</span>
-            </GlassEffect>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <GlassPane className="flex h-32 items-center justify-center p-4">
+              <span className="relative z-[1] text-sm font-medium text-site-text">
+                &lt;GlassPane&gt;
+              </span>
+            </GlassPane>
+            <GlassPane
+              interactive
+              className="flex h-32 items-center justify-center p-4"
+            >
+              <span className="relative z-[1] text-sm font-medium text-site-text">
+                interactive
+              </span>
+            </GlassPane>
+            <GlassPane
+              refract
+              liquid
+              className="relative flex h-32 items-center justify-center overflow-hidden rounded-site p-4"
+            >
+              <span className="relative z-10 text-sm font-medium text-site-text">
+                refract + liquid
+              </span>
+            </GlassPane>
           </div>
         </Section>
 
-        {/* ── 6 · Primitive gallery ── */}
+        {/* ── 8 · Primitive gallery ── */}
         <Section
           id="gallery"
           eyebrow="components/ui/*"
           title="Primitive gallery"
-          description="The shared primitives every page composes from, so reviewers can verify each one carries the glass material."
+          description="The shared primitives every page composes from, so reviewers can verify each one carries the glass material and the v2 press physics."
         >
           <PrimitiveGallery />
         </Section>
 
         <footer className="border-t border-site-border pt-6 text-xs text-site-text-dim">
-          Internal design-lab reference · Liquid Glass UI redesign · every surface uses{' '}
+          Internal design-lab reference · Liquid Glass v2 optics · every surface uses{' '}
           <Mono>--site-*</Mono> tokens and the <Mono>.glass-*</Mono> classes only.
         </footer>
       </div>
@@ -374,7 +424,7 @@ function PrimitiveGallery() {
     <div className="flex flex-col gap-10">
       {/* Buttons */}
       <div className="flex flex-col gap-3">
-        <GroupHeading>Button — all variants</GroupHeading>
+        <GroupHeading>Button — all variants (spring press · hover sheen)</GroupHeading>
         <div className="flex flex-wrap items-center gap-3">
           {BUTTON_VARIANTS.map((variant) => (
             <Button key={variant} variant={variant}>
@@ -401,7 +451,7 @@ function PrimitiveGallery() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-site-text-muted">
-                Tint + rim, no blur. Unlimited per page.
+                Tint + rim, no blur, no always-on ring. Unlimited per page.
               </p>
             </CardContent>
           </Card>
@@ -413,14 +463,16 @@ function PrimitiveGallery() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-site-text-muted">Backdrop blur + micro-noise. Budgeted.</p>
+              <p className="text-sm text-site-text-muted">
+                Backdrop blur + micro-noise + optics ring. Budgeted.
+              </p>
             </CardContent>
           </Card>
           <Card interactive>
             <CardHeader>
               <CardTitle>Interactive card</CardTitle>
               <CardDescription>
-                <Mono>interactive</Mono> — hover tint-raise + pointer light.
+                <Mono>interactive</Mono> — hover glint ring + pointer light.
               </CardDescription>
             </CardHeader>
             <CardContent>

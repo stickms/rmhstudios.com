@@ -1,34 +1,72 @@
 'use client';
 
 import { useEffect } from 'react';
+import { initGlassLens } from '@/lib/glass-lens';
 
 /**
- * The signature "reactive" glass behaviour: a soft radial specular highlight
- * that follows the cursor across any element marked `[data-glass-light]`
- * (usually paired with the `.glass-interactive` class, which draws the light).
+ * The scene light (v2 §4.1–§4.4). One document-level, rAF-throttled
+ * `pointermove` listener drives two things off a single event:
  *
- * One document-level, rAF-throttled `pointermove` listener finds the hovered
- * `[data-glass-light]` element and writes the pointer's position as CSS custom
- * properties (`--glass-px` / `--glass-py`, percent coords within the element)
- * onto that element only — no React re-renders, repaint confined to that one
- * composited layer (§5.1, §6.2).
+ *  1. **Per-element diffuse hotspot** (v1, unchanged): the hovered
+ *     `[data-glass-light]` element gets `--glass-px/--glass-py` (percent coords)
+ *     so `.glass-interactive`'s `::after` can draw the light where the cursor is.
+ *  2. **Global specular light** (v2): the pointer's viewport position, quantised
+ *     to 8px, is written as `--light-x/--light-y` on `<html>`. Every optics-ring
+ *     `::before` (§4.2) reads those through a `background-attachment: fixed`
+ *     radial gradient, so one light sweeps every pane's rim at once. Absence of
+ *     the vars = the CSS "sun" default (top centre) — restored on `pointerleave`.
  *
- * Gated to fine pointers with hover (touch devices never pay for it) and off
- * under `html.perf-lite`. Mounted once in `components/Providers.tsx`.
+ * Cost: two `<html>`-level custom-property writes invalidate only the elements
+ * whose computed styles reference them (the ≤10 always-on rings + the hovered
+ * card), each repainting a thin masked band. 8px quantisation + rAF batching
+ * keeps that well under a frame.
+ *
+ * Gates: fine pointer only (touch keeps the CSS sun), off under `perf-lite`, and
+ * static under reduced motion (OS preference OR the `html.reduce-motion` account
+ * toggle) — the global light stops tracking and the sun default stands; the
+ * per-element hotspot (a hover affordance, not motion) is unchanged. This effect
+ * also owns `initGlassLens()` (§3.3): the lens generator is pointer-independent,
+ * so it runs before the fine-pointer gate (touch devices still refract).
+ * Mounted once in `components/Providers.tsx`.
  */
 export function useGlassLight(): void {
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-    if (document.documentElement.classList.contains('perf-lite')) return;
 
+    // Lens refraction filters (Chromium-only; self-gates on support / perf-lite
+    // / reduced-transparency). Pointer-independent — set up before the pointer
+    // gate so touch devices still get refraction.
+    const disposeLens = initGlassLens();
+
+    const root = document.documentElement;
+    const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    if (!finePointer || root.classList.contains('perf-lite')) {
+      return () => disposeLens();
+    }
+
+    // Reduced motion freezes the global light at the sun default; the per-element
+    // hotspot still tracks (it is a hover highlight, not ambient motion).
+    const reducedMotion =
+      root.classList.contains('reduce-motion') ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const Q = 8; // px quantum — caps global-light style invalidations to ~1/8th
     let raf = 0;
     let last: HTMLElement | null = null;
+    let lastLx = -1;
+    let lastLy = -1;
 
     const clear = (el: HTMLElement | null) => {
       if (!el) return;
       el.style.removeProperty('--glass-px');
       el.style.removeProperty('--glass-py');
+    };
+
+    const clearLight = () => {
+      root.style.removeProperty('--light-x');
+      root.style.removeProperty('--light-y');
+      lastLx = -1;
+      lastLy = -1;
     };
 
     const onMove = (e: PointerEvent) => {
@@ -46,14 +84,32 @@ export function useGlassLight(): void {
           }
         }
         last = el;
+
+        if (!reducedMotion) {
+          const lx = Math.round(e.clientX / Q) * Q;
+          const ly = Math.round(e.clientY / Q) * Q;
+          if (lx !== lastLx || ly !== lastLy) {
+            root.style.setProperty('--light-x', `${lx}px`);
+            root.style.setProperty('--light-y', `${ly}px`);
+            lastLx = lx;
+            lastLy = ly;
+          }
+        }
       });
     };
 
+    // Pointer left the document → rest the light at the sun default.
+    const onLeave = () => clearLight();
+
     document.addEventListener('pointermove', onMove, { passive: true });
+    document.addEventListener('pointerleave', onLeave);
     return () => {
       document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerleave', onLeave);
       if (raf) cancelAnimationFrame(raf);
       clear(last);
+      clearLight();
+      disposeLens();
     };
   }, []);
 }

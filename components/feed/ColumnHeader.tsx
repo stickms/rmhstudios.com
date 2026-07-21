@@ -56,8 +56,13 @@ export function ColumnHeader({
   return (
     <header
       className={cn(
-        'flex items-center gap-2 border-b border-site-border px-4 py-3',
-        sticky && 'sticky top-0 z-10 glass-chrome',
+        'flex items-center gap-2 px-4 py-3',
+        // Sticky column headers float as L3 glass-chrome capsules inset from the
+        // column edges (§8.2); embedded (sticky={false}) headers stay inline with
+        // a hairline divider. The optics-ring glint comes free from .glass-chrome.
+        sticky
+          ? 'sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3'
+          : 'border-b border-site-border',
         className,
       )}
     >

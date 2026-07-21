@@ -391,7 +391,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
 
         <div
-          className="relative bg-site-bg border border-site-border rounded-site shadow-xl w-full max-w-md mx-4 flex flex-col max-h-[90vh]"
+          className="relative glass-overlay w-full max-w-md mx-4 flex flex-col max-h-[90vh]"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
@@ -772,7 +772,7 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
         <div className="fixed inset-0 z-300 flex items-center justify-center" onClick={() => setShowResetConfirm(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative bg-site-bg border border-site-border rounded-site shadow-xl w-full max-w-sm mx-4 p-5"
+            className="relative glass-overlay w-full max-w-sm mx-4 p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <h3 className="font-bold text-site-text mb-2">{t("reset-avatar-confirm-title", { defaultValue: "Reset avatar?" })}</h3>

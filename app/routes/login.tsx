@@ -354,8 +354,12 @@ function LoginPage() {
       }}
     >
       {/* Flagship: a singular L2 pane with hero edge-refraction + prism rim
-          (1 of ≤2/page). */}
-      <div className="glass-pane glass-refract glass-refract--prism relative w-full max-w-sm p-6 sm:p-8">
+          (1 of ≤2/page). data-glass-lens opts it into the per-element lens
+          filter; .glass-liquid adds the ambient sheen (1 of ≤3/page). */}
+      <div
+        data-glass-lens=""
+        className="glass-pane glass-liquid glass-refract glass-refract--prism relative w-full max-w-sm p-6 sm:p-8"
+      >
         {/* Brand + heading */}
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="glass-inset mb-3 flex size-12 items-center justify-center rounded-2xl">

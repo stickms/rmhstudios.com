@@ -589,8 +589,13 @@ export function CommandPalette({ initialOpen = false }: { initialOpen?: boolean 
       <DialogPrimitive.Root open={open} onOpenChange={setOpen}>
         <DialogPrimitive.Portal>
           <DialogPrimitive.Overlay className="fixed inset-0 z-[90] glass-scrim data-[state=open]:animate-in data-[state=open]:fade-in-0" />
+          {/* The sanctioned prism overlay (§3.4 / §7): the flagship refracting
+              surface. Mirrors the login card's glass-refract glass-refract--prism
+              + data-glass-lens; the ≤1-prism-per-page budget is spent here while
+              the palette is open. */}
           <DialogPrimitive.Content
-            className="glass-overlay fixed left-1/2 top-[12dvh] z-[91] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+            data-glass-lens=""
+            className="glass-overlay glass-refract glass-refract--prism fixed left-1/2 top-[12dvh] z-[91] w-[calc(100vw-2rem)] max-w-xl -translate-x-1/2 overflow-hidden data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
             aria-describedby={undefined}
           >
             <DialogPrimitive.Title className="sr-only">

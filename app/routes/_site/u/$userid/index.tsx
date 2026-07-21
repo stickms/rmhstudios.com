@@ -112,7 +112,7 @@ function ProfilePage() {
 
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-dock">
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         <ProfileColumn userId={userId} />
       </AnimatedMain>
 

@@ -168,7 +168,7 @@ export function MembershipPanel({
     // No `overflow-hidden` on this section: it would establish a scroll
     // container and break the pinned hero's position:sticky. The hero clips
     // its own glow internally.
-    <section className="pricing-root relative isolate">
+    <section className="relative isolate">
       <PricingStyles />
 
       {/* ── Signature pinned hero ────────────────────────────── */}
@@ -214,8 +214,9 @@ export function MembershipPanel({
       />
 
       {/* Content padding only — the center-column width is governed by the
-          surrounding AnimatedMain so the gutters match blog/library. */}
-      <div className="relative border-t border-site-border px-5 pb-16 pt-12 sm:px-8 sm:pt-16">
+          surrounding AnimatedMain so the gutters match blog/library. The old
+          section divider is gone (§8.4): the plans float over the aurora. */}
+      <div className="relative px-5 pb-16 pt-12 sm:px-8 sm:pt-16">
         {/* ── Status banner ──────────────────────────────────── */}
         {status && (
           <Reveal
@@ -247,10 +248,14 @@ export function MembershipPanel({
                     aren't clobbered by the RevealItem motion node's inline
                     transform. */}
                 <article
-                  className={`pricing-card group relative flex w-full flex-col rounded-site border p-6 ${
+                  // Floating L2 slabs (§8.4): .glass-pane owns the frost/tint/
+                  // border/ring; the featured tier additionally takes the page's
+                  // one prism refract slot + ambient sheen + per-element lens.
+                  data-glass-lens={plan.featured ? '' : undefined}
+                  className={`pricing-card group relative flex w-full flex-col glass-pane rounded-site p-6 ${
                     plan.featured
-                      ? 'pricing-card--featured border-transparent bg-site-surface/70'
-                      : 'border-site-border bg-site-surface/30'
+                      ? 'pricing-card--featured glass-refract glass-refract--prism glass-liquid'
+                      : ''
                   }`}
                 >
                 {plan.featured && (
@@ -373,13 +378,12 @@ function PricingStyles() {
       .pricing-price { font-family: var(--font-jetbrains-mono); font-weight: 600; letter-spacing: -0.04em; }
 
       /* The pricing panel sits directly on the aurora canvas — no opaque slab
-         (the old .pricing-root background was deleted with the glass redesign). */
+         (the old panel background was deleted with the glass redesign). */
 
-      /* Cards — L2 frosted glass panes over the aurora (§9.4). */
+      /* Cards — the .glass-pane class owns the frost/tint/border/blur now (§8.4);
+         this only layers the hover-lift + featured gold glow on top. */
       .pricing-card {
         transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
-        -webkit-backdrop-filter: blur(16px) saturate(160%);
-        backdrop-filter: blur(16px) saturate(160%);
       }
       .pricing-card:hover { transform: translateY(-4px); border-color: var(--site-border-bright); }
       .pricing-card--featured {

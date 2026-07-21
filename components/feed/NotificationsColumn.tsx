@@ -222,7 +222,8 @@ function PreferencesPanel() {
   ];
 
   return (
-    <div className="border-b border-site-border bg-site-surface/40 px-4 py-3">
+    // Floating slab (§8.4): a discrete glass-fill card over the aurora gutter.
+    <div className="glass-fill rounded-site mx-3 mt-3 px-4 py-3">
       <p className="mb-2 text-sm font-semibold text-site-text">
         {t('notification-prefs-title', { defaultValue: 'Which notifications do you want?' })}
       </p>
@@ -480,7 +481,13 @@ export function NotificationsColumn({
           </p>
         </Reveal>
       ) : (
-        <Reveal as="ul" className="divide-y divide-site-border">
+        // Density page (§8.4): rows stay dense INSIDE one floating glass-fill
+        // container — the internal divide-y hairlines are the only row separators
+        // (not per-row cards); overflow-hidden clips them to the rounded corners.
+        <Reveal
+          as="ul"
+          className="glass-fill rounded-site mx-3 mt-3 divide-y divide-site-border overflow-hidden"
+        >
           {groups.map((g) => {
             const n = g.newest;
             const grouped = g.count > 1;

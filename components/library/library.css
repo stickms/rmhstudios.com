@@ -2368,8 +2368,10 @@
   align-items: end;
   gap: clamp(38px, 7vw, 112px);
   max-width: 1400px;
-  margin: 0 auto;
-  padding: clamp(72px, 10vw, 142px) clamp(20px, 5vw, 72px) clamp(52px, 7vw, 86px);
+  /* Floats as a glass slab (§8.4): a block gap opens the aurora above/below;
+     .glass-pane owns the frost/border/radius, .glass-refract the edge lens. */
+  margin: clamp(14px, 2.5vw, 24px) auto;
+  padding: clamp(56px, 8vw, 118px) clamp(20px, 5vw, 72px) clamp(48px, 6vw, 74px);
 }
 
 .lib-hero__copy {
@@ -2415,8 +2417,15 @@
   flex-direction: column-reverse;
   gap: 6px;
 }
+/* Etched stats (§8.4): a vertical light hairline separates the second column
+   from the first (logical border → RTL-safe). */
+.lib-stats div:nth-child(even) {
+  padding-inline-start: clamp(16px, 2.5vw, 24px);
+  border-inline-start: 1px solid var(--site-glass-rim-soft, rgba(255, 255, 255, 0.08));
+}
 .lib-stats dt {
   color: var(--site-text-dim, #65656c);
+  font-family: var(--site-font-mono, ui-monospace, monospace);
   font-size: 0.62rem;
   font-weight: 650;
   letter-spacing: 0.1em;
@@ -2425,6 +2434,7 @@
 .lib-stats dd {
   margin: 0;
   color: var(--site-text, #e9e9ec);
+  font-family: var(--site-font-display);
   font-size: clamp(1.15rem, 2vw, 1.6rem);
   font-weight: 600;
   font-variant-numeric: tabular-nums;

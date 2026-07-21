@@ -116,7 +116,7 @@ function PostPage() {
   return (
     <>
       {/* Center - Post Detail */}
-      <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-dock">
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         <PostDetail postId={postid} />
       </AnimatedMain>
 

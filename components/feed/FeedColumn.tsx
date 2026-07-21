@@ -134,8 +134,11 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
   return (
     <PullToRefresh onRefresh={refreshFeed}>
       <div className="flex flex-col">
-        {/* Header */}
-        <div className="sticky top-0 z-10 glass-chrome border-b border-site-border">
+        {/* Header — floating L3 glass-chrome capsule (§8.2): insets from the
+            column edges so aurora shows around it. The glass-chrome bg + blur +
+            glint ring all clip to rounded-site on their own (no overflow-hidden,
+            which would clip the filter dropdown). */}
+        <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
           <div className="flex items-center justify-between px-4 py-3">
             {/* Mobile: sandwich menu left, RMH center, filters right. This used to
               be a hand-rolled copy of MobileMenuButton that had drifted — it was

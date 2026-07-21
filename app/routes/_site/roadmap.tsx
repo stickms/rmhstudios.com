@@ -29,7 +29,7 @@ function RoadmapPage() {
   return (
     <>
       <AnimatedMain
-        className="relative isolate min-h-screen w-full min-w-0 border-r border-site-border pb-dock"
+        className="relative isolate min-h-screen w-full min-w-0 pb-dock"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <MobileTopBar title={t('roadmap-title', { defaultValue: 'Roadmap' })} />

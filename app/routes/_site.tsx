@@ -58,7 +58,9 @@ function SiteLayout() {
   const { t } = useTranslation('common');
   return (
     <ShellLayoutContext.Provider value={true}>
-      <div className="vibe-app min-h-dvh flex flex-col md:flex-row md:justify-center">
+      {/* Aurora gutters between the floating rail, column track, and right rail
+          are a ≥md luxury (phone width is too precious — §8.2.6). */}
+      <div className="vibe-app min-h-dvh flex flex-col md:flex-row md:justify-center md:gap-4 md:px-4 xl:gap-6">
         {/* Keyboard skip link — visually hidden until focused. */}
         <a
           href="#main-content"
@@ -75,14 +77,19 @@ function SiteLayout() {
         {/* Desktop/tablet: a spacer reserves the sidebar's width so the content
             centers beside it; the aside itself is fixed within that width. Hidden
             on mobile (the mobile drawer, below, owns the sidebar there).
-            On desktop the sidebar is INLINE (not an overlay), so it stays
-            transparent and shares the body aurora with the content — just a
-            hairline border divides them. The aside carries no backdrop-filter, so
+            The aside is a bare positioning box (no border, no backdrop-filter);
+            LeftSidebar is wrapped in a floating rail panel inset by m-3 so the
+            aurora shows in the gutter around a rounded glass rail (§8.2). The
+            rail's blur/glint live on .glass-chrome--aside's pseudo-elements, so
+            neither the aside nor the rail establishes a containing block —
             LeftSidebar's non-portaled fixed user menu keeps the viewport as its
-            containing block (§3.3.1). */}
+            containing block (§3.3.1). Geometry (fixed/top/widths/z-index) is
+            unchanged. */}
         <div className="hidden md:block md:w-16 xl:w-64 shrink-0 relative">
-          <aside className="fixed top-0 md:w-16 xl:w-64 h-screen border-r border-site-border overflow-hidden z-30 flex flex-col">
-            <LeftSidebar />
+          <aside className="fixed top-0 md:w-16 xl:w-64 h-screen overflow-hidden z-30">
+            <div className="m-3 h-[calc(100%-1.5rem)] rounded-site glass-chrome--aside overflow-hidden flex flex-col">
+              <LeftSidebar />
+            </div>
           </aside>
         </div>
 

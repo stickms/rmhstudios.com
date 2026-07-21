@@ -553,7 +553,7 @@ export function ConversationView({
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <div className="sticky top-0 z-10 glass-chrome border-b border-site-border shrink-0">
+      <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3 shrink-0">
         <div className="flex items-center gap-3 px-4 py-3">
           <Link
             to="/messages"
@@ -874,7 +874,7 @@ export function ConversationView({
               )}
             </button>
             {attachOpen && (
-              <div className="absolute bottom-full right-0 z-30 mb-1 w-40 rounded-site border border-site-border bg-site-bg py-1 shadow-xl">
+              <div className="absolute bottom-full right-0 z-30 mb-1 w-40 glass-overlay py-1">
                 <button
                   type="button"
                   disabled={imageUrls.length >= MAX_DM_IMAGES}

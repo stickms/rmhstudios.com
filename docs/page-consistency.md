@@ -47,13 +47,15 @@ function ExamplePage() {
 }
 ```
 
-`PageLayout` (`components/feed/PageLayout.tsx`) supplies the sticky L3
-glass-chrome header (`.glass-chrome sticky top-0 z-10` — it condenses on scroll
-via a sentinel + `data-scrolled`), the h1 in the theme display font, mobile menu
+`PageLayout` (`components/feed/PageLayout.tsx`) supplies the **floating
+header capsule** (`.glass-chrome sticky top-2 mx-2 rounded-site md:top-3
+md:mx-3` — it condenses on scroll via a sentinel + `data-scrolled`, which
+raises blur and rim glint), the h1 in the theme display font, mobile menu
 button, optional back arrow (`backTo`/`backLabel`), optional right sidebar,
-and the width-constrained bordered center column. The center column carries
-`pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0` to clear the floating
-mobile dock.
+and the width-constrained **transparent** center column (v2 floating shell:
+no `border-r` app-frame edge — content floats as glass panes over the aurora,
+with `md:gap-4 xl:gap-6` gutters supplied by the `_site` shell). The center
+column carries `pb-dock` to clear the floating mobile dock.
 
 Props: `title`, `children`, `rightSidebar?`, `headerExtra?`, `headerRight?`,
 `wide?`, `backTo?`, `backLabel?`.
@@ -68,7 +70,7 @@ import { AnimatedMain } from "@/components/feed/AnimatedMain";
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from "@/lib/layout-width";
 
 <AnimatedMain
-  className="w-full min-w-0 border-r border-site-border pb-[calc(env(safe-area-inset-bottom,0px)+92px)] md:pb-0"
+  className="w-full min-w-0 pb-dock"
   targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
 >
   {/* column content */}
@@ -103,6 +105,16 @@ Work through this for every new or edited page:
       `bg-site-surface` still works (degrades to a translucent L1 tint).
 - [ ] Buttons via `<Button variant size>`; pills via `<Badge>`; icons from
       `lucide-react`.
+- [ ] Tab strips via `<LiquidTabs>` (`components/ui/liquid-tabs.tsx`) — the
+      active capsule flows between tabs. Exception: tab bars that are really
+      route links (RMHLadder) or need richer ARIA (`aria-controls`) keep their
+      own markup and add the `layoutId` capsule directly.
+- [ ] v2 optics come free — don't re-add them: panes/overlays/chrome get the
+      specular rim glint automatically; interactive fills glint on hover. Only
+      opt in to the rationed extras where a page's spec says so:
+      `.glass-refract` + `data-glass-lens` (≤2/page, hero/chrome only),
+      `.glass-refract--prism` (≤1/page), `.glass-liquid` ambient sheen
+      (≤3/page, signature surfaces), `.glass-sheen-hover` (primary CTAs).
 
 ### States
 
@@ -208,3 +220,10 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    items (blur cost) or on an ancestor of a `position:fixed` element (containing
    block) — see design-language.md §5.1.
 8. Adding `react-icons`, new font imports, or one-off animation systems.
+9. Re-adding the old app-frame edges: `border-r border-site-border` on page
+   columns, full-bleed `sticky top-0 border-b` headers, or flush `divide-y`
+   post lists — the v2 floating shell replaced all three (floating header
+   capsule, aurora gutters, spaced `.glass-fill` cards).
+10. Hand-rolling a `layoutId` tab capsule instead of `LiquidTabs`, or stacking
+    `.glass-refract` onto a `.glass-chrome--aside` element (both of its
+    pseudo-elements are already spoken for — blur carrier + glint ring).

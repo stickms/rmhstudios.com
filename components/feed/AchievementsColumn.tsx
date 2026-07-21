@@ -126,7 +126,7 @@ export function AchievementsColumn({
       {hideHeader ? (
         <div className="px-4 pt-4">{Stats}</div>
       ) : (
-        <div className="sticky top-0 z-10 border-b border-site-border glass-chrome">
+        <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
           <ColumnHeader
             sticky={false}
             className="border-b-0 pb-0"

@@ -16,6 +16,7 @@ import {
   type DiscoveryBlogPost,
 } from './ExploreRecommendations';
 import { ColumnHeader } from './ColumnHeader';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 
 interface SearchUser {
   id: string;
@@ -204,7 +205,9 @@ export function SearchColumn({
     <div className="min-h-screen">
       {/* The search field is the header, so it goes in ColumnHeader's `children`
           slot; the category tabs sit under it inside the same sticky block. */}
-      <div className="sticky top-0 z-10 border-b border-site-border glass-chrome">
+      {/* Floating L3 glass-chrome capsule (§8.2); bg/blur/glint clip to
+          rounded-site on their own (the tab row keeps its own overflow-x-auto). */}
+      <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
         <ColumnHeader sticky={false} className="border-b-0 pb-0">
           <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-4 py-2">
             <Search className="h-4 w-4 text-site-text-muted" />
@@ -224,26 +227,19 @@ export function SearchColumn({
             {loading && <Spinner size={16} className="text-site-text-muted" />}
           </div>
         </ColumnHeader>
-        <div
-          className="flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="tablist"
-          aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
-        >
-          {TABS.map((tab_item) => (
-            <button
-              key={tab_item.id}
-              role="tab"
-              aria-selected={tab === tab_item.id}
-              onClick={() => setTab(tab_item.id)}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                tab === tab_item.id
-                  ? 'bg-site-accent text-site-accent-fg'
-                  : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'
-              }`}
-            >
-              {t(`tab-${tab_item.id}`, { defaultValue: tab_item.label })}
-            </button>
-          ))}
+        {/* Result-type tabs → shared LiquidTabs (§5.4). setTab keeps mirroring
+            the selection to the URL. Labels are pre-translated before handoff. */}
+        <div className="overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <LiquidTabs
+            tabs={TABS.map((tab_item) => ({
+              id: tab_item.id,
+              label: t(`tab-${tab_item.id}`, { defaultValue: tab_item.label }),
+            }))}
+            value={tab}
+            onChange={(id) => setTab(id as Tab)}
+            size="sm"
+            aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
+          />
         </div>
       </div>
 

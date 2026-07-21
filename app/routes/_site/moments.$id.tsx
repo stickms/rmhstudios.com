@@ -66,7 +66,7 @@ function MomentPage() {
   return (
     <>
       <AnimatedMain
-        className="w-full min-w-0 border-r border-site-border pb-dock"
+        className="w-full min-w-0 pb-dock"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 px-4 py-12 text-center">

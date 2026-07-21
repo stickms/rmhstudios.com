@@ -115,12 +115,11 @@
   transition-duration: 80ms;
 }
 
-/* Active tab = an accent glass capsule with a specular top rim. */
+/* Active tab = accent text only; the accent glass capsule is now the flowing
+   layoutId motion element rendered inside the active button (§5.4), so the
+   static background/border/rim move there and the capsule morphs between tabs. */
 .cstudio-tab.is-active {
   color: var(--site-accent, #6c5cff);
-  background: var(--site-accent-dim, rgba(108, 92, 255, 0.14));
-  border-color: color-mix(in srgb, var(--site-accent, #6c5cff) 40%, transparent);
-  box-shadow: inset 0 1px 0 var(--site-glass-rim-soft, rgba(255, 255, 255, 0.1));
 }
 
 .cstudio-tab__icon {

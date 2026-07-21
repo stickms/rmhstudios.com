@@ -10,9 +10,12 @@ import {
   Settings,
   ShieldCheck,
 } from 'lucide-react';
+import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
+import { SPRING } from '@/lib/motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 
 type NavItem = {
   label: string;
@@ -55,6 +58,7 @@ export default function RmhLadderShell({
   isAdmin: boolean;
 }) {
   const { t } = useTranslation('site');
+  const reduced = useReducedMotion();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const navItems = [
     ...PUBLIC_NAV,
@@ -71,20 +75,36 @@ export default function RmhLadderShell({
     <PageLayout title={pageTitle(pathname)} wide>
       <div className="rmhladder min-w-0 px-3 pb-24 pt-3 sm:px-4 sm:pt-4 md:pb-12">
         <div className="mb-5 flex items-center gap-1 overflow-x-auto border-b border-site-border pb-3" aria-label={t('ladder.navigation', { defaultValue: 'RMH Ladder navigation' })}>
-          {navItems.map(({ label, to, icon: Icon }) => (
-            <Button
-              key={to}
-              asChild
-              size="sm"
-              variant={isActive(to) ? 'accent' : 'ghost'}
-              className="min-h-11 shrink-0"
-            >
-              <Link to={to} aria-current={isActive(to) ? 'page' : undefined}>
-                <Icon className="size-4" aria-hidden />
-                {t(`ladder.nav.${label.toLowerCase()}`, { defaultValue: label })}
-              </Link>
-            </Button>
-          ))}
+          {navItems.map(({ label, to, icon: Icon }) => {
+            const active = isActive(to);
+            // These are route links (some public/crawlable + prefetched), so they
+            // stay <Link>s rather than becoming LiquidTabs' role=tab buttons. The
+            // flowing active capsule is a layoutId motion element behind the link;
+            // the shell is a layout route (Outlet) so it survives navigation and
+            // the capsule morphs between routes (§5.4).
+            return (
+              <div key={to} className="relative shrink-0">
+                {active && (
+                  <motion.span
+                    layoutId="rmhladder-nav-capsule"
+                    aria-hidden
+                    className="glass-liquid absolute inset-0 rounded-site bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
+                    transition={reduced ? { duration: 0 } : SPRING.snappy}
+                  />
+                )}
+                <Button asChild size="sm" variant="ghost" className="relative min-h-11">
+                  <Link
+                    to={to}
+                    aria-current={active ? 'page' : undefined}
+                    className={active ? 'text-site-accent' : undefined}
+                  >
+                    <Icon className="size-4" aria-hidden />
+                    {t(`ladder.nav.${label.toLowerCase()}`, { defaultValue: label })}
+                  </Link>
+                </Button>
+              </div>
+            );
+          })}
           {!isAuthenticated && (
             <Button asChild size="sm" variant="accent-outline" className="ml-auto min-h-11 shrink-0">
               <Link to="/login" search={{ callbackURL: pathname }}>

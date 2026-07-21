@@ -69,8 +69,10 @@ export function BackToTop({ threshold = 600 }: { threshold?: number }) {
             // iOS Safari's floating tab bar (--safe-bottom, via .bottom-above-dock).
             'fixed right-4 bottom-above-dock z-40 md:right-6 md:bottom-6',
             'flex size-11 items-center justify-center rounded-full',
-            // Floating L4 glass disc.
-            'glass-overlay text-site-text',
+            // Floating L4 glass disc; the always-on optics-ring glint comes free
+            // from .glass-overlay. glass-bevel-sm thins the ring (6px) so it fits
+            // this small disc instead of the 12px pane default.
+            'glass-overlay glass-bevel-sm text-site-text',
             'hover:border-site-accent',
             'active:scale-95',
           )}

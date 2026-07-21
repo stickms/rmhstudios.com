@@ -38,7 +38,7 @@ function SharePage() {
   const draft = buildDraft({ title, text, url });
 
   return (
-    <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-dock">
+    <AnimatedMain className="w-full min-w-0 pb-dock">
       <ComposeModal open initialContent={draft} onClose={() => navigate({ to: '/' })} />
     </AnimatedMain>
   );

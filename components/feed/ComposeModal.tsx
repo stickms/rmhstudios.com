@@ -187,7 +187,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
-      <div className="absolute inset-x-4 top-[5vh] sm:top-[10vh] mx-auto max-w-lg max-h-[90dvh] overflow-y-auto bg-site-bg border border-site-border rounded-site shadow-xl animate-in zoom-in-95 fade-in duration-200">
+      <div className="absolute inset-x-4 top-[5vh] sm:top-[10vh] mx-auto max-w-lg max-h-[90dvh] overflow-y-auto glass-overlay animate-in zoom-in-95 fade-in duration-200">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
           <button
@@ -252,7 +252,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
               {menuOpen && (
                 <div
                   ref={menuPopRef}
-                  className="absolute top-full right-0 mt-1 w-40 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30"
+                  className="absolute top-full right-0 mt-1 w-40 glass-overlay py-1 z-30"
                 >
                   <button
                     onClick={() => {
@@ -549,7 +549,7 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setAltEditIndex(null)}
           />
-          <div className="relative w-full max-w-md rounded-site border border-site-border bg-site-bg p-4 shadow-xl animate-in zoom-in-95 fade-in duration-150">
+          <div className="relative w-full max-w-md p-4 glass-overlay animate-in zoom-in-95 fade-in duration-150">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="text-sm font-semibold text-site-text">
                 {t('alt-text-heading', { defaultValue: 'Describe this image' })}

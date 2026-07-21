@@ -101,7 +101,7 @@ export function ProfileHoverCard({
           side="bottom"
           align="start"
           sideOffset={6}
-          className="z-[80] w-72 rounded-site border border-site-border bg-site-bg p-4 shadow-2xl outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
+          className="z-[80] w-72 p-4 glass-overlay outline-none data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95"
         >
           {!profile ? (
             <div className="flex animate-pulse items-center gap-3">
