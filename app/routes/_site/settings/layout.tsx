@@ -39,7 +39,7 @@ function LayoutSettingsPage() {
           <p className="mb-4 text-sm text-site-text-muted">
             {t('sidebar-desc', {
               defaultValue:
-                'Pin destinations to the main rail or hide them. Hidden items stay reachable under “More” and search.',
+                'Drag the tabs into the order you want, or hide the ones you don’t use. Hidden tabs stay reachable from search and their link.',
             })}
           </p>
           <SidebarEditMode />

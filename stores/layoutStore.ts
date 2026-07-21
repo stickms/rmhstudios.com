@@ -53,13 +53,17 @@ interface LayoutStore {
   hydrate: () => void;
   togglePin: (id: string) => void;
   toggleHidden: (id: string) => void;
+  /** Persist a new full top-level sidebar tab order. */
+  setSidebarOrder: (order: string[]) => void;
+  /** Clear sidebar order + hidden back to the default rail. */
+  resetSidebar: () => void;
   setHomeStack: (stack: HomeStackItem[]) => void;
   addWidget: (kind: WidgetKind) => void;
   removeWidget: (kind: WidgetKind) => void;
   toggleCollapsed: (kind: WidgetKind) => void;
 }
 
-const DEFAULT_SIDEBAR: SidebarPref = { pinned: [], hidden: [] };
+const DEFAULT_SIDEBAR: SidebarPref = { pinned: [], hidden: [], order: [] };
 
 export const useLayoutStore = create<LayoutStore>((set, get) => ({
   sidebar: DEFAULT_SIDEBAR,
@@ -88,21 +92,35 @@ export const useLayoutStore = create<LayoutStore>((set, get) => ({
   },
 
   togglePin: (id) => {
-    const { pinned, hidden } = get().sidebar;
+    const { pinned, hidden, order } = get().sidebar;
     const next: SidebarPref = pinned.includes(id)
-      ? { pinned: pinned.filter((p) => p !== id), hidden }
+      ? { pinned: pinned.filter((p) => p !== id), hidden, order }
       : // Pinning implies un-hiding (can't be both).
-        { pinned: [...pinned, id], hidden: hidden.filter((h) => h !== id) };
+        { pinned: [...pinned, id], hidden: hidden.filter((h) => h !== id), order };
     writeMirror(LAYOUT_SIDEBAR_KEY, next);
     set({ sidebar: next });
     void persist({ sidebar: next });
   },
 
   toggleHidden: (id) => {
-    const { pinned, hidden } = get().sidebar;
+    const { pinned, hidden, order } = get().sidebar;
     const next: SidebarPref = hidden.includes(id)
-      ? { pinned, hidden: hidden.filter((h) => h !== id) }
-      : { pinned: pinned.filter((p) => p !== id), hidden: [...hidden, id] };
+      ? { pinned, hidden: hidden.filter((h) => h !== id), order }
+      : { pinned: pinned.filter((p) => p !== id), hidden: [...hidden, id], order };
+    writeMirror(LAYOUT_SIDEBAR_KEY, next);
+    set({ sidebar: next });
+    void persist({ sidebar: next });
+  },
+
+  setSidebarOrder: (order) => {
+    const next: SidebarPref = { ...get().sidebar, order };
+    writeMirror(LAYOUT_SIDEBAR_KEY, next);
+    set({ sidebar: next });
+    void persist({ sidebar: next });
+  },
+
+  resetSidebar: () => {
+    const next: SidebarPref = { pinned: [], hidden: [], order: [] };
     writeMirror(LAYOUT_SIDEBAR_KEY, next);
     set({ sidebar: next });
     void persist({ sidebar: next });

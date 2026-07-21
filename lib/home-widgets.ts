@@ -91,94 +91,87 @@ export function parseHomeStack(raw: unknown): HomeStackItem[] {
 // ─── Sidebar pin/hide ──────────────────────────────────────────────────────
 
 /**
- * The pin/hide-able sidebar destinations (hrefs), mirroring the "More" group
- * in components/feed/LeftSidebar. Kept here (client-safe) so both the editor
- * and the sidebar validate against one list; ids not in this set are dropped.
- * Home/Explore/Inbox/admin are intentionally NOT customizable (always present).
+ * The reorderable top-level sidebar tabs (ids), mirroring the top-level nav in
+ * `lib/sidebar-nav.ts`. Kept here (client-safe, no icon imports) so the editor,
+ * the sidebar, and the sync API all validate against one list; ids not in this
+ * set are dropped at read time (forward-safe). Leaf ids are hrefs; group ids are
+ * `group:<name>`. Admin is intentionally excluded — it's always pinned to the
+ * bottom of the rail, never reordered or hidden.
  */
 export const SIDEBAR_NAV_IDS = [
+  '/',
+  '/search',
+  '/messages',
   '/create',
   '/library',
   '/communities',
   '/store',
   '/arcade',
   '/predictions',
-  '/leaderboard',
-  '/spaces',
-  '/events',
-  '/market',
-  '/creator-studio',
-  '/help',
-  '/playlists',
-  '/homes',
-  '/rmhladder',
-  '/rideshare',
   '/developer',
-  '/rmh-capital',
-  '/rmh-pmc',
-  '/rmh-internal-affairs',
-  '/adaptive-intelligence',
-  '/deeplink',
+  'group:services',
+  'group:ventures',
 ] as const;
 
 const SIDEBAR_ID_SET = new Set<string>(SIDEBAR_NAV_IDS);
 
 /**
- * Display metadata for the customizable sidebar destinations (English fallback
- * label + lucide icon name), mirroring components/feed/LeftSidebar's NAV. The
- * editor renders from this; i18n keys are `nav-*` in the `feed` namespace.
+ * Which tabs may be hidden from the rail. Home is always present (never strand
+ * the feed) and groups aren't individually hideable — only leaf destinations,
+ * which stay reachable via the command palette and their URL when hidden (§2.6).
  */
-export const SIDEBAR_NAV_META: Record<
-  (typeof SIDEBAR_NAV_IDS)[number],
-  { label: string; iconName: string; tKey: string }
-> = {
-  '/create': { label: 'Creator Studio', iconName: 'Wand2', tKey: 'nav-creator-studio' },
-  '/library': { label: 'Library', iconName: 'Library', tKey: 'nav-library' },
-  '/communities': { label: 'Communities', iconName: 'Users', tKey: 'nav-communities' },
-  '/store': { label: 'Store', iconName: 'ShoppingBag', tKey: 'nav-store' },
-  '/arcade': { label: 'Arcade', iconName: 'Gamepad2', tKey: 'nav-arcade' },
-  '/predictions': { label: 'Predictions', iconName: 'TrendingUp', tKey: 'nav-predictions' },
-  '/leaderboard': { label: 'Leaderboard', iconName: 'Trophy', tKey: 'nav-leaderboard' },
-  '/spaces': { label: 'Spaces', iconName: 'Radio', tKey: 'nav-spaces' },
-  '/events': { label: 'Events', iconName: 'CalendarDays', tKey: 'nav-events' },
-  '/market': { label: 'Market', iconName: 'Store', tKey: 'nav-market' },
-  '/creator-studio': { label: 'Studio', iconName: 'Coins', tKey: 'nav-studio' },
-  '/help': { label: 'Help', iconName: 'HelpCircle', tKey: 'nav-help' },
-  '/playlists': { label: 'Playlists', iconName: 'ListMusic', tKey: 'nav-playlists' },
-  '/homes': { label: 'RMHHomes', iconName: 'Building2', tKey: 'nav-homes' },
-  '/rmhladder': { label: 'RMHLadder', iconName: 'Briefcase', tKey: 'nav-rmhladder' },
-  '/rideshare': { label: 'Rideshare', iconName: 'Car', tKey: 'nav-rideshare' },
-  '/developer': { label: 'Developer', iconName: 'Terminal', tKey: 'nav-developer' },
-  '/rmh-capital': { label: 'RMH Capital', iconName: 'Landmark', tKey: 'nav-rmh-capital' },
-  '/rmh-pmc': { label: 'RMH PMC', iconName: 'Shield', tKey: 'nav-rmh-pmc' },
-  '/rmh-internal-affairs': { label: 'Internal Affairs', iconName: 'Eye', tKey: 'nav-internal-affairs' },
-  '/adaptive-intelligence': { label: 'Adaptive Intelligence', iconName: 'Atom', tKey: 'nav-adaptive-intelligence' },
-  '/deeplink': { label: 'RMH Deeplink', iconName: 'Brain', tKey: 'nav-rmh-deeplink' },
-};
+export const SIDEBAR_HIDEABLE_IDS = [
+  '/search',
+  '/messages',
+  '/create',
+  '/library',
+  '/communities',
+  '/store',
+  '/arcade',
+  '/predictions',
+  '/developer',
+] as const;
+
+const SIDEBAR_HIDEABLE_SET = new Set<string>(SIDEBAR_HIDEABLE_IDS);
 
 export interface SidebarPref {
-  /** Hrefs promoted into the main rail (out of "More"). */
+  /** Tab ids promoted into the main rail (reserved; see nav pin buttons). */
   pinned: string[];
-  /** Hrefs hidden from the rail (still reachable via "More"/palette/URL). */
+  /** Tab ids hidden from the rail (still reachable via palette/URL). */
   hidden: string[];
+  /** Full top-level tab order; [] = the default order in `SIDEBAR_NAV`. */
+  order: string[];
 }
 
-/** Normalize a stored sidebar pref: known ids only, deduped, pin wins over hide. */
+/**
+ * Normalize a stored sidebar pref: known ids only, order-preserving dedupe, pin
+ * wins over hide. `order` is validated against the full orderable set; `hidden`
+ * against the hideable subset only.
+ */
 export function parseSidebarPref(raw: unknown): SidebarPref {
-  const obj = (raw && typeof raw === 'object' ? raw : {}) as { pinned?: unknown; hidden?: unknown };
-  const clean = (v: unknown): string[] => {
+  const obj = (raw && typeof raw === 'object' ? raw : {}) as {
+    pinned?: unknown;
+    hidden?: unknown;
+    order?: unknown;
+  };
+  const clean = (v: unknown, allowed: Set<string>): string[] => {
     if (!Array.isArray(v)) return [];
     const seen = new Set<string>();
+    const out: string[] = [];
     for (const x of v) {
-      if (typeof x === 'string' && SIDEBAR_ID_SET.has(x)) seen.add(x);
+      if (typeof x === 'string' && allowed.has(x) && !seen.has(x)) {
+        seen.add(x);
+        out.push(x);
+      }
     }
-    return [...seen];
+    return out;
   };
-  const pinned = clean(obj.pinned);
+  const order = clean(obj.order, SIDEBAR_ID_SET);
+  const pinned = clean(obj.pinned, SIDEBAR_ID_SET);
   const pinnedSet = new Set(pinned);
   // A destination can't be both pinned and hidden — pin wins.
-  const hidden = clean(obj.hidden).filter((h) => !pinnedSet.has(h));
-  return { pinned, hidden };
+  const hidden = clean(obj.hidden, SIDEBAR_HIDEABLE_SET).filter((h) => !pinnedSet.has(h));
+  return { pinned, hidden, order };
 }
 
 export interface LayoutPref {
@@ -205,7 +198,8 @@ export const layoutPrefsSchema = z.object({
   sidebar: z
     .object({
       pinned: z.array(z.enum(SIDEBAR_NAV_IDS)).max(SIDEBAR_NAV_IDS.length).optional(),
-      hidden: z.array(z.enum(SIDEBAR_NAV_IDS)).max(SIDEBAR_NAV_IDS.length).optional(),
+      hidden: z.array(z.enum(SIDEBAR_HIDEABLE_IDS)).max(SIDEBAR_HIDEABLE_IDS.length).optional(),
+      order: z.array(z.enum(SIDEBAR_NAV_IDS)).max(SIDEBAR_NAV_IDS.length).optional(),
     })
     .optional(),
   homeStack: z.array(homeStackItemSchema).max(MAX_STACK).optional(),
