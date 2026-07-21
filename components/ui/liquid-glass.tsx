@@ -3,12 +3,14 @@
 /**
  * Liquid Glass primitives — the SSR filter host + a thin `GlassPane` helper.
  *
- * `GlassFilter` mounts the SVG lens filters (`#glass-lens`, `#glass-lens-prism`)
- * that Chromium samples through `backdrop-filter: url(...)` on `.glass-refract`
- * surfaces (v2 §3). It is mounted once globally in `__root.tsx`; only mount it
- * again for markup rendered outside the root document. Per-size-bucket variants
- * are generated at runtime by `lib/glass-lens.ts` and appended into the same
- * `#glass-filters` node.
+ * `GlassFilter` mounts the SVG lens filters (`#glass-lens`, `#glass-lens-press`,
+ * `#glass-lens-prism`) that Chromium samples through `backdrop-filter: url(...)`
+ * — and Gecko/WebKit through `filter: url(...)` over a mirrored aurora copy
+ * (§3.6) — on `.glass-refract` surfaces (v2 §3). It is mounted once globally in
+ * `__root.tsx`; only mount it again for markup rendered outside the root
+ * document. Per-size-bucket variants (rest + press pairs) are generated at
+ * runtime by `lib/glass-lens.ts` and appended into the same `#glass-filters`
+ * node.
  */
 
 import React from 'react';
@@ -24,11 +26,13 @@ const LENS_MAP_HREF = lensMapDataURI(256, 256);
  * GlassFilter — the global lens filter host (v2 §3.3–§3.4).
  *
  * `#glass-lens`: feImage(displacement map) → blur → single displacement pass.
+ * `#glass-lens-press`: the same at ×1.6 displacement scale — the pre-hydration
+ * default for the §3.7 press state (`.glass-refract:active`), before the bucket
+ * generator mints per-size press pairs.
  * `#glass-lens-prism`: three channel-isolated displacements at ±12% scale, then
  * re-summed — true chromatic dispersion (blue bends more than red). Budget: ≤1
- * prism element per page. Both only ever run on Chromium (the only engine that
- * feeds an SVG filter into `backdrop-filter`); other engines keep the CSS
- * edge-blur fallback in `.glass-refract::before`.
+ * prism element per page. On Chromium these feed `backdrop-filter`; on
+ * Gecko/WebKit the same filters drive `filter` over the mirrored aurora (§3.6).
  */
 const GlassFilter: React.FC = () => (
   <svg id="glass-filters" style={{ display: 'none' }} aria-hidden>
@@ -54,6 +58,34 @@ const GlassFilter: React.FC = () => (
         in="SourceGraphic"
         in2="soft"
         scale="56"
+        xChannelSelector="R"
+        yChannelSelector="G"
+      />
+    </filter>
+
+    {/* §3.7 press default: same map, displacement ×1.6 (56 → 90). */}
+    <filter
+      id="glass-lens-press"
+      x="0%"
+      y="0%"
+      width="100%"
+      height="100%"
+      colorInterpolationFilters="sRGB"
+    >
+      <feImage
+        href={LENS_MAP_HREF}
+        x="0"
+        y="0"
+        width="256"
+        height="256"
+        preserveAspectRatio="none"
+        result="map"
+      />
+      <feGaussianBlur in="map" stdDeviation="2" result="soft" />
+      <feDisplacementMap
+        in="SourceGraphic"
+        in2="soft"
+        scale="90"
         xChannelSelector="R"
         yChannelSelector="G"
       />

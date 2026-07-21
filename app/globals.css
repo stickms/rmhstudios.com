@@ -148,6 +148,26 @@
   --site-glass-glint: var(--site-glass-rim); /* accent presets re-derive (§4.2) */
   --site-aurora-far-1: rgba(86, 140, 255, 0.1); /* aurora depth layer (§5.1) */
   --site-aurora-far-2: rgba(170, 108, 255, 0.09);
+  /* §4.35 single-sheet edges: the specular is a border-box background LAYER on
+     each glass surface (not a masked pseudo ring), so it lives inside the 1px
+     border ring while the structural border itself goes transparent — glass reads
+     as one lit sheet, not an outlined frame. --glass-glint-layer is the shared
+     paint; --glass-glint-attach is `fixed` (one viewport-anchored scene light) on
+     fine pointers and swaps to `scroll` (static top-edge sun) on touch/perf-lite;
+     --glass-glint-hover (registered <number>, default 1) multiplies the opacity so
+     repeated interactive fills can fade their glint 0→1 on hover only. */
+  --glass-glint-attach: fixed;
+  --glass-glint-layer: radial-gradient(
+    var(--glass-glint-size, 340px) circle at var(--light-x, 50%) var(--light-y, -8%),
+    color-mix(
+        in srgb,
+        var(--site-glass-glint, var(--site-glass-rim))
+          calc(var(--glass-glint-opacity, 0.9) * var(--glass-glint-hover, 1) * 100%),
+        transparent
+      )
+      0%,
+    transparent 70%
+  );
 
   /* Elevation tokens — the rim lives in the shadow so Card/Dialog/etc. pick it
      up through shadow-site / shadow-site-sm with zero component changes. */
@@ -344,6 +364,8 @@
   --site-glass-depth: 0 24px 64px rgba(60, 74, 120, 0.16);
   --site-glass-depth-sm: 0 4px 16px rgba(60, 74, 120, 0.1);
   --site-glass-saturate: 150%;
+  /* §4.35: bright rims on bright frost need less light to read as an edge. */
+  --glass-glint-opacity: 0.5;
   --site-radius: 22px;
   --site-radius-sm: 14px;
   --site-canvas:
@@ -478,6 +500,8 @@
   --site-glass-depth: 0 24px 64px rgba(90, 62, 32, 0.18);
   --site-glass-depth-sm: 0 4px 16px rgba(90, 62, 32, 0.12);
   --site-glass-saturate: 150%;
+  /* §4.35: bright rims on bright frost need less light to read as an edge. */
+  --glass-glint-opacity: 0.5;
   --site-radius: 22px;
   --site-radius-sm: 14px;
   --site-canvas:
@@ -659,6 +683,16 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
   background-color: color-mix(in srgb, var(--site-bg) 52%, transparent);
 }
 
+/* Registered so the hover-only glint on interactive fills can fade 0→1 (a bare
+   custom property transitions discretely). inherits:false + initial 1 means
+   always-on surfaces (which never set it) resolve to a clean ×1 multiplier and
+   keep their per-theme --glass-glint-opacity (and the [data-scrolled] bump). */
+@property --glass-glint-hover {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+
 @layer components {
   /* ── L1 · glass-fill ── repeated content (feed cards, rows, tiles). Tint + rim
      via shadow-site-sm. NO blur — cheap, unlimited per page; the canvas provides
@@ -675,10 +709,17 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
      so the optics ring (::before, §2.1) anchors here. */
   .glass-pane {
     position: relative;
+    /* §4.35 layer order (load-bearing): tint (background-color) clips to the LAST
+       layer's clip = border-box, so the material fills under the transparent
+       border and the edge is the same sheet; noise stays padding-box; the glint
+       is the border-box layer, so its specular lives in the 1px border ring. */
     background-color: var(--site-glass-tint);
-    background-image: var(--site-glass-noise);
+    background-image: var(--site-glass-noise), var(--glass-glint-layer);
+    background-clip: padding-box, border-box;
+    background-origin: padding-box, border-box;
+    background-attachment: scroll, var(--glass-glint-attach, fixed);
     box-shadow: var(--site-shadow-sm);
-    border: var(--site-border-width) solid var(--site-border);
+    border: var(--site-border-width) solid transparent;
     border-radius: var(--site-radius);
     -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
     backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
@@ -691,12 +732,22 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
   .glass-chrome {
     position: relative;
     --glass-bevel: 8px;
-    background: color-mix(in srgb, var(--site-bg) 32%, transparent);
+    /* §4.35: single glint layer over a border-box tint + transparent border (the
+       lit edge IS the border). border-box sizing (Tailwind preflight) → the added
+       border costs no outer layout. */
+    background-color: color-mix(in srgb, var(--site-bg) 32%, transparent);
+    background-image: var(--glass-glint-layer);
+    background-clip: border-box;
+    background-origin: border-box;
+    background-attachment: var(--glass-glint-attach, fixed);
+    border: var(--site-border-width) solid transparent;
     -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
     backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
   }
   .glass-chrome[data-scrolled] {
-    background: color-mix(in srgb, var(--site-bg) 55%, transparent);
+    /* background-color only (NOT the `background` shorthand) so the glint layer
+       survives the condense; the --glass-glint-opacity bump then rides it (§7). */
+    background-color: color-mix(in srgb, var(--site-bg) 55%, transparent);
     --glass-glint-opacity: 1; /* condensed chrome catches more light (§4.2/§7) */
     /* Blur deepens 12px → 18px when the capsule condenses (§7/§8.2). The aside
        variant reads --site-glass-blur-chrome on ::before but never carries
@@ -711,7 +762,15 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
   .glass-chrome--aside {
     position: relative;
     --glass-bevel: 8px;
-    background: color-mix(in srgb, var(--site-bg) 40%, transparent);
+    /* §4.35: the aside carries its glint in its OWN background now (its ::after
+       ring was deleted). Blur stays on ::before (§3.3.1 containing-block rule),
+       so the glint cannot ride a pseudo here — it rides the border-box layer. */
+    background-color: color-mix(in srgb, var(--site-bg) 40%, transparent);
+    background-image: var(--glass-glint-layer);
+    background-clip: border-box;
+    background-origin: border-box;
+    background-attachment: var(--glass-glint-attach, fixed);
+    border: var(--site-border-width) solid transparent;
   }
   .glass-chrome--aside::before {
     content: '';
@@ -728,9 +787,14 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
      anchors the optics ring (::before, §2.1). */
   .glass-overlay {
     position: relative;
-    background: color-mix(in srgb, var(--site-bg) 62%, transparent);
+    /* §4.35: single glint layer, tint fills to border-box, transparent border. */
+    background-color: color-mix(in srgb, var(--site-bg) 62%, transparent);
+    background-image: var(--glass-glint-layer);
+    background-clip: border-box;
+    background-origin: border-box;
+    background-attachment: var(--glass-glint-attach, fixed);
     box-shadow: var(--site-shadow);
-    border: var(--site-border-width) solid var(--site-border);
+    border: var(--site-border-width) solid transparent;
     border-radius: var(--site-radius);
     -webkit-backdrop-filter: blur(var(--site-glass-blur-overlay)) saturate(180%);
     backdrop-filter: blur(var(--site-glass-blur-overlay)) saturate(180%);
@@ -748,7 +812,9 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
      shadow, faint light bottom inner edge (§4.2). No backdrop blur (legibility). */
   .glass-inset {
     background: var(--site-glass-ink);
-    border: var(--site-border-width) solid var(--site-border);
+    /* §4.35: wells keep a border at half strength so a recessed field still reads
+       as carved INTO the sheet (not outlined on it) now that slabs go borderless. */
+    border: var(--site-border-width) solid color-mix(in srgb, var(--site-border) 50%, transparent);
     border-radius: var(--site-radius-sm);
     box-shadow:
       inset 0 1px 2px rgb(0 0 0 / 0.35),
@@ -807,83 +873,68 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     }
   }
 
-  /* ══ The optics ring (§2.1–§2.2) ══════════════════════════════════════════
-     ONE masked edge band per surface — the single home of the specular rim
-     glint (§4.2), and, with .glass-refract, the carrier of the lens
-     backdrop-filter (§3). PSEUDO OWNERSHIP (load-bearing):
-       • ::before = optics ring on .glass-pane/.glass-overlay/.glass-chrome and
-         on .glass-fill.glass-interactive (cards, hover-gated below).
-       • .glass-chrome--aside keeps blur on ::before, so ITS ring lives on
-         ::after (the aside is never .glass-interactive, so ::after is free).
-       • ::after elsewhere = the pointer hotspot, owned by .glass-interactive.
-     NO ring on .glass-inset (wells are holes), plain .glass-fill (the unlimited
-     cheap tier), or .glass-scrim. Never add a third pseudo owner — ride an
-     existing layer. Content that could reach the bevel band sits at z-index ≥ 1.
-     The glint is a viewport-anchored (background-attachment: fixed) radial so
-     EVERY surface samples the same light at once; --light-x/y come from
-     useGlassLight, absence = the sun default. `screen` blend only ever lightens. */
-  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
-  .glass-chrome--aside::after,
-  .glass-fill.glass-interactive::before {
+  /* ══ Pseudo-element contract v2 (§2 + §4.35, load-bearing) ═════════════════
+     The specular rim glint is NO LONGER a masked ::before ring — it is a
+     border-box background LAYER on each surface (see the elevation classes
+     above, painted via --glass-glint-layer). That frees the pseudos:
+       • ::before = REFRACTION ONLY (the masked bevel band carrying the lens
+         filter, below). Non-refract surfaces have NO ::before at all.
+       • ::after  = the pointer hotspot, owned by .glass-interactive.
+       • .glass-chrome--aside keeps blur on ::before (§3.3.1); its old ::after
+         ring is deleted — it now glints from its own background.
+     Never add a third pseudo owner. */
+
+  /* Hover-gated glint for repeated interactive fills (cards, tiles): the same
+     border-box glint layer as the always-on surfaces, but --glass-glint-hover
+     multiplies its opacity from 0 (rest) to 1 (hover) so at most one fill lights
+     at a time. Transparent border → on hover the lit edge IS the border (§4.35). */
+  .glass-fill.glass-interactive {
+    --glass-glint-hover: 0;
+    background-image: var(--glass-glint-layer);
+    background-clip: border-box;
+    background-origin: border-box;
+    background-attachment: var(--glass-glint-attach, fixed);
+    border-color: transparent;
+    transition:
+      background-color var(--site-transition-speed),
+      box-shadow var(--site-transition-speed),
+      transform 0.34s var(--ease-glass),
+      --glass-glint-hover 0.25s ease;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .glass-fill.glass-interactive:hover {
+      --glass-glint-hover: 1;
+    }
+  }
+  /* Small capsules take a thinner refraction bevel (per-component opt-in). */
+  .glass-bevel-sm {
+    --glass-bevel: 6px;
+  }
+
+  /* ── Edge lens refraction (§3) — hero/chrome only, ≤2 per page, never in
+     scroll containers. ::before is REFRACTION-ONLY (§4.35): the masked bevel band
+     carries the lens filter and paints NO glint. The ring geometry (mask / inset /
+     bevel) lives here now. Content that could reach the band sits at z-index ≥ 1.
+     Fallback (FF/Safari without url() in backdrop-filter): plain edge blur, or the
+     mirror branch below. Chromium: the lens displacement map (per-element size
+     from lib/glass-lens.ts, else the static #glass-lens). */
+  .glass-refract {
+    position: relative;
+  }
+  .glass-refract::before {
     content: '';
     position: absolute;
     inset: 0;
     z-index: 0;
     border-radius: inherit;
     pointer-events: none;
-    padding: var(--glass-bevel, 12px); /* ring thickness = glass edge bevel */
+    padding: var(--glass-bevel, 12px); /* band width = glass edge bevel */
     -webkit-mask:
       linear-gradient(#000 0 0) content-box exclude,
       linear-gradient(#000 0 0);
     mask:
       linear-gradient(#000 0 0) content-box exclude,
       linear-gradient(#000 0 0);
-    background-image: radial-gradient(
-      var(--glass-glint-size, 340px) circle at var(--light-x, 50%) var(--light-y, -8%),
-      var(--site-glass-glint, var(--site-glass-rim)) 0%,
-      color-mix(in srgb, var(--site-glass-glint, var(--site-glass-rim)) 40%, transparent) 38%,
-      transparent 70%
-    );
-    background-attachment: fixed;
-    mix-blend-mode: screen;
-    opacity: var(--glass-glint-opacity, 0.9);
-  }
-  /* Repeated cards pay only on hover — at most one card ring paints at a time. */
-  .glass-fill.glass-interactive::before {
-    opacity: 0;
-    transition: opacity 0.25s ease;
-  }
-  .glass-fill.glass-interactive:hover::before {
-    opacity: var(--glass-glint-opacity, 0.9);
-  }
-  /* Small capsules take a thinner bevel (per-component opt-in). */
-  .glass-bevel-sm {
-    --glass-bevel: 6px;
-  }
-  /* Touch / coarse pointers: background-attachment: fixed is unreliable on iOS
-     and there is no pointer to track — swap to a static element-local top glint
-     (the sun), same ring mask. */
-  @media not ((hover: hover) and (pointer: fine)) {
-    :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
-    .glass-chrome--aside::after {
-      background-image: linear-gradient(
-        180deg,
-        var(--site-glass-glint, var(--site-glass-rim)),
-        transparent 34%
-      );
-      background-attachment: scroll;
-    }
-  }
-
-  /* ── Edge lens refraction (§3) — hero/chrome only, ≤2 per page, never in
-     scroll containers. The ring geometry (mask/inset/bevel) is shared from the
-     optics ring above; this ONLY adds the backdrop bend to that same ::before.
-     Fallback (FF/Safari): a plain edge blur. Chromium: the lens displacement
-     map (per-element size from lib/glass-lens.ts, else the static #glass-lens). */
-  .glass-refract {
-    position: relative;
-  }
-  .glass-refract::before {
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
   }
@@ -892,12 +943,22 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
       -webkit-backdrop-filter: var(--glass-lens, url('#glass-lens')) blur(1px);
       backdrop-filter: var(--glass-lens, url('#glass-lens')) blur(1px);
     }
+    /* §3.7 reactive lens: pressing a refract surface deepens the bend (glass
+       flexing under the finger). Rides :active with the --ease-glass transform on
+       .glass-interactive; skipped under reduced motion — both the OS media query
+       AND the html.reduce-motion account flag. */
+    @media not (prefers-reduced-motion: reduce) {
+      html:not(.reduce-motion) .glass-refract:active::before {
+        -webkit-backdrop-filter: var(--glass-lens-press, var(--glass-lens, url('#glass-lens-press'))) blur(1px);
+        backdrop-filter: var(--glass-lens-press, var(--glass-lens, url('#glass-lens-press'))) blur(1px);
+      }
+    }
   }
   /* Chromatic dispersion (§3.4) — ≤1 prism element per page (3-pass ≈ 3× cost).
      Sanctioned: login card, /store featured tier, command palette, design lab.
      Chromium swaps the ::before lens to the 3-displacement prism filter; every
      engine also gets the static rim fringe as inset hairlines on the ::before
-     ring (masked to the bevel band), so ::after stays free for the hotspot. */
+     band, so ::after stays free for the hotspot. */
   .glass-refract--prism::before {
     box-shadow:
       inset 0 0 0 1px rgba(255, 80, 120, 0.14),
@@ -907,6 +968,37 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     .glass-refract--prism::before {
       -webkit-backdrop-filter: var(--glass-lens-prism, url('#glass-lens-prism')) blur(1px);
       backdrop-filter: var(--glass-lens-prism, url('#glass-lens-prism')) blur(1px);
+    }
+  }
+
+  /* ── §3.6 Universal mirror refraction — the non-Chromium branch. SVG url()
+     filters run in `filter` (not backdrop-filter) on Gecko + WebKit, so rather
+     than faking the bend with edge blur we paint a viewport-anchored COPY of the
+     aurora we own (--site-canvas) into the masked band and displace THAT with the
+     lens via `filter`. The band then genuinely bends "the background" — same
+     pixels, actually displaced. Parallax tracks --aurora-mx/my (the drift keyframe
+     is NOT mirrored: at a ≤14px band behind 1px blur the phase error is
+     imperceptible). Gated off touch (iOS degrades fixed attachment; a
+     misregistered aurora reads worse than plain blur). */
+  @supports (filter: url('#glass-lens')) and (not (backdrop-filter: url('#glass-lens'))) {
+    @media (hover: hover) and (pointer: fine) {
+      .glass-refract::before {
+        background-image: var(--site-canvas);
+        background-attachment: fixed;
+        background-repeat: no-repeat;
+        background-position: calc(50% + var(--aurora-mx, 0px)) calc(50% + var(--aurora-my, 0px));
+        background-size: 104vw 104vh; /* ≈ body::before oversize, viewport units */
+        filter: var(--glass-lens, url('#glass-lens')) blur(1px);
+        /* still frost whatever real content also passes beneath the band */
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+      }
+      /* §3.7 press swap, mirror branch: deepen the displacement inside `filter`. */
+      @media not (prefers-reduced-motion: reduce) {
+        html:not(.reduce-motion) .glass-refract:active::before {
+          filter: var(--glass-lens-press, var(--glass-lens, url('#glass-lens-press'))) blur(1px);
+        }
+      }
     }
   }
 
@@ -960,6 +1052,26 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
   }
 }
 
+/* Touch / coarse pointers (§4.35): background-attachment: fixed is unreliable on
+   iOS and there is no pointer to track — swap the whole glint layer to a static
+   element-anchored top-edge sun in the same border-box slot. Redefined on :root
+   (top-level, so it beats the base token) → every glass surface inherits it. */
+@media not ((hover: hover) and (pointer: fine)) {
+  :root {
+    --glass-glint-attach: scroll;
+    --glass-glint-layer: linear-gradient(
+      180deg,
+      color-mix(
+        in srgb,
+        var(--site-glass-glint, var(--site-glass-rim))
+          calc(var(--glass-glint-opacity, 0.9) * var(--glass-glint-hover, 1) * 100%),
+        transparent
+      ),
+      transparent 34%
+    );
+  }
+}
+
 /* The travelling light band for the ambient .glass-liquid sheen. Long dwells at
    each off-pane end keep the sweep occasional and calm rather than a strobe. */
 @keyframes glass-sheen {
@@ -1010,16 +1122,16 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
 .style-high-contrast
   :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
   background: var(--site-surface) !important;
+  /* §4.35: restore a real (2px, from --site-border-width) border — the single-
+     sheet glint edge is gone with the opaque surface, so shape needs a solid edge.
+     The `background` shorthand above already stripped the glint background layer. */
+  border-color: var(--site-border) !important;
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
-/* All optics dead: the optics rings (host ::before + aside ::after + card ::before),
-   the pointer hotspot, the refract lens, and the far aurora. */
-.style-high-contrast
-  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
+/* All remaining optics dead (§4.35 simplified pseudo set): the aside blur carrier,
+   the refract lens band, the pointer hotspot, and the far aurora. */
 .style-high-contrast .glass-chrome--aside::before,
-.style-high-contrast .glass-chrome--aside::after,
-.style-high-contrast .glass-fill.glass-interactive::before,
 .style-high-contrast .glass-refract::before,
 .style-high-contrast .glass-interactive::after,
 .style-high-contrast body::after {
@@ -1037,6 +1149,9 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
 @media (prefers-reduced-transparency: reduce) {
   :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
     background: var(--site-surface-opaque, var(--site-surface));
+    /* §4.35: opaque surfaces need real edges — restore the border the single-sheet
+       glint replaced (the shorthand above already dropped the glint layer). */
+    border-color: var(--site-border);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
@@ -1045,11 +1160,9 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-  /* Rings + lens + sheen off (surfaces are already opaque); pointer hotspot stays. */
-  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
+  /* Lens band + aside blur off (surfaces are opaque; the glint layer is already
+     gone with the shorthand); pointer hotspot stays. */
   .glass-chrome--aside::before,
-  .glass-chrome--aside::after,
-  .glass-fill.glass-interactive::before,
   .glass-refract::before {
     display: none;
   }
@@ -1061,6 +1174,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
 html.reduce-transparency
   :is(.glass-fill, .glass-pane, .glass-chrome, .glass-chrome--aside, .glass-overlay, .glass-inset) {
   background: var(--site-surface-opaque, var(--site-surface));
+  border-color: var(--site-border); /* §4.35: restore edges on opaque surfaces */
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
@@ -1069,11 +1183,7 @@ html.reduce-transparency .bg-site-bg {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-html.reduce-transparency
-  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
 html.reduce-transparency .glass-chrome--aside::before,
-html.reduce-transparency .glass-chrome--aside::after,
-html.reduce-transparency .glass-fill.glass-interactive::before,
 html.reduce-transparency .glass-refract::before {
   display: none;
 }
@@ -1084,9 +1194,23 @@ html.reduce-transparency .glass-liquid {
 
 /* Device tiering (§6.4/§10): low-end devices keep chrome/overlay blur (few, carry
    the identity) but demote L2 panes to flat tint, drop the pointer light, and
-   strip the lens (JS never generates the filters either). The optics rings STAY
-   but rest at the static sun (no fixed attachment); the far aurora + sheen go.
-   CSS-only demotion — no component branches. */
+   strip the lens — both branches: Chromium's backdrop-filter AND the §3.6 mirror
+   `filter` + aurora copy (JS never generates the filters either). The glint stays
+   but rests at the static element-anchored sun (no fixed attachment); the far
+   aurora + sheen go. CSS-only demotion — no component branches. */
+html.perf-lite {
+  --glass-glint-attach: scroll;
+  --glass-glint-layer: linear-gradient(
+    180deg,
+    color-mix(
+      in srgb,
+      var(--site-glass-glint, var(--site-glass-rim))
+        calc(var(--glass-glint-opacity, 0.9) * var(--glass-glint-hover, 1) * 100%),
+      transparent
+    ),
+    transparent 34%
+  );
+}
 html.perf-lite .glass-pane {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
@@ -1097,17 +1221,8 @@ html.perf-lite .glass-interactive::after {
 html.perf-lite .glass-refract::before {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
-}
-html.perf-lite
-  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
-html.perf-lite .glass-chrome--aside::after,
-html.perf-lite .glass-fill.glass-interactive::before {
-  background-image: linear-gradient(
-    180deg,
-    var(--site-glass-glint, var(--site-glass-rim)),
-    transparent 34%
-  );
-  background-attachment: scroll;
+  filter: none; /* strip the §3.6 mirror displacement */
+  background-image: none; /* and the aurora copy it displaced */
 }
 html.perf-lite body::after {
   display: none;
@@ -1119,10 +1234,13 @@ html.perf-lite body::after {
 @media (forced-colors: active) {
   :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset) {
     border: 1px solid;
+    /* §4.35: the glint rides the element background now — strip it (and pane noise)
+       so forced colors keep only the structural border. */
+    background-image: none;
   }
-  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
-  .glass-chrome--aside::after,
-  .glass-fill.glass-interactive::before,
+  /* Remaining pseudos (refract band + pointer hotspot) and the far aurora paint
+     nothing. */
+  .glass-refract::before,
   .glass-interactive::after,
   body::after {
     background: none;
