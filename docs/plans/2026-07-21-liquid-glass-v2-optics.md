@@ -895,6 +895,86 @@ backdrop-filter element (nesting a backdrop sampler inside a filtered
 subtree re-rasterizes it — keep the capsule underlay backdrop-free; the
 capsule's own material is plain accent tint + rim, which it already is).
 
+### 5.48 Liquid open transitions (amendment 2026-07-21e)
+
+**Owner request:** opening things — an RMHark, an image, a book, a blog post
+— should **liquidly expand** from the element you touched into the detail
+view, with the detail's content (comments, metadata, related items) loading
+in with staggered entrances. Mobile-first, glass aesthetics throughout.
+
+**Mechanism (extends what exists — do not reinvent):**
+`lib/view-transition.ts` already ships `runViewTransition()` (scoped VT,
+`.vt-active` guard, reduced-motion/no-support fallback to instant nav) and
+`postMediaVTName()` used by FeedList/RMHarkCard/PostDetail/PostImageGrid for
+the media morph. v2 generalizes:
+
+1. **Card-level morphs.** New helper in `lib/view-transition.ts`:
+
+```ts
+/** Shared-element name for any card→detail liquid open. kind: 'post' |
+ *  'image' | 'book' | 'album' | 'blog' | 'news' | 'build' | 'persona'. */
+export function liquidVTName(kind: string, id: string): string {
+  return `liquid-${kind}-${id}`;
+}
+```
+
+   The *clicked card's glass slab* (not just its media) gets
+   `viewTransitionName: liquidVTName(kind, id)` set **at click time only**
+   (VT names must be unique per document — never on every list item at rest;
+   set on pointerdown/click, clear after the transition, exactly how the
+   existing media morph manages it — copy that lifecycle). The detail page's
+   hero pane carries the same name statically.
+2. **Liquid timing for the morph.** In `globals.css`, groups named
+   `liquid-*` get the springier glass curve and slightly longer run than the
+   default 0.28s:
+
+```css
+::view-transition-group(*.liquid) { /* if class syntax unsupported, enumerate: */
+}
+/* VT names can't be wildcarded cross-browser — instead set the timing on the
+   group via the existing global ::view-transition-group(*) block ONLY while
+   html.vt-liquid is set (runViewTransition gains an optional {liquid: true}
+   that adds the class for the transition's lifetime): */
+html.vt-liquid::view-transition-group(*) {
+  animation-duration: 0.38s;
+  animation-timing-function: var(--ease-glass);
+}
+```
+
+   (The overshoot is subtle at 0.38s; the snapshot is a flat image so corner
+   radii are baked — acceptable, the bounds morph carries the effect.)
+3. **Content entrance after the morph.** Detail views mount their secondary
+   content (comments/replies, metadata rows, related lists) through the
+   existing `staggerContainer`/`staggerItem` + `fadeRise` variants
+   (`lib/motion.ts`): first ~8 items stagger at 30ms, the rest mount
+   instantly (no long tails on big threads). While loading, skeletons show;
+   when data arrives it staggers in. Under reduced motion `MotionConfig`
+   already collapses this.
+4. **Adopters (each = name the two ends + stagger the detail):**
+   - **RMHark → detail/thread** (`RMHarkCard` root ↔ `PostDetail`/
+     `ThreadView` hero card; replies stagger). The existing media-level morph
+     stays — card and media morph together (nested names are fine).
+   - **Image → lightbox** (`PostImageGrid` img ↔ the lightbox/viewer img —
+     locate the existing lightbox; if images open in a dialog rather than a
+     route, the same-document VT still works via `runViewTransition`).
+     Lightbox chrome (close, counters) fadeRise on `.glass-overlay`.
+   - **Book spine → reader** (`/library` `BookSpine`/`lib-book` cover ↔
+     `library.$slug` reader cover/hero). Reader internals stay out of scope —
+     name its existing hero element only.
+   - **Blog/news card → reader** (list cards ↔ `/blog/$slug`, `/news/$slug`
+     hero + title; article body fadeRise).
+   - **Album tile → album viewer**, **build tile → build detail**
+     (`builds_.$slug`), **persona tile → persona chat** — same pattern.
+5. **Mobile:** VT morphs run on mobile Chromium/Safari; keep the morph
+   duration ≤0.38s (long morphs feel laggy under touch); the stagger deltas
+   stay ≤30ms. No-VT browsers (older Firefox) get instant nav + the stagger
+   — still reads as a designed entrance.
+6. **Glass rules:** morph targets are glass slabs — during VT they're
+   snapshots, so backdrop blur freezes for the 0.38s (imperceptible; the
+   destination re-samples live on arrival). Never set a VT name on an
+   element inside a scroll container mid-scroll momentum (iOS jank) — set at
+   interaction time, which naturally satisfies this.
+
 ### 5.5 Dialog, toast, progress accents
 
 - **Dialog** (`components/ui/dialog.tsx` + its css): content enter re-tuned
