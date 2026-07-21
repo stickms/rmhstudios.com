@@ -1292,6 +1292,28 @@ first; the orchestrator sequences this).
 7. `pnpm exec tsc --noEmit` · `pnpm lint` · `pnpm exec vitest run` ·
    `pnpm build` all green; `pnpm i18n:extract` diff committed if strings
    changed.
+8. **Final hygiene sweep (last phase, mandatory).** Every amendment round
+   must leave zero superseded code behind — future agents read this repo as
+   ground truth. Standing rule for all phases: **when you replace a
+   mechanism, delete its predecessor in the same change** (no compatibility
+   shims, no "kept just in case" CSS). The closing sweep then verifies:
+   - No orphaned selectors/tokens/keyframes from earlier v2 rounds: check at
+     minimum the pre-§4.35 ring-glint selectors, `--glass-bevel*` (now
+     refraction-ring-only — delete if nothing consumes), old tab
+     underline/active styles obsoleted by §5.45 sheets (`FeedTabs`,
+     `creator-studio.css` `.cstudio-tabs .is-active` remnants,
+     `rmhladder.css` nav rules, `library.css` `lib-nav` positioning), the
+     reduce-transparency *toggle* UI leftovers after the §5.46 slider, and
+     any unused `--glass-user-*` / tilt / goo scaffolding.
+   - Every CSS custom property defined in `globals.css` under the glass
+     system has ≥1 consumer (grep); every `.glass-*` class has ≥1 usage or
+     a documented escape-hatch note.
+   - §12.6 greps still return zero; re-run the Appendix D checks.
+   - Docs match final reality: `design-language.md` §5–7,
+     `page-consistency.md` checklist, and a status note at the top of the
+     v1 plan doc pointing here. Superseded sections *within this doc* keep
+     their amendment pointers (they narrate why, which is useful history —
+     code carries none of it).
 
 ---
 
