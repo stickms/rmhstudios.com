@@ -342,6 +342,96 @@ sidebar rail, the login card, the command palette, one hero pane per flagship
 page (library, store, recap/wrapped). Never in scroll containers, never on
 list items (unchanged rule).
 
+### 3.6 Universal mirror refraction (the non-Chromium branch)
+
+**Amendment (2026-07-21b).** SVG filters in `backdrop-filter` remain
+Chromium-only (WebKit bug 245510 and the Firefox request are open, no ship
+signals). But true refraction only *needs* backdrop sampling when the
+backdrop is unknown — and after the §8 floating-shell restructure, what sits
+behind most refract surfaces is the **aurora canvas we own and can
+replicate**. So the fallback branch stops faking (edge blur) and starts
+*mirroring*:
+
+```css
+/* Non-Chromium engines with a fine pointer: paint a viewport-anchored COPY
+   of the aurora into the optics ring and displace the copy with a regular
+   `filter` (SVG url() filters in `filter` work in Gecko + WebKit). The ring
+   then genuinely bends "the background" — same pixels, actually displaced.
+   Gated off touch: iOS degrades background-attachment:fixed, and misregistered
+   aurora reads worse than plain blur. */
+@supports (filter: url('#glass-lens')) and (not (backdrop-filter: url('#glass-lens'))) {
+  @media (hover: hover) and (pointer: fine) {
+    .glass-refract::before {
+      background-image: var(--site-canvas);
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      /* Track the parallax the real canvas gets from useLiquidBackground —
+         background-position can read the same vars the body::before translate
+         uses. The drift keyframe's scale/rotate is NOT mirrored: at a ≤14px
+         band behind 1px blur, the low-frequency gradients make the phase
+         error imperceptible. */
+      background-position: calc(50% + var(--aurora-mx, 0px)) calc(50% + var(--aurora-my, 0px));
+      background-size: 104vw 104vh;      /* ≈ body::before oversize, viewport units */
+      filter: var(--glass-lens, url('#glass-lens')) blur(1px);
+      /* keep frosting whatever real content also passes beneath */
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+    }
+  }
+}
+```
+
+- **Registration accuracy is not the goal — plausibility is.** The copy sits
+  within a few percent of the real canvas (parallax tracked, drift not); the
+  displacement then bends it. At ring scale this is indistinguishable from
+  true backdrop refraction over the aurora.
+- `lib/glass-lens.ts` gate widens from
+  `CSS.supports('backdrop-filter','url(#x)')` to *either* property — the
+  per-element bucket vars now serve both branches (`--glass-lens` is consumed
+  by `backdrop-filter` on Chromium and by `filter` here).
+- **WebKit verification note:** `feDisplacementMap` via `filter: url()` on
+  HTML content has a history of WebKit rendering bugs (software paths, DPR
+  scaling). QA must eyeball desktop Safari; if it misrenders, the escape
+  hatch is *baking*: canvas + lens are both static per (theme × bucket), so
+  the pre-refracted band can be generated once (offscreen canvas → data URI)
+  and painted as a plain background image — refraction as texture, zero
+  filters. Implement only if live Safari testing fails.
+- High-contrast / reduced-transparency / perf-lite / forced-colors: the ring
+  pseudo is already killed by the §10 blocks — no new gates needed. Touch
+  devices keep the static-sun glint ring with plain edge blur (unchanged).
+
+### 3.7 Reactive lens states (press-flex refraction)
+
+The lens gets discrete intensity states — no per-frame filter animation
+(continuous backdrop re-filtering is compositor poison), just a **state swap
+that rides the existing spring press**:
+
+- `lib/glass-lens.ts` additionally emits a **press variant per live bucket**:
+  same map, displacement scale ×1.6, id suffix `-press`, exposed as a second
+  var `--glass-lens-press` on the element. (Bucket LRU cap counts pairs;
+  cap stays ≤8 filter *pairs*.)
+- CSS (both branches):
+
+```css
+/* Pressing a refract surface deepens the bend — glass flexing under the
+   finger. Rides :active with the --ease-glass transform already on
+   .glass-interactive; reduced motion skips the swap. */
+@media not (prefers-reduced-motion: reduce) {
+  html:not(.reduce-motion) .glass-refract:active::before {
+    -webkit-backdrop-filter: var(--glass-lens-press, var(--glass-lens, url('#glass-lens-press'))) blur(1px);
+    backdrop-filter: var(--glass-lens-press, var(--glass-lens, url('#glass-lens-press'))) blur(1px);
+  }
+}
+/* mirror branch equivalent swaps the `filter` inside the §3.6 block */
+```
+
+- A static `#glass-lens-press` (256×256, scale ×1.6) joins `GlassFilter` as
+  the pre-JS default, so the press state exists before hydration.
+- **Design lab:** an intensity playground — rest/hover/press 3-way toggle on
+  a demo pane plus a "press me" pane wired to the real `:active` path. This
+  is where the discrete-state mechanics are reviewed before anyone asks for
+  continuous animation (which stays banned by §9).
+
 ---
 
 ## 4. Reflection — one light, every surface answers
@@ -417,6 +507,72 @@ Interaction & fallback rules:
 | `.glass-pane`, `.glass-overlay`, `.glass-chrome` bars, `.glass-chrome--aside` (via `::after`) | Always on. These are few per page (≤8 by budget) — always-on is affordable. |
 | `.glass-fill.glass-interactive` (cards, admin tiles, listing tiles, shop items) | Hover-only (opacity fade-in). |
 | `.glass-inset`, plain `.glass-fill`, `.glass-scrim` | **No ring.** Wells are holes, not slabs; plain fills are the unlimited cheap tier and must stay pseudo-free. |
+
+### 4.35 Single-sheet edge rework (amendment 2026-07-21b — supersedes the ring-flood glint)
+
+**Owner feedback:** the shipped glint paints the entire `--glass-bevel` band,
+and on light themes (Sepia/Light, where `--site-glass-rim` is near-opaque
+cream/white) that band + the 1px `--site-border` + the rim insets stack into
+a **thick outlined box**. Glass should read as **a single sheet whose edge
+catches light** — not a frame.
+
+The fix relocates the specular from the 12px ring-flood to a **hairline of
+light living in the border ring itself**, and makes the structural border
+disappear into it:
+
+1. **Glint = border-box background layer on the element** (no pseudo). Glass
+   surfaces set `border-color: transparent` and paint layered backgrounds:
+
+```css
+.glass-pane {
+  border: var(--site-border-width) solid transparent;
+  background-color: var(--site-glass-tint);      /* fills to border-box — the
+                                                    edge is the same material */
+  background-image:
+    var(--site-glass-noise),                     /* padding-box */
+    radial-gradient(                             /* the hairline specular */
+      var(--glass-glint-size, 340px) circle
+        at var(--light-x, 50%) var(--light-y, -8%),
+      color-mix(in srgb, var(--site-glass-glint, var(--site-glass-rim))
+        calc(var(--glass-glint-opacity, 0.9) * 100%), transparent) 0%,
+      transparent 70%);
+  background-clip: padding-box, border-box;      /* glint exists ONLY in the
+                                                    1px border ring */
+  background-attachment: scroll, fixed;          /* viewport-anchored light */
+  background-origin: padding-box, border-box;
+}
+```
+
+   Same pattern for `.glass-overlay`, `.glass-chrome`, `.glass-chrome--aside`
+   (whose `::after` ring is **deleted** — the aside carries glint in its own
+   background now), and hover-gated for `.glass-fill.glass-interactive`
+   (swap the glint layer in on `:hover`; an instant swap is acceptable, or
+   register `@property --glass-glint-o` for a fade where supported).
+2. **`::before` returns to refraction-only.** The masked bevel band keeps the
+   lens `backdrop-filter`/`filter` (§3.3/§3.6) but paints **no** glint.
+   Non-refract surfaces need **no `::before` at all** anymore — delete the
+   always-on ring rules (cheaper: fewer painted layers, and the §2 pseudo
+   contract simplifies to: `::before` = refraction, `::after` = pointer
+   light, aside keeps blur on `::before`).
+3. **Structural borders on glass go transparent** — the lit hairline *is*
+   the edge. Shape at rest comes from tint contrast + the existing soft rim
+   insets in `--site-shadow*` (keep those; they are 1px and subtle).
+   `.glass-inset` wells keep a border at half strength
+   (`color-mix(in srgb, var(--site-border) 50%, transparent)`) so recessed
+   fields still read as carved into the sheet, not outlined on it.
+4. **Per-theme glint level:** light themes drop `--glass-glint-opacity` to
+   ~0.5 (`.style-light`, `.style-sepia`) — bright rims on bright frost need
+   less light to read. Dark themes keep 0.9.
+5. **Degradations:** high-contrast and reduced-transparency **restore solid
+   borders** (`border-color: var(--site-border)` in their §10 blocks —
+   opaque surfaces need real edges; high-contrast keeps its 2px). The
+   forced-colors structural-border rule stays. Touch keeps a static top-edge
+   glint (element-anchored linear-gradient in the same border-box layer).
+
+**Acceptance (matches the owner's screenshot complaint):** the Sepia
+composer must render as one soft sheet — no pale band around the pane, no
+double outline between pane and text well; a ≤1px light hairline on the lit
+edge is the only edge treatment visible.
 
 ### 4.4 The scene light source (JS) — `useGlassLight` v2
 
