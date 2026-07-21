@@ -2,15 +2,11 @@
   "badge-app": "Aplikacja",
   "badge-game": "Gra",
   "build-details": "Szczegóły budowy",
-  "build-source-label": "Źródło budowy",
-  "details-for": "Szczegóły dla {{title}}",
   "empty-curated": "Brak budów pasujących do tego wyszukiwania.",
   "empty-user-no-builds": "Brak jeszcze budów użytkowników — bądź pierwszym, który doda.",
   "empty-user-search": "Brak budów użytkowników pasujących do tego wyszukiwania.",
   "loading": "Ładowanie…",
-  "open-build": "Otwórz {{title}}",
-  "open-menu": "Otwórz menu",
-  "page-title": "Budowy",
+  "open": "Open",
   "search-builds-label": "Szukaj budów",
   "search-builds-placeholder": "Szukaj budów...",
   "search-user-builds-placeholder": "Szukaj budów użytkowników...",
@@ -21,6 +17,6 @@
   "sort-name-az": "Nazwa (A–Z)",
   "sort-recent": "Najnowsze",
   "submit": "Prześlij",
-  "tab-curated": "Wyselekcjonowane",
-  "tab-user-builds": "Budowy użytkowników"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

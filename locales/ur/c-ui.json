@@ -5,5 +5,12 @@
   "close": "بند کریں",
   "confirm": "تصدیق کریں",
   "copied": "کاپی ہو گیا",
-  "copy": "کاپی کریں"
+  "copy": "کاپی کریں",
+  "first-page": "First page",
+  "last-page": "Last page",
+  "move-down": "Move down{{name}}",
+  "move-up": "Move up{{name}}",
+  "next-page": "Next page",
+  "page-of": "Page {{page}} of {{total}}",
+  "prev-page": "Previous page"
 }

@@ -2,15 +2,11 @@
   "badge-app": "অ্যাপ",
   "badge-game": "গেম",
   "build-details": "বিল্ড বিবরণ",
-  "build-source-label": "বিল্ড উৎস",
-  "details-for": "{{title}}-এর বিবরণ",
   "empty-curated": "ওই অনুসন্ধানের সাথে মেলে এমন কোনো বিল্ড নেই।",
   "empty-user-no-builds": "এখনও কোনো ব্যবহারকারী বিল্ড নেই — প্রথমটি জমা দিন।",
   "empty-user-search": "ওই অনুসন্ধানের সাথে মেলে এমন কোনো ব্যবহারকারী বিল্ড নেই।",
   "loading": "লোড হচ্ছে…",
-  "open-build": "{{title}} খুলুন",
-  "open-menu": "মেনু খুলুন",
-  "page-title": "বিল্ডসমূহ",
+  "open": "Open",
   "search-builds-label": "বিল্ড অনুসন্ধান",
   "search-builds-placeholder": "বিল্ড অনুসন্ধান করুন...",
   "search-user-builds-placeholder": "ব্যবহারকারী বিল্ড অনুসন্ধান করুন...",
@@ -21,6 +17,6 @@
   "sort-name-az": "নাম (A–Z)",
   "sort-recent": "সাম্প্রতিক",
   "submit": "জমা দিন",
-  "tab-curated": "কিউরেটেড",
-  "tab-user-builds": "ব্যবহারকারী বিল্ড"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

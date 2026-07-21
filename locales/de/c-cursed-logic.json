@@ -126,7 +126,7 @@
   "round-flow-heading": "Rundenablauf",
   "round-flow-modifier": "— Nach der Haltung gewürfelt; gilt nur für diese Runde.",
   "round-flow-reveal": "— Der Zug des Protokolls, dann deiner, dann die Auflösung.",
-  "round-flow-stance": "— Jede Runde erhältst du 3 zufällige Haltungen aus einem Pool (z. B. Schlag +1, Block negiert Chip, Vorbereitung kann nicht fehlschlagen). Wähle eine vor dem Modifikator.",
+  "round-flow-stance": "— Jede Runde erhältst du 3 zufällige Haltungen aus einem Pool (z.\u202fB. Schlag +1, Block negiert Chip, Vorbereitung kann nicht fehlschlagen). Wähle eine vor dem Modifikator.",
   "run-modifiers-heading": "Lauf-Modifikatoren (nächster Lauf)",
   "shaken": "Erschüttert",
   "shaken-desc": "(Protokoll) — Es hat in deinen Block geschlagen; es erhält extra Chip, wenn es als Nächstes blockt.",

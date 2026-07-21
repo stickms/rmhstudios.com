@@ -4,6 +4,7 @@
   "back-to-admin-label": "관리자로 돌아가기",
   "changes-now-live": "변경 사항이 적용되었습니다.",
   "content-label": "내용",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "날짜",
   "delete-confirm": "\"{{title}}\"을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
   "delete-failed": "게시물 삭제 실패",
@@ -18,9 +19,9 @@
   "generic-error": "오류가 발생했습니다",
   "hide-preview": "미리보기 숨기기",
   "image-url-label": "이미지 URL",
-  "initializing-editor": "편집기 초기화 중...",
   "live-preview": "실시간 미리보기",
-  "loading-editor": "편집기 로딩 중...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "메타데이터",
   "new-blog-post": "새 블로그 게시물",
   "post-created-successfully": "게시물이 성공적으로 생성되었습니다!",
@@ -37,5 +38,6 @@
   "title-label": "제목",
   "title-placeholder": "내 멋진 게시물",
   "untitled-post": "제목 없는 게시물",
-  "update-post": "게시물 업데이트"
+  "update-post": "게시물 업데이트",
+  "upload-markdown": "Upload .md"
 }

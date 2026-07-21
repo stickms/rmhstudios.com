@@ -1,18 +1,5 @@
 {
-  "back-home": "Về Trang Chủ",
   "controls-hint": "WASD/← → Di chuyển • Space Nhảy • Shift Lướt • E Tương tác • M Menu",
-  "controls-interact": "E — Tương tác",
-  "controls-jump": "Space — Nhảy",
-  "controls-menu": "M — Menu",
-  "controls-move": "WASD / Phím Mũi Tên — Di chuyển",
-  "debt": "NỢ",
   "e-continue": "[E] Tiếp tục",
-  "loading": "ĐANG TẢI...",
-  "login-to-play": "Đăng nhập để chơi",
-  "menu-title": "Menu",
-  "music-volume": "Âm lượng nhạc",
-  "resume": "Tiếp tục [M]",
-  "sign-in-prompt": "Bạn cần đăng nhập trước khi vào sòng bạc. Các khoản nợ của bạn sẽ được ghi lại.",
-  "subtitle": "Bàn đang chờ",
-  "title": "House Always Wins"
+  "loading": "ĐANG TẢI..."
 }

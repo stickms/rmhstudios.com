@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "रांगेत जोडा",
   "artist": "कलाकार",
   "correct-title": "बरोबर — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "होस्ट",
   "join-a-room": "खोलीत सामील व्हा",
   "join-room": "खोलीत सामील व्हा",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} श्रोता",
   "listener-count_other": "{{count}} श्रोते",
+  "loading": "Loading…",
   "loading-rooms": "खोल्या लोड होत आहेत...",
   "mini-close": "थांबवा आणि बंद करा",
   "mini-open": "प्लेयर उघडा",
@@ -20,14 +23,17 @@
   "mini-play": "प्ले करा",
   "mini-player": "संगीत मिनी-प्लेयर",
   "new": "नवीन",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "अद्याप कोडी नाहीत.",
   "no-results": "कोणतेही परिणाम सापडले नाहीत",
   "no-track-playing": "कोणतेही ट्रॅक वाजत नाही",
   "not-configured": "या सर्व्हरवर संगीत शोध कॉन्फिगर केलेला नाही.",
   "not-quite": "बरोबर नाही — दुसरा संकेत वापरून पहा किंवा अंदाज लावा.",
   "open-player": "प्लेअर उघडा",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "सार्वजनिक खोल्या",
   "puzzles": "कोडी",
+  "queue-action": "Queue",
   "queue-label": "रांग",
   "reveal-another-hint_one": "दुसरा संकेत उघड करा ({{count}} शिल्लक)",
   "reveal-another-hint_other": "दुसरा संकेत उघड करा ({{count}} शिल्लक)",
@@ -40,5 +46,6 @@
   "searching": "शोधत आहे...",
   "sign-in-to-guess": "अंदाज लावण्यासाठी साइन इन करा.",
   "solves-plays": "{{solves}} सोडवले · {{plays}} वाजवले",
-  "song-title-placeholder": "गाण्याचे शीर्षक..."
+  "song-title-placeholder": "गाण्याचे शीर्षक...",
+  "your-playlists": "Your playlists"
 }

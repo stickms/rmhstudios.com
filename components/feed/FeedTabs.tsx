@@ -27,23 +27,24 @@ interface FeedTabsProps {
 export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
   const { filter, setFilter } = useFeedStore();
 
+  // §5.45: the tab strips are standalone glass sheets BELOW the header capsule
+  // (FeedColumn positions them), separated by the standard gutter. The For You /
+  // Following selector shows at every breakpoint now (the desktop copy that used
+  // to live inline in the header is gone). Each LiquidTabs is its own pill sheet.
   return (
-    <div>
-      {/* Feed / Friends mode selector — hidden on md+ where FeedColumn already
-          renders the For You / Following tabs inline in the header (avoids
-          showing the same toggle twice when filters are open). The flowing
-          capsule carries the ambient sheen (counts against the ≤3/page). */}
-      <div className="md:hidden px-3 py-2">
-        <LiquidTabs
-          tabs={modeTabs}
-          value={mode}
-          onChange={(id) => onModeChange(id as 'feed' | 'friends')}
-        />
-      </div>
+    <div className="space-y-3">
+      {/* Feed / Friends mode selector. The flowing capsule carries the ambient
+          sheen (counts against the ≤3/page). */}
+      <LiquidTabs
+        tabs={modeTabs}
+        value={mode}
+        onChange={(id) => onModeChange(id as 'feed' | 'friends')}
+      />
 
-      {/* Content type filters (only in feed mode) */}
+      {/* Content type filters (only in feed mode). w-fit pill scrolls inside its
+          own overflow track when it exceeds the column width. */}
       {mode === 'feed' && (
-        <div className="overflow-x-auto scrollbar-none px-3 py-2">
+        <div className="overflow-x-auto scrollbar-none">
           <LiquidTabs
             tabs={contentTabs}
             value={filter}

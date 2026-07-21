@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Добавить в очередь",
   "artist": "Исполнитель",
   "correct-title": "Верно — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "ВЕДУЩИЙ",
   "join-a-room": "Присоединиться к комнате",
   "join-room": "Присоединиться",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} слушатель",
   "listener-count_other": "{{count}} слушателей",
+  "loading": "Loading…",
   "loading-rooms": "Загрузка комнат...",
   "mini-close": "Остановить и закрыть",
   "mini-open": "Открыть плеер",
@@ -20,14 +23,17 @@
   "mini-play": "Воспроизвести",
   "mini-player": "Мини-плеер музыки",
   "new": "Новое",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Пока нет головоломок.",
   "no-results": "Ничего не найдено",
   "no-track-playing": "Трек не играет",
   "not-configured": "Поиск музыки не настроен на этом сервере.",
   "not-quite": "Не совсем — попробуйте другую подсказку или догадку.",
   "open-player": "Открыть плеер",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Публичные комнаты",
   "puzzles": "Головоломки",
+  "queue-action": "Queue",
   "queue-label": "Очередь",
   "reveal-another-hint_one": "Показать ещё подсказку (осталось {{count}})",
   "reveal-another-hint_other": "Показать ещё подсказку (осталось {{count}})",
@@ -40,5 +46,6 @@
   "searching": "Поиск...",
   "sign-in-to-guess": "Войдите, чтобы угадывать.",
   "solves-plays": "{{solves}} решено · {{plays}} прослушиваний",
-  "song-title-placeholder": "Название песни..."
+  "song-title-placeholder": "Название песни...",
+  "your-playlists": "Your playlists"
 }

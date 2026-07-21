@@ -181,21 +181,24 @@ role, not by looks — the tier decides blur cost (see the redesign doc §6 budg
 | `.glass-inset`                               | —               | Recessed wells: inputs, search fields.                                                                                                                                     |
 | `.glass-scrim`                               | —               | Dialog/drawer backdrops.                                                                                                                                                   |
 | `.glass-interactive` + `data-glass-light=""` | modifier        | Hover tint-raise, springy press flex (`--ease-glass`), pointer-tracked diffuse highlight (`::after`), and — on `.glass-fill` — the hover-only specular rim glint.          |
-| `.glass-refract` + `data-glass-lens`         | modifier        | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, **≤2 per page**, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`, Chromium-only enhancement). Not compatible with `.glass-chrome--aside` (its pseudos are the blur carrier + glint ring). |
+| `.glass-refract` + `data-glass-lens`         | modifier        | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, **≤2 per page**, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`; Chromium bends the backdrop, Gecko/WebKit displace a mirrored aurora copy — §3.6). Pressing deepens the bend (`:active`, ×1.6, §3.7). Not compatible with `.glass-chrome--aside` (its `::before` is the blur carrier, so the lens band has nowhere to live). |
 | `.glass-refract--prism`                      | modifier        | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. **≤1 per page**; sanctioned users: login card, command palette, `/store` featured tier, design lab. |
 | `.glass-liquid` (or `<GlassPane liquid>`)    | modifier        | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, **≤3 per page**, never on list items. |
 | `.glass-sheen-hover`                         | modifier        | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in). Unlimited.                                                                     |
 | `.glass-bevel-sm`                            | modifier        | Narrow 6px optics ring for small capsules/discs (e.g. BackToTop).                                                                                                          |
 | `.glass-opaque`                              | —               | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                      |
 
-**The rim glint comes free** (v2): `.glass-pane`/`.glass-overlay`/`.glass-chrome`
-carry an always-on specular ring (`::before`; `--aside` variant uses `::after`)
-whose bright segment tracks the global scene light (`--light-x/--light-y`,
-written by `useGlassLight`; absent = a static top sun). `.glass-fill` +
-`.glass-interactive` glints on hover only. Wells (`.glass-inset`), scrims, and
-plain fills carry no ring. Never add a third pseudo-element owner to a glass
-class — `::before` is the optics ring (or the aside blur), `::after` is the
-pointer light (or the aside ring).
+**The rim glint comes free** (v2, §4.35): `.glass-pane`/`.glass-overlay`/`.glass-chrome`
+(and the `--aside` variant) paint an always-on specular as a **border-box
+background layer** — it lives in the 1px border ring while the structural border
+itself goes transparent, so glass reads as one lit sheet, not an outlined frame.
+Its bright segment tracks the global scene light (`--light-x/--light-y`, written
+by `useGlassLight`; absent = a static top sun; touch/perf-lite fall back to an
+element-anchored top-edge sun). `.glass-fill` + `.glass-interactive` glints on
+hover only (its `--glass-glint-hover` multiplier fades 0→1). Wells
+(`.glass-inset`, half-strength border), scrims, and plain fills carry no glint.
+Pseudo contract: `::before` is refraction-only (the masked lens band) or the aside
+blur; `::after` is the pointer light — never add a third owner.
 
 Rules: never put a backdrop tier (`.glass-pane/chrome/overlay`) on an ancestor of
 a `position:fixed` element (`backdrop-filter` creates a containing block — use

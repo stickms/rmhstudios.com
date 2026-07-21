@@ -2,15 +2,11 @@
   "badge-app": "App",
   "badge-game": "Game",
   "build-details": "Build details",
-  "build-source-label": "Build source",
-  "details-for": "Details for {{title}}",
   "empty-curated": "No builds match that search.",
   "empty-user-no-builds": "No user builds yet — be the first to submit one.",
   "empty-user-search": "No user builds match that search.",
   "loading": "Loading…",
-  "open-build": "Open {{title}}",
-  "open-menu": "Open menu",
-  "page-title": "Builds",
+  "open": "Open",
   "search-builds-label": "Search builds",
   "search-builds-placeholder": "Search builds...",
   "search-user-builds-placeholder": "Search user builds...",
@@ -21,6 +17,6 @@
   "sort-name-az": "Name (A–Z)",
   "sort-recent": "Recent",
   "submit": "Submit",
-  "tab-curated": "Curated",
-  "tab-user-builds": "User builds"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

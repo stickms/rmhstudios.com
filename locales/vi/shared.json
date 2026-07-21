@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "Trò chuyện...",
-  "error-boundary-message": "Đã xảy ra lỗi không mong muốn.",
-  "error-boundary-retry": "Thử lại",
-  "error-boundary-title": "Đã xảy ra lỗi",
   "failed-to-load-media": "Không tải được phương tiện",
   "game-crashed": "Trò chơi gặp sự cố",
   "game-crashed-named": "{{gameName}} gặp sự cố",

@@ -1,6 +1,8 @@
 {
   "add": "追加",
+  "add-gif-aria": "Add a GIF",
   "add-to-favorites": "お気に入りに追加",
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "キューに追加",
   "add-video": "動画を追加",
   "add-video-to-queue": "動画をキューに追加して開始",

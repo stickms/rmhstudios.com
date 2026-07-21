@@ -2,15 +2,11 @@
   "badge-app": "Aplikace",
   "badge-game": "Hra",
   "build-details": "Detaily buildu",
-  "build-source-label": "Zdroj sestavení",
-  "details-for": "Podrobnosti pro {{title}}",
   "empty-curated": "Žádné sestavení neodpovídá tomuto vyhledávání.",
   "empty-user-no-builds": "Zatím žádné uživatelské sestavení — buďte první, kdo nějaké přidá.",
   "empty-user-search": "Tomuto vyhledávání neodpovídají žádné uživatelské sestavení.",
   "loading": "Načítání…",
-  "open-build": "Otevřít {{title}}",
-  "open-menu": "Otevřít menu",
-  "page-title": "Sestavení",
+  "open": "Open",
   "search-builds-label": "Hledat sestavení",
   "search-builds-placeholder": "Hledat sestavení...",
   "search-user-builds-placeholder": "Hledat uživatelská sestavení...",
@@ -21,6 +17,6 @@
   "sort-name-az": "Název (A–Z)",
   "sort-recent": "Nejnovější",
   "submit": "Odeslat",
-  "tab-curated": "Kurátorské",
-  "tab-user-builds": "Uživatelská sestavení"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

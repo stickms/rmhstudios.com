@@ -13,8 +13,9 @@ overrides:
   srvx: '>=0.11.13'
   '@hono/node-server': '>=1.19.13'
   dompurify: '>=3.4.9'
-  js-yaml@<3.15.0: '>=3.15.0'
+  js-yaml@<3.15.0: '>=4.3.0 <5'
   esbuild@>=0.27.3 <0.28.1: '>=0.28.1'
+  js-yaml@>=4.0.0 <4.3.0: '>=4.3.0 <5'
 
 importers:
 
@@ -5058,8 +5059,8 @@ packages:
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
-  js-yaml@4.2.0:
-    resolution: {integrity: sha512-ePWsvanv0DWuDRsW8dnt+R4jQ31SCRCQ7hhNcPXZPsoBZiemuZNYGf7adZdqX2D86j6rvKp3RpCxVTSb8WQlOw==}
+  js-yaml@4.3.0:
+    resolution: {integrity: sha512-1td788aAnnZ5qs7V2QIRl1owjtYpbKt749Y3xauqQgwIIGF/xXWz1wMTEBx5O3LK3lXLVuqXPdPxj2BoFHaW9Q==}
     hasBin: true
 
   jsesc@3.1.0:
@@ -7952,7 +7953,7 @@ snapshots:
       globals: 14.0.0
       ignore: 5.3.2
       import-fresh: 3.3.1
-      js-yaml: 4.2.0
+      js-yaml: 4.3.0
       minimatch: 3.1.5
       strip-json-comments: 3.1.1
     transitivePeerDependencies:
@@ -11502,7 +11503,7 @@ snapshots:
 
   gray-matter@4.0.3:
     dependencies:
-      js-yaml: 4.2.0
+      js-yaml: 4.3.0
       kind-of: 6.0.3
       section-matter: 1.0.0
       strip-bom-string: 1.0.0
@@ -11645,7 +11646,7 @@ snapshots:
       fs-extra: 11.3.5
       gulp-sort: 2.0.0
       i18next: 24.2.3(typescript@5.9.3)
-      js-yaml: 4.2.0
+      js-yaml: 4.3.0
       lilconfig: 3.1.3
       rsvp: 4.8.5
       sort-keys: 5.1.0
@@ -11901,7 +11902,7 @@ snapshots:
 
   js-tokens@4.0.0: {}
 
-  js-yaml@4.2.0:
+  js-yaml@4.3.0:
     dependencies:
       argparse: 2.0.1
 
@@ -14195,7 +14196,7 @@ snapshots:
       '@oozcitak/dom': 2.0.2
       '@oozcitak/infra': 2.0.2
       '@oozcitak/util': 10.0.0
-      js-yaml: 4.2.0
+      js-yaml: 4.3.0
 
   xmlbuilder@11.0.1: {}
 

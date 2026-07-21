@@ -2,15 +2,11 @@
   "badge-app": "Додаток",
   "badge-game": "Гра",
   "build-details": "Деталі збірки",
-  "build-source-label": "Джерело збірки",
-  "details-for": "Деталі для {{title}}",
   "empty-curated": "Жодних збірок не знайдено за цим пошуком.",
   "empty-user-no-builds": "Користувацьких збірок ще немає — стань першим, хто додасть.",
   "empty-user-search": "Жодних користувацьких збірок не знайдено за цим пошуком.",
   "loading": "Завантаження…",
-  "open-build": "Відкрити {{title}}",
-  "open-menu": "Відкрити меню",
-  "page-title": "Збірки",
+  "open": "Open",
   "search-builds-label": "Пошук збірок",
   "search-builds-placeholder": "Пошук збірок...",
   "search-user-builds-placeholder": "Пошук користувацьких збірок...",
@@ -21,6 +17,6 @@
   "sort-name-az": "Назва (А–Я)",
   "sort-recent": "Останні",
   "submit": "Надіслати",
-  "tab-curated": "Кураторські",
-  "tab-user-builds": "Збірки користувачів"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

@@ -4,6 +4,7 @@
   "back-to-admin-label": "Voltar ao Admin",
   "changes-now-live": "Suas alterações agora estão no ar.",
   "content-label": "Conteúdo",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "Data",
   "delete-confirm": "Tem certeza de que deseja excluir \"{{title}}\"? Esta ação não pode ser desfeita.",
   "delete-failed": "Falha ao excluir postagem",
@@ -18,9 +19,9 @@
   "generic-error": "Ocorreu um erro",
   "hide-preview": "Ocultar Pré-visualização",
   "image-url-label": "URL da Imagem",
-  "initializing-editor": "Inicializando Editor...",
   "live-preview": "Pré-visualização ao Vivo",
-  "loading-editor": "Carregando Editor...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "Metadados",
   "new-blog-post": "Nova Postagem no Blog",
   "post-created-successfully": "Postagem criada com sucesso!",
@@ -37,5 +38,6 @@
   "title-label": "Título",
   "title-placeholder": "Minha Postagem Incrível",
   "untitled-post": "Postagem sem Título",
-  "update-post": "Atualizar Postagem"
+  "update-post": "Atualizar Postagem",
+  "upload-markdown": "Upload .md"
 }

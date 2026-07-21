@@ -64,20 +64,26 @@
    accept horizontal touch scrolling on mobile Safari, so the tabs would clip
    off-screen with no way to reach them. Decoupling fixes that. */
 .cstudio-tabs {
+  /* §5.45: a standalone L1 glass sheet (pill) below the "Make anything." hero,
+     not a full-width chrome bar. Stays sticky, but at a top offset that clears
+     the floating header/mobile bar so it reads as its own floating sheet. The
+     inner __scroll keeps the horizontal overflow decoupled from the sticky
+     element (mobile-Safari sticky+overflow bug — see the note above). */
   position: sticky;
-  top: 0;
+  top: 12px;
   z-index: 20;
-  margin-top: clamp(20px, 4vw, 32px);
-  /* L3 glass-chrome — the persistent tab strip while scrolling the gallery. */
-  background: color-mix(in srgb, var(--site-bg, #0c0c0d) 32%, transparent);
-  -webkit-backdrop-filter: blur(24px) saturate(170%);
-  backdrop-filter: blur(24px) saturate(170%);
-  border-bottom: 1px solid var(--site-border, #232328);
+  width: fit-content;
+  max-width: calc(100% - 2 * var(--studio-gutter));
+  margin: clamp(20px, 4vw, 32px) var(--studio-gutter) 0;
+  background: var(--site-glass-tint);
+  border: 1px solid var(--site-border);
+  border-radius: 9999px;
+  box-shadow: var(--site-shadow-sm);
 }
 .cstudio-tabs__scroll {
   display: flex;
   gap: 4px;
-  padding: 8px var(--studio-gutter);
+  padding: 4px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   -webkit-overflow-scrolling: touch;

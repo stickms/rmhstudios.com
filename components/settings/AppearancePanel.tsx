@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { useThemeStore } from '@/stores/themeStore';
 import { FONT_SCALES, HEX_RE, type FontScale } from '@/lib/appearance/prefs';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
+import { GlassClarityControl } from '@/components/settings/GlassClarityControl';
 
 async function persist(body: Record<string, unknown>) {
   await fetch('/api/preferences/appearance', {
@@ -54,10 +55,6 @@ export function AppearancePanel() {
   function setReduceMotion(value: boolean) {
     store.setReduceMotion(value);
     void persist({ reduceMotion: value });
-  }
-  function setReduceTransparency(value: boolean) {
-    store.setReduceTransparency(value);
-    void persist({ reduceTransparency: value });
   }
   function applyCustomAccent(hex: string) {
     if (!HEX_RE.test(hex)) return;
@@ -179,14 +176,12 @@ export function AppearancePanel() {
           checked={store.reduceMotion}
           onChange={setReduceMotion}
         />
-        <ToggleRow
-          label={t('reduce-transparency', { defaultValue: 'Reduce transparency' })}
-          description={t('reduce-transparency-desc', {
-            defaultValue: 'Collapse the glass to solid surfaces.',
-          })}
-          checked={store.reduceTransparency}
-          onChange={setReduceTransparency}
-        />
+      </Section>
+
+      {/* Glass clarity (§5.46) — the frosted↔clear slider (stop 0 Opaque is the
+          old reduce-transparency behavior). Self-contained: applies + persists. */}
+      <Section title={t('glass-section', { defaultValue: 'Glass' })}>
+        <GlassClarityControl />
       </Section>
     </div>
   );

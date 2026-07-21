@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "채팅...",
-  "error-boundary-message": "예기치 않은 오류가 발생했습니다.",
-  "error-boundary-retry": "다시 시도",
-  "error-boundary-title": "문제가 발생했습니다",
   "failed-to-load-media": "미디어를 불러오지 못했습니다",
   "game-crashed": "게임이 충돌했습니다",
   "game-crashed-named": "{{gameName}}이(가) 충돌했습니다",

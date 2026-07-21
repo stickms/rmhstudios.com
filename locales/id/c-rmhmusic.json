@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Tambahkan ke antrean",
   "artist": "Artis",
   "correct-title": "Benar — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "HOST",
   "join-a-room": "Gabung Ruangan",
   "join-room": "Gabung Ruangan",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} pendengar",
   "listener-count_other": "{{count}} pendengar",
+  "loading": "Loading…",
   "loading-rooms": "Memuat ruangan...",
   "mini-close": "Hentikan dan tutup",
   "mini-open": "Buka pemutar",
@@ -20,14 +23,17 @@
   "mini-play": "Putar",
   "mini-player": "Mini-pemutar musik",
   "new": "Baru",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Belum ada teka-teki.",
   "no-results": "Tidak ada hasil ditemukan",
   "no-track-playing": "Tidak ada lagu yang diputar",
   "not-configured": "Pencarian musik belum dikonfigurasi di server ini.",
   "not-quite": "Belum tepat — coba petunjuk atau tebakan lain.",
   "open-player": "Buka Pemutar",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Ruangan Publik",
   "puzzles": "Teka-teki",
+  "queue-action": "Queue",
   "queue-label": "Antrean",
   "reveal-another-hint_one": "Tampilkan petunjuk lain ({{count}} tersisa)",
   "reveal-another-hint_other": "Tampilkan petunjuk lain ({{count}} tersisa)",
@@ -40,5 +46,6 @@
   "searching": "Mencari...",
   "sign-in-to-guess": "Masuk untuk menebak.",
   "solves-plays": "{{solves}} terpecahkan · {{plays}} pemutaran",
-  "song-title-placeholder": "Judul lagu..."
+  "song-title-placeholder": "Judul lagu...",
+  "your-playlists": "Your playlists"
 }

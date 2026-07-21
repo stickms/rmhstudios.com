@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "加入队列",
   "artist": "艺术家",
   "correct-title": "正确 — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "主人",
   "join-a-room": "加入房间",
   "join-room": "加入房间",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} 位听众",
   "listener-count_other": "{{count}} 位听众",
+  "loading": "Loading…",
   "loading-rooms": "正在加载房间...",
   "mini-close": "停止并关闭",
   "mini-open": "打开播放器",
@@ -20,14 +23,17 @@
   "mini-play": "播放",
   "mini-player": "音乐迷你播放器",
   "new": "新的",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "还没有谜题。",
   "no-results": "未找到结果",
   "no-track-playing": "当前没有播放曲目",
   "not-configured": "此服务器未配置音乐搜索功能。",
   "not-quite": "不太对——再猜一次或换个提示试试。",
   "open-player": "打开播放器",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "公共房间",
   "puzzles": "谜题",
+  "queue-action": "Queue",
   "queue-label": "队列",
   "reveal-another-hint_one": "再透露一个提示（还剩{{count}}个）",
   "reveal-another-hint_other": "再给一条提示（还剩{{count}}条）",
@@ -40,5 +46,6 @@
   "searching": "搜索中...",
   "sign-in-to-guess": "登录以猜测。",
   "solves-plays": "{{solves}} 已解决 · {{plays}} 次游玩",
-  "song-title-placeholder": "歌曲名称……"
+  "song-title-placeholder": "歌曲名称……",
+  "your-playlists": "Your playlists"
 }

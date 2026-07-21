@@ -151,6 +151,8 @@
   "status-thinking": "Думает...",
   "streak_one": "Серия: {{count}}",
   "streak_other": "Серия: {{count}}",
+  "tab-games": "Games",
+  "tab-markets": "Markets",
   "table-name-placeholder": "Название стола (необязательно)",
   "take-insurance": "Взять страховку ({{cost}})",
   "texas-holdem-rooms": "Комнаты Техасского Холдема",

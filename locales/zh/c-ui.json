@@ -5,5 +5,12 @@
   "close": "关闭",
   "confirm": "确认",
   "copied": "已复制",
-  "copy": "复制"
+  "copy": "复制",
+  "first-page": "First page",
+  "last-page": "Last page",
+  "move-down": "Move down{{name}}",
+  "move-up": "Move up{{name}}",
+  "next-page": "Next page",
+  "page-of": "Page {{page}} of {{total}}",
+  "prev-page": "Previous page"
 }

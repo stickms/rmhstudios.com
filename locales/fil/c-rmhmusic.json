@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Idagdag sa pila",
   "artist": "Artista",
   "correct-title": "Tama — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "HOST",
   "join-a-room": "Sumali sa Kuwarto",
   "join-room": "Sumali sa Kuwarto",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} tagapakinig",
   "listener-count_other": "{{count}} tagapakinig",
+  "loading": "Loading…",
   "loading-rooms": "Naglo-load ng mga kuwarto...",
   "mini-close": "Ihinto at isara",
   "mini-open": "Buksan ang player",
@@ -20,14 +23,17 @@
   "mini-play": "I-play",
   "mini-player": "Mini-player ng Music",
   "new": "Bago",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Wala pang palaisipan.",
   "no-results": "Walang nakitang resulta",
   "no-track-playing": "Walang tumutugtog na track",
   "not-configured": "Hindi naka-configure ang paghahanap ng musika sa server na ito.",
   "not-quite": "Hindi eksakto — subukan ang ibang pahiwatig o hula.",
   "open-player": "Buksan ang Player",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Mga Pampublikong Kuwarto",
   "puzzles": "Mga Palaisipan",
+  "queue-action": "Queue",
   "queue-label": "Pila",
   "reveal-another-hint_one": "Magpakita ng isa pang pahiwatig ({{count}} natitira)",
   "reveal-another-hint_other": "Magpakita ng isa pang pahiwatig ({{count}} natitira)",
@@ -40,5 +46,6 @@
   "searching": "Naghahanap...",
   "sign-in-to-guess": "Mag-sign in para makahula.",
   "solves-plays": "{{solves}} nalutas · {{plays}} nilaro",
-  "song-title-placeholder": "Pamagat ng kanta..."
+  "song-title-placeholder": "Pamagat ng kanta...",
+  "your-playlists": "Your playlists"
 }

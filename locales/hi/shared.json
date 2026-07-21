@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "चैट...",
-  "error-boundary-message": "एक अप्रत्याशित त्रुटि हुई।",
-  "error-boundary-retry": "फिर से प्रयास करें",
-  "error-boundary-title": "कुछ गलत हो गया",
   "failed-to-load-media": "मीडिया लोड करने में विफल",
   "game-crashed": "गेम क्रैश हो गया",
   "game-crashed-named": "{{gameName}} क्रैश हो गया",

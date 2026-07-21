@@ -4,6 +4,7 @@
   "back-to-admin-label": "Kembali ke Admin",
   "changes-now-live": "Perubahan anda kini telah berkuat kuasa.",
   "content-label": "Kandungan",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "Tarikh",
   "delete-confirm": "Adakah anda pasti mahu memadam \"{{title}}\"? Tindakan ini tidak boleh dibatalkan.",
   "delete-failed": "Gagal memadam siaran",
@@ -18,9 +19,9 @@
   "generic-error": "Ralat berlaku",
   "hide-preview": "Sembunyikan Pratonton",
   "image-url-label": "URL Imej",
-  "initializing-editor": "Menginisialisasi Editor...",
   "live-preview": "Pratonton Langsung",
-  "loading-editor": "Memuatkan Editor...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "Metadata",
   "new-blog-post": "Siaran Blog Baharu",
   "post-created-successfully": "Siaran berjaya dicipta!",
@@ -37,5 +38,6 @@
   "title-label": "Tajuk",
   "title-placeholder": "Siaran Hebat Saya",
   "untitled-post": "Siaran Tanpa Tajuk",
-  "update-post": "Kemas Kini Siaran"
+  "update-post": "Kemas Kini Siaran",
+  "upload-markdown": "Upload .md"
 }

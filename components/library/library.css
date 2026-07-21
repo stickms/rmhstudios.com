@@ -2506,19 +2506,16 @@
    jump straight to one category; it scrolls horizontally on narrow screens so
    the rail never wraps or overflows. */
 .lib-nav {
-  /* Static row inside .lib-topbar — the wrapper provides the single sticky
-     context, so this always renders below the title, never over it. */
-  padding: 10px clamp(16px, 4vw, 44px);
-  background: color-mix(in srgb, var(--site-bg, #000) 42%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--site-text, #fff) 8%, transparent);
-  backdrop-filter: saturate(170%) blur(var(--site-glass-blur-chrome, 24px));
-  -webkit-backdrop-filter: saturate(170%) blur(var(--site-glass-blur-chrome, 24px));
+  /* §5.45: a standalone glass sheet BELOW the hero (moved out of the sticky
+     .lib-topbar). The sheet look — L1 fill, hairline glint edge, pill radius —
+     comes from the .glass-fill/.rounded-full/.p-1 utilities on the element; this
+     rule only positions it (gutter under the hero, left-aligned to the page). */
+  max-width: calc(100% - 2 * clamp(16px, 4vw, 44px));
+  margin: 0 clamp(16px, 4vw, 44px) clamp(20px, 3vw, 28px);
 }
 .lib-nav__scroll {
   display: flex;
-  gap: 8px;
-  max-width: 1400px;
-  margin-inline: auto;
+  gap: 4px;
   overflow-x: auto;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
@@ -2528,15 +2525,18 @@
   display: none;
 }
 .lib-nav__chip {
+  /* §5.45: inside the pill sheet the individual chips are transparent tabs — only
+     the flowing lib-nav-active capsule highlights the selection (matching the
+     shared LiquidTabs sheet), so no per-chip border/background. */
   position: relative;
   isolation: isolate;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
   padding: 8px 14px;
-  border: 1px solid color-mix(in srgb, var(--site-text, #fff) 12%, transparent);
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--site-text, #fff) 4%, transparent);
+  background: transparent;
   color: var(--site-text-muted, #9a9aa2);
   font: inherit;
   font-size: 0.85rem;

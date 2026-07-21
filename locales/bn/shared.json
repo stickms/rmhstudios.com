@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "চ্যাট...",
-  "error-boundary-message": "একটি অপ্রত্যাশিত ত্রুটি ঘটেছে।",
-  "error-boundary-retry": "পুনরায় চেষ্টা করুন",
-  "error-boundary-title": "কিছু ভুল হয়েছে",
   "failed-to-load-media": "মিডিয়া লোড করতে ব্যর্থ হয়েছে",
   "game-crashed": "গেম ক্র্যাশ হয়েছে",
   "game-crashed-named": "{{gameName}} ক্র্যাশ হয়েছে",

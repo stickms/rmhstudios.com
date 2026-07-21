@@ -115,9 +115,11 @@ function Store() {
       >
         <MobileTopBar title={t('store-title', { defaultValue: 'Store' })} />
 
-        <div className="border-b border-site-border">
+        {/* Shop / Market tabs → standalone glass sheet (§5.45), sheet-wrapped but
+            keeping the ?tab= mirroring + roving nav + underline active marker. */}
+        <div className="px-2 pt-3 md:px-3">
           <div
-            className="flex gap-1 px-2"
+            className="glass-fill glass-bevel-sm flex w-fit items-center gap-1 rounded-full p-1"
             role="tablist"
             aria-label={t('store-title', { defaultValue: 'Store' })}
             onKeyDown={onTabsKeyDown}

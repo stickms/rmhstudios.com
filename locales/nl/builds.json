@@ -2,15 +2,11 @@
   "badge-app": "App",
   "badge-game": "Game",
   "build-details": "Buildgegevens",
-  "build-source-label": "Buildbron",
-  "details-for": "Details voor {{title}}",
   "empty-curated": "Geen builds gevonden voor die zoekopdracht.",
   "empty-user-no-builds": "Nog geen gebruikersbuilds — wees de eerste om er een in te dienen.",
   "empty-user-search": "Geen gebruikersbuilds gevonden voor die zoekopdracht.",
   "loading": "Laden…",
-  "open-build": "Open {{title}}",
-  "open-menu": "Menu openen",
-  "page-title": "Builds",
+  "open": "Open",
   "search-builds-label": "Zoek builds",
   "search-builds-placeholder": "Zoek builds...",
   "search-user-builds-placeholder": "Zoek gebruikersbuilds...",
@@ -21,6 +17,6 @@
   "sort-name-az": "Naam (A–Z)",
   "sort-recent": "Recent",
   "submit": "Indienen",
-  "tab-curated": "Samengesteld",
-  "tab-user-builds": "Gebruikersbuilds"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

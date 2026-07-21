@@ -1,18 +1,5 @@
 {
-  "back-home": "Bumalik sa Tahanan",
   "controls-hint": "WASD/← → Galaw • Space Tumalon • Shift Dash • E Makipag-ugnayan • M Menu",
-  "controls-interact": "E — Makipag-ugnayan",
-  "controls-jump": "Space — Tumalon",
-  "controls-menu": "M — Menu",
-  "controls-move": "WASD / Arrows — Galaw",
-  "debt": "UTANG",
   "e-continue": "[E] Magpatuloy",
-  "loading": "NAG-LO-LOAD...",
-  "login-to-play": "Mag-login para Maglaro",
-  "menu-title": "Menu",
-  "music-volume": "Volume ng Musika",
-  "resume": "Ipagpatuloy [M]",
-  "sign-in-prompt": "Kailangan mong mag-sign in bago ka makapasok sa casino. Itatala ang iyong mga utang.",
-  "subtitle": "Naghihintay ang mesa",
-  "title": "Laging Panalo ang Bahay"
+  "loading": "NAG-LO-LOAD..."
 }

@@ -350,69 +350,6 @@ function Library() {
                 </button>
               )}
             </header>
-
-            <nav
-              className="lib-nav"
-              aria-label={t('sections-label', { defaultValue: 'Library sections' })}
-            >
-              <div className="lib-nav__scroll" role="tablist">
-                {(
-                  [
-                    { id: 'all', label: t('cat-all', { defaultValue: 'All' }), icon: LayoutGrid },
-                    {
-                      id: 'books',
-                      label: t('cat-books', { defaultValue: 'Books' }),
-                      icon: BookOpen,
-                    },
-                    {
-                      id: 'albums',
-                      label: t('cat-albums', { defaultValue: 'Albums' }),
-                      icon: Disc3,
-                    },
-                    {
-                      id: 'collections',
-                      label: t('cat-collections', { defaultValue: 'Collections' }),
-                      icon: Layers,
-                    },
-                    {
-                      id: 'reads',
-                      label: t('cat-reads', { defaultValue: 'Reads' }),
-                      icon: Newspaper,
-                    },
-                    {
-                      id: 'music',
-                      label: t('cat-music', { defaultValue: 'Music' }),
-                      icon: ListMusic,
-                    },
-                  ] as { id: LibraryView; label: string; icon: LucideIcon }[]
-                ).map(({ id, label, icon: Icon }) => {
-                  const active = view === id;
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      role="tab"
-                      aria-selected={active}
-                      className={`lib-nav__chip${active ? ' is-active' : ''}`}
-                      onClick={() => setView(id)}
-                    >
-                      {active && (
-                        <motion.span
-                          layoutId="lib-nav-active"
-                          className="lib-nav__chip-bg"
-                          transition={SPRING.soft}
-                          aria-hidden="true"
-                        />
-                      )}
-                      <span className="lib-nav__chip-label">
-                        <Icon aria-hidden="true" />
-                        {label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </nav>
           </div>
 
           <section
@@ -479,6 +416,73 @@ function Library() {
               )}
             </label>
           </section>
+
+          {/* §5.45: section tabs are a standalone glass sheet BELOW the hero slab
+              (moved out of the sticky .lib-topbar). The PR #577 single-sticky fix
+              is preserved — .lib-head stays the lone sticky row so nothing stacks.
+              The lib-nav-active layoutId capsule still flows between chips. */}
+          <nav
+            className="lib-nav glass-fill glass-bevel-sm w-fit rounded-full p-1"
+            aria-label={t('sections-label', { defaultValue: 'Library sections' })}
+          >
+            <div className="lib-nav__scroll" role="tablist">
+              {(
+                [
+                  { id: 'all', label: t('cat-all', { defaultValue: 'All' }), icon: LayoutGrid },
+                  {
+                    id: 'books',
+                    label: t('cat-books', { defaultValue: 'Books' }),
+                    icon: BookOpen,
+                  },
+                  {
+                    id: 'albums',
+                    label: t('cat-albums', { defaultValue: 'Albums' }),
+                    icon: Disc3,
+                  },
+                  {
+                    id: 'collections',
+                    label: t('cat-collections', { defaultValue: 'Collections' }),
+                    icon: Layers,
+                  },
+                  {
+                    id: 'reads',
+                    label: t('cat-reads', { defaultValue: 'Reads' }),
+                    icon: Newspaper,
+                  },
+                  {
+                    id: 'music',
+                    label: t('cat-music', { defaultValue: 'Music' }),
+                    icon: ListMusic,
+                  },
+                ] as { id: LibraryView; label: string; icon: LucideIcon }[]
+              ).map(({ id, label, icon: Icon }) => {
+                const active = view === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    className={`lib-nav__chip${active ? ' is-active' : ''}`}
+                    onClick={() => setView(id)}
+                  >
+                    {active && (
+                      <motion.span
+                        layoutId="lib-nav-active"
+                        className="lib-nav__chip-bg"
+                        transition={SPRING.soft}
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span className="lib-nav__chip-label">
+                      <Icon aria-hidden="true" />
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
 
           {shows('reads') && <LibraryBlogRow posts={blogPosts} />}
 

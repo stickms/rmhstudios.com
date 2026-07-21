@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Añadir a la cola",
   "artist": "Artista",
   "correct-title": "Correcto — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "ANFITRIÓN",
   "join-a-room": "Unirse a una sala",
   "join-room": "Unirse a la sala",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} oyente",
   "listener-count_other": "{{count}} oyentes",
+  "loading": "Loading…",
   "loading-rooms": "Cargando salas...",
   "mini-close": "Detener y cerrar",
   "mini-open": "Abrir reproductor",
@@ -20,14 +23,17 @@
   "mini-play": "Reproducir",
   "mini-player": "Mini reproductor de música",
   "new": "Nuevo",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Aún no hay acertijos.",
   "no-results": "No se encontraron resultados",
   "no-track-playing": "No hay pista sonando",
   "not-configured": "La búsqueda de música no está configurada en este servidor.",
   "not-quite": "Casi — prueba otra pista o adivinanza.",
   "open-player": "Abrir reproductor",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Salas públicas",
   "puzzles": "Acertijos",
+  "queue-action": "Queue",
   "queue-label": "Cola",
   "reveal-another-hint_one": "Revelar otra pista ({{count}} restante)",
   "reveal-another-hint_other": "Revelar otra pista ({{count}} restantes)",
@@ -40,5 +46,6 @@
   "searching": "Buscando...",
   "sign-in-to-guess": "Inicia sesión para adivinar.",
   "solves-plays": "{{solves}} resuelto · {{plays}} reproducciones",
-  "song-title-placeholder": "Título de la canción..."
+  "song-title-placeholder": "Título de la canción...",
+  "your-playlists": "Your playlists"
 }

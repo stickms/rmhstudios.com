@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, Suspense, lazy } from 'react';
-import { SlidersHorizontal, Search, X, BadgeCheck, ShieldCheck } from 'lucide-react';
+import { Search, X, BadgeCheck, ShieldCheck } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { FeedTabs } from './FeedTabs';
 import { ComposeBoxLazy } from './ComposeBoxLazy';
@@ -48,7 +48,6 @@ export interface InitialFeed {
 
 export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed> | null }) {
   const { t } = useTranslation('feed');
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [mode, setMode] = useState<'feed' | 'friends'>('feed');
   // Select individually (stable action refs; `search` is the only reactive value)
   // so an unrelated store mutation — every SSE like/comment/repost count tick —
@@ -119,7 +118,6 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
 
   const handleModeChange = (newMode: 'feed' | 'friends') => {
     setMode(newMode);
-    setFiltersOpen(false);
     setSearchInput('');
     // Switching tabs clears any active search — drop it from the URL too so the
     // q-driven effect doesn't immediately re-apply it.
@@ -135,75 +133,24 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
     <PullToRefresh onRefresh={refreshFeed}>
       <div className="flex flex-col">
         {/* Header — floating L3 glass-chrome capsule (§8.2): insets from the
-            column edges so aurora shows around it. The glass-chrome bg + blur +
-            glint ring all clip to rounded-site on their own (no overflow-hidden,
-            which would clip the filter dropdown). */}
+            column edges so aurora shows around it. It now carries only the sticky
+            search (the For You / Following + content-type tabs moved out to their
+            own sheet strips below, §5.45). The glass-chrome bg + blur + glint edge
+            all clip to rounded-site on their own. */}
         <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
-          <div className="flex items-center justify-between px-4 py-3">
-            {/* Mobile: sandwich menu left, RMH center, filters right. This used to
-              be a hand-rolled copy of MobileMenuButton that had drifted — it was
-              missing the canonical 44px (min-h-11/min-w-11) touch target. */}
+          {/* Mobile chrome row: drawer button + centered RMH branding. Desktop has
+              the sidebar, so this row is mobile-only; the spacer balances the 44px
+              menu button so the wordmark stays centered. */}
+          <div className="flex items-center justify-between px-4 pt-3 md:hidden">
             <MobileMenuButton />
-
-            {/* Desktop: For You / Following tabs inline */}
-            <div className="hidden md:flex items-center gap-1">
-              <button
-                onClick={() => handleModeChange('feed')}
-                className={`relative px-3 py-1.5 text-sm font-bold transition-colors rounded-sm ${
-                  mode === 'feed' ? 'text-site-text' : 'text-site-text-muted hover:text-site-text'
-                }`}
-              >
-                {t('for-you', { defaultValue: 'For You' })}
-                {mode === 'feed' && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
-                )}
-              </button>
-              <button
-                onClick={() => handleModeChange('friends')}
-                className={`relative px-3 py-1.5 text-sm font-bold transition-colors rounded-sm ${
-                  mode === 'friends'
-                    ? 'text-site-text'
-                    : 'text-site-text-muted hover:text-site-text'
-                }`}
-              >
-                {t('following', { defaultValue: 'Following' })}
-                {mode === 'friends' && (
-                  <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-site-accent rounded-full" />
-                )}
-              </button>
-            </div>
-
-            {/* Mobile: centered RMH branding */}
-            <span className="md:hidden text-site-accent font-(family-name:--site-font-display) font-bold text-lg">
+            <span className="text-site-accent font-(family-name:--site-font-display) font-bold text-lg">
               RMH
             </span>
-
-            <button
-              onClick={() => setFiltersOpen(!filtersOpen)}
-              className={`p-2 rounded-site-sm transition-colors ${
-                filtersOpen
-                  ? 'text-site-accent bg-site-accent-dim'
-                  : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-              }`}
-              title={t('toggle-feed-filters', { defaultValue: 'Toggle feed filters' })}
-            >
-              <SlidersHorizontal className="w-5 h-5" />
-            </button>
-          </div>
-          {/* Animated open/close — grid-rows fr transition collapses height
-            smoothly without needing to measure the content. */}
-          <div
-            className={`grid transition-[grid-template-rows] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none ${
-              filtersOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
-            }`}
-          >
-            <div className="overflow-hidden">
-              <FeedTabs mode={mode} onModeChange={handleModeChange} />
-            </div>
+            <span className="w-11" aria-hidden />
           </div>
 
-          {/* Search bar */}
-          <div className="px-4 py-2 border-t border-site-border">
+          {/* Search bar (the header's sticky behavior stays here). */}
+          <div className="px-4 py-2 md:pt-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim" />
               <input
@@ -227,6 +174,13 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
               )}
             </div>
           </div>
+        </div>
+
+        {/* Tab strips — standalone glass sheets BELOW the header capsule (§5.45),
+            separated by the standard gutter. State wiring (mode + useFeedStore
+            filter) is unchanged. */}
+        <div className="mt-3 px-2 md:px-3">
+          <FeedTabs mode={mode} onModeChange={handleModeChange} />
         </div>
 
         {/* User search results */}

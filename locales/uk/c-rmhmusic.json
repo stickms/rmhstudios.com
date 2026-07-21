@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Додати до черги",
   "artist": "Виконавець",
   "correct-title": "Правильно — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "ВЕДУЧИЙ",
   "join-a-room": "Приєднатися до кімнати",
   "join-room": "Приєднатися",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} слухач",
   "listener-count_other": "{{count}} слухачів",
+  "loading": "Loading…",
   "loading-rooms": "Завантаження кімнат...",
   "mini-close": "Зупинити і закрити",
   "mini-open": "Відкрити плеєр",
@@ -20,14 +23,17 @@
   "mini-play": "Відтворити",
   "mini-player": "Міні-плеєр музики",
   "new": "Нове",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Поки що немає головоломок.",
   "no-results": "Нічого не знайдено",
   "no-track-playing": "Зараз нічого не грає",
   "not-configured": "Пошук музики не налаштовано на цьому сервері.",
   "not-quite": "Майже — спробуйте іншу підказку або варіант.",
   "open-player": "Відкрити плеєр",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Публічні кімнати",
   "puzzles": "Головоломки",
+  "queue-action": "Queue",
   "queue-label": "Черга",
   "reveal-another-hint_one": "Показати ще одну підказку (залишилося {{count}})",
   "reveal-another-hint_other": "Показати ще одну підказку (залишилося {{count}})",
@@ -40,5 +46,6 @@
   "searching": "Пошук...",
   "sign-in-to-guess": "Увійдіть, щоб вгадувати.",
   "solves-plays": "{{solves}} розгадано · {{plays}} відтворень",
-  "song-title-placeholder": "Назва пісні..."
+  "song-title-placeholder": "Назва пісні...",
+  "your-playlists": "Your playlists"
 }

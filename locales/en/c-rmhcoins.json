@@ -151,6 +151,8 @@
   "status-thinking": "Thinking...",
   "streak_one": "Streak: {{count}}",
   "streak_other": "Streak: {{count}}",
+  "tab-games": "Games",
+  "tab-markets": "Markets",
   "table-name-placeholder": "Table name (optional)",
   "take-insurance": "Take ({{cost}})",
   "texas-holdem-rooms": "Texas Hold'em Rooms",

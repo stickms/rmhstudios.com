@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Ajouter à la file",
   "artist": "Artiste",
   "correct-title": "Correct — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "HÔTE",
   "join-a-room": "Rejoindre une salle",
   "join-room": "Rejoindre la salle",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} auditeur",
   "listener-count_other": "{{count}} auditeurs",
+  "loading": "Loading…",
   "loading-rooms": "Chargement des salles...",
   "mini-close": "Arrêter et fermer",
   "mini-open": "Ouvrir le lecteur",
@@ -20,14 +23,17 @@
   "mini-play": "Lecture",
   "mini-player": "Mini-lecteur de musique",
   "new": "Nouveau",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Aucune énigme pour l'instant.",
   "no-results": "Aucun résultat trouvé",
   "no-track-playing": "Aucun morceau en cours",
   "not-configured": "La recherche musicale n'est pas configurée sur ce serveur.",
   "not-quite": "Pas tout à fait — essayez un autre indice ou une autre devinette.",
   "open-player": "Ouvrir le lecteur",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Salles publiques",
   "puzzles": "Énigmes",
+  "queue-action": "Queue",
   "queue-label": "File d'attente",
   "reveal-another-hint_one": "Révéler un autre indice ({{count}} restant)",
   "reveal-another-hint_other": "Révéler un autre indice ({{count}} restants)",
@@ -40,5 +46,6 @@
   "searching": "Recherche en cours...",
   "sign-in-to-guess": "Connectez-vous pour deviner.",
   "solves-plays": "{{solves}} résolues · {{plays}} écoutes",
-  "song-title-placeholder": "Titre de la chanson..."
+  "song-title-placeholder": "Titre de la chanson...",
+  "your-playlists": "Your playlists"
 }

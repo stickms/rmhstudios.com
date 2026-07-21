@@ -190,26 +190,30 @@ export function ShopColumn({
         }
       />
 
-      <div
-        className="flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain border-b border-site-border px-3 py-2 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        role="tablist"
-        aria-label={t('shop-categories-label', { defaultValue: 'Shop categories' })}
-      >
-        {KIND_ORDER.map((k) => (
-          <button
-            key={k}
-            role="tab"
-            aria-selected={tab === k}
-            onClick={() => setTab(k)}
-            className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-              tab === k
-                ? 'bg-site-accent text-(--site-accent-fg)'
-                : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'
-            }`}
-          >
-            {KIND_LABELS[k]}
-          </button>
-        ))}
+      {/* Category tabs → standalone glass sheet below the hero (§5.45). The pill
+          scrolls horizontally inside its own track; ARIA/state are unchanged. */}
+      <div className="mt-3 overflow-x-auto overscroll-x-contain px-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div
+          className="glass-fill glass-bevel-sm flex w-fit flex-nowrap items-center gap-1 rounded-full p-1"
+          role="tablist"
+          aria-label={t('shop-categories-label', { defaultValue: 'Shop categories' })}
+        >
+          {KIND_ORDER.map((k) => (
+            <button
+              key={k}
+              role="tab"
+              aria-selected={tab === k}
+              onClick={() => setTab(k)}
+              className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+                tab === k
+                  ? 'bg-site-accent text-(--site-accent-fg)'
+                  : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'
+              }`}
+            >
+              {KIND_LABELS[k]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (

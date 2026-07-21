@@ -342,6 +342,96 @@ sidebar rail, the login card, the command palette, one hero pane per flagship
 page (library, store, recap/wrapped). Never in scroll containers, never on
 list items (unchanged rule).
 
+### 3.6 Universal mirror refraction (the non-Chromium branch)
+
+**Amendment (2026-07-21b).** SVG filters in `backdrop-filter` remain
+Chromium-only (WebKit bug 245510 and the Firefox request are open, no ship
+signals). But true refraction only *needs* backdrop sampling when the
+backdrop is unknown — and after the §8 floating-shell restructure, what sits
+behind most refract surfaces is the **aurora canvas we own and can
+replicate**. So the fallback branch stops faking (edge blur) and starts
+*mirroring*:
+
+```css
+/* Non-Chromium engines with a fine pointer: paint a viewport-anchored COPY
+   of the aurora into the optics ring and displace the copy with a regular
+   `filter` (SVG url() filters in `filter` work in Gecko + WebKit). The ring
+   then genuinely bends "the background" — same pixels, actually displaced.
+   Gated off touch: iOS degrades background-attachment:fixed, and misregistered
+   aurora reads worse than plain blur. */
+@supports (filter: url('#glass-lens')) and (not (backdrop-filter: url('#glass-lens'))) {
+  @media (hover: hover) and (pointer: fine) {
+    .glass-refract::before {
+      background-image: var(--site-canvas);
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      /* Track the parallax the real canvas gets from useLiquidBackground —
+         background-position can read the same vars the body::before translate
+         uses. The drift keyframe's scale/rotate is NOT mirrored: at a ≤14px
+         band behind 1px blur, the low-frequency gradients make the phase
+         error imperceptible. */
+      background-position: calc(50% + var(--aurora-mx, 0px)) calc(50% + var(--aurora-my, 0px));
+      background-size: 104vw 104vh;      /* ≈ body::before oversize, viewport units */
+      filter: var(--glass-lens, url('#glass-lens')) blur(1px);
+      /* keep frosting whatever real content also passes beneath */
+      -webkit-backdrop-filter: blur(2px);
+      backdrop-filter: blur(2px);
+    }
+  }
+}
+```
+
+- **Registration accuracy is not the goal — plausibility is.** The copy sits
+  within a few percent of the real canvas (parallax tracked, drift not); the
+  displacement then bends it. At ring scale this is indistinguishable from
+  true backdrop refraction over the aurora.
+- `lib/glass-lens.ts` gate widens from
+  `CSS.supports('backdrop-filter','url(#x)')` to *either* property — the
+  per-element bucket vars now serve both branches (`--glass-lens` is consumed
+  by `backdrop-filter` on Chromium and by `filter` here).
+- **WebKit verification note:** `feDisplacementMap` via `filter: url()` on
+  HTML content has a history of WebKit rendering bugs (software paths, DPR
+  scaling). QA must eyeball desktop Safari; if it misrenders, the escape
+  hatch is *baking*: canvas + lens are both static per (theme × bucket), so
+  the pre-refracted band can be generated once (offscreen canvas → data URI)
+  and painted as a plain background image — refraction as texture, zero
+  filters. Implement only if live Safari testing fails.
+- High-contrast / reduced-transparency / perf-lite / forced-colors: the ring
+  pseudo is already killed by the §10 blocks — no new gates needed. Touch
+  devices keep the static-sun glint ring with plain edge blur (unchanged).
+
+### 3.7 Reactive lens states (press-flex refraction)
+
+The lens gets discrete intensity states — no per-frame filter animation
+(continuous backdrop re-filtering is compositor poison), just a **state swap
+that rides the existing spring press**:
+
+- `lib/glass-lens.ts` additionally emits a **press variant per live bucket**:
+  same map, displacement scale ×1.6, id suffix `-press`, exposed as a second
+  var `--glass-lens-press` on the element. (Bucket LRU cap counts pairs;
+  cap stays ≤8 filter *pairs*.)
+- CSS (both branches):
+
+```css
+/* Pressing a refract surface deepens the bend — glass flexing under the
+   finger. Rides :active with the --ease-glass transform already on
+   .glass-interactive; reduced motion skips the swap. */
+@media not (prefers-reduced-motion: reduce) {
+  html:not(.reduce-motion) .glass-refract:active::before {
+    -webkit-backdrop-filter: var(--glass-lens-press, var(--glass-lens, url('#glass-lens-press'))) blur(1px);
+    backdrop-filter: var(--glass-lens-press, var(--glass-lens, url('#glass-lens-press'))) blur(1px);
+  }
+}
+/* mirror branch equivalent swaps the `filter` inside the §3.6 block */
+```
+
+- A static `#glass-lens-press` (256×256, scale ×1.6) joins `GlassFilter` as
+  the pre-JS default, so the press state exists before hydration.
+- **Design lab:** an intensity playground — rest/hover/press 3-way toggle on
+  a demo pane plus a "press me" pane wired to the real `:active` path. This
+  is where the discrete-state mechanics are reviewed before anyone asks for
+  continuous animation (which stays banned by §9).
+
 ---
 
 ## 4. Reflection — one light, every surface answers
@@ -417,6 +507,72 @@ Interaction & fallback rules:
 | `.glass-pane`, `.glass-overlay`, `.glass-chrome` bars, `.glass-chrome--aside` (via `::after`) | Always on. These are few per page (≤8 by budget) — always-on is affordable. |
 | `.glass-fill.glass-interactive` (cards, admin tiles, listing tiles, shop items) | Hover-only (opacity fade-in). |
 | `.glass-inset`, plain `.glass-fill`, `.glass-scrim` | **No ring.** Wells are holes, not slabs; plain fills are the unlimited cheap tier and must stay pseudo-free. |
+
+### 4.35 Single-sheet edge rework (amendment 2026-07-21b — supersedes the ring-flood glint)
+
+**Owner feedback:** the shipped glint paints the entire `--glass-bevel` band,
+and on light themes (Sepia/Light, where `--site-glass-rim` is near-opaque
+cream/white) that band + the 1px `--site-border` + the rim insets stack into
+a **thick outlined box**. Glass should read as **a single sheet whose edge
+catches light** — not a frame.
+
+The fix relocates the specular from the 12px ring-flood to a **hairline of
+light living in the border ring itself**, and makes the structural border
+disappear into it:
+
+1. **Glint = border-box background layer on the element** (no pseudo). Glass
+   surfaces set `border-color: transparent` and paint layered backgrounds:
+
+```css
+.glass-pane {
+  border: var(--site-border-width) solid transparent;
+  background-color: var(--site-glass-tint);      /* fills to border-box — the
+                                                    edge is the same material */
+  background-image:
+    var(--site-glass-noise),                     /* padding-box */
+    radial-gradient(                             /* the hairline specular */
+      var(--glass-glint-size, 340px) circle
+        at var(--light-x, 50%) var(--light-y, -8%),
+      color-mix(in srgb, var(--site-glass-glint, var(--site-glass-rim))
+        calc(var(--glass-glint-opacity, 0.9) * 100%), transparent) 0%,
+      transparent 70%);
+  background-clip: padding-box, border-box;      /* glint exists ONLY in the
+                                                    1px border ring */
+  background-attachment: scroll, fixed;          /* viewport-anchored light */
+  background-origin: padding-box, border-box;
+}
+```
+
+   Same pattern for `.glass-overlay`, `.glass-chrome`, `.glass-chrome--aside`
+   (whose `::after` ring is **deleted** — the aside carries glint in its own
+   background now), and hover-gated for `.glass-fill.glass-interactive`
+   (swap the glint layer in on `:hover`; an instant swap is acceptable, or
+   register `@property --glass-glint-o` for a fade where supported).
+2. **`::before` returns to refraction-only.** The masked bevel band keeps the
+   lens `backdrop-filter`/`filter` (§3.3/§3.6) but paints **no** glint.
+   Non-refract surfaces need **no `::before` at all** anymore — delete the
+   always-on ring rules (cheaper: fewer painted layers, and the §2 pseudo
+   contract simplifies to: `::before` = refraction, `::after` = pointer
+   light, aside keeps blur on `::before`).
+3. **Structural borders on glass go transparent** — the lit hairline *is*
+   the edge. Shape at rest comes from tint contrast + the existing soft rim
+   insets in `--site-shadow*` (keep those; they are 1px and subtle).
+   `.glass-inset` wells keep a border at half strength
+   (`color-mix(in srgb, var(--site-border) 50%, transparent)`) so recessed
+   fields still read as carved into the sheet, not outlined on it.
+4. **Per-theme glint level:** light themes drop `--glass-glint-opacity` to
+   ~0.5 (`.style-light`, `.style-sepia`) — bright rims on bright frost need
+   less light to read. Dark themes keep 0.9.
+5. **Degradations:** high-contrast and reduced-transparency **restore solid
+   borders** (`border-color: var(--site-border)` in their §10 blocks —
+   opaque surfaces need real edges; high-contrast keeps its 2px). The
+   forced-colors structural-border rule stays. Touch keeps a static top-edge
+   glint (element-anchored linear-gradient in the same border-box layer).
+
+**Acceptance (matches the owner's screenshot complaint):** the Sepia
+composer must render as one soft sheet — no pale band around the pane, no
+double outline between pane and text well; a ≤1px light hairline on the lit
+edge is the only edge treatment visible.
 
 ### 4.4 The scene light source (JS) — `useGlassLight` v2
 
@@ -601,6 +757,224 @@ primitive):**
 | Settings section switcher (if tabbed) | `app/routes/_site/settings*` | inspect; migrate if tabs |
 | DailyPuzzlesHub | `components/daily-puzzles/DailyPuzzlesHub.tsx` | already has layoutId — **refactor onto the primitive** so there is exactly one implementation |
 
+### 5.45 Tab sheets & placement (amendment 2026-07-21c)
+
+**Owner request:** tab lists sit on their own **glass sheet**, and always
+render **below the hero section or page title** — never buried inside header
+chrome — so they read as an obvious, tactile control.
+
+1. **The sheet.** `LiquidTabs` gains a `sheet` prop (default **true**): the
+   `role="tablist"` row is wrapped in a pill sheet —
+   `glass-fill glass-bevel-sm rounded-full p-1 w-fit` (L1: cheap, repeatable;
+   hairline glint edge from §4.35). The active capsule keeps its accent glass
+   + `glass-liquid`. Hand-rolled capsule tab bars (creator studio, RMHLadder)
+   adopt the same sheet wrapper classes around their existing markup.
+2. **Placement rule (new convention, page-consistency checklist item):** tab
+   strips are standalone sheets in the content flow, **below** the hero pane
+   or the page-title header capsule, separated by the normal gutter
+   (`mt-3`/`space-y-3`). They do NOT live inside `headerExtra` or the sticky
+   header capsule. A strip that was sticky may stay sticky (`top` offset
+   clearing the floating header), but it stays visually its own sheet.
+3. **Adopters to move/re-wrap:** Feed (For You/Following + content filters —
+   out of the header capsule, below it), `/library` (lib-nav strip moves
+   below the hero slab), `/store` (Shop/Market below the "Choose your
+   altitude." hero), `/search` (type tabs below the search well), profile
+   (below the identity header — verify), creator studio (below "Make
+   anything.", keep sticky + `?tab=`), RMHLadder shell nav, DailyPuzzlesHub.
+   ARIA/state wiring is untouched — this is wrapper + placement only.
+
+### 5.46 Glass clarity slider (amendment 2026-07-21c)
+
+**Owner request:** the frosted/clear glass control in Settings must
+verifiably work — and become a **slider with a live preview**, not just a
+toggle.
+
+1. **One axis, five stops** (stepped slider, Radix `Slider` primitive):
+   `0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear`. Semantic: how much
+   scene shows through the material.
+   - `0` = exactly today's reduce-transparency behavior (opaque surfaces, no
+     blur) — the existing mechanism (`html.reduce-transparency`) *is* this
+     stop; keep it as the implementation.
+   - `2` = the shipped default (no modification).
+   - `1` / `3` / `4` = multipliers via two `<html>`-level vars set inline by
+     the appearance runtime:
+
+```css
+/* globals.css — glass classes consume the user factors */
+--glass-user-blur: 1;   /* 1: 1.25 · 3: 0.65 · 4: 0.35 */
+--glass-user-tint: 1;   /* 1: 1.35 · 3: 0.75 · 4: 0.5  */
+/* e.g. .glass-pane blur becomes:
+   blur(calc(var(--site-glass-blur-pane) * var(--glass-user-blur, 1))) …
+   tint alpha via color-mix(in srgb, var(--site-glass-tint)
+   calc(var(--glass-user-tint, 1) * 100%), transparent) — clamp ≤ 1 by
+   construction (Calm's 1.35 applies color-mix toward --site-surface-opaque
+   instead of >100% alpha). */
+```
+
+2. **Persistence & no-flash:** stored like the theme (`localStorage`
+   `rmh-glass-level`, default 2), applied pre-paint by the `__root.tsx`
+   `themeScript` (level 0 adds `reduce-transparency`, others set the two
+   vars inline), synced through `/api/preferences/appearance` (zod: int
+   0–4; tiny Prisma prefs addition mirroring reduce-transparency's shape).
+   The OS `prefers-reduced-transparency` media query still forces opaque
+   regardless of slider (accessibility wins).
+3. **Settings UI (Appearance):** replace the bare toggle row with a
+   "Glass clarity" block: the stepped slider + stop labels + a **live
+   preview card** — a mini aurora swatch (reuses the ThemeGallery
+   mini-canvas pattern) with a small `.glass-pane` over it that re-renders
+   at the hovered/dragged stop *before* commit (pointer-preview like theme
+   hover-preview). Moving the slider also applies live to the whole page
+   (it's inline vars — instant). Strings via
+   `t('settings-glass-clarity', …)` etc. + `pnpm i18n:extract`.
+4. **Interactions with modes:** high-contrast ignores the slider entirely
+   (glass is off); `perf-lite` caps the effective blur but not the tint
+   factor; the design lab gains a read-only indicator of the active level.
+5. **"Ensure it works":** the implementing agent must trace the existing
+   reduce-transparency toggle end-to-end (settings control → class → CSS →
+   persistence → API sync → no-flash script) and fix anything broken found
+   along the way, then wire the slider onto that verified path.
+
+### 5.47 True liquid morphing (amendment 2026-07-21e)
+
+**Owner request:** moving glass should **morph** like Apple's Liquid Glass —
+stretch, pinch off, and reabsorb — not slide as a rigid capsule.
+
+Two composable mechanisms; both are progressive polish over the existing
+`layoutId` spring (which remains the skeleton and the reduced-motion/perf
+fallback):
+
+1. **Velocity squash & stretch** (all engines, near-free). The capsule's
+   scale is a function of its own motion: while the `layoutId` transition
+   runs, drive `scaleX = 1 + min(|vx|·k, 0.35)` and `scaleY = 1/scaleX`
+   (volume conservation) from a framer-motion velocity motion-value
+   (`useVelocity` on the capsule's projected x; k ≈ 0.0004). `transformOrigin`
+   at the trailing edge. It settles through `EASE.glass`'s overshoot — the
+   droplet lands with a wobble.
+
+```tsx
+// inside LiquidTabs' capsule (sketch)
+const x = useMotionValue(0);            // fed by the layout projection
+const vx = useVelocity(x);
+const stretch = useTransform(vx, (v) => 1 + Math.min(Math.abs(v) * 0.0004, 0.35));
+const squash  = useTransform(stretch, (s) => 1 / s);
+<motion.span layoutId={id} style={{ scaleX: stretch, scaleY: squash }} … />
+```
+
+2. **Gooey metaball merge** (the Apple-style fusion). A goo filter in
+   `GlassFilter`:
+
+```xml
+<filter id="glass-goo">
+  <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/>
+  <feColorMatrix in="blur" mode="matrix"
+    values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo"/>
+</filter>
+```
+
+   Structure rule (hard): the goo applies to a **capsule-only underlay** — an
+   absolutely-positioned layer spanning the control that contains (a) the
+   `layoutId` capsule and (b) a small **trail droplet** following the capsule
+   center on a softer spring (stiffness ~½). Blur+threshold fuses them: in
+   flight the pair reads as a stretching teardrop that pinches off and
+   reabsorbs on arrival. **Labels/icons render in a sibling layer above,
+   never filtered** (alpha thresholding destroys glyph edges). `filter:
+   url(#glass-goo)` is regular `filter` — Gecko/WebKit fine; verify Safari
+   once (goo demos are known-good there).
+
+**Where:** `LiquidTabs`' capsule underlay (all §5.45 sheets inherit), the
+mobile dock's active pill, the sidebar's active nav capsule. Menus/dialogs
+morphing out of their trigger buttons is noted as future work — not in
+scope.
+
+**Gates:** reduced motion → capsule jumps (existing; stretch/goo never
+mount). `perf-lite` / high-contrast → no goo filter, plain spring slide.
+The goo region is one small strip per control and filters tiny solid-color
+blobs — cost is negligible next to the backdrop budget, but the underlay
+must carry `contain: layout paint` and the filter must not wrap any
+backdrop-filter element (nesting a backdrop sampler inside a filtered
+subtree re-rasterizes it — keep the capsule underlay backdrop-free; the
+capsule's own material is plain accent tint + rim, which it already is).
+
+### 5.48 Liquid open transitions (amendment 2026-07-21e)
+
+**Owner request:** opening things — an RMHark, an image, a book, a blog post
+— should **liquidly expand** from the element you touched into the detail
+view, with the detail's content (comments, metadata, related items) loading
+in with staggered entrances. Mobile-first, glass aesthetics throughout.
+
+**Mechanism (extends what exists — do not reinvent):**
+`lib/view-transition.ts` already ships `runViewTransition()` (scoped VT,
+`.vt-active` guard, reduced-motion/no-support fallback to instant nav) and
+`postMediaVTName()` used by FeedList/RMHarkCard/PostDetail/PostImageGrid for
+the media morph. v2 generalizes:
+
+1. **Card-level morphs.** New helper in `lib/view-transition.ts`:
+
+```ts
+/** Shared-element name for any card→detail liquid open. kind: 'post' |
+ *  'image' | 'book' | 'album' | 'blog' | 'news' | 'build' | 'persona'. */
+export function liquidVTName(kind: string, id: string): string {
+  return `liquid-${kind}-${id}`;
+}
+```
+
+   The *clicked card's glass slab* (not just its media) gets
+   `viewTransitionName: liquidVTName(kind, id)` set **at click time only**
+   (VT names must be unique per document — never on every list item at rest;
+   set on pointerdown/click, clear after the transition, exactly how the
+   existing media morph manages it — copy that lifecycle). The detail page's
+   hero pane carries the same name statically.
+2. **Liquid timing for the morph.** In `globals.css`, groups named
+   `liquid-*` get the springier glass curve and slightly longer run than the
+   default 0.28s:
+
+```css
+::view-transition-group(*.liquid) { /* if class syntax unsupported, enumerate: */
+}
+/* VT names can't be wildcarded cross-browser — instead set the timing on the
+   group via the existing global ::view-transition-group(*) block ONLY while
+   html.vt-liquid is set (runViewTransition gains an optional {liquid: true}
+   that adds the class for the transition's lifetime): */
+html.vt-liquid::view-transition-group(*) {
+  animation-duration: 0.38s;
+  animation-timing-function: var(--ease-glass);
+}
+```
+
+   (The overshoot is subtle at 0.38s; the snapshot is a flat image so corner
+   radii are baked — acceptable, the bounds morph carries the effect.)
+3. **Content entrance after the morph.** Detail views mount their secondary
+   content (comments/replies, metadata rows, related lists) through the
+   existing `staggerContainer`/`staggerItem` + `fadeRise` variants
+   (`lib/motion.ts`): first ~8 items stagger at 30ms, the rest mount
+   instantly (no long tails on big threads). While loading, skeletons show;
+   when data arrives it staggers in. Under reduced motion `MotionConfig`
+   already collapses this.
+4. **Adopters (each = name the two ends + stagger the detail):**
+   - **RMHark → detail/thread** (`RMHarkCard` root ↔ `PostDetail`/
+     `ThreadView` hero card; replies stagger). The existing media-level morph
+     stays — card and media morph together (nested names are fine).
+   - **Image → lightbox** (`PostImageGrid` img ↔ the lightbox/viewer img —
+     locate the existing lightbox; if images open in a dialog rather than a
+     route, the same-document VT still works via `runViewTransition`).
+     Lightbox chrome (close, counters) fadeRise on `.glass-overlay`.
+   - **Book spine → reader** (`/library` `BookSpine`/`lib-book` cover ↔
+     `library.$slug` reader cover/hero). Reader internals stay out of scope —
+     name its existing hero element only.
+   - **Blog/news card → reader** (list cards ↔ `/blog/$slug`, `/news/$slug`
+     hero + title; article body fadeRise).
+   - **Album tile → album viewer**, **build tile → build detail**
+     (`builds_.$slug`), **persona tile → persona chat** — same pattern.
+5. **Mobile:** VT morphs run on mobile Chromium/Safari; keep the morph
+   duration ≤0.38s (long morphs feel laggy under touch); the stagger deltas
+   stay ≤30ms. No-VT browsers (older Firefox) get instant nav + the stagger
+   — still reads as a designed entrance.
+6. **Glass rules:** morph targets are glass slabs — during VT they're
+   snapshots, so backdrop blur freezes for the 0.38s (imperceptible; the
+   destination re-samples live on arrival). Never set a VT name on an
+   element inside a scroll container mid-scroll momentum (iOS jank) — set at
+   interaction time, which naturally satisfies this.
+
 ### 5.5 Dialog, toast, progress accents
 
 - **Dialog** (`components/ui/dialog.tsx` + its css): content enter re-tuned
@@ -614,6 +988,63 @@ primitive):**
   glass fiber. (Token-only colors.)
 
 ---
+
+### 5.5x Layout clarity, mobile friendliness & tilt light (amendment 2026-07-21d)
+
+**Owner request:** revamp element layout for clarity — nothing overlaps;
+verify mobile friendliness end-to-end; and make the glass respond to device
+tilt.
+
+**A. No-overlap & clarity pass.** Audit and fix, with live verification
+(the dev server + Playwright are available — screenshot desktop 1440px and
+mobile 390px, plus programmatic `getBoundingClientRect` intersection checks
+on the floating elements):
+
+1. **Floating-element stack:** dock, MiniPlayer, BackToTop, cookie bar,
+   toasts — verify vertical stacking on mobile (`.bottom-above-dock`,
+   `--safe-bottom`) and that no two overlap when all are visible.
+2. **Z-index ladder:** sidebar rail (30), header capsules (10), drawer (60),
+   overlays/palette — enumerate and fix any pair that can collide (e.g. an
+   open popover under a later sticky capsule).
+3. **Tablet rail (Phase B note):** at `md` the 64px rail + `m-3` insets
+   compress icon pills — tune the collapsed-rail padding so pills breathe.
+4. **Tab sheets on narrow screens:** every §5.45 sheet must scroll
+   horizontally (`overflow-x-auto`, no wrap, edge fade mask) — never clip or
+   collide with `headerRight` actions at 390px.
+5. **Header capsules vs. content:** consistent first-content gutter below
+   every capsule (no content sliding under the capsule at rest); breadcrumb +
+   long titles truncate rather than push `headerRight` off-viewport.
+6. **Spacing rhythm:** gutters between floating panes are the §8 constants
+   (`space-y-3` / `gap-4/6`) everywhere — kill ad-hoc `mt-*` drift on the
+   restructured pages.
+
+**B. Mobile friendliness.** At 390×844 (and `xs` 480): drawer + dock
+gestures still work; feed cards/media never overflow the viewport; tab
+sheets scroll; the settings clarity slider is thumb-operable (≥44px target);
+forms keep the 16px zoom floor; safe-area insets respected. Fix what fails.
+
+**C. Tilt-driven glass light.** The scene light (§4.4) learns device
+orientation, so tilting the phone slides the glint across every pane — the
+signature mobile counterpart of pointer tracking:
+
+1. Extend the orientation path in `hooks/useLiquidBackground.ts` (it already
+   maps `deviceorientation` on no-permission platforms) — or a sibling in
+   `useGlassLight` sharing its listener — to also write quantized
+   `--light-x/--light-y` (viewport px: center + gamma/beta normalized ×
+   ~40% of viewport). Toggle `html.tilt-live` while orientation events flow.
+2. Under `html.tilt-live`, coarse-pointer devices switch their glint from
+   the static top-edge gradient to the viewport-anchored radial (same layer,
+   `--glass-glint-attach` flips to `fixed`). **iOS caveat:** fixed
+   attachment is historically buggy in iOS Safari — verify in the iOS
+   simulator profile; if it misrenders, keep iOS on the static gradient and
+   ship tilt for Android only (leave the gate commented).
+3. **iOS permission:** `DeviceOrientationEvent.requestPermission()` needs a
+   user gesture — add a "Tilt effects" enable row in Settings → Appearance
+   (only rendered when the permission gate exists), persisting consent as
+   `rmh-motion-ok`; auto-enable elsewhere. Off under reduced motion /
+   `perf-lite` (same gates as the aurora parallax).
+4. The aurora parallax keeps its existing tilt input — light + backdrop
+   moving together is what sells the material.
 
 ## 6. New tokens & JS surface (complete list)
 
@@ -861,10 +1292,138 @@ first; the orchestrator sequences this).
 7. `pnpm exec tsc --noEmit` · `pnpm lint` · `pnpm exec vitest run` ·
    `pnpm build` all green; `pnpm i18n:extract` diff committed if strings
    changed.
+8. **Final hygiene sweep (last phase, mandatory).** Every amendment round
+   must leave zero superseded code behind — future agents read this repo as
+   ground truth. Standing rule for all phases: **when you replace a
+   mechanism, delete its predecessor in the same change** (no compatibility
+   shims, no "kept just in case" CSS). The closing sweep then verifies:
+   - No orphaned selectors/tokens/keyframes from earlier v2 rounds: check at
+     minimum the pre-§4.35 ring-glint selectors, `--glass-bevel*` (now
+     refraction-ring-only — delete if nothing consumes), old tab
+     underline/active styles obsoleted by §5.45 sheets (`FeedTabs`,
+     `creator-studio.css` `.cstudio-tabs .is-active` remnants,
+     `rmhladder.css` nav rules, `library.css` `lib-nav` positioning), the
+     reduce-transparency *toggle* UI leftovers after the §5.46 slider, and
+     any unused `--glass-user-*` / tilt / goo scaffolding.
+   - Every CSS custom property defined in `globals.css` under the glass
+     system has ≥1 consumer (grep); every `.glass-*` class has ≥1 usage or
+     a documented escape-hatch note.
+   - §12.6 greps still return zero; re-run the Appendix D checks.
+   - Docs match final reality: `design-language.md` §5–7,
+     `page-consistency.md` checklist, and a status note at the top of the
+     v1 plan doc pointing here. Superseded sections *within this doc* keep
+     their amendment pointers (they narrate why, which is useful history —
+     code carries none of it).
 
 ---
 
-## Appendix D — Dead/invisible UI: removal list
+## 14. Glass-native user themes & marketplace (amendment 2026-07-21f)
+
+**Owner request:** liquid glass must work with website themes — including
+user-made ones; a themes **marketplace** where only **members** can create
+but anyone can **buy with RMH coins**; a good **preview system** for
+creation; mobile-friendly throughout.
+
+**Ground truth:** a Theme Studio + economy skeleton exists —
+`prisma` `UserTheme` (tokens Json v1, status, `priceCoins` 200–5000,
+`sales`), `lib/themes/tokens.ts` (strict zod, 9 flat hex colors + radius),
+`lib/themes/themes.server.ts`, `components/themes/ThemeStudio.tsx` (144
+lines, has buy-with-coins), `ThemeEditor.tsx` (221 lines),
+`app/routes/_site/studio/themes.tsx`. **The v1 contract is glass-hostile:**
+`--site-canvas` is set to a flat hex (glass over a flat color reads as gray
+plastic — §3.2) and no glass tokens exist, so applying a user theme
+currently degrades the entire material system. No membership gate found on
+creation.
+
+### 14.1 Token contract v2 — themes are tints of the glass
+
+Principle (same as built-in themes, §3.4): **a theme supplies colors and a
+few scalar knobs; the system owns the glass geometry** (blur tiers, bevel,
+shadow composition, aurora keyframes, glint mechanics). That way every user
+theme is automatically a correct glass tint, and future optics upgrades
+apply to all sold themes retroactively.
+
+```ts
+// lib/themes/tokens.ts — v2 (strict, colors + numbers only, never CSS strings)
+{
+  v: 2,
+  // The scene: base + three aurora glows. The radial GEOMETRY is a fixed
+  // system template (same stop positions/alphas as built-in canvases);
+  // the theme only colors it.
+  canvasBase: hex, glow1: hex, glow2: hex, glow3: hex,
+  // The material: one tint color + alpha (clamped 0.04–0.30 dark / ≤0.65
+  // when canvasBase luminance is high), rim/glint strength 0–1.
+  tint: hex, tintAlpha: number, glintStrength: number,
+  // Ink & accent (as v1): text, textMuted, accent, accentFg, border, radius.
+  …
+}
+```
+
+`themeCssVars()` v2 derives the full contract: `--site-canvas` from the
+4 scene colors via the standard radial template; `--site-glass-tint(-strong)`
+from tint+alpha; rims/glint from tint luminance (light themes get bright
+rims at lower `--glass-glint-opacity`, mirroring §4.35.4);
+`--site-aurora-far-1/2` at reduced alpha; `--site-surface-opaque` as a solid
+mix; depth shadows tinted from `canvasBase`. **v1 themes upcast on read**
+(deterministic defaults: glows derived from accent/bg mixes, tintAlpha from
+the v1 surface-vs-bg delta) — existing drafts and purchases keep working;
+`THEME_TOKENS_VERSION = 2` with a back-compat parse, never a breaking
+reject.
+
+Runtime: applying an owned theme sets the derived vars the same way accent
+presets do (inline on `<html>`), pre-paint via the no-flash script
+(persisted `rmh-user-theme` cache of the derived vars). High-contrast and
+the OS/reduced-transparency overrides still win; the §5.46 clarity slider
+composes independently (multipliers on top of any theme).
+
+### 14.2 Marketplace
+
+- **Create/publish = members only, server-enforced** in
+  `themes.server.ts`/the API routes (use the same membership check the rest
+  of the economy uses — locate it, don't invent one). Non-members browsing
+  the create tab get a glass upsell CTA → `/store`. Buying stays open to
+  anyone with coins (flow exists — verify zod + rate limit + overdraft
+  handling on the coin spend; the economy tests in `testing/` show the
+  invariants).
+- **Browse:** the studio themes tab becomes a marketplace grid — L1
+  `.glass-fill.glass-interactive` cards, each with a **live mini-shell
+  preview** (see 14.3) rendered under that theme's scoped vars, price chip
+  (coins), sales count, author; sort: top / new. Owned themes → inventory
+  section with Apply/Remove.
+- **Try before buying:** a "Preview" action applies the theme transiently
+  site-wide via the existing `themeStore.preview` mechanism with a floating
+  glass confirm bar (Buy · Exit preview) — the strongest possible preview is
+  the real site.
+- Publish flow keeps the 200–5000 coin price validation and DRAFT→PUBLISHED
+  transitions; no new moderation machinery (reuse the existing report path
+  only if it is a one-liner; otherwise out of scope).
+
+### 14.3 The preview system (creation)
+
+- **Editor = controls + a live glass scene**, not swatches: the preview pane
+  renders a **mini site shell** — sidebar-rail sliver, floating header
+  capsule, one feed card, a Button row, a LiquidTabs sheet, an input well —
+  inside a scoped container carrying the draft's derived vars over the
+  draft's own aurora (the §4.35 glint and material read for real, because
+  the scoped vars feed the same classes).
+- **Preview-on-site** button: transient site-wide application
+  (`themeStore.preview`) with a floating exit bar — same mechanism as
+  try-before-buy.
+- **Contrast guardrails:** live WCAG checks (text vs. tint over the
+  brightest glow; accentFg vs. accent) shown as inline warnings; publishing
+  with a failing AA pair is blocked server-side (the check is pure math on
+  the token values — implement once in `lib/themes/tokens.ts`, shared by
+  editor + API).
+- **Mobile:** editor stacks (preview above, controls in an accordion/sheet
+  below), 44px targets, slider/color inputs thumb-friendly; marketplace
+  grid single-column at `xs`.
+
+### 14.4 Verification
+
+tsc/lint/vitest green; economy invariants untouched (coin tests pass);
+member gate covered by a unit test on the server function; v1→v2 upcast
+round-trip test; editor + marketplace screenshots at 1440px and 390px in
+Glass Dark + Sepia.
 
 > Populated from the 2026-07-21 repo audit (verified with file:line evidence).
 > Phase D executes this list **after** A–C land (some items are replaced, not

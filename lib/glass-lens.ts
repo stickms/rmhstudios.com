@@ -1,20 +1,25 @@
 'use client';
 
 /**
- * Per-size-bucket lens displacement filters (v2 §3.3).
+ * Per-size-bucket lens displacement filters (v2 §3.3, §3.6, §3.7).
  *
- * `backdrop-filter: url(#filter)` is a Chromium-only capability — every other
- * engine keeps the CSS edge-blur fallback (`.glass-refract::before`), so this
- * whole module is a progressive enhancement gated behind
- * `CSS.supports('backdrop-filter', 'url(#x)')`.
+ * The lens serves BOTH refraction branches now: Chromium samples the SVG filter
+ * through `backdrop-filter: url(...)`, and (§3.6) Gecko/WebKit displace a
+ * viewport-anchored aurora copy through the same filter in `filter: url(...)`.
+ * So the gate widened from `backdrop-filter` support alone to EITHER property —
+ * the per-element `--glass-lens` var feeds whichever branch the engine uses.
  *
  * The static `#glass-lens` (256×256) in `GlassFilter` is the first-paint
  * default. This generator then refines each `[data-glass-lens]` element to a
  * filter whose displacement map is sized to the element so the bevel band stays
  * a CONSTANT ~26px regardless of pane size (a 900px hero must not get a 200px
- * mush band). Element size is quantised to 64px buckets and the live `<filter>`
- * node count is LRU-capped at 8 (§9 budget) — beyond that, elements reuse the
- * nearest existing bucket rather than mint a new node.
+ * mush band). Element size is quantised to 64px buckets.
+ *
+ * §3.7: each bucket also gets a PRESS variant (same map, displacement ×1.6,
+ * id suffix `-press`) exposed as `--glass-lens-press`, so `:active` can deepen
+ * the bend with no per-frame filter animation. The LRU therefore counts filter
+ * PAIRS and caps them at 8 (§9 budget) — beyond that, elements reuse the nearest
+ * existing bucket pair rather than mint new nodes.
  *
  * SSR-safe: every DOM/`CSS`/observer touch is guarded, and `initGlassLens()`
  * returns a no-op disposer when it cannot run (server, unsupported engine,
@@ -28,15 +33,21 @@ const XLINK_NS = 'http://www.w3.org/1999/xlink';
 // The bevel band is a fixed pixel width in the map so refraction reads the same
 // on a small capsule and a wide hero; it is NOT a percentage of pane size.
 const BEVEL_PX = 26;
-// §9 budget: ≤8 live lens <filter> nodes. Past the cap, reuse the nearest bucket.
-const MAX_LIVE_FILTERS = 8;
+// Displacement scales: rest matches the static #glass-lens; press is ×1.6 (§3.7).
+const DISPLACE_SCALE = 56;
+const PRESS_SCALE = Math.round(DISPLACE_SCALE * 1.6); // 90
+// §9 budget: ≤8 live lens <filter> PAIRS (rest + press). Past the cap, reuse the
+// nearest bucket pair.
+const MAX_LIVE_PAIRS = 8;
 
 function lensSupported(): boolean {
   return (
     typeof window !== 'undefined' &&
     typeof CSS !== 'undefined' &&
     typeof CSS.supports === 'function' &&
-    CSS.supports('backdrop-filter', 'url(#x)')
+    // §3.6: run on either branch — Chromium (backdrop-filter url) OR Gecko/WebKit
+    // (filter url over the mirrored aurora copy).
+    (CSS.supports('backdrop-filter', 'url(#x)') || CSS.supports('filter', 'url(#x)'))
   );
 }
 
@@ -90,7 +101,7 @@ export function lensMapDataURI(w: number, h: number): string {
 }
 
 /** Build one `<filter id>` node (feImage map → blur → displace) inside `defs`. */
-function ensureFilter(defs: Element, id: string, w: number, h: number): void {
+function ensureFilter(defs: Element, id: string, w: number, h: number, scale: number): void {
   if (defs.querySelector(`#${id}`)) return;
   const uri = lensMapDataURI(w, h);
 
@@ -121,12 +132,18 @@ function ensureFilter(defs: Element, id: string, w: number, h: number): void {
   const disp = document.createElementNS(SVG_NS, 'feDisplacementMap');
   disp.setAttribute('in', 'SourceGraphic');
   disp.setAttribute('in2', 'soft');
-  disp.setAttribute('scale', '56');
+  disp.setAttribute('scale', String(scale));
   disp.setAttribute('xChannelSelector', 'R');
   disp.setAttribute('yChannelSelector', 'G');
 
   filter.append(feImage, blur, disp);
   defs.appendChild(filter);
+}
+
+/** Ensure a bucket's rest + press filter pair exists (§3.7). */
+function ensurePair(defs: Element, id: string, w: number, h: number): void {
+  ensureFilter(defs, id, w, h, DISPLACE_SCALE);
+  ensureFilter(defs, `${id}-press`, w, h, PRESS_SCALE);
 }
 
 /**
@@ -168,19 +185,21 @@ export function initGlassLens(): () => void {
     if (el.offsetWidth === 0 || el.offsetHeight === 0) return; // not laid out yet
     let id = `glass-lens-${w}x${h}`;
     if (!live.has(id)) {
-      if (live.size >= MAX_LIVE_FILTERS) {
+      if (live.size >= MAX_LIVE_PAIRS) {
         const reuse = nearest(w, h);
         if (reuse) id = reuse;
         else {
-          ensureFilter(defs, id, w, h);
+          ensurePair(defs, id, w, h);
           live.set(id, { w, h });
         }
       } else {
-        ensureFilter(defs, id, w, h);
+        ensurePair(defs, id, w, h);
         live.set(id, { w, h });
       }
     }
+    // Both vars point at the same bucket pair; the CSS :active swap picks -press.
     el.style.setProperty('--glass-lens', `url(#${id})`);
+    el.style.setProperty('--glass-lens-press', `url(#${id}-press)`);
   }
 
   function flush(): void {
@@ -211,6 +230,7 @@ export function initGlassLens(): () => void {
     ro.unobserve(el);
     dirty.delete(el);
     el.style.removeProperty('--glass-lens');
+    el.style.removeProperty('--glass-lens-press');
   }
 
   document.querySelectorAll<HTMLElement>('[data-glass-lens]').forEach(track);
@@ -246,9 +266,15 @@ export function initGlassLens(): () => void {
     ro.disconnect();
     mo.disconnect();
     if (raf) cancelAnimationFrame(raf);
-    observed.forEach((el) => el.style.removeProperty('--glass-lens'));
+    observed.forEach((el) => {
+      el.style.removeProperty('--glass-lens');
+      el.style.removeProperty('--glass-lens-press');
+    });
     observed.clear();
-    for (const id of live.keys()) document.getElementById(id)?.remove();
+    for (const id of live.keys()) {
+      document.getElementById(id)?.remove();
+      document.getElementById(`${id}-press`)?.remove();
+    }
     live.clear();
   };
 }

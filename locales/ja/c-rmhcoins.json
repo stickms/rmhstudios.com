@@ -151,6 +151,8 @@
   "status-thinking": "思考中...",
   "streak_one": "連勝：{{count}}",
   "streak_other": "連勝：{{count}}",
+  "tab-games": "Games",
+  "tab-markets": "Markets",
   "table-name-placeholder": "テーブル名（任意）",
   "take-insurance": "保険をかける（{{cost}}）",
   "texas-holdem-rooms": "テキサスホールデムルーム",

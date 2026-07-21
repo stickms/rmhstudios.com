@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "أضف إلى قائمة الانتظار",
   "artist": "فنان",
   "correct-title": "صحيح — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "مضيف",
   "join-a-room": "انضم إلى غرفة",
   "join-room": "انضم إلى الغرفة",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} مستمع",
   "listener-count_other": "{{count}} مستمع",
+  "loading": "Loading…",
   "loading-rooms": "جارٍ تحميل الغرف...",
   "mini-close": "إيقاف وإغلاق",
   "mini-open": "فتح المشغل",
@@ -20,14 +23,17 @@
   "mini-play": "تشغيل",
   "mini-player": "مشغل الموسيقى المصغر",
   "new": "جديد",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "لا ألغاز بعد.",
   "no-results": "لم يتم العثور على نتائج",
   "no-track-playing": "لا توجد أغنية قيد التشغيل",
   "not-configured": "لم يتم تكوين البحث عن الموسيقى على هذا الخادم.",
   "not-quite": "ليس تمامًا — جرب تلميحًا آخر أو تخمينًا.",
   "open-player": "فتح اللاعب",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "غرف عامة",
   "puzzles": "ألغاز",
+  "queue-action": "Queue",
   "queue-label": "Queue",
   "reveal-another-hint_one": "كشف تلميح آخر ({{count}} متبقي)",
   "reveal-another-hint_other": "كشف تلميح آخر ({{count}} متبقي)",
@@ -40,5 +46,6 @@
   "searching": "بحث...",
   "sign-in-to-guess": "سجّل الدخول لتخمين.",
   "solves-plays": "{{solves}} تم حلها · {{plays}} لعب",
-  "song-title-placeholder": "عنوان الأغنية..."
+  "song-title-placeholder": "عنوان الأغنية...",
+  "your-playlists": "Your playlists"
 }

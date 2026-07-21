@@ -1,18 +1,5 @@
 {
-  "back-home": "Ana Sayfaya Dön",
   "controls-hint": "WASD/← → Hareket • Space Zıpla • Shift Hızlan • E Etkileşim • M Menü",
-  "controls-interact": "E — Etkileşim",
-  "controls-jump": "Space — Zıpla",
-  "controls-menu": "M — Menü",
-  "controls-move": "WASD / Oklar — Hareket",
-  "debt": "BORÇ",
   "e-continue": "[E] Devam Et",
-  "loading": "YÜKLENİYOR...",
-  "login-to-play": "Oynamak İçin Giriş Yap",
-  "menu-title": "Menü",
-  "music-volume": "Müzik Sesi",
-  "resume": "Devam Et [M]",
-  "sign-in-prompt": "Kumarhaneye girmeden önce giriş yapmanız gerekiyor. Borçlarınız kaydedilecektir.",
-  "subtitle": "Masa bekliyor",
-  "title": "Ev Her Zaman Kazanır"
+  "loading": "YÜKLENİYOR..."
 }

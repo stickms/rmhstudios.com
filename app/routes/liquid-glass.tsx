@@ -14,6 +14,18 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useThemeStore } from '@/stores/themeStore';
+
+// §5.46: read-only indicator of the active glass clarity stop (no i18n in the lab).
+const CLARITY_LABELS = ['Opaque', 'Calm', 'Default', 'Airy', 'Clear'];
+function ClarityIndicator() {
+  const level = useThemeStore((s) => s.glassLevel);
+  return (
+    <Badge variant="outline">
+      clarity {level} · {CLARITY_LABELS[level] ?? '—'}
+    </Badge>
+  );
+}
 
 const PATH = '/liquid-glass';
 const TITLE = 'Liquid Glass — Design Lab | RMH Studios';
@@ -124,6 +136,10 @@ function Section({
 }
 
 function LiquidGlassLab() {
+  // §3.7 playground: toggles the demo pane's lens between the rest and press
+  // (×1.6) static filters by hand. This pane carries no data-glass-lens, so the
+  // bucket generator never fights the inline --glass-lens override.
+  const [pressDemo, setPressDemo] = useState(false);
   return (
     // Full-screen top-level page (outside _site/): its own padding + document
     // scroll. The body already paints --site-canvas (the aurora, now two-layer
@@ -155,6 +171,7 @@ function LiquidGlassLab() {
               <Badge variant="accent">L1–L4 elevation</Badge>
               <Badge variant="default">rim glint</Badge>
               <Badge variant="outline">lens refraction</Badge>
+              <ClarityIndicator />
             </div>
           </div>
         </header>
@@ -304,6 +321,70 @@ function LiquidGlassLab() {
                 <span className="text-base font-semibold text-site-text">Refraction off</span>
                 <Mono>.glass-pane</Mono>
                 <span className="text-xs text-site-text-dim">clean, optically flat edge</span>
+              </div>
+            </div>
+          </div>
+        </Section>
+
+        {/* ── 5b · Reactive lens (press-flex) ── §3.7 */}
+        <Section
+          id="press"
+          eyebrow="§3.7"
+          title="Reactive lens — press-flex refraction"
+          description={
+            <>
+              The lens has discrete intensity states — no per-frame filter animation
+              (that stays banned). Pressing a refract surface swaps to a ×1.6 displacement map so the
+              glass flexes under the finger, riding the same spring press. The left pane toggles rest
+              ↔ press by hand (it points <Mono>--glass-lens</Mono> at the static{' '}
+              <Mono>#glass-lens-press</Mono>); the right pane is on the real <Mono>:active</Mono>{' '}
+              path — press and hold it. Both skip the swap under reduced motion.
+            </>
+          }
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-3">
+              <div
+                data-glass-lens=""
+                style={
+                  pressDemo
+                    ? ({ '--glass-lens': "url('#glass-lens-press')" } as React.CSSProperties)
+                    : undefined
+                }
+                className="glass-pane glass-refract relative flex h-40 items-center justify-center overflow-hidden rounded-site p-6"
+              >
+                <div className="relative z-10 flex flex-col items-center gap-1 text-center">
+                  <span className="text-base font-semibold text-site-text">
+                    {pressDemo ? 'Press' : 'Rest'}
+                  </span>
+                  <Mono>{pressDemo ? 'scale ×1.6' : 'scale ×1'}</Mono>
+                  <span className="text-xs text-site-text-dim">manual state toggle</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="lg-press-toggle"
+                  checked={pressDemo}
+                  onCheckedChange={setPressDemo}
+                  aria-label="Toggle the lens press state"
+                />
+                <label htmlFor="lg-press-toggle" className="text-sm text-site-text-muted">
+                  {pressDemo ? 'Press state' : 'Rest state'}
+                </label>
+              </div>
+            </div>
+            <div
+              data-glass-lens=""
+              data-glass-light=""
+              className="glass-pane glass-refract glass-interactive relative flex h-40 cursor-pointer select-none items-center justify-center overflow-hidden rounded-site p-6"
+            >
+              <div className="relative z-10 flex flex-col items-center gap-1 text-center">
+                <MousePointerClick className="mx-auto h-6 w-6 text-site-accent" aria-hidden />
+                <span className="text-base font-semibold text-site-text">Press me</span>
+                <Mono>.glass-refract:active</Mono>
+                <span className="text-xs text-site-text-dim">
+                  press &amp; hold — the bend deepens
+                </span>
               </div>
             </div>
           </div>

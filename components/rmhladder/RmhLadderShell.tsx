@@ -74,8 +74,15 @@ export default function RmhLadderShell({
   return (
     <PageLayout title={pageTitle(pathname)} wide>
       <div className="rmhladder min-w-0 px-3 pb-24 pt-3 sm:px-4 sm:pt-4 md:pb-12">
-        <div className="mb-5 flex items-center gap-1 overflow-x-auto border-b border-site-border pb-3" aria-label={t('ladder.navigation', { defaultValue: 'RMH Ladder navigation' })}>
-          {navItems.map(({ label, to, icon: Icon }) => {
+        {/* §5.45: the sub-nav rides a standalone glass sheet (pill) below the page
+            title; the sign-in CTA stays a sibling outside the sheet, pushed right.
+            The rmhladder-nav-capsule layoutId still flows between routes. */}
+        <div className="mb-5 flex items-center gap-2">
+          <nav
+            className="glass-fill glass-bevel-sm flex w-fit min-w-0 max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            aria-label={t('ladder.navigation', { defaultValue: 'RMH Ladder navigation' })}
+          >
+            {navItems.map(({ label, to, icon: Icon }) => {
             const active = isActive(to);
             // These are route links (some public/crawlable + prefetched), so they
             // stay <Link>s rather than becoming LiquidTabs' role=tab buttons. The
@@ -105,6 +112,7 @@ export default function RmhLadderShell({
               </div>
             );
           })}
+          </nav>
           {!isAuthenticated && (
             <Button asChild size="sm" variant="accent-outline" className="ml-auto min-h-11 shrink-0">
               <Link to="/login" search={{ callbackURL: pathname }}>

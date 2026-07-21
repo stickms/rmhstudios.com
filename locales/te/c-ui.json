@@ -1,9 +1,16 @@
 {
   "back-to-top": "పైకి వెళ్ళండి",
-  "breadcrumb": "బ్రెడ్‌క్రంబ్",
+  "breadcrumb": "బ్రెడ్\u200cక్రంబ్",
   "cancel": "రద్దు చేయండి",
   "close": "మూసివేయి",
   "confirm": "నిర్ధారించండి",
   "copied": "కాపీ చేయబడింది",
-  "copy": "కాపీ చేయండి"
+  "copy": "కాపీ చేయండి",
+  "first-page": "First page",
+  "last-page": "Last page",
+  "move-down": "Move down{{name}}",
+  "move-up": "Move up{{name}}",
+  "next-page": "Next page",
+  "page-of": "Page {{page}} of {{total}}",
+  "prev-page": "Previous page"
 }

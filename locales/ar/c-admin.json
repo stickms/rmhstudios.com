@@ -4,6 +4,7 @@
   "back-to-admin-label": "العودة إلى المشرف",
   "changes-now-live": "تم الآن تطبيق تغييراتك.",
   "content-label": "محتوى",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "التاريخ",
   "delete-confirm": "هل أنت متأكد أنك تريد حذف \"{{title}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
   "delete-failed": "فشل في حذف المنشور",
@@ -18,9 +19,9 @@
   "generic-error": "حدث خطأ.",
   "hide-preview": "إخفاء المعاينة",
   "image-url-label": "رابط الصورة",
-  "initializing-editor": "جارٍ تهيئة المحرر...",
   "live-preview": "معاينة مباشرة",
-  "loading-editor": "جارٍ تحميل المحرر...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "البيانات الوصفية",
   "new-blog-post": "منشور مدونة جديد",
   "post-created-successfully": "تم إنشاء المنشور بنجاح!",
@@ -37,5 +38,6 @@
   "title-label": "عنوان",
   "title-placeholder": "منشوري الرائع",
   "untitled-post": "منشور بدون عنوان",
-  "update-post": "تحديث المنشور"
+  "update-post": "تحديث المنشور",
+  "upload-markdown": "Upload .md"
 }

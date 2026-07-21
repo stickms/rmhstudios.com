@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Zur Warteschlange hinzufügen",
   "artist": "Künstler",
   "correct-title": "Richtig — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "GASTGEBER",
   "join-a-room": "Einem Raum beitreten",
   "join-room": "Raum beitreten",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} Zuhörer",
   "listener-count_other": "{{count}} Zuhörer",
+  "loading": "Loading…",
   "loading-rooms": "Räume werden geladen...",
   "mini-close": "Stoppen und schließen",
   "mini-open": "Player öffnen",
@@ -20,14 +23,17 @@
   "mini-play": "Abspielen",
   "mini-player": "Musik-Mini-Player",
   "new": "Neu",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Noch keine Rätsel.",
   "no-results": "Keine Ergebnisse gefunden",
   "no-track-playing": "Kein Titel wird abgespielt",
   "not-configured": "Die Musiksuchen ist auf diesem Server nicht konfiguriert.",
   "not-quite": "Nicht ganz — versuche einen anderen Hinweis oder eine andere Schätzung.",
   "open-player": "Player öffnen",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Öffentliche Räume",
   "puzzles": "Rätsel",
+  "queue-action": "Queue",
   "queue-label": "Warteschlange",
   "reveal-another-hint_one": "Einen weiteren Hinweis anzeigen (noch {{count}} übrig)",
   "reveal-another-hint_other": "Weitere Hinweise anzeigen (noch {{count}} übrig)",
@@ -40,5 +46,6 @@
   "searching": "Suche läuft...",
   "sign-in-to-guess": "Melde dich an, um zu raten.",
   "solves-plays": "{{solves}} gelöst · {{plays}} gespielt",
-  "song-title-placeholder": "Songtitel..."
+  "song-title-placeholder": "Songtitel...",
+  "your-playlists": "Your playlists"
 }

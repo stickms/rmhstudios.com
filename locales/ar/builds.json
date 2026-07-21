@@ -2,15 +2,11 @@
   "badge-app": "تطبيق",
   "badge-game": "لعبة",
   "build-details": "تفاصيل البناء",
-  "build-source-label": "بناء المصدر",
-  "details-for": "تفاصيل عن {{title}}",
   "empty-curated": "لا توجد إصدارات تطابق هذا البحث.",
   "empty-user-no-builds": "لا يوجد أي بناء من المستخدمين بعد — كن أول من يقدم واحدًا.",
   "empty-user-search": "لا توجد أي حسابات مستخدمين تطابق هذا البحث.",
   "loading": "جارٍ التحميل…",
-  "open-build": "افتح {{title}}",
-  "open-menu": "افتح القائمة",
-  "page-title": "يبني",
+  "open": "Open",
   "search-builds-label": "بحث عن البناء",
   "search-builds-placeholder": "جارٍ البحث عن البناء...",
   "search-user-builds-placeholder": "البحث عن بنيات المستخدم...",
@@ -21,6 +17,6 @@
   "sort-name-az": "الاسم (أ–ي)",
   "sort-recent": "حديثاً",
   "submit": "تقديم",
-  "tab-curated": "منسق",
-  "tab-user-builds": "يبني المستخدم"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }
