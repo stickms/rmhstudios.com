@@ -2,7 +2,6 @@
   "access-required": "Accesso {{tierName}} richiesto",
   "active": "Attivo",
   "attempt-count_one": "{{count}} tentativo",
-  "attempt-count_many": "{{count}} attempt",
   "attempt-count_other": "{{count}} tentativi",
   "attempts": "tentativi",
   "best-streak": "miglior: {{longestStreak}}",

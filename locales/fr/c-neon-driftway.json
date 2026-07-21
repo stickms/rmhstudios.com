@@ -28,7 +28,6 @@
   "play": "Jouer",
   "play-again": "Rejouer",
   "players-count_one": "Joueurs ({{count}}/6)",
-  "players-count_many": "Players ({{count}}/6)",
   "players-count_other": "Joueurs ({{count}}/6)",
   "race-over": "COURSE TERMINÉE",
   "race-starting-in": "La course commence dans",

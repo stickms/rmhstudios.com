@@ -17,5 +17,6 @@
   "sort-name-az": "名称（A–Z）",
   "sort-recent": "最近",
   "submit": "提交",
+  "views-count_one": "",
   "views-count_other": "{{count}} views"
 }

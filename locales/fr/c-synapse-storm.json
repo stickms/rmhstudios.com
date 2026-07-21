@@ -54,7 +54,6 @@
   "neural-collapse": "EFFONDREMENT NEURONAL",
   "neural-lobby": "LOBBY NEURONAL",
   "neural-operatives_one": "OPÉRATIFS NEURONAUX ({{count}}/{{max}})",
-  "neural-operatives_many": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_other": "OPÉRATIFS NEURONAUX ({{count}}/{{max}})",
   "no-scores-yet": "Pas encore de scores. Soyez le premier !",
   "not-ranked": "Vous n'avez pas encore de classement. Jouez une partie !",

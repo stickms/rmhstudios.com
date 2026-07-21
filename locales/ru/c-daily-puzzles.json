@@ -46,8 +46,6 @@
   "find-contradiction": "Найдите противоречие",
   "five-facts-tagline": "Пять фактов. Два — ложь. Найдите самозванцев.",
   "found-liar_one": "Вы нашли лжеца за {{count}} ход{{suffix}}.",
-  "found-liar_few": "You found the liar in {{count}} guess{{suffix}}.",
-  "found-liar_many": "You found the liar in {{count}} guess{{suffix}}.",
   "found-liar_other": "Вы нашли лжеца за {{count}} ходов{{suffix}}.",
   "fun-fact": "Забавный факт",
   "gave-up-message": "Вы сдались в сегодняшней головоломке.",

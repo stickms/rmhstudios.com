@@ -46,8 +46,6 @@
   "find-contradiction": "Знайдіть суперечність",
   "five-facts-tagline": "П'ять фактів. Два — брехня. Знайдіть самозванців.",
   "found-liar_one": "Ви знайшли брехуна за {{count}} спробу{{suffix}}.",
-  "found-liar_few": "You found the liar in {{count}} guess{{suffix}}.",
-  "found-liar_many": "You found the liar in {{count}} guess{{suffix}}.",
   "found-liar_other": "Ви знайшли брехуна за {{count}} спроб{{suffix}}.",
   "fun-fact": "Цікавий факт",
   "gave-up-message": "Ви здалися в сьогоднішній головоломці.",

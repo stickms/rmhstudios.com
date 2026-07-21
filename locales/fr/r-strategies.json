@@ -43,7 +43,6 @@
   "loading": "Chargement...",
   "loading-puzzle": "Chargement du puzzle...",
   "min-remaining_one": "{{count}} minute restante",
-  "min-remaining_many": "{{count}} min remaining",
   "min-remaining_other": "{{count}} minutes restantes",
   "next-sahur-mode": "Prochain mode Sahur (3x XP)",
   "no-intelligence": "Aucun renseignement disponible à votre niveau d'habilitation.",

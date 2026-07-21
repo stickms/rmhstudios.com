@@ -17,5 +17,6 @@
   "sort-name-az": "Tên (A–Z)",
   "sort-recent": "Gần đây",
   "submit": "Gửi",
+  "views-count_one": "",
   "views-count_other": "{{count}} views"
 }

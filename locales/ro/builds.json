@@ -18,6 +18,5 @@
   "sort-recent": "Recente",
   "submit": "Trimite",
   "views-count_one": "{{count}} views",
-  "views-count_few": "{{count}} views",
   "views-count_other": "{{count}} views"
 }

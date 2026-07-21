@@ -54,8 +54,6 @@
   "neural-collapse": "NEURAL COLLAPSE",
   "neural-lobby": "NEURAL LOBBY",
   "neural-operatives_one": "NEURAL OPERATIVES ({{count}}/{{max}})",
-  "neural-operatives_few": "NEURAL OPERATIVES ({{count}}/{{max}})",
-  "neural-operatives_many": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "neural-operatives_other": "NEURAL OPERATIVES ({{count}}/{{max}})",
   "no-scores-yet": "Brak wyników. Bądź pierwszy!",
   "not-ranked": "Nie zająłeś jeszcze miejsca. Zagraj rundę!",

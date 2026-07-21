@@ -28,8 +28,6 @@
   "pagination-previous": "Předchozí",
   "pagination-range": "{{from}}–{{to}} z {{total}}",
   "player-count_one": "{{count}} hráč",
-  "player-count_few": "{{count}} players",
-  "player-count_many": "{{count}} players",
   "player-count_other": "{{count}} hráčů",
   "player-range": "{{minPlayers}}–{{maxPlayers}} hráčů",
   "pts": "b",

@@ -1,7 +1,6 @@
 {
   "all": "Toate",
   "article-count_one": "{{count}} articol",
-  "article-count_few": "{{count}} article",
   "article-count_other": "{{count}} articole",
   "clear": "Șterge",
   "clear-all-filters": "Șterge toate filtrele",
@@ -15,7 +14,6 @@
   "read-original-article-on": "Citește articolul original pe {{publisher}}",
   "read-our-take": "Citește opinia noastră",
   "results-count_one": "{{count}} rezultat",
-  "results-count_few": "{{count}} results",
   "results-count_other": "{{count}} rezultate",
   "search-placeholder": "Caută articole...",
   "sort-label": "Sortare:",

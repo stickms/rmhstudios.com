@@ -46,7 +46,6 @@
   "find-contradiction": "Găsește contradicția",
   "five-facts-tagline": "Cinci fapte. Două sunt minciuni. Găsește impostorii.",
   "found-liar_one": "Ai găsit mincinosul din {{count}} încercare{{suffix}}.",
-  "found-liar_few": "You found the liar in {{count}} guess{{suffix}}.",
   "found-liar_other": "Ai găsit mincinosul din {{count}} încercări{{suffix}}.",
   "fun-fact": "Fapt amuzant",
   "gave-up-message": "Ai renunțat la puzzle-ul de azi.",

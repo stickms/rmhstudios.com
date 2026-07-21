@@ -44,8 +44,6 @@
   "saved-to-slot": "Zapisano w slocie {{slotId}}",
   "select-poem-prompt": "Wybierz wiersz, aby zobaczyć szczegóły.",
   "select-words-prompt_one": "Wybierz {{count}} słowo, aby ułożyć wiersz",
-  "select-words-prompt_few": "Select {{count}} words to compose your poem",
-  "select-words-prompt_many": "Select {{count}} words to compose your poem",
   "select-words-prompt_other": "Wybierz {{count}} słowa, aby ułożyć wiersz",
   "settings": "Ustawienia",
   "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",

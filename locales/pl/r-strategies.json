@@ -43,8 +43,6 @@
   "loading": "Ładowanie...",
   "loading-puzzle": "Ładowanie zagadki...",
   "min-remaining_one": "Pozostała {{count}} minuta",
-  "min-remaining_few": "{{count}} min remaining",
-  "min-remaining_many": "{{count}} min remaining",
   "min-remaining_other": "Pozostało {{count}} minut",
   "next-sahur-mode": "Następny tryb Sahur (3x XP)",
   "no-intelligence": "Brak dostępnych danych wywiadowczych na twoim poziomie dostępu.",

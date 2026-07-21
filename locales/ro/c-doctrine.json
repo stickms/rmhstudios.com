@@ -2,7 +2,6 @@
   "access-required": "Acces necesar: {{tierName}}",
   "active": "Activ",
   "attempt-count_one": "{{count}} încercare",
-  "attempt-count_few": "{{count}} attempt",
   "attempt-count_other": "{{count}} încercări",
   "attempts": "încercări",
   "best-streak": "record: {{longestStreak}}",

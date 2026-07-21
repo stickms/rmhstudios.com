@@ -9,7 +9,6 @@
   "edit-build": "Modifica build",
   "error-loading-build": "Errore nel caricamento della build",
   "like-count_one": "{{count}} mi piace",
-  "like-count_many": "{{count}} likes",
   "like-count_other": "{{count}} mi piace",
   "manage-subtitle": "Gestisci le tue build pubblicate e in bozza",
   "my-builds": "Le mie build",
@@ -26,6 +25,5 @@
   "update-build-details": "Aggiorna i dettagli della tua build qui sotto.",
   "view": "Visualizza",
   "view-count_one": "{{count}} visualizzazioni",
-  "view-count_many": "{{count}} views",
   "view-count_other": "{{count}} visualizzazioni"
 }

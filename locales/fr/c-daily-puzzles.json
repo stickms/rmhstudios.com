@@ -46,7 +46,6 @@
   "find-contradiction": "Trouvez la contradiction",
   "five-facts-tagline": "Cinq faits. Deux sont des mensonges. Trouvez les imposteurs.",
   "found-liar_one": "Vous avez trouvé le menteur en {{count}} coup{{suffix}}.",
-  "found-liar_many": "You found the liar in {{count}} guess{{suffix}}.",
   "found-liar_other": "Vous avez trouvé le menteur en {{count}} coups{{suffix}}.",
   "fun-fact": "Anecdote",
   "gave-up-message": "Vous avez abandonné l'énigme du jour.",

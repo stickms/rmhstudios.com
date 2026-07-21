@@ -18,7 +18,5 @@
   "sort-recent": "Останні",
   "submit": "Надіслати",
   "views-count_one": "{{count}} views",
-  "views-count_few": "{{count}} views",
-  "views-count_many": "{{count}} views",
   "views-count_other": "{{count}} views"
 }

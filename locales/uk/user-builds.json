@@ -9,8 +9,6 @@
   "edit-build": "Редагувати збірку",
   "error-loading-build": "Помилка завантаження збірки",
   "like-count_one": "{{count}} вподобання",
-  "like-count_few": "{{count}} likes",
-  "like-count_many": "{{count}} likes",
   "like-count_other": "{{count}} вподобань",
   "manage-subtitle": "Керуйте своїми опублікованими та чернетковими збірками",
   "my-builds": "Мої збірки",
@@ -27,7 +25,5 @@
   "update-build-details": "Оновіть деталі вашої збірки нижче.",
   "view": "Переглянути",
   "view-count_one": "{{count}} перегляд",
-  "view-count_few": "{{count}} views",
-  "view-count_many": "{{count}} views",
   "view-count_other": "{{count}} переглядів"
 }

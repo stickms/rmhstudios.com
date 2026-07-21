@@ -28,8 +28,6 @@
   "pagination-previous": "Назад",
   "pagination-range": "{{from}}–{{to}} из {{total}}",
   "player-count_one": "{{count}} игрок",
-  "player-count_few": "{{count}} players",
-  "player-count_many": "{{count}} players",
   "player-count_other": "{{count}} игроков",
   "player-range": "{{minPlayers}}–{{maxPlayers}} игроков",
   "pts": "очк.",

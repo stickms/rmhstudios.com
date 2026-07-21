@@ -31,7 +31,6 @@
   "not-found": "This tournament no longer exists.",
   "players": "Players",
   "players-count_one": "{{count}} players",
-  "players-count_few": "{{count}} players",
   "players-count_other": "{{count}} players",
   "prize": "{{n}} prize",
   "prize-pool": "Prize pool",

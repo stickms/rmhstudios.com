@@ -43,8 +43,6 @@
   "loading": "Načítání...",
   "loading-puzzle": "Načítání hádanky...",
   "min-remaining_one": "{{count}} minuta zbývá",
-  "min-remaining_few": "{{count}} min remaining",
-  "min-remaining_many": "{{count}} min remaining",
   "min-remaining_other": "{{count}} minut zbývá",
   "next-sahur-mode": "Další Sahur mód (3x XP)",
   "no-intelligence": "Na vaší úrovni prověření není k dispozici žádná inteligence.",

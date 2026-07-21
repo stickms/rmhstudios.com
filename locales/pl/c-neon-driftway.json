@@ -28,8 +28,6 @@
   "play": "Graj",
   "play-again": "Graj ponownie",
   "players-count_one": "Gracze ({{count}}/6)",
-  "players-count_few": "Players ({{count}}/6)",
-  "players-count_many": "Players ({{count}}/6)",
   "players-count_other": "Gracze ({{count}}/6)",
   "race-over": "WYŚCIG ZAKOŃCZONY",
   "race-starting-in": "Wyścig rozpocznie się za",

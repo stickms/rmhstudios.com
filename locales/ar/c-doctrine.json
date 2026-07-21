@@ -1,11 +1,7 @@
 {
   "access-required": "مطلوب وصول {{tierName}}",
   "active": "نشط",
-  "attempt-count_zero": "{{count}} attempt",
   "attempt-count_one": "{{count}} محاولة",
-  "attempt-count_two": "{{count}} attempt",
-  "attempt-count_few": "{{count}} attempt",
-  "attempt-count_many": "{{count}} attempt",
   "attempt-count_other": "{{count}} محاولة",
   "attempts": "محاولات",
   "best-streak": "الأفضل: {{longestStreak}}",

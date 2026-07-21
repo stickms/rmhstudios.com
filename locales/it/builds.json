@@ -18,6 +18,5 @@
   "sort-recent": "Recenti",
   "submit": "Invia",
   "views-count_one": "{{count}} views",
-  "views-count_many": "{{count}} views",
   "views-count_other": "{{count}} views"
 }

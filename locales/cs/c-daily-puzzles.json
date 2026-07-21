@@ -46,8 +46,6 @@
   "find-contradiction": "Najděte rozpor",
   "five-facts-tagline": "Pět faktů. Dva jsou lži. Najděte podvodníky.",
   "found-liar_one": "Našli jste lháře za {{count}} tip{{suffix}}.",
-  "found-liar_few": "You found the liar in {{count}} guess{{suffix}}.",
-  "found-liar_many": "You found the liar in {{count}} guess{{suffix}}.",
   "found-liar_other": "Našli jste lháře za {{count}} tipů{{suffix}}.",
   "fun-fact": "Zajímavost",
   "gave-up-message": "Vzdali jste dnešní hádanku.",

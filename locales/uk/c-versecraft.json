@@ -44,8 +44,6 @@
   "saved-to-slot": "Збережено в слот {{slotId}}",
   "select-poem-prompt": "Виберіть вірш, щоб переглянути деталі.",
   "select-words-prompt_one": "Виберіть {{count}} слово, щоб скласти вірш",
-  "select-words-prompt_few": "Select {{count}} words to compose your poem",
-  "select-words-prompt_many": "Select {{count}} words to compose your poem",
   "select-words-prompt_other": "Виберіть {{count}} слів, щоб скласти вірш",
   "settings": "Налаштування",
   "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",

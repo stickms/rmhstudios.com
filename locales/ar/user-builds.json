@@ -8,11 +8,7 @@
   "edit": "تعديل",
   "edit-build": "تعديل بناء",
   "error-loading-build": "خطأ في تحميل البناء",
-  "like-count_zero": "{{count}} likes",
   "like-count_one": "{{count}} إعجاب",
-  "like-count_two": "{{count}} likes",
-  "like-count_few": "{{count}} likes",
-  "like-count_many": "{{count}} likes",
   "like-count_other": "{{count}} إعجاب",
   "manage-subtitle": "إدارة منشوراتك ومسوداتك",
   "my-builds": "إبداعاتي",
@@ -28,10 +24,6 @@
   "submit-a-build": "تقديم بناء",
   "update-build-details": "قم بتحديث تفاصيل البناء الخاصة بك أدناه.",
   "view": "عرض",
-  "view-count_zero": "{{count}} views",
   "view-count_one": "{{count}} مشاهدة",
-  "view-count_two": "{{count}} views",
-  "view-count_few": "{{count}} views",
-  "view-count_many": "{{count}} views",
   "view-count_other": "{{count}} مشاهدة"
 }

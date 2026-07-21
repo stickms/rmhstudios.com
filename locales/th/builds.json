@@ -17,5 +17,6 @@
   "sort-name-az": "ชื่อ (A–Z)",
   "sort-recent": "ล่าสุด",
   "submit": "ส่ง",
+  "views-count_one": "",
   "views-count_other": "{{count}} views"
 }

@@ -1,8 +1,6 @@
 {
   "all": "Все",
   "article-count_one": "{{count}} статья",
-  "article-count_few": "{{count}} article",
-  "article-count_many": "{{count}} article",
   "article-count_other": "{{count}} статей",
   "clear": "Очистить",
   "clear-all-filters": "Очистить все фильтры",
@@ -16,8 +14,6 @@
   "read-original-article-on": "Читать оригинальную статью на {{publisher}}",
   "read-our-take": "Читать наше мнение",
   "results-count_one": "{{count}} результат",
-  "results-count_few": "{{count}} results",
-  "results-count_many": "{{count}} results",
   "results-count_other": "{{count}} результатов",
   "search-placeholder": "Поиск статей...",
   "sort-label": "Сортировка:",

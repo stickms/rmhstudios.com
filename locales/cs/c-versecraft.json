@@ -44,8 +44,6 @@
   "saved-to-slot": "Uloženo do slotu {{slotId}}",
   "select-poem-prompt": "Vyberte báseň pro zobrazení podrobností.",
   "select-words-prompt_one": "Vyberte {{count}} slovo pro složení básně",
-  "select-words-prompt_few": "Select {{count}} words to compose your poem",
-  "select-words-prompt_many": "Select {{count}} words to compose your poem",
   "select-words-prompt_other": "Vyberte {{count}} slov pro složení básně",
   "settings": "Nastavení",
   "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",

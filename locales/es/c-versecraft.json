@@ -44,7 +44,6 @@
   "saved-to-slot": "Guardado en la ranura {{slotId}}",
   "select-poem-prompt": "Selecciona un poema para ver los detalles.",
   "select-words-prompt_one": "Selecciona {{count}} palabra para componer tu poema",
-  "select-words-prompt_many": "Select {{count}} words to compose your poem",
   "select-words-prompt_other": "Selecciona {{count}} palabras para componer tu poema",
   "settings": "Ajustes",
   "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",

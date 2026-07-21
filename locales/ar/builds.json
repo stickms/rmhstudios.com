@@ -17,10 +17,6 @@
   "sort-name-az": "الاسم (أ–ي)",
   "sort-recent": "حديثاً",
   "submit": "تقديم",
-  "views-count_zero": "{{count}} views",
   "views-count_one": "{{count}} views",
-  "views-count_two": "{{count}} views",
-  "views-count_few": "{{count}} views",
-  "views-count_many": "{{count}} views",
   "views-count_other": "{{count}} views"
 }

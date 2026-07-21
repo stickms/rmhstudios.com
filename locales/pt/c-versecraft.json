@@ -44,7 +44,6 @@
   "saved-to-slot": "Salvo no slot {{slotId}}",
   "select-poem-prompt": "Selecione um poema para ver detalhes.",
   "select-words-prompt_one": "Selecione {{count}} palavra para compor seu poema",
-  "select-words-prompt_many": "Select {{count}} words to compose your poem",
   "select-words-prompt_other": "Selecione {{count}} palavras para compor seu poema",
   "settings": "Configurações",
   "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",

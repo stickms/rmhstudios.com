@@ -46,7 +46,6 @@
   "find-contradiction": "Trova la contraddizione",
   "five-facts-tagline": "Cinque fatti. Due sono bugie. Trova gli impostori.",
   "found-liar_one": "Hai trovato il bugiardo in {{count}} tentativo{{suffix}}.",
-  "found-liar_many": "You found the liar in {{count}} guess{{suffix}}.",
   "found-liar_other": "Hai trovato il bugiardo in {{count}} tentativi{{suffix}}.",
   "fun-fact": "Curiosità",
   "gave-up-message": "Hai rinunciato al puzzle di oggi.",

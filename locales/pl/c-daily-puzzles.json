@@ -46,8 +46,6 @@
   "find-contradiction": "Znajdź sprzeczność",
   "five-facts-tagline": "Pięć faktów. Dwa to kłamstwa. Znajdź oszustów.",
   "found-liar_one": "Znalazłeś kłamcę w {{count}} zgadywaniu{{suffix}}.",
-  "found-liar_few": "You found the liar in {{count}} guess{{suffix}}.",
-  "found-liar_many": "You found the liar in {{count}} guess{{suffix}}.",
   "found-liar_other": "Znalazłeś kłamcę w {{count}} zgadywaniach{{suffix}}.",
   "fun-fact": "Ciekawostka",
   "gave-up-message": "Podałeś się w dzisiejszej łamigłówce.",

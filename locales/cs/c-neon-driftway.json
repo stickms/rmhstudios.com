@@ -28,8 +28,6 @@
   "play": "Hrát",
   "play-again": "Hrát znovu",
   "players-count_one": "Hráči ({{count}}/6)",
-  "players-count_few": "Players ({{count}}/6)",
-  "players-count_many": "Players ({{count}}/6)",
   "players-count_other": "Hráči ({{count}}/6)",
   "race-over": "ZÁVOD UKONČEN",
   "race-starting-in": "Závod začíná za",

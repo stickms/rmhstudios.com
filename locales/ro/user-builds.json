@@ -9,7 +9,6 @@
   "edit-build": "Editează Construcția",
   "error-loading-build": "Eroare la Încărcarea Construcției",
   "like-count_one": "{{count}} like",
-  "like-count_few": "{{count}} likes",
   "like-count_other": "{{count}} like-uri",
   "manage-subtitle": "Gestionează construcțiile tale publicate și ciornele",
   "my-builds": "Construcțiile Mele",
@@ -26,6 +25,5 @@
   "update-build-details": "Actualizează detaliile construcției tale mai jos.",
   "view": "Vizualizează",
   "view-count_one": "{{count}} vizualizare",
-  "view-count_few": "{{count}} views",
   "view-count_other": "{{count}} vizualizări"
 }

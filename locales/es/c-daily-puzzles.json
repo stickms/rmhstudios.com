@@ -46,7 +46,6 @@
   "find-contradiction": "Encuentra la contradicción",
   "five-facts-tagline": "Cinco datos. Dos son mentiras. Encuentra a los impostores.",
   "found-liar_one": "Encontraste al mentiroso en {{count}} intento{{suffix}}.",
-  "found-liar_many": "You found the liar in {{count}} guess{{suffix}}.",
   "found-liar_other": "Encontraste al mentiroso en {{count}} intentos{{suffix}}.",
   "fun-fact": "Dato curioso",
   "gave-up-message": "Te rendiste en el acertijo de hoy.",

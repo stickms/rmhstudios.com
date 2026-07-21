@@ -1,7 +1,6 @@
 {
   "all": "Tutti",
   "article-count_one": "{{count}} articolo",
-  "article-count_many": "{{count}} article",
   "article-count_other": "{{count}} articoli",
   "clear": "Cancella",
   "clear-all-filters": "Cancella tutti i filtri",
@@ -15,7 +14,6 @@
   "read-original-article-on": "Leggi l'articolo originale su {{publisher}}",
   "read-our-take": "Leggi il nostro parere",
   "results-count_one": "{{count}} risultato",
-  "results-count_many": "{{count}} results",
   "results-count_other": "{{count}} risultati",
   "search-placeholder": "Cerca articoli...",
   "sort-label": "Ordina:",

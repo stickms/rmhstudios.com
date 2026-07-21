@@ -1,7 +1,6 @@
 {
   "backfill-thumbs": "Backfill all page thumbnails",
   "backfill-thumbs-done_one": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
-  "backfill-thumbs-done_many": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-done_other": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
   "backfill-thumbs-failed": "Failed to queue thumbnail backfill. Try again.",
   "empty-gallery": "Aún no hay páginas — sé el primero en crear una.",

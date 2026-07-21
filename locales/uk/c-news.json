@@ -1,8 +1,6 @@
 {
   "all": "Усі",
   "article-count_one": "{{count}} стаття",
-  "article-count_few": "{{count}} article",
-  "article-count_many": "{{count}} article",
   "article-count_other": "{{count}} статей",
   "clear": "Очистити",
   "clear-all-filters": "Очистити всі фільтри",
@@ -16,8 +14,6 @@
   "read-original-article-on": "Читати оригінальну статтю на {{publisher}}",
   "read-our-take": "Читати наш огляд",
   "results-count_one": "{{count}} результат",
-  "results-count_few": "{{count}} results",
-  "results-count_many": "{{count}} results",
   "results-count_other": "{{count}} результатів",
   "search-placeholder": "Пошук статей...",
   "sort-label": "Сортувати:",

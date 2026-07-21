@@ -43,8 +43,6 @@
   "loading": "Загрузка...",
   "loading-puzzle": "Загрузка головоломки...",
   "min-remaining_one": "{{count}} минута осталась",
-  "min-remaining_few": "{{count}} min remaining",
-  "min-remaining_many": "{{count}} min remaining",
   "min-remaining_other": "{{count}} минут осталось",
   "next-sahur-mode": "Следующий режим Sahur (3x XP)",
   "no-intelligence": "Нет разведданных, доступных на вашем уровне допуска.",
