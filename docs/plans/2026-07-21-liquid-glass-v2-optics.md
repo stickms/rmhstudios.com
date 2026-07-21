@@ -864,7 +864,113 @@ first; the orchestrator sequences this).
 
 ---
 
-## Appendix D — Dead/invisible UI: removal list
+## 14. Glass-native user themes & marketplace (amendment 2026-07-21f)
+
+**Owner request:** liquid glass must work with website themes — including
+user-made ones; a themes **marketplace** where only **members** can create
+but anyone can **buy with RMH coins**; a good **preview system** for
+creation; mobile-friendly throughout.
+
+**Ground truth:** a Theme Studio + economy skeleton exists —
+`prisma` `UserTheme` (tokens Json v1, status, `priceCoins` 200–5000,
+`sales`), `lib/themes/tokens.ts` (strict zod, 9 flat hex colors + radius),
+`lib/themes/themes.server.ts`, `components/themes/ThemeStudio.tsx` (144
+lines, has buy-with-coins), `ThemeEditor.tsx` (221 lines),
+`app/routes/_site/studio/themes.tsx`. **The v1 contract is glass-hostile:**
+`--site-canvas` is set to a flat hex (glass over a flat color reads as gray
+plastic — §3.2) and no glass tokens exist, so applying a user theme
+currently degrades the entire material system. No membership gate found on
+creation.
+
+### 14.1 Token contract v2 — themes are tints of the glass
+
+Principle (same as built-in themes, §3.4): **a theme supplies colors and a
+few scalar knobs; the system owns the glass geometry** (blur tiers, bevel,
+shadow composition, aurora keyframes, glint mechanics). That way every user
+theme is automatically a correct glass tint, and future optics upgrades
+apply to all sold themes retroactively.
+
+```ts
+// lib/themes/tokens.ts — v2 (strict, colors + numbers only, never CSS strings)
+{
+  v: 2,
+  // The scene: base + three aurora glows. The radial GEOMETRY is a fixed
+  // system template (same stop positions/alphas as built-in canvases);
+  // the theme only colors it.
+  canvasBase: hex, glow1: hex, glow2: hex, glow3: hex,
+  // The material: one tint color + alpha (clamped 0.04–0.30 dark / ≤0.65
+  // when canvasBase luminance is high), rim/glint strength 0–1.
+  tint: hex, tintAlpha: number, glintStrength: number,
+  // Ink & accent (as v1): text, textMuted, accent, accentFg, border, radius.
+  …
+}
+```
+
+`themeCssVars()` v2 derives the full contract: `--site-canvas` from the
+4 scene colors via the standard radial template; `--site-glass-tint(-strong)`
+from tint+alpha; rims/glint from tint luminance (light themes get bright
+rims at lower `--glass-glint-opacity`, mirroring §4.35.4);
+`--site-aurora-far-1/2` at reduced alpha; `--site-surface-opaque` as a solid
+mix; depth shadows tinted from `canvasBase`. **v1 themes upcast on read**
+(deterministic defaults: glows derived from accent/bg mixes, tintAlpha from
+the v1 surface-vs-bg delta) — existing drafts and purchases keep working;
+`THEME_TOKENS_VERSION = 2` with a back-compat parse, never a breaking
+reject.
+
+Runtime: applying an owned theme sets the derived vars the same way accent
+presets do (inline on `<html>`), pre-paint via the no-flash script
+(persisted `rmh-user-theme` cache of the derived vars). High-contrast and
+the OS/reduced-transparency overrides still win; the §5.46 clarity slider
+composes independently (multipliers on top of any theme).
+
+### 14.2 Marketplace
+
+- **Create/publish = members only, server-enforced** in
+  `themes.server.ts`/the API routes (use the same membership check the rest
+  of the economy uses — locate it, don't invent one). Non-members browsing
+  the create tab get a glass upsell CTA → `/store`. Buying stays open to
+  anyone with coins (flow exists — verify zod + rate limit + overdraft
+  handling on the coin spend; the economy tests in `testing/` show the
+  invariants).
+- **Browse:** the studio themes tab becomes a marketplace grid — L1
+  `.glass-fill.glass-interactive` cards, each with a **live mini-shell
+  preview** (see 14.3) rendered under that theme's scoped vars, price chip
+  (coins), sales count, author; sort: top / new. Owned themes → inventory
+  section with Apply/Remove.
+- **Try before buying:** a "Preview" action applies the theme transiently
+  site-wide via the existing `themeStore.preview` mechanism with a floating
+  glass confirm bar (Buy · Exit preview) — the strongest possible preview is
+  the real site.
+- Publish flow keeps the 200–5000 coin price validation and DRAFT→PUBLISHED
+  transitions; no new moderation machinery (reuse the existing report path
+  only if it is a one-liner; otherwise out of scope).
+
+### 14.3 The preview system (creation)
+
+- **Editor = controls + a live glass scene**, not swatches: the preview pane
+  renders a **mini site shell** — sidebar-rail sliver, floating header
+  capsule, one feed card, a Button row, a LiquidTabs sheet, an input well —
+  inside a scoped container carrying the draft's derived vars over the
+  draft's own aurora (the §4.35 glint and material read for real, because
+  the scoped vars feed the same classes).
+- **Preview-on-site** button: transient site-wide application
+  (`themeStore.preview`) with a floating exit bar — same mechanism as
+  try-before-buy.
+- **Contrast guardrails:** live WCAG checks (text vs. tint over the
+  brightest glow; accentFg vs. accent) shown as inline warnings; publishing
+  with a failing AA pair is blocked server-side (the check is pure math on
+  the token values — implement once in `lib/themes/tokens.ts`, shared by
+  editor + API).
+- **Mobile:** editor stacks (preview above, controls in an accordion/sheet
+  below), 44px targets, slider/color inputs thumb-friendly; marketplace
+  grid single-column at `xs`.
+
+### 14.4 Verification
+
+tsc/lint/vitest green; economy invariants untouched (coin tests pass);
+member gate covered by a unit test on the server function; v1→v2 upcast
+round-trip test; editor + marketplace screenshots at 1440px and 390px in
+Glass Dark + Sepia.
 
 > Populated from the 2026-07-21 repo audit (verified with file:line evidence).
 > Phase D executes this list **after** A–C land (some items are replaced, not
