@@ -18,6 +18,7 @@ import {
     generateChainlinkPuzzle,
     isValidAssociation,
     computeChainlinkScore,
+    type ChainlinkPuzzle,
 } from '@/lib/daily-puzzles/chainlink';
 import {
     formatDateKey,
@@ -32,20 +33,39 @@ import {
     fetchResultFromServer,
 } from '@/lib/daily-puzzles/persistence';
 import { generateChainlinkShare } from '@/lib/daily-puzzles/share';
+import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
+import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { authClient } from '@/lib/auth-client';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 
 const MAX_MIDDLE_LINKS = 6;
 
-function ChainlinkGameContent({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+function ChainlinkGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+    const [puzzle, setPuzzle] = useState<ChainlinkPuzzle | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        setPuzzle(null);
+        fetchDailyPuzzle('chainlink', dateKey, generateChainlinkPuzzle).then((p) => {
+            if (!cancelled) setPuzzle(p);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [dateKey]);
+
+    if (!puzzle) return <PuzzleLoading title="Chainlink" emoji="🔗" />;
+    return <ChainlinkGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+}
+
+function ChainlinkGameContent({ puzzle, dateKey, isToday }: { puzzle: ChainlinkPuzzle; dateKey: string; isToday: boolean }) {
     const { t } = useTranslation("c-daily-puzzles");
     const selectedDate = useMemo(() => {
         const [y, m, d] = dateKey.split('-').map(Number);
         return new Date(y, m - 1, d);
     }, [dateKey]);
     const puzzleNumber = getPuzzleNumber(selectedDate);
-    const puzzle = generateChainlinkPuzzle(selectedDate);
 
     const [chain, setChain] = useState<string[]>(['']);
     const [validationErrors, setValidationErrors] = useState<(string | null)[]>([]);
@@ -555,7 +575,7 @@ export function ChainlinkGame() {
 
     return (
         <div className="max-w-2xl mx-auto px-4 py-8">
-            <ChainlinkGameContent key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
+            <ChainlinkGameLoader key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
             <PastPuzzlesSection
                 gameMode="chainlink"
                 selectedDateKey={selectedDateKey}

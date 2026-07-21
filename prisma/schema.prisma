@@ -610,6 +610,24 @@ model DailyPuzzleScore {
   @@map("daily_puzzle_score")
 }
 
+// Daily Puzzle content cache — the generated puzzle for a given mode + day.
+// The first request for a (gameMode, dateKey) generates the puzzle (via the
+// DeepSeek AI pipeline, falling back to the built-in deterministic generator)
+// and stores it here; every later request for that day reads this row, so the
+// puzzle is identical for everyone worldwide. The unique constraint makes the
+// first writer win under concurrent first-requests.
+model DailyPuzzle {
+  id        String   @id @default(cuid())
+  gameMode  String // alibi | spectrum | outcast | chainlink | impostor
+  dateKey   String // YYYY-MM-DD (America/New_York)
+  source    String   @default("deepseek") // deepseek | fallback
+  data      Json // full puzzle payload, including the solution fields
+  createdAt DateTime @default(now())
+
+  @@unique([gameMode, dateKey])
+  @@map("daily_puzzle")
+}
+
 // Slice It Player Model
 model Player {
   id          String   @id @default(cuid())

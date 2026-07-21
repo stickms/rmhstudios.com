@@ -9,11 +9,14 @@ import {
     generateOutcastPuzzle,
     checkOutcastGuess,
     computeOutcastScore,
+    type OutcastPuzzle,
 } from '@/lib/daily-puzzles/outcast';
 import { formatDateKey, getTodayEST, getPuzzleNumber } from '@/lib/daily-puzzles/seed';
 import { getResult, saveResult, hasCompleted } from '@/lib/daily-puzzles/persistence';
 import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/persistence';
 import { generateOutcastShare } from '@/lib/daily-puzzles/share';
+import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
+import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { authClient } from '@/lib/auth-client';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
@@ -28,13 +31,30 @@ const DIFFICULTY_COLORS: Record<string, string> = {
 
 const MAX_SCORE = 175;
 
-function OutcastGameContent({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+function OutcastGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+    const [puzzle, setPuzzle] = useState<OutcastPuzzle | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        setPuzzle(null);
+        fetchDailyPuzzle('outcast', dateKey, generateOutcastPuzzle).then((p) => {
+            if (!cancelled) setPuzzle(p);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [dateKey]);
+
+    if (!puzzle) return <PuzzleLoading title="Outcast" emoji="🎭" />;
+    return <OutcastGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+}
+
+function OutcastGameContent({ puzzle, dateKey, isToday }: { puzzle: OutcastPuzzle; dateKey: string; isToday: boolean }) {
     const selectedDate = useMemo(() => {
         const [y, m, d] = dateKey.split('-').map(Number);
         return new Date(y, m - 1, d);
     }, [dateKey]);
     const puzzleNumber = getPuzzleNumber(selectedDate);
-    const puzzle = generateOutcastPuzzle(selectedDate);
 
     const { t } = useTranslation('c-daily-puzzles');
     const [currentRound, setCurrentRound] = useState(0);
@@ -462,7 +482,7 @@ export function OutcastGame() {
 
     return (
         <div className="max-w-2xl mx-auto px-4 py-8">
-            <OutcastGameContent key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
+            <OutcastGameLoader key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
             <PastPuzzlesSection
                 gameMode="outcast"
                 selectedDateKey={selectedDateKey}
