@@ -5,8 +5,11 @@ import ruAdmin from "@/locales/ru/admin.json";
 import ruBuilds from "@/locales/ru/builds.json";
 import ruCAdmin from "@/locales/ru/c-admin.json";
 import ruCAltair from "@/locales/ru/c-altair.json";
+import ruCAwards from "@/locales/ru/c-awards.json";
 import ruCBlog from "@/locales/ru/c-blog.json";
 import ruCBuilds from "@/locales/ru/c-builds.json";
+import ruCCircle from "@/locales/ru/c-circle.json";
+import ruCCreator from "@/locales/ru/c-creator.json";
 import ruCCursedLogic from "@/locales/ru/c-cursed-logic.json";
 import ruCDailyPuzzles from "@/locales/ru/c-daily-puzzles.json";
 import ruCDoctrine from "@/locales/ru/c-doctrine.json";
@@ -14,15 +17,20 @@ import ruCDreamRift from "@/locales/ru/c-dream-rift.json";
 import ruCEconomy from "@/locales/ru/c-economy.json";
 import ruCForestExplorer from "@/locales/ru/c-forest-explorer.json";
 import ruCGame from "@/locales/ru/c-game.json";
+import ruCHistory from "@/locales/ru/c-history.json";
 import ruCHouseAlwaysWins from "@/locales/ru/c-house-always-wins.json";
 import ruCKowloonKnockout from "@/locales/ru/c-kowloon-knockout.json";
 import ruCLaundrySort from "@/locales/ru/c-laundry-sort.json";
+import ruCLayout from "@/locales/ru/c-layout.json";
 import ruCLibrary from "@/locales/ru/c-library.json";
 import ruCLightsOut from "@/locales/ru/c-lights-out.json";
+import ruCLists from "@/locales/ru/c-lists.json";
 import ruCLockdown from "@/locales/ru/c-lockdown.json";
 import ruCModeration from "@/locales/ru/c-moderation.json";
 import ruCNeonDriftway from "@/locales/ru/c-neon-driftway.json";
 import ruCNews from "@/locales/ru/c-news.json";
+import ruCPredictions from "@/locales/ru/c-predictions.json";
+import ruCProfileModules from "@/locales/ru/c-profile-modules.json";
 import ruCRideshare from "@/locales/ru/c-rideshare.json";
 import ruCRmhCapital from "@/locales/ru/c-rmh-capital.json";
 import ruCRmhPmc from "@/locales/ru/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import ruCRmhtube from "@/locales/ru/c-rmhtube.json";
 import ruCRmhtype from "@/locales/ru/c-rmhtype.json";
 import ruCRmhvibe from "@/locales/ru/c-rmhvibe.json";
 import ruCRoadmap from "@/locales/ru/c-roadmap.json";
+import ruCSaves from "@/locales/ru/c-saves.json";
 import ruCSignalForge from "@/locales/ru/c-signal-forge.json";
+import ruCStatus from "@/locales/ru/c-status.json";
 import ruCStudio from "@/locales/ru/c-studio.json";
 import ruCSynapseStorm from "@/locales/ru/c-synapse-storm.json";
 import ruCTempleOfJoy from "@/locales/ru/c-temple-of-joy.json";
+import ruCTournaments from "@/locales/ru/c-tournaments.json";
 import ruCUi from "@/locales/ru/c-ui.json";
 import ruCUserBuilds from "@/locales/ru/c-user-builds.json";
 import ruCVega from "@/locales/ru/c-vega.json";
 import ruCVersecraft from "@/locales/ru/c-versecraft.json";
 import ruCVoidBreaker from "@/locales/ru/c-void-breaker.json";
+import ruCWager from "@/locales/ru/c-wager.json";
+import ruCWishlist from "@/locales/ru/c-wishlist.json";
 import ruCommon from "@/locales/ru/common.json";
 import ruFeed from "@/locales/ru/feed.json";
+import ruGamesHub from "@/locales/ru/games-hub.json";
 import ruGroups from "@/locales/ru/groups.json";
 import ruLibrary from "@/locales/ru/library.json";
 import ruNav from "@/locales/ru/nav.json";
@@ -61,8 +75,13 @@ import ruRSliceIt from "@/locales/ru/r-slice-it.json";
 import ruRStrategies from "@/locales/ru/r-strategies.json";
 import ruRStudio from "@/locales/ru/r-studio.json";
 import ruRideshare from "@/locales/ru/rideshare.json";
+import ruSearch from "@/locales/ru/search.json";
+import ruSettingsAppearance from "@/locales/ru/settings-appearance.json";
+import ruSettingsContent from "@/locales/ru/settings-content.json";
+import ruSettingsNotifications from "@/locales/ru/settings-notifications.json";
 import ruShared from "@/locales/ru/shared.json";
 import ruSite from "@/locales/ru/site.json";
+import ruThemeStudio from "@/locales/ru/theme-studio.json";
 import ruUserBuilds from "@/locales/ru/user-builds.json";
 import ruV from "@/locales/ru/v.json";
 
@@ -71,8 +90,11 @@ const ruResources = {
   "builds": ruBuilds,
   "c-admin": ruCAdmin,
   "c-altair": ruCAltair,
+  "c-awards": ruCAwards,
   "c-blog": ruCBlog,
   "c-builds": ruCBuilds,
+  "c-circle": ruCCircle,
+  "c-creator": ruCCreator,
   "c-cursed-logic": ruCCursedLogic,
   "c-daily-puzzles": ruCDailyPuzzles,
   "c-doctrine": ruCDoctrine,
@@ -80,15 +102,20 @@ const ruResources = {
   "c-economy": ruCEconomy,
   "c-forest-explorer": ruCForestExplorer,
   "c-game": ruCGame,
+  "c-history": ruCHistory,
   "c-house-always-wins": ruCHouseAlwaysWins,
   "c-kowloon-knockout": ruCKowloonKnockout,
   "c-laundry-sort": ruCLaundrySort,
+  "c-layout": ruCLayout,
   "c-library": ruCLibrary,
   "c-lights-out": ruCLightsOut,
+  "c-lists": ruCLists,
   "c-lockdown": ruCLockdown,
   "c-moderation": ruCModeration,
   "c-neon-driftway": ruCNeonDriftway,
   "c-news": ruCNews,
+  "c-predictions": ruCPredictions,
+  "c-profile-modules": ruCProfileModules,
   "c-rideshare": ruCRideshare,
   "c-rmh-capital": ruCRmhCapital,
   "c-rmh-pmc": ruCRmhPmc,
@@ -102,17 +129,23 @@ const ruResources = {
   "c-rmhtype": ruCRmhtype,
   "c-rmhvibe": ruCRmhvibe,
   "c-roadmap": ruCRoadmap,
+  "c-saves": ruCSaves,
   "c-signal-forge": ruCSignalForge,
+  "c-status": ruCStatus,
   "c-studio": ruCStudio,
   "c-synapse-storm": ruCSynapseStorm,
   "c-temple-of-joy": ruCTempleOfJoy,
+  "c-tournaments": ruCTournaments,
   "c-ui": ruCUi,
   "c-user-builds": ruCUserBuilds,
   "c-vega": ruCVega,
   "c-versecraft": ruCVersecraft,
   "c-void-breaker": ruCVoidBreaker,
+  "c-wager": ruCWager,
+  "c-wishlist": ruCWishlist,
   "common": ruCommon,
   "feed": ruFeed,
+  "games-hub": ruGamesHub,
   "groups": ruGroups,
   "library": ruLibrary,
   "nav": ruNav,
@@ -127,8 +160,13 @@ const ruResources = {
   "r-strategies": ruRStrategies,
   "r-studio": ruRStudio,
   "rideshare": ruRideshare,
+  "search": ruSearch,
+  "settings-appearance": ruSettingsAppearance,
+  "settings-content": ruSettingsContent,
+  "settings-notifications": ruSettingsNotifications,
   "shared": ruShared,
   "site": ruSite,
+  "theme-studio": ruThemeStudio,
   "user-builds": ruUserBuilds,
   "v": ruV,
 } as const;

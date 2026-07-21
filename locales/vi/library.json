@@ -36,7 +36,7 @@
   "collection-by": "bởi {{who}}",
   "collection-delete-confirm": "Xóa bộ sưu tập này? Các sách sẽ không bị xóa.",
   "collection-desc-placeholder": "Tùy chọn",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Chưa có sách nào.",
   "collection-rename-prompt": "Tên bộ sưu tập",
   "collection-title-placeholder": "ví dụ: Danh sách đọc của tôi",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "Đổi tên",
   "reported": "Đã báo cáo",
   "search-label": "Tìm kiếm trong thư viện",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Tìm kiếm sách và album",
   "search-your-books": "Tìm kiếm sách của bạn…",
   "section-albums": "Album",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Thêm sách",
+  "upload-label": "Tải lên PDF"
 }

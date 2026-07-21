@@ -5,8 +5,11 @@ import thAdmin from "@/locales/th/admin.json";
 import thBuilds from "@/locales/th/builds.json";
 import thCAdmin from "@/locales/th/c-admin.json";
 import thCAltair from "@/locales/th/c-altair.json";
+import thCAwards from "@/locales/th/c-awards.json";
 import thCBlog from "@/locales/th/c-blog.json";
 import thCBuilds from "@/locales/th/c-builds.json";
+import thCCircle from "@/locales/th/c-circle.json";
+import thCCreator from "@/locales/th/c-creator.json";
 import thCCursedLogic from "@/locales/th/c-cursed-logic.json";
 import thCDailyPuzzles from "@/locales/th/c-daily-puzzles.json";
 import thCDoctrine from "@/locales/th/c-doctrine.json";
@@ -14,15 +17,20 @@ import thCDreamRift from "@/locales/th/c-dream-rift.json";
 import thCEconomy from "@/locales/th/c-economy.json";
 import thCForestExplorer from "@/locales/th/c-forest-explorer.json";
 import thCGame from "@/locales/th/c-game.json";
+import thCHistory from "@/locales/th/c-history.json";
 import thCHouseAlwaysWins from "@/locales/th/c-house-always-wins.json";
 import thCKowloonKnockout from "@/locales/th/c-kowloon-knockout.json";
 import thCLaundrySort from "@/locales/th/c-laundry-sort.json";
+import thCLayout from "@/locales/th/c-layout.json";
 import thCLibrary from "@/locales/th/c-library.json";
 import thCLightsOut from "@/locales/th/c-lights-out.json";
+import thCLists from "@/locales/th/c-lists.json";
 import thCLockdown from "@/locales/th/c-lockdown.json";
 import thCModeration from "@/locales/th/c-moderation.json";
 import thCNeonDriftway from "@/locales/th/c-neon-driftway.json";
 import thCNews from "@/locales/th/c-news.json";
+import thCPredictions from "@/locales/th/c-predictions.json";
+import thCProfileModules from "@/locales/th/c-profile-modules.json";
 import thCRideshare from "@/locales/th/c-rideshare.json";
 import thCRmhCapital from "@/locales/th/c-rmh-capital.json";
 import thCRmhPmc from "@/locales/th/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import thCRmhtube from "@/locales/th/c-rmhtube.json";
 import thCRmhtype from "@/locales/th/c-rmhtype.json";
 import thCRmhvibe from "@/locales/th/c-rmhvibe.json";
 import thCRoadmap from "@/locales/th/c-roadmap.json";
+import thCSaves from "@/locales/th/c-saves.json";
 import thCSignalForge from "@/locales/th/c-signal-forge.json";
+import thCStatus from "@/locales/th/c-status.json";
 import thCStudio from "@/locales/th/c-studio.json";
 import thCSynapseStorm from "@/locales/th/c-synapse-storm.json";
 import thCTempleOfJoy from "@/locales/th/c-temple-of-joy.json";
+import thCTournaments from "@/locales/th/c-tournaments.json";
 import thCUi from "@/locales/th/c-ui.json";
 import thCUserBuilds from "@/locales/th/c-user-builds.json";
 import thCVega from "@/locales/th/c-vega.json";
 import thCVersecraft from "@/locales/th/c-versecraft.json";
 import thCVoidBreaker from "@/locales/th/c-void-breaker.json";
+import thCWager from "@/locales/th/c-wager.json";
+import thCWishlist from "@/locales/th/c-wishlist.json";
 import thCommon from "@/locales/th/common.json";
 import thFeed from "@/locales/th/feed.json";
+import thGamesHub from "@/locales/th/games-hub.json";
 import thGroups from "@/locales/th/groups.json";
 import thLibrary from "@/locales/th/library.json";
 import thNav from "@/locales/th/nav.json";
@@ -61,8 +75,13 @@ import thRSliceIt from "@/locales/th/r-slice-it.json";
 import thRStrategies from "@/locales/th/r-strategies.json";
 import thRStudio from "@/locales/th/r-studio.json";
 import thRideshare from "@/locales/th/rideshare.json";
+import thSearch from "@/locales/th/search.json";
+import thSettingsAppearance from "@/locales/th/settings-appearance.json";
+import thSettingsContent from "@/locales/th/settings-content.json";
+import thSettingsNotifications from "@/locales/th/settings-notifications.json";
 import thShared from "@/locales/th/shared.json";
 import thSite from "@/locales/th/site.json";
+import thThemeStudio from "@/locales/th/theme-studio.json";
 import thUserBuilds from "@/locales/th/user-builds.json";
 import thV from "@/locales/th/v.json";
 
@@ -71,8 +90,11 @@ const thResources = {
   "builds": thBuilds,
   "c-admin": thCAdmin,
   "c-altair": thCAltair,
+  "c-awards": thCAwards,
   "c-blog": thCBlog,
   "c-builds": thCBuilds,
+  "c-circle": thCCircle,
+  "c-creator": thCCreator,
   "c-cursed-logic": thCCursedLogic,
   "c-daily-puzzles": thCDailyPuzzles,
   "c-doctrine": thCDoctrine,
@@ -80,15 +102,20 @@ const thResources = {
   "c-economy": thCEconomy,
   "c-forest-explorer": thCForestExplorer,
   "c-game": thCGame,
+  "c-history": thCHistory,
   "c-house-always-wins": thCHouseAlwaysWins,
   "c-kowloon-knockout": thCKowloonKnockout,
   "c-laundry-sort": thCLaundrySort,
+  "c-layout": thCLayout,
   "c-library": thCLibrary,
   "c-lights-out": thCLightsOut,
+  "c-lists": thCLists,
   "c-lockdown": thCLockdown,
   "c-moderation": thCModeration,
   "c-neon-driftway": thCNeonDriftway,
   "c-news": thCNews,
+  "c-predictions": thCPredictions,
+  "c-profile-modules": thCProfileModules,
   "c-rideshare": thCRideshare,
   "c-rmh-capital": thCRmhCapital,
   "c-rmh-pmc": thCRmhPmc,
@@ -102,17 +129,23 @@ const thResources = {
   "c-rmhtype": thCRmhtype,
   "c-rmhvibe": thCRmhvibe,
   "c-roadmap": thCRoadmap,
+  "c-saves": thCSaves,
   "c-signal-forge": thCSignalForge,
+  "c-status": thCStatus,
   "c-studio": thCStudio,
   "c-synapse-storm": thCSynapseStorm,
   "c-temple-of-joy": thCTempleOfJoy,
+  "c-tournaments": thCTournaments,
   "c-ui": thCUi,
   "c-user-builds": thCUserBuilds,
   "c-vega": thCVega,
   "c-versecraft": thCVersecraft,
   "c-void-breaker": thCVoidBreaker,
+  "c-wager": thCWager,
+  "c-wishlist": thCWishlist,
   "common": thCommon,
   "feed": thFeed,
+  "games-hub": thGamesHub,
   "groups": thGroups,
   "library": thLibrary,
   "nav": thNav,
@@ -127,8 +160,13 @@ const thResources = {
   "r-strategies": thRStrategies,
   "r-studio": thRStudio,
   "rideshare": thRideshare,
+  "search": thSearch,
+  "settings-appearance": thSettingsAppearance,
+  "settings-content": thSettingsContent,
+  "settings-notifications": thSettingsNotifications,
   "shared": thShared,
   "site": thSite,
+  "theme-studio": thThemeStudio,
   "user-builds": thUserBuilds,
   "v": thV,
 } as const;

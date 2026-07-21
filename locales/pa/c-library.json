@@ -94,7 +94,7 @@
   "show-book-details": "Show book details",
   "size-limit": "ਵੱਧ ਤੋਂ ਵੱਧ {{maxMb}} MB।",
   "status-analyzing": "ਫ਼ਾਈਲ ਪੜ੍ਹੀ ਜਾ ਰਹੀ ਹੈ…",
-  "status-drafting": "Generating title & description…",
+  "status-drafting": "ਸਿਰਲੇਖ ਅਤੇ ਵਰਣਨ ਤਿਆਰ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ…",
   "status-uploading": "ਪ੍ਰਕਾਸ਼ਿਤ ਕੀਤਾ ਜਾ ਰਿਹਾ ਹੈ…",
   "storage-not-durable": "Object storage is not configured on the server, so uploads will not persist (they 404 after a while). Set the S3_* / R2 environment variables.",
   "table-of-contents": "Table of contents",

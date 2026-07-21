@@ -5,8 +5,11 @@ import msAdmin from "@/locales/ms/admin.json";
 import msBuilds from "@/locales/ms/builds.json";
 import msCAdmin from "@/locales/ms/c-admin.json";
 import msCAltair from "@/locales/ms/c-altair.json";
+import msCAwards from "@/locales/ms/c-awards.json";
 import msCBlog from "@/locales/ms/c-blog.json";
 import msCBuilds from "@/locales/ms/c-builds.json";
+import msCCircle from "@/locales/ms/c-circle.json";
+import msCCreator from "@/locales/ms/c-creator.json";
 import msCCursedLogic from "@/locales/ms/c-cursed-logic.json";
 import msCDailyPuzzles from "@/locales/ms/c-daily-puzzles.json";
 import msCDoctrine from "@/locales/ms/c-doctrine.json";
@@ -14,15 +17,20 @@ import msCDreamRift from "@/locales/ms/c-dream-rift.json";
 import msCEconomy from "@/locales/ms/c-economy.json";
 import msCForestExplorer from "@/locales/ms/c-forest-explorer.json";
 import msCGame from "@/locales/ms/c-game.json";
+import msCHistory from "@/locales/ms/c-history.json";
 import msCHouseAlwaysWins from "@/locales/ms/c-house-always-wins.json";
 import msCKowloonKnockout from "@/locales/ms/c-kowloon-knockout.json";
 import msCLaundrySort from "@/locales/ms/c-laundry-sort.json";
+import msCLayout from "@/locales/ms/c-layout.json";
 import msCLibrary from "@/locales/ms/c-library.json";
 import msCLightsOut from "@/locales/ms/c-lights-out.json";
+import msCLists from "@/locales/ms/c-lists.json";
 import msCLockdown from "@/locales/ms/c-lockdown.json";
 import msCModeration from "@/locales/ms/c-moderation.json";
 import msCNeonDriftway from "@/locales/ms/c-neon-driftway.json";
 import msCNews from "@/locales/ms/c-news.json";
+import msCPredictions from "@/locales/ms/c-predictions.json";
+import msCProfileModules from "@/locales/ms/c-profile-modules.json";
 import msCRideshare from "@/locales/ms/c-rideshare.json";
 import msCRmhCapital from "@/locales/ms/c-rmh-capital.json";
 import msCRmhPmc from "@/locales/ms/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import msCRmhtube from "@/locales/ms/c-rmhtube.json";
 import msCRmhtype from "@/locales/ms/c-rmhtype.json";
 import msCRmhvibe from "@/locales/ms/c-rmhvibe.json";
 import msCRoadmap from "@/locales/ms/c-roadmap.json";
+import msCSaves from "@/locales/ms/c-saves.json";
 import msCSignalForge from "@/locales/ms/c-signal-forge.json";
+import msCStatus from "@/locales/ms/c-status.json";
 import msCStudio from "@/locales/ms/c-studio.json";
 import msCSynapseStorm from "@/locales/ms/c-synapse-storm.json";
 import msCTempleOfJoy from "@/locales/ms/c-temple-of-joy.json";
+import msCTournaments from "@/locales/ms/c-tournaments.json";
 import msCUi from "@/locales/ms/c-ui.json";
 import msCUserBuilds from "@/locales/ms/c-user-builds.json";
 import msCVega from "@/locales/ms/c-vega.json";
 import msCVersecraft from "@/locales/ms/c-versecraft.json";
 import msCVoidBreaker from "@/locales/ms/c-void-breaker.json";
+import msCWager from "@/locales/ms/c-wager.json";
+import msCWishlist from "@/locales/ms/c-wishlist.json";
 import msCommon from "@/locales/ms/common.json";
 import msFeed from "@/locales/ms/feed.json";
+import msGamesHub from "@/locales/ms/games-hub.json";
 import msGroups from "@/locales/ms/groups.json";
 import msLibrary from "@/locales/ms/library.json";
 import msNav from "@/locales/ms/nav.json";
@@ -61,8 +75,13 @@ import msRSliceIt from "@/locales/ms/r-slice-it.json";
 import msRStrategies from "@/locales/ms/r-strategies.json";
 import msRStudio from "@/locales/ms/r-studio.json";
 import msRideshare from "@/locales/ms/rideshare.json";
+import msSearch from "@/locales/ms/search.json";
+import msSettingsAppearance from "@/locales/ms/settings-appearance.json";
+import msSettingsContent from "@/locales/ms/settings-content.json";
+import msSettingsNotifications from "@/locales/ms/settings-notifications.json";
 import msShared from "@/locales/ms/shared.json";
 import msSite from "@/locales/ms/site.json";
+import msThemeStudio from "@/locales/ms/theme-studio.json";
 import msUserBuilds from "@/locales/ms/user-builds.json";
 import msV from "@/locales/ms/v.json";
 
@@ -71,8 +90,11 @@ const msResources = {
   "builds": msBuilds,
   "c-admin": msCAdmin,
   "c-altair": msCAltair,
+  "c-awards": msCAwards,
   "c-blog": msCBlog,
   "c-builds": msCBuilds,
+  "c-circle": msCCircle,
+  "c-creator": msCCreator,
   "c-cursed-logic": msCCursedLogic,
   "c-daily-puzzles": msCDailyPuzzles,
   "c-doctrine": msCDoctrine,
@@ -80,15 +102,20 @@ const msResources = {
   "c-economy": msCEconomy,
   "c-forest-explorer": msCForestExplorer,
   "c-game": msCGame,
+  "c-history": msCHistory,
   "c-house-always-wins": msCHouseAlwaysWins,
   "c-kowloon-knockout": msCKowloonKnockout,
   "c-laundry-sort": msCLaundrySort,
+  "c-layout": msCLayout,
   "c-library": msCLibrary,
   "c-lights-out": msCLightsOut,
+  "c-lists": msCLists,
   "c-lockdown": msCLockdown,
   "c-moderation": msCModeration,
   "c-neon-driftway": msCNeonDriftway,
   "c-news": msCNews,
+  "c-predictions": msCPredictions,
+  "c-profile-modules": msCProfileModules,
   "c-rideshare": msCRideshare,
   "c-rmh-capital": msCRmhCapital,
   "c-rmh-pmc": msCRmhPmc,
@@ -102,17 +129,23 @@ const msResources = {
   "c-rmhtype": msCRmhtype,
   "c-rmhvibe": msCRmhvibe,
   "c-roadmap": msCRoadmap,
+  "c-saves": msCSaves,
   "c-signal-forge": msCSignalForge,
+  "c-status": msCStatus,
   "c-studio": msCStudio,
   "c-synapse-storm": msCSynapseStorm,
   "c-temple-of-joy": msCTempleOfJoy,
+  "c-tournaments": msCTournaments,
   "c-ui": msCUi,
   "c-user-builds": msCUserBuilds,
   "c-vega": msCVega,
   "c-versecraft": msCVersecraft,
   "c-void-breaker": msCVoidBreaker,
+  "c-wager": msCWager,
+  "c-wishlist": msCWishlist,
   "common": msCommon,
   "feed": msFeed,
+  "games-hub": msGamesHub,
   "groups": msGroups,
   "library": msLibrary,
   "nav": msNav,
@@ -127,8 +160,13 @@ const msResources = {
   "r-strategies": msRStrategies,
   "r-studio": msRStudio,
   "rideshare": msRideshare,
+  "search": msSearch,
+  "settings-appearance": msSettingsAppearance,
+  "settings-content": msSettingsContent,
+  "settings-notifications": msSettingsNotifications,
   "shared": msShared,
   "site": msSite,
+  "theme-studio": msThemeStudio,
   "user-builds": msUserBuilds,
   "v": msV,
 } as const;

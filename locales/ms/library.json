@@ -36,7 +36,7 @@
   "collection-by": "oleh {{who}}",
   "collection-delete-confirm": "Padam koleksi ini? Buku tidak akan dipadam.",
   "collection-desc-placeholder": "Pilihan",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Tiada buku lagi.",
   "collection-rename-prompt": "Nama koleksi",
   "collection-title-placeholder": "cth. Senarai bacaan saya",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "Tukar nama",
   "reported": "Dilaporkan",
   "search-label": "Cari perpustakaan",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Cari buku dan album",
   "search-your-books": "Cari buku anda…",
   "section-albums": "Album",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Tambah buku",
+  "upload-label": "Muat naik PDF"
 }

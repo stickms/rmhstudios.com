@@ -36,7 +36,7 @@
   "collection-by": "par {{who}}",
   "collection-delete-confirm": "Supprimer cette collection ? Les livres ne sont pas supprimés.",
   "collection-desc-placeholder": "Facultatif",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Pas encore de livres.",
   "collection-rename-prompt": "Nom de la collection",
   "collection-title-placeholder": "ex. Ma liste de lecture",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "Renommer",
   "reported": "Signalé",
   "search-label": "Rechercher dans la bibliothèque",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Rechercher des livres et des albums",
   "search-your-books": "Rechercher dans vos livres…",
   "section-albums": "Albums",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Ajouter un livre",
+  "upload-label": "Télécharger un PDF"
 }

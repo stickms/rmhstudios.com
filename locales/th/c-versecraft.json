@@ -46,7 +46,7 @@
   "select-words-prompt_one": "เลือก {{count}} คำเพื่อแต่งบทกวีของคุณ",
   "select-words-prompt_other": "เลือก {{count}} คำเพื่อแต่งบทกวีของคุณ",
   "settings": "การตั้งค่า",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "ลงชื่อเข้าใช้เพื่อบันทึกเรื่องราวของคุณไปยังคลาวด์และเล่นซ้ำได้ทุกที่",
   "sign-in-to-save": "ลงชื่อเข้าใช้เพื่อบันทึกความคืบหน้าของคุณไปยังคลาวด์",
   "skip": "ข้าม",
   "slot-auto": "อัตโนมัติ",

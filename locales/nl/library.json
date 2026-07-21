@@ -36,7 +36,7 @@
   "collection-by": "door {{who}}",
   "collection-delete-confirm": "Deze collectie verwijderen? De boeken worden niet verwijderd.",
   "collection-desc-placeholder": "Optioneel",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Nog geen boeken.",
   "collection-rename-prompt": "Collectienaam",
   "collection-title-placeholder": "bijv. Mijn leeslijst",
   "collections-community": "Reader collections",
@@ -75,7 +75,7 @@
   "rename": "Hernoemen",
   "reported": "Gemeld",
   "search-label": "Doorzoek de bibliotheek",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Zoek boeken en albums",
   "search-your-books": "Doorzoek je boeken…",
   "section-albums": "Albums",
   "section-blog": "Blog",
@@ -88,6 +88,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Boek toevoegen",
+  "upload-label": "PDF uploaden"
 }

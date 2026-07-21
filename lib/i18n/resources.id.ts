@@ -5,8 +5,11 @@ import idAdmin from "@/locales/id/admin.json";
 import idBuilds from "@/locales/id/builds.json";
 import idCAdmin from "@/locales/id/c-admin.json";
 import idCAltair from "@/locales/id/c-altair.json";
+import idCAwards from "@/locales/id/c-awards.json";
 import idCBlog from "@/locales/id/c-blog.json";
 import idCBuilds from "@/locales/id/c-builds.json";
+import idCCircle from "@/locales/id/c-circle.json";
+import idCCreator from "@/locales/id/c-creator.json";
 import idCCursedLogic from "@/locales/id/c-cursed-logic.json";
 import idCDailyPuzzles from "@/locales/id/c-daily-puzzles.json";
 import idCDoctrine from "@/locales/id/c-doctrine.json";
@@ -14,15 +17,20 @@ import idCDreamRift from "@/locales/id/c-dream-rift.json";
 import idCEconomy from "@/locales/id/c-economy.json";
 import idCForestExplorer from "@/locales/id/c-forest-explorer.json";
 import idCGame from "@/locales/id/c-game.json";
+import idCHistory from "@/locales/id/c-history.json";
 import idCHouseAlwaysWins from "@/locales/id/c-house-always-wins.json";
 import idCKowloonKnockout from "@/locales/id/c-kowloon-knockout.json";
 import idCLaundrySort from "@/locales/id/c-laundry-sort.json";
+import idCLayout from "@/locales/id/c-layout.json";
 import idCLibrary from "@/locales/id/c-library.json";
 import idCLightsOut from "@/locales/id/c-lights-out.json";
+import idCLists from "@/locales/id/c-lists.json";
 import idCLockdown from "@/locales/id/c-lockdown.json";
 import idCModeration from "@/locales/id/c-moderation.json";
 import idCNeonDriftway from "@/locales/id/c-neon-driftway.json";
 import idCNews from "@/locales/id/c-news.json";
+import idCPredictions from "@/locales/id/c-predictions.json";
+import idCProfileModules from "@/locales/id/c-profile-modules.json";
 import idCRideshare from "@/locales/id/c-rideshare.json";
 import idCRmhCapital from "@/locales/id/c-rmh-capital.json";
 import idCRmhPmc from "@/locales/id/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import idCRmhtube from "@/locales/id/c-rmhtube.json";
 import idCRmhtype from "@/locales/id/c-rmhtype.json";
 import idCRmhvibe from "@/locales/id/c-rmhvibe.json";
 import idCRoadmap from "@/locales/id/c-roadmap.json";
+import idCSaves from "@/locales/id/c-saves.json";
 import idCSignalForge from "@/locales/id/c-signal-forge.json";
+import idCStatus from "@/locales/id/c-status.json";
 import idCStudio from "@/locales/id/c-studio.json";
 import idCSynapseStorm from "@/locales/id/c-synapse-storm.json";
 import idCTempleOfJoy from "@/locales/id/c-temple-of-joy.json";
+import idCTournaments from "@/locales/id/c-tournaments.json";
 import idCUi from "@/locales/id/c-ui.json";
 import idCUserBuilds from "@/locales/id/c-user-builds.json";
 import idCVega from "@/locales/id/c-vega.json";
 import idCVersecraft from "@/locales/id/c-versecraft.json";
 import idCVoidBreaker from "@/locales/id/c-void-breaker.json";
+import idCWager from "@/locales/id/c-wager.json";
+import idCWishlist from "@/locales/id/c-wishlist.json";
 import idCommon from "@/locales/id/common.json";
 import idFeed from "@/locales/id/feed.json";
+import idGamesHub from "@/locales/id/games-hub.json";
 import idGroups from "@/locales/id/groups.json";
 import idLibrary from "@/locales/id/library.json";
 import idNav from "@/locales/id/nav.json";
@@ -61,8 +75,13 @@ import idRSliceIt from "@/locales/id/r-slice-it.json";
 import idRStrategies from "@/locales/id/r-strategies.json";
 import idRStudio from "@/locales/id/r-studio.json";
 import idRideshare from "@/locales/id/rideshare.json";
+import idSearch from "@/locales/id/search.json";
+import idSettingsAppearance from "@/locales/id/settings-appearance.json";
+import idSettingsContent from "@/locales/id/settings-content.json";
+import idSettingsNotifications from "@/locales/id/settings-notifications.json";
 import idShared from "@/locales/id/shared.json";
 import idSite from "@/locales/id/site.json";
+import idThemeStudio from "@/locales/id/theme-studio.json";
 import idUserBuilds from "@/locales/id/user-builds.json";
 import idV from "@/locales/id/v.json";
 
@@ -71,8 +90,11 @@ const idResources = {
   "builds": idBuilds,
   "c-admin": idCAdmin,
   "c-altair": idCAltair,
+  "c-awards": idCAwards,
   "c-blog": idCBlog,
   "c-builds": idCBuilds,
+  "c-circle": idCCircle,
+  "c-creator": idCCreator,
   "c-cursed-logic": idCCursedLogic,
   "c-daily-puzzles": idCDailyPuzzles,
   "c-doctrine": idCDoctrine,
@@ -80,15 +102,20 @@ const idResources = {
   "c-economy": idCEconomy,
   "c-forest-explorer": idCForestExplorer,
   "c-game": idCGame,
+  "c-history": idCHistory,
   "c-house-always-wins": idCHouseAlwaysWins,
   "c-kowloon-knockout": idCKowloonKnockout,
   "c-laundry-sort": idCLaundrySort,
+  "c-layout": idCLayout,
   "c-library": idCLibrary,
   "c-lights-out": idCLightsOut,
+  "c-lists": idCLists,
   "c-lockdown": idCLockdown,
   "c-moderation": idCModeration,
   "c-neon-driftway": idCNeonDriftway,
   "c-news": idCNews,
+  "c-predictions": idCPredictions,
+  "c-profile-modules": idCProfileModules,
   "c-rideshare": idCRideshare,
   "c-rmh-capital": idCRmhCapital,
   "c-rmh-pmc": idCRmhPmc,
@@ -102,17 +129,23 @@ const idResources = {
   "c-rmhtype": idCRmhtype,
   "c-rmhvibe": idCRmhvibe,
   "c-roadmap": idCRoadmap,
+  "c-saves": idCSaves,
   "c-signal-forge": idCSignalForge,
+  "c-status": idCStatus,
   "c-studio": idCStudio,
   "c-synapse-storm": idCSynapseStorm,
   "c-temple-of-joy": idCTempleOfJoy,
+  "c-tournaments": idCTournaments,
   "c-ui": idCUi,
   "c-user-builds": idCUserBuilds,
   "c-vega": idCVega,
   "c-versecraft": idCVersecraft,
   "c-void-breaker": idCVoidBreaker,
+  "c-wager": idCWager,
+  "c-wishlist": idCWishlist,
   "common": idCommon,
   "feed": idFeed,
+  "games-hub": idGamesHub,
   "groups": idGroups,
   "library": idLibrary,
   "nav": idNav,
@@ -127,8 +160,13 @@ const idResources = {
   "r-strategies": idRStrategies,
   "r-studio": idRStudio,
   "rideshare": idRideshare,
+  "search": idSearch,
+  "settings-appearance": idSettingsAppearance,
+  "settings-content": idSettingsContent,
+  "settings-notifications": idSettingsNotifications,
   "shared": idShared,
   "site": idSite,
+  "theme-studio": idThemeStudio,
   "user-builds": idUserBuilds,
   "v": idV,
 } as const;

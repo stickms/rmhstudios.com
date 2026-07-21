@@ -5,8 +5,11 @@ import esAdmin from "@/locales/es/admin.json";
 import esBuilds from "@/locales/es/builds.json";
 import esCAdmin from "@/locales/es/c-admin.json";
 import esCAltair from "@/locales/es/c-altair.json";
+import esCAwards from "@/locales/es/c-awards.json";
 import esCBlog from "@/locales/es/c-blog.json";
 import esCBuilds from "@/locales/es/c-builds.json";
+import esCCircle from "@/locales/es/c-circle.json";
+import esCCreator from "@/locales/es/c-creator.json";
 import esCCursedLogic from "@/locales/es/c-cursed-logic.json";
 import esCDailyPuzzles from "@/locales/es/c-daily-puzzles.json";
 import esCDoctrine from "@/locales/es/c-doctrine.json";
@@ -14,15 +17,20 @@ import esCDreamRift from "@/locales/es/c-dream-rift.json";
 import esCEconomy from "@/locales/es/c-economy.json";
 import esCForestExplorer from "@/locales/es/c-forest-explorer.json";
 import esCGame from "@/locales/es/c-game.json";
+import esCHistory from "@/locales/es/c-history.json";
 import esCHouseAlwaysWins from "@/locales/es/c-house-always-wins.json";
 import esCKowloonKnockout from "@/locales/es/c-kowloon-knockout.json";
 import esCLaundrySort from "@/locales/es/c-laundry-sort.json";
+import esCLayout from "@/locales/es/c-layout.json";
 import esCLibrary from "@/locales/es/c-library.json";
 import esCLightsOut from "@/locales/es/c-lights-out.json";
+import esCLists from "@/locales/es/c-lists.json";
 import esCLockdown from "@/locales/es/c-lockdown.json";
 import esCModeration from "@/locales/es/c-moderation.json";
 import esCNeonDriftway from "@/locales/es/c-neon-driftway.json";
 import esCNews from "@/locales/es/c-news.json";
+import esCPredictions from "@/locales/es/c-predictions.json";
+import esCProfileModules from "@/locales/es/c-profile-modules.json";
 import esCRideshare from "@/locales/es/c-rideshare.json";
 import esCRmhCapital from "@/locales/es/c-rmh-capital.json";
 import esCRmhPmc from "@/locales/es/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import esCRmhtube from "@/locales/es/c-rmhtube.json";
 import esCRmhtype from "@/locales/es/c-rmhtype.json";
 import esCRmhvibe from "@/locales/es/c-rmhvibe.json";
 import esCRoadmap from "@/locales/es/c-roadmap.json";
+import esCSaves from "@/locales/es/c-saves.json";
 import esCSignalForge from "@/locales/es/c-signal-forge.json";
+import esCStatus from "@/locales/es/c-status.json";
 import esCStudio from "@/locales/es/c-studio.json";
 import esCSynapseStorm from "@/locales/es/c-synapse-storm.json";
 import esCTempleOfJoy from "@/locales/es/c-temple-of-joy.json";
+import esCTournaments from "@/locales/es/c-tournaments.json";
 import esCUi from "@/locales/es/c-ui.json";
 import esCUserBuilds from "@/locales/es/c-user-builds.json";
 import esCVega from "@/locales/es/c-vega.json";
 import esCVersecraft from "@/locales/es/c-versecraft.json";
 import esCVoidBreaker from "@/locales/es/c-void-breaker.json";
+import esCWager from "@/locales/es/c-wager.json";
+import esCWishlist from "@/locales/es/c-wishlist.json";
 import esCommon from "@/locales/es/common.json";
 import esFeed from "@/locales/es/feed.json";
+import esGamesHub from "@/locales/es/games-hub.json";
 import esGroups from "@/locales/es/groups.json";
 import esLibrary from "@/locales/es/library.json";
 import esNav from "@/locales/es/nav.json";
@@ -61,8 +75,13 @@ import esRSliceIt from "@/locales/es/r-slice-it.json";
 import esRStrategies from "@/locales/es/r-strategies.json";
 import esRStudio from "@/locales/es/r-studio.json";
 import esRideshare from "@/locales/es/rideshare.json";
+import esSearch from "@/locales/es/search.json";
+import esSettingsAppearance from "@/locales/es/settings-appearance.json";
+import esSettingsContent from "@/locales/es/settings-content.json";
+import esSettingsNotifications from "@/locales/es/settings-notifications.json";
 import esShared from "@/locales/es/shared.json";
 import esSite from "@/locales/es/site.json";
+import esThemeStudio from "@/locales/es/theme-studio.json";
 import esUserBuilds from "@/locales/es/user-builds.json";
 import esV from "@/locales/es/v.json";
 
@@ -71,8 +90,11 @@ const esResources = {
   "builds": esBuilds,
   "c-admin": esCAdmin,
   "c-altair": esCAltair,
+  "c-awards": esCAwards,
   "c-blog": esCBlog,
   "c-builds": esCBuilds,
+  "c-circle": esCCircle,
+  "c-creator": esCCreator,
   "c-cursed-logic": esCCursedLogic,
   "c-daily-puzzles": esCDailyPuzzles,
   "c-doctrine": esCDoctrine,
@@ -80,15 +102,20 @@ const esResources = {
   "c-economy": esCEconomy,
   "c-forest-explorer": esCForestExplorer,
   "c-game": esCGame,
+  "c-history": esCHistory,
   "c-house-always-wins": esCHouseAlwaysWins,
   "c-kowloon-knockout": esCKowloonKnockout,
   "c-laundry-sort": esCLaundrySort,
+  "c-layout": esCLayout,
   "c-library": esCLibrary,
   "c-lights-out": esCLightsOut,
+  "c-lists": esCLists,
   "c-lockdown": esCLockdown,
   "c-moderation": esCModeration,
   "c-neon-driftway": esCNeonDriftway,
   "c-news": esCNews,
+  "c-predictions": esCPredictions,
+  "c-profile-modules": esCProfileModules,
   "c-rideshare": esCRideshare,
   "c-rmh-capital": esCRmhCapital,
   "c-rmh-pmc": esCRmhPmc,
@@ -102,17 +129,23 @@ const esResources = {
   "c-rmhtype": esCRmhtype,
   "c-rmhvibe": esCRmhvibe,
   "c-roadmap": esCRoadmap,
+  "c-saves": esCSaves,
   "c-signal-forge": esCSignalForge,
+  "c-status": esCStatus,
   "c-studio": esCStudio,
   "c-synapse-storm": esCSynapseStorm,
   "c-temple-of-joy": esCTempleOfJoy,
+  "c-tournaments": esCTournaments,
   "c-ui": esCUi,
   "c-user-builds": esCUserBuilds,
   "c-vega": esCVega,
   "c-versecraft": esCVersecraft,
   "c-void-breaker": esCVoidBreaker,
+  "c-wager": esCWager,
+  "c-wishlist": esCWishlist,
   "common": esCommon,
   "feed": esFeed,
+  "games-hub": esGamesHub,
   "groups": esGroups,
   "library": esLibrary,
   "nav": esNav,
@@ -127,8 +160,13 @@ const esResources = {
   "r-strategies": esRStrategies,
   "r-studio": esRStudio,
   "rideshare": esRideshare,
+  "search": esSearch,
+  "settings-appearance": esSettingsAppearance,
+  "settings-content": esSettingsContent,
+  "settings-notifications": esSettingsNotifications,
   "shared": esShared,
   "site": esSite,
+  "theme-studio": esThemeStudio,
   "user-builds": esUserBuilds,
   "v": esV,
 } as const;
