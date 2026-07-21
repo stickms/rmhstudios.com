@@ -106,9 +106,15 @@ Work through this for every new or edited page:
 - [ ] Buttons via `<Button variant size>`; pills via `<Badge>`; icons from
       `lucide-react`.
 - [ ] Tab strips via `<LiquidTabs>` (`components/ui/liquid-tabs.tsx`) — the
-      active capsule flows between tabs. Exception: tab bars that are really
+      active capsule flows between tabs. Each strip rides its own glass **sheet**
+      (`sheet` prop, default on) and sits **below** the hero / page-title
+      capsule in the content flow, separated by the standard gutter — never
+      inside `headerExtra` or the sticky header (§5.45). A strip that must stay
+      sticky keeps a `top` offset clearing the floating header but remains its
+      own sheet; on narrow screens wrap it in `tab-sheet-scroll` so it scrolls
+      horizontally instead of clipping. Exception: tab bars that are really
       route links (RMHLadder) or need richer ARIA (`aria-controls`) keep their
-      own markup and add the `layoutId` capsule directly.
+      own markup and add the `layoutId` capsule + sheet wrapper directly.
 - [ ] v2 optics come free — don't re-add them: panes/overlays/chrome get the
       specular rim glint automatically; interactive fills glint on hover. Only
       opt in to the rationed extras where a page's spec says so:
@@ -156,6 +162,10 @@ Work through this for every new or edited page:
 - [ ] framer-motion for JS animation (MotionConfig already gates reduced
       motion); gate imperative animation with `useReducedMotion()`. Prefer the
       shared tokens/variants in `lib/motion.ts` over ad-hoc `duration`/`ease`.
+- [ ] Card→detail navigations (posts, images, books, blog/news) open with the
+      liquid morph: `runViewTransition(el, { liquid: true })` + `liquidVTName()`
+      (`lib/view-transition.ts`, §5.48), then stagger the detail's secondary
+      content — don't hard-cut into a detail view.
 - [ ] Icon-only controls have `aria-label` or `sr-only` text; decorative icons
       `aria-hidden`.
 - [ ] Keyboard path works (focus-visible rings are global; don't suppress
@@ -225,5 +235,7 @@ These are the mistakes that make a page feel "off" — reviewers will flag them:
    post lists — the v2 floating shell replaced all three (floating header
    capsule, aurora gutters, spaced `.glass-fill` cards).
 10. Hand-rolling a `layoutId` tab capsule instead of `LiquidTabs`, or stacking
-    `.glass-refract` onto a `.glass-chrome--aside` element (both of its
-    pseudo-elements are already spoken for — blur carrier + glint ring).
+    `.glass-refract` onto a `.glass-chrome--aside` element (its `::before` is the
+    blur carrier, so the lens band has nowhere to live — see design-language.md
+    §5.1). The aside's glint rides its own border-box background layer now (§4.35),
+    not a pseudo.

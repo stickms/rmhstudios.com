@@ -784,7 +784,8 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
   /* Fixed asides: blur lives on ::before so fixed descendants (LeftSidebar's
      non-portaled user menu) keep the VIEWPORT as their containing block. NEVER
      put backdrop-filter on the aside itself (§3.3.1). Because ::before is the
-     blur carrier here, the aside's optics ring lives on ::after instead (§2). */
+     blur carrier here, the glint can't ride a pseudo — it lives in the aside's
+     own border-box background layer (§4.35); the old ::after ring is deleted. */
   .glass-chrome--aside {
     position: relative;
     --glass-bevel: 8px;

@@ -96,16 +96,29 @@ the default; persisted prefs self-heal in `Providers.tsx`.
 | Base    | `default` (**Glass Dark** — the site default: aurora-lit deep-ocean canvas, translucent surfaces, specular rims), `light` (**Glass Light** — daylight canvas, brighter white frost, dark ink), `high-contrast` (WCAG AAA, **no glass**: opaque black/white, yellow accent, 2px borders) |
 | Curated | `graphite` (Graphite Glass — monochrome smoke, desaturated), `sepia` (Sepia Glass — warm parchment, amber accent), `nocturne` (Nocturne Glass — deep-navy nightscape, sky-blue aurora)                                                                                                  |
 
-The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassEffect`,
-`GlassDock`, `GlassPane`, `GlassFilter`) with a design-lab reference at
-`/liquid-glass`. A user "Reduce transparency" toggle (Settings → Appearance)
-collapses the glass to opaque surfaces — the manual equivalent of the OS
-`prefers-reduced-transparency`.
+The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
+`GlassFilter` — the v2 lens-filter host mounted globally in `__root.tsx`) with a
+design-lab reference at `/liquid-glass`. A **Glass clarity** slider (Settings →
+Appearance, §5.46) tunes how much scene shows through in five stops
+(`0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear`): stop 0 is the opaque
+`html.reduce-transparency` mechanism (the manual equivalent of the OS
+`prefers-reduced-transparency`), and stops 1/3/4 scale the `--glass-user-blur` /
+`--glass-user-tint` factors the glass classes consume (stop 2 = the shipped
+default). Persisted as `rmh-glass-level`, applied pre-paint by the no-flash
+script; the OS override and high-contrast still win.
 
 On top of any theme a user can pick an **accent preset** — a curated color
 (`lib/appearance.ts`, `ACCENT_PRESETS`, 14 options) that overrides just the
 `--site-accent*` tokens as inline styles on `<html>`, keeping everything else
 from the theme. `null` = the theme's own accent.
+
+**User themes (v2, §14)** extend the same principle to the marketplace: a
+`UserTheme`'s tokens are colors + a few scalar knobs (`lib/themes/tokens.ts`,
+`THEME_TOKENS_VERSION = 2`), and `themeCssVars()` derives the full `--site-*` /
+`--site-glass-*` contract from them — so every purchased theme is a correct
+glass tint and inherits future optics upgrades. Members create/publish (Theme
+Studio, `components/themes/`); anyone buys with RMH coins. v1 token maps upcast
+on read (`upcastTokens`), never rejected.
 
 Themes differ **only through the `--site-*` token contract** — there are no
 per-theme `[data-slot]` component overrides or full-page background effects on
@@ -185,7 +198,7 @@ role, not by looks — the tier decides blur cost (see the redesign doc §6 budg
 | `.glass-refract--prism`                      | modifier        | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. **≤1 per page**; sanctioned users: login card, command palette, `/store` featured tier, design lab. |
 | `.glass-liquid` (or `<GlassPane liquid>`)    | modifier        | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, **≤3 per page**, never on list items. |
 | `.glass-sheen-hover`                         | modifier        | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in). Unlimited.                                                                     |
-| `.glass-bevel-sm`                            | modifier        | Narrow 6px optics ring for small capsules/discs (e.g. BackToTop).                                                                                                          |
+| `.glass-bevel-sm`                            | modifier        | Narrow 6px optics ring for small capsules — the `LiquidTabs` sheet pill (§5.45), plus discs like BackToTop.                                                                |
 | `.glass-opaque`                              | —               | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                      |
 
 **The rim glint comes free** (v2, §4.35): `.glass-pane`/`.glass-overlay`/`.glass-chrome`
@@ -318,12 +331,26 @@ no shell.
   motion) — every glass rim's specular glint answers it. Its per-element
   duty (`--glass-px/--glass-py` for the `::after` diffuse hotspot) and the
   `lib/glass-lens.ts` per-element lens-filter generator both initialize from
-  the same single listener.
-- **Liquid tabs:** tab strips use `components/ui/liquid-tabs.tsx` — the
-  active capsule is a `layoutId` glass pill that flows between tabs on
-  `SPRING.snappy` and jumps under reduced motion. Link-based or
+  the same single listener. On touch devices `useLiquidBackground.ts` maps
+  `deviceorientation` to the same `--light-x/--light-y` under `html.tilt-live`,
+  so tilting the phone slides the glint across every pane (§5.5x C; opt-in on
+  iOS via the Settings → Appearance tilt row).
+- **Liquid tabs:** tab strips use `components/ui/liquid-tabs.tsx` — each rides
+  its own L1 **glass sheet** (`glass-fill glass-bevel-sm rounded-full` pill,
+  `sheet` prop default) placed **below** the hero/page-title capsule, never
+  inside header chrome (§5.45; see `page-consistency.md`). The active capsule is
+  a `layoutId` glass pill that flows between tabs on `SPRING.snappy` and jumps
+  under reduced motion; on capable engines it also **morphs** — velocity
+  squash/stretch plus a `#glass-goo` metaball trail (`liquid-morph.tsx`, §5.47),
+  stripped under reduced-motion / perf-lite / high-contrast. Link-based or
   `aria-controls`-rich tab bars keep their own markup and add the `layoutId`
   capsule directly (creator studio, RMHLadder).
+- **Liquid opens:** card→detail navigations morph the clicked glass slab into
+  the detail hero via `runViewTransition(el, { liquid: true })` + `liquidVTName()`
+  (`lib/view-transition.ts`, §5.48) — the VT name is set at click time and
+  cleared after; the detail's secondary content (comments, metadata, related
+  lists) then staggers in via `staggerContainer`/`fadeRise`. No-VT browsers get
+  instant nav + the stagger.
 - `hooks/useReducedMotion.ts` — SSR-safe boolean for JS animations CSS can't
   reach; `prefersReducedMotion()` for imperative checks.
 - `hooks/useCelebration.ts` — confetti/fireworks; lazy-loads canvas-confetti,
