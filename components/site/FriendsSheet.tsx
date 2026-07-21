@@ -1,20 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
 
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetClose,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from '@/components/ui/sheet';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useActiveFriends } from '@/hooks/useActiveFriends';
-import { contextVerb, type ActiveFriend } from '@/lib/presence-types';
+import { contextVerb, sameActiveFriend, type ActiveFriend } from '@/lib/presence-types';
 import { ActivityLine } from './ActivityLine';
 
 /**
@@ -58,7 +52,7 @@ export function FriendsStrip({ className }: { className?: string }) {
               />
               <span
                 aria-hidden
-                className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-site-surface ${
+                className={`absolute -bottom-0.5 -end-0.5 h-2.5 w-2.5 rounded-full border-2 border-site-surface ${
                   f.activity ? 'bg-site-accent' : 'bg-site-success'
                 }`}
               />
@@ -92,6 +86,9 @@ export function FriendsSheet({
   friends: ActiveFriend[];
 }) {
   const { t } = useTranslation('site');
+  // Stable across polls so the memoized rows aren't invalidated by a new inline
+  // closure each render (onOpenChange is a setter and safe to close over).
+  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
@@ -100,7 +97,7 @@ export function FriendsSheet({
         </SheetHeader>
         <ul className="flex flex-col gap-1 pt-2">
           {friends.map((f) => (
-            <FriendSheetRow key={f.user.id} friend={f} onNavigate={() => onOpenChange(false)} />
+            <FriendSheetRow key={f.user.id} friend={f} onNavigate={close} />
           ))}
         </ul>
       </SheetContent>
@@ -108,40 +105,54 @@ export function FriendsSheet({
   );
 }
 
-function FriendSheetRow({ friend, onNavigate }: { friend: ActiveFriend; onNavigate: () => void }) {
-  const { t } = useTranslation('site');
-  const { user, activity, joinable } = friend;
-  const name = user.name || user.handle || user.username || t('someone', { defaultValue: 'Someone' });
-  const profileHref = `/u/${user.handle ?? user.id}`;
-  return (
-    <li className="flex items-center gap-3 rounded-site px-2 py-2">
-      <SheetClose asChild>
-        <Link to={profileHref} onClick={onNavigate} className="flex min-w-0 flex-1 items-center gap-3">
-          <span className="relative shrink-0">
-            <UserAvatar src={user.image} alt="" size={40} fallbackName={name} />
-            <span
-              aria-hidden
-              className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-site-surface bg-site-success"
-            />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm font-medium text-site-text">{name}</span>
-            <ActivityLine activity={activity} />
-          </span>
-        </Link>
-      </SheetClose>
-      {joinable && activity ? (
-        // Full-width context button on mobile (not hover-revealed).
+const FriendSheetRow = memo(
+  function FriendSheetRow({
+    friend,
+    onNavigate,
+  }: {
+    friend: ActiveFriend;
+    onNavigate: () => void;
+  }) {
+    const { t } = useTranslation('site');
+    const { user, activity, joinable } = friend;
+    const name =
+      user.name || user.handle || user.username || t('someone', { defaultValue: 'Someone' });
+    const profileHref = `/u/${user.handle ?? user.id}`;
+    return (
+      <li className="flex items-center gap-3 rounded-site px-2 py-2">
         <SheetClose asChild>
           <Link
-            to={joinable.href}
+            to={profileHref}
             onClick={onNavigate}
-            className="glass-interactive shrink-0 rounded-full bg-site-accent-dim px-3 py-1.5 text-xs font-semibold text-site-accent"
+            className="flex min-w-0 flex-1 items-center gap-3"
           >
-            {t(`presence-context-${activity.kind}`, { defaultValue: contextVerb(activity.kind) })}
+            <span className="relative shrink-0">
+              <UserAvatar src={user.image} alt="" size={40} fallbackName={name} />
+              <span
+                aria-hidden
+                className="absolute -bottom-0.5 -end-0.5 h-3 w-3 rounded-full border-2 border-site-surface bg-site-success"
+              />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium text-site-text">{name}</span>
+              <ActivityLine activity={activity} />
+            </span>
           </Link>
         </SheetClose>
-      ) : null}
-    </li>
-  );
-}
+        {joinable && activity ? (
+          // Full-width context button on mobile (not hover-revealed).
+          <SheetClose asChild>
+            <Link
+              to={joinable.href}
+              onClick={onNavigate}
+              className="glass-interactive shrink-0 rounded-full bg-site-accent-dim px-3 py-1.5 text-xs font-semibold text-site-accent"
+            >
+              {t(`presence-context-${activity.kind}`, { defaultValue: contextVerb(activity.kind) })}
+            </Link>
+          </SheetClose>
+        ) : null}
+      </li>
+    );
+  },
+  (prev, next) => prev.onNavigate === next.onNavigate && sameActiveFriend(prev.friend, next.friend),
+);

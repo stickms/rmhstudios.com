@@ -22,6 +22,11 @@ function load(locale: string, ns: string): Record<string, string> {
 // orphan key a locale has that English does not — still fails the suite. Shrink
 // this map (ideally to {}) the moment the translate pipeline is run.
 const KNOWN_UNTRANSLATED: Record<string, string[]> = {
+  // SortableList reorder controls (commit 443451a, the §15 groundwork
+  // primitives) landed in en/c-ui.json but weren't machine-translated. Runtime
+  // falls back to English per key. Remove once `pnpm i18n:translate &&
+  // pnpm i18n:resources` has been run and the catalogs committed.
+  'c-ui': ['move-down', 'move-up'],
   feed: [
     'menu-audience',
     'menu-content-warning',

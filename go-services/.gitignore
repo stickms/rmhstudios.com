@@ -1,0 +1,11 @@
+# Compiled command binaries — `go build ./cmd/<name>/` drops the binary here,
+# named after its cmd directory. Production builds them into the image
+# (Dockerfile go-builder stage / Bazel), never from a committed artifact.
+/assets
+/bot-worker
+/discord-bot
+/doctrine-worker
+/recap
+/status
+/supervisor
+/vibe-worker

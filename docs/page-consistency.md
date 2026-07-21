@@ -13,10 +13,10 @@ states). This guide is the recipe.
 
 ## 1. Decide the page type first
 
-| Type | Where the file goes | Gets |
-|---|---|---|
-| Standard site page (feed, wallet, settings, admin, …) | `app/routes/_site/<name>.tsx` | Left sidebar, mobile nav, skip link, page-enter animation |
-| Full-screen experience (game, `/login`, legal, marketing arm, Discord activity) | `app/routes/<name>.tsx` (top level) | Nothing — you own the whole viewport |
+| Type                                                                            | Where the file goes                 | Gets                                                      |
+| ------------------------------------------------------------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| Standard site page (feed, wallet, settings, admin, …)                           | `app/routes/_site/<name>.tsx`       | Left sidebar, mobile nav, skip link, page-enter animation |
+| Full-screen experience (game, `/login`, legal, marketing arm, Discord activity) | `app/routes/<name>.tsx` (top level) | Nothing — you own the whole viewport                      |
 
 This split is deliberate. Games, `login`, `secret/*`, the legal pages
 (`terms`, `privacy`, `cookies`, `copyright`, `security`) and `discord/*` are
@@ -28,22 +28,20 @@ intentionally top-level — do not "fix" them into `_site/`.
 
 ```tsx
 // app/routes/_site/example.tsx
-import { createFileRoute } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
-import { PageLayout } from "@/components/feed/PageLayout";
+import { createFileRoute } from '@tanstack/react-router';
+import { useTranslation } from 'react-i18next';
+import { PageLayout } from '@/components/feed/PageLayout';
 
-export const Route = createFileRoute("/_site/example")({
-  head: () => ({ meta: [{ title: "Example | RMH Studios" }] }),
+export const Route = createFileRoute('/_site/example')({
+  head: () => ({ meta: [{ title: 'Example | RMH Studios' }] }),
   component: ExamplePage,
 });
 
 function ExamplePage() {
-  const { t } = useTranslation("site");
+  const { t } = useTranslation('site');
   return (
-    <PageLayout title={t("example-title", { defaultValue: "Example" })}>
-      <div className="px-4 pt-4 pb-12 max-w-2xl mx-auto">
-        {/* content */}
-      </div>
+    <PageLayout title={t('example-title', { defaultValue: 'Example' })}>
+      <div className="px-4 pt-4 pb-12 max-w-2xl mx-auto">{/* content */}</div>
     </PageLayout>
   );
 }
@@ -88,12 +86,14 @@ Widths come from `lib/layout-width.ts`: `DEFAULT_WIDTH` 648, `WIDE_WIDTH` 800,
 Work through this for every new or edited page:
 
 ### Structure
+
 - [ ] File in the right place (`_site/` vs top level) — see §1.
 - [ ] Wrapped in `PageLayout` (or the `AnimatedMain` column pattern).
 - [ ] Inner content padded `px-4 pt-4 pb-12` (usually with `max-w-2xl mx-auto`).
 - [ ] No sidebars/nav re-implemented — the shell owns them.
 
 ### Visual tokens (see design-language.md §1)
+
 - [ ] Colors/borders/text only via `site-*` utilities; radii via
       `rounded-site`/`rounded-site-sm`; shadows via `shadow-site`.
 - [ ] Surfaces via `Card` (L1 `.glass-fill` by default; `pane` for L2,
@@ -105,6 +105,7 @@ Work through this for every new or edited page:
       `lucide-react`.
 
 ### States
+
 - [ ] Loading: `<Skeleton>` blocks (add `shimmer` for hero placeholders) or
       `<Spinner>` (router-level pending is already handled by `RoutePending`).
       Buttons that trigger async work use `<Button loading={…}>` for in-flight
@@ -125,18 +126,21 @@ Work through this for every new or edited page:
       centered sign-in prompt with `<Button variant="accent">`.
 
 ### Head / SEO (see app/CLAUDE.md for details)
+
 - [ ] `head()` returns at minimum `meta: [{ title: "X | RMH Studios" }]`.
 - [ ] Public/marketing pages: use `buildMeta()` + `buildCanonical()` from
       `@/lib/seo`; content pages add JSON-LD via `jsonLdScript(...)` from
       `@/lib/schema`.
 
 ### i18n
+
 - [ ] Every user-facing string through `t("key", { defaultValue: "…" })`,
       namespace `site` for standard pages (see design-language.md §10 for the
       namespace map).
 - [ ] `pnpm i18n:extract` run after adding strings.
 
 ### Motion & accessibility
+
 - [ ] framer-motion for JS animation (MotionConfig already gates reduced
       motion); gate imperative animation with `useReducedMotion()`. Prefer the
       shared tokens/variants in `lib/motion.ts` over ad-hoc `duration`/`ease`.
@@ -144,6 +148,11 @@ Work through this for every new or edited page:
       `aria-hidden`.
 - [ ] Keyboard path works (focus-visible rings are global; don't suppress
       outlines).
+- [ ] Focus ring stays visible against the surface it lands on — the global
+      ring is `2px solid var(--site-accent)` (offset 2px), so any theme whose
+      `--site-accent` approaches its `--site-surface` must be checked. Tab to the
+      skip link (`_site.tsx`, the first focus stop) under `.style-high-contrast`
+      specifically: the ring vs. surface must clear WCAG 1.4.11 (≥3:1).
 - [ ] Check `.style-light` (Glass Light) and `.style-high-contrast` (glass off),
       plus reduced-transparency, not just default Glass Dark.
 - [ ] Mobile: bottom padding clears the floating dock
@@ -151,7 +160,8 @@ Work through this for every new or edited page:
       PageLayout does this); tap targets comfortable at 480px (`xs` breakpoint).
 
 ### Before pushing
-- [ ] `pnpm exec tsc --noEmit` and `pnpm lint` introduce no *new* warnings.
+
+- [ ] `pnpm exec tsc --noEmit` and `pnpm lint` introduce no _new_ warnings.
 - [ ] Dev server run once so `app/routeTree.gen.ts` regenerates (never edit it
       by hand).
 
@@ -167,7 +177,7 @@ Games own their viewport but still share:
 - Auth via the same session (`useSession()` from `@/components/Providers`, or
   a `beforeLoad` redirect).
 - Reduced-motion respect where feasible (canvas/WebGL excluded).
-- The theme class is *suppressed* on game routes (`THEME_EXCLUDED_ROUTES` in
+- The theme class is _suppressed_ on game routes (`THEME_EXCLUDED_ROUTES` in
   `components/Providers.tsx`) — game UIs use their own palettes, often defined
   as dedicated variable groups in `globals.css` (e.g. `--temple-*`,
   `--slice-*`, `--neon-*`).
