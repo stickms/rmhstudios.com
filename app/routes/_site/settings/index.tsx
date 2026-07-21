@@ -54,7 +54,8 @@ function SectionCard({
     <section
       id={id}
       aria-labelledby={`${id}-heading`}
-      className="rounded-site border border-site-border bg-site-surface p-4"
+      // Discrete floating L2 slab (§8.4); rows keep their hairlines INSIDE.
+      className="glass-pane rounded-site p-4"
     >
       <div className="mb-4 flex items-center gap-2">
         <Icon className="h-4.5 w-4.5 text-site-accent" aria-hidden />

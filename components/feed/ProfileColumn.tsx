@@ -27,6 +27,7 @@ import { MobileMenuButton } from './MobileMenuButton';
 import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { VirtualPostList } from './VirtualPostList';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { AchievementsColumn } from './AchievementsColumn';
 import { AchievementBadgeStrip } from './AchievementBadgeStrip';
 import { ProfileEditModal } from './ProfileEditModal';
@@ -565,8 +566,8 @@ export function ProfileColumn({
 
   return (
     <div className="flex flex-col" style={themeStyle}>
-      {/* Header bar */}
-      <div className="sticky top-0 z-10 glass-chrome border-b border-site-border">
+      {/* Header bar — floating L3 glass-chrome capsule (§8.2). */}
+      <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
         <div className="flex items-center gap-3 px-4 py-3">
           <MobileMenuButton />
           <div>
@@ -1006,63 +1007,19 @@ export function ProfileColumn({
         )}
       </Reveal>
 
-      {/* Tab bar */}
-      <div className="border-b border-site-border">
-        <div className="flex">
-          <button
-            onClick={() => handleTabChange('rmharks')}
-            aria-pressed={tab === 'rmharks'}
-            className={`relative flex-1 py-3 text-center text-sm font-bold transition-colors duration-150 ${
-              tab === 'rmharks'
-                ? 'text-site-accent'
-                : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
-            }`}
-          >
-            RMHarks
-            <span
-              aria-hidden
-              className={`pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-center bg-site-accent transition-transform duration-150 ${
-                tab === 'rmharks' ? 'scale-x-100' : 'scale-x-0'
-              }`}
-            />
-          </button>
-          {showLikesTab && (
-            <button
-              onClick={() => handleTabChange('likes')}
-              aria-pressed={tab === 'likes'}
-              className={`relative flex-1 py-3 text-center text-sm font-bold transition-colors duration-150 ${
-                tab === 'likes'
-                  ? 'text-site-accent'
-                  : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
-              }`}
-            >
-              {t('likes', { defaultValue: 'Likes' })}
-              <span
-                aria-hidden
-                className={`pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-center bg-site-accent transition-transform duration-150 ${
-                  tab === 'likes' ? 'scale-x-100' : 'scale-x-0'
-                }`}
-              />
-            </button>
-          )}
-          <button
-            onClick={() => handleTabChange('achievements')}
-            aria-pressed={tab === 'achievements'}
-            className={`relative flex-1 py-3 text-center text-sm font-bold transition-colors duration-150 ${
-              tab === 'achievements'
-                ? 'text-site-accent'
-                : 'text-site-text-dim hover:text-site-text hover:bg-site-surface/50'
-            }`}
-          >
-            {t('achievements', { defaultValue: 'Achievements' })}
-            <span
-              aria-hidden
-              className={`pointer-events-none absolute inset-x-0 bottom-0 h-0.5 origin-center bg-site-accent transition-transform duration-150 ${
-                tab === 'achievements' ? 'scale-x-100' : 'scale-x-0'
-              }`}
-            />
-          </button>
-        </div>
+      {/* Tab bar → shared LiquidTabs (§5.4). handleTabChange keeps the lazy
+          liked-posts fetch on first switch. "RMHarks" stays a literal (unchanged
+          from the pre-migration markup) to avoid i18n churn. */}
+      <div className="px-3 py-2">
+        <LiquidTabs
+          tabs={[
+            { id: 'rmharks', label: 'RMHarks' },
+            ...(showLikesTab ? [{ id: 'likes', label: t('likes', { defaultValue: 'Likes' }) }] : []),
+            { id: 'achievements', label: t('achievements', { defaultValue: 'Achievements' }) },
+          ]}
+          value={tab}
+          onChange={(id) => handleTabChange(id as ProfileTab)}
+        />
       </div>
 
       {/* RMHarks tab content */}

@@ -2616,7 +2616,7 @@ html.vt-active .page-root > * {
  * find-in-page both behave. */
 .feed-card-cv {
   content-visibility: auto;
-  contain-intrinsic-size: auto 320px;
+  contain-intrinsic-size: auto 332px; /* card + the floating-card gap (§8.3) */
 }
 /* During a back/forward restore, lay every feed card out at its REAL height so the
  * saved pixel offset lands on exactly the content you left — the size estimate

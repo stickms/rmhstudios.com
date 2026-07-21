@@ -53,6 +53,7 @@ import {
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useCelebration } from '@/hooks/useCelebration';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { authClient } from '@/lib/auth-client';
 
 const LIGHTS_OUT = 'lights-out';
@@ -402,40 +403,15 @@ export function DailyPuzzlesHub() {
 
         {/* ── Filters + share ─────────────────────────────────────────────── */}
         <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
-          <div
-            className="flex gap-1.5 rounded-full border border-site-border bg-site-surface p-1"
-            role="group"
+          {/* Filter tabs → shared LiquidTabs (§5.4): the single flowing-capsule
+              implementation replaces this hub's hand-rolled layoutId pill. */}
+          <LiquidTabs
+            tabs={filters}
+            value={filter}
+            onChange={(id) => setFilter(id as Filter)}
+            size="sm"
             aria-label={t('filter-label', { defaultValue: 'Filter puzzles' })}
-          >
-            {filters.map((f) => {
-              const active = filter === f.id;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setFilter(f.id)}
-                  className={`relative rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
-                    active ? 'text-site-accent-fg' : 'text-site-text-muted hover:text-site-text'
-                  }`}
-                >
-                  {active && (
-                    <motion.span
-                      layoutId="filter-pill"
-                      className="absolute inset-0 rounded-full bg-site-accent"
-                      transition={
-                        reduced ? { duration: 0 } : { type: 'spring', stiffness: 400, damping: 30 }
-                      }
-                    />
-                  )}
-                  <span className="relative">
-                    {f.label}
-                    <span className="ml-1 opacity-70">{f.count}</span>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+          />
 
           <button
             type="button"

@@ -398,7 +398,7 @@ export function ComposeBox({
 
   if (!session) {
     return (
-      <div className="px-4 py-6 border-b border-site-border text-center">
+      <div className="glass-pane rounded-site mx-3 px-4 py-6 text-center">
         <p className="text-sm text-site-text-muted mb-2">
           {t('sign-in-prompt', { defaultValue: 'Sign in to post RMHarks' })}
         </p>
@@ -452,9 +452,11 @@ export function ComposeBox({
   const CurrentReplyIcon = currentReply.icon;
 
   return (
-    // focus-within lifts the composer to a faint surface + brighter hairline
-    // while writing, then settles back — an activation cue, not a layout change.
-    <div className="px-4 py-3 border-b border-site-border transition-colors duration-200 focus-within:bg-site-surface/20 focus-within:border-site-border-bright">
+    // Floating composer slab (§8.3): its own L2 glass-pane over the aurora
+    // gutter (mx-3), separated from the first post by the feed gap; one L2 per
+    // page is in budget. focus-within lifts the pane's hairline while writing,
+    // then settles back — an activation cue, not a layout change.
+    <div className="glass-pane rounded-site mx-3 px-4 py-3 transition-colors duration-200 focus-within:bg-site-surface/20 focus-within:border-site-border-bright">
       {pendingDraft && !content && (
         <div className="mb-3 flex items-center gap-2 rounded-site border border-site-border bg-site-bg-subtle px-3 py-2">
           <History className="h-4 w-4 shrink-0 text-site-accent" aria-hidden />
@@ -519,7 +521,9 @@ export function ComposeBox({
             placeholder={t('compose-placeholder', { defaultValue: "What's on your mind?" })}
             rows={3}
             maxLength={MAX_RMHARK_LENGTH}
-            className="w-full bg-transparent text-site-text placeholder:text-site-text-dim text-base resize-none border-none outline-none"
+            // Recessed text well (§8.3): .glass-inset carries the border, radius
+            // and inner shadow; accent border on focus is the input affordance.
+            className="w-full glass-inset text-site-text placeholder:text-site-text-dim text-base resize-none px-3 py-2 outline-none transition-colors focus:border-site-accent"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 handleSubmit();

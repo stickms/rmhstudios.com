@@ -226,7 +226,7 @@ export function PostDetail({ postId }: PostDetailProps) {
   return (
     <div className="flex flex-col">
       {/* Header bar */}
-      <div className="sticky top-0 z-10 glass-chrome border-b border-site-border">
+      <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             onClick={() => window.history.back()}

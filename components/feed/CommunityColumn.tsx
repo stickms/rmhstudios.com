@@ -170,7 +170,7 @@ export function CommunityColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
+      <header className="sticky top-2 z-10 mx-2 flex items-center gap-2 rounded-site glass-chrome px-4 py-3 shadow-site-sm md:top-3 md:mx-3">
         <Link
           to="/communities"
           className="text-site-text-muted hover:text-site-text"

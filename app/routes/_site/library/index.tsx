@@ -312,7 +312,7 @@ function Library() {
   return (
     <>
       <AnimatedMain
-        className="vibe-screen lib min-h-screen w-full min-w-0 border-r border-site-border pb-dock"
+        className="vibe-screen lib min-h-screen w-full min-w-0 pb-dock"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <LibraryRevealProvider>
@@ -415,7 +415,13 @@ function Library() {
             </nav>
           </div>
 
-          <section className="lib-hero" aria-labelledby="library-title">
+          <section
+            // Flagship hero → floating L2 glass slab with edge refraction (§8.4):
+            // the library page's one refract slot (+ per-element lens).
+            className="lib-hero glass-pane glass-refract"
+            data-glass-lens=""
+            aria-labelledby="library-title"
+          >
             <div className="lib-hero__copy">
               <p className="lib-hero__eyebrow">
                 {t('archive-eyebrow', { defaultValue: 'RMH Studios archive' })}

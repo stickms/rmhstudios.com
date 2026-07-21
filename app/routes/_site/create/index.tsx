@@ -15,7 +15,10 @@ import { useCallback, useMemo } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { type LucideIcon, FileText, Gamepad2, AppWindow, Boxes, Bot, Coins } from 'lucide-react';
+import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { SPRING } from '@/lib/motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
@@ -70,6 +73,7 @@ function CreatorStudio() {
   const { gallery, curated, seed } = Route.useLoaderData();
   const { tab = 'pages' } = Route.useSearch();
   const navigate = useNavigate();
+  const reduced = useReducedMotion();
 
   const setTab = useCallback(
     (next: StudioTab) => {
@@ -112,7 +116,7 @@ function CreatorStudio() {
   return (
     <>
       <AnimatedMain
-        className="cstudio-screen vibe-screen min-h-screen w-full min-w-0 border-r border-site-border pb-dock"
+        className="cstudio-screen vibe-screen min-h-screen w-full min-w-0 pb-dock"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <MobileTopBar title={t('creator-studio', { defaultValue: 'Creator Studio' })} />
@@ -150,8 +154,20 @@ function CreatorStudio() {
                   className={`cstudio-tab ${active ? 'is-active' : ''}`}
                   onClick={() => setTab(id)}
                 >
-                  <Icon className="cstudio-tab__icon" aria-hidden="true" />
-                  {label}
+                  {/* Flowing active capsule (§5.4): a layoutId motion element kept
+                      ON the existing markup so the richer tab/tabpanel ARIA
+                      (aria-controls + aria-labelledby) survives — LiquidTabs has no
+                      aria-controls, so migrating to it would drop that wiring. */}
+                  {active && (
+                    <motion.span
+                      layoutId="cstudio-tab-capsule"
+                      aria-hidden
+                      className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
+                      transition={reduced ? { duration: 0 } : SPRING.snappy}
+                    />
+                  )}
+                  <Icon className="cstudio-tab__icon relative z-1" aria-hidden="true" />
+                  <span className="relative z-1">{label}</span>
                 </button>
               );
             })}

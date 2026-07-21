@@ -16,6 +16,7 @@ import {
   type DiscoveryBlogPost,
 } from './ExploreRecommendations';
 import { ColumnHeader } from './ColumnHeader';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 
 interface SearchUser {
   id: string;
@@ -226,26 +227,19 @@ export function SearchColumn({
             {loading && <Spinner size={16} className="text-site-text-muted" />}
           </div>
         </ColumnHeader>
-        <div
-          className="flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          role="tablist"
-          aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
-        >
-          {TABS.map((tab_item) => (
-            <button
-              key={tab_item.id}
-              role="tab"
-              aria-selected={tab === tab_item.id}
-              onClick={() => setTab(tab_item.id)}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                tab === tab_item.id
-                  ? 'bg-site-accent text-site-accent-fg'
-                  : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'
-              }`}
-            >
-              {t(`tab-${tab_item.id}`, { defaultValue: tab_item.label })}
-            </button>
-          ))}
+        {/* Result-type tabs → shared LiquidTabs (§5.4). setTab keeps mirroring
+            the selection to the URL. Labels are pre-translated before handoff. */}
+        <div className="overflow-x-auto overscroll-x-contain px-4 pb-3 pt-3 [-webkit-overflow-scrolling:touch] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <LiquidTabs
+            tabs={TABS.map((tab_item) => ({
+              id: tab_item.id,
+              label: t(`tab-${tab_item.id}`, { defaultValue: tab_item.label }),
+            }))}
+            value={tab}
+            onChange={(id) => setTab(id as Tab)}
+            size="sm"
+            aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
+          />
         </div>
       </div>
 

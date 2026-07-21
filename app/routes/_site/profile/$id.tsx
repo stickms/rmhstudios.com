@@ -82,7 +82,7 @@ function ProfilePage() {
 
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-dock">
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         {/* `key` remounts the column on profile→profile navigation so it re-seeds
             cleanly from the new loader data (no stale-state carryover). */}
         <ProfileColumn key={userId} userId={userId} initialProfile={profile} />

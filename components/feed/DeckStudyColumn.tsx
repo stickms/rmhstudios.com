@@ -180,7 +180,7 @@ export function DeckStudyColumn({
     const card = queue[idx];
     return (
       <div className="min-h-screen">
-        <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
+        <header className="sticky top-2 z-10 mx-2 flex items-center gap-2 rounded-site glass-chrome px-4 py-3 shadow-site-sm md:top-3 md:mx-3">
           <button onClick={() => setQueue(null)} className="text-site-text-dim hover:text-site-text">
             <ArrowLeft className="h-5 w-5" />
           </button>
@@ -217,7 +217,7 @@ export function DeckStudyColumn({
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-site-border glass-chrome px-4 py-3">
+      <header className="sticky top-2 z-10 mx-2 flex items-center gap-2 rounded-site glass-chrome px-4 py-3 shadow-site-sm md:top-3 md:mx-3">
         <Link to="/study" className="text-site-text-dim hover:text-site-text">
           <ArrowLeft className="h-5 w-5" />
         </Link>

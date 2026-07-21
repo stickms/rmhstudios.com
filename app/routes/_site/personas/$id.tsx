@@ -30,7 +30,7 @@ function PersonaChatPage() {
   return (
     <>
       <AnimatedMain
-        className="w-full min-w-0 border-r border-site-border"
+        className="w-full min-w-0"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         {/* `key` remounts the column on persona→persona navigation so it

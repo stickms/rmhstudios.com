@@ -11,8 +11,8 @@ import { RMHarkCard } from './RMHarkCard';
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 // Estimate before a row is measured. Matches `contain-intrinsic-size` on
-// `.feed-card-cv` (globals.css) so the scrollbar reads similarly pre-measurement.
-const ESTIMATED_ROW_HEIGHT = 320;
+// `.feed-card-cv` (globals.css), incl. the floating-card top gutter (§8.3).
+const ESTIMATED_ROW_HEIGHT = 332;
 const OVERSCAN = 6;
 
 /**
@@ -39,9 +39,10 @@ interface VirtualPostListProps {
  *
  * Like FeedList it virtualizes against WINDOW scroll (the _site shell scrolls the
  * document), tracks its offset from the top of the page as `scrollMargin`, and
- * only mounts the rows in view (+ overscan). Each card keeps its own `border-b`,
- * so no `divide-y` wrapper is needed. The caller keeps its headers, empty states,
- * infinite-scroll sentinel, and "load more" controls around this component.
+ * only mounts the rows in view (+ overscan). Cards are floating glass slabs now
+ * (§8.3), so the list floats them over aurora gutters (space-y-3 gaps + px-3 side
+ * gutters + pt-3 first-card gap) exactly like the home feed. The caller keeps its
+ * headers, empty states, infinite-scroll sentinel, and "load more" controls.
  */
 export function VirtualPostList({ items, className }: VirtualPostListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -86,7 +87,7 @@ export function VirtualPostList({ items, className }: VirtualPostListProps) {
 
   if (!virtualized) {
     return (
-      <div ref={parentRef} className={className}>
+      <div ref={parentRef} className={`space-y-3 px-3 pt-3 ${className ?? ''}`.trim()}>
         {items.map((item) => (
           <div key={item.id} className="feed-card-cv">
             <MemoRMHarkCard item={item} />
@@ -122,7 +123,11 @@ export function VirtualPostList({ items, className }: VirtualPostListProps) {
               transform: `translateY(${vRow.start - virtualizer.options.scrollMargin}px)`,
             }}
           >
-            <MemoRMHarkCard item={item} />
+            {/* Gutter + top gap ride the inner element so measureElement includes
+                it (keeps virtual offsets exact), mirroring FeedList (§8.3). */}
+            <div className="px-3 pt-3">
+              <MemoRMHarkCard item={item} />
+            </div>
           </div>
         );
       })}

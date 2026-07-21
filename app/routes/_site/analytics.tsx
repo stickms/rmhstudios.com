@@ -19,7 +19,7 @@ function AnalyticsPage() {
   return (
     <>
       <AnimatedMain
-        className="w-full min-w-0 border-r border-site-border pb-dock"
+        className="w-full min-w-0 pb-dock"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <div className="sticky top-0 z-10 border-b border-site-border glass-chrome px-4 py-3">

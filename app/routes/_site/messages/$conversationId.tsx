@@ -34,7 +34,7 @@ function ConversationPage() {
   return (
     <>
       {/* Center - Conversation */}
-      <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-dock">
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         <ConversationView conversationId={conversationId} initialOtherUser={otherUser} />
       </AnimatedMain>
 

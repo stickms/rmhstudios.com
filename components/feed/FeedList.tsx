@@ -18,7 +18,8 @@ const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : use
 
 // Estimate before a row is measured. Matches `contain-intrinsic-size` on
 // `.feed-card-cv` (globals.css) so the scrollbar reads similarly pre-measurement.
-const ESTIMATED_ROW_HEIGHT = 320;
+// Includes the floating-card top gutter (pt-3) each row carries (§8.3).
+const ESTIMATED_ROW_HEIGHT = 332;
 const OVERSCAN = 6;
 
 // Module-level so it survives route unmounts (the feed store is module-scoped
@@ -299,9 +300,11 @@ export function FeedList({
                   transform: `translateY(${vRow.start - virtualizer.options.scrollMargin}px)`,
                 }}
               >
-                {/* Enter animation on an INNER element so its transform can't
-                    clobber the row-positioning transform above. */}
-                <div className={entering ? 'feed-item-enter' : undefined}>
+                {/* Floating-card gutter + top gap (§8.3) rides the inner element
+                    so measureElement includes it (keeps virtual offsets exact).
+                    Enter animation also stays here so its transform can't clobber
+                    the row-positioning transform above. */}
+                <div className={`px-3 pt-3 ${entering ? 'feed-item-enter' : ''}`.trim()}>
                   <FeedItem item={item} />
                 </div>
               </div>
@@ -314,18 +317,22 @@ export function FeedList({
         // layout/paint for cards far from the viewport until the virtualizer takes
         // over on mount. Pending (optimistic) and just-entered posts opt out —
         // they sit at the top and must render (and animate) without being skipped.
-        displayItems.map((item) => {
-          const entering = enteringIds.has(item.id);
-          const cv = item.pending || entering ? '' : 'feed-card-cv';
-          return (
-            <div
-              key={item.id}
-              className={`${cv} ${entering ? 'feed-item-enter' : ''}`.trim() || undefined}
-            >
-              <FeedItem item={item} />
-            </div>
-          );
-        })
+        // Floating cards float over aurora gutters (§8.3): space-y-3 gaps + px-3
+        // side gutters; pt-3 gives the first card its top gap.
+        <div className="space-y-3 px-3 pt-3">
+          {displayItems.map((item) => {
+            const entering = enteringIds.has(item.id);
+            const cv = item.pending || entering ? '' : 'feed-card-cv';
+            return (
+              <div
+                key={item.id}
+                className={`${cv} ${entering ? 'feed-item-enter' : ''}`.trim() || undefined}
+              >
+                <FeedItem item={item} />
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* Initial load → layout-matched skeletons so the feed reads as

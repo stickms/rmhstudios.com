@@ -204,10 +204,15 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     <div
       ref={cardRef}
       {...(item.pending || item.deletedAt ? {} : reactionTrigger)}
-      className={`relative px-4 py-3 border-b border-site-border transition-colors duration-200 ${
+      // Floating glass card (§8.3): .glass-fill gives the border/radius/tint;
+      // .glass-interactive adds the hover tint-raise, springy press, hover glint
+      // ring and pointer light (data-glass-light marks it for useGlassLight).
+      // Cards stay L1 — NEVER add .glass-pane/blur to a repeated list item (§9).
+      data-glass-light=""
+      className={`relative glass-fill rounded-site px-4 py-3 ${
         item.pending
           ? 'opacity-60 pointer-events-none select-none'
-          : 'hover:bg-site-surface/30 hover:border-site-border-bright cursor-pointer'
+          : 'glass-interactive cursor-pointer'
       }`}
       onClick={item.pending ? undefined : handleCardClick}
       aria-busy={item.pending || undefined}

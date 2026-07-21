@@ -351,7 +351,9 @@ export function MessagesColumn({
             </p>
           </div>
         ) : (
-          <div>
+          // Density page (§8.4): one floating glass-fill container; rows stay
+          // dense with divide-y hairlines inside (not per-row cards).
+          <div className="glass-fill rounded-site mx-3 mt-3 divide-y divide-site-border overflow-hidden">
             {searchResults.map((conv) => (
               <ConversationRow
                 key={conv.id}
@@ -381,15 +383,19 @@ export function MessagesColumn({
         </div>
       ) : (
         <Reveal>
-          {conversations.map((conv) => (
-            <ConversationRow
-              key={conv.id}
-              conv={conv}
-              currentUserId={session.user.id}
-              t={t}
-              formatTime={formatTime}
-            />
-          ))}
+          {/* Density page (§8.4): rows stay dense inside one floating glass-fill
+              container with divide-y hairlines; the spinner/sentinel sit outside. */}
+          <div className="glass-fill rounded-site mx-3 mt-3 divide-y divide-site-border overflow-hidden">
+            {conversations.map((conv) => (
+              <ConversationRow
+                key={conv.id}
+                conv={conv}
+                currentUserId={session.user.id}
+                t={t}
+                formatTime={formatTime}
+              />
+            ))}
+          </div>
 
           {loadingMore && (
             <div className="flex items-center justify-center py-8">
@@ -447,7 +453,9 @@ function ConversationRow({
   return (
     <Link
       to={`/messages/${conv.id}` as string}
-      className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 active:scale-[0.99] transition-[background-color,transform] duration-150 border-b border-site-border"
+      // Row separators come from the container's divide-y (§8.4), not a per-row
+      // border, so rows read as one dense card rather than stacked slabs.
+      className="flex items-center gap-3 px-4 py-3 hover:bg-site-surface/50 active:scale-[0.99] transition-[background-color,transform] duration-150"
     >
       <UserAvatar
         src={conv.otherUser.image ?? undefined}

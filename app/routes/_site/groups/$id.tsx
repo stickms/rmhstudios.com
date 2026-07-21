@@ -19,7 +19,7 @@ function GroupChatPage() {
 
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 border-r border-site-border" targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}>
+      <AnimatedMain className="w-full min-w-0" targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}>
         {isPending ? (
           <div className="flex justify-center py-20">
             <Spinner />

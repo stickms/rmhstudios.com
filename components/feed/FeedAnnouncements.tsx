@@ -83,7 +83,9 @@ export function FeedAnnouncements() {
       {visible.map((a) => (
         <div
           key={a.id}
-          className={`relative rounded-site border p-3 pr-9 ${VARIANT_STYLES[a.variant] ?? VARIANT_STYLES.info}`}
+          // Floating announcement slab (§8.3): L2 glass-pane carries the border +
+          // ring glint; the variant utilities tint it and set the accent rim.
+          className={`relative glass-pane rounded-site p-3 pr-9 ${VARIANT_STYLES[a.variant] ?? VARIANT_STYLES.info}`}
         >
           <button
             onClick={() => dismiss(a.id)}

@@ -29,7 +29,7 @@ function SearchPage() {
 
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 border-r border-site-border pb-dock">
+      <AnimatedMain className="w-full min-w-0 pb-dock">
         <SavedSearches currentQuery={q} />
         <SearchColumn
           initialQuery={q}
