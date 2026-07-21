@@ -834,6 +834,69 @@ toggle.
    persistence → API sync → no-flash script) and fix anything broken found
    along the way, then wire the slider onto that verified path.
 
+### 5.47 True liquid morphing (amendment 2026-07-21e)
+
+**Owner request:** moving glass should **morph** like Apple's Liquid Glass —
+stretch, pinch off, and reabsorb — not slide as a rigid capsule.
+
+Two composable mechanisms; both are progressive polish over the existing
+`layoutId` spring (which remains the skeleton and the reduced-motion/perf
+fallback):
+
+1. **Velocity squash & stretch** (all engines, near-free). The capsule's
+   scale is a function of its own motion: while the `layoutId` transition
+   runs, drive `scaleX = 1 + min(|vx|·k, 0.35)` and `scaleY = 1/scaleX`
+   (volume conservation) from a framer-motion velocity motion-value
+   (`useVelocity` on the capsule's projected x; k ≈ 0.0004). `transformOrigin`
+   at the trailing edge. It settles through `EASE.glass`'s overshoot — the
+   droplet lands with a wobble.
+
+```tsx
+// inside LiquidTabs' capsule (sketch)
+const x = useMotionValue(0);            // fed by the layout projection
+const vx = useVelocity(x);
+const stretch = useTransform(vx, (v) => 1 + Math.min(Math.abs(v) * 0.0004, 0.35));
+const squash  = useTransform(stretch, (s) => 1 / s);
+<motion.span layoutId={id} style={{ scaleX: stretch, scaleY: squash }} … />
+```
+
+2. **Gooey metaball merge** (the Apple-style fusion). A goo filter in
+   `GlassFilter`:
+
+```xml
+<filter id="glass-goo">
+  <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/>
+  <feColorMatrix in="blur" mode="matrix"
+    values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo"/>
+</filter>
+```
+
+   Structure rule (hard): the goo applies to a **capsule-only underlay** — an
+   absolutely-positioned layer spanning the control that contains (a) the
+   `layoutId` capsule and (b) a small **trail droplet** following the capsule
+   center on a softer spring (stiffness ~½). Blur+threshold fuses them: in
+   flight the pair reads as a stretching teardrop that pinches off and
+   reabsorbs on arrival. **Labels/icons render in a sibling layer above,
+   never filtered** (alpha thresholding destroys glyph edges). `filter:
+   url(#glass-goo)` is regular `filter` — Gecko/WebKit fine; verify Safari
+   once (goo demos are known-good there).
+
+**Where:** `LiquidTabs`' capsule underlay (all §5.45 sheets inherit), the
+mobile dock's active pill, the sidebar's active nav capsule. Menus/dialogs
+morphing out of their trigger buttons is noted as future work — not in
+scope.
+
+**Gates:** reduced motion → capsule jumps (existing; stretch/goo never
+mount). `perf-lite` / high-contrast → no goo filter, plain spring slide.
+The goo region is one small strip per control and filters tiny solid-color
+blobs — cost is negligible next to the backdrop budget, but the underlay
+must carry `contain: layout paint` and the filter must not wrap any
+backdrop-filter element (nesting a backdrop sampler inside a filtered
+subtree re-rasterizes it — keep the capsule underlay backdrop-free; the
+capsule's own material is plain accent tint + rim, which it already is).
+
+### 5.5 Dialog, toast, progress accents
+
 - **Dialog** (`components/ui/dialog.tsx` + its css): content enter re-tuned
   to scale `0.94 → 1` with `var(--ease-glass)` (a whisper of overshoot);
   scrim timing unchanged. Under reduced motion both collapse (existing reset).
