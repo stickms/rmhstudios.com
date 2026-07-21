@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { toast } from 'sonner';
 
 import { Switch } from '@/components/ui/switch';
 import { Spinner } from '@/components/ui/spinner';
 import {
   NOTIFY_CATEGORIES,
-  CATEGORY_LABELS,
   CATEGORY_DEFAULTS,
   resolveChannels,
   type NotifyCategory,
@@ -17,6 +17,42 @@ import {
 
 type Channel = 'inapp' | 'push' | 'email';
 const CHANNELS: Channel[] = ['inapp', 'push', 'email'];
+
+// Static-key label resolvers. The category rows and channel headers are dynamic
+// (driven by NOTIFY_CATEGORIES / CHANNELS), but i18next-parser can only extract
+// STRING-LITERAL t() keys — a `t(`category-${cat}`)` template is invisible to
+// `pnpm i18n:extract`, so those keys never reach locales/*/settings-notifications.json
+// and non-English users saw English labels. Resolving through these literal
+// switches keeps the keys extractable + translatable while still rendering per
+// locale change (never bake t() into a module constant — it freezes to the
+// first-loaded locale). English defaults are the authoritative source strings.
+function categoryLabel(t: TFunction, cat: NotifyCategory): string {
+  switch (cat) {
+    case 'social':
+      return t('category-social', { defaultValue: 'Likes & reposts' });
+    case 'replies':
+      return t('category-replies', { defaultValue: 'Replies & mentions' });
+    case 'follows':
+      return t('category-follows', { defaultValue: 'Follows' });
+    case 'economy':
+      return t('category-economy', { defaultValue: 'Tips, awards & sales' });
+    case 'events':
+      return t('category-events', { defaultValue: 'Events & live' });
+    case 'system':
+      return t('category-system', { defaultValue: 'System' });
+  }
+}
+
+function channelLabel(t: TFunction, c: Channel): string {
+  switch (c) {
+    case 'inapp':
+      return t('channel-inapp', { defaultValue: 'In-app' });
+    case 'push':
+      return t('channel-push', { defaultValue: 'Push' });
+    case 'email':
+      return t('channel-email', { defaultValue: 'Email' });
+  }
+}
 
 function toMinutes(hhmm: string): number | null {
   const m = /^(\d{2}):(\d{2})$/.exec(hhmm);
@@ -98,7 +134,7 @@ export function NotificationSettings() {
           {NOTIFY_CATEGORIES.map((cat) => {
             const ch = resolveChannels(prefs.matrix, cat);
             const summary = CHANNELS.filter((c) => ch[c])
-              .map((c) => t(`channel-${c}`, { defaultValue: c }))
+              .map((c) => channelLabel(t, c))
               .join(' · ') || t('off', { defaultValue: 'Off' });
             const expanded = open === cat;
             return (
@@ -110,9 +146,7 @@ export function NotificationSettings() {
                   className="flex w-full items-center justify-between gap-3 py-3 text-start"
                 >
                   <span className="min-w-0">
-                    <span className="block text-sm text-site-text">
-                      {t(`category-${cat}`, { defaultValue: CATEGORY_LABELS[cat] })}
-                    </span>
+                    <span className="block text-sm text-site-text">{categoryLabel(t, cat)}</span>
                     <span className="block text-xs text-site-text-muted">{summary}</span>
                   </span>
                   <span className="text-site-text-dim">{expanded ? '−' : '+'}</span>
@@ -121,7 +155,7 @@ export function NotificationSettings() {
                   <div className="pb-3 ps-1">
                     {CHANNELS.map((c) => (
                       <label key={c} className="flex items-center justify-between py-2">
-                        <span className="text-sm text-site-text">{t(`channel-${c}`, { defaultValue: c })}</span>
+                        <span className="text-sm text-site-text">{channelLabel(t, c)}</span>
                         <Switch
                           checked={ch[c]}
                           onCheckedChange={(v) => setChannel(cat, c, v)}
