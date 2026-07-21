@@ -1,12 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
-import {
-  Droplets,
-  Layers,
-  MousePointerClick,
-  Sparkles,
-  Wind,
-} from 'lucide-react';
+import { Droplets, Layers, MousePointerClick, Sparkles, Wind } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buildMeta, buildCanonical } from '@/lib/seo';
 import {
@@ -17,13 +11,7 @@ import {
   type DockIcon,
 } from '@/components/ui/liquid-glass';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
@@ -115,9 +103,7 @@ const BADGE_VARIANTS = [
 
 /** Monospace class-name label used throughout the lab. */
 function Mono({ children }: { children: React.ReactNode }) {
-  return (
-    <code className="font-mono text-xs text-site-accent">{children}</code>
-  );
+  return <code className="font-mono text-xs text-site-accent">{children}</code>;
 }
 
 /** A labelled reference section with an ordered heading. */
@@ -140,10 +126,7 @@ function Section({
         <span className="font-mono text-xs uppercase tracking-[0.2em] text-site-text-dim">
           {eyebrow}
         </span>
-        <h2
-          id={`${id}-heading`}
-          className="text-2xl font-semibold tracking-tight text-site-text"
-        >
+        <h2 id={`${id}-heading`} className="text-2xl font-semibold tracking-tight text-site-text">
           {title}
         </h2>
         {description ? (
@@ -182,9 +165,9 @@ function LiquidGlassLab() {
               Liquid Glass
             </h1>
             <p className="max-w-2xl text-base text-site-text-muted sm:text-lg">
-              The living reference for the site&apos;s glass material system — elevation
-              tiers, the one-sun lighting model, pointer-tracked speculars, and edge
-              refraction, all rendered over the real aurora canvas.
+              The living reference for the site&apos;s glass material system — elevation tiers, the
+              one-sun lighting model, pointer-tracked speculars, and edge refraction, all rendered
+              over the real aurora canvas.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
               <Badge variant="accent">L1–L4 elevation</Badge>
@@ -201,9 +184,9 @@ function LiquidGlassLab() {
           title="Elevation tiers"
           description={
             <>
-              Blur and shadow co-vary with height. Each swatch below is the named glass
-              class applied directly, over the aurora — read the material, then the{' '}
-              <Mono>class</Mono> beneath it.
+              Blur and shadow co-vary with height. Each swatch below is the named glass class
+              applied directly, over the aurora — read the material, then the <Mono>class</Mono>{' '}
+              beneath it.
             </>
           }
         >
@@ -211,10 +194,7 @@ function LiquidGlassLab() {
             {TIERS.map((tier) => (
               <div key={tier.name} className="flex flex-col gap-2">
                 <div
-                  className={cn(
-                    'flex h-28 items-center justify-center px-3 text-center',
-                    tier.cls,
-                  )}
+                  className={cn('flex h-28 items-center justify-center px-3 text-center', tier.cls)}
                 >
                   <span className="text-sm font-medium text-site-text">{tier.label}</span>
                 </div>
@@ -233,9 +213,9 @@ function LiquidGlassLab() {
           description={
             <>
               One sun, top-slightly-left, sitewide. Interactive glass adds{' '}
-              <Mono>.glass-interactive</Mono> plus <Mono>data-glass-light</Mono>: a soft
-              radial specular that follows your cursor (fine-pointer devices only — touch
-              never pays for it). Hover a card.
+              <Mono>.glass-interactive</Mono> plus <Mono>data-glass-light</Mono>: a soft radial
+              specular that follows your cursor (fine-pointer devices only — touch never pays for
+              it). Hover a card.
             </>
           }
         >
@@ -268,11 +248,10 @@ function LiquidGlassLab() {
           title="Refraction — on vs off"
           description={
             <>
-              <Mono>.glass-refract</Mono> displaces the backdrop in a ~14px edge band so
-              the aurora bends at the pane&apos;s rim (Chromium upgrades to the{' '}
-              <Mono>#glass-distortion</Mono> displacement map; other engines keep the plain
-              edge blur). Rationed to ≤ 2 hero/chrome elements per page — the hero and this
-              comparison are this page&apos;s two.
+              <Mono>.glass-refract</Mono> displaces the backdrop in a ~14px edge band so the aurora
+              bends at the pane&apos;s rim (Chromium upgrades to the <Mono>#glass-distortion</Mono>{' '}
+              displacement map; other engines keep the plain edge blur). Rationed to ≤ 2 hero/chrome
+              elements per page — the hero and this comparison are this page&apos;s two.
             </>
           }
         >
@@ -304,11 +283,11 @@ function LiquidGlassLab() {
           title="Liquid sheen — living material"
           description={
             <>
-              <Mono>.glass-liquid</Mono> (or <Mono>&lt;GlassPane liquid&gt;</Mono>) drifts a
-              slow specular band across the surface like light travelling over wet glass —
-              layered over the pointer-tracked light and the whole aurora canvas, which now
-              gently flows and parallaxes to your cursor behind every pane. Signature
-              surfaces only; ration it like refraction. Hover the left pane.
+              <Mono>.glass-liquid</Mono> (or <Mono>&lt;GlassPane liquid&gt;</Mono>) drifts a slow
+              specular band across the surface like light travelling over wet glass — layered over
+              the pointer-tracked light and the whole aurora canvas, which now gently flows and
+              parallaxes to your cursor behind every pane. Signature surfaces only; ration it like
+              refraction. Hover the left pane.
             </>
           }
         >
@@ -321,9 +300,7 @@ function LiquidGlassLab() {
               <div className="relative z-10 flex flex-col items-center gap-1 text-center">
                 <span className="text-base font-semibold text-site-text">Sheen on</span>
                 <Mono>.glass-liquid</Mono>
-                <span className="text-xs text-site-text-dim">
-                  watch the light travel across
-                </span>
+                <span className="text-xs text-site-text-dim">watch the light travel across</span>
               </div>
             </GlassPane>
             <GlassPane className="relative flex h-44 items-center justify-center overflow-hidden p-6">
@@ -343,10 +320,10 @@ function LiquidGlassLab() {
           title="GlassEffect · Dock · Button"
           description={
             <>
-              The standalone glass primitives (refract → tint → rim → content layer
-              stack). <Mono>GlassDock</Mono> and <Mono>GlassButton</Mono> are built on{' '}
-              <Mono>GlassEffect</Mono>; site buttons use the <Mono>Button</Mono> primitive
-              below instead.
+              The standalone glass primitives (refract → tint → rim → content layer stack).{' '}
+              <Mono>GlassDock</Mono> and <Mono>GlassButton</Mono> are built on{' '}
+              <Mono>GlassEffect</Mono>; site buttons use the <Mono>Button</Mono> primitive below
+              instead.
             </>
           }
         >
@@ -436,9 +413,7 @@ function PrimitiveGallery() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-site-text-muted">
-                Backdrop blur + micro-noise. Budgeted.
-              </p>
+              <p className="text-sm text-site-text-muted">Backdrop blur + micro-noise. Budgeted.</p>
             </CardContent>
           </Card>
           <Card interactive>

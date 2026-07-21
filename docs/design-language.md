@@ -21,8 +21,8 @@ highlights, depth-graded blur, a pointer-tracked light, and an optional
 travelling **liquid sheen** on signature surfaces.
 It is expressed as an **elevation system of explicit CSS classes**
 (`.glass-fill` / `.glass-pane` / `.glass-chrome` / `.glass-overlay` /
-`.glass-inset`, plus `.glass-interactive` and `.glass-refract`) placed *on*
-components — see §5.1 below. Every theme is a *tint* of that glass; `high-contrast`
+`.glass-inset`, plus `.glass-interactive` and `.glass-refract`) placed _on_
+components — see §5.1 below. Every theme is a _tint_ of that glass; `high-contrast`
 turns the glass off (opaque, blur-free). Full spec:
 [`docs/plans/2026-07-14-liquid-glass-ui-redesign.md`](./plans/2026-07-14-liquid-glass-ui-redesign.md).
 
@@ -38,39 +38,39 @@ the absence of any `.style-*` class on `<html>`.
 Tokens every theme defines (set in `:root`, overridden by each `.style-*`
 class):
 
-| Group | Tokens |
-|---|---|
-| Backgrounds | `--site-bg`, `--site-bg-subtle`, `--site-canvas` (the aurora painted on `<body>`) |
-| Surfaces | `--site-surface`, `--site-surface-hover`, `--site-surface-active`, `--site-surface-opaque` (autofill / reduced-transparency fallback) |
-| Glass material | `--site-glass-tint`, `--site-glass-tint-strong`, `--site-glass-ink`, `--site-glass-rim`, `--site-glass-rim-soft`, `--site-glass-light`, `--site-glass-blur-{pane,chrome,overlay}`, `--site-glass-saturate`, `--site-glass-depth(-sm)`, `--site-glass-noise` |
-| Borders | `--site-border`, `--site-border-bright`, `--site-border-width` (1px default; 2px in high-contrast) |
-| Text | `--site-text`, `--site-text-muted`, `--site-text-dim` |
-| Accent | `--site-accent`, `--site-accent-fg`, `--site-accent-hover`, `--site-accent-dim` |
-| Status | `--site-success`, `--site-danger`, `--site-warning` |
-| Elevation / shape | `--site-shadow` (prominent: modals/popovers/floating chrome), `--site-shadow-sm` (resting: cards/surfaces), `--site-radius` (18px default), `--site-radius-sm` (12px default) |
-| Typography | `--site-font-display`, `--site-font-body`, `--site-font-mono` |
-| Motion / flourish | `--site-transition-speed` (200ms default), `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform` |
+| Group             | Tokens                                                                                                                                                                                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backgrounds       | `--site-bg`, `--site-bg-subtle`, `--site-canvas` (the aurora painted on `<body>`)                                                                                                                                                                           |
+| Surfaces          | `--site-surface`, `--site-surface-hover`, `--site-surface-active`, `--site-surface-opaque` (autofill / reduced-transparency fallback)                                                                                                                       |
+| Glass material    | `--site-glass-tint`, `--site-glass-tint-strong`, `--site-glass-ink`, `--site-glass-rim`, `--site-glass-rim-soft`, `--site-glass-light`, `--site-glass-blur-{pane,chrome,overlay}`, `--site-glass-saturate`, `--site-glass-depth(-sm)`, `--site-glass-noise` |
+| Borders           | `--site-border`, `--site-border-bright`, `--site-border-width` (1px default; 2px in high-contrast)                                                                                                                                                          |
+| Text              | `--site-text`, `--site-text-muted`, `--site-text-dim`                                                                                                                                                                                                       |
+| Accent            | `--site-accent`, `--site-accent-fg`, `--site-accent-hover`, `--site-accent-dim`                                                                                                                                                                             |
+| Status            | `--site-success`, `--site-danger`, `--site-warning`                                                                                                                                                                                                         |
+| Elevation / shape | `--site-shadow` (prominent: modals/popovers/floating chrome), `--site-shadow-sm` (resting: cards/surfaces), `--site-radius` (18px default), `--site-radius-sm` (12px default)                                                                               |
+| Typography        | `--site-font-display`, `--site-font-body`, `--site-font-mono`                                                                                                                                                                                               |
+| Motion / flourish | `--site-transition-speed` (200ms default), `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform`                                                                                                |
 
 ### Tailwind utilities — use these, never raw hex/oklch
 
-| Purpose | Utilities |
-|---|---|
-| Backgrounds | `bg-site-bg`, `bg-site-bg-subtle`, `bg-site-surface`, `bg-site-surface-hover`, `bg-site-surface-active` |
-| Borders | `border-site-border`, `border-site-border-bright` |
-| Text | `text-site-text`, `text-site-text-muted`, `text-site-text-dim` |
-| Accent | `bg-site-accent`, `text-site-accent`, `text-site-accent-fg`, `bg-site-accent-hover`, `bg-site-accent-dim` |
-| Status | `text-site-success`, `text-site-danger`, `text-site-warning` (and `bg-` variants) |
-| Radius | `rounded-site`, `rounded-site-sm` (theme-aware — do not use `rounded-lg`/`rounded-xl` for site chrome) |
-| Shadow | `shadow-site` (prominent), `shadow-site-sm` (resting) |
-| Fonts | `font-nunito` (body default), `font-sans` (Inter), `font-mono` (JetBrains Mono), `font-display` (Nunito), `font-serif` (Playfair), `font-comic` (Bangers) |
-| Theme display font | `font-(family-name:--site-font-display)` — used for page `<h1>`s so headings adopt each theme's display face |
+| Purpose            | Utilities                                                                                                                                                 |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backgrounds        | `bg-site-bg`, `bg-site-bg-subtle`, `bg-site-surface`, `bg-site-surface-hover`, `bg-site-surface-active`                                                   |
+| Borders            | `border-site-border`, `border-site-border-bright`                                                                                                         |
+| Text               | `text-site-text`, `text-site-text-muted`, `text-site-text-dim`                                                                                            |
+| Accent             | `bg-site-accent`, `text-site-accent`, `text-site-accent-fg`, `bg-site-accent-hover`, `bg-site-accent-dim`                                                 |
+| Status             | `text-site-success`, `text-site-danger`, `text-site-warning` (and `bg-` variants)                                                                         |
+| Radius             | `rounded-site`, `rounded-site-sm` (theme-aware — do not use `rounded-lg`/`rounded-xl` for site chrome)                                                    |
+| Shadow             | `shadow-site` (prominent), `shadow-site-sm` (resting)                                                                                                     |
+| Fonts              | `font-nunito` (body default), `font-sans` (Inter), `font-mono` (JetBrains Mono), `font-display` (Nunito), `font-serif` (Playfair), `font-comic` (Bangers) |
+| Theme display font | `font-(family-name:--site-font-display)` — used for page `<h1>`s so headings adopt each theme's display face                                              |
 
 Extra breakpoint: `xs` = 480px (defined in the `@theme inline` block).
 
 A legacy shadcn token set (`--card`, `--primary`, `--muted`, `--border`,
 `--ring`, `--radius`, `--chart-*`, `--sidebar*`) also exists for a few
 shadcn-derived pieces. **Prefer `--site-*` for all new site UI.** A separate
-`.dark` class exists only for Slice It game variables — it is *not* the site
+`.dark` class exists only for Slice It game variables — it is _not_ the site
 theme mechanism.
 
 ---
@@ -82,13 +82,13 @@ over its own `--site-canvas` aurora. Theme = a `.style-<id>` class on `<html>`
 (the default `Glass Dark` is the bare `:root` — no class). The catalog lives in
 `stores/themeStore.ts` (`SITE_STYLES`, with id/label/icon/group); the CSS for
 each lives in `app/globals.css`. Visitors with no saved preference get
-`DEFAULT_STYLE` (`default`). The old `liquid-glass` id is retired — it *became*
+`DEFAULT_STYLE` (`default`). The old `liquid-glass` id is retired — it _became_
 the default; persisted prefs self-heal in `Providers.tsx`.
 
-| Group | Themes |
-|---|---|
-| Base | `default` (**Glass Dark** — the site default: aurora-lit deep-ocean canvas, translucent surfaces, specular rims), `light` (**Glass Light** — daylight canvas, brighter white frost, dark ink), `high-contrast` (WCAG AAA, **no glass**: opaque black/white, yellow accent, 2px borders) |
-| Curated | `graphite` (Graphite Glass — monochrome smoke, desaturated), `sepia` (Sepia Glass — warm parchment, amber accent), `nocturne` (Nocturne Glass — deep-navy nightscape, sky-blue aurora) |
+| Group   | Themes                                                                                                                                                                                                                                                                                  |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Base    | `default` (**Glass Dark** — the site default: aurora-lit deep-ocean canvas, translucent surfaces, specular rims), `light` (**Glass Light** — daylight canvas, brighter white frost, dark ink), `high-contrast` (WCAG AAA, **no glass**: opaque black/white, yellow accent, 2px borders) |
+| Curated | `graphite` (Graphite Glass — monochrome smoke, desaturated), `sepia` (Sepia Glass — warm parchment, amber accent), `nocturne` (Nocturne Glass — deep-navy nightscape, sky-blue aurora)                                                                                                  |
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassEffect`,
 `GlassDock`, `GlassPane`, `GlassFilter`) with a design-lab reference at
@@ -116,7 +116,7 @@ all derive from it — so **adding a theme is just a `.style-<id>` CSS block plu
 a `SITE_STYLES` entry** (with its `bg`); nothing else needs editing.
 
 - `stores/themeStore.ts` — Zustand `useThemeStore { style, setStyle, preview,
-  setPreview, accent, setAccent }`. `THEME_BG` is derived from `SITE_STYLES`.
+setPreview, accent, setAccent }`. `THEME_BG` is derived from `SITE_STYLES`.
 - `components/Providers.tsx` — an effect swaps the `style-*` class on `<html>`
   (Dark/`default` needs none — it uses `:root`), applies the accent override,
   persists to `localStorage`, and updates `<meta name="theme-color">` + body
@@ -124,7 +124,7 @@ a `SITE_STYLES` entry** (with its `bg`); nothing else needs editing.
   `DEFAULT_STYLE`. Games/app routes are excluded (`THEME_EXCLUDED_ROUTES`) —
   they own their styling; an `app-route` class is toggled on `<html>` for them.
 - **No-flash SSR:** an inline `themeScript` in `app/routes/__root.tsx` applies
-  the persisted class + accent *before hydration*, deriving the background from
+  the persisted class + accent _before hydration_, deriving the background from
   the `THEME_BG` map (also from `SITE_STYLES`), so there is no hand-copied
   theme→background map to keep in sync.
 
@@ -166,18 +166,18 @@ Glass is opt-in per element via these classes (in `app/globals.css`). Pick by
 role, not by looks — the tier decides blur cost (see the redesign doc §6 budget:
 ≤8 backdrop-filters per viewport, **0** on repeated list items).
 
-| Class | Tier | Use for |
-|---|---|---|
-| `.glass-fill` | L1 (no blur) | Repeated content: cards, list rows, table rows, grid tiles. Cheap, unlimited. |
-| `.glass-pane` | L2 (blur+noise) | Singular panels: heroes, composers, settings sections, tier cards. Budgeted. |
-| `.glass-chrome` (`--aside` variant) | L3 | Persistent chrome: sidebar, sticky headers, mobile dock. Condenses on scroll via `[data-scrolled]`. |
-| `.glass-overlay` | L4 | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips. |
-| `.glass-inset` | — | Recessed wells: inputs, search fields. |
-| `.glass-scrim` | — | Dialog/drawer backdrops. |
-| `.glass-interactive` + `data-glass-light=""` | modifier | Hover tint-raise, springy press flex, pointer-tracked specular highlight. |
-| `.glass-refract` (`--prism`) | modifier | Edge refraction — hero/chrome only, **≤2 per page**, never in scroll containers. |
-| `.glass-liquid` (or `<GlassPane liquid>`) | modifier | Ambient travelling sheen (light over wet glass). Signature surfaces only, **≤2–3 per page**, never on list items. Styles `::before` — **don't** stack on `.glass-refract`. |
-| `.glass-opaque` | — | Escape hatch for full-screen fixed takeovers that must hide the page. |
+| Class                                        | Tier            | Use for                                                                                                                                                                    |
+| -------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.glass-fill`                                | L1 (no blur)    | Repeated content: cards, list rows, table rows, grid tiles. Cheap, unlimited.                                                                                              |
+| `.glass-pane`                                | L2 (blur+noise) | Singular panels: heroes, composers, settings sections, tier cards. Budgeted.                                                                                               |
+| `.glass-chrome` (`--aside` variant)          | L3              | Persistent chrome: sidebar, sticky headers, mobile dock. Condenses on scroll via `[data-scrolled]`.                                                                        |
+| `.glass-overlay`                             | L4              | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips.                                                                                                  |
+| `.glass-inset`                               | —               | Recessed wells: inputs, search fields.                                                                                                                                     |
+| `.glass-scrim`                               | —               | Dialog/drawer backdrops.                                                                                                                                                   |
+| `.glass-interactive` + `data-glass-light=""` | modifier        | Hover tint-raise, springy press flex, pointer-tracked specular highlight.                                                                                                  |
+| `.glass-refract` (`--prism`)                 | modifier        | Edge refraction — hero/chrome only, **≤2 per page**, never in scroll containers.                                                                                           |
+| `.glass-liquid` (or `<GlassPane liquid>`)    | modifier        | Ambient travelling sheen (light over wet glass). Signature surfaces only, **≤2–3 per page**, never on list items. Styles `::before` — **don't** stack on `.glass-refract`. |
+| `.glass-opaque`                              | —               | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                      |
 
 Rules: never put a backdrop tier (`.glass-pane/chrome/overlay`) on an ancestor of
 a `position:fixed` element (`backdrop-filter` creates a containing block — use
@@ -194,29 +194,29 @@ Dialog is `.glass-overlay` + `.glass-scrim`; the shell chrome is `.glass-chrome`
 Always reach for these before writing new markup. Helper: `cn()` from
 `@/lib/utils` (= `twMerge(clsx(...))`).
 
-| Component | File | Notes |
-|---|---|---|
-| `Button` / `buttonVariants` | `components/ui/button.tsx` | CVA. Variants: `default`, `destructive`, `danger`, `outline`, `secondary`, `ghost`, `link`, `accent`, `accent-outline`, `accent-ghost`. Sizes: `xs`, `sm`, `default`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. `asChild` supported. **`loading` prop** (+ optional `loadingText`) shows an inline spinner, sets `aria-busy`, and disables the button — reach for this instead of hand-rolling `disabled={x}` + a separate `<Loader2>`. |
-| `Badge` / `badgeVariants` | `components/ui/badge.tsx` | CVA pill. Variants: `default`, `accent`, `solid`, `success`, `warning`, `danger`, `outline`. |
-| `Card` + Header/Title/Description/Action/Content/Footer | `components/ui/card.tsx` | `bg-site-surface border border-site-border rounded-site shadow-site`. |
-| `Dialog` (Radix wrapper) | `components/ui/dialog.tsx` | Themed content, `bg-black/70 backdrop-blur-sm` overlay, built-in close X with translated `sr-only` label. |
-| `Input`, `Textarea` | `components/ui/input.tsx`, `textarea.tsx` | `bg-site-surface`, `rounded-site-sm`, hairline border, accent focus ring. |
-| `Select` | `components/ui/select.tsx` | Styled **native** `<select>` + lucide chevron (not Radix Select). |
-| `Label` | `components/ui/label.tsx` | Radix Label. |
-| `EmptyState` | `components/ui/empty-state.tsx` | Canonical zero-state: `{icon, title, description, action}`. |
-| `Skeleton` | `components/ui/skeleton.tsx` | Canonical loading placeholder. Defaults to a gentle `animate-pulse`; pass **`shimmer`** for a travelling highlight sweep (reduced-motion-safe) — nicer for above-the-fold / hero placeholders. |
-| `Spinner` | `components/ui/spinner.tsx` | Canonical spinner (lucide `Loader2`, `role="status"`) for **standalone / section loading** (accent-coloured, centred). A bare inline `<Loader2 className="animate-spin" />` inside a button/label is fine — it inherits `currentColor` so it contrasts its container; forcing `<Spinner>` there would paint it accent-on-accent. |
-| `Tooltip` | `components/ui/Tooltip.tsx` | Portal + framer-motion. Shows on **hover and keyboard focus**, dismisses on Escape, wires `aria-describedby`. |
-| `IconButton` | `components/ui/icon-button.tsx` | Icon-only `Button` that requires a `label` (becomes `aria-label` **and** a `Tooltip`). Reach for this instead of a bare `<button aria-label>`. |
-| `CopyButton` / `useClipboard` | `components/ui/copy-button.tsx`, `hooks/useClipboard.ts` | Canonical copy-to-clipboard: icon → check, sonner toast, `execCommand` fallback. Don't hand-roll `navigator.clipboard.writeText` + `useState`. |
-| `ConfirmDialog` / `useConfirm` | `components/ui/confirm-dialog.tsx` | Themed promise-based confirm — `await confirm({ title, description, danger })`. Replaces native `window.confirm` (which ignores themes/i18n/a11y). `<ConfirmProvider>` is already mounted in `Providers`. |
-| `Breadcrumbs` | `components/ui/breadcrumbs.tsx` | "Where am I" trail for nested pages; also a `breadcrumbs?` prop on `PageLayout`. Last item is the current page (`aria-current`). |
-| `BackToTop` | `components/ui/back-to-top.tsx` | Floating scroll-to-top button, mounted once in the `_site` shell (targets the window **and** the mobile `[data-scroll-root]` scroller). |
-| `NotificationBadge` | `components/ui/notification-badge.tsx` | Count pill (`bg-site-danger`). |
-| `UserAvatar` | `components/ui/UserAvatar.tsx` | Default fallback `/images/social/default_avatar.png`. |
-| `OptimizedImage`, `BlurImage` | `components/ui/` | Image loading. |
-| `AnimatedCount`, `ViewTransitionLink`, `NavigationProgress`, `RoutePending` | `components/ui/` | Motion/navigation helpers. `RoutePending` is the router-wide pending fallback. |
-| Pagination, Slider (Radix), Resizable, `skeletons/PostCardSkeleton` | `components/ui/` | — |
+| Component                                                                   | File                                                     | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| --------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Button` / `buttonVariants`                                                 | `components/ui/button.tsx`                               | CVA. Variants: `default`, `destructive`, `danger`, `outline`, `secondary`, `ghost`, `link`, `accent`, `accent-outline`, `accent-ghost`. Sizes: `xs`, `sm`, `default`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. `asChild` supported. **`loading` prop** (+ optional `loadingText`) shows an inline spinner, sets `aria-busy`, and disables the button — reach for this instead of hand-rolling `disabled={x}` + a separate `<Loader2>`. |
+| `Badge` / `badgeVariants`                                                   | `components/ui/badge.tsx`                                | CVA pill. Variants: `default`, `accent`, `solid`, `success`, `warning`, `danger`, `outline`.                                                                                                                                                                                                                                                                                                                                                 |
+| `Card` + Header/Title/Description/Action/Content/Footer                     | `components/ui/card.tsx`                                 | `bg-site-surface border border-site-border rounded-site shadow-site`.                                                                                                                                                                                                                                                                                                                                                                        |
+| `Dialog` (Radix wrapper)                                                    | `components/ui/dialog.tsx`                               | Themed content, `bg-black/70 backdrop-blur-sm` overlay, built-in close X with translated `sr-only` label.                                                                                                                                                                                                                                                                                                                                    |
+| `Input`, `Textarea`                                                         | `components/ui/input.tsx`, `textarea.tsx`                | `bg-site-surface`, `rounded-site-sm`, hairline border, accent focus ring.                                                                                                                                                                                                                                                                                                                                                                    |
+| `Select`                                                                    | `components/ui/select.tsx`                               | Styled **native** `<select>` + lucide chevron (not Radix Select).                                                                                                                                                                                                                                                                                                                                                                            |
+| `Label`                                                                     | `components/ui/label.tsx`                                | Radix Label.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `EmptyState`                                                                | `components/ui/empty-state.tsx`                          | Canonical zero-state: `{icon, title, description, action}`.                                                                                                                                                                                                                                                                                                                                                                                  |
+| `Skeleton`                                                                  | `components/ui/skeleton.tsx`                             | Canonical loading placeholder. Defaults to a gentle `animate-pulse`; pass **`shimmer`** for a travelling highlight sweep (reduced-motion-safe) — nicer for above-the-fold / hero placeholders.                                                                                                                                                                                                                                               |
+| `Spinner`                                                                   | `components/ui/spinner.tsx`                              | Canonical spinner (lucide `Loader2`, `role="status"`) for **standalone / section loading** (accent-coloured, centred). A bare inline `<Loader2 className="animate-spin" />` inside a button/label is fine — it inherits `currentColor` so it contrasts its container; forcing `<Spinner>` there would paint it accent-on-accent.                                                                                                             |
+| `Tooltip`                                                                   | `components/ui/Tooltip.tsx`                              | Portal + framer-motion. Shows on **hover and keyboard focus**, dismisses on Escape, wires `aria-describedby`.                                                                                                                                                                                                                                                                                                                                |
+| `IconButton`                                                                | `components/ui/icon-button.tsx`                          | Icon-only `Button` that requires a `label` (becomes `aria-label` **and** a `Tooltip`). Reach for this instead of a bare `<button aria-label>`.                                                                                                                                                                                                                                                                                               |
+| `CopyButton` / `useClipboard`                                               | `components/ui/copy-button.tsx`, `hooks/useClipboard.ts` | Canonical copy-to-clipboard: icon → check, sonner toast, `execCommand` fallback. Don't hand-roll `navigator.clipboard.writeText` + `useState`.                                                                                                                                                                                                                                                                                               |
+| `ConfirmDialog` / `useConfirm`                                              | `components/ui/confirm-dialog.tsx`                       | Themed promise-based confirm — `await confirm({ title, description, danger })`. Replaces native `window.confirm` (which ignores themes/i18n/a11y). `<ConfirmProvider>` is already mounted in `Providers`.                                                                                                                                                                                                                                    |
+| `Breadcrumbs`                                                               | `components/ui/breadcrumbs.tsx`                          | "Where am I" trail for nested pages; also a `breadcrumbs?` prop on `PageLayout`. Last item is the current page (`aria-current`).                                                                                                                                                                                                                                                                                                             |
+| `BackToTop`                                                                 | `components/ui/back-to-top.tsx`                          | Floating scroll-to-top button, mounted once in the `_site` shell (targets the window **and** the mobile `[data-scroll-root]` scroller).                                                                                                                                                                                                                                                                                                      |
+| `NotificationBadge`                                                         | `components/ui/notification-badge.tsx`                   | Count pill (`bg-site-danger`).                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `UserAvatar`                                                                | `components/ui/UserAvatar.tsx`                           | Default fallback `/images/social/default_avatar.png`.                                                                                                                                                                                                                                                                                                                                                                                        |
+| `OptimizedImage`, `BlurImage`                                               | `components/ui/`                                         | Image loading.                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `AnimatedCount`, `ViewTransitionLink`, `NavigationProgress`, `RoutePending` | `components/ui/`                                         | Motion/navigation helpers. `RoutePending` is the router-wide pending fallback.                                                                                                                                                                                                                                                                                                                                                               |
+| Pagination, Slider (Radix), Resizable, `skeletons/PostCardSkeleton`         | `components/ui/`                                         | —                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 Surfaces outside `Card`: `bg-site-surface border border-site-border
 rounded-site`; hover affordance `hover:bg-site-surface-hover
@@ -342,19 +342,19 @@ Every user-facing string goes through `t()` with a `defaultValue` (English is
 the authoritative source):
 
 ```tsx
-const { t } = useTranslation("site");
-t("wallet-title", { defaultValue: "Wallet" });
+const { t } = useTranslation('site');
+t('wallet-title', { defaultValue: 'Wallet' });
 ```
 
 Namespace conventions (files under `locales/en/`):
 
-| Namespace | Used for |
-|---|---|
-| `site` | most `_site/` pages |
-| `common`, `nav`, `pages`, `shared`, `feed` | core shell + feed |
-| `admin`, `library`, `rideshare`, `groups`, `builds`, `user-builds`, `v` | feature areas |
-| `c-<area>` (e.g. `c-ui`, `c-rmhbox`) | component strings |
-| `r-<area>` (e.g. `r-strategies`) | route/experience entry strings |
+| Namespace                                                               | Used for                       |
+| ----------------------------------------------------------------------- | ------------------------------ |
+| `site`                                                                  | most `_site/` pages            |
+| `common`, `nav`, `pages`, `shared`, `feed`                              | core shell + feed              |
+| `admin`, `library`, `rideshare`, `groups`, `builds`, `user-builds`, `v` | feature areas                  |
+| `c-<area>` (e.g. `c-ui`, `c-rmhbox`)                                    | component strings              |
+| `r-<area>` (e.g. `r-strategies`)                                        | route/experience entry strings |
 
 After adding strings run `pnpm i18n:extract` (populates all
 `locales/*/<ns>.json`), and `pnpm i18n:coverage` to check locale coverage.

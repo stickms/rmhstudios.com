@@ -85,9 +85,8 @@ export function useLiquidBackground(): void {
       // Only attach where the browser fires the event without an explicit
       // permission grant (i.e. iOS's requestPermission gate is absent).
       const needsPermission =
-        typeof (
-          DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> }
-        ).requestPermission === 'function';
+        typeof (DeviceOrientationEvent as unknown as { requestPermission?: () => Promise<string> })
+          .requestPermission === 'function';
       if (!needsPermission) {
         window.addEventListener('deviceorientation', onOrientation, { passive: true });
         cleanups.push(() => window.removeEventListener('deviceorientation', onOrientation));
