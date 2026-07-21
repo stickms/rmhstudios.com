@@ -5,7 +5,7 @@
   "changes-now-live": "Ihre Änderungen sind jetzt live.",
   "content-label": "Inhalt",
   "date-label": "Datum",
-  "delete-confirm": "Sind Sie sicher, dass Sie \"{{title}}\" löschen möchten? Dies kann nicht rückgängig gemacht werden.",
+  "delete-confirm": "Das Löschen von \"{{title}}\" kann nicht rückgängig gemacht werden.",
   "delete-failed": "Fehler beim Löschen des Beitrags",
   "delete-post": "Beitrag löschen",
   "delete-success": "Blogbeitrag gelöscht: {{slug}}.",

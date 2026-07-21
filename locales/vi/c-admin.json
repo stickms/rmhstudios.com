@@ -5,7 +5,7 @@
   "changes-now-live": "Các thay đổi của bạn hiện đã có hiệu lực.",
   "content-label": "Nội dung",
   "date-label": "Ngày",
-  "delete-confirm": "Bạn có chắc chắn muốn xóa \"{{title}}\"? Hành động này không thể hoàn tác.",
+  "delete-confirm": "Việc xóa \"{{title}}\" không thể hoàn tác.",
   "delete-failed": "Xóa bài viết thất bại",
   "delete-post": "Xóa bài viết",
   "delete-success": "Đã xóa bài viết blog: {{slug}}.",

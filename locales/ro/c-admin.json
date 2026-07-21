@@ -5,7 +5,7 @@
   "changes-now-live": "Modificările tale sunt acum active.",
   "content-label": "Conținut",
   "date-label": "Dată",
-  "delete-confirm": "Ești sigur că vrei să ștergi „{{title}}”? Această acțiune nu poate fi anulată.",
+  "delete-confirm": "Ștergerea „{{title}}” nu poate fi anulată.",
   "delete-failed": "Ștergerea postării a eșuat",
   "delete-post": "Șterge Postarea",
   "delete-success": "Postarea de blog a fost ștearsă: {{slug}}.",

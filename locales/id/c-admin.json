@@ -5,7 +5,7 @@
   "changes-now-live": "Perubahan Anda sekarang sudah aktif.",
   "content-label": "Konten",
   "date-label": "Tanggal",
-  "delete-confirm": "Apakah Anda yakin ingin menghapus \"{{title}}\"? Tindakan ini tidak dapat dibatalkan.",
+  "delete-confirm": "Penghapusan \"{{title}}\" tidak dapat dibatalkan.",
   "delete-failed": "Gagal menghapus posting",
   "delete-post": "Hapus Posting",
   "delete-success": "Posting blog dihapus: {{slug}}.",

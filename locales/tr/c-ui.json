@@ -5,5 +5,7 @@
   "close": "Kapat",
   "confirm": "Onayla",
   "copied": "Kopyalandı",
-  "copy": "Kopyala"
+  "copy": "Kopyala",
+  "move-down": "Aşağı taşı{{name}}",
+  "move-up": "Yukarı taşı{{name}}"
 }

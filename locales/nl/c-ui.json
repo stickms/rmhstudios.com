@@ -5,5 +5,7 @@
   "close": "Sluiten",
   "confirm": "Bevestigen",
   "copied": "Gekopieerd",
-  "copy": "Kopiëren"
+  "copy": "Kopiëren",
+  "move-down": "Naar beneden verplaatsen{{name}}",
+  "move-up": "Naar boven verplaatsen{{name}}"
 }

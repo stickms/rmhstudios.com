@@ -5,5 +5,7 @@
   "close": "Stäng",
   "confirm": "Bekräfta",
   "copied": "Kopierat",
-  "copy": "Kopiera"
+  "copy": "Kopiera",
+  "move-down": "Flytta ner{{name}}",
+  "move-up": "Flytta upp{{name}}"
 }

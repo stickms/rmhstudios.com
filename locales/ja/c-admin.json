@@ -5,7 +5,7 @@
   "changes-now-live": "変更が公開されました。",
   "content-label": "コンテンツ",
   "date-label": "日付",
-  "delete-confirm": "「{{title}}」を削除してもよろしいですか？この操作は元に戻せません。",
+  "delete-confirm": "「{{title}}」の削除は元に戻せません。",
   "delete-failed": "投稿の削除に失敗しました",
   "delete-post": "投稿を削除",
   "delete-success": "ブログ投稿を削除しました: {{slug}}。",

@@ -5,7 +5,7 @@
   "changes-now-live": "تم الآن تطبيق تغييراتك.",
   "content-label": "محتوى",
   "date-label": "التاريخ",
-  "delete-confirm": "هل أنت متأكد أنك تريد حذف \"{{title}}\"؟ لا يمكن التراجع عن هذا الإجراء.",
+  "delete-confirm": "لا يمكن التراجع عن حذف \"{{title}}\".",
   "delete-failed": "فشل في حذف المنشور",
   "delete-post": "حذف المنشور",
   "delete-success": "تم حذف منشور المدونة: {{slug}}.",

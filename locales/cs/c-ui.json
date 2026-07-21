@@ -5,5 +5,7 @@
   "close": "Zavřít",
   "confirm": "Potvrdit",
   "copied": "Zkopírováno",
-  "copy": "Kopírovat"
+  "copy": "Kopírovat",
+  "move-down": "Posunout dolů{{name}}",
+  "move-up": "Posunout nahoru{{name}}"
 }

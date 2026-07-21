@@ -5,5 +5,7 @@
   "close": "닫기",
   "confirm": "확인",
   "copied": "복사됨",
-  "copy": "복사"
+  "copy": "복사",
+  "move-down": "아래로 이동{{name}}",
+  "move-up": "위로 이동{{name}}"
 }
