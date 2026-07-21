@@ -105,6 +105,24 @@ jobs:
           git add locales lib/i18n
           git commit -m "chore(i18n): machine-translate new locale keys"
           git push origin "$branch"
-          gh pr create --base main --head "$branch" \
-            --title "chore(i18n): machine-translate new locale keys" \
-            --body "Automated DeepSeek translation of locale keys that were missing or whose English source changed, plus regenerated \`lib/i18n/resources.*.ts\`. Opened by the \`i18n-translate\` workflow so translation stays OFF the deploy critical path. English is the runtime fallback for anything still untranslated."
+          # Opening the PR needs the org/repo setting "Allow GitHub Actions to
+          # create and approve pull requests". When it's OFF, `gh pr create`
+          # exits non-zero with "GitHub Actions is not permitted to create or
+          # approve pull requests" — a policy state, NOT a translation failure.
+          # The branch is already pushed and the deploy is unaffected (English is
+          # the runtime fallback), so that specific block must not red-fail the
+          # job: surface a warning with the branch to open by hand. Any OTHER
+          # failure (network, bad base, ...) still fails the step.
+          if gh pr create --base main --head "$branch" \
+              --title "chore(i18n): machine-translate new locale keys" \
+              --body "Automated DeepSeek translation of locale keys that were missing or whose English source changed, plus regenerated \`lib/i18n/resources.*.ts\`. Opened by the \`i18n-translate\` workflow so translation stays OFF the deploy critical path. English is the runtime fallback for anything still untranslated." \
+              2> pr-err.txt; then
+            echo "Opened translation PR for $branch."
+          elif grep -qiE "not permitted to create|not allowed to create|GitHub Actions is not permitted" pr-err.txt; then
+            echo "::warning title=i18n translation PR not opened::GitHub Actions can't open PRs in this repo (setting 'Allow GitHub Actions to create and approve pull requests' is off). Translations are pushed to branch '$branch' — open a PR from it manually, or enable the setting. Deploy is unaffected."
+            cat pr-err.txt
+          else
+            echo "::error title=i18n translation PR failed::gh pr create failed for an unexpected reason:"
+            cat pr-err.txt
+            exit 1
+          fi
