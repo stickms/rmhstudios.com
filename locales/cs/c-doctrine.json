@@ -2,6 +2,8 @@
   "access-required": "Vyžadován přístup {{tierName}}",
   "active": "Aktivní",
   "attempt-count_one": "{{count}} pokus",
+  "attempt-count_few": "{{count}} attempt",
+  "attempt-count_many": "{{count}} attempt",
   "attempt-count_other": "{{count}} pokusů",
   "attempts": "pokusy",
   "best-streak": "nejlepší: {{longestStreak}}",

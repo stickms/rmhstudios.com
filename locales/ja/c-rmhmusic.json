@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "キューに追加",
   "artist": "アーティスト",
   "correct-title": "正解 — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "ホスト",
   "join-a-room": "ルームに参加",
   "join-room": "ルーム参加",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} リスナー",
   "listener-count_other": "{{count}} リスナー",
+  "loading": "Loading…",
   "loading-rooms": "ルームを読み込み中...",
   "mini-close": "停止して閉じる",
   "mini-open": "プレーヤーを開く",
@@ -20,14 +23,17 @@
   "mini-play": "再生",
   "mini-player": "ミュージックミニプレーヤー",
   "new": "新規",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "まだパズルはありません。",
   "no-results": "結果が見つかりません",
   "no-track-playing": "再生中のトラックはありません",
   "not-configured": "このサーバーでは音楽検索が設定されていません。",
   "not-quite": "惜しい — 別のヒントか推測を試してみてください。",
   "open-player": "プレイヤーを開く",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "公開ルーム",
   "puzzles": "パズル",
+  "queue-action": "Queue",
   "queue-label": "キュー",
   "reveal-another-hint_one": "別のヒントを表示 (残り{{count}})",
   "reveal-another-hint_other": "別のヒントを表示 (残り{{count}})",
@@ -40,5 +46,6 @@
   "searching": "検索中...",
   "sign-in-to-guess": "推測するにはサインインしてください。",
   "solves-plays": "{{solves}} 解決 · {{plays}} プレイ",
-  "song-title-placeholder": "曲名..."
+  "song-title-placeholder": "曲名...",
+  "your-playlists": "Your playlists"
 }

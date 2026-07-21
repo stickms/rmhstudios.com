@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "چیٹ...",
-  "error-boundary-message": "ایک غیر متوقع خرابی پیش آئی۔",
-  "error-boundary-retry": "دوبارہ کوشش کریں",
-  "error-boundary-title": "کچھ غلط ہو گیا",
   "failed-to-load-media": "میڈیا لوڈ کرنے میں ناکام",
   "game-crashed": "گیم کریش ہو گیا",
   "game-crashed-named": "{{gameName}} کریش ہو گیا",

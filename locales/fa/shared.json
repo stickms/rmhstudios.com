@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "چت...",
-  "error-boundary-message": "یک خطای غیرمنتظره رخ داد.",
-  "error-boundary-retry": "تلاش مجدد",
-  "error-boundary-title": "مشکلی پیش آمد",
   "failed-to-load-media": "بارگذاری رسانه انجام نشد",
   "game-crashed": "بازی از کار افتاد",
   "game-crashed-named": "{{gameName}} از کار افتاد",

@@ -151,6 +151,8 @@
   "status-thinking": "सोच रहे हैं...",
   "streak_one": "लगातार: {{count}}",
   "streak_other": "लगातार: {{count}}",
+  "tab-games": "Games",
+  "tab-markets": "Markets",
   "table-name-placeholder": "टेबल का नाम (वैकल्पिक)",
   "take-insurance": "बीमा लें ({{cost}})",
   "texas-holdem-rooms": "टेक्सास होल्डम कमरे",

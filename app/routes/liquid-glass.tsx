@@ -14,6 +14,18 @@ import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/ui/empty-state';
+import { useThemeStore } from '@/stores/themeStore';
+
+// §5.46: read-only indicator of the active glass clarity stop (no i18n in the lab).
+const CLARITY_LABELS = ['Opaque', 'Calm', 'Default', 'Airy', 'Clear'];
+function ClarityIndicator() {
+  const level = useThemeStore((s) => s.glassLevel);
+  return (
+    <Badge variant="outline">
+      clarity {level} · {CLARITY_LABELS[level] ?? '—'}
+    </Badge>
+  );
+}
 
 const PATH = '/liquid-glass';
 const TITLE = 'Liquid Glass — Design Lab | RMH Studios';
@@ -159,6 +171,7 @@ function LiquidGlassLab() {
               <Badge variant="accent">L1–L4 elevation</Badge>
               <Badge variant="default">rim glint</Badge>
               <Badge variant="outline">lens refraction</Badge>
+              <ClarityIndicator />
             </div>
           </div>
         </header>

@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "Obrolan...",
-  "error-boundary-message": "Terjadi kesalahan yang tidak terduga.",
-  "error-boundary-retry": "Coba Lagi",
-  "error-boundary-title": "Terjadi kesalahan",
   "failed-to-load-media": "Gagal memuat media",
   "game-crashed": "Permainan mogok",
   "game-crashed-named": "{{gameName}} mogok",

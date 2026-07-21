@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Toevoegen aan wachtrij",
   "artist": "Artiest",
   "correct-title": "Correct — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "HOST",
   "join-a-room": "Deelnemen aan een kamer",
   "join-room": "Kamer betreden",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} luisteraar",
   "listener-count_other": "{{count}} luisteraars",
+  "loading": "Loading…",
   "loading-rooms": "Kamers laden...",
   "mini-close": "Stoppen en sluiten",
   "mini-open": "Speler openen",
@@ -20,14 +23,17 @@
   "mini-play": "Afspelen",
   "mini-player": "Muziek-miniplayer",
   "new": "Nieuw",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Nog geen puzzels.",
   "no-results": "Geen resultaten gevonden",
   "no-track-playing": "Geen nummer wordt afgespeeld",
   "not-configured": "Muziek zoeken is niet geconfigureerd op deze server.",
   "not-quite": "Niet helemaal — probeer een andere hint of gok.",
   "open-player": "Speler openen",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Openbare kamers",
   "puzzles": "Puzzels",
+  "queue-action": "Queue",
   "queue-label": "Wachtrij",
   "reveal-another-hint_one": "Nog een hint onthullen ({{count}} over)",
   "reveal-another-hint_other": "Nog een hint onthullen ({{count}} over)",
@@ -40,5 +46,6 @@
   "searching": "Zoeken...",
   "sign-in-to-guess": "Log in om te raden.",
   "solves-plays": "{{solves}} opgelost · {{plays}} afspeelbeurten",
-  "song-title-placeholder": "Nummer titel..."
+  "song-title-placeholder": "Nummer titel...",
+  "your-playlists": "Your playlists"
 }

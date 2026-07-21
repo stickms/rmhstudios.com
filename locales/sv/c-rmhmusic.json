@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Lägg till i kö",
   "artist": "Artist",
   "correct-title": "Rätt — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "VÄRD",
   "join-a-room": "Gå med i ett rum",
   "join-room": "Gå med i rum",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} lyssnare",
   "listener-count_other": "{{count}} lyssnare",
+  "loading": "Loading…",
   "loading-rooms": "Laddar rum...",
   "mini-close": "Stoppa och stäng",
   "mini-open": "Öppna spelare",
@@ -20,14 +23,17 @@
   "mini-play": "Spela",
   "mini-player": "Musik-minispelare",
   "new": "Ny",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Inga pussel än.",
   "no-results": "Inga resultat hittades",
   "no-track-playing": "Ingen låt spelas",
   "not-configured": "Musiksökning är inte konfigurerad på denna server.",
   "not-quite": "Inte riktigt — prova en annan ledtråd eller gissa.",
   "open-player": "Öppna spelare",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Offentliga rum",
   "puzzles": "Pussel",
+  "queue-action": "Queue",
   "queue-label": "Kö",
   "reveal-another-hint_one": "Visa en annan ledtråd ({{count}} kvar)",
   "reveal-another-hint_other": "Visa en annan ledtråd ({{count}} kvar)",
@@ -40,5 +46,6 @@
   "searching": "Söker...",
   "sign-in-to-guess": "Logga in för att gissa.",
   "solves-plays": "{{solves}} lösta · {{plays}} spelningar",
-  "song-title-placeholder": "Låttitel..."
+  "song-title-placeholder": "Låttitel...",
+  "your-playlists": "Your playlists"
 }

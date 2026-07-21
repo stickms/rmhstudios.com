@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "聊天……",
-  "error-boundary-message": "发生了一个意外错误。",
-  "error-boundary-retry": "再试一次",
-  "error-boundary-title": "出了点问题",
   "failed-to-load-media": "加载媒体失败",
   "game-crashed": "游戏崩溃了",
   "game-crashed-named": "{{gameName}} 崩溃了",

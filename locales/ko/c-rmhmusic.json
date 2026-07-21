@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "대기열에 추가",
   "artist": "아티스트",
   "correct-title": "정답 — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "호스트",
   "join-a-room": "방 참가",
   "join-room": "방 참가",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "청취자 {{count}}명",
   "listener-count_other": "청취자 {{count}}명",
+  "loading": "Loading…",
   "loading-rooms": "방 불러오는 중...",
   "mini-close": "정지 후 닫기",
   "mini-open": "플레이어 열기",
@@ -20,14 +23,17 @@
   "mini-play": "재생",
   "mini-player": "음악 미니 플레이어",
   "new": "새로 만들기",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "아직 퍼즐이 없습니다.",
   "no-results": "검색 결과 없음",
   "no-track-playing": "재생 중인 트랙 없음",
   "not-configured": "이 서버에서 음악 검색이 설정되지 않았습니다.",
   "not-quite": "아쉽네요 — 다른 힌트나 추측을 시도해 보세요.",
   "open-player": "플레이어 열기",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "공개 방",
   "puzzles": "퍼즐",
+  "queue-action": "Queue",
   "queue-label": "대기열",
   "reveal-another-hint_one": "힌트 하나 더 공개 ({{count}}개 남음)",
   "reveal-another-hint_other": "힌트 하나 더 공개 ({{count}}개 남음)",
@@ -40,5 +46,6 @@
   "searching": "검색 중...",
   "sign-in-to-guess": "추측하려면 로그인하세요.",
   "solves-plays": "{{solves}}회 해결 · {{plays}}회 재생",
-  "song-title-placeholder": "노래 제목..."
+  "song-title-placeholder": "노래 제목...",
+  "your-playlists": "Your playlists"
 }

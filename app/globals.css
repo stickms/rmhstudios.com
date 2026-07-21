@@ -169,6 +169,19 @@
     transparent 70%
   );
 
+  /* ── Glass clarity slider (§5.46) — user blur/tint factors, set inline on
+     <html> by the appearance runtime for stops 1/3/4 (Calm 1.25/1.35 · Airy
+     0.65/0.75 · Clear 0.35/0.5). Stop 0 (Opaque) is the reduce-transparency
+     class; stop 2 (Default) is these 1/1 defaults. The blur is consumed through
+     --glass-blur-factor (not --glass-user-blur directly) so perf-lite can cap it
+     ≤1 — the user factor is set inline on <html>, which would out-specify a
+     class rule, but the derived factor is class-settable. Tint scales directly
+     (perf-lite keeps it). --site-surface-opaque anchors Calm's toward-opaque mix
+     so the tint never has to exceed 100% alpha. */
+  --glass-user-blur: 1;
+  --glass-user-tint: 1;
+  --glass-blur-factor: var(--glass-user-blur, 1);
+
   /* Elevation tokens — the rim lives in the shadow so Card/Dialog/etc. pick it
      up through shadow-site / shadow-site-sm with zero component changes. */
   --site-shadow:
@@ -713,7 +726,18 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
        layer's clip = border-box, so the material fills under the transparent
        border and the edge is the same sheet; noise stays padding-box; the glint
        is the border-box layer, so its specular lives in the 1px border ring. */
-    background-color: var(--site-glass-tint);
+    /* §5.46: tint alpha scales with the clarity slider — Airy/Clear (<1) mix
+       toward transparent, Calm (>1) toward --site-surface-opaque; the clamps make
+       each half a no-op in the other's regime and guard against negative %. */
+    background-color: color-mix(
+      in srgb,
+      var(--site-surface-opaque) clamp(0%, calc((var(--glass-user-tint, 1) - 1) * 100%), 100%),
+      color-mix(
+        in srgb,
+        var(--site-glass-tint) clamp(0%, calc(var(--glass-user-tint, 1) * 100%), 100%),
+        transparent
+      )
+    );
     background-image: var(--site-glass-noise), var(--glass-glint-layer);
     background-clip: padding-box, border-box;
     background-origin: padding-box, border-box;
@@ -721,8 +745,8 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     box-shadow: var(--site-shadow-sm);
     border: var(--site-border-width) solid transparent;
     border-radius: var(--site-radius);
-    -webkit-backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
-    backdrop-filter: blur(var(--site-glass-blur-pane)) saturate(var(--site-glass-saturate));
+    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate));
+    backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate));
   }
 
   /* ── L3 · glass-chrome ── persistent chrome (sidebar, sticky headers, dock).
@@ -735,25 +759,27 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     /* §4.35: single glint layer over a border-box tint + transparent border (the
        lit edge IS the border). border-box sizing (Tailwind preflight) → the added
        border costs no outer layout. */
-    background-color: color-mix(in srgb, var(--site-bg) 32%, transparent);
+    /* §5.46: the --site-bg mix % scales with the clarity slider (a plain factor
+       works here — the mix tops out well under 100% even at Calm's 1.35). */
+    background-color: color-mix(in srgb, var(--site-bg) calc(32% * var(--glass-user-tint, 1)), transparent);
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
     background-attachment: var(--glass-glint-attach, fixed);
     border: var(--site-border-width) solid transparent;
-    -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
-    backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
+    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1))) saturate(150%);
+    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1))) saturate(150%);
   }
   .glass-chrome[data-scrolled] {
     /* background-color only (NOT the `background` shorthand) so the glint layer
        survives the condense; the --glass-glint-opacity bump then rides it (§7). */
-    background-color: color-mix(in srgb, var(--site-bg) 55%, transparent);
+    background-color: color-mix(in srgb, var(--site-bg) calc(55% * var(--glass-user-tint, 1)), transparent);
     --glass-glint-opacity: 1; /* condensed chrome catches more light (§4.2/§7) */
     /* Blur deepens 12px → 18px when the capsule condenses (§7/§8.2). The aside
        variant reads --site-glass-blur-chrome on ::before but never carries
        [data-scrolled], so it is unaffected. */
-    -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome-scrolled)) saturate(150%);
-    backdrop-filter: blur(var(--site-glass-blur-chrome-scrolled)) saturate(150%);
+    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))) saturate(150%);
+    backdrop-filter: blur(calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))) saturate(150%);
   }
   /* Fixed asides: blur lives on ::before so fixed descendants (LeftSidebar's
      non-portaled user menu) keep the VIEWPORT as their containing block. NEVER
@@ -765,7 +791,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     /* §4.35: the aside carries its glint in its OWN background now (its ::after
        ring was deleted). Blur stays on ::before (§3.3.1 containing-block rule),
        so the glint cannot ride a pseudo here — it rides the border-box layer. */
-    background-color: color-mix(in srgb, var(--site-bg) 40%, transparent);
+    background-color: color-mix(in srgb, var(--site-bg) calc(40% * var(--glass-user-tint, 1)), transparent);
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
@@ -778,8 +804,8 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
-    backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
+    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1))) saturate(150%);
+    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1))) saturate(150%);
   }
 
   /* ── L4 · glass-overlay ── floating UI (dialogs, popovers, menus, palette,
@@ -788,7 +814,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
   .glass-overlay {
     position: relative;
     /* §4.35: single glint layer, tint fills to border-box, transparent border. */
-    background-color: color-mix(in srgb, var(--site-bg) 62%, transparent);
+    background-color: color-mix(in srgb, var(--site-bg) calc(62% * var(--glass-user-tint, 1)), transparent);
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
@@ -796,8 +822,8 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     box-shadow: var(--site-shadow);
     border: var(--site-border-width) solid transparent;
     border-radius: var(--site-radius);
-    -webkit-backdrop-filter: blur(var(--site-glass-blur-overlay)) saturate(180%);
-    backdrop-filter: blur(var(--site-glass-blur-overlay)) saturate(180%);
+    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(180%);
+    backdrop-filter: blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(180%);
   }
 
   /* Dialog / drawer backdrops. Blur stays low + constant (cheap; never
@@ -1200,6 +1226,11 @@ html.reduce-transparency .glass-liquid {
    aurora + sheen go. CSS-only demotion — no component branches. */
 html.perf-lite {
   --glass-glint-attach: scroll;
+  /* §5.46.4: the clarity slider may lower blur on weak devices but never raise
+     its cost — cap the blur factor at 1 here. This rides the derived factor (not
+     --glass-user-blur, which the runtime sets inline on <html> and would
+     out-specify this class rule). Tint still scales. */
+  --glass-blur-factor: min(var(--glass-user-blur, 1), 1);
   --glass-glint-layer: linear-gradient(
     180deg,
     color-mix(

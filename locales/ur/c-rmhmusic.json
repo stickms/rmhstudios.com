@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "قطار میں شامل کریں",
   "artist": "فنکار",
   "correct-title": "درست — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "میزبان",
   "join-a-room": "ایک کمرے میں شامل ہوں",
   "join-room": "کمرے میں شامل ہوں",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} سننے والا",
   "listener-count_other": "{{count}} سننے والے",
+  "loading": "Loading…",
   "loading-rooms": "کمرے لوڈ ہو رہے ہیں...",
   "mini-close": "روکیں اور بند کریں",
   "mini-open": "پلیئر کھولیں",
@@ -20,14 +23,17 @@
   "mini-play": "چلائیں",
   "mini-player": "میوزک منی پلیئر",
   "new": "نیا",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "ابھی تک کوئی پہیلی نہیں۔",
   "no-results": "کوئی نتیجہ نہیں ملا",
   "no-track-playing": "کوئی ٹریک نہیں چل رہا",
   "not-configured": "اس سرور پر موسیقی کی تلاش ترتیب نہیں دی گئی۔",
   "not-quite": "بالکل نہیں — کوئی اور اشارہ یا اندازہ آزمائیں۔",
   "open-player": "پلیئر کھولیں",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "عوامی کمرے",
   "puzzles": "پہیلیاں",
+  "queue-action": "Queue",
   "queue-label": "قطار",
   "reveal-another-hint_one": "ایک اور اشارہ ظاہر کریں ({{count}} باقی)",
   "reveal-another-hint_other": "ایک اور اشارہ ظاہر کریں ({{count}} باقی)",
@@ -40,5 +46,6 @@
   "searching": "تلاش ہو رہی ہے...",
   "sign-in-to-guess": "اندازہ لگانے کے لیے سائن ان کریں۔",
   "solves-plays": "{{solves}} حل ہوئے · {{plays}} پلے",
-  "song-title-placeholder": "گانے کا عنوان..."
+  "song-title-placeholder": "گانے کا عنوان...",
+  "your-playlists": "Your playlists"
 }

@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "সারিতে যোগ করুন",
   "artist": "শিল্পী",
   "correct-title": "সঠিক — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "হোস্ট",
   "join-a-room": "একটি রুমে যোগ দিন",
   "join-room": "রুমে যোগ দিন",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} শ্রোতা",
   "listener-count_other": "{{count}} শ্রোতা",
+  "loading": "Loading…",
   "loading-rooms": "রুম লোড হচ্ছে...",
   "mini-close": "থামান এবং বন্ধ করুন",
   "mini-open": "প্লেয়ার খুলুন",
@@ -20,14 +23,17 @@
   "mini-play": "চালান",
   "mini-player": "মিউজিক মিনি-প্লেয়ার",
   "new": "নতুন",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "এখনো কোনো ধাঁধা নেই।",
   "no-results": "কোনো ফলাফল পাওয়া যায়নি",
   "no-track-playing": "কোনো ট্র্যাক বাজছে না",
   "not-configured": "এই সার্ভারে সঙ্গীত অনুসন্ধান কনফিগার করা নেই।",
   "not-quite": "ঠিক নয় — আরেকটি ইঙ্গিত বা অনুমান চেষ্টা করুন।",
   "open-player": "প্লেয়ার খুলুন",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "পাবলিক রুম",
   "puzzles": "ধাঁধা",
+  "queue-action": "Queue",
   "queue-label": "সারি",
   "reveal-another-hint_one": "আরেকটি ইঙ্গিত প্রকাশ করুন ({{count}} বাকি)",
   "reveal-another-hint_other": "আরেকটি ইঙ্গিত প্রকাশ করুন ({{count}} বাকি)",
@@ -40,5 +46,6 @@
   "searching": "অনুসন্ধান করা হচ্ছে...",
   "sign-in-to-guess": "অনুমান করতে সাইন ইন করুন।",
   "solves-plays": "{{solves}} সমাধান · {{plays}} প্লে",
-  "song-title-placeholder": "গানের শিরোনাম..."
+  "song-title-placeholder": "গানের শিরোনাম...",
+  "your-playlists": "Your playlists"
 }

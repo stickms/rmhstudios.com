@@ -2,15 +2,11 @@
   "badge-app": "Εφαρμογή",
   "badge-game": "Παιχνίδι",
   "build-details": "Λεπτομέρειες κατασκευής",
-  "build-source-label": "Πηγή κατασκευής",
-  "details-for": "Λεπτομέρειες για {{title}}",
   "empty-curated": "Δεν βρέθηκαν κατασκευές που να ταιριάζουν με αυτήν την αναζήτηση.",
   "empty-user-no-builds": "Δεν υπάρχουν ακόμη κατασκευές χρηστών — γίνε ο πρώτος που θα υποβάλει μία.",
   "empty-user-search": "Δεν βρέθηκαν κατασκευές χρηστών που να ταιριάζουν με αυτήν την αναζήτηση.",
   "loading": "Φόρτωση…",
-  "open-build": "Άνοιγμα {{title}}",
-  "open-menu": "Άνοιγμα μενού",
-  "page-title": "Κατασκευές",
+  "open": "Open",
   "search-builds-label": "Αναζήτηση κατασκευών",
   "search-builds-placeholder": "Αναζήτηση κατασκευών...",
   "search-user-builds-placeholder": "Αναζήτηση κατασκευών χρηστών...",
@@ -21,6 +17,6 @@
   "sort-name-az": "Όνομα (Α–Ω)",
   "sort-recent": "Πρόσφατα",
   "submit": "Υποβολή",
-  "tab-curated": "Επιμελημένα",
-  "tab-user-builds": "Κατασκευές χρηστών"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

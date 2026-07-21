@@ -2,15 +2,11 @@
   "badge-app": "अॅप",
   "badge-game": "गेम",
   "build-details": "बिल्ड तपशील",
-  "build-source-label": "बिल्ड स्रोत",
-  "details-for": "{{title}} साठी तपशील",
   "empty-curated": "त्या शोधाशी जुळणारे कोणतेही बिल्ड नाहीत.",
   "empty-user-no-builds": "अद्याप कोणतेही वापरकर्ता बिल्ड नाहीत — पहिले सबमिट करा.",
   "empty-user-search": "त्या शोधाशी जुळणारे कोणतेही वापरकर्ता बिल्ड नाहीत.",
   "loading": "लोड होत आहे…",
-  "open-build": "{{title}} उघडा",
-  "open-menu": "मेनू उघडा",
-  "page-title": "बिल्ड्स",
+  "open": "Open",
   "search-builds-label": "बिल्ड्स शोधा",
   "search-builds-placeholder": "बिल्ड्स शोधा...",
   "search-user-builds-placeholder": "वापरकर्ता बिल्ड्स शोधा...",
@@ -21,6 +17,6 @@
   "sort-name-az": "नाव (A–Z)",
   "sort-recent": "अलीकडील",
   "submit": "सबमिट करा",
-  "tab-curated": "क्युरेटेड",
-  "tab-user-builds": "वापरकर्ता बिल्ड्स"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

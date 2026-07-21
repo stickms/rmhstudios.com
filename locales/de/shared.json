@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "Chatten...",
-  "error-boundary-message": "Ein unerwarteter Fehler ist aufgetreten.",
-  "error-boundary-retry": "Erneut versuchen",
-  "error-boundary-title": "Etwas ist schiefgelaufen",
   "failed-to-load-media": "Medien konnten nicht geladen werden",
   "game-crashed": "Spiel abgestürzt",
   "game-crashed-named": "{{gameName}} abgestürzt",

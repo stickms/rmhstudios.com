@@ -28,6 +28,7 @@
   "pagination-previous": "Anterior",
   "pagination-range": "{{from}}–{{to}} din {{total}}",
   "player-count_one": "{{count}} jucător",
+  "player-count_few": "{{count}} players",
   "player-count_other": "{{count}} jucători",
   "player-range": "{{minPlayers}}–{{maxPlayers}} jucători",
   "pts": "pct",

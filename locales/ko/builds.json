@@ -2,15 +2,11 @@
   "badge-app": "앱",
   "badge-game": "게임",
   "build-details": "빌드 세부 정보",
-  "build-source-label": "빌드 소스",
-  "details-for": "{{title}} 세부 정보",
   "empty-curated": "검색과 일치하는 빌드가 없습니다.",
   "empty-user-no-builds": "아직 사용자 빌드가 없습니다 — 첫 번째로 제출해 보세요.",
   "empty-user-search": "검색과 일치하는 사용자 빌드가 없습니다.",
   "loading": "불러오는 중…",
-  "open-build": "{{title}} 열기",
-  "open-menu": "메뉴 열기",
-  "page-title": "빌드",
+  "open": "Open",
   "search-builds-label": "빌드 검색",
   "search-builds-placeholder": "빌드 검색...",
   "search-user-builds-placeholder": "사용자 빌드 검색...",
@@ -21,6 +17,5 @@
   "sort-name-az": "이름 (가나다순)",
   "sort-recent": "최신순",
   "submit": "제출",
-  "tab-curated": "엄선",
-  "tab-user-builds": "사용자 빌드"
+  "views-count_other": "{{count}} views"
 }

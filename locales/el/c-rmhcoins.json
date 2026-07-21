@@ -151,6 +151,8 @@
   "status-thinking": "Σκέφτεται...",
   "streak_one": "Σερί: {{count}}",
   "streak_other": "Σερί: {{count}}",
+  "tab-games": "Games",
+  "tab-markets": "Markets",
   "table-name-placeholder": "Όνομα τραπεζιού (προαιρετικό)",
   "take-insurance": "Λάβετε ({{cost}})",
   "texas-holdem-rooms": "Δωμάτια Texas Hold'em",

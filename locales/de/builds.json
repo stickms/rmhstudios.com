@@ -2,15 +2,11 @@
   "badge-app": "App",
   "badge-game": "Spiel",
   "build-details": "Build-Details",
-  "build-source-label": "Build-Quelle",
-  "details-for": "Details zu {{title}}",
   "empty-curated": "Keine Builds passen zu dieser Suche.",
   "empty-user-no-builds": "Noch keine Nutzer-Builds – sei der Erste, der einen einreicht.",
   "empty-user-search": "Keine Nutzer-Builds passen zu dieser Suche.",
   "loading": "Wird geladen…",
-  "open-build": "{{title}} öffnen",
-  "open-menu": "Menü öffnen",
-  "page-title": "Builds",
+  "open": "Open",
   "search-builds-label": "Builds durchsuchen",
   "search-builds-placeholder": "Builds durchsuchen...",
   "search-user-builds-placeholder": "Nutzer-Builds durchsuchen...",
@@ -21,6 +17,6 @@
   "sort-name-az": "Name (A–Z)",
   "sort-recent": "Neueste",
   "submit": "Einreichen",
-  "tab-curated": "Kuratiert",
-  "tab-user-builds": "Nutzer-Builds"
+  "views-count_one": "{{count}} views",
+  "views-count_other": "{{count}} views"
 }

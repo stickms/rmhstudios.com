@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "Chat...",
-  "error-boundary-message": "An unexpected error occurred.",
-  "error-boundary-retry": "Try Again",
-  "error-boundary-title": "Something went wrong",
   "failed-to-load-media": "Failed to load media",
   "game-crashed": "Game crashed",
   "game-crashed-named": "{{gameName}} crashed",

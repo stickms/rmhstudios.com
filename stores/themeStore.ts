@@ -64,6 +64,13 @@ interface ThemeStore {
    */
   reduceTransparency: boolean;
   setReduceTransparency: (value: boolean) => void;
+  /**
+   * Glass clarity stop (§5.46): 0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear.
+   * Stop 0 is the reduce-transparency mechanism; stops 1/3/4 set inline user
+   * blur/tint factors. Persisted and account-synced like `style` (default 2).
+   */
+  glassLevel: number;
+  setGlassLevel: (value: number) => void;
 
   // ── Appearance & accessibility comfort suite (§13) ──────────────────────
   /** Root font scale in per-mille (875|1000|1125|1250); null = default (1000). */
@@ -92,6 +99,8 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   setAccent: (accent) => set({ accent }),
   reduceTransparency: false,
   setReduceTransparency: (reduceTransparency) => set({ reduceTransparency }),
+  glassLevel: 2,
+  setGlassLevel: (glassLevel) => set({ glassLevel }),
   fontScale: null,
   setFontScale: (fontScale) => set({ fontScale }),
   density: null,

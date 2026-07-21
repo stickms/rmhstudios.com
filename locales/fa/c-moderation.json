@@ -1,10 +1,10 @@
 {
   "cancel": "لغو",
   "details-placeholder": "افزودن جزئیات (اختیاری)",
-  "dialog-description": "به ما بگویید چه مشکلی وجود دارد. گزارش‌ها برای شخصی که گزارش می‌دهید ناشناس هستند.",
+  "dialog-description": "به ما بگویید چه مشکلی وجود دارد. گزارش\u200cها برای شخصی که گزارش می\u200cدهید ناشناس هستند.",
   "dialog-title": "گزارش محتوا",
   "reason-harassment": "آزار یا قلدری",
-  "reason-hate": "گفتار نفرت‌انگیز",
+  "reason-hate": "گفتار نفرت\u200cانگیز",
   "reason-illegal": "محتوای غیرقانونی",
   "reason-misinformation": "اطلاعات نادرست",
   "reason-other": "چیز دیگر",

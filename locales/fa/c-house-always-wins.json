@@ -1,18 +1,5 @@
 {
-  "back-home": "بازگشت به خانه",
   "controls-hint": "WASD/← → حرکت • Space پرش • Shift دش • E تعامل • M منو",
-  "controls-interact": "E — تعامل",
-  "controls-jump": "Space — پرش",
-  "controls-menu": "M — منو",
-  "controls-move": "WASD / کلیدهای جهت — حرکت",
-  "debt": "بدهی",
   "e-continue": "[E] ادامه",
-  "loading": "در حال بارگذاری...",
-  "login-to-play": "برای بازی وارد شوید",
-  "menu-title": "منو",
-  "music-volume": "حجم موسیقی",
-  "resume": "ادامه [M]",
-  "sign-in-prompt": "برای ورود به کازینو باید وارد حساب خود شوید. بدهی‌های شما ثبت خواهد شد.",
-  "subtitle": "میز منتظر است",
-  "title": "خانه همیشه برنده است"
+  "loading": "در حال بارگذاری..."
 }

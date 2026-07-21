@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "Chat...",
-  "error-boundary-message": "A apărut o eroare neașteptată.",
-  "error-boundary-retry": "Încearcă din nou",
-  "error-boundary-title": "Ceva nu a funcționat",
   "failed-to-load-media": "Încărcarea media a eșuat",
   "game-crashed": "Jocul s-a blocat",
   "game-crashed-named": "{{gameName}} s-a blocat",

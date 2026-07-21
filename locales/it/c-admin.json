@@ -4,6 +4,7 @@
   "back-to-admin-label": "Torna all'Amministrazione",
   "changes-now-live": "Le tue modifiche sono ora attive.",
   "content-label": "Contenuto",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "Data",
   "delete-confirm": "Sei sicuro di voler eliminare \"{{title}}\"? Questa operazione non può essere annullata.",
   "delete-failed": "Eliminazione del post fallita",
@@ -18,9 +19,9 @@
   "generic-error": "Si è verificato un errore",
   "hide-preview": "Nascondi Anteprima",
   "image-url-label": "URL dell'immagine",
-  "initializing-editor": "Inizializzazione Editor...",
   "live-preview": "Anteprima Live",
-  "loading-editor": "Caricamento Editor...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "Metadati",
   "new-blog-post": "Nuovo Post del Blog",
   "post-created-successfully": "Post creato con successo!",
@@ -37,5 +38,6 @@
   "title-label": "Titolo",
   "title-placeholder": "Il Mio Post Fantastico",
   "untitled-post": "Post Senza Titolo",
-  "update-post": "Aggiorna Post"
+  "update-post": "Aggiorna Post",
+  "upload-markdown": "Upload .md"
 }

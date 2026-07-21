@@ -151,6 +151,8 @@
   "status-thinking": "Đang suy nghĩ...",
   "streak_one": "Chuỗi: {{count}}",
   "streak_other": "Chuỗi: {{count}}",
+  "tab-games": "Games",
+  "tab-markets": "Markets",
   "table-name-placeholder": "Tên bàn (không bắt buộc)",
   "take-insurance": "Nhận bảo hiểm ({{cost}})",
   "texas-holdem-rooms": "Phòng Texas Hold'em",

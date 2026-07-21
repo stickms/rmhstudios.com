@@ -1,9 +1,13 @@
 {
+  "backfill-thumbs": "Backfill all page thumbnails",
+  "backfill-thumbs-done_other": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
+  "backfill-thumbs-failed": "Failed to queue thumbnail backfill. Try again.",
   "empty-gallery": "Chưa có trang nào — hãy là người đầu tiên tạo một trang.",
   "generate-aria-label": "Tạo",
   "hero-headline": "Nền tảng cho mọi thứ.",
   "loading": "Đang tải…",
   "no-results": "Không có trang nào khớp với tìm kiếm đó.",
+  "open-page": "Open page",
   "pages-title": "Trang",
   "prompt-aria-label": "Mô tả trang bạn muốn tạo",
   "prompt-placeholder": "Bạn muốn đi đâu?",

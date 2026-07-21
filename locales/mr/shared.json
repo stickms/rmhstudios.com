@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "चॅट...",
-  "error-boundary-message": "एक अनपेक्षित त्रुटी आली.",
-  "error-boundary-retry": "पुन्हा प्रयत्न करा",
-  "error-boundary-title": "काहीतरी चूक झाली",
   "failed-to-load-media": "मीडिया लोड करण्यात अयशस्वी",
   "game-crashed": "गेम क्रॅश झाला",
   "game-crashed-named": "{{gameName}} क्रॅश झाला",

@@ -1,8 +1,5 @@
 {
   "chat-placeholder": "Chat...",
-  "error-boundary-message": "Došlo k neočekávané chybě.",
-  "error-boundary-retry": "Zkusit znovu",
-  "error-boundary-title": "Něco se pokazilo",
   "failed-to-load-media": "Nepodařilo se načíst média",
   "game-crashed": "Hra spadla",
   "game-crashed-named": "{{gameName}} spadla",

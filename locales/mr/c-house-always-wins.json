@@ -1,18 +1,5 @@
 {
-  "back-home": "मुख्यपृष्ठावर परत",
   "controls-hint": "WASD/← → हलवा • Space उडी मारा • Shift धावा • E संवाद साधा • M मेनू",
-  "controls-interact": "E — संवाद साधा",
-  "controls-jump": "Space — उडी मारा",
-  "controls-menu": "M — मेनू",
-  "controls-move": "WASD / बाण — हलवा",
-  "debt": "कर्ज",
   "e-continue": "[E] पुढे चला",
-  "loading": "लोड होत आहे...",
-  "login-to-play": "खेळण्यासाठी लॉगिन करा",
-  "menu-title": "मेनू",
-  "music-volume": "संगीताचा आवाज",
-  "resume": "पुन्हा सुरू करा [M]",
-  "sign-in-prompt": "कॅसिनोमध्ये प्रवेश करण्यापूर्वी तुम्ही साइन इन करणे आवश्यक आहे. तुमचे कर्ज नोंदवले जाईल.",
-  "subtitle": "टेबल वाट पाहत आहे",
-  "title": "हाऊस नेहमीच जिंकते"
+  "loading": "लोड होत आहे..."
 }

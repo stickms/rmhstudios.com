@@ -14,6 +14,8 @@
   "actions-heading": "Akce",
   "active": "Aktivní",
   "brace-btn_one": "Zpevnit ({{count}})",
+  "brace-btn_few": "Brace ({{count}})",
+  "brace-btn_many": "Brace ({{count}})",
   "brace-btn_other": "Zpevnit ({{count}})",
   "buy-cost": "Koupit ({{cost}} F)",
   "charge": "Nabití",

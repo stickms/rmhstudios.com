@@ -28,6 +28,8 @@
   "play": "Грати",
   "play-again": "Грати знову",
   "players-count_one": "Гравці ({{count}}/6)",
+  "players-count_few": "Players ({{count}}/6)",
+  "players-count_many": "Players ({{count}}/6)",
   "players-count_other": "Гравці ({{count}}/6)",
   "race-over": "ГОНКА ЗАВЕРШЕНА",
   "race-starting-in": "Гонка починається через",

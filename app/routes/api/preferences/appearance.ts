@@ -56,6 +56,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             readableFont: row?.readableFont ?? false,
             customAccent: row?.customAccent ?? null,
             reduceMotion: row?.reduceMotion ?? false,
+            glassLevel: row?.glassLevel ?? null,
           });
         } catch (error) {
           console.error('Appearance prefs fetch error:', error);
@@ -87,8 +88,16 @@ export const Route = createFileRoute('/api/preferences/appearance')({
 
           // Undefined fields are omitted by Prisma (left unchanged); explicit null
           // clears the column back to the default.
-          const { style, accent, reduceTransparency, fontScale, density, readableFont, reduceMotion } =
-            parsed.data;
+          const {
+            style,
+            accent,
+            reduceTransparency,
+            fontScale,
+            density,
+            readableFont,
+            reduceMotion,
+            glassLevel,
+          } = parsed.data;
           // Custom accent is normalized/nudged through the contrast guard so the
           // stored value is guaranteed to carry a legible label (AA).
           let customAccent = parsed.data.customAccent;
@@ -100,6 +109,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             ...(readableFont !== undefined ? { readableFont } : {}),
             ...(customAccent !== undefined ? { customAccent } : {}),
             ...(reduceMotion !== undefined ? { reduceMotion } : {}),
+            ...(glassLevel !== undefined ? { glassLevel } : {}),
           };
           const row = await prisma.appearancePreference.upsert({
             where: { userId: session.user.id },
@@ -121,6 +131,7 @@ export const Route = createFileRoute('/api/preferences/appearance')({
             readableFont: row.readableFont ?? false,
             customAccent: row.customAccent ?? null,
             reduceMotion: row.reduceMotion ?? false,
+            glassLevel: row.glassLevel ?? null,
           });
         } catch (error) {
           console.error('Appearance prefs save error:', error);

@@ -151,6 +151,8 @@
   "status-thinking": "思考中……",
   "streak_one": "连续天数：{{count}}",
   "streak_other": "连续记录：{{count}}",
+  "tab-games": "Games",
+  "tab-markets": "Markets",
   "table-name-placeholder": "表名（可选）",
   "take-insurance": "花费（{{cost}}）",
   "texas-holdem-rooms": "德州扑克室",

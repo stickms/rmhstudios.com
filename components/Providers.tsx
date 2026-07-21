@@ -30,6 +30,9 @@ import {
   READABLE_FONT_KEY,
   CUSTOM_ACCENT_KEY,
   REDUCE_MOTION_KEY,
+  GLASS_LEVEL_KEY,
+  isGlassLevel,
+  applyGlassLevel,
 } from '@/lib/appearance/prefs';
 import { useGlassLight } from '@/hooks/useGlassLight';
 import { useLiquidBackground } from '@/hooks/useLiquidBackground';
@@ -212,6 +215,7 @@ export function Providers({
   const preview = useThemeStore((s) => s.preview);
   const accent = useThemeStore((s) => s.accent);
   const reduceTransparency = useThemeStore((s) => s.reduceTransparency);
+  const glassLevel = useThemeStore((s) => s.glassLevel);
   const fontScale = useThemeStore((s) => s.fontScale);
   const density = useThemeStore((s) => s.density);
   const readableFont = useThemeStore((s) => s.readableFont);
@@ -400,6 +404,12 @@ export function Providers({
     if (localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1') {
       useThemeStore.getState().setReduceTransparency(true);
     }
+    // Glass clarity (§5.46): the stored stop, else map a legacy reduce-transparency
+    // flag to stop 0 (Opaque) so existing "reduce transparency" users keep it.
+    const gl = Number(localStorage.getItem(GLASS_LEVEL_KEY));
+    if (isGlassLevel(gl)) useThemeStore.getState().setGlassLevel(gl);
+    else if (localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1')
+      useThemeStore.getState().setGlassLevel(0);
     // Comfort suite (§13) — hydrate from the no-flash localStorage cache.
     const st = useThemeStore.getState();
     const fs = Number(localStorage.getItem(FONT_SCALE_KEY));
@@ -437,10 +447,14 @@ export function Providers({
     // Persist the COMMITTED style (not a transient preview).
     localStorage.setItem('rmh-style', style);
 
-    // Reduce-transparency: the user setting toggles a class the glass
-    // degradations key off (§10). Persisted for the no-flash script to re-apply.
-    html.classList.toggle('reduce-transparency', reduceTransparency);
-    if (reduceTransparency) localStorage.setItem(REDUCE_TRANSPARENCY_KEY, '1');
+    // Glass clarity (§5.46): the slider owns both the reduce-transparency class
+    // (stop 0, the §10 degradation the glass keys off) AND the inline user
+    // blur/tint factors (stops 1/3/4). Persisted for the no-flash script; the
+    // legacy reduce-transparency key is kept in sync at stop 0 so an older client
+    // or the no-flash fallback still turns glass off.
+    applyGlassLevel(html, glassLevel);
+    localStorage.setItem(GLASS_LEVEL_KEY, String(glassLevel));
+    if (glassLevel === 0) localStorage.setItem(REDUCE_TRANSPARENCY_KEY, '1');
     else localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
 
     // Accent override: apply on content pages; clear on app/game routes (they own
@@ -503,7 +517,7 @@ export function Providers({
     preview,
     accent,
     isAppRoute,
-    reduceTransparency,
+    glassLevel,
     fontScale,
     density,
     readableFont,
@@ -600,6 +614,7 @@ export function Providers({
             readableFont?: boolean | null;
             customAccent?: string | null;
             reduceMotion?: boolean | null;
+            glassLevel?: number | null;
           };
           if ([875, 1000, 1125, 1250].includes(Number(r.fontScale)))
             store.setFontScale(Number(r.fontScale));
@@ -608,6 +623,11 @@ export function Providers({
           if (typeof r.reduceMotion === 'boolean') store.setReduceMotion(r.reduceMotion);
           if (typeof r.customAccent === 'string' && HEX_RE.test(r.customAccent))
             store.setCustomAccent(r.customAccent);
+          // Glass clarity (§5.46): the account stop wins; otherwise map a legacy
+          // reduce-transparency flag to stop 0 (Opaque). glassLevel is authoritative
+          // for the reduce-transparency class going forward.
+          if (isGlassLevel(r.glassLevel)) store.setGlassLevel(r.glassLevel);
+          else if (nextReduce) store.setGlassLevel(0);
           appearanceSyncedRef.current = true;
         },
       )

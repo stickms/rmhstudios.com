@@ -4,6 +4,7 @@
   "back-to-admin-label": "Zpět do Administrace",
   "changes-now-live": "Vaše změny jsou nyní aktivní.",
   "content-label": "Obsah",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "Datum",
   "delete-confirm": "Opravdu chcete smazat „{{title}}“? Tuto akci nelze vrátit.",
   "delete-failed": "Smazání příspěvku se nezdařilo",
@@ -18,9 +19,9 @@
   "generic-error": "Došlo k chybě",
   "hide-preview": "Skrýt náhled",
   "image-url-label": "URL obrázku",
-  "initializing-editor": "Inicializace editoru...",
   "live-preview": "Živý náhled",
-  "loading-editor": "Načítání editoru...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "Metadata",
   "new-blog-post": "Nový blogový příspěvek",
   "post-created-successfully": "Příspěvek úspěšně vytvořen!",
@@ -37,5 +38,6 @@
   "title-label": "Název",
   "title-placeholder": "Můj skvělý příspěvek",
   "untitled-post": "Příspěvek bez názvu",
-  "update-post": "Aktualizovat příspěvek"
+  "update-post": "Aktualizovat příspěvek",
+  "upload-markdown": "Upload .md"
 }

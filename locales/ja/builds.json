@@ -2,15 +2,11 @@
   "badge-app": "アプリ",
   "badge-game": "ゲーム",
   "build-details": "ビルドの詳細",
-  "build-source-label": "ビルドソース",
-  "details-for": "{{title}} の詳細",
   "empty-curated": "その検索に一致するビルドはありません。",
   "empty-user-no-builds": "まだユーザービルドがありません — 最初の1人になりましょう。",
   "empty-user-search": "その検索に一致するユーザービルドはありません。",
   "loading": "読み込み中…",
-  "open-build": "{{title}} を開く",
-  "open-menu": "メニューを開く",
-  "page-title": "ビルド",
+  "open": "Open",
   "search-builds-label": "ビルドを検索",
   "search-builds-placeholder": "ビルドを検索…",
   "search-user-builds-placeholder": "ユーザービルドを検索…",
@@ -21,6 +17,5 @@
   "sort-name-az": "名前（A–Z）",
   "sort-recent": "新着",
   "submit": "投稿",
-  "tab-curated": "厳選",
-  "tab-user-builds": "ユーザービルド"
+  "views-count_other": "{{count}} views"
 }

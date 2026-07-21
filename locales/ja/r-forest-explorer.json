@@ -3,9 +3,9 @@
   "choose-your-path": "古の森を進む道を選んでください",
   "forest-explorer-title": "フォレストエクスプローラー",
   "free-explore": "自由探索",
-  "free-explore-desc": "昼夜のサイクル、光る蛍、曲がりくねった川がある平和な森を自由に歩き回れます。目標はありません — ただ探索するだけです。",
+  "free-explore-desc-v2": "Wander freely through a peaceful forest with day and night cycles, fireflies, butterflies, and a winding river. Plant seeds and return to watch your garden bloom.",
   "sandbox-label": "サンドボックス",
   "story-mode": "ストーリーモード",
-  "story-mode-desc": "ささやく森、移り変わる木々の天蓋、静かな木立を巡る物語の旅。パズルを解き、秘密を明かし、森を再生させましょう。",
+  "story-mode-desc-v2": "Follow the last Warden's trail through whispering woods, a shifting canopy, and a tranquil grove. Solve puzzles, uncover the journal, restore the forest.",
   "three-acts-label": "3幕"
 }

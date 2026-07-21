@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "เพิ่มในคิว",
   "artist": "ศิลปิน",
   "correct-title": "ถูกต้อง — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "เจ้าภาพ",
   "join-a-room": "เข้าร่วมห้อง",
   "join-room": "เข้าร่วมห้อง",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "ผู้ฟัง {{count}} คน",
   "listener-count_other": "ผู้ฟัง {{count}} คน",
+  "loading": "Loading…",
   "loading-rooms": "กำลังโหลดห้อง...",
   "mini-close": "หยุดและปิด",
   "mini-open": "เปิดเครื่องเล่น",
@@ -20,14 +23,17 @@
   "mini-play": "เล่น",
   "mini-player": "มินิเพลเยอร์เพลง",
   "new": "ใหม่",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "ยังไม่มีปริศนา",
   "no-results": "ไม่พบผลลัพธ์",
   "no-track-playing": "ไม่มีเพลงที่กำลังเล่น",
   "not-configured": "การค้นหาเพลงไม่ได้กำหนดค่าไว้บนเซิร์ฟเวอร์นี้",
   "not-quite": "ยังไม่ถูก — ลองคำใบ้อื่นหรือทายใหม่",
   "open-player": "เปิดเครื่องเล่น",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "ห้องสาธารณะ",
   "puzzles": "ปริศนา",
+  "queue-action": "Queue",
   "queue-label": "คิว",
   "reveal-another-hint_one": "เปิดเผยคำใบ้อื่น (เหลือ {{count}})",
   "reveal-another-hint_other": "เปิดเผยคำใบ้อื่น (เหลือ {{count}})",
@@ -40,5 +46,6 @@
   "searching": "กำลังค้นหา...",
   "sign-in-to-guess": "ลงชื่อเข้าใช้เพื่อทาย",
   "solves-plays": "{{solves}} ครั้งที่แก้ · {{plays}} ครั้งที่เล่น",
-  "song-title-placeholder": "ชื่อเพลง..."
+  "song-title-placeholder": "ชื่อเพลง...",
+  "your-playlists": "Your playlists"
 }

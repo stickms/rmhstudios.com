@@ -1,18 +1,5 @@
 {
-  "back-home": "Înapoi Acasă",
   "controls-hint": "WASD/← → Deplasare • Space Salt • Shift Dash • E Interacțiune • M Meniu",
-  "controls-interact": "E — Interacțiune",
-  "controls-jump": "Space — Salt",
-  "controls-menu": "M — Meniu",
-  "controls-move": "WASD / Săgeți — Deplasare",
-  "debt": "DATORIE",
   "e-continue": "[E] Continuă",
-  "loading": "SE ÎNCARCĂ...",
-  "login-to-play": "Autentifică-te pentru a juca",
-  "menu-title": "Meniu",
-  "music-volume": "Volum Muzică",
-  "resume": "Continuă [M]",
-  "sign-in-prompt": "Trebuie să te autentifici înainte de a intra în cazinou. Datoriile tale vor fi înregistrate.",
-  "subtitle": "Masa așteaptă",
-  "title": "Casa Câștigă Întotdeauna"
+  "loading": "SE ÎNCARCĂ..."
 }

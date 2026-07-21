@@ -4,6 +4,7 @@
   "back-to-admin-label": "Quay lại Trang quản trị",
   "changes-now-live": "Các thay đổi của bạn hiện đã có hiệu lực.",
   "content-label": "Nội dung",
+  "content-placeholder": "Write your post in Markdown…",
   "date-label": "Ngày",
   "delete-confirm": "Bạn có chắc chắn muốn xóa \"{{title}}\"? Hành động này không thể hoàn tác.",
   "delete-failed": "Xóa bài viết thất bại",
@@ -18,9 +19,9 @@
   "generic-error": "Đã xảy ra lỗi",
   "hide-preview": "Ẩn bản xem trước",
   "image-url-label": "URL hình ảnh",
-  "initializing-editor": "Đang khởi tạo trình soạn thảo...",
   "live-preview": "Xem trước trực tiếp",
-  "loading-editor": "Đang tải trình soạn thảo...",
+  "markdown-import-failed": "Could not read that file",
+  "markdown-imported": "Imported {{name}}",
   "metadata": "Siêu dữ liệu",
   "new-blog-post": "Bài viết blog mới",
   "post-created-successfully": "Bài viết đã được tạo thành công!",
@@ -37,5 +38,6 @@
   "title-label": "Tiêu đề",
   "title-placeholder": "Bài viết tuyệt vời của tôi",
   "untitled-post": "Bài viết chưa có tiêu đề",
-  "update-post": "Cập nhật bài viết"
+  "update-post": "Cập nhật bài viết",
+  "upload-markdown": "Upload .md"
 }

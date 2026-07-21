@@ -18,6 +18,11 @@
  *  - Under reduced motion the capsule jumps (no spring) — the `layoutId`
  *    element stays so the active state is still visible.
  *  - No i18n here: labels/aria-label come from callers (already translated).
+ *  - `sheet` (default true, §5.45): the tablist rides its own L1 glass pill so a
+ *    tab strip reads as a standalone, tactile control placed BELOW a hero/title
+ *    (never buried in header chrome). Wrapper only — the roving nav + layoutId
+ *    capsule live on the inner `role="tablist"`, untouched. Pass `sheet={false}`
+ *    where the caller supplies its own container.
  */
 
 import { useId } from 'react';
@@ -42,6 +47,12 @@ interface LiquidTabsProps {
   onChange: (id: string) => void;
   size?: 'sm' | 'default';
   className?: string;
+  /**
+   * Wrap the tablist in its own L1 glass pill sheet (§5.45). Default true. When
+   * true, `className` styles the sheet; when false, it styles the tablist and the
+   * caller owns the container. Turn off where the caller supplies its own sheet.
+   */
+  sheet?: boolean;
   /** Accessible name for the tablist (already translated). */
   'aria-label'?: string;
 }
@@ -52,6 +63,7 @@ export function LiquidTabs({
   onChange,
   size = 'default',
   className,
+  sheet = true,
   'aria-label': ariaLabel,
 }: LiquidTabsProps) {
   const uid = useId();
@@ -80,13 +92,13 @@ export function LiquidTabs({
 
   const pad = size === 'sm' ? 'px-3 py-1 text-xs' : 'px-4 py-1.5 text-sm';
 
-  return (
+  const list = (
     <div
       role="tablist"
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
       data-slot="liquid-tabs"
-      className={cn('inline-flex items-center gap-1', className)}
+      className={cn('inline-flex items-center gap-1', !sheet && className)}
     >
       {tabs.map((tab) => {
         const active = tab.id === value;
@@ -122,6 +134,20 @@ export function LiquidTabs({
           </button>
         );
       })}
+    </div>
+  );
+
+  if (!sheet) return list;
+
+  // §5.45: the tab strip rides its own L1 glass pill (cheap, repeatable; the
+  // hairline glint edge comes from .glass-fill). The wrapper is presentational
+  // only — the roving nav + layoutId capsule stay on the inner tablist.
+  return (
+    <div
+      data-slot="liquid-tabs-sheet"
+      className={cn('glass-fill glass-bevel-sm w-fit rounded-full p-1', className)}
+    >
+      {list}
     </div>
   );
 }

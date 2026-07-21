@@ -1,18 +1,5 @@
 {
-  "back-home": "ਵਾਪਸ ਮੁੱਖ ਪੰਨੇ",
   "controls-hint": "WASD/← → ਹਿਲਾਓ • Space ਛਾਲ ਮਾਰੋ • Shift ਡੈਸ਼ ਕਰੋ • E ਗੱਲਬਾਤ ਕਰੋ • M ਮੀਨੂ",
-  "controls-interact": "E — ਗੱਲਬਾਤ ਕਰੋ",
-  "controls-jump": "Space — ਛਾਲ ਮਾਰੋ",
-  "controls-menu": "M — ਮੀਨੂ",
-  "controls-move": "WASD / Arrows — ਹਿਲਾਓ",
-  "debt": "ਕਰਜ਼ਾ",
   "e-continue": "[E] ਜਾਰੀ ਰੱਖੋ",
-  "loading": "ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...",
-  "login-to-play": "ਖੇਡਣ ਲਈ ਲੌਗਇਨ ਕਰੋ",
-  "menu-title": "ਮੀਨੂ",
-  "music-volume": "ਸੰਗੀਤ ਦੀ ਆਵਾਜ਼",
-  "resume": "ਜਾਰੀ ਰੱਖੋ [M]",
-  "sign-in-prompt": "ਕੈਸੀਨੋ ਵਿੱਚ ਦਾਖਲ ਹੋਣ ਤੋਂ ਪਹਿਲਾਂ ਤੁਹਾਨੂੰ ਸਾਈਨ ਇਨ ਕਰਨ ਦੀ ਲੋੜ ਹੈ। ਤੁਹਾਡੇ ਕਰਜ਼ੇ ਰਿਕਾਰਡ ਕੀਤੇ ਜਾਣਗੇ।",
-  "subtitle": "ਮੇਜ਼ ਉਡੀਕ ਰਿਹਾ ਹੈ",
-  "title": "ਘਰ ਹਮੇਸ਼ਾ ਜਿੱਤਦਾ ਹੈ"
+  "loading": "ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ..."
 }

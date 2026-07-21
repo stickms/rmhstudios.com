@@ -1,4 +1,5 @@
 {
+  "add-to-playlist": "Add to playlist",
   "add-to-queue": "Thêm vào hàng chờ",
   "artist": "Nghệ sĩ",
   "correct-title": "Chính xác — {{title}}",
@@ -11,8 +12,10 @@
   "host-label": "CHỦ PHÒNG",
   "join-a-room": "Tham Gia Phòng",
   "join-room": "Tham Gia",
+  "join-room-to-queue": "Join a room to queue",
   "listener-count_one": "{{count}} người nghe",
   "listener-count_other": "{{count}} người nghe",
+  "loading": "Loading…",
   "loading-rooms": "Đang tải phòng...",
   "mini-close": "Dừng và đóng",
   "mini-open": "Mở trình phát",
@@ -20,14 +23,17 @@
   "mini-play": "Phát",
   "mini-player": "Trình phát nhạc thu nhỏ",
   "new": "Mới",
+  "no-playlists": "No playlists yet.",
   "no-puzzles-yet": "Chưa có câu đố nào.",
   "no-results": "Không tìm thấy kết quả",
   "no-track-playing": "Không có bài hát nào đang phát",
   "not-configured": "Tìm kiếm nhạc chưa được cấu hình trên máy chủ này.",
   "not-quite": "Chưa đúng — hãy thử gợi ý hoặc đoán khác.",
   "open-player": "Mở Trình Phát",
+  "playlist-queued": "Added {{n}} to the queue",
   "public-rooms": "Phòng Công Cộng",
   "puzzles": "Câu đố",
+  "queue-action": "Queue",
   "queue-label": "Hàng chờ",
   "reveal-another-hint_one": "Hiện thêm gợi ý (còn {{count}})",
   "reveal-another-hint_other": "Hiện thêm gợi ý (còn {{count}})",
@@ -40,5 +46,6 @@
   "searching": "Đang tìm kiếm...",
   "sign-in-to-guess": "Đăng nhập để đoán.",
   "solves-plays": "{{solves}} đã giải · {{plays}} lượt phát",
-  "song-title-placeholder": "Tên bài hát..."
+  "song-title-placeholder": "Tên bài hát...",
+  "your-playlists": "Your playlists"
 }

@@ -1,9 +1,13 @@
 {
+  "backfill-thumbs": "Backfill all page thumbnails",
+  "backfill-thumbs-done_other": "Queued {{count}} page(s) for thumbnail re-render. They will refresh as the worker processes them.",
+  "backfill-thumbs-failed": "Failed to queue thumbnail backfill. Try again.",
   "empty-gallery": "아직 페이지가 없습니다 — 첫 페이지를 만들어 보세요.",
   "generate-aria-label": "생성",
   "hero-headline": "모든 것을 위한 플랫폼.",
   "loading": "불러오는 중…",
   "no-results": "검색과 일치하는 페이지가 없습니다.",
+  "open-page": "Open page",
   "pages-title": "페이지",
   "prompt-aria-label": "만들고 싶은 페이지를 설명하세요",
   "prompt-placeholder": "어디로 가고 싶으세요?",
