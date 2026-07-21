@@ -659,17 +659,6 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
   background-color: color-mix(in srgb, var(--site-bg) 52%, transparent);
 }
 
-/* Floating chrome that still paints an opaque bg-site-bg (hand-rolled menus /
-   hover cards not yet migrated to .glass-overlay) reads as frosted glass so
-   content never ghosts through. Leaf elements → the containing block that
-   backdrop-filter creates is harmless. Removed as consumers adopt .glass-overlay. */
-html:not(.style-high-contrast)
-  :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg:not(.fixed):not([data-drawer-active]) {
-  background-color: color-mix(in srgb, var(--site-bg) 80%, transparent);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
-  backdrop-filter: blur(20px) saturate(160%);
-}
-
 @layer components {
   /* ── L1 · glass-fill ── repeated content (feed cards, rows, tiles). Tint + rim
      via shadow-site-sm. NO blur — cheap, unlimited per page; the canvas provides
@@ -1051,8 +1040,7 @@ html:not(.style-high-contrast)
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
-  html:not(.style-high-contrast) .bg-site-bg,
-  html:not(.style-high-contrast) :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg {
+  html:not(.style-high-contrast) .bg-site-bg {
     background-color: var(--site-surface-opaque, var(--site-bg));
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -1076,8 +1064,7 @@ html.reduce-transparency
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-html.reduce-transparency .bg-site-bg,
-html.reduce-transparency :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg {
+html.reduce-transparency .bg-site-bg {
   background-color: var(--site-surface-opaque, var(--site-bg));
   -webkit-backdrop-filter: none;
   backdrop-filter: none;

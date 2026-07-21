@@ -3,8 +3,8 @@
    The signed-in shell now inherits the site design tokens directly (no local
    --site-* override), so it follows the active theme (Dark / Light /
    High Contrast). This file only carries structural chrome that can't live in
-   Tailwind utilities: the body-font re-resolution + smoothing, the Playfair
-   wordmark, the frosted-glass backing, and the card hover treatment.
+   Tailwind utilities: the body-font re-resolution + smoothing and the Playfair
+   wordmark.
    ───────────────────────────────────────────────────────────────────────────── */
 
 .vibe-app {
@@ -20,29 +20,4 @@
 .site-logo {
   font-family: var(--font-playfair), Georgia, serif;
   letter-spacing: -0.02em;
-}
-
-/* Legacy alias — `.vibe-glass` now maps onto the L3 `.glass-chrome` elevation
-   (see app/globals.css) so the few remaining non-shell consumers (FeedLayout,
-   MembershipPanel, ListingDetailView) inherit the redesign. New code should use
-   `.glass-chrome` directly. */
-.vibe-glass {
-  background: color-mix(in srgb, var(--site-bg) 32%, transparent);
-  backdrop-filter: blur(24px) saturate(170%);
-  -webkit-backdrop-filter: blur(24px) saturate(170%);
-}
-
-/* Cards: L1 glass-fill echo — subtle translucent tint + rim that brightens on
-   hover, matching the builds/library grid. Kept as an alias for existing markup. */
-.vibe-card {
-  background: var(--site-glass-tint);
-  border: 1px solid var(--site-border);
-  border-radius: var(--site-radius);
-  box-shadow: var(--site-shadow-sm);
-  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease;
-}
-
-.vibe-card:hover {
-  border-color: var(--site-border-bright);
-  background: var(--site-glass-tint-strong);
 }

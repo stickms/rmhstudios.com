@@ -298,7 +298,7 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
                   <MoreHorizontal className="w-3.5 h-3.5" />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-44 bg-site-bg border border-site-border rounded-site shadow-xl py-1 z-30">
+                  <div className="absolute right-0 top-full mt-1 w-44 glass-overlay py-1 z-30">
                     <button
                       onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"

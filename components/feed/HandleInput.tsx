@@ -158,7 +158,7 @@ export function HandleInput({ value, onChange, multiple = false, placeholder, cl
 
       {open && (loading || suggestions.length > 0) && (
         <div
-          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-site border border-site-border bg-site-bg py-1 shadow-xl"
+          className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto glass-overlay py-1"
           onMouseDown={(e) => e.preventDefault()}
         >
           {loading && suggestions.length === 0 ? (

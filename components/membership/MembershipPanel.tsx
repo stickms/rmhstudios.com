@@ -378,7 +378,7 @@ function PricingStyles() {
       .pricing-price { font-family: var(--font-jetbrains-mono); font-weight: 600; letter-spacing: -0.04em; }
 
       /* The pricing panel sits directly on the aurora canvas — no opaque slab
-         (the old .pricing-root background was deleted with the glass redesign). */
+         (the old panel background was deleted with the glass redesign). */
 
       /* Cards — the .glass-pane class owns the frost/tint/border/blur now (§8.4);
          this only layers the hover-lift + featured gold glow on top. */

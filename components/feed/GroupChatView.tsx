@@ -623,7 +623,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               )}
             </button>
             {attachOpen && (
-              <div className="absolute bottom-full left-0 z-30 mb-1 w-40 rounded-site border border-site-border bg-site-bg py-1 shadow-xl">
+              <div className="absolute bottom-full left-0 z-30 mb-1 w-40 glass-overlay py-1">
                 <button
                   type="button"
                   disabled={imageUrls.length >= MAX_IMAGES}

@@ -75,7 +75,7 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
 
       <div
-        className="relative bg-site-bg border border-site-border rounded-site shadow-xl w-full max-w-lg flex flex-col max-h-[90dvh] overflow-y-auto"
+        className="relative glass-overlay w-full max-w-lg flex flex-col max-h-[90dvh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
