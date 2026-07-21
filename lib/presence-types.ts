@@ -48,6 +48,27 @@ export interface ActiveFriend {
   joinable: JoinTarget | null;
 }
 
+/**
+ * Field-level equality for a Friends rail/sheet row. `useActiveFriends` polls
+ * and calls `setFriends` with a fresh array of fresh objects every cycle, so
+ * every row's `friend` prop is a new reference even when nothing changed. This
+ * compares only what a row actually renders (identity, avatar, and the
+ * precomputed activity label + join target) so a `React.memo`'d row skips the
+ * re-render when a poll returns equivalent data.
+ */
+export function sameActiveFriend(a: ActiveFriend, b: ActiveFriend): boolean {
+  return (
+    a.user.id === b.user.id &&
+    a.user.name === b.user.name &&
+    a.user.handle === b.user.handle &&
+    a.user.username === b.user.username &&
+    a.user.image === b.user.image &&
+    (a.activity?.kind ?? null) === (b.activity?.kind ?? null) &&
+    (a.activity?.label ?? null) === (b.activity?.label ?? null) &&
+    (a.joinable?.href ?? null) === (b.joinable?.href ?? null)
+  );
+}
+
 /** zod for the presence-privacy PUT (settings → privacy). */
 export const presencePrivacySchema = z.object({
   presenceVisibility: z.enum(PRESENCE_VISIBILITIES).optional(),

@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { Users, UserPlus, Check } from 'lucide-react';
@@ -7,7 +8,7 @@ import { Users, UserPlus, Check } from 'lucide-react';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useActiveFriends } from '@/hooks/useActiveFriends';
 import { useClipboard } from '@/hooks/useClipboard';
-import { contextVerb, type ActiveFriend } from '@/lib/presence-types';
+import { contextVerb, sameActiveFriend, type ActiveFriend } from '@/lib/presence-types';
 import { ActivityLine } from './ActivityLine';
 
 /**
@@ -74,7 +75,10 @@ export function FriendsRail() {
   );
 }
 
-function FriendRailRow({ friend }: { friend: ActiveFriend }) {
+// Memoized on the rendered fields (not prop identity): the poll hands every row
+// a new `friend` object each cycle, so without this each of N rows re-renders
+// (and re-runs its avatar + t()) on every poll even when nothing changed.
+const FriendRailRow = memo(function FriendRailRow({ friend }: { friend: ActiveFriend }) {
   const { t } = useTranslation('site');
   const { user, activity, joinable } = friend;
   const name = user.name || user.handle || user.username || t('someone', { defaultValue: 'Someone' });
@@ -104,4 +108,4 @@ function FriendRailRow({ friend }: { friend: ActiveFriend }) {
       ) : null}
     </li>
   );
-}
+}, (prev, next) => sameActiveFriend(prev.friend, next.friend));

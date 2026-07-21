@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { ArrowRight } from 'lucide-react';
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/sheet';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useActiveFriends } from '@/hooks/useActiveFriends';
-import { contextVerb, type ActiveFriend } from '@/lib/presence-types';
+import { contextVerb, sameActiveFriend, type ActiveFriend } from '@/lib/presence-types';
 import { ActivityLine } from './ActivityLine';
 
 /**
@@ -92,6 +92,9 @@ export function FriendsSheet({
   friends: ActiveFriend[];
 }) {
   const { t } = useTranslation('site');
+  // Stable across polls so the memoized rows aren't invalidated by a new inline
+  // closure each render (onOpenChange is a setter and safe to close over).
+  const close = useCallback(() => onOpenChange(false), [onOpenChange]);
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent>
@@ -100,7 +103,7 @@ export function FriendsSheet({
         </SheetHeader>
         <ul className="flex flex-col gap-1 pt-2">
           {friends.map((f) => (
-            <FriendSheetRow key={f.user.id} friend={f} onNavigate={() => onOpenChange(false)} />
+            <FriendSheetRow key={f.user.id} friend={f} onNavigate={close} />
           ))}
         </ul>
       </SheetContent>
@@ -108,7 +111,7 @@ export function FriendsSheet({
   );
 }
 
-function FriendSheetRow({ friend, onNavigate }: { friend: ActiveFriend; onNavigate: () => void }) {
+const FriendSheetRow = memo(function FriendSheetRow({ friend, onNavigate }: { friend: ActiveFriend; onNavigate: () => void }) {
   const { t } = useTranslation('site');
   const { user, activity, joinable } = friend;
   const name = user.name || user.handle || user.username || t('someone', { defaultValue: 'Someone' });
@@ -144,4 +147,4 @@ function FriendSheetRow({ friend, onNavigate }: { friend: ActiveFriend; onNaviga
       ) : null}
     </li>
   );
-}
+}, (prev, next) => prev.onNavigate === next.onNavigate && sameActiveFriend(prev.friend, next.friend));
