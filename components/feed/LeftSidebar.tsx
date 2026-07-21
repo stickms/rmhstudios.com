@@ -6,36 +6,15 @@ import { authClient } from '@/lib/auth-client';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import {
-  Home,
-  Library,
-  Atom,
-  Brain,
-  Wand2,
   LogOut,
   User,
-  ShieldCheck,
   MoreHorizontal,
   Pin,
   Settings,
-  TrendingUp,
-  Inbox,
-  Landmark,
   Bookmark,
-  ShoppingBag,
-  Compass,
-  Users,
   Zap,
-  Shield,
-  Terminal,
   ChevronDown,
-  Car,
-  Building2,
-  Briefcase,
-  Gamepad2,
-  LayoutGrid,
-  Rocket,
   HelpCircle,
-  type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -43,6 +22,13 @@ import { NotificationsPopover } from '@/components/site/NotificationsPopover';
 import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNavStore } from '@/stores/navStore';
+import { useLayoutStore } from '@/stores/layoutStore';
+import {
+  SIDEBAR_NAV,
+  isNavGroup,
+  orderNavItems,
+  type NavLeaf,
+} from '@/lib/sidebar-nav';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
 import { MobileSidebarCloseButton } from './MobileSidebarCloseButton';
@@ -67,97 +53,6 @@ const SUBMENU_ITEM = {
   open: { opacity: 1, y: 0, transition: { duration: 0.18 } },
   closed: { opacity: 0, y: -6 },
 };
-
-// `tKey` is the i18n key (namespace "feed"); `label` is the English fallback.
-type NavLeaf = {
-  href: string;
-  tKey: string;
-  label: string;
-  icon: LucideIcon;
-  requiresAuth?: boolean;
-  requiresAdmin?: boolean;
-  badge?: 'inbox' | 'admin-review';
-  external?: boolean;
-};
-type NavGroup = {
-  group: string;
-  tKey: string;
-  label: string;
-  icon: LucideIcon;
-  children: NavLeaf[];
-};
-type NavItem = NavLeaf | NavGroup;
-const isGroup = (item: NavItem): item is NavGroup => 'group' in item;
-
-// Top-level nav. Singles stay flat; related destinations are merged into
-// collapsible groups to keep the rail short. "Services" collects our real
-// standalone product verticals (each gets equal billing as a group child);
-// "RMH Ventures" collects the external brand/offering microsites. Former
-// "More" destinations that were folded into a host page live there now:
-// Leaderboard→Arcade, Spaces/Events→Communities, Market→Store, Studio→Creator
-// Studio, Playlists→Library, Help→user menu + command palette.
-const NAV: NavItem[] = [
-  { href: '/', tKey: 'nav-home', label: 'Home', icon: Home },
-  { href: '/search', tKey: 'nav-explore', label: 'Explore', icon: Compass },
-  {
-    href: '/messages',
-    tKey: 'nav-inbox',
-    label: 'Inbox',
-    icon: Inbox,
-    requiresAuth: true,
-    badge: 'inbox',
-  },
-  { href: '/create', tKey: 'nav-creator-studio', label: 'Creator Studio', icon: Wand2 },
-  { href: '/library', tKey: 'nav-library', label: 'Library', icon: Library },
-  { href: '/communities', tKey: 'nav-communities', label: 'Communities', icon: Users },
-  { href: '/store', tKey: 'nav-store', label: 'Store', icon: ShoppingBag },
-  { href: '/arcade', tKey: 'nav-arcade', label: 'Arcade', icon: Gamepad2 },
-  { href: '/predictions', tKey: 'nav-predictions', label: 'Predictions', icon: TrendingUp },
-  { href: '/developer', tKey: 'nav-developer', label: 'Developer', icon: Terminal },
-  {
-    group: 'services',
-    tKey: 'nav-services',
-    label: 'Services',
-    icon: LayoutGrid,
-    children: [
-      { href: '/homes', tKey: 'nav-homes', label: 'RMHHomes', icon: Building2 },
-      { href: '/rmhladder', tKey: 'nav-rmhladder', label: 'RMHLadder', icon: Briefcase },
-      { href: '/rideshare', tKey: 'nav-rideshare', label: 'Rideshare', icon: Car },
-    ],
-  },
-  {
-    group: 'ventures',
-    tKey: 'nav-ventures',
-    label: 'RMH Ventures',
-    icon: Rocket,
-    children: [
-      { href: '/rmh-capital', tKey: 'nav-rmh-capital', label: 'RMH Capital', icon: Landmark },
-      { href: '/rmh-pmc', tKey: 'nav-rmh-pmc', label: 'RMH PMC', icon: Shield },
-      {
-        href: '/adaptive-intelligence',
-        tKey: 'nav-adaptive-intelligence',
-        label: 'Adaptive Intelligence',
-        icon: Atom,
-      },
-      {
-        href: '/deeplink',
-        tKey: 'nav-rmh-deeplink',
-        label: 'RMH Deeplink',
-        icon: Brain,
-        external: true,
-      },
-    ],
-  },
-  // Admin lives at the bottom of the rail and is only rendered for admins.
-  {
-    href: '/admin',
-    tKey: 'nav-admin',
-    label: 'Admin',
-    icon: ShieldCheck,
-    requiresAdmin: true,
-    badge: 'admin-review',
-  },
-];
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // When expanded=true (e.g. in mobile drawer), always show labels.
@@ -191,8 +86,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const navigate = useNavigate();
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
-    for (const item of NAV) {
-      if (isGroup(item)) init[item.group] = item.children.some((c) => pathname?.startsWith(c.href));
+    for (const item of SIDEBAR_NAV) {
+      if (isNavGroup(item))
+        init[item.group] = item.children.some((c) => pathname?.startsWith(c.href));
     }
     return init;
   });
@@ -243,6 +139,21 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   useEffect(() => {
     useNavStore.getState().hydrate();
   }, []);
+
+  // User-customized top-level tab order + hidden tabs (cross-device, §15). Same
+  // deal: the store starts at the defaults (empty order / nothing hidden), which
+  // match the SSR markup, and hydrate() applies the saved layout after mount so
+  // there's never a hydration mismatch.
+  const sidebarOrder = useLayoutStore((s) => s.sidebar.order);
+  const sidebarHidden = useLayoutStore((s) => s.sidebar.hidden);
+  const layoutHydrated = useLayoutStore((s) => s.hydrated);
+  useEffect(() => {
+    useLayoutStore.getState().hydrate();
+  }, []);
+  // Apply the saved order, then drop hidden leaves. Both fall back to defaults
+  // until hydrated, so the first client render matches the server's.
+  const orderedNav = orderNavItems(SIDEBAR_NAV, layoutHydrated ? sidebarOrder : []);
+  const hiddenSet = new Set(layoutHydrated ? sidebarHidden : []);
 
   const { data: session, isPending } = useSession();
   const isAdmin = !!(session?.user as any)?.isAdmin;
@@ -438,10 +349,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       {/* Nav Links — its own scroll region on desktop; part of the drawer's
           scroll on mobile (see rootSizeClass/navScrollClass above). */}
       <nav ref={navRef} className={`flex flex-col gap-1 ${navScrollClass} pr-1.5`}>
-        {NAV.map((item) => {
-          if (!isGroup(item)) {
+        {orderedNav.map((item) => {
+          if (!isNavGroup(item)) {
             if (item.requiresAuth && !session) return null;
             if (item.requiresAdmin && !isAdmin) return null;
+            // Hidden leaves drop out of the rail (still reachable via the
+            // command palette and their URL — never stranded).
+            if (hiddenSet.has(item.id)) return null;
             return renderLeaf(item);
           }
           const Icon = item.icon;

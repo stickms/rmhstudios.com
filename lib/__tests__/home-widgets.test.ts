@@ -34,6 +34,7 @@ describe('parseSidebarPref', () => {
     expect(parseSidebarPref({ pinned: ['/store', '/store', '/not-real'], hidden: ['/arcade'] })).toEqual({
       pinned: ['/store'],
       hidden: ['/arcade'],
+      order: [],
     });
   });
 
@@ -41,19 +42,45 @@ describe('parseSidebarPref', () => {
     expect(parseSidebarPref({ pinned: ['/library'], hidden: ['/library'] })).toEqual({
       pinned: ['/library'],
       hidden: [],
+      order: [],
+    });
+  });
+
+  it('parses order: preserves sequence, drops unknown/non-orderable, dedupes', () => {
+    expect(
+      parseSidebarPref({
+        order: ['/store', 'group:services', '/store', '/admin', '/not-real', '/'],
+      }),
+    ).toEqual({
+      pinned: [],
+      hidden: [],
+      // '/admin' isn't orderable and '/not-real' is unknown — both dropped.
+      order: ['/store', 'group:services', '/'],
+    });
+  });
+
+  it('only hides leaves in the hideable set (never Home or a group)', () => {
+    expect(parseSidebarPref({ hidden: ['/', 'group:services', '/arcade'] })).toEqual({
+      pinned: [],
+      hidden: ['/arcade'],
+      order: [],
     });
   });
 
   it('tolerates garbage input', () => {
-    expect(parseSidebarPref(null)).toEqual({ pinned: [], hidden: [] });
-    expect(parseSidebarPref({ pinned: 'x', hidden: 3 })).toEqual({ pinned: [], hidden: [] });
+    expect(parseSidebarPref(null)).toEqual({ pinned: [], hidden: [], order: [] });
+    expect(parseSidebarPref({ pinned: 'x', hidden: 3, order: 7 })).toEqual({
+      pinned: [],
+      hidden: [],
+      order: [],
+    });
   });
 });
 
 describe('parseLayoutPref', () => {
   it('combines both with unset row → defaults', () => {
     const p = parseLayoutPref(null);
-    expect(p.sidebar).toEqual({ pinned: [], hidden: [] });
+    expect(p.sidebar).toEqual({ pinned: [], hidden: [], order: [] });
     expect(p.homeStack).toEqual(DEFAULT_HOME_STACK);
   });
 });
