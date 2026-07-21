@@ -196,7 +196,13 @@ export function RightSidebar({
               >
                 <div className="relative w-10 h-10 rounded-site-sm overflow-hidden bg-site-bg shrink-0 border border-site-border">
                   {build.thumbnailUrl ? (
-                    <OptimizedImage src={build.thumbnailUrl} alt={build.title} width={40} height={40} className="w-full h-full object-cover" />
+                    <OptimizedImage
+                      src={build.thumbnailUrl}
+                      alt={build.title}
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
                   )}
@@ -220,7 +226,13 @@ export function RightSidebar({
               >
                 <div className="relative w-10 h-10 rounded-site-sm overflow-hidden bg-site-bg shrink-0 border border-site-border">
                   {build.thumbnailUrl ? (
-                    <OptimizedImage src={build.thumbnailUrl} alt={build.title} width={40} height={40} className="w-full h-full object-cover" />
+                    <OptimizedImage
+                      src={build.thumbnailUrl}
+                      alt={build.title}
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
                   )}
@@ -237,7 +249,11 @@ export function RightSidebar({
             );
           })}
         </div>
-        <Link to="/builds" aria-label={t('show-more-builds', { defaultValue: 'Show more official builds' })} className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+        <Link
+          to="/builds"
+          aria-label={t('show-more-builds', { defaultValue: 'Show more official builds' })}
+          className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
+        >
           {t('show-more', { defaultValue: 'Show more' })}
         </Link>
       </section>
@@ -257,7 +273,13 @@ export function RightSidebar({
             >
               <div className="relative w-10 h-10 rounded-site-sm overflow-hidden bg-site-bg shrink-0 border border-site-border">
                 {build.thumbnailUrl ? (
-                  <OptimizedImage src={build.thumbnailUrl} alt={build.title} width={40} height={40} className="w-full h-full object-cover" />
+                  <OptimizedImage
+                    src={build.thumbnailUrl}
+                    alt={build.title}
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-cover"
+                  />
                 ) : (
                   <div className="w-full h-full bg-linear-to-br from-site-accent/30 to-site-surface" />
                 )}
@@ -268,19 +290,38 @@ export function RightSidebar({
                 </p>
                 {build.creator && (
                   <p className="text-xs text-site-text-dim truncate mt-0.5">
-                    {t('build-by', { creator: build.creator.name || build.creator.username || t('unknown', { defaultValue: 'Unknown' }), defaultValue: 'by {{creator}}' })}
+                    {t('build-by', {
+                      creator:
+                        build.creator.name ||
+                        build.creator.username ||
+                        t('unknown', { defaultValue: 'Unknown' }),
+                      defaultValue: 'by {{creator}}',
+                    })}
                   </p>
                 )}
                 <div className="flex items-center gap-2 text-[11px] text-site-text-dim mt-0.5">
-                  <span className="inline-flex items-center gap-1"><Heart className="w-3 h-3" />{build.likeCount}</span>
-                  <span className="inline-flex items-center gap-1"><MessageCircle className="w-3 h-3" />{build.commentCount}</span>
-                  <span className="inline-flex items-center gap-1"><Eye className="w-3 h-3" />{build.viewCount}</span>
+                  <span className="inline-flex items-center gap-1">
+                    <Heart className="w-3 h-3" />
+                    {build.likeCount}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <MessageCircle className="w-3 h-3" />
+                    {build.commentCount}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    {build.viewCount}
+                  </span>
                 </div>
               </div>
             </Link>
           ))}
         </div>
-        <Link to="/user-builds" aria-label={t('show-more-user-builds', { defaultValue: 'Show more community builds' })} className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+        <Link
+          to="/user-builds"
+          aria-label={t('show-more-user-builds', { defaultValue: 'Show more community builds' })}
+          className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
+        >
           {t('show-more', { defaultValue: 'Show more' })}
         </Link>
       </section>
@@ -295,17 +336,36 @@ export function RightSidebar({
           {recommendedUsers.map((user) => {
             const profileHref = user.handle ? `/u/${user.handle}` : `/profile/${user.id}`;
             return (
-              <div key={user.id} className="-mx-2 px-2 flex items-center gap-2.5 rounded-site-sm py-1.5 hover:bg-site-surface-hover transition-colors">
-                <Link to={profileHref as string} className="flex items-center gap-2.5 min-w-0 flex-1">
-                  <UserAvatar src={user.image ?? undefined} alt={user.name || user.username || t('user', { defaultValue: 'User' })} size={36} fallbackName={(user.name || user.username) ?? undefined} />
+              <div
+                key={user.id}
+                className="-mx-2 px-2 flex items-center gap-2.5 rounded-site-sm py-1.5 hover:bg-site-surface-hover transition-colors"
+              >
+                <Link
+                  to={profileHref as string}
+                  className="flex items-center gap-2.5 min-w-0 flex-1"
+                >
+                  <UserAvatar
+                    src={user.image ?? undefined}
+                    alt={user.name || user.username || t('user', { defaultValue: 'User' })}
+                    size={36}
+                    fallbackName={(user.name || user.username) ?? undefined}
+                  />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-site-text truncate">{user.name || user.username || t('user', { defaultValue: 'User' })}</p>
+                    <p className="text-sm font-medium text-site-text truncate">
+                      {user.name || user.username || t('user', { defaultValue: 'User' })}
+                    </p>
                     <p className="text-xs text-site-text-dim">
-                      {t('follower-count', { count: user.followerCount, defaultValue: '{{count}} followers' })}
+                      {t('follower-count', {
+                        count: user.followerCount,
+                        defaultValue: '{{count}} followers',
+                      })}
                     </p>
                   </div>
                 </Link>
-                <Link to={profileHref as string} className="text-xs font-semibold text-site-accent hover:text-site-accent-hover transition-colors">
+                <Link
+                  to={profileHref as string}
+                  className="text-xs font-semibold text-site-accent hover:text-site-accent-hover transition-colors"
+                >
                   {t('follow', { defaultValue: 'Follow' })}
                 </Link>
               </div>
@@ -330,7 +390,11 @@ export function RightSidebar({
             </Link>
           ))}
         </div>
-        <Link to="/blog" aria-label={t('show-more-blog', { defaultValue: 'Show more blog posts' })} className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors">
+        <Link
+          to="/blog"
+          aria-label={t('show-more-blog', { defaultValue: 'Show more blog posts' })}
+          className="block text-sm text-site-accent hover:text-site-accent-hover mt-3 transition-colors"
+        >
           {t('show-more', { defaultValue: 'Show more' })}
         </Link>
       </section>
@@ -339,10 +403,23 @@ export function RightSidebar({
       <div className="text-xs text-site-text-dim px-2 space-y-1">
         <p>{t('footer-tagline', { defaultValue: 'RMH | The Everything Platform' })}</p>
         <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-          <Link to="/security" className="hover:text-site-text transition-colors">{t('security', { defaultValue: 'Security' })}</Link>
-          <Link to="/optimization" className="hover:text-site-text transition-colors">{t('optimization', { defaultValue: 'Speed' })}</Link>
-          <Link to="/roadmap" className="hover:text-site-text transition-colors">{t('roadmap', { defaultValue: 'Roadmap' })}</Link>
-          <Link to="/black-lives-matter" className="hover:text-site-text transition-colors">{t('black-lives-matter', { defaultValue: 'Black Lives Matter' })}</Link>
+          <Link to="/security" className="hover:text-site-text transition-colors">
+            {t('security', { defaultValue: 'Security' })}
+          </Link>
+          <Link to="/optimization" className="hover:text-site-text transition-colors">
+            {t('optimization', { defaultValue: 'Speed' })}
+          </Link>
+          {/* Server-rendered standalone HTML route (no client component), so a
+              full-load anchor rather than a router Link. */}
+          <a href="/rmh-internal-affairs" className="hover:text-site-text transition-colors">
+            {t('internal-affairs', { defaultValue: 'Internal Affairs' })}
+          </a>
+          <Link to="/roadmap" className="hover:text-site-text transition-colors">
+            {t('roadmap', { defaultValue: 'Roadmap' })}
+          </Link>
+          <Link to="/black-lives-matter" className="hover:text-site-text transition-colors">
+            {t('black-lives-matter', { defaultValue: 'Black Lives Matter' })}
+          </Link>
         </div>
       </div>
     </div>
