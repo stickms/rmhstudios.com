@@ -1425,6 +1425,83 @@ member gate covered by a unit test on the server function; v1→v2 upcast
 round-trip test; editor + marketplace screenshots at 1440px and 390px in
 Glass Dark + Sepia.
 
+---
+
+## 15. Consistency & liquid-feel polish (amendment 2026-07-21g)
+
+**Owner feedback after using the shipped build:** (a) many UI elements lack
+proper spacing between them; (b) navigating to an RMHark **cancels the
+liquid-open animation** — it reads choppy; (c) elements "don't morph much" —
+the metaball effect is too subtle; (d) tab styling is not unified (e.g. the
+store's Shop/Market tabs vs. everywhere else).
+
+### 15.1 Unify every tab strip (the key ask: consistency)
+
+One visual grammar for all tab strips: **glass sheet + flowing capsule**
+(§5.45 + §5.47). Sweep and converge:
+
+- `/store` Shop/Market kept an **underline marker** through Phase G — convert
+  to the capsule treatment (keep `?tab=`, roving nav, ARIA; the underline
+  dies per §12.8).
+- Grep for remaining underline/`border-b`-active tab patterns across
+  `components/` + `app/routes/_site/` (`aria-selected` + underline styles,
+  accent-underline Link rows used as tabs) and converge each on the
+  sheet+capsule grammar — `LiquidTabs` for plain tablists, sheet classes +
+  inline `layoutId` capsule where links/richer ARIA demand custom markup
+  (the RMHLadder pattern).
+- Every converged capsule carries the §5.47 morph underlay — a strip is
+  either fully liquid or it isn't shipped.
+
+### 15.2 Fix the choppy liquid open
+
+Root-cause hypothesis (verify in code): `startViewTransition` freezes
+rendering until the `update` promise resolves — a slow destination loader
+stalls the freeze, and the entrance work after it reads as the animation
+"cancelling". Fixes:
+
+- **Readiness budget:** in `runViewTransition`, if the update promise is
+  still pending after **~180ms**, call `transition.skipTransition()`
+  (feature-detect) — instant swap + normal entrances instead of a stalled
+  morph. The skip path must clear `vt-active`/`vt-liquid` synchronously and
+  must not double-fire the destination staggers.
+- **Warm the destination:** liquid-open cards get TanStack Router
+  `preload="intent"` so data is usually cached before the click (verify feed
+  card links; add where missing).
+- Acceptance: warm navigations morph smoothly; cold ones swap instantly with
+  the stagger — never a frozen half-morph.
+
+### 15.3 More pronounced morphing (metaballs)
+
+Tune §5.47 until the merge is *visible* in normal use (design-lab playground
+is the instrument):
+
+- Goo: `stdDeviation` toward ~9 with a rebalanced threshold so the fusion
+  neck is thicker and lives longer; trail droplet ~70% of capsule height on
+  a ~⅓-stiffness spring (visible lag); widen the speed-gated opacity window
+  so the teardrop is seen, not glimpsed.
+- Stretch cap toward 0.5 for tab-scale distances.
+- Optionally a second micro-droplet for jumps >3 tab widths — ship it if the
+  lab says yes, note why if not.
+- Budgets/gates unchanged (reduced-motion jump; perf-lite plain spring).
+
+### 15.4 Spacing rhythm enforcement
+
+The §8 constants are law: **12px (`space-y-3`/`gap-3`) between sibling glass
+elements in a column; `md:gap-4 xl:gap-6` between columns; capsule-to-first-
+content `mt-3`.** Sweep the restructured pages for violations (adjacent
+cards/sheets/panes at 0–4px, sections butting tab sheets, headerExtra
+remnants) and fix to the constants. Add the rhythm rule to the
+page-consistency.md checklist. Live-verify with the Phase-H audit-script
+pattern (gap measurement between sibling glass rects) on `/`, `/store`,
+`/library`, `/settings`, `/studio/themes` at 1440 + 390.
+
+Verification: gates green; before/after screenshots of the `/store` tabs and
+one spacing-fixed page; §12.8 applies to every replaced style.
+
+---
+
+## Appendix D — Dead/invisible UI: removal list
+
 > Populated from the 2026-07-21 repo audit (verified with file:line evidence).
 > Phase D executes this list **after** A–C land (some items are replaced, not
 > merely deleted). Every deletion must keep `tsc`/`lint`/`vitest` green and be
