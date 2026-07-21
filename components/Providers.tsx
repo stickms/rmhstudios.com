@@ -32,6 +32,7 @@ import {
   REDUCE_MOTION_KEY,
 } from '@/lib/appearance/prefs';
 import { useGlassLight } from '@/hooks/useGlassLight';
+import { useLiquidBackground } from '@/hooks/useLiquidBackground';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useLocaleStore, writeLocaleCookie } from '@/stores/localeStore';
 import { applyHtmlLangDir } from '@/lib/i18n/dom';
@@ -222,6 +223,12 @@ export function Providers({
   // The pointer-tracked specular highlight for interactive glass — one
   // document-level rAF-throttled listener, mounted once here (§5.1).
   useGlassLight();
+
+  // Makes the aurora canvas react to pointer / device motion with a gentle
+  // parallax drift (pairs with the ambient `aurora-drift` flow in globals.css),
+  // so the shared glass backdrop feels alive. Gated off under reduced motion and
+  // on low-end devices. One rAF-throttled listener, mounted once here (§5.1).
+  useLiquidBackground();
 
   // Device tiering (§6.4): a one-time heuristic demotes the glass on low-end
   // devices (drops refraction + pointer light, flattens L2 panes to L1 fills)

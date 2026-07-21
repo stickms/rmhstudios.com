@@ -537,10 +537,51 @@ html:not(.app-route) body::before {
      which is fine, it's the crisp in-viewport aurora. Painting the aurora BEHIND
      the browser chrome is handled by the root canvas background (see the mobile
      html:not(.app-route) rule), the one layer iOS lets reach those strips. */
-  inset: 0;
+  /* Oversized by 14% on every side so the slow drift + the pointer/motion
+     parallax below can translate the layer a few percent without ever revealing
+     an unpainted edge. */
+  inset: -14%;
   z-index: -1;
   background-image: var(--site-canvas);
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
   pointer-events: none;
+  transform-origin: center;
+  /* Two independent transform channels compose here (translate applies before
+     transform): `translate` carries the live pointer / device-motion parallax
+     (written as --aurora-mx/--aurora-my by hooks/useLiquidBackground), while the
+     `aurora-drift` keyframes animate `transform` for the ambient flow. Easing the
+     translate gives the reactive follow a liquid trail instead of a hard snap. */
+  translate: var(--aurora-mx, 0px) var(--aurora-my, 0px);
+  transition: translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: aurora-drift 34s ease-in-out infinite alternate;
+  will-change: transform, translate;
+}
+
+/* The ambient "liquid" flow: an ultra-slow scale/rotate/drift so the shared
+   backdrop every glass surface samples is never static — glass reads as living
+   material. Transform-only (GPU-composited, no per-frame layout/paint). Neutered
+   automatically under reduced motion by the global 0.01ms animation reset. */
+@keyframes aurora-drift {
+  0% {
+    transform: scale(1.06) rotate(0deg) translate3d(0, 0, 0);
+  }
+  50% {
+    transform: scale(1.13) rotate(0.7deg) translate3d(1.6%, -1.4%, 0);
+  }
+  100% {
+    transform: scale(1.07) rotate(-0.7deg) translate3d(-1.5%, 1.2%, 0);
+  }
+}
+
+/* Low-end devices and high-contrast (canvas is `none` there) pay nothing for the
+   ambient flow or the parallax follow. */
+html.perf-lite body::before,
+html.style-high-contrast body::before {
+  animation: none;
+  translate: none;
+  transition: none;
+  will-change: auto;
 }
 
 /* Page canvas show-through: elements that use bg-site-bg as the page ground let
@@ -648,23 +689,28 @@ html:not(.style-high-contrast)
     backdrop-filter: none !important;
   }
 
-  /* ── Reactivity (§5.1–5.2): hover tint-raise, press flex, pointer specular. ── */
+  /* ── Reactivity (§5.1–5.2): hover tint-raise, press flex, pointer specular. ──
+     The transform easing is the springy glass curve (EASE.glass) so a press
+     releases with a little elastic overshoot — the surface reads as soft, liquid
+     material rather than a rigid slab. */
   .glass-interactive {
     position: relative;
     transition:
       background-color var(--site-transition-speed),
       box-shadow var(--site-transition-speed),
-      transform var(--site-transition-speed);
+      transform 0.34s cubic-bezier(0.175, 0.885, 0.32, 2.2);
   }
   .glass-interactive:hover {
     background-color: var(--site-glass-tint-strong);
   }
   .glass-interactive:active {
-    transform: scale(0.985);
+    transform: scale(0.97);
   }
   /* The pointer light is your light, not the sun's — hover only, fine-pointer
      only, so touch devices never pay for it (§5.1). The hook writes
-     --glass-px/--glass-py on the hovered [data-glass-light] element. */
+     --glass-px/--glass-py on the hovered [data-glass-light] element. A larger,
+     softer radius that eases toward the cursor gives the light a fluid, trailing
+     quality instead of a hard hotspot. */
   @media (hover: hover) and (pointer: fine) {
     .glass-interactive::after {
       content: '';
@@ -674,12 +720,14 @@ html:not(.style-high-contrast)
       border-radius: inherit;
       pointer-events: none;
       background: radial-gradient(
-        140px circle at var(--glass-px, 50%) var(--glass-py, -30%),
+        220px circle at var(--glass-px, 50%) var(--glass-py, -30%),
         var(--site-glass-light),
-        transparent 70%
+        transparent 72%
       );
       opacity: 0;
-      transition: opacity 0.18s ease;
+      transition:
+        opacity 0.25s ease,
+        background-position 0.2s ease;
     }
     .glass-interactive:hover::after {
       opacity: 1;
@@ -727,6 +775,63 @@ html:not(.style-high-contrast)
       inset 0 0 0 1px rgba(255, 80, 120, 0.14),
       inset 0 0 0 2px rgba(80, 160, 255, 0.12);
   }
+
+  /* ── Liquid sheen (§5.4) — an ultra-slow diagonal specular that drifts across a
+     surface like light travelling over wet glass. Opt-in modifier for SIGNATURE
+     surfaces only (heroes, docks, the active tab capsule) — ration it like
+     .glass-refract (≤2–3 per page); it is NOT for repeated list items. The sheen
+     paints on ::before at z-0 with `screen` blend so it only ever lightens; give
+     the surface's own content a stacking context (position + z-index ≥ 1) so text
+     stays crisp above it. Frozen by the global reduced-motion reset.
+     NOTE: styles ::before, so do NOT combine on the same element as .glass-refract
+     (which also styles ::before). It composes fine with .glass-interactive (::after). */
+  .glass-liquid {
+    position: relative;
+    isolation: isolate;
+  }
+  .glass-liquid::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      115deg,
+      transparent 30%,
+      color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 46%,
+      color-mix(in srgb, var(--site-glass-light) 85%, transparent) 50%,
+      color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 54%,
+      transparent 70%
+    );
+    background-size: 260% 100%;
+    background-repeat: no-repeat;
+    mix-blend-mode: screen;
+    opacity: 0;
+    animation: glass-sheen 9s ease-in-out infinite;
+  }
+  html.perf-lite .glass-liquid::before {
+    animation: none;
+    display: none;
+  }
+}
+
+/* The travelling light band for .glass-liquid. A long dwell at each end keeps the
+   sweep occasional and calm rather than a constant strobe. */
+@keyframes glass-sheen {
+  0%,
+  8% {
+    background-position: 150% 0;
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.6;
+  }
+  55%,
+  100% {
+    background-position: -60% 0;
+    opacity: 0;
+  }
 }
 
 /* Refraction layer for the GlassEffect primitive (components/ui/liquid-glass.tsx).
@@ -756,6 +861,7 @@ html:not(.style-high-contrast)
 }
 .style-high-contrast .glass-chrome--aside::before,
 .style-high-contrast .glass-refract::before,
+.style-high-contrast .glass-liquid::before,
 .style-high-contrast .glass-interactive::after {
   display: none;
 }
@@ -777,7 +883,8 @@ html:not(.style-high-contrast)
     backdrop-filter: none;
   }
   .glass-chrome--aside::before,
-  .glass-refract::before {
+  .glass-refract::before,
+  .glass-liquid::before {
     display: none;
   }
 }
@@ -794,7 +901,8 @@ html.reduce-transparency :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg {
   backdrop-filter: none;
 }
 html.reduce-transparency .glass-chrome--aside::before,
-html.reduce-transparency .glass-refract::before {
+html.reduce-transparency .glass-refract::before,
+html.reduce-transparency .glass-liquid::before {
   display: none;
 }
 

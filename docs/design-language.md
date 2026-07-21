@@ -15,7 +15,10 @@ component change.
 
 **Liquid Glass is the material system, not a theme.** The site's default look is
 physically-plausible layered glass: translucent surfaces over a per-theme aurora
-canvas, specular rim highlights, depth-graded blur, and a pointer-tracked light.
+canvas that **slowly flows and parallaxes to pointer / device motion** (so the
+shared backdrop every pane samples is alive, not static), specular rim
+highlights, depth-graded blur, a pointer-tracked light, and an optional
+travelling **liquid sheen** on signature surfaces.
 It is expressed as an **elevation system of explicit CSS classes**
 (`.glass-fill` / `.glass-pane` / `.glass-chrome` / `.glass-overlay` /
 `.glass-inset`, plus `.glass-interactive` and `.glass-refract`) placed *on*
@@ -171,8 +174,9 @@ role, not by looks — the tier decides blur cost (see the redesign doc §6 budg
 | `.glass-overlay` | L4 | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips. |
 | `.glass-inset` | — | Recessed wells: inputs, search fields. |
 | `.glass-scrim` | — | Dialog/drawer backdrops. |
-| `.glass-interactive` + `data-glass-light=""` | modifier | Hover tint-raise, press flex, pointer-tracked specular highlight. |
+| `.glass-interactive` + `data-glass-light=""` | modifier | Hover tint-raise, springy press flex, pointer-tracked specular highlight. |
 | `.glass-refract` (`--prism`) | modifier | Edge refraction — hero/chrome only, **≤2 per page**, never in scroll containers. |
+| `.glass-liquid` (or `<GlassPane liquid>`) | modifier | Ambient travelling sheen (light over wet glass). Signature surfaces only, **≤2–3 per page**, never on list items. Styles `::before` — **don't** stack on `.glass-refract`. |
 | `.glass-opaque` | — | Escape hatch for full-screen fixed takeovers that must hide the page. |
 
 Rules: never put a backdrop tier (`.glass-pane/chrome/overlay`) on an ancestor of
@@ -271,6 +275,12 @@ no shell.
   6px rise), suppressed on history-back (`html.nav-pop`) and during View
   Transitions (`html.vt-active`). Feed items use `.feed-item-enter`.
   Shared-element View Transitions go through `lib/view-transition.ts`.
+- **Living backdrop:** the aurora canvas (`body::before`) runs an ultra-slow
+  transform-only `aurora-drift` keyframe, and `hooks/useLiquidBackground.ts` (one
+  rAF-throttled listener, mounted in `Providers.tsx` next to `useGlassLight`) adds
+  a small pointer / device-orientation parallax via `--aurora-mx/--aurora-my`. Both
+  are gated off under reduced motion and `html.perf-lite`; the drift also stops in
+  high-contrast (canvas is `none` there).
 - `hooks/useReducedMotion.ts` — SSR-safe boolean for JS animations CSS can't
   reach; `prefersReducedMotion()` for imperative checks.
 - `hooks/useCelebration.ts` — confetti/fireworks; lazy-loads canvas-confetti,

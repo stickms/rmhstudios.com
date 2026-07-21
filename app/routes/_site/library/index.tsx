@@ -31,6 +31,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { motion } from 'framer-motion';
+import { SPRING } from '@/lib/motion';
 import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
@@ -314,6 +316,10 @@ function Library() {
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <LibraryRevealProvider>
+          {/* Title bar + section tabs share ONE sticky container so the tabs sit
+              directly below the title and never slide up behind it — the two used
+              to be sibling `sticky top:0` bars, which stacked and overlapped. */}
+          <div className="lib-topbar">
           <header className="lib-head">
             <span className="md:hidden">
               <button
@@ -374,13 +380,24 @@ function Library() {
                     className={`lib-nav__chip${active ? ' is-active' : ''}`}
                     onClick={() => setView(id)}
                   >
-                    <Icon aria-hidden="true" />
-                    {label}
+                    {active && (
+                      <motion.span
+                        layoutId="lib-nav-active"
+                        className="lib-nav__chip-bg"
+                        transition={SPRING.soft}
+                        aria-hidden="true"
+                      />
+                    )}
+                    <span className="lib-nav__chip-label">
+                      <Icon aria-hidden="true" />
+                      {label}
+                    </span>
                   </button>
                 );
               })}
             </div>
           </nav>
+          </div>
 
           <section className="lib-hero" aria-labelledby="library-title">
             <div className="lib-hero__copy">

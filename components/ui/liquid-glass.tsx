@@ -200,11 +200,20 @@ interface GlassPaneProps extends React.HTMLAttributes<HTMLDivElement> {
   interactive?: boolean;
   /** Add edge-weighted refraction (hero/chrome only — ration to ≤2 per page). */
   refract?: boolean;
+  /**
+   * Add the ambient "liquid" sheen — a slow specular that drifts across the pane
+   * like light over wet glass. Signature surfaces only (heroes, docks); ration it
+   * like `refract`. Give the pane's own content a stacking context so text stays
+   * above the sheen (this wrapper's children already render in normal flow above
+   * the z-0 sheen layer).
+   */
+  liquid?: boolean;
 }
 
 const GlassPane: React.FC<GlassPaneProps> = ({
   interactive = false,
   refract = false,
+  liquid = false,
   className,
   children,
   ...props
@@ -216,6 +225,7 @@ const GlassPane: React.FC<GlassPaneProps> = ({
       'glass-pane',
       interactive && 'glass-interactive',
       refract && 'glass-refract',
+      liquid && 'glass-liquid',
       className,
     )}
     {...props}
