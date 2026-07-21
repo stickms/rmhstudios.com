@@ -31,20 +31,40 @@ import {
     hasCompleted,
 } from '@/lib/daily-puzzles/persistence';
 import { generateAlibiShare } from '@/lib/daily-puzzles/share';
+import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
+import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 import { authClient } from '@/lib/auth-client';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/persistence';
 
 type GamePhase = 'rules' | 'reading' | 'result';
+type AlibiPuzzleFull = ReturnType<typeof generateAlibiPuzzle>;
 
-function AlibiGameContent({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+function AlibiGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+    const [puzzle, setPuzzle] = useState<AlibiPuzzleFull | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        setPuzzle(null);
+        fetchDailyPuzzle('alibi', dateKey, generateAlibiPuzzle).then((p) => {
+            if (!cancelled) setPuzzle(p);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [dateKey]);
+
+    if (!puzzle) return <PuzzleLoading title="Alibi" emoji="🔍" />;
+    return <AlibiGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+}
+
+function AlibiGameContent({ puzzle, dateKey, isToday }: { puzzle: AlibiPuzzleFull; dateKey: string; isToday: boolean }) {
     const selectedDate = useMemo(() => {
         const [y, m, d] = dateKey.split('-').map(Number);
         return new Date(y, m - 1, d);
     }, [dateKey]);
     const puzzleNumber = getPuzzleNumber(selectedDate);
-    const puzzle = generateAlibiPuzzle(selectedDate);
 
     const { t } = useTranslation("c-daily-puzzles");
     const [phase, setPhase] = useState<GamePhase>('rules');
@@ -531,7 +551,7 @@ export function AlibiGame() {
 
     return (
         <div className="max-w-2xl mx-auto px-4 py-8 relative">
-            <AlibiGameContent key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
+            <AlibiGameLoader key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
             <PastPuzzlesSection
                 gameMode="alibi"
                 selectedDateKey={selectedDateKey}

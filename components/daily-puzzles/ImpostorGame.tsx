@@ -5,25 +5,44 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Trophy, Copy, Check, CircleAlert } from 'lucide-react';
-import { generateImpostorPuzzle, checkImpostorGuess, computeImpostorScore } from '@/lib/daily-puzzles/impostor';
+import { generateImpostorPuzzle, checkImpostorGuess, computeImpostorScore, type ImpostorPuzzle } from '@/lib/daily-puzzles/impostor';
 import { formatDateKey, getTodayEST, getPuzzleNumber } from '@/lib/daily-puzzles/seed';
 import { getResult, saveResult, hasCompleted } from '@/lib/daily-puzzles/persistence';
 import { saveResultWithSync, fetchResultFromServer } from '@/lib/daily-puzzles/persistence';
 import { generateImpostorShare } from '@/lib/daily-puzzles/share';
+import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
+import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 import { authClient } from '@/lib/auth-client';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
 
 type StatementResult = 'real' | 'fake-found' | 'fake-missed' | 'wrong-guess';
 
-function ImpostorGameContent({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+function ImpostorGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+    const [puzzle, setPuzzle] = useState<ImpostorPuzzle | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        setPuzzle(null);
+        fetchDailyPuzzle('impostor', dateKey, generateImpostorPuzzle).then((p) => {
+            if (!cancelled) setPuzzle(p);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [dateKey]);
+
+    if (!puzzle) return <PuzzleLoading title="Impostor" emoji="🤥" />;
+    return <ImpostorGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+}
+
+function ImpostorGameContent({ puzzle, dateKey, isToday }: { puzzle: ImpostorPuzzle; dateKey: string; isToday: boolean }) {
     const { t } = useTranslation("c-daily-puzzles");
     const selectedDate = useMemo(() => {
         const [y, m, d] = dateKey.split('-').map(Number);
         return new Date(y, m - 1, d);
     }, [dateKey]);
     const puzzleNumber = useMemo(() => getPuzzleNumber(selectedDate), [selectedDate]);
-    const puzzle = useMemo(() => generateImpostorPuzzle(selectedDate), [selectedDate]);
 
     const [guessNumber, setGuessNumber] = useState<1 | 2>(1);
     const [selectedStatements, setSelectedStatements] = useState<Set<number>>(new Set());
@@ -386,7 +405,7 @@ export function ImpostorGame() {
 
     return (
         <div className="max-w-2xl mx-auto px-4 py-8">
-            <ImpostorGameContent key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
+            <ImpostorGameLoader key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
             <PastPuzzlesSection
                 gameMode="impostor"
                 selectedDateKey={selectedDateKey}

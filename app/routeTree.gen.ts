@@ -403,6 +403,7 @@ import { Route as ApiDiscordDailyProgressRouteImport } from './routes/api/discor
 import { Route as ApiDiscordActivityImageRouteImport } from './routes/api/discord/activity-image'
 import { Route as ApiDailyPuzzlesScoreRouteImport } from './routes/api/daily-puzzles/score'
 import { Route as ApiDailyPuzzlesResultsRouteImport } from './routes/api/daily-puzzles/results'
+import { Route as ApiDailyPuzzlesPuzzleRouteImport } from './routes/api/daily-puzzles/puzzle'
 import { Route as ApiDailyPuzzlesLeaderboardRouteImport } from './routes/api/daily-puzzles/leaderboard'
 import { Route as ApiCronWebhooksRouteImport } from './routes/api/cron/webhooks'
 import { Route as ApiCreatorStudioOverviewRouteImport } from './routes/api/creator/studio-overview'
@@ -2705,6 +2706,11 @@ const ApiDailyPuzzlesResultsRoute = ApiDailyPuzzlesResultsRouteImport.update({
   path: '/api/daily-puzzles/results',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiDailyPuzzlesPuzzleRoute = ApiDailyPuzzlesPuzzleRouteImport.update({
+  id: '/api/daily-puzzles/puzzle',
+  path: '/api/daily-puzzles/puzzle',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiDailyPuzzlesLeaderboardRoute =
   ApiDailyPuzzlesLeaderboardRouteImport.update({
     id: '/api/daily-puzzles/leaderboard',
@@ -4592,6 +4598,7 @@ export interface FileRoutesByFullPath {
   '/api/creator/studio-overview': typeof ApiCreatorStudioOverviewRoute
   '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
+  '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
   '/api/discord/activity-image': typeof ApiDiscordActivityImageRoute
@@ -5273,6 +5280,7 @@ export interface FileRoutesByTo {
   '/api/creator/studio-overview': typeof ApiCreatorStudioOverviewRoute
   '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
+  '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
   '/api/discord/activity-image': typeof ApiDiscordActivityImageRoute
@@ -5981,6 +5989,7 @@ export interface FileRoutesById {
   '/api/creator/studio-overview': typeof ApiCreatorStudioOverviewRoute
   '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
+  '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
   '/api/daily-puzzles/results': typeof ApiDailyPuzzlesResultsRoute
   '/api/daily-puzzles/score': typeof ApiDailyPuzzlesScoreRoute
   '/api/discord/activity-image': typeof ApiDiscordActivityImageRoute
@@ -6689,6 +6698,7 @@ export interface FileRouteTypes {
     | '/api/creator/studio-overview'
     | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
+    | '/api/daily-puzzles/puzzle'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
     | '/api/discord/activity-image'
@@ -7370,6 +7380,7 @@ export interface FileRouteTypes {
     | '/api/creator/studio-overview'
     | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
+    | '/api/daily-puzzles/puzzle'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
     | '/api/discord/activity-image'
@@ -8077,6 +8088,7 @@ export interface FileRouteTypes {
     | '/api/creator/studio-overview'
     | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
+    | '/api/daily-puzzles/puzzle'
     | '/api/daily-puzzles/results'
     | '/api/daily-puzzles/score'
     | '/api/discord/activity-image'
@@ -8643,6 +8655,7 @@ export interface RootRouteChildren {
   ApiCreatorStudioOverviewRoute: typeof ApiCreatorStudioOverviewRoute
   ApiCronWebhooksRoute: typeof ApiCronWebhooksRoute
   ApiDailyPuzzlesLeaderboardRoute: typeof ApiDailyPuzzlesLeaderboardRoute
+  ApiDailyPuzzlesPuzzleRoute: typeof ApiDailyPuzzlesPuzzleRoute
   ApiDailyPuzzlesResultsRoute: typeof ApiDailyPuzzlesResultsRoute
   ApiDailyPuzzlesScoreRoute: typeof ApiDailyPuzzlesScoreRoute
   ApiDiscordActivityImageRoute: typeof ApiDiscordActivityImageRoute
@@ -11683,6 +11696,13 @@ declare module '@tanstack/react-router' {
       path: '/api/daily-puzzles/results'
       fullPath: '/api/daily-puzzles/results'
       preLoaderRoute: typeof ApiDailyPuzzlesResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/daily-puzzles/puzzle': {
+      id: '/api/daily-puzzles/puzzle'
+      path: '/api/daily-puzzles/puzzle'
+      fullPath: '/api/daily-puzzles/puzzle'
+      preLoaderRoute: typeof ApiDailyPuzzlesPuzzleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/daily-puzzles/leaderboard': {
@@ -15399,6 +15419,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCreatorStudioOverviewRoute: ApiCreatorStudioOverviewRoute,
   ApiCronWebhooksRoute: ApiCronWebhooksRoute,
   ApiDailyPuzzlesLeaderboardRoute: ApiDailyPuzzlesLeaderboardRoute,
+  ApiDailyPuzzlesPuzzleRoute: ApiDailyPuzzlesPuzzleRoute,
   ApiDailyPuzzlesResultsRoute: ApiDailyPuzzlesResultsRoute,
   ApiDailyPuzzlesScoreRoute: ApiDailyPuzzlesScoreRoute,
   ApiDiscordActivityImageRoute: ApiDiscordActivityImageRoute,

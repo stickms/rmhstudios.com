@@ -5,10 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, Lock, Trophy, Copy, Check, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
-import { generateSpectrumPuzzle, computeSpectrumScore, type SpectrumItem } from '@/lib/daily-puzzles/spectrum';
+import { generateSpectrumPuzzle, computeSpectrumScore, type SpectrumPuzzle } from '@/lib/daily-puzzles/spectrum';
 import { formatDateKey, getTodayEST, getPuzzleNumber } from '@/lib/daily-puzzles/seed';
 import { getResult, saveResult, hasCompleted } from '@/lib/daily-puzzles/persistence';
 import { generateSpectrumShare } from '@/lib/daily-puzzles/share';
+import { fetchDailyPuzzle } from '@/lib/daily-puzzles/client';
+import { PuzzleLoading } from '@/components/daily-puzzles/PuzzleLoading';
 import { DailyPuzzleLeaderboard } from '@/components/daily-puzzles/DailyPuzzleLeaderboard';
 import { authClient } from '@/lib/auth-client';
 import { PastPuzzlesSection } from '@/components/daily-puzzles/PastPuzzlesSection';
@@ -34,14 +36,31 @@ function accuracyColor(accuracy: number): string {
     return 'text-red-400';
 }
 
-function SpectrumGameContent({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+function SpectrumGameLoader({ dateKey, isToday }: { dateKey: string; isToday: boolean }) {
+    const [puzzle, setPuzzle] = useState<SpectrumPuzzle | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        setPuzzle(null);
+        fetchDailyPuzzle('spectrum', dateKey, generateSpectrumPuzzle).then((p) => {
+            if (!cancelled) setPuzzle(p);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [dateKey]);
+
+    if (!puzzle) return <PuzzleLoading title="Spectrum" emoji="🌈" />;
+    return <SpectrumGameContent puzzle={puzzle} dateKey={dateKey} isToday={isToday} />;
+}
+
+function SpectrumGameContent({ puzzle, dateKey, isToday }: { puzzle: SpectrumPuzzle; dateKey: string; isToday: boolean }) {
     const { t } = useTranslation("c-daily-puzzles");
     const selectedDate = useMemo(() => {
         const [y, m, d] = dateKey.split('-').map(Number);
         return new Date(y, m - 1, d);
     }, [dateKey]);
     const puzzleNumber = getPuzzleNumber(selectedDate);
-    const puzzle = generateSpectrumPuzzle(selectedDate);
 
     const [playerOrder, setPlayerOrder] = useState<string[]>(
         () => puzzle.items.map(i => i.name)
@@ -402,7 +421,7 @@ export function SpectrumGame() {
 
     return (
         <div className="max-w-xl mx-auto px-4 py-8">
-            <SpectrumGameContent key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
+            <SpectrumGameLoader key={selectedDateKey} dateKey={selectedDateKey} isToday={selectedDateKey === todayKey} />
             <PastPuzzlesSection
                 gameMode="spectrum"
                 selectedDateKey={selectedDateKey}
