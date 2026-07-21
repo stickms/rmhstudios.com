@@ -7,6 +7,7 @@ import { Loader2, Bot, Send, ArrowLeft, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { liquidVTName } from '@/lib/view-transition';
 
 interface Msg {
   role: string;
@@ -140,7 +141,11 @@ export function PersonaChatColumn({
         <Link to="/personas" className="text-site-text-dim hover:text-site-text">
           <ArrowLeft className="h-5 w-5" />
         </Link>
-        <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-lg">
+        {/* §5.48 liquid-open hero — the persona tile avatar morphs into this. */}
+        <div
+          className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-site-sm bg-site-accent/12 text-lg"
+          style={{ viewTransitionName: liquidVTName('persona', persona.id) }}
+        >
           {persona.avatarUrl ? (
             <img src={persona.avatarUrl} alt="" className="h-full w-full object-cover" />
           ) : (

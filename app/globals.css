@@ -1133,6 +1133,30 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
   }
 }
 
+/* §5.47 true liquid morphing — the goo underlay. An absolutely-positioned,
+   capsule-only layer behind a control's active capsule that carries the
+   #glass-goo metaball filter so the moving capsule and its trailing droplet fuse
+   into a stretching teardrop (see components/ui/liquid-morph.tsx).
+   Constraints (hard):
+     - `contain: layout paint` isolates the filter region and clips the droplet.
+     - It hosts ONLY plain accent-tint blobs — never a backdrop-filter element
+       (nesting a backdrop sampler in a filtered subtree re-rasterizes it) and
+       never labels/icons (alpha thresholding destroys glyph edges; those live in
+       the sibling layer above at z-index ≥ 1).
+   Degradations: perf-lite / high-contrast drop the whole underlay so only the
+   plain layoutId spring slide remains (the capsule above is untouched). Reduced
+   motion never mounts it in the first place (the components gate on
+   useReducedMotion), so no CSS rule is needed for that path. */
+.lg-goo {
+  filter: url(#glass-goo);
+  contain: layout paint;
+  pointer-events: none;
+}
+html.perf-lite .lg-goo,
+html.style-high-contrast .lg-goo {
+  display: none;
+}
+
 /* Success toast rim-flash (§5.5). Sonner portals its toasts to <body> and tags
    them data-type; a success toast flashes a bright success-tinted rim that
    settles into the standard L4 rim (--site-shadow, which the sonner toastOptions
@@ -2828,6 +2852,17 @@ html.nav-pop .page-root > * {
  * doesn't fight the morph (lib/view-transition.ts toggles this class). */
 html.vt-active .page-root > * {
   animation: none !important;
+}
+/* §5.48 liquid open transitions: while a card→detail morph runs, runViewTransition
+ * marks <html> with `.vt-liquid` (cleared with the same guarantee as `.vt-active`),
+ * and the shared-element groups run a touch longer on the springy glass curve so a
+ * card visibly *expands* into its detail hero. The overshoot is subtle at 0.38s;
+ * snapshots are flat images so baked corner radii are acceptable — the bounds
+ * morph carries the effect. The reduced-motion block below still neutralises this
+ * (it matches `::view-transition-group(*)` unconditionally). */
+html.vt-liquid::view-transition-group(*) {
+  animation-duration: 0.38s;
+  animation-timing-function: var(--ease-glass);
 }
 /* View-transition pseudo-elements live outside the document tree, so the global
  * `*` reduced-motion rule can't reach them — neutralise them explicitly. */

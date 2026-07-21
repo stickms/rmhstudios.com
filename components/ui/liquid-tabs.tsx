@@ -25,12 +25,13 @@
  *    where the caller supplies its own container.
  */
 
-import { useId } from 'react';
+import { useId, useRef } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { SPRING } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useLiquidMorph } from './liquid-morph';
 
 export interface LiquidTab {
   id: string;
@@ -72,6 +73,13 @@ export function LiquidTabs({
   const layoutId = `liquid-tab-${uid}`;
   const tabId = (id: string) => `${layoutId}-${id}`;
 
+  // §5.47 true liquid morphing: velocity squash/stretch on the capsule + a gooey
+  // trailing droplet in an underlay. Rides on top of the layoutId spring, which
+  // stays the reduced-motion fallback. The capsule lives inside the active tab
+  // (pixel-accurate via layout projection); the underlay mirrors it.
+  const capsuleRef = useRef<HTMLSpanElement>(null);
+  const { squashStyle, underlay } = useLiquidMorph({ capsuleRef, axis: 'x', reduced });
+
   // Roving keyboard nav (WAI-ARIA tabs pattern, mirrored from the creator-studio
   // tab bar): ←/→/↑/↓ move, Home/End jump to the ends, and focus follows.
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -98,8 +106,10 @@ export function LiquidTabs({
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
       data-slot="liquid-tabs"
-      className={cn('inline-flex items-center gap-1', !sheet && className)}
+      className={cn('relative inline-flex items-center gap-1', !sheet && className)}
     >
+      {/* Goo underlay (§5.47) — capsule-only, behind the tabs; labels stay above. */}
+      {underlay}
       {tabs.map((tab) => {
         const active = tab.id === value;
         const Icon = tab.icon;
@@ -119,12 +129,21 @@ export function LiquidTabs({
             )}
           >
             {active && (
+              // Outer element owns the layoutId projection (position morph); the
+              // inner span carries the material + velocity squash, so scaling never
+              // fights framer-motion's projection transform (§5.47).
               <motion.span
+                ref={capsuleRef}
                 layoutId={layoutId}
                 aria-hidden
-                className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
+                className="absolute inset-0"
                 transition={reduced ? { duration: 0 } : SPRING.snappy}
-              />
+              >
+                <motion.span
+                  className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
+                  style={squashStyle}
+                />
+              </motion.span>
             )}
             {Icon && <Icon className="relative z-1 h-4 w-4 shrink-0" aria-hidden />}
             <span className="relative z-1">{tab.label}</span>

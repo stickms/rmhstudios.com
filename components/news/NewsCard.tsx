@@ -7,6 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { getCategoryColor } from '@/lib/news-categories';
 import { NewsSourceBadge } from './NewsSourceBadge';
 import { DUR_FAST, EASE_OUT_EXPO, STAGGER } from '@/components/motion';
+import { useLiquidLink } from '@/hooks/useLiquidLink';
+import { liquidVTName } from '@/lib/view-transition';
 import type { NewsArticle } from '@/lib/news';
 
 interface NewsCardProps {
@@ -17,6 +19,8 @@ interface NewsCardProps {
 export function NewsCard({ article, index }: NewsCardProps) {
     const { t } = useTranslation("c-news");
     const categoryColor = getCategoryColor(article.category ?? '');
+    const liquidOpen = useLiquidLink();
+    const slug = article.slug ?? '';
 
     return (
         <motion.div
@@ -34,7 +38,13 @@ export function NewsCard({ article, index }: NewsCardProps) {
                     borderColor: 'var(--site-border)',
                 }}
             >
-                <Link to={`/news/${article.slug}` as string} className="absolute inset-0 z-0" />
+                {/* §5.48: the overlay link's box == the card, so tagging it at
+                    click time morphs the whole card into the article header. */}
+                <Link
+                    to={`/news/${article.slug}` as string}
+                    onClick={(e) => liquidOpen(e, liquidVTName('news', slug), { to: `/news/${slug}` })}
+                    className="absolute inset-0 z-0"
+                />
 
                 {/* Category */}
                 <div className="px-5 pt-5 pb-0 relative z-10 pointer-events-none">

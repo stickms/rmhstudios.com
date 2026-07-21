@@ -11,6 +11,7 @@ import ReactMarkdown from 'react-markdown';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Calendar, ExternalLink } from 'lucide-react';
 import { ShareButton } from '@/components/blog/ShareButton';
+import { liquidVTName } from '@/lib/view-transition';
 import { getCategoryColor } from '@/lib/news-categories';
 import { useTranslation } from 'react-i18next';
 import {
@@ -93,7 +94,8 @@ function NewsArticlePage() {
           <ArrowLeft className="w-4 h-4" /> {t("back-to-news", { defaultValue: "Back to News" })}
         </Link>
 
-        <header className="mb-12">
+        {/* §5.48 liquid-open hero — the news card morphs into this header. */}
+        <header className="mb-12" style={{ viewTransitionName: liquidVTName('news', slug) }}>
           <div className="flex flex-wrap items-center gap-3 mb-4 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both">
             <span
               className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider ${categoryColor.bg} ${categoryColor.text} ${categoryColor.border} border`}

@@ -11,6 +11,7 @@ import ReactMarkdown from 'react-markdown';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '@/lib/auth-client';
 import type { Build } from '@/lib/user-builds-types';
+import { liquidVTName } from '@/lib/view-transition';
 import { TechBadges } from './TechBadges';
 import { BuildComments } from './BuildComments';
 import { PostAwards } from '@/components/awards/PostAwards';
@@ -279,9 +280,12 @@ export function BuildDetail({ build: initialBuild, backHref = '/builds' }: Build
         </div>
       </div>
 
-      {/* Thumbnail */}
+      {/* Thumbnail — §5.48 liquid-open hero the build card's thumbnail morphs into. */}
       {build.thumbnailUrl && (
-        <div className="builds-detail__thumb mb-8">
+        <div
+          className="builds-detail__thumb mb-8"
+          style={{ viewTransitionName: liquidVTName('build', build.id) }}
+        >
           <BlurImage src={build.thumbnailUrl} alt={build.title} fit="cover" width={1280} quality={85} sizes="100vw" className="w-full" imgClassName="w-full" />
         </div>
       )}

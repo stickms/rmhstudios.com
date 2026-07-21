@@ -16,7 +16,7 @@ import { GifEmbed } from './GifEmbed';
 import { LinkPreview } from './LinkPreview';
 import { PostImageGrid } from './PostImageGrid';
 import { SensitiveMedia } from './SensitiveMedia';
-import { runViewTransition, postMediaVTName } from '@/lib/view-transition';
+import { runLiquidOpen, liquidVTName, postMediaVTName } from '@/lib/view-transition';
 import { UserAvatar } from './UserAvatar';
 import { Spinner } from '@/components/ui/spinner';
 import { useFeedStore } from '@/stores/feedStore';
@@ -193,11 +193,13 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     // (useScrollRestoration handles it) so the feed doesn't visibly scroll up
     // during the transition; going back then restores the exact feed position.
     const go = () => navigate({ to: postHref(item.user, actualId), resetScroll: false });
-    // Only run a View Transition when there's a hero image to morph into the
-    // detail page; text-only posts keep the normal per-page enter animation.
-    // Degrades to a plain navigation when unsupported or reduced-motion is on.
-    if (item.imageUrls && item.imageUrls.length > 0) runViewTransition(go);
-    else go();
+    // §5.48: liquidly expand the whole card slab into the detail hero. The card's
+    // VT name is set at click time and cleared after (never at rest on a list
+    // item); the nested media morph (postMediaVTName, set statically on the first
+    // image) rides along. This one path replaces the former image-only
+    // runViewTransition trigger — text and media posts now morph uniformly
+    // (§12.8: one mechanism). Degrades to plain nav under no-VT / reduced motion.
+    runLiquidOpen(cardRef.current, liquidVTName('post', actualId), go);
   };
 
   return (

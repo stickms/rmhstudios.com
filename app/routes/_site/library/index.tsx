@@ -13,6 +13,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import {
@@ -697,6 +698,7 @@ function BookSpine({
   const { t } = useTranslation('library');
   const revealRef = useReveal();
   const menu = useContextMenu();
+  const navigate = useNavigate();
   const style = {
     '--book-hue': String(book.hue),
   } as React.CSSProperties;
@@ -738,6 +740,16 @@ function BookSpine({
         className="lib-book"
         style={style}
         draggable={dnd?.draggable ? false : undefined}
+        // §5.48: the book cover liquidly expands into the reader's hero stage.
+        // Name set only at click time (tag the cover child).
+        onClick={(e) => {
+          if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          e.preventDefault();
+          const cover = e.currentTarget.querySelector('.lib-book__cover') as HTMLElement | null;
+          runLiquidOpen(cover, liquidVTName('book', book.slug), () =>
+            navigate({ to: '/library/$slug', params: { slug: book.slug } } as never),
+          );
+        }}
         aria-label={t('open-book', { title: book.title, defaultValue: 'Open {{title}}' })}
       >
         <div className="lib-book__3d">

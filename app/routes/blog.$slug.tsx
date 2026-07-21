@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft, Calendar } from 'lucide-react';
 import { ShareButton } from '@/components/blog/ShareButton';
+import { liquidVTName } from '@/lib/view-transition';
 import {
   AnimatedH1, AnimatedH2, AnimatedH3, AnimatedP,
   AnimatedUl, AnimatedOl, AnimatedLi,
@@ -86,7 +87,8 @@ function BlogPost() {
           <ArrowLeft className="w-4 h-4" /> {t("back-to-logs", { defaultValue: "Back to Logs" })}
         </Link>
 
-        <header className="mb-12">
+        {/* §5.48 liquid-open hero — the blog card morphs into this header. */}
+        <header className="mb-12" style={{ viewTransitionName: liquidVTName('blog', slug) }}>
           <div className="flex items-center justify-between mb-4 animate-in fade-in slide-in-from-bottom-4 duration-700 fill-mode-both">
             <div className="flex items-center gap-2 text-site-accent font-mono">
               <Calendar className="w-5 h-5" />

@@ -1,7 +1,7 @@
 'use client';
 
 import { Link, useLocation, useNavigate } from '@tanstack/react-router';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useId } from 'react';
 import { authClient } from '@/lib/auth-client';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
@@ -36,7 +36,9 @@ import { useAppBadge } from '@/lib/useAppBadge';
 import { useStreak } from '@/lib/useStreak';
 import { usePresenceHeartbeat } from '@/lib/usePresenceHeartbeat';
 import { AnimatePresence, m as motion } from 'framer-motion';
+import { SPRING } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useLiquidMorph } from '@/components/ui/liquid-morph';
 import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 
 // Dropdown motion for collapsible nav groups (e.g. "More"): the panel expands
@@ -101,6 +103,22 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   });
   const toggleGroup = (g: string) => setOpenGroups((s) => ({ ...s, [g]: !s[g] }));
   const reduced = useReducedMotion();
+
+  // §5.47: the active-nav capsule FLOWS between items on route change — a
+  // layoutId pill that morphs vertically, with velocity squash/stretch and a
+  // gooey trailing droplet (useLiquidMorph). Both LeftSidebar instances (desktop
+  // rail + mobile drawer) are mounted at once, so the layoutId is useId-scoped so
+  // their capsules never share one element. The capsule renders inside whichever
+  // active leaf `canHost`s it (deduped so a pinned + submenu duplicate never
+  // mounts two elements with the same layoutId).
+  const capsuleUid = useId();
+  const capsuleLayoutId = `rmh-sidebar-capsule-${capsuleUid}`;
+  const capsuleRef = useRef<HTMLSpanElement>(null);
+  const { squashStyle, underlay: capsuleUnderlay } = useLiquidMorph({
+    capsuleRef,
+    axis: 'y',
+    reduced,
+  });
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const userMenuBtnRef = useRef<HTMLButtonElement>(null);
@@ -205,7 +223,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // single stable place to drive the badge without a second SSE/poll subscriber.
   useAppBadge(session ? totalUnread : 0);
 
-  const renderLeaf = (link: NavLeaf, nested = false) => {
+  const renderLeaf = (link: NavLeaf, nested = false, canHost = true) => {
     const Icon = link.icon;
     const label = t(link.tKey, { defaultValue: link.label });
     const isActive =
@@ -216,39 +234,64 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
             pathname?.startsWith('/groups')
           )
         : pathname === link.href || (link.href !== '/' && pathname?.startsWith(link.href + '/'));
+    // Only ONE rendered leaf hosts the shared-layoutId capsule at a time (a pinned
+    // child renders both in the rail and inside its group submenu — `canHost`
+    // dedupes so two elements never share the layoutId, §5.47).
+    const hostsCapsule = isActive && canHost;
     const indent = nested
       ? expanded
         ? 'pl-10'
         : 'md:justify-center xl:justify-start xl:pl-10'
       : itemJustifyClass;
-    // Active capsule carries .glass-liquid (ambient sheen) — a signature surface
-    // (§5.2). Only one leaf is active at a time, so this stays within the ≤3
-    // ambient-sheen budget. Inactive pills keep the pointer light via
+    // The active pill is now the flowing layoutId capsule (below) — the leaf
+    // itself only carries the accent text + hover states. `relative` anchors the
+    // absolute capsule; inactive pills keep the pointer light via
     // .glass-interactive + data-glass-light.
-    const leafClass = `glass-interactive flex items-center gap-3 ${itemPadXClass} ${nested ? 'py-2' : 'py-3'} rounded-full text-sm font-medium transition-colors ${indent} ${
+    const leafClass = `glass-interactive relative flex items-center gap-3 ${itemPadXClass} ${nested ? 'py-2' : 'py-3'} rounded-full text-sm font-medium transition-colors ${indent} ${
       isActive
-        ? 'glass-liquid text-site-accent bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]'
+        ? 'text-site-accent'
         : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
     }`;
     const leafInner = (
       <>
-        {link.badge === 'inbox' ? (
-          <div className="relative shrink-0">
-            <Icon className="w-5 h-5" />
-            <NotificationBadge count={inboxCount} className="absolute -top-1.5 -right-1.5" />
-          </div>
-        ) : link.badge === 'admin-review' ? (
-          <div className="relative shrink-0">
-            <Icon className="w-5 h-5" />
-            <NotificationBadge
-              count={reviewCounts.total}
-              className="absolute -top-1.5 -right-1.5"
+        {hostsCapsule && (
+          // Outer element owns the layoutId projection; the inner span carries the
+          // material + velocity squash so scaling never fights the projection
+          // transform. `.glass-liquid` keeps the capsule a signature sheen surface
+          // (one active leaf at a time → within the ≤3 ambient-sheen budget, §5.2).
+          <motion.span
+            ref={capsuleRef}
+            layoutId={capsuleLayoutId}
+            aria-hidden
+            className="absolute inset-0 z-0"
+            transition={reduced ? { duration: 0 } : SPRING.snappy}
+          >
+            <motion.span
+              className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]"
+              style={squashStyle}
             />
-          </div>
-        ) : (
-          <Icon className="w-5 h-5 shrink-0" />
+          </motion.span>
         )}
-        <span className={labelClass}>{label}</span>
+        {/* Labels/icons ride above the capsule + goo underlay (never filtered). */}
+        <span className="relative z-[1] flex min-w-0 items-center gap-3">
+          {link.badge === 'inbox' ? (
+            <span className="relative shrink-0">
+              <Icon className="w-5 h-5" />
+              <NotificationBadge count={inboxCount} className="absolute -top-1.5 -right-1.5" />
+            </span>
+          ) : link.badge === 'admin-review' ? (
+            <span className="relative shrink-0">
+              <Icon className="w-5 h-5" />
+              <NotificationBadge
+                count={reviewCounts.total}
+                className="absolute -top-1.5 -right-1.5"
+              />
+            </span>
+          ) : (
+            <Icon className="w-5 h-5 shrink-0" />
+          )}
+          <span className={labelClass}>{label}</span>
+        </span>
       </>
     );
     // External/static destinations (e.g. the standalone Deeplink site) need a
@@ -291,7 +334,9 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       : t('nav-pin', { defaultValue: 'Pin {{name}} to sidebar', name });
     return (
       <div key={link.href} className="relative group/pin">
-        {renderLeaf(link, nested)}
+        {/* A pinned child renders in the rail AND its submenu — only the rail copy
+            (nested=false) hosts the shared capsule so the layoutId stays unique. */}
+        {renderLeaf(link, nested, !nested || !isPinned)}
         <button
           type="button"
           onClick={() => togglePin(link.href)}
@@ -354,9 +399,16 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
       </div>
 
       {/* Nav Links — its own scroll region on desktop; part of the drawer's
-          scroll on mobile (see rootSizeClass/navScrollClass above). */}
-      <nav ref={navRef} className={`flex flex-col gap-1 ${navScrollClass} xl:pr-1.5`}>
-        {orderedNav.map((item) => {
+          scroll on mobile (see rootSizeClass/navScrollClass above). The inner
+          `relative` wrapper is the goo underlay's positioning context and the
+          capsule's coordinate space — it wraps ALL leaves (incl. expanding group
+          submenus) so the underlay covers the full content height and stays
+          registered with the capsule through scroll (§5.47). */}
+      <nav ref={navRef} className={`${navScrollClass} xl:pr-1.5`}>
+        <div className="relative flex flex-col gap-1">
+          {/* Goo underlay (§5.47) — capsule-only, behind the leaves. */}
+          {capsuleUnderlay}
+          {orderedNav.map((item) => {
           if (!isNavGroup(item)) {
             if (item.requiresAuth && !session) return null;
             if (item.requiresAdmin && !isAdmin) return null;
@@ -425,7 +477,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
               )}
             </div>
           );
-        })}
+          })}
+        </div>
       </nav>
 
       {/* Notification bell — quick triage without leaving the page */}

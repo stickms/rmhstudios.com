@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { BlurImage } from '@/components/ui/BlurImage';
 import { knownSize, rememberSize } from '@/lib/image-aspect';
+import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 
 interface PostImageGridProps {
   urls: string[];
@@ -24,6 +25,10 @@ const SINGLE_MAX_VH = 80;
 
 export function PostImageGrid({ urls, alts, className = '', heroName }: PostImageGridProps) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  // §5.48: liquidly expand the clicked thumbnail into the lightbox (same-document
+  // VT). Names are unique per (grid instance, index) and set only at open time.
+  const vtBase = useId();
+  const imgVTName = (i: number) => liquidVTName('img', `${vtBase}-${i}`);
 
   if (!urls || urls.length === 0) return null;
 
@@ -39,7 +44,7 @@ export function PostImageGrid({ urls, alts, className = '', heroName }: PostImag
             alt={alts?.[i]?.trim() || undefined}
             single={single}
             heroName={i === 0 ? heroName : undefined}
-            onOpen={() => setLightboxIndex(i)}
+            onOpen={(el) => runLiquidOpen(el, imgVTName(i), () => setLightboxIndex(i))}
           />
         ))}
       </div>
@@ -49,6 +54,7 @@ export function PostImageGrid({ urls, alts, className = '', heroName }: PostImag
           urls={urls}
           alts={alts}
           index={lightboxIndex}
+          vtName={imgVTName(lightboxIndex)}
           onIndexChange={setLightboxIndex}
           onClose={() => setLightboxIndex(null)}
         />
@@ -68,7 +74,7 @@ function GridImage({
   alt?: string;
   single: boolean;
   heroName?: string;
-  onOpen: () => void;
+  onOpen: (el: HTMLElement) => void;
 }) {
   const { t } = useTranslation('feed');
   // When the author described the image, use that as both the image alt and the
@@ -96,7 +102,7 @@ function GridImage({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          onOpen();
+          onOpen(e.currentTarget);
         }}
         style={vt}
         className="group relative block aspect-square overflow-hidden rounded-site-sm"
@@ -125,7 +131,7 @@ function GridImage({
         type="button"
         onClick={(e) => {
           e.stopPropagation();
-          onOpen();
+          onOpen(e.currentTarget);
         }}
         style={{ ...vt, maxWidth: `min(100%, ${size.width}px, calc(${SINGLE_MAX_VH}vh * ${ratio}))` }}
         className="group relative mx-auto block w-full overflow-hidden rounded-site-sm"
@@ -151,7 +157,7 @@ function GridImage({
       type="button"
       onClick={(e) => {
         e.stopPropagation();
-        onOpen();
+        onOpen(e.currentTarget);
       }}
       style={vt}
       className="group relative block overflow-hidden rounded-site-sm"
@@ -175,11 +181,13 @@ interface LightboxProps {
   urls: string[];
   alts?: string[];
   index: number;
+  /** Shared-element name for the currently-shown image (the open-morph target). */
+  vtName?: string;
   onIndexChange: (i: number) => void;
   onClose: () => void;
 }
 
-function Lightbox({ urls, alts, index, onIndexChange, onClose }: LightboxProps) {
+function Lightbox({ urls, alts, index, vtName, onIndexChange, onClose }: LightboxProps) {
   const { t } = useTranslation('feed');
   const hasMultiple = urls.length > 1;
 
@@ -262,6 +270,7 @@ function Lightbox({ urls, alts, index, onIndexChange, onClose }: LightboxProps) 
         loading="eager"
         className="max-h-full max-w-full rounded-site-sm"
         imgClassName="max-h-[90vh] max-w-full"
+        style={vtName ? { viewTransitionName: vtName } : undefined}
         onClick={(e) => e.stopPropagation()}
       />
 

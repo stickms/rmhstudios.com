@@ -27,7 +27,9 @@ import { PollDisplay } from './PollDisplay';
 import { GifEmbed } from './GifEmbed';
 import { PostImageGrid } from './PostImageGrid';
 import { SensitiveMedia } from './SensitiveMedia';
-import { postMediaVTName } from '@/lib/view-transition';
+import { postMediaVTName, liquidVTName } from '@/lib/view-transition';
+import { m as motion } from 'framer-motion';
+import { staggerContainer, staggerItem } from '@/lib/motion';
 import { LinkPreview } from './LinkPreview';
 import { UserAvatar } from './UserAvatar';
 import { ThreadSummary } from './ThreadSummary';
@@ -240,8 +242,13 @@ export function PostDetail({ postId }: PostDetailProps) {
         </div>
       </div>
 
-      {/* Post content (expanded) */}
-      <div className="relative px-4 pt-4 pb-3 border-b border-site-border">
+      {/* Post content (expanded) — the liquid-open hero the feed card morphs into
+          (§5.48). The name is static here (one post per detail page → unique). */}
+      <div
+        className="relative px-4 pt-4 pb-3 border-b border-site-border"
+        style={{ viewTransitionName: liquidVTName('post', postId) }}
+      >
+
         {/* More menu — top right (shared with the feed card so features match) */}
         {!post.deletedAt && (
           <div className="absolute top-4 right-4 z-20">
@@ -456,18 +463,35 @@ export function PostDetail({ postId }: PostDetailProps) {
             {t("no-replies", { defaultValue: "No replies yet. Be the first!" })}
           </p>
         ) : (
-          <div className="divide-y divide-site-border">
-            {comments.map((comment) => (
-              <CommentItem
-                key={comment.id}
-                comment={comment}
-                postId={postId}
-                sessionUser={session?.user ? { ...session.user, image: resolvedUser?.image || session.user.image, name: resolvedUser?.name || session.user.name } : undefined}
-                onReplyAdded={handleReplyAdded}
-                onCommentRemoved={handleCommentRemoved}
-              />
-            ))}
-          </div>
+          // §5.48 staggered content entrance: the first ~8 replies fade-rise at
+          // 30ms steps after the hero morph; the tail mounts instantly (variants
+          // sliced to the head — no long tails on big threads). MotionConfig
+          // collapses this under reduced motion.
+          <motion.div
+            className="divide-y divide-site-border"
+            variants={staggerContainer(0.03)}
+            initial="initial"
+            animate="animate"
+          >
+            {comments.map((comment, i) => {
+              const node = (
+                <CommentItem
+                  comment={comment}
+                  postId={postId}
+                  sessionUser={session?.user ? { ...session.user, image: resolvedUser?.image || session.user.image, name: resolvedUser?.name || session.user.name } : undefined}
+                  onReplyAdded={handleReplyAdded}
+                  onCommentRemoved={handleCommentRemoved}
+                />
+              );
+              return i < 8 ? (
+                <motion.div key={comment.id} variants={staggerItem}>
+                  {node}
+                </motion.div>
+              ) : (
+                <div key={comment.id}>{node}</div>
+              );
+            })}
+          </motion.div>
         )}
       </div>}
 

@@ -9,11 +9,12 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 import { Bot, Plus, MessageSquare, X, Globe, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Storefront, type StoreItem } from '@/components/creator-studio/storefront';
+import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 
 interface Persona {
   id: string;
@@ -36,6 +37,7 @@ function hueFor(s: string): number {
 
 export function PersonasTab({ seed }: { seed: number }) {
   const { t } = useTranslation('feed');
+  const navigate = useNavigate();
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [mine, setMine] = useState<Persona[]>([]);
   const [signedIn, setSignedIn] = useState(false);
@@ -228,9 +230,24 @@ export function PersonasTab({ seed }: { seed: number }) {
               <Link
                 key={p.id}
                 to={`/personas/${p.id}` as string}
+                // §5.48: the tile avatar liquidly expands into the chat header
+                // avatar. Name set only at click time (tag the avatar child).
+                onClick={(e) => {
+                  if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+                  e.preventDefault();
+                  const avatar = e.currentTarget.querySelector(
+                    '[data-persona-avatar]',
+                  ) as HTMLElement | null;
+                  runLiquidOpen(avatar, liquidVTName('persona', p.id), () =>
+                    navigate({ to: `/personas/${p.id}` } as never),
+                  );
+                }}
                 className="flex items-start gap-3 rounded-site border border-site-border bg-site-surface p-3 transition-colors hover:border-site-accent/60"
               >
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-site bg-site-accent/12 text-xl">
+                <div
+                  data-persona-avatar
+                  className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-site bg-site-accent/12 text-xl"
+                >
                   {p.avatarUrl ? (
                     <img src={p.avatarUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
                   ) : (

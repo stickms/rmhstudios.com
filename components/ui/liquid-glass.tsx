@@ -139,6 +139,24 @@ const GlassFilter: React.FC = () => (
       <feComposite in="r" in2="g" operator="arithmetic" k2="1" k3="1" result="rg" />
       <feComposite in="rg" in2="b" operator="arithmetic" k2="1" k3="1" />
     </filter>
+
+    {/* §5.47 gooey metaball merge: blur, then an alpha ramp (matrix 18/-7) that
+        cuts the blur back to a hard threshold — two nearby solid blobs fuse into
+        one, so a moving capsule and its trailing droplet read as a stretching
+        teardrop that pinches off and reabsorbs on arrival. Applied via regular
+        `filter` (Gecko/WebKit-safe) to a capsule-only underlay (`.lg-goo`), NEVER
+        to a subtree containing labels/icons (thresholding destroys glyph edges)
+        or a backdrop-filter element (a backdrop sampler inside a filtered subtree
+        re-rasterizes — the capsule material is plain accent tint + rim). */}
+    <filter id="glass-goo" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+      <feColorMatrix
+        in="blur"
+        type="matrix"
+        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+        result="goo"
+      />
+    </filter>
   </svg>
 );
 
