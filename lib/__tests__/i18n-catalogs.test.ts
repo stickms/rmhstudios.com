@@ -60,6 +60,7 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'filter-todo',
     'hub-footer',
     'hub-headline',
+    'loading-puzzle',
     'mode-title-alibi',
     'mode-title-chainlink',
     'mode-title-impostor',

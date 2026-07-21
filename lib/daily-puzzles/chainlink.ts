@@ -609,6 +609,16 @@ export function generateChainlinkPuzzle(date: Date): ChainlinkPuzzle {
     };
 }
 
+/** All words that have outgoing associations — the playable Chainlink vocabulary. */
+export function associationVocabulary(): string[] {
+    return Object.keys(ASSOCIATION_MAP);
+}
+
+/** Whether a word is a valid Chainlink anchor (has outgoing associations). */
+export function isAssociationKey(word: string): boolean {
+    return Boolean(ASSOCIATION_MAP[word.toLowerCase().trim()]);
+}
+
 /** Simple client-side association check using the map */
 export function isValidAssociation(wordA: string, wordB: string): boolean {
     const a = wordA.toLowerCase().trim();
