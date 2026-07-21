@@ -14,17 +14,23 @@ any accent preset layered on top — restyles the entire site without a single
 component change.
 
 **Liquid Glass is the material system, not a theme.** The site's default look is
-physically-plausible layered glass: translucent surfaces over a per-theme aurora
-canvas that **slowly flows and parallaxes to pointer / device motion** (so the
-shared backdrop every pane samples is alive, not static), specular rim
-highlights, depth-graded blur, a pointer-tracked light, and an optional
-travelling **liquid sheen** on signature surfaces.
+physically-plausible layered glass with **live optics** (v2): translucent
+surfaces over a **two-layer, depth-parallaxing aurora canvas** that flows and
+follows pointer / device motion; a **specular rim glint on every glass
+surface** that tracks the scene light (the pointer on desktop, a fixed top
+"sun" otherwise); **lens-model edge refraction** (a real displacement height
+field, Chromium-enhanced) with an optional chromatic **prism** dispersion on
+one flagship surface per page; a pointer-tracked diffuse light on interactive
+elements; and travelling **liquid sheens** on signature surfaces. The shell
+itself is **floating glass**: an inset rounded sidebar rail, floating header
+capsules, and content panes separated by aurora gutters instead of an
+app-frame of borders.
 It is expressed as an **elevation system of explicit CSS classes**
 (`.glass-fill` / `.glass-pane` / `.glass-chrome` / `.glass-overlay` /
-`.glass-inset`, plus `.glass-interactive` and `.glass-refract`) placed _on_
-components — see §5.1 below. Every theme is a _tint_ of that glass; `high-contrast`
-turns the glass off (opaque, blur-free). Full spec:
-[`docs/plans/2026-07-14-liquid-glass-ui-redesign.md`](./plans/2026-07-14-liquid-glass-ui-redesign.md).
+`.glass-inset`, plus the modifiers in §5.1) placed _on_ components. Every
+theme is a _tint_ of that glass; `high-contrast` turns the glass off (opaque,
+blur-free). Specs: [v1 material system](./plans/2026-07-14-liquid-glass-ui-redesign.md)
+· [v2 optics & floating shell](./plans/2026-07-21-liquid-glass-v2-optics.md).
 
 ---
 
@@ -174,10 +180,22 @@ role, not by looks — the tier decides blur cost (see the redesign doc §6 budg
 | `.glass-overlay`                             | L4              | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips.                                                                                                  |
 | `.glass-inset`                               | —               | Recessed wells: inputs, search fields.                                                                                                                                     |
 | `.glass-scrim`                               | —               | Dialog/drawer backdrops.                                                                                                                                                   |
-| `.glass-interactive` + `data-glass-light=""` | modifier        | Hover tint-raise, springy press flex, pointer-tracked specular highlight.                                                                                                  |
-| `.glass-refract` (`--prism`)                 | modifier        | Edge refraction — hero/chrome only, **≤2 per page**, never in scroll containers.                                                                                           |
-| `.glass-liquid` (or `<GlassPane liquid>`)    | modifier        | Ambient travelling sheen (light over wet glass). Signature surfaces only, **≤2–3 per page**, never on list items. Styles `::before` — **don't** stack on `.glass-refract`. |
+| `.glass-interactive` + `data-glass-light=""` | modifier        | Hover tint-raise, springy press flex (`--ease-glass`), pointer-tracked diffuse highlight (`::after`), and — on `.glass-fill` — the hover-only specular rim glint.          |
+| `.glass-refract` + `data-glass-lens`         | modifier        | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, **≤2 per page**, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`, Chromium-only enhancement). Not compatible with `.glass-chrome--aside` (its pseudos are the blur carrier + glint ring). |
+| `.glass-refract--prism`                      | modifier        | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. **≤1 per page**; sanctioned users: login card, command palette, `/store` featured tier, design lab. |
+| `.glass-liquid` (or `<GlassPane liquid>`)    | modifier        | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, **≤3 per page**, never on list items. |
+| `.glass-sheen-hover`                         | modifier        | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in). Unlimited.                                                                     |
+| `.glass-bevel-sm`                            | modifier        | Narrow 6px optics ring for small capsules/discs (e.g. BackToTop).                                                                                                          |
 | `.glass-opaque`                              | —               | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                      |
+
+**The rim glint comes free** (v2): `.glass-pane`/`.glass-overlay`/`.glass-chrome`
+carry an always-on specular ring (`::before`; `--aside` variant uses `::after`)
+whose bright segment tracks the global scene light (`--light-x/--light-y`,
+written by `useGlassLight`; absent = a static top sun). `.glass-fill` +
+`.glass-interactive` glints on hover only. Wells (`.glass-inset`), scrims, and
+plain fills carry no ring. Never add a third pseudo-element owner to a glass
+class — `::before` is the optics ring (or the aside blur), `::after` is the
+pointer light (or the aside ring).
 
 Rules: never put a backdrop tier (`.glass-pane/chrome/overlay`) on an ancestor of
 a `position:fixed` element (`backdrop-filter` creates a containing block — use
@@ -230,27 +248,36 @@ Toasts: **sonner**. A themed global `<Toaster>` is mounted in
 
 ## 6. Layout system & page anatomy
 
-The `_site` layout route (`app/routes/_site.tsx`) provides the shell:
-`LeftSidebar` (fixed desktop aside, `md:w-16 xl:w-64`), `MobileSidebarShell`
-(mobile drawer), skip link, and `<main id="main-content">` with the
-`.page-root` enter animation. **Pages never re-add sidebars.**
+The `_site` layout route (`app/routes/_site.tsx`) provides the **floating
+glass shell** (v2): the desktop sidebar is an inset rounded rail
+(`glass-chrome--aside` panel with `m-3 rounded-site` inside the fixed aside,
+`md:w-16 xl:w-64` spacer geometry unchanged), `MobileSidebarShell` (mobile
+drawer + dock), skip link, aurora gutters between rail/content/right-rail
+(`md:gap-4 xl:gap-6 md:px-4` on the shell flex row), and the single
+`<main id="main-content">` with the `.page-root` enter animation. **Pages
+never re-add sidebars** (and `AnimatedMain` renders a `<div>` — the shell's
+`<main>` is the one landmark).
 
 Two page archetypes (see `docs/page-consistency.md` for full code):
 
 1. **Standard content page** — wrap in
    `components/feed/PageLayout.tsx`:
-   `PageLayout({ title, children, rightSidebar?, headerExtra?, headerRight?, wide?, backTo?, backLabel? })`.
-   It renders the sticky translucent header
-   (`sticky top-0 z-10 h-15 bg-site-bg/85 backdrop-blur-md border-b border-site-border`),
-   the bordered center column, and a right sidebar or spacer.
+   `PageLayout({ title, children, rightSidebar?, headerExtra?, headerRight?, wide?, backTo?, backLabel?, breadcrumbs? })`.
+   It renders the **floating header capsule**
+   (`.glass-chrome sticky top-2 mx-2 rounded-site shadow-site-sm md:top-3 md:mx-3`,
+   condensing on scroll via `data-scrolled`: shorter, more opaque, more blur,
+   brighter glint), the transparent center column, and a right sidebar
+   (a `sticky top-3 space-y-3` floating widget stack) or spacer.
 2. **Feed-column page** — use `AnimatedMain` directly with a target width from
    `lib/layout-width.ts`.
 
 Column widths come from `lib/layout-width.ts`: `DEFAULT_WIDTH = 648`,
 `WIDE_WIDTH = 800`, `WIDE_NO_RIGHT_SIDEBAR_WIDTH = 952`. Inner content is
 usually `px-4 pt-4 pb-12 max-w-2xl mx-auto`; the column always carries
-`border-r border-site-border pb-16 md:pb-0` (the `pb-16` clears the mobile
-bottom nav). Vertical rhythm via `space-y-*` / `divide-y divide-site-border`.
+`pb-dock` (clears the mobile dock) and **no `border-r`** — the old app-frame
+edge is gone. Repeated content floats as spaced `.glass-fill` cards
+(`space-y-3 px-3`); hairline `divide-y` rhythm lives *inside* container
+cards, not between page-level sections.
 
 Full-screen experiences (games, `/login`, legal pages, Discord activities) live
 at the **top level** of `app/routes/` — outside `_site/` — and deliberately get
@@ -275,12 +302,25 @@ no shell.
   6px rise), suppressed on history-back (`html.nav-pop`) and during View
   Transitions (`html.vt-active`). Feed items use `.feed-item-enter`.
   Shared-element View Transitions go through `lib/view-transition.ts`.
-- **Living backdrop:** the aurora canvas (`body::before`) runs an ultra-slow
-  transform-only `aurora-drift` keyframe, and `hooks/useLiquidBackground.ts` (one
-  rAF-throttled listener, mounted in `Providers.tsx` next to `useGlassLight`) adds
-  a small pointer / device-orientation parallax via `--aurora-mx/--aurora-my`. Both
-  are gated off under reduced motion and `html.perf-lite`; the drift also stops in
-  high-contrast (canvas is `none` there).
+- **Living backdrop (v2 — two layers):** the aurora canvas (`body::before`)
+  runs an ultra-slow transform-only `aurora-drift` keyframe, and a far-field
+  layer (`body::after`, per-theme `--site-aurora-far-*` stops) counter-drifts
+  at `-0.6×` the pointer parallax — so pointer motion produces visible depth.
+  `hooks/useLiquidBackground.ts` (one rAF-throttled listener, mounted in
+  `Providers.tsx` next to `useGlassLight`) writes `--aurora-mx/--aurora-my`;
+  both layers are gated off under reduced motion and `html.perf-lite`, and
+  stop in high-contrast (canvas is `none` there).
+- **The scene light:** `hooks/useGlassLight.ts` also writes 8px-quantized
+  `--light-x/--light-y` on `<html>` (fine pointers only, static under reduced
+  motion) — every glass rim's specular glint answers it. Its per-element
+  duty (`--glass-px/--glass-py` for the `::after` diffuse hotspot) and the
+  `lib/glass-lens.ts` per-element lens-filter generator both initialize from
+  the same single listener.
+- **Liquid tabs:** tab strips use `components/ui/liquid-tabs.tsx` — the
+  active capsule is a `layoutId` glass pill that flows between tabs on
+  `SPRING.snappy` and jumps under reduced motion. Link-based or
+  `aria-controls`-rich tab bars keep their own markup and add the `layoutId`
+  capsule directly (creator studio, RMHLadder).
 - `hooks/useReducedMotion.ts` — SSR-safe boolean for JS animations CSS can't
   reach; `prefersReducedMotion()` for imperative checks.
 - `hooks/useCelebration.ts` — confetti/fireworks; lazy-loads canvas-confetti,
