@@ -250,9 +250,10 @@ function RootDocument({ children }: { children: ReactNode }) {
       </head>
       <body className="font-body antialiased" suppressHydrationWarning>
         <script dangerouslySetInnerHTML={{ __html: bodyThemeScript }} />
-        {/* SVG displacement filter sampled by the liquid-glass primitives
-            (components/ui/liquid-glass.tsx) via url(#glass-distortion).
-            Mounted once here so glass surfaces work on every route. */}
+        {/* SVG lens filters (#glass-lens / #glass-lens-prism) sampled by
+            .glass-refract surfaces via backdrop-filter (components/ui/liquid-glass.tsx;
+            per-size buckets appended at runtime by lib/glass-lens.ts). Mounted
+            once here so glass refraction works on every route. */}
         <GlassFilter />
         {children}
         <Scripts />

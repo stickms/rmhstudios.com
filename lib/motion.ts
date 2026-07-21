@@ -59,7 +59,13 @@ export const EASE = {
   glass: [0.175, 0.885, 0.32, 2.2] as Bezier,
 } as const;
 
-/** CSS `cubic-bezier(...)` string form of {@link EASE.glass}, for inline styles. */
+/**
+ * CSS `cubic-bezier(...)` string form of {@link EASE.glass}, for inline styles.
+ * The canonical CSS home of this curve is the `--ease-glass` token in
+ * `app/globals.css` (§5.3): site press physics (`.glass-interactive`, `Button`)
+ * reference that token so a re-tune is one line. This string mirrors it for the
+ * rare inline-style consumer that cannot reach the token — keep the two in sync.
+ */
 export const GLASS_EASE_CSS = 'cubic-bezier(0.175, 0.885, 0.32, 2.2)';
 
 /**

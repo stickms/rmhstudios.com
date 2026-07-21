@@ -79,10 +79,14 @@ export function accentCssVars(value: string, fg: string): Record<string, string>
     // subtly warms the specular highlight (§3.4). Mixed against a neutral white
     // base rather than var(--site-glass-light) to avoid a self-referential cycle.
     '--site-glass-light': `color-mix(in srgb, ${value} 20%, rgba(255, 255, 255, 0.14))`,
+    // The viewport-anchored rim glint (v2 §4.2) warms the same way the pointer
+    // light does: mostly the theme's rim with a touch of accent. Default (no
+    // preset) resolves to the plain rim via the token declared in globals.css.
+    '--site-glass-glint': `color-mix(in srgb, ${value} 18%, var(--site-glass-rim))`,
   };
 }
 
-const ACCENT_VAR_NAMES = ['--site-accent', '--site-accent-fg', '--site-accent-hover', '--site-accent-dim', '--site-glass-light'];
+const ACCENT_VAR_NAMES = ['--site-accent', '--site-accent-fg', '--site-accent-hover', '--site-accent-dim', '--site-glass-light', '--site-glass-glint'];
 
 /** Apply an accent id's tokens to an element (usually <html>), or clear them. */
 export function applyAccent(el: HTMLElement, id: string | null | undefined): void {

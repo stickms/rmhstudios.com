@@ -1,191 +1,111 @@
 'use client';
 
 /**
- * Liquid Glass primitives — frosted, light-refracting surfaces (à la iOS 26
- * "Liquid Glass"). Powers the site-wide `.style-liquid-glass` theme in
- * `app/globals.css` and is available as a standalone building block anywhere
- * a one-off glass panel is wanted.
+ * Liquid Glass primitives — the SSR filter host + a thin `GlassPane` helper.
  *
- * `GlassFilter` (the SVG displacement filter the glass layers reference by
- * `url(#glass-distortion)`) is mounted once globally in `__root.tsx`; only
- * mount it again for markup rendered outside the root document.
+ * `GlassFilter` mounts the SVG lens filters (`#glass-lens`, `#glass-lens-prism`)
+ * that Chromium samples through `backdrop-filter: url(...)` on `.glass-refract`
+ * surfaces (v2 §3). It is mounted once globally in `__root.tsx`; only mount it
+ * again for markup rendered outside the root document. Per-size-bucket variants
+ * are generated at runtime by `lib/glass-lens.ts` and appended into the same
+ * `#glass-filters` node.
  */
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { GLASS_EASE_CSS } from '@/lib/motion';
+import { lensMapDataURI } from '@/lib/glass-lens';
 
-interface GlassEffectProps {
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties;
-  href?: string;
-  target?: string;
-}
+// The §3.2 static default map (256×256): R = x-displacement, G = y-displacement,
+// 50% gray = neutral. The bucket generator refines this per element at runtime;
+// this constant is the first-paint default so refraction appears immediately.
+const LENS_MAP_HREF = lensMapDataURI(256, 256);
 
-interface DockIcon {
-  src: string;
-  alt: string;
-  onClick?: () => void;
-}
-
-// The springy overshoot curve every glass element eases with (see EASE.glass).
-const GLASS_EASE = GLASS_EASE_CSS;
-
-// Glass Effect Wrapper Component
-const GlassEffect: React.FC<GlassEffectProps> = ({
-  children,
-  className = '',
-  style = {},
-  href,
-  target,
-}) => {
-  const glassStyle: React.CSSProperties = {
-    boxShadow: '0 6px 6px rgba(0, 0, 0, 0.2), 0 0 20px rgba(0, 0, 0, 0.1)',
-    transitionTimingFunction: GLASS_EASE,
-    ...style,
-  };
-
-  const content = (
-    <div
-      data-slot="glass-effect"
-      className={cn(
-        'relative flex overflow-hidden font-semibold text-site-text transition-all duration-700',
-        href && 'cursor-pointer',
-        className,
-      )}
-      style={glassStyle}
-    >
-      {/* Glass layers: backdrop refraction → tint → specular rim highlight.
-          The refraction (SVG displacement of the backdrop) is applied via the
-          .liquid-glass-refract class in globals.css — it must live inside
-          backdrop-filter (Chromium-only; other engines keep the plain blur). */}
-      <div
-        className="liquid-glass-refract absolute inset-0 z-0 overflow-hidden rounded-[inherit]"
-        style={{ isolation: 'isolate' }}
-      />
-      {/* Tint plate + specular rim, re-based on the glass tokens so GlassEffect
-          obeys themes / high-contrast / reduced-transparency (§7.1). */}
-      <div
-        className="absolute inset-0 z-10 rounded-[inherit]"
-        style={{ background: 'var(--site-glass-tint-strong)' }}
-      />
-      <div
-        className="absolute inset-0 z-20 overflow-hidden rounded-[inherit]"
-        style={{
-          boxShadow:
-            'inset 2px 2px 1px 0 var(--site-glass-rim), inset -1px -1px 1px 1px var(--site-glass-rim-soft)',
-        }}
-      />
-
-      {/* Content */}
-      <div className="relative z-30">{children}</div>
-    </div>
-  );
-
-  return href ? (
-    <a
-      href={href}
-      target={target}
-      rel={target === '_blank' ? 'noopener noreferrer' : undefined}
-      className="block"
-    >
-      {content}
-    </a>
-  ) : (
-    content
-  );
-};
-
-// Dock Component. When `href` is set the whole dock is one link, so the icons
-// render as plain images (their onClick is ignored) — interactive buttons
-// nested inside an <a> are invalid HTML. The icon row deliberately has no
-// overflow-hidden: the GlassEffect wrapper already clips at its rounded
-// bounds, and its p-3 leaves room for the icons' focus rings and hover zoom.
-const GlassDock: React.FC<{ icons: DockIcon[]; href?: string }> = ({ icons, href }) => (
-  <GlassEffect href={href} className="rounded-3xl p-3 hover:rounded-4xl hover:p-4">
-    <div className="flex items-center justify-center gap-2 rounded-3xl px-0.5 py-0">
-      {icons.map((icon) => {
-        const img = (
-          <img
-            src={icon.src}
-            alt={href ? icon.alt : ''}
-            aria-hidden={href ? undefined : true}
-            className="h-16 w-16 rounded-2xl object-cover"
-          />
-        );
-        return href ? (
-          <span key={icon.alt} className="rounded-2xl">
-            {img}
-          </span>
-        ) : (
-          <button
-            key={icon.alt}
-            type="button"
-            onClick={icon.onClick}
-            aria-label={icon.alt}
-            className="cursor-pointer rounded-2xl transition-all duration-700 hover:scale-110"
-            style={{
-              transformOrigin: 'center center',
-              transitionTimingFunction: GLASS_EASE,
-            }}
-          >
-            {img}
-          </button>
-        );
-      })}
-    </div>
-  </GlassEffect>
-);
-
-// Button Component
-const GlassButton: React.FC<{ children: React.ReactNode; href?: string }> = ({
-  children,
-  href,
-}) => (
-  <GlassEffect
-    href={href}
-    className="overflow-hidden rounded-3xl px-10 py-6 hover:rounded-4xl hover:px-11 hover:py-7"
-  >
-    <div
-      className="transition-all duration-700 hover:scale-95"
-      style={{ transitionTimingFunction: GLASS_EASE }}
-    >
-      {children}
-    </div>
-  </GlassEffect>
-);
-
-// SVG filter the glass layers sample for their refraction (via backdrop-filter
-// url(#glass-distortion) in .liquid-glass-refract). Render once per document.
-// Simplified from the reference implementation: its feComponentTransfer and
-// feSpecularLighting/feComposite passes produced results nothing consumed, so
-// only the effective turbulence → blur → displacement chain is kept.
+/**
+ * GlassFilter — the global lens filter host (v2 §3.3–§3.4).
+ *
+ * `#glass-lens`: feImage(displacement map) → blur → single displacement pass.
+ * `#glass-lens-prism`: three channel-isolated displacements at ±12% scale, then
+ * re-summed — true chromatic dispersion (blue bends more than red). Budget: ≤1
+ * prism element per page. Both only ever run on Chromium (the only engine that
+ * feeds an SVG filter into `backdrop-filter`); other engines keep the CSS
+ * edge-blur fallback in `.glass-refract::before`.
+ */
 const GlassFilter: React.FC = () => (
-  <svg style={{ display: 'none' }} aria-hidden>
+  <svg id="glass-filters" style={{ display: 'none' }} aria-hidden>
     <filter
-      id="glass-distortion"
+      id="glass-lens"
       x="0%"
       y="0%"
       width="100%"
       height="100%"
-      filterUnits="objectBoundingBox"
+      colorInterpolationFilters="sRGB"
     >
-      <feTurbulence
-        type="fractalNoise"
-        baseFrequency="0.001 0.005"
-        numOctaves="1"
-        seed="17"
-        result="turbulence"
+      <feImage
+        href={LENS_MAP_HREF}
+        x="0"
+        y="0"
+        width="256"
+        height="256"
+        preserveAspectRatio="none"
+        result="map"
       />
-      <feGaussianBlur in="turbulence" stdDeviation="3" result="softMap" />
+      <feGaussianBlur in="map" stdDeviation="2" result="soft" />
       <feDisplacementMap
         in="SourceGraphic"
-        in2="softMap"
-        scale="80"
+        in2="soft"
+        scale="56"
         xChannelSelector="R"
         yChannelSelector="G"
       />
+    </filter>
+
+    <filter
+      id="glass-lens-prism"
+      x="0%"
+      y="0%"
+      width="100%"
+      height="100%"
+      colorInterpolationFilters="sRGB"
+    >
+      <feImage
+        href={LENS_MAP_HREF}
+        x="0"
+        y="0"
+        width="256"
+        height="256"
+        preserveAspectRatio="none"
+        result="map"
+      />
+      <feGaussianBlur in="map" stdDeviation="2" result="soft" />
+      <feDisplacementMap
+        in="SourceGraphic"
+        in2="soft"
+        scale="49"
+        xChannelSelector="R"
+        yChannelSelector="G"
+        result="dr"
+      />
+      <feDisplacementMap
+        in="SourceGraphic"
+        in2="soft"
+        scale="56"
+        xChannelSelector="R"
+        yChannelSelector="G"
+        result="dg"
+      />
+      <feDisplacementMap
+        in="SourceGraphic"
+        in2="soft"
+        scale="63"
+        xChannelSelector="R"
+        yChannelSelector="G"
+        result="db"
+      />
+      <feColorMatrix in="dr" result="r" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" />
+      <feColorMatrix in="dg" result="g" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" />
+      <feColorMatrix in="db" result="b" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" />
+      <feComposite in="r" in2="g" operator="arithmetic" k2="1" k3="1" result="rg" />
+      <feComposite in="rg" in2="b" operator="arithmetic" k2="1" k3="1" />
     </filter>
   </svg>
 );
@@ -198,14 +118,18 @@ const GlassFilter: React.FC = () => (
 interface GlassPaneProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Add hover tint-raise, press flex, and the pointer specular highlight. */
   interactive?: boolean;
-  /** Add edge-weighted refraction (hero/chrome only — ration to ≤2 per page). */
+  /**
+   * Add edge lens refraction (v2 §3): the aurora bends in the pane's edge band.
+   * Sets `data-glass-lens` so `lib/glass-lens.ts` sizes a displacement filter to
+   * this pane on Chromium; other engines fall back to the edge blur. Hero/chrome
+   * only — ration to ≤2 per page, never in scroll containers.
+   */
   refract?: boolean;
   /**
    * Add the ambient "liquid" sheen — a slow specular that drifts across the pane
-   * like light over wet glass. Signature surfaces only (heroes, docks); ration it
-   * like `refract`. Give the pane's own content a stacking context so text stays
-   * above the sheen (this wrapper's children already render in normal flow above
-   * the z-0 sheen layer).
+   * like light over wet glass. In v2 the sheen is a background layer (no pseudo),
+   * so it composes freely with `refract` and `interactive` on the same pane.
+   * Signature surfaces only; ration it like `refract` (≤2–3 per page).
    */
   liquid?: boolean;
 }
@@ -221,6 +145,7 @@ const GlassPane: React.FC<GlassPaneProps> = ({
   <div
     data-slot="glass-pane"
     data-glass-light={interactive ? '' : undefined}
+    data-glass-lens={refract ? '' : undefined}
     className={cn(
       'glass-pane',
       interactive && 'glass-interactive',
@@ -234,5 +159,5 @@ const GlassPane: React.FC<GlassPaneProps> = ({
   </div>
 );
 
-export { GlassEffect, GlassDock, GlassButton, GlassFilter, GlassPane };
-export type { DockIcon, GlassEffectProps, GlassPaneProps };
+export { GlassFilter, GlassPane };
+export type { GlassPaneProps };

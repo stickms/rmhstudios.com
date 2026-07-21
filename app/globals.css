@@ -133,6 +133,19 @@
   --site-glass-depth: 0 24px 64px rgba(2, 10, 28, 0.6);
   --site-glass-depth-sm: 0 4px 16px rgba(2, 10, 28, 0.28);
 
+  /* ── v2 optics (§6) — press curve, optics-ring geometry, rim-glint, far aurora.
+     --light-x/--light-y are deliberately NOT declared: their absence is the
+     scene "sun" default baked into the glint gradient's var() fallbacks;
+     useGlassLight writes them only while a fine pointer moves. --glass-lens /
+     --glass-lens-prism are written per element by lib/glass-lens.ts only. */
+  --ease-glass: cubic-bezier(0.175, 0.885, 0.32, 2.2);
+  --glass-bevel: 12px; /* optics-ring thickness (panes/overlays); chrome → 8px */
+  --glass-glint-size: 340px; /* specular falloff radius */
+  --glass-glint-opacity: 0.9;
+  --site-glass-glint: var(--site-glass-rim); /* accent presets re-derive (§4.2) */
+  --site-aurora-far-1: rgba(86, 140, 255, 0.1); /* aurora depth layer (§5.1) */
+  --site-aurora-far-2: rgba(170, 108, 255, 0.09);
+
   /* Elevation tokens — the rim lives in the shadow so Card/Dialog/etc. pick it
      up through shadow-site / shadow-site-sm with zero component changes. */
   --site-shadow:
@@ -293,6 +306,8 @@
     radial-gradient(110% 95% at 86% 102%, rgba(52, 208, 188, 0.22), transparent 64%),
     radial-gradient(80% 70% at 8% 98%, rgba(255, 120, 196, 0.16), transparent 60%),
     linear-gradient(180deg, #0d1b2e 0%, #13253e 48%, #0b1930 100%);
+  --site-aurora-far-1: rgba(86, 140, 255, 0.1);
+  --site-aurora-far-2: rgba(170, 108, 255, 0.09);
 }
 
 /* Glass Light — daylight canvas: near-white base with soft pastel sky radials;
@@ -334,6 +349,8 @@
     radial-gradient(110% 95% at 88% 102%, rgba(120, 226, 205, 0.2), transparent 62%),
     radial-gradient(80% 70% at 5% 100%, rgba(255, 175, 215, 0.16), transparent 60%),
     linear-gradient(180deg, #eef1f9 0%, #e6ebf5 50%, #edf0f8 100%);
+  --site-aurora-far-1: rgba(120, 165, 255, 0.11);
+  --site-aurora-far-2: rgba(185, 150, 255, 0.1);
   /* Light theme: leave the OSM map tiles as-is (already light). */
   --site-map-filter: none;
   --background: #e9edf6;
@@ -422,6 +439,8 @@
     radial-gradient(95% 80% at 92% 6%, rgba(200, 205, 215, 0.06), transparent 60%),
     radial-gradient(120% 95% at 84% 104%, rgba(120, 125, 140, 0.1), transparent 64%),
     linear-gradient(180deg, #17171a 0%, #202024 50%, #131316 100%);
+  --site-aurora-far-1: rgba(255, 255, 255, 0.04);
+  --site-aurora-far-2: rgba(120, 125, 140, 0.05);
   --background: #17171a;
   --foreground: #f3f3f5;
 }
@@ -463,6 +482,8 @@
     radial-gradient(95% 78% at 94% 4%, rgba(210, 160, 90, 0.22), transparent 60%),
     radial-gradient(115% 95% at 86% 104%, rgba(235, 205, 150, 0.24), transparent 64%),
     linear-gradient(180deg, #f4ead6 0%, #efe4cf 50%, #ece0c8 100%);
+  --site-aurora-far-1: rgba(220, 180, 120, 0.12);
+  --site-aurora-far-2: rgba(210, 160, 90, 0.09);
   /* Sepia is a light theme — keep the light OSM map tiles. */
   --site-map-filter: none;
   --background: #efe4cf;
@@ -504,6 +525,8 @@
     radial-gradient(95% 78% at 94% 2%, rgba(90, 150, 255, 0.24), transparent 60%),
     radial-gradient(120% 95% at 84% 104%, rgba(60, 190, 210, 0.18), transparent 64%),
     linear-gradient(180deg, #0a1424 0%, #0e1c34 50%, #081120 100%);
+  --site-aurora-far-1: rgba(70, 120, 220, 0.13);
+  --site-aurora-far-2: rgba(90, 150, 255, 0.1);
   --background: #0a1424;
   --foreground: #eaeef7;
 }
@@ -562,22 +585,63 @@ html:not(.app-route) body::before {
    backdrop every glass surface samples is never static — glass reads as living
    material. Transform-only (GPU-composited, no per-frame layout/paint). Neutered
    automatically under reduced motion by the global 0.01ms animation reset. */
+/* 5 stops (same 34s, same amplitude as the original 3) — a less elliptical,
+   more organic path so the near field never reads as a looping ellipse. */
 @keyframes aurora-drift {
   0% {
     transform: scale(1.06) rotate(0deg) translate3d(0, 0, 0);
   }
+  25% {
+    transform: scale(1.1) rotate(0.5deg) translate3d(1.2%, -0.6%, 0);
+  }
   50% {
     transform: scale(1.13) rotate(0.7deg) translate3d(1.6%, -1.4%, 0);
+  }
+  75% {
+    transform: scale(1.09) rotate(-0.3deg) translate3d(-0.6%, 0.4%, 0);
   }
   100% {
     transform: scale(1.07) rotate(-0.7deg) translate3d(-1.5%, 1.2%, 0);
   }
 }
 
+/* Aurora layer 2 — the far field (§5.1). A depth sibling behind body::before:
+   it counter-drifts slower and follows the pointer at −0.6× the near layer's
+   parallax (reusing --aurora-mx/my written by useLiquidBackground — NO new JS),
+   so pointer motion resolves into depth rather than a flat slide. z-index:-2
+   keeps it behind the near layer. Same kill-switches as the near layer below. */
+html:not(.app-route):not(.style-high-contrast) body::after {
+  content: '';
+  position: fixed;
+  inset: -18%;
+  z-index: -2;
+  pointer-events: none;
+  background-image:
+    radial-gradient(60% 50% at 24% 30%, var(--site-aurora-far-1, rgba(86, 140, 255, 0.1)), transparent 70%),
+    radial-gradient(50% 45% at 78% 66%, var(--site-aurora-far-2, rgba(170, 108, 255, 0.09)), transparent 70%);
+  translate: calc(var(--aurora-mx, 0px) * -0.6) calc(var(--aurora-my, 0px) * -0.6);
+  transition: translate 0.9s cubic-bezier(0.22, 1, 0.36, 1); /* lazier trail */
+  animation: aurora-drift-far 52s ease-in-out infinite alternate;
+  will-change: transform, translate;
+}
+@keyframes aurora-drift-far {
+  0% {
+    transform: scale(1.1) rotate(0.4deg) translate3d(-1.2%, 0.8%, 0);
+  }
+  50% {
+    transform: scale(1.04) rotate(-0.5deg) translate3d(1.4%, -1%, 0);
+  }
+  100% {
+    transform: scale(1.12) rotate(0.3deg) translate3d(-0.8%, 1.2%, 0);
+  }
+}
+
 /* Low-end devices and high-contrast (canvas is `none` there) pay nothing for the
-   ambient flow or the parallax follow. */
+   ambient flow or the parallax follow — both aurora layers. */
 html.perf-lite body::before,
-html.style-high-contrast body::before {
+html.perf-lite body::after,
+html.style-high-contrast body::before,
+html.style-high-contrast body::after {
   animation: none;
   translate: none;
   transition: none;
@@ -615,8 +679,10 @@ html:not(.style-high-contrast)
   }
 
   /* ── L2 · glass-pane ── singular panels (heroes, composer, settings sections,
-     tier cards). Blur + saturate + micro-noise. Budgeted (§6.1). */
+     tier cards). Blur + saturate + micro-noise. Budgeted (§6.1). position:relative
+     so the optics ring (::before, §2.1) anchors here. */
   .glass-pane {
+    position: relative;
     background-color: var(--site-glass-tint);
     background-image: var(--site-glass-noise);
     box-shadow: var(--site-shadow-sm);
@@ -627,19 +693,27 @@ html:not(.style-high-contrast)
   }
 
   /* ── L3 · glass-chrome ── persistent chrome (sidebar, sticky headers, dock).
-     More of the aurora shows through; condenses on scroll via [data-scrolled]. */
+     More of the aurora shows through; condenses on scroll via [data-scrolled].
+     Thinner optics-ring bevel than panes (§2.1); position:relative anchors the
+     ring ::before (a position utility from the shell overrides it where set). */
   .glass-chrome {
+    position: relative;
+    --glass-bevel: 8px;
     background: color-mix(in srgb, var(--site-bg) 32%, transparent);
     -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
     backdrop-filter: blur(var(--site-glass-blur-chrome)) saturate(150%);
   }
   .glass-chrome[data-scrolled] {
     background: color-mix(in srgb, var(--site-bg) 55%, transparent);
+    --glass-glint-opacity: 1; /* condensed chrome catches more light (§4.2/§7) */
   }
   /* Fixed asides: blur lives on ::before so fixed descendants (LeftSidebar's
      non-portaled user menu) keep the VIEWPORT as their containing block. NEVER
-     put backdrop-filter on the aside itself (§3.3.1). */
+     put backdrop-filter on the aside itself (§3.3.1). Because ::before is the
+     blur carrier here, the aside's optics ring lives on ::after instead (§2). */
   .glass-chrome--aside {
+    position: relative;
+    --glass-bevel: 8px;
     background: color-mix(in srgb, var(--site-bg) 40%, transparent);
   }
   .glass-chrome--aside::before {
@@ -653,8 +727,10 @@ html:not(.style-high-contrast)
   }
 
   /* ── L4 · glass-overlay ── floating UI (dialogs, popovers, menus, palette,
-     toasts, tooltips). More opaque so text never ghosts through. */
+     toasts, tooltips). More opaque so text never ghosts through. position:relative
+     anchors the optics ring (::before, §2.1). */
   .glass-overlay {
+    position: relative;
     background: color-mix(in srgb, var(--site-bg) 62%, transparent);
     box-shadow: var(--site-shadow);
     border: var(--site-border-width) solid var(--site-border);
@@ -698,7 +774,7 @@ html:not(.style-high-contrast)
     transition:
       background-color var(--site-transition-speed),
       box-shadow var(--site-transition-speed),
-      transform 0.34s cubic-bezier(0.175, 0.885, 0.32, 2.2);
+      transform 0.34s var(--ease-glass);
   }
   .glass-interactive:hover {
     background-color: var(--site-glass-tint-strong);
@@ -734,117 +810,178 @@ html:not(.style-high-contrast)
     }
   }
 
-  /* ── Edge-weighted refraction (§4.3) — hero/chrome only, ≤2 per page. The rim
-     band displaces; the pane centre stays optically clean. Chromium upgrades to
-     the SVG displacement map; other engines keep the plain edge blur. ── */
-  .glass-refract {
-    position: relative;
-  }
-  .glass-refract::before {
+  /* ══ The optics ring (§2.1–§2.2) ══════════════════════════════════════════
+     ONE masked edge band per surface — the single home of the specular rim
+     glint (§4.2), and, with .glass-refract, the carrier of the lens
+     backdrop-filter (§3). PSEUDO OWNERSHIP (load-bearing):
+       • ::before = optics ring on .glass-pane/.glass-overlay/.glass-chrome and
+         on .glass-fill.glass-interactive (cards, hover-gated below).
+       • .glass-chrome--aside keeps blur on ::before, so ITS ring lives on
+         ::after (the aside is never .glass-interactive, so ::after is free).
+       • ::after elsewhere = the pointer hotspot, owned by .glass-interactive.
+     NO ring on .glass-inset (wells are holes), plain .glass-fill (the unlimited
+     cheap tier), or .glass-scrim. Never add a third pseudo owner — ride an
+     existing layer. Content that could reach the bevel band sits at z-index ≥ 1.
+     The glint is a viewport-anchored (background-attachment: fixed) radial so
+     EVERY surface samples the same light at once; --light-x/y come from
+     useGlassLight, absence = the sun default. `screen` blend only ever lightens. */
+  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
+  .glass-chrome--aside::after,
+  .glass-fill.glass-interactive::before {
     content: '';
     position: absolute;
     inset: 0;
     z-index: 0;
     border-radius: inherit;
     pointer-events: none;
-    padding: 14px;
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
+    padding: var(--glass-bevel, 12px); /* ring thickness = glass edge bevel */
     -webkit-mask:
       linear-gradient(#000 0 0) content-box exclude,
       linear-gradient(#000 0 0);
     mask:
       linear-gradient(#000 0 0) content-box exclude,
       linear-gradient(#000 0 0);
+    background-image: radial-gradient(
+      var(--glass-glint-size, 340px) circle at var(--light-x, 50%) var(--light-y, -8%),
+      var(--site-glass-glint, var(--site-glass-rim)) 0%,
+      color-mix(in srgb, var(--site-glass-glint, var(--site-glass-rim)) 40%, transparent) 38%,
+      transparent 70%
+    );
+    background-attachment: fixed;
+    mix-blend-mode: screen;
+    opacity: var(--glass-glint-opacity, 0.9);
   }
-  @supports (backdrop-filter: url(#glass-distortion)) {
-    .glass-refract::before {
-      -webkit-backdrop-filter: url(#glass-distortion) blur(2px);
-      backdrop-filter: url(#glass-distortion) blur(2px);
+  /* Repeated cards pay only on hover — at most one card ring paints at a time. */
+  .glass-fill.glass-interactive::before {
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+  .glass-fill.glass-interactive:hover::before {
+    opacity: var(--glass-glint-opacity, 0.9);
+  }
+  /* Small capsules take a thinner bevel (per-component opt-in). */
+  .glass-bevel-sm {
+    --glass-bevel: 6px;
+  }
+  /* Touch / coarse pointers: background-attachment: fixed is unreliable on iOS
+     and there is no pointer to track — swap to a static element-local top glint
+     (the sun), same ring mask. */
+  @media not ((hover: hover) and (pointer: fine)) {
+    :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
+    .glass-chrome--aside::after {
+      background-image: linear-gradient(
+        180deg,
+        var(--site-glass-glint, var(--site-glass-rim)),
+        transparent 34%
+      );
+      background-attachment: scroll;
     }
   }
-  /* Optional chromatic fringe on the rim — featured tier + design lab only. */
-  .glass-refract--prism::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    border-radius: inherit;
-    pointer-events: none;
+
+  /* ── Edge lens refraction (§3) — hero/chrome only, ≤2 per page, never in
+     scroll containers. The ring geometry (mask/inset/bevel) is shared from the
+     optics ring above; this ONLY adds the backdrop bend to that same ::before.
+     Fallback (FF/Safari): a plain edge blur. Chromium: the lens displacement
+     map (per-element size from lib/glass-lens.ts, else the static #glass-lens). */
+  .glass-refract {
+    position: relative;
+  }
+  .glass-refract::before {
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+  }
+  @supports (backdrop-filter: url('#glass-lens')) {
+    .glass-refract::before {
+      -webkit-backdrop-filter: var(--glass-lens, url('#glass-lens')) blur(1px);
+      backdrop-filter: var(--glass-lens, url('#glass-lens')) blur(1px);
+    }
+  }
+  /* Chromatic dispersion (§3.4) — ≤1 prism element per page (3-pass ≈ 3× cost).
+     Sanctioned: login card, /store featured tier, command palette, design lab.
+     Chromium swaps the ::before lens to the 3-displacement prism filter; every
+     engine also gets the static rim fringe as inset hairlines on the ::before
+     ring (masked to the bevel band), so ::after stays free for the hotspot. */
+  .glass-refract--prism::before {
     box-shadow:
       inset 0 0 0 1px rgba(255, 80, 120, 0.14),
       inset 0 0 0 2px rgba(80, 160, 255, 0.12);
   }
-
-  /* ── Liquid sheen (§5.4) — an ultra-slow diagonal specular that drifts across a
-     surface like light travelling over wet glass. Opt-in modifier for SIGNATURE
-     surfaces only (heroes, docks, the active tab capsule) — ration it like
-     .glass-refract (≤2–3 per page); it is NOT for repeated list items. The sheen
-     paints on ::before at z-0 with `screen` blend so it only ever lightens; give
-     the surface's own content a stacking context (position + z-index ≥ 1) so text
-     stays crisp above it. Frozen by the global reduced-motion reset.
-     NOTE: styles ::before, so do NOT combine on the same element as .glass-refract
-     (which also styles ::before). It composes fine with .glass-interactive (::after). */
-  .glass-liquid {
-    position: relative;
-    isolation: isolate;
+  @supports (backdrop-filter: url('#glass-lens-prism')) {
+    .glass-refract--prism::before {
+      -webkit-backdrop-filter: var(--glass-lens-prism, url('#glass-lens-prism')) blur(1px);
+      backdrop-filter: var(--glass-lens-prism, url('#glass-lens-prism')) blur(1px);
+    }
   }
-  .glass-liquid::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    border-radius: inherit;
-    pointer-events: none;
-    background: linear-gradient(
+
+  /* ── Liquid sheen (§5.2) — a slow diagonal specular that drifts across a
+     surface like light over wet glass. PSEUDO-FREE in v2: the sheen is a
+     background layer over the noise/tint, so it composes with .glass-refract
+     (::before) and .glass-interactive (::after) on the same element. SIGNATURE
+     surfaces only — ration like .glass-refract (≤3 ambient per page); NOT for
+     list items. The band rests off-pane (150%) so a stopped animation is never
+     stuck mid-sweep; `screen` blend keeps it a highlight. The 2nd layer is the
+     shared noise (harmless where a host has no noise of its own). */
+  .glass-liquid {
+    background-image:
+      linear-gradient(
+        115deg,
+        transparent 30%,
+        color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 46%,
+        color-mix(in srgb, var(--site-glass-light) 85%, transparent) 50%,
+        color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 54%,
+        transparent 70%
+      ),
+      var(--site-glass-noise);
+    background-size: 260% 100%, auto;
+    background-repeat: no-repeat, repeat;
+    background-blend-mode: screen, normal;
+    background-position: 150% 0, 0 0;
+    animation: glass-sheen 9s ease-in-out infinite;
+  }
+  html.perf-lite .glass-liquid {
+    animation: none; /* band rests off-pane at 150% — nothing stuck mid-sweep */
+  }
+
+  /* One-shot hover sweep for signature CTAs (§5.2/§5.3) — buttons + tab capsules.
+     Provides its own sheen band so it works on surfaces without .glass-liquid;
+     re-triggers each hover. Resting band sits off-pane (150%) → invisible. */
+  .glass-sheen-hover {
+    background-image: linear-gradient(
       115deg,
-      transparent 30%,
-      color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 46%,
+      transparent 38%,
+      color-mix(in srgb, var(--site-glass-rim) 55%, transparent) 47%,
       color-mix(in srgb, var(--site-glass-light) 85%, transparent) 50%,
-      color-mix(in srgb, var(--site-glass-rim) 60%, transparent) 54%,
-      transparent 70%
+      color-mix(in srgb, var(--site-glass-rim) 55%, transparent) 53%,
+      transparent 62%
     );
     background-size: 260% 100%;
     background-repeat: no-repeat;
-    mix-blend-mode: screen;
-    opacity: 0;
-    animation: glass-sheen 9s ease-in-out infinite;
+    background-position: 150% 0;
   }
-  html.perf-lite .glass-liquid::before {
-    animation: none;
-    display: none;
+  .glass-sheen-hover:hover {
+    animation: glass-sheen-once 0.9s cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
 
-/* The travelling light band for .glass-liquid. A long dwell at each end keeps the
-   sweep occasional and calm rather than a constant strobe. */
+/* The travelling light band for the ambient .glass-liquid sheen. Long dwells at
+   each off-pane end keep the sweep occasional and calm rather than a strobe. */
 @keyframes glass-sheen {
   0%,
-  8% {
-    background-position: 150% 0;
-    opacity: 0;
+  22% {
+    background-position: 150% 0, 0 0;
   }
-  30% {
-    opacity: 0.6;
-  }
-  55%,
+  60%,
   100% {
-    background-position: -60% 0;
-    opacity: 0;
+    background-position: -60% 0, 0 0;
   }
 }
-
-/* Refraction layer for the GlassEffect primitive (components/ui/liquid-glass.tsx).
-   Kept as an alias of the old class so GlassEffect markup keeps working; the
-   SVG displacement can only act on the backdrop from inside backdrop-filter. */
-.liquid-glass-refract {
-  -webkit-backdrop-filter: blur(3px);
-  backdrop-filter: blur(3px);
-}
-@supports (backdrop-filter: url(#glass-distortion)) {
-  .liquid-glass-refract {
-    -webkit-backdrop-filter: url(#glass-distortion) blur(3px);
-    backdrop-filter: url(#glass-distortion) blur(3px);
+/* One pass of the same band for .glass-sheen-hover (single background layer). */
+@keyframes glass-sheen-once {
+  from {
+    background-position: 150% 0;
+  }
+  to {
+    background-position: -60% 0;
   }
 }
 
@@ -859,11 +996,21 @@ html:not(.style-high-contrast)
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
+/* All optics dead: the optics rings (host ::before + aside ::after + card ::before),
+   the pointer hotspot, the refract lens, and the far aurora. */
+.style-high-contrast
+  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
 .style-high-contrast .glass-chrome--aside::before,
+.style-high-contrast .glass-chrome--aside::after,
+.style-high-contrast .glass-fill.glass-interactive::before,
 .style-high-contrast .glass-refract::before,
-.style-high-contrast .glass-liquid::before,
-.style-high-contrast .glass-interactive::after {
+.style-high-contrast .glass-interactive::after,
+.style-high-contrast body::after {
   display: none;
+}
+.style-high-contrast .glass-liquid {
+  background-image: none;
+  animation: none;
 }
 
 /* Reduce transparency — three triggers, one behaviour (§10): the OS media
@@ -882,10 +1029,17 @@ html:not(.style-high-contrast)
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
+  /* Rings + lens + sheen off (surfaces are already opaque); pointer hotspot stays. */
+  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
   .glass-chrome--aside::before,
-  .glass-refract::before,
-  .glass-liquid::before {
+  .glass-chrome--aside::after,
+  .glass-fill.glass-interactive::before,
+  .glass-refract::before {
     display: none;
+  }
+  .glass-liquid {
+    background-image: none;
+    animation: none;
   }
 }
 html.reduce-transparency
@@ -900,40 +1054,66 @@ html.reduce-transparency :is(.absolute, .shadow-xl, .shadow-2xl).bg-site-bg {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
+html.reduce-transparency
+  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
 html.reduce-transparency .glass-chrome--aside::before,
-html.reduce-transparency .glass-refract::before,
-html.reduce-transparency .glass-liquid::before {
+html.reduce-transparency .glass-chrome--aside::after,
+html.reduce-transparency .glass-fill.glass-interactive::before,
+html.reduce-transparency .glass-refract::before {
   display: none;
 }
+html.reduce-transparency .glass-liquid {
+  background-image: none;
+  animation: none;
+}
 
-/* Device tiering (§6.4): low-end devices keep chrome/overlay blur (few, carry
-   the identity) but demote L2 panes to flat tint and drop refraction + the
-   pointer light. CSS-only demotion — no component branches. */
+/* Device tiering (§6.4/§10): low-end devices keep chrome/overlay blur (few, carry
+   the identity) but demote L2 panes to flat tint, drop the pointer light, and
+   strip the lens (JS never generates the filters either). The optics rings STAY
+   but rest at the static sun (no fixed attachment); the far aurora + sheen go.
+   CSS-only demotion — no component branches. */
 html.perf-lite .glass-pane {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
 }
-html.perf-lite .glass-refract::before,
 html.perf-lite .glass-interactive::after {
+  display: none;
+}
+html.perf-lite .glass-refract::before {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+html.perf-lite
+  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
+html.perf-lite .glass-chrome--aside::after,
+html.perf-lite .glass-fill.glass-interactive::before {
+  background-image: linear-gradient(
+    180deg,
+    var(--site-glass-glint, var(--site-glass-rim)),
+    transparent 34%
+  );
+  background-attachment: scroll;
+}
+html.perf-lite body::after {
   display: none;
 }
 
 /* Forced colors / Windows High Contrast strips backgrounds — keep structural
-   borders so panes retain their shape. */
+   borders so panes retain their shape; make sure the v2 optics pseudos paint
+   nothing (their backgrounds are already stripped, this is belt-and-suspenders). */
 @media (forced-colors: active) {
   :is(.glass-fill, .glass-pane, .glass-chrome, .glass-overlay, .glass-inset) {
     border: 1px solid;
   }
-}
-
-/* Scrolling backdrop for the /liquid-glass demo (and any GlassEffect showcase
-   that tiles a background image). */
-@keyframes moveBackground {
-  from {
-    background-position: 0% 0%;
+  :is(.glass-pane, .glass-overlay, .glass-chrome):not(.glass-chrome--aside)::before,
+  .glass-chrome--aside::after,
+  .glass-fill.glass-interactive::before,
+  .glass-interactive::after,
+  body::after {
+    background: none;
   }
-  to {
-    background-position: 0% -1000%;
+  .glass-liquid {
+    background-image: none;
   }
 }
 
@@ -1677,12 +1857,15 @@ textarea,
 }
 
 /* Press feedback on tap/click — opacity only, so there's never a layout
-   shift, and it reads on both touch and mouse. Disabled controls stay inert. */
-a:active,
-button:not(:disabled):not([aria-disabled='true']):active,
-[role='button']:not([aria-disabled='true']):active,
-[role='tab']:active,
-[role='menuitem']:active,
+   shift, and it reads on both touch and mouse. Disabled controls stay inert.
+   Material-press elements opt OUT (§5.3): the springy scale on Button
+   ([data-slot='button']) and .glass-interactive is the press cue there — an
+   opacity flicker fights the squish. Links and legacy buttons keep the cue. */
+a:not(.glass-interactive):active,
+button:not(:disabled):not([aria-disabled='true']):not([data-slot='button']):not(.glass-interactive):active,
+[role='button']:not([aria-disabled='true']):not(.glass-interactive):active,
+[role='tab']:not(.glass-interactive):active,
+[role='menuitem']:not(.glass-interactive):active,
 summary:active {
   opacity: 0.6;
   transition: opacity 60ms ease;
