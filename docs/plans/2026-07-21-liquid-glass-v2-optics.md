@@ -1495,6 +1495,89 @@ page-consistency.md checklist. Live-verify with the Phase-H audit-script
 pattern (gap measurement between sibling glass rects) on `/`, `/store`,
 `/library`, `/settings`, `/studio/themes` at 1440 + 390.
 
+**Internal padding too (owner follow-up):** the rhythm rule covers the
+inside of elements, not just gaps between them — text inputs/wells at
+`px-3.5 py-2.5` minimum (16px floor on phones stays), buttons per their CVA
+sizes, card content `px-4 py-3`+, list rows never letting text touch the
+glass edge (≥12px inline padding). Sweep the same five pages for cramped
+interiors (inputs, chips, wells, menu rows) and fix to the primitives'
+canonical paddings rather than inventing per-page values.
+
+### 15.7 Services dropdown → Services page (owner ask; ships with the §15.6 phase)
+
+The sidebar's "Services" nav group is currently an expanding dropdown of
+links. Convert it to a **`/services` page**: the sidebar entry becomes a
+plain nav link (dropdown dies per §12.8); the page is a standard
+`PageLayout` route ("Services" title capsule) with a **tab sheet below the
+title** (§5.45 grammar, morphing capsule) — one tab per current dropdown
+child, each tab hosting that service's summary card(s)/link-outs. Keep the
+existing child routes reachable exactly as today (tabs link/route to them —
+follow the RMHLadder link-tab pattern if children are separate routes, or
+`?tab=` panels if they are content sections). i18n via existing nav strings
++ `t()` for new ones; mobile: single column, tab sheet scrolls. Verify the
+"RMH Ventures" sibling group for the same treatment IF its children are the
+same shape — otherwise leave and note.
+
+### 15.6 Liquid pop — metaball open/close for floating UI (owner follow-up; runs as its own phase after §15.1–15.5)
+
+**Owner ask:** popovers, menus, dropdowns (and selects where technically
+possible) must be consistently styled — proper opacity, no content ghosting
+— and open/close with a **liquid-glass metaball animation**: the panel
+morphs out of its trigger like a droplet budding off, and reabsorbs on
+close.
+
+**Hard constraint (from §5.47):** an element with `backdrop-filter` must
+never sit inside a `filter: url(#glass-goo)` subtree (it re-rasterizes and
+breaks the backdrop sampling). `.glass-overlay` panels blur their backdrop —
+so the panel itself can never be goo-filtered. The morph is therefore a
+**two-act structure**:
+
+1. **Act 1 — the bud (goo, ~160–200ms):** a dedicated goo underlay (fixed-
+   positioned, `contain: layout paint`, `filter: url(#glass-goo)`) contains
+   two solid accentless tint blobs (`--site-glass-tint-strong` over
+   `--site-surface-opaque` mix — NO backdrop blur): a small disc anchored on
+   the trigger and a growing rounded-rect scaling from the trigger toward
+   the panel's final rect. Blur+threshold fuses them: the panel visibly buds
+   out of the trigger with a liquid neck that pinches off as separation
+   completes.
+2. **Act 2 — the settle (glass, ~120ms overlap):** the real `.glass-overlay`
+   panel fades/scales in **on top** of the blob during the last frames
+   (crossfade), then the underlay unmounts. Close plays the acts in reverse
+   with shorter timings (~120ms total — closes must feel snappier than
+   opens). Content (menu items/text) rides the real panel only — never
+   filtered.
+
+**Implementation shape:** one shared primitive — `components/ui/liquid-pop.tsx`
+(`useLiquidPop({ triggerRef, panelRef, open })` returning the underlay
+portal + data-state hooks) — consumed by: the Radix popover wrapper
+(`radix-popover-animate` sites), `NotificationsPopover`, the sidebar user
+menu, the feed overflow/repost/attachment menus and hand-rolled dropdowns
+(the Phase-D `.glass-overlay` migration list is the inventory),
+`EmojiPickerPanel`, `ReactionMenu`, and autocomplete panels
+(`MentionTextarea`, `HandleInput`). **Tooltips are exempt** (too frequent,
+too small — keep the existing fade). **Native `<select>` popups cannot be
+styled or animated** (OS-rendered) — the `Select` primitive stays native by
+deliberate v1 decision; document the exemption in design-language.md §5.2
+rather than converting to a custom listbox (an a11y-significant rewrite —
+propose separately if the owner wants it).
+
+**Opacity/consistency sweep (same phase):** audit every floating panel for
+the L4 grammar — `.glass-overlay` background (62% bg mix — no thinner
+ad-hoc tints), readable over bright aurora corners in Glass Light/Sepia,
+`shadow-site`, hairline+glint edge. Fix stragglers (grep for floating
+panels still on `bg-site-bg`/`bg-site-surface` with manual shadows).
+
+**Gates:** reduced motion → instant open/close (no goo, no scale);
+perf-lite → skip Act 1, keep the existing fade; high-contrast → no goo, no
+fade-scale (opaque panel, instant). Budget: the underlay exists only while
+animating (~200ms), one at a time in practice — no standing cost. Escape/
+outside-click during Act 1 must resolve cleanly (cancel → reverse from
+current progress or instant-close; never a stuck blob).
+
+**Acceptance:** mid-animation frame captures showing the neck between
+trigger and panel on open; menus in Glass Light show no content ghosting;
+rapid open/close spam (10× toggle) leaves no orphaned underlays.
+
 ### 15.5 Sticky stacking (owner follow-up, same round)
 
 Pages with 2+ sticky elements in one column (header capsule + sticky tab
