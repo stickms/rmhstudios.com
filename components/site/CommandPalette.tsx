@@ -45,6 +45,7 @@ import {
   Search,
   SlidersHorizontal,
   CornerDownLeft,
+  HelpCircle,
   type LucideIcon,
 } from 'lucide-react';
 import { games } from '@/lib/games';
@@ -132,14 +133,21 @@ const PAGES: Array<Omit<Command, 'section'>> = [
     label: 'Communities',
     href: '/communities',
     icon: Users,
-    keywords: 'groups clubs',
+    keywords: 'groups clubs events spaces live audio rooms rsvp',
   },
   {
     id: 'page-store',
     label: 'Store',
     href: '/store',
     icon: ShoppingBag,
-    keywords: 'shop marketplace buy',
+    keywords: 'shop marketplace buy market listings trade sell cosmetics',
+  },
+  {
+    id: 'page-arcade',
+    label: 'Arcade',
+    href: '/arcade',
+    icon: Gamepad2,
+    keywords: 'games daily challenge leaderboard ranking',
   },
   {
     id: 'page-predictions',
@@ -213,6 +221,13 @@ const PAGES: Array<Omit<Command, 'section'>> = [
     href: '/ranked',
     icon: Trophy,
     keywords: 'leaderboard elo competitive',
+  },
+  {
+    id: 'page-help',
+    label: 'Help',
+    href: '/help',
+    icon: HelpCircle,
+    keywords: 'help support concierge assistant faq questions guide contact',
   },
   {
     id: 'page-settings',

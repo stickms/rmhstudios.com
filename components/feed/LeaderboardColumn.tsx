@@ -39,9 +39,12 @@ function rankClass(rank: number): string {
 export function LeaderboardColumn({
   initialData,
   signedIn,
+  hideHeader = false,
 }: {
   initialData: LeaderboardData;
   signedIn: boolean;
+  /** Hide the built-in ColumnHeader (e.g. when hosted under the /arcade tab bar). */
+  hideHeader?: boolean;
 }) {
   const { t } = useTranslation('feed');
   const [scope, setScope] = useState<Scope>('global');
@@ -81,7 +84,9 @@ export function LeaderboardColumn({
 
   return (
     <div className="min-h-screen">
-      <ColumnHeader icon={Trophy} title={t('leaderboard', { defaultValue: 'Leaderboard' })} />
+      {!hideHeader && (
+        <ColumnHeader icon={Trophy} title={t('leaderboard', { defaultValue: 'Leaderboard' })} />
+      )}
 
       <div className="space-y-4 p-4">
         {/* Scope toggle */}

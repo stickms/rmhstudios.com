@@ -9,7 +9,7 @@ interface NotificationBadgeProps {
 
 /**
  * Canonical unread-count pill. Replaces the hardcoded `bg-red-500 text-white`
- * badges in LeftSidebar / MobileNav / InboxColumn with a single
+ * badges in LeftSidebar / InboxColumn with a single
  * token-driven component.
  */
 export function NotificationBadge({ count, max = 99, className }: NotificationBadgeProps) {

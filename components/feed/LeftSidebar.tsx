@@ -32,13 +32,9 @@ import {
   Car,
   Building2,
   Briefcase,
-  Trophy,
-  ListMusic,
   Gamepad2,
-  Coins,
-  CalendarDays,
-  Store,
-  Radio,
+  LayoutGrid,
+  Rocket,
   HelpCircle,
   type LucideIcon,
 } from 'lucide-react';
@@ -95,7 +91,12 @@ type NavItem = NavLeaf | NavGroup;
 const isGroup = (item: NavItem): item is NavGroup => 'group' in item;
 
 // Top-level nav. Singles stay flat; related destinations are merged into
-// collapsible groups to keep the rail short.
+// collapsible groups to keep the rail short. "Services" collects our real
+// standalone product verticals (each gets equal billing as a group child);
+// "RMH Ventures" collects the external brand/offering microsites. Former
+// "More" destinations that were folded into a host page live there now:
+// Leaderboard→Arcade, Spaces/Events→Communities, Market→Store, Studio→Creator
+// Studio, Playlists→Library, Help→user menu + command palette.
 const NAV: NavItem[] = [
   { href: '/', tKey: 'nav-home', label: 'Home', icon: Home },
   { href: '/search', tKey: 'nav-explore', label: 'Explore', icon: Compass },
@@ -113,23 +114,24 @@ const NAV: NavItem[] = [
   { href: '/store', tKey: 'nav-store', label: 'Store', icon: ShoppingBag },
   { href: '/arcade', tKey: 'nav-arcade', label: 'Arcade', icon: Gamepad2 },
   { href: '/predictions', tKey: 'nav-predictions', label: 'Predictions', icon: TrendingUp },
+  { href: '/developer', tKey: 'nav-developer', label: 'Developer', icon: Terminal },
   {
-    group: 'more',
-    tKey: 'nav-more',
-    label: 'More',
-    icon: MoreHorizontal,
+    group: 'services',
+    tKey: 'nav-services',
+    label: 'Services',
+    icon: LayoutGrid,
     children: [
-      { href: '/leaderboard', tKey: 'nav-leaderboard', label: 'Leaderboard', icon: Trophy },
-      { href: '/spaces', tKey: 'nav-spaces', label: 'Spaces', icon: Radio },
-      { href: '/events', tKey: 'nav-events', label: 'Events', icon: CalendarDays },
-      { href: '/market', tKey: 'nav-market', label: 'Market', icon: Store },
-      { href: '/creator-studio', tKey: 'nav-studio', label: 'Studio', icon: Coins },
-      { href: '/help', tKey: 'nav-help', label: 'Help', icon: HelpCircle },
-      { href: '/playlists', tKey: 'nav-playlists', label: 'Playlists', icon: ListMusic },
       { href: '/homes', tKey: 'nav-homes', label: 'RMHHomes', icon: Building2 },
       { href: '/rmhladder', tKey: 'nav-rmhladder', label: 'RMHLadder', icon: Briefcase },
       { href: '/rideshare', tKey: 'nav-rideshare', label: 'Rideshare', icon: Car },
-      { href: '/developer', tKey: 'nav-developer', label: 'Developer', icon: Terminal },
+    ],
+  },
+  {
+    group: 'ventures',
+    tKey: 'nav-ventures',
+    label: 'RMH Ventures',
+    icon: Rocket,
+    children: [
       { href: '/rmh-capital', tKey: 'nav-rmh-capital', label: 'RMH Capital', icon: Landmark },
       { href: '/rmh-pmc', tKey: 'nav-rmh-pmc', label: 'RMH PMC', icon: Shield },
       {
@@ -617,6 +619,14 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 >
                   <Bookmark className="w-4 h-4" />
                   <span>{t('bookmarks', { defaultValue: 'Bookmarks' })}</span>
+                </Link>
+                <Link
+                  to="/help"
+                  onClick={() => setShowUserMenu(false)}
+                  className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  <span>{t('help', { defaultValue: 'Help' })}</span>
                 </Link>
                 <Link
                   to="/settings"

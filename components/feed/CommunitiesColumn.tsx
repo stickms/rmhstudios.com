@@ -40,8 +40,15 @@ function formatCount(n: number): string {
 
 export function CommunitiesColumn({
   initialCommunities = [],
+  embedded = false,
 }: {
   initialCommunities?: Community[];
+  /**
+   * When rendered as a tab inside another page (e.g. `/communities`'s tab shell),
+   * the parent already owns a sticky bar + the mobile drawer button — so the
+   * column's own header drops both to avoid a double sticky row / duplicate menu.
+   */
+  embedded?: boolean;
 }) {
   const navigate = useNavigate();
   const { t } = useTranslation('feed');
@@ -125,6 +132,8 @@ export function CommunitiesColumn({
       <ColumnHeader
         icon={Users}
         title={t('communities-heading', { defaultValue: 'Communities' })}
+        sticky={!embedded}
+        showMenuButton={!embedded}
         actions={
           session && (
             <Button size="sm" variant="accent" onClick={() => setCreateOpen(true)}>
