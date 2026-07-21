@@ -31,6 +31,9 @@ const KNOWN_UNTRANSLATED: Record<string, string[]> = {
     'menu-audience',
     'menu-content-warning',
     'menu-reply-control',
+    // RightSidebar footer link to the standalone DIA site; awaiting the
+    // DeepSeek translate pipeline. Runtime falls back to English per key.
+    'internal-affairs',
     // Profile-customization page + settings strings added in #526; awaiting the
     // DeepSeek translate pipeline. Remove once `pnpm i18n:translate &&
     // pnpm i18n:resources` has been run and the catalogs committed.
