@@ -65,9 +65,15 @@ func main() {
 		return worker.Deps{DB: database, Logger: logger.With("worker", name), Metrics: metricsByWorker[name], Cfg: cfg}
 	}
 
+	// Bound the post-SIGTERM drain well under Compose's stop_grace_period (90s
+	// for supervisor). An unbounded g.Wait() would let one stuck worker hang the
+	// process until Compose SIGKILLs it, throwing away the clean-shutdown path.
+	drainGrace := config.GetDuration("SHUTDOWN_DRAIN_GRACE", 80*time.Second)
+
 	logger.Info("supervisor starting", "workers", len(runs))
-	if err := runGroup(ctx, runs, deps); err != nil {
+	if err := runGroup(ctx, runs, deps, logger, drainGrace); err != nil {
 		logger.Error("supervisor exiting on worker error", "error", err)
 		os.Exit(1)
 	}
+	logger.Info("supervisor stopped")
 }
