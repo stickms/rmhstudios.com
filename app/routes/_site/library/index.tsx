@@ -11,7 +11,7 @@
  * and to migrate the bundled catalog into object storage.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { createServerFn } from '@tanstack/react-start';
@@ -34,6 +34,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { SPRING } from '@/lib/motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useLiquidMorph } from '@/components/ui/liquid-morph';
 import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
@@ -156,6 +158,15 @@ function Library() {
   const navigate = useNavigate();
   const setView = (next: LibraryView) =>
     void navigate({ to: '/library', search: next === 'all' ? {} : { view: next }, replace: true });
+  const reduced = useReducedMotion();
+  // §15.1/§5.47: the flowing lib-nav capsule carries the shared morph (velocity
+  // squash + gooey trailing droplet), the same as every other converged strip.
+  const navCapsuleRef = useRef<HTMLSpanElement>(null);
+  const { squashStyle: navSquash, underlay: navUnderlay } = useLiquidMorph({
+    capsuleRef: navCapsuleRef,
+    axis: 'x',
+    reduced,
+  });
   // A section renders when we're on "All" or on its own category.
   const shows = (id: LibraryView) => view === 'all' || view === id;
   const session = useSession();
@@ -426,7 +437,9 @@ function Library() {
             className="lib-nav glass-fill glass-bevel-sm w-fit rounded-full p-1"
             aria-label={t('sections-label', { defaultValue: 'Library sections' })}
           >
-            <div className="lib-nav__scroll" role="tablist">
+            <div className="lib-nav__scroll relative" role="tablist">
+              {/* Goo underlay (§5.47) — capsule-only, behind the chips; labels above. */}
+              {navUnderlay}
               {(
                 [
                   { id: 'all', label: t('cat-all', { defaultValue: 'All' }), icon: LayoutGrid },
@@ -468,12 +481,17 @@ function Library() {
                     onClick={() => setView(id)}
                   >
                     {active && (
+                      // Outer span owns the layoutId position morph; the inner
+                      // chip-bg carries the material + velocity squash (§5.47).
                       <motion.span
+                        ref={navCapsuleRef}
                         layoutId="lib-nav-active"
-                        className="lib-nav__chip-bg"
-                        transition={SPRING.soft}
+                        className="absolute inset-0 z-0"
+                        transition={reduced ? { duration: 0 } : SPRING.soft}
                         aria-hidden="true"
-                      />
+                      >
+                        <motion.span className="lib-nav__chip-bg" style={navSquash} />
+                      </motion.span>
                     )}
                     <span className="lib-nav__chip-label">
                       <Icon aria-hidden="true" />

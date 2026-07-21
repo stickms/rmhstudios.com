@@ -31,6 +31,7 @@ import { m as motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { SPRING } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useLiquidMorph } from './liquid-morph';
 
 export interface LiquidTab {
@@ -38,8 +39,12 @@ export interface LiquidTab {
   /** Already-translated label text. */
   label: string;
   icon?: LucideIcon;
-  /** Optional trailing count pill. */
+  /** Optional trailing count pill (plain number). */
   count?: number;
+  /** Optional unread-count danger badge (overrides `count` styling). */
+  badge?: number;
+  /** Disabled tabs can't be selected and are skipped by the roving nav. */
+  disabled?: boolean;
 }
 
 interface LiquidTabsProps {
@@ -54,6 +59,12 @@ interface LiquidTabsProps {
    * caller owns the container. Turn off where the caller supplies its own sheet.
    */
   sheet?: boolean;
+  /**
+   * Stretch every tab to equal width and the sheet to the full column width —
+   * for section switchers that serve as a page's primary chrome (Inbox, Journey)
+   * rather than a compact w-fit control.
+   */
+  fullWidth?: boolean;
   /** Accessible name for the tablist (already translated). */
   'aria-label'?: string;
 }
@@ -65,6 +76,7 @@ export function LiquidTabs({
   size = 'default',
   className,
   sheet = true,
+  fullWidth = false,
   'aria-label': ariaLabel,
 }: LiquidTabsProps) {
   const uid = useId();
@@ -81,18 +93,32 @@ export function LiquidTabs({
   const { squashStyle, underlay } = useLiquidMorph({ capsuleRef, axis: 'x', reduced });
 
   // Roving keyboard nav (WAI-ARIA tabs pattern, mirrored from the creator-studio
-  // tab bar): ←/→/↑/↓ move, Home/End jump to the ends, and focus follows.
+  // tab bar): ←/→/↑/↓ move, Home/End jump to the ends, and focus follows. Disabled
+  // tabs are skipped in every direction.
+  const step = (from: number, dir: 1 | -1) => {
+    const n = tabs.length;
+    for (let i = 1; i <= n; i++) {
+      const j = ((from + dir * i) % n + n) % n;
+      if (!tabs[j].disabled) return j;
+    }
+    return from;
+  };
+  const edge = (dir: 1 | -1) => {
+    if (dir === 1) return tabs.findIndex((t) => !t.disabled);
+    for (let i = tabs.length - 1; i >= 0; i--) if (!tabs[i].disabled) return i;
+    return -1;
+  };
   const onKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const idx = tabs.findIndex((t) => t.id === value);
     if (idx < 0) return;
     let next = idx;
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (idx + 1) % tabs.length;
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')
-      next = (idx - 1 + tabs.length) % tabs.length;
-    else if (e.key === 'Home') next = 0;
-    else if (e.key === 'End') next = tabs.length - 1;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = step(idx, 1);
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = step(idx, -1);
+    else if (e.key === 'Home') next = edge(1);
+    else if (e.key === 'End') next = edge(-1);
     else return;
     e.preventDefault();
+    if (next < 0 || next === idx) return;
     const nextId = tabs[next].id;
     onChange(nextId);
     requestAnimationFrame(() => document.getElementById(tabId(nextId))?.focus());
@@ -106,7 +132,11 @@ export function LiquidTabs({
       aria-label={ariaLabel}
       onKeyDown={onKeyDown}
       data-slot="liquid-tabs"
-      className={cn('relative inline-flex items-center gap-1', !sheet && className)}
+      className={cn(
+        'relative flex items-center gap-1',
+        fullWidth ? 'w-full' : 'inline-flex',
+        !sheet && className,
+      )}
     >
       {/* Goo underlay (§5.47) — capsule-only, behind the tabs; labels stay above. */}
       {underlay}
@@ -120,11 +150,14 @@ export function LiquidTabs({
             type="button"
             role="tab"
             aria-selected={active}
+            aria-disabled={tab.disabled || undefined}
+            disabled={tab.disabled}
             tabIndex={active ? 0 : -1}
             onClick={() => onChange(tab.id)}
             className={cn(
-              'relative inline-flex items-center gap-1.5 rounded-full font-medium whitespace-nowrap transition-colors',
+              'relative inline-flex items-center justify-center gap-1.5 rounded-full font-medium whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-40',
               pad,
+              fullWidth && 'flex-1',
               active ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text',
             )}
           >
@@ -150,6 +183,9 @@ export function LiquidTabs({
             {typeof tab.count === 'number' && (
               <span className="relative z-1 text-xs opacity-70 tabular-nums">{tab.count}</span>
             )}
+            {typeof tab.badge === 'number' && (
+              <NotificationBadge count={tab.badge} className="relative z-1" />
+            )}
           </button>
         );
       })}
@@ -164,7 +200,11 @@ export function LiquidTabs({
   return (
     <div
       data-slot="liquid-tabs-sheet"
-      className={cn('glass-fill glass-bevel-sm w-fit rounded-full p-1', className)}
+      className={cn(
+        'glass-fill glass-bevel-sm rounded-full p-1',
+        fullWidth ? 'w-full' : 'w-fit',
+        className,
+      )}
     >
       {list}
     </div>

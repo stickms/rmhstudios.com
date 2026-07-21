@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Trophy, Plus, Coins, Users } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSession } from '@/components/Providers';
@@ -23,17 +24,13 @@ export const Route = createFileRoute('/_site/tournaments/')({
   component: TournamentsPage,
 });
 
-const TABS = [
-  { key: 'REGISTRATION', label: 'Open' },
-  { key: 'LIVE', label: 'Live' },
-  { key: 'COMPLETE', label: 'Finished' },
-] as const;
+type TournamentStatus = 'REGISTRATION' | 'LIVE' | 'COMPLETE';
 
 function TournamentsPage() {
   const { t } = useTranslation('c-tournaments');
   const { data: session } = useSession();
   const viewerId = session?.user?.id ?? null;
-  const [status, setStatus] = useState<(typeof TABS)[number]['key']>('REGISTRATION');
+  const [status, setStatus] = useState<TournamentStatus>('REGISTRATION');
   const [items, setItems] = useState<SerializedTournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -66,26 +63,18 @@ function TournamentsPage() {
         ) : null
       }
     >
-      <div className="flex gap-2 mb-4" role="tablist">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            role="tab"
-            aria-selected={status === tab.key}
-            onClick={() => setStatus(tab.key)}
-            className={`px-3.5 py-1.5 rounded-site text-sm font-medium transition-colors ${
-              status === tab.key
-                ? 'bg-site-accent-dim text-site-accent'
-                : 'text-site-text-dim hover:text-site-text hover:bg-site-surface-hover'
-            }`}
-          >
-            {tab.key === 'REGISTRATION'
-              ? t('tab-open', { defaultValue: 'Open' })
-              : tab.key === 'LIVE'
-                ? t('tab-live', { defaultValue: 'Live' })
-                : t('tab-done', { defaultValue: 'Finished' })}
-          </button>
-        ))}
+      {/* §15.1: unified sheet + flowing-capsule tab strip below the page title. */}
+      <div className="mt-3 mb-3">
+        <LiquidTabs
+          aria-label={t('title', { defaultValue: 'Tournaments' })}
+          value={status}
+          onChange={(id) => setStatus(id as TournamentStatus)}
+          tabs={[
+            { id: 'REGISTRATION', label: t('tab-open', { defaultValue: 'Open' }) },
+            { id: 'LIVE', label: t('tab-live', { defaultValue: 'Live' }) },
+            { id: 'COMPLETE', label: t('tab-done', { defaultValue: 'Finished' }) },
+          ]}
+        />
       </div>
 
       {loading ? (

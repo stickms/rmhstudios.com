@@ -3,7 +3,7 @@
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { RMHarkActions } from './RMHarkActions';
 import { useEffect, useRef, useState, useMemo } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useRouter } from '@tanstack/react-router';
 import { Repeat2, BadgeCheck, ShieldCheck, Pin } from 'lucide-react';
 import { toast } from 'sonner';
 import { RMHarkOverflowMenu } from './RMHarkOverflowMenu';
@@ -53,6 +53,7 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
   const viewTracked = useRef(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  const router = useRouter();
   const actualId = item.actualId ?? item.id;
   // Read the viewer from the ONE root-level session subscription (shared
   // context) instead of each card opening its own authClient.useSession().
@@ -180,6 +181,17 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     return () => io.disconnect();
   }, [actualId, item.pending]);
 
+  // §15.2: this card is a div (not a <Link>), so it never got the router's
+  // `defaultPreload: 'intent'` warming — the detail loader ran cold on click,
+  // stalling the VT freeze into a choppy open. Warm the destination on hover/
+  // focus-in so the loader is usually cached before the click and the liquid
+  // morph runs inside the §15.2 readiness budget. preloadRoute is deduped by
+  // the router's 30s preload stale time, so repeat hovers are free.
+  const warmDetail = () => {
+    if (item.pending || item.deletedAt) return;
+    void router.preloadRoute({ to: postHref(item.user, actualId) }).catch(() => {});
+  };
+
   const handleCardClick = (e: React.MouseEvent) => {
     const target = e.target as HTMLElement;
     if (target.closest('a') || target.closest('button') || target.closest('[role="button"]')) {
@@ -217,6 +229,8 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
           : 'glass-interactive cursor-pointer'
       }`}
       onClick={item.pending ? undefined : handleCardClick}
+      onMouseEnter={item.pending ? undefined : warmDetail}
+      onFocusCapture={item.pending ? undefined : warmDetail}
       aria-busy={item.pending || undefined}
     >
       {/* Optimistic post — awaiting the server round-trip. */}

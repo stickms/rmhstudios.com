@@ -7,6 +7,7 @@ import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { useSession } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Spinner } from '@/components/ui/spinner';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getArcadeState } from '@/lib/game/results.server';
@@ -75,31 +76,16 @@ function ArcadePage() {
             no big section header stacks under the tabs. */}
         <MobileTopBar title={title} />
 
-        <div
-          role="tablist"
-          aria-label={title}
-          className="flex items-center gap-1 border-b border-site-border px-3"
-        >
-          {tabs.map(({ id, label, icon: Icon }) => {
-            const active = tab === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setTab(id)}
-                className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                  active
-                    ? 'border-site-accent text-site-text'
-                    : 'border-transparent text-site-text-dim hover:text-site-text'
-                }`}
-              >
-                <Icon className="size-4" aria-hidden />
-                {label}
-              </button>
-            );
-          })}
+        {/* §15.1: unified sheet + flowing-capsule tab strip (was a border-b
+            underline row). This is the arcade's primary chrome on every
+            breakpoint; content renders header-less beneath it. */}
+        <div className="mt-3 px-2 tab-sheet-scroll md:px-3">
+          <LiquidTabs
+            aria-label={title}
+            value={tab}
+            onChange={(id) => setTab(id as ArcadeTab)}
+            tabs={tabs}
+          />
         </div>
 
         {tab === 'leaderboard' ? (

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ShoppingBag, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { Spinner } from '@/components/ui/spinner';
 import { toast } from 'sonner';
@@ -194,27 +195,13 @@ export function ShopColumn({
           scrolls horizontally in the shared tab-sheet track (overflow + edge fade,
           §5.5x A.4); ARIA/state are unchanged. */}
       <div className="mt-3 px-3 tab-sheet-scroll">
-        <div
-          className="glass-fill glass-bevel-sm flex w-fit flex-nowrap items-center gap-1 rounded-full p-1"
-          role="tablist"
+        <LiquidTabs
+          size="sm"
           aria-label={t('shop-categories-label', { defaultValue: 'Shop categories' })}
-        >
-          {KIND_ORDER.map((k) => (
-            <button
-              key={k}
-              role="tab"
-              aria-selected={tab === k}
-              onClick={() => setTab(k)}
-              className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                tab === k
-                  ? 'bg-site-accent text-(--site-accent-fg)'
-                  : 'text-site-text-muted hover:bg-site-surface hover:text-site-text'
-              }`}
-            >
-              {KIND_LABELS[k]}
-            </button>
-          ))}
-        </div>
+          value={tab}
+          onChange={(id) => setTab(id as ShopItemKind)}
+          tabs={KIND_ORDER.map((k) => ({ id: k, label: KIND_LABELS[k] }))}
+        />
       </div>
 
       {loading ? (

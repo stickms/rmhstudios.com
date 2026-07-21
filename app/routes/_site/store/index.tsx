@@ -12,11 +12,12 @@
  * (Note: `/store/$userid` is a separate per-creator storefront route — leave
  * it untouched.)
  */
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
+import { m as motion } from 'framer-motion';
 import { type LucideIcon, ShoppingBag, Store as StoreIcon } from 'lucide-react';
 import { auth } from '@/lib/auth';
 import { getUserTier, type Tier } from '@/lib/entitlements';
@@ -25,6 +26,9 @@ import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { MembershipPanel } from '@/components/membership/MembershipPanel';
 import { ShopColumn } from '@/components/feed/ShopColumn';
 import { MarketColumn } from '@/components/market/MarketColumn';
+import { useLiquidMorph } from '@/components/ui/liquid-morph';
+import { SPRING } from '@/lib/motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { getShopData } from '@/lib/shop/list.server';
 import { browse } from '@/lib/market/market.server';
@@ -74,6 +78,13 @@ function Store() {
   const { tier: currentTier, shop, listings, viewerId } = Route.useLoaderData();
   const { tab = 'shop' } = Route.useSearch();
   const navigate = useNavigate();
+  const reduced = useReducedMotion();
+  // §15.1/§5.47: the active Shop/Market capsule flows between tabs with the
+  // velocity squash + gooey trailing droplet, the same morph every converged
+  // strip carries. Custom markup (not LiquidTabs) keeps the aria-controls
+  // tabpanel wiring + ?tab= mirroring byte-identical.
+  const capsuleRef = useRef<HTMLSpanElement>(null);
+  const { squashStyle, underlay } = useLiquidMorph({ capsuleRef, axis: 'x', reduced });
 
   const setTab = useCallback(
     (next: StoreTab) => {
@@ -115,45 +126,70 @@ function Store() {
       >
         <MobileTopBar title={t('store-title', { defaultValue: 'Store' })} />
 
-        {/* Shop / Market tabs → standalone glass sheet (§5.45), sheet-wrapped but
-            keeping the ?tab= mirroring + roving nav + underline active marker. */}
-        <div className="px-2 pt-3 md:px-3">
-          <div
-            className="glass-fill glass-bevel-sm flex w-fit items-center gap-1 rounded-full p-1"
-            role="tablist"
-            aria-label={t('store-title', { defaultValue: 'Store' })}
-            onKeyDown={onTabsKeyDown}
-          >
-            {tabs.map(({ id, label, icon: Icon }) => {
-              const active = tab === id;
-              return (
-                <button
-                  key={id}
-                  id={`store-tab-${id}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-controls={`store-panel-${id}`}
-                  tabIndex={active ? 0 : -1}
-                  onClick={() => setTab(id)}
-                  className={cn(
-                    'relative inline-flex items-center gap-2 px-4 py-3 text-sm font-semibold transition-colors',
-                    active ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text',
-                  )}
-                >
-                  <Icon className="h-4 w-4" aria-hidden="true" />
-                  {label}
-                  {active && (
-                    <span
-                      className="absolute inset-x-2 bottom-0 h-0.5 rounded-full bg-site-accent"
-                      aria-hidden="true"
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+        {/* §15.1: a proper floating "Store" page-title capsule (PageLayout-style)
+            on desktop — the store previously had no title above the tabs. It is
+            NON-sticky on purpose: the Shop/Market panels each own a sticky section
+            header (ColumnHeader top-2), so a sticky page title here would stack on
+            top of them (§15.5 one-sticky-group rule). Mobile keeps MobileTopBar. */}
+        <div className="mx-2 mt-2 hidden rounded-site glass-chrome px-4 py-3 shadow-site-sm md:mx-3 md:mt-3 md:block">
+          <h1 className="font-(family-name:--site-font-display) text-2xl font-semibold tracking-[-0.022em] text-site-text">
+            {t('store-title', { defaultValue: 'Store' })}
+          </h1>
         </div>
+
+        {/* §15.1: Shop/Market as the unified sheet + flowing-capsule strip, placed
+            BELOW the page-title capsule (was a bare bottom-underline marker). ?tab=
+            mirroring, roving nav and aria-controls wiring are byte-identical. */}
+        <div className="mt-3 px-2 md:px-3">
+        <div
+          className="glass-fill glass-bevel-sm relative flex w-fit items-center gap-1 rounded-full p-1"
+          role="tablist"
+          aria-label={t('store-title', { defaultValue: 'Store' })}
+          onKeyDown={onTabsKeyDown}
+        >
+          {/* Goo underlay (§5.47) — capsule-only, behind the tabs; labels above. */}
+          {underlay}
+          {tabs.map(({ id, label, icon: Icon }) => {
+            const active = tab === id;
+            return (
+              <button
+                key={id}
+                id={`store-tab-${id}`}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                aria-controls={`store-panel-${id}`}
+                tabIndex={active ? 0 : -1}
+                onClick={() => setTab(id)}
+                className={cn(
+                  'relative inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold transition-colors',
+                  active ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text',
+                )}
+              >
+                {active && (
+                  // Outer element owns the layoutId position morph; the inner span
+                  // carries the material + velocity squash so scaling never fights
+                  // the projection transform (§5.47).
+                  <motion.span
+                    ref={capsuleRef}
+                    layoutId="store-tab-capsule"
+                    aria-hidden
+                    className="absolute inset-0 z-0"
+                    transition={reduced ? { duration: 0 } : SPRING.snappy}
+                  >
+                    <motion.span
+                      className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
+                      style={squashStyle}
+                    />
+                  </motion.span>
+                )}
+                <Icon className="relative z-1 h-4 w-4" aria-hidden="true" />
+                <span className="relative z-1">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
         {tab === 'shop' && (
           <div role="tabpanel" id="store-panel-shop" aria-labelledby="store-tab-shop">

@@ -11,7 +11,7 @@
  * This Creator Studio lives at `/create` to avoid colliding with it.)
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { type LucideIcon, FileText, Gamepad2, AppWindow, Boxes, Bot, Coins } from 'lucide-react';
@@ -19,6 +19,7 @@ import { m as motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { SPRING } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useLiquidMorph } from '@/components/ui/liquid-morph';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
@@ -74,6 +75,11 @@ function CreatorStudio() {
   const { tab = 'pages' } = Route.useSearch();
   const navigate = useNavigate();
   const reduced = useReducedMotion();
+  // §15.1/§5.47: the active tab capsule carries the shared morph (velocity squash
+  // + gooey trailing droplet). Custom markup keeps the aria-controls tabpanel
+  // wiring + roving nav that LiquidTabs doesn't model.
+  const capsuleRef = useRef<HTMLSpanElement>(null);
+  const { squashStyle, underlay } = useLiquidMorph({ capsuleRef, axis: 'x', reduced });
 
   const setTab = useCallback(
     (next: StudioTab) => {
@@ -135,11 +141,13 @@ function CreatorStudio() {
 
         <div className="cstudio-tabs">
           <div
-            className="cstudio-tabs__scroll"
+            className="cstudio-tabs__scroll relative"
             role="tablist"
             aria-label={t('creator-studio', { defaultValue: 'Creator Studio' })}
             onKeyDown={onTabsKeyDown}
           >
+            {/* Goo underlay (§5.47) — capsule-only, behind the tabs; labels above. */}
+            {underlay}
             {tabs.map(({ id, label, icon: Icon }) => {
               const active = tab === id;
               return (
@@ -154,17 +162,25 @@ function CreatorStudio() {
                   className={`cstudio-tab ${active ? 'is-active' : ''}`}
                   onClick={() => setTab(id)}
                 >
-                  {/* Flowing active capsule (§5.4): a layoutId motion element kept
-                      ON the existing markup so the richer tab/tabpanel ARIA
+                  {/* Flowing active capsule (§5.4/§5.47): a layoutId motion element
+                      kept ON the existing markup so the richer tab/tabpanel ARIA
                       (aria-controls + aria-labelledby) survives — LiquidTabs has no
-                      aria-controls, so migrating to it would drop that wiring. */}
+                      aria-controls, so migrating to it would drop that wiring. The
+                      outer span owns the position morph; the inner span carries the
+                      material + velocity squash (paired with the goo underlay). */}
                   {active && (
                     <motion.span
+                      ref={capsuleRef}
                       layoutId="cstudio-tab-capsule"
                       aria-hidden
-                      className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
+                      className="absolute inset-0 z-0"
                       transition={reduced ? { duration: 0 } : SPRING.snappy}
-                    />
+                    >
+                      <motion.span
+                        className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
+                        style={squashStyle}
+                      />
+                    </motion.span>
                   )}
                   <Icon className="cstudio-tab__icon relative z-1" aria-hidden="true" />
                   <span className="relative z-1">{label}</span>

@@ -48,12 +48,14 @@ import {
 } from 'framer-motion';
 
 const STRETCH_K = 0.0004; // |velocity px/s| → stretch factor (§5.47 sketch)
-const STRETCH_MAX = 0.35; // volume-conserving cap
-// Trail droplet spring ≈ ½ the snappy capsule stiffness (SPRING.snappy = 500) so
-// it lags the capsule and the goo reads the lag as a stretching tail.
-const TRAIL_SPRING = { stiffness: 250, damping: 30, mass: 0.9 } as const;
-const OPACITY_AT = 1200; // px/s at which the goo tail reaches its opacity cap
-const OPACITY_CAP = 0.5; // keep the transient tail subtle behind the real capsule
+const STRETCH_MAX = 0.5; // §15.3: volume-conserving cap raised to 0.5 for tab-scale jumps
+// §15.3: trail droplet spring ≈ ⅓ the snappy capsule stiffness (SPRING.snappy =
+// 500) so it lags the capsule noticeably — the goo reads the lag as a longer,
+// clearly-visible stretching tail (½-stiffness was too tight to see mid-switch).
+const TRAIL_SPRING = { stiffness: 165, damping: 26, mass: 1 } as const;
+const OPACITY_AT = 600; // §15.3: reach the opacity cap sooner so the teardrop is
+const OPACITY_CAP = 0.7; //  seen for most of the motion, not glimpsed at peak speed
+const DROP_FACTOR = 0.7; // §15.3: droplet ≈ 70% of the capsule's short side (height)
 
 interface LiquidMorphOptions {
   /** Ref to the OUTER `layoutId` capsule element (the projected box we sample). */
@@ -119,7 +121,7 @@ export function useLiquidMorph({ capsuleRef, axis, reduced }: LiquidMorphOptions
   const dropCx = useSpring(cx, TRAIL_SPRING);
   const dropCy = useSpring(cy, TRAIL_SPRING);
   const short = useTransform([mw, mh], ([w, h]) => Math.min(w as number, h as number));
-  const dropD = useTransform(short, (s) => s * 0.82);
+  const dropD = useTransform(short, (s) => s * DROP_FACTOR);
   const dropX = useTransform([dropCx, dropD], ([x, d]) => (x as number) - (d as number) / 2);
   const dropY = useTransform([dropCy, dropD], ([y, d]) => (y as number) - (d as number) / 2);
   const gooOpacity = useTransform(v, (val) => Math.min(Math.abs(val) / OPACITY_AT, OPACITY_CAP));

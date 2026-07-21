@@ -2,9 +2,24 @@
 
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 
-type VTDocument = Document & {
-  startViewTransition?: (cb: () => void | Promise<void>) => { finished: Promise<void> };
+type ViewTransition = {
+  finished: Promise<void>;
+  ready?: Promise<void>;
+  /** Drops the animation but still commits the DOM update. Chromium-only today. */
+  skipTransition?: () => void;
 };
+type VTDocument = Document & {
+  startViewTransition?: (cb: () => void | Promise<void>) => ViewTransition;
+};
+
+// §15.2 readiness budget: `startViewTransition` freezes rendering until the
+// update callback's promise resolves. A slow destination loader stalls that
+// freeze, and the entrance work after it reads as the morph "cancelling"
+// (the owner's choppy-open complaint). If the update hasn't resolved within
+// this budget we `skipTransition()` — instant swap + normal staggered
+// entrances instead of a frozen half-morph. Warm navigations (preloaded on
+// intent) resolve well inside it and morph smoothly.
+const SKIP_BUDGET_MS = 180;
 
 /**
  * Runs a DOM-updating callback inside a scoped View Transition when the browser
@@ -55,17 +70,43 @@ export function runViewTransition(
   const root = document.documentElement;
   root.classList.add('vt-active');
   if (liquid) root.classList.add('vt-liquid');
-  const cleanup = () => {
+  // `settle`/`cleanup` are idempotent: the skip path clears the liquid classes
+  // synchronously (so the destination's normal enter animation runs at once,
+  // not a stalled morph), and `transition.finished` later runs cleanup once —
+  // the guard keeps `onSettled` (and the class removal) firing exactly once, so
+  // the staggers never double-fire.
+  let cleared = false;
+  const clearClasses = () => {
+    if (cleared) return;
+    cleared = true;
     root.classList.remove('vt-active');
     root.classList.remove('vt-liquid');
+  };
+  const cleanup = () => {
+    clearClasses();
     settle();
   };
   try {
-    const transition = doc.startViewTransition(() => update());
-    transition.finished.then(cleanup, cleanup);
+    let resolved = false;
+    const transition = doc.startViewTransition(() =>
+      Promise.resolve(update()).finally(() => {
+        resolved = true;
+      }),
+    );
+    // If the destination is still pending past the budget, drop the morph.
+    const timer = setTimeout(() => {
+      if (!resolved && typeof transition.skipTransition === 'function') {
+        transition.skipTransition();
+        clearClasses();
+      }
+    }, SKIP_BUDGET_MS);
+    const done = () => {
+      clearTimeout(timer);
+      cleanup();
+    };
+    transition.finished.then(done, done);
   } catch {
-    root.classList.remove('vt-active');
-    root.classList.remove('vt-liquid');
+    clearClasses();
     void update();
     settle();
   }

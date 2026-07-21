@@ -7,6 +7,7 @@ import { ProgressColumn } from './ProgressColumn';
 import { AchievementsColumn } from './AchievementsColumn';
 import { StreakColumn } from './StreakColumn';
 import { ColumnHeader } from './ColumnHeader';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { Reveal } from '@/components/motion';
 import type { AchievementsPayload } from '@/lib/achievements.server';
 
@@ -64,35 +65,22 @@ export function JourneyColumn({
       <Reveal>
         {/* The tab bar *is* this page's header: no title, so the nav fills the
             row. Padding is mobile-only, to make room for the drawer button. */}
-        <ColumnHeader className="px-4 py-0 md:px-0">
-          <nav
-            className="flex"
-            role="tablist"
+        {/* §15.1: unified flowing-capsule tab strip (was a border-b underline
+            row). sheet={false} keeps it inside the existing sticky ColumnHeader —
+            the header IS this page's chrome — without nesting glass-in-glass. */}
+        <ColumnHeader className="px-2 py-2 md:px-2">
+          <LiquidTabs
+            fullWidth
+            sheet={false}
             aria-label={t('journey-sections-label', { defaultValue: 'Journey sections' })}
-          >
-            {TABS.map(({ id, labelKey, defaultLabel, icon: Icon }) => {
-              const active = tab === id;
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  onClick={() => selectTab(id)}
-                  className={`flex flex-1 items-center justify-center gap-1.5 border-b-2 px-3 py-3 text-sm font-semibold transition-colors ${
-                    active
-                      ? 'border-site-accent text-site-text'
-                      : 'border-transparent text-site-text-muted hover:text-site-text'
-                  }`}
-                >
-                  <Icon
-                    className={`h-4 w-4 ${id === 'streaks' && active ? 'text-site-warning' : ''}`}
-                  />
-                  <span>{t(labelKey, { defaultValue: defaultLabel })}</span>
-                </button>
-              );
-            })}
-          </nav>
+            value={tab}
+            onChange={(id) => selectTab(id as JourneyTab)}
+            tabs={TABS.map(({ id, labelKey, defaultLabel, icon }) => ({
+              id,
+              label: t(labelKey, { defaultValue: defaultLabel }),
+              icon,
+            }))}
+          />
         </ColumnHeader>
       </Reveal>
 
