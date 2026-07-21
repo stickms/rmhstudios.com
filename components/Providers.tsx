@@ -20,7 +20,9 @@ import {
   DEFAULT_STYLE,
   SiteStyle,
   REDUCE_TRANSPARENCY_KEY,
+  USER_THEME_KEY,
 } from '@/stores/themeStore';
+import { clearThemeTokens, type AppliedUserTheme } from '@/lib/themes/tokens';
 import { applyAccent, isAccentId, ACCENT_STORAGE_KEY, accentCssVars } from '@/lib/appearance';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import {
@@ -43,6 +45,7 @@ import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
+import { ThemePreviewBar } from '@/components/themes/ThemePreviewBar';
 import { RecentsTracker } from '@/components/site/RecentsTracker';
 import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import type { Locale } from '@/lib/i18n/config';
@@ -221,6 +224,8 @@ export function Providers({
   const readableFont = useThemeStore((s) => s.readableFont);
   const customAccent = useThemeStore((s) => s.customAccent);
   const reduceMotion = useThemeStore((s) => s.reduceMotion);
+  const userTheme = useThemeStore((s) => s.userTheme);
+  const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
   const isFirstRun = useRef(true);
 
@@ -427,6 +432,19 @@ export function Providers({
     if (localStorage.getItem(REDUCE_MOTION_KEY) === '1') st.setReduceMotion(true);
     const ca = localStorage.getItem(CUSTOM_ACCENT_KEY);
     if (ca && HEX_RE.test(ca)) st.setCustomAccent(ca);
+    // Marketplace user theme (§14): the no-flash script already painted it; hydrate
+    // the store so the runtime effect keeps it applied and can clear it on removal.
+    try {
+      const raw = localStorage.getItem(USER_THEME_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as AppliedUserTheme;
+        if (parsed && typeof parsed.id === 'string' && parsed.vars && typeof parsed.bg === 'string') {
+          st.setUserTheme(parsed);
+        }
+      }
+    } catch {
+      /* corrupt cache — ignore, the built-in theme shows through */
+    }
   }, []);
 
   // Sync style class + accent override to <html> and persist. `preview` (the
@@ -454,6 +472,23 @@ export function Providers({
     }
     // Persist the COMMITTED style (not a transient preview).
     localStorage.setItem('rmh-style', style);
+
+    // Marketplace user theme (§14): a full v2 retint set inline over the built-in
+    // cascade (a transient preview beats the committed one). Skipped on app/game
+    // routes (they own their palette) and under high-contrast (its opaque black/
+    // white must win — inline vars would out-specify the class). Reduced-
+    // transparency composes for free: it paints --site-surface-opaque, which the
+    // theme sets. Accent presets are applied AFTER this block so they still win.
+    const activeUserTheme = userThemePreview ?? userTheme;
+    const userThemeOn = !!activeUserTheme && !isAppRoute && activeStyle !== 'high-contrast';
+    if (userThemeOn && activeUserTheme) {
+      for (const [k, v] of Object.entries(activeUserTheme.vars)) html.style.setProperty(k, v);
+    } else {
+      clearThemeTokens(html);
+    }
+    // Persist only the COMMITTED theme (not a transient preview) for the no-flash script.
+    if (userTheme) localStorage.setItem(USER_THEME_KEY, JSON.stringify(userTheme));
+    else localStorage.removeItem(USER_THEME_KEY);
 
     // Glass clarity (§5.46): the slider owns both the reduce-transparency class
     // (stop 0, the §10 degradation the glass keys off) AND the inline user
@@ -509,7 +544,11 @@ export function Providers({
     // Excluded app/game routes keep the base (dark) document background so the
     // browser bar tint and overscroll match their :root-token chrome — same
     // gate as the inline themeScript in app/routes/__root.tsx.
-    const bg = isAppRoute ? THEME_BG.default : (THEME_BG[activeStyle] ?? THEME_BG.default);
+    const bg = userThemeOn
+      ? (activeUserTheme as AppliedUserTheme).bg
+      : isAppRoute
+        ? THEME_BG.default
+        : (THEME_BG[activeStyle] ?? THEME_BG.default);
     html.style.backgroundColor = bg;
     document.body.style.backgroundColor = bg;
 
@@ -534,6 +573,8 @@ export function Providers({
     readableFont,
     customAccent,
     reduceMotion,
+    userTheme,
+    userThemePreview,
   ]);
 
   // ── Account sync ─────────────────────────────────────────────────────────
@@ -682,6 +723,9 @@ export function Providers({
                   {children}
                   <CommandPaletteMount />
                   <RecentsTracker />
+                  {/* §14: the floating try-before-buy / preview-on-site confirm bar,
+                      mounted globally so it survives navigation under a previewed theme. */}
+                  <ThemePreviewBar />
                 </ConfirmProvider>
               </ResolvedUserCtx.Provider>
               <Toaster

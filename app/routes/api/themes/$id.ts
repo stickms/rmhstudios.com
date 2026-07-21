@@ -42,7 +42,13 @@ export const Route = createFileRoute('/api/themes/$id')({
             await updateTheme(session.user.id, params.id, parsed.data);
           } catch (e) {
             if (e instanceof ThemeError) {
-              return Response.json({ error: e.message }, { status: e.message === 'FORBIDDEN' ? 403 : e.message === 'NOT_FOUND' ? 404 : 400 });
+              const status =
+                e.message === 'FORBIDDEN' || e.message === 'MEMBERS_ONLY'
+                  ? 403
+                  : e.message === 'NOT_FOUND'
+                    ? 404
+                    : 400;
+              return Response.json({ error: e.message }, { status });
             }
             throw e;
           }

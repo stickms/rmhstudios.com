@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { AppliedUserTheme, AppliedUserThemePreview } from "@/lib/themes/tokens";
 
 // Each theme carries its document background color (`bg`) alongside its catalog
 // metadata so there is ONE source of truth for the theme→background map. Both the
@@ -88,11 +89,30 @@ interface ThemeStore {
   /** Account-level reduce-motion, OR-ed with the OS media query. */
   reduceMotion: boolean;
   setReduceMotion: (value: boolean) => void;
+
+  // ── Marketplace user themes (§14) ────────────────────────────────────────
+  /**
+   * The owned marketplace theme applied site-wide (a v2 derived-vars blob), or
+   * null for a built-in theme. A full retint set inline on <html> over the
+   * built-in cascade; persisted (localStorage `rmh-user-theme`) and painted
+   * pre-paint by the no-flash script. High-contrast + reduced-transparency win.
+   */
+  userTheme: AppliedUserTheme | null;
+  setUserTheme: (theme: AppliedUserTheme | null) => void;
+  /**
+   * A transient user theme rendered *instead of* `userTheme` without persisting
+   * — powers try-before-buy and the editor's "preview on site". Committing (or
+   * choosing a built-in style) clears it.
+   */
+  userThemePreview: AppliedUserThemePreview | null;
+  setUserThemePreview: (theme: AppliedUserThemePreview | null) => void;
 }
 
 export const useThemeStore = create<ThemeStore>((set) => ({
   style: DEFAULT_STYLE,
-  setStyle: (style) => set({ style, preview: null }),
+  // Committing a built-in style clears any user-theme preview (they are mutually
+  // exclusive site looks) but keeps a committed user theme until removed.
+  setStyle: (style) => set({ style, preview: null, userThemePreview: null }),
   preview: null,
   setPreview: (preview) => set({ preview }),
   accent: null,
@@ -111,7 +131,15 @@ export const useThemeStore = create<ThemeStore>((set) => ({
   setCustomAccent: (customAccent) => set({ customAccent }),
   reduceMotion: false,
   setReduceMotion: (reduceMotion) => set({ reduceMotion }),
+  userTheme: null,
+  // Applying/removing an owned theme also clears any transient preview.
+  setUserTheme: (userTheme) => set({ userTheme, userThemePreview: null }),
+  userThemePreview: null,
+  setUserThemePreview: (userThemePreview) => set({ userThemePreview }),
 }));
 
 /** localStorage key for the reduce-transparency preference (no-flash cache). */
 export const REDUCE_TRANSPARENCY_KEY = "rmh-reduce-transparency";
+
+/** localStorage key for the applied marketplace user theme (§14 no-flash cache). */
+export const USER_THEME_KEY = "rmh-user-theme";
