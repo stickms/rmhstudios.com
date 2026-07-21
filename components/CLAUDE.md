@@ -14,7 +14,7 @@ feature lives in that feature's directory; genuinely shared primitives live in
 | Directory | Contents |
 |---|---|
 | `ui/` | **Shared primitives** — Button, Badge, Card, Dialog, Input, Textarea, Select, Label, EmptyState, Skeleton, Spinner, Tooltip, NotificationBadge, UserAvatar, OptimizedImage/BlurImage, AnimatedCount, ViewTransitionLink, NavigationProgress, RoutePending, pagination, slider, resizable, skeletons/. Always check here before writing new UI. Full API notes in `docs/design-language.md` §5. |
-| `feed/` | Feed/timeline plus the **layout system**: `PageLayout.tsx` (canonical page wrapper), `AnimatedMain.tsx`, `LeftSidebar`, `MobileNav`, post cards, composer. Also `feed.css`. |
+| `feed/` | Feed/timeline plus the **layout system**: `PageLayout.tsx` (canonical page wrapper), `AnimatedMain.tsx`, `LeftSidebar`, `MobileSidebarShell` (mobile drawer), post cards, composer. Also `feed.css`. |
 | `site/` | Site-level chrome: `CommandPalette` (mounted globally), `LanguageSwitcher`, `PasskeyManager`. |
 | `shared/` | Cross-feature building blocks: `GameLoadingFallback`, `GameErrorBoundary`, ChatPanel, EmojiPicker, ReactionMenu. |
 | `errors/` | `RouteErrorFallback`, `NotFound` — wired as route error/404 components. |

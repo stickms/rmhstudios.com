@@ -406,6 +406,7 @@ import { Route as ApiDailyPuzzlesResultsRouteImport } from './routes/api/daily-p
 import { Route as ApiDailyPuzzlesPuzzleRouteImport } from './routes/api/daily-puzzles/puzzle'
 import { Route as ApiDailyPuzzlesLeaderboardRouteImport } from './routes/api/daily-puzzles/leaderboard'
 import { Route as ApiCronWebhooksRouteImport } from './routes/api/cron/webhooks'
+import { Route as ApiCreatorStudioOverviewRouteImport } from './routes/api/creator/studio-overview'
 import { Route as ApiCoinsTipRouteImport } from './routes/api/coins/tip'
 import { Route as ApiCoinsPurchaseRouteImport } from './routes/api/coins/purchase'
 import { Route as ApiCoinsGiftRouteImport } from './routes/api/coins/gift'
@@ -2721,6 +2722,12 @@ const ApiCronWebhooksRoute = ApiCronWebhooksRouteImport.update({
   path: '/api/cron/webhooks',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiCreatorStudioOverviewRoute =
+  ApiCreatorStudioOverviewRouteImport.update({
+    id: '/api/creator/studio-overview',
+    path: '/api/creator/studio-overview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiCoinsTipRoute = ApiCoinsTipRouteImport.update({
   id: '/api/coins/tip',
   path: '/api/coins/tip',
@@ -4588,6 +4595,7 @@ export interface FileRoutesByFullPath {
   '/api/coins/gift': typeof ApiCoinsGiftRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
   '/api/coins/tip': typeof ApiCoinsTipRoute
+  '/api/creator/studio-overview': typeof ApiCreatorStudioOverviewRoute
   '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
@@ -5269,6 +5277,7 @@ export interface FileRoutesByTo {
   '/api/coins/gift': typeof ApiCoinsGiftRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
   '/api/coins/tip': typeof ApiCoinsTipRoute
+  '/api/creator/studio-overview': typeof ApiCreatorStudioOverviewRoute
   '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
@@ -5977,6 +5986,7 @@ export interface FileRoutesById {
   '/api/coins/gift': typeof ApiCoinsGiftRoute
   '/api/coins/purchase': typeof ApiCoinsPurchaseRoute
   '/api/coins/tip': typeof ApiCoinsTipRoute
+  '/api/creator/studio-overview': typeof ApiCreatorStudioOverviewRoute
   '/api/cron/webhooks': typeof ApiCronWebhooksRoute
   '/api/daily-puzzles/leaderboard': typeof ApiDailyPuzzlesLeaderboardRoute
   '/api/daily-puzzles/puzzle': typeof ApiDailyPuzzlesPuzzleRoute
@@ -6685,6 +6695,7 @@ export interface FileRouteTypes {
     | '/api/coins/gift'
     | '/api/coins/purchase'
     | '/api/coins/tip'
+    | '/api/creator/studio-overview'
     | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/puzzle'
@@ -7366,6 +7377,7 @@ export interface FileRouteTypes {
     | '/api/coins/gift'
     | '/api/coins/purchase'
     | '/api/coins/tip'
+    | '/api/creator/studio-overview'
     | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/puzzle'
@@ -8073,6 +8085,7 @@ export interface FileRouteTypes {
     | '/api/coins/gift'
     | '/api/coins/purchase'
     | '/api/coins/tip'
+    | '/api/creator/studio-overview'
     | '/api/cron/webhooks'
     | '/api/daily-puzzles/leaderboard'
     | '/api/daily-puzzles/puzzle'
@@ -8639,6 +8652,7 @@ export interface RootRouteChildren {
   ApiCoinsGiftRoute: typeof ApiCoinsGiftRoute
   ApiCoinsPurchaseRoute: typeof ApiCoinsPurchaseRoute
   ApiCoinsTipRoute: typeof ApiCoinsTipRoute
+  ApiCreatorStudioOverviewRoute: typeof ApiCreatorStudioOverviewRoute
   ApiCronWebhooksRoute: typeof ApiCronWebhooksRoute
   ApiDailyPuzzlesLeaderboardRoute: typeof ApiDailyPuzzlesLeaderboardRoute
   ApiDailyPuzzlesPuzzleRoute: typeof ApiDailyPuzzlesPuzzleRoute
@@ -11703,6 +11717,13 @@ declare module '@tanstack/react-router' {
       path: '/api/cron/webhooks'
       fullPath: '/api/cron/webhooks'
       preLoaderRoute: typeof ApiCronWebhooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/creator/studio-overview': {
+      id: '/api/creator/studio-overview'
+      path: '/api/creator/studio-overview'
+      fullPath: '/api/creator/studio-overview'
+      preLoaderRoute: typeof ApiCreatorStudioOverviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/coins/tip': {
@@ -15395,6 +15416,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiCoinsGiftRoute: ApiCoinsGiftRoute,
   ApiCoinsPurchaseRoute: ApiCoinsPurchaseRoute,
   ApiCoinsTipRoute: ApiCoinsTipRoute,
+  ApiCreatorStudioOverviewRoute: ApiCreatorStudioOverviewRoute,
   ApiCronWebhooksRoute: ApiCronWebhooksRoute,
   ApiDailyPuzzlesLeaderboardRoute: ApiDailyPuzzlesLeaderboardRoute,
   ApiDailyPuzzlesPuzzleRoute: ApiDailyPuzzlesPuzzleRoute,

@@ -37,7 +37,14 @@ function formatCountdown(ms: number): string {
   return `${pad(h)}:${pad(m)}:${pad(s)}`;
 }
 
-export function ArcadeHub({ initialState }: { initialState: ArcadeState | null }) {
+export function ArcadeHub({
+  initialState,
+  hideHeader = false,
+}: {
+  initialState: ArcadeState | null;
+  /** Hide the built-in desktop header (e.g. when hosted under the /arcade tab bar). */
+  hideHeader?: boolean;
+}) {
   const { t } = useTranslation('site');
   const router = useRouter();
   const [state, setState] = useState<ArcadeState | null>(initialState);
@@ -119,12 +126,14 @@ export function ArcadeHub({ initialState }: { initialState: ArcadeState | null }
   return (
     <div>
       {/* Desktop header row (mobile uses MobileTopBar from the page). */}
-      <div className="hidden md:flex items-center gap-2 border-b border-site-border px-5 py-4">
-        <Gamepad2 className="h-5 w-5 text-site-accent" aria-hidden />
-        <h1 className="font-(family-name:--site-font-display) text-2xl font-semibold tracking-[-0.022em] text-site-text">
-          {t('arcade-title', { defaultValue: 'Arcade Pass' })}
-        </h1>
-      </div>
+      {!hideHeader && (
+        <div className="hidden md:flex items-center gap-2 border-b border-site-border px-5 py-4">
+          <Gamepad2 className="h-5 w-5 text-site-accent" aria-hidden />
+          <h1 className="font-(family-name:--site-font-display) text-2xl font-semibold tracking-[-0.022em] text-site-text">
+            {t('arcade-title', { defaultValue: 'Arcade Pass' })}
+          </h1>
+        </div>
+      )}
 
       <div className="space-y-5 px-4 py-5 sm:px-5">
         {/* Streak + reset countdown */}

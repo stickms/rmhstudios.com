@@ -12,10 +12,24 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
-import { BookOpen, CloudUpload, FileText, Menu, Search, Upload, X } from 'lucide-react';
+import {
+  BookOpen,
+  CloudUpload,
+  Disc3,
+  FileText,
+  Layers,
+  LayoutGrid,
+  ListMusic,
+  Menu,
+  Newspaper,
+  Search,
+  Upload,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
@@ -23,8 +37,10 @@ import { type LibraryBook } from '@/lib/library/library';
 import { listAllBooks } from '@/lib/library/library.server';
 import { listAlbums } from '@/lib/albums.server';
 import { listCollectionsView, type Viewer } from '@/lib/library/collections.server';
+import { listPlaylists } from '@/lib/playlists.server';
 import { auth } from '@/lib/auth';
 import { getAllPosts, type Post } from '@/lib/blog';
+import { PlaylistsColumn } from '@/components/feed/PlaylistsColumn';
 import { LibraryBlogRow } from '@/components/library/LibraryBlogRow';
 import { LibraryRevealProvider, useReveal } from '@/components/library/LibraryReveal';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
@@ -68,6 +84,23 @@ const fetchAlbums = createServerFn({ method: 'GET' }).handler(async () => ({
   albums: await listAlbums(),
 }));
 
+// The former standalone /playlists page is folded into the library as the
+// "Music" section. Signed-out visitors get null (the section shows a sign-in
+// prompt), mirroring the old page's behavior.
+const fetchPlaylists = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = getRequest();
+  const session = await auth.api.getSession({ headers: request.headers }).catch(() => null);
+  if (!session) return { playlists: null };
+  return { playlists: await listPlaylists(session.user.id) };
+});
+
+// The library grew past a comfortable single scroll (reads + albums +
+// collections + books + music). A sticky category navigator filters to one
+// section; the active category is mirrored into `?view=` so deep links (e.g.
+// the /playlists redirect → /library?view=music) land on the right section.
+const LIBRARY_VIEWS = ['all', 'reads', 'albums', 'collections', 'books', 'music'] as const;
+type LibraryView = (typeof LIBRARY_VIEWS)[number];
+
 export const Route = createFileRoute('/_site/library/')({
   head: () => ({
     meta: [
@@ -79,17 +112,22 @@ export const Route = createFileRoute('/_site/library/')({
       },
     ],
   }),
-  // perf audit §4.2: the four server fns were awaited sequentially — 4 serial
-  // HTTP round trips on client nav / 4 serial DB reads on SSR. They're
-  // independent, so run them in parallel.
+  validateSearch: (search: Record<string, unknown>): { view?: LibraryView } => {
+    const view = search.view;
+    return LIBRARY_VIEWS.includes(view as LibraryView) ? { view: view as LibraryView } : {};
+  },
+  // perf audit §4.2: the server fns were awaited sequentially — serial HTTP
+  // round trips on client nav / serial DB reads on SSR. They're independent, so
+  // run them in parallel.
   loader: async () => {
-    const [books, blog, collections, albums] = await Promise.all([
+    const [books, blog, collections, albums, playlists] = await Promise.all([
       fetchBooks(),
       fetchBlogPosts(),
       fetchCollections(),
       fetchAlbums(),
+      fetchPlaylists(),
     ]);
-    return { ...books, ...blog, ...collections, ...albums };
+    return { ...books, ...blog, ...collections, ...albums, ...playlists };
   },
   component: Library,
 });
@@ -109,7 +147,14 @@ function Library() {
     posts: blogPosts,
     collections: initialCollections,
     albums,
+    playlists,
   } = Route.useLoaderData();
+  const { view = 'all' } = Route.useSearch();
+  const navigate = useNavigate();
+  const setView = (next: LibraryView) =>
+    void navigate({ to: '/library', search: next === 'all' ? {} : { view: next }, replace: true });
+  // A section renders when we're on "All" or on its own category.
+  const shows = (id: LibraryView) => view === 'all' || view === id;
   const session = useSession();
   const sessionUser = session.data?.user as
     { isAdmin?: boolean; handle?: string | null } | undefined;
@@ -300,6 +345,43 @@ function Library() {
             )}
           </header>
 
+          <nav
+            className="lib-nav"
+            aria-label={t('sections-label', { defaultValue: 'Library sections' })}
+          >
+            <div className="lib-nav__scroll" role="tablist">
+              {(
+                [
+                  { id: 'all', label: t('cat-all', { defaultValue: 'All' }), icon: LayoutGrid },
+                  { id: 'books', label: t('cat-books', { defaultValue: 'Books' }), icon: BookOpen },
+                  { id: 'albums', label: t('cat-albums', { defaultValue: 'Albums' }), icon: Disc3 },
+                  {
+                    id: 'collections',
+                    label: t('cat-collections', { defaultValue: 'Collections' }),
+                    icon: Layers,
+                  },
+                  { id: 'reads', label: t('cat-reads', { defaultValue: 'Reads' }), icon: Newspaper },
+                  { id: 'music', label: t('cat-music', { defaultValue: 'Music' }), icon: ListMusic },
+                ] as { id: LibraryView; label: string; icon: LucideIcon }[]
+              ).map(({ id, label, icon: Icon }) => {
+                const active = view === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={active}
+                    className={`lib-nav__chip${active ? ' is-active' : ''}`}
+                    onClick={() => setView(id)}
+                  >
+                    <Icon aria-hidden="true" />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+
           <section className="lib-hero" aria-labelledby="library-title">
             <div className="lib-hero__copy">
               <p className="lib-hero__eyebrow">
@@ -359,9 +441,9 @@ function Library() {
             </label>
           </section>
 
-          <LibraryBlogRow posts={blogPosts} />
+          {shows('reads') && <LibraryBlogRow posts={blogPosts} />}
 
-          {isAdmin && hasUnmigrated && (
+          {shows('books') && isAdmin && hasUnmigrated && (
             <div className="lib-edit__migrate">
               <span>
                 {t('migrate-prompt', {
@@ -383,44 +465,68 @@ function Library() {
             </div>
           )}
 
-          <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />
+          {shows('albums') && <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />}
 
-          <LibraryCollections
-            books={books}
-            collections={collections}
-            onChanged={refreshCollections}
-            isAdmin={isAdmin}
-            myHandle={myHandle}
-            canCreate={Boolean(session.data)}
-          />
-
-          {filtered.length === 0 ? (
-            <p className="vibe-hint lib__empty">
-              {t('no-results', { defaultValue: 'No books match that search.' })}
-            </p>
-          ) : (
-            <>
-              <Section
-                title={t('section-curated', { defaultValue: 'Curated' })}
-                books={curated}
-                isAdmin={isAdmin}
-                onEdit={setEditing}
-                onMove={(book, dir) => move(curated, book, dir)}
-                onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
-                onChanged={refresh}
-              />
-              <Section
-                title={t('section-community', { defaultValue: 'Community uploads' })}
-                books={community}
-                isAdmin={isAdmin}
-                onEdit={setEditing}
-                onMove={(book, dir) => move(community, book, dir)}
-                onReorder={(draggedId, targetId) => reorderWithin(community, draggedId, targetId)}
-                onChanged={refresh}
-                showAttribution
-              />
-            </>
+          {shows('collections') && (
+            <LibraryCollections
+              books={books}
+              collections={collections}
+              onChanged={refreshCollections}
+              isAdmin={isAdmin}
+              myHandle={myHandle}
+              canCreate={Boolean(session.data)}
+            />
           )}
+
+          {shows('music') && (
+            <section className="lib__section lib__section--catalog lib__section--music">
+              <div className="lib__section-head">
+                <h2 className="lib__section-title">
+                  {t('section-music', { defaultValue: 'Music' })}
+                </h2>
+                {playlists && (
+                  <span className="lib__section-count">
+                    {t('playlist-count', {
+                      count: playlists.length,
+                      defaultValue: '{{count}} playlists',
+                    })}
+                  </span>
+                )}
+              </div>
+              <PlaylistsColumn initialData={{ playlists }} embedded />
+            </section>
+          )}
+
+          {shows('books') &&
+            (filtered.length === 0 ? (
+              <p className="vibe-hint lib__empty">
+                {t('no-results', { defaultValue: 'No books match that search.' })}
+              </p>
+            ) : (
+              <>
+                <Section
+                  title={t('section-curated', { defaultValue: 'Curated' })}
+                  books={curated}
+                  isAdmin={isAdmin}
+                  onEdit={setEditing}
+                  onMove={(book, dir) => move(curated, book, dir)}
+                  onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
+                  onChanged={refresh}
+                />
+                <Section
+                  title={t('section-community', { defaultValue: 'Community uploads' })}
+                  books={community}
+                  isAdmin={isAdmin}
+                  onEdit={setEditing}
+                  onMove={(book, dir) => move(community, book, dir)}
+                  onReorder={(draggedId, targetId) =>
+                    reorderWithin(community, draggedId, targetId)
+                  }
+                  onChanged={refresh}
+                  showAttribution
+                />
+              </>
+            ))}
         </LibraryRevealProvider>
       </AnimatedMain>
       <div className="hidden lg:block w-4 shrink-0" />

@@ -37,7 +37,16 @@ interface Item {
   durationMs: number | null;
 }
 
-export function PlaylistsColumn({ initialData }: { initialData: { playlists: Summary[] | null } }) {
+export function PlaylistsColumn({
+  initialData,
+  embedded = false,
+}: {
+  initialData: { playlists: Summary[] | null };
+  // When hosted inside another page (e.g. the Library "Music" section) the host
+  // supplies the heading and outer scroll region, so drop our own ColumnHeader
+  // and full-height wrapper.
+  embedded?: boolean;
+}) {
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
   const [playlists, setPlaylists] = useState<Summary[]>(initialData.playlists ?? []);
@@ -156,8 +165,10 @@ export function PlaylistsColumn({ initialData }: { initialData: { playlists: Sum
   };
 
   return (
-    <div className="min-h-screen">
-      <ColumnHeader icon={ListMusic} title={t('playlists-title', { defaultValue: 'Playlists' })} />
+    <div className={embedded ? 'lib-playlists' : 'min-h-screen'}>
+      {!embedded && (
+        <ColumnHeader icon={ListMusic} title={t('playlists-title', { defaultValue: 'Playlists' })} />
+      )}
 
       {!signedIn ? (
         <div className="p-4">

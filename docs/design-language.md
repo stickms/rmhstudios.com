@@ -227,9 +227,9 @@ Toasts: **sonner**. A themed global `<Toaster>` is mounted in
 ## 6. Layout system & page anatomy
 
 The `_site` layout route (`app/routes/_site.tsx`) provides the shell:
-`LeftSidebar` (fixed desktop aside, `md:w-16 xl:w-64`), `MobileNav` (bottom
-bar), skip link, and `<main id="main-content">` with the `.page-root` enter
-animation. **Pages never re-add sidebars.**
+`LeftSidebar` (fixed desktop aside, `md:w-16 xl:w-64`), `MobileSidebarShell`
+(mobile drawer), skip link, and `<main id="main-content">` with the
+`.page-root` enter animation. **Pages never re-add sidebars.**
 
 Two page archetypes (see `docs/page-consistency.md` for full code):
 
