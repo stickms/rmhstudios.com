@@ -2321,10 +2321,17 @@
   );
 }
 
-.lib-head {
+/* Sticky wrapper for the title bar + section tabs. Making the WRAPPER the single
+   sticky element (rather than the head and the nav each `sticky top:0`) is what
+   keeps the tabs parked directly below the title instead of sliding up behind
+   it. The head and nav are now static rows stacked inside this one unit. */
+.lib-topbar {
   position: sticky;
   inset-block-start: 0;
   z-index: 30;
+}
+
+.lib-head {
   display: flex;
   align-items: center;
   min-height: 58px;
@@ -2489,9 +2496,8 @@
    jump straight to one category; it scrolls horizontally on narrow screens so
    the rail never wraps or overflows. */
 .lib-nav {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 26; /* under .lib-head (z-30) so it tucks below it while scrolling */
+  /* Static row inside .lib-topbar — the wrapper provides the single sticky
+     context, so this always renders below the title, never over it. */
   padding: 10px clamp(16px, 4vw, 44px);
   background: color-mix(in srgb, var(--site-bg, #000) 42%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--site-text, #fff) 8%, transparent);
@@ -2512,10 +2518,11 @@
   display: none;
 }
 .lib-nav__chip {
+  position: relative;
+  isolation: isolate;
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
-  gap: 7px;
   padding: 8px 14px;
   border: 1px solid color-mix(in srgb, var(--site-text, #fff) 12%, transparent);
   border-radius: 999px;
@@ -2526,22 +2533,35 @@
   font-weight: 550;
   white-space: nowrap;
   cursor: pointer;
-  transition:
-    color 150ms ease,
-    background 150ms ease,
-    border-color 150ms ease;
+  transition: color 200ms ease;
 }
 .lib-nav__chip:hover {
   color: var(--site-text, #fff);
-  background: color-mix(in srgb, var(--site-text, #fff) 8%, transparent);
 }
-.lib-nav__chip.is-active {
-  color: var(--site-accent, #9b7ad8);
+/* Content sits above the sliding capsule. */
+.lib-nav__chip-label {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+/* The liquid selection capsule — a single element shared across chips via
+   framer-motion `layoutId`, so switching sections glides it from the old chip to
+   the new one (springy settle) instead of hard-cutting the highlight. */
+.lib-nav__chip-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 999px;
   background: var(
     --site-accent-dim,
     color-mix(in srgb, var(--site-accent, #9b7ad8) 18%, transparent)
   );
-  border-color: color-mix(in srgb, var(--site-accent, #9b7ad8) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--site-accent, #9b7ad8) 45%, transparent);
+}
+.lib-nav__chip.is-active {
+  color: var(--site-accent, #9b7ad8);
 }
 .lib-nav__chip svg {
   width: 15px;

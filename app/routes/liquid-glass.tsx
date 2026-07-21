@@ -9,7 +9,13 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buildMeta, buildCanonical } from '@/lib/seo';
-import { GlassEffect, GlassDock, GlassButton, type DockIcon } from '@/components/ui/liquid-glass';
+import {
+  GlassEffect,
+  GlassDock,
+  GlassButton,
+  GlassPane,
+  type DockIcon,
+} from '@/components/ui/liquid-glass';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -287,6 +293,46 @@ function LiquidGlassLab() {
                 <span className="text-xs text-site-text-dim">clean, optically flat edge</span>
               </div>
             </div>
+          </div>
+        </Section>
+
+        {/* ── 4b · Liquid sheen ── ambient specular drift; pairs with the flowing
+            aurora canvas and the pointer light for the full "liquid" read. */}
+        <Section
+          id="liquid-sheen"
+          eyebrow="§5.4"
+          title="Liquid sheen — living material"
+          description={
+            <>
+              <Mono>.glass-liquid</Mono> (or <Mono>&lt;GlassPane liquid&gt;</Mono>) drifts a
+              slow specular band across the surface like light travelling over wet glass —
+              layered over the pointer-tracked light and the whole aurora canvas, which now
+              gently flows and parallaxes to your cursor behind every pane. Signature
+              surfaces only; ration it like refraction. Hover the left pane.
+            </>
+          }
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <GlassPane
+              liquid
+              interactive
+              className="relative flex h-44 items-center justify-center overflow-hidden p-6"
+            >
+              <div className="relative z-10 flex flex-col items-center gap-1 text-center">
+                <span className="text-base font-semibold text-site-text">Sheen on</span>
+                <Mono>.glass-liquid</Mono>
+                <span className="text-xs text-site-text-dim">
+                  watch the light travel across
+                </span>
+              </div>
+            </GlassPane>
+            <GlassPane className="relative flex h-44 items-center justify-center overflow-hidden p-6">
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="text-base font-semibold text-site-text">Sheen off</span>
+                <Mono>.glass-pane</Mono>
+                <span className="text-xs text-site-text-dim">the resting L2 pane</span>
+              </div>
+            </GlassPane>
           </div>
         </Section>
 
