@@ -5,7 +5,7 @@
   "changes-now-live": "Perubahan anda kini telah berkuat kuasa.",
   "content-label": "Kandungan",
   "date-label": "Tarikh",
-  "delete-confirm": "Adakah anda pasti mahu memadam \"{{title}}\"? Tindakan ini tidak boleh dibatalkan.",
+  "delete-confirm": "Memadamkan \"{{title}}\" tidak boleh dibatalkan.",
   "delete-failed": "Gagal memadam siaran",
   "delete-post": "Padam Siaran",
   "delete-success": "Siaran blog dipadam: {{slug}}.",

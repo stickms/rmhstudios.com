@@ -5,7 +5,7 @@
   "changes-now-live": "你的更改现已生效。",
   "content-label": "内容",
   "date-label": "日期",
-  "delete-confirm": "您确定要删除“{{title}}”吗？此操作无法撤销。",
+  "delete-confirm": "删除“{{title}}”的操作无法撤销。",
   "delete-failed": "删除帖子失败",
   "delete-post": "删除帖子",
   "delete-success": "已删除的博客文章：{{slug}}。",

@@ -5,7 +5,7 @@
   "changes-now-live": "Vaše změny jsou nyní aktivní.",
   "content-label": "Obsah",
   "date-label": "Datum",
-  "delete-confirm": "Opravdu chcete smazat „{{title}}“? Tuto akci nelze vrátit.",
+  "delete-confirm": "Smazání \"{{title}}\" nelze vrátit zpět.",
   "delete-failed": "Smazání příspěvku se nezdařilo",
   "delete-post": "Smazat příspěvek",
   "delete-success": "Blogový příspěvek smazán: {{slug}}.",

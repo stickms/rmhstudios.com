@@ -5,7 +5,7 @@
   "changes-now-live": "Uw wijzigingen zijn nu live.",
   "content-label": "Inhoud",
   "date-label": "Datum",
-  "delete-confirm": "Weet u zeker dat u \"{{title}}\" wilt verwijderen? Dit kan niet ongedaan worden gemaakt.",
+  "delete-confirm": "Het verwijderen van \"{{title}}\" kan niet ongedaan worden gemaakt.",
   "delete-failed": "Verwijderen van bericht mislukt",
   "delete-post": "Bericht verwijderen",
   "delete-success": "Blogbericht verwijderd: {{slug}}.",

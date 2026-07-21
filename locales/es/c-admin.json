@@ -5,7 +5,7 @@
   "changes-now-live": "Tus cambios ya están en vivo.",
   "content-label": "Contenido",
   "date-label": "Fecha",
-  "delete-confirm": "¿Estás seguro de que deseas eliminar \"{{title}}\"? Esto no se puede deshacer.",
+  "delete-confirm": "Eliminar \"{{title}}\" no se puede deshacer.",
   "delete-failed": "Error al eliminar la publicación",
   "delete-post": "Eliminar Publicación",
   "delete-success": "Publicación de blog eliminada: {{slug}}.",

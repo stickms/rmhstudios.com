@@ -5,7 +5,7 @@
   "changes-now-live": "آپ کی تبدیلیاں اب فعال ہیں۔",
   "content-label": "مواد",
   "date-label": "تاریخ",
-  "delete-confirm": "کیا آپ واقعی \"{{title}}\" کو حذف کرنا چاہتے ہیں؟ یہ عمل واپس نہیں لیا جا سکتا۔",
+  "delete-confirm": "\"{{title}}\" کو حذف کرنا واپس نہیں کیا جا سکتا۔",
   "delete-failed": "پوسٹ حذف کرنے میں ناکامی",
   "delete-post": "پوسٹ حذف کریں",
   "delete-success": "بلاگ پوسٹ حذف ہو گئی: {{slug}}۔",

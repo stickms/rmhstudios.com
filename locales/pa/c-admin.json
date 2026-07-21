@@ -5,7 +5,7 @@
   "changes-now-live": "ਤੁਹਾਡੀਆਂ ਤਬਦੀਲੀਆਂ ਹੁਣ ਲਾਈਵ ਹਨ।",
   "content-label": "ਸਮੱਗਰੀ",
   "date-label": "ਮਿਤੀ",
-  "delete-confirm": "ਕੀ ਤੁਸੀਂ ਪੱਕਾ \"{{title}}\" ਨੂੰ ਮਿਟਾਉਣਾ ਚਾਹੁੰਦੇ ਹੋ? ਇਹ ਵਾਪਸ ਨਹੀਂ ਆ ਸਕਦਾ।",
+  "delete-confirm": "\"{{title}}\" ਨੂੰ ਮਿਟਾਉਣਾ ਵਾਪਸ ਨਹੀਂ ਲਿਆ ਜਾ ਸਕਦਾ।",
   "delete-failed": "ਪੋਸਟ ਮਿਟਾਉਣ ਵਿੱਚ ਅਸਫਲ",
   "delete-post": "ਪੋਸਟ ਮਿਟਾਓ",
   "delete-success": "ਬਲੌਗ ਪੋਸਟ ਮਿਟਾਇਆ: {{slug}}।",

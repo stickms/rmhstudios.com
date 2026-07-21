@@ -5,7 +5,7 @@
   "changes-now-live": "Twoje zmiany są już widoczne.",
   "content-label": "Treść",
   "date-label": "Data",
-  "delete-confirm": "Czy na pewno chcesz usunąć „{{title}}”? Tej operacji nie można cofnąć.",
+  "delete-confirm": "Usunięcie \"{{title}}\" jest nieodwracalne.",
   "delete-failed": "Nie udało się usunąć posta",
   "delete-post": "Usuń post",
   "delete-success": "Usunięto post: {{slug}}.",

@@ -5,5 +5,7 @@
   "close": "Schließen",
   "confirm": "Bestätigen",
   "copied": "Kopiert",
-  "copy": "Kopieren"
+  "copy": "Kopieren",
+  "move-down": "Nach unten verschieben{{name}}",
+  "move-up": "Nach oben verschieben{{name}}"
 }

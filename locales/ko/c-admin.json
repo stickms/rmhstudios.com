@@ -5,7 +5,7 @@
   "changes-now-live": "변경 사항이 적용되었습니다.",
   "content-label": "내용",
   "date-label": "날짜",
-  "delete-confirm": "\"{{title}}\"을(를) 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+  "delete-confirm": "\"{{title}}\"을(를) 삭제하면 되돌릴 수 없습니다.",
   "delete-failed": "게시물 삭제 실패",
   "delete-post": "게시물 삭제",
   "delete-success": "블로그 게시물이 삭제되었습니다: {{slug}}.",
