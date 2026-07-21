@@ -311,9 +311,13 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ? 'pl-10'
         : 'md:justify-center xl:justify-start xl:pl-10'
       : itemJustifyClass;
+    // Active capsule carries .glass-liquid (ambient sheen) — a signature surface
+    // (§5.2). Only one leaf is active at a time, so this stays within the ≤3
+    // ambient-sheen budget. Inactive pills keep the pointer light via
+    // .glass-interactive + data-glass-light.
     const leafClass = `glass-interactive flex items-center gap-3 px-3.5 ${nested ? 'py-2' : 'py-3'} rounded-full text-sm font-medium transition-colors ${indent} ${
       isActive
-        ? 'text-site-accent bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]'
+        ? 'glass-liquid text-site-accent bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]'
         : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
     }`;
     const leafInner = (

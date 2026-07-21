@@ -123,6 +123,9 @@
      expensive glass on the site. Kept to a cheaper radius; the tint + saturate
      still read as frosted glass across light/dark/high-contrast. */
   --site-glass-blur-chrome: 12px;
+  /* Condensed sticky chrome (header capsule with [data-scrolled]) deepens its
+     blur so scrolled content reads clearly through it (§7/§8.2). */
+  --site-glass-blur-chrome-scrolled: 18px;
   --site-glass-blur-overlay: 28px;
   --site-glass-saturate: 160%;
   /* Lighting — one sun, top-slightly-left (§4.2) */
@@ -706,6 +709,11 @@ html:not(.style-high-contrast)
   .glass-chrome[data-scrolled] {
     background: color-mix(in srgb, var(--site-bg) 55%, transparent);
     --glass-glint-opacity: 1; /* condensed chrome catches more light (§4.2/§7) */
+    /* Blur deepens 12px → 18px when the capsule condenses (§7/§8.2). The aside
+       variant reads --site-glass-blur-chrome on ::before but never carries
+       [data-scrolled], so it is unaffected. */
+    -webkit-backdrop-filter: blur(var(--site-glass-blur-chrome-scrolled)) saturate(150%);
+    backdrop-filter: blur(var(--site-glass-blur-chrome-scrolled)) saturate(150%);
   }
   /* Fixed asides: blur lives on ::before so fixed descendants (LeftSidebar's
      non-portaled user menu) keep the VIEWPORT as their containing block. NEVER
@@ -983,6 +991,26 @@ html:not(.style-high-contrast)
   to {
     background-position: -60% 0;
   }
+}
+
+/* Success toast rim-flash (§5.5). Sonner portals its toasts to <body> and tags
+   them data-type; a success toast flashes a bright success-tinted rim that
+   settles into the standard L4 rim (--site-shadow, which the sonner toastOptions
+   set inline) over 0.8s. No `forwards` → after the flash the box-shadow reverts
+   to that resting inline value. The global reduced-motion reset collapses it. */
+@keyframes toast-success-flash {
+  from {
+    box-shadow:
+      inset 0 1px 0 var(--site-success),
+      inset 0 0 0 1px color-mix(in srgb, var(--site-success) 55%, transparent),
+      var(--site-glass-depth);
+  }
+  to {
+    box-shadow: var(--site-shadow);
+  }
+}
+[data-sonner-toast][data-type='success'] {
+  animation: toast-success-flash 0.8s ease-out;
 }
 
 /* ── Global degradations ──────────────────────────────────────────────────── */

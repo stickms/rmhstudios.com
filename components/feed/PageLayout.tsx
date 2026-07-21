@@ -76,19 +76,20 @@ export function PageLayout({
     <>
       {/* Center Column – width animates between pages. Bottom padding clears the
           floating mobile dock (§8.3). */}
-      <AnimatedMain
-        className="w-full min-w-0 border-r border-site-border pb-dock"
-        targetWidth={targetWidth}
-      >
+      <AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={targetWidth}>
         <div className="flex flex-col">
           {/* Scroll sentinel — sits at the very top so the header knows when the
               page has scrolled beneath it. */}
           <div ref={sentinelRef} aria-hidden className="h-px" />
-          {/* Sticky Header — L3 glass-chrome; condenses on scroll. */}
+          {/* Sticky Header — L3 glass-chrome floating capsule (§8.2): insets from
+              the column edges (mx-2 mobile → mx-3 ≥md) so the aurora shows around
+              it. Still condenses on scroll (height + tint + blur + glint via
+              [data-scrolled]). The optics-ring glint is always-on and comes free
+              from .glass-chrome — no per-header work. */}
           <div
             ref={headerRef}
             data-slot="page-header"
-            className="glass-chrome sticky top-0 z-10 h-18 data-[scrolled]:h-16 border-b border-site-border transition-[height]"
+            className="glass-chrome sticky top-2 z-10 mx-2 rounded-site shadow-site-sm h-18 data-[scrolled]:h-16 transition-[height] md:top-3 md:mx-3"
           >
             <div className="h-full flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -126,7 +127,9 @@ export function PageLayout({
 
       {/* Right Sidebar or Spacer - hidden below lg */}
       {hasRightSidebar ? (
-        <aside className="hidden lg:block w-80 shrink-0 self-start">{rightSidebar}</aside>
+        // No self-start: the aside stretches to the column height so the
+        // RightSidebar's sticky stack (top-3) has room to travel (§8.2.4).
+        <aside className="hidden lg:block w-80 shrink-0">{rightSidebar}</aside>
       ) : !wide ? (
         <div className="hidden lg:block w-80 shrink-0" />
       ) : (

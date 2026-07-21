@@ -204,7 +204,9 @@ export function SearchColumn({
     <div className="min-h-screen">
       {/* The search field is the header, so it goes in ColumnHeader's `children`
           slot; the category tabs sit under it inside the same sticky block. */}
-      <div className="sticky top-0 z-10 border-b border-site-border glass-chrome">
+      {/* Floating L3 glass-chrome capsule (§8.2); bg/blur/glint clip to
+          rounded-site on their own (the tab row keeps its own overflow-x-auto). */}
+      <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
         <ColumnHeader sticky={false} className="border-b-0 pb-0">
           <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-4 py-2">
             <Search className="h-4 w-4 text-site-text-muted" />

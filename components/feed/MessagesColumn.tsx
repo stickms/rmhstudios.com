@@ -272,7 +272,9 @@ export function MessagesColumn({
         className={
           embedded
             ? 'border-b border-site-border'
-            : 'sticky top-0 z-10 glass-chrome border-b border-site-border'
+            : // Floating L3 glass-chrome capsule (§8.2); bg/blur/glint clip to
+              // rounded-site without overflow-hidden.
+              'sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3'
         }
       >
         {!embedded && (
