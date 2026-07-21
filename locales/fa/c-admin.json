@@ -5,7 +5,7 @@
   "changes-now-live": "تغییرات شما اکنون اعمال شده است.",
   "content-label": "محتوا",
   "date-label": "تاریخ",
-  "delete-confirm": "آیا مطمئن هستید که می‌خواهید «{{title}}» را حذف کنید؟ این عمل قابل بازگشت نیست.",
+  "delete-confirm": "حذف \"{{title}}\" قابل بازگشت نیست.",
   "delete-failed": "حذف پست ناموفق بود",
   "delete-post": "حذف پست",
   "delete-success": "پست وبلاگ حذف شد: {{slug}}.",

@@ -5,7 +5,7 @@
   "changes-now-live": "Değişiklikleriniz artık yayında.",
   "content-label": "İçerik",
   "date-label": "Tarih",
-  "delete-confirm": "\"{{title}}\" öğesini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+  "delete-confirm": "\"{{title}}\" silme işlemi geri alınamaz.",
   "delete-failed": "Gönderi silinemedi",
   "delete-post": "Gönderiyi Sil",
   "delete-success": "Blog gönderisi silindi: {{slug}}.",

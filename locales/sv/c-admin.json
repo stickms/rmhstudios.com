@@ -5,7 +5,7 @@
   "changes-now-live": "Dina ändringar är nu publicerade.",
   "content-label": "Innehåll",
   "date-label": "Datum",
-  "delete-confirm": "Är du säker på att du vill ta bort \"{{title}}\"? Detta kan inte ångras.",
+  "delete-confirm": "Borttagning av \"{{title}}\" kan inte ångras.",
   "delete-failed": "Misslyckades med att ta bort inlägg",
   "delete-post": "Ta bort inlägg",
   "delete-success": "Blogginlägg borttaget: {{slug}}.",

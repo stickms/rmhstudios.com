@@ -5,5 +5,7 @@
   "close": "Isara",
   "confirm": "Kumpirmahin",
   "copied": "Nakopya",
-  "copy": "Kopyahin"
+  "copy": "Kopyahin",
+  "move-down": "Ibaba ang{{name}}",
+  "move-up": "Itaas ang{{name}}"
 }
