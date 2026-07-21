@@ -108,10 +108,10 @@ from one Dockerfile + pushes them to GHCR → an HMAC-signed request wakes the V
 webhook listener (`webhook-server.cjs`) → `./deploy.sh production <sha>` pulls
 those images → prisma migrate → blue/green web hotswap (port 7005/7015 flip).
 CI: `web-ci.yml` (typecheck, lint, tests, build, production dependency audit),
-`typecheck-server.yml`, `vitest-coverage.yml`, `go-microservices.yml` (Bazel
-test), `codeql.yml` (JS/TS + Go SAST), and `senior-review.yml` (LLM review
-gate), plus many granular lint/security workflows. Run the core checks locally
-before opening a pull request.
+`go-microservices.yml` (Bazel test), and `senior-review.yml` (LLM review gate),
+plus a few build/deploy guards (`build-vibe-packages`, `compose-validate`,
+`prisma-validate`, `prisma-migrate-status`). Run the core checks locally before
+opening a pull request.
 
 ## Trust order for conflicting information
 
