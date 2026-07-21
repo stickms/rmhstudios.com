@@ -846,6 +846,63 @@ toggle.
 
 ---
 
+### 5.5x Layout clarity, mobile friendliness & tilt light (amendment 2026-07-21d)
+
+**Owner request:** revamp element layout for clarity — nothing overlaps;
+verify mobile friendliness end-to-end; and make the glass respond to device
+tilt.
+
+**A. No-overlap & clarity pass.** Audit and fix, with live verification
+(the dev server + Playwright are available — screenshot desktop 1440px and
+mobile 390px, plus programmatic `getBoundingClientRect` intersection checks
+on the floating elements):
+
+1. **Floating-element stack:** dock, MiniPlayer, BackToTop, cookie bar,
+   toasts — verify vertical stacking on mobile (`.bottom-above-dock`,
+   `--safe-bottom`) and that no two overlap when all are visible.
+2. **Z-index ladder:** sidebar rail (30), header capsules (10), drawer (60),
+   overlays/palette — enumerate and fix any pair that can collide (e.g. an
+   open popover under a later sticky capsule).
+3. **Tablet rail (Phase B note):** at `md` the 64px rail + `m-3` insets
+   compress icon pills — tune the collapsed-rail padding so pills breathe.
+4. **Tab sheets on narrow screens:** every §5.45 sheet must scroll
+   horizontally (`overflow-x-auto`, no wrap, edge fade mask) — never clip or
+   collide with `headerRight` actions at 390px.
+5. **Header capsules vs. content:** consistent first-content gutter below
+   every capsule (no content sliding under the capsule at rest); breadcrumb +
+   long titles truncate rather than push `headerRight` off-viewport.
+6. **Spacing rhythm:** gutters between floating panes are the §8 constants
+   (`space-y-3` / `gap-4/6`) everywhere — kill ad-hoc `mt-*` drift on the
+   restructured pages.
+
+**B. Mobile friendliness.** At 390×844 (and `xs` 480): drawer + dock
+gestures still work; feed cards/media never overflow the viewport; tab
+sheets scroll; the settings clarity slider is thumb-operable (≥44px target);
+forms keep the 16px zoom floor; safe-area insets respected. Fix what fails.
+
+**C. Tilt-driven glass light.** The scene light (§4.4) learns device
+orientation, so tilting the phone slides the glint across every pane — the
+signature mobile counterpart of pointer tracking:
+
+1. Extend the orientation path in `hooks/useLiquidBackground.ts` (it already
+   maps `deviceorientation` on no-permission platforms) — or a sibling in
+   `useGlassLight` sharing its listener — to also write quantized
+   `--light-x/--light-y` (viewport px: center + gamma/beta normalized ×
+   ~40% of viewport). Toggle `html.tilt-live` while orientation events flow.
+2. Under `html.tilt-live`, coarse-pointer devices switch their glint from
+   the static top-edge gradient to the viewport-anchored radial (same layer,
+   `--glass-glint-attach` flips to `fixed`). **iOS caveat:** fixed
+   attachment is historically buggy in iOS Safari — verify in the iOS
+   simulator profile; if it misrenders, keep iOS on the static gradient and
+   ship tilt for Android only (leave the gate commented).
+3. **iOS permission:** `DeviceOrientationEvent.requestPermission()` needs a
+   user gesture — add a "Tilt effects" enable row in Settings → Appearance
+   (only rendered when the permission gate exists), persisting consent as
+   `rmh-motion-ok`; auto-enable elsewhere. Off under reduced motion /
+   `perf-lite` (same gates as the aurora parallax).
+4. The aurora parallax keeps its existing tilt input — light + backdrop
+   moving together is what sells the material.
+
 ## 6. New tokens & JS surface (complete list)
 
 `:root` additions (each theme may override; sane defaults inherit):
