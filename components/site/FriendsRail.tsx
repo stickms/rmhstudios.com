@@ -90,7 +90,7 @@ const FriendRailRow = memo(function FriendRailRow({ friend }: { friend: ActiveFr
           <UserAvatar src={user.image} alt="" size={32} fallbackName={name} />
           <span
             aria-hidden
-            className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-site-surface bg-site-success"
+            className="absolute -bottom-0.5 -end-0.5 h-3 w-3 rounded-full border-2 border-site-surface bg-site-success"
           />
         </span>
         <span className="min-w-0 flex-1">

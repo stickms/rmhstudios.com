@@ -58,7 +58,7 @@ export function FriendsStrip({ className }: { className?: string }) {
               />
               <span
                 aria-hidden
-                className={`absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-site-surface ${
+                className={`absolute -bottom-0.5 -end-0.5 h-2.5 w-2.5 rounded-full border-2 border-site-surface ${
                   f.activity ? 'bg-site-accent' : 'bg-site-success'
                 }`}
               />
@@ -124,7 +124,7 @@ const FriendSheetRow = memo(function FriendSheetRow({ friend, onNavigate }: { fr
             <UserAvatar src={user.image} alt="" size={40} fallbackName={name} />
             <span
               aria-hidden
-              className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-site-surface bg-site-success"
+              className="absolute -bottom-0.5 -end-0.5 h-3 w-3 rounded-full border-2 border-site-surface bg-site-success"
             />
           </span>
           <span className="min-w-0 flex-1">
