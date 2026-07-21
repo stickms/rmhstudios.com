@@ -757,7 +757,82 @@ primitive):**
 | Settings section switcher (if tabbed) | `app/routes/_site/settings*` | inspect; migrate if tabs |
 | DailyPuzzlesHub | `components/daily-puzzles/DailyPuzzlesHub.tsx` | already has layoutId — **refactor onto the primitive** so there is exactly one implementation |
 
-### 5.5 Dialog, toast, progress accents
+### 5.45 Tab sheets & placement (amendment 2026-07-21c)
+
+**Owner request:** tab lists sit on their own **glass sheet**, and always
+render **below the hero section or page title** — never buried inside header
+chrome — so they read as an obvious, tactile control.
+
+1. **The sheet.** `LiquidTabs` gains a `sheet` prop (default **true**): the
+   `role="tablist"` row is wrapped in a pill sheet —
+   `glass-fill glass-bevel-sm rounded-full p-1 w-fit` (L1: cheap, repeatable;
+   hairline glint edge from §4.35). The active capsule keeps its accent glass
+   + `glass-liquid`. Hand-rolled capsule tab bars (creator studio, RMHLadder)
+   adopt the same sheet wrapper classes around their existing markup.
+2. **Placement rule (new convention, page-consistency checklist item):** tab
+   strips are standalone sheets in the content flow, **below** the hero pane
+   or the page-title header capsule, separated by the normal gutter
+   (`mt-3`/`space-y-3`). They do NOT live inside `headerExtra` or the sticky
+   header capsule. A strip that was sticky may stay sticky (`top` offset
+   clearing the floating header), but it stays visually its own sheet.
+3. **Adopters to move/re-wrap:** Feed (For You/Following + content filters —
+   out of the header capsule, below it), `/library` (lib-nav strip moves
+   below the hero slab), `/store` (Shop/Market below the "Choose your
+   altitude." hero), `/search` (type tabs below the search well), profile
+   (below the identity header — verify), creator studio (below "Make
+   anything.", keep sticky + `?tab=`), RMHLadder shell nav, DailyPuzzlesHub.
+   ARIA/state wiring is untouched — this is wrapper + placement only.
+
+### 5.46 Glass clarity slider (amendment 2026-07-21c)
+
+**Owner request:** the frosted/clear glass control in Settings must
+verifiably work — and become a **slider with a live preview**, not just a
+toggle.
+
+1. **One axis, five stops** (stepped slider, Radix `Slider` primitive):
+   `0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear`. Semantic: how much
+   scene shows through the material.
+   - `0` = exactly today's reduce-transparency behavior (opaque surfaces, no
+     blur) — the existing mechanism (`html.reduce-transparency`) *is* this
+     stop; keep it as the implementation.
+   - `2` = the shipped default (no modification).
+   - `1` / `3` / `4` = multipliers via two `<html>`-level vars set inline by
+     the appearance runtime:
+
+```css
+/* globals.css — glass classes consume the user factors */
+--glass-user-blur: 1;   /* 1: 1.25 · 3: 0.65 · 4: 0.35 */
+--glass-user-tint: 1;   /* 1: 1.35 · 3: 0.75 · 4: 0.5  */
+/* e.g. .glass-pane blur becomes:
+   blur(calc(var(--site-glass-blur-pane) * var(--glass-user-blur, 1))) …
+   tint alpha via color-mix(in srgb, var(--site-glass-tint)
+   calc(var(--glass-user-tint, 1) * 100%), transparent) — clamp ≤ 1 by
+   construction (Calm's 1.35 applies color-mix toward --site-surface-opaque
+   instead of >100% alpha). */
+```
+
+2. **Persistence & no-flash:** stored like the theme (`localStorage`
+   `rmh-glass-level`, default 2), applied pre-paint by the `__root.tsx`
+   `themeScript` (level 0 adds `reduce-transparency`, others set the two
+   vars inline), synced through `/api/preferences/appearance` (zod: int
+   0–4; tiny Prisma prefs addition mirroring reduce-transparency's shape).
+   The OS `prefers-reduced-transparency` media query still forces opaque
+   regardless of slider (accessibility wins).
+3. **Settings UI (Appearance):** replace the bare toggle row with a
+   "Glass clarity" block: the stepped slider + stop labels + a **live
+   preview card** — a mini aurora swatch (reuses the ThemeGallery
+   mini-canvas pattern) with a small `.glass-pane` over it that re-renders
+   at the hovered/dragged stop *before* commit (pointer-preview like theme
+   hover-preview). Moving the slider also applies live to the whole page
+   (it's inline vars — instant). Strings via
+   `t('settings-glass-clarity', …)` etc. + `pnpm i18n:extract`.
+4. **Interactions with modes:** high-contrast ignores the slider entirely
+   (glass is off); `perf-lite` caps the effective blur but not the tint
+   factor; the design lab gains a read-only indicator of the active level.
+5. **"Ensure it works":** the implementing agent must trace the existing
+   reduce-transparency toggle end-to-end (settings control → class → CSS →
+   persistence → API sync → no-flash script) and fix anything broken found
+   along the way, then wire the slider onto that verified path.
 
 - **Dialog** (`components/ui/dialog.tsx` + its css): content enter re-tuned
   to scale `0.94 → 1` with `var(--ease-glass)` (a whisper of overshoot);
