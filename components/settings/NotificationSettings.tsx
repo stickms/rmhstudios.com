@@ -129,13 +129,16 @@ export function NotificationSettings() {
   return (
     <div className="space-y-6">
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-site-text">{t('categories', { defaultValue: 'Categories' })}</h3>
+        <h3 className="mb-2 text-sm font-semibold text-site-text">
+          {t('categories', { defaultValue: 'Categories' })}
+        </h3>
         <ul className="divide-y divide-site-border">
           {NOTIFY_CATEGORIES.map((cat) => {
             const ch = resolveChannels(prefs.matrix, cat);
-            const summary = CHANNELS.filter((c) => ch[c])
-              .map((c) => channelLabel(t, c))
-              .join(' · ') || t('off', { defaultValue: 'Off' });
+            const summary =
+              CHANNELS.filter((c) => ch[c])
+                .map((c) => channelLabel(t, c))
+                .join(' · ') || t('off', { defaultValue: 'Off' });
             const expanded = open === cat;
             return (
               <li key={cat}>
@@ -156,15 +159,14 @@ export function NotificationSettings() {
                     {CHANNELS.map((c) => (
                       <label key={c} className="flex items-center justify-between py-2">
                         <span className="text-sm text-site-text">{channelLabel(t, c)}</span>
-                        <Switch
-                          checked={ch[c]}
-                          onCheckedChange={(v) => setChannel(cat, c, v)}
-                        />
+                        <Switch checked={ch[c]} onCheckedChange={(v) => setChannel(cat, c, v)} />
                       </label>
                     ))}
                     {CATEGORY_DEFAULTS[cat].email ? null : (
                       <p className="text-xs text-site-text-dim">
-                        {t('email-note', { defaultValue: 'Email off by default for this category.' })}
+                        {t('email-note', {
+                          defaultValue: 'Email off by default for this category.',
+                        })}
                       </p>
                     )}
                   </div>
@@ -176,7 +178,9 @@ export function NotificationSettings() {
       </section>
 
       <section>
-        <h3 className="mb-2 text-sm font-semibold text-site-text">{t('quiet-hours', { defaultValue: 'Quiet hours' })}</h3>
+        <h3 className="mb-2 text-sm font-semibold text-site-text">
+          {t('quiet-hours', { defaultValue: 'Quiet hours' })}
+        </h3>
         <p className="mb-2 text-sm text-site-text-muted">
           {t('quiet-desc', { defaultValue: 'Push notifications are held during these hours.' })}
         </p>

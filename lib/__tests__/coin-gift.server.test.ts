@@ -19,10 +19,12 @@ const prismaMock = vi.hoisted(() => ({
   $transaction: vi.fn(),
 }));
 vi.mock('@/lib/prisma.server', () => ({ prisma: prismaMock }));
-vi.mock('@/lib/notifications.server', () => ({ createNotification: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('@/lib/notifications.server', () => ({
+  createNotification: vi.fn().mockResolvedValue(undefined),
+}));
 
 import { debitCoins, creditCoins, EscrowError, type Tx } from '@/lib/wager/escrow.server';
-import { sendCoinGift, CoinGiftError, GIFT_MIN, GIFT_DAILY_CAP } from '@/lib/gifting/coin-gift.server';
+import { sendCoinGift, GIFT_MIN, GIFT_DAILY_CAP } from '@/lib/gifting/coin-gift.server';
 
 /** A tx whose userProfile.updateMany enforces the same atomic guard as Postgres. */
 function makeWallet(balance: number) {
@@ -31,14 +33,22 @@ function makeWallet(balance: number) {
     userProfile: {
       upsert: vi.fn(async () => ({})),
       // Atomic conditional decrement: check + write in one indivisible step.
-      updateMany: vi.fn(async ({ where, data }: { where: { coins?: { gte: number } }; data: { coins: { decrement: number } } }) => {
-        const need = where.coins?.gte ?? 0;
-        if (state.coins >= need) {
-          state.coins -= data.coins.decrement;
-          return { count: 1 };
-        }
-        return { count: 0 };
-      }),
+      updateMany: vi.fn(
+        async ({
+          where,
+          data,
+        }: {
+          where: { coins?: { gte: number } };
+          data: { coins: { decrement: number } };
+        }) => {
+          const need = where.coins?.gte ?? 0;
+          if (state.coins >= need) {
+            state.coins -= data.coins.decrement;
+            return { count: 1 };
+          }
+          return { count: 0 };
+        },
+      ),
     },
     coinTransaction: { create: vi.fn(async () => ({})) },
   };
@@ -65,7 +75,10 @@ describe('debitCoins — atomic overdraft guard', () => {
     await debitCoins(tx, 'u', 30);
     expect(state.coins).toBe(70);
     expect(raw.userProfile.updateMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: 'u', coins: { gte: 30 } }), data: { coins: { decrement: 30 } } }),
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: 'u', coins: { gte: 30 } }),
+        data: { coins: { decrement: 30 } },
+      }),
     );
   });
 
@@ -88,7 +101,9 @@ describe('debitCoins — atomic overdraft guard', () => {
     const failed = results.filter((r) => r.status === 'rejected');
     expect(ok).toHaveLength(1);
     expect(failed).toHaveLength(1);
-    expect((failed[0] as PromiseRejectedResult).reason).toMatchObject({ code: 'INSUFFICIENT_COINS' });
+    expect((failed[0] as PromiseRejectedResult).reason).toMatchObject({
+      code: 'INSUFFICIENT_COINS',
+    });
     expect(state.coins).toBe(20); // one 80 debit applied, never negative
   });
 });
@@ -104,46 +119,73 @@ describe('creditCoins', () => {
 
 describe('sendCoinGift', () => {
   function stubRecipient(receiveGifts: boolean | null = true) {
-    prismaMock.user.findUnique.mockResolvedValue({ id: 'r', profile: receiveGifts === null ? null : { receiveGifts } });
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: 'r',
+      profile: receiveGifts === null ? null : { receiveGifts },
+    });
     prismaMock.coinTransaction.count.mockResolvedValue(0);
   }
 
   it('rejects a self-gift (no balance movement)', async () => {
-    await expect(sendCoinGift({ gifterId: 'a', recipientId: 'a', amount: 100 })).rejects.toMatchObject({ code: 'SELF' });
+    await expect(
+      sendCoinGift({ gifterId: 'a', recipientId: 'a', amount: 100 }),
+    ).rejects.toMatchObject({ code: 'SELF' });
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 
   it('rejects an out-of-range amount', async () => {
-    await expect(sendCoinGift({ gifterId: 'a', recipientId: 'b', amount: GIFT_MIN - 1 })).rejects.toMatchObject({ code: 'INVALID' });
+    await expect(
+      sendCoinGift({ gifterId: 'a', recipientId: 'b', amount: GIFT_MIN - 1 }),
+    ).rejects.toMatchObject({ code: 'INVALID' });
   });
 
   it('rejects a recipient who has opted out of gifts', async () => {
     stubRecipient(false);
-    await expect(sendCoinGift({ gifterId: 'a', recipientId: 'r', amount: 100 })).rejects.toMatchObject({ code: 'DISABLED' });
+    await expect(
+      sendCoinGift({ gifterId: 'a', recipientId: 'r', amount: 100 }),
+    ).rejects.toMatchObject({ code: 'DISABLED' });
   });
 
   it('enforces the daily send cap', async () => {
     prismaMock.user.findUnique.mockResolvedValue({ id: 'r', profile: { receiveGifts: true } });
     prismaMock.coinTransaction.count.mockResolvedValue(GIFT_DAILY_CAP);
-    await expect(sendCoinGift({ gifterId: 'a', recipientId: 'r', amount: 100 })).rejects.toMatchObject({ code: 'CAP' });
+    await expect(
+      sendCoinGift({ gifterId: 'a', recipientId: 'r', amount: 100 }),
+    ).rejects.toMatchObject({ code: 'CAP' });
   });
 
   it('surfaces an overdraft as INSUFFICIENT_COINS', async () => {
     stubRecipient(true);
     const wallet = makeWallet(50); // less than the 100 gift
-    prismaMock.$transaction.mockImplementation(async (cb: (tx: Tx) => Promise<unknown>) => cb(wallet.tx));
-    await expect(sendCoinGift({ gifterId: 'a', recipientId: 'r', amount: 100 })).rejects.toMatchObject({ code: 'INSUFFICIENT_COINS' });
+    prismaMock.$transaction.mockImplementation(async (cb: (tx: Tx) => Promise<unknown>) =>
+      cb(wallet.tx),
+    );
+    await expect(
+      sendCoinGift({ gifterId: 'a', recipientId: 'r', amount: 100 }),
+    ).rejects.toMatchObject({ code: 'INSUFFICIENT_COINS' });
     expect(wallet.state.coins).toBe(50); // debit never applied
   });
 
   it('settles a valid gift: debits the sender and writes one GIFT ledger row', async () => {
     stubRecipient(true);
     const wallet = makeWallet(500);
-    prismaMock.$transaction.mockImplementation(async (cb: (tx: Tx) => Promise<unknown>) => cb(wallet.tx));
-    await expect(sendCoinGift({ gifterId: 'a', recipientId: 'r', amount: 100, note: 'gg' })).resolves.toEqual({ ok: true });
+    prismaMock.$transaction.mockImplementation(async (cb: (tx: Tx) => Promise<unknown>) =>
+      cb(wallet.tx),
+    );
+    await expect(
+      sendCoinGift({ gifterId: 'a', recipientId: 'r', amount: 100, note: 'gg' }),
+    ).resolves.toEqual({ ok: true });
     expect(wallet.state.coins).toBe(400);
     expect(wallet.raw.coinTransaction.create).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ senderId: 'a', recipientId: 'r', amount: 100, type: 'GIFT', entityType: 'gift' }) }),
+      expect.objectContaining({
+        data: expect.objectContaining({
+          senderId: 'a',
+          recipientId: 'r',
+          amount: 100,
+          type: 'GIFT',
+          entityType: 'gift',
+        }),
+      }),
     );
   });
 });

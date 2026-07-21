@@ -16,7 +16,9 @@ import { listSaved, createSaved, updateSaved, deleteSaved } from '@/lib/search/s
 beforeEach(() => {
   prismaMock.savedSearch.findMany.mockReset().mockResolvedValue([]);
   prismaMock.savedSearch.count.mockReset().mockResolvedValue(0);
-  prismaMock.savedSearch.create.mockReset().mockResolvedValue({ id: 'x', query: 'q', types: [], alerts: false, createdAt: new Date(0) });
+  prismaMock.savedSearch.create
+    .mockReset()
+    .mockResolvedValue({ id: 'x', query: 'q', types: [], alerts: false, createdAt: new Date(0) });
   prismaMock.savedSearch.updateMany.mockReset().mockResolvedValue({ count: 1 });
   prismaMock.savedSearch.deleteMany.mockReset().mockResolvedValue({ count: 1 });
 });

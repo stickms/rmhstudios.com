@@ -2,7 +2,7 @@
 
 **When to use:** a deploy just promoted a new web color and the freshly-live
 container is serving errors (5xx, white screen, broken auth, a bad release you
-need off the front door *now*). This is the **inverse** of the forward flip in
+need off the front door _now_). This is the **inverse** of the forward flip in
 [`deploy/hotswap-web.sh`](../../deploy/hotswap-web.sh) — it points Apache back
 at the previous color.
 
@@ -10,7 +10,7 @@ at the previous color.
 > verification** (it restarts the old container and reverts the port file before
 > it ever finishes — see the "verify the flip landed" block in
 > `hotswap-web.sh`). This runbook is for the case the script can't catch: the
-> flip *succeeded*, the new color is live and healthy-by-probe, but the release
+> flip _succeeded_, the new color is live and healthy-by-probe, but the release
 > is bad. By then the old container has usually been `docker rm`'d, so rolling
 > back means bringing the previous image back up, not just flipping a file.
 
@@ -50,7 +50,7 @@ docker ps --filter name=rmhstudios-prod-web --format '{{.Names}}\t{{.Ports}}\t{{
 ```
 
 Call the live one `$BAD_PORT` and the rollback target `$GOOD_PORT`
-(the other of 7005/7015). Confirm which color is *bad* from the symptom, not
+(the other of 7005/7015). Confirm which color is _bad_ from the symptom, not
 from memory — the file is the source of truth.
 
 ### 2 — Make sure the previous color is actually running
@@ -116,21 +116,21 @@ docker stop rmhstudios-prod-web-<bad-color>     # keep it around until you're su
 ## Migration stance — read this before touching the database
 
 **Do not reflexively revert the migration.** The deploy runs
-`prisma migrate deploy` *before* the flip, so by rollback time the new schema is
+`prisma migrate deploy` _before_ the flip, so by rollback time the new schema is
 already applied. Whether the previous web color is safe against it depends on
 the migration's shape:
 
-| Migration shape | Is the previous web color safe against the new schema? | DB action on rollback |
-| --- | --- | --- |
-| **Additive** — new nullable column, new table, new index (the vast majority here) | **Yes.** Old code simply ignores the additions. | **None.** Leave the migration applied. |
-| **Widening** — enum value added, column made nullable | Yes. | None. |
-| **Breaking** — column/table dropped or renamed, column made `NOT NULL`, type narrowed, data backfilled-then-old-column-removed | **No** — old code may query a column that's gone or write a shape the new constraint rejects. | Escalate; see below. |
+| Migration shape                                                                                                                | Is the previous web color safe against the new schema?                                        | DB action on rollback                  |
+| ------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | -------------------------------------- |
+| **Additive** — new nullable column, new table, new index (the vast majority here)                                              | **Yes.** Old code simply ignores the additions.                                               | **None.** Leave the migration applied. |
+| **Widening** — enum value added, column made nullable                                                                          | Yes.                                                                                          | None.                                  |
+| **Breaking** — column/table dropped or renamed, column made `NOT NULL`, type narrowed, data backfilled-then-old-column-removed | **No** — old code may query a column that's gone or write a shape the new constraint rejects. | Escalate; see below.                   |
 
 **Reverting a migration is the more dangerous move** and is a last resort:
 `prisma migrate` has no down-migrations, so it means hand-writing and applying
 reverse SQL, and any writes taken since the flip (posts, coins, redemptions)
 that depend on the new schema can be **lost or corrupted** by dropping what they
-wrote into. For a breaking migration, prefer rolling *forward* (ship a fix on
+wrote into. For a breaking migration, prefer rolling _forward_ (ship a fix on
 the new schema) over reverting. If you must revert:
 
 1. Take a fresh DB snapshot first (`deploy/backup/…`).
