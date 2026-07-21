@@ -1495,6 +1495,28 @@ page-consistency.md checklist. Live-verify with the Phase-H audit-script
 pattern (gap measurement between sibling glass rects) on `/`, `/store`,
 `/library`, `/settings`, `/studio/themes` at 1440 + 390.
 
+### 15.5 Sticky stacking (owner follow-up, same round)
+
+Pages with 2+ sticky elements in one column (header capsule + sticky tab
+sheet + sticky search, etc.) currently pin them to the **same top offset**,
+so they overlap and hide each other while scrolled. Rule: **a column has one
+sticky group.** Two compliant shapes:
+
+1. **Merge** — functionally related co-stickies (tabs + search; title +
+   filter row) join a single sticky glass container with internal `space-y-2`
+   (one backdrop surface, cheaper too). Prefer this when the elements always
+   appear/disappear together.
+2. **Cascade** — independent stickies get cumulative offsets: the second
+   sticky's `top` = first sticky's height + gutter (account for the
+   condensed `data-scrolled` height and the smaller `top-2` mobile offset).
+   Prefer this when one element can unmount independently.
+
+Sweep every page with multiple stickies (`/search`, feed, creator studio,
+library, RMHLadder shell, thread/detail views, any §15.1 convergence that
+made a strip sticky) and apply one of the two shapes. Programmatic check:
+scrolled to mid-page at 1440 + 390, collect all `position:sticky/fixed`
+rects in the column — zero pairwise intersections.
+
 Verification: gates green; before/after screenshots of the `/store` tabs and
 one spacing-fixed page; §12.8 applies to every replaced style.
 
