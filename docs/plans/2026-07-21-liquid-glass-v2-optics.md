@@ -659,17 +659,102 @@ move the mouse — do you see glass react?"*
 
 ---
 
-## 8. What this doc deliberately does NOT change
+## 8. Layout restructure — the floating glass shell
 
-- Elevation tiers, blur radii, tint tokens, theme catalog (6 themes), accent
-  presets, `THEME_BG`, the anti-FOUC script — all v1, all stable.
-- Layout: no width/geometry/padding changes anywhere (v1 already moved
-  `pb-16 → pb-dock`).
-- The containing-block rules (aside `::before` blur; `.glass-opaque`
-  takeovers; `[data-drawer-active]` opacity) — restated in §2, unchanged in
-  behavior.
-- No new fonts, icons, routes, or dependencies. `framer-motion` is already a
-  dependency (LiquidTabs uses it).
+> **Amendment (2026-07-21, owner request):** v2 is *not* CSS-only. The page
+> layout itself is restructured so the glass has something to float over.
+> This supersedes v1 §15's "no layout changes" non-goal.
+
+### 8.1 The problem with the current anatomy
+
+The shell is an **app frame**: a full-height sidebar flush against a bordered
+center column (`border-r border-site-border`) with a full-bleed sticky
+header, and the feed is a Twitter-style divided list
+(`RMHarkCard.tsx:207` — `px-4 py-3 border-b border-site-border` rows).
+Everything touches everything; the aurora only peeks through tints. Glass
+panes read best when they **float** — discrete slabs with the lit scene
+visible in the gutters around them.
+
+### 8.2 Floating shell (Phase B — one change, every page inherits)
+
+1. **Sidebar → floating rail.** Keep the fixed aside + spacer geometry
+   *exactly* (`_site.tsx:84` — widths, z-index, containing-block rule §3.3.1
+   all untouched). Inside the aside, wrap `LeftSidebar` in an inner rail
+   panel: `m-3 h-[calc(100%-1.5rem)] rounded-site glass-chrome--aside
+   overflow-hidden flex flex-col` + the optics ring (`::after`) +
+   `data-glass-lens .glass-refract` treatment adapted to the aside variant.
+   Remove the aside's `border-r` (the rail's own rim replaces it). The page
+   edge now visibly bends and glints behind a floating rounded rail.
+2. **Sticky header → floating capsule.** In `PageLayout.tsx:88–92`: the
+   header becomes `sticky top-3 z-10 mx-3 rounded-site glass-chrome
+   shadow-site-sm` (+ ring) instead of full-bleed `top-0 … border-b`.
+   Scroll condensation stays (height + tint + now glint §7). The same
+   treatment applies to the feed's own sticky header
+   (`FeedColumn.tsx:138`) and any column header using the
+   `sticky top-0 … glass-chrome border-b` pattern
+   (`components/feed/ColumnHeader.tsx` if shared — grep
+   `sticky top-0 z-10` under `components/feed/`).
+3. **Center column → transparent track.** Remove
+   `border-r border-site-border` from the column wrappers (`PageLayout.tsx:80`
+   and the feed-column pages that hand-write it — grep
+   `border-r border-site-border` in `app/routes/_site/` +
+   `components/feed/`). Columns keep their `max-width`/`pb-dock`; the shell's
+   outer flex gains aurora gutters: `md:gap-4 xl:gap-6 md:px-4` on the
+   `_site.tsx:61` flex row. The **content floats as panes; the column itself
+   stays transparent** (no giant blur surface — budget).
+4. **Right sidebar → floating widget stack.** `RightSidebar.tsx` sections are
+   already `glass-fill` cards — wrap the aside content in
+   `sticky top-3 space-y-3` and drop any leftover left hairline.
+5. **Landmark fix (while in here):** `AnimatedMain` renders
+   `<main id="main-content">` *inside* the shell's
+   `<main id="main-content" class="contents">` (`_site.tsx` ~line 100) —
+   nested mains + duplicate id. Change `AnimatedMain` to render a `<div>`
+   (verify with grep that no top-level route depends on its landmark; the
+   shell's `<main>` keeps the id and the skip-link target).
+6. **Mobile:** the drawer/dock mechanics are untouched. The floating header
+   capsule insets `mx-2 top-2` below `md`; columns stay edge-to-edge
+   (gutters are a ≥`md` luxury — phone width is too precious).
+
+### 8.3 Feed restructure (Phase C — the flagship visible change)
+
+- **Post rows → floating glass cards.** `RMHarkCard` root
+  (`RMHarkCard.tsx:207`): `px-4 py-3 border-b border-site-border` becomes
+  `glass-fill rounded-site px-4 py-3` (border comes from `.glass-fill`).
+  The list container (`FeedList.tsx` / `FeedColumn.tsx:231`) swaps
+  `divide/border-b` for `space-y-3 px-3 pt-3` — aurora gaps between every
+  post. Media inside cards rounds to `rounded-site-sm` and stays within the
+  card radius.
+- **Virtualization guard:** `.feed-card-cv`'s
+  `contain-intrinsic-size: auto 320px` (`globals.css:2406–2409`) accounts for
+  the new gap (`auto 332px`) so restore-scroll stays accurate.
+- **Composer** (inline feed composer): its own `.glass-pane rounded-site mx-3`
+  slab, separated from the first post by a gutter.
+- **Pinned hero / announcements** (`PinnedHero.tsx`, `FeedAnnouncements.tsx`):
+  become `.glass-pane` slabs with the ring; the hero may take the page's
+  `.glass-refract` slot on `/`.
+- Thread/detail internals (`ThreadView`, `PostDetail`) keep their connector
+  hairlines *inside* their card — only the outer framing floats.
+
+### 8.4 Per-page restructures (Phase C, flagships)
+
+| Page | Restructure |
+|---|---|
+| `/library` | Hero becomes a full-width floating `.glass-pane .glass-refract` slab with the stats `<dl>` etched into it (v1 §9.2 finally realized); shelves separated by aurora gutters instead of section borders. |
+| `/store` | Tier cards become three floating `.glass-pane` slabs over open canvas (featured = prism + sheen), shop grid floats below with gutters — delete any wrapper borders. |
+| `/settings` | Section groups become discrete floating panes (`space-y-4`, no divide-y between groups); rows keep hairlines *inside* panes. |
+| `/profile/$id`, `/u/$userid` | Identity header becomes a floating pane overlapping the banner (negative margin), tabs → `LiquidTabs`, content cards float with gutters. |
+| `/notifications`, `/messages` | Rows stay dense **inside** one floating `.glass-fill` container card per group (density pages don't explode into per-row cards). |
+| Admin | **No restructure** — density rule stands; admin inherits the shell only. |
+
+### 8.5 Still explicitly unchanged
+
+- Elevation tiers, blur radii, tint tokens, theme catalog, accent presets,
+  `THEME_BG`, anti-FOUC script.
+- Containing-block rules (aside blur on pseudo; `.glass-opaque`;
+  `[data-drawer-active]`) — §2.
+- Column `max-width` constants (`lib/layout-width.ts`) — gutters come from
+  flex `gap`, not width math.
+- No new fonts, icons, routes, or dependencies (`framer-motion` exists).
 - Games/apps (`THEME_EXCLUDED_ROUTES`), API routes, auth, economy.
 
 ---
@@ -733,8 +818,8 @@ Rules for every phase agent:
 | Phase | Contents | Files | Depends on |
 |---|---|---|---|
 | **A — Optics core** | §2 layer contract; §3 lens map + `#glass-lens`/`#glass-lens-prism` + `lib/glass-lens.ts` + `GlassFilter` v2 (delete turbulence); §4 ring glint CSS + `useGlassLight` v2; §5.1 aurora layer 2 + richer drift; §5.2 sheen rebuild; §5.3 press tokens + button/global-press amendments; §6 tokens; §10 degradation-rule extensions; design lab rebuild | `app/globals.css`, `components/ui/liquid-glass.tsx`, `hooks/useGlassLight.ts`, **new** `lib/glass-lens.ts`, `lib/appearance.ts` (glint derivation), `lib/motion.ts` (comment only), `components/ui/button.tsx`, `app/routes/liquid-glass.tsx` | — |
-| **B — Shell & primitives** | §7 rows: sidebar rail + drawer + dock + PageLayout header + dialogs/palette/popovers/toasts + `LiquidTabs` primitive + Card hover ring verification + BackToTop/Tooltip | `app/routes/_site.tsx`, `components/feed/LeftSidebar.tsx`, `MobileSidebarShell.tsx`, `PageLayout.tsx`, `components/ui/dialog.tsx` (+css), **new** `components/ui/liquid-tabs.tsx`, `components/site/CommandPalette.tsx`, `NotificationsPopover.tsx`, `components/Providers.tsx` (toast opts), `components/ui/card.tsx` | A |
-| **C — Page visibility** | §7 rows: FeedTabs/Profile/Search/Library/RMHLadder/creator-studio → `LiquidTabs`; login upgrade; library hero refract; membership featured-tier prism + sheen; shop tiles; DailyPuzzlesHub refactor onto the primitive | `components/feed/FeedTabs.tsx`, `ProfileColumn.tsx`, `SearchColumn.tsx`, `components/library/*`, `components/creator-studio/*`, `components/rmhladder/*`, `components/membership/MembershipPanel.tsx`, `components/feed/ShopColumn.tsx`, `app/routes/login.tsx`, `components/daily-puzzles/DailyPuzzlesHub.tsx` | A, B (LiquidTabs) |
+| **B — Shell restructure & primitives** | §8.2 floating shell (rail, header capsule, transparent track + gutters, right-rail stack, landmark fix); §7 rows: drawer + dock + dialogs/palette/popovers/toasts + `LiquidTabs` primitive + Card hover ring verification + BackToTop/Tooltip | `app/routes/_site.tsx`, `components/feed/LeftSidebar.tsx`, `MobileSidebarShell.tsx`, `PageLayout.tsx`, `AnimatedMain.tsx`, `ColumnHeader.tsx`, `RightSidebar.tsx`, `components/ui/dialog.tsx` (+css), **new** `components/ui/liquid-tabs.tsx`, `components/site/CommandPalette.tsx`, `NotificationsPopover.tsx`, `components/Providers.tsx` (toast opts), `components/ui/card.tsx` | A |
+| **C — Page restructure & visibility** | §8.3 feed floating cards + composer/hero slabs; §8.4 flagship restructures (library, store, settings, profile, notifications/messages containers); §7 rows: FeedTabs/Profile/Search/Library/RMHLadder/creator-studio → `LiquidTabs`; login upgrade; shop tiles; DailyPuzzlesHub refactor; `border-r border-site-border` sweep across `_site` columns | `components/feed/RMHarkCard.tsx`, `FeedList.tsx`, `FeedColumn.tsx`, `FeedTabs.tsx`, `PinnedHero.tsx`, `ComposeBox.tsx`, `ProfileColumn.tsx`, `SearchColumn.tsx`, `NotificationsColumn.tsx`, `MessagesColumn.tsx`, `components/library/*`, `components/creator-studio/*`, `components/rmhladder/*`, `components/membership/MembershipPanel.tsx`, `components/feed/ShopColumn.tsx`, `app/routes/_site/settings*`, `app/routes/login.tsx`, `components/daily-puzzles/DailyPuzzlesHub.tsx`, `globals.css` (`.feed-card-cv` size only) | A, B (LiquidTabs + shell) |
 | **D — Dead-UI removal** | Appendix D list: delete/deprecate every confirmed-dead item; migrate the last `:is(.absolute,…)` catch-all consumers; final grep gates | per Appendix D | A–C (deletes last) |
 | **E — Docs & verification** | Update `docs/design-language.md` (§5.1 table + §7 motion) and `page-consistency.md`; full §12 QA; RUM note; final build | docs, — | A–D |
 
@@ -751,10 +836,17 @@ first; the orchestrator sequences this).
    pointer across ≥3 panes simultaneously; sheen sweeps ~every 9s on ≤3
    surfaces; all four degradation toggles kill the right things (§10 table).
 2. **Visibility smoke (the user-facing bar):** on `/`, `/library`, `/store`,
-   `/settings`, `/login` with a mouse: moving the cursor makes rims glint;
-   hovering cards lights them; switching tabs flows a capsule; pressing
-   buttons springs; the background has depth-parallax. Each verifiable
-   without dev tools.
+   `/settings`, `/login` with a mouse: the sidebar is a floating rounded
+   glass rail; the header is a floating capsule; feed posts are discrete
+   glass cards with aurora visible between them; moving the cursor makes
+   rims glint; hovering cards lights them; switching tabs flows a capsule;
+   pressing buttons springs; the background has depth-parallax. Each
+   verifiable without dev tools.
+   **Layout regression guard:** sticky pinning still engages (header capsule
+   + feed header), the sidebar user menu still positions against the
+   viewport, drawer/dock gestures still work, scroll restoration lands
+   correctly on the resized feed cards, and RTL (`ar`) mirrors the gutters
+   symmetrically.
 3. **Perf:** §9 gates (DevTools trace at 4× throttle; layers panel count of
    backdrop-filters ≤8; no long task >50ms from `pointermove`).
 4. **Engines:** Chromium full; Firefox/Safari get edge-blur refract fallback +
