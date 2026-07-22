@@ -357,6 +357,27 @@ export function Providers({
     }
   }, [userId, idleReady, fetchResolvedUser]);
 
+  // Shader-grade liquid layer (§16.1). Dynamic-imported after idle so the
+  // detect/scene/WGSL/GLSL runtime is a code-split chunk that never touches the
+  // LCP path. It self-gates (WebGPU→WebGL2→none, off under perf-lite / reduced
+  // motion / high-contrast / reduce-transparency) and, when a tier initialises,
+  // sets `html.liquid-gl` so the CSS aurora + goo underlays hide (no double
+  // render). When no tier is available the untouched CSS/SVG stack renders.
+  useEffect(() => {
+    if (!idleReady) return;
+    let cancelled = false;
+    let dispose: (() => void) | undefined;
+    import('@/lib/liquid-gl')
+      .then((m) => {
+        if (!cancelled) dispose = m.initLiquidGL();
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      dispose?.();
+    };
+  }, [idleReady]);
+
   // Referral attribution: /ref/$code stashes an invite code before sign-up;
   // claim it once a session exists (works for email and OAuth flows alike).
   // The key is cleared on any server verdict and kept only on network failure
@@ -416,7 +437,11 @@ export function Providers({
     // flag together) is healed back to Default once. Deliberate Opaque picks
     // made after this fix never write the legacy key, so they are not healed.
     // True accessibility needs stay covered by prefers-reduced-transparency.
-    const gl = Number(localStorage.getItem(GLASS_LEVEL_KEY));
+    // Read the raw string first: Number(null) coerces to 0, which would
+    // hydrate a fresh visitor (no stored level) straight into Opaque — the
+    // stored-value branches below must only run when a value actually exists.
+    const glRaw = localStorage.getItem(GLASS_LEVEL_KEY);
+    const gl = glRaw === null ? Number.NaN : Number(glRaw);
     if (gl === 0 && localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1') {
       localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
       localStorage.setItem(GLASS_LEVEL_KEY, '2');

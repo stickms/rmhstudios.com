@@ -11,7 +11,7 @@
  * and to migrate the bundled catalog into object storage.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { createServerFn } from '@tanstack/react-start';
@@ -29,13 +29,9 @@ import {
   Search,
   Upload,
   X,
-  type LucideIcon,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import { SPRING } from '@/lib/motion';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { useLiquidMorph } from '@/components/ui/liquid-morph';
+import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
@@ -158,15 +154,6 @@ function Library() {
   const navigate = useNavigate();
   const setView = (next: LibraryView) =>
     void navigate({ to: '/library', search: next === 'all' ? {} : { view: next }, replace: true });
-  const reduced = useReducedMotion();
-  // §15.1/§5.47: the flowing lib-nav capsule carries the shared morph (velocity
-  // squash + gooey trailing droplet), the same as every other converged strip.
-  const navCapsuleRef = useRef<HTMLSpanElement>(null);
-  const { squashStyle: navSquash, underlay: navUnderlay } = useLiquidMorph({
-    capsuleRef: navCapsuleRef,
-    axis: 'x',
-    reduced,
-  });
   // A section renders when we're on "All" or on its own category.
   const shows = (id: LibraryView) => view === 'all' || view === id;
   const session = useSession();
@@ -429,79 +416,28 @@ function Library() {
             </label>
           </section>
 
-          {/* §5.45: section tabs are a standalone glass sheet BELOW the hero slab
-              (moved out of the sticky .lib-topbar). The PR #577 single-sticky fix
-              is preserved — .lib-head stays the lone sticky row so nothing stacks.
-              The lib-nav-active layoutId capsule still flows between chips. */}
-          <nav
-            className="lib-nav glass-fill glass-bevel-sm w-fit rounded-full p-1"
+          {/* §16.2: section switcher is now the shared LiquidTabs sheet (was the
+              bespoke `.lib-nav__chip*` markup). `.lib-nav` positions the sheet only
+              (page-gutter margins, column max-width); the pill look + flowing
+              capsule + goo morph come from LiquidTabs. `scroll` keeps the six
+              categories on one horizontal track on narrow screens. Placement is
+              unchanged — a standalone sheet BELOW the hero slab, NOT sticky, so the
+              PR #577 single-sticky fix (.lib-head is the lone sticky row) holds. */}
+          <LiquidTabs
+            className="lib-nav"
+            tabs={([
+              { id: 'all', label: t('cat-all', { defaultValue: 'All' }), icon: LayoutGrid },
+              { id: 'books', label: t('cat-books', { defaultValue: 'Books' }), icon: BookOpen },
+              { id: 'albums', label: t('cat-albums', { defaultValue: 'Albums' }), icon: Disc3 },
+              { id: 'collections', label: t('cat-collections', { defaultValue: 'Collections' }), icon: Layers },
+              { id: 'reads', label: t('cat-reads', { defaultValue: 'Reads' }), icon: Newspaper },
+              { id: 'music', label: t('cat-music', { defaultValue: 'Music' }), icon: ListMusic },
+            ]) as LiquidTab[]}
+            value={view}
+            onChange={(next) => setView(next as LibraryView)}
+            scroll
             aria-label={t('sections-label', { defaultValue: 'Library sections' })}
-          >
-            <div className="lib-nav__scroll relative" role="tablist">
-              {/* Goo underlay (§5.47) — capsule-only, behind the chips; labels above. */}
-              {navUnderlay}
-              {(
-                [
-                  { id: 'all', label: t('cat-all', { defaultValue: 'All' }), icon: LayoutGrid },
-                  {
-                    id: 'books',
-                    label: t('cat-books', { defaultValue: 'Books' }),
-                    icon: BookOpen,
-                  },
-                  {
-                    id: 'albums',
-                    label: t('cat-albums', { defaultValue: 'Albums' }),
-                    icon: Disc3,
-                  },
-                  {
-                    id: 'collections',
-                    label: t('cat-collections', { defaultValue: 'Collections' }),
-                    icon: Layers,
-                  },
-                  {
-                    id: 'reads',
-                    label: t('cat-reads', { defaultValue: 'Reads' }),
-                    icon: Newspaper,
-                  },
-                  {
-                    id: 'music',
-                    label: t('cat-music', { defaultValue: 'Music' }),
-                    icon: ListMusic,
-                  },
-                ] as { id: LibraryView; label: string; icon: LucideIcon }[]
-              ).map(({ id, label, icon: Icon }) => {
-                const active = view === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    role="tab"
-                    aria-selected={active}
-                    className={`lib-nav__chip${active ? ' is-active' : ''}`}
-                    onClick={() => setView(id)}
-                  >
-                    {active && (
-                      // Outer span owns the layoutId position morph; the inner
-                      // chip-bg carries the material + velocity squash (§5.47).
-                      <motion.span
-                        ref={navCapsuleRef}
-                        layoutId="lib-nav-active"
-                        className="absolute inset-0 z-0"
-                        transition={reduced ? { duration: 0 } : SPRING.soft}
-                        aria-hidden="true"
-                      >
-                        <motion.span className="lib-nav__chip-bg" style={navSquash} />
-                      </motion.span>
-                    )}
-                    <span className="lib-nav__chip-label">
-                      <Icon aria-hidden="true" />
-                      {label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
+          />
 
           {shows('reads') && <LibraryBlogRow posts={blogPosts} />}
 

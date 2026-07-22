@@ -10,19 +10,16 @@ import {
   Settings,
   ShieldCheck,
 } from 'lucide-react';
-import { useRef } from 'react';
-import { m as motion } from 'framer-motion';
+import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
-import { useLiquidMorph } from '@/components/ui/liquid-morph';
-import { SPRING } from '@/lib/motion';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 
 type NavItem = {
   label: string;
   to: string;
-  icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean }>;
+  icon: LucideIcon;
 };
 
 const PUBLIC_NAV: NavItem[] = [
@@ -60,12 +57,6 @@ export default function RmhLadderShell({
   isAdmin: boolean;
 }) {
   const { t } = useTranslation('site');
-  const reduced = useReducedMotion();
-  // §15.1/§5.47: the flowing nav capsule carries the shared morph (velocity
-  // squash + gooey trailing droplet). Route <Link>s stay (crawlable/prefetched),
-  // so this keeps the custom markup rather than adopting LiquidTabs' role=tab.
-  const capsuleRef = useRef<HTMLSpanElement>(null);
-  const { squashStyle, underlay } = useLiquidMorph({ capsuleRef, axis: 'x', reduced });
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const navItems = [
     ...PUBLIC_NAV,
@@ -78,58 +69,44 @@ export default function RmhLadderShell({
     return pathname.startsWith(to);
   }
 
+  // §16.2: the sub-nav is the shared LiquidTabs sheet in LINK MODE — route <Link>s
+  // (some public/crawlable + prefetched) keep their semantics and `aria-current`,
+  // while LiquidTabs owns the sheet, the flowing capsule + morph and the visual
+  // grammar every other strip uses (one renderer, one look). The shell is a layout
+  // route (Outlet) so the capsule survives navigation and morphs between routes.
+  const tabs: LiquidTab[] = navItems.map(({ label, to, icon }) => ({
+    id: to,
+    label: t(`ladder.nav.${label.toLowerCase()}`, { defaultValue: label }),
+    icon,
+  }));
+  const activeTo = navItems.find((i) => isActive(i.to))?.to ?? navItems[0]?.to ?? '';
+
   return (
     <PageLayout title={pageTitle(pathname)} wide>
       <div className="rmhladder min-w-0 px-3 pb-24 pt-3 sm:px-4 sm:pt-4 md:pb-12">
         {/* §5.45: the sub-nav rides a standalone glass sheet (pill) below the page
-            title; the sign-in CTA stays a sibling outside the sheet, pushed right.
-            The rmhladder-nav-capsule layoutId still flows between routes. */}
+            title; the sign-in CTA stays a sibling outside the sheet, pushed right. */}
         <div className="mb-5 flex items-center gap-2">
-          <nav
-            className="relative flex w-fit min-w-0 max-w-full items-center gap-1 overflow-x-auto rounded-full p-1 glass-fill glass-bevel-sm [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          <LiquidTabs
+            tabs={tabs}
+            value={activeTo}
+            scroll
             aria-label={t('ladder.navigation', { defaultValue: 'RMH Ladder navigation' })}
-          >
-            {/* Goo underlay (§5.47) — capsule-only, behind the links; labels above. */}
-            {underlay}
-            {navItems.map(({ label, to, icon: Icon }) => {
-            const active = isActive(to);
-            // These are route links (some public/crawlable + prefetched), so they
-            // stay <Link>s rather than becoming LiquidTabs' role=tab buttons. The
-            // flowing active capsule is a layoutId motion element behind the link;
-            // the shell is a layout route (Outlet) so it survives navigation and
-            // the capsule morphs between routes (§5.4).
-            return (
-              <div key={to} className="relative shrink-0">
-                {active && (
-                  // Outer span owns the layoutId position morph; the inner span
-                  // carries the material + velocity squash (§5.47).
-                  <motion.span
-                    ref={capsuleRef}
-                    layoutId="rmhladder-nav-capsule"
-                    aria-hidden
-                    className="absolute inset-0 z-0"
-                    transition={reduced ? { duration: 0 } : SPRING.snappy}
-                  >
-                    <motion.span
-                      className="glass-liquid absolute inset-0 rounded-site bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
-                      style={squashStyle}
-                    />
-                  </motion.span>
-                )}
-                <Button asChild size="sm" variant="ghost" className="relative min-h-11">
-                  <Link
-                    to={to}
-                    aria-current={active ? 'page' : undefined}
-                    className={active ? 'text-site-accent' : undefined}
-                  >
-                    <Icon className="size-4" aria-hidden />
-                    {t(`ladder.nav.${label.toLowerCase()}`, { defaultValue: label })}
-                  </Link>
-                </Button>
-              </div>
-            );
-          })}
-          </nav>
+            renderTab={(tab, props) => (
+              // Bare <Link> wearing LiquidTabs' own tab class (props.className) so
+              // the route tab matches every other strip exactly; `min-h-11` keeps
+              // the 44px touch target the ladder nav had. props.children is the
+              // pre-composed icon + label at z-1 above the flowing capsule.
+              <Link
+                to={tab.id}
+                id={props.id}
+                aria-current={props['aria-current']}
+                className={`${props.className} min-h-11`}
+              >
+                {props.children}
+              </Link>
+            )}
+          />
           {!isAuthenticated && (
             <Button asChild size="sm" variant="accent-outline" className="ml-auto min-h-11 shrink-0">
               <Link to="/login" search={{ callbackURL: pathname }}>

@@ -46,6 +46,7 @@ import {
   useAnimationFrame,
   type MotionStyle,
 } from 'framer-motion';
+import { useLiquidActive, useLiquidBody, useLiquidGroup } from '@/hooks/useLiquidBody';
 
 const STRETCH_K = 0.0004; // |velocity px/s| → stretch factor (§5.47 sketch)
 const STRETCH_MAX = 0.5; // §15.3: volume-conserving cap raised to 0.5 for tab-scale jumps
@@ -76,30 +77,22 @@ interface LiquidMorphResult {
 export function useLiquidMorph({ capsuleRef, axis, reduced }: LiquidMorphOptions): LiquidMorphResult {
   const underlayRef = useRef<HTMLSpanElement>(null);
 
+  // §16.1: when a GL tier is live the SHADER draws the metaball merge (capsule +
+  // trail droplet as SDF bodies with smooth-min), so we register those bodies and
+  // skip the `.lg-goo` SVG underlay entirely. The underlay span still mounts as an
+  // invisible coordinate anchor (opacity 0, no filter, no blobs) so the sampler
+  // can read the capsule's viewport box + the droplet's underlay-space position.
+  const glActive = useLiquidActive();
+  const group = useLiquidGroup();
+  const capBody = useLiquidBody({ kind: 'capsule', group });
+  const dropBody = useLiquidBody({ kind: 'droplet', group });
+
   // Live projected box of the real capsule, in the underlay's own coordinate
   // space (scroll-safe — both are in the same DOM/scroll context).
   const mx = useMotionValue(0);
   const my = useMotionValue(0);
   const mw = useMotionValue(0);
   const mh = useMotionValue(0);
-
-  useAnimationFrame(() => {
-    if (reduced) return;
-    // §5.47 gate: perf-lite / high-contrast get a PLAIN spring slide — freezing
-    // the sampled position keeps velocity at 0 (no squash), and CSS also hides
-    // `.lg-goo`. Read reactively so a runtime settings change takes effect.
-    const de = document.documentElement;
-    if (de.classList.contains('perf-lite') || de.classList.contains('style-high-contrast')) return;
-    const cap = capsuleRef.current;
-    const under = underlayRef.current;
-    if (!cap || !under) return;
-    const c = cap.getBoundingClientRect();
-    const u = under.getBoundingClientRect();
-    mx.set(c.left - u.left);
-    my.set(c.top - u.top);
-    mw.set(c.width);
-    mh.set(c.height);
-  });
 
   const along = axis === 'x' ? mx : my;
   const v = useVelocity(along);
@@ -126,30 +119,79 @@ export function useLiquidMorph({ capsuleRef, axis, reduced }: LiquidMorphOptions
   const dropY = useTransform([dropCy, dropD], ([y, d]) => (y as number) - (d as number) / 2);
   const gooOpacity = useTransform(v, (val) => Math.min(Math.abs(val) / OPACITY_AT, OPACITY_CAP));
 
+  // One sampler for both the squash motion values AND (when GL is live) the shader
+  // bodies. The capsule box `c` is already viewport-space; the droplet is anchored
+  // via the underlay origin `u` + its spring position — no extra layout reads.
+  useAnimationFrame(() => {
+    if (reduced) return;
+    // §5.47 gate: perf-lite / high-contrast get a PLAIN spring slide — freezing
+    // the sampled position keeps velocity at 0 (no squash), and CSS also hides
+    // `.lg-goo`. Read reactively so a runtime settings change takes effect.
+    const de = document.documentElement;
+    if (de.classList.contains('perf-lite') || de.classList.contains('style-high-contrast')) return;
+    const cap = capsuleRef.current;
+    const under = underlayRef.current;
+    if (!cap || !under) return;
+    const c = cap.getBoundingClientRect();
+    const u = under.getBoundingClientRect();
+    mx.set(c.left - u.left);
+    my.set(c.top - u.top);
+    mw.set(c.width);
+    mh.set(c.height);
+
+    if (glActive) {
+      const moving = Math.abs(v.get()) > 40;
+      capBody.set({
+        cx: c.left + c.width / 2,
+        cy: c.top + c.height / 2,
+        hw: c.width / 2,
+        hh: c.height / 2,
+        radius: Math.min(c.width, c.height) / 2,
+        active: moving,
+      });
+      const dd = dropD.get();
+      dropBody.set({
+        cx: u.left + dropCx.get(),
+        cy: u.top + dropCy.get(),
+        hw: dd / 2,
+        hh: dd / 2,
+        radius: dd / 2,
+        active: moving,
+      });
+    }
+  });
+
   const squashStyle: MotionStyle = reduced
     ? {}
     : axis === 'x'
       ? { scaleX: stretch, scaleY: squash, transformOrigin: origin }
       : { scaleY: stretch, scaleX: squash, transformOrigin: origin };
 
+  // With GL live, render an invisible anchor span (no goo, no blobs); otherwise
+  // the full `.lg-goo` metaball underlay (the CSS/SVG fallback tier, unchanged).
+  const showGoo = !reduced && !glActive;
   const underlay = reduced ? null : (
     <motion.span
       ref={underlayRef}
       aria-hidden
-      className="lg-goo absolute inset-0 z-0 overflow-hidden"
-      style={{ opacity: gooOpacity }}
+      className={showGoo ? 'lg-goo absolute inset-0 z-0 overflow-hidden' : 'absolute inset-0 z-0'}
+      style={showGoo ? { opacity: gooOpacity } : { opacity: 0, pointerEvents: 'none' }}
     >
-      {/* mirror — sits directly under the real capsule (near-opaque accent so the
-          goo alpha-threshold keeps it); hidden at rest via the layer opacity. */}
-      <motion.span
-        className="absolute top-0 left-0 rounded-full bg-site-accent"
-        style={{ x: mx, y: my, width: mw, height: mh }}
-      />
-      {/* trail droplet — lagging blob that goo fuses with the mirror into a tail. */}
-      <motion.span
-        className="absolute top-0 left-0 rounded-full bg-site-accent"
-        style={{ x: dropX, y: dropY, width: dropD, height: dropD }}
-      />
+      {showGoo && (
+        <>
+          {/* mirror — sits directly under the real capsule (near-opaque accent so
+              the goo alpha-threshold keeps it); hidden at rest via the opacity. */}
+          <motion.span
+            className="absolute top-0 left-0 rounded-full bg-site-accent"
+            style={{ x: mx, y: my, width: mw, height: mh }}
+          />
+          {/* trail droplet — lagging blob the goo fuses with the mirror into a tail. */}
+          <motion.span
+            className="absolute top-0 left-0 rounded-full bg-site-accent"
+            style={{ x: dropX, y: dropY, width: dropD, height: dropD }}
+          />
+        </>
+      )}
     </motion.span>
   );
 

@@ -2506,76 +2506,14 @@
    jump straight to one category; it scrolls horizontally on narrow screens so
    the rail never wraps or overflows. */
 .lib-nav {
-  /* §5.45: a standalone glass sheet BELOW the hero (moved out of the sticky
-     .lib-topbar). The sheet look — L1 fill, hairline glint edge, pill radius —
-     comes from the .glass-fill/.rounded-full/.p-1 utilities on the element; this
-     rule only positions it (gutter under the hero, left-aligned to the page). */
+  /* §16.2: the section switcher is the shared `LiquidTabs` sheet now (pill fill,
+     flowing capsule, roving nav + goo morph all live in that component, applied
+     via its `className` prop). This rule ONLY positions the sheet — the page
+     gutter under the hero, left-aligned to the column — so the pill look must NOT
+     be duplicated here. Placement is deliberately non-sticky (PR #577 keeps
+     .lib-head the lone sticky row so nothing stacks). */
   max-width: calc(100% - 2 * clamp(16px, 4vw, 44px));
   margin: 0 clamp(16px, 4vw, 44px) clamp(20px, 3vw, 28px);
-}
-.lib-nav__scroll {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-.lib-nav__scroll::-webkit-scrollbar {
-  display: none;
-}
-.lib-nav__chip {
-  /* §5.45: inside the pill sheet the individual chips are transparent tabs — only
-     the flowing lib-nav-active capsule highlights the selection (matching the
-     shared LiquidTabs sheet), so no per-chip border/background. */
-  position: relative;
-  isolation: isolate;
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  padding: 8px 14px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--site-text-muted, #9a9aa2);
-  font: inherit;
-  font-size: 0.85rem;
-  font-weight: 550;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color 200ms ease;
-}
-.lib-nav__chip:hover {
-  color: var(--site-text, #fff);
-}
-/* Content sits above the sliding capsule. */
-.lib-nav__chip-label {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-/* The liquid selection capsule — a single element shared across chips via
-   framer-motion `layoutId`, so switching sections glides it from the old chip to
-   the new one (springy settle) instead of hard-cutting the highlight. */
-.lib-nav__chip-bg {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  border-radius: 999px;
-  background: var(
-    --site-accent-dim,
-    color-mix(in srgb, var(--site-accent, #9b7ad8) 18%, transparent)
-  );
-  border: 1px solid color-mix(in srgb, var(--site-accent, #9b7ad8) 45%, transparent);
-}
-.lib-nav__chip.is-active {
-  color: var(--site-accent, #9b7ad8);
-}
-.lib-nav__chip svg {
-  width: 15px;
-  height: 15px;
 }
 
 /* Music (playlists) folded into the library as a first-class section. The

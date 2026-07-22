@@ -44,6 +44,7 @@ import { Route as KowloonKnockoutRouteImport } from './routes/kowloon-knockout'
 import { Route as HouseAlwaysWinsRouteImport } from './routes/house-always-wins'
 import { Route as ForestExplorerRouteImport } from './routes/forest-explorer'
 import { Route as DreamRiftRouteImport } from './routes/dream-rift'
+import { Route as DesignRouteImport } from './routes/design'
 import { Route as DeeplinkRouteImport } from './routes/deeplink'
 import { Route as DailyRouteImport } from './routes/daily'
 import { Route as CopyrightRouteImport } from './routes/copyright'
@@ -890,6 +891,11 @@ const ForestExplorerRoute = ForestExplorerRouteImport.update({
 const DreamRiftRoute = DreamRiftRouteImport.update({
   id: '/dream-rift',
   path: '/dream-rift',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DesignRoute = DesignRouteImport.update({
+  id: '/design',
+  path: '/design',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeeplinkRoute = DeeplinkRouteImport.update({
@@ -4361,6 +4367,7 @@ export interface FileRoutesByFullPath {
   '/copyright': typeof CopyrightRoute
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
+  '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/house-always-wins': typeof HouseAlwaysWinsRoute
@@ -5066,6 +5073,7 @@ export interface FileRoutesByTo {
   '/cookies': typeof CookiesRoute
   '/copyright': typeof CopyrightRoute
   '/deeplink': typeof DeeplinkRouteWithChildren
+  '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/house-always-wins': typeof HouseAlwaysWinsRoute
   '/laundry-sort': typeof LaundrySortRoute
@@ -5753,6 +5761,7 @@ export interface FileRoutesById {
   '/copyright': typeof CopyrightRoute
   '/daily': typeof DailyRouteWithChildren
   '/deeplink': typeof DeeplinkRouteWithChildren
+  '/design': typeof DesignRoute
   '/dream-rift': typeof DreamRiftRoute
   '/forest-explorer': typeof ForestExplorerRouteWithChildren
   '/house-always-wins': typeof HouseAlwaysWinsRoute
@@ -6464,6 +6473,7 @@ export interface FileRouteTypes {
     | '/copyright'
     | '/daily'
     | '/deeplink'
+    | '/design'
     | '/dream-rift'
     | '/forest-explorer'
     | '/house-always-wins'
@@ -7169,6 +7179,7 @@ export interface FileRouteTypes {
     | '/cookies'
     | '/copyright'
     | '/deeplink'
+    | '/design'
     | '/dream-rift'
     | '/house-always-wins'
     | '/laundry-sort'
@@ -7855,6 +7866,7 @@ export interface FileRouteTypes {
     | '/copyright'
     | '/daily'
     | '/deeplink'
+    | '/design'
     | '/dream-rift'
     | '/forest-explorer'
     | '/house-always-wins'
@@ -8565,6 +8577,7 @@ export interface RootRouteChildren {
   CopyrightRoute: typeof CopyrightRoute
   DailyRoute: typeof DailyRouteWithChildren
   DeeplinkRoute: typeof DeeplinkRouteWithChildren
+  DesignRoute: typeof DesignRoute
   DreamRiftRoute: typeof DreamRiftRoute
   ForestExplorerRoute: typeof ForestExplorerRouteWithChildren
   HouseAlwaysWinsRoute: typeof HouseAlwaysWinsRoute
@@ -9195,6 +9208,13 @@ declare module '@tanstack/react-router' {
       path: '/dream-rift'
       fullPath: '/dream-rift'
       preLoaderRoute: typeof DreamRiftRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/design': {
+      id: '/design'
+      path: '/design'
+      fullPath: '/design'
+      preLoaderRoute: typeof DesignRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deeplink': {
@@ -15337,6 +15357,7 @@ const rootRouteChildren: RootRouteChildren = {
   CopyrightRoute: CopyrightRoute,
   DailyRoute: DailyRouteWithChildren,
   DeeplinkRoute: DeeplinkRouteWithChildren,
+  DesignRoute: DesignRoute,
   DreamRiftRoute: DreamRiftRoute,
   ForestExplorerRoute: ForestExplorerRouteWithChildren,
   HouseAlwaysWinsRoute: HouseAlwaysWinsRoute,

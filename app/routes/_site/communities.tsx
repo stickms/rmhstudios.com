@@ -1,21 +1,17 @@
-import { useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
-import { m as motion } from 'framer-motion';
-import { type LucideIcon, Users, CalendarDays, Radio } from 'lucide-react';
+import { Users, CalendarDays, Radio } from 'lucide-react';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
-import { MobileMenuButton } from '@/components/feed/MobileMenuButton';
-import { useLiquidMorph } from '@/components/ui/liquid-morph';
-import { SPRING } from '@/lib/motion';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { MobileTopBar } from '@/components/feed/MobileHeader';
+import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { CommunitiesColumn } from '@/components/feed/CommunitiesColumn';
 import { CommunitiesSkeleton } from '@/components/feed/CommunitiesSkeleton';
 import { EventsColumn } from '@/components/events/EventsColumn';
 import { SpacesColumn } from '@/components/spaces/SpacesColumn';
-import { cn } from '@/lib/utils';
 import { auth } from '@/lib/auth';
 import { listCommunities } from '@/lib/communities.server';
 
@@ -66,20 +62,20 @@ function CommunitiesShell({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Top-of-page tab bar switching between the three surfaces. It is the page's one
- * sticky chrome row and carries the mobile drawer button, so each embedded
- * column drops its own sticky header + menu button (see `embedded` props below).
+ * Top-of-page section switcher between the three surfaces. §16.2: this is now
+ * the shared `LiquidTabs` sheet+capsule grammar (was a bare tab row buried in a
+ * `glass-chrome border-b` header — the §5.45 "never in header chrome" violation
+ * the owner flagged). It sits BELOW the page title, on its own floating pill,
+ * exactly like /store. `?tab=` mirroring + the aria-controls tabpanel wiring
+ * (idBase="communities" → `communities-tab-*` / `communities-panel-*`) are
+ * byte-identical to the old markup; the mobile drawer button moved to the
+ * MobileTopBar (its canonical home) so each embedded column stays header-less.
  */
 function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
   const { t } = useTranslation('site');
   const navigate = useNavigate();
-  const reduced = useReducedMotion();
-  // §15.1/§5.47: the active tab is a flowing capsule with the shared morph
-  // (was a flat bg-site-accent-dim pill). aria-controls + roving nav unchanged.
-  const capsuleRef = useRef<HTMLSpanElement>(null);
-  const { squashStyle, underlay } = useLiquidMorph({ capsuleRef, axis: 'x', reduced });
 
-  const tabs: { id: CommunitiesTab; label: string; icon: LucideIcon }[] = [
+  const tabs: LiquidTab[] = [
     {
       id: 'communities',
       label: t('communities-tab-communities', { defaultValue: 'Communities' }),
@@ -90,83 +86,32 @@ function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
   ];
 
   const setTab = useCallback(
-    (next: CommunitiesTab) => {
-      void navigate({ to: '/communities', search: { tab: next }, replace: true });
+    (next: string) => {
+      void navigate({ to: '/communities', search: { tab: next as CommunitiesTab }, replace: true });
     },
     [navigate],
   );
 
-  // Roving keyboard navigation for the tablist (WAI-ARIA tabs pattern):
-  // ←/→ (and ↑/↓) move between tabs, Home/End jump to the ends, focus follows.
-  const onKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      const idx = COMMUNITIES_TABS.indexOf(active);
-      let next = idx;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (idx + 1) % COMMUNITIES_TABS.length;
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp')
-        next = (idx - 1 + COMMUNITIES_TABS.length) % COMMUNITIES_TABS.length;
-      else if (e.key === 'Home') next = 0;
-      else if (e.key === 'End') next = COMMUNITIES_TABS.length - 1;
-      else return;
-      e.preventDefault();
-      const nextId = COMMUNITIES_TABS[next];
-      setTab(nextId);
-      requestAnimationFrame(() => document.getElementById(`communities-tab-${nextId}`)?.focus());
-    },
-    [active, setTab],
-  );
-
   return (
-    <div className="sticky top-0 z-20 glass-chrome border-b border-site-border">
-      <div className="flex items-center gap-1 px-2 py-2">
-        <MobileMenuButton />
-        <div
-          role="tablist"
-          aria-label={t('communities-sections', { defaultValue: 'Community sections' })}
-          className="relative flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
-          onKeyDown={onKeyDown}
-        >
-          {/* Goo underlay (§5.47) — capsule-only, behind the tabs; labels above. */}
-          {underlay}
-          {tabs.map(({ id, label, icon: Icon }) => {
-            const isActive = active === id;
-            return (
-              <button
-                key={id}
-                id={`communities-tab-${id}`}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-controls={`communities-panel-${id}`}
-                tabIndex={isActive ? 0 : -1}
-                onClick={() => setTab(id)}
-                className={cn(
-                  'relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
-                  isActive ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text',
-                )}
-              >
-                {isActive && (
-                  <motion.span
-                    ref={capsuleRef}
-                    layoutId="communities-tab-capsule"
-                    aria-hidden
-                    className="absolute inset-0 z-0"
-                    transition={reduced ? { duration: 0 } : SPRING.snappy}
-                  >
-                    <motion.span
-                      className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
-                      style={squashStyle}
-                    />
-                  </motion.span>
-                )}
-                <Icon className="relative z-1 h-4 w-4" aria-hidden />
-                <span className="relative z-1">{label}</span>
-              </button>
-            );
-          })}
-        </div>
+    <>
+      <MobileTopBar title={t('communities-title', { defaultValue: 'Communities' })} />
+      {/* §5.45: floating "Communities" page-title capsule on desktop (mobile uses
+          MobileTopBar), then the tab sheet below it. */}
+      <div className="mx-2 mt-2 hidden rounded-site glass-chrome px-4 py-3 shadow-site-sm md:mx-3 md:mt-3 md:block">
+        <h1 className="font-(family-name:--site-font-display) text-2xl font-semibold tracking-[-0.022em] text-site-text">
+          {t('communities-title', { defaultValue: 'Communities' })}
+        </h1>
       </div>
-    </div>
+      <div className="mt-3 px-2 md:px-3">
+        <LiquidTabs
+          tabs={tabs}
+          value={active}
+          onChange={setTab}
+          idBase="communities"
+          aria-label={t('communities-sections', { defaultValue: 'Community sections' })}
+        />
+      </div>
+    </>
   );
 }
 

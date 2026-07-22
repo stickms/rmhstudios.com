@@ -410,6 +410,9 @@ export function RightSidebar({
           <Link to="/security" className="hover:text-site-text transition-colors">
             {t('security', { defaultValue: 'Security' })}
           </Link>
+          <Link to="/design" className="hover:text-site-text transition-colors">
+            {t('liquid-glass', { defaultValue: 'Liquid Glass' })}
+          </Link>
           <Link to="/optimization" className="hover:text-site-text transition-colors">
             {t('optimization', { defaultValue: 'Speed' })}
           </Link>
