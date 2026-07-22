@@ -46,7 +46,7 @@
   "select-words-prompt_one": "உங்கள் கவிதையை உருவாக்க {{count}} வார்த்தைகளைத் தேர்ந்தெடுக்கவும்",
   "select-words-prompt_other": "உங்கள் கவிதையை உருவாக்க {{count}} வார்த்தைகளைத் தேர்ந்தெடுக்கவும்",
   "settings": "அமைப்புகள்",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "உங்கள் கதைகளை கிளவுடில் சேமித்து எங்கிருந்தும் மீண்டும் இயக்க உள்நுழையவும்.",
   "sign-in-to-save": "கிளவுட்டில் உங்கள் முன்னேற்றத்தைச் சேமிக்க உள்நுழையவும்",
   "skip": "தவிர்",
   "slot-auto": "தானியங்கி",

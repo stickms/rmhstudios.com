@@ -5,8 +5,11 @@ import elAdmin from "@/locales/el/admin.json";
 import elBuilds from "@/locales/el/builds.json";
 import elCAdmin from "@/locales/el/c-admin.json";
 import elCAltair from "@/locales/el/c-altair.json";
+import elCAwards from "@/locales/el/c-awards.json";
 import elCBlog from "@/locales/el/c-blog.json";
 import elCBuilds from "@/locales/el/c-builds.json";
+import elCCircle from "@/locales/el/c-circle.json";
+import elCCreator from "@/locales/el/c-creator.json";
 import elCCursedLogic from "@/locales/el/c-cursed-logic.json";
 import elCDailyPuzzles from "@/locales/el/c-daily-puzzles.json";
 import elCDoctrine from "@/locales/el/c-doctrine.json";
@@ -14,15 +17,20 @@ import elCDreamRift from "@/locales/el/c-dream-rift.json";
 import elCEconomy from "@/locales/el/c-economy.json";
 import elCForestExplorer from "@/locales/el/c-forest-explorer.json";
 import elCGame from "@/locales/el/c-game.json";
+import elCHistory from "@/locales/el/c-history.json";
 import elCHouseAlwaysWins from "@/locales/el/c-house-always-wins.json";
 import elCKowloonKnockout from "@/locales/el/c-kowloon-knockout.json";
 import elCLaundrySort from "@/locales/el/c-laundry-sort.json";
+import elCLayout from "@/locales/el/c-layout.json";
 import elCLibrary from "@/locales/el/c-library.json";
 import elCLightsOut from "@/locales/el/c-lights-out.json";
+import elCLists from "@/locales/el/c-lists.json";
 import elCLockdown from "@/locales/el/c-lockdown.json";
 import elCModeration from "@/locales/el/c-moderation.json";
 import elCNeonDriftway from "@/locales/el/c-neon-driftway.json";
 import elCNews from "@/locales/el/c-news.json";
+import elCPredictions from "@/locales/el/c-predictions.json";
+import elCProfileModules from "@/locales/el/c-profile-modules.json";
 import elCRideshare from "@/locales/el/c-rideshare.json";
 import elCRmhCapital from "@/locales/el/c-rmh-capital.json";
 import elCRmhPmc from "@/locales/el/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import elCRmhtube from "@/locales/el/c-rmhtube.json";
 import elCRmhtype from "@/locales/el/c-rmhtype.json";
 import elCRmhvibe from "@/locales/el/c-rmhvibe.json";
 import elCRoadmap from "@/locales/el/c-roadmap.json";
+import elCSaves from "@/locales/el/c-saves.json";
 import elCSignalForge from "@/locales/el/c-signal-forge.json";
+import elCStatus from "@/locales/el/c-status.json";
 import elCStudio from "@/locales/el/c-studio.json";
 import elCSynapseStorm from "@/locales/el/c-synapse-storm.json";
 import elCTempleOfJoy from "@/locales/el/c-temple-of-joy.json";
+import elCTournaments from "@/locales/el/c-tournaments.json";
 import elCUi from "@/locales/el/c-ui.json";
 import elCUserBuilds from "@/locales/el/c-user-builds.json";
 import elCVega from "@/locales/el/c-vega.json";
 import elCVersecraft from "@/locales/el/c-versecraft.json";
 import elCVoidBreaker from "@/locales/el/c-void-breaker.json";
+import elCWager from "@/locales/el/c-wager.json";
+import elCWishlist from "@/locales/el/c-wishlist.json";
 import elCommon from "@/locales/el/common.json";
 import elFeed from "@/locales/el/feed.json";
+import elGamesHub from "@/locales/el/games-hub.json";
 import elGroups from "@/locales/el/groups.json";
 import elLibrary from "@/locales/el/library.json";
 import elNav from "@/locales/el/nav.json";
@@ -61,8 +75,13 @@ import elRSliceIt from "@/locales/el/r-slice-it.json";
 import elRStrategies from "@/locales/el/r-strategies.json";
 import elRStudio from "@/locales/el/r-studio.json";
 import elRideshare from "@/locales/el/rideshare.json";
+import elSearch from "@/locales/el/search.json";
+import elSettingsAppearance from "@/locales/el/settings-appearance.json";
+import elSettingsContent from "@/locales/el/settings-content.json";
+import elSettingsNotifications from "@/locales/el/settings-notifications.json";
 import elShared from "@/locales/el/shared.json";
 import elSite from "@/locales/el/site.json";
+import elThemeStudio from "@/locales/el/theme-studio.json";
 import elUserBuilds from "@/locales/el/user-builds.json";
 import elV from "@/locales/el/v.json";
 
@@ -71,8 +90,11 @@ const elResources = {
   "builds": elBuilds,
   "c-admin": elCAdmin,
   "c-altair": elCAltair,
+  "c-awards": elCAwards,
   "c-blog": elCBlog,
   "c-builds": elCBuilds,
+  "c-circle": elCCircle,
+  "c-creator": elCCreator,
   "c-cursed-logic": elCCursedLogic,
   "c-daily-puzzles": elCDailyPuzzles,
   "c-doctrine": elCDoctrine,
@@ -80,15 +102,20 @@ const elResources = {
   "c-economy": elCEconomy,
   "c-forest-explorer": elCForestExplorer,
   "c-game": elCGame,
+  "c-history": elCHistory,
   "c-house-always-wins": elCHouseAlwaysWins,
   "c-kowloon-knockout": elCKowloonKnockout,
   "c-laundry-sort": elCLaundrySort,
+  "c-layout": elCLayout,
   "c-library": elCLibrary,
   "c-lights-out": elCLightsOut,
+  "c-lists": elCLists,
   "c-lockdown": elCLockdown,
   "c-moderation": elCModeration,
   "c-neon-driftway": elCNeonDriftway,
   "c-news": elCNews,
+  "c-predictions": elCPredictions,
+  "c-profile-modules": elCProfileModules,
   "c-rideshare": elCRideshare,
   "c-rmh-capital": elCRmhCapital,
   "c-rmh-pmc": elCRmhPmc,
@@ -102,17 +129,23 @@ const elResources = {
   "c-rmhtype": elCRmhtype,
   "c-rmhvibe": elCRmhvibe,
   "c-roadmap": elCRoadmap,
+  "c-saves": elCSaves,
   "c-signal-forge": elCSignalForge,
+  "c-status": elCStatus,
   "c-studio": elCStudio,
   "c-synapse-storm": elCSynapseStorm,
   "c-temple-of-joy": elCTempleOfJoy,
+  "c-tournaments": elCTournaments,
   "c-ui": elCUi,
   "c-user-builds": elCUserBuilds,
   "c-vega": elCVega,
   "c-versecraft": elCVersecraft,
   "c-void-breaker": elCVoidBreaker,
+  "c-wager": elCWager,
+  "c-wishlist": elCWishlist,
   "common": elCommon,
   "feed": elFeed,
+  "games-hub": elGamesHub,
   "groups": elGroups,
   "library": elLibrary,
   "nav": elNav,
@@ -127,8 +160,13 @@ const elResources = {
   "r-strategies": elRStrategies,
   "r-studio": elRStudio,
   "rideshare": elRideshare,
+  "search": elSearch,
+  "settings-appearance": elSettingsAppearance,
+  "settings-content": elSettingsContent,
+  "settings-notifications": elSettingsNotifications,
   "shared": elShared,
   "site": elSite,
+  "theme-studio": elThemeStudio,
   "user-builds": elUserBuilds,
   "v": elV,
 } as const;

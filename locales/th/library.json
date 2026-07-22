@@ -36,7 +36,7 @@
   "collection-by": "โดย {{who}}",
   "collection-delete-confirm": "ลบคอลเลกชันนี้? หนังสือจะไม่ถูกลบ",
   "collection-desc-placeholder": "ไม่บังคับ",
-  "collection-empty": "No books yet.",
+  "collection-empty": "ยังไม่มีหนังสือ",
   "collection-rename-prompt": "ชื่อคอลเลกชัน",
   "collection-title-placeholder": "เช่น รายการอ่านของฉัน",
   "collections-community": "Reader collections",
@@ -80,7 +80,7 @@
   "result-count_one": "{{count}} things to explore",
   "result-count_other": "{{count}} things to explore",
   "search-label": "ค้นหาในคลัง",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "ค้นหาหนังสือ อัลบั้ม เพลย์ลิสต์ และสิ่งที่อ่าน…",
   "search-your-books": "ค้นหาหนังสือของคุณ…",
   "section-albums": "อัลบั้ม",
   "section-blog": "Blog",
@@ -93,6 +93,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "เพิ่มหนังสือ",
+  "upload-label": "อัปโหลด PDF"
 }

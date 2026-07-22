@@ -6,7 +6,7 @@
   "content-label": "Inhalt",
   "content-placeholder": "Write your post in Markdown…",
   "date-label": "Datum",
-  "delete-confirm": "Sind Sie sicher, dass Sie \"{{title}}\" löschen möchten? Dies kann nicht rückgängig gemacht werden.",
+  "delete-confirm": "Das Löschen von \"{{title}}\" kann nicht rückgängig gemacht werden.",
   "delete-failed": "Fehler beim Löschen des Beitrags",
   "delete-post": "Beitrag löschen",
   "delete-success": "Blogbeitrag gelöscht: {{slug}}.",

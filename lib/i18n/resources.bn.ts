@@ -5,8 +5,11 @@ import bnAdmin from "@/locales/bn/admin.json";
 import bnBuilds from "@/locales/bn/builds.json";
 import bnCAdmin from "@/locales/bn/c-admin.json";
 import bnCAltair from "@/locales/bn/c-altair.json";
+import bnCAwards from "@/locales/bn/c-awards.json";
 import bnCBlog from "@/locales/bn/c-blog.json";
 import bnCBuilds from "@/locales/bn/c-builds.json";
+import bnCCircle from "@/locales/bn/c-circle.json";
+import bnCCreator from "@/locales/bn/c-creator.json";
 import bnCCursedLogic from "@/locales/bn/c-cursed-logic.json";
 import bnCDailyPuzzles from "@/locales/bn/c-daily-puzzles.json";
 import bnCDoctrine from "@/locales/bn/c-doctrine.json";
@@ -14,15 +17,20 @@ import bnCDreamRift from "@/locales/bn/c-dream-rift.json";
 import bnCEconomy from "@/locales/bn/c-economy.json";
 import bnCForestExplorer from "@/locales/bn/c-forest-explorer.json";
 import bnCGame from "@/locales/bn/c-game.json";
+import bnCHistory from "@/locales/bn/c-history.json";
 import bnCHouseAlwaysWins from "@/locales/bn/c-house-always-wins.json";
 import bnCKowloonKnockout from "@/locales/bn/c-kowloon-knockout.json";
 import bnCLaundrySort from "@/locales/bn/c-laundry-sort.json";
+import bnCLayout from "@/locales/bn/c-layout.json";
 import bnCLibrary from "@/locales/bn/c-library.json";
 import bnCLightsOut from "@/locales/bn/c-lights-out.json";
+import bnCLists from "@/locales/bn/c-lists.json";
 import bnCLockdown from "@/locales/bn/c-lockdown.json";
 import bnCModeration from "@/locales/bn/c-moderation.json";
 import bnCNeonDriftway from "@/locales/bn/c-neon-driftway.json";
 import bnCNews from "@/locales/bn/c-news.json";
+import bnCPredictions from "@/locales/bn/c-predictions.json";
+import bnCProfileModules from "@/locales/bn/c-profile-modules.json";
 import bnCRideshare from "@/locales/bn/c-rideshare.json";
 import bnCRmhCapital from "@/locales/bn/c-rmh-capital.json";
 import bnCRmhPmc from "@/locales/bn/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import bnCRmhtube from "@/locales/bn/c-rmhtube.json";
 import bnCRmhtype from "@/locales/bn/c-rmhtype.json";
 import bnCRmhvibe from "@/locales/bn/c-rmhvibe.json";
 import bnCRoadmap from "@/locales/bn/c-roadmap.json";
+import bnCSaves from "@/locales/bn/c-saves.json";
 import bnCSignalForge from "@/locales/bn/c-signal-forge.json";
+import bnCStatus from "@/locales/bn/c-status.json";
 import bnCStudio from "@/locales/bn/c-studio.json";
 import bnCSynapseStorm from "@/locales/bn/c-synapse-storm.json";
 import bnCTempleOfJoy from "@/locales/bn/c-temple-of-joy.json";
+import bnCTournaments from "@/locales/bn/c-tournaments.json";
 import bnCUi from "@/locales/bn/c-ui.json";
 import bnCUserBuilds from "@/locales/bn/c-user-builds.json";
 import bnCVega from "@/locales/bn/c-vega.json";
 import bnCVersecraft from "@/locales/bn/c-versecraft.json";
 import bnCVoidBreaker from "@/locales/bn/c-void-breaker.json";
+import bnCWager from "@/locales/bn/c-wager.json";
+import bnCWishlist from "@/locales/bn/c-wishlist.json";
 import bnCommon from "@/locales/bn/common.json";
 import bnFeed from "@/locales/bn/feed.json";
+import bnGamesHub from "@/locales/bn/games-hub.json";
 import bnGroups from "@/locales/bn/groups.json";
 import bnLibrary from "@/locales/bn/library.json";
 import bnNav from "@/locales/bn/nav.json";
@@ -61,8 +75,13 @@ import bnRSliceIt from "@/locales/bn/r-slice-it.json";
 import bnRStrategies from "@/locales/bn/r-strategies.json";
 import bnRStudio from "@/locales/bn/r-studio.json";
 import bnRideshare from "@/locales/bn/rideshare.json";
+import bnSearch from "@/locales/bn/search.json";
+import bnSettingsAppearance from "@/locales/bn/settings-appearance.json";
+import bnSettingsContent from "@/locales/bn/settings-content.json";
+import bnSettingsNotifications from "@/locales/bn/settings-notifications.json";
 import bnShared from "@/locales/bn/shared.json";
 import bnSite from "@/locales/bn/site.json";
+import bnThemeStudio from "@/locales/bn/theme-studio.json";
 import bnUserBuilds from "@/locales/bn/user-builds.json";
 import bnV from "@/locales/bn/v.json";
 
@@ -71,8 +90,11 @@ const bnResources = {
   "builds": bnBuilds,
   "c-admin": bnCAdmin,
   "c-altair": bnCAltair,
+  "c-awards": bnCAwards,
   "c-blog": bnCBlog,
   "c-builds": bnCBuilds,
+  "c-circle": bnCCircle,
+  "c-creator": bnCCreator,
   "c-cursed-logic": bnCCursedLogic,
   "c-daily-puzzles": bnCDailyPuzzles,
   "c-doctrine": bnCDoctrine,
@@ -80,15 +102,20 @@ const bnResources = {
   "c-economy": bnCEconomy,
   "c-forest-explorer": bnCForestExplorer,
   "c-game": bnCGame,
+  "c-history": bnCHistory,
   "c-house-always-wins": bnCHouseAlwaysWins,
   "c-kowloon-knockout": bnCKowloonKnockout,
   "c-laundry-sort": bnCLaundrySort,
+  "c-layout": bnCLayout,
   "c-library": bnCLibrary,
   "c-lights-out": bnCLightsOut,
+  "c-lists": bnCLists,
   "c-lockdown": bnCLockdown,
   "c-moderation": bnCModeration,
   "c-neon-driftway": bnCNeonDriftway,
   "c-news": bnCNews,
+  "c-predictions": bnCPredictions,
+  "c-profile-modules": bnCProfileModules,
   "c-rideshare": bnCRideshare,
   "c-rmh-capital": bnCRmhCapital,
   "c-rmh-pmc": bnCRmhPmc,
@@ -102,17 +129,23 @@ const bnResources = {
   "c-rmhtype": bnCRmhtype,
   "c-rmhvibe": bnCRmhvibe,
   "c-roadmap": bnCRoadmap,
+  "c-saves": bnCSaves,
   "c-signal-forge": bnCSignalForge,
+  "c-status": bnCStatus,
   "c-studio": bnCStudio,
   "c-synapse-storm": bnCSynapseStorm,
   "c-temple-of-joy": bnCTempleOfJoy,
+  "c-tournaments": bnCTournaments,
   "c-ui": bnCUi,
   "c-user-builds": bnCUserBuilds,
   "c-vega": bnCVega,
   "c-versecraft": bnCVersecraft,
   "c-void-breaker": bnCVoidBreaker,
+  "c-wager": bnCWager,
+  "c-wishlist": bnCWishlist,
   "common": bnCommon,
   "feed": bnFeed,
+  "games-hub": bnGamesHub,
   "groups": bnGroups,
   "library": bnLibrary,
   "nav": bnNav,
@@ -127,8 +160,13 @@ const bnResources = {
   "r-strategies": bnRStrategies,
   "r-studio": bnRStudio,
   "rideshare": bnRideshare,
+  "search": bnSearch,
+  "settings-appearance": bnSettingsAppearance,
+  "settings-content": bnSettingsContent,
+  "settings-notifications": bnSettingsNotifications,
   "shared": bnShared,
   "site": bnSite,
+  "theme-studio": bnThemeStudio,
   "user-builds": bnUserBuilds,
   "v": bnV,
 } as const;

@@ -46,7 +46,7 @@
   "select-words-prompt_one": "Selectează {{count}} cuvânt pentru a compune poezia ta",
   "select-words-prompt_other": "Selectează {{count}} cuvinte pentru a compune poezia ta",
   "settings": "Setări",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "Conectează-te pentru a-ți salva poveștile în cloud și a le reda de oriunde.",
   "sign-in-to-save": "Autentifică-te pentru a salva progresul în cloud",
   "skip": "Sari peste",
   "slot-auto": "Auto",

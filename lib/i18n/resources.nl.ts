@@ -5,8 +5,11 @@ import nlAdmin from "@/locales/nl/admin.json";
 import nlBuilds from "@/locales/nl/builds.json";
 import nlCAdmin from "@/locales/nl/c-admin.json";
 import nlCAltair from "@/locales/nl/c-altair.json";
+import nlCAwards from "@/locales/nl/c-awards.json";
 import nlCBlog from "@/locales/nl/c-blog.json";
 import nlCBuilds from "@/locales/nl/c-builds.json";
+import nlCCircle from "@/locales/nl/c-circle.json";
+import nlCCreator from "@/locales/nl/c-creator.json";
 import nlCCursedLogic from "@/locales/nl/c-cursed-logic.json";
 import nlCDailyPuzzles from "@/locales/nl/c-daily-puzzles.json";
 import nlCDoctrine from "@/locales/nl/c-doctrine.json";
@@ -14,15 +17,20 @@ import nlCDreamRift from "@/locales/nl/c-dream-rift.json";
 import nlCEconomy from "@/locales/nl/c-economy.json";
 import nlCForestExplorer from "@/locales/nl/c-forest-explorer.json";
 import nlCGame from "@/locales/nl/c-game.json";
+import nlCHistory from "@/locales/nl/c-history.json";
 import nlCHouseAlwaysWins from "@/locales/nl/c-house-always-wins.json";
 import nlCKowloonKnockout from "@/locales/nl/c-kowloon-knockout.json";
 import nlCLaundrySort from "@/locales/nl/c-laundry-sort.json";
+import nlCLayout from "@/locales/nl/c-layout.json";
 import nlCLibrary from "@/locales/nl/c-library.json";
 import nlCLightsOut from "@/locales/nl/c-lights-out.json";
+import nlCLists from "@/locales/nl/c-lists.json";
 import nlCLockdown from "@/locales/nl/c-lockdown.json";
 import nlCModeration from "@/locales/nl/c-moderation.json";
 import nlCNeonDriftway from "@/locales/nl/c-neon-driftway.json";
 import nlCNews from "@/locales/nl/c-news.json";
+import nlCPredictions from "@/locales/nl/c-predictions.json";
+import nlCProfileModules from "@/locales/nl/c-profile-modules.json";
 import nlCRideshare from "@/locales/nl/c-rideshare.json";
 import nlCRmhCapital from "@/locales/nl/c-rmh-capital.json";
 import nlCRmhPmc from "@/locales/nl/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import nlCRmhtube from "@/locales/nl/c-rmhtube.json";
 import nlCRmhtype from "@/locales/nl/c-rmhtype.json";
 import nlCRmhvibe from "@/locales/nl/c-rmhvibe.json";
 import nlCRoadmap from "@/locales/nl/c-roadmap.json";
+import nlCSaves from "@/locales/nl/c-saves.json";
 import nlCSignalForge from "@/locales/nl/c-signal-forge.json";
+import nlCStatus from "@/locales/nl/c-status.json";
 import nlCStudio from "@/locales/nl/c-studio.json";
 import nlCSynapseStorm from "@/locales/nl/c-synapse-storm.json";
 import nlCTempleOfJoy from "@/locales/nl/c-temple-of-joy.json";
+import nlCTournaments from "@/locales/nl/c-tournaments.json";
 import nlCUi from "@/locales/nl/c-ui.json";
 import nlCUserBuilds from "@/locales/nl/c-user-builds.json";
 import nlCVega from "@/locales/nl/c-vega.json";
 import nlCVersecraft from "@/locales/nl/c-versecraft.json";
 import nlCVoidBreaker from "@/locales/nl/c-void-breaker.json";
+import nlCWager from "@/locales/nl/c-wager.json";
+import nlCWishlist from "@/locales/nl/c-wishlist.json";
 import nlCommon from "@/locales/nl/common.json";
 import nlFeed from "@/locales/nl/feed.json";
+import nlGamesHub from "@/locales/nl/games-hub.json";
 import nlGroups from "@/locales/nl/groups.json";
 import nlLibrary from "@/locales/nl/library.json";
 import nlNav from "@/locales/nl/nav.json";
@@ -61,8 +75,13 @@ import nlRSliceIt from "@/locales/nl/r-slice-it.json";
 import nlRStrategies from "@/locales/nl/r-strategies.json";
 import nlRStudio from "@/locales/nl/r-studio.json";
 import nlRideshare from "@/locales/nl/rideshare.json";
+import nlSearch from "@/locales/nl/search.json";
+import nlSettingsAppearance from "@/locales/nl/settings-appearance.json";
+import nlSettingsContent from "@/locales/nl/settings-content.json";
+import nlSettingsNotifications from "@/locales/nl/settings-notifications.json";
 import nlShared from "@/locales/nl/shared.json";
 import nlSite from "@/locales/nl/site.json";
+import nlThemeStudio from "@/locales/nl/theme-studio.json";
 import nlUserBuilds from "@/locales/nl/user-builds.json";
 import nlV from "@/locales/nl/v.json";
 
@@ -71,8 +90,11 @@ const nlResources = {
   "builds": nlBuilds,
   "c-admin": nlCAdmin,
   "c-altair": nlCAltair,
+  "c-awards": nlCAwards,
   "c-blog": nlCBlog,
   "c-builds": nlCBuilds,
+  "c-circle": nlCCircle,
+  "c-creator": nlCCreator,
   "c-cursed-logic": nlCCursedLogic,
   "c-daily-puzzles": nlCDailyPuzzles,
   "c-doctrine": nlCDoctrine,
@@ -80,15 +102,20 @@ const nlResources = {
   "c-economy": nlCEconomy,
   "c-forest-explorer": nlCForestExplorer,
   "c-game": nlCGame,
+  "c-history": nlCHistory,
   "c-house-always-wins": nlCHouseAlwaysWins,
   "c-kowloon-knockout": nlCKowloonKnockout,
   "c-laundry-sort": nlCLaundrySort,
+  "c-layout": nlCLayout,
   "c-library": nlCLibrary,
   "c-lights-out": nlCLightsOut,
+  "c-lists": nlCLists,
   "c-lockdown": nlCLockdown,
   "c-moderation": nlCModeration,
   "c-neon-driftway": nlCNeonDriftway,
   "c-news": nlCNews,
+  "c-predictions": nlCPredictions,
+  "c-profile-modules": nlCProfileModules,
   "c-rideshare": nlCRideshare,
   "c-rmh-capital": nlCRmhCapital,
   "c-rmh-pmc": nlCRmhPmc,
@@ -102,17 +129,23 @@ const nlResources = {
   "c-rmhtype": nlCRmhtype,
   "c-rmhvibe": nlCRmhvibe,
   "c-roadmap": nlCRoadmap,
+  "c-saves": nlCSaves,
   "c-signal-forge": nlCSignalForge,
+  "c-status": nlCStatus,
   "c-studio": nlCStudio,
   "c-synapse-storm": nlCSynapseStorm,
   "c-temple-of-joy": nlCTempleOfJoy,
+  "c-tournaments": nlCTournaments,
   "c-ui": nlCUi,
   "c-user-builds": nlCUserBuilds,
   "c-vega": nlCVega,
   "c-versecraft": nlCVersecraft,
   "c-void-breaker": nlCVoidBreaker,
+  "c-wager": nlCWager,
+  "c-wishlist": nlCWishlist,
   "common": nlCommon,
   "feed": nlFeed,
+  "games-hub": nlGamesHub,
   "groups": nlGroups,
   "library": nlLibrary,
   "nav": nlNav,
@@ -127,8 +160,13 @@ const nlResources = {
   "r-strategies": nlRStrategies,
   "r-studio": nlRStudio,
   "rideshare": nlRideshare,
+  "search": nlSearch,
+  "settings-appearance": nlSettingsAppearance,
+  "settings-content": nlSettingsContent,
+  "settings-notifications": nlSettingsNotifications,
   "shared": nlShared,
   "site": nlSite,
+  "theme-studio": nlThemeStudio,
   "user-builds": nlUserBuilds,
   "v": nlV,
 } as const;

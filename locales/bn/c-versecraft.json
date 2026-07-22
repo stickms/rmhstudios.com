@@ -46,7 +46,7 @@
   "select-words-prompt_one": "আপনার কবিতা রচনা করতে {{count}}টি শব্দ নির্বাচন করুন",
   "select-words-prompt_other": "আপনার কবিতা রচনা করতে {{count}}টি শব্দ নির্বাচন করুন",
   "settings": "সেটিংস",
-  "sign-in-hint": "Sign in to save your stories to the cloud and replay them anywhere.",
+  "sign-in-hint": "সাইন ইন করুন আপনার গল্পগুলো ক্লাউডে সংরক্ষণ করতে এবং যেকোনো জায়গায় সেগুলো পুনরায় চালাতে।",
   "sign-in-to-save": "ক্লাউডে আপনার অগ্রগতি সংরক্ষণ করতে সাইন ইন করুন",
   "skip": "এড়িয়ে যান",
   "slot-auto": "স্বয়ংক্রিয়",
