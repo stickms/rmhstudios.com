@@ -1605,6 +1605,103 @@ one spacing-fixed page; §12.8 applies to every replaced style.
 
 ---
 
+## 16. Shader-grade liquid glass & global scheme enforcement (amendment 2026-07-22a)
+
+**Owner feedback with reference implementations:** the SVG blur-threshold
+goo "doesn't look liquid at all" — implement like
+`bergice/liquidglass` (WebGL fragment shader) and
+`jeantimex/glass-effect-webgpu` (WGSL pipeline), cloned read-only at
+`<scratchpad>/refs-liquidglass/` (single `index.html`, study its fragment
+shader) and `<scratchpad>/refs-glass-webgpu/` (`src/` presets + WGSL —
+study the refraction/dispersion/fresnel chain). Also: tabs STILL not
+consistent (communities named); a global, *enforced* design scheme; several
+concrete visual bugs (list in §16.3).
+
+### 16.1 The liquid layer (Phase M1)
+
+One fixed, full-viewport canvas (`#liquid-layer`, z-index −1) owned by a new
+`lib/liquid-gl/` runtime, replacing the CSS aurora layers **when active**:
+
+1. **Scene:** the shader renders the aurora itself — theme scene colors
+   passed as uniforms (read the derived `--site-canvas`-family tokens; user
+   themes v2 already expose scene colors), with the drift animation and
+   `--aurora-mx/my` parallax as uniforms. Owning the scene pixels is what
+   makes true refraction possible (the §3.6 insight, now shader-executed).
+2. **Liquid bodies:** registered UI shapes rendered as SDF rounded-rects/
+   discs with **smooth-min merging** (the real metaball look), refracting
+   the shader's own aurora (UV displacement along the SDF normal ×
+   thickness profile), fresnel-weighted specular lit from `--light-x/y`
+   (pointer/tilt — the existing scene light feeds a uniform), and chromatic
+   dispersion (per-channel refraction offsets, per the WebGPU reference).
+   Bodies: tab/nav capsules + trail droplets (replaces the SVG `#glass-goo`
+   path when active), the liquid-pop menu bud, hero-pane rims. Feed cards
+   and content panels stay on DOM `backdrop-filter` (the canvas cannot
+   sample DOM content — content-over-content glass remains CSS).
+3. **Registration runtime:** `useLiquidBody(ref, kind)` / `data-liquid-body`
+   → `lib/liquid-gl/registry.ts`; rects synced from the existing motion
+   values (no layout reads in the frame loop), only while animating; body
+   cap ~24.
+4. **Tiering:** WebGPU (WGSL) → WebGL2 (port the same shader) → **current
+   CSS/SVG stack unchanged** (also the reduced-motion / perf-lite /
+   high-contrast / reduce-transparency path). `html.liquid-gl` gates: when
+   the canvas is live, the CSS aurora layers and SVG goo underlays are
+   hidden (never double-render).
+5. **Budgets:** one canvas; DPR cap 1.5; pause on `visibilitychange`; idle
+   damping (30fps when no body animates and parallax is quiet); zero
+   per-frame allocations in the render loop; bundle: the runtime lazy-loads
+   after first paint (no LCP cost).
+6. **Interactivity mandate (owner):** every body responds — cursor
+   (refraction bulges toward the pointer), press (depth pulse via the
+   existing press states), tilt (specular uniform already rides
+   `--light-x/y`).
+
+### 16.2 Global scheme enforcement (Phase M2)
+
+- **One tablist renderer.** Extend `LiquidTabs` to absorb the remaining
+  custom cases: link-tabs (render-prop/asChild so RMHLadder-style route
+  tabs keep `<Link>` semantics) and `aria-controls` wiring — then migrate
+  EVERY remaining custom capsule strip onto it (communities, store,
+  creator studio, RMHLadder, library) and delete the bespoke markup. No
+  more "converged styling on custom markup" — one component, one look.
+- **Design-lint test** (`lib/__tests__/design-consistency.test.ts`): a
+  static scan that FAILS on: `role="tablist"` outside `liquid-tabs.tsx`;
+  underline-active-tab patterns (`aria-selected` + `border-b`/underline
+  markers); ad-hoc tab `layoutId` capsules outside sanctioned files. The
+  "global website design scheme" as an executable gate — future drift
+  fails CI, not a review eyeball.
+
+### 16.3 Concrete fixes (Phase M2, from owner screenshots)
+
+1. **Feed filter select shadow:** the select on the feed sheet renders a
+   stray/doubled shadow — selects are `.glass-inset` wells (inner shadow
+   only); find and delete the extra layer.
+2. **Separator rhythm:** horizontal separators (`hr`, standalone
+   `border-t/b` dividers) sit flush against neighbors — give separators
+   `my-3` (or the divided rows their `py`) per the §15.4 rhythm; sweep.
+3. **RelatedPosts:** cards render flush-stacked — `space-y-3`.
+4. **PostDetail "← Post" capsule:** no padding below the header capsule —
+   apply the standard `mt-3` first-content gutter.
+5. **Double load animation on post open:** entrance animations play on the
+   skeleton AND replay when data arrives — a jarring double entrance. Rule:
+   **one entrance per navigation.** Root-cause (page-enter + stagger, or
+   skeleton-stagger + content-stagger), then either crossfade
+   skeleton→content with no re-stagger, or suppress the second pass
+   (`initial={false}` on the data swap). Verify on a cold load of a post
+   URL and a warm in-app open.
+6. **Popover smoothness:** profile the liquid-pop open on a mid-tier
+   throttle — no frame >16ms (no layout reads mid-animation; will-change
+   discipline). (Full shader-driven buds arrive with M1.)
+7. **Universal micro-interactivity (owner):** everything clickable or
+   hoverable animates — hover raise/glint + press response on every
+   interactive element (buttons, links, icon buttons, rows, chips). Audit
+   pass with fixes; reduced-motion collapses everything as usual.
+
+Verification for both phases: gates green; design-lint test green; frame
+captures (shader teardrop vs SVG for M1; smooth popover trace for M2);
+mobile spot-check at 390px.
+
+---
+
 ## Appendix D — Dead/invisible UI: removal list
 
 > Populated from the 2026-07-21 repo audit (verified with file:line evidence).
