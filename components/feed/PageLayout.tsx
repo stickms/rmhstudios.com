@@ -134,9 +134,9 @@ export function PageLayout({
 
       {/* Right Sidebar or Spacer - hidden below lg */}
       {hasRightSidebar ? (
-        // No self-start: the aside stretches to the column height so the
-        // RightSidebar's sticky stack (top-3) has room to travel (§8.2.4).
-        <aside className="hidden lg:block w-80 shrink-0">{rightSidebar}</aside>
+        // Keep the rail at its content height; it follows the page's scroll root
+        // instead of stretching to support a viewport-sticky child.
+        <aside className="hidden lg:block w-80 shrink-0 self-start">{rightSidebar}</aside>
       ) : !wide ? (
         <div className="hidden lg:block w-80 shrink-0" />
       ) : (
