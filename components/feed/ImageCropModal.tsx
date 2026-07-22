@@ -4,7 +4,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import Cropper from 'react-easy-crop';
 import type { Area } from 'react-easy-crop';
-import { FlipHorizontal, FlipVertical, RotateCcw, RotateCw, X, ZoomIn, ZoomOut } from 'lucide-react';
+import {
+  FlipHorizontal,
+  FlipVertical,
+  RotateCcw,
+  RotateCw,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ImageCropModalProps {
@@ -15,7 +23,13 @@ interface ImageCropModalProps {
   cropShape?: 'rect' | 'round';
 }
 
-export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cropShape = 'round' }: ImageCropModalProps) {
+export function ImageCropModal({
+  imageSrc,
+  onCropDone,
+  onCancel,
+  aspect = 1,
+  cropShape = 'round',
+}: ImageCropModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [minZoom, setMinZoom] = useState(1);
@@ -41,21 +55,25 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
   }, []);
 
   // Compute minZoom so the full image can fit within the square crop area
-  const onMediaLoaded = useCallback((mediaSize: { naturalWidth: number; naturalHeight: number }) => {
-    const { naturalWidth, naturalHeight } = mediaSize;
-    if (naturalWidth && naturalHeight) {
-      const min = Math.min(naturalWidth, naturalHeight);
-      const max = Math.max(naturalWidth, naturalHeight);
-      setMinZoom(min / max);
-    }
-  }, []);
+  const onMediaLoaded = useCallback(
+    (mediaSize: { naturalWidth: number; naturalHeight: number }) => {
+      const { naturalWidth, naturalHeight } = mediaSize;
+      if (naturalWidth && naturalHeight) {
+        const min = Math.min(naturalWidth, naturalHeight);
+        const max = Math.max(naturalWidth, naturalHeight);
+        setMinZoom(min / max);
+      }
+    },
+    [],
+  );
 
   // Compose flip into the transform AFTER translate/rotate/scale so that
   // drag interactions stay non-inverted (drag right = image moves right)
   // while the image content visually mirrors.
-  const flipTransform = (flipH || flipV)
-    ? `translate(${crop.x}px, ${crop.y}px) rotate(${rotation}deg) scale(${zoom})${flipH ? ' scaleX(-1)' : ''}${flipV ? ' scaleY(-1)' : ''}`
-    : undefined;
+  const flipTransform =
+    flipH || flipV
+      ? `translate(${crop.x}px, ${crop.y}px) rotate(${rotation}deg) scale(${zoom})${flipH ? ' scaleX(-1)' : ''}${flipV ? ' scaleY(-1)' : ''}`
+      : undefined;
 
   const handleSave = async () => {
     if (!croppedAreaPixels) return;
@@ -71,27 +89,39 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
   };
 
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4" onClick={onCancel}>
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-0 sm:p-4">
+      <button
+        type="button"
+        tabIndex={-1}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onCancel}
+        aria-label={t('close-crop-modal', { defaultValue: 'Close crop modal' })}
+      />
 
       <div
-        className="relative glass-overlay w-full max-w-lg flex flex-col max-h-[90dvh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
+        data-mobile-fullscreen="true"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="image-crop-title"
+        className="glass-overlay relative flex h-dvh w-dvw max-w-none flex-col overflow-y-auto rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] sm:h-auto sm:max-h-[90dvh] sm:w-full sm:max-w-lg sm:rounded-site sm:p-0"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-site-border shrink-0">
-          <h2 className="font-bold text-site-text">{t('crop-image', { defaultValue: 'Crop Image' })}</h2>
+          <h2 id="image-crop-title" className="font-bold text-site-text">
+            {t('crop-image', { defaultValue: 'Crop Image' })}
+          </h2>
           <button
+            type="button"
             onClick={onCancel}
             className="p-2.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
             aria-label={t('close-crop-modal', { defaultValue: 'Close crop modal' })}
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden />
           </button>
         </div>
 
         {/* Crop area */}
-        <div className="relative w-full h-64 sm:h-80 bg-black/90 shrink-0">
+        <div className="relative min-h-64 w-full flex-1 bg-black/90 sm:h-80 sm:flex-none">
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -175,7 +205,9 @@ export function ImageCropModal({ imageSrc, onCropDone, onCancel, aspect = 1, cro
             {t('cancel', { defaultValue: 'Cancel' })}
           </Button>
           <Button variant="accent" disabled={saving} onClick={handleSave}>
-            {saving ? t('applying', { defaultValue: 'Applying...' }) : t('apply', { defaultValue: 'Apply' })}
+            {saving
+              ? t('applying', { defaultValue: 'Applying...' })
+              : t('apply', { defaultValue: 'Apply' })}
           </Button>
         </div>
       </div>
@@ -199,7 +231,11 @@ async function getCroppedImg(
   const rotRad = (rotation * Math.PI) / 180;
 
   // Compute bounding box of rotated image
-  const { width: bBoxWidth, height: bBoxHeight } = getRotatedSize(image.width, image.height, rotation);
+  const { width: bBoxWidth, height: bBoxHeight } = getRotatedSize(
+    image.width,
+    image.height,
+    rotation,
+  );
 
   canvas.width = bBoxWidth;
   canvas.height = bBoxHeight;
@@ -231,11 +267,7 @@ async function getCroppedImg(
   );
 
   return new Promise((resolve) => {
-    croppedCanvas.toBlob(
-      (blob) => resolve(blob),
-      'image/png',
-      1,
-    );
+    croppedCanvas.toBlob((blob) => resolve(blob), 'image/png', 1);
   });
 }
 

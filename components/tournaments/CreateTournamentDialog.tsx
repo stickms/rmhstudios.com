@@ -17,10 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { WAGER_ELIGIBLE_GAMES } from '@/lib/wager/eligible-games';
-import {
-  MAX_TOURNAMENT_PLAYERS,
-  MIN_TOURNAMENT_PLAYERS,
-} from '@/lib/wager/constants';
+import { MAX_TOURNAMENT_PLAYERS, MIN_TOURNAMENT_PLAYERS } from '@/lib/wager/constants';
 
 interface Props {
   open: boolean;
@@ -57,7 +54,9 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error ?? t('create-failed', { defaultValue: 'Could not create tournament' }));
+        toast.error(
+          data.error ?? t('create-failed', { defaultValue: 'Could not create tournament' }),
+        );
         return;
       }
       toast.success(t('created', { defaultValue: 'Tournament created!' }));
@@ -72,7 +71,7 @@ export function CreateTournamentDialog({ open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent mobileFullscreen>
         <DialogHeader>
           <DialogTitle>{t('create-title', { defaultValue: 'Host a tournament' })}</DialogTitle>
           <DialogDescription>

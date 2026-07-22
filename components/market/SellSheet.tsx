@@ -117,7 +117,7 @@ export function SellSheet({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent mobileFullscreen className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t('market-sell-title', { defaultValue: 'Sell an item' })}</DialogTitle>
           <DialogDescription>

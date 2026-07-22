@@ -23,11 +23,30 @@ describe('performance tier', () => {
     ).toBe(true);
   });
 
+  it('avoids optional GPU work on constrained connections', () => {
+    expect(
+      shouldUsePerfLite({
+        deviceMemory: 16,
+        hardwareConcurrency: 16,
+        effectiveType: '2g',
+        iosWebKit: false,
+      }),
+    ).toBe(true);
+    expect(
+      shouldUsePerfLite({
+        deviceMemory: 16,
+        hardwareConcurrency: 16,
+        downlinkMbps: 1.2,
+        iosWebKit: false,
+      }),
+    ).toBe(true);
+  });
+
   it('retains the generic memory and core heuristics elsewhere', () => {
     expect(shouldUsePerfLite({ deviceMemory: 4, iosWebKit: false })).toBe(true);
     expect(shouldUsePerfLite({ hardwareConcurrency: 4, iosWebKit: false })).toBe(true);
-    expect(
-      shouldUsePerfLite({ deviceMemory: 8, hardwareConcurrency: 8, iosWebKit: false }),
-    ).toBe(false);
+    expect(shouldUsePerfLite({ deviceMemory: 8, hardwareConcurrency: 8, iosWebKit: false })).toBe(
+      false,
+    );
   });
 });

@@ -657,8 +657,16 @@ html:not(.app-route):not(.style-high-contrast) body::after {
   z-index: -2;
   pointer-events: none;
   background-image:
-    radial-gradient(60% 50% at 24% 30%, var(--site-aurora-far-1, rgba(86, 140, 255, 0.1)), transparent 70%),
-    radial-gradient(50% 45% at 78% 66%, var(--site-aurora-far-2, rgba(170, 108, 255, 0.09)), transparent 70%);
+    radial-gradient(
+      60% 50% at 24% 30%,
+      var(--site-aurora-far-1, rgba(86, 140, 255, 0.1)),
+      transparent 70%
+    ),
+    radial-gradient(
+      50% 45% at 78% 66%,
+      var(--site-aurora-far-2, rgba(170, 108, 255, 0.09)),
+      transparent 70%
+    );
   translate: calc(var(--aurora-mx, 0px) * -0.6) calc(var(--aurora-my, 0px) * -0.6);
   transition: translate 0.9s cubic-bezier(0.22, 1, 0.36, 1); /* lazier trail */
   animation: aurora-drift-far 52s ease-in-out infinite alternate;
@@ -779,8 +787,10 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     box-shadow: var(--site-shadow-sm);
     border: var(--site-border-width) solid transparent;
     border-radius: var(--site-radius);
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate));
-    backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1))) saturate(var(--site-glass-saturate));
+    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1)))
+      saturate(var(--site-glass-saturate));
+    backdrop-filter: blur(calc(var(--site-glass-blur-pane) * var(--glass-blur-factor, 1)))
+      saturate(var(--site-glass-saturate));
   }
 
   /* ── L3 · glass-chrome ── persistent chrome (sidebar, sticky headers, dock).
@@ -795,25 +805,41 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
        border costs no outer layout. */
     /* §5.46: the --site-bg mix % scales with the clarity slider (a plain factor
        works here — the mix tops out well under 100% even at Calm's 1.35). */
-    background-color: color-mix(in srgb, var(--site-bg) calc(32% * var(--glass-user-tint, 1)), transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--site-bg) calc(32% * var(--glass-user-tint, 1)),
+      transparent
+    );
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
     background-attachment: var(--glass-glint-attach, fixed);
     border: var(--site-border-width) solid transparent;
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1))) saturate(150%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1))) saturate(150%);
+    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
+      saturate(150%);
+    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
+      saturate(150%);
   }
   .glass-chrome[data-scrolled] {
     /* background-color only (NOT the `background` shorthand) so the glint layer
        survives the condense; the --glass-glint-opacity bump then rides it (§7). */
-    background-color: color-mix(in srgb, var(--site-bg) calc(55% * var(--glass-user-tint, 1)), transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--site-bg) calc(55% * var(--glass-user-tint, 1)),
+      transparent
+    );
     --glass-glint-opacity: 1; /* condensed chrome catches more light (§4.2/§7) */
     /* Blur deepens 12px → 18px when the capsule condenses (§7/§8.2). The aside
        variant reads --site-glass-blur-chrome on ::before but never carries
        [data-scrolled], so it is unaffected. */
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))) saturate(150%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))) saturate(150%);
+    -webkit-backdrop-filter: blur(
+        calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))
+      )
+      saturate(150%);
+    backdrop-filter: blur(
+        calc(var(--site-glass-blur-chrome-scrolled) * var(--glass-blur-factor, 1))
+      )
+      saturate(150%);
   }
   /* Fixed asides: blur lives on ::before so fixed descendants (LeftSidebar's
      non-portaled user menu) keep the VIEWPORT as their containing block. NEVER
@@ -826,7 +852,11 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     /* §4.35: the aside carries its glint in its OWN background now (its ::after
        ring was deleted). Blur stays on ::before (§3.3.1 containing-block rule),
        so the glint cannot ride a pseudo here — it rides the border-box layer. */
-    background-color: color-mix(in srgb, var(--site-bg) calc(40% * var(--glass-user-tint, 1)), transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--site-bg) calc(40% * var(--glass-user-tint, 1)),
+      transparent
+    );
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
@@ -839,8 +869,10 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1))) saturate(150%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1))) saturate(150%);
+    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
+      saturate(150%);
+    backdrop-filter: blur(calc(var(--site-glass-blur-chrome) * var(--glass-blur-factor, 1)))
+      saturate(150%);
   }
 
   /* ── L4 · glass-overlay ── floating UI (dialogs, popovers, menus, palette,
@@ -848,8 +880,20 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
      anchors the optics ring (::before, §2.1). */
   .glass-overlay {
     position: relative;
+    /* Last-line viewport safety for every floating surface, including older
+       hand-positioned menus that do not use the measured liquid-pop hook. The
+       hook still supplies precise x/y clamping; these limits guarantee that no
+       popover can exceed the visible screen or trap unreachable content. */
+    max-inline-size: calc(100dvw - var(--safe-left, 0px) - var(--safe-right, 0px) - 24px);
+    max-block-size: calc(100dvh - var(--safe-top, 0px) - var(--safe-bottom, 0px) - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     /* §4.35: single glint layer, tint fills to border-box, transparent border. */
-    background-color: color-mix(in srgb, var(--site-bg) calc(62% * var(--glass-user-tint, 1)), transparent);
+    background-color: color-mix(
+      in srgb,
+      var(--site-bg) calc(62% * var(--glass-user-tint, 1)),
+      transparent
+    );
     background-image: var(--glass-glint-layer);
     background-clip: border-box;
     background-origin: border-box;
@@ -857,8 +901,22 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     box-shadow: var(--site-shadow);
     border: var(--site-border-width) solid transparent;
     border-radius: var(--site-radius);
-    -webkit-backdrop-filter: blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(180%);
-    backdrop-filter: blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))) saturate(180%);
+    -webkit-backdrop-filter: blur(
+        calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1))
+      )
+      saturate(180%);
+    backdrop-filter: blur(calc(var(--site-glass-blur-overlay) * var(--glass-blur-factor, 1)))
+      saturate(180%);
+  }
+
+  /* Full-screen mobile editors intentionally consume the visual viewport. This
+     opt-in overrides the generic popover clamp above; safe-area padding remains
+     owned by the Dialog/Sheet primitive so controls clear notches and home bars. */
+  @media (max-width: 767px) {
+    .glass-overlay[data-mobile-fullscreen='true'] {
+      max-inline-size: none;
+      max-block-size: none;
+    }
   }
 
   /* Dialog / drawer backdrops. Blur stays low + constant (cheap; never
@@ -1010,8 +1068,13 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
        AND the html.reduce-motion account flag. */
     @media not (prefers-reduced-motion: reduce) {
       html:not(.reduce-motion) .glass-refract:active::before {
-        -webkit-backdrop-filter: var(--glass-lens-press, var(--glass-lens, url('#glass-lens-press'))) blur(1px);
-        backdrop-filter: var(--glass-lens-press, var(--glass-lens, url('#glass-lens-press'))) blur(1px);
+        -webkit-backdrop-filter: var(
+            --glass-lens-press,
+            var(--glass-lens, url('#glass-lens-press'))
+          )
+          blur(1px);
+        backdrop-filter: var(--glass-lens-press, var(--glass-lens, url('#glass-lens-press')))
+          blur(1px);
       }
     }
   }
@@ -1082,10 +1145,14 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
         transparent 70%
       ),
       var(--site-glass-noise);
-    background-size: 260% 100%, auto;
+    background-size:
+      260% 100%,
+      auto;
     background-repeat: no-repeat, repeat;
     background-blend-mode: screen, normal;
-    background-position: 150% 0, 0 0;
+    background-position:
+      150% 0,
+      0 0;
     animation: glass-sheen 9s ease-in-out infinite;
   }
   html.perf-lite .glass-liquid {
@@ -1153,7 +1220,6 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
       );
     }
     .glass-overlay {
-      max-width: calc(100dvw - 24px);
       background-color: color-mix(
         in srgb,
         var(--site-bg) clamp(76%, calc(86% * var(--glass-user-tint, 1)), 96%),
@@ -1166,21 +1232,13 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
 /* Touch / coarse pointers (§4.35): background-attachment: fixed is unreliable on
    iOS and there is no pointer to track — swap the whole glint layer to a static
    element-anchored top-edge sun in the same border-box slot. Redefined on
-   html:not(.tilt-live) (beats the base :root token) → every glass surface inherits
-   the static sun AT REST.
-   §5.5x C — tilt light: while device-orientation events flow, useLiquidBackground
-   writes --light-x/--light-y from the tilt and sets html.tilt-live. That un-matches
-   this rule, so the base :root radial + `fixed` attachment return and the glint
-   tracks the tilt (the mobile counterpart of pointer tracking). One token flip, no
-   duplicated gradient. perf-lite/reduced-motion never set tilt-live (the hook
-   self-gates) and perf-lite re-forces the static sun below, so the degradations win.
-   iOS QA GATE (cannot verify on-device here, §5.5x C): background-attachment:fixed
-   is historically buggy in iOS Safari. If the tilt radial misregisters on a real
-   iOS device, keep iOS on the static sun by re-scoping this selector to
-   `html:not(.tilt-live), html.tilt-live.ios-safari` (set that class from UA) — i.e.
-   ship tilt for Android only. Left as a commented note per the spec. */
+   every glass surface inherits the static sun. Coarse-pointer devices keep this
+   element-anchored even when tilt input is live: mobile engines can composite a
+   fixed background a frame behind its scrolling parent, which reads as a detached
+   shadow/glint during page and tab transitions. Tilt still moves the shared aurora;
+   the per-surface edge remains physically attached to its glass. */
 @media not ((hover: hover) and (pointer: fine)) {
-  html:not(.tilt-live) {
+  html {
     --glass-glint-attach: scroll;
     --glass-glint-layer: linear-gradient(
       180deg,
@@ -1200,11 +1258,15 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
 @keyframes glass-sheen {
   0%,
   22% {
-    background-position: 150% 0, 0 0;
+    background-position:
+      150% 0,
+      0 0;
   }
   60%,
   100% {
-    background-position: -60% 0, 0 0;
+    background-position:
+      -60% 0,
+      0 0;
   }
 }
 /* One pass of the same band for .glass-sheen-hover (single background layer). */
@@ -2265,7 +2327,9 @@ textarea,
    ([data-slot='button']) and .glass-interactive is the press cue there — an
    opacity flicker fights the squish. Links and legacy buttons keep the cue. */
 a:not(.glass-interactive):active,
-button:not(:disabled):not([aria-disabled='true']):not([data-slot='button']):not(.glass-interactive):active,
+button:not(:disabled):not([aria-disabled='true']):not([data-slot='button']):not(
+    .glass-interactive
+  ):active,
 [role='button']:not([aria-disabled='true']):not(.glass-interactive):active,
 [role='tab']:not(.glass-interactive):active,
 [role='menuitem']:not(.glass-interactive):active,

@@ -137,7 +137,10 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
             search (the For You / Following + content-type tabs moved out to their
             own sheet strips below, §5.45). The glass-chrome bg + blur + glint edge
             all clip to rounded-site on their own. */}
-        <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
+        <header
+          data-slot="feed-header"
+          className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3"
+        >
           {/* Mobile chrome row: drawer button + centered RMH branding. Desktop has
               the sidebar, so this row is mobile-only; the spacer balances the 44px
               menu button so the wordmark stays centered. */}
@@ -150,31 +153,41 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
           </div>
 
           {/* Search bar (the header's sticky behavior stays here). */}
-          <div className="px-4 py-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim" />
+          <div className="px-3 pb-3 pt-2 md:px-4 md:py-3">
+            <label htmlFor="feed-search" className="sr-only">
+              {t('search-placeholder', { defaultValue: 'Search posts and people' })}
+            </label>
+            <div className="glass-inset relative">
+              <Search
+                className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-site-text-dim"
+                aria-hidden
+              />
               <input
+                id="feed-search"
                 ref={searchRef}
                 type="text"
                 value={searchInput}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 placeholder={t('search-placeholder', { defaultValue: 'Search...' })}
-                className="w-full bg-site-surface text-site-text placeholder:text-site-text-dim text-sm rounded-site-sm pl-9 pr-9 py-2 border border-site-border outline-none focus:border-site-accent transition-colors"
+                enterKeyHint="search"
+                className="w-full rounded-site-sm bg-transparent py-2.5 pl-10 pr-11 text-base text-site-text outline-none placeholder:text-site-text-dim sm:text-sm"
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') clearSearch();
                 }}
               />
               {searchInput && (
                 <button
+                  type="button"
                   onClick={clearSearch}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-site-text-dim hover:text-site-text transition-colors"
+                  aria-label={t('clear-search', { defaultValue: 'Clear search' })}
+                  className="absolute right-1 top-1/2 inline-flex min-h-9 min-w-9 -translate-y-1/2 items-center justify-center rounded-full text-site-text-dim transition-colors hover:bg-site-surface-hover hover:text-site-text"
                 >
-                  <X className="w-4 h-4" />
+                  <X className="h-4 w-4" aria-hidden />
                 </button>
               )}
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Tab strips — standalone glass sheets BELOW the header capsule (§5.45),
             separated by the standard gutter. State wiring (mode + useFeedStore
@@ -185,7 +198,10 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
 
         {/* User search results */}
         {userResults.length > 0 && (
-          <div className="border-b border-site-border">
+          <section
+            className="glass-fill mx-3 overflow-hidden"
+            aria-label={t('people', { defaultValue: 'People' })}
+          >
             <div className="px-4 py-2">
               <p className="text-xs font-semibold text-site-text-dim uppercase tracking-wide mb-1">
                 {t('people', { defaultValue: 'People' })}
@@ -195,7 +211,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
               <Link
                 key={user.id}
                 to={`/u/${user.handle || user.id}` as string}
-                className="flex items-center gap-3 px-4 py-2.5 hover:bg-site-surface transition-colors"
+                className="flex min-h-12 items-center gap-3 border-t border-site-border px-4 py-2.5 transition-colors first:border-t-0 hover:bg-site-surface-hover"
               >
                 <UserAvatar
                   src={user.image ?? undefined}
@@ -209,10 +225,10 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
                       {user.name || t('unknown-user', { defaultValue: 'Unknown' })}
                     </span>
                     {user.isVerified && (
-                      <BadgeCheck className="w-3.5 h-3.5 text-site-success shrink-0" />
+                      <BadgeCheck className="w-3.5 h-3.5 text-site-success shrink-0" aria-hidden />
                     )}
                     {user.isAdmin && (
-                      <ShieldCheck className="w-3.5 h-3.5 text-site-accent shrink-0" />
+                      <ShieldCheck className="w-3.5 h-3.5 text-site-accent shrink-0" aria-hidden />
                     )}
                   </div>
                   {user.handle && (
@@ -221,7 +237,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
                 </div>
               </Link>
             ))}
-          </div>
+          </section>
         )}
 
         {/* Admin announcements, pinned above the composer */}
@@ -257,7 +273,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
             <Link
               to="/login"
               search={{ callbackURL: undefined }}
-              className="px-5 py-2 rounded-site-sm bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
+              className="px-5 py-2 rounded-site-sm bg-site-accent text-site-accent-fg text-sm font-bold hover:bg-site-accent-hover transition-colors"
             >
               {t('sign-in', { defaultValue: 'Sign in' })}
             </Link>

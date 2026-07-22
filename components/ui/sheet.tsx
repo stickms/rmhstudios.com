@@ -51,8 +51,10 @@ const SheetContent = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & {
     /** Hide the drag handle (mobile). Default false. */
     hideHandle?: boolean;
+    /** Use a safe-area-aware full-screen editor instead of a bottom sheet on mobile. */
+    mobileFullscreen?: boolean;
   }
->(({ className, children, hideHandle = false, ...props }, ref) => {
+>(({ className, children, hideHandle = false, mobileFullscreen = false, ...props }, ref) => {
   const { t } = useTranslation('c-ui');
   const closeRef = React.useRef<HTMLButtonElement>(null);
   const [dragY, setDragY] = React.useState(0);
@@ -82,20 +84,24 @@ const SheetContent = React.forwardRef<
       <DialogPrimitive.Content
         ref={ref}
         data-slot="sheet-content"
+        data-mobile-fullscreen={mobileFullscreen || undefined}
         style={dragY ? { transform: `translateY(${dragY}px)`, transition: 'none' } : undefined}
         className={cn(
           // L4 glass-overlay for both layouts.
           'glass-overlay fixed z-50 flex flex-col text-site-text',
-          // Mobile: bottom sheet, rounded top, safe-area padding, capped height.
-          'inset-x-0 bottom-0 max-h-[85dvh] rounded-t-site px-4 pt-2 pb-[max(1rem,env(safe-area-inset-bottom))]',
+          // Mobile: a horizontally-centered floating bottom sheet by default;
+          // complex editors can opt into the full visual viewport instead.
+          mobileFullscreen
+            ? 'inset-0 h-dvh max-h-none w-dvw rounded-none px-0 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)]'
+            : 'bottom-2 left-1/2 max-h-[calc(100dvh-1rem)] w-[calc(100dvw-1rem)] -translate-x-1/2 rounded-site px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2',
           // Desktop: centered dialog.
-          'md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-site md:px-6 md:pt-6 md:pb-6',
-          className
+          'md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:h-auto md:w-full md:max-w-lg md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-site md:px-6 md:pb-6 md:pt-6',
+          className,
         )}
         {...props}
       >
         {/* Drag handle — mobile only; drives swipe-to-dismiss. */}
-        {hideHandle ? null : (
+        {hideHandle || mobileFullscreen ? null : (
           <div
             onPointerDown={onHandlePointerDown}
             onPointerMove={onHandlePointerMove}
@@ -109,9 +115,12 @@ const SheetContent = React.forwardRef<
 
         <DialogPrimitive.Close
           ref={closeRef}
-          className="absolute right-4 top-3 rounded-full p-1.5 text-site-text-muted opacity-80 outline-none transition-opacity hover:bg-site-surface-hover hover:opacity-100 focus-visible:ring-2 focus-visible:ring-site-accent/50 disabled:pointer-events-none md:top-4"
+          className={cn(
+            'absolute right-4 rounded-full p-1.5 text-site-text-muted opacity-80 outline-none transition-opacity hover:bg-site-surface-hover hover:opacity-100 focus-visible:ring-2 focus-visible:ring-site-accent/50 disabled:pointer-events-none md:top-4',
+            mobileFullscreen ? 'top-[max(.75rem,env(safe-area-inset-top))]' : 'top-3',
+          )}
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" aria-hidden />
           <span className="sr-only">{t('close', { defaultValue: 'Close' })}</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
@@ -121,21 +130,13 @@ const SheetContent = React.forwardRef<
 SheetContent.displayName = 'SheetContent';
 
 function SheetHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn('flex flex-col gap-1.5 pb-3 text-start', className)}
-      {...props}
-    />
-  );
+  return <div className={cn('flex flex-col gap-1.5 pb-3 text-start', className)} {...props} />;
 }
 
 function SheetFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn(
-        'flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end',
-        className
-      )}
+      className={cn('flex flex-col-reverse gap-2 pt-4 sm:flex-row sm:justify-end', className)}
       {...props}
     />
   );

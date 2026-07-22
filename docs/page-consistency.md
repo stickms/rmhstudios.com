@@ -54,10 +54,10 @@ raises blur and rim glint), the h1 in the theme display font, mobile menu
 button, optional back arrow (`backTo`/`backLabel`), optional right sidebar,
 and the width-constrained **transparent** center column (v2 floating shell:
 no `border-r` app-frame edge — content floats as glass panes over the aurora,
-with `md:gap-4 xl:gap-6` gutters supplied by the `_site` shell). The center
+with responsive gutters supplied by `SiteShell`). The center
 column carries `pb-dock` to clear the floating mobile dock.
 
-Props: `title`, `children`, `rightSidebar?`, `headerExtra?`, `headerRight?`,
+Props: `title`, `children`, `rightSidebar?`, `headerRight?`,
 `wide?`, `backTo?`, `backLabel?`.
 
 ### Feed-column variant
@@ -75,7 +75,7 @@ import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from "@/lib/layout-width";
 >
   {/* column content */}
 </AnimatedMain>
-<div className="hidden lg:block w-4 shrink-0" />
+<div className="hidden xl:block w-4 shrink-0" />
 ```
 
 Widths come from `lib/layout-width.ts`: `DEFAULT_WIDTH` 648, `WIDE_WIDTH` 800,
@@ -109,25 +109,30 @@ Work through this for every new or edited page:
       active capsule flows between tabs. Each strip rides its own glass **sheet**
       (`sheet` prop, default on) and sits **below** the hero / page-title
       capsule in the content flow, separated by the standard gutter — never
-      inside `headerExtra` or the sticky header (§5.45). A strip that must stay
+      inside the sticky header (§5.45). A strip that must stay
       sticky keeps a `top` offset clearing the floating header but remains its
       own sheet; on narrow screens wrap it in `tab-sheet-scroll` so it scrolls
       horizontally instead of clipping. Exception: tab bars that are really
       route links (RMHLadder) or need richer ARIA (`aria-controls`) keep their
       own markup and add the `layoutId` capsule + sheet wrapper directly. Every
-      such custom capsule still carries the §5.47 morph underlay (`useLiquidMorph`
-      + the two-layer outer-`layoutId`/inner-material span split) — a strip is
+      such custom capsule still carries the §5.47 morph underlay (`useLiquidMorph` + the two-layer outer-`layoutId`/inner-material span split) — a strip is
       either fully liquid or it isn't shipped (§15.1).
 - [ ] **Spacing rhythm (§15.4):** 12px (`space-y-3` / `gap-3`) between sibling
-      glass elements in a column; `md:gap-4 xl:gap-6` between columns; `mt-3` from
+      glass elements in a column; responsive `SiteShell` gutters between columns; `mt-3` from
       a header/hero capsule to the first content below it. Internal padding at the
       primitive's canonical value, never a cramped per-page override: text
       inputs/wells `px-3.5 py-2.5` (16px font floor on phones), card content
       `px-4 py-3`+, menu/list rows ≥12px inline padding (text never touches the
       glass edge).
+- [ ] **Dialogs and editors:** standard dialogs use `DialogContent` and remain
+      horizontally centered within the visual viewport. Complex or wide forms
+      pass `mobileFullscreen`; large sheet editors do the same with
+      `SheetContent`. Keep sibling controls at `gap-2` or greater, section groups
+      at `gap-3`/`space-y-3` or greater, and leave close-control clearance in the
+      shared header instead of adding one-off offsets.
 - [ ] **Sticky stacking (§15.5):** a column has **one sticky group**. Either
-      *merge* related co-stickies (tabs + search) into a single sticky glass
-      container, or *cascade* independent stickies with cumulative `top` offsets
+      _merge_ related co-stickies (tabs + search) into a single sticky glass
+      container, or _cascade_ independent stickies with cumulative `top` offsets
       (account for the condensed `data-scrolled` header height and the smaller
       `top-2` mobile offset). Never pin two stickies to the same `top` — they
       overlap and hide each other while scrolled.

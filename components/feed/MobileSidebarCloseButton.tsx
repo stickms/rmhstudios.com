@@ -20,11 +20,13 @@ export function MobileSidebarCloseButton({ className = '' }: { className?: strin
   const { close } = useMobileSidebar();
   return (
     <button
+      type="button"
+      data-mobile-sidebar-close=""
       onClick={close}
       className={`md:hidden inline-flex min-h-11 min-w-11 -mr-2 items-center justify-center rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${className}`}
       aria-label={t('close-menu', { defaultValue: 'Close menu' })}
     >
-      <X className="w-5 h-5" />
+      <X className="w-5 h-5" aria-hidden />
     </button>
   );
 }

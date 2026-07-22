@@ -3,7 +3,9 @@
 import { useEffect, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { AnimatedMain } from './AnimatedMain';
+import { ContextRail } from './ContextRail';
 import { MobileMenuButton } from './MobileMenuButton';
 import { MobileBrandPrefix } from './MobileHeader';
 import { Breadcrumbs, type BreadcrumbItem } from '@/components/ui/breadcrumbs';
@@ -13,7 +15,6 @@ interface PageLayoutProps {
   title: string;
   children: React.ReactNode;
   rightSidebar?: React.ReactNode;
-  headerExtra?: React.ReactNode;
   /** Element rendered right-aligned in the sticky header row (e.g. filter button) */
   headerRight?: React.ReactNode;
   /** Use a wider center column (800 px) – useful for grid-heavy pages like Builds. */
@@ -37,13 +38,13 @@ export function PageLayout({
   title,
   children,
   rightSidebar,
-  headerExtra,
   headerRight,
   wide,
   backTo,
   backLabel,
   breadcrumbs,
 }: PageLayoutProps) {
+  const { t } = useTranslation('feed');
   const hasRightSidebar = Boolean(rightSidebar);
   const targetWidth = wide
     ? hasRightSidebar
@@ -55,7 +56,7 @@ export function PageLayout({
   // `data-scrolled` on the sticky header, which condenses (more opaque, shorter)
   // as content scrolls under it. Works for both scroll roots (window on desktop,
   // the mobile shell's inner scroller) since both fill the viewport.
-  const headerRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLElement>(null);
   const sentinelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -93,7 +94,7 @@ export function PageLayout({
               bottom margin (mb-2 = top-2, md:mb-3 = md:top-3) so every page's own
               first-content padding (§15.4 mt-3/space-y-3) is honoured, from the
               SHARED layer — it can no longer be eaten per-page. */}
-          <div
+          <header
             ref={headerRef}
             data-slot="page-header"
             className="glass-chrome sticky top-2 z-10 mx-2 mb-2 rounded-site shadow-site-sm h-18 data-[scrolled]:h-16 transition-[height] md:top-3 md:mx-3 md:mb-3"
@@ -105,10 +106,10 @@ export function PageLayout({
                 {backTo && (
                   <Link
                     to={backTo}
-                    aria-label={backLabel ?? 'Back'}
+                    aria-label={backLabel ?? t('back', { defaultValue: 'Back' })}
                     className="shrink-0 -ml-1 rounded-full p-1.5 text-site-text-muted transition-colors hover:bg-site-surface hover:text-site-text active:scale-95"
                   >
-                    <ArrowLeft className="h-5 w-5" />
+                    <ArrowLeft className="h-5 w-5" aria-hidden />
                   </Link>
                 )}
                 <div className="flex flex-col justify-center min-w-0">
@@ -122,27 +123,18 @@ export function PageLayout({
                   </h1>
                 </div>
               </div>
-              {headerRight}
+              {headerRight && <div className="shrink-0">{headerRight}</div>}
             </div>
-            {headerExtra}
-          </div>
+          </header>
 
           {/* Page Content */}
           {children}
         </div>
       </AnimatedMain>
 
-      {/* Right Sidebar or Spacer - hidden below lg */}
-      {hasRightSidebar ? (
-        // Keep the rail at its content height; it follows the page's scroll root
-        // instead of stretching to support a viewport-sticky child.
-        <aside className="hidden lg:block w-80 shrink-0 self-start">{rightSidebar}</aside>
-      ) : !wide ? (
-        <div className="hidden lg:block w-80 shrink-0" />
-      ) : (
-        // Keep the same trailing gutter feel as the right sidebar layout.
-        <div className="hidden lg:block w-4 shrink-0" />
-      )}
+      <ContextRail reserve={!hasRightSidebar} compactReserve={Boolean(wide)}>
+        {rightSidebar}
+      </ContextRail>
     </>
   );
 }

@@ -23,12 +23,7 @@ import { NotificationBadge } from '@/components/ui/notification-badge';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNavStore } from '@/stores/navStore';
 import { useLayoutStore } from '@/stores/layoutStore';
-import {
-  SIDEBAR_NAV,
-  isNavGroup,
-  orderNavItems,
-  type NavLeaf,
-} from '@/lib/sidebar-nav';
+import { SIDEBAR_NAV, isNavGroup, orderNavItems, type NavLeaf } from '@/lib/sidebar-nav';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { useAdminReviewCount } from '@/lib/useAdminReviewCount';
 import { MobileSidebarCloseButton } from './MobileSidebarCloseButton';
@@ -56,12 +51,18 @@ const SUBMENU_ITEM = {
   closed: { opacity: 0, y: -6 },
 };
 
+type SidebarSessionUser = {
+  id: string;
+  handle?: string | null;
+  isAdmin?: boolean;
+};
+
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // When expanded=true (e.g. in mobile drawer), always show labels.
-  // Otherwise, labels are hidden below xl breakpoint.
-  const labelClass = expanded ? '' : 'hidden xl:block';
-  const logoFullClass = expanded ? '' : 'hidden xl:block';
-  const logoShortClass = expanded ? 'hidden' : 'xl:hidden';
+  // Otherwise, labels stay hidden until the shell has room for all three columns.
+  const labelClass = expanded ? '' : 'hidden 2xl:block';
+  const logoFullClass = expanded ? '' : 'hidden 2xl:block';
+  const logoShortClass = expanded ? 'hidden' : '2xl:hidden';
   // Mobile drawer (`expanded`): pad x/top uniformly; the bottom inset is applied
   // inline (see the root div) as 1rem + the OS safe-area, so the sidebar body
   // fills the drawer to the bottom with no empty tinted band while the footer
@@ -69,15 +70,15 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // 0 while that bar is shown).
   // Collapsed rail (md, 64px): tighter padding so the icon pills breathe inside
   // the m-2 rail panel instead of being crushed + clipped (§5.5x A.3). p-4 returns
-  // at xl where the rail is 256px and shows labels.
-  const paddingClass = expanded ? 'px-4 pt-4' : 'p-1.5 xl:p-4';
-  const logoAlignClass = expanded ? 'justify-start' : 'justify-center xl:justify-start';
-  const iconMrClass = expanded ? 'mr-2' : 'xl:mr-2';
-  const itemJustifyClass = expanded ? '' : 'md:justify-center xl:justify-start';
+  // at 2xl where the rail expands and shows labels.
+  const paddingClass = expanded ? 'px-4 pt-4' : 'p-1.5 2xl:p-4';
+  const logoAlignClass = expanded ? 'justify-start' : 'justify-center 2xl:justify-start';
+  const iconMrClass = expanded ? 'mr-2' : '2xl:mr-2';
+  const itemJustifyClass = expanded ? '' : 'md:justify-center 2xl:justify-start';
   // Collapsed pills drop to px-2 at md (icon-only) so a ~40px rounded pill centres
-  // the icon without overflowing the tight rail track; px-3.5 returns at xl with
+  // the icon without overflowing the tight rail track; px-3.5 returns at 2xl with
   // labels (§5.5x A.3). Expanded (drawer) always keeps the roomy px-3.5.
-  const itemPadXClass = expanded ? 'px-3.5' : 'px-2 xl:px-3.5';
+  const itemPadXClass = expanded ? 'px-3.5' : 'px-2 2xl:px-3.5';
   // Both the mobile drawer (MobileSidebarShell's fixed `<aside>`) and the desktop
   // rail (fixed, `overflow-hidden` aside) fill the viewport height, so the nav
   // gets its own internal scroll region while the footer (notification bell,
@@ -187,7 +188,8 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   const hiddenSet = new Set(layoutHydrated ? sidebarHidden : []);
 
   const { data: session, isPending } = useSession();
-  const isAdmin = !!(session?.user as any)?.isAdmin;
+  const sidebarUser = session?.user as SidebarSessionUser | undefined;
+  const isAdmin = !!sidebarUser?.isAdmin;
   const { resolved: resolvedUser } = useResolvedUser();
   const unreadCount = useUnreadCount(!!session);
   const { count: notificationCount, refresh: refreshNotificationCount } =
@@ -247,7 +249,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     const indent = nested
       ? expanded
         ? 'pl-10'
-        : 'md:justify-center xl:justify-start xl:pl-10'
+        : 'md:justify-center 2xl:justify-start 2xl:pl-10'
       : itemJustifyClass;
     // The active pill is now the flowing layoutId capsule (below) — the leaf
     // itself only carries the accent text + hover states. `relative` anchors the
@@ -410,79 +412,79 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           capsule's coordinate space — it wraps ALL leaves (incl. expanding group
           submenus) so the underlay covers the full content height and stays
           registered with the capsule through scroll (§5.47). */}
-      <nav ref={navRef} className={`${navScrollClass} xl:pr-1.5`}>
+      <nav ref={navRef} className={`${navScrollClass} 2xl:pr-1.5`}>
         <div className="relative flex flex-col gap-1">
           {/* Goo underlay (§5.47) — capsule-only, behind the leaves. */}
           {capsuleUnderlay}
           {orderedNav.map((item) => {
-          if (!isNavGroup(item)) {
-            if (item.requiresAuth && !session) return null;
-            if (item.requiresAdmin && !isAdmin) return null;
-            // Hidden leaves drop out of the rail (still reachable via the
-            // command palette and their URL — never stranded).
-            if (hiddenSet.has(item.id)) return null;
-            return renderLeaf(item);
-          }
-          const Icon = item.icon;
-          const groupLabel = t(item.tKey, { defaultValue: item.label });
-          const isOpen = !!openGroups[item.group];
-          const groupActive = item.children.some((c) => pathname?.startsWith(c.href));
-          // Pinned children surface in the main rail, right above their group.
-          const pinnedChildren = navHydrated
-            ? item.children.filter((c) => pinned.includes(c.href))
-            : [];
-          return (
-            <div key={item.group} className="flex flex-col gap-1">
-              {pinnedChildren.map((c) => renderPinnable(c, false))}
-              <button
-                type="button"
-                onClick={() => toggleGroup(item.group)}
-                aria-expanded={isOpen}
-                className={`flex items-center gap-3 ${itemPadXClass} py-3 rounded-full text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
-                  groupActive
-                    ? 'text-site-accent bg-site-accent-dim'
-                    : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-                }`}
-                title={groupLabel}
-              >
-                <Icon className="w-5 h-5 shrink-0" />
-                <span className={labelClass}>{groupLabel}</span>
-                <ChevronDown
-                  className={`w-4 h-4 shrink-0 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''} ${labelClass}`}
-                />
-              </button>
-              {reduced ? (
-                isOpen && item.children.map((c) => renderPinnable(c, true))
-              ) : (
-                <AnimatePresence initial={false}>
-                  {isOpen && (
-                    <motion.div
-                      key="submenu"
-                      variants={SUBMENU_PANEL}
-                      initial="closed"
-                      animate="open"
-                      exit="closed"
-                      transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
-                      className="overflow-hidden"
-                    >
+            if (!isNavGroup(item)) {
+              if (item.requiresAuth && !session) return null;
+              if (item.requiresAdmin && !isAdmin) return null;
+              // Hidden leaves drop out of the rail (still reachable via the
+              // command palette and their URL — never stranded).
+              if (hiddenSet.has(item.id)) return null;
+              return renderLeaf(item);
+            }
+            const Icon = item.icon;
+            const groupLabel = t(item.tKey, { defaultValue: item.label });
+            const isOpen = !!openGroups[item.group];
+            const groupActive = item.children.some((c) => pathname?.startsWith(c.href));
+            // Pinned children surface in the main rail, right above their group.
+            const pinnedChildren = navHydrated
+              ? item.children.filter((c) => pinned.includes(c.href))
+              : [];
+            return (
+              <div key={item.group} className="flex flex-col gap-1">
+                {pinnedChildren.map((c) => renderPinnable(c, false))}
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(item.group)}
+                  aria-expanded={isOpen}
+                  className={`flex items-center gap-3 ${itemPadXClass} py-3 rounded-full text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
+                    groupActive
+                      ? 'text-site-accent bg-site-accent-dim'
+                      : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
+                  }`}
+                  title={groupLabel}
+                >
+                  <Icon className="w-5 h-5 shrink-0" />
+                  <span className={labelClass}>{groupLabel}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 shrink-0 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''} ${labelClass}`}
+                  />
+                </button>
+                {reduced ? (
+                  isOpen && item.children.map((c) => renderPinnable(c, true))
+                ) : (
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
                       <motion.div
-                        className="flex flex-col gap-1 pt-1"
-                        variants={SUBMENU_LIST}
+                        key="submenu"
+                        variants={SUBMENU_PANEL}
                         initial="closed"
                         animate="open"
+                        exit="closed"
+                        transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
+                        className="overflow-hidden"
                       >
-                        {item.children.map((c) => (
-                          <motion.div key={c.href} variants={SUBMENU_ITEM}>
-                            {renderPinnable(c, true)}
-                          </motion.div>
-                        ))}
+                        <motion.div
+                          className="flex flex-col gap-1 pt-1"
+                          variants={SUBMENU_LIST}
+                          initial="closed"
+                          animate="open"
+                        >
+                          {item.children.map((c) => (
+                            <motion.div key={c.href} variants={SUBMENU_ITEM}>
+                              {renderPinnable(c, true)}
+                            </motion.div>
+                          ))}
+                        </motion.div>
                       </motion.div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              )}
-            </div>
-          );
+                    )}
+                  </AnimatePresence>
+                )}
+              </div>
+            );
           })}
         </div>
       </nav>
@@ -506,7 +508,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         ) : session ? (
           <div className="relative flex items-center gap-2" ref={userMenuRef}>
             <Link
-              to={`/u/${(session.user as any).handle || session.user.id}` as string}
+              to={`/u/${sidebarUser?.handle || session.user.id}` as string}
               className={`flex items-center gap-2 px-2 hover:bg-site-surface rounded-full transition-colors py-1 flex-1 min-w-0 ${itemJustifyClass}`}
             >
               <UserAvatar
@@ -555,7 +557,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 }
                 setShowUserMenu(!showUserMenu);
               }}
-              className={`p-1.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${expanded ? '' : 'hidden xl:block'}`}
+              className={`p-1.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${expanded ? '' : 'hidden 2xl:block'}`}
               title={t('more-options', { defaultValue: 'More options' })}
             >
               <MoreHorizontal className="w-4 h-4" />
@@ -571,7 +573,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 }}
               >
                 <Link
-                  to={`/u/${(session.user as any).handle || session.user.id}` as string}
+                  to={`/u/${sidebarUser?.handle || session.user.id}` as string}
                   onClick={() => setShowUserMenu(false)}
                   className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 text-site-text-muted hover:text-site-text hover:bg-site-surface-hover transition-colors"
                 >
@@ -631,16 +633,16 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           // Signed-out: a sign-in CTA with a compact Settings gear beside it, so
           // appearance and language (saved locally, synced on sign-in) stay
           // reachable without an account. The gear sits next to the button when
-          // there's room (mobile drawer / xl rail) and stacks under it in the
+          // there's room (mobile drawer / 2xl rail) and stacks under it in the
           // narrow icon rail.
           <div
-            className={`flex gap-2 ${expanded ? 'items-center' : 'flex-col xl:flex-row xl:items-center'}`}
+            className={`flex gap-2 ${expanded ? 'items-center' : 'flex-col 2xl:flex-row 2xl:items-center'}`}
           >
             <Link
               to="/login"
               search={{ callbackURL: undefined }}
               aria-label={t('sign-in', { defaultValue: 'Sign In' })}
-              className={expanded ? 'min-w-0 flex-1' : 'xl:min-w-0 xl:flex-1'}
+              className={expanded ? 'min-w-0 flex-1' : '2xl:min-w-0 2xl:flex-1'}
             >
               <Button
                 variant="accent"

@@ -185,21 +185,21 @@ Glass is opt-in per element via these classes (in `app/globals.css`). Pick by
 role, not by looks — the tier decides blur cost (see the redesign doc §6 budget:
 ≤8 backdrop-filters per viewport, **0** on repeated list items).
 
-| Class                                        | Tier            | Use for                                                                                                                                                                    |
-| -------------------------------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.glass-fill`                                | L1 (no blur)    | Repeated content: cards, list rows, table rows, grid tiles. Cheap, unlimited.                                                                                              |
-| `.glass-pane`                                | L2 (blur+noise) | Singular panels: heroes, composers, settings sections, tier cards. Budgeted.                                                                                               |
-| `.glass-chrome` (`--aside` variant)          | L3              | Persistent chrome: sidebar, sticky headers, mobile dock. Condenses on scroll via `[data-scrolled]`.                                                                        |
-| `.glass-overlay`                             | L4              | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips.                                                                                                  |
-| `.glass-inset`                               | —               | Recessed wells: inputs, search fields.                                                                                                                                     |
-| `.glass-scrim`                               | —               | Dialog/drawer backdrops.                                                                                                                                                   |
-| `.glass-interactive` + `data-glass-light=""` | modifier        | Hover tint-raise, springy press flex (`--ease-glass`), pointer-tracked diffuse highlight (`::after`), and — on `.glass-fill` — the hover-only specular rim glint.          |
+| Class                                        | Tier            | Use for                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| -------------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `.glass-fill`                                | L1 (no blur)    | Repeated content: cards, list rows, table rows, grid tiles. Cheap, unlimited.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `.glass-pane`                                | L2 (blur+noise) | Singular panels: heroes, composers, settings sections, tier cards. Budgeted.                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `.glass-chrome` (`--aside` variant)          | L3              | Persistent chrome: sidebar, sticky headers, mobile dock. Condenses on scroll via `[data-scrolled]`.                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `.glass-overlay`                             | L4              | Floating UI: dialogs, popovers, menus, command palette, toasts, tooltips.                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| `.glass-inset`                               | —               | Recessed wells: inputs, search fields.                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `.glass-scrim`                               | —               | Dialog/drawer backdrops.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `.glass-interactive` + `data-glass-light=""` | modifier        | Hover tint-raise, springy press flex (`--ease-glass`), pointer-tracked diffuse highlight (`::after`), and — on `.glass-fill` — the hover-only specular rim glint.                                                                                                                                                                                                                                                                                                                                                 |
 | `.glass-refract` + `data-glass-lens`         | modifier        | Lens-model edge refraction (v2): the backdrop bends through a displacement height field at the pane edge. Hero/chrome only, **≤2 per page**, never in scroll containers. `data-glass-lens` opts into per-element filter sizing (`lib/glass-lens.ts`; Chromium bends the backdrop, Gecko/WebKit displace a mirrored aurora copy — §3.6). Pressing deepens the bend (`:active`, ×1.6, §3.7). Not compatible with `.glass-chrome--aside` (its `::before` is the blur carrier, so the lens band has nowhere to live). |
-| `.glass-refract--prism`                      | modifier        | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. **≤1 per page**; sanctioned users: login card, command palette, `/store` featured tier, design lab. |
-| `.glass-liquid` (or `<GlassPane liquid>`)    | modifier        | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, **≤3 per page**, never on list items. |
-| `.glass-sheen-hover`                         | modifier        | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in). Unlimited.                                                                     |
-| `.glass-bevel-sm`                            | modifier        | Narrow 6px optics ring for small capsules — the `LiquidTabs` sheet pill (§5.45), plus discs like BackToTop.                                                                |
-| `.glass-opaque`                              | —               | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                      |
+| `.glass-refract--prism`                      | modifier        | True chromatic dispersion (R/G/B displaced at different magnitudes) + fringe. **≤1 per page**; sanctioned users: login card, command palette, `/store` featured tier, design lab.                                                                                                                                                                                                                                                                                                                                 |
+| `.glass-liquid` (or `<GlassPane liquid>`)    | modifier        | Ambient travelling sheen (light over wet glass), painted as a background layer (v2) so it **composes freely** with `.glass-refract` and `.glass-interactive`. Signature surfaces only, **≤3 per page**, never on list items.                                                                                                                                                                                                                                                                                      |
+| `.glass-sheen-hover`                         | modifier        | One-shot sheen sweep on hover — primary CTAs (`Button` `default`/`accent` have it built in). Unlimited.                                                                                                                                                                                                                                                                                                                                                                                                           |
+| `.glass-bevel-sm`                            | modifier        | Narrow 6px optics ring for small capsules — the `LiquidTabs` sheet pill (§5.45), plus discs like BackToTop.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `.glass-opaque`                              | —               | Escape hatch for full-screen fixed takeovers that must hide the page.                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 **The rim glint comes free** (v2, §4.35): `.glass-pane`/`.glass-overlay`/`.glass-chrome`
 (and the `--aside` variant) paint an always-on specular as a **border-box
@@ -233,9 +233,9 @@ Always reach for these before writing new markup. Helper: `cn()` from
 | `Button` / `buttonVariants`                                                 | `components/ui/button.tsx`                               | CVA. Variants: `default`, `destructive`, `danger`, `outline`, `secondary`, `ghost`, `link`, `accent`, `accent-outline`, `accent-ghost`. Sizes: `xs`, `sm`, `default`, `lg`, `icon`, `icon-xs`, `icon-sm`, `icon-lg`. `asChild` supported. **`loading` prop** (+ optional `loadingText`) shows an inline spinner, sets `aria-busy`, and disables the button — reach for this instead of hand-rolling `disabled={x}` + a separate `<Loader2>`. |
 | `Badge` / `badgeVariants`                                                   | `components/ui/badge.tsx`                                | CVA pill. Variants: `default`, `accent`, `solid`, `success`, `warning`, `danger`, `outline`.                                                                                                                                                                                                                                                                                                                                                 |
 | `Card` + Header/Title/Description/Action/Content/Footer                     | `components/ui/card.tsx`                                 | `bg-site-surface border border-site-border rounded-site shadow-site`.                                                                                                                                                                                                                                                                                                                                                                        |
-| `Dialog` (Radix wrapper)                                                    | `components/ui/dialog.tsx`                               | Themed content, `bg-black/70 backdrop-blur-sm` overlay, built-in close X with translated `sr-only` label.                                                                                                                                                                                                                                                                                                                                    |
+| `Dialog` (Radix wrapper)                                                    | `components/ui/dialog.tsx`                               | Centered, viewport-clamped glass content with safe internal spacing and a translated close control. Pass `mobileFullscreen` for complex/wide editors; they consume the phone visual viewport with safe-area padding, then return to a centered dialog from `sm`.                                                                                                                                                                             |
 | `Input`, `Textarea`                                                         | `components/ui/input.tsx`, `textarea.tsx`                | `bg-site-surface`, `rounded-site-sm`, hairline border, accent focus ring.                                                                                                                                                                                                                                                                                                                                                                    |
-| `Select`                                                                    | `components/ui/select.tsx`                               | Styled **native** `<select>` + lucide chevron (not Radix Select). **§15.6 exemption:** the option list is the OS-rendered native popup — it cannot be glass-styled or given the liquid-pop metaball open/close, so `Select` stays native by deliberate v1 decision (a custom listbox is an a11y-significant rewrite — propose separately). |
+| `Select`                                                                    | `components/ui/select.tsx`                               | Styled **native** `<select>` + lucide chevron (not Radix Select). **§15.6 exemption:** the option list is the OS-rendered native popup — it cannot be glass-styled or given the liquid-pop metaball open/close, so `Select` stays native by deliberate v1 decision (a custom listbox is an a11y-significant rewrite — propose separately).                                                                                                   |
 | `Label`                                                                     | `components/ui/label.tsx`                                | Radix Label.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `EmptyState`                                                                | `components/ui/empty-state.tsx`                          | Canonical zero-state: `{icon, title, description, action}`.                                                                                                                                                                                                                                                                                                                                                                                  |
 | `Skeleton`                                                                  | `components/ui/skeleton.tsx`                             | Canonical loading placeholder. Defaults to a gentle `animate-pulse`; pass **`shimmer`** for a travelling highlight sweep (reduced-motion-safe) — nicer for above-the-fold / hero placeholders.                                                                                                                                                                                                                                               |
@@ -260,16 +260,21 @@ hover:border-site-border-bright` (or `hover:border-site-accent`). Dividers:
 Toasts: **sonner**. A themed global `<Toaster>` is mounted in
 `components/Providers.tsx`; pages just `import { toast } from "sonner"`.
 
+`SheetContent` follows the same rule: ordinary pickers are horizontally
+centered floating bottom sheets on phones, while `mobileFullscreen` is reserved
+for large editors such as Edit Profile. Do not hand-position wide mobile modals
+with viewport offsets; use the shared option so safe areas, scrolling, and
+close-button clearance stay consistent.
+
 ---
 
 ## 6. Layout system & page anatomy
 
-The `_site` layout route (`app/routes/_site.tsx`) provides the **floating
-glass shell** (v2): the desktop sidebar is an inset rounded rail
-(`glass-chrome--aside` panel with `m-3 rounded-site` inside the fixed aside,
-`md:w-16 xl:w-64` spacer geometry unchanged), `MobileSidebarShell` (mobile
-drawer + dock), skip link, aurora gutters between rail/content/right-rail
-(`md:gap-4 xl:gap-6 md:px-4` on the shell flex row), and the single
+The `_site` layout route delegates to `components/feed/SiteShell.tsx`, which
+provides the **floating glass shell**: the desktop sidebar is an inset rounded
+`glass-chrome--aside` rail (64px from `md`, expanding to 264px at `2xl` so laptop
+reading width is never sacrificed), `MobileSidebarShell` (mobile drawer + dock),
+skip link, aurora gutters between rail/content/right-rail, and the single
 `<main id="main-content">` with the `.page-root` enter animation. **Pages
 never re-add sidebars** (and `AnimatedMain` renders a `<div>` — the shell's
 `<main>` is the one landmark).
@@ -278,12 +283,12 @@ Two page archetypes (see `docs/page-consistency.md` for full code):
 
 1. **Standard content page** — wrap in
    `components/feed/PageLayout.tsx`:
-   `PageLayout({ title, children, rightSidebar?, headerExtra?, headerRight?, wide?, backTo?, backLabel?, breadcrumbs? })`.
+   `PageLayout({ title, children, rightSidebar?, headerRight?, wide?, backTo?, backLabel?, breadcrumbs? })`.
    It renders the **floating header capsule**
    (`.glass-chrome sticky top-2 mx-2 rounded-site shadow-site-sm md:top-3 md:mx-3`,
    condensing on scroll via `data-scrolled`: shorter, more opaque, more blur,
    brighter glint), the transparent center column, and a right sidebar
-   (a `sticky top-3 space-y-3` floating widget stack) or spacer.
+   (a floating widget stack, visible from `xl`) or spacer.
 2. **Feed-column page** — use `AnimatedMain` directly with a target width from
    `lib/layout-width.ts`.
 
@@ -292,7 +297,7 @@ Column widths come from `lib/layout-width.ts`: `DEFAULT_WIDTH = 648`,
 usually `px-4 pt-4 pb-12 max-w-2xl mx-auto`; the column always carries
 `pb-dock` (clears the mobile dock) and **no `border-r`** — the old app-frame
 edge is gone. Repeated content floats as spaced `.glass-fill` cards
-(`space-y-3 px-3`); hairline `divide-y` rhythm lives *inside* container
+(`space-y-3 px-3`); hairline `divide-y` rhythm lives _inside_ container
 cards, not between page-level sections.
 
 Full-screen experiences (games, `/login`, legal pages, Discord activities) live
@@ -332,9 +337,16 @@ no shell.
   duty (`--glass-px/--glass-py` for the `::after` diffuse hotspot) and the
   `lib/glass-lens.ts` per-element lens-filter generator both initialize from
   the same single listener. On touch devices `useLiquidBackground.ts` maps
-  `deviceorientation` to the same `--light-x/--light-y` under `html.tilt-live`,
-  so tilting the phone slides the glint across every pane (§5.5x C; opt-in on
-  iOS via the Settings → Appearance tilt row).
+  `deviceorientation` to the same `--light-x/--light-y` under `html.tilt-live`
+  (opt-in on iOS via Settings → Appearance). The aurora follows that input,
+  while coarse-pointer rim glints stay element-anchored; fixed backgrounds can
+  otherwise composite a frame behind their scrolling parent on mobile.
+- **Shader/DOM synchronization:** liquid bodies unregister in layout-effect
+  cleanup and re-sample before paint on route/tab commits. Scroll, nested scroll,
+  elastic touch movement, `visualViewport` changes, page resume, and layout-shift
+  events wake the normally-idle sampler. A liquid pop settles immediately onto
+  its real panel when either endpoint moves mid-animation, preventing a cached
+  GPU bud, rim, or shadow from detaching from its DOM owner.
 - **Liquid tabs:** tab strips use `components/ui/liquid-tabs.tsx` — each rides
   its own L1 **glass sheet** (`glass-fill glass-bevel-sm rounded-full` pill,
   `sheet` prop default) placed **below** the hero/page-title capsule, never

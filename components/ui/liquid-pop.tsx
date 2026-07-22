@@ -129,6 +129,7 @@ export function useLiquidPop({
 }: LiquidPopOptions): LiquidPopResult {
   const reduced = useReducedMotion();
   const [active, setActive] = useState(false);
+  const geometryPinnedRef = useRef(true);
 
   // §16.1: when a GL tier is live the SHADER renders the bud (a growing SDF
   // rounded-rect) smooth-min merged with the trigger disc, so we register those
@@ -203,6 +204,7 @@ export function useLiquidPop({
     const panel = panelRef.current;
 
     if (open) {
+      geometryPinnedRef.current = true;
       resetPanel();
       // Panel is committed this render; read its rect before paint so the goo
       // targets the real box and the opacity-0 is set with no flash.
@@ -281,6 +283,7 @@ export function useLiquidPop({
     }
 
     resetPanel();
+    geometryPinnedRef.current = true;
     // Closing — reabsorb the bud into the trigger against the cached rects.
     if (mode === 'full' && trigRect.current && panelRect.current) {
       progress.set(1);
@@ -377,7 +380,7 @@ export function useLiquidPop({
   useEffect(() => {
     if (!glActive || !active) return;
     let raf = requestAnimationFrame(function loop() {
-      if (trigRect.current && panelRect.current) {
+      if (geometryPinnedRef.current && trigRect.current && panelRect.current) {
         const w = growW.get();
         const h = growH.get();
         const left = growLeft.get();
@@ -417,6 +420,59 @@ export function useLiquidPop({
     discLeft,
     discTop,
   ]);
+
+  // A pop animation uses cached viewport rectangles by design. If scrolling,
+  // mobile browser chrome, or a route/layout shift moves either DOM endpoint
+  // mid-animation, continuing to interpolate those stale rectangles detaches the
+  // shader body (and its rim/shadow) from the real panel. Settle immediately onto
+  // the DOM surface, hide both GPU bodies in the same event, and refresh the
+  // cached endpoints for a later close animation.
+  useEffect(() => {
+    if (!open) return;
+    const resync = () => {
+      const nextTrigger = readRect(triggerRef.current);
+      const nextPanel = readRect(panelRef.current);
+      if (nextTrigger) trigRect.current = nextTrigger;
+      if (nextPanel) panelRect.current = nextPanel;
+      if (!active) return;
+
+      geometryPinnedRef.current = false;
+      budBody.set({ cx: 0, cy: 0, hw: 0, hh: 0, radius: 0, active: false });
+      discBody.set({ cx: 0, cy: 0, hw: 0, hh: 0, radius: 0, active: false });
+      progress.set(1);
+      resetPanel();
+      setActive(false);
+    };
+
+    window.addEventListener('scroll', resync, { passive: true, capture: true });
+    window.addEventListener('resize', resync, { passive: true });
+    window.visualViewport?.addEventListener('scroll', resync);
+    window.visualViewport?.addEventListener('resize', resync);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') resync();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pageshow', resync);
+
+    let layoutObserver: PerformanceObserver | null = null;
+    if (typeof PerformanceObserver !== 'undefined') {
+      try {
+        layoutObserver = new PerformanceObserver(resync);
+        layoutObserver.observe({ type: 'layout-shift' });
+      } catch {
+        layoutObserver = null;
+      }
+    }
+    return () => {
+      window.removeEventListener('scroll', resync, { capture: true });
+      window.removeEventListener('resize', resync);
+      window.visualViewport?.removeEventListener('scroll', resync);
+      window.visualViewport?.removeEventListener('resize', resync);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pageshow', resync);
+      layoutObserver?.disconnect();
+    };
+  }, [open, active, triggerRef, panelRef, budBody, discBody, progress, resetPanel]);
 
   const underlay =
     active && !glActive && typeof document !== 'undefined'

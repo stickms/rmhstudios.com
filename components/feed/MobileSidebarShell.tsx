@@ -107,6 +107,8 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
   const [asidePainted, setAsidePainted] = useState(false);
 
   const panelRef = useRef<HTMLDivElement>(null);
+  const lastFocusedRef = useRef<HTMLElement | null>(null);
+  const wasOpenRef = useRef(false);
   // Outer wrapper the gesture listeners attach to (so touches on the page, the
   // scrim, and the sidebar all reach them) and a ref to the sidebar panel (so a
   // vertical swipe on its nav scrolls the nav instead of dragging the drawer).
@@ -125,9 +127,21 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
     mode: 'none' as 'none' | 'drag' | 'scroll' | 'lock',
   });
 
-  const open = useCallback(() => setIsOpen(true), []);
+  const rememberFocus = useCallback(() => {
+    lastFocusedRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  }, []);
+  const open = useCallback(() => {
+    rememberFocus();
+    setIsOpen(true);
+  }, [rememberFocus]);
   const close = useCallback(() => setIsOpen(false), []);
-  const toggle = useCallback(() => setIsOpen((v) => !v), []);
+  const toggle = useCallback(() => {
+    setIsOpen((v) => {
+      if (!v) rememberFocus();
+      return !v;
+    });
+  }, [rememberFocus]);
 
   // Live ref so the once-attached native listeners never read stale state.
   const isOpenRef = useRef(isOpen);
@@ -143,10 +157,50 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
   useEffect(() => {
     if (!isOpen) return;
     function onKey(e: KeyboardEvent) {
-      if (e.key === 'Escape') setIsOpen(false);
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const drawer = asideRef.current;
+      if (!drawer) return;
+      const focusable = Array.from(
+        drawer.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      ).filter((el) => !el.hasAttribute('inert') && el.getClientRects().length > 0);
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
+  }, [isOpen]);
+
+  // Treat the drawer like the modal navigation surface it is: move keyboard
+  // focus to its explicit close control, then return focus to the opener. `inert`
+  // below keeps the off-canvas copy of the navigation out of the tab order.
+  useEffect(() => {
+    const wasOpen = wasOpenRef.current;
+    wasOpenRef.current = isOpen;
+
+    if (isOpen) {
+      asideRef.current
+        ?.querySelector<HTMLElement>('[data-mobile-sidebar-close]')
+        ?.focus({ preventScroll: true });
+      return;
+    }
+
+    if (!wasOpen) return;
+    const target = lastFocusedRef.current;
+    if (target?.isConnected) target.focus({ preventScroll: true });
   }, [isOpen]);
 
   // NO CSS scroll-lock while the drawer is open — deliberately. Both
@@ -176,6 +230,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
       }
       const t = e.touches[0];
       if (!t) return;
+      if (!isOpenRef.current) rememberFocus();
       drag.current = {
         startX: t.clientX,
         startY: t.clientY,
@@ -281,7 +336,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
       wrap.removeEventListener('touchend', onTouchEnd);
       wrap.removeEventListener('touchcancel', onTouchEnd);
     };
-  }, []);
+  }, [rememberFocus]);
 
   const dragging = dragX !== null;
   const offset = dragging ? (dragX as number) : isOpen ? DRAWER_WIDTH : 0;
@@ -328,7 +383,11 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             `data-scroll-root` → useScrollRestoration and BackToTop use
             the window; the custom PullToRefresh (which needs an inner scroller)
             goes inert, so iOS's native document pull-to-refresh takes over. */}
-        <div ref={panelRef} className="relative min-h-[100lvh] touch-pan-y md:contents">
+        <div
+          ref={panelRef}
+          className="relative min-h-[100lvh] touch-pan-y md:contents"
+          inert={isOpen}
+        >
           {children}
         </div>
 
@@ -342,6 +401,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
           <button
             type="button"
             onClick={close}
+            tabIndex={-1}
             aria-label={t('close-menu', { defaultValue: 'Close menu' })}
             className="fixed inset-0 z-[55] touch-none md:hidden"
           />
@@ -365,6 +425,7 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             bar. That footer padding now also carries the (100lvh − 100dvh)
             toolbar overlap so the footer still clears the bar. */}
         <aside
+          id="mobile-site-drawer"
           ref={asideRef}
           className={`glass-chrome--aside md:hidden fixed top-0 left-0 z-[60] flex w-64 flex-col border-r border-site-border shadow-site overscroll-contain touch-pan-y ${
             asideRevealed ? '' : 'invisible'
@@ -378,6 +439,10 @@ export function MobileSidebarShell({ children }: MobileSidebarShellProps) {
             height: 'calc(100lvh + var(--drawer-bleed))',
           }}
           aria-hidden={!isOpen}
+          role="dialog"
+          aria-modal="true"
+          aria-label={t('open-menu', { defaultValue: 'Navigation menu' })}
+          inert={!isOpen}
         >
           <LeftSidebar expanded />
         </aside>

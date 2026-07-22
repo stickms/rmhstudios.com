@@ -38,7 +38,7 @@
  * subtlety comes from the speed-gated underlay opacity (0 at rest).
  */
 
-import { useEffect, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import {
   m as motion,
   useMotionValue,
@@ -82,6 +82,7 @@ const MOVE_EPS = 0.05; // px — below this per-axis delta the capsule is at res
 // must keep viewport-space shader bodies anchored through the boundary bounce.
 const SCROLL_ACTIVE_MS = 180;
 const ELASTIC_SETTLE_MS = 360;
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 interface LiquidMorphOptions {
   /** Ref to the OUTER `layoutId` capsule element (the projected box we sample). */
@@ -296,6 +297,10 @@ export function useLiquidMorph({
     const onWheel = () => onScrollActivity(ELASTIC_SETTLE_MS);
     const onTouchMove = () => onScrollActivity();
     const onTouchEnd = () => onScrollActivity(ELASTIC_SETTLE_MS);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') onScrollActivity(ELASTIC_SETTLE_MS);
+    };
+    const onPageShow = () => onScrollActivity(ELASTIC_SETTLE_MS);
     window.addEventListener('resize', onWake, { passive: true });
     // §17.4 scroll anchoring: the GL body is drawn in VIEWPORT coords, so a scroll
     // moves the capsule element but leaves the (idle) shader drawing its glass at the
@@ -313,6 +318,24 @@ export function useLiquidMorph({
     window.addEventListener('touchmove', onTouchMove, { passive: true, capture: true });
     window.addEventListener('touchend', onTouchEnd, { passive: true, capture: true });
     window.addEventListener('touchcancel', onTouchEnd, { passive: true, capture: true });
+    window.visualViewport?.addEventListener('scroll', onScroll);
+    window.visualViewport?.addEventListener('resize', onScroll);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('pageshow', onPageShow);
+
+    // Async fonts, streamed content, and route transitions can reposition a
+    // resting capsule without emitting scroll/resize. Chromium exposes those as
+    // layout-shift entries; wake only when such an entry occurs, then return to
+    // zero layout reads after the normal settle window.
+    let layoutObserver: PerformanceObserver | null = null;
+    if (typeof PerformanceObserver !== 'undefined') {
+      try {
+        layoutObserver = new PerformanceObserver(() => onScrollActivity());
+        layoutObserver.observe({ type: 'layout-shift' });
+      } catch {
+        layoutObserver = null;
+      }
+    }
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
@@ -322,6 +345,11 @@ export function useLiquidMorph({
       window.removeEventListener('touchmove', onTouchMove, { capture: true });
       window.removeEventListener('touchend', onTouchEnd, { capture: true });
       window.removeEventListener('touchcancel', onTouchEnd, { capture: true });
+      window.visualViewport?.removeEventListener('scroll', onScroll);
+      window.visualViewport?.removeEventListener('resize', onScroll);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('pageshow', onPageShow);
+      layoutObserver?.disconnect();
     };
     // Stable loop; `sampleRef.current` is refreshed each render so it stays current.
   }, []);
@@ -329,7 +357,10 @@ export function useLiquidMorph({
   // Wake the sampler when the active selection changes (the capsule morphs to a new
   // slot), when the GL tier toggles (bodies must (de)register + re-anchor), or when
   // reduced-motion flips. It idles again a few frames after the transition settles.
-  useEffect(() => {
+  useIsoLayoutEffect(() => {
+    // Update the registry during the same commit as the DOM capsule. This avoids
+    // a stale shader/shadow frame before the rAF sampler follows the projection.
+    sampleRef.current();
     kickRef.current();
   }, [activeKey, glActive, reduced]);
 

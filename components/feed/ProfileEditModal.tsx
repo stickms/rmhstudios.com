@@ -573,7 +573,10 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
           if (!next) void requestClose();
         }}
       >
-        <SheetContent className="max-h-[96dvh] px-0 pb-0 pt-2 md:max-h-[92dvh] md:w-[min(900px,calc(100vw-2rem))] md:max-w-none md:px-0 md:pb-0 md:pt-0">
+        <SheetContent
+          mobileFullscreen
+          className="md:max-h-[92dvh] md:w-[min(900px,calc(100vw-2rem))] md:max-w-none md:px-0 md:pb-0 md:pt-0"
+        >
           <div className="border-b border-site-border px-4 pb-3 pt-2 md:px-6 md:pt-6">
             <SheetHeader className="pr-10">
               <SheetTitle>{t('edit-profile', { defaultValue: 'Edit profile' })}</SheetTitle>

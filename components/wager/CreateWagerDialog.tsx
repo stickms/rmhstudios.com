@@ -48,7 +48,9 @@ export function CreateWagerDialog({ open, onClose, onCreated, opponentId, oppone
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        toast.error(data.error ?? t('create-failed', { defaultValue: 'Could not create challenge' }));
+        toast.error(
+          data.error ?? t('create-failed', { defaultValue: 'Could not create challenge' }),
+        );
         return;
       }
       toast.success(
@@ -67,7 +69,7 @@ export function CreateWagerDialog({ open, onClose, onCreated, opponentId, oppone
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent mobileFullscreen>
         <DialogHeader>
           <DialogTitle>
             {opponentName
@@ -88,11 +90,7 @@ export function CreateWagerDialog({ open, onClose, onCreated, opponentId, oppone
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
             <Label htmlFor="wager-game">{t('game', { defaultValue: 'Game' })}</Label>
-            <Select
-              id="wager-game"
-              value={gameId}
-              onChange={(e) => setGameId(e.target.value)}
-            >
+            <Select id="wager-game" value={gameId} onChange={(e) => setGameId(e.target.value)}>
               {WAGER_ELIGIBLE_GAMES.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.title}
