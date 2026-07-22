@@ -125,8 +125,17 @@ target "web" {
   args = frontend_args()
   # Registry-backed layer cache on GHCR — no 10 GB GHA-cache eviction cap, no
   # cross-workflow contention, arm64-native, shareable with other builders.
+  #
+  # ignore-error=true: the cache export runs AFTER the image is already pushed, so
+  # it is a pure best-effort speedup — never on the deploy's correctness path. GHCR
+  # occasionally drops the buildx auth session mid-export ("no active session …:
+  # context deadline exceeded"); that used to fail the whole `build` job and BLOCK
+  # the deploy even though BOTH images were already in GHCR (deploy for 6ff6c7f).
+  # With ignore-error the export failure is logged as a warning and the build stays
+  # green; the only cost is a colder layer cache on the next run. The image PUSH is
+  # unaffected — a genuine push failure still fails the build, as it must.
   cache-from = ["type=registry,ref=${IMAGE_WEB}:buildcache"]
-  cache-to   = ["type=registry,ref=${IMAGE_WEB}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true"]
+  cache-to   = ["type=registry,ref=${IMAGE_WEB}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true,ignore-error=true"]
 }
 
 # ── Full image (runner-full): supervisor, status — + Go bins + Chromium ──────
@@ -161,5 +170,9 @@ target "full" {
   # them rebuild is nearly free — whereas exporting them at mode=max cost ~25s of
   # cache-export that runs AFTER the push and blocks deploy-gate from firing the
   # webhook. Trading ~25s of on-critical-path export for ~0s of off-path rebuild.
-  cache-to = ["type=registry,ref=${IMAGE_FULL}:buildcache,mode=min,image-manifest=true,oci-mediatypes=true"]
+  #
+  # ignore-error=true (same rationale as the web target above): this is the export
+  # that flaked on 6ff6c7f. A best-effort GHCR cache export must never fail an
+  # otherwise-good build/deploy — the images are already pushed by the time it runs.
+  cache-to = ["type=registry,ref=${IMAGE_FULL}:buildcache,mode=min,image-manifest=true,oci-mediatypes=true,ignore-error=true"]
 }
