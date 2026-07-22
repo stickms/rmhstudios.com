@@ -50,6 +50,14 @@ export function PageLayout({
   const { t } = useTranslation('feed');
   const descriptionId = useId();
   const hasRightSidebar = Boolean(rightSidebar);
+  const hasBreadcrumbs = Boolean(breadcrumbs?.length);
+  const expandedHeaderHeight = description
+    ? hasBreadcrumbs
+      ? 'h-22 sm:h-26'
+      : 'h-22'
+    : hasBreadcrumbs
+      ? 'h-18 sm:h-22'
+      : 'h-18';
   const targetWidth = wide
     ? hasRightSidebar
       ? WIDE_WIDTH
@@ -102,10 +110,10 @@ export function PageLayout({
             ref={headerRef}
             data-slot="page-header"
             aria-describedby={description ? descriptionId : undefined}
-            className={`group glass-chrome sticky top-2 z-10 mx-2 mb-2 rounded-site shadow-site-sm data-[scrolled]:h-16 transition-[height] md:top-3 md:mx-3 md:mb-3 ${description ? 'h-22' : 'h-18'}`}
+            className={`group glass-chrome sticky top-2 z-10 mx-2 mb-2 rounded-site shadow-site-sm transition-[height] data-[scrolled]:h-16 md:top-3 md:mx-3 md:mb-3 ${expandedHeaderHeight}`}
           >
-            <div className="h-full flex items-center justify-between px-4 py-3">
-              <div className="flex items-center gap-3 min-w-0">
+            <div className="flex h-full min-w-0 items-center gap-3 px-3 py-3 sm:px-4">
+              <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
                 {/* Mobile: always show the sidebar button in the top-left */}
                 <MobileMenuButton />
                 {backTo && (
@@ -117,11 +125,14 @@ export function PageLayout({
                     <ArrowLeft className="h-5 w-5" aria-hidden />
                   </Link>
                 )}
-                <div className="flex flex-col justify-center min-w-0">
+                <div className="flex min-w-0 flex-1 flex-col justify-center">
                   {breadcrumbs && breadcrumbs.length > 0 && (
-                    <Breadcrumbs items={breadcrumbs} className="mb-0.5 hidden sm:block" />
+                    <Breadcrumbs
+                      items={breadcrumbs}
+                      className="mb-0.5 hidden sm:block group-data-[scrolled]:hidden"
+                    />
                   )}
-                  <h1 className="font-(family-name:--site-font-display) font-semibold text-2xl tracking-[-0.022em] text-site-text flex items-center gap-2 min-w-0 truncate">
+                  <h1 className="flex min-w-0 items-center gap-2 truncate font-(family-name:--site-font-display) text-xl font-semibold text-site-text [letter-spacing:var(--site-letter-spacing)] sm:text-2xl">
                     {/* Mobile: "RMH |" brand prefix before the page title */}
                     <MobileBrandPrefix />
                     {title}
@@ -130,14 +141,14 @@ export function PageLayout({
                     <p
                       id={descriptionId}
                       data-slot="page-description"
-                      className="mt-0.5 line-clamp-1 text-xs text-site-text-muted sm:text-sm"
+                      className="mt-0.5 line-clamp-1 text-xs text-site-text-muted group-data-[scrolled]:hidden sm:text-sm"
                     >
                       {description}
                     </p>
                   )}
                 </div>
               </div>
-              {headerRight && <div className="shrink-0">{headerRight}</div>}
+              {headerRight && <div className="min-w-0 shrink-0">{headerRight}</div>}
             </div>
           </header>
 

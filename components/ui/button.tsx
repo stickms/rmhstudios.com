@@ -6,10 +6,10 @@ import { Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  // The transform transition rides --ease-glass (§5.3) so active:scale releases
-  // with the site's springy overshoot; colour/shadow/opacity stay on a plain
-  // quick ease. This replaces the bare `transition-all` (which fought the squish).
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full text-sm font-medium tracking-[-0.01em] [transition:transform_0.34s_var(--ease-glass),color_0.15s_ease,background-color_0.15s_ease,border-color_0.15s_ease,box-shadow_0.15s_ease,opacity_0.15s_ease] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-site-accent/50 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
+  // The transform transition rides the theme's press duration + --ease-glass
+  // (§5.3), so each material can tune its release without changing the
+  // primitive; colour/shadow/opacity stay on a plain quick ease.
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[var(--site-control-radius,999px)] text-sm font-medium tracking-[-0.01em] [transition:transform_var(--site-press-duration,340ms)_var(--ease-glass),color_0.15s_ease,background-color_0.15s_ease,border-color_0.15s_ease,box-shadow_0.15s_ease,opacity_0.15s_ease] active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-site-accent/50 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-site-bg aria-invalid:ring-site-danger/30 aria-invalid:border-site-danger",
   {
     variants: {
       variant: {
