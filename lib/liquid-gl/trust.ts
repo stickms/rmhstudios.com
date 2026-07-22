@@ -102,18 +102,26 @@ export function watchdogFailed(args: {
 }
 
 /**
- * §16.4b.3 WebKit caution tier. Safari/iOS WebKit ships WebGPU but it is young;
- * WebGL2 is battle-tested there, so WebKit UAs skip WebGPU. iOS Chrome/Edge/Firefox
- * are all WebKit under the hood (their UAs carry `CriOS`/`EdgiOS`/`FxiOS`, not the
- * bare `Chrome`/`Edg` desktop-Blink tokens) — so they correctly resolve to WebKit.
+ * WebKit detection for the compositor-safe tier. iOS Chrome/Edge/Firefox use
+ * WebKit too (their UAs carry `CriOS`/`EdgiOS`/`FxiOS`, not the bare
+ * `Chrome`/`Edg` desktop-Blink tokens), so they correctly receive the same
+ * CSS-only fallback as Safari.
  */
 export function isWebKit(ua: string): boolean {
   return /AppleWebKit/.test(ua) && !/\bChrome\/|Chromium|\bEdg\/|OPR\//.test(ua);
 }
 
-/** Tier attempt order for this UA — WebKit avoids WebGPU (§16.4b.3). */
+/**
+ * Tier attempt order for this UA.
+ *
+ * WebKit is deliberately CSS-only. A GPU/compositor stall can block the main
+ * thread before the verified-frame watchdog gets a chance to run, so trying
+ * WebGL2 and recovering afterward is not a safe failure mode on iOS. The CSS
+ * liquid treatment remains the supported fallback there; Blink/Gecko retain
+ * the normal WebGPU → WebGL2 order.
+ */
 export function preferredTierOrder(ua: string): ('webgpu' | 'webgl2')[] {
-  return isWebKit(ua) ? ['webgl2'] : ['webgpu', 'webgl2'];
+  return isWebKit(ua) ? [] : ['webgpu', 'webgl2'];
 }
 
 /**

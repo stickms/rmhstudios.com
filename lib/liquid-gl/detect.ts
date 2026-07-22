@@ -55,8 +55,9 @@ export function webgl2Available(): boolean {
 export async function detectLiquidTier(): Promise<LiquidTier> {
   if (liquidGlBlocked()) return 'none';
 
-  // §16.4b.3: WebKit UAs skip WebGPU (young Safari WebGPU is the prime iOS
-  // freeze suspect) and go straight to battle-tested WebGL2.
+  // WebKit stays on the CSS tier. A compositor/GPU stall can block the same
+  // main thread that owns our watchdog, so attempting either native GPU tier
+  // and hoping to recover is not a reliable safety boundary on iOS Safari.
   const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
   const order = preferredTierOrder(ua);
 

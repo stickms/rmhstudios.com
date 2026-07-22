@@ -52,7 +52,8 @@ function lensSupported(): boolean {
 }
 
 function perfLite(): boolean {
-  return document.documentElement.classList.contains('perf-lite');
+  const root = document.documentElement;
+  return root.classList.contains('perf-lite') || root.classList.contains('ios-webkit');
 }
 
 function reducedTransparency(): boolean {
