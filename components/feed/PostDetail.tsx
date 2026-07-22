@@ -43,9 +43,17 @@ export function PostDetail({ postId }: PostDetailProps) {
   const { t } = useTranslation("feed");
   const navigate = useNavigate();
   const locale = useLocaleStore((s) => s.locale);
-  const [post, setPost] = useState<FeedItem | null>(null);
+  // §17.2: seed the detail from the feed card's already-known data so the hero (the
+  // liquid-open morph target) renders INSTANTLY — no skeleton flash, no second
+  // entrance when the fetch lands. Warm opens (from the feed) hit this; a cold URL
+  // load finds no seed and shows the spinner until the fetch resolves.
+  const [post, setPost] = useState<FeedItem | null>(
+    () => useFeedStore.getState().items.find((i) => i.id === postId) ?? null,
+  );
   const [comments, setComments] = useState<Comment[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(
+    () => !useFeedStore.getState().items.some((i) => i.id === postId),
+  );
   const [loadingComments, setLoadingComments] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [commentContent, setCommentContent] = useState('');
@@ -119,7 +127,11 @@ export function PostDetail({ postId }: PostDetailProps) {
 
   // Fetch post
   useEffect(() => {
-    setLoading(true);
+    // §17.2: keep the seeded hero on screen while the full record loads (only show
+    // the spinner when there was no seed) so the morph never lands on a skeleton.
+    const seed = useFeedStore.getState().items.find((i) => i.id === postId) ?? null;
+    if (seed) setPost(seed);
+    setLoading(!seed);
     fetch(`/api/rmharks/${postId}`)
       .then(async (res) => {
         if (res.status === 404) { setNotFound(true); return; }
@@ -227,8 +239,9 @@ export function PostDetail({ postId }: PostDetailProps) {
 
   return (
     <div className="flex flex-col">
-      {/* Header bar */}
-      <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
+      {/* Header bar — §17.6: reserve the sticky-shift with a bottom margin so the
+          hero's mt-3 gutter below is honoured (same fix as PageLayout). */}
+      <div className="sticky top-2 z-10 mx-2 mb-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3 md:mb-3">
         <div className="flex items-center gap-3 px-4 py-3">
           <button
             onClick={() => window.history.back()}

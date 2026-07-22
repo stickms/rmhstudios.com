@@ -6,6 +6,7 @@ import { Trophy, Coins, Zap } from 'lucide-react';
 import { UserAvatar } from './UserAvatar';
 import { ColumnHeader } from './ColumnHeader';
 import { Spinner } from '@/components/ui/spinner';
+import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { Reveal } from '@/components/motion';
 import { LIFT_CARD } from '@/components/feed/motionHelpers';
 
@@ -77,10 +78,15 @@ export function LeaderboardColumn({
     void load(scope);
   }, [scope, load]);
 
-  const tabClass = (active: boolean) =>
-    `relative px-3 py-1.5 text-sm font-bold rounded-sm transition-colors ${
-      active ? 'text-site-text' : 'text-site-text-muted hover:text-site-text'
-    }`;
+  // §17.5 sweep: this Global/Friends scope toggle was a hand-rolled underline strip
+  // with no tab semantics (invisible to the §16.2 design-lint gate) — migrated to
+  // the shared §5.45 LiquidTabs sheet. The Friends tab only exists when signed in.
+  const scopeTabs: LiquidTab[] = [
+    { id: 'global', label: t('leaderboard-global', { defaultValue: 'Global' }) },
+    ...(signedIn
+      ? [{ id: 'friends', label: t('leaderboard-friends', { defaultValue: 'Friends' }) }]
+      : []),
+  ];
 
   return (
     <div className="min-h-screen">
@@ -89,23 +95,14 @@ export function LeaderboardColumn({
       )}
 
       <div className="space-y-4 p-4">
-        {/* Scope toggle */}
-        <div className="flex items-center gap-1">
-          <button onClick={() => setScope('global')} className={tabClass(scope === 'global')}>
-            {t('leaderboard-global', { defaultValue: 'Global' })}
-            {scope === 'global' && (
-              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-full bg-site-accent" />
-            )}
-          </button>
-          {signedIn && (
-            <button onClick={() => setScope('friends')} className={tabClass(scope === 'friends')}>
-              {t('leaderboard-friends', { defaultValue: 'Friends' })}
-              {scope === 'friends' && (
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 w-8 rounded-full bg-site-accent" />
-              )}
-            </button>
-          )}
-        </div>
+        {/* Scope toggle — §5.45 tab sheet */}
+        <LiquidTabs
+          tabs={scopeTabs}
+          value={scope}
+          onChange={(id) => setScope(id as Scope)}
+          size="sm"
+          aria-label={t('leaderboard-scope-aria', { defaultValue: 'Leaderboard scope' })}
+        />
 
         <p className="text-xs text-site-text-dim">
           {t('leaderboard-subtitle', {

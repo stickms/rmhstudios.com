@@ -211,7 +211,11 @@ export function RMHarkCard({ item }: RMHarkCardProps) {
     // image) rides along. This one path replaces the former image-only
     // runViewTransition trigger — text and media posts now morph uniformly
     // (§12.8: one mechanism). Degrades to plain nav under no-VT / reduced motion.
-    runLiquidOpen(cardRef.current, liquidVTName('post', actualId), go);
+    // §17.2 WebKit pre-condition: the detail hero seeds from THIS feed item (it is
+    // already in the feed store), so the destination renders instantly — the morph
+    // is warm by construction. The resolved preload lets runViewTransition confirm
+    // that before capturing, so on WebKit (no skipTransition) it never freezes.
+    runLiquidOpen(cardRef.current, liquidVTName('post', actualId), go, () => Promise.resolve());
   };
 
   return (

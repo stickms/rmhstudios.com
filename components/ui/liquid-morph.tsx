@@ -48,16 +48,24 @@ import {
   type MotionStyle,
 } from 'framer-motion';
 import { useLiquidActive, useLiquidBody, useLiquidGroup } from '@/hooks/useLiquidBody';
+import { computeDroplet } from '@/lib/liquid-gl/droplet';
 
 const STRETCH_K = 0.0004; // |velocity px/s| → stretch factor (§5.47 sketch)
 const STRETCH_MAX = 0.5; // §15.3: volume-conserving cap raised to 0.5 for tab-scale jumps
 // §15.3: trail droplet spring ≈ ⅓ the snappy capsule stiffness (SPRING.snappy =
 // 500) so it lags the capsule noticeably — the goo reads the lag as a longer,
 // clearly-visible stretching tail (½-stiffness was too tight to see mid-switch).
-const TRAIL_SPRING = { stiffness: 165, damping: 26, mass: 1 } as const;
+// §17.3 spring rest: explicit rest thresholds (px units) so the trail spring can
+// never oscillate below visibility forever — it lands and the idle sampler stops.
+const TRAIL_SPRING = {
+  stiffness: 165,
+  damping: 26,
+  mass: 1,
+  restDelta: 0.1,
+  restSpeed: 0.1,
+} as const;
 const OPACITY_AT = 600; // §15.3: reach the opacity cap sooner so the teardrop is
 const OPACITY_CAP = 0.7; //  seen for most of the motion, not glimpsed at peak speed
-const DROP_FACTOR = 0.7; // §15.3: droplet ≈ 70% of the capsule's short side (height)
 
 // §16.4 idle-at-rest. The capsule only MOVES during a `layoutId` transition (a new
 // tab/route becomes active). Between those, its projected box is static — so the
@@ -131,13 +139,31 @@ export function useLiquidMorph({
         : 'center bottom',
   );
 
-  // Goo geometry: mirror tracks the capsule; droplet lags on the soft spring.
+  // Goo geometry: mirror tracks the capsule; droplet lags on the soft spring, but
+  // its rendered centre + size are then CLAMPED and TAPERED (§17.1) so its edge can
+  // never trail the capsule further than a gap the CSS goo (~18px) and the GL smin
+  // (k≈26px) can both bridge — no free-floating ball on a fast, wide jump. Derived
+  // at the coordinate source, so the CSS blobs below AND the GL bodies fed from
+  // dropCx/dropCy/dropD inherit the same cohesive teardrop.
   const cx = useTransform([mx, mw], ([x, w]) => (x as number) + (w as number) / 2);
   const cy = useTransform([my, mh], ([y, h]) => (y as number) + (h as number) / 2);
-  const dropCx = useSpring(cx, TRAIL_SPRING);
-  const dropCy = useSpring(cy, TRAIL_SPRING);
-  const short = useTransform([mw, mh], ([w, h]) => Math.min(w as number, h as number));
-  const dropD = useTransform(short, (s) => s * DROP_FACTOR);
+  const dropCxRaw = useSpring(cx, TRAIL_SPRING);
+  const dropCyRaw = useSpring(cy, TRAIL_SPRING);
+  const dropState = useTransform(
+    [cx, cy, dropCxRaw, dropCyRaw, mw, mh],
+    ([cxv, cyv, rx, ry, w, h]) =>
+      computeDroplet(
+        cxv as number,
+        cyv as number,
+        rx as number,
+        ry as number,
+        w as number,
+        h as number,
+      ),
+  );
+  const dropCx = useTransform(dropState, (s) => s.cx);
+  const dropCy = useTransform(dropState, (s) => s.cy);
+  const dropD = useTransform(dropState, (s) => s.d);
   const dropX = useTransform([dropCx, dropD], ([x, d]) => (x as number) - (d as number) / 2);
   const dropY = useTransform([dropCy, dropD], ([y, d]) => (y as number) - (d as number) / 2);
   const gooOpacity = useTransform(v, (val) => Math.min(Math.abs(val) / OPACITY_AT, OPACITY_CAP));
@@ -237,12 +263,22 @@ export function useLiquidMorph({
     };
     kickRef.current = kick;
     kick(); // sample the initial rest position once, then idle
-    const onResize = () => kick();
-    window.addEventListener('resize', onResize, { passive: true });
+    const onWake = () => kick();
+    window.addEventListener('resize', onWake, { passive: true });
+    // §17.4 scroll anchoring: the GL body is drawn in VIEWPORT coords, so a scroll
+    // moves the capsule element but leaves the (idle) shader drawing its glass at the
+    // stale screen position — the owner's "shadow follows the screen" report. Scroll
+    // is therefore a WAKE signal, same class as resize/activeKey: it re-arms the
+    // sampler, which re-reads the capsule's viewport box and re-anchors the GL body,
+    // then idles again after SETTLE_FRAMES (§16.4 zero-reads-at-rest preserved).
+    // `capture` catches scrolls in nested/inner containers too; the squash path stays
+    // inert because mx/my are underlay-relative (both scroll together → no velocity).
+    window.addEventListener('scroll', onWake, { passive: true, capture: true });
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       rafRef.current = 0;
-      window.removeEventListener('resize', onResize);
+      window.removeEventListener('resize', onWake);
+      window.removeEventListener('scroll', onWake, { capture: true });
     };
     // Stable loop; `sampleRef.current` is refreshed each render so it stays current.
   }, []);

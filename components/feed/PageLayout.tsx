@@ -86,10 +86,17 @@ export function PageLayout({
               it. Still condenses on scroll (height + tint + blur + glint via
               [data-scrolled]). The optics-ring glint is always-on and comes free
               from .glass-chrome — no per-header work. */}
+          {/* §17.6 header→content rhythm: the header is `sticky top-2`, so at rest
+              it renders ~top-offset px BELOW its flow box — which silently ate the
+              page's first-content gutter (subtitle/tab sheet sat flush under it, the
+              owner's /services report). Reserve that sticky shift with a matching
+              bottom margin (mb-2 = top-2, md:mb-3 = md:top-3) so every page's own
+              first-content padding (§15.4 mt-3/space-y-3) is honoured, from the
+              SHARED layer — it can no longer be eaten per-page. */}
           <div
             ref={headerRef}
             data-slot="page-header"
-            className="glass-chrome sticky top-2 z-10 mx-2 rounded-site shadow-site-sm h-18 data-[scrolled]:h-16 transition-[height] md:top-3 md:mx-3"
+            className="glass-chrome sticky top-2 z-10 mx-2 mb-2 rounded-site shadow-site-sm h-18 data-[scrolled]:h-16 transition-[height] md:top-3 md:mx-3 md:mb-3"
           >
             <div className="h-full flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3 min-w-0">

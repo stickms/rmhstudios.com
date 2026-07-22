@@ -1762,6 +1762,157 @@ therefore the fix is structural trust management, not device debugging:
 
 ---
 
+## 17. Cohesion, smoothness & the no-freeze guarantee (amendment 2026-07-22b — Phase O)
+
+Owner feedback round after §16.4/§16.4b shipped. Six reports, verbatim:
+(1) "there's a trailing metaball that appears disconnected from the main
+'glass' part"; (2) "the animation when opening a rmhark or going back doesnt
+seem to animate smoothly, and reloads on page load interrupting the
+smoothness"; (3) "the page still freezes sometimes, like on the settings page
+when previewing different themes. ensure no freezes occur throughout the whole
+website (e.g. ensure animations always end)"; (4) "the liquid glass 'shadow'
+appears to follow the screen when i scroll rather than the element it's
+attached to"; (5) "the tabs on the predictions page arent liquid glass";
+(6) "spacing below some page headers doesnt exist between it and tabs"
+(screenshot: /services — the subtitle sits flush against the hero sheet).
+
+The §16.4 discipline applies to every item: **trace/reproduce first, name the
+mechanism, then fix** — no speculative patches. Each subsection below records
+the code-level findings already verified plus the mandated fix shape.
+
+### 17.1 Trail droplet cohesion — the tail must never detach
+
+**Mechanism (verified in code).** The trail droplet lags the capsule on a
+soft spring (`TRAIL_SPRING` stiffness 165 vs the capsule's ~500,
+`liquid-morph.tsx`). Nothing bounds the lag distance. The CSS goo bridge
+(`#glass-goo`: blur stdDev 9 → alpha matrix 16/−6) can only fuse blobs whose
+edge gap is ≲ 2× the blur radius (~18 px); the GL tier's `smin(d, di, k)`
+likewise only bridges within `k`. A fast tab jump (100–300 px) puts the
+droplet far outside both ranges mid-flight — it renders as a free-floating
+ball, which is exactly the owner's report. It also keeps its full size
+(70 % of capsule height) no matter how far it lags, so even the pinch-off
+reads as a detached blob rather than a shrinking droplet.
+
+**Fix (at the source, so BOTH tiers inherit it).** Derive the droplet's
+rendered position from the spring output but **clamp its centre so its edge
+never trails the capsule's trailing edge by more than a merge gap** the goo
+and `smin` can both bridge (≈ 8 px CSS; ≤ the shader's `k` in GL). Project
+the spring position onto that maximum-lag boundary when it overshoots. Add a
+**separation taper**: droplet diameter scales down as lag approaches the
+clamp (full size when merged, ~40 % at maximum lag) so reabsorption reads as
+surface tension, not teleporting. The `dropSettled` idle check must use the
+clamped values. Verify with mid-motion frame captures (CSS tier and GL tier)
+on a wide tab jump: no frame may show a fully separated blob.
+
+### 17.2 Liquid open/back smoothness — one motion, no replays
+
+Three distinct complaints hide here; trace each on the RMHark card → detail
+path (Performance profile + frame-by-frame screenshots):
+
+1. **The open morph stutters.** Audit what actually runs during the VT:
+   the destination's mount work, image decode, and any entrance animation
+   that fires *during* the morph. The §15.2 rule stands — `.vt-active`
+   stands entrances down — verify nothing mounts motion mid-morph.
+2. **"Reloads on page load."** After the morph lands, client-fetched data
+   (comments/replies, fresh hero image) re-renders the page and replays
+   entrances — the double-load again, one level deeper. Mandates: seed the
+   detail view from the feed card's already-known data (React Query
+   `initialData` / router loader seed) so the hero and body render
+   instantly with no skeleton flash; anything that mounts after the morph
+   uses `initial={false}`; the hero image must reuse the card's cached URL
+   (same `src`, no swap).
+3. **Back is a hard cut.** popstate never goes through `runLiquidOpen`, so
+   returning to the feed remounts with full entrances (reads as a reload).
+   Attempt the reverse morph: remember the last-opened id, have that feed
+   card carry the matching `view-transition-name` while the detail page is
+   up, and wrap history-back navigations in `runViewTransition` via the
+   router's history subscription. If that cannot be made reliable, the
+   documented fallback is a *designed* return: no stagger replay, no
+   refetch flash, instant scroll restore — and say so in the report
+   (the owner asked to be told what isn't fixable).
+
+**WebKit hazard (fix in the same pass):** `skipTransition()` is
+Chromium-only, so on WebKit the 180 ms budget cannot bail out of a slow
+loader — the freeze simply holds. Restructure: *before* starting a liquid
+VT, race the destination preload against a short budget; start the VT only
+when the update will resolve immediately (warm), otherwise navigate plain.
+That converts the budget from "escape hatch" (Chromium-only) to
+"pre-condition" (universal).
+
+### 17.3 The no-freeze guarantee — every animation ends
+
+**Reported repro:** previewing themes on the settings page freezes the page.
+Trace it first: profile a click-through of theme previews on
+`/settings/appearance` and in the studio; name the long tasks. Prime
+suspects (verify, don't assume): the full-document style recalc from the
+root class/vars swap multiplied across every `backdrop-filter` surface;
+GL renderer re-init (instead of a uniform retint) per preview; lens map
+regeneration; `ThemeMiniShell` render storms. Fix the top offenders —
+batch the var writes, retint GL via uniforms without teardown, `contain`
+the mini shells, debounce rapid preview clicks.
+
+**Sitewide mandate — "animations always end":**
+
+1. **rAF inventory.** Every `requestAnimationFrame` loop in the repo must
+   have a provable settle/stop condition (the §16.4 idle-at-rest pattern).
+   Inventory all of them; fix any that can spin forever; then extend the
+   design-lint test with a `requestAnimationFrame` file allowlist so a new
+   unbounded loop cannot land silently.
+2. **VT hard stop.** `vt-active`/`vt-liquid` (and any other freeze-adjacent
+   root class) get a watchdog: force-cleared after ~1.5 s even if
+   `transition.finished` never settles.
+3. **Spring rest.** Custom framer springs must reach rest (`restDelta`/
+   `restSpeed` where the defaults can oscillate below visibility forever).
+
+### 17.4 Scroll anchoring — GL bodies must move with their elements
+
+**Mechanism (verified in code).** GL bodies are pushed in *viewport*
+coordinates by their owners' samplers, and §16.4 made those samplers stop at
+rest — nothing in `lib/liquid-gl/` or any registrar listens to scroll. So
+once idle, a scroll moves the element but the shader keeps drawing its
+glass/shadow at the stale screen position — the owner's "shadow follows the
+screen" report, exactly.
+
+**Fix.** Scroll is a wake signal, same class as `activeKey`/resize/GL-toggle:
+every body registrar (`useLiquidMorph`, `useLiquidPop`, and any pane/other
+registrar — inventory them all) kicks its sampler on
+`scroll` (`window`, `{ passive: true, capture: true }` so nested scroll
+containers are caught too). The idle-at-rest loop already keeps sampling
+while the box is changing and re-idles after `SETTLE_FRAMES`, so the §16.4
+zero-reads-at-rest guarantee is preserved — scroll just re-arms it. Confirm
+the squash path stays inert during scroll (`mx/my` are underlay-relative, so
+no fake velocity — verify with a trace). Evidence: screenshot glass mid-page,
+scroll 500 px, screenshot again — the drawn glass must sit on its element in
+both.
+
+### 17.5 Predictions tabs — the strip that escaped the sweep
+
+`RMHCoinsPage.tsx` (~line 93) hand-rolls its Markets/Games switch as plain
+buttons with a conditional accent capsule — no `role="tablist"`, which is
+precisely why the §16.2 design-lint gate (which only polices `tablist`
+usage) never saw it. Convert it to `LiquidTabs` on the standard §5.45 sheet
+below the page title, semantics and morph included. Then **sweep for other
+escapees** (hand-rolled switchers with no tab semantics: conditional-accent
+button rows, segmented controls) and convert what qualifies. Extend the
+design-lint gate to catch this shape where a reliable signal exists (e.g.
+files matching a conditional active-capsule pattern outside `liquid-tabs`);
+if no reliable grep exists, document the manual-review rule instead of
+shipping a false-positive-prone check.
+
+### 17.6 Header → tabs rhythm — the missing gap
+
+Owner screenshot (/services): the subtitle sits flush under the hero sheet;
+some pages have no breathing room between the header block and the tab
+sheet. The §15.4 spacing rhythm already defines the scale — the gap between
+a page's title/subtitle block and whatever follows (tab sheet included) must
+come from `PageLayout` itself, not per-page margins, so it cannot be missed
+again. Audit every page that places a `LiquidTabs` sheet under a
+`PageLayout` header (and the /services hero specifically), fix the rhythm in
+the shared layer, and screenshot /services + two other tab pages as
+evidence.
+
+---
+
 ## Appendix D — Dead/invisible UI: removal list
 
 > Populated from the 2026-07-21 repo audit (verified with file:line evidence).

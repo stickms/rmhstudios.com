@@ -384,6 +384,7 @@
   "leaderboard-friends": "Vänner",
   "leaderboard-global": "Global",
   "leaderboard-level": "Nivå {{n}}",
+  "leaderboard-scope-aria": "Leaderboard scope",
   "leaderboard-subtitle": "Rankad efter total XP. Tjäna XP genom att posta, spela, plugga med mera.",
   "leaderboard-xp": "XP",
   "learn-more": "Läs mer",

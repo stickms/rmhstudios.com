@@ -384,6 +384,7 @@
   "leaderboard-friends": "Друзья",
   "leaderboard-global": "Мир",
   "leaderboard-level": "Ур. {{n}}",
+  "leaderboard-scope-aria": "Leaderboard scope",
   "leaderboard-subtitle": "Рейтинг по общему опыту (XP). Зарабатывайте XP, публикуя посты, играя, обучаясь и не только.",
   "leaderboard-xp": "XP",
   "learn-more": "Подробнее",

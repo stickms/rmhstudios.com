@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Loader2 } from 'lucide-react';
+import { Loader2, TrendingUp, Gamepad2 } from 'lucide-react';
 import { authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
+import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { CoinIcon } from './CoinIcon';
@@ -68,6 +69,11 @@ export function RMHCoinsPage() {
 
   if (!session?.user) return null;
 
+  const tabs: LiquidTab[] = [
+    { id: 'markets', label: t("tab-markets", { defaultValue: "Markets" }), icon: TrendingUp },
+    { id: 'games', label: t("tab-games", { defaultValue: "Games" }), icon: Gamepad2 },
+  ];
+
   return (
     <div className="flex flex-col w-full">
       {/* Balance bar */}
@@ -90,35 +96,29 @@ export function RMHCoinsPage() {
         )}
       </div>
 
-      {/* Markets / Games tab switch */}
-      <div className="flex border-b border-site-border">
-        {([
-          { id: 'markets' as const, label: t("tab-markets", { defaultValue: "Markets" }) },
-          { id: 'games' as const, label: t("tab-games", { defaultValue: "Games" }) },
-        ]).map((tb) => (
-          <button
-            key={tb.id}
-            onClick={() => setTab(tb.id)}
-            className={`flex-1 py-3 text-sm font-semibold transition-colors relative ${
-              tab === tb.id
-                ? 'text-site-text'
-                : 'text-site-text-dim hover:text-site-text'
-            }`}
-          >
-            {tb.label}
-            {tab === tb.id && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-site-accent" />
-            )}
-          </button>
-        ))}
+      {/* Markets / Games switch — §5.45 tab sheet on the shared LiquidTabs renderer
+          (§17.5: this strip was hand-rolled with no tab semantics, so the §16.2
+          design-lint gate never saw it). Sits below the balance header. */}
+      <div className="px-4 pt-3">
+        <LiquidTabs
+          tabs={tabs}
+          value={tab}
+          onChange={(id) => setTab(id as 'markets' | 'games')}
+          idBase="rmhcoins"
+          aria-label={t("tabs-aria", { defaultValue: "Predictions sections" })}
+        />
       </div>
 
       {/* Tab content */}
-      <div className="flex-1">
+      <div className="flex-1 pt-3">
         {tab === 'markets' ? (
-          <PredictionsMarketTab coins={coins} setCoins={setCoins} />
+          <div id="rmhcoins-panel-markets" role="tabpanel" aria-labelledby="rmhcoins-tab-markets">
+            <PredictionsMarketTab coins={coins} setCoins={setCoins} />
+          </div>
         ) : (
-          <PlayTab coins={coins} setCoins={setCoins} />
+          <div id="rmhcoins-panel-games" role="tabpanel" aria-labelledby="rmhcoins-tab-games">
+            <PlayTab coins={coins} setCoins={setCoins} />
+          </div>
         )}
       </div>
     </div>

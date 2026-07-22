@@ -384,6 +384,7 @@
   "leaderboard-friends": "دوستان",
   "leaderboard-global": "جهانی",
   "leaderboard-level": "سطح {{n}}",
+  "leaderboard-scope-aria": "Leaderboard scope",
   "leaderboard-subtitle": "رتبه\u200cبندی بر اساس XP کل. با پست گذاشتن، بازی کردن، مطالعه و موارد دیگر XP کسب کنید.",
   "leaderboard-xp": "XP",
   "learn-more": "بیشتر بدانید",

@@ -384,6 +384,7 @@
   "leaderboard-friends": "好友",
   "leaderboard-global": "全球",
   "leaderboard-level": "Lv {{n}}",
+  "leaderboard-scope-aria": "Leaderboard scope",
   "leaderboard-subtitle": "按累计经验值排名。通过发帖、游戏、学习等方式获得经验值。",
   "leaderboard-xp": "经验值",
   "learn-more": "了解更多",

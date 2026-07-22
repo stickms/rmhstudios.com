@@ -7,9 +7,10 @@
  * hardcoded palette copies to drift out of sync.
  */
 
+import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check } from 'lucide-react';
-import { SITE_STYLES, useThemeStore } from '@/stores/themeStore';
+import { SITE_STYLES, useThemeStore, type SiteStyle } from '@/stores/themeStore';
 import { cn } from '@/lib/utils';
 
 const GROUPS = [...new Set(SITE_STYLES.map((s) => s.group))];
@@ -18,7 +19,12 @@ function ThemePreviewSwatch({ styleId }: { styleId: string }) {
   return (
     <div
       aria-hidden
-      className={cn(`style-${styleId}`, 'pointer-events-none border-b border-site-border')}
+      // §17.3: contain each swatch so its scoped `.style-*` cascade can't participate
+      // in the full-document recalc when the ROOT theme (preview) swaps.
+      className={cn(
+        `style-${styleId}`,
+        'pointer-events-none border-b border-site-border [contain:layout_paint]',
+      )}
     >
       {/* --site-canvas lets gradient themes (liquid-glass) preview their real
           backdrop; plain themes fall back to their solid --site-bg. */}
@@ -49,6 +55,36 @@ export function ThemeGallery() {
   const setStyle = useThemeStore((s) => s.setStyle);
   const setPreview = useThemeStore((s) => s.setPreview);
 
+  // §17.3 no-freeze: each preview applies the theme site-wide by swapping the root
+  // `.style-*` class — a full-document style recalc across every backdrop surface
+  // (~20–40ms each, traced). Sweeping the pointer across the grid used to fire one
+  // per swatch crossed, stacking into the reported freeze. Debounce so a fast sweep
+  // collapses to the swatch actually settled on; the previous swatch's hover-out and
+  // a real click both apply immediately (clearing the pending debounce), so the
+  // preview still feels instant.
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clearPending = () => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+    }
+  };
+  const previewSoon = useCallback(
+    (id: SiteStyle) => {
+      clearPending();
+      debounceRef.current = setTimeout(() => setPreview(id), 45);
+    },
+    [setPreview],
+  );
+  const previewNow = useCallback(
+    (id: SiteStyle | null) => {
+      clearPending();
+      setPreview(id);
+    },
+    [setPreview],
+  );
+  useEffect(() => clearPending, []);
+
   return (
     <div className="space-y-5">
       {GROUPS.map((group) => (
@@ -66,7 +102,7 @@ export function ThemeGallery() {
               group,
             })}
             className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4"
-            onMouseLeave={() => setPreview(null)}
+            onMouseLeave={() => previewNow(null)}
           >
             {SITE_STYLES.filter((s) => s.group === group).map((s) => {
               const active = style === s.id;
@@ -76,10 +112,13 @@ export function ThemeGallery() {
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  onClick={() => setStyle(s.id)}
-                  onMouseEnter={() => setPreview(s.id)}
-                  onFocus={() => setPreview(s.id)}
-                  onBlur={() => setPreview(null)}
+                  onClick={() => {
+                    clearPending();
+                    setStyle(s.id);
+                  }}
+                  onMouseEnter={() => previewSoon(s.id)}
+                  onFocus={() => previewNow(s.id)}
+                  onBlur={() => previewNow(null)}
                   className={cn(
                     'overflow-hidden rounded-site border text-left transition-all',
                     active
