@@ -169,65 +169,81 @@ function refreshStatic(): void {
 function frame(now: number): void {
   if (!rt || !rt.running) return;
 
-  // Detect a user-theme / accent change via cheap inline reads; re-parse only then.
-  const sig = buildInlineSig();
-  if (sig !== rt.inlineSig) refreshStatic();
+  // The whole per-frame body is wrapped so a throw from the renderer (a GL/GPU
+  // driver hiccup, a lost-context race, or a shader edge case on a specific
+  // device) can NEVER escape the rAF callback. Unwrapped, such a throw skips the
+  // final `requestAnimationFrame(frame)` and silently kills the loop — during
+  // probation nothing then falls back (the canvas sits hidden behind the CSS
+  // forever) and, once verified, the frozen canvas persists until the 1s
+  // watchdog notices the stalled heartbeat. It also reaches window.onerror,
+  // which the site's client-error beacon reports as a crash. Instead, treat any
+  // frame throw exactly like a failed verify / stalled watchdog: tear the tier
+  // down and fall back to CSS at once (§16.4b — stop trusting the tier the
+  // instant it stops proving itself). The happy path is unchanged: no throw
+  // means the catch never runs.
+  try {
+    // Detect a user-theme / accent change via cheap inline reads; re-parse only then.
+    const sig = buildInlineSig();
+    if (sig !== rt.inlineSig) refreshStatic();
 
-  readLiveInputs(rt.live);
-  const sc = rt.scene;
-  sc.mx = rt.live.mx;
-  sc.my = rt.live.my;
-  sc.lightX = rt.live.lightX;
-  sc.lightY = rt.live.lightY;
-  sc.time = (now - rt.startTime) / 1000;
+    readLiveInputs(rt.live);
+    const sc = rt.scene;
+    sc.mx = rt.live.mx;
+    sc.my = rt.live.my;
+    sc.lightX = rt.live.lightX;
+    sc.lightY = rt.live.lightY;
+    sc.time = (now - rt.startTime) / 1000;
 
-  // Idle damping: throttle to 30fps when nothing animates and the parallax/light
-  // are quiet. The ambient drift keeps advancing (time), just at the idle rate.
-  // §16.4b: never idle-damp during probation — render every frame so the gate's N
-  // clean frames accumulate promptly (the canvas is still hidden behind the CSS).
-  const probation = !rt.verify.verified && !rt.verify.aborted;
-  const active = anyActive();
-  const moved =
-    Math.abs(rt.live.mx - rt.lastMx) > 0.1 ||
-    Math.abs(rt.live.my - rt.lastMy) > 0.1 ||
-    Math.abs(rt.live.lightX - rt.lastLx) > 0.0005 ||
-    Math.abs(rt.live.lightY - rt.lastLy) > 0.0005;
-  rt.lastMx = rt.live.mx;
-  rt.lastMy = rt.live.my;
-  rt.lastLx = rt.live.lightX;
-  rt.lastLy = rt.live.lightY;
-  const idle = !active && !moved;
+    // Idle damping: throttle to 30fps when nothing animates and the parallax/light
+    // are quiet. The ambient drift keeps advancing (time), just at the idle rate.
+    // §16.4b: never idle-damp during probation — render every frame so the gate's N
+    // clean frames accumulate promptly (the canvas is still hidden behind the CSS).
+    const probation = !rt.verify.verified && !rt.verify.aborted;
+    const active = anyActive();
+    const moved =
+      Math.abs(rt.live.mx - rt.lastMx) > 0.1 ||
+      Math.abs(rt.live.my - rt.lastMy) > 0.1 ||
+      Math.abs(rt.live.lightX - rt.lastLx) > 0.0005 ||
+      Math.abs(rt.live.lightY - rt.lastLy) > 0.0005;
+    rt.lastMx = rt.live.mx;
+    rt.lastMy = rt.live.my;
+    rt.lastLx = rt.live.lightX;
+    rt.lastLy = rt.live.lightY;
+    const idle = !active && !moved;
 
-  if (!probation && idle && now - rt.lastFrame < IDLE_INTERVAL) {
-    rt.raf = requestAnimationFrame(frame);
-    return;
-  }
-  rt.lastFrame = now;
-
-  rt.renderer.render(sc, liveBodies(), liveCount());
-  rt.lastRenderTs = now; // §16.4b heartbeat
-
-  // §16.4b verified-frame gating: keep the CSS stack painting until the renderer
-  // has produced N clean, non-blank frames — only THEN reveal the canvas. A GL
-  // error / lost context / blank readback during probation aborts to CSS for good.
-  if (probation) {
-    const deep = isGateFrame(rt.verify);
-    const { ok, nonBlank } = rt.renderer.checkFrame(deep);
-    const lost = rt.contextLost || rt.renderer.isLost();
-    rt.verify = stepVerify(rt.verify, { ok, nonBlank, lost });
-    if (rt.verify.verified) {
-      // Reveal: hide the CSS aurora/goo, tell components the shader is live.
-      clearFailure(lsRemove);
-      document.documentElement.classList.add('liquid-gl');
-      notifyActive();
-      startWatchdog();
-    } else if (rt.verify.aborted) {
-      abortToCss();
+    if (!probation && idle && now - rt.lastFrame < IDLE_INTERVAL) {
+      rt.raf = requestAnimationFrame(frame);
       return;
     }
-  }
+    rt.lastFrame = now;
 
-  rt.raf = requestAnimationFrame(frame);
+    rt.renderer.render(sc, liveBodies(), liveCount());
+    rt.lastRenderTs = now; // §16.4b heartbeat
+
+    // §16.4b verified-frame gating: keep the CSS stack painting until the renderer
+    // has produced N clean, non-blank frames — only THEN reveal the canvas. A GL
+    // error / lost context / blank readback during probation aborts to CSS for good.
+    if (probation) {
+      const deep = isGateFrame(rt.verify);
+      const { ok, nonBlank } = rt.renderer.checkFrame(deep);
+      const lost = rt.contextLost || rt.renderer.isLost();
+      rt.verify = stepVerify(rt.verify, { ok, nonBlank, lost });
+      if (rt.verify.verified) {
+        // Reveal: hide the CSS aurora/goo, tell components the shader is live.
+        clearFailure(lsRemove);
+        document.documentElement.classList.add('liquid-gl');
+        notifyActive();
+        startWatchdog();
+      } else if (rt.verify.aborted) {
+        abortToCss();
+        return;
+      }
+    }
+
+    rt.raf = requestAnimationFrame(frame);
+  } catch {
+    abortToCss();
+  }
 }
 
 function start(): void {
@@ -251,14 +267,21 @@ function startWatchdog(): void {
   if (watchdog) return;
   watchdog = setInterval(() => {
     if (!rt) return;
-    const failed = watchdogFailed({
-      now: performance.now(),
-      lastRenderTs: rt.lastRenderTs,
-      running: rt.running,
-      visible: typeof document !== 'undefined' ? document.visibilityState === 'visible' : true,
-      contextLost: rt.contextLost || rt.renderer.isLost(),
-    });
-    if (failed) abortToCss();
+    // A throw here (e.g. `renderer.isLost()` on a half-torn-down context) would
+    // otherwise fire uncaught every interval AND never abort — leaving a frozen
+    // canvas that also spams the client-error beacon. Treat it as a failure.
+    try {
+      const failed = watchdogFailed({
+        now: performance.now(),
+        lastRenderTs: rt.lastRenderTs,
+        running: rt.running,
+        visible: typeof document !== 'undefined' ? document.visibilityState === 'visible' : true,
+        contextLost: rt.contextLost || rt.renderer.isLost(),
+      });
+      if (failed) abortToCss();
+    } catch {
+      abortToCss();
+    }
   }, WATCHDOG_INTERVAL_MS);
 }
 
