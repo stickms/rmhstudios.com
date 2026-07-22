@@ -9,7 +9,7 @@ The whole visual system rests on one idea: **a single CSS custom-property
 contract (`--site-*`) that every theme re-defines.** Components never hardcode
 colors, radii, fonts, or shadows — they consume the contract through Tailwind
 utilities. Because of that, every theme — the base themes (Glass Dark, Glass
-Light, High Contrast), the curated set (Graphite / Sepia / Nocturne Glass), and
+Light, High Contrast), the curated set (Graphite / Sepia / Nocturne Glass), Ultra, and
 any accent preset layered on top — restyles the entire site without a single
 component change.
 
@@ -53,9 +53,9 @@ class):
 | Text              | `--site-text`, `--site-text-muted`, `--site-text-dim`                                                                                                                                                                                                       |
 | Accent            | `--site-accent`, `--site-accent-fg`, `--site-accent-hover`, `--site-accent-dim`                                                                                                                                                                             |
 | Status            | `--site-success`, `--site-danger`, `--site-warning`                                                                                                                                                                                                         |
-| Elevation / shape | `--site-shadow` (prominent: modals/popovers/floating chrome), `--site-shadow-sm` (resting: cards/surfaces), `--site-radius` (18px default), `--site-radius-sm` (12px default)                                                                               |
+| Elevation / shape | `--site-shadow` (prominent: modals/popovers/floating chrome), `--site-shadow-sm` (resting: cards/surfaces), `--site-radius`, `--site-radius-sm`, `--site-control-radius` (shared button geometry)                                                           |
 | Typography        | `--site-font-display`, `--site-font-body`, `--site-font-mono`                                                                                                                                                                                               |
-| Motion / flourish | `--site-transition-speed` (200ms default), `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform`                                                                                                |
+| Motion / flourish | `--site-transition-speed` (200ms default), `--site-press-duration`, `--site-card-transform`, `--site-glow`, `--site-text-shadow`, `--site-letter-spacing`, `--site-heading-transform`                                                                       |
 
 ### Tailwind utilities — use these, never raw hex/oklch
 
@@ -81,7 +81,7 @@ theme mechanism.
 
 ---
 
-## 2. Themes (6, all glass tints) + accent presets
+## 2. Themes (7, all glass tints) + accent presets
 
 The catalog is a tight, tasteful set — every theme is a **tint of the glass**
 over its own `--site-canvas` aurora. Theme = a `.style-<id>` class on `<html>`
@@ -91,10 +91,10 @@ each lives in `app/globals.css`. Visitors with no saved preference get
 `DEFAULT_STYLE` (`default`). The old `liquid-glass` id is retired — it _became_
 the default; persisted prefs self-heal in `Providers.tsx`.
 
-| Group   | Themes                                                                                                                                                                                                                                                                                  |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Base    | `default` (**Glass Dark** — the site default: aurora-lit deep-ocean canvas, translucent surfaces, specular rims), `light` (**Glass Light** — daylight canvas, brighter white frost, dark ink), `high-contrast` (WCAG AAA, **no glass**: opaque black/white, yellow accent, 2px borders) |
-| Curated | `graphite` (Graphite Glass — monochrome smoke, desaturated), `sepia` (Sepia Glass — warm parchment, amber accent), `nocturne` (Nocturne Glass — deep-navy nightscape, sky-blue aurora)                                                                                                  |
+| Group   | Themes                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Base    | `default` (**Glass Dark** — the site default: aurora-lit deep-ocean canvas, translucent surfaces, specular rims), `light` (**Glass Light** — daylight canvas, brighter white frost, dark ink), `high-contrast` (WCAG AAA, **no glass**: opaque black/white, yellow accent, 2px borders), `ultra` (**Ultra** — near-black spectral canvas, precision geometry, ice-cyan signal color, fast motion and restrained violet energy) |
+| Curated | `graphite` (Graphite Glass — monochrome smoke, desaturated), `sepia` (Sepia Glass — warm parchment, amber accent), `nocturne` (Nocturne Glass — deep-navy nightscape, sky-blue aurora)                                                                                                                                                                                                                                         |
 
 The glass primitives live in `components/ui/liquid-glass.tsx` (`GlassPane` and
 `GlassFilter` — the v2 lens-filter host mounted globally in `__root.tsx`) with a

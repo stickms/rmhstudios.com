@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import type { AppliedUserTheme, AppliedUserThemePreview } from "@/lib/themes/tokens";
+import { create } from 'zustand';
+import type { AppliedUserTheme, AppliedUserThemePreview } from '@/lib/themes/tokens';
 
 // Each theme carries its document background color (`bg`) alongside its catalog
 // metadata so there is ONE source of truth for the theme→background map. Both the
@@ -12,12 +12,13 @@ import type { AppliedUserTheme, AppliedUserThemePreview } from "@/lib/themes/tok
 // former `liquid-glass` id is retired into `default` (Glass Dark) — the site
 // default; persisted `liquid-glass` prefs self-heal to `default` in Providers.
 export const SITE_STYLES = [
-  { id: "default", label: "Glass Dark", icon: "🫧", group: "Base", bg: "#0d1b2e" },
-  { id: "light", label: "Glass Light", icon: "☀️", group: "Base", bg: "#e9edf6" },
-  { id: "high-contrast", label: "High Contrast", icon: "◐", group: "Base", bg: "#000" },
-  { id: "graphite", label: "Graphite Glass", icon: "🪨", group: "Curated", bg: "#17171a" },
-  { id: "sepia", label: "Sepia Glass", icon: "📖", group: "Curated", bg: "#efe4cf" },
-  { id: "nocturne", label: "Nocturne Glass", icon: "🌌", group: "Curated", bg: "#0a1424" },
+  { id: 'default', label: 'Glass Dark', icon: '🫧', group: 'Base', bg: '#0d1b2e' },
+  { id: 'light', label: 'Glass Light', icon: '☀️', group: 'Base', bg: '#e9edf6' },
+  { id: 'high-contrast', label: 'High Contrast', icon: '◐', group: 'Base', bg: '#000' },
+  { id: 'graphite', label: 'Graphite Glass', icon: '🪨', group: 'Curated', bg: '#17171a' },
+  { id: 'sepia', label: 'Sepia Glass', icon: '📖', group: 'Curated', bg: '#efe4cf' },
+  { id: 'nocturne', label: 'Nocturne Glass', icon: '🌌', group: 'Curated', bg: '#0a1424' },
+  { id: 'ultra', label: 'Ultra', icon: '✦', group: 'Base', bg: '#07090f' },
 ] as const;
 
 /**
@@ -26,9 +27,9 @@ export const SITE_STYLES = [
  * self-heal rewrite in components/Providers.tsx. Glass Dark (`default`, the
  * bare :root) is the site default.
  */
-export const DEFAULT_STYLE: SiteStyle = "default";
+export const DEFAULT_STYLE: SiteStyle = 'default';
 
-export type SiteStyle = (typeof SITE_STYLES)[number]["id"];
+export type SiteStyle = (typeof SITE_STYLES)[number]['id'];
 
 /**
  * Theme → document background color, derived from SITE_STYLES. Used to paint the
@@ -36,7 +37,7 @@ export type SiteStyle = (typeof SITE_STYLES)[number]["id"];
  * Safari derives its bar tint correctly on the first frame.
  */
 export const THEME_BG: Record<SiteStyle, string> = Object.fromEntries(
-  SITE_STYLES.map((s) => [s.id, s.bg])
+  SITE_STYLES.map((s) => [s.id, s.bg]),
 ) as Record<SiteStyle, string>;
 
 interface ThemeStore {
@@ -78,8 +79,8 @@ interface ThemeStore {
   fontScale: number | null;
   setFontScale: (value: number | null) => void;
   /** 'cozy' (default) | 'compact'; null = cozy. */
-  density: "cozy" | "compact" | null;
-  setDensity: (value: "cozy" | "compact" | null) => void;
+  density: 'cozy' | 'compact' | null;
+  setDensity: (value: 'cozy' | 'compact' | null) => void;
   /** Legible body-font stack for dyslexia-friendly reading. */
   readableFont: boolean;
   setReadableFont: (value: boolean) => void;
@@ -139,7 +140,7 @@ export const useThemeStore = create<ThemeStore>((set) => ({
 }));
 
 /** localStorage key for the reduce-transparency preference (no-flash cache). */
-export const REDUCE_TRANSPARENCY_KEY = "rmh-reduce-transparency";
+export const REDUCE_TRANSPARENCY_KEY = 'rmh-reduce-transparency';
 
 /** localStorage key for the applied marketplace user theme (§14 no-flash cache). */
-export const USER_THEME_KEY = "rmh-user-theme";
+export const USER_THEME_KEY = 'rmh-user-theme';

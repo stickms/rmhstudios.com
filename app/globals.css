@@ -192,6 +192,7 @@
     var(--site-glass-depth-sm);
   --site-radius: 22px;
   --site-radius-sm: 14px;
+  --site-control-radius: 999px;
   --site-font-display:
     var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
   --site-font-body:
@@ -200,6 +201,7 @@
   --site-border-width: 1px;
   --site-card-transform: translateY(-2px);
   --site-transition-speed: 200ms;
+  --site-press-duration: 340ms;
   --site-heading-transform: none;
   --site-glow: none;
   --site-text-shadow: none;
@@ -571,6 +573,101 @@
   --foreground: #eaeef7;
 }
 
+/* Ultra — the precision interface. Near-black spectral depth, ice-cyan signal
+   colour, sharp geometry and restrained violet energy trade the default's soft
+   oceanic atmosphere for a denser, instrument-grade feel. It still fulfills
+   the complete glass contract, so accessibility preferences and every shared
+   primitive continue to compose without theme-specific component patches. */
+.style-ultra {
+  color-scheme: dark;
+  --site-bg: #07090f;
+  --site-bg-subtle: rgba(129, 231, 255, 0.055);
+  --site-surface: rgba(202, 241, 255, 0.065);
+  --site-surface-hover: rgba(202, 241, 255, 0.115);
+  --site-surface-active: rgba(202, 241, 255, 0.17);
+  --site-surface-opaque: #111722;
+  --site-border: rgba(178, 230, 255, 0.14);
+  --site-border-bright: rgba(182, 239, 255, 0.36);
+  --site-text: #f5f9ff;
+  --site-text-muted: rgba(222, 235, 248, 0.8);
+  --site-text-dim: rgba(207, 224, 242, 0.56);
+  --site-accent: #76f7ff;
+  --site-accent-fg: #031214;
+  --site-accent-hover: #a1fbff;
+  --site-accent-dim: rgba(118, 247, 255, 0.14);
+  --site-success: #62f6b8;
+  --site-danger: #ff668f;
+  --site-warning: #ffd166;
+
+  /* Clearer, colder material with a narrow high-energy edge. */
+  --site-glass-tint: rgba(169, 224, 255, 0.065);
+  --site-glass-tint-strong: rgba(177, 232, 255, 0.12);
+  --site-glass-ink: rgba(2, 6, 14, 0.58);
+  --site-glass-rim: rgba(191, 244, 255, 0.42);
+  --site-glass-rim-soft: rgba(157, 223, 255, 0.12);
+  --site-glass-light: rgba(118, 247, 255, 0.18);
+  --site-glass-blur-pane: 20px;
+  --site-glass-blur-chrome: 15px;
+  --site-glass-blur-chrome-scrolled: 22px;
+  --site-glass-blur-overlay: 32px;
+  --site-glass-saturate: 175%;
+  --site-glass-depth: 0 28px 72px rgba(0, 2, 10, 0.72);
+  --site-glass-depth-sm: 0 8px 24px rgba(0, 2, 10, 0.42);
+  --site-shadow:
+    inset 0 1px 0 var(--site-glass-rim), inset 0 0 0 0.5px var(--site-glass-rim-soft),
+    0 0 36px rgba(70, 207, 255, 0.045), var(--site-glass-depth);
+  --site-shadow-sm:
+    inset 0 1px 0 var(--site-glass-rim-soft), inset 0 0 0 0.5px var(--site-glass-rim-soft),
+    0 0 20px rgba(70, 207, 255, 0.035), var(--site-glass-depth-sm);
+  --glass-bevel: 8px;
+  --glass-glint-size: 260px;
+  --glass-glint-opacity: 1;
+  --site-glass-noise: none;
+
+  /* Tighter geometry and faster response give every tokenized primitive the
+     same technical silhouette without coupling the theme to data-slot rules. */
+  --site-radius: 14px;
+  --site-radius-sm: 9px;
+  --site-control-radius: 9px;
+  --site-font-display: 'Space Grotesk', var(--font-inter);
+  --site-font-body:
+    var(--font-inter), -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+  --site-font-mono: var(--font-jetbrains-mono), 'Cascadia Code', monospace;
+  --site-card-transform: translateY(-3px);
+  --site-transition-speed: 150ms;
+  --site-press-duration: 180ms;
+  --site-heading-transform: none;
+  --site-letter-spacing: -0.035em;
+  --ease-glass: cubic-bezier(0.16, 1, 0.3, 1.18);
+
+  /* A subtle 64px technical grid sits behind asymmetric cyan/violet energy.
+     Repeating gradients keep the pattern crisp at any viewport size. */
+  --site-canvas:
+    radial-gradient(90% 68% at 8% -4%, rgba(52, 211, 255, 0.26), transparent 58%),
+    radial-gradient(76% 62% at 96% 3%, rgba(127, 92, 255, 0.24), transparent 60%),
+    radial-gradient(88% 72% at 78% 106%, rgba(0, 255, 198, 0.13), transparent 62%),
+    repeating-linear-gradient(
+      90deg,
+      rgba(157, 229, 255, 0.018) 0,
+      rgba(157, 229, 255, 0.018) 1px,
+      transparent 1px,
+      transparent 64px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(157, 229, 255, 0.014) 0,
+      rgba(157, 229, 255, 0.014) 1px,
+      transparent 1px,
+      transparent 64px
+    ),
+    linear-gradient(160deg, #07090f 0%, #0a0e18 48%, #060810 100%);
+  --site-aurora-far-1: rgba(52, 211, 255, 0.12);
+  --site-aurora-far-2: rgba(127, 92, 255, 0.11);
+  --site-map-filter: invert(1) hue-rotate(165deg) brightness(0.78) contrast(1.08) saturate(0.8);
+  --background: #07090f;
+  --foreground: #f5f9ff;
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    LIQUID GLASS MATERIAL SYSTEM
    The former `.style-liquid-glass` theme is now the site default (:root above).
@@ -841,9 +938,6 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
       )
       saturate(150%);
   }
-  [data-slot='page-header'][data-scrolled] [data-slot='page-description'] {
-    display: none;
-  }
   /* Fixed asides: blur lives on ::before so fixed descendants (LeftSidebar's
      non-portaled user menu) keep the VIEWPORT as their containing block. NEVER
      put backdrop-filter on the aside itself (§3.3.1). Because ::before is the
@@ -960,7 +1054,7 @@ html:not(.style-high-contrast) .bg-site-bg:not(.fixed):not([data-drawer-active])
     transition:
       background-color var(--site-transition-speed),
       box-shadow var(--site-transition-speed),
-      transform 0.34s var(--ease-glass);
+      transform var(--site-press-duration, 340ms) var(--ease-glass);
   }
   .glass-interactive:hover {
     background-color: var(--site-glass-tint-strong);
@@ -1588,7 +1682,7 @@ html.readable-font body {
 /* Novelty themes retired in the Apple-style overhaul. The catalog is now the
    three base themes — Dark (:root), Light (.style-light), High Contrast
    (.style-high-contrast) — plus the curated set above (Graphite / Sepia /
-   Nocturne / Liquid Glass) and the accent-preset overrides (see
+   Nocturne), the Ultra signature style, and the accent-preset overrides (see
    lib/appearance.ts). All are registered in stores/themeStore.ts (SITE_STYLES);
    Liquid Glass is the site default for visitors with no saved preference. */
 
