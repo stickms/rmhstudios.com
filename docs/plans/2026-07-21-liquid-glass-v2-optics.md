@@ -1700,6 +1700,37 @@ Verification for both phases: gates green; design-lint test green; frame
 captures (shader teardrop vs SVG for M1; smooth popover trace for M2);
 mobile spot-check at 390px.
 
+### 16.4 Navigation freeze (owner regression report — diagnose first, then fix)
+
+**Owner:** "Switching pages seems to freeze everything, it might be an
+animation issue?" Treat as P0. Diagnosis mandate — trace before touching
+code. Suspects, in likelihood order:
+
+1. **View-Transition freeze windows.** `startViewTransition` halts rendering
+   from capture until the update promise resolves. Verify the §15.2 180ms
+   `skipTransition()` budget actually engages (feature presence, timer
+   correctness, and that the *capture itself* isn't the cost — snapshotting a
+   long feed at high DPR can block for hundreds of ms before any timer
+   matters). Consider: skip VT entirely when `document.hidden`, when the DOM
+   is huge, or when navigation type isn't a card-open.
+2. **Continuous rAF + layout reads in the morph underlays.** `useLiquidMorph`
+   samples the capsule's projected rect per frame per mounted strip
+   (sidebar + every tab sheet). Rule: **samplers idle when nothing
+   animates** — subscribe to the layout transition's start/finish (or
+   velocity ≈ 0 for N frames → stop; restart on layoutId change), and cache
+   rects instead of re-reading layout per frame.
+3. **Shader-layer init/nav cost** (only if present on the tested build):
+   scene re-parse on theme/route change must be one-shot, never per frame;
+   registry cleanup on unmount verified.
+4. Anything else the trace actually shows (long tasks > 100ms during nav
+   with attributed stacks decide — not intuition).
+
+Fix what the trace convicts; each fix re-traced. Acceptance: navigating
+feed → library → store → post → back at 4× CPU throttle shows no main-thread
+block > 100ms attributable to the motion system, and no continuously-running
+rAF loop while the page is at rest (verify with a 5s idle trace: zero
+rAF-driven layout reads).
+
 ---
 
 ## Appendix D — Dead/invisible UI: removal list
