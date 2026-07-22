@@ -45,9 +45,10 @@
 #     (GHCR_TOKEN / GITHUB_TOKEN with read:packages) OR make the two packages
 #     public. Remove GitHub's old push webhook so only THIS workflow drives the
 #     listener (a raw push webhook would fire before the image exists).
-#   • GHCR layer cache: the build reads/writes registry cache tags
-#     ${IMAGE_WEB}:buildcache / ${IMAGE_FULL}:buildcache (docker-bake.hcl). These
-#     are created automatically on the first push; no manual setup needed.
+#   • GHCR layer cache: the build refreshes ${IMAGE_WEB}:buildcache (the full
+#     shared Node/Vite graph) and can read the older ${IMAGE_FULL}:buildcache as
+#     a best-effort warm start. Cache misses only cause cold stages; they never
+#     block image production or deploy. See docker-bake.hcl.
 # ─────────────────────────────────────────────────────────────────────────────
 name: deploy
 

@@ -156,23 +156,18 @@ target "full" {
   args = merge(frontend_args(), {
     WEB_IMAGE = "runner"
   })
-  # Read the web buildcache too (shared base layers) and write the full one.
+  # Read the web buildcache too (shared base layers). Keep reading the existing
+  # full cache while it is useful, but do not export it on every deploy.
   cache-from = [
     "type=registry,ref=${IMAGE_FULL}:buildcache",
     "type=registry,ref=${IMAGE_WEB}:buildcache",
   ]
-  # mode=min (not max): only export the final-image layers, not every intermediate
-  # stage. The `web` target above already exports the whole SHARED graph (deps,
-  # prisma, the ~137s vite-builder, server-builder) at mode=max, and `full` reads
-  # it via cache-from — so the only stages min drops here are `full`'s own extras:
-  # go-builder (go mod download + build, ~30s) and the Chromium apk layer (~8s).
-  # Both run in PARALLEL with the vite build (off the critical path), so letting
-  # them rebuild is nearly free — whereas exporting them at mode=max cost ~25s of
-  # cache-export that runs AFTER the push and blocks deploy-gate from firing the
-  # webhook. Trading ~25s of on-critical-path export for ~0s of off-path rebuild.
-  #
-  # ignore-error=true (same rationale as the web target above): this is the export
-  # that flaked on 6ff6c7f. A best-effort GHCR cache export must never fail an
-  # otherwise-good build/deploy — the images are already pushed by the time it runs.
-  cache-to = ["type=registry,ref=${IMAGE_FULL}:buildcache,mode=min,image-manifest=true,oci-mediatypes=true,ignore-error=true"]
+  # The web target already exports the expensive shared graph (deps, Prisma,
+  # Vite, server bundles) at mode=max. Exporting even a mode=min full cache still
+  # serialized 392/407 MB layers after both images were pushed: 59s in run
+  # 29943953406, ending in a harmless GHCR auth timeout. The full-only Go build
+  # (~25s) and Chromium install (~8s) run in parallel with Vite, so persisting
+  # them costs more critical-path time than rebuilding them. Omitting cache-to is
+  # also fail-soft by construction: a missing/stale cache simply causes a cold
+  # full-only stage while the actual image push remains the correctness gate.
 }
