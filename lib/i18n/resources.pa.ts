@@ -5,8 +5,11 @@ import paAdmin from "@/locales/pa/admin.json";
 import paBuilds from "@/locales/pa/builds.json";
 import paCAdmin from "@/locales/pa/c-admin.json";
 import paCAltair from "@/locales/pa/c-altair.json";
+import paCAwards from "@/locales/pa/c-awards.json";
 import paCBlog from "@/locales/pa/c-blog.json";
 import paCBuilds from "@/locales/pa/c-builds.json";
+import paCCircle from "@/locales/pa/c-circle.json";
+import paCCreator from "@/locales/pa/c-creator.json";
 import paCCursedLogic from "@/locales/pa/c-cursed-logic.json";
 import paCDailyPuzzles from "@/locales/pa/c-daily-puzzles.json";
 import paCDoctrine from "@/locales/pa/c-doctrine.json";
@@ -14,15 +17,20 @@ import paCDreamRift from "@/locales/pa/c-dream-rift.json";
 import paCEconomy from "@/locales/pa/c-economy.json";
 import paCForestExplorer from "@/locales/pa/c-forest-explorer.json";
 import paCGame from "@/locales/pa/c-game.json";
+import paCHistory from "@/locales/pa/c-history.json";
 import paCHouseAlwaysWins from "@/locales/pa/c-house-always-wins.json";
 import paCKowloonKnockout from "@/locales/pa/c-kowloon-knockout.json";
 import paCLaundrySort from "@/locales/pa/c-laundry-sort.json";
+import paCLayout from "@/locales/pa/c-layout.json";
 import paCLibrary from "@/locales/pa/c-library.json";
 import paCLightsOut from "@/locales/pa/c-lights-out.json";
+import paCLists from "@/locales/pa/c-lists.json";
 import paCLockdown from "@/locales/pa/c-lockdown.json";
 import paCModeration from "@/locales/pa/c-moderation.json";
 import paCNeonDriftway from "@/locales/pa/c-neon-driftway.json";
 import paCNews from "@/locales/pa/c-news.json";
+import paCPredictions from "@/locales/pa/c-predictions.json";
+import paCProfileModules from "@/locales/pa/c-profile-modules.json";
 import paCRideshare from "@/locales/pa/c-rideshare.json";
 import paCRmhCapital from "@/locales/pa/c-rmh-capital.json";
 import paCRmhPmc from "@/locales/pa/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import paCRmhtube from "@/locales/pa/c-rmhtube.json";
 import paCRmhtype from "@/locales/pa/c-rmhtype.json";
 import paCRmhvibe from "@/locales/pa/c-rmhvibe.json";
 import paCRoadmap from "@/locales/pa/c-roadmap.json";
+import paCSaves from "@/locales/pa/c-saves.json";
 import paCSignalForge from "@/locales/pa/c-signal-forge.json";
+import paCStatus from "@/locales/pa/c-status.json";
 import paCStudio from "@/locales/pa/c-studio.json";
 import paCSynapseStorm from "@/locales/pa/c-synapse-storm.json";
 import paCTempleOfJoy from "@/locales/pa/c-temple-of-joy.json";
+import paCTournaments from "@/locales/pa/c-tournaments.json";
 import paCUi from "@/locales/pa/c-ui.json";
 import paCUserBuilds from "@/locales/pa/c-user-builds.json";
 import paCVega from "@/locales/pa/c-vega.json";
 import paCVersecraft from "@/locales/pa/c-versecraft.json";
 import paCVoidBreaker from "@/locales/pa/c-void-breaker.json";
+import paCWager from "@/locales/pa/c-wager.json";
+import paCWishlist from "@/locales/pa/c-wishlist.json";
 import paCommon from "@/locales/pa/common.json";
 import paFeed from "@/locales/pa/feed.json";
+import paGamesHub from "@/locales/pa/games-hub.json";
 import paGroups from "@/locales/pa/groups.json";
 import paLibrary from "@/locales/pa/library.json";
 import paNav from "@/locales/pa/nav.json";
@@ -61,8 +75,13 @@ import paRSliceIt from "@/locales/pa/r-slice-it.json";
 import paRStrategies from "@/locales/pa/r-strategies.json";
 import paRStudio from "@/locales/pa/r-studio.json";
 import paRideshare from "@/locales/pa/rideshare.json";
+import paSearch from "@/locales/pa/search.json";
+import paSettingsAppearance from "@/locales/pa/settings-appearance.json";
+import paSettingsContent from "@/locales/pa/settings-content.json";
+import paSettingsNotifications from "@/locales/pa/settings-notifications.json";
 import paShared from "@/locales/pa/shared.json";
 import paSite from "@/locales/pa/site.json";
+import paThemeStudio from "@/locales/pa/theme-studio.json";
 import paUserBuilds from "@/locales/pa/user-builds.json";
 import paV from "@/locales/pa/v.json";
 
@@ -71,8 +90,11 @@ const paResources = {
   "builds": paBuilds,
   "c-admin": paCAdmin,
   "c-altair": paCAltair,
+  "c-awards": paCAwards,
   "c-blog": paCBlog,
   "c-builds": paCBuilds,
+  "c-circle": paCCircle,
+  "c-creator": paCCreator,
   "c-cursed-logic": paCCursedLogic,
   "c-daily-puzzles": paCDailyPuzzles,
   "c-doctrine": paCDoctrine,
@@ -80,15 +102,20 @@ const paResources = {
   "c-economy": paCEconomy,
   "c-forest-explorer": paCForestExplorer,
   "c-game": paCGame,
+  "c-history": paCHistory,
   "c-house-always-wins": paCHouseAlwaysWins,
   "c-kowloon-knockout": paCKowloonKnockout,
   "c-laundry-sort": paCLaundrySort,
+  "c-layout": paCLayout,
   "c-library": paCLibrary,
   "c-lights-out": paCLightsOut,
+  "c-lists": paCLists,
   "c-lockdown": paCLockdown,
   "c-moderation": paCModeration,
   "c-neon-driftway": paCNeonDriftway,
   "c-news": paCNews,
+  "c-predictions": paCPredictions,
+  "c-profile-modules": paCProfileModules,
   "c-rideshare": paCRideshare,
   "c-rmh-capital": paCRmhCapital,
   "c-rmh-pmc": paCRmhPmc,
@@ -102,17 +129,23 @@ const paResources = {
   "c-rmhtype": paCRmhtype,
   "c-rmhvibe": paCRmhvibe,
   "c-roadmap": paCRoadmap,
+  "c-saves": paCSaves,
   "c-signal-forge": paCSignalForge,
+  "c-status": paCStatus,
   "c-studio": paCStudio,
   "c-synapse-storm": paCSynapseStorm,
   "c-temple-of-joy": paCTempleOfJoy,
+  "c-tournaments": paCTournaments,
   "c-ui": paCUi,
   "c-user-builds": paCUserBuilds,
   "c-vega": paCVega,
   "c-versecraft": paCVersecraft,
   "c-void-breaker": paCVoidBreaker,
+  "c-wager": paCWager,
+  "c-wishlist": paCWishlist,
   "common": paCommon,
   "feed": paFeed,
+  "games-hub": paGamesHub,
   "groups": paGroups,
   "library": paLibrary,
   "nav": paNav,
@@ -127,8 +160,13 @@ const paResources = {
   "r-strategies": paRStrategies,
   "r-studio": paRStudio,
   "rideshare": paRideshare,
+  "search": paSearch,
+  "settings-appearance": paSettingsAppearance,
+  "settings-content": paSettingsContent,
+  "settings-notifications": paSettingsNotifications,
   "shared": paShared,
   "site": paSite,
+  "theme-studio": paThemeStudio,
   "user-builds": paUserBuilds,
   "v": paV,
 } as const;

@@ -36,7 +36,7 @@
   "collection-by": "od {{who}}",
   "collection-delete-confirm": "Smazat tuto kolekci? Knihy nebudou smazány.",
   "collection-desc-placeholder": "Volitelné",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Zatím žádné knihy.",
   "collection-rename-prompt": "Název kolekce",
   "collection-title-placeholder": "např. Můj seznam četby",
   "collections-community": "Reader collections",
@@ -80,7 +80,7 @@
   "result-count_one": "{{count}} things to explore",
   "result-count_other": "{{count}} things to explore",
   "search-label": "Hledat v knihovně",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Hledat knihy, alba, playlisty a četbu…",
   "search-your-books": "Hledat vaše knihy…",
   "section-albums": "Alba",
   "section-blog": "Blog",
@@ -93,6 +93,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Přidat knihu",
+  "upload-label": "Nahrát PDF"
 }

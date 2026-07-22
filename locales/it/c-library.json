@@ -94,7 +94,7 @@
   "show-book-details": "Show book details",
   "size-limit": "Fino a {{maxMb}} MB.",
   "status-analyzing": "Lettura del file…",
-  "status-drafting": "Generating title & description…",
+  "status-drafting": "Generazione del titolo e della descrizione in corso…",
   "status-uploading": "Pubblicazione…",
   "storage-not-durable": "Object storage is not configured on the server, so uploads will not persist (they 404 after a while). Set the S3_* / R2 environment variables.",
   "table-of-contents": "Table of contents",

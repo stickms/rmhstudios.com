@@ -94,7 +94,7 @@
   "show-book-details": "Show book details",
   "size-limit": "Hanggang {{maxMb}} MB.",
   "status-analyzing": "Binabasa ang file…",
-  "status-drafting": "Generating title & description…",
+  "status-drafting": "Ginagawa ang pamagat at paglalarawan…",
   "status-uploading": "Ina-upload…",
   "storage-not-durable": "Object storage is not configured on the server, so uploads will not persist (they 404 after a while). Set the S3_* / R2 environment variables.",
   "table-of-contents": "Table of contents",

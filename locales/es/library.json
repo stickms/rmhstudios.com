@@ -36,7 +36,7 @@
   "collection-by": "por {{who}}",
   "collection-delete-confirm": "¿Eliminar esta colección? Los libros no se eliminan.",
   "collection-desc-placeholder": "Opcional",
-  "collection-empty": "No books yet.",
+  "collection-empty": "Aún no hay libros.",
   "collection-rename-prompt": "Nombre de la colección",
   "collection-title-placeholder": "p. ej. Mi lista de lectura",
   "collections-community": "Reader collections",
@@ -80,7 +80,7 @@
   "result-count_one": "{{count}} things to explore",
   "result-count_other": "{{count}} things to explore",
   "search-label": "Buscar en la biblioteca",
-  "search-placeholder": "Search books and albums",
+  "search-placeholder": "Buscar libros, álbumes, listas de reproducción y lecturas…",
   "search-your-books": "Busca tus libros…",
   "section-albums": "Álbumes",
   "section-blog": "Blog",
@@ -93,6 +93,6 @@
   "stat-collections": "Collections",
   "stat-pages": "Pages",
   "stat-volumes": "Volumes",
-  "upload-button": "Add a book",
-  "upload-label": "Upload a PDF"
+  "upload-button": "Añadir un libro",
+  "upload-label": "Subir un PDF"
 }
