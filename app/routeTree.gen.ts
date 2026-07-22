@@ -148,6 +148,7 @@ import { Route as SiteWishlistRouteImport } from './routes/_site/wishlist'
 import { Route as SiteWalletRouteImport } from './routes/_site/wallet'
 import { Route as SiteShopRouteImport } from './routes/_site/shop'
 import { Route as SiteShareRouteImport } from './routes/_site/share'
+import { Route as SiteServicesRouteImport } from './routes/_site/services'
 import { Route as SiteSearchRouteImport } from './routes/_site/search'
 import { Route as SiteRoadmapRouteImport } from './routes/_site/roadmap'
 import { Route as SiteRmhladderRouteImport } from './routes/_site/rmhladder'
@@ -1408,6 +1409,11 @@ const SiteShopRoute = SiteShopRouteImport.update({
 const SiteShareRoute = SiteShareRouteImport.update({
   id: '/share',
   path: '/share',
+  getParentRoute: () => SiteRoute,
+} as any)
+const SiteServicesRoute = SiteServicesRouteImport.update({
+  id: '/services',
+  path: '/services',
   getParentRoute: () => SiteRoute,
 } as any)
 const SiteSearchRoute = SiteSearchRouteImport.update({
@@ -4419,6 +4425,7 @@ export interface FileRoutesByFullPath {
   '/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
+  '/services': typeof SiteServicesRoute
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
   '/wallet': typeof SiteWalletRoute
@@ -5103,6 +5110,7 @@ export interface FileRoutesByTo {
   '/recap': typeof SiteRecapRoute
   '/roadmap': typeof SiteRoadmapRoute
   '/search': typeof SiteSearchRoute
+  '/services': typeof SiteServicesRoute
   '/share': typeof SiteShareRoute
   '/shop': typeof SiteShopRoute
   '/wallet': typeof SiteWalletRoute
@@ -5809,6 +5817,7 @@ export interface FileRoutesById {
   '/_site/rmhladder': typeof SiteRmhladderRouteWithChildren
   '/_site/roadmap': typeof SiteRoadmapRoute
   '/_site/search': typeof SiteSearchRoute
+  '/_site/services': typeof SiteServicesRoute
   '/_site/share': typeof SiteShareRoute
   '/_site/shop': typeof SiteShopRoute
   '/_site/wallet': typeof SiteWalletRoute
@@ -6519,6 +6528,7 @@ export interface FileRouteTypes {
     | '/rmhladder'
     | '/roadmap'
     | '/search'
+    | '/services'
     | '/share'
     | '/shop'
     | '/wallet'
@@ -7203,6 +7213,7 @@ export interface FileRouteTypes {
     | '/recap'
     | '/roadmap'
     | '/search'
+    | '/services'
     | '/share'
     | '/shop'
     | '/wallet'
@@ -7908,6 +7919,7 @@ export interface FileRouteTypes {
     | '/_site/rmhladder'
     | '/_site/roadmap'
     | '/_site/search'
+    | '/_site/services'
     | '/_site/share'
     | '/_site/shop'
     | '/_site/wallet'
@@ -9911,6 +9923,13 @@ declare module '@tanstack/react-router' {
       path: '/share'
       fullPath: '/share'
       preLoaderRoute: typeof SiteShareRouteImport
+      parentRoute: typeof SiteRoute
+    }
+    '/_site/services': {
+      id: '/_site/services'
+      path: '/services'
+      fullPath: '/services'
+      preLoaderRoute: typeof SiteServicesRouteImport
       parentRoute: typeof SiteRoute
     }
     '/_site/search': {
@@ -14027,6 +14046,7 @@ interface SiteRouteChildren {
   SiteRmhladderRoute: typeof SiteRmhladderRouteWithChildren
   SiteRoadmapRoute: typeof SiteRoadmapRoute
   SiteSearchRoute: typeof SiteSearchRoute
+  SiteServicesRoute: typeof SiteServicesRoute
   SiteShareRoute: typeof SiteShareRoute
   SiteShopRoute: typeof SiteShopRoute
   SiteWalletRoute: typeof SiteWalletRoute
@@ -14120,6 +14140,7 @@ const SiteRouteChildren: SiteRouteChildren = {
   SiteRmhladderRoute: SiteRmhladderRouteWithChildren,
   SiteRoadmapRoute: SiteRoadmapRoute,
   SiteSearchRoute: SiteSearchRoute,
+  SiteServicesRoute: SiteServicesRoute,
   SiteShareRoute: SiteShareRoute,
   SiteShopRoute: SiteShopRoute,
   SiteWalletRoute: SiteWalletRoute,

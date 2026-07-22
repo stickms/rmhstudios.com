@@ -19,6 +19,7 @@ import {
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { EASE_OUT_EXPO } from '@/components/motion';
 import { Button } from '@/components/ui/button';
+import { useLiquidPop } from '@/components/ui/liquid-pop';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { UserAvatar } from './UserAvatar';
@@ -88,6 +89,14 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
   const scrollRef = useRef<HTMLDivElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const attachRef = useRef<HTMLDivElement>(null);
+  const attachBtnRef = useRef<HTMLButtonElement>(null);
+  const attachPanelRef = useRef<HTMLDivElement>(null);
+  // §15.6 liquid pop — the attach (+) menu buds out of its trigger.
+  const { underlay: attachUnderlay } = useLiquidPop({
+    triggerRef: attachBtnRef,
+    panelRef: attachPanelRef,
+    open: attachOpen,
+  });
   const lastAtRef = useRef<string | null>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // The initial message page is history (no entrance); everything appended
@@ -608,7 +617,9 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
           />
           {/* Attach (+) menu — image, GIF, poll. Mirrors the rmhark composer. */}
           <div className="relative" ref={attachRef}>
+            {attachUnderlay}
             <button
+              ref={attachBtnRef}
               type="button"
               onClick={() => setAttachOpen((v) => !v)}
               aria-label={t('add-to-message', { defaultValue: 'Add to message' })}
@@ -623,7 +634,7 @@ export function GroupChatView({ id, currentUserId }: { id: string; currentUserId
               )}
             </button>
             {attachOpen && (
-              <div className="absolute bottom-full left-0 z-30 mb-1 w-40 glass-overlay py-1">
+              <div ref={attachPanelRef} className="absolute bottom-full left-0 z-30 mb-1 w-40 glass-overlay py-1">
                 <button
                   type="button"
                   disabled={imageUrls.length >= MAX_IMAGES}

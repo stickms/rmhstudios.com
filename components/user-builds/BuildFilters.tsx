@@ -106,7 +106,7 @@ export function BuildFilters({
             {showCategories && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowCategories(false)} />
-                <div className="absolute top-full mt-2 right-0 w-48 bg-site-surface border border-site-border rounded-site shadow-lg py-1 z-50 max-h-64 overflow-y-auto">
+                <div className="absolute top-full mt-2 right-0 w-48 glass-overlay py-1 z-50 max-h-64 overflow-y-auto">
                   <button
                     onClick={() => {
                       onCategoryChange(undefined);
@@ -157,7 +157,7 @@ export function BuildFilters({
             {showSort && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setShowSort(false)} />
-                <div className="absolute top-full mt-2 right-0 w-40 bg-site-surface border border-site-border rounded-site shadow-lg py-1 z-50">
+                <div className="absolute top-full mt-2 right-0 w-40 glass-overlay py-1 z-50">
                   {SORT_OPTIONS.map((option) => (
                     <button
                       key={option.value}

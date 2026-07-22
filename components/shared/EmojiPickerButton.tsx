@@ -3,6 +3,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Smile } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useLiquidPop } from '@/components/ui/liquid-pop';
 
 const EmojiPickerPanel = lazy(() => import('./EmojiPickerPanel'));
 
@@ -35,6 +36,10 @@ export function EmojiPickerButton({
   const { t } = useTranslation('feed');
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  // §15.6 liquid pop — the emoji picker buds out of the smile trigger.
+  const { underlay } = useLiquidPop({ triggerRef, panelRef, open });
 
   useEffect(() => {
     if (!open) return;
@@ -54,7 +59,9 @@ export function EmojiPickerButton({
 
   return (
     <div ref={rootRef} className={`relative ${className}`}>
+      {underlay}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={t('emoji-picker-open', { defaultValue: 'Add emoji' })}
@@ -66,6 +73,7 @@ export function EmojiPickerButton({
       </button>
       {open && (
         <div
+          ref={panelRef}
           // The picker renders its own emoji and re-renders as you scroll/pick;
           // exclude it from the app-wide twemoji observer so it never rewrites a
           // node the picker owns (which crashes React) and never walks its huge

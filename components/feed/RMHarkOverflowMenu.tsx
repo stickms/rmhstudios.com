@@ -33,6 +33,7 @@ import { useTranslation } from 'react-i18next';
 import { useSession } from '@/components/Providers';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { useLiquidPop } from '@/components/ui/liquid-pop';
 import { cn } from '@/lib/utils';
 import type { FeedItem } from '@/lib/feed-types';
 
@@ -108,6 +109,10 @@ export function RMHarkOverflowMenu({
   const [pinned, setPinned] = useState(!!item.pinned);
   const [bookmarked, setBookmarked] = useState(!!item.bookmarked);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  // §15.6 liquid pop — the menu buds out of the three-dots trigger.
+  const { underlay } = useLiquidPop({ triggerRef, panelRef, open: menuOpen });
   const { run: runBookmark } = useOptimisticAction();
   const { run: runPin } = useOptimisticAction();
 
@@ -282,7 +287,9 @@ export function RMHarkOverflowMenu({
   return (
     // Lift above sibling content (comments, related posts) while the menu is open.
     <div className={cn('relative', menuOpen && 'z-30', className)} ref={menuRef}>
+      {underlay}
       <button
+        ref={triggerRef}
         onClick={(e) => {
           e.stopPropagation();
           setMenuOpen((v) => !v);
@@ -299,6 +306,7 @@ export function RMHarkOverflowMenu({
       </button>
       {menuOpen && (
         <div
+          ref={panelRef}
           role="menu"
           tabIndex={-1}
           className="absolute right-0 top-full mt-1 w-44 glass-overlay py-1 z-30"
