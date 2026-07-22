@@ -1731,6 +1731,35 @@ block > 100ms attributable to the motion system, and no continuously-running
 rAF loop while the page is at rest (verify with a 5s idle trace: zero
 rAF-driven layout reads).
 
+**16.4b — iOS total-animation freeze (owner report after #589/#591 went
+live; same phase, P0).** On iOS "all animation seems frozen". Prime
+suspect: the GL tier initializes on iOS Safari (which ships WebGPU and
+WebGL2), `html.liquid-gl` hides the CSS aurora and `.lg-goo` underlays —
+and then the canvas fails, stalls, or renders invisibly on WebKit, leaving
+the site motion-dead. Cannot be reproduced in this container (no WebKit);
+therefore the fix is structural trust management, not device debugging:
+
+1. **Verified-frame gating:** never set `html.liquid-gl` at init. Set it
+   only after the renderer has produced its first N successful frames AND a
+   readback/sanity check confirms non-blank output (or, minimally, no GL
+   errors + context not lost). Until then the CSS stack keeps running —
+   double rendering for a few frames is invisible (the canvas sits behind
+   the opaque CSS aurora until revealed).
+2. **Runtime watchdog:** after activation, monitor the loop (frame counter
+   heartbeat + `webglcontextlost` / WebGPU `device.lost`). If frames stop
+   or the context dies: remove `html.liquid-gl`, tear down, and permanently
+   fall back to CSS for the session (persist a `rmh-liquid-gl-failed` flag
+   so the next load skips the attempt; clear the flag on app version
+   change).
+3. **WebKit caution tier:** prefer WebGL2 over WebGPU on WebKit UAs for now
+   (Safari WebGPU is young; WebGL2 is battle-tested) — one UA check at
+   detect time, documented.
+4. **Audit the misdetection paths too:** verify nothing in perf-lite /
+   reduce-motion / clarity hydration can misfire on iOS to freeze CSS
+   animations sitewide (the global 0.01ms reset) — the GL theory is prime
+   but the freeze must be impossible from every path, not just the likely
+   one.
+
 ---
 
 ## Appendix D — Dead/invisible UI: removal list
