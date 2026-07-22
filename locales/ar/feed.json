@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "إعادة تسمية قائمة التشغيل",
   "playlists-empty-desc": "أنشئ واحدة أعلاه، ثم أضف مقاطع من RMHMusic.",
   "playlists-empty-title": "لا توجد قوائم تشغيل بعد",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "احفظ المقاطع الصوتية ومقاطع الفيديو في قوائم تشغيل دائمة خاصة بك.",
   "playlists-signin-title": "سجّل الدخول لإنشاء قوائم التشغيل",
   "playlists-title": "قوائم التشغيل",

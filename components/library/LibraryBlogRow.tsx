@@ -14,18 +14,27 @@ import { useReveal } from './LibraryReveal';
 import { useLiquidLink } from '@/hooks/useLiquidLink';
 import { liquidVTName } from '@/lib/view-transition';
 
-export function LibraryBlogRow({ posts }: { posts: Partial<Post>[] }) {
+export function LibraryBlogRow({ posts, query = '' }: { posts: Partial<Post>[]; query?: string }) {
   const { t } = useTranslation('library');
+  const q = query.trim().toLowerCase();
+  const visible = q
+    ? posts.filter(
+        (post) =>
+          post.title?.toLowerCase().includes(q) ||
+          post.description?.toLowerCase().includes(q) ||
+          post.tags?.some((tag) => tag.toLowerCase().includes(q)),
+      )
+    : posts;
 
-  if (!posts.length) return null;
+  if (!visible.length) return null;
 
   return (
-    <section className="lib__section lib-blog">
+    <section className="lib__section lib-blog glass-fill lib-section-shell">
       <div className="lib-blog__head">
         <h2 className="lib__section-title">{t('section-blog', { defaultValue: 'Blog' })}</h2>
       </div>
       <div className="lib-blog__row" role="list">
-        {posts.map((post) => (
+        {visible.map((post) => (
           <BlogCard key={post.slug} post={post} />
         ))}
       </div>
@@ -43,13 +52,17 @@ function BlogCard({ post }: { post: Partial<Post> }) {
       to={`/blog/${post.slug}` as string}
       // §5.48: liquidly expand the card into the article header on click.
       onClick={(e) => liquidOpen(e, liquidVTName('blog', slug), { to: `/blog/${slug}` })}
-      className="lib-blog__card lib-reveal"
+      className="lib-blog__card lib-reveal glass-fill glass-interactive lib-orbit-card"
+      data-glass-light=""
+      data-library-orbit=""
       role="listitem"
     >
       {post.tags && post.tags.length > 0 && (
         <div className="lib-blog__tags">
           {post.tags.slice(0, 3).map((tag) => (
-            <span key={tag} className="lib-blog__tag">{tag}</span>
+            <span key={tag} className="lib-blog__tag">
+              {tag}
+            </span>
           ))}
         </div>
       )}

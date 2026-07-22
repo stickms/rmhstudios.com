@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "பிளேலிஸ்டை மறுபெயரிடு",
   "playlists-empty-desc": "மேலே ஒன்றை உருவாக்கி, பின்னர் RMHMusic-இலிருந்து பாடல்களைச் சேர்க்கவும்.",
   "playlists-empty-title": "இதுவரை பிளேலிஸ்ட்கள் இல்லை",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "பாடல்களையும் வீடியோக்களையும் உங்கள் சொந்த நிரந்தர பிளேலிஸ்ட்களில் சேமிக்கவும்.",
   "playlists-signin-title": "பிளேலிஸ்ட்களை உருவாக்க உள்நுழையவும்",
   "playlists-title": "பிளேலிஸ்ட்கள்",

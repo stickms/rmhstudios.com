@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Renombrar lista de reproducción",
   "playlists-empty-desc": "Crea una arriba y luego agrega pistas desde RMHMusic.",
   "playlists-empty-title": "Aún no hay listas de reproducción",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Guarda pistas y videos en tus propias listas de reproducción persistentes.",
   "playlists-signin-title": "Inicia sesión para crear listas de reproducción",
   "playlists-title": "Listas de reproducción",

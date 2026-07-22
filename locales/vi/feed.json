@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Đổi tên danh sách phát",
   "playlists-empty-desc": "Tạo một danh sách ở trên, sau đó thêm bài hát từ RMHMusic.",
   "playlists-empty-title": "Chưa có danh sách phát nào",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Lưu bài hát và video vào danh sách phát riêng của bạn.",
   "playlists-signin-title": "Đăng nhập để tạo danh sách phát",
   "playlists-title": "Danh sách phát",

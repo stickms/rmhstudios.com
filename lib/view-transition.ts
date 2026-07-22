@@ -30,6 +30,25 @@ const SKIP_BUDGET_MS = 180;
 // escape hatch into a universal pre-condition.
 const PRELOAD_BUDGET_MS = 160;
 
+// Only one native snapshot transition may own the document at a time. Keeping
+// its complete cleanup here lets a second navigation (or a route-level recovery
+// check) synchronously finish an interrupted predecessor instead of carrying a
+// frozen pseudo-element or click-time shared-element name onto the next page.
+let finishActiveTransition: (() => void) | null = null;
+
+/**
+ * End any in-flight native transition and clear its temporary document state.
+ * Safe to call after ordinary route changes: it is a no-op once the transition
+ * has settled normally.
+ */
+export function recoverViewTransition(): void {
+  finishActiveTransition?.();
+  finishActiveTransition = null;
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.remove('vt-active', 'vt-liquid');
+  }
+}
+
 /**
  * WebKit's View Transition implementation has no `skipTransition()` escape.
  * If capture or the DOM update wedges, its rendering freeze can outlive every
@@ -81,7 +100,10 @@ export function runViewTransition(
   } = {},
 ): void {
   const { liquid = false, onSettled, preload } = opts;
+  let settled = false;
   const settle = () => {
+    if (settled) return;
+    settled = true;
     try {
       onSettled?.();
     } catch {
@@ -109,6 +131,9 @@ export function runViewTransition(
   const root = document.documentElement;
 
   const startTransition = () => {
+    // A quick second navigation must not inherit the first transition's source
+    // name or snapshot. `finish()` below invokes skipTransition when available.
+    recoverViewTransition();
     root.classList.add('vt-active');
     if (liquid) root.classList.add('vt-liquid');
     // `settle`/`cleanup` are idempotent: the skip path clears the liquid classes
@@ -116,24 +141,33 @@ export function runViewTransition(
     // not a stalled morph), and `transition.finished` later runs cleanup once —
     // the guard keeps `onSettled` (and the class removal) firing exactly once, so
     // the staggers never double-fire.
-    let cleared = false;
-    const clearClasses = () => {
-      if (cleared) return;
-      cleared = true;
-      root.classList.remove('vt-active');
-      root.classList.remove('vt-liquid');
-    };
-    const cleanup = () => {
-      clearClasses();
+    let finished = false;
+    let transition: ViewTransition | null = null;
+    let budgetTimer: ReturnType<typeof setTimeout> | null = null;
+    let watchdog: ReturnType<typeof setTimeout> | null = null;
+    const finish = (skipSnapshot: boolean) => {
+      if (finished) return;
+      finished = true;
+      if (budgetTimer) clearTimeout(budgetTimer);
+      if (watchdog) clearTimeout(watchdog);
+      // A browser-owned snapshot can outlive our DOM classes when `finished`
+      // wedges. Explicitly drop it before releasing the source element name.
+      if (skipSnapshot) {
+        try {
+          transition?.skipTransition?.();
+        } catch {
+          /* already settled / unsupported */
+        }
+      }
+      root.classList.remove('vt-active', 'vt-liquid');
       settle();
+      if (finishActiveTransition === abort) finishActiveTransition = null;
     };
-    // §17.3 VT watchdog: force-clear the freeze-adjacent root classes after ~1.5s
-    // even if `transition.finished` never settles (a wedged capture / interrupted
-    // transition must never leave the page frozen — "animations always end").
-    const watchdog = setTimeout(clearClasses, 1500);
+    const abort = () => finish(true);
+    finishActiveTransition = abort;
     try {
       let resolved = false;
-      const transition = doc.startViewTransition(() =>
+      transition = doc.startViewTransition(() =>
         Promise.resolve(update()).finally(() => {
           resolved = true;
         }),
@@ -141,21 +175,18 @@ export function runViewTransition(
       // Chromium safety net: if the destination is still pending past the budget,
       // drop the morph (the §17.2 preload pre-condition is the primary guard now,
       // and it is the ONLY one that works on WebKit).
-      const timer = setTimeout(() => {
-        if (!resolved && typeof transition.skipTransition === 'function') {
-          transition.skipTransition();
-          clearClasses();
+      budgetTimer = setTimeout(() => {
+        if (!resolved && typeof transition?.skipTransition === 'function') {
+          abort();
         }
       }, SKIP_BUDGET_MS);
-      const done = () => {
-        clearTimeout(timer);
-        clearTimeout(watchdog);
-        cleanup();
-      };
-      transition.finished.then(done, done);
+      // §17.3 VT watchdog: perform the FULL cleanup, including browser snapshot
+      // cancellation and the caller's source-name restoration. The old watchdog
+      // only removed root classes, which left stale glass elements behind.
+      watchdog = setTimeout(abort, 1_200);
+      transition.finished.then(() => finish(false), abort);
     } catch {
-      clearTimeout(watchdog);
-      clearClasses();
+      abort();
       plain();
     }
   };

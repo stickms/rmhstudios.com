@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Çalma listesini yeniden adlandır",
   "playlists-empty-desc": "Yukarıdan bir tane oluşturun, ardından RMHMusic'ten parça ekleyin.",
   "playlists-empty-title": "Henüz çalma listesi yok",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Parçaları ve videoları kendi kalıcı çalma listelerinize kaydedin.",
   "playlists-signin-title": "Çalma listeleri oluşturmak için giriş yapın",
   "playlists-title": "Çalma listeleri",

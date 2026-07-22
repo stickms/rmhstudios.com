@@ -31,15 +31,22 @@ export function LibraryAlbums({
 }) {
   const { t } = useTranslation('library');
   const q = query.trim().toLowerCase();
-  const albums = q ? allAlbums.filter((a) => a.title.toLowerCase().includes(q)) : allAlbums;
+  const albums = q
+    ? allAlbums.filter(
+        (a) =>
+          a.title.toLowerCase().includes(q) ||
+          a.description.toLowerCase().includes(q) ||
+          a.slides.some((slide) => slide.alt.toLowerCase().includes(q)),
+      )
+    : allAlbums;
 
   // Hide the section entirely for non-admins when there's nothing to show. Admins
   // always see it (with the create/manage button) so they have an entry point
   // even before the first album exists.
-  if (albums.length === 0 && !isAdmin) return null;
+  if (allAlbums.length === 0 && !isAdmin) return null;
 
   return (
-    <section className="lib__section lib-albums">
+    <section className="lib__section lib-albums glass-fill lib-section-shell">
       <div className="lib__section-head lib-albums__head">
         <h2 className="lib__section-title">{t('section-albums', { defaultValue: 'Albums' })}</h2>
         {isAdmin && (
@@ -49,17 +56,25 @@ export function LibraryAlbums({
             aria-label={t('manage-albums', { defaultValue: 'Create or manage albums' })}
           >
             <Plus size={13} aria-hidden="true" />
-            <span className="lib-albums__new-label">{t('new-album', { defaultValue: 'New album' })}</span>
+            <span className="lib-albums__new-label">
+              {t('new-album', { defaultValue: 'New album' })}
+            </span>
           </Link>
         )}
       </div>
       {albums.length === 0 ? (
         <div className="lib-albums__empty">
-          <p>{t('no-albums-admin', { defaultValue: 'No albums yet.' })}</p>
-          <Link to="/admin/albums" className="lib-albums__empty-cta">
-            <Plus size={14} aria-hidden="true" />
-            {t('create-first-album', { defaultValue: 'Create your first album' })}
-          </Link>
+          <p>
+            {q
+              ? t('no-albums-match', { defaultValue: 'No albums match that search.' })
+              : t('no-albums-admin', { defaultValue: 'No albums yet.' })}
+          </p>
+          {isAdmin && (
+            <Link to="/admin/albums" className="lib-albums__empty-cta">
+              <Plus size={14} aria-hidden="true" />
+              {t('create-first-album', { defaultValue: 'Create your first album' })}
+            </Link>
+          )}
         </div>
       ) : (
         <div className="lib-albums__grid" role="list">
@@ -80,9 +95,7 @@ function AlbumCard({ album }: { album: Album }) {
   // On hover/focus, warm the first handful of optimized photos (and video posters)
   // so the fullscreen viewer paints instantly instead of fetching on open.
   const preload = useIntentPreload(
-    album.slides
-      .slice(0, ALBUM_PREWARM)
-      .map((s) => (s.type === 'image' ? s.src : s.thumb)),
+    album.slides.slice(0, ALBUM_PREWARM).map((s) => (s.type === 'image' ? s.src : s.thumb)),
   );
 
   return (
@@ -90,11 +103,16 @@ function AlbumCard({ album }: { album: Album }) {
       <ViewTransitionLink
         to="/library/albums/$albumId"
         params={{ albumId: album.id }}
-        className="lib-album"
+        className="lib-album glass-fill glass-interactive lib-orbit-card"
+        data-glass-light=""
+        data-library-orbit=""
         aria-label={t('open-album', { title: album.title, defaultValue: 'Open {{title}}' })}
         {...preload}
       >
-        <div className="lib-album__cover" style={{ viewTransitionName: albumCoverVTName(album.id) }}>
+        <div
+          className="lib-album__cover"
+          style={{ viewTransitionName: albumCoverVTName(album.id) }}
+        >
           <BlurImage
             src={album.cover}
             alt={album.title}

@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Palitan ang pangalan ng playlist",
   "playlists-empty-desc": "Gumawa ng isa sa itaas, pagkatapos ay magdagdag ng mga track mula sa RMHMusic.",
   "playlists-empty-title": "Wala pang playlist",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "I-save ang mga track at video sa iyong sariling permanenteng playlist.",
   "playlists-signin-title": "Mag-sign in para gumawa ng mga playlist",
   "playlists-title": "Mga Playlist",

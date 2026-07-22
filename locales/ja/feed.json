@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "プレイリスト名を変更",
   "playlists-empty-desc": "上で作成してから、RMHMusicからトラックを追加してください。",
   "playlists-empty-title": "プレイリストはまだありません",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "トラックや動画を自分専用の永続的なプレイリストに保存できます。",
   "playlists-signin-title": "サインインしてプレイリストを作成",
   "playlists-title": "プレイリスト",

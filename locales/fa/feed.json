@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "تغییر نام پلی\u200cلیست",
   "playlists-empty-desc": "یکی در بالا بسازید، سپس آهنگ\u200cهایی از RMHMusic اضافه کنید.",
   "playlists-empty-title": "هنوز پلی\u200cلیستی وجود ندارد",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "آهنگ\u200cها و ویدیوها را در پلی\u200cلیست\u200cهای دائمی خودتان ذخیره کنید.",
   "playlists-signin-title": "برای ساخت پلی\u200cلیست وارد شوید",
   "playlists-title": "پلی\u200cلیست\u200cها",
