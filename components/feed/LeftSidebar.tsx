@@ -40,7 +40,6 @@ import { SPRING } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useLiquidMorph } from '@/components/ui/liquid-morph';
 import { useLiquidPop } from '@/components/ui/liquid-pop';
-import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 
 // Dropdown motion for collapsible nav groups (e.g. "More"): the panel expands
 // its height while its items fade/slide in with a slight stagger.
@@ -129,7 +128,6 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // The click handler positions the menu from a hardcoded size estimate; this
   // clamps the actually-rendered element so a taller/narrower menu (or a small
   // viewport) can't still push it off-screen. Re-fit when the anchor moves.
-  useMenuViewportFit(showUserMenu, userMenuPopRef, [userMenuPos.bottom, userMenuPos.right]);
   // §15.6 liquid pop — the user menu buds out of the "more options" trigger.
   const { underlay: userMenuUnderlay } = useLiquidPop({
     triggerRef: userMenuBtnRef,

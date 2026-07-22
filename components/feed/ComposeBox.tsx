@@ -53,7 +53,6 @@ import {
   useComposeDraftAutosave,
   type ComposeDraft,
 } from '@/hooks/useComposeDraft';
-import { useMenuViewportFit } from '@/hooks/useMenuViewportFit';
 
 const MAX_IMAGES = 4;
 
@@ -108,7 +107,6 @@ export function ComposeBox({
   const menuBtnRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
-  useMenuViewportFit(menuOpen, menuPopRef);
   // §15.6 liquid pop — the attachment (+) menu buds out of its trigger.
   const { underlay: menuUnderlay } = useLiquidPop({
     triggerRef: menuBtnRef,
