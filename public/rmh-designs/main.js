@@ -5,13 +5,15 @@
    3. Grid scaffold toggle (button / 'g')
    4. Spec-sheet readouts (scroll coord + pointer)
    All guarded by prefers-reduced-motion.
+   Browser globals are addressed via `window.` so this file lints clean
+   under the repo's public-microsite ESLint config.
    ============================================================ */
 (() => {
   "use strict";
   const $  = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   /* ---------------------------------------------------------------
      1. HERO — pixels assemble, then resolve into matter
@@ -36,7 +38,7 @@
     ready.then(() => requestAnimationFrame(() => setTimeout(build, 30)));
 
     function build() {
-      let particles = [];
+      const particles = [];
       try {
         const box   = headline.getBoundingClientRect();
         const W = box.width, H = box.height;
@@ -51,7 +53,7 @@
         // Draw each line onto the overlay, scaled to match the DOM footprint
         // (canvas ignores font-stretch, so we scale-to-fit for alignment).
         const lines = $$(".line", headline);
-        const cs = getComputedStyle(lines[0] || headline);
+        const cs = window.getComputedStyle(lines[0] || headline);
         const fs = parseFloat(cs.fontSize) || 80;
         ctx.fillStyle = "#fff";
         ctx.textBaseline = "alphabetic";
@@ -94,7 +96,7 @@
         ctx.clearRect(0, 0, W, H);
 
         if (!particles.length || particles.length > 9000) return revealText();
-      } catch (e) {
+      } catch {
         return revealText();
       }
 
@@ -149,7 +151,7 @@
       $$(".creed").forEach((c) => c.classList.add("in"));
       return;
     }
-    const io = new IntersectionObserver((entries, obs) => {
+    const io = new window.IntersectionObserver((entries, obs) => {
       entries.forEach((en) => {
         if (!en.isIntersecting) return;
         en.target.classList.add("in");
@@ -213,7 +215,7 @@
     };
 
     btn.addEventListener("click", toggle);
-    addEventListener("keydown", (e) => {
+    window.addEventListener("keydown", (e) => {
       if (e.key.toLowerCase() === "g" && !/input|textarea/i.test(document.activeElement.tagName)) {
         e.preventDefault(); toggle();
       }
@@ -235,22 +237,22 @@
         if (raf) return;
         raf = requestAnimationFrame(() => {
           raf = 0;
-          const max = document.documentElement.scrollHeight - innerHeight;
-          const pct = clamp(scrollY / (max || 1), 0, 1);
+          const max = document.documentElement.scrollHeight - window.innerHeight;
+          const pct = clamp(window.scrollY / (max || 1), 0, 1);
           scr.textContent = String(Math.round(pct * 100)).padStart(3, "0") + "%";
           let active = "";
           for (const s of sections) {
-            if (s.getBoundingClientRect().top <= innerHeight * 0.4) active = s.dataset.sec;
+            if (s.getBoundingClientRect().top <= window.innerHeight * 0.4) active = s.dataset.sec;
           }
           if (sec && active) sec.textContent = active;
         });
       };
-      addEventListener("scroll", onScroll, { passive: true });
+      window.addEventListener("scroll", onScroll, { passive: true });
       onScroll();
     }
 
-    if (ptr && matchMedia("(pointer:fine)").matches) {
-      addEventListener("pointermove", (e) => {
+    if (ptr && window.matchMedia("(pointer:fine)").matches) {
+      window.addEventListener("pointermove", (e) => {
         ptr.textContent =
           String(Math.round(e.clientX)).padStart(4, "0") + "," +
           String(Math.round(e.clientY)).padStart(4, "0");
