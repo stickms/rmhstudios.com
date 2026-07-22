@@ -207,23 +207,36 @@ function Library() {
   const { view: routeView = 'all' } = Route.useSearch();
   const navigate = useNavigate();
   const [view, setActiveView] = useState<LibraryView>(routeView);
+  const [hasFiltered, setHasFiltered] = useState(false);
   const orbit = useLibraryOrbit();
 
   useEffect(() => setActiveView(routeView), [routeView]);
 
   const setView = async (next: LibraryView) => {
     if (next === view) return;
+    const scrollLeft = window.scrollX;
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    setHasFiltered(true);
     setActiveView(next);
-    await navigate({
-      to: '/library',
-      search: next === 'all' ? {} : { view: next },
-      replace: true,
-      resetScroll: false,
-    });
-    // Search-only navigation should never eject someone from the shelf they
-    // were exploring, including browsers with eager native scroll restoration.
-    window.setTimeout(() => window.scrollTo(0, scrollTop), 0);
+    try {
+      await navigate({
+        to: '/library',
+        search: next === 'all' ? {} : { view: next },
+        replace: true,
+        resetScroll: false,
+      });
+    } catch {
+      // The local filter is already usable; a transient history-sync failure
+      // should not break the interaction or skip scroll recovery.
+    } finally {
+      // TanStack/browser restoration can run just after the search-only
+      // navigation commits. Restore now, then make two bounded one-shot retries
+      // across that short window; there is no persistent animation-frame loop.
+      const restoreScroll = () => window.scrollTo(scrollLeft, scrollTop);
+      restoreScroll();
+      window.setTimeout(restoreScroll, 0);
+      window.setTimeout(restoreScroll, 50);
+    }
   };
   // A section renders when we're on "All" or on its own category.
   const shows = (id: LibraryView) => view === 'all' || view === id;
@@ -433,7 +446,7 @@ function Library() {
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
         <div className="lib-playground" {...orbit}>
-          <LibraryRevealProvider>
+          <LibraryRevealProvider instant={hasFiltered}>
             {/* The lightweight title stays above the hero. The explorer below is
               the page's single sticky control group. */}
             <div className="lib-topbar">

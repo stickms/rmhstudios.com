@@ -208,7 +208,7 @@ export function SearchColumn({
           (§5.45), never inside the sticky block. bg/blur/glint clip to
           rounded-site on their own. */}
       <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
-        <ColumnHeader sticky={false} className="border-b-0 pb-0">
+        <ColumnHeader sticky={false} className="border-b-0">
           <div className="flex items-center gap-2 rounded-full border border-site-border bg-site-surface px-4 py-2">
             <Search className="h-4 w-4 text-site-text-muted" />
             <input
@@ -232,7 +232,7 @@ export function SearchColumn({
           well. setTab keeps mirroring the selection to the URL. Labels are
           pre-translated before handoff. The w-fit pill scrolls in the shared
           tab-sheet track (overflow + edge fade, §5.5x A.4). */}
-      <div className="mt-3 px-2 md:px-3 tab-sheet-scroll">
+      <div className="my-4 px-2 md:px-3 tab-sheet-scroll">
         <LiquidTabs
           tabs={TABS.map((tab_item) => ({
             id: tab_item.id,

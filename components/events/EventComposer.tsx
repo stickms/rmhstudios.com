@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -189,8 +190,9 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label className="flex flex-col gap-1 text-xs font-medium text-site-text-muted">
               {t('event-venue-kind', { defaultValue: 'Venue' })}
-              <select
-                className={inputCls}
+              <Select
+                controlSize="sm"
+                containerClassName="w-full"
                 value={venueKind}
                 onChange={(e) => setVenueKind(e.target.value as EventVenueKindValue)}
               >
@@ -199,7 +201,7 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
                     {t(v.labelKey, { defaultValue: v.label })}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
             <label className="flex flex-col gap-1 text-xs font-medium text-site-text-muted">
               {t('event-capacity', { defaultValue: 'Capacity (optional)' })}

@@ -2149,6 +2149,13 @@ body {
   opacity: 1;
 }
 
+/* Native option popups cannot render backdrop blur, but they can still inherit
+   the active theme instead of falling back to a bright OS-default palette. */
+[data-slot='select'] option {
+  color: var(--site-text);
+  background: var(--site-surface-opaque, var(--site-surface));
+}
+
 /* ==================== BROWSER AUTOFILL ====================
  * Chrome/Safari render autofilled inputs with their own near-white background
  * and dark text, which is unreadable on the dark themes and shows through as a

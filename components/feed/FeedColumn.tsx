@@ -150,7 +150,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
           </div>
 
           {/* Search bar (the header's sticky behavior stays here). */}
-          <div className="px-4 py-2 md:pt-3">
+          <div className="px-4 py-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-site-text-dim" />
               <input
@@ -179,7 +179,7 @@ export function FeedColumn({ initialFeed }: { initialFeed?: Promise<InitialFeed>
         {/* Tab strips — standalone glass sheets BELOW the header capsule (§5.45),
             separated by the standard gutter. State wiring (mode + useFeedStore
             filter) is unchanged. */}
-        <div className="mt-3 px-2 md:px-3">
+        <div className="my-4 px-2 md:px-3">
           <FeedTabs mode={mode} onModeChange={handleModeChange} />
         </div>
 

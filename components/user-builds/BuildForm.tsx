@@ -6,6 +6,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { Plus, X, Upload, AlertCircle } from 'lucide-react';
 import type { Build, BuildCategory } from '@/lib/user-builds-types';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 
 interface BuildFormProps {
   build?: Build;
@@ -174,11 +175,11 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
 
       {/* Category */}
       <div>
-        <label className="block text-sm font-medium text-site-text mb-2">{t("label-category", { defaultValue: "Category" })}</label>
-        <select
+        <label htmlFor="build-category" className="block text-sm font-medium text-site-text mb-2">{t("label-category", { defaultValue: "Category" })}</label>
+        <Select
+          id="build-category"
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className="w-full px-4 py-2 rounded-site-sm bg-site-surface border border-site-border text-site-text outline-none focus:border-site-accent/50 transition-colors"
         >
           <option value="">{t("select-category", { defaultValue: "Select a category..." })}</option>
           {categories.map((cat) => (
@@ -186,7 +187,7 @@ export function BuildForm({ build, onSuccess }: BuildFormProps) {
               {cat.name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {/* Technologies */}

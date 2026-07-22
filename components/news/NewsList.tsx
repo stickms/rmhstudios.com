@@ -6,6 +6,7 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { Search, X } from 'lucide-react';
 import { Pagination } from '@/components/ui/pagination';
+import { Select } from '@/components/ui/select';
 import { Reveal } from '@/components/motion';
 import { NewsCard } from './NewsCard';
 import { NewsHero } from './NewsHero';
@@ -188,15 +189,16 @@ export function NewsList({ initialArticles, featuredArticles, filtersOpen = fals
                                     <X className="w-3 h-3" /> {t("clear", { defaultValue: "Clear" })}
                                 </button>
                             )}
-                            <span className="text-sm text-(--site-text-dim)">{t("sort-label", { defaultValue: "Sort:" })}</span>
-                            <select
+                            <label htmlFor="news-sort" className="text-sm text-(--site-text-dim)">{t("sort-label", { defaultValue: "Sort:" })}</label>
+                            <Select
+                                id="news-sort"
+                                controlSize="sm"
                                 value={sortMode}
                                 onChange={(e) => setSortMode(e.target.value as 'newest' | 'oldest')}
-                                className="bg-(--site-bg) border border-(--site-border) rounded-site-sm py-1 px-3 text-sm text-(--site-text) focus:outline-none focus:border-(--site-accent)"
                             >
                                 <option value="newest">{t("sort-newest", { defaultValue: "Newest" })}</option>
                                 <option value="oldest">{t("sort-oldest", { defaultValue: "Oldest" })}</option>
-                            </select>
+                            </Select>
                             <span className="text-sm text-(--site-text-dim) font-mono ml-auto">
                                 {t("article-count", { count: filteredArticles.length, defaultValue: "{{count}} article", defaultValue_other: "{{count}} articles" })}
                             </span>
