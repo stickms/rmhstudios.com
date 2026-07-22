@@ -688,6 +688,40 @@ html.style-high-contrast body::after {
   will-change: auto;
 }
 
+/* §16.1 — the shader-grade liquid layer. When a GL tier initialises,
+   lib/liquid-gl sets `html.liquid-gl` and mounts the fixed `#liquid-layer` canvas
+   (z-index:-1). The shader RENDERS the aurora itself (scene colours from the theme
+   tokens) and the liquid bodies (tab/nav capsules + trail droplets, the liquid-pop
+   bud) as SDF metaballs, so the CSS aurora layers and the SVG-goo underlays must
+   hide — never double-render the same effect. Every glass surface still composites
+   over the canvas. When GL is off (unsupported, or perf-lite / reduced-motion /
+   high-contrast / reduce-transparency), this class is absent and the CSS/SVG stack
+   below renders unchanged — it IS the fallback tier. */
+html.liquid-gl body::before,
+html.liquid-gl body::after {
+  display: none;
+}
+html.liquid-gl .lg-goo {
+  display: none;
+}
+/* The #liquid-layer canvas sits at z-index:-1 as a body child, so it paints in
+   the root stacking context BELOW the body box — an opaque body background (the
+   inline THEME_BG the appearance runtime sets for overscroll/no-flash) would hide
+   it. Under html.liquid-gl the canvas paints the full opaque aurora itself, so the
+   body background is made transparent to reveal it; <html> keeps its opaque
+   THEME_BG as the pre-init / overscroll backstop. !important beats the inline
+   body background-color. Gated to non-app routes exactly like the CSS aurora
+   (games/apps own their background) — see the body::before gate above. */
+html.liquid-gl:not(.app-route) body {
+  background-color: transparent !important;
+}
+/* On app/game routes the canvas must not show (those pages own their backdrop);
+   the body stays opaque there, but hide the canvas outright so it costs no
+   compositing. The render loop still idle-damps to 30fps with zero bodies. */
+html.liquid-gl.app-route #liquid-layer {
+  display: none;
+}
+
 /* Page canvas show-through: elements that use bg-site-bg as the page ground let
    the aurora read through (cheap — no blur). Full-screen fixed takeovers (admin
    MDX editor) and the mobile drawer's sliding panel stay opaque. High-contrast
