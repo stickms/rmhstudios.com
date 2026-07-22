@@ -57,80 +57,21 @@
   color: var(--site-text-muted, #a9a9b2);
 }
 
-/* ── Tab bar ─────────────────────────────────────────────────────────────── */
-/* Outer wrapper owns the sticky positioning + chrome. Keeping the horizontal
-   scroll on a separate inner element matters: an element that is BOTH
-   `position: sticky` and an `overflow-x: auto` scroll container doesn't reliably
-   accept horizontal touch scrolling on mobile Safari, so the tabs would clip
-   off-screen with no way to reach them. Decoupling fixes that. */
+/* ── Tab bar placement ───────────────────────────────────────────────────── */
+/* §16.2: the tab bar is now the shared `LiquidTabs` component (sheet + flowing
+   capsule + roving nav + goo morph all live there). This class only POSITIONS
+   that sheet — it rides the `className` prop, so the glass pill look (fill, rim,
+   radius, shadow) comes from LiquidTabs' own `.glass-fill glass-bevel-sm
+   rounded-full` and must NOT be duplicated here. It stays sticky below the "Make
+   anything." hero at a top offset that clears the floating header/mobile bar;
+   LiquidTabs' `scroll` prop keeps the inner horizontal overflow decoupled from
+   this sticky element (the mobile-Safari sticky+overflow bug). */
 .cstudio-tabs {
-  /* §5.45: a standalone L1 glass sheet (pill) below the "Make anything." hero,
-     not a full-width chrome bar. Stays sticky, but at a top offset that clears
-     the floating header/mobile bar so it reads as its own floating sheet. The
-     inner __scroll keeps the horizontal overflow decoupled from the sticky
-     element (mobile-Safari sticky+overflow bug — see the note above). */
   position: sticky;
   top: 12px;
   z-index: 20;
-  width: fit-content;
   max-width: calc(100% - 2 * var(--studio-gutter));
   margin: clamp(20px, 4vw, 32px) var(--studio-gutter) 0;
-  background: var(--site-glass-tint);
-  border: 1px solid var(--site-border);
-  border-radius: 9999px;
-  box-shadow: var(--site-shadow-sm);
-}
-.cstudio-tabs__scroll {
-  display: flex;
-  gap: 4px;
-  padding: 4px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-}
-.cstudio-tabs__scroll::-webkit-scrollbar {
-  display: none;
-}
-
-.cstudio-tab {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-  padding: 9px 16px;
-  border-radius: 9999px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: var(--site-text-muted, #a9a9b2);
-  background: transparent;
-  border: 1px solid transparent;
-  cursor: pointer;
-  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-  white-space: nowrap;
-}
-
-.cstudio-tab:hover {
-  color: var(--site-text, #f5f5f7);
-  background: var(--site-glass-tint, rgba(255, 255, 255, 0.1));
-}
-
-.cstudio-tab:active {
-  transform: scale(0.95);
-  transition-duration: 80ms;
-}
-
-/* Active tab = accent text only; the accent glass capsule is now the flowing
-   layoutId motion element rendered inside the active button (§5.4), so the
-   static background/border/rim move there and the capsule morphs between tabs. */
-.cstudio-tab.is-active {
-  color: var(--site-accent, #6c5cff);
-}
-
-.cstudio-tab__icon {
-  width: 17px;
-  height: 17px;
 }
 
 /* ── Tab body ────────────────────────────────────────────────────────────── */

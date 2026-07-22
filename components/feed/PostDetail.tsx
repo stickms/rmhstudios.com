@@ -243,9 +243,11 @@ export function PostDetail({ postId }: PostDetailProps) {
       </div>
 
       {/* Post content (expanded) — the liquid-open hero the feed card morphs into
-          (§5.48). The name is static here (one post per detail page → unique). */}
+          (§5.48). The name is static here (one post per detail page → unique).
+          §16.3.4: `mt-3` gives the standard capsule-to-first-content gutter below
+          the "← Post" header capsule (§15.4 rhythm — it was flush before). */}
       <div
-        className="relative px-4 pt-4 pb-3 border-b border-site-border"
+        className="relative mt-3 px-4 pt-4 pb-3 border-b border-site-border"
         style={{ viewTransitionName: liquidVTName('post', postId) }}
       >
 
@@ -463,14 +465,18 @@ export function PostDetail({ postId }: PostDetailProps) {
             {t("no-replies", { defaultValue: "No replies yet. Be the first!" })}
           </p>
         ) : (
-          // §5.48 staggered content entrance: the first ~8 replies fade-rise at
-          // 30ms steps after the hero morph; the tail mounts instantly (variants
-          // sliced to the head — no long tails on big threads). MotionConfig
-          // collapses this under reduced motion.
+          // §16.3.5 — one entrance per navigation. The post body is fetched
+          // CLIENT-side (the route loader only has meta+sidebar), so the column
+          // enters ONCE via `page-enter`/the liquid-open morph while a spinner
+          // shows, THEN the replies arrive a beat later. Re-staggering them here
+          // was a second, jarring entrance wave on the SAME navigation (the
+          // owner's "double load animation"). `initial={false}` mounts the
+          // replies already-settled — the page/morph is the single entrance;
+          // reduced motion collapsed this anyway.
           <motion.div
             className="divide-y divide-site-border"
             variants={staggerContainer(0.03)}
-            initial="initial"
+            initial={false}
             animate="animate"
           >
             {comments.map((comment, i) => {

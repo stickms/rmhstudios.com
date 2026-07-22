@@ -294,6 +294,14 @@ export function useLiquidPop({ triggerRef, panelRef, open, z = 60 }: LiquidPopOp
               zIndex: z,
               pointerEvents: 'none',
               opacity: blobOp,
+              // §16.3.6 will-change discipline: the layer animates opacity, so hint
+              // it — and this is disciplined because the underlay is mounted ONLY
+              // while `active` (it unmounts the moment the morph settles), so the
+              // hint is never left on a static element. Geometry is read once at
+              // open (cached in trigRect/panelRect refs) — the per-frame transforms
+              // read no layout, so the only mid-morph cost is the goo-filter raster
+              // (M1's shader bud replaces it).
+              willChange: 'opacity',
             }}
           >
             <motion.span

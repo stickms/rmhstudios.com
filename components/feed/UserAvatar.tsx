@@ -71,7 +71,17 @@ function UserAvatarImpl({ user, size = 'md', linkToProfile = true }: UserAvatarP
   );
 
   if (linkToProfile) {
-    return <Link to={userProfileHref(user)}>{avatar}</Link>;
+    // §16.3.7 micro-interactivity: a profile-linking avatar is clickable, so it
+    // must respond — a subtle hover dim + press scale + focus ring (reduced motion
+    // collapses the transform via the global reset). It was a bare, inert <Link>.
+    return (
+      <Link
+        to={userProfileHref(user)}
+        className="block shrink-0 rounded-full transition-[transform,opacity] duration-150 hover:opacity-90 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50"
+      >
+        {avatar}
+      </Link>
+    );
   }
 
   return avatar;

@@ -11,15 +11,12 @@
  * This Creator Studio lives at `/create` to avoid colliding with it.)
  */
 
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
-import { type LucideIcon, FileText, Gamepad2, AppWindow, Boxes, Bot, Coins } from 'lucide-react';
-import { m as motion } from 'framer-motion';
+import { FileText, Gamepad2, AppWindow, Boxes, Bot, Coins } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { SPRING } from '@/lib/motion';
-import { useReducedMotion } from '@/hooks/useReducedMotion';
-import { useLiquidMorph } from '@/components/ui/liquid-morph';
+import { LiquidTabs, type LiquidTab } from '@/components/ui/liquid-tabs';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { MobileTopBar } from '@/components/feed/MobileHeader';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
@@ -74,43 +71,18 @@ function CreatorStudio() {
   const { gallery, curated, seed } = Route.useLoaderData();
   const { tab = 'pages' } = Route.useSearch();
   const navigate = useNavigate();
-  const reduced = useReducedMotion();
-  // §15.1/§5.47: the active tab capsule carries the shared morph (velocity squash
-  // + gooey trailing droplet). Custom markup keeps the aria-controls tabpanel
-  // wiring + roving nav that LiquidTabs doesn't model.
-  const capsuleRef = useRef<HTMLSpanElement>(null);
-  const { squashStyle, underlay } = useLiquidMorph({ capsuleRef, axis: 'x', reduced });
 
   const setTab = useCallback(
-    (next: StudioTab) => {
-      void navigate({ to: '/create', search: { tab: next }, replace: true });
+    (next: string) => {
+      void navigate({ to: '/create', search: { tab: next as StudioTab }, replace: true });
     },
     [navigate],
-  );
-
-  // Roving keyboard navigation for the tablist (WAI-ARIA tabs pattern):
-  // ←/→ move between tabs, Home/End jump to the ends, and focus follows.
-  const onTabsKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLDivElement>) => {
-      const idx = STUDIO_TABS.indexOf(tab);
-      let next = idx;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (idx + 1) % STUDIO_TABS.length;
-      else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (idx - 1 + STUDIO_TABS.length) % STUDIO_TABS.length;
-      else if (e.key === 'Home') next = 0;
-      else if (e.key === 'End') next = STUDIO_TABS.length - 1;
-      else return;
-      e.preventDefault();
-      const nextId = STUDIO_TABS[next];
-      setTab(nextId);
-      requestAnimationFrame(() => document.getElementById(`cstudio-tab-${nextId}`)?.focus());
-    },
-    [tab, setTab],
   );
 
   const games = useMemo(() => curated.filter((b) => b.kind === 'game'), [curated]);
   const apps = useMemo(() => curated.filter((b) => b.kind === 'app'), [curated]);
 
-  const tabs: { id: StudioTab; label: string; icon: LucideIcon }[] = [
+  const tabs: LiquidTab[] = [
     { id: 'pages', label: t('studio-tab-pages', { defaultValue: 'Pages' }), icon: FileText },
     { id: 'games', label: t('studio-tab-games', { defaultValue: 'Games' }), icon: Gamepad2 },
     { id: 'apps', label: t('studio-tab-apps', { defaultValue: 'Apps' }), icon: AppWindow },
@@ -139,56 +111,23 @@ function CreatorStudio() {
           </p>
         </header>
 
-        <div className="cstudio-tabs">
-          <div
-            className="cstudio-tabs__scroll relative"
-            role="tablist"
-            aria-label={t('creator-studio', { defaultValue: 'Creator Studio' })}
-            onKeyDown={onTabsKeyDown}
-          >
-            {/* Goo underlay (§5.47) — capsule-only, behind the tabs; labels above. */}
-            {underlay}
-            {tabs.map(({ id, label, icon: Icon }) => {
-              const active = tab === id;
-              return (
-                <button
-                  key={id}
-                  id={`cstudio-tab-${id}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={active}
-                  aria-controls={`cstudio-panel-${id}`}
-                  tabIndex={active ? 0 : -1}
-                  className={`cstudio-tab ${active ? 'is-active' : ''}`}
-                  onClick={() => setTab(id)}
-                >
-                  {/* Flowing active capsule (§5.4/§5.47): a layoutId motion element
-                      kept ON the existing markup so the richer tab/tabpanel ARIA
-                      (aria-controls + aria-labelledby) survives — LiquidTabs has no
-                      aria-controls, so migrating to it would drop that wiring. The
-                      outer span owns the position morph; the inner span carries the
-                      material + velocity squash (paired with the goo underlay). */}
-                  {active && (
-                    <motion.span
-                      ref={capsuleRef}
-                      layoutId="cstudio-tab-capsule"
-                      aria-hidden
-                      className="absolute inset-0 z-0"
-                      transition={reduced ? { duration: 0 } : SPRING.snappy}
-                    >
-                      <motion.span
-                        className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
-                        style={squashStyle}
-                      />
-                    </motion.span>
-                  )}
-                  <Icon className="cstudio-tab__icon relative z-1" aria-hidden="true" />
-                  <span className="relative z-1">{label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        {/* §16.2: the top-level tabs are now the shared LiquidTabs sheet (was
+            bespoke `.cstudio-tab*` markup). `.cstudio-tabs` positions the sheet
+            only (sticky below the hero, gutter margins, column max-width — the
+            glass pill look comes from LiquidTabs); `scroll` decouples the inner
+            horizontal overflow from the sticky sheet (the mobile-Safari sticky +
+            overflow bug the old `__scroll` split guarded against). `?tab=`
+            mirroring, roving nav and the aria-controls wiring (idBase="cstudio" →
+            `cstudio-tab-*` / `cstudio-panel-*`) are byte-identical. */}
+        <LiquidTabs
+          className="cstudio-tabs"
+          tabs={tabs}
+          value={tab}
+          onChange={setTab}
+          idBase="cstudio"
+          scroll
+          aria-label={t('creator-studio', { defaultValue: 'Creator Studio' })}
+        />
 
         {tab === 'pages' && (
           <div className="cstudio-body cstudio-body--pages" role="tabpanel" id="cstudio-panel-pages" aria-labelledby="cstudio-tab-pages">
