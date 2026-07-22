@@ -6,7 +6,7 @@
   "content-label": "Nilalaman",
   "content-placeholder": "Write your post in Markdown…",
   "date-label": "Petsa",
-  "delete-confirm": "Sigurado ka bang gusto mong tanggalin ang \"{{title}}\"? Hindi na ito maaaring ibalik.",
+  "delete-confirm": "Ang pagtanggal ng \"{{title}}\" ay hindi na maaaring i-undo.",
   "delete-failed": "Nabigo ang pagtanggal ng post",
   "delete-post": "Tanggalin ang Post",
   "delete-success": "Natanggal ang blog post: {{slug}}.",

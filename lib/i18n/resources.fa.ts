@@ -5,8 +5,11 @@ import faAdmin from "@/locales/fa/admin.json";
 import faBuilds from "@/locales/fa/builds.json";
 import faCAdmin from "@/locales/fa/c-admin.json";
 import faCAltair from "@/locales/fa/c-altair.json";
+import faCAwards from "@/locales/fa/c-awards.json";
 import faCBlog from "@/locales/fa/c-blog.json";
 import faCBuilds from "@/locales/fa/c-builds.json";
+import faCCircle from "@/locales/fa/c-circle.json";
+import faCCreator from "@/locales/fa/c-creator.json";
 import faCCursedLogic from "@/locales/fa/c-cursed-logic.json";
 import faCDailyPuzzles from "@/locales/fa/c-daily-puzzles.json";
 import faCDoctrine from "@/locales/fa/c-doctrine.json";
@@ -14,15 +17,20 @@ import faCDreamRift from "@/locales/fa/c-dream-rift.json";
 import faCEconomy from "@/locales/fa/c-economy.json";
 import faCForestExplorer from "@/locales/fa/c-forest-explorer.json";
 import faCGame from "@/locales/fa/c-game.json";
+import faCHistory from "@/locales/fa/c-history.json";
 import faCHouseAlwaysWins from "@/locales/fa/c-house-always-wins.json";
 import faCKowloonKnockout from "@/locales/fa/c-kowloon-knockout.json";
 import faCLaundrySort from "@/locales/fa/c-laundry-sort.json";
+import faCLayout from "@/locales/fa/c-layout.json";
 import faCLibrary from "@/locales/fa/c-library.json";
 import faCLightsOut from "@/locales/fa/c-lights-out.json";
+import faCLists from "@/locales/fa/c-lists.json";
 import faCLockdown from "@/locales/fa/c-lockdown.json";
 import faCModeration from "@/locales/fa/c-moderation.json";
 import faCNeonDriftway from "@/locales/fa/c-neon-driftway.json";
 import faCNews from "@/locales/fa/c-news.json";
+import faCPredictions from "@/locales/fa/c-predictions.json";
+import faCProfileModules from "@/locales/fa/c-profile-modules.json";
 import faCRideshare from "@/locales/fa/c-rideshare.json";
 import faCRmhCapital from "@/locales/fa/c-rmh-capital.json";
 import faCRmhPmc from "@/locales/fa/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import faCRmhtube from "@/locales/fa/c-rmhtube.json";
 import faCRmhtype from "@/locales/fa/c-rmhtype.json";
 import faCRmhvibe from "@/locales/fa/c-rmhvibe.json";
 import faCRoadmap from "@/locales/fa/c-roadmap.json";
+import faCSaves from "@/locales/fa/c-saves.json";
 import faCSignalForge from "@/locales/fa/c-signal-forge.json";
+import faCStatus from "@/locales/fa/c-status.json";
 import faCStudio from "@/locales/fa/c-studio.json";
 import faCSynapseStorm from "@/locales/fa/c-synapse-storm.json";
 import faCTempleOfJoy from "@/locales/fa/c-temple-of-joy.json";
+import faCTournaments from "@/locales/fa/c-tournaments.json";
 import faCUi from "@/locales/fa/c-ui.json";
 import faCUserBuilds from "@/locales/fa/c-user-builds.json";
 import faCVega from "@/locales/fa/c-vega.json";
 import faCVersecraft from "@/locales/fa/c-versecraft.json";
 import faCVoidBreaker from "@/locales/fa/c-void-breaker.json";
+import faCWager from "@/locales/fa/c-wager.json";
+import faCWishlist from "@/locales/fa/c-wishlist.json";
 import faCommon from "@/locales/fa/common.json";
 import faFeed from "@/locales/fa/feed.json";
+import faGamesHub from "@/locales/fa/games-hub.json";
 import faGroups from "@/locales/fa/groups.json";
 import faLibrary from "@/locales/fa/library.json";
 import faNav from "@/locales/fa/nav.json";
@@ -61,8 +75,13 @@ import faRSliceIt from "@/locales/fa/r-slice-it.json";
 import faRStrategies from "@/locales/fa/r-strategies.json";
 import faRStudio from "@/locales/fa/r-studio.json";
 import faRideshare from "@/locales/fa/rideshare.json";
+import faSearch from "@/locales/fa/search.json";
+import faSettingsAppearance from "@/locales/fa/settings-appearance.json";
+import faSettingsContent from "@/locales/fa/settings-content.json";
+import faSettingsNotifications from "@/locales/fa/settings-notifications.json";
 import faShared from "@/locales/fa/shared.json";
 import faSite from "@/locales/fa/site.json";
+import faThemeStudio from "@/locales/fa/theme-studio.json";
 import faUserBuilds from "@/locales/fa/user-builds.json";
 import faV from "@/locales/fa/v.json";
 
@@ -71,8 +90,11 @@ const faResources = {
   "builds": faBuilds,
   "c-admin": faCAdmin,
   "c-altair": faCAltair,
+  "c-awards": faCAwards,
   "c-blog": faCBlog,
   "c-builds": faCBuilds,
+  "c-circle": faCCircle,
+  "c-creator": faCCreator,
   "c-cursed-logic": faCCursedLogic,
   "c-daily-puzzles": faCDailyPuzzles,
   "c-doctrine": faCDoctrine,
@@ -80,15 +102,20 @@ const faResources = {
   "c-economy": faCEconomy,
   "c-forest-explorer": faCForestExplorer,
   "c-game": faCGame,
+  "c-history": faCHistory,
   "c-house-always-wins": faCHouseAlwaysWins,
   "c-kowloon-knockout": faCKowloonKnockout,
   "c-laundry-sort": faCLaundrySort,
+  "c-layout": faCLayout,
   "c-library": faCLibrary,
   "c-lights-out": faCLightsOut,
+  "c-lists": faCLists,
   "c-lockdown": faCLockdown,
   "c-moderation": faCModeration,
   "c-neon-driftway": faCNeonDriftway,
   "c-news": faCNews,
+  "c-predictions": faCPredictions,
+  "c-profile-modules": faCProfileModules,
   "c-rideshare": faCRideshare,
   "c-rmh-capital": faCRmhCapital,
   "c-rmh-pmc": faCRmhPmc,
@@ -102,17 +129,23 @@ const faResources = {
   "c-rmhtype": faCRmhtype,
   "c-rmhvibe": faCRmhvibe,
   "c-roadmap": faCRoadmap,
+  "c-saves": faCSaves,
   "c-signal-forge": faCSignalForge,
+  "c-status": faCStatus,
   "c-studio": faCStudio,
   "c-synapse-storm": faCSynapseStorm,
   "c-temple-of-joy": faCTempleOfJoy,
+  "c-tournaments": faCTournaments,
   "c-ui": faCUi,
   "c-user-builds": faCUserBuilds,
   "c-vega": faCVega,
   "c-versecraft": faCVersecraft,
   "c-void-breaker": faCVoidBreaker,
+  "c-wager": faCWager,
+  "c-wishlist": faCWishlist,
   "common": faCommon,
   "feed": faFeed,
+  "games-hub": faGamesHub,
   "groups": faGroups,
   "library": faLibrary,
   "nav": faNav,
@@ -127,8 +160,13 @@ const faResources = {
   "r-strategies": faRStrategies,
   "r-studio": faRStudio,
   "rideshare": faRideshare,
+  "search": faSearch,
+  "settings-appearance": faSettingsAppearance,
+  "settings-content": faSettingsContent,
+  "settings-notifications": faSettingsNotifications,
   "shared": faShared,
   "site": faSite,
+  "theme-studio": faThemeStudio,
   "user-builds": faUserBuilds,
   "v": faV,
 } as const;

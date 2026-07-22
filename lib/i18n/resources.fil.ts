@@ -5,8 +5,11 @@ import filAdmin from "@/locales/fil/admin.json";
 import filBuilds from "@/locales/fil/builds.json";
 import filCAdmin from "@/locales/fil/c-admin.json";
 import filCAltair from "@/locales/fil/c-altair.json";
+import filCAwards from "@/locales/fil/c-awards.json";
 import filCBlog from "@/locales/fil/c-blog.json";
 import filCBuilds from "@/locales/fil/c-builds.json";
+import filCCircle from "@/locales/fil/c-circle.json";
+import filCCreator from "@/locales/fil/c-creator.json";
 import filCCursedLogic from "@/locales/fil/c-cursed-logic.json";
 import filCDailyPuzzles from "@/locales/fil/c-daily-puzzles.json";
 import filCDoctrine from "@/locales/fil/c-doctrine.json";
@@ -14,15 +17,20 @@ import filCDreamRift from "@/locales/fil/c-dream-rift.json";
 import filCEconomy from "@/locales/fil/c-economy.json";
 import filCForestExplorer from "@/locales/fil/c-forest-explorer.json";
 import filCGame from "@/locales/fil/c-game.json";
+import filCHistory from "@/locales/fil/c-history.json";
 import filCHouseAlwaysWins from "@/locales/fil/c-house-always-wins.json";
 import filCKowloonKnockout from "@/locales/fil/c-kowloon-knockout.json";
 import filCLaundrySort from "@/locales/fil/c-laundry-sort.json";
+import filCLayout from "@/locales/fil/c-layout.json";
 import filCLibrary from "@/locales/fil/c-library.json";
 import filCLightsOut from "@/locales/fil/c-lights-out.json";
+import filCLists from "@/locales/fil/c-lists.json";
 import filCLockdown from "@/locales/fil/c-lockdown.json";
 import filCModeration from "@/locales/fil/c-moderation.json";
 import filCNeonDriftway from "@/locales/fil/c-neon-driftway.json";
 import filCNews from "@/locales/fil/c-news.json";
+import filCPredictions from "@/locales/fil/c-predictions.json";
+import filCProfileModules from "@/locales/fil/c-profile-modules.json";
 import filCRideshare from "@/locales/fil/c-rideshare.json";
 import filCRmhCapital from "@/locales/fil/c-rmh-capital.json";
 import filCRmhPmc from "@/locales/fil/c-rmh-pmc.json";
@@ -36,17 +44,23 @@ import filCRmhtube from "@/locales/fil/c-rmhtube.json";
 import filCRmhtype from "@/locales/fil/c-rmhtype.json";
 import filCRmhvibe from "@/locales/fil/c-rmhvibe.json";
 import filCRoadmap from "@/locales/fil/c-roadmap.json";
+import filCSaves from "@/locales/fil/c-saves.json";
 import filCSignalForge from "@/locales/fil/c-signal-forge.json";
+import filCStatus from "@/locales/fil/c-status.json";
 import filCStudio from "@/locales/fil/c-studio.json";
 import filCSynapseStorm from "@/locales/fil/c-synapse-storm.json";
 import filCTempleOfJoy from "@/locales/fil/c-temple-of-joy.json";
+import filCTournaments from "@/locales/fil/c-tournaments.json";
 import filCUi from "@/locales/fil/c-ui.json";
 import filCUserBuilds from "@/locales/fil/c-user-builds.json";
 import filCVega from "@/locales/fil/c-vega.json";
 import filCVersecraft from "@/locales/fil/c-versecraft.json";
 import filCVoidBreaker from "@/locales/fil/c-void-breaker.json";
+import filCWager from "@/locales/fil/c-wager.json";
+import filCWishlist from "@/locales/fil/c-wishlist.json";
 import filCommon from "@/locales/fil/common.json";
 import filFeed from "@/locales/fil/feed.json";
+import filGamesHub from "@/locales/fil/games-hub.json";
 import filGroups from "@/locales/fil/groups.json";
 import filLibrary from "@/locales/fil/library.json";
 import filNav from "@/locales/fil/nav.json";
@@ -61,8 +75,13 @@ import filRSliceIt from "@/locales/fil/r-slice-it.json";
 import filRStrategies from "@/locales/fil/r-strategies.json";
 import filRStudio from "@/locales/fil/r-studio.json";
 import filRideshare from "@/locales/fil/rideshare.json";
+import filSearch from "@/locales/fil/search.json";
+import filSettingsAppearance from "@/locales/fil/settings-appearance.json";
+import filSettingsContent from "@/locales/fil/settings-content.json";
+import filSettingsNotifications from "@/locales/fil/settings-notifications.json";
 import filShared from "@/locales/fil/shared.json";
 import filSite from "@/locales/fil/site.json";
+import filThemeStudio from "@/locales/fil/theme-studio.json";
 import filUserBuilds from "@/locales/fil/user-builds.json";
 import filV from "@/locales/fil/v.json";
 
@@ -71,8 +90,11 @@ const filResources = {
   "builds": filBuilds,
   "c-admin": filCAdmin,
   "c-altair": filCAltair,
+  "c-awards": filCAwards,
   "c-blog": filCBlog,
   "c-builds": filCBuilds,
+  "c-circle": filCCircle,
+  "c-creator": filCCreator,
   "c-cursed-logic": filCCursedLogic,
   "c-daily-puzzles": filCDailyPuzzles,
   "c-doctrine": filCDoctrine,
@@ -80,15 +102,20 @@ const filResources = {
   "c-economy": filCEconomy,
   "c-forest-explorer": filCForestExplorer,
   "c-game": filCGame,
+  "c-history": filCHistory,
   "c-house-always-wins": filCHouseAlwaysWins,
   "c-kowloon-knockout": filCKowloonKnockout,
   "c-laundry-sort": filCLaundrySort,
+  "c-layout": filCLayout,
   "c-library": filCLibrary,
   "c-lights-out": filCLightsOut,
+  "c-lists": filCLists,
   "c-lockdown": filCLockdown,
   "c-moderation": filCModeration,
   "c-neon-driftway": filCNeonDriftway,
   "c-news": filCNews,
+  "c-predictions": filCPredictions,
+  "c-profile-modules": filCProfileModules,
   "c-rideshare": filCRideshare,
   "c-rmh-capital": filCRmhCapital,
   "c-rmh-pmc": filCRmhPmc,
@@ -102,17 +129,23 @@ const filResources = {
   "c-rmhtype": filCRmhtype,
   "c-rmhvibe": filCRmhvibe,
   "c-roadmap": filCRoadmap,
+  "c-saves": filCSaves,
   "c-signal-forge": filCSignalForge,
+  "c-status": filCStatus,
   "c-studio": filCStudio,
   "c-synapse-storm": filCSynapseStorm,
   "c-temple-of-joy": filCTempleOfJoy,
+  "c-tournaments": filCTournaments,
   "c-ui": filCUi,
   "c-user-builds": filCUserBuilds,
   "c-vega": filCVega,
   "c-versecraft": filCVersecraft,
   "c-void-breaker": filCVoidBreaker,
+  "c-wager": filCWager,
+  "c-wishlist": filCWishlist,
   "common": filCommon,
   "feed": filFeed,
+  "games-hub": filGamesHub,
   "groups": filGroups,
   "library": filLibrary,
   "nav": filNav,
@@ -127,8 +160,13 @@ const filResources = {
   "r-strategies": filRStrategies,
   "r-studio": filRStudio,
   "rideshare": filRideshare,
+  "search": filSearch,
+  "settings-appearance": filSettingsAppearance,
+  "settings-content": filSettingsContent,
+  "settings-notifications": filSettingsNotifications,
   "shared": filShared,
   "site": filSite,
+  "theme-studio": filThemeStudio,
   "user-builds": filUserBuilds,
   "v": filV,
 } as const;
