@@ -187,6 +187,26 @@ const STYLE_CLASSES = SITE_STYLES.map((s) => `style-${s.id}`);
 // `m` component (aliased as `motion`) and picks these up from LazyMotion context.
 const loadMotionFeatures = () => import('@/lib/motion-features').then((mod) => mod.default);
 
+// Start fetching the optional shader chunk once the document's critical load is
+// complete, then reuse the same promise when the idle gate starts it. This warms
+// Vite's module cache without putting liquid glass on the load/LCP critical path.
+// A rejected fetch is deliberately evicted so a later idle attempt can retry.
+interface LiquidGLModule {
+  initLiquidGL(): () => void;
+}
+let liquidGLImport: Promise<LiquidGLModule> | null = null;
+
+function loadLiquidGL(): Promise<LiquidGLModule> {
+  if (liquidGLImport) return liquidGLImport;
+  const pending: Promise<LiquidGLModule> = import('@/lib/liquid-gl');
+  const cached = pending.catch((error) => {
+    if (liquidGLImport === cached) liquidGLImport = null;
+    throw error;
+  });
+  liquidGLImport = cached;
+  return cached;
+}
+
 // THEME_BG (theme → document background color) lives in stores/themeStore.ts,
 // derived from SITE_STYLES, so the runtime and the no-flash inline script share
 // one source. Excluded app/game routes always paint THEME_BG.default (pure
@@ -357,9 +377,28 @@ export function Providers({
     }
   }, [userId, idleReady, fetchResolvedUser]);
 
-  // Shader-grade liquid layer (§16.1). Dynamic-imported after idle so the
-  // detect/scene/WGSL/GLSL runtime is a code-split chunk that never touches the
-  // LCP path. It self-gates (WebGPU→WebGL2→none, off under perf-lite / reduced
+  // Opportunistically warm the liquid runtime only after the window load event.
+  // The handler returns immediately (it never awaits the chunk), so images,
+  // fonts, hydration, and the load event are not held up by this enhancement.
+  useEffect(() => {
+    let cancelled = false;
+    let timer = 0;
+    const warm = () => {
+      if (cancelled) return;
+      void loadLiquidGL().catch(() => {});
+    };
+    if (document.readyState === 'complete') timer = window.setTimeout(warm, 0);
+    else window.addEventListener('load', warm, { once: true });
+    return () => {
+      cancelled = true;
+      if (timer) window.clearTimeout(timer);
+      window.removeEventListener('load', warm);
+    };
+  }, []);
+
+  // Shader-grade liquid layer (§16.1). Initialised after idle from the optional
+  // code-split chunk warmed above; it never gates the LCP/load path. It self-gates
+  // (WebGPU→WebGL2→none, off under perf-lite / reduced
   // motion / high-contrast / reduce-transparency) and, when a tier initialises,
   // sets `html.liquid-gl` so the CSS aurora + goo underlays hide (no double
   // render). When no tier is available the untouched CSS/SVG stack renders.
@@ -367,13 +406,26 @@ export function Providers({
     if (!idleReady) return;
     let cancelled = false;
     let dispose: (() => void) | undefined;
-    import('@/lib/liquid-gl')
-      .then((m) => {
-        if (!cancelled) dispose = m.initLiquidGL();
-      })
-      .catch(() => {});
+    let retryTimer = 0;
+    let attempts = 0;
+    const start = () => {
+      attempts++;
+      loadLiquidGL()
+        .then((m) => {
+          if (!cancelled) dispose = m.initLiquidGL();
+        })
+        .catch(() => {
+          // A flaky chunk request should not disable glass for the whole visit.
+          // Retry twice in the background; CSS remains the complete fallback.
+          if (!cancelled && attempts < 3) {
+            retryTimer = window.setTimeout(start, attempts * 1_500);
+          }
+        });
+    };
+    start();
     return () => {
       cancelled = true;
+      if (retryTimer) window.clearTimeout(retryTimer);
       dispose?.();
     };
   }, [idleReady]);

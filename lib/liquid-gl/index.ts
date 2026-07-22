@@ -15,18 +15,14 @@
  */
 
 import type { LiquidRenderer, LiquidTier, SceneState } from './types';
-import { detectLiquidTier, liquidGlBlocked } from './detect';
+import { liquidGlBlocked, liquidTierCandidates } from './detect';
 import { anyActive, liveBodies, liveCount, onRegistryChange } from './registry';
 import { setLiquidActive } from './active';
-import {
-  readSceneStatic,
-  readLiveInputs,
-  type LiveInputs,
-  type SceneStatic,
-} from './scene';
+import { readSceneStatic, readLiveInputs, type LiveInputs, type SceneStatic } from './scene';
 import {
   GL_TRUST_VERSION,
   WATCHDOG_INTERVAL_MS,
+  clearFailure,
   initialVerify,
   isBlockedByPriorFailure,
   isGateFrame,
@@ -52,6 +48,13 @@ function lsGet(k: string): string | null {
 function lsSet(k: string, v: string): void {
   try {
     if (typeof localStorage !== 'undefined') localStorage.setItem(k, v);
+  } catch {
+    /* ignore */
+  }
+}
+function lsRemove(k: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.removeItem(k);
   } catch {
     /* ignore */
   }
@@ -85,9 +88,12 @@ let rt: Runtime | null = null;
 let tier: LiquidTier = 'none';
 let initializing = false;
 let forceCss = false;
-// §16.4b: once the layer proves untrustworthy this session, never re-attempt it
-// (a re-boot would flash the same broken canvas). Reloads are handled by the
-// persisted `rmh-liquid-gl-failed` flag; this covers the live session.
+// If WebGPU passes capability detection but fails verification or loses its
+// device, retry the independent WebGL2 backend instead of disabling all GL.
+let skipWebGPUThisSession = false;
+// §16.4b: once WebGL2 proves untrustworthy this session, never re-attempt it.
+// Reloads honor a short persisted cooldown; WebGPU failures get one independent
+// WebGL2 attempt first (the canvas remains hidden behind CSS during both gates).
 let failedThisSession = false;
 let watchdog: ReturnType<typeof setInterval> | null = null;
 let classObserver: MutationObserver | null = null;
@@ -211,6 +217,7 @@ function frame(now: number): void {
     rt.verify = stepVerify(rt.verify, { ok, nonBlank, lost });
     if (rt.verify.verified) {
       // Reveal: hide the CSS aurora/goo, tell components the shader is live.
+      clearFailure(lsRemove);
       document.documentElement.classList.add('liquid-gl');
       notifyActive();
       startWatchdog();
@@ -263,14 +270,22 @@ function stopWatchdog(): void {
 }
 
 /**
- * §16.4b: abandon the shader layer for the rest of the session AND persist the
- * failure so the next load skips it (until the GL trust version changes). Removes
+ * §16.4b: degrade a failed WebGPU tier to WebGL2, or abandon a failed WebGL2 tier
+ * for the rest of the session and persist a short retry cooldown. Removes
  * `html.liquid-gl` so the CSS aurora/goo return, and tells components GL is off.
  */
 function abortToCss(): void {
+  const failedTier = tier;
+  teardown();
+  if (failedTier === 'webgpu' && !forceCss && !liquidGlBlocked()) {
+    skipWebGPUThisSession = true;
+    // The WebGPU canvas/device is fully disposed before the independent WebGL2
+    // attempt starts. CSS remains visible throughout both probation windows.
+    void boot();
+    return;
+  }
   failedThisSession = true;
   recordFailure(GL_TRUST_VERSION, lsSet);
-  teardown();
 }
 
 function teardown(): void {
@@ -292,31 +307,42 @@ async function boot(): Promise<void> {
     document.documentElement.classList.remove('liquid-gl');
     return;
   }
-  // §16.4b: a prior verified-frame/watchdog failure recorded for THIS trust
-  // version means the shader is untrusted on this device — stay on CSS. A failure
-  // from an older version is stale (the GL code changed) and is ignored.
+  // §16.4b: pause attempts briefly after a verified-frame/watchdog failure. Old
+  // versions and expired cooldowns retry invisibly behind the CSS fallback.
   if (isBlockedByPriorFailure(GL_TRUST_VERSION, lsGet)) {
     document.documentElement.classList.remove('liquid-gl');
     return;
   }
   initializing = true;
   try {
-    tier = await detectLiquidTier();
-    if (tier === 'none') return;
-
-    const canvas = makeCanvas();
+    let canvas: HTMLCanvasElement | null = null;
     let renderer: LiquidRenderer | null = null;
-    if (tier === 'webgpu') {
-      const { createWebGPURenderer } = await import('./renderer-webgpu');
-      renderer = await createWebGPURenderer(canvas);
-      if (!renderer) tier = 'webgl2'; // adapter/device failed after detect — degrade
+    const candidates = liquidTierCandidates().filter(
+      (candidate) => candidate !== 'webgpu' || !skipWebGPUThisSession,
+    );
+    for (const candidate of candidates) {
+      // A canvas is permanently bound to the first context mode requested from
+      // it. Use a fresh one per candidate so a failed WebGPU setup cannot make
+      // the subsequent WebGL2 getContext() silently return null.
+      const candidateCanvas = makeCanvas();
+      try {
+        if (candidate === 'webgpu') {
+          const { createWebGPURenderer } = await import('./renderer-webgpu');
+          renderer = await createWebGPURenderer(candidateCanvas);
+        } else {
+          const { createWebGL2Renderer } = await import('./renderer-webgl2');
+          renderer = await createWebGL2Renderer(candidateCanvas);
+        }
+      } catch {
+        renderer = null;
+      }
+      if (renderer) {
+        tier = candidate;
+        canvas = candidateCanvas;
+        break;
+      }
     }
-    if (!renderer) {
-      const { createWebGL2Renderer } = await import('./renderer-webgl2');
-      renderer = createWebGL2Renderer(canvas);
-      tier = renderer ? 'webgl2' : 'none';
-    }
-    if (!renderer) {
+    if (!renderer || !canvas) {
       tier = 'none';
       return;
     }

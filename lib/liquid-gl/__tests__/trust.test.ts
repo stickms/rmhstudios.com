@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   FAIL_KEY,
+  FAILURE_COOLDOWN_MS,
   GL_TRUST_VERSION,
   STALL_MS,
   VERIFY_FRAMES,
@@ -9,6 +10,7 @@ import {
   isGateFrame,
   isWebKit,
   preferredTierOrder,
+  clearFailure,
   recordFailure,
   stepVerify,
   watchdogFailed,
@@ -80,7 +82,13 @@ describe('verified-frame gating (§16.4b.1)', () => {
 });
 
 describe('runtime watchdog (§16.4b.2)', () => {
-  const base = { now: 10_000, lastRenderTs: 10_000, running: true, visible: true, contextLost: false };
+  const base = {
+    now: 10_000,
+    lastRenderTs: 10_000,
+    running: true,
+    visible: true,
+    contextLost: false,
+  };
 
   it('passes when frames are fresh', () => {
     expect(watchdogFailed(base)).toBe(false);
@@ -97,7 +105,9 @@ describe('runtime watchdog (§16.4b.2)', () => {
   });
 
   it('always fails on a lost context, even if paused', () => {
-    expect(watchdogFailed({ ...base, running: false, visible: false, contextLost: true })).toBe(true);
+    expect(watchdogFailed({ ...base, running: false, visible: false, contextLost: true })).toBe(
+      true,
+    );
   });
 });
 
@@ -142,16 +152,34 @@ describe('failure persistence (§16.4b.2 — version-gated)', () => {
 
   it('blocks GL after a failure recorded for the current version', () => {
     const s = fakeStore();
-    expect(isBlockedByPriorFailure(GL_TRUST_VERSION, s.get)).toBe(false);
-    recordFailure(GL_TRUST_VERSION, s.set);
-    expect(s.map.get(FAIL_KEY)).toBe(GL_TRUST_VERSION);
-    expect(isBlockedByPriorFailure(GL_TRUST_VERSION, s.get)).toBe(true);
+    const now = 1_000_000;
+    expect(isBlockedByPriorFailure(GL_TRUST_VERSION, s.get, now)).toBe(false);
+    recordFailure(GL_TRUST_VERSION, s.set, now);
+    expect(JSON.parse(s.map.get(FAIL_KEY) as string)).toEqual({
+      version: GL_TRUST_VERSION,
+      failedAt: now,
+    });
+    expect(isBlockedByPriorFailure(GL_TRUST_VERSION, s.get, now)).toBe(true);
   });
 
   it('ignores a stale failure from a different version (auto-clears on version change)', () => {
     const s = fakeStore();
-    recordFailure('old-version', s.set);
+    recordFailure('old-version', s.set, 1_000_000);
     expect(isBlockedByPriorFailure(GL_TRUST_VERSION, s.get)).toBe(false);
+  });
+
+  it('retries after the failure cooldown and clears the marker after success', () => {
+    const s = fakeStore();
+    const failedAt = 1_000_000;
+    recordFailure(GL_TRUST_VERSION, s.set, failedAt);
+    expect(
+      isBlockedByPriorFailure(GL_TRUST_VERSION, s.get, failedAt + FAILURE_COOLDOWN_MS - 1),
+    ).toBe(true);
+    expect(isBlockedByPriorFailure(GL_TRUST_VERSION, s.get, failedAt + FAILURE_COOLDOWN_MS)).toBe(
+      false,
+    );
+    clearFailure((key) => void s.map.delete(key));
+    expect(s.map.has(FAIL_KEY)).toBe(false);
   });
 
   it('never throws when storage access throws (private mode)', () => {

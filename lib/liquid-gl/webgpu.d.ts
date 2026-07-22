@@ -50,10 +50,9 @@ declare global {
       mappedAtCreation?: boolean;
     }): GPUBuffer;
     createBindGroupLayout(descriptor: unknown): GPUBindGroupLayout;
-    createPipelineLayout(descriptor: {
-      bindGroupLayouts: GPUBindGroupLayout[];
-    }): GPUPipelineLayout;
+    createPipelineLayout(descriptor: { bindGroupLayouts: GPUBindGroupLayout[] }): GPUPipelineLayout;
     createRenderPipeline(descriptor: unknown): GPURenderPipeline;
+    createRenderPipelineAsync?(descriptor: unknown): Promise<GPURenderPipeline>;
     createBindGroup(descriptor: unknown): GPUBindGroup;
     createCommandEncoder(): GPUCommandEncoder;
     destroy(): void;

@@ -226,7 +226,10 @@ export async function createWebGPURenderer(
   }
 
   const ctx = canvas.getContext('webgpu') as unknown as GPUCanvasContext | null;
-  if (!ctx) return null;
+  if (!ctx) {
+    device.destroy();
+    return null;
+  }
 
   // §16.4b: track device loss + uncaptured GPU errors for the verified-frame gate
   // and the runtime watchdog. WebGPU has no synchronous readback in a sync frame
@@ -241,34 +244,47 @@ export async function createWebGPURenderer(
     errored = true;
   });
 
-  const format = gpu.getPreferredCanvasFormat();
-  ctx.configure({ device, format, alphaMode: 'opaque' });
-
-  const module = device.createShaderModule({ code: WGSL });
-  const bindGroupLayout = device.createBindGroupLayout({
-    entries: [
-      {
-        binding: 0,
-        visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
-        buffer: { type: 'uniform' },
-      },
-    ],
-  });
-  const pipeline = device.createRenderPipeline({
-    layout: device.createPipelineLayout({ bindGroupLayouts: [bindGroupLayout] }),
-    vertex: { module, entryPoint: 'vs' },
-    fragment: { module, entryPoint: 'fs', targets: [{ format }] },
-    primitive: { topology: 'triangle-list' },
-  });
-
-  const uniformBuffer = device.createBuffer({
-    size: UNIFORM_BYTES,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-  const bindGroup = device.createBindGroup({
-    layout: bindGroupLayout,
-    entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
-  });
+  let bindGroupLayout: GPUBindGroupLayout;
+  let pipeline: GPURenderPipeline;
+  let uniformBuffer: GPUBuffer;
+  let bindGroup: GPUBindGroup;
+  try {
+    const format = gpu.getPreferredCanvasFormat();
+    ctx.configure({ device, format, alphaMode: 'opaque' });
+    const module = device.createShaderModule({ code: WGSL });
+    bindGroupLayout = device.createBindGroupLayout({
+      entries: [
+        {
+          binding: 0,
+          visibility: GPUShaderStage.FRAGMENT | GPUShaderStage.VERTEX,
+          buffer: { type: 'uniform' },
+        },
+      ],
+    });
+    const pipelineDescriptor = {
+      layout: device.createPipelineLayout({ bindGroupLayouts: [bindGroupLayout] }),
+      vertex: { module, entryPoint: 'vs' },
+      fragment: { module, entryPoint: 'fs', targets: [{ format }] },
+      primitive: { topology: 'triangle-list' },
+    };
+    // Async creation lets the driver compile/cache this stable pipeline without
+    // synchronously stalling the main thread. Older implementations retain the
+    // synchronous fallback.
+    pipeline = device.createRenderPipelineAsync
+      ? await device.createRenderPipelineAsync(pipelineDescriptor)
+      : device.createRenderPipeline(pipelineDescriptor);
+    uniformBuffer = device.createBuffer({
+      size: UNIFORM_BYTES,
+      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    });
+    bindGroup = device.createBindGroup({
+      layout: bindGroupLayout,
+      entries: [{ binding: 0, resource: { buffer: uniformBuffer } }],
+    });
+  } catch {
+    device.destroy();
+    return null;
+  }
 
   const staging = new Float32Array(UNIFORM_FLOATS);
   let width = 0;
