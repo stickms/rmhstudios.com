@@ -1010,7 +1010,7 @@ export function ProfileColumn({
       {/* Tab bar → shared LiquidTabs (§5.4). handleTabChange keeps the lazy
           liked-posts fetch on first switch. "RMHarks" stays a literal (unchanged
           from the pre-migration markup) to avoid i18n churn. */}
-      <div className="px-3 py-2">
+      <div className="px-3 py-2 tab-sheet-scroll">
         <LiquidTabs
           tabs={[
             { id: 'rmharks', label: 'RMHarks' },

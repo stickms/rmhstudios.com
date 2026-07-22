@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Swords, Plus } from 'lucide-react';
 import { PageLayout } from '@/components/feed/PageLayout';
 import { Button } from '@/components/ui/button';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useSession } from '@/components/Providers';
 import { WagerCard } from '@/components/wager/WagerCard';
 import { CreateWagerDialog } from '@/components/wager/CreateWagerDialog';
@@ -65,26 +66,22 @@ function WagerPage() {
         ) : null
       }
     >
-      {/* Tabs */}
-      <div className="flex gap-2 mb-4" role="tablist">
-        {(['open', 'mine'] as const).map((tk) => (
-          <button
-            key={tk}
-            role="tab"
-            aria-selected={tab === tk}
-            onClick={() => setTab(tk)}
-            disabled={tk === 'mine' && !viewerId}
-            className={`px-3.5 py-1.5 rounded-site text-sm font-medium transition-colors disabled:opacity-40 ${
-              tab === tk
-                ? 'bg-site-accent-dim text-site-accent'
-                : 'text-site-text-dim hover:text-site-text hover:bg-site-surface-hover'
-            }`}
-          >
-            {tk === 'open'
-              ? t('tab-open', { defaultValue: 'Open challenges' })
-              : t('tab-mine', { defaultValue: 'My matches' })}
-          </button>
-        ))}
+      {/* §15.1: unified sheet + flowing-capsule tab strip below the page title.
+          The "My matches" tab stays disabled (roving-nav-skipped) for guests. */}
+      <div className="mt-3 mb-3">
+        <LiquidTabs
+          aria-label={t('title', { defaultValue: 'Wager Matches' })}
+          value={tab}
+          onChange={(id) => setTab(id as 'open' | 'mine')}
+          tabs={[
+            { id: 'open', label: t('tab-open', { defaultValue: 'Open challenges' }) },
+            {
+              id: 'mine',
+              label: t('tab-mine', { defaultValue: 'My matches' }),
+              disabled: !viewerId,
+            },
+          ]}
+        />
       </div>
 
       {loading ? (

@@ -2,16 +2,23 @@
  * Theme Studio — server logic (§14). Theme CRUD, publish gate, purchase
  * (storefront ledger pattern → creator earnings), and the shop shelf.
  * Ownership rides UserInventory (kind THEME, itemId "user:<themeId>").
+ *
+ * **Member gate (§14.2):** creating/updating/publishing a theme requires an
+ * active membership — the same Stripe-subscription check the rest of the economy
+ * uses (`getUserTier` !== 'free'). Buying stays open to anyone with coins.
  */
 import { prisma } from '@/lib/prisma.server';
 import {
   themeTokensSchema,
+  canPublish,
+  upcastTokens,
+  readTokens,
   THEME_PRICE_MIN,
   THEME_PRICE_MAX,
   type ThemeTokens,
   type UserThemeView,
 } from '@/lib/themes/tokens';
-import { canPublish } from '@/lib/themes/validate';
+import { getUserTier } from '@/lib/entitlements';
 import { resolveUser, userDisplaySelect } from '@/lib/user-display';
 
 const FEE_RATE = 0.1; // 10% burned, mirrors storefront
@@ -26,6 +33,15 @@ function parseTokens(raw: unknown): ThemeTokens {
   return parsed.data;
 }
 
+/**
+ * Members-only gate for authoring (create/update/publish). Uses the shared
+ * entitlement resolver — any active paid tier counts; free does not (§14.2).
+ */
+export async function requireMember(userId: string): Promise<void> {
+  const tier = await getUserTier(userId).catch(() => 'free' as const);
+  if (tier === 'free') throw new ThemeError('MEMBERS_ONLY');
+}
+
 export async function listMyThemes(authorId: string): Promise<UserThemeView[]> {
   const rows = await prisma.userTheme.findMany({
     where: { authorId },
@@ -35,7 +51,7 @@ export async function listMyThemes(authorId: string): Promise<UserThemeView[]> {
   return rows.map((r) => ({
     id: r.id,
     name: r.name,
-    tokens: r.tokens as unknown as ThemeTokens,
+    tokens: readTokens(r.tokens), // v1 rows upcast to v2 on read (§14.1)
     status: String(r.status),
     priceCoins: r.priceCoins,
     sales: r.sales,
@@ -65,7 +81,7 @@ export async function getTheme(id: string, viewerId: string | null): Promise<Use
   return {
     id: t.id,
     name: t.name,
-    tokens: t.tokens as unknown as ThemeTokens,
+    tokens: readTokens(t.tokens),
     status: String(t.status),
     priceCoins: t.priceCoins,
     sales: t.sales,
@@ -84,6 +100,7 @@ async function isOwned(userId: string, themeId: string): Promise<boolean> {
 }
 
 export async function createTheme(authorId: string, name: string, tokens: unknown): Promise<string> {
+  await requireMember(authorId);
   const valid = parseTokens(tokens);
   const count = await prisma.userTheme.count({ where: { authorId } });
   if (count >= 50) throw new ThemeError('LIMIT');
@@ -99,6 +116,7 @@ export async function updateTheme(
   id: string,
   data: { name?: string; tokens?: unknown },
 ): Promise<void> {
+  await requireMember(authorId);
   const theme = await prisma.userTheme.findUnique({ where: { id }, select: { authorId: true, status: true } });
   if (!theme) throw new ThemeError('NOT_FOUND');
   if (theme.authorId !== authorId) throw new ThemeError('FORBIDDEN');
@@ -119,11 +137,13 @@ export async function deleteOrDelistTheme(authorId: string, id: string): Promise
 }
 
 export async function publishTheme(authorId: string, id: string, priceCoins: number): Promise<void> {
+  await requireMember(authorId);
   if (priceCoins < THEME_PRICE_MIN || priceCoins > THEME_PRICE_MAX) throw new ThemeError('PRICE_RANGE');
   const theme = await prisma.userTheme.findUnique({ where: { id }, select: { authorId: true, tokens: true } });
   if (!theme) throw new ThemeError('NOT_FOUND');
   if (theme.authorId !== authorId) throw new ThemeError('FORBIDDEN');
-  if (!canPublish(theme.tokens as unknown as ThemeTokens)) throw new ThemeError('CONTRAST_GATE');
+  // Upcast v1 drafts before the gate; the gate is pure math on v2 token values.
+  if (!canPublish(upcastTokens(theme.tokens))) throw new ThemeError('CONTRAST_GATE');
   await prisma.userTheme.update({ where: { id }, data: { status: 'PUBLISHED', priceCoins } });
 }
 
@@ -187,6 +207,41 @@ export async function buyTheme(buyerId: string, id: string): Promise<BuyResult> 
   });
 }
 
+/** Themes the viewer owns (bought or authored) — the inventory shelf (§14.2). */
+export async function listOwnedThemes(userId: string): Promise<UserThemeView[]> {
+  const rows = await prisma.userInventory.findMany({
+    where: { userId, kind: 'THEME' },
+    select: { itemId: true },
+  });
+  const ids = rows.map((r) => r.itemId.replace(/^user:/, '')).filter(Boolean);
+  if (ids.length === 0) return [];
+  const themes = await prisma.userTheme.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      name: true,
+      tokens: true,
+      status: true,
+      priceCoins: true,
+      sales: true,
+      author: { select: userDisplaySelect },
+    },
+  });
+  return themes.map((r) => {
+    const a = resolveUser(r.author);
+    return {
+      id: r.id,
+      name: r.name,
+      tokens: readTokens(r.tokens),
+      status: String(r.status),
+      priceCoins: r.priceCoins,
+      sales: r.sales,
+      author: { name: a.name, handle: a.handle },
+      owned: true,
+    };
+  });
+}
+
 export async function listShop(sort: 'top' | 'new' = 'top'): Promise<UserThemeView[]> {
   const rows = await prisma.userTheme.findMany({
     where: { status: 'PUBLISHED' },
@@ -206,7 +261,7 @@ export async function listShop(sort: 'top' | 'new' = 'top'): Promise<UserThemeVi
     return {
       id: r.id,
       name: r.name,
-      tokens: r.tokens as unknown as ThemeTokens,
+      tokens: readTokens(r.tokens),
       status: 'PUBLISHED',
       priceCoins: r.priceCoins,
       sales: r.sales,

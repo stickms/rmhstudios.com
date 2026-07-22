@@ -13,6 +13,7 @@ import { authClient } from '@/lib/auth-client';
 import { useResolvedUser } from '@/components/Providers';
 import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { Button } from '@/components/ui/button';
+import { useLiquidPop } from '@/components/ui/liquid-pop';
 import { useFeedStore } from '@/stores/feedStore';
 import {
   MAX_RMHARK_LENGTH,
@@ -68,6 +69,13 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
   const imageInputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuPopRef = useRef<HTMLDivElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  // §15.6 liquid pop — the attachment (+) menu buds out of its trigger.
+  const { underlay: menuUnderlay } = useLiquidPop({
+    triggerRef: menuBtnRef,
+    panelRef: menuPopRef,
+    open: menuOpen,
+  });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
   useMenuViewportFit(menuOpen, menuPopRef);
@@ -242,7 +250,9 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
 
             {/* Plus button */}
             <div className="relative" ref={menuRef}>
+              {menuUnderlay}
               <button
+                ref={menuBtnRef}
                 onClick={() => setMenuOpen((v) => !v)}
                 className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"
               >

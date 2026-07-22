@@ -1,11 +1,15 @@
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import { useTranslation } from 'react-i18next';
+import { m as motion } from 'framer-motion';
 import { type LucideIcon, Users, CalendarDays, Radio } from 'lucide-react';
 import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { MobileMenuButton } from '@/components/feed/MobileMenuButton';
+import { useLiquidMorph } from '@/components/ui/liquid-morph';
+import { SPRING } from '@/lib/motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { WIDE_NO_RIGHT_SIDEBAR_WIDTH } from '@/lib/layout-width';
 import { CommunitiesColumn } from '@/components/feed/CommunitiesColumn';
 import { CommunitiesSkeleton } from '@/components/feed/CommunitiesSkeleton';
@@ -69,6 +73,11 @@ function CommunitiesShell({ children }: { children: React.ReactNode }) {
 function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
   const { t } = useTranslation('site');
   const navigate = useNavigate();
+  const reduced = useReducedMotion();
+  // §15.1/§5.47: the active tab is a flowing capsule with the shared morph
+  // (was a flat bg-site-accent-dim pill). aria-controls + roving nav unchanged.
+  const capsuleRef = useRef<HTMLSpanElement>(null);
+  const { squashStyle, underlay } = useLiquidMorph({ capsuleRef, axis: 'x', reduced });
 
   const tabs: { id: CommunitiesTab; label: string; icon: LucideIcon }[] = [
     {
@@ -114,9 +123,11 @@ function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
         <div
           role="tablist"
           aria-label={t('communities-sections', { defaultValue: 'Community sections' })}
-          className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
+          className="relative flex min-w-0 flex-1 items-center gap-1 overflow-x-auto"
           onKeyDown={onKeyDown}
         >
+          {/* Goo underlay (§5.47) — capsule-only, behind the tabs; labels above. */}
+          {underlay}
           {tabs.map(({ id, label, icon: Icon }) => {
             const isActive = active === id;
             return (
@@ -130,14 +141,26 @@ function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
                 tabIndex={isActive ? 0 : -1}
                 onClick={() => setTab(id)}
                 className={cn(
-                  'inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'bg-site-accent-dim text-site-accent'
-                    : 'text-site-text-muted hover:bg-site-surface-hover hover:text-site-text',
+                  'relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors',
+                  isActive ? 'text-site-accent' : 'text-site-text-muted hover:text-site-text',
                 )}
               >
-                <Icon className="h-4 w-4" aria-hidden />
-                {label}
+                {isActive && (
+                  <motion.span
+                    ref={capsuleRef}
+                    layoutId="communities-tab-capsule"
+                    aria-hidden
+                    className="absolute inset-0 z-0"
+                    transition={reduced ? { duration: 0 } : SPRING.snappy}
+                  >
+                    <motion.span
+                      className="glass-liquid absolute inset-0 rounded-full bg-site-accent-dim shadow-[inset_0_1px_0_var(--site-glass-rim)]"
+                      style={squashStyle}
+                    />
+                  </motion.span>
+                )}
+                <Icon className="relative z-1 h-4 w-4" aria-hidden />
+                <span className="relative z-1">{label}</span>
               </button>
             );
           })}

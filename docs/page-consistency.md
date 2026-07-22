@@ -114,7 +114,23 @@ Work through this for every new or edited page:
       own sheet; on narrow screens wrap it in `tab-sheet-scroll` so it scrolls
       horizontally instead of clipping. Exception: tab bars that are really
       route links (RMHLadder) or need richer ARIA (`aria-controls`) keep their
-      own markup and add the `layoutId` capsule + sheet wrapper directly.
+      own markup and add the `layoutId` capsule + sheet wrapper directly. Every
+      such custom capsule still carries the §5.47 morph underlay (`useLiquidMorph`
+      + the two-layer outer-`layoutId`/inner-material span split) — a strip is
+      either fully liquid or it isn't shipped (§15.1).
+- [ ] **Spacing rhythm (§15.4):** 12px (`space-y-3` / `gap-3`) between sibling
+      glass elements in a column; `md:gap-4 xl:gap-6` between columns; `mt-3` from
+      a header/hero capsule to the first content below it. Internal padding at the
+      primitive's canonical value, never a cramped per-page override: text
+      inputs/wells `px-3.5 py-2.5` (16px font floor on phones), card content
+      `px-4 py-3`+, menu/list rows ≥12px inline padding (text never touches the
+      glass edge).
+- [ ] **Sticky stacking (§15.5):** a column has **one sticky group**. Either
+      *merge* related co-stickies (tabs + search) into a single sticky glass
+      container, or *cascade* independent stickies with cumulative `top` offsets
+      (account for the condensed `data-scrolled` header height and the smaller
+      `top-2` mobile offset). Never pin two stickies to the same `top` — they
+      overlap and hide each other while scrolled.
 - [ ] v2 optics come free — don't re-add them: panes/overlays/chrome get the
       specular rim glint automatically; interactive fills glint on hover. Only
       opt in to the rationed extras where a page's spec says so:

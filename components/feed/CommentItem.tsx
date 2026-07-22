@@ -15,6 +15,7 @@ import { AIGenerateButton } from './AIGenerateButton';
 import { MentionTextarea } from './MentionTextarea';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
 import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
+import { useLiquidPop } from '@/components/ui/liquid-pop';
 import { useFreshUser } from '@/stores/userDisplayStore';
 import { timeAgoShort } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
@@ -111,6 +112,14 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
   const [showTranslated, setShowTranslated] = useState(false);
   const [translating, setTranslating] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
+  const menuPanelRef = useRef<HTMLDivElement>(null);
+  // §15.6 liquid pop — the comment overflow menu buds out of its trigger.
+  const { underlay: menuUnderlay } = useLiquidPop({
+    triggerRef: menuBtnRef,
+    panelRef: menuPanelRef,
+    open: menuOpen,
+  });
 
   // When the site language changes, drop any cached translation so the next
   // "Translate" click re-translates into the newly selected language.
@@ -291,14 +300,16 @@ export function CommentItem({ comment, postId, sessionUser, onReplyAdded, onComm
             {/* More menu */}
             {!comment.deletedAt && (
               <div className="relative ml-auto shrink-0" ref={menuRef}>
+                {menuUnderlay}
                 <button
+                  ref={menuBtnRef}
                   onClick={() => setMenuOpen((v) => !v)}
                   className="p-1 rounded-full text-site-text-dim hover:text-site-text hover:bg-site-surface transition-colors"
                 >
                   <MoreHorizontal className="w-3.5 h-3.5" />
                 </button>
                 {menuOpen && (
-                  <div className="absolute right-0 top-full mt-1 w-44 glass-overlay py-1 z-30">
+                  <div ref={menuPanelRef} className="absolute right-0 top-full mt-1 w-44 glass-overlay py-1 z-30">
                     <button
                       onClick={() => { setMenuOpen(false); setEngagementModal('likes'); }}
                       className="flex items-center gap-2 w-full px-3 py-2 text-sm text-site-text hover:bg-site-surface transition-colors"

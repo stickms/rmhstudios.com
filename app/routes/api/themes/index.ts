@@ -37,7 +37,8 @@ export const Route = createFileRoute('/api/themes/')({
             const id = await createTheme(session.user.id, parsed.data.name, parsed.data.tokens);
             return Response.json({ id });
           } catch (e) {
-            if (e instanceof ThemeError) return Response.json({ error: e.message }, { status: 400 });
+            if (e instanceof ThemeError)
+              return Response.json({ error: e.message }, { status: e.message === 'MEMBERS_ONLY' ? 403 : 400 });
             throw e;
           }
         } catch (error) {

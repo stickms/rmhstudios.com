@@ -10,6 +10,7 @@ import { Link } from '@tanstack/react-router';
 import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { Button } from '@/components/ui/button';
+import { useLiquidPop } from '@/components/ui/liquid-pop';
 import { GhostTextArea } from './GhostTextArea';
 import { PostImageGrid } from './PostImageGrid';
 import { useMessageSuggestion } from '@/lib/useMessageSuggestion';
@@ -84,6 +85,14 @@ export function ConversationView({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const attachRef = useRef<HTMLDivElement>(null);
+  const attachBtnRef = useRef<HTMLButtonElement>(null);
+  const attachPanelRef = useRef<HTMLDivElement>(null);
+  // §15.6 liquid pop — the attach (+) menu buds out of its trigger.
+  const { underlay: attachUnderlay } = useLiquidPop({
+    triggerRef: attachBtnRef,
+    panelRef: attachPanelRef,
+    open: attachOpen,
+  });
   const imageInputRef = useRef<HTMLInputElement>(null);
   const initialFetched = useRef(false);
   // IDs of messages that should NOT animate in: the initial page and any
@@ -859,7 +868,9 @@ export function ConversationView({
           />
           {/* Attach (+) menu — image, GIF. Mirrors the rmhark composer. */}
           <div className="relative shrink-0" ref={attachRef}>
+            {attachUnderlay}
             <button
+              ref={attachBtnRef}
               type="button"
               aria-label={t('add-to-message', { defaultValue: 'Add to message' })}
               aria-expanded={attachOpen}
@@ -874,7 +885,7 @@ export function ConversationView({
               )}
             </button>
             {attachOpen && (
-              <div className="absolute bottom-full right-0 z-30 mb-1 w-40 glass-overlay py-1">
+              <div ref={attachPanelRef} className="absolute bottom-full right-0 z-30 mb-1 w-40 glass-overlay py-1">
                 <button
                   type="button"
                   disabled={imageUrls.length >= MAX_DM_IMAGES}

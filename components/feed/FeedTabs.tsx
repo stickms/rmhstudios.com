@@ -41,10 +41,11 @@ export function FeedTabs({ mode, onModeChange }: FeedTabsProps) {
         onChange={(id) => onModeChange(id as 'feed' | 'friends')}
       />
 
-      {/* Content type filters (only in feed mode). w-fit pill scrolls inside its
-          own overflow track when it exceeds the column width. */}
+      {/* Content type filters (only in feed mode). The w-fit pill scrolls inside
+          the shared tab-sheet track (overflow + edge fade, §5.5x A.4) when it
+          exceeds the column width. */}
       {mode === 'feed' && (
-        <div className="overflow-x-auto scrollbar-none">
+        <div className="tab-sheet-scroll">
           <LiquidTabs
             tabs={contentTabs}
             value={filter}

@@ -19,6 +19,7 @@ import {
   searchShortcodes,
   replaceCompletedShortcode,
 } from '@/lib/emoji/shortcode-matcher';
+import { useLiquidPop } from '@/components/ui/liquid-pop';
 
 interface UserSuggestion {
   id: string;
@@ -90,6 +91,9 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
     const [activeIndex, setActiveIndex] = useState(0);
     const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
     const [loading, setLoading] = useState(false);
+    // §15.6 liquid pop — the suggestion list buds from the caret anchor.
+    const popAnchorRef = useRef<HTMLSpanElement>(null);
+    const popPanelRef = useRef<HTMLDivElement>(null);
 
     // Ignore stale fetches and re-open the menu only for fresh input.
     const requestSeq = useRef(0);
@@ -214,6 +218,11 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
 
     const isOpen = trigger !== null && (loading || suggestions.length > 0);
     const query = trigger?.query ?? '';
+    const { underlay: popUnderlay } = useLiquidPop({
+      triggerRef: popAnchorRef,
+      panelRef: popPanelRef,
+      open: isOpen && position !== null,
+    });
 
     const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
       if (isOpen && suggestions.length > 0) {
@@ -285,7 +294,17 @@ export const MentionTextarea = forwardRef<HTMLTextAreaElement, MentionTextareaPr
         />
 
         {isOpen && position && (
+          <span
+            ref={popAnchorRef}
+            aria-hidden
+            className="pointer-events-none absolute h-1 w-1"
+            style={{ top: position.top, left: Math.max(0, position.left) }}
+          />
+        )}
+        {popUnderlay}
+        {isOpen && position && (
           <div
+            ref={popPanelRef}
             className="absolute z-50 w-64 max-h-64 overflow-y-auto glass-overlay py-1"
             style={{ top: position.top, left: Math.max(0, position.left) }}
             // Keep focus in the textarea when clicking a row.

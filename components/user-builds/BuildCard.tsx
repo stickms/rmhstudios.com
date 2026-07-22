@@ -1,6 +1,7 @@
 'use client';
 
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
+import { useRef } from 'react';
 import { Heart, MessageCircle, Eye, ExternalLink, Github, Award } from 'lucide-react';
 import type { Build } from '@/lib/user-builds-types';
 import { TechBadges } from './TechBadges';
@@ -9,6 +10,7 @@ import { UserAvatar } from '@/components/ui/UserAvatar';
 import { useCardSheen } from '@/hooks/useCardSheen';
 import { formatCount } from '@/lib/utils';
 import { safeHref } from '@/lib/url-safety';
+import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { useTranslation } from 'react-i18next';
 
 interface BuildCardProps {
@@ -38,6 +40,10 @@ function timeAgo(dateStr: string, t: TFunc): string {
 export function BuildCard({ build, onLike }: BuildCardProps) {
   const { t } = useTranslation("c-user-builds");
   const { cardRef, sheenStyle, handlers: sheenHandlers } = useCardSheen();
+  const navigate = useNavigate();
+  // §5.48: the card thumbnail liquidly expands into the detail's thumbnail
+  // (image↔image). Name set at click time only (never at rest on a list item).
+  const thumbRef = useRef<HTMLDivElement>(null);
 
   const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -51,12 +57,22 @@ export function BuildCard({ build, onLike }: BuildCardProps) {
       className="h-full hover:scale-[1.03] transition-transform duration-300"
       {...sheenHandlers}
     >
-      <Link to={`/user-builds/${build.slug}` as string} className="block h-full">
+      <Link
+        to={`/user-builds/${build.slug}` as string}
+        onClick={(e) => {
+          if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          e.preventDefault();
+          runLiquidOpen(thumbRef.current, liquidVTName('build', build.id), () =>
+            navigate({ to: `/user-builds/${build.slug}` } as never),
+          );
+        }}
+        className="block h-full"
+      >
         <div className="group relative rounded-site border border-site-border bg-site-surface hover:border-site-accent/50 transition-all overflow-hidden flex flex-col h-full">
           {/* Mouse-tracking sheen */}
           <div style={sheenStyle} className="rounded-site" />
         {/* Thumbnail */}
-        <div className="relative">
+        <div ref={thumbRef} className="relative">
           {build.thumbnailUrl ? (
             <div className="aspect-video w-full overflow-hidden bg-site-bg">
               <BlurImage

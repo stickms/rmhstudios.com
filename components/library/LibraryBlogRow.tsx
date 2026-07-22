@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { Calendar } from 'lucide-react';
 import type { Post } from '@/lib/blog';
 import { useReveal } from './LibraryReveal';
+import { useLiquidLink } from '@/hooks/useLiquidLink';
+import { liquidVTName } from '@/lib/view-transition';
 
 export function LibraryBlogRow({ posts }: { posts: Partial<Post>[] }) {
   const { t } = useTranslation('library');
@@ -33,10 +35,14 @@ export function LibraryBlogRow({ posts }: { posts: Partial<Post>[] }) {
 
 function BlogCard({ post }: { post: Partial<Post> }) {
   const revealRef = useReveal();
+  const liquidOpen = useLiquidLink();
+  const slug = post.slug ?? '';
   return (
     <Link
       ref={revealRef}
       to={`/blog/${post.slug}` as string}
+      // §5.48: liquidly expand the card into the article header on click.
+      onClick={(e) => liquidOpen(e, liquidVTName('blog', slug), { to: `/blog/${slug}` })}
       className="lib-blog__card lib-reveal"
       role="listitem"
     >

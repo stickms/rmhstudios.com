@@ -17,6 +17,7 @@ import { NotificationBadge } from '@/components/ui/notification-badge';
 import { Spinner } from '@/components/ui/spinner';
 import { NOTIFICATIONS_READ_EVENT } from '@/lib/useNotificationCount';
 import { timeAgoShort } from '@/lib/utils';
+import { useLiquidPop } from '@/components/ui/liquid-pop';
 
 interface NotificationActor {
   id: string;
@@ -84,6 +85,9 @@ export function NotificationsPopover({
   const [pos, setPos] = useState({ left: 0, top: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  // §15.6 liquid pop — the panel buds out of the bell trigger. z above the
+  // portaled panel's z-[80] so the reabsorb reads over the page, not under it.
+  const { underlay } = useLiquidPop({ triggerRef: btnRef, panelRef, open, z: 79 });
 
   const load = useCallback(async () => {
     try {
@@ -189,6 +193,8 @@ export function NotificationsPopover({
         </div>
         <span className={labelClass}>{label}</span>
       </button>
+
+      {underlay}
 
       {open &&
         typeof document !== 'undefined' &&

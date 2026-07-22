@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CHAT_REACTION_EMOJIS } from '@/lib/shared/chat-constants';
+import { useLiquidPop } from '@/components/ui/liquid-pop';
 
 const EmojiPickerPanel = lazy(() => import('./EmojiPickerPanel'));
 
@@ -19,6 +20,19 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
   const { t } = useTranslation('feed');
   const [showFull, setShowFull] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  // §15.6 liquid pop — the reaction bar buds out of the tap point. This menu
+  // mounts already-open, so flip an internal open flag on after mount to drive
+  // the entrance morph; a 0×0 anchor at (x, y) is the bud origin.
+  const anchorRef = useRef<HTMLSpanElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const [popOpen, setPopOpen] = useState(false);
+  useEffect(() => setPopOpen(true), []);
+  const { underlay } = useLiquidPop({
+    triggerRef: anchorRef,
+    panelRef: barRef,
+    open: popOpen && !showFull,
+    z: 99,
+  });
 
   useEffect(() => {
     const onPointerDown = (e: MouseEvent | TouchEvent) => {
@@ -46,6 +60,13 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
 
   return createPortal(
     <div ref={rootRef} className="fixed z-[100]" style={style}>
+      <span
+        ref={anchorRef}
+        aria-hidden
+        className="pointer-events-none fixed h-1 w-1"
+        style={{ top: y, left: x }}
+      />
+      {underlay}
       {showFull ? (
         // Exempt the emoji-picker widget from the app-wide twemoji observer: it
         // renders its own emoji and re-renders internally, so letting twemoji
@@ -65,7 +86,7 @@ export function ReactionMenu({ x, y, onSelect, onClose }: ReactionMenuProps) {
           </Suspense>
         </div>
       ) : (
-        <div className="flex items-center gap-1 rounded-full px-2 py-1.5 glass-overlay">
+        <div ref={barRef} className="flex items-center gap-1 rounded-full px-2 py-1.5 glass-overlay">
           {CHAT_REACTION_EMOJIS.map((emoji) => (
             <button
               key={emoji}

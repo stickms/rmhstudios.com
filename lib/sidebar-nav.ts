@@ -23,9 +23,6 @@ import {
   Users,
   Shield,
   Terminal,
-  Car,
-  Building2,
-  Briefcase,
   Gamepad2,
   LayoutGrid,
   Rocket,
@@ -83,18 +80,10 @@ export const SIDEBAR_NAV: NavItem[] = [
   { id: '/arcade', href: '/arcade', tKey: 'nav-arcade', label: 'Arcade', icon: Gamepad2 },
   { id: '/predictions', href: '/predictions', tKey: 'nav-predictions', label: 'Predictions', icon: TrendingUp },
   { id: '/developer', href: '/developer', tKey: 'nav-developer', label: 'Developer', icon: Terminal },
-  {
-    id: 'group:services',
-    group: 'services',
-    tKey: 'nav-services',
-    label: 'Services',
-    icon: LayoutGrid,
-    children: [
-      { id: '/homes', href: '/homes', tKey: 'nav-homes', label: 'RMHHomes', icon: Building2 },
-      { id: '/rmhladder', href: '/rmhladder', tKey: 'nav-rmhladder', label: 'RMHLadder', icon: Briefcase },
-      { id: '/rideshare', href: '/rideshare', tKey: 'nav-rideshare', label: 'Rideshare', icon: Car },
-    ],
-  },
+  // §15.7: Services is a plain link to the /services hub page (the former
+  // expanding group died per §12.8). Its verticals (/homes, /rmhladder,
+  // /rideshare) live as tabs on that page and stay reachable directly.
+  { id: '/services', href: '/services', tKey: 'nav-services', label: 'Services', icon: LayoutGrid },
   {
     id: 'group:ventures',
     group: 'ventures',

@@ -95,7 +95,7 @@ export function PartyBar({ inline = true }: { inline?: boolean }) {
         {menuOpen && (
           <div
             className={cn(
-              'absolute right-0 z-10 w-52 rounded-site border border-site-border bg-site-surface p-1 shadow-site',
+              'absolute right-0 z-10 w-52 glass-overlay p-1',
               // Inline card opens the menu downward; the docked pill opens it up.
               inline ? 'top-full mt-2' : 'bottom-full mb-2',
             )}

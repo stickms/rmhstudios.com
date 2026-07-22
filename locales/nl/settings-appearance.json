@@ -13,5 +13,9 @@
   "reduce-motion": "Reduce motion",
   "reduce-motion-desc": "Minimize animations and transitions.",
   "text-size": "Text size",
-  "text-size-desc": "Scale the whole interface."
+  "text-size-desc": "Scale the whole interface.",
+  "tilt-denied": "Motion access was declined. You can enable it in Safari settings.",
+  "tilt-effects": "Tilt effects",
+  "tilt-effects-desc": "Let the glass catch light as you tilt your device.",
+  "tilt-enabled": "Tilt effects on"
 }

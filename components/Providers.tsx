@@ -20,7 +20,9 @@ import {
   DEFAULT_STYLE,
   SiteStyle,
   REDUCE_TRANSPARENCY_KEY,
+  USER_THEME_KEY,
 } from '@/stores/themeStore';
+import { clearThemeTokens, type AppliedUserTheme } from '@/lib/themes/tokens';
 import { applyAccent, isAccentId, ACCENT_STORAGE_KEY, accentCssVars } from '@/lib/appearance';
 import { ensureReadableAccent } from '@/lib/appearance/contrast';
 import {
@@ -43,6 +45,7 @@ import { games } from '@/lib/games';
 import { apps } from '@/lib/apps';
 import { AppI18nProvider } from '@/components/i18n/AppI18nProvider';
 import { CommandPaletteMount } from '@/components/site/CommandPaletteMount';
+import { ThemePreviewBar } from '@/components/themes/ThemePreviewBar';
 import { RecentsTracker } from '@/components/site/RecentsTracker';
 import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import type { Locale } from '@/lib/i18n/config';
@@ -221,6 +224,8 @@ export function Providers({
   const readableFont = useThemeStore((s) => s.readableFont);
   const customAccent = useThemeStore((s) => s.customAccent);
   const reduceMotion = useThemeStore((s) => s.reduceMotion);
+  const userTheme = useThemeStore((s) => s.userTheme);
+  const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
   const isFirstRun = useRef(true);
 
@@ -404,12 +409,20 @@ export function Providers({
     if (localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1') {
       useThemeStore.getState().setReduceTransparency(true);
     }
-    // Glass clarity (§5.46): the stored stop, else map a legacy reduce-transparency
-    // flag to stop 0 (Opaque) so existing "reduce transparency" users keep it.
+    // Glass clarity (§5.46): the stored stop wins; unset means Default (2) —
+    // full glass. The launch-era migration mapped a legacy reduce-transparency
+    // flag to stop 0 (Opaque), which surprised users into an opaque site; that
+    // mapping is removed, and the exact state it produced (level 0 + legacy
+    // flag together) is healed back to Default once. Deliberate Opaque picks
+    // made after this fix never write the legacy key, so they are not healed.
+    // True accessibility needs stay covered by prefers-reduced-transparency.
     const gl = Number(localStorage.getItem(GLASS_LEVEL_KEY));
-    if (isGlassLevel(gl)) useThemeStore.getState().setGlassLevel(gl);
-    else if (localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1')
-      useThemeStore.getState().setGlassLevel(0);
+    if (gl === 0 && localStorage.getItem(REDUCE_TRANSPARENCY_KEY) === '1') {
+      localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
+      localStorage.setItem(GLASS_LEVEL_KEY, '2');
+    } else if (isGlassLevel(gl)) {
+      useThemeStore.getState().setGlassLevel(gl);
+    }
     // Comfort suite (§13) — hydrate from the no-flash localStorage cache.
     const st = useThemeStore.getState();
     const fs = Number(localStorage.getItem(FONT_SCALE_KEY));
@@ -419,6 +432,19 @@ export function Providers({
     if (localStorage.getItem(REDUCE_MOTION_KEY) === '1') st.setReduceMotion(true);
     const ca = localStorage.getItem(CUSTOM_ACCENT_KEY);
     if (ca && HEX_RE.test(ca)) st.setCustomAccent(ca);
+    // Marketplace user theme (§14): the no-flash script already painted it; hydrate
+    // the store so the runtime effect keeps it applied and can clear it on removal.
+    try {
+      const raw = localStorage.getItem(USER_THEME_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as AppliedUserTheme;
+        if (parsed && typeof parsed.id === 'string' && parsed.vars && typeof parsed.bg === 'string') {
+          st.setUserTheme(parsed);
+        }
+      }
+    } catch {
+      /* corrupt cache — ignore, the built-in theme shows through */
+    }
   }, []);
 
   // Sync style class + accent override to <html> and persist. `preview` (the
@@ -447,6 +473,23 @@ export function Providers({
     // Persist the COMMITTED style (not a transient preview).
     localStorage.setItem('rmh-style', style);
 
+    // Marketplace user theme (§14): a full v2 retint set inline over the built-in
+    // cascade (a transient preview beats the committed one). Skipped on app/game
+    // routes (they own their palette) and under high-contrast (its opaque black/
+    // white must win — inline vars would out-specify the class). Reduced-
+    // transparency composes for free: it paints --site-surface-opaque, which the
+    // theme sets. Accent presets are applied AFTER this block so they still win.
+    const activeUserTheme = userThemePreview ?? userTheme;
+    const userThemeOn = !!activeUserTheme && !isAppRoute && activeStyle !== 'high-contrast';
+    if (userThemeOn && activeUserTheme) {
+      for (const [k, v] of Object.entries(activeUserTheme.vars)) html.style.setProperty(k, v);
+    } else {
+      clearThemeTokens(html);
+    }
+    // Persist only the COMMITTED theme (not a transient preview) for the no-flash script.
+    if (userTheme) localStorage.setItem(USER_THEME_KEY, JSON.stringify(userTheme));
+    else localStorage.removeItem(USER_THEME_KEY);
+
     // Glass clarity (§5.46): the slider owns both the reduce-transparency class
     // (stop 0, the §10 degradation the glass keys off) AND the inline user
     // blur/tint factors (stops 1/3/4). Persisted for the no-flash script; the
@@ -454,8 +497,11 @@ export function Providers({
     // or the no-flash fallback still turns glass off.
     applyGlassLevel(html, glassLevel);
     localStorage.setItem(GLASS_LEVEL_KEY, String(glassLevel));
-    if (glassLevel === 0) localStorage.setItem(REDUCE_TRANSPARENCY_KEY, '1');
-    else localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
+    // Never write the legacy reduce-transparency key here: the level-0 heal in
+    // the hydration effect keys on (level 0 + legacy flag) to identify the
+    // launch-era migration state, so a deliberate Opaque pick must not recreate
+    // that pair.
+    localStorage.removeItem(REDUCE_TRANSPARENCY_KEY);
 
     // Accent override: apply on content pages; clear on app/game routes (they own
     // their palette) and when no accent is chosen. applyAccent no-ops safely for a
@@ -498,7 +544,11 @@ export function Providers({
     // Excluded app/game routes keep the base (dark) document background so the
     // browser bar tint and overscroll match their :root-token chrome — same
     // gate as the inline themeScript in app/routes/__root.tsx.
-    const bg = isAppRoute ? THEME_BG.default : (THEME_BG[activeStyle] ?? THEME_BG.default);
+    const bg = userThemeOn
+      ? (activeUserTheme as AppliedUserTheme).bg
+      : isAppRoute
+        ? THEME_BG.default
+        : (THEME_BG[activeStyle] ?? THEME_BG.default);
     html.style.backgroundColor = bg;
     document.body.style.backgroundColor = bg;
 
@@ -523,6 +573,8 @@ export function Providers({
     readableFont,
     customAccent,
     reduceMotion,
+    userTheme,
+    userThemePreview,
   ]);
 
   // ── Account sync ─────────────────────────────────────────────────────────
@@ -626,8 +678,11 @@ export function Providers({
           // Glass clarity (§5.46): the account stop wins; otherwise map a legacy
           // reduce-transparency flag to stop 0 (Opaque). glassLevel is authoritative
           // for the reduce-transparency class going forward.
+          // An account without an explicit glassLevel means Default (2) — the
+          // legacy reduceTransparency boolean no longer forces Opaque (it
+          // surprised users into an opaque site; OS-level
+          // prefers-reduced-transparency still covers accessibility needs).
           if (isGlassLevel(r.glassLevel)) store.setGlassLevel(r.glassLevel);
-          else if (nextReduce) store.setGlassLevel(0);
           appearanceSyncedRef.current = true;
         },
       )
@@ -668,6 +723,9 @@ export function Providers({
                   {children}
                   <CommandPaletteMount />
                   <RecentsTracker />
+                  {/* §14: the floating try-before-buy / preview-on-site confirm bar,
+                      mounted globally so it survives navigation under a previewed theme. */}
+                  <ThemePreviewBar />
                 </ConfirmProvider>
               </ResolvedUserCtx.Provider>
               <Toaster

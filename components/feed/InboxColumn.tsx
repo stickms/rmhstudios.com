@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { MobileMenuButton } from './MobileMenuButton';
 import { MobileBrandPrefix } from './MobileHeader';
 import { useSession } from '@/components/Providers';
-import { NotificationBadge } from '@/components/ui/notification-badge';
+import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { useUnreadCount } from '@/lib/useUnreadCount';
 import { useNotificationCount } from '@/lib/useNotificationCount';
 import { MessagesColumn } from './MessagesColumn';
@@ -56,30 +56,19 @@ export function InboxColumn({
             {t('inbox-title', { defaultValue: 'Inbox' })}
           </h1>
         </div>
-        <div className="flex items-center gap-1 px-2 pb-2" role="tablist" aria-label={t('inbox-sections-label', { defaultValue: 'Inbox sections' })}>
-          {tabs.map((t) => {
-            const Icon = t.icon;
-            const active = tab === t.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => setTab(t.id)}
-                className={`relative flex flex-1 items-center justify-center gap-2 rounded-site px-3 py-2 text-sm font-medium transition-colors ${
-                  active
-                    ? 'text-site-accent bg-site-accent-dim'
-                    : 'text-site-text-muted hover:text-site-text hover:bg-site-surface'
-                }`}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                <span className="hidden sm:inline">{t.label}</span>
-                <NotificationBadge count={t.badge ?? 0} />
-              </button>
-            );
-          })}
-        </div>
+      </div>
+
+      {/* §15.1/§5.45: inbox sections as a unified sheet + flowing-capsule strip,
+          standalone below the title chrome (was a flat-pill row inside it). The
+          w-fit pill scrolls in the shared tab-sheet track on narrow screens. */}
+      <div className="mt-3 px-2 tab-sheet-scroll md:px-3">
+        <LiquidTabs
+          size="sm"
+          aria-label={t('inbox-sections-label', { defaultValue: 'Inbox sections' })}
+          value={tab}
+          onChange={(id) => setTab(id as InboxTab)}
+          tabs={tabs}
+        />
       </div>
 
       {/* Active section */}

@@ -15,6 +15,7 @@ const ComposeModal = lazy(() =>
 import { useTranslation } from 'react-i18next';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
 import { AnimatedCount } from '@/components/ui/AnimatedCount';
+import { useLiquidPop } from '@/components/ui/liquid-pop';
 
 interface RMHarkActionsProps {
   item: FeedItem;
@@ -42,6 +43,14 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
   const quoteMounted = useRef(false);
   quoteMounted.current ||= quoteOpen;
   const repostRef = useRef<HTMLDivElement>(null);
+  const repostBtnRef = useRef<HTMLButtonElement>(null);
+  const repostPanelRef = useRef<HTMLDivElement>(null);
+  // §15.6 liquid pop — the reRMHark menu buds out of its trigger.
+  const { underlay: repostUnderlay } = useLiquidPop({
+    triggerRef: repostBtnRef,
+    panelRef: repostPanelRef,
+    open: repostMenu,
+  });
   const { run: runLike } = useOptimisticAction();
   const { run: runRepost } = useOptimisticAction();
 
@@ -114,7 +123,9 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
 
       {/* reRMHark */}
       <div className="relative" ref={repostRef}>
+        {repostUnderlay}
         <button
+          ref={repostBtnRef}
           onClick={(e) => {
             e.stopPropagation();
             setRepostMenu((v) => !v);
@@ -137,6 +148,7 @@ export function RMHarkActions({ item, onUpdate }: RMHarkActionsProps) {
         </button>
         {repostMenu && (
           <div
+            ref={repostPanelRef}
             className="absolute left-0 top-full mt-1 w-40 glass-overlay py-1 z-30"
             onClick={(e) => e.stopPropagation()}
           >

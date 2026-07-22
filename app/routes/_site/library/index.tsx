@@ -11,8 +11,9 @@
  * and to migrate the bundled catalog into object storage.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
+import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { createServerFn } from '@tanstack/react-start';
 import { getRequest } from '@tanstack/react-start/server';
 import {
@@ -33,6 +34,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { SPRING } from '@/lib/motion';
+import { useReducedMotion } from '@/hooks/useReducedMotion';
+import { useLiquidMorph } from '@/components/ui/liquid-morph';
 import { useMobileSidebar } from '@/components/feed/MobileSidebarShell';
 import { MobileBrandPrefix } from '@/components/feed/MobileHeader';
 import { type LibraryBook } from '@/lib/library/library';
@@ -155,6 +158,15 @@ function Library() {
   const navigate = useNavigate();
   const setView = (next: LibraryView) =>
     void navigate({ to: '/library', search: next === 'all' ? {} : { view: next }, replace: true });
+  const reduced = useReducedMotion();
+  // §15.1/§5.47: the flowing lib-nav capsule carries the shared morph (velocity
+  // squash + gooey trailing droplet), the same as every other converged strip.
+  const navCapsuleRef = useRef<HTMLSpanElement>(null);
+  const { squashStyle: navSquash, underlay: navUnderlay } = useLiquidMorph({
+    capsuleRef: navCapsuleRef,
+    axis: 'x',
+    reduced,
+  });
   // A section renders when we're on "All" or on its own category.
   const shows = (id: LibraryView) => view === 'all' || view === id;
   const session = useSession();
@@ -425,7 +437,9 @@ function Library() {
             className="lib-nav glass-fill glass-bevel-sm w-fit rounded-full p-1"
             aria-label={t('sections-label', { defaultValue: 'Library sections' })}
           >
-            <div className="lib-nav__scroll" role="tablist">
+            <div className="lib-nav__scroll relative" role="tablist">
+              {/* Goo underlay (§5.47) — capsule-only, behind the chips; labels above. */}
+              {navUnderlay}
               {(
                 [
                   { id: 'all', label: t('cat-all', { defaultValue: 'All' }), icon: LayoutGrid },
@@ -467,12 +481,17 @@ function Library() {
                     onClick={() => setView(id)}
                   >
                     {active && (
+                      // Outer span owns the layoutId position morph; the inner
+                      // chip-bg carries the material + velocity squash (§5.47).
                       <motion.span
+                        ref={navCapsuleRef}
                         layoutId="lib-nav-active"
-                        className="lib-nav__chip-bg"
-                        transition={SPRING.soft}
+                        className="absolute inset-0 z-0"
+                        transition={reduced ? { duration: 0 } : SPRING.soft}
                         aria-hidden="true"
-                      />
+                      >
+                        <motion.span className="lib-nav__chip-bg" style={navSquash} />
+                      </motion.span>
                     )}
                     <span className="lib-nav__chip-label">
                       <Icon aria-hidden="true" />
@@ -697,6 +716,7 @@ function BookSpine({
   const { t } = useTranslation('library');
   const revealRef = useReveal();
   const menu = useContextMenu();
+  const navigate = useNavigate();
   const style = {
     '--book-hue': String(book.hue),
   } as React.CSSProperties;
@@ -738,6 +758,16 @@ function BookSpine({
         className="lib-book"
         style={style}
         draggable={dnd?.draggable ? false : undefined}
+        // §5.48: the book cover liquidly expands into the reader's hero stage.
+        // Name set only at click time (tag the cover child).
+        onClick={(e) => {
+          if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+          e.preventDefault();
+          const cover = e.currentTarget.querySelector('.lib-book__cover') as HTMLElement | null;
+          runLiquidOpen(cover, liquidVTName('book', book.slug), () =>
+            navigate({ to: '/library/$slug', params: { slug: book.slug } } as never),
+          );
+        }}
         aria-label={t('open-book', { title: book.title, defaultValue: 'Open {{title}}' })}
       >
         <div className="lib-book__3d">

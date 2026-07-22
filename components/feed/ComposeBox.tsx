@@ -32,6 +32,7 @@ import { useEmojiInsert } from '@/lib/emoji/use-emoji-insert';
 import { useSession, useResolvedUser } from '@/components/Providers';
 import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { Button } from '@/components/ui/button';
+import { useLiquidPop } from '@/components/ui/liquid-pop';
 import { useFeedStore } from '@/stores/feedStore';
 import {
   MAX_RMHARK_LENGTH,
@@ -103,9 +104,16 @@ export function ComposeBox({
   // Popover element itself (not its trigger wrapper) — the viewport-fit hook
   // clamps this so the edge-anchored (+) menu can't spill off a small screen.
   const menuPopRef = useRef<HTMLDivElement>(null);
+  const menuBtnRef = useRef<HTMLButtonElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const insertEmoji = useEmojiInsert(textareaRef, content, setContent);
   useMenuViewportFit(menuOpen, menuPopRef);
+  // §15.6 liquid pop — the attachment (+) menu buds out of its trigger.
+  const { underlay: menuUnderlay } = useLiquidPop({
+    triggerRef: menuBtnRef,
+    panelRef: menuPopRef,
+    open: menuOpen,
+  });
 
   // Autosave the draft text so a refresh/navigation can't eat an unsent post;
   // offer any stored draft back once on mount.
@@ -869,7 +877,9 @@ export function ComposeBox({
 
               {/* Plus button — image upload, GIF, poll, draft, schedule */}
               <div className="relative" ref={menuRef}>
+                {menuUnderlay}
                 <button
+                  ref={menuBtnRef}
                   onClick={() => setMenuOpen((v) => !v)}
                   aria-label={t('add-to-post-aria', { defaultValue: 'Add to post' })}
                   className="p-1.5 rounded-full text-site-text-dim hover:text-site-accent hover:bg-site-accent/10 transition-colors"

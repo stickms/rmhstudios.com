@@ -38,6 +38,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { LibraryBook } from '@/lib/library/library';
+import { liquidVTName } from '@/lib/view-transition';
 import { PageStore } from '@/lib/library/page-store';
 import { useBookState, type Bookmark as BookmarkT, type Note } from '@/lib/library/reader-store';
 import { BookCanvas } from './BookCanvas';
@@ -397,7 +398,10 @@ export function BookReader({ book }: { book: LibraryBook }) {
         </div>
       </header>
 
-      <div className="lib-reader__stage">
+      {/* §5.48 liquid-open hero — the shelf book cover morphs into this stage
+          (no DOM cover in the WebGL reader, so the stage container is the closest
+          stable hero; naming only, no restyle). */}
+      <div className="lib-reader__stage" style={{ viewTransitionName: liquidVTName('book', book.slug) }}>
         {status === 'loading' && (
           <div className="lib-reader__status" role="status" aria-live="polite">
             <Loader2 className="lib-spin" size={22} />

@@ -10,7 +10,8 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
       <div className="relative">
         <select
           className={cn(
-            "flex h-11 w-full appearance-none glass-inset px-3.5 py-1.5 pr-9 text-sm text-site-text transition-[color,box-shadow,border-color,background-color] hover:border-site-border-bright",
+            // §15.4: match the input/textarea well interior padding (px-3.5 py-2.5).
+            "flex h-11 w-full appearance-none glass-inset px-3.5 py-2.5 pr-9 text-sm text-site-text transition-[color,box-shadow,border-color,background-color] hover:border-site-border-bright",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-site-accent/50 focus-visible:border-site-accent",
             "disabled:cursor-not-allowed disabled:opacity-50",
             className

@@ -60,6 +60,9 @@ function MiniPlayerInner() {
   return (
     <div
       className="glass-overlay fixed bottom-above-dock left-2 right-2 z-40 mx-auto max-w-sm overflow-hidden md:bottom-4 md:left-auto md:right-4"
+      // §5.5x A.1: floating-bottom stack member — globals.css lifts it above the
+      // cookie bar (and back-to-top above it) so the stack never overlaps.
+      data-floating="miniplayer"
       role="region"
       aria-label={t('mini-player', { defaultValue: 'Music mini-player' })}
     >
