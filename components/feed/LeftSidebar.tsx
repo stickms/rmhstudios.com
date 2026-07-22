@@ -119,6 +119,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     capsuleRef,
     axis: 'y',
     reduced,
+    activeKey: pathname,
   });
   const [showUserMenu, setShowUserMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);

@@ -42,7 +42,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import { m as motion, useMotionValue, useTransform, useAnimationFrame, animate } from 'framer-motion';
+import { m as motion, useMotionValue, useTransform, animate } from 'framer-motion';
 import { EASE } from '@/lib/motion';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useLiquidActive, useLiquidBody, useLiquidGroup } from '@/hooks/useLiquidBody';
@@ -295,31 +295,54 @@ export function useLiquidPop({ triggerRef, panelRef, open, z = 60 }: LiquidPopOp
   // Feed the shader bodies from the cached-rect-derived motion values (viewport
   // px). Bud = the growing rounded-rect; disc = the trigger-anchored droplet. No
   // layout reads (trigRect/panelRect are cached at open) and none in the GL loop.
-  useAnimationFrame(() => {
+  //
+  // §16.4 idle-at-rest: a self-driven rAF that runs ONLY while the pop is animating
+  // (`active`) AND a GL tier is live — replacing a keepAlive useAnimationFrame that
+  // ticked every frame for the pop's whole mounted lifetime (e.g. an always-mounted
+  // sidebar user menu). When GL is off, or the pop is closed, no rAF runs at all.
+  useEffect(() => {
     if (!glActive || !active) return;
-    if (!trigRect.current || !panelRect.current) return;
-    const w = growW.get();
-    const h = growH.get();
-    const left = growLeft.get();
-    const top = growTop.get();
-    budBody.set({
-      cx: left + w / 2,
-      cy: top + h / 2,
-      hw: w / 2,
-      hh: h / 2,
-      radius: growRadius.get(),
-      active: true,
+    let raf = requestAnimationFrame(function loop() {
+      if (trigRect.current && panelRect.current) {
+        const w = growW.get();
+        const h = growH.get();
+        const left = growLeft.get();
+        const top = growTop.get();
+        budBody.set({
+          cx: left + w / 2,
+          cy: top + h / 2,
+          hw: w / 2,
+          hh: h / 2,
+          radius: growRadius.get(),
+          active: true,
+        });
+        const ds = discSize.get();
+        discBody.set({
+          cx: discLeft.get() + ds / 2,
+          cy: discTop.get() + ds / 2,
+          hw: ds / 2,
+          hh: ds / 2,
+          radius: ds / 2,
+          active: true,
+        });
+      }
+      raf = requestAnimationFrame(loop);
     });
-    const ds = discSize.get();
-    discBody.set({
-      cx: discLeft.get() + ds / 2,
-      cy: discTop.get() + ds / 2,
-      hw: ds / 2,
-      hh: ds / 2,
-      radius: ds / 2,
-      active: true,
-    });
-  });
+    return () => cancelAnimationFrame(raf);
+  }, [
+    active,
+    glActive,
+    budBody,
+    discBody,
+    growW,
+    growH,
+    growLeft,
+    growTop,
+    growRadius,
+    discSize,
+    discLeft,
+    discTop,
+  ]);
 
   const underlay =
     active && !glActive && typeof document !== 'undefined'

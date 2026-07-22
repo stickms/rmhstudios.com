@@ -24,11 +24,38 @@ import {
   type LiveInputs,
   type SceneStatic,
 } from './scene';
+import {
+  GL_TRUST_VERSION,
+  WATCHDOG_INTERVAL_MS,
+  initialVerify,
+  isBlockedByPriorFailure,
+  isGateFrame,
+  recordFailure,
+  stepVerify,
+  watchdogFailed,
+  type VerifyState,
+} from './trust';
 
 export { isLiquidActive, subscribeLiquidActive } from './active';
 
 const DPR_CAP = 1.5;
 const IDLE_INTERVAL = 1000 / 30; // 30fps idle damping
+
+// §16.4b storage adapters — best-effort, SSR/private-mode safe.
+function lsGet(k: string): string | null {
+  try {
+    return typeof localStorage !== 'undefined' ? localStorage.getItem(k) : null;
+  } catch {
+    return null;
+  }
+}
+function lsSet(k: string, v: string): void {
+  try {
+    if (typeof localStorage !== 'undefined') localStorage.setItem(k, v);
+  } catch {
+    /* ignore */
+  }
+}
 
 interface Runtime {
   canvas: HTMLCanvasElement;
@@ -47,12 +74,22 @@ interface Runtime {
   lastMy: number;
   lastLx: number;
   lastLy: number;
+  // §16.4b trust management.
+  verify: VerifyState;
+  lastRenderTs: number;
+  contextLost: boolean;
+  onContextLost: ((e: Event) => void) | null;
 }
 
 let rt: Runtime | null = null;
 let tier: LiquidTier = 'none';
 let initializing = false;
 let forceCss = false;
+// §16.4b: once the layer proves untrustworthy this session, never re-attempt it
+// (a re-boot would flash the same broken canvas). Reloads are handled by the
+// persisted `rmh-liquid-gl-failed` flag; this covers the live session.
+let failedThisSession = false;
+let watchdog: ReturnType<typeof setInterval> | null = null;
 let classObserver: MutationObserver | null = null;
 let resizeHandler: (() => void) | null = null;
 let visHandler: (() => void) | null = null;
@@ -60,13 +97,15 @@ let unsubRegistry: (() => void) | null = null;
 
 // Integrating components subscribe to `subscribeLiquidActive` (from ./active) so
 // they register bodies + skip their SVG-goo underlay only while a tier is live.
+// §16.4b: "live" means VERIFIED — during the probation window the canvas is still
+// hidden behind the CSS aurora, so components must keep rendering the CSS/SVG goo.
 function notifyActive(): void {
-  setLiquidActive(!!rt);
+  setLiquidActive(!!rt && rt.verify.verified);
 }
 
-/** The active tier — for the design-lab indicator. */
+/** The active (verified) tier — for the design-lab indicator. */
 export function getLiquidTier(): LiquidTier {
-  return rt ? tier : 'none';
+  return rt && rt.verify.verified ? tier : 'none';
 }
 
 function dpr(): number {
@@ -138,6 +177,9 @@ function frame(now: number): void {
 
   // Idle damping: throttle to 30fps when nothing animates and the parallax/light
   // are quiet. The ambient drift keeps advancing (time), just at the idle rate.
+  // §16.4b: never idle-damp during probation — render every frame so the gate's N
+  // clean frames accumulate promptly (the canvas is still hidden behind the CSS).
+  const probation = !rt.verify.verified && !rt.verify.aborted;
   const active = anyActive();
   const moved =
     Math.abs(rt.live.mx - rt.lastMx) > 0.1 ||
@@ -150,13 +192,34 @@ function frame(now: number): void {
   rt.lastLy = rt.live.lightY;
   const idle = !active && !moved;
 
-  if (idle && now - rt.lastFrame < IDLE_INTERVAL) {
+  if (!probation && idle && now - rt.lastFrame < IDLE_INTERVAL) {
     rt.raf = requestAnimationFrame(frame);
     return;
   }
   rt.lastFrame = now;
 
   rt.renderer.render(sc, liveBodies(), liveCount());
+  rt.lastRenderTs = now; // §16.4b heartbeat
+
+  // §16.4b verified-frame gating: keep the CSS stack painting until the renderer
+  // has produced N clean, non-blank frames — only THEN reveal the canvas. A GL
+  // error / lost context / blank readback during probation aborts to CSS for good.
+  if (probation) {
+    const deep = isGateFrame(rt.verify);
+    const { ok, nonBlank } = rt.renderer.checkFrame(deep);
+    const lost = rt.contextLost || rt.renderer.isLost();
+    rt.verify = stepVerify(rt.verify, { ok, nonBlank, lost });
+    if (rt.verify.verified) {
+      // Reveal: hide the CSS aurora/goo, tell components the shader is live.
+      document.documentElement.classList.add('liquid-gl');
+      notifyActive();
+      startWatchdog();
+    } else if (rt.verify.aborted) {
+      abortToCss();
+      return;
+    }
+  }
+
   rt.raf = requestAnimationFrame(frame);
 }
 
@@ -174,9 +237,47 @@ function stop(): void {
   rt.raf = 0;
 }
 
+// §16.4b runtime watchdog — after activation, a stalled heartbeat or a lost
+// context tears the layer down and returns to CSS. Cheap: one 1s interval reading
+// timestamps + a flag (no layout, no GL work).
+function startWatchdog(): void {
+  if (watchdog) return;
+  watchdog = setInterval(() => {
+    if (!rt) return;
+    const failed = watchdogFailed({
+      now: performance.now(),
+      lastRenderTs: rt.lastRenderTs,
+      running: rt.running,
+      visible: typeof document !== 'undefined' ? document.visibilityState === 'visible' : true,
+      contextLost: rt.contextLost || rt.renderer.isLost(),
+    });
+    if (failed) abortToCss();
+  }, WATCHDOG_INTERVAL_MS);
+}
+
+function stopWatchdog(): void {
+  if (watchdog) {
+    clearInterval(watchdog);
+    watchdog = null;
+  }
+}
+
+/**
+ * §16.4b: abandon the shader layer for the rest of the session AND persist the
+ * failure so the next load skips it (until the GL trust version changes). Removes
+ * `html.liquid-gl` so the CSS aurora/goo return, and tells components GL is off.
+ */
+function abortToCss(): void {
+  failedThisSession = true;
+  recordFailure(GL_TRUST_VERSION, lsSet);
+  teardown();
+}
+
 function teardown(): void {
   stop();
+  stopWatchdog();
   if (rt) {
+    if (rt.onContextLost) rt.canvas.removeEventListener('webglcontextlost', rt.onContextLost);
     rt.renderer.dispose();
     rt.canvas.remove();
     rt = null;
@@ -186,8 +287,15 @@ function teardown(): void {
 }
 
 async function boot(): Promise<void> {
-  if (rt || initializing) return;
+  if (rt || initializing || failedThisSession) return;
   if (forceCss || liquidGlBlocked()) {
+    document.documentElement.classList.remove('liquid-gl');
+    return;
+  }
+  // §16.4b: a prior verified-frame/watchdog failure recorded for THIS trust
+  // version means the shader is untrusted on this device — stay on CSS. A failure
+  // from an older version is stale (the GL code changed) and is ignored.
+  if (isBlockedByPriorFailure(GL_TRUST_VERSION, lsGet)) {
     document.documentElement.classList.remove('liquid-gl');
     return;
   }
@@ -249,16 +357,33 @@ async function boot(): Promise<void> {
       lastMy: 0,
       lastLx: 0.5,
       lastLy: -0.08,
+      verify: initialVerify(),
+      lastRenderTs: 0,
+      contextLost: false,
+      onContextLost: null,
     };
     refreshStatic();
 
+    // §16.4b: a WebGL context-loss event fails the layer immediately (preventing
+    // the default also lets nothing try to restore a canvas we're abandoning).
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      if (rt) rt.contextLost = true;
+      abortToCss();
+    };
+    rt.onContextLost = onLost;
+    canvas.addEventListener('webglcontextlost', onLost);
+
     // Insert behind everything (first body child; z-index:-1 keeps it under the
     // transparent app content, which still composites over the shader material).
+    // §16.4b VERIFIED-FRAME GATING: do NOT set `html.liquid-gl` yet. The canvas
+    // renders behind the still-visible, opaque CSS aurora; only after the frame
+    // loop confirms N clean, non-blank frames is the class set (revealing the
+    // canvas + hiding the CSS). Until then components keep their CSS/SVG goo, so a
+    // canvas that fails/stalls/blanks on WebKit never leaves the site motion-dead.
     document.body.insertBefore(canvas, document.body.firstChild);
-    document.documentElement.classList.add('liquid-gl');
     applySize();
     start();
-    notifyActive();
   } finally {
     initializing = false;
   }

@@ -281,8 +281,42 @@ export function createWebGL2Renderer(canvas: HTMLCanvasElement): LiquidRenderer 
   const kindToIndex = (k: LiquidBody['kind']): number =>
     k === 'capsule' ? 0 : k === 'droplet' ? 1 : k === 'bud' ? 2 : 3;
 
+  // §16.4b readback sanity: a small centre block. A working render is never all
+  // black (even the darkest theme base is ~rgb(13,26,46)); a wedged/blank WebKit
+  // canvas clears to opaque black (alpha:false) → all-zero RGB.
+  const READBACK = 8;
+  const readbackBuf = new Uint8Array(READBACK * READBACK * 4);
+
   return {
     tier: 'webgl2',
+    isLost() {
+      return gl.isContextLost();
+    },
+    checkFrame(deep: boolean) {
+      // getError() also clears the flag, so this reports the error since the last
+      // check — i.e. anything raised producing this frame.
+      const ok = gl.getError() === gl.NO_ERROR && !gl.isContextLost();
+      if (!ok) return { ok: false, nonBlank: false };
+      if (!deep) return { ok: true, nonBlank: true };
+      let nonBlank = true;
+      try {
+        const x = Math.max(0, (width >> 1) - (READBACK >> 1));
+        const y = Math.max(0, (height >> 1) - (READBACK >> 1));
+        gl.readPixels(x, y, READBACK, READBACK, gl.RGBA, gl.UNSIGNED_BYTE, readbackBuf);
+        nonBlank = false;
+        for (let i = 0; i < readbackBuf.length; i += 4) {
+          if (readbackBuf[i] > 4 || readbackBuf[i + 1] > 4 || readbackBuf[i + 2] > 4) {
+            nonBlank = true;
+            break;
+          }
+        }
+        // A readback error itself (e.g. lost mid-read) fails the gate.
+        if (gl.getError() !== gl.NO_ERROR) return { ok: false, nonBlank: false };
+      } catch {
+        return { ok: false, nonBlank: false };
+      }
+      return { ok: true, nonBlank };
+    },
     resize(w: number, h: number, dpr: number) {
       width = w;
       height = h;

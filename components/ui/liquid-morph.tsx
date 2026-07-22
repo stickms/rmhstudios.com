@@ -25,9 +25,11 @@
  * Structure rules (hard): the goo never wraps labels/icons (thresholding destroys
  * glyph edges — they live above at z ≥ 1) and never wraps a backdrop-filter
  * element (nesting a backdrop sampler in a filtered subtree re-rasterizes it — the
- * blobs are plain accent fill). A single `useAnimationFrame` samples the real
+ * blobs are plain accent fill). A single idle-at-rest rAF (§16.4) samples the real
  * capsule's live projected box (relative to the underlay, so it is scroll-safe),
- * feeding both the squash velocity and the goo mirror — no second listener.
+ * feeding both the squash velocity and the goo mirror — no second listener. It runs
+ * ONLY while the capsule is moving (a `layoutId` transition, woken by `activeKey`)
+ * and stops after it settles, so nothing reads layout at rest.
  *
  * Gates: `reduced` (from useReducedMotion) → nothing mounts, the plain `layoutId`
  * spring remains. perf-lite / high-contrast strip `.lg-goo` in CSS (plain spring
@@ -36,14 +38,13 @@
  * subtlety comes from the speed-gated underlay opacity (0 at rest).
  */
 
-import { useRef, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import {
   m as motion,
   useMotionValue,
   useVelocity,
   useTransform,
   useSpring,
-  useAnimationFrame,
   type MotionStyle,
 } from 'framer-motion';
 import { useLiquidActive, useLiquidBody, useLiquidGroup } from '@/hooks/useLiquidBody';
@@ -58,6 +59,16 @@ const OPACITY_AT = 600; // §15.3: reach the opacity cap sooner so the teardrop 
 const OPACITY_CAP = 0.7; //  seen for most of the motion, not glimpsed at peak speed
 const DROP_FACTOR = 0.7; // §15.3: droplet ≈ 70% of the capsule's short side (height)
 
+// §16.4 idle-at-rest. The capsule only MOVES during a `layoutId` transition (a new
+// tab/route becomes active). Between those, its projected box is static — so the
+// sampler must not read layout every frame forever (the navigation-freeze
+// regression: 4 mounted strips each forcing 2 getBoundingClientRect/frame at rest).
+// The rAF samples only while the box is changing; once it is stable for this many
+// frames it stops entirely (zero layout reads at rest) and is re-woken on the next
+// `activeKey`/resize/GL-toggle change.
+const SETTLE_FRAMES = 6;
+const MOVE_EPS = 0.05; // px — below this per-axis delta the capsule is at rest
+
 interface LiquidMorphOptions {
   /** Ref to the OUTER `layoutId` capsule element (the projected box we sample). */
   capsuleRef: RefObject<HTMLElement | null>;
@@ -65,6 +76,13 @@ interface LiquidMorphOptions {
   axis: 'x' | 'y';
   /** From useReducedMotion — when true nothing mounts (plain spring fallback). */
   reduced: boolean;
+  /**
+   * The active-selection key (tab value / active route). The sampler wakes on its
+   * change — the ONLY time the capsule morphs to a new slot — and idles a few
+   * frames after the transition settles, so nothing reads layout at rest (§16.4).
+   * Omit to fall back to waking on every render.
+   */
+  activeKey?: string | number;
 }
 
 interface LiquidMorphResult {
@@ -74,7 +92,12 @@ interface LiquidMorphResult {
   underlay: React.ReactNode;
 }
 
-export function useLiquidMorph({ capsuleRef, axis, reduced }: LiquidMorphOptions): LiquidMorphResult {
+export function useLiquidMorph({
+  capsuleRef,
+  axis,
+  reduced,
+  activeKey,
+}: LiquidMorphOptions): LiquidMorphResult {
   const underlayRef = useRef<HTMLSpanElement>(null);
 
   // §16.1: when a GL tier is live the SHADER draws the metaball merge (capsule +
@@ -119,23 +142,44 @@ export function useLiquidMorph({ capsuleRef, axis, reduced }: LiquidMorphOptions
   const dropY = useTransform([dropCy, dropD], ([y, d]) => (y as number) - (d as number) / 2);
   const gooOpacity = useTransform(v, (val) => Math.min(Math.abs(val) / OPACITY_AT, OPACITY_CAP));
 
-  // One sampler for both the squash motion values AND (when GL is live) the shader
-  // bodies. The capsule box `c` is already viewport-space; the droplet is anchored
-  // via the underlay origin `u` + its spring position — no extra layout reads.
-  useAnimationFrame(() => {
-    if (reduced) return;
-    // §5.47 gate: perf-lite / high-contrast get a PLAIN spring slide — freezing
-    // the sampled position keeps velocity at 0 (no squash), and CSS also hides
-    // `.lg-goo`. Read reactively so a runtime settings change takes effect.
+  // §16.4 idle-at-rest sampler. One sampler for both the squash motion values AND
+  // (when GL is live) the shader bodies. The capsule box `c` is already
+  // viewport-space; the droplet is anchored via the underlay origin `u` + its
+  // spring position — no extra layout reads.
+  //
+  // `sampleRef` holds the latest closure (motion values / GL bodies refresh each
+  // render) so the stable rAF loop always runs current logic; it returns whether
+  // the capsule (or its lagging droplet spring) is still moving. When it settles,
+  // the loop stops — no rAF, no getBoundingClientRect — until `kickRef` re-arms it
+  // on the next activeKey / GL-toggle / resize change. Velocity → 0 (and squash →
+  // 1) at rest via framer's own self-terminating useVelocity frames, so the
+  // visual rest state is unchanged.
+  const rafRef = useRef(0);
+  const settleRef = useRef(0);
+  const prevBox = useRef({ x: 0, y: 0, w: 0, h: 0 });
+  const kickRef = useRef<() => void>(() => {});
+
+  const sampleRef = useRef<() => boolean>(() => false);
+  sampleRef.current = () => {
+    // §5.47 gate: reduced / perf-lite / high-contrast get a PLAIN spring slide —
+    // no squash, no goo — so sample nothing and let the loop idle. Read reactively
+    // so a runtime settings change takes effect on the next kick.
     const de = document.documentElement;
-    if (de.classList.contains('perf-lite') || de.classList.contains('style-high-contrast')) return;
+    if (
+      reduced ||
+      de.classList.contains('perf-lite') ||
+      de.classList.contains('style-high-contrast')
+    )
+      return false;
     const cap = capsuleRef.current;
     const under = underlayRef.current;
-    if (!cap || !under) return;
+    if (!cap || !under) return false;
     const c = cap.getBoundingClientRect();
     const u = under.getBoundingClientRect();
-    mx.set(c.left - u.left);
-    my.set(c.top - u.top);
+    const nx = c.left - u.left;
+    const ny = c.top - u.top;
+    mx.set(nx);
+    my.set(ny);
     mw.set(c.width);
     mh.set(c.height);
 
@@ -159,7 +203,56 @@ export function useLiquidMorph({ capsuleRef, axis, reduced }: LiquidMorphOptions
         active: moving,
       });
     }
-  });
+
+    // Still-moving check: the projected box changed, OR the trailing droplet spring
+    // hasn't caught the capsule centre yet (keep sampling so the goo tail resolves).
+    const p = prevBox.current;
+    const moved =
+      Math.abs(nx - p.x) > MOVE_EPS ||
+      Math.abs(ny - p.y) > MOVE_EPS ||
+      Math.abs(c.width - p.w) > MOVE_EPS ||
+      Math.abs(c.height - p.h) > MOVE_EPS;
+    p.x = nx;
+    p.y = ny;
+    p.w = c.width;
+    p.h = c.height;
+    const dropSettled =
+      Math.abs(dropCx.get() - cx.get()) <= MOVE_EPS && Math.abs(dropCy.get() - cy.get()) <= MOVE_EPS;
+    return moved || !dropSettled;
+  };
+
+  useEffect(() => {
+    const loop = () => {
+      if (sampleRef.current()) {
+        settleRef.current = 0;
+      } else if (++settleRef.current >= SETTLE_FRAMES) {
+        rafRef.current = 0; // settled → fully idle (no rAF, no layout reads)
+        return;
+      }
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    const kick = () => {
+      settleRef.current = 0;
+      if (!rafRef.current) rafRef.current = requestAnimationFrame(loop);
+    };
+    kickRef.current = kick;
+    kick(); // sample the initial rest position once, then idle
+    const onResize = () => kick();
+    window.addEventListener('resize', onResize, { passive: true });
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = 0;
+      window.removeEventListener('resize', onResize);
+    };
+    // Stable loop; `sampleRef.current` is refreshed each render so it stays current.
+  }, []);
+
+  // Wake the sampler when the active selection changes (the capsule morphs to a new
+  // slot), when the GL tier toggles (bodies must (de)register + re-anchor), or when
+  // reduced-motion flips. It idles again a few frames after the transition settles.
+  useEffect(() => {
+    kickRef.current();
+  }, [activeKey, glActive, reduced]);
 
   const squashStyle: MotionStyle = reduced
     ? {}
