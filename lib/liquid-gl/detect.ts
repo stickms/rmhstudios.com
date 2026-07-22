@@ -15,6 +15,13 @@
 import type { LiquidTier } from './types';
 import { preferredTierOrder } from './trust';
 
+/** Ordered backend candidates, with policy/accessibility gates applied. */
+export function liquidTierCandidates(): ('webgpu' | 'webgl2')[] {
+  if (liquidGlBlocked()) return [];
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
+  return preferredTierOrder(ua);
+}
+
 /** True when any accessibility/perf gate forbids the shader layer entirely. */
 export function liquidGlBlocked(): boolean {
   if (typeof window === 'undefined' || typeof document === 'undefined') return true;
@@ -53,14 +60,7 @@ export function webgl2Available(): boolean {
  * blocks or no context is available.
  */
 export async function detectLiquidTier(): Promise<LiquidTier> {
-  if (liquidGlBlocked()) return 'none';
-
-  // §16.4b.3: WebKit UAs skip WebGPU (young Safari WebGPU is the prime iOS
-  // freeze suspect) and go straight to battle-tested WebGL2.
-  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : '';
-  const order = preferredTierOrder(ua);
-
-  for (const tier of order) {
+  for (const tier of liquidTierCandidates()) {
     if (tier === 'webgpu') {
       // WebGPU: present AND an adapter resolves.
       const gpu = typeof navigator !== 'undefined' ? navigator.gpu : undefined;

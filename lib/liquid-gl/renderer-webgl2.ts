@@ -205,12 +205,20 @@ void main() {
 }
 `;
 
-function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLShader | null {
+function compile(
+  gl: WebGL2RenderingContext,
+  type: number,
+  src: string,
+  checkImmediately: boolean,
+): WebGLShader | null {
   const sh = gl.createShader(type);
   if (!sh) return null;
   gl.shaderSource(sh, src);
   gl.compileShader(sh);
-  if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+  // With KHR_parallel_shader_compile, querying COMPILE_STATUS here would defeat
+  // the extension by synchronously waiting. LINK_STATUS below reports failures
+  // after the non-blocking completion poll.
+  if (checkImmediately && !gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
     console.warn('[liquid-gl] shader compile failed:', gl.getShaderInfoLog(sh));
     gl.deleteShader(sh);
     return null;
@@ -218,7 +226,32 @@ function compile(gl: WebGL2RenderingContext, type: number, src: string): WebGLSh
   return sh;
 }
 
-export function createWebGL2Renderer(canvas: HTMLCanvasElement): LiquidRenderer | null {
+/**
+ * Let drivers exposing KHR_parallel_shader_compile finish without making the
+ * main thread synchronously wait in LINK_STATUS. Exact shader sources are kept
+ * stable, allowing the browser/driver's own program cache to hit on later loads.
+ */
+function waitForParallelCompile(
+  gl: WebGL2RenderingContext,
+  program: WebGLProgram,
+  ext: KHR_parallel_shader_compile | null,
+): Promise<void> {
+  if (!ext) return Promise.resolve();
+  return new Promise((resolve) => {
+    const poll = () => {
+      if (gl.isContextLost() || gl.getProgramParameter(program, ext.COMPLETION_STATUS_KHR)) {
+        resolve();
+      } else {
+        requestAnimationFrame(poll);
+      }
+    };
+    poll();
+  });
+}
+
+export async function createWebGL2Renderer(
+  canvas: HTMLCanvasElement,
+): Promise<LiquidRenderer | null> {
   const gl = canvas.getContext('webgl2', {
     alpha: false,
     antialias: false,
@@ -229,16 +262,29 @@ export function createWebGL2Renderer(canvas: HTMLCanvasElement): LiquidRenderer 
   });
   if (!gl) return null;
 
-  const vs = compile(gl, gl.VERTEX_SHADER, VERT);
-  const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG);
-  if (!vs || !fs) return null;
+  const parallelCompile = gl.getExtension('KHR_parallel_shader_compile');
+  const vs = compile(gl, gl.VERTEX_SHADER, VERT, !parallelCompile);
+  const fs = compile(gl, gl.FRAGMENT_SHADER, FRAG, !parallelCompile);
+  if (!vs || !fs) {
+    if (vs) gl.deleteShader(vs);
+    if (fs) gl.deleteShader(fs);
+    return null;
+  }
   const program = gl.createProgram();
-  if (!program) return null;
+  if (!program) {
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    return null;
+  }
   gl.attachShader(program, vs);
   gl.attachShader(program, fs);
   gl.linkProgram(program);
+  await waitForParallelCompile(gl, program, parallelCompile);
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
     console.warn('[liquid-gl] program link failed:', gl.getProgramInfoLog(program));
+    gl.deleteProgram(program);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
     return null;
   }
   gl.useProgram(program);
