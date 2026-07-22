@@ -16,12 +16,13 @@
  * straight back to the CSS/SVG path when GL is off.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { isLiquidActive, subscribeLiquidActive } from '@/lib/liquid-gl/active';
 import { registerBody } from '@/lib/liquid-gl/registry';
 import type { LiquidBodyHandle, LiquidBodyKind, LiquidBodyPatch } from '@/lib/liquid-gl/types';
 
 let groupSeq = 1;
+const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 /** Allocate a process-unique merge-group id (bodies sharing it fuse via smin). */
 export function allocLiquidGroup(): number {
   return groupSeq++;
@@ -62,7 +63,10 @@ export function useLiquidBody(opts: {
   const handleRef = useRef<LiquidBodyHandle | null>(null);
 
   const shouldRegister = glActive && enabled;
-  useEffect(() => {
+  // Layout timing is intentional: route/tab commits remove the old shader body
+  // before the browser can paint its now-detached position. A passive cleanup
+  // leaves a one-frame ghost that is especially visible during mobile scrolling.
+  useIsoLayoutEffect(() => {
     if (!shouldRegister) return;
     const handle = registerBody(kind, group);
     handleRef.current = handle;

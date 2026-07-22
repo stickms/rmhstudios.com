@@ -446,6 +446,10 @@ export function initLiquidGL(): () => void {
 
   resizeHandler = () => applySize();
   window.addEventListener('resize', resizeHandler, { passive: true });
+  // Mobile browser chrome changes the visual viewport without consistently
+  // delivering a layout-viewport resize. Re-size before its next paint so the
+  // fixed shader canvas and DOM glass surfaces keep the same coordinate space.
+  window.visualViewport?.addEventListener('resize', resizeHandler);
 
   // Pause on tab hide (budget §16.1.5) — no wasted GPU while backgrounded.
   visHandler = () => {
@@ -463,6 +467,7 @@ export function initLiquidGL(): () => void {
   return () => {
     if (classObserver) classObserver.disconnect();
     if (resizeHandler) window.removeEventListener('resize', resizeHandler);
+    if (resizeHandler) window.visualViewport?.removeEventListener('resize', resizeHandler);
     if (visHandler) document.removeEventListener('visibilitychange', visHandler);
     if (unsubRegistry) unsubRegistry();
     classObserver = null;

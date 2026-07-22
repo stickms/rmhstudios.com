@@ -278,7 +278,7 @@ export function Providers({
     const root = document.documentElement;
     const nav = navigator as Navigator & {
       deviceMemory?: number;
-      connection?: { saveData?: boolean };
+      connection?: { saveData?: boolean; effectiveType?: string; downlink?: number };
     };
     // perf audit §6.4: widened from ≤4GB/≤4-core to ≤6GB/≤6-core so more
     // mid-range devices drop the expensive backdrop blur, and honor the
@@ -294,6 +294,8 @@ export function Providers({
       deviceMemory: nav.deviceMemory,
       hardwareConcurrency: navigator.hardwareConcurrency,
       saveData: nav.connection?.saveData,
+      effectiveType: nav.connection?.effectiveType,
+      downlinkMbps: nav.connection?.downlink,
       iosWebKit,
     });
     root.classList.toggle('perf-lite', lite);
@@ -406,6 +408,9 @@ export function Providers({
     let timer = 0;
     const warm = () => {
       if (cancelled) return;
+      // The CSS fallback is complete. Do not spend bandwidth on the optional
+      // shader chunk when the one-shot device/network tier already rejected it.
+      if (document.documentElement.classList.contains('perf-lite')) return;
       void loadLiquidGL().catch(() => {});
     };
     if (document.readyState === 'complete') timer = window.setTimeout(warm, 0);
@@ -426,6 +431,7 @@ export function Providers({
   // render). When no tier is available the untouched CSS/SVG stack renders.
   useEffect(() => {
     if (!idleReady) return;
+    if (document.documentElement.classList.contains('perf-lite')) return;
     let cancelled = false;
     let dispose: (() => void) | undefined;
     let retryTimer = 0;

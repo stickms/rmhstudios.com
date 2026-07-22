@@ -83,21 +83,27 @@ export function ThreadComposer() {
         </DialogTrigger>
       </div>
 
-      <DialogContent>
+      <DialogContent mobileFullscreen>
         <DialogHeader>
           <DialogTitle>{t('new-thread', { defaultValue: 'New thread' })}</DialogTitle>
         </DialogHeader>
 
         <div className="max-h-[55dvh] space-y-3 overflow-y-auto pr-1">
           {segments.map((seg, i) => (
-            <div key={i} className="relative rounded-site border border-site-border bg-site-surface/40 p-2">
+            <div
+              key={i}
+              className="relative rounded-site border border-site-border bg-site-surface/40 p-2"
+            >
               <div className="flex items-start gap-2">
                 <span className="mt-2 text-xs font-bold text-site-text-dim">{i + 1}</span>
                 <Textarea
                   value={seg}
                   onChange={(e) => setSeg(i, e.target.value)}
                   rows={3}
-                  aria-label={t('thread-segment-label', { defaultValue: 'Thread post {{n}}', n: i + 1 })}
+                  aria-label={t('thread-segment-label', {
+                    defaultValue: 'Thread post {{n}}',
+                    n: i + 1,
+                  })}
                   placeholder={
                     i === 0
                       ? t('thread-first-placeholder', { defaultValue: 'Start your thread…' })
@@ -107,14 +113,19 @@ export function ThreadComposer() {
                 />
               </div>
               <div className="mt-1 flex items-center justify-end gap-3 pl-6">
-                <span className={`text-xs ${seg.length >= MAX_LEN ? 'text-site-danger' : 'text-site-text-dim'}`}>
+                <span
+                  className={`text-xs ${seg.length >= MAX_LEN ? 'text-site-danger' : 'text-site-text-dim'}`}
+                >
                   {MAX_LEN - seg.length}
                 </span>
                 {segments.length > 2 && (
                   <button
                     type="button"
                     onClick={() => removeSeg(i)}
-                    aria-label={t('thread-remove-post', { defaultValue: 'Remove post {{n}}', n: i + 1 })}
+                    aria-label={t('thread-remove-post', {
+                      defaultValue: 'Remove post {{n}}',
+                      n: i + 1,
+                    })}
                     className="text-site-text-dim hover:text-site-danger"
                   >
                     <X className="h-4 w-4" aria-hidden />
@@ -126,8 +137,15 @@ export function ThreadComposer() {
         </div>
 
         <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
-          <Button variant="outline" size="sm" onClick={addSeg} disabled={segments.length >= MAX_SEGMENTS} className="gap-1">
-            <Plus className="h-4 w-4" aria-hidden /> {t('thread-add-post', { defaultValue: 'Add post' })}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addSeg}
+            disabled={segments.length >= MAX_SEGMENTS}
+            className="gap-1"
+          >
+            <Plus className="h-4 w-4" aria-hidden />{' '}
+            {t('thread-add-post', { defaultValue: 'Add post' })}
           </Button>
           <Button variant="accent" size="sm" onClick={post} disabled={!canPost} loading={busy}>
             {t('post-thread', { defaultValue: 'Post thread' })}

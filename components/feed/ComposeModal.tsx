@@ -190,17 +190,31 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
   return (
     <div className="fixed inset-0 z-[100]">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <button
+        type="button"
+        tabIndex={-1}
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
+        aria-label={t('close', { defaultValue: 'Close' })}
+      />
 
       {/* Modal */}
-      <div className="absolute inset-x-4 top-[5vh] sm:top-[10vh] mx-auto max-w-lg max-h-[90dvh] overflow-y-auto glass-overlay animate-in zoom-in-95 fade-in duration-200">
+      <div
+        data-mobile-fullscreen="true"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t('palette-new-post', { defaultValue: 'New post' })}
+        className="glass-overlay absolute inset-0 h-dvh max-h-none overflow-y-auto rounded-none pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] animate-in fade-in zoom-in-95 duration-200 sm:inset-x-4 sm:bottom-auto sm:top-[10vh] sm:mx-auto sm:h-auto sm:max-h-[80dvh] sm:max-w-lg sm:rounded-site sm:p-0"
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-site-border">
           <button
+            type="button"
             onClick={onClose}
+            aria-label={t('close', { defaultValue: 'Close' })}
             className="p-1.5 -ml-1.5 rounded-full text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden />
           </button>
           <div className="flex items-center gap-1.5">
             {/* AI draft button */}
@@ -553,13 +567,21 @@ export function ComposeModal({ open, onClose, quoteItem, initialContent = '' }: 
       {/* Image alt-text editor — opened from the ALT pill on a preview image */}
       {altEditIndex !== null && imageUrls[altEditIndex] && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-          <div
+          <button
+            type="button"
+            tabIndex={-1}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setAltEditIndex(null)}
+            aria-label={t('close', { defaultValue: 'Close' })}
           />
-          <div className="relative w-full max-w-md p-4 glass-overlay animate-in zoom-in-95 fade-in duration-150">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="compose-alt-title"
+            className="relative w-full max-w-md p-4 glass-overlay animate-in zoom-in-95 fade-in duration-150"
+          >
             <div className="mb-2 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-site-text">
+              <h3 id="compose-alt-title" className="text-sm font-semibold text-site-text">
                 {t('alt-text-heading', { defaultValue: 'Describe this image' })}
               </h3>
               <button

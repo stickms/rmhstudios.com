@@ -23,10 +23,10 @@ import { useEffect } from 'react';
  * §5.5x C — tilt light: the same tilt that drifts the aurora also writes the scene
  * light `--light-x/--light-y` (viewport px: centre + tilt × ~40% of the viewport,
  * 8px-quantised, rAF-batched — the SAME contract useGlassLight uses on fine pointers
- * §4.4) and toggles `html.tilt-live`. Under `html.tilt-live` the coarse-pointer glint
- * layer flips from the static sun to the viewport-anchored radial (globals.css §4.35
- * touch block), so tilting the phone slides the glint across every pane. Light +
- * backdrop move together, which is what sells the material (§5.5x C.4).
+ * §4.4) and toggles `html.tilt-live`. The class remains a useful live-input signal,
+ * while coarse-pointer glass keeps an element-anchored rim: mobile compositors can
+ * otherwise lag a fixed glint one frame behind its scrolling parent. Tilt still
+ * moves the shared aurora, preserving depth without a detached surface highlight.
  *
  * No React re-renders (writes straight to the DOM), and fully gated off under
  * reduced motion (OS preference or the `html.reduce-motion` account toggle) and
@@ -122,8 +122,8 @@ export function useLiquidBackground(): void {
           (window.innerHeight / 2 + ny * TILT_LIGHT_SPREAD * window.innerHeight) / LIGHT_Q,
         ) * LIGHT_Q;
       haveLight = true;
-      // Flip the coarse-pointer glint from static sun to the tracking radial while
-      // orientation events flow (globals.css §4.35 touch block keys off .tilt-live).
+      // Mark orientation input live. Coarse-pointer rims remain element-anchored
+      // in CSS so their highlight cannot trail a scrolling or transitioning pane.
       if (!tiltLive) {
         root.classList.add('tilt-live');
         tiltLive = true;

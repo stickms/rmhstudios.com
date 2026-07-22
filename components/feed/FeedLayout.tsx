@@ -5,6 +5,7 @@ import { Await } from '@tanstack/react-router';
 import { RightSidebar } from './RightSidebar';
 import { FeedColumn, type InitialFeed } from './FeedColumn';
 import { AnimatedMain } from './AnimatedMain';
+import { ContextRail } from './ContextRail';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /** The right-sidebar payload, streamed from the route loader. */
@@ -59,7 +60,10 @@ function RightSidebarSkeleton() {
   return (
     <div className="space-y-4 p-4" aria-hidden>
       {[0, 1, 2].map((i) => (
-        <div key={i} className="space-y-2 rounded-site border border-site-border bg-site-surface p-4">
+        <div
+          key={i}
+          className="space-y-2 rounded-site border border-site-border bg-site-surface p-4"
+        >
           <Skeleton className="h-4 w-24" />
           <Skeleton className="h-3 w-full" />
           <Skeleton className="h-3 w-3/4" />
@@ -79,10 +83,10 @@ export function FeedLayout({ sidebar, initialFeed }: FeedLayoutProps) {
         <FeedColumn initialFeed={initialFeed} />
       </AnimatedMain>
 
-      {/* Right Sidebar - hidden below lg, scrolls in normal flow with the page.
+      {/* Right Sidebar - hidden below xl, scrolls in normal flow with the page.
           Streamed in its own Suspense slot so the sidebar's DB reads never delay
           the feed column. self-start keeps the rail at its content height. */}
-      <aside className="hidden lg:block w-80 shrink-0 self-start">
+      <ContextRail>
         {sidebar ? (
           <Suspense fallback={<RightSidebarSkeleton />}>
             <Await promise={sidebar}>
@@ -99,7 +103,7 @@ export function FeedLayout({ sidebar, initialFeed }: FeedLayoutProps) {
         ) : (
           <RightSidebarSkeleton />
         )}
-      </aside>
+      </ContextRail>
     </>
   );
 }

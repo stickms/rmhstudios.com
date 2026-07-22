@@ -138,7 +138,7 @@ export function EventComposer({ open, onOpenChange, communityId, onCreated }: Ev
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent mobileFullscreen className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{t('create-event-title', { defaultValue: 'Create an event' })}</DialogTitle>
           <DialogDescription>

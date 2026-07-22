@@ -259,7 +259,7 @@ export function FeedList({
         <div className="sticky top-24 z-20 mt-4 flex justify-center pointer-events-none">
           <button
             onClick={handleShowNew}
-            className="pointer-events-auto flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-site-accent text-site-bg text-sm font-bold shadow-lg hover:bg-site-accent-hover transition-[transform,background-color] duration-150 active:scale-95"
+            className="pointer-events-auto flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-site-accent text-site-accent-fg text-sm font-bold shadow-site hover:bg-site-accent-hover transition-[transform,background-color] duration-150 active:scale-95"
           >
             <ArrowUp className="w-4 h-4" />
             {t('new-posts', {
@@ -361,7 +361,7 @@ export function FeedList({
           </p>
           <button
             onClick={retry}
-            className="px-5 py-2 rounded-site-sm bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
+            className="px-5 py-2 rounded-site-sm bg-site-accent text-site-accent-fg text-sm font-bold hover:bg-site-accent-hover transition-colors"
           >
             {t('retry', { defaultValue: 'Retry' })}
           </button>
@@ -386,7 +386,7 @@ export function FeedList({
             {onSwitchToForYou && (
               <button
                 onClick={onSwitchToForYou}
-                className="px-5 py-2 rounded-site-sm bg-site-accent text-site-bg text-sm font-bold hover:bg-site-accent-hover transition-colors"
+                className="px-5 py-2 rounded-site-sm bg-site-accent text-site-accent-fg text-sm font-bold hover:bg-site-accent-hover transition-colors"
               >
                 {t('browse-for-you', { defaultValue: 'Browse For You' })}
               </button>

@@ -3,6 +3,8 @@ export interface PerformanceTierSignals {
   deviceMemory?: number;
   hardwareConcurrency?: number;
   saveData?: boolean;
+  effectiveType?: string;
+  downlinkMbps?: number;
   iosWebKit: boolean;
 }
 
@@ -16,6 +18,8 @@ export interface PerformanceTierSignals {
  */
 export function shouldUsePerfLite(signals: PerformanceTierSignals): boolean {
   if (signals.saveData) return true;
+  if (signals.effectiveType === 'slow-2g' || signals.effectiveType === '2g') return true;
+  if (signals.downlinkMbps !== undefined && signals.downlinkMbps < 1.5) return true;
   if (signals.iosWebKit) return false;
   return (signals.deviceMemory ?? 8) <= 6 || (signals.hardwareConcurrency ?? 8) <= 6;
 }

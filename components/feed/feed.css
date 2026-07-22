@@ -16,6 +16,84 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ── Responsive site shell ──────────────────────────────────────────────────
+   Keep the reading column generous on laptops: the navigation stays an icon
+   rail until 1536px and the contextual rail does not appear until 1280px. The
+   old 1280px expansion squeezed a feed + context rail into less than 600px. */
+.site-shell {
+  display: flex;
+  min-height: 100dvh;
+  width: 100%;
+  flex-direction: column;
+}
+
+.site-shell__rail-slot {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .site-shell {
+    max-width: 1600px;
+    margin-inline: auto;
+    flex-direction: row;
+    justify-content: center;
+    gap: 16px;
+    padding-inline: 12px;
+  }
+
+  .site-shell__rail-slot {
+    position: relative;
+    display: block;
+    width: 64px;
+    flex: 0 0 64px;
+  }
+
+  .site-shell__rail {
+    position: fixed;
+    top: 0;
+    z-index: 30;
+    height: 100dvh;
+    width: 64px;
+    overflow: hidden;
+  }
+
+  .site-shell__rail-glass {
+    display: flex;
+    height: calc(100% - 16px);
+    margin: 8px;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--site-radius);
+  }
+}
+
+@media (min-width: 1280px) {
+  .site-shell {
+    gap: 20px;
+    padding-inline: 16px;
+  }
+}
+
+@media (min-width: 1536px) {
+  .site-shell {
+    gap: 24px;
+  }
+
+  .site-shell__rail-slot,
+  .site-shell__rail {
+    width: 264px;
+  }
+
+  .site-shell__rail-slot {
+    flex-basis: 264px;
+  }
+
+  .site-shell__rail-glass {
+    height: calc(100% - 24px);
+    margin: 12px;
+  }
+}
+
 /* Logo wordmark — Playfair Display serif, matching the membership page. */
 .site-logo {
   font-family: var(--font-playfair), Georgia, serif;

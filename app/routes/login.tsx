@@ -19,7 +19,11 @@ import { cn } from '@/lib/utils';
 
 export const Route = createFileRoute('/login')({
   validateSearch: (search: Record<string, unknown>) => ({
-    callbackURL: (search.callbackURL as string) || (search.callbackUrl as string) || (search.next as string) || undefined,
+    callbackURL:
+      (search.callbackURL as string) ||
+      (search.callbackUrl as string) ||
+      (search.next as string) ||
+      undefined,
   }),
   head: () => ({
     meta: [{ title: 'Login | RMH' }],
@@ -64,7 +68,9 @@ function LoginPage() {
         if (ref.origin === window.location.origin && ref.pathname !== '/login') {
           setCallbackURL(ref.pathname + ref.search);
         }
-      } catch {}
+      } catch {
+        // A missing or malformed referrer simply leaves the safe default route.
+      }
     }
   }, [rawCallback]);
 
@@ -197,7 +203,7 @@ function LoginPage() {
             name: displayName,
             image: avatarFile ? undefined : '/images/social/default_avatar.png',
             callbackURL,
-          } as any,
+          },
           {
             onSuccess: async () => {
               if (avatarFile) {
@@ -205,15 +211,17 @@ function LoginPage() {
                   const formData = new FormData();
                   formData.append('avatar', avatarFile);
                   await fetch('/api/profile/avatar', { method: 'POST', body: formData });
-                } catch {}
+                } catch {
+                  // Account creation succeeded; avatar upload is best-effort.
+                }
               }
               window.location.href = callbackURL;
             },
-            onError: (ctx: any) => {
+            onError: (ctx) => {
               setPending(null);
               setError(ctx.error.message);
             },
-          }
+          },
         );
       } else {
         await authClient.signIn.email(
@@ -222,11 +230,11 @@ function LoginPage() {
             onSuccess: () => {
               window.location.href = callbackURL;
             },
-            onError: (ctx: any) => {
+            onError: (ctx) => {
               setPending(null);
               setError(ctx.error.message);
             },
-          }
+          },
         );
       }
     } catch {
@@ -238,19 +246,35 @@ function LoginPage() {
   if (isPending || session?.user) {
     return (
       <div className="min-h-dvh flex items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-site-accent" aria-label={t('loading', { defaultValue: 'Loading…' })} />
+        <Loader2
+          className="size-6 animate-spin text-site-accent"
+          aria-label={t('loading', { defaultValue: 'Loading…' })}
+        />
       </div>
     );
   }
 
   const providers = [
-    { id: 'discord' as const, label: t('continue-with-discord', { defaultValue: 'Continue with Discord' }), icon: <FaDiscord className="size-5 text-[#5865F2]" /> },
-    { id: 'google' as const, label: t('continue-with-google', { defaultValue: 'Continue with Google' }), icon: <FaGoogle className="size-5 text-[#ea4335]" /> },
-    { id: 'github' as const, label: t('continue-with-github', { defaultValue: 'Continue with GitHub' }), icon: <FaGithub className="size-5" /> },
+    {
+      id: 'discord' as const,
+      label: t('continue-with-discord', { defaultValue: 'Continue with Discord' }),
+      icon: <FaDiscord className="size-5 text-[#5865F2]" />,
+    },
+    {
+      id: 'google' as const,
+      label: t('continue-with-google', { defaultValue: 'Continue with Google' }),
+      icon: <FaGoogle className="size-5 text-[#ea4335]" />,
+    },
+    {
+      id: 'github' as const,
+      label: t('continue-with-github', { defaultValue: 'Continue with GitHub' }),
+      icon: <FaGithub className="size-5" />,
+    },
   ];
 
   // Field glyph shared by the email/password/display-name wells.
-  const fieldIcon = 'pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-site-text-dim z-10';
+  const fieldIcon =
+    'pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-site-text-dim z-10';
 
   const emailForm = (
     <form onSubmit={handleCredentialsSubmit} className="space-y-3">
@@ -267,7 +291,9 @@ function LoginPage() {
                 src={avatarPreview || '/images/social/default_avatar.png'}
                 alt={t('avatar-preview-alt', { defaultValue: 'Avatar preview' })}
                 className="size-full rounded-full object-cover"
-                onError={(e) => { (e.target as HTMLImageElement).src = '/images/social/default_avatar.png'; }}
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/images/social/default_avatar.png';
+                }}
               />
               <span className="absolute -bottom-0.5 -right-0.5 flex size-7 items-center justify-center rounded-full bg-site-accent text-site-accent-fg shadow-[inset_0_1px_0_var(--site-glass-rim-soft)]">
                 <Camera className="size-3.5" aria-hidden />
@@ -280,7 +306,9 @@ function LoginPage() {
               className="hidden"
               onChange={handleAvatarSelect}
             />
-            <p className="text-xs text-site-text-dim">{t('optional-profile-picture', { defaultValue: 'Optional profile picture' })}</p>
+            <p className="text-xs text-site-text-dim">
+              {t('optional-profile-picture', { defaultValue: 'Optional profile picture' })}
+            </p>
           </div>
 
           <div className="relative">
@@ -336,41 +364,50 @@ function LoginPage() {
         </div>
       )}
 
-      <Button type="submit" variant="accent" size="lg" loading={pending === 'email'} disabled={busy} className="w-full">
-        {isSignUp ? t('create-account-btn', { defaultValue: 'Create account' }) : t('sign-in-btn', { defaultValue: 'Sign in' })}
+      <Button
+        type="submit"
+        variant="accent"
+        size="lg"
+        loading={pending === 'email'}
+        disabled={busy}
+        className="w-full"
+      >
+        {isSignUp
+          ? t('create-account-btn', { defaultValue: 'Create account' })
+          : t('sign-in-btn', { defaultValue: 'Sign in' })}
       </Button>
     </form>
   );
 
   return (
-    // No opaque full-viewport fill — the body paints the theme aurora and the
-    // card floats on it as glass. dvh + safe-area keeps it clear of the notch /
-    // home-indicator now that the global body inset is gone.
-    <div
-      className="min-h-dvh flex flex-col items-center justify-center px-4"
-      style={{
-        paddingTop: 'max(2rem, env(safe-area-inset-top))',
-        paddingBottom: 'max(2rem, env(safe-area-inset-bottom))',
-      }}
-    >
+    // Phones get one calm, edge-to-edge auth surface; larger screens retain the
+    // floating flagship card over the aurora. The card owns mobile safe areas so
+    // long sign-up content can scroll naturally without clipped controls.
+    <div className="flex min-h-dvh flex-col items-center justify-center sm:px-4 sm:py-8">
       {/* Flagship: a singular L2 pane with hero edge-refraction + prism rim
           (1 of ≤2/page). data-glass-lens opts it into the per-element lens
           filter; .glass-liquid adds the ambient sheen (1 of ≤3/page). */}
       <div
         data-glass-lens=""
-        className="glass-pane glass-liquid glass-refract glass-refract--prism relative w-full max-w-sm p-6 sm:p-8"
+        className="glass-pane glass-liquid glass-refract glass-refract--prism relative flex min-h-dvh w-full max-w-none flex-col justify-center rounded-none px-5 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(1.5rem,env(safe-area-inset-top))] sm:min-h-0 sm:max-w-sm sm:rounded-site sm:p-8"
       >
         {/* Brand + heading */}
         <div className="mb-6 flex flex-col items-center text-center">
           <div className="glass-inset mb-3 flex size-12 items-center justify-center rounded-2xl">
             <span className="font-serif text-lg font-bold tracking-tight text-site-text">R</span>
           </div>
-          <p className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-site-text-dim">RMH Studios</p>
+          <p className="font-mono text-[0.68rem] uppercase tracking-[0.2em] text-site-text-dim">
+            RMH Studios
+          </p>
           <h1 className="mt-1.5 font-(family-name:--site-font-display) text-2xl font-bold tracking-tight text-site-text">
-            {isSignUp ? t('create-account-heading', { defaultValue: 'Create your account' }) : t('welcome-back', { defaultValue: 'Welcome back' })}
+            {isSignUp
+              ? t('create-account-heading', { defaultValue: 'Create your account' })
+              : t('welcome-back', { defaultValue: 'Welcome back' })}
           </h1>
           <p className="mt-1 text-sm text-site-text-muted">
-            {isSignUp ? t('signup-subheading', { defaultValue: 'Make an identity to access the platform.' }) : t('signin-subheading', { defaultValue: 'Sign in to access your profile.' })}
+            {isSignUp
+              ? t('signup-subheading', { defaultValue: 'Make an identity to access the platform.' })
+              : t('signin-subheading', { defaultValue: 'Sign in to access your profile.' })}
           </p>
         </div>
 
@@ -408,7 +445,11 @@ function LoginPage() {
                 title={p.label}
                 className="w-full"
               >
-                {pending === p.id ? <Loader2 className="size-5 animate-spin" aria-hidden /> : p.icon}
+                {pending === p.id ? (
+                  <Loader2 className="size-5 animate-spin" aria-hidden />
+                ) : (
+                  p.icon
+                )}
               </Button>
             ))}
           </div>
@@ -442,25 +483,34 @@ function LoginPage() {
             <button
               type="button"
               onClick={switchMode}
-              className={cn('text-sm text-site-text-dim transition-colors hover:text-site-text', busy && 'pointer-events-none opacity-60')}
+              className={cn(
+                'text-sm text-site-text-dim transition-colors hover:text-site-text',
+                busy && 'pointer-events-none opacity-60',
+              )}
             >
-              {isSignUp ? t('already-have-account', { defaultValue: 'Already have an account? Sign in' }) : t('no-account', { defaultValue: "Don't have an account? Sign up" })}
+              {isSignUp
+                ? t('already-have-account', { defaultValue: 'Already have an account? Sign in' })
+                : t('no-account', { defaultValue: "Don't have an account? Sign up" })}
             </button>
           </div>
         </div>
+        {/* Back to the site — kept inside the mobile full-screen surface so it
+            participates in the same spacing and never creates a second viewport. */}
+        <Link
+          to="/"
+          className="mt-5 inline-flex items-center justify-center gap-1.5 text-sm text-site-text-dim transition-colors hover:text-site-text"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          {t('back-to-home', { defaultValue: 'Back to home' })}
+        </Link>
       </div>
 
-      {/* Back to the site — a quiet escape hatch. */}
-      <Link
-        to="/"
-        className="mt-5 inline-flex items-center gap-1.5 text-sm text-site-text-dim transition-colors hover:text-site-text"
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-        {t('back-to-home', { defaultValue: 'Back to home' })}
-      </Link>
-
       {cropSrc && (
-        <ImageCropModal imageSrc={cropSrc} onCropDone={handleCropDone} onCancel={handleCropCancel} />
+        <ImageCropModal
+          imageSrc={cropSrc}
+          onCropDone={handleCropDone}
+          onCancel={handleCropCancel}
+        />
       )}
     </div>
   );
