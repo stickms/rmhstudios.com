@@ -71,7 +71,7 @@
   top: 12px;
   z-index: 20;
   max-width: calc(100% - 2 * var(--studio-gutter));
-  margin: clamp(20px, 4vw, 32px) var(--studio-gutter) 0;
+  margin: clamp(20px, 4vw, 32px) var(--studio-gutter) clamp(12px, 2vw, 20px);
 }
 
 /* ── Tab body ────────────────────────────────────────────────────────────── */

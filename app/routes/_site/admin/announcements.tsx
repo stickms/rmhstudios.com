@@ -7,6 +7,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Megaphone, Trash2, BarChart3, Image as ImageIcon, ImagePlus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { Spinner } from '@/components/ui/spinner';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -329,10 +330,10 @@ function AdminAnnouncementsPage() {
               </label>
               <label className="mt-3 flex items-center gap-2">
                 <span className="text-xs text-site-text-dim">{t('poll-length', { defaultValue: 'Poll length' })}</span>
-                <select
+                <Select
+                  controlSize="sm"
                   value={pollDuration}
                   onChange={(e) => setPollDuration(Number(e.target.value))}
-                  className="rounded-site-sm border border-site-border bg-site-bg px-2 py-1 text-xs text-site-text focus:outline-none"
                 >
                   <option value={0}>{t('poll-no-limit', { defaultValue: 'No limit' })}</option>
                   <option value={1}>{t('poll-1-hour', { defaultValue: '1 hour' })}</option>
@@ -340,7 +341,7 @@ function AdminAnnouncementsPage() {
                   <option value={24}>{t('poll-1-day', { defaultValue: '1 day' })}</option>
                   <option value={72}>{t('poll-3-days', { defaultValue: '3 days' })}</option>
                   <option value={168}>{t('poll-1-week', { defaultValue: '1 week' })}</option>
-                </select>
+                </Select>
               </label>
             </div>
           )}

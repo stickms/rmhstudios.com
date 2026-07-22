@@ -5,6 +5,7 @@ import { Link } from '@tanstack/react-router';
 import { KeyRound, Plus, Trash2, ShieldCheck, RefreshCw, X, BookOpen } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { CopyButton } from '@/components/ui/copy-button';
 import { useConfirm } from '@/components/ui/confirm-dialog';
 import { SCOPES, DEFAULT_SCOPES, scopesByGroup } from '@/lib/api/scopes';
@@ -231,18 +232,19 @@ export function KeysManager() {
         </div>
 
         <div className="flex items-center gap-2">
-          <label className="text-xs text-site-text-muted">Expires</label>
-          <select
+          <label htmlFor="api-key-expiry" className="text-xs text-site-text-muted">Expires</label>
+          <Select
+            id="api-key-expiry"
+            controlSize="sm"
             value={expiryDays}
             onChange={(e) => setExpiryDays(Number(e.target.value))}
-            className="rounded-site-sm border border-site-border bg-site-bg px-2 py-1 text-xs text-site-text"
           >
             {EXPIRY_OPTIONS.map((o) => (
               <option key={o.days} value={o.days}>
                 {o.label}
               </option>
             ))}
-          </select>
+          </Select>
           <div className="flex-1" />
           <Button
             size="sm"

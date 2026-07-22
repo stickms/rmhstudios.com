@@ -250,13 +250,13 @@
 }
 
 .lib-book__title {
-  /* Titles read as printed book lettering: an elegant serif (Playfair, loaded
-     globally) instead of the UI sans. */
-  font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+  /* Covers use the same display face as the rest of the site; the former serif
+     treatment made these cards feel disconnected from the library UI. */
+  font-family: var(--site-font-display);
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.3;
-  letter-spacing: -0.005em;
+  letter-spacing: -0.025em;
   /* The cover art is a dark navy slab on EVERY theme, so its printed title must
      stay light. var(--site-text) flips dark on light themes (e.g. Sepia) and
      the title vanished against the cover — pin it light like the page badge. */
@@ -285,18 +285,14 @@
 }
 
 .lib-book__name {
-  /* Book / collection / volume titles: the same printed-book serif as the
-     on-cover title, so every title on the page shares one voice. */
-  font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+  /* Book, collection, and volume titles stay in the site display system. */
+  font-family: var(--site-font-display);
   font-size: 0.84rem;
-  font-weight: 600;
+  font-weight: 650;
   color: var(--site-text);
   line-height: 1.3;
-  /* Stay legible when a neighbouring book spins over the caption: a soft dark
-     halo keeps the light title readable on any cover colour behind it. */
-  text-shadow:
-    0 1px 3px rgba(2, 10, 28, 0.6),
-    0 0 1px rgba(2, 10, 28, 0.5);
+  letter-spacing: -0.025em;
+  text-shadow: none;
   position: relative;
   z-index: 21;
   /* Up to three lines of the title before truncating. */

@@ -94,6 +94,11 @@ interface LiquidMorphOptions {
    * Omit to fall back to waking on every render.
    */
   activeKey?: string | number;
+  /**
+   * Whether to render/register the lagging metaball. Tab pills disable this so
+   * their active shape stays cohesive; navigation capsules may keep the trail.
+   */
+  trail?: boolean;
 }
 
 interface LiquidMorphResult {
@@ -108,6 +113,7 @@ export function useLiquidMorph({
   axis,
   reduced,
   activeKey,
+  trail = true,
 }: LiquidMorphOptions): LiquidMorphResult {
   const underlayRef = useRef<HTMLSpanElement>(null);
 
@@ -225,14 +231,18 @@ export function useLiquidMorph({
         active: moving || scrolling,
       });
       const dd = dropD.get();
-      dropBody.set({
-        cx: u.left + dropCx.get(),
-        cy: u.top + dropCy.get(),
-        hw: dd / 2,
-        hh: dd / 2,
-        radius: dd / 2,
-        active: moving || scrolling,
-      });
+      if (trail) {
+        dropBody.set({
+          cx: u.left + dropCx.get(),
+          cy: u.top + dropCy.get(),
+          hw: dd / 2,
+          hh: dd / 2,
+          radius: dd / 2,
+          active: moving || scrolling,
+        });
+      } else {
+        dropBody.set({ cx: 0, cy: 0, hw: 0, hh: 0, radius: 0, active: false });
+      }
     }
 
     // Still-moving check: the projected box changed, OR the trailing droplet spring
@@ -248,8 +258,9 @@ export function useLiquidMorph({
     p.w = c.width;
     p.h = c.height;
     const dropSettled =
-      Math.abs(dropCx.get() - cx.get()) <= MOVE_EPS &&
-      Math.abs(dropCy.get() - cy.get()) <= MOVE_EPS;
+      !trail ||
+      (Math.abs(dropCx.get() - cx.get()) <= MOVE_EPS &&
+        Math.abs(dropCy.get() - cy.get()) <= MOVE_EPS);
     return moved || !dropSettled || performance.now() < scrollActiveUntil.current;
   };
 
@@ -312,7 +323,7 @@ export function useLiquidMorph({
 
   // With GL live, render an invisible anchor span (no goo, no blobs); otherwise
   // the full `.lg-goo` metaball underlay (the CSS/SVG fallback tier, unchanged).
-  const showGoo = !reduced && !glActive;
+  const showGoo = trail && !reduced && !glActive;
   const underlay = reduced ? null : (
     <motion.span
       ref={underlayRef}

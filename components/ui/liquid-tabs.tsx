@@ -148,9 +148,18 @@ export function LiquidTabs({
   // §5.47 true liquid morphing: velocity squash/stretch on the capsule + a gooey
   // trailing droplet in an underlay. Rides on top of the layoutId spring, which
   // stays the reduced-motion fallback. The capsule lives inside/behind the active
-  // tab (pixel-accurate via layout projection); the underlay mirrors it.
+  // tab (pixel-accurate via layout projection); the underlay anchors the shared
+  // material sampler without rendering a trailing droplet for tabs.
   const capsuleRef = useRef<HTMLSpanElement>(null);
-  const { squashStyle, underlay } = useLiquidMorph({ capsuleRef, axis: 'x', reduced, activeKey: value });
+  const { squashStyle, underlay } = useLiquidMorph({
+    capsuleRef,
+    axis: 'x',
+    reduced,
+    activeKey: value,
+    // A lagging metaball can detach on wide jumps and reads as an idle dot.
+    // Tabs keep the cohesive active pill and its squash/layout animation only.
+    trail: false,
+  });
 
   const link = Boolean(renderTab);
 
@@ -283,7 +292,8 @@ export function LiquidTabs({
   });
 
   // Link mode → a <nav> (aria-current semantics); tablist mode → role="tablist"
-  // with roving nav. The goo underlay (§5.47) is capsule-only, behind the tabs.
+  // with roving nav. The morph underlay is an invisible coordinate anchor for
+  // tabs; the distracting lagging droplet is disabled above.
   const list = link ? (
     <nav aria-label={ariaLabel} data-slot="liquid-tabs" className={innerClass}>
       {underlay}

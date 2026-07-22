@@ -79,7 +79,7 @@ function ArcadePage() {
         {/* §15.1: unified sheet + flowing-capsule tab strip (was a border-b
             underline row). This is the arcade's primary chrome on every
             breakpoint; content renders header-less beneath it. */}
-        <div className="mt-3 px-2 tab-sheet-scroll md:px-3">
+        <div className="my-3 px-2 tab-sheet-scroll md:px-3">
           <LiquidTabs
             aria-label={title}
             value={tab}

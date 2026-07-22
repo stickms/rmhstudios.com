@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Swords, Trophy, Check, X, Flag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { Select } from '@/components/ui/select';
 import { UserAvatar } from './UserAvatar';
 import { HandleInput } from './HandleInput';
 import { ColumnHeader } from './ColumnHeader';
@@ -208,21 +209,22 @@ export function RankedColumn({
               as="section"
               className={`rounded-site border border-site-border bg-site-surface p-4 ${LIFT_CARD}`}
             >
-              <h2 className="mb-2 text-sm font-bold text-site-text">
+              <h2 id="ranked-challenge-heading" className="mb-2 text-sm font-bold text-site-text">
                 {t('challenge-a-player', { defaultValue: 'Challenge a player' })}
               </h2>
               <div className="flex flex-wrap items-center gap-2">
-                <select
+                <Select
+                  aria-labelledby="ranked-challenge-heading"
+                  controlSize="sm"
                   value={game}
                   onChange={(e) => setGame(e.target.value)}
-                  className="rounded-site-sm border border-site-border bg-site-bg px-2.5 py-1.5 text-sm text-site-text outline-none focus:border-site-accent"
                 >
                   {games.map((g) => (
                     <option key={g.id} value={g.id}>
                       {g.name}
                     </option>
                   ))}
-                </select>
+                </Select>
                 <div className="flex-1">
                   <HandleInput
                     value={opponent}
@@ -361,20 +363,21 @@ export function RankedColumn({
         {/* Leaderboard */}
         <Reveal as="section">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
+            <h2 id="ranked-leaderboard-heading" className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-site-text-dim">
               <Trophy className="h-3.5 w-3.5" /> {t('leaderboard', { defaultValue: 'Leaderboard' })}
             </h2>
-            <select
+            <Select
+              aria-labelledby="ranked-leaderboard-heading"
+              controlSize="sm"
               value={lbGame}
               onChange={(e) => setLbGame(e.target.value)}
-              className="rounded-site-sm border border-site-border bg-site-bg px-2 py-1 text-xs text-site-text outline-none focus:border-site-accent"
             >
               {games.map((g) => (
                 <option key={g.id} value={g.id}>
                   {g.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           {lbLoading ? (
             <div className="flex justify-center py-8">

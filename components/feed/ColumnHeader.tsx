@@ -61,7 +61,7 @@ export function ColumnHeader({
         // column edges (§8.2); embedded (sticky={false}) headers stay inline with
         // a hairline divider. The optics-ring glint comes free from .glass-chrome.
         sticky
-          ? 'sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3'
+          ? 'sticky top-2 z-10 mx-2 mb-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3 md:mb-3'
           : 'border-b border-site-border',
         className,
       )}

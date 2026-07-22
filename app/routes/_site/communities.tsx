@@ -102,7 +102,7 @@ function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
           {t('communities-title', { defaultValue: 'Communities' })}
         </h1>
       </div>
-      <div className="mt-3 px-2 md:px-3">
+      <div className="my-3 px-2 md:px-3">
         <LiquidTabs
           tabs={tabs}
           value={active}

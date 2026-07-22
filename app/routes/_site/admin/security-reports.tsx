@@ -10,6 +10,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ShieldAlert, Trash2 } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { EmptyState } from '@/components/ui/empty-state';
 import { toast } from 'sonner';
@@ -261,9 +262,9 @@ function ReportCard({
         <label className="sr-only" htmlFor={`status-${report.id}`}>
           {t('status-label', { defaultValue: 'Status' })}
         </label>
-        <select
+        <Select
+          controlSize="sm"
           id={`status-${report.id}`}
-          className="glass-inset px-2.5 py-1.5 text-sm text-site-text"
           value={report.status}
           disabled={busy}
           onChange={(e) => onStatus(report.id, e.target.value as SecurityReportStatus)}
@@ -273,7 +274,7 @@ function ReportCard({
               {SECURITY_STATUS_LABELS[s]}
             </option>
           ))}
-        </select>
+        </Select>
         <Button variant="accent" size="sm" onClick={() => onNotes(report.id, notes)} loading={busy}>
           {t('save-notes', { defaultValue: 'Save notes' })}
         </Button>

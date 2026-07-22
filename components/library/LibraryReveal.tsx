@@ -42,8 +42,17 @@ type RevealApi = {
 
 const RevealCtx = createContext<RevealApi | null>(null);
 
-export function LibraryRevealProvider({ children }: { children: ReactNode }) {
+export function LibraryRevealProvider({
+  children,
+  instant = false,
+}: {
+  children: ReactNode;
+  /** Reveal newly mounted items immediately after an in-page filter change. */
+  instant?: boolean;
+}) {
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const instantRef = useRef(instant);
+  instantRef.current = instant;
   // Elements registered (possibly before the observer exists, since children's
   // ref callbacks run before this provider's effect).
   const registered = useRef<Set<HTMLElement>>(new Set());
@@ -69,6 +78,19 @@ export function LibraryRevealProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (instant) {
+      // Filtering unmounts and remounts result families. Replaying their entrance
+      // cascade makes the page feel as if it reset, so reveal both registered and
+      // already-queued nodes synchronously for every post-filter render.
+      new Set([...registered.current, ...pending.current]).forEach((el) => {
+        el.style.animationDelay = '0ms';
+        el.dataset.revealed = 'true';
+      });
+      registered.current.clear();
+      pending.current = [];
+      return;
+    }
+
     if (typeof IntersectionObserver === 'undefined') {
       // No observer support: just show everything.
       registered.current.forEach((el) => {
@@ -109,11 +131,16 @@ export function LibraryRevealProvider({ children }: { children: ReactNode }) {
       if (frame.current != null) cancelAnimationFrame(frame.current);
       frame.current = null;
     };
-  }, [flush]);
+  }, [flush, instant]);
 
   const api = useMemo<RevealApi>(
     () => ({
       observe: (el) => {
+        if (instantRef.current) {
+          el.style.animationDelay = '0ms';
+          el.dataset.revealed = 'true';
+          return;
+        }
         registered.current.add(el);
         observerRef.current?.observe(el);
       },

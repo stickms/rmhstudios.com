@@ -5,6 +5,7 @@ import { Camera, X, Check, RotateCcw, Plus } from 'lucide-react';
 import { MAX_PROFILE_LINKS } from '@/lib/profile-schema';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
+import { Select } from '@/components/ui/select';
 import { ImageCropModal } from './ImageCropModal';
 import { SpotifySongSearch, type SpotifyTrack } from './SpotifySongSearch';
 import { EmojiPickerButton } from '@/components/shared/EmojiPickerButton';
@@ -718,16 +719,16 @@ export function ProfileEditModal({ open, onClose, onSaved, initial }: ProfileEdi
 
             {/* DM Privacy */}
             <div>
-              <label className="block text-xs font-medium text-site-text-dim mb-1.5">{t("dm-privacy-label", { defaultValue: "Who can message you" })}</label>
-              <select
+              <label htmlFor="profile-dm-privacy" className="block text-xs font-medium text-site-text-dim mb-1.5">{t("dm-privacy-label", { defaultValue: "Who can message you" })}</label>
+              <Select
+                id="profile-dm-privacy"
                 value={dmPrivacy}
                 onChange={(e) => setDmPrivacy(e.target.value)}
-                className="w-full bg-site-surface text-site-text text-sm rounded-site p-3 border border-site-border outline-none focus:border-site-accent transition-colors appearance-none cursor-pointer"
               >
                 <option value="EVERYONE">{t("dm-everyone", { defaultValue: "Everyone" })}</option>
                 <option value="FOLLOWERS">{t("dm-followers", { defaultValue: "People I follow" })}</option>
                 <option value="NONE">{t("dm-none", { defaultValue: "Nobody" })}</option>
-              </select>
+              </Select>
               <p className="text-xs text-site-text-dim mt-1">
                 {dmPrivacy === 'EVERYONE' && t("dm-everyone-hint", { defaultValue: "Anyone can send you a direct message." })}
                 {dmPrivacy === 'FOLLOWERS' && t("dm-followers-hint", { defaultValue: "Only people you follow can message you." })}

@@ -110,7 +110,7 @@ function Store() {
             page-title capsule (was bespoke tablist markup). `?tab=` mirroring,
             roving nav and the aria-controls tabpanel wiring (idBase="store" →
             `store-tab-*` / `store-panel-*`) are byte-identical to before. */}
-        <div className="mt-3 px-2 md:px-3">
+        <div className="my-3 px-2 md:px-3">
           <LiquidTabs
             tabs={tabs}
             value={tab}
