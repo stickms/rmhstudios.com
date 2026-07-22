@@ -170,11 +170,10 @@ export function RightSidebar({
 }: RightSidebarProps) {
   const { t } = useTranslation('feed');
   return (
-    // Floating widget stack (§8.2.4): sticks below the header capsule (top-3) as
-    // the page scrolls; space-y-3 opens aurora gutters between the glass-fill
-    // cards. Sticking requires the enclosing aside to stretch (self-start removed
-    // in PageLayout); the home feed's aside (FeedLayout) is swept in Phase C.
-    <div className="sticky top-3 space-y-3 p-4">
+    // Floating widget stack in normal document flow: the rail scrolls with the
+    // page instead of pinning itself to the viewport. space-y-3 opens aurora
+    // gutters between the glass-fill cards.
+    <div className="space-y-3 p-4">
       <OnlineNowPill />
 
       <TodayWidget />
