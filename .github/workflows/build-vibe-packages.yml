@@ -1,20 +1,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Builds the "vibe packages" (the first stage of `pnpm build`) on its own, so a
-# break in that generator is caught fast without waiting on the full Vite build.
+# Manually builds the "vibe packages" in isolation for debugging. Pull requests
+# are already covered by web-ci's `pnpm run build:frontend`, whose first step is
+# this exact generator; main deploys build the same cached Docker stage. Keeping
+# a second automatic install/build consumed a runner without adding coverage.
 # ─────────────────────────────────────────────────────────────────────────────
 name: build-vibe-packages
 
 on:
-  pull_request:
-    paths:
-      - "scripts/build-vibe-packages.ts"
-      - "lib/**"
-      - "components/**"
-      - ".github/workflows/build-vibe-packages.yml"
-  push:
-    branches: [main]
-    paths:
-      - "scripts/build-vibe-packages.ts"
   workflow_dispatch: {}
 
 concurrency:
