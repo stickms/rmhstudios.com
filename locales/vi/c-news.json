@@ -2,6 +2,7 @@
   "all": "Tất cả",
   "article-count_one": "{{count}} bài viết",
   "article-count_other": "{{count}} bài viết",
+  "categories-label": "News categories",
   "clear": "Xóa",
   "clear-all-filters": "Xóa tất cả bộ lọc",
   "clear-filters": "Xóa bộ lọc",

@@ -2,6 +2,7 @@
   "all": "Alles",
   "article-count_one": "{{count}} artikel",
   "article-count_other": "{{count}} artikelen",
+  "categories-label": "News categories",
   "clear": "Wissen",
   "clear-all-filters": "Alle filters wissen",
   "clear-filters": "Filters wissen",

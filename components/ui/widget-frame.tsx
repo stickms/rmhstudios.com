@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AsyncReveal } from '@/components/motion';
 
 /**
  * WidgetFrame (groundwork G3) — the shared modular-block surface used by both
@@ -60,39 +61,50 @@ export function WidgetFrame({
   className,
   children,
 }: WidgetFrameProps) {
+  // Once a widget has real content, background refreshes keep that subtree
+  // mounted. This protects charts/media/local state from restarting just because
+  // the widget is fetching a fresher snapshot.
+  const hasResolved = React.useRef(!loading);
+  if (!loading) hasResolved.current = true;
+  const initialLoading = loading && !hasResolved.current;
+
   return (
-    <Card
-      data-slot="widget-frame"
-      className={cn('gap-0 py-0 overflow-hidden', className)}
-    >
+    <Card data-slot="widget-frame" className={cn('gap-0 py-0 overflow-hidden', className)}>
       <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-site-border">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-site-text">
-          {Icon ? (
-            <Icon className="h-4 w-4 text-site-text-muted" aria-hidden />
-          ) : null}
+          {Icon ? <Icon className="h-4 w-4 text-site-text-muted" aria-hidden /> : null}
           <span className="truncate">{title}</span>
         </h3>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
 
-      <div className="px-4 py-4">
-        {loading ? (
+      <div className="px-4 py-4" aria-busy={loading}>
+        {initialLoading && (
           <div className="space-y-2" aria-hidden>
             <Skeleton className="h-4 w-3/4" />
             <Skeleton className="h-4 w-1/2" />
             <Skeleton className="h-4 w-2/3" />
           </div>
-        ) : empty ? (
-          <EmptyState
-            icon={emptyIcon ?? Icon}
-            title={emptyTitle}
-            description={emptyDescription}
-            action={emptyAction}
-            className="py-8"
-          />
-        ) : (
-          children
         )}
+        <AsyncReveal
+          show={!initialLoading}
+          className={cn(
+            'transition-opacity duration-150',
+            loading && hasResolved.current && 'opacity-70',
+          )}
+        >
+          {empty ? (
+            <EmptyState
+              icon={emptyIcon ?? Icon}
+              title={emptyTitle}
+              description={emptyDescription}
+              action={emptyAction}
+              className="py-8"
+            />
+          ) : (
+            children
+          )}
+        </AsyncReveal>
       </div>
     </Card>
   );

@@ -2,6 +2,7 @@
   "all": "الكل",
   "article-count_one": "{{count}} مقال",
   "article-count_other": "{{count}} مقال",
+  "categories-label": "News categories",
   "clear": "واضح",
   "clear-all-filters": "مسح جميع الفلاتر",
   "clear-filters": "مسح الفلاتر",

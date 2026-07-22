@@ -11,12 +11,22 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { CheckCircle2, Circle, Flame, Palette, PenSquare, Sparkles, UserPlus, X } from 'lucide-react';
+import {
+  CheckCircle2,
+  Circle,
+  Flame,
+  Palette,
+  PenSquare,
+  Sparkles,
+  UserPlus,
+  X,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSession } from '@/components/Providers';
 import { useCelebration } from '@/hooks/useCelebration';
 import { useIdleReady } from '@/hooks/useIdleReady';
 import { useThemeStore } from '@/stores/themeStore';
+import { AsyncReveal } from '@/components/motion';
 
 const DISMISS_KEY = 'rmh-onboarding-dismissed';
 /** Only pitch the checklist to accounts younger than this. */
@@ -74,8 +84,12 @@ export function OnboardingChecklist() {
     return () => document.removeEventListener('visibilitychange', onVisible);
   }, [session?.user, dismissed, refresh]);
 
-  if (!session?.user || dismissed || !status || status.claimed) return null;
-  if (Date.now() - new Date(status.accountCreatedAt).getTime() > MAX_ACCOUNT_AGE_MS) return null;
+  if (!session?.user || dismissed || !status || status.claimed) {
+    return <AsyncReveal show={false} />;
+  }
+  if (Date.now() - new Date(status.accountCreatedAt).getTime() > MAX_ACCOUNT_AGE_MS) {
+    return <AsyncReveal show={false} />;
+  }
 
   const themeCustomized = themeStyle !== 'default';
   const steps = [
@@ -135,7 +149,7 @@ export function OnboardingChecklist() {
           t('onboarding-claimed', {
             reward: data.reward,
             defaultValue: '+{{reward}} coins — welcome aboard! 🎉',
-          })
+          }),
         );
         setStatus((s) => (s ? { ...s, claimed: true } : s));
       } else {
@@ -147,7 +161,11 @@ export function OnboardingChecklist() {
   };
 
   return (
-    <section className="border-b border-site-border bg-site-accent-dim/20 px-4 py-4">
+    <AsyncReveal
+      show
+      as="section"
+      className="border-b border-site-border bg-site-accent-dim/20 px-4 py-4"
+    >
       <div className="mb-2 flex items-start justify-between gap-2">
         <h2 className="flex items-center gap-2 font-bold text-site-text">
           <Sparkles className="h-5 w-5 text-site-accent" aria-hidden />
@@ -187,7 +205,10 @@ export function OnboardingChecklist() {
           return (
             <li key={step.key}>
               {step.href && !step.done ? (
-                <Link to={step.href} className="block rounded-site-sm px-1 py-0.5 hover:bg-site-surface-hover">
+                <Link
+                  to={step.href}
+                  className="block rounded-site-sm px-1 py-0.5 hover:bg-site-surface-hover"
+                >
                   {row}
                 </Link>
               ) : (
@@ -201,7 +222,7 @@ export function OnboardingChecklist() {
       <div className="flex items-center gap-3">
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-site-surface">
           <div
-            className="h-full rounded-full bg-site-accent transition-all"
+            className="h-full rounded-full bg-site-accent transition-[width] duration-300"
             style={{ width: `${(doneCount / steps.length) * 100}%` }}
           />
         </div>
@@ -212,6 +233,6 @@ export function OnboardingChecklist() {
           })}
         </Button>
       </div>
-    </section>
+    </AsyncReveal>
   );
 }

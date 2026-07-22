@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
+import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
 import type { HydratedSave, SaveFolderView } from '@/lib/saves/types';
 
 interface HubData {
@@ -119,7 +120,11 @@ export function SavesHub({ initial }: { initial: HubData }) {
   return (
     <div className="px-4 pt-4 pb-12">
       {/* Folder filter row — scrolls horizontally on mobile. */}
-      <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+      <HorizontalScroller
+        aria-label={t('folders-label', { defaultValue: 'Saved item folders' })}
+        className="mb-4"
+        surface="pill"
+      >
         {chip('all', t('all', { defaultValue: 'All' }))}
         {chip('default', t('unfiled', { defaultValue: 'Saved' }))}
         {folders.map((f) => chip(f.id, f.name, f.count))}
@@ -150,7 +155,7 @@ export function SavesHub({ initial }: { initial: HubData }) {
             label={t('new-folder', { defaultValue: 'New folder' })}
           />
         )}
-      </div>
+      </HorizontalScroller>
 
       {items.length === 0 && !loading ? (
         <EmptyState

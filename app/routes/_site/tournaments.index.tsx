@@ -53,6 +53,9 @@ function TournamentsPage() {
   return (
     <PageLayout
       title={t('title', { defaultValue: 'Tournaments' })}
+      description={t('description', {
+        defaultValue: 'Join open brackets, follow live matches, or host your own competition.',
+      })}
       wide
       headerRight={
         viewerId ? (
@@ -64,7 +67,7 @@ function TournamentsPage() {
       }
     >
       {/* §15.1: unified sheet + flowing-capsule tab strip below the page title. */}
-      <div className="mt-3 mb-3">
+      <div className="mx-3 mt-3 mb-3">
         <LiquidTabs
           aria-label={t('title', { defaultValue: 'Tournaments' })}
           value={status}
@@ -74,6 +77,8 @@ function TournamentsPage() {
             { id: 'LIVE', label: t('tab-live', { defaultValue: 'Live' }) },
             { id: 'COMPLETE', label: t('tab-done', { defaultValue: 'Finished' }) },
           ]}
+          fullWidth
+          scroll
         />
       </div>
 
@@ -134,9 +139,7 @@ function TournamentsPage() {
         </div>
       )}
 
-      {creating && (
-        <CreateTournamentDialog open={creating} onClose={() => setCreating(false)} />
-      )}
+      {creating && <CreateTournamentDialog open={creating} onClose={() => setCreating(false)} />}
     </PageLayout>
   );
 }

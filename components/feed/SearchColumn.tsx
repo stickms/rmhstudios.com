@@ -232,7 +232,7 @@ export function SearchColumn({
           well. setTab keeps mirroring the selection to the URL. Labels are
           pre-translated before handoff. The w-fit pill scrolls in the shared
           tab-sheet track (overflow + edge fade, §5.5x A.4). */}
-      <div className="my-4 px-2 md:px-3 tab-sheet-scroll">
+      <div className="my-4 px-2 md:px-3">
         <LiquidTabs
           tabs={TABS.map((tab_item) => ({
             id: tab_item.id,
@@ -241,6 +241,7 @@ export function SearchColumn({
           value={tab}
           onChange={(id) => setTab(id as Tab)}
           size="sm"
+          scroll
           aria-label={t('search-categories-aria-label', { defaultValue: 'Search categories' })}
         />
       </div>

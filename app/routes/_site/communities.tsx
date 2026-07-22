@@ -50,10 +50,7 @@ export const Route = createFileRoute('/_site/communities')({
 function CommunitiesShell({ children }: { children: React.ReactNode }) {
   return (
     <>
-      <AnimatedMain
-        className="w-full min-w-0 pb-dock"
-        targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
-      >
+      <AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}>
         {children}
       </AnimatedMain>
       <div className="hidden lg:block w-4 shrink-0" />
@@ -81,7 +78,11 @@ function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
       label: t('communities-tab-communities', { defaultValue: 'Communities' }),
       icon: Users,
     },
-    { id: 'events', label: t('communities-tab-events', { defaultValue: 'Events' }), icon: CalendarDays },
+    {
+      id: 'events',
+      label: t('communities-tab-events', { defaultValue: 'Events' }),
+      icon: CalendarDays,
+    },
     { id: 'spaces', label: t('communities-tab-spaces', { defaultValue: 'Spaces' }), icon: Radio },
   ];
 
@@ -108,6 +109,7 @@ function CommunitiesTabs({ active }: { active: CommunitiesTab }) {
           value={active}
           onChange={setTab}
           idBase="communities"
+          scroll
           aria-label={t('communities-sections', { defaultValue: 'Community sections' })}
         />
       </div>
@@ -124,7 +126,11 @@ function CommunitiesPage() {
       <CommunitiesTabs active={tab} />
 
       {tab === 'communities' && (
-        <div role="tabpanel" id="communities-panel-communities" aria-labelledby="communities-tab-communities">
+        <div
+          role="tabpanel"
+          id="communities-panel-communities"
+          aria-labelledby="communities-tab-communities"
+        >
           <CommunitiesColumn initialCommunities={communities} embedded />
         </div>
       )}

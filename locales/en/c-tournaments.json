@@ -12,6 +12,7 @@
   "create-failed": "Could not create tournament",
   "create-title": "Host a tournament",
   "created": "Tournament created!",
+  "description": "Join open brackets, follow live matches, or host your own competition.",
   "done": "Done",
   "empty": "No tournaments here yet. Host one and set the prize!",
   "entrants": "Entrants",

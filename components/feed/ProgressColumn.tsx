@@ -207,7 +207,7 @@ export function ProgressColumn({ hideHeader = false }: { hideHeader?: boolean } 
           <div className="mt-3">
             <div className="h-2.5 w-full overflow-hidden rounded-full bg-site-bg">
               <div
-                className="h-full rounded-full bg-site-accent transition-all"
+                className="h-full rounded-full bg-site-accent transition-[width] duration-300"
                 style={{ width: `${lvlPct}%` }}
               />
             </div>

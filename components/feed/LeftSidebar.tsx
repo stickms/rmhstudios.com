@@ -59,10 +59,11 @@ type SidebarSessionUser = {
 
 export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // When expanded=true (e.g. in mobile drawer), always show labels.
-  // Otherwise, labels stay hidden until the shell has room for all three columns.
-  const labelClass = expanded ? '' : 'hidden 2xl:block';
-  const logoFullClass = expanded ? '' : 'hidden 2xl:block';
-  const logoShortClass = expanded ? 'hidden' : '2xl:hidden';
+  // Otherwise, labels stay hidden on the tablet rail and appear at the ordinary
+  // desktop breakpoint, where the shell expands to a readable 240px sidebar.
+  const labelClass = expanded ? '' : 'hidden lg:block';
+  const logoFullClass = expanded ? '' : 'hidden lg:block';
+  const logoShortClass = expanded ? 'hidden' : 'lg:hidden';
   // Mobile drawer (`expanded`): pad x/top uniformly; the bottom inset is applied
   // inline (see the root div) as 1rem + the OS safe-area, so the sidebar body
   // fills the drawer to the bottom with no empty tinted band while the footer
@@ -70,17 +71,17 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
   // 0 while that bar is shown).
   // Collapsed rail (md, 64px): tighter padding so the icon pills breathe inside
   // the m-2 rail panel instead of being crushed + clipped (§5.5x A.3). p-4 returns
-  // at 2xl where the rail expands and shows labels.
-  const paddingClass = expanded ? 'px-4 pt-4' : 'p-1.5 2xl:p-4';
-  const logoAlignClass = expanded ? 'justify-start' : 'justify-center 2xl:justify-start';
-  const iconMrClass = expanded ? 'mr-2' : '2xl:mr-2';
-  const itemJustifyClass = expanded ? '' : 'md:justify-center 2xl:justify-start';
+  // at lg where the rail expands and shows labels.
+  const paddingClass = expanded ? 'px-4 pt-4' : 'p-1.5 lg:p-4';
+  const logoAlignClass = expanded ? 'justify-start' : 'justify-center lg:justify-start';
+  const iconMrClass = expanded ? 'mr-2' : 'lg:mr-2';
+  const itemJustifyClass = expanded ? '' : 'md:justify-center lg:justify-start';
   // Collapsed pills drop to px-2 at md (icon-only) so a ~40px rounded pill centres
-  // the icon without overflowing the tight rail track; px-3.5 returns at 2xl with
+  // the icon without overflowing the tight rail track; px-3.5 returns at lg with
   // labels (§5.5x A.3). Expanded (drawer) always keeps the roomy px-3.5.
-  const itemPadXClass = expanded ? 'px-3.5' : 'px-2 2xl:px-3.5';
+  const itemPadXClass = expanded ? 'px-3.5' : 'px-2 lg:px-3.5';
   // Both the mobile drawer (MobileSidebarShell's fixed `<aside>`) and the desktop
-  // rail (fixed, `overflow-hidden` aside) fill the viewport height, so the nav
+  // rail fill the viewport height, so the nav
   // gets its own internal scroll region while the footer (notification bell,
   // profile/sign-in) stays pinned to the bottom. `overscroll-contain` keeps a
   // scroll that reaches the nav's top/bottom from chaining out to the main page
@@ -249,7 +250,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
     const indent = nested
       ? expanded
         ? 'pl-10'
-        : 'md:justify-center 2xl:justify-start 2xl:pl-10'
+        : 'md:justify-center lg:justify-start lg:pl-10'
       : itemJustifyClass;
     // The active pill is now the flowing layoutId capsule (below) — the leaf
     // itself only carries the accent text + hover states. `relative` anchors the
@@ -284,19 +285,19 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         <span className="relative z-[1] flex min-w-0 items-center gap-3">
           {link.badge === 'inbox' ? (
             <span className="relative shrink-0">
-              <Icon className="w-5 h-5" />
+              <Icon className="w-5 h-5" aria-hidden />
               <NotificationBadge count={inboxCount} className="absolute -top-1.5 -right-1.5" />
             </span>
           ) : link.badge === 'admin-review' ? (
             <span className="relative shrink-0">
-              <Icon className="w-5 h-5" />
+              <Icon className="w-5 h-5" aria-hidden />
               <NotificationBadge
                 count={reviewCounts.total}
                 className="absolute -top-1.5 -right-1.5"
               />
             </span>
           ) : (
-            <Icon className="w-5 h-5 shrink-0" />
+            <Icon className="w-5 h-5 shrink-0" aria-hidden />
           )}
           <span className={labelClass}>{label}</span>
         </span>
@@ -312,6 +313,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           data-glass-light=""
           className={leafClass}
           title={label}
+          aria-label={label}
           aria-current={isActive ? 'page' : undefined}
         >
           {leafInner}
@@ -325,6 +327,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
         data-glass-light=""
         className={leafClass}
         title={label}
+        aria-label={label}
         aria-current={isActive ? 'page' : undefined}
       >
         {leafInner}
@@ -391,7 +394,11 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           expanded ? 'justify-between gap-2' : logoAlignClass
         }`}
       >
-        <Link to="/" className="flex items-center">
+        <Link
+          to="/"
+          className="flex items-center"
+          aria-label={t('nav-home', { defaultValue: 'RMH Studios home' })}
+        >
           <span
             className={`site-logo font-playfair font-bold text-xl text-site-text ${logoFullClass}`}
           >
@@ -412,7 +419,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           capsule's coordinate space — it wraps ALL leaves (incl. expanding group
           submenus) so the underlay covers the full content height and stays
           registered with the capsule through scroll (§5.47). */}
-      <nav ref={navRef} className={`${navScrollClass} 2xl:pr-1.5`}>
+      <nav ref={navRef} className={`${navScrollClass} lg:pr-1.5`}>
         <div className="relative flex flex-col gap-1">
           {/* Goo underlay (§5.47) — capsule-only, behind the leaves. */}
           {capsuleUnderlay}
@@ -440,6 +447,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   type="button"
                   onClick={() => toggleGroup(item.group)}
                   aria-expanded={isOpen}
+                  aria-label={groupLabel}
                   className={`flex items-center gap-3 ${itemPadXClass} py-3 rounded-full text-sm font-medium transition-colors w-full ${itemJustifyClass} ${
                     groupActive
                       ? 'text-site-accent bg-site-accent-dim'
@@ -447,42 +455,40 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                   }`}
                   title={groupLabel}
                 >
-                  <Icon className="w-5 h-5 shrink-0" />
+                  <Icon className="w-5 h-5 shrink-0" aria-hidden />
                   <span className={labelClass}>{groupLabel}</span>
                   <ChevronDown
                     className={`w-4 h-4 shrink-0 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''} ${labelClass}`}
                   />
                 </button>
-                {reduced ? (
-                  isOpen && item.children.map((c) => renderPinnable(c, true))
-                ) : (
-                  <AnimatePresence initial={false}>
-                    {isOpen && (
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      key="submenu"
+                      variants={SUBMENU_PANEL}
+                      initial={reduced ? false : 'closed'}
+                      animate="open"
+                      exit="closed"
+                      transition={
+                        reduced ? { duration: 0 } : { duration: 0.24, ease: [0.32, 0.72, 0, 1] }
+                      }
+                      className="overflow-hidden"
+                    >
                       <motion.div
-                        key="submenu"
-                        variants={SUBMENU_PANEL}
-                        initial="closed"
+                        className="flex flex-col gap-1 pt-1"
+                        variants={reduced ? undefined : SUBMENU_LIST}
+                        initial={reduced ? false : 'closed'}
                         animate="open"
-                        exit="closed"
-                        transition={{ duration: 0.24, ease: [0.32, 0.72, 0, 1] }}
-                        className="overflow-hidden"
                       >
-                        <motion.div
-                          className="flex flex-col gap-1 pt-1"
-                          variants={SUBMENU_LIST}
-                          initial="closed"
-                          animate="open"
-                        >
-                          {item.children.map((c) => (
-                            <motion.div key={c.href} variants={SUBMENU_ITEM}>
-                              {renderPinnable(c, true)}
-                            </motion.div>
-                          ))}
-                        </motion.div>
+                        {item.children.map((c) => (
+                          <motion.div key={c.href} variants={reduced ? undefined : SUBMENU_ITEM}>
+                            {renderPinnable(c, true)}
+                          </motion.div>
+                        ))}
                       </motion.div>
-                    )}
-                  </AnimatePresence>
-                )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             );
           })}
@@ -557,7 +563,7 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
                 }
                 setShowUserMenu(!showUserMenu);
               }}
-              className={`p-1.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${expanded ? '' : 'hidden 2xl:block'}`}
+              className={`p-1.5 rounded-site-sm text-site-text-muted hover:text-site-text hover:bg-site-surface transition-colors shrink-0 ${expanded ? '' : 'hidden lg:block'}`}
               title={t('more-options', { defaultValue: 'More options' })}
             >
               <MoreHorizontal className="w-4 h-4" />
@@ -633,16 +639,16 @@ export function LeftSidebar({ expanded = false }: { expanded?: boolean }) {
           // Signed-out: a sign-in CTA with a compact Settings gear beside it, so
           // appearance and language (saved locally, synced on sign-in) stay
           // reachable without an account. The gear sits next to the button when
-          // there's room (mobile drawer / 2xl rail) and stacks under it in the
+          // there's room (mobile drawer / lg rail) and stacks under it in the
           // narrow icon rail.
           <div
-            className={`flex gap-2 ${expanded ? 'items-center' : 'flex-col 2xl:flex-row 2xl:items-center'}`}
+            className={`flex gap-2 ${expanded ? 'items-center' : 'flex-col lg:flex-row lg:items-center'}`}
           >
             <Link
               to="/login"
               search={{ callbackURL: undefined }}
               aria-label={t('sign-in', { defaultValue: 'Sign In' })}
-              className={expanded ? 'min-w-0 flex-1' : '2xl:min-w-0 2xl:flex-1'}
+              className={expanded ? 'min-w-0 flex-1' : 'lg:min-w-0 lg:flex-1'}
             >
               <Button
                 variant="accent"

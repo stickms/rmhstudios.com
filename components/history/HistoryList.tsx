@@ -13,6 +13,7 @@ import { IconButton } from '@/components/ui/icon-button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Spinner } from '@/components/ui/spinner';
 import { useConfirm } from '@/components/ui/confirm-dialog';
+import { HorizontalScroller } from '@/components/ui/horizontal-scroller';
 import {
   HISTORY_ENTITY_TYPES,
   progressRatio,
@@ -137,10 +138,14 @@ export function HistoryList({ initial }: { initial: HistoryData }) {
         </Button>
       </div>
 
-      <div className="mb-4 flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+      <HorizontalScroller
+        aria-label={t('filter-history', { defaultValue: 'Filter history' })}
+        className="mb-4"
+        surface="pill"
+      >
         {chip('all', t('all', { defaultValue: 'All' }))}
         {HISTORY_ENTITY_TYPES.map((type) => chip(type, t(`type-${type}`, { defaultValue: type })))}
-      </div>
+      </HorizontalScroller>
 
       {items.length === 0 && !loading ? (
         <EmptyState

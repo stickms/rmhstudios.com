@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState, memo } from 'react';
 import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import type { FeedItem } from '@/lib/feed-types';
 import { RMHarkCard } from './RMHarkCard';
+import { useStableListMotion } from '@/hooks/useStableListMotion';
 
 // useLayoutEffect warns during SSR; use useEffect on the server so the render
 // stays quiet, and keep pre-paint timing on the client (scrollMargin must be
@@ -47,6 +48,10 @@ interface VirtualPostListProps {
 export function VirtualPostList({ items, className }: VirtualPostListProps) {
   const parentRef = useRef<HTMLDivElement>(null);
   const [scrollMargin, setScrollMargin] = useState(0);
+  const enteringIds = useStableListMotion(
+    items.map((item) => item.id),
+    { maxAnimated: 8 },
+  );
 
   // Server render + first client (hydration) render → a plain list so the SSR
   // HTML has content and hydration matches; `feed-card-cv` skips layout/paint for
@@ -85,47 +90,45 @@ export function VirtualPostList({ items, className }: VirtualPostListProps) {
     };
   }, [virtualized]);
 
-  if (!virtualized) {
-    return (
-      <div ref={parentRef} className={`space-y-3 px-3 pt-3 ${className ?? ''}`.trim()}>
-        {items.map((item) => (
-          <div key={item.id} className="feed-card-cv">
-            <MemoRMHarkCard item={item} />
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const virtualRows = virtualizer.getVirtualItems();
+  const windowed = virtualized && virtualRows.length > 0;
+  const rows = windowed
+    ? virtualRows.map((row) => ({ index: row.index, key: row.key, start: row.start }))
+    : items.map((item, index) => ({ index, key: item.id, start: 0 }));
 
-  // Windowed: the container reserves the full (measured) height so the scrollbar
-  // and any following infinite-scroll sentinel behave. No `feed-card-cv` here —
-  // the virtualizer already culls offscreen rows, and content-visibility would
-  // report the intrinsic-size estimate for overscan rows, corrupting measurement.
+  // The row/card structure stays the same across the SSR plain-list → windowed
+  // transition. React therefore preserves visible cards instead of remounting
+  // them and restarting image, media, or entrance animations after hydration.
   return (
     <div
       ref={parentRef}
-      className={className}
-      style={{ position: 'relative', width: '100%', height: `${virtualizer.getTotalSize()}px` }}
+      className={`${windowed ? 'relative ' : ''}w-full ${className ?? ''}`.trim()}
+      style={windowed ? { height: `${virtualizer.getTotalSize()}px` } : undefined}
     >
-      {virtualizer.getVirtualItems().map((vRow) => {
-        const item = items[vRow.index];
+      {rows.map((row) => {
+        const item = items[row.index];
         if (!item) return null;
+        const entering = enteringIds.has(item.id);
         return (
           <div
-            key={vRow.key}
-            data-index={vRow.index}
-            ref={virtualizer.measureElement}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              transform: `translateY(${vRow.start - virtualizer.options.scrollMargin}px)`,
-            }}
+            key={row.key}
+            data-index={row.index}
+            ref={windowed ? virtualizer.measureElement : undefined}
+            style={
+              windowed
+                ? {
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    transform: `translateY(${row.start - virtualizer.options.scrollMargin}px)`,
+                  }
+                : undefined
+            }
           >
-            {/* Gutter + top gap ride the inner element so measureElement includes
-                it (keeps virtual offsets exact), mirroring FeedList (§8.3). */}
-            <div className="px-3 pt-3">
+            <div
+              className={`px-3 pt-3 ${!windowed && !entering ? 'feed-card-cv' : ''} ${entering ? 'content-item-enter' : ''}`.trim()}
+            >
               <MemoRMHarkCard item={item} />
             </div>
           </div>

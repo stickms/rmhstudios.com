@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { markPageEnterComplete } from '@/lib/motion';
 
 /**
  * Suppress the per-page enter animation (`.page-root > *`, see globals.css) on
@@ -25,7 +26,13 @@ export function BackNavAnimation() {
       if (clearTimer) clearTimeout(clearTimer);
       // Long enough to cover the route remount + first paint, short enough that
       // a link click shortly after still animates.
-      clearTimer = setTimeout(() => root.classList.remove('nav-pop'), 400);
+      clearTimer = setTimeout(() => {
+        // The restored page has already landed at its saved scroll position.
+        // Freeze that settled state before removing the temporary suppression,
+        // otherwise `page-enter` can start 400ms late.
+        markPageEnterComplete();
+        root.classList.remove('nav-pop');
+      }, 400);
     };
     window.addEventListener('popstate', onPop);
     return () => {

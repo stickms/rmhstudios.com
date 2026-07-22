@@ -10,6 +10,7 @@ import { ArrowUp } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { PostListSkeleton } from '@/components/ui/skeletons/PostCardSkeleton';
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
+import { useStableListMotion } from '@/hooks/useStableListMotion';
 
 // useLayoutEffect warns during SSR; fall back to useEffect on the server so the
 // render stays quiet, and keep pre-paint timing on the client (scrollMargin must
@@ -72,9 +73,6 @@ export function FeedList({
   } = useFeedStore();
   const sentinelRef = useRef<HTMLDivElement>(null);
   const initialFetched = useRef(false);
-  // Ids of posts just flushed from the "N new" pill, so they can ease in rather
-  // than pop. Cleared after the animation window.
-  const [enteringIds, setEnteringIds] = useState<Set<string>>(() => new Set());
 
   // Before the store is seeded (the module-level store is still pristine on the
   // server render and the first client render), show the server-streamed first
@@ -83,6 +81,12 @@ export function FeedList({
   const usingInitial =
     !initialized && items.length === 0 && !following && !!initialItems && initialItems.length > 0;
   const displayItems = usingInitial ? initialItems : items;
+  // Stable ids mean new pages, optimistic posts, and flushed SSE items animate
+  // once, while cached/refetched objects and virtualizer remounts never replay.
+  const enteringIds = useStableListMotion(
+    displayItems.map((item) => item.id),
+    { maxAnimated: 8 },
+  );
 
   // ── Windowing ──────────────────────────────────────────────────────────────
   // Only visible rows (+ overscan) live in the DOM once mounted; on the server
@@ -238,19 +242,21 @@ export function FeedList({
   }, [observerCallback]);
 
   const handleShowNew = () => {
-    // Tag the incoming posts so they ease in instead of popping. (A container
-    // View Transition would clash with the per-image `view-transition-name`s on
-    // feed cards, desyncing image vs. text — a scoped per-item enter is the
-    // non-jarring option here.)
-    if (!prefersReducedMotion()) {
-      const flushedIds = new Set(pendingItems.map((i) => i.id));
-      setEnteringIds(flushedIds);
-      window.setTimeout(() => setEnteringIds(new Set()), 500);
-    }
+    // The keyed list-motion hook tags the flushed posts on the render where they
+    // first join `displayItems`; existing cards keep their component identity.
     flushPending();
-    // Snap to the top so the freshly inserted posts are visible.
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   };
+
+  const virtualRows = virtualizer.getVirtualItems();
+  const windowed = virtualized && virtualRows.length > 0;
+  const rows = windowed
+    ? virtualRows.map((row) => ({
+        index: row.index,
+        key: row.key,
+        start: row.start,
+      }))
+    : displayItems.map((item, index) => ({ index, key: item.id, start: 0 }));
 
   return (
     <div>
@@ -271,69 +277,48 @@ export function FeedList({
         </div>
       )}
 
-      {virtualized ? (
-        // Windowed list: the container reserves the full (measured) height so the
-        // scrollbar and the infinite-scroll sentinel behave, and only the rows in
-        // view (+ overscan) are mounted and measured. No `feed-card-cv` here — the
-        // virtualizer already culls off-screen rows, and `content-visibility` would
-        // report the intrinsic-size estimate for overscan rows instead of their
-        // real height, corrupting measurement.
-        <div
-          ref={parentRef}
-          className="relative w-full"
-          style={{ height: `${virtualizer.getTotalSize()}px` }}
-        >
-          {virtualizer.getVirtualItems().map((vRow) => {
-            const item = displayItems[vRow.index];
-            if (!item) return null;
-            const entering = enteringIds.has(item.id);
-            return (
+      {/* The row/card DOM shape is identical before and after windowing starts.
+          Switching from the SSR-safe plain list to the virtualized layout now
+          changes only positioning styles and culls offscreen keys; visible cards,
+          images, media, and their internal animation state stay mounted. */}
+      <div
+        ref={parentRef}
+        className={windowed ? 'relative w-full' : 'w-full'}
+        style={windowed ? { height: `${virtualizer.getTotalSize()}px` } : undefined}
+      >
+        {rows.map((row) => {
+          const item = displayItems[row.index];
+          if (!item) return null;
+          const entering = enteringIds.has(item.id);
+          const contentVisibility = !windowed && !item.pending && !entering ? 'feed-card-cv' : '';
+          return (
+            <div
+              key={row.key}
+              data-index={row.index}
+              ref={windowed ? virtualizer.measureElement : undefined}
+              style={
+                windowed
+                  ? {
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      transform: `translateY(${row.start - virtualizer.options.scrollMargin}px)`,
+                    }
+                  : undefined
+              }
+            >
+              {/* Padding lives on the same inner node in both modes. New content
+                  animates here so it never competes with the positioning transform. */}
               <div
-                key={vRow.key}
-                data-index={vRow.index}
-                ref={virtualizer.measureElement}
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  transform: `translateY(${vRow.start - virtualizer.options.scrollMargin}px)`,
-                }}
-              >
-                {/* Floating-card gutter + top gap (§8.3) rides the inner element
-                    so measureElement includes it (keeps virtual offsets exact).
-                    Enter animation also stays here so its transform can't clobber
-                    the row-positioning transform above. */}
-                <div className={`px-3 pt-3 ${entering ? 'feed-item-enter' : ''}`.trim()}>
-                  <FeedItem item={item} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        // Server render + first client (hydration) render: a plain list so the
-        // streamed HTML has posts and hydration matches. `feed-card-cv` skips
-        // layout/paint for cards far from the viewport until the virtualizer takes
-        // over on mount. Pending (optimistic) and just-entered posts opt out —
-        // they sit at the top and must render (and animate) without being skipped.
-        // Floating cards float over aurora gutters (§8.3): space-y-3 gaps + px-3
-        // side gutters; pt-3 gives the first card its top gap.
-        <div className="space-y-3 px-3 pt-3">
-          {displayItems.map((item) => {
-            const entering = enteringIds.has(item.id);
-            const cv = item.pending || entering ? '' : 'feed-card-cv';
-            return (
-              <div
-                key={item.id}
-                className={`${cv} ${entering ? 'feed-item-enter' : ''}`.trim() || undefined}
+                className={`px-3 pt-3 ${contentVisibility} ${entering ? 'content-item-enter' : ''}`.trim()}
               >
                 <FeedItem item={item} />
               </div>
-            );
-          })}
-        </div>
-      )}
+            </div>
+          );
+        })}
+      </div>
 
       {/* Initial load → layout-matched skeletons so the feed reads as
           "content arriving" rather than a bare spinner, and the empty state

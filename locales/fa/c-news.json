@@ -2,6 +2,7 @@
   "all": "همه",
   "article-count_one": "{{count}} مقاله",
   "article-count_other": "{{count}} مقاله",
+  "categories-label": "News categories",
   "clear": "پاک کردن",
   "clear-all-filters": "پاک کردن همه فیلترها",
   "clear-filters": "پاک کردن فیلترها",

@@ -57,7 +57,12 @@ export function BracketView({ tournament, canReport, reportingId, onReport }: Pr
   }
 
   return (
-    <div className="overflow-x-auto pb-2 -mx-1 px-1">
+    <div
+      role="region"
+      aria-label={t('bracket', { defaultValue: 'Tournament bracket' })}
+      tabIndex={0}
+      className="glass-fill max-w-full overflow-x-auto rounded-site p-3 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-site-accent"
+    >
       <div className="flex gap-4 min-w-max">
         {rounds.map(([round, matches]) => (
           <div key={round} className="flex flex-col gap-3 min-w-[220px]">

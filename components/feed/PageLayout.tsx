@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,8 @@ import { DEFAULT_WIDTH, WIDE_NO_RIGHT_SIDEBAR_WIDTH, WIDE_WIDTH } from '@/lib/la
 
 interface PageLayoutProps {
   title: string;
+  /** Short orientation copy shown with the title and hidden when chrome condenses. */
+  description?: string;
   children: React.ReactNode;
   rightSidebar?: React.ReactNode;
   /** Element rendered right-aligned in the sticky header row (e.g. filter button) */
@@ -36,6 +38,7 @@ interface PageLayoutProps {
 
 export function PageLayout({
   title,
+  description,
   children,
   rightSidebar,
   headerRight,
@@ -45,6 +48,7 @@ export function PageLayout({
   breadcrumbs,
 }: PageLayoutProps) {
   const { t } = useTranslation('feed');
+  const descriptionId = useId();
   const hasRightSidebar = Boolean(rightSidebar);
   const targetWidth = wide
     ? hasRightSidebar
@@ -97,7 +101,8 @@ export function PageLayout({
           <header
             ref={headerRef}
             data-slot="page-header"
-            className="glass-chrome sticky top-2 z-10 mx-2 mb-2 rounded-site shadow-site-sm h-18 data-[scrolled]:h-16 transition-[height] md:top-3 md:mx-3 md:mb-3"
+            aria-describedby={description ? descriptionId : undefined}
+            className={`group glass-chrome sticky top-2 z-10 mx-2 mb-2 rounded-site shadow-site-sm data-[scrolled]:h-16 transition-[height] md:top-3 md:mx-3 md:mb-3 ${description ? 'h-22' : 'h-18'}`}
           >
             <div className="h-full flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3 min-w-0">
@@ -121,6 +126,15 @@ export function PageLayout({
                     <MobileBrandPrefix />
                     {title}
                   </h1>
+                  {description && (
+                    <p
+                      id={descriptionId}
+                      data-slot="page-description"
+                      className="mt-0.5 line-clamp-1 text-xs text-site-text-muted sm:text-sm"
+                    >
+                      {description}
+                    </p>
+                  )}
                 </div>
               </div>
               {headerRight && <div className="shrink-0">{headerRight}</div>}

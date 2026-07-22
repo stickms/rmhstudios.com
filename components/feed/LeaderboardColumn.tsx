@@ -101,6 +101,7 @@ export function LeaderboardColumn({
           value={scope}
           onChange={(id) => setScope(id as Scope)}
           size="sm"
+          scroll
           aria-label={t('leaderboard-scope-aria', { defaultValue: 'Leaderboard scope' })}
         />
 

@@ -30,7 +30,7 @@ const VENUE_META: Record<
   IRL: { icon: MapPin, labelKey: 'venue-irl', label: 'In person' },
 };
 
-export function EventCard({ event }: { event: EventDTO }) {
+export function EventCard({ event, className }: { event: EventDTO; className?: string }) {
   const { t } = useTranslation('site');
   // Local RSVP state so the button + counts update without a full refetch.
   const [going, setGoing] = useState(event.goingCount);
@@ -68,6 +68,7 @@ export function EventCard({ event }: { event: EventDTO }) {
       className={cn(
         'flex flex-col gap-3 rounded-site border border-site-border bg-site-surface p-4',
         canceled && 'opacity-60',
+        className,
       )}
     >
       <div className="flex items-start justify-between gap-3">

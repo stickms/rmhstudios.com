@@ -4,8 +4,10 @@ import { ImgHTMLAttributes, useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { buildOptimizedUrl, generateSrcSet, isOptimizable } from './OptimizedImage';
 
-interface BlurImageProps
-  extends Omit<ImgHTMLAttributes<HTMLImageElement>, 'srcSet' | 'placeholder'> {
+interface BlurImageProps extends Omit<
+  ImgHTMLAttributes<HTMLImageElement>,
+  'srcSet' | 'placeholder'
+> {
   /** Image source URL (CDN, /api/feed/image/..., or external). */
   src: string;
   /** Alt text. */
@@ -106,10 +108,7 @@ export function BlurImage({
       {/* Skeleton behind everything so there's always a placeholder holding the
           space — even for non-optimizable images with no blur preview. */}
       {!loaded && (
-        <span
-          aria-hidden="true"
-          className="absolute inset-0 animate-pulse bg-site-surface"
-        />
+        <span aria-hidden="true" className="absolute inset-0 animate-pulse bg-site-surface" />
       )}
       {placeholderSrc && !loaded && (
         <img
@@ -124,7 +123,7 @@ export function BlurImage({
           decoding="async"
           className={cn(
             'pointer-events-none absolute inset-0 h-full w-full scale-110 blur-xl',
-            fitClass
+            fitClass,
           )}
         />
       )}
@@ -143,10 +142,10 @@ export function BlurImage({
         }}
         className={cn(
           fitClass,
-          'transition-opacity duration-500',
+          'transition-opacity duration-300',
           loaded ? 'opacity-100' : 'opacity-0',
           reserve && 'absolute inset-0 h-full w-full',
-          imgClassName
+          imgClassName,
         )}
         {...rest}
       />

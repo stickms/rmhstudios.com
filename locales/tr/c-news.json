@@ -2,6 +2,7 @@
   "all": "Tümü",
   "article-count_one": "{{count}} makale",
   "article-count_other": "{{count}} makale",
+  "categories-label": "News categories",
   "clear": "Temizle",
   "clear-all-filters": "Tüm Filtreleri Temizle",
   "clear-filters": "Filtreleri temizle",

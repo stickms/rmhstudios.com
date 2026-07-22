@@ -2,6 +2,7 @@
   "all": "전체",
   "article-count_one": "기사 {{count}}개",
   "article-count_other": "기사 {{count}}개",
+  "categories-label": "News categories",
   "clear": "지우기",
   "clear-all-filters": "모든 필터 지우기",
   "clear-filters": "필터 지우기",

@@ -129,7 +129,12 @@ export const overlay: Variants = {
 /** Modal content: rise + scale for a grounded, quick entrance. */
 export const modalContent: Variants = {
   initial: { opacity: 0, scale: 0.97, y: 8 },
-  animate: { opacity: 1, scale: 1, y: 0, transition: { duration: DURATION.slow, ease: EASE.emphasized } },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: { duration: DURATION.slow, ease: EASE.emphasized },
+  },
   exit: { opacity: 0, scale: 0.97, y: 8, transition: exitTransition },
 };
 
@@ -151,3 +156,17 @@ export const staggerContainer = (stagger = 0.04, delayChildren = 0): Variants =>
 
 /** Item paired with {@link staggerContainer}. Same feel as {@link fadeRise}. */
 export const staggerItem: Variants = fadeRise;
+
+/**
+ * Mark the currently mounted route roots as already settled. This is used when
+ * another transition (router pending UI, history restoration, or a native View
+ * Transition) already communicated the navigation; it prevents the CSS
+ * `page-enter` animation from starting late when that transition releases its
+ * temporary suppression class.
+ */
+export function markPageEnterComplete(): void {
+  if (typeof document === 'undefined') return;
+  for (const element of document.querySelectorAll<HTMLElement>('.page-root > *')) {
+    element.dataset.pageEnterComplete = '';
+  }
+}

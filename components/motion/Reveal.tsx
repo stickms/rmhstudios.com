@@ -41,9 +41,9 @@ export interface RevealProps {
 
 /**
  * Scroll-triggered reveal wrapper. Fades + rises its children into view once,
- * when they scroll near the viewport. Under reduced motion it renders a plain
- * element with no motion node at all (belt-and-suspenders alongside the global
- * `MotionConfig reducedMotion="user"`).
+ * when they scroll near the viewport. The motion element stays mounted when a
+ * reduced-motion preference resolves after hydration, so its children never
+ * restart merely because accessibility state finished loading.
  */
 export function Reveal({
   as = 'div',
@@ -54,21 +54,15 @@ export function Reveal({
   children,
 }: RevealProps) {
   const reduced = useReducedMotion();
-
-  if (reduced) {
-    const Tag = as as 'div';
-    return <Tag className={className}>{children}</Tag>;
-  }
-
   const MotionTag = motion[as as keyof typeof motion] as typeof motion.div;
 
   return (
     <MotionTag
       className={className}
-      initial={{ opacity: 0, y }}
+      initial={reduced ? false : { opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-10% 0px' }}
-      transition={{ duration, delay, ease: EASE_OUT_EXPO }}
+      transition={reduced ? { duration: 0 } : { duration, delay, ease: EASE_OUT_EXPO }}
     >
       {children}
     </MotionTag>

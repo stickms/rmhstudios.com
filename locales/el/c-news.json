@@ -2,6 +2,7 @@
   "all": "Όλα",
   "article-count_one": "{{count}} άρθρο",
   "article-count_other": "{{count}} άρθρα",
+  "categories-label": "News categories",
   "clear": "Απαλοιφή",
   "clear-all-filters": "Απαλοιφή όλων των φίλτρων",
   "clear-filters": "Απαλοιφή φίλτρων",

@@ -2,6 +2,7 @@
   "all": "すべて",
   "article-count_one": "{{count}} 記事",
   "article-count_other": "{{count}} 記事",
+  "categories-label": "News categories",
   "clear": "クリア",
   "clear-all-filters": "すべてのフィルターをクリア",
   "clear-filters": "フィルターをクリア",

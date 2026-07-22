@@ -2,6 +2,7 @@
 
 import { prefersReducedMotion } from '@/hooks/useReducedMotion';
 import { isWebKit } from '@/lib/liquid-gl/trust';
+import { markPageEnterComplete } from '@/lib/motion';
 
 type ViewTransition = {
   finished: Promise<void>;
@@ -159,6 +160,10 @@ export function runViewTransition(
           /* already settled / unsupported */
         }
       }
+      // The native snapshot already performed the entrance. Mark the mounted
+      // destination before releasing `.vt-active`, otherwise its CSS page-enter
+      // animation can begin late and make the whole page appear to refresh.
+      if (!skipSnapshot) markPageEnterComplete();
       root.classList.remove('vt-active', 'vt-liquid');
       settle();
       if (finishActiveTransition === abort) finishActiveTransition = null;
