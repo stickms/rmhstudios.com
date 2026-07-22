@@ -169,6 +169,8 @@ export const Route = createFileRoute('/api/profile')({
             location: profile.location,
             website: profile.website,
             links: profile.links ?? [],
+            tipGoal: profile.tipGoal,
+            tipGoalLabel: profile.tipGoalLabel,
             membershipPriceCoins: profile.membershipPriceCoins,
             showLikes: profile.showLikes,
             dmPrivacy: profile.dmPrivacy,

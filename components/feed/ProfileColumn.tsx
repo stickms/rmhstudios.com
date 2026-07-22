@@ -3,22 +3,8 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import {
-  MapPin,
-  Link as LinkIcon,
-  Calendar,
-  MessageCircle,
-  BadgeCheck,
-  ShieldCheck,
-  Coins,
-  Store,
-  Gift,
-  BarChart3,
-  Star,
-  Palette,
-} from 'lucide-react';
+import { BadgeCheck, ShieldCheck } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
-import { buildOptimizedUrl } from '@/components/ui/OptimizedImage';
 import { TipDialog } from '@/components/economy/TipDialog';
 import { GiftSubDialog } from '@/components/economy/GiftSubDialog';
 import { useNavigate } from '@tanstack/react-router';
@@ -29,112 +15,39 @@ import { useResolvedUser } from '@/components/Providers';
 import { VirtualPostList } from './VirtualPostList';
 import { LiquidTabs } from '@/components/ui/liquid-tabs';
 import { AchievementsColumn } from './AchievementsColumn';
-import { AchievementBadgeStrip } from './AchievementBadgeStrip';
 import { ProfileEditModal } from './ProfileEditModal';
 import { SocialListModal } from './SocialListModal';
-import { VinylRecord } from './VinylRecord';
 import { Link } from '@tanstack/react-router';
 import type { FeedItem, FeedItemUser } from '@/lib/feed-types';
 import { useUserDisplayStore } from '@/stores/userDisplayStore';
-import { Reveal } from '@/components/motion';
-import { CoinIcon } from '@/components/rmhcoins/CoinIcon';
 import { useOptimisticAction } from '@/hooks/useOptimisticAction';
-import { AnimatedCount } from '@/components/ui/AnimatedCount';
-import { safeHref } from '@/lib/url-safety';
-import { StatusBadge } from './StatusBadge';
-import { StatusEditor } from './StatusEditor';
-import type { UserStatus } from '@/lib/profile/status';
-import { WishButton } from '@/components/wishlist/WishButton';
-import { AddToListSheet } from '@/components/lists/AddToListSheet';
 import { ProfileShowcase } from '@/components/profile/ProfileShowcase';
-import type { ProfileModule } from '@/lib/profile/modules';
-
-interface ProfileData {
-  id: string;
-  name: string | null;
-  username: string | null;
-  handle: string | null;
-  image: string | null;
-  isVerified: boolean;
-  isAdmin: boolean;
-  createdAt: string;
-  bio: string | null;
-  location: string | null;
-  website: string | null;
-  links?: { label: string; url: string }[];
-  bannerUrl?: string | null;
-  showLikes: boolean;
-  dmPrivacy: string;
-  profileSongSpotifyId: string | null;
-  profileSongTitle: string | null;
-  profileSongArtist: string | null;
-  profileSongPreviewUrl: string | null;
-  profileSongAlbumArt: string | null;
-  status?: UserStatus | null;
-  modules?: ProfileModule[];
-  followerCount: number;
-  followingCount: number;
-  rmharkCount: number;
-  isFollowing: boolean;
-  isOwnProfile: boolean;
-  handleCooldownMs?: number;
-  hasCustomAvatar?: boolean;
-  coins: number;
-  isOnline?: boolean;
-  tipGoal?: number | null;
-  tipGoalLabel?: string | null;
-  tipsThisMonth?: number;
-  membershipPriceCoins?: number | null;
-  memberCount?: number;
-  isMember?: boolean;
-  cosmetics?: {
-    nameColor?: { color?: string; gradient?: string };
-    avatarFrame?: { color?: string; gradient?: string };
-    badge?: { emoji?: string };
-    banner?: { gradient?: string };
-    pet?: { emoji?: string };
-    theme?: {
-      id: string;
-      accent?: string;
-      accentHover?: string;
-      accentFg?: string;
-      accentDim?: string;
-      gradient?: string;
-    };
-  };
-}
+import { ProfileHero } from '@/components/profile/ProfileHero';
+import type { ProfileData } from '@/components/profile/profile-types';
 
 type ProfileTab = 'rmharks' | 'likes' | 'achievements';
 
-const DEFAULT_AVATAR = '/images/social/default_avatar.png';
-
-function ProfileAvatar({ image, name }: { image: string | null; name: string | null }) {
-  const { t } = useTranslation('feed');
-  const [imgError, setImgError] = useState(false);
-  const imgSrc = imgError ? DEFAULT_AVATAR : image;
-
-  return (
-    <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center text-site-text font-bold text-2xl ring-4 ring-site-bg shrink-0">
-      {imgSrc ? (
-        // Route the avatar through the optimizer at ~2x its 80px display size so
-        // the profile header doesn't pull the full-res external CDN original.
-        // Local paths (the default-avatar fallback) pass through untouched.
-        <img
-          src={buildOptimizedUrl(imgSrc, 160, 80)}
-          alt={name || t('user', { defaultValue: 'User' })}
-          loading="lazy"
-          decoding="async"
-          width={80}
-          height={80}
-          className="w-full h-full rounded-full object-cover"
-          onError={() => setImgError(true)}
-        />
-      ) : (
-        (name?.[0] || 'U').toUpperCase()
-      )}
-    </div>
-  );
+interface SpotifyController {
+  addListener: (
+    event: 'playback_update',
+    listener: (event: { data: { isPaused: boolean } }) => void,
+  ) => void;
+  pause: () => void;
+  play: () => void;
 }
+
+interface SpotifyIframeApi {
+  createController: (
+    container: HTMLElement,
+    options: { uri: string; width: number; height: number },
+    ready: (controller: SpotifyController) => void,
+  ) => void;
+}
+
+type SpotifyWindow = Window & {
+  SpotifyIframeApi?: SpotifyIframeApi;
+  onSpotifyIframeApiReady?: (api: SpotifyIframeApi) => void;
+};
 
 export function ProfileColumn({
   userId,
@@ -188,8 +101,7 @@ export function ProfileColumn({
   // Spotify IFrame API state
   const [isPlaying, setIsPlaying] = useState(false);
   const embedContainerRef = useRef<HTMLDivElement>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const controllerRef = useRef<any>(null);
+  const controllerRef = useRef<SpotifyController | null>(null);
   const scriptLoadedRef = useRef(false);
 
   const { t } = useTranslation('feed');
@@ -244,7 +156,7 @@ export function ProfileColumn({
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, [userId]);
+  }, [initialProfile, userId]);
 
   // Reset per-profile post state when navigating to a different profile. The
   // ProfileColumn instance is reused across /u/$userid routes, so without this
@@ -271,13 +183,12 @@ export function ProfileColumn({
 
     let cancelled = false;
 
-    const initController = (IFrameAPI: { createController: Function }) => {
+    const initController = (iframeApi: SpotifyIframeApi) => {
       if (cancelled || !embedContainerRef.current) return;
-      IFrameAPI.createController(
+      iframeApi.createController(
         embedContainerRef.current,
         { uri: `spotify:track:${spotifyId}`, width: 0, height: 0 },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (ctrl: any) => {
+        (ctrl) => {
           if (cancelled) return;
           controllerRef.current = ctrl;
           ctrl.addListener('playback_update', (e: { data: { isPaused: boolean } }) => {
@@ -287,17 +198,14 @@ export function ProfileColumn({
       );
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((window as any).SpotifyIframeApi) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      initController((window as any).SpotifyIframeApi);
+    const spotifyWindow = window as SpotifyWindow;
+    if (spotifyWindow.SpotifyIframeApi) {
+      initController(spotifyWindow.SpotifyIframeApi);
     } else if (!scriptLoadedRef.current) {
       scriptLoadedRef.current = true;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window as any).onSpotifyIframeApiReady = (IFrameAPI: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any).SpotifyIframeApi = IFrameAPI;
-        initController(IFrameAPI);
+      spotifyWindow.onSpotifyIframeApiReady = (iframeApi) => {
+        spotifyWindow.SpotifyIframeApi = iframeApi;
+        initController(iframeApi);
       };
       const script = document.createElement('script');
       script.src = 'https://open.spotify.com/embed/iframe-api/v1';
@@ -517,11 +425,6 @@ export function ProfileColumn({
     }
   };
 
-  const formatDate = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -562,280 +465,55 @@ export function ProfileColumn({
         ...(theme.accentDim ? { '--site-accent-dim': theme.accentDim } : {}),
       } as React.CSSProperties)
     : undefined;
-  const headerBackdrop = profile.cosmetics?.banner?.gradient ?? theme?.gradient;
-
   return (
     <div className="flex flex-col" style={themeStyle}>
-      {/* Header bar — floating L3 glass-chrome capsule (§8.2). */}
-      <div className="sticky top-2 z-10 mx-2 rounded-site glass-chrome shadow-site-sm md:top-3 md:mx-3">
+      {/* Compact identity chrome stays visible while the full glass hero scrolls away. */}
+      <div className="glass-chrome sticky top-2 z-10 mx-2 rounded-site shadow-site-sm md:top-3 md:mx-3">
         <div className="flex items-center gap-3 px-4 py-3">
           <MobileMenuButton />
-          <div>
-            <div className="flex items-center gap-1">
-              <h1 className="font-(family-name:--site-font-display) font-bold text-lg text-site-text truncate">
-                {displayName || profile.username || 'User'}
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-1.5">
+              <h1 className="truncate font-(family-name:--site-font-display) text-lg font-bold text-site-text">
+                {displayName || profile.username || t('user', { defaultValue: 'User' })}
               </h1>
-              {profile.isVerified && <BadgeCheck className="w-4 h-4 text-site-success shrink-0" />}
-              {profile.isAdmin && (
-                <span
-                  title={t('admin', { defaultValue: 'Admin' })}
-                  className="inline-flex items-center shrink-0"
-                >
-                  <ShieldCheck className="w-4 h-4 text-site-accent" />
-                </span>
-              )}
+              {profile.isVerified ? (
+                <BadgeCheck className="size-4 shrink-0 text-site-success" aria-hidden />
+              ) : null}
+              {profile.isAdmin ? (
+                <ShieldCheck className="size-4 shrink-0 text-site-accent" aria-hidden />
+              ) : null}
             </div>
-            <p className="text-xs text-site-text-dim">{profile.rmharkCount} RMHarks</p>
+            <p className="text-xs text-site-text-dim">
+              {t('rmhark-count', {
+                count: profile.rmharkCount,
+                defaultValue: '{{count}} RMHarks',
+              })}
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Profile header */}
-      <Reveal className="px-4 pt-6 pb-4 border-b border-site-border">
-        {/* The equipped banner sits behind the avatar + song row and spans the
-            full profile width (full-bleed past the header padding) — filling the
-            area the old profile pet used to occupy. */}
-        <div className="relative mb-12">
-          {profile.bannerUrl ? (
-            <div
-              className="absolute inset-x-[-16px] top-[-24px] bottom-[-24px] overflow-hidden"
-              aria-hidden
-            >
-              <div
-                className="h-full w-full bg-cover bg-center"
-                style={{ backgroundImage: `url(${profile.bannerUrl})` }}
-              />
-              {/* Scrim keeps the name/handle legible over a photo banner. */}
-              <div className="absolute inset-0 bg-gradient-to-t from-site-bg/70 via-site-bg/10 to-transparent" />
-            </div>
-          ) : headerBackdrop ? (
-            <div
-              className="absolute inset-x-[-16px] top-[-24px] bottom-[-24px]"
-              style={{ background: headerBackdrop }}
-              aria-hidden
-            />
-          ) : null}
-          <div className="relative flex items-start justify-between">
-            <div className="relative shrink-0">
-              {profile.cosmetics?.avatarFrame ? (
-                <div
-                  className="rounded-full p-[3px]"
-                  style={{
-                    background:
-                      profile.cosmetics.avatarFrame.gradient ?? profile.cosmetics.avatarFrame.color,
-                  }}
-                >
-                  <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
-                </div>
-              ) : (
-                <ProfileAvatar image={displayImage ?? null} name={displayName ?? null} />
-              )}
-              {profile.isOnline && (
-                <span
-                  className="absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-site-bg bg-site-success"
-                  title={t('online-now', { defaultValue: 'Online now' })}
-                  aria-label={t('online-now', { defaultValue: 'Online now' })}
-                />
-              )}
-            </div>
+      <ProfileHero
+        profile={profile}
+        displayName={displayName}
+        displayImage={displayImage}
+        signedIn={Boolean(session)}
+        isPlaying={isPlaying}
+        membershipBusy={membershipBusy}
+        messageSending={messageSending}
+        messageError={messageError}
+        onTogglePlay={handleTogglePlay}
+        onEdit={() => setShowEdit(true)}
+        onFollow={handleFollowToggle}
+        onMessage={handleMessage}
+        onTip={() => setTipOpen(true)}
+        onGift={() => setGiftOpen(true)}
+        onJoinMembership={handleJoinMembership}
+        onShowSocial={setSocialModal}
+        onShowAchievements={() => handleTabChange('achievements')}
+      />
 
-            {profile.profileSongSpotifyId && profile.profileSongAlbumArt && (
-              <VinylRecord
-                albumArt={profile.profileSongAlbumArt}
-                title={profile.profileSongTitle ?? 'Unknown'}
-                artist={profile.profileSongArtist ?? 'Unknown'}
-                isPlaying={isPlaying}
-                onToggle={handleTogglePlay}
-              />
-            )}
-          </div>
-        </div>
-
-        {messageError && <p className="text-sm text-site-danger mt-2">{messageError}</p>}
-
-        <div className="flex items-start justify-between mb-3">
-          <div>
-            <div className="flex items-center gap-1.5 align-middle">
-              <h2
-                className="font-bold text-xl text-site-text truncate"
-                style={
-                  profile.cosmetics?.nameColor?.gradient
-                    ? {
-                        background: profile.cosmetics.nameColor.gradient,
-                        WebkitBackgroundClip: 'text',
-                        backgroundClip: 'text',
-                        color: 'transparent',
-                      }
-                    : profile.cosmetics?.nameColor?.color
-                      ? { color: profile.cosmetics.nameColor.color }
-                      : undefined
-                }
-              >
-                {displayName || 'Unknown'}
-              </h2>
-              {profile.cosmetics?.badge?.emoji && (
-                <span
-                  className="shrink-0 text-lg"
-                  title={t('equipped-badge', { defaultValue: 'Equipped badge' })}
-                >
-                  {profile.cosmetics.badge.emoji}
-                </span>
-              )}
-              {profile.isVerified && <BadgeCheck className="w-5 h-5 text-site-success shrink-0" />}
-              {profile.isAdmin && (
-                <span
-                  title={t('admin', { defaultValue: 'Admin' })}
-                  className="inline-flex items-center shrink-0"
-                >
-                  <ShieldCheck className="w-5 h-5 text-site-accent" />
-                </span>
-              )}
-              {/* RMH Coins */}
-              <Link
-                to="/predictions"
-                className="inline-flex items-center gap-0.5 shrink-0 hover:opacity-80 transition-opacity"
-                title={t('rmh-coins-count', {
-                  count: profile.coins,
-                  defaultValue: '{{count}} RMH Coins',
-                })}
-              >
-                <CoinIcon className="w-4 h-4" />
-                <AnimatedCount
-                  value={profile.coins}
-                  format={(n) => n.toLocaleString()}
-                  className="text-sm font-bold text-site-warning"
-                />
-              </Link>
-            </div>
-            {profile.handle && <p className="text-sm text-site-text-dim">@{profile.handle}</p>}
-          </div>
-          <div className="flex items-center gap-2">
-            <Link
-              to={`/store/${profile.handle || profile.id}` as string}
-              title={t('storefront', { defaultValue: 'Storefront' })}
-              aria-label={t('storefront', { defaultValue: 'Storefront' })}
-            >
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
-              >
-                <Store className="w-4 h-4" />
-              </Button>
-            </Link>
-            {profile.isOwnProfile ? (
-              <div className="flex items-center gap-2">
-                <Link to="/analytics">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
-                    title={t('creator-analytics', { defaultValue: 'Creator Analytics' })}
-                  >
-                    <BarChart3 className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Link
-                  to="/settings/profile"
-                  title={t('profile-cosmetics-title', { defaultValue: 'Profile customization' })}
-                  aria-label={t('profile-cosmetics-title', {
-                    defaultValue: 'Profile customization',
-                  })}
-                >
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
-                  >
-                    <Palette className="h-4 w-4" />
-                  </Button>
-                </Link>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowEdit(true)}
-                  className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
-                >
-                  {t('edit-profile', { defaultValue: 'Edit Profile' })}
-                </Button>
-              </div>
-            ) : session ? (
-              <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setTipOpen(true)}
-                  className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
-                  title={t('send-a-tip', { defaultValue: 'Send a tip' })}
-                  aria-label={t('send-a-tip', { defaultValue: 'Send a tip' })}
-                >
-                  <Coins className="w-4 h-4 text-site-warning" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setGiftOpen(true)}
-                  className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
-                  title={t('gift-a-membership', { defaultValue: 'Gift a membership' })}
-                  aria-label={t('gift-a-membership', { defaultValue: 'Gift a membership' })}
-                >
-                  <Gift className="w-4 h-4 text-site-accent" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleMessage}
-                  disabled={messageSending}
-                  className="rounded-site-sm border-site-border text-site-text hover:bg-site-surface active:scale-95"
-                  title={t('message', { defaultValue: 'Message' })}
-                  aria-label={t('message', { defaultValue: 'Message' })}
-                >
-                  <MessageCircle className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={profile.isFollowing ? 'outline' : 'accent'}
-                  size="sm"
-                  onClick={handleFollowToggle}
-                  aria-pressed={profile.isFollowing}
-                  className={`rounded-site-sm active:scale-95 ${profile.isFollowing ? 'border-site-border text-site-text hover:border-site-danger hover:text-site-danger hover:bg-site-danger/10' : ''}`}
-                >
-                  {profile.isFollowing
-                    ? t('following', { defaultValue: 'Following' })
-                    : t('follow', { defaultValue: 'Follow' })}
-                </Button>
-              </>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Custom status (§10): own profile gets the editor; others see the badge. */}
-        <div className="mb-3">
-          {profile.isOwnProfile ? (
-            <StatusEditor initial={profile.status ?? null} />
-          ) : profile.status ? (
-            <StatusBadge status={profile.status} />
-          ) : null}
-        </div>
-
-        {/* Wishlist follow (§8) + add-to-list (§3) for other accounts. */}
-        {!profile.isOwnProfile ? (
-          <div className="mb-3 flex flex-wrap gap-2">
-            <WishButton
-              entityType="creator_builds"
-              entityId={profile.id}
-              label={t('notify-builds', { defaultValue: 'Notify me about builds' })}
-            />
-            <AddToListSheet targetUserId={profile.id} />
-          </div>
-        ) : null}
-
-        {profile.bio && (
-          <p className="text-site-text text-[15px] whitespace-pre-wrap break-words mb-3">
-            {profile.bio}
-          </p>
-        )}
-
-        {/* Profile v2 showcase (§12): owner-configured module blocks. */}
+      <div className="px-3 pt-3">
         <ProfileShowcase
           modules={profile.modules ?? []}
           isOwner={profile.isOwnProfile}
@@ -847,174 +525,20 @@ export function ProfileColumn({
             status: profile.status ?? null,
           }}
         />
-
-        {/* Per-creator membership CTA (coin-funded). Own profile just sees the count. */}
-        {!profile.isOwnProfile &&
-          profile.membershipPriceCoins &&
-          profile.membershipPriceCoins > 0 && (
-            <div className="mb-3 flex flex-wrap items-center gap-2 rounded-site border border-site-accent/30 bg-site-accent/5 p-3">
-              <Star className="h-4 w-4 shrink-0 text-site-accent" aria-hidden="true" />
-              {profile.isMember ? (
-                <span className="text-sm font-medium text-site-text">
-                  {t('you-are-a-member', { defaultValue: "You're a member" })}
-                </span>
-              ) : (
-                <>
-                  <span className="flex-1 text-sm text-site-text">
-                    {t('membership-pitch', {
-                      price: profile.membershipPriceCoins,
-                      defaultValue: 'Support this creator — {{price}} coins/month',
-                    })}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="accent"
-                    loading={membershipBusy}
-                    disabled={!session}
-                    onClick={handleJoinMembership}
-                    className="rounded-site-sm active:scale-95"
-                  >
-                    {t('become-a-member', { defaultValue: 'Become a member' })}
-                  </Button>
-                </>
-              )}
-            </div>
-          )}
-        {profile.isOwnProfile &&
-          profile.membershipPriceCoins &&
-          profile.membershipPriceCoins > 0 && (
-            <div className="mb-3 flex items-center gap-2 rounded-site border border-site-border bg-site-surface/40 p-3 text-sm text-site-text-muted">
-              <Star className="h-4 w-4 shrink-0 text-site-accent" aria-hidden="true" />
-              {t('creator-member-summary', {
-                count: profile.memberCount ?? 0,
-                defaultValue: '{{count}} members · {{price}} coins/month',
-                price: profile.membershipPriceCoins,
-              })}
-            </div>
-          )}
-
-        {/* Creator tip goal */}
-        {profile.tipGoal && profile.tipGoal > 0 && (
-          <div className="mb-3 rounded-site border border-site-border bg-site-surface p-3">
-            <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="inline-flex items-center gap-1.5 font-medium text-site-text">
-                <CoinIcon className="h-4 w-4" />{' '}
-                {profile.tipGoalLabel || t('tip-goal', { defaultValue: 'Tip goal' })}
-              </span>
-              <span className="text-site-text-muted">
-                {(profile.tipsThisMonth ?? 0).toLocaleString()} / {profile.tipGoal.toLocaleString()}
-              </span>
-            </div>
-            <div className="h-2 w-full overflow-hidden rounded-full bg-site-bg">
-              <div
-                className="h-full rounded-full bg-site-warning transition-all"
-                style={{
-                  width: `${Math.min(100, ((profile.tipsThisMonth ?? 0) / profile.tipGoal) * 100)}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-site-text-dim mb-3">
-          {profile.location && (
-            <span className="flex items-center gap-1">
-              <MapPin className="w-4 h-4" />
-              {profile.location}
-            </span>
-          )}
-          {profile.website && (
-            <a
-              href={safeHref(profile.website)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-site-accent hover:underline"
-            >
-              <LinkIcon className="w-4 h-4" />
-              {profile.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
-            </a>
-          )}
-          <span className="flex items-center gap-1">
-            <Calendar className="w-4 h-4" />
-            {t('joined-date', {
-              date: formatDate(profile.createdAt),
-              defaultValue: 'Joined {{date}}',
-            })}
-          </span>
-        </div>
-
-        {/* Link-in-bio: author-curated links rendered as chips. */}
-        {profile.links && profile.links.length > 0 && (
-          <div className="mb-3 flex flex-wrap gap-2">
-            {profile.links.map((link, i) => (
-              <a
-                key={`${link.url}-${i}`}
-                href={safeHref(link.url)}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={link.url}
-                className="inline-flex items-center gap-1.5 rounded-full border border-site-border bg-site-surface px-3 py-1 text-sm font-medium text-site-text transition-colors hover:border-site-accent hover:text-site-accent"
-              >
-                <LinkIcon className="w-3.5 h-3.5 shrink-0" />
-                <span className="max-w-[12rem] truncate">{link.label}</span>
-              </a>
-            ))}
-          </div>
-        )}
-
-        {/* Best unlocked badges — links to the Achievements tab */}
-        <AchievementBadgeStrip
-          userId={profile.id}
-          onShowAll={() => handleTabChange('achievements')}
-        />
-
-        <div className="flex items-center gap-4 text-sm">
-          <button
-            onClick={() => setSocialModal('following')}
-            className="hover:underline text-left transition-transform active:scale-95"
-          >
-            <AnimatedCount
-              value={profile.followingCount}
-              format={(n) => n.toLocaleString()}
-              className="font-bold text-site-text"
-            />{' '}
-            <span className="text-site-text-dim">
-              {t('following-label', { defaultValue: 'Following' })}
-            </span>
-          </button>
-          <button
-            onClick={() => setSocialModal('followers')}
-            className="hover:underline text-left transition-transform active:scale-95"
-          >
-            <AnimatedCount
-              value={profile.followerCount}
-              format={(n) => n.toLocaleString()}
-              className="font-bold text-site-text"
-            />{' '}
-            <span className="text-site-text-dim">
-              {t('followers-label', { defaultValue: 'Followers' })}
-            </span>
-          </button>
-        </div>
-
-        {/* Hidden Spotify embed container */}
-        {profile.profileSongSpotifyId && (
-          <div
-            ref={embedContainerRef}
-            className="fixed -left-[9999px] -top-[9999px] w-px h-px overflow-hidden pointer-events-none"
-            aria-hidden="true"
-          />
-        )}
-      </Reveal>
+      </div>
 
       {/* Tab bar → shared LiquidTabs (§5.4). handleTabChange keeps the lazy
-          liked-posts fetch on first switch. "RMHarks" stays a literal (unchanged
-          from the pre-migration markup) to avoid i18n churn. */}
+          liked-posts fetch on first switch. */}
       <div className="px-3 py-3 tab-sheet-scroll">
         <LiquidTabs
           tabs={[
-            { id: 'rmharks', label: 'RMHarks' },
-            ...(showLikesTab ? [{ id: 'likes', label: t('likes', { defaultValue: 'Likes' }) }] : []),
+            {
+              id: 'rmharks',
+              label: t('rmharks-label', { defaultValue: 'RMHarks' }),
+            },
+            ...(showLikesTab
+              ? [{ id: 'likes', label: t('likes', { defaultValue: 'Likes' }) }]
+              : []),
             { id: 'achievements', label: t('achievements', { defaultValue: 'Achievements' }) },
           ]}
           value={tab}
@@ -1145,6 +669,7 @@ export function ProfileColumn({
             dmPrivacy: profile.dmPrivacy,
             tipGoal: profile.tipGoal,
             tipGoalLabel: profile.tipGoalLabel,
+            membershipPriceCoins: profile.membershipPriceCoins,
             profileSongSpotifyId: profile.profileSongSpotifyId,
             profileSongTitle: profile.profileSongTitle,
             profileSongArtist: profile.profileSongArtist,
@@ -1164,21 +689,33 @@ export function ProfileColumn({
                     }
                   : {}),
                 ...(data.handle !== undefined ? { handle: data.handle } : {}),
-                bio: data.bio,
-                location: data.location,
-                website: data.website,
+                ...(data.bio !== undefined ? { bio: data.bio } : {}),
+                ...(data.location !== undefined ? { location: data.location } : {}),
+                ...(data.website !== undefined ? { website: data.website } : {}),
                 ...(data.links !== undefined ? { links: data.links } : {}),
                 ...(data.bannerUrl !== undefined ? { bannerUrl: data.bannerUrl } : {}),
                 ...(data.membershipPriceCoins !== undefined
                   ? { membershipPriceCoins: data.membershipPriceCoins }
                   : {}),
-                showLikes: data.showLikes,
-                dmPrivacy: data.dmPrivacy,
-                profileSongSpotifyId: data.profileSongSpotifyId,
-                profileSongTitle: data.profileSongTitle,
-                profileSongArtist: data.profileSongArtist,
-                profileSongPreviewUrl: data.profileSongPreviewUrl,
-                profileSongAlbumArt: data.profileSongAlbumArt,
+                ...(data.tipGoal !== undefined ? { tipGoal: data.tipGoal } : {}),
+                ...(data.tipGoalLabel !== undefined ? { tipGoalLabel: data.tipGoalLabel } : {}),
+                ...(data.showLikes !== undefined ? { showLikes: data.showLikes } : {}),
+                ...(data.dmPrivacy !== undefined ? { dmPrivacy: data.dmPrivacy } : {}),
+                ...(data.profileSongSpotifyId !== undefined
+                  ? { profileSongSpotifyId: data.profileSongSpotifyId }
+                  : {}),
+                ...(data.profileSongTitle !== undefined
+                  ? { profileSongTitle: data.profileSongTitle }
+                  : {}),
+                ...(data.profileSongArtist !== undefined
+                  ? { profileSongArtist: data.profileSongArtist }
+                  : {}),
+                ...(data.profileSongPreviewUrl !== undefined
+                  ? { profileSongPreviewUrl: data.profileSongPreviewUrl }
+                  : {}),
+                ...(data.profileSongAlbumArt !== undefined
+                  ? { profileSongAlbumArt: data.profileSongAlbumArt }
+                  : {}),
               };
             });
 

@@ -10,6 +10,7 @@ import { AnimatedMain } from '@/components/feed/AnimatedMain';
 import { getSidebarData } from '@/lib/sidebar-data';
 import { getRequestSession } from '@/lib/auth-session.server';
 import { getProfile } from '@/lib/profile.server';
+import { WIDE_WIDTH } from '@/lib/layout-width';
 
 const fetchProfileData = createServerFn({ method: 'GET' })
   .validator((id: string) => id)
@@ -82,7 +83,7 @@ function ProfilePage() {
 
   return (
     <>
-      <AnimatedMain className="w-full min-w-0 pb-dock">
+      <AnimatedMain className="w-full min-w-0 pb-dock" targetWidth={WIDE_WIDTH}>
         {/* `key` remounts the column on profile→profile navigation so it re-seeds
             cleanly from the new loader data (no stale-state carryover). */}
         <ProfileColumn key={userId} userId={userId} initialProfile={profile} />
