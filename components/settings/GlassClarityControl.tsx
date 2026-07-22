@@ -6,8 +6,9 @@
  *   0 Opaque · 1 Calm · 2 Default · 3 Airy · 4 Clear.
  * Stop 0 IS the reduce-transparency mechanism (html.reduce-transparency); stops
  * 1/3/4 set the two inline user factors the glass classes consume; stop 2 is the
- * shipped default. Dragging applies live to the whole page (inline vars are
- * instant) and to a mini aurora+glass preview; releasing commits (store + PUT).
+ * shipped default. Dragging updates the bounded mini preview; releasing applies
+ * the selected material to the page and commits it (store + PUT). Keeping the
+ * global backdrop graph out of pointer-move prevents mobile compositor stalls.
  * The OS `prefers-reduced-transparency` query still forces opaque regardless.
  */
 
@@ -34,7 +35,8 @@ export function GlassClarityControl() {
   const setGlassLevel = useThemeStore((s) => s.setGlassLevel);
   const setReduceTransparency = useThemeStore((s) => s.setReduceTransparency);
 
-  // `draft` follows the pointer during a drag (live), then commits on release.
+  // `draft` follows the pointer inside the bounded preview, then commits on
+  // release. A cancelled touch restores the last committed stop.
   // Re-sync when the committed level changes elsewhere (account sync).
   const [draft, setDraft] = useState(glassLevel);
   useEffect(() => setDraft(glassLevel), [glassLevel]);
@@ -59,13 +61,17 @@ export function GlassClarityControl() {
 
   function preview(v: number) {
     setDraft(v);
-    // Whole-page live application — inline vars on <html>, instant.
-    applyGlassLevel(document.documentElement, v);
   }
   function commit(v: number) {
+    // Apply once at the interaction boundary. Recomputing every backdrop-filter
+    // on each touchmove can pin mobile compositors and strand ambient animation.
+    applyGlassLevel(document.documentElement, v);
     setGlassLevel(v);
     setReduceTransparency(v === 0);
     void persistGlassLevel(v);
+  }
+  function recoverDraft() {
+    setDraft(useThemeStore.getState().glassLevel);
   }
 
   // The mini preview's glass reflects the DRAFT stop via locally-scoped vars
@@ -119,15 +125,13 @@ export function GlassClarityControl() {
         value={[draft]}
         onValueChange={([v]) => preview(v)}
         onValueCommit={([v]) => commit(v)}
+        onPointerCancel={recoverDraft}
         aria-label={t('settings-glass-clarity', { defaultValue: 'Glass clarity' })}
       />
 
       <div className="mt-2 flex justify-between text-[11px] text-site-text-dim">
         {GLASS_LEVELS.map((lvl) => (
-          <span
-            key={lvl}
-            className={lvl === draft ? 'font-semibold text-site-accent' : undefined}
-          >
+          <span key={lvl} className={lvl === draft ? 'font-semibold text-site-accent' : undefined}>
             {labels[lvl]}
           </span>
         ))}

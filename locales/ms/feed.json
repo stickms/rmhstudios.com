@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Namakan semula senarai main",
   "playlists-empty-desc": "Cipta satu di atas, kemudian tambah trek daripada RMHMusic.",
   "playlists-empty-title": "Tiada senarai main lagi",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Simpan trek dan video ke dalam senarai main kekal anda sendiri.",
   "playlists-signin-title": "Log masuk untuk membina senarai main",
   "playlists-title": "Senarai Main",

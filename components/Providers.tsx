@@ -51,6 +51,7 @@ import { RecentsTracker } from '@/components/site/RecentsTracker';
 import { ConfirmProvider } from '@/components/ui/confirm-dialog';
 import type { Locale } from '@/lib/i18n/config';
 import type { LocaleBundle } from '@/lib/i18n/resources';
+import { recoverViewTransition } from '@/lib/view-transition';
 
 // perf audit §4.3: build the QueryClient PER component instance (via useState
 // below), not once at module scope. A module-scope client is shared by every
@@ -249,6 +250,15 @@ export function Providers({
   const userThemePreview = useThemeStore((s) => s.userThemePreview);
   const { pathname } = useLocation();
   const isFirstRun = useRef(true);
+
+  // Native snapshots normally finish in 380ms. If a browser drops the
+  // `finished` signal during navigation, give the intended morph time to end and
+  // then force its shared-element name/snapshot/classes to settle. This also
+  // covers route changes that were not initiated through ViewTransitionLink.
+  useEffect(() => {
+    const recovery = window.setTimeout(recoverViewTransition, 700);
+    return () => window.clearTimeout(recovery);
+  }, [pathname]);
 
   // The pointer-tracked specular highlight for interactive glass — one
   // document-level rAF-throttled listener, mounted once here (§5.1).
@@ -527,7 +537,12 @@ export function Providers({
       const raw = localStorage.getItem(USER_THEME_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as AppliedUserTheme;
-        if (parsed && typeof parsed.id === 'string' && parsed.vars && typeof parsed.bg === 'string') {
+        if (
+          parsed &&
+          typeof parsed.id === 'string' &&
+          parsed.vars &&
+          typeof parsed.bg === 'string'
+        ) {
           st.setUserTheme(parsed);
         }
       }

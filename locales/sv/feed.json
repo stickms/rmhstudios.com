@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Byt namn på spellista",
   "playlists-empty-desc": "Skapa en ovan och lägg sedan till låtar från RMHMusic.",
   "playlists-empty-title": "Inga spellistor än",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Spara låtar och videor i dina egna permanenta spellistor.",
   "playlists-signin-title": "Logga in för att skapa spellistor",
   "playlists-title": "Spellistor",

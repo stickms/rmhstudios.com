@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Playlist umbenennen",
   "playlists-empty-desc": "Erstelle oben eine, und füge dann Titel aus RMHMusic hinzu.",
   "playlists-empty-title": "Noch keine Playlists",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Speichere Titel und Videos in deinen eigenen dauerhaften Playlists.",
   "playlists-signin-title": "Melde dich an, um Playlists zu erstellen",
   "playlists-title": "Playlists",

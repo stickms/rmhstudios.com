@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Přejmenovat playlist",
   "playlists-empty-desc": "Vytvořte jeden výše a poté přidejte skladby z RMHMusic.",
   "playlists-empty-title": "Zatím žádné playlisty",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Ukládejte skladby a videa do vlastních trvalých playlistů.",
   "playlists-signin-title": "Přihlaste se pro vytváření playlistů",
   "playlists-title": "Playlisty",

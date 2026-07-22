@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "เปลี่ยนชื่อเพลย์ลิสต์",
   "playlists-empty-desc": "สร้างเพลย์ลิสต์ที่ด้านบน แล้วเพิ่มเพลงจาก RMHMusic",
   "playlists-empty-title": "ยังไม่มีเพลย์ลิสต์",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "บันทึกเพลงและวิดีโอลงในเพลย์ลิสต์ส่วนตัวของคุณ",
   "playlists-signin-title": "ลงชื่อเข้าใช้เพื่อสร้างเพลย์ลิสต์",
   "playlists-title": "เพลย์ลิสต์",

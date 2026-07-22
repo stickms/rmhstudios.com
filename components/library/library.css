@@ -1,8 +1,7 @@
 /* ─────────────────────────────────────────────────────────────────────────────
-   RMH Studios — Library.
-   A bookshelf of interactive 3D books + a custom book-flip PDF reader, built on
-   the same black/white "vibe" aesthetic (see vibe.css). Reuses .vibe-screen,
-   .vibe-gallery__head, .vibe-search, .vibe-toolbar__icon.
+   RMH Studios — Library catalog, collections, upload flows, and readers.
+   The catalog opts into the shared liquid-glass system at the end of this file;
+   reader controls continue to reuse the RMHVibe toolbar primitives.
    ───────────────────────────────────────────────────────────────────────────── */
 
 .lib {
@@ -91,18 +90,6 @@
   animation: lib-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-/* Clickable region inside a book (used when the book also carries a separate
-   "details" link, e.g. curated builds). Fills the book so cover + caption click
-   through to the build itself. */
-.lib-book__primary {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-  text-decoration: none;
-  color: inherit;
-}
-
 @keyframes lib-rise {
   from {
     opacity: 0;
@@ -128,85 +115,6 @@
 }
 .lib-volume:hover .lib-book__3d {
   background: var(--site-glass-tint-strong);
-}
-
-/* Description shown on hover — a book-jacket blurb that fades + slides up over the
-   lower cover. Stays flat (outside the tilting cover) so it's always readable. */
-.lib-book__desc-pop {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  width: min(100%, 150px);
-  max-height: var(--cover-h);
-  overflow-y: auto;
-  transform: translateX(-50%) translateY(8px);
-  padding: 36px 12px 12px;
-  border-radius: 6px;
-  font-size: 0.72rem;
-  line-height: 1.46;
-  color: #f5f5f7;
-  /* Jacket-blurb card: solid enough that the full description stays legible, with a
-     short fade at the very top so it reads as rising out of the cover. */
-  background: linear-gradient(
-    to top,
-    rgba(0, 0, 0, 0.94) 0%,
-    rgba(0, 0, 0, 0.94) 78%,
-    rgba(0, 0, 0, 0) 100%
-  );
-  opacity: 0;
-  pointer-events: none;
-  z-index: 2;
-  transition:
-    opacity 240ms ease,
-    transform 320ms cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.lib-book:hover .lib-book__desc-pop,
-.lib-book:focus-within .lib-book__desc-pop {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* "Details" link (curated builds) — small circular button at the cover's top-right. */
-.lib-book__details {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 4;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 9999px;
-  color: #f5f5f7;
-  background: rgba(10, 10, 10, 0.55);
-  border: 0.5px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  opacity: 0;
-  transform: translateY(-4px);
-  transition:
-    opacity 200ms ease,
-    transform 200ms ease,
-    background 160ms ease;
-}
-
-.lib-book:hover .lib-book__details,
-.lib-book:focus-within .lib-book__details {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.lib-book__details:hover {
-  background: rgba(40, 40, 44, 0.92);
-}
-
-/* Always show the details affordance on touch devices (no hover). */
-@media (hover: none) {
-  .lib-book__details {
-    opacity: 1;
-    transform: none;
-  }
 }
 
 .lib-book__cover {
@@ -321,17 +229,6 @@
   background: #fff;
 }
 
-.lib-book__img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: top center;
-  border-radius: 3px 6px 6px 3px;
-  z-index: 0;
-}
-
 .lib-book__edge {
   z-index: 2;
 }
@@ -362,23 +259,13 @@
   letter-spacing: -0.005em;
   /* The cover art is a dark navy slab on EVERY theme, so its printed title must
      stay light. var(--site-text) flips dark on light themes (e.g. Sepia) and
-     the title vanished against the cover — pin it light like the other
-     on-cover elements (.lib-book__desc-pop, page badge). */
+     the title vanished against the cover — pin it light like the page badge. */
   color: #f5f5f7;
   display: -webkit-box;
   -webkit-line-clamp: 5;
   line-clamp: 5;
   -webkit-box-orient: vertical;
   overflow: hidden;
-}
-
-.lib-book__foot {
-  margin-top: auto;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 6px;
-  padding-top: 10px;
 }
 
 .lib-book__mark {
@@ -388,13 +275,6 @@
   letter-spacing: 0.16em;
   /* On the always-dark cover, keep the imprint light on every theme. */
   color: rgba(245, 245, 247, 0.72);
-}
-
-.lib-book__pages {
-  font-size: 0.58rem;
-  letter-spacing: 0.02em;
-  color: var(--site-text-dim);
-  white-space: nowrap;
 }
 
 /* Caption under the shelf ledge — fixed height keeps every row aligned. */
@@ -849,19 +729,6 @@
 }
 
 /* ─── EPUB reader ────────────────────────────────────────────────────────────── */
-/* The EPUB reader fills the stage with a reflow iframe — no 3D book padding. */
-.lib-epub__stage {
-  padding: 0;
-  perspective: none;
-}
-.lib-epub__frame {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  display: block;
-  background: transparent;
-}
-
 /* Font-size + theme controls. */
 .lib-epub__settings {
   display: flex;
@@ -875,33 +742,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-}
-.lib-epub__steppers {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.lib-epub__step {
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  border: 0.5px solid var(--site-border);
-  background: var(--site-surface);
-  color: var(--site-text);
-  cursor: pointer;
-  transition: background 130ms ease;
-}
-.lib-epub__step:hover {
-  background: var(--site-surface-hover);
-}
-.lib-epub__set-val {
-  min-width: 3em;
-  text-align: center;
-  font-size: 0.8rem;
-  color: var(--site-text);
-  font-variant-numeric: tabular-nums;
 }
 .lib-epub__themes {
   display: flex;
@@ -962,27 +802,8 @@
   margin: 8px auto 0;
   padding: 0 clamp(16px, 4vw, 44px);
 }
-.lib-collections__group {
-  margin-top: 18px;
-}
-.lib-collections__group-head {
-  max-width: 1320px;
-  margin: 0 auto;
-  padding: 0 clamp(16px, 4vw, 44px);
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 16px;
-}
 .lib-collections__group-titles {
   min-width: 0;
-}
-.lib-collections__group-title {
-  margin: 0;
-  font-size: 1.02rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--site-text);
 }
 .lib-collections__group-desc {
   margin: 3px 0 0;
@@ -990,11 +811,6 @@
   line-height: 1.4;
   color: var(--site-text-muted);
   max-width: 64ch;
-}
-.lib-collections__group-actions {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
 }
 .lib-collections__shelf {
   margin-top: 12px;
@@ -1087,12 +903,6 @@
   color: #fff;
   border-radius: inherit;
 }
-/* Manage action row, centered under the tile. */
-.lib-coll-tile__actions {
-  justify-content: center;
-  margin-top: 8px;
-}
-
 /* Collection view modal — wider so the book shelf breathes. */
 .lib-coll-modal {
   max-width: min(920px, 94vw);
@@ -1101,27 +911,6 @@
   max-height: 64vh;
   overflow-y: auto;
 }
-/* Remove-from-collection badge on a book while managing. */
-.lib-collections__remove {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  z-index: 5;
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid var(--site-border);
-  background: rgba(10, 10, 10, 0.82);
-  color: var(--site-danger);
-  cursor: pointer;
-  transition: background 140ms ease;
-}
-.lib-collections__remove:hover {
-  background: color-mix(in srgb, var(--site-danger) 30%, transparent);
-}
-
 /* Add-books picker list (inside the modal). */
 .lib-collections__picker {
   list-style: none;
@@ -1299,7 +1088,6 @@
   /* Drop the tactile press-scale feedback when reduced motion is requested. */
   .lib-book:active .lib-book__cover,
   .lib-coll-tile__btn:active .lib-book__cover,
-  .lib-edit__btn:active:not(:disabled),
   .lib-upload__btn:active:not(:disabled),
   .lib-upload__open:active,
   .lib-upload__close:active,
@@ -1413,10 +1201,6 @@
 .lib-upload__drop:hover {
   border-color: var(--site-border-bright);
   background: var(--site-surface);
-}
-.lib-upload__body {
-  display: flex;
-  gap: 16px;
 }
 .lib-upload__cover {
   flex: 0 0 132px;
@@ -1670,11 +1454,6 @@
   font-size: 13px;
   color: var(--site-danger);
 }
-.lib-upload__status {
-  margin: 14px 0 0;
-  font-size: 13px;
-  color: var(--site-text-muted);
-}
 .lib-upload__actions {
   display: flex;
   justify-content: flex-end;
@@ -1714,9 +1493,6 @@
   cursor: default;
 }
 @media (max-width: 480px) {
-  .lib-upload__body {
-    flex-direction: column;
-  }
   .lib-upload__cover {
     flex-basis: auto;
     max-width: 132px;
@@ -1889,59 +1665,6 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-}
-
-.lib-edit__bar {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-  padding: 3px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.78);
-  border: 1px solid var(--site-border);
-  z-index: 4;
-}
-.lib-edit__bar--static {
-  padding: 4px 8px;
-}
-.lib-edit__hint {
-  font-size: 11px;
-  color: var(--site-text-muted);
-}
-.lib-edit__btn {
-  display: grid;
-  place-items: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
-  border: none;
-  background: transparent;
-  color: var(--site-text);
-  cursor: pointer;
-  transition:
-    background 140ms ease,
-    color 140ms ease,
-    transform 140ms ease;
-}
-.lib-edit__btn:hover:not(:disabled) {
-  background: var(--site-surface-hover);
-}
-.lib-edit__btn:active:not(:disabled) {
-  transform: scale(0.92);
-}
-.lib-edit__btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
-.lib-edit__btn.is-on {
-  color: var(--site-accent);
-}
-.lib-edit__btn--danger:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--site-danger) 25%, transparent);
-  color: var(--site-danger);
 }
 
 .lib-edit__check {
@@ -2321,27 +2044,14 @@
   );
 }
 
-/* Sticky wrapper for the title bar + section tabs. Making the WRAPPER the single
-   sticky element (rather than the head and the nav each `sticky top:0`) is what
-   keeps the tabs parked directly below the title instead of sliding up behind
-   it. The head and nav are now static rows stacked inside this one unit. */
-.lib-topbar {
-  position: sticky;
-  inset-block-start: 0;
-  z-index: 30;
-}
-
+/* Structural header rules. Material and placement come from the shared
+   `.glass-chrome` class and the catalog-scoped playground layer below. */
 .lib-head {
   display: flex;
   align-items: center;
   min-height: 58px;
   gap: 12px;
   padding: max(8px, env(safe-area-inset-top)) clamp(16px, 4vw, 44px) 8px;
-  /* L3 glass-chrome — matches the site's other sticky headers. */
-  background: color-mix(in srgb, var(--site-bg, #000) 32%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--site-text, #fff) 9%, transparent);
-  backdrop-filter: saturate(170%) blur(var(--site-glass-blur-chrome, 24px));
-  -webkit-backdrop-filter: saturate(170%) blur(var(--site-glass-blur-chrome, 24px));
 }
 
 .lib-head__brand {
@@ -2498,22 +2208,6 @@
 .lib-search button:hover {
   color: var(--site-text, #fff);
   background: color-mix(in srgb, var(--site-text, #fff) 8%, transparent);
-}
-
-/* ─── Section navigator ─────────────────────────────────────────────────────
-   The library outgrew a single comfortable scroll (reads + albums +
-   collections + books + music). A sticky liquid-glass chip row lets readers
-   jump straight to one category; it scrolls horizontally on narrow screens so
-   the rail never wraps or overflows. */
-.lib-nav {
-  /* §16.2: the section switcher is the shared `LiquidTabs` sheet now (pill fill,
-     flowing capsule, roving nav + goo morph all live in that component, applied
-     via its `className` prop). This rule ONLY positions the sheet — the page
-     gutter under the hero, left-aligned to the column — so the pill look must NOT
-     be duplicated here. Placement is deliberately non-sticky (PR #577 keeps
-     .lib-head the lone sticky row so nothing stacks). */
-  max-width: calc(100% - 2 * clamp(16px, 4vw, 44px));
-  margin: 0 clamp(16px, 4vw, 44px) clamp(20px, 3vw, 28px);
 }
 
 /* Music (playlists) folded into the library as a first-class section. The
@@ -3056,4 +2750,526 @@
   .lib-volume .lib-book:focus-visible .lib-book__cover {
     transform: none;
   }
+}
+
+/* ─── Library glass playground ───────────────────────────────────────────────
+   The index route opts into this layer with `.lib--glass-playground`; reader,
+   upload, and admin routes keep their purpose-built layouts above. All repeated
+   media cards use cheap L1 glass, while the hero and explorer are the page's two
+   rationed refractive surfaces. */
+.lib--glass-playground {
+  --lib-gutter: clamp(12px, 2.7vw, 28px);
+  --lib-content: 1400px;
+  padding-bottom: clamp(88px, 12vw, 152px);
+  background:
+    radial-gradient(
+      circle at 84% 8%,
+      color-mix(in srgb, var(--site-accent) 20%, transparent),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 4% 46%,
+      color-mix(in srgb, var(--site-accent) 9%, transparent),
+      transparent 34rem
+    );
+}
+
+.lib-playground {
+  min-height: 100vh;
+  padding-inline: var(--lib-gutter);
+  perspective: 1200px;
+}
+
+/* The title is a floating capsule, not a full-width app-frame bar. */
+.lib--glass-playground .lib-topbar {
+  position: relative;
+  inset: auto;
+  z-index: 20;
+  max-width: var(--lib-content);
+  margin-inline: auto;
+  padding-top: clamp(8px, 1.5vw, 14px);
+}
+
+.lib--glass-playground .lib-head {
+  min-height: 50px;
+  padding: 6px 8px 6px 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.lib--glass-playground .lib-head__brand {
+  gap: 8px;
+  font-family: var(--site-font-display);
+  font-size: 0.88rem;
+}
+
+.lib--glass-playground .lib-upload__open {
+  min-height: 36px;
+  border-color: transparent;
+  background: var(--site-accent-dim);
+  color: var(--site-accent);
+}
+
+.lib--glass-playground .lib-upload__open:hover {
+  border-color: var(--site-border-bright);
+  background: var(--site-surface-hover);
+}
+
+/* Hero: a compact editorial statement surrounded by touchable count bubbles. */
+.lib--glass-playground .lib-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(238px, 0.44fr);
+  align-items: center;
+  gap: clamp(28px, 6vw, 84px);
+  max-width: var(--lib-content);
+  margin: 12px auto;
+  padding: clamp(40px, 6vw, 78px) clamp(20px, 5vw, 68px);
+  overflow: visible;
+  border-radius: calc(var(--site-radius) * 1.35);
+}
+
+.lib--glass-playground .lib-hero__copy {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+}
+
+.lib--glass-playground .lib-hero h1 {
+  max-width: 760px;
+  font-size: clamp(2.75rem, 6vw, 5.9rem);
+  line-height: 0.96;
+  letter-spacing: -0.06em;
+}
+
+.lib--glass-playground .lib-hero__lede {
+  max-width: 620px;
+  margin-top: clamp(18px, 3vw, 30px);
+  font-size: clamp(0.98rem, 1.45vw, 1.16rem);
+}
+
+.lib--glass-playground .lib-stats {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(96px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.lib--glass-playground .lib-stats > div {
+  display: flex;
+  min-height: 104px;
+  aspect-ratio: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 14px;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  text-align: center;
+}
+
+.lib--glass-playground .lib-stats > div:nth-child(even) {
+  padding-inline-start: 14px;
+  border-inline-start: 1px solid transparent;
+}
+
+.lib--glass-playground .lib-stats > div:nth-child(2),
+.lib--glass-playground .lib-stats > div:nth-child(3) {
+  translate: 0 10px;
+}
+
+.lib--glass-playground .lib-stats dt {
+  color: var(--site-text-muted);
+  font-size: 0.58rem;
+}
+
+.lib--glass-playground .lib-stats dd {
+  order: -1;
+  font-size: clamp(1.3rem, 2.3vw, 1.85rem);
+}
+
+/* The explorer is the only sticky group: search, result feedback, and tabs
+   travel together, so category changes never create colliding chrome. */
+.lib-explorer {
+  position: sticky;
+  inset-block-start: 10px;
+  z-index: 35;
+  display: grid;
+  gap: 8px;
+  max-width: var(--lib-content);
+  margin: 12px auto 18px;
+  padding: 9px;
+  border-radius: calc(var(--site-radius) * 1.25);
+}
+
+.lib-explorer > * {
+  position: relative;
+  z-index: 1;
+}
+
+.lib-explorer__search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.lib--glass-playground .lib-search {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  border-color: transparent;
+  border-radius: 999px;
+  background: var(--site-glass-tint);
+}
+
+.lib--glass-playground .lib-search:focus-within {
+  border-color: var(--site-accent);
+  background: var(--site-surface-hover);
+  box-shadow: 0 0 0 3px var(--site-accent-dim);
+}
+
+.lib--glass-playground .lib-search input {
+  height: 42px;
+  padding-inline: 44px;
+  font-size: 1rem;
+}
+
+.lib-explorer__result {
+  margin: 0;
+  padding-inline: 8px;
+  color: var(--site-text-dim);
+  font-family: var(--site-font-mono);
+  font-size: 0.68rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.lib--glass-playground .lib-nav {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lib--glass-playground .lib-nav [role='tab'] {
+  min-height: 38px;
+  padding-inline: 13px;
+}
+
+/* Each content family uses the same outer bubble and internal spacing rhythm. */
+.lib--glass-playground .lib-section-shell {
+  max-width: var(--lib-content);
+  margin: 14px auto 0;
+  padding: clamp(14px, 2.4vw, 28px);
+  overflow: visible;
+  border: 1px solid transparent;
+  border-radius: calc(var(--site-radius) * 1.25);
+}
+
+.lib--glass-playground .lib__section + .lib__section {
+  margin-top: 14px;
+}
+
+.lib--glass-playground .lib__section--catalog + .lib__section--catalog {
+  margin-top: 14px;
+}
+
+.lib--glass-playground .lib__section-head,
+.lib--glass-playground .lib-blog__head,
+.lib--glass-playground .lib-collections__head,
+.lib--glass-playground .lib-albums__head {
+  max-width: none;
+  margin: 0;
+  padding: 0 2px 14px;
+  border: 0;
+}
+
+.lib--glass-playground .lib__section--catalog .lib__section-head {
+  padding-block: 0 14px;
+  border: 0;
+}
+
+.lib--glass-playground .lib__section-title,
+.lib--glass-playground .lib__section--catalog .lib__section-title {
+  margin: 0;
+  padding: 0;
+  color: var(--site-text);
+  font-family: var(--site-font-display);
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  text-transform: none;
+}
+
+.lib--glass-playground .lib__section-count {
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--site-surface);
+  color: var(--site-text-muted);
+}
+
+.lib--glass-playground .lib-blog__row,
+.lib--glass-playground .lib-albums__grid,
+.lib--glass-playground .lib__shelf,
+.lib--glass-playground .lib__shelf--catalog {
+  max-width: none;
+  margin: 0;
+  padding: 2px;
+  background: none;
+}
+
+.lib--glass-playground .lib-blog__row {
+  gap: 12px;
+  padding-bottom: 8px;
+}
+
+.lib--glass-playground .lib-albums__grid {
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.lib--glass-playground .lib__shelf--catalog {
+  --cover-h: 280px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 218px), 1fr));
+  gap: 14px;
+}
+
+.lib--glass-playground .lib-collections .lib__shelf {
+  grid-auto-rows: auto;
+  gap: 14px;
+}
+
+.lib--glass-playground .lib-collections__group-wrap + .lib-collections__group-wrap {
+  margin-top: 20px;
+}
+
+.lib--glass-playground .lib-collections__subhead {
+  margin: 0 2px 10px;
+  color: var(--site-text-dim);
+  font-family: var(--site-font-mono);
+  font-size: 0.64rem;
+}
+
+/* Universal media bubbles. JS supplies the two rotation variables by delegated
+   pointer events; the regular glass system supplies the tracked light hotspot. */
+.lib-playground [data-library-orbit] {
+  --lib-orbit-x: 0deg;
+  --lib-orbit-y: 0deg;
+  --lib-orbit-lift: 0px;
+  transform: perspective(900px) translateY(var(--lib-orbit-lift)) rotateX(var(--lib-orbit-x))
+    rotateY(var(--lib-orbit-y));
+  transform-style: preserve-3d;
+  transition:
+    transform 0.38s var(--ease-glass),
+    box-shadow var(--site-transition-speed),
+    background-color var(--site-transition-speed);
+  will-change: transform;
+}
+
+.lib-playground [data-library-orbit][data-orbit-active] {
+  transition:
+    transform 70ms linear,
+    box-shadow var(--site-transition-speed),
+    background-color var(--site-transition-speed);
+}
+
+.lib-playground [data-library-orbit]:hover,
+.lib-playground [data-library-orbit]:focus-visible,
+.lib-playground [data-library-orbit]:focus-within {
+  --lib-orbit-lift: -4px;
+}
+
+.lib--glass-playground .lib-orbit-card {
+  isolation: isolate;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: var(--site-radius);
+}
+
+.lib--glass-playground .lib-blog__card {
+  min-height: 214px;
+  padding: 18px;
+  background-color: var(--site-glass-tint);
+}
+
+.lib--glass-playground .lib-album {
+  gap: 12px;
+  padding: 10px;
+  background-color: var(--site-glass-tint);
+}
+
+.lib--glass-playground .lib-album__cover {
+  border: 0;
+  border-radius: calc(var(--site-radius) - 5px);
+  box-shadow: var(--site-shadow-sm);
+}
+
+.lib--glass-playground .lib-album:hover .lib-album__cover {
+  transform: translateZ(14px) scale(1.015);
+  border-color: transparent;
+  box-shadow: var(--site-shadow);
+}
+
+.lib--glass-playground .lib-album__count,
+.lib--glass-playground .lib-album__badge {
+  border: 1px solid var(--site-glass-rim-soft);
+  background: var(--site-glass-tint-strong);
+  color: var(--site-text);
+  backdrop-filter: blur(var(--site-glass-blur-chrome));
+}
+
+.lib--glass-playground .lib-volume .lib-book,
+.lib--glass-playground .lib-coll-tile__btn {
+  gap: 0;
+  height: 100%;
+  padding: 10px;
+  background-color: var(--site-glass-tint);
+}
+
+.lib--glass-playground .lib-volume .lib-book__3d,
+.lib--glass-playground .lib-coll-tile__btn .lib-book__3d {
+  border: 0;
+  border-radius: calc(var(--site-radius) - 5px);
+  background:
+    radial-gradient(
+      circle at var(--lib-orbit-glow-x, 50%) var(--lib-orbit-glow-y, 35%),
+      color-mix(in srgb, var(--site-accent) 16%, transparent),
+      transparent 58%
+    ),
+    var(--site-surface);
+}
+
+.lib--glass-playground .lib-volume .lib-book__meta,
+.lib--glass-playground .lib-coll-tile__btn .lib-book__meta {
+  min-height: 150px;
+  padding: 14px 4px 2px;
+}
+
+.lib--glass-playground .lib-playlists > .space-y-4 {
+  padding: 0;
+}
+
+.lib--glass-playground .lib-playlists .lib-orbit-card {
+  background-color: var(--site-glass-tint);
+}
+
+.lib--glass-playground .lib-edit__migrate,
+.lib--glass-playground .lib__empty {
+  max-width: var(--lib-content);
+  margin: 14px auto 0;
+  border-radius: var(--site-radius);
+  background: var(--site-surface);
+}
+
+@media (max-width: 800px) {
+  .lib--glass-playground .lib-hero {
+    grid-template-columns: 1fr;
+    gap: 30px;
+    padding-block: 46px 38px;
+  }
+
+  .lib--glass-playground .lib-stats {
+    grid-template-columns: repeat(4, minmax(76px, 1fr));
+  }
+
+  .lib--glass-playground .lib-stats > div {
+    min-height: 0;
+  }
+
+  .lib--glass-playground .lib-stats > div:nth-child(2),
+  .lib--glass-playground .lib-stats > div:nth-child(3) {
+    translate: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .lib--glass-playground {
+    --lib-gutter: 8px;
+  }
+
+  .lib--glass-playground .lib-head {
+    padding-inline: 6px;
+  }
+
+  .lib--glass-playground .lib-hero {
+    margin-top: 8px;
+    padding: 34px 18px 28px;
+  }
+
+  .lib--glass-playground .lib-hero h1 {
+    font-size: clamp(2.55rem, 13vw, 4rem);
+  }
+
+  .lib--glass-playground .lib-stats {
+    grid-template-columns: repeat(2, minmax(90px, 1fr));
+  }
+
+  .lib--glass-playground .lib-stats > div {
+    aspect-ratio: auto;
+    min-height: 88px;
+  }
+
+  .lib-explorer {
+    inset-block-start: 6px;
+    padding: 7px;
+  }
+
+  .lib-explorer__search-row {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .lib-explorer__result {
+    display: none;
+  }
+
+  .lib--glass-playground .lib-nav [role='tab'] {
+    min-height: 36px;
+    padding-inline: 11px;
+  }
+
+  .lib--glass-playground .lib-section-shell {
+    padding: 14px 10px;
+  }
+
+  .lib--glass-playground .lib__shelf--catalog {
+    --cover-h: 220px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .lib--glass-playground .lib-volume .lib-book,
+  .lib--glass-playground .lib-coll-tile__btn {
+    padding: 7px;
+  }
+
+  .lib--glass-playground .lib-volume .lib-book__meta {
+    min-height: 174px;
+    padding-top: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lib-playground [data-library-orbit],
+  .lib-playground [data-library-orbit][data-orbit-active] {
+    --lib-orbit-x: 0deg !important;
+    --lib-orbit-y: 0deg !important;
+    transform: translateY(var(--lib-orbit-lift));
+    transition: none;
+  }
+}
+
+html.reduce-motion .lib-playground [data-library-orbit] {
+  --lib-orbit-x: 0deg !important;
+  --lib-orbit-y: 0deg !important;
+  transform: translateY(var(--lib-orbit-lift));
+  transition: none;
+}
+
+.style-high-contrast .lib--glass-playground .lib-orbit-card,
+.style-high-contrast .lib--glass-playground .lib-section-shell {
+  border-color: var(--site-border);
 }

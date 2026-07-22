@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "重命名播放列表",
   "playlists-empty-desc": "在上方创建一个，然后从 RMHMusic 添加曲目。",
   "playlists-empty-title": "还没有播放列表",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "将曲目和视频保存到您自己的永久播放列表中。",
   "playlists-signin-title": "登录以创建播放列表",
   "playlists-title": "播放列表",

@@ -11,7 +11,7 @@
  * and to migrate the bundled catalog into object storage.
  */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { runLiquidOpen, liquidVTName } from '@/lib/view-transition';
 import { createServerFn } from '@tanstack/react-start';
@@ -140,6 +140,60 @@ function formatCount(value: number): string {
   }).format(value);
 }
 
+function resetLibraryOrbit(element: HTMLElement | null) {
+  if (!element) return;
+  element.style.setProperty('--lib-orbit-x', '0deg');
+  element.style.setProperty('--lib-orbit-y', '0deg');
+  element.style.setProperty('--lib-orbit-glow-x', '50%');
+  element.style.setProperty('--lib-orbit-glow-y', '50%');
+  element.removeAttribute('data-orbit-active');
+}
+
+/**
+ * One delegated pointer handler powers every playful glass object on the page.
+ * It writes CSS variables directly (no React renders during pointer movement),
+ * works with a fine pointer and a finger while it is down, and leaves scrolling
+ * fully native on touch devices.
+ */
+function useLibraryOrbit() {
+  const active = useRef<HTMLElement | null>(null);
+
+  useEffect(() => () => resetLibraryOrbit(active.current), []);
+
+  const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'mouse' && event.buttons === 0) return;
+    const target = (event.target as Element).closest<HTMLElement>('[data-library-orbit]');
+    if (!target || !event.currentTarget.contains(target)) {
+      resetLibraryOrbit(active.current);
+      active.current = null;
+      return;
+    }
+
+    if (active.current !== target) resetLibraryOrbit(active.current);
+    active.current = target;
+
+    const rect = target.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    const y = Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height));
+    target.style.setProperty('--lib-orbit-x', `${((0.5 - y) * 7).toFixed(2)}deg`);
+    target.style.setProperty('--lib-orbit-y', `${((x - 0.5) * 8).toFixed(2)}deg`);
+    target.style.setProperty('--lib-orbit-glow-x', `${(x * 100).toFixed(1)}%`);
+    target.style.setProperty('--lib-orbit-glow-y', `${(y * 100).toFixed(1)}%`);
+    target.setAttribute('data-orbit-active', '');
+  };
+
+  const onPointerLeave = () => {
+    resetLibraryOrbit(active.current);
+    active.current = null;
+  };
+
+  const onPointerUp = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== 'mouse') onPointerLeave();
+  };
+
+  return { onPointerMove, onPointerLeave, onPointerCancel: onPointerLeave, onPointerUp };
+}
+
 function Library() {
   const { t } = useTranslation('library');
   const { open: openSidebar } = useMobileSidebar();
@@ -150,10 +204,27 @@ function Library() {
     albums,
     playlists,
   } = Route.useLoaderData();
-  const { view = 'all' } = Route.useSearch();
+  const { view: routeView = 'all' } = Route.useSearch();
   const navigate = useNavigate();
-  const setView = (next: LibraryView) =>
-    void navigate({ to: '/library', search: next === 'all' ? {} : { view: next }, replace: true });
+  const [view, setActiveView] = useState<LibraryView>(routeView);
+  const orbit = useLibraryOrbit();
+
+  useEffect(() => setActiveView(routeView), [routeView]);
+
+  const setView = async (next: LibraryView) => {
+    if (next === view) return;
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    setActiveView(next);
+    await navigate({
+      to: '/library',
+      search: next === 'all' ? {} : { view: next },
+      replace: true,
+      resetScroll: false,
+    });
+    // Search-only navigation should never eject someone from the shelf they
+    // were exploring, including browsers with eager native scroll restoration.
+    window.setTimeout(() => window.scrollTo(0, scrollTop), 0);
+  };
   // A section renders when we're on "All" or on its own category.
   const shows = (id: LibraryView) => view === 'all' || view === id;
   const session = useSession();
@@ -227,6 +298,53 @@ function Library() {
       return b.title.toLowerCase().includes(q) || b.description.toLowerCase().includes(q);
     });
   }, [books, query, collectedSlugs]);
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const matchingAlbums = useMemo(
+    () =>
+      albums.filter(
+        (album) =>
+          !normalizedQuery ||
+          album.title.toLowerCase().includes(normalizedQuery) ||
+          album.description.toLowerCase().includes(normalizedQuery) ||
+          album.slides.some((slide) => slide.alt.toLowerCase().includes(normalizedQuery)),
+      ).length,
+    [albums, normalizedQuery],
+  );
+  const matchingCollections = useMemo(
+    () =>
+      collections.filter(
+        (collection) =>
+          !normalizedQuery ||
+          collection.title.toLowerCase().includes(normalizedQuery) ||
+          collection.description.toLowerCase().includes(normalizedQuery) ||
+          collection.books.some((book) => book.title.toLowerCase().includes(normalizedQuery)),
+      ).length,
+    [collections, normalizedQuery],
+  );
+  const matchingReads = useMemo(
+    () =>
+      blogPosts.filter(
+        (post) =>
+          !normalizedQuery ||
+          post.title?.toLowerCase().includes(normalizedQuery) ||
+          post.description?.toLowerCase().includes(normalizedQuery) ||
+          post.tags?.some((tag) => tag.toLowerCase().includes(normalizedQuery)),
+      ).length,
+    [blogPosts, normalizedQuery],
+  );
+  const matchingPlaylists = useMemo(
+    () =>
+      playlists?.filter(
+        (playlist) =>
+          !normalizedQuery ||
+          playlist.name.toLowerCase().includes(normalizedQuery) ||
+          playlist.kind.toLowerCase().includes(normalizedQuery),
+      ).length ?? 0,
+    [playlists, normalizedQuery],
+  );
+  const totalMatches =
+    filtered.length + matchingAlbums + matchingCollections + matchingReads + matchingPlaylists;
 
   // Sections render in manual order (position), title as a stable tiebreak — so
   // admin reordering (arrows + drag) actually takes effect.
@@ -311,219 +429,285 @@ function Library() {
   return (
     <>
       <AnimatedMain
-        className="vibe-screen lib min-h-screen w-full min-w-0 pb-dock"
+        className="vibe-screen lib lib--glass-playground min-h-screen w-full min-w-0 pb-dock"
         targetWidth={WIDE_NO_RIGHT_SIDEBAR_WIDTH}
       >
-        <LibraryRevealProvider>
-          {/* Title bar + section tabs share ONE sticky container so the tabs sit
-              directly below the title and never slide up behind it — the two used
-              to be sibling `sticky top:0` bars, which stacked and overlapped. */}
-          <div className="lib-topbar">
-            <header className="lib-head">
-              <span className="md:hidden">
-                <button
-                  type="button"
-                  onClick={openSidebar}
-                  aria-label={t('open-menu', { defaultValue: 'Open menu' })}
-                  className="vibe-toolbar__icon"
-                >
-                  <Menu size={18} />
-                </button>
-              </span>
-              <div className="lib-head__brand">
-                <MobileBrandPrefix />
-                <BookOpen size={17} aria-hidden="true" />
-                <span>{t('library-heading', { defaultValue: 'Library' })}</span>
-              </div>
-              {session.data && (
-                <button
-                  type="button"
-                  className="lib-upload__open"
-                  onClick={() => setUploadOpen(true)}
-                  aria-label={t('upload-label', { defaultValue: 'Upload a PDF' })}
-                >
-                  <Upload size={15} aria-hidden="true" />
-                  <span className="lib-upload__open-label">
-                    {t('upload-button', { defaultValue: 'Add a book' })}
-                  </span>
-                </button>
-              )}
-            </header>
-          </div>
-
-          <section
-            // Flagship hero → floating L2 glass slab with edge refraction (§8.4):
-            // the library page's one refract slot (+ per-element lens).
-            className="lib-hero glass-pane glass-refract"
-            data-glass-lens=""
-            aria-labelledby="library-title"
-          >
-            <div className="lib-hero__copy">
-              <p className="lib-hero__eyebrow">
-                {t('archive-eyebrow', { defaultValue: 'RMH Studios archive' })}
-              </p>
-              <h1 id="library-title">
-                {t('archive-title', { defaultValue: 'A home for long-form thinking.' })}
-              </h1>
-              <p className="lib-hero__lede">
-                {t('archive-description', {
-                  defaultValue:
-                    'Stories, original research, technical field notes, operating plans, and strange ideas—collected in one quiet reading room.',
-                })}
-              </p>
-            </div>
-            <dl
-              className="lib-stats"
-              aria-label={t('library-totals', { defaultValue: 'Library totals' })}
-            >
-              <div>
-                <dt>{t('stat-volumes', { defaultValue: 'Volumes' })}</dt>
-                <dd>{publicBooks.length.toLocaleString()}</dd>
-              </div>
-              <div>
-                <dt>{t('stat-pages', { defaultValue: 'Pages' })}</dt>
-                <dd>{formatCount(totalPages)}</dd>
-              </div>
-              <div>
-                <dt>{t('stat-albums', { defaultValue: 'Albums' })}</dt>
-                <dd>{albums.length.toLocaleString()}</dd>
-              </div>
-              <div>
-                <dt>{t('stat-collections', { defaultValue: 'Collections' })}</dt>
-                <dd>{collections.length.toLocaleString()}</dd>
-              </div>
-            </dl>
-            <label className="lib-search">
-              <Search size={18} aria-hidden="true" />
-              <span className="sr-only">
-                {t('search-label', { defaultValue: 'Search the library' })}
-              </span>
-              <input
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder={t('search-placeholder', { defaultValue: 'Search books and albums' })}
-              />
-              {query && (
-                <button
-                  type="button"
-                  onClick={() => setQuery('')}
-                  aria-label={t('clear-search', { defaultValue: 'Clear search' })}
-                >
-                  <X size={16} />
-                </button>
-              )}
-            </label>
-          </section>
-
-          {/* §16.2: section switcher is now the shared LiquidTabs sheet (was the
-              bespoke `.lib-nav__chip*` markup). `.lib-nav` positions the sheet only
-              (page-gutter margins, column max-width); the pill look + flowing
-              capsule + goo morph come from LiquidTabs. `scroll` keeps the six
-              categories on one horizontal track on narrow screens. Placement is
-              unchanged — a standalone sheet BELOW the hero slab, NOT sticky, so the
-              PR #577 single-sticky fix (.lib-head is the lone sticky row) holds. */}
-          <LiquidTabs
-            className="lib-nav"
-            tabs={([
-              { id: 'all', label: t('cat-all', { defaultValue: 'All' }), icon: LayoutGrid },
-              { id: 'books', label: t('cat-books', { defaultValue: 'Books' }), icon: BookOpen },
-              { id: 'albums', label: t('cat-albums', { defaultValue: 'Albums' }), icon: Disc3 },
-              { id: 'collections', label: t('cat-collections', { defaultValue: 'Collections' }), icon: Layers },
-              { id: 'reads', label: t('cat-reads', { defaultValue: 'Reads' }), icon: Newspaper },
-              { id: 'music', label: t('cat-music', { defaultValue: 'Music' }), icon: ListMusic },
-            ]) as LiquidTab[]}
-            value={view}
-            onChange={(next) => setView(next as LibraryView)}
-            scroll
-            aria-label={t('sections-label', { defaultValue: 'Library sections' })}
-          />
-
-          {shows('reads') && <LibraryBlogRow posts={blogPosts} />}
-
-          {shows('books') && isAdmin && hasUnmigrated && (
-            <div className="lib-edit__migrate">
-              <span>
-                {t('migrate-prompt', {
-                  defaultValue:
-                    'Some books are still bundled on disk. Move them to object storage to manage them.',
-                })}
-              </span>
-              <button
-                type="button"
-                className="lib-upload__btn lib-upload__btn--primary"
-                onClick={runMigration}
-                disabled={migrating}
-              >
-                <CloudUpload size={14} aria-hidden="true" />
-                {migrating
-                  ? t('migrate-running', { defaultValue: 'Migrating…' })
-                  : t('migrate-button', { defaultValue: 'Migrate to S3' })}
-              </button>
-            </div>
-          )}
-
-          {shows('albums') && <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />}
-
-          {shows('collections') && (
-            <LibraryCollections
-              books={books}
-              collections={collections}
-              onChanged={refreshCollections}
-              isAdmin={isAdmin}
-              myHandle={myHandle}
-              canCreate={Boolean(session.data)}
-            />
-          )}
-
-          {shows('music') && (
-            <section className="lib__section lib__section--catalog lib__section--music">
-              <div className="lib__section-head">
-                <h2 className="lib__section-title">
-                  {t('section-music', { defaultValue: 'Music' })}
-                </h2>
-                {playlists && (
-                  <span className="lib__section-count">
-                    {t('playlist-count', {
-                      count: playlists.length,
-                      defaultValue: '{{count}} playlists',
-                    })}
-                  </span>
+        <div className="lib-playground" {...orbit}>
+          <LibraryRevealProvider>
+            {/* The lightweight title stays above the hero. The explorer below is
+              the page's single sticky control group. */}
+            <div className="lib-topbar">
+              <header className="lib-head glass-chrome glass-bevel-sm">
+                <span className="md:hidden">
+                  <button
+                    type="button"
+                    onClick={openSidebar}
+                    aria-label={t('open-menu', { defaultValue: 'Open menu' })}
+                    className="vibe-toolbar__icon"
+                  >
+                    <Menu size={18} />
+                  </button>
+                </span>
+                <div className="lib-head__brand">
+                  <MobileBrandPrefix />
+                  <BookOpen size={17} aria-hidden="true" />
+                  <span>{t('library-heading', { defaultValue: 'Library' })}</span>
+                </div>
+                {session.data && (
+                  <button
+                    type="button"
+                    className="lib-upload__open"
+                    onClick={() => setUploadOpen(true)}
+                    aria-label={t('upload-label', { defaultValue: 'Upload a PDF' })}
+                  >
+                    <Upload size={15} aria-hidden="true" />
+                    <span className="lib-upload__open-label">
+                      {t('upload-button', { defaultValue: 'Add a book' })}
+                    </span>
+                  </button>
                 )}
-              </div>
-              <PlaylistsColumn initialData={{ playlists }} embedded />
-            </section>
-          )}
+              </header>
+            </div>
 
-          {shows('books') &&
-            (filtered.length === 0 ? (
-              <p className="vibe-hint lib__empty">
-                {t('no-results', { defaultValue: 'No books match that search.' })}
-              </p>
-            ) : (
-              <>
-                <Section
-                  title={t('section-curated', { defaultValue: 'Curated' })}
-                  books={curated}
-                  isAdmin={isAdmin}
-                  onEdit={setEditing}
-                  onMove={(book, dir) => move(curated, book, dir)}
-                  onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
-                  onChanged={refresh}
-                />
-                <Section
-                  title={t('section-community', { defaultValue: 'Community uploads' })}
-                  books={community}
-                  isAdmin={isAdmin}
-                  onEdit={setEditing}
-                  onMove={(book, dir) => move(community, book, dir)}
-                  onReorder={(draggedId, targetId) => reorderWithin(community, draggedId, targetId)}
-                  onChanged={refresh}
-                  showAttribution
-                />
-              </>
-            ))}
-        </LibraryRevealProvider>
+            <section
+              // Flagship hero → floating L2 glass slab with edge refraction (§8.4):
+              // the library page's one refract slot (+ per-element lens).
+              className="lib-hero glass-pane glass-refract glass-liquid"
+              data-glass-lens=""
+              aria-labelledby="library-title"
+            >
+              <div className="lib-hero__copy">
+                <p className="lib-hero__eyebrow">
+                  {t('archive-eyebrow', { defaultValue: 'A living media library' })}
+                </p>
+                <h1 id="library-title">
+                  {t('archive-title', { defaultValue: 'Pick something up. Get lost in it.' })}
+                </h1>
+                <p className="lib-hero__lede">
+                  {t('archive-description', {
+                    defaultValue:
+                      'Books, photo albums, essays, playlists, field notes, and strange ideas—floating together in one playful archive.',
+                  })}
+                </p>
+              </div>
+              <dl
+                className="lib-stats"
+                aria-label={t('library-totals', { defaultValue: 'Library totals' })}
+              >
+                <div
+                  className="glass-fill glass-interactive"
+                  data-glass-light=""
+                  data-library-orbit=""
+                >
+                  <dt>{t('stat-volumes', { defaultValue: 'Volumes' })}</dt>
+                  <dd>{publicBooks.length.toLocaleString()}</dd>
+                </div>
+                <div
+                  className="glass-fill glass-interactive"
+                  data-glass-light=""
+                  data-library-orbit=""
+                >
+                  <dt>{t('stat-pages', { defaultValue: 'Pages' })}</dt>
+                  <dd>{formatCount(totalPages)}</dd>
+                </div>
+                <div
+                  className="glass-fill glass-interactive"
+                  data-glass-light=""
+                  data-library-orbit=""
+                >
+                  <dt>{t('stat-albums', { defaultValue: 'Albums' })}</dt>
+                  <dd>{albums.length.toLocaleString()}</dd>
+                </div>
+                <div
+                  className="glass-fill glass-interactive"
+                  data-glass-light=""
+                  data-library-orbit=""
+                >
+                  <dt>{t('stat-collections', { defaultValue: 'Collections' })}</dt>
+                  <dd>{collections.length.toLocaleString()}</dd>
+                </div>
+              </dl>
+            </section>
+
+            <div
+              className="lib-explorer glass-chrome glass-refract"
+              data-glass-lens=""
+              role="region"
+              aria-label={t('explore-library', { defaultValue: 'Explore the library' })}
+            >
+              <div className="lib-explorer__search-row">
+                <label className="lib-search glass-inset">
+                  <Search size={18} aria-hidden="true" />
+                  <span className="sr-only">
+                    {t('search-label', { defaultValue: 'Search the library' })}
+                  </span>
+                  <input
+                    type="search"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder={t('search-placeholder', {
+                      defaultValue: 'Search books, albums, playlists, and reads…',
+                    })}
+                  />
+                  {query && (
+                    <button
+                      type="button"
+                      onClick={() => setQuery('')}
+                      aria-label={t('clear-search', { defaultValue: 'Clear search' })}
+                    >
+                      <X size={16} />
+                    </button>
+                  )}
+                </label>
+                <p className="lib-explorer__result" aria-live="polite">
+                  {t('result-count', {
+                    count: totalMatches,
+                    defaultValue: '{{count}} things to explore',
+                  })}
+                </p>
+              </div>
+
+              {/* Search and tabs intentionally share one sticky glass group: one
+              control surface, no competing sticky offsets. */}
+              <LiquidTabs
+                className="lib-nav"
+                tabs={
+                  [
+                    {
+                      id: 'all',
+                      label: t('cat-all', { defaultValue: 'Everything' }),
+                      icon: LayoutGrid,
+                      count: totalMatches,
+                    },
+                    {
+                      id: 'books',
+                      label: t('cat-books', { defaultValue: 'Books' }),
+                      icon: BookOpen,
+                      count: filtered.length,
+                    },
+                    {
+                      id: 'albums',
+                      label: t('cat-albums', { defaultValue: 'Albums' }),
+                      icon: Disc3,
+                      count: matchingAlbums,
+                    },
+                    {
+                      id: 'music',
+                      label: t('cat-music', { defaultValue: 'Music' }),
+                      icon: ListMusic,
+                      count: matchingPlaylists,
+                    },
+                    {
+                      id: 'collections',
+                      label: t('cat-collections', { defaultValue: 'Collections' }),
+                      icon: Layers,
+                      count: matchingCollections,
+                    },
+                    {
+                      id: 'reads',
+                      label: t('cat-reads', { defaultValue: 'Reads' }),
+                      icon: Newspaper,
+                      count: matchingReads,
+                    },
+                  ] as LiquidTab[]
+                }
+                value={view}
+                onChange={(next) => void setView(next as LibraryView)}
+                sheet={false}
+                scroll
+                aria-label={t('sections-label', { defaultValue: 'Library sections' })}
+              />
+            </div>
+
+            {shows('reads') && <LibraryBlogRow posts={blogPosts} query={query} />}
+
+            {shows('books') && isAdmin && hasUnmigrated && (
+              <div className="lib-edit__migrate">
+                <span>
+                  {t('migrate-prompt', {
+                    defaultValue:
+                      'Some books are still bundled on disk. Move them to object storage to manage them.',
+                  })}
+                </span>
+                <button
+                  type="button"
+                  className="lib-upload__btn lib-upload__btn--primary"
+                  onClick={runMigration}
+                  disabled={migrating}
+                >
+                  <CloudUpload size={14} aria-hidden="true" />
+                  {migrating
+                    ? t('migrate-running', { defaultValue: 'Migrating…' })
+                    : t('migrate-button', { defaultValue: 'Migrate to S3' })}
+                </button>
+              </div>
+            )}
+
+            {shows('albums') && <LibraryAlbums albums={albums} query={query} isAdmin={isAdmin} />}
+
+            {shows('collections') && (
+              <LibraryCollections
+                books={books}
+                collections={collections}
+                onChanged={refreshCollections}
+                isAdmin={isAdmin}
+                myHandle={myHandle}
+                canCreate={Boolean(session.data)}
+                query={query}
+              />
+            )}
+
+            {shows('music') && (
+              <section className="lib__section lib__section--catalog lib__section--music glass-fill lib-section-shell">
+                <div className="lib__section-head">
+                  <h2 className="lib__section-title">
+                    {t('section-music', { defaultValue: 'Music' })}
+                  </h2>
+                  {playlists && (
+                    <span className="lib__section-count">
+                      {t('playlist-count', {
+                        count: playlists.length,
+                        defaultValue: '{{count}} playlists',
+                      })}
+                    </span>
+                  )}
+                </div>
+                <PlaylistsColumn initialData={{ playlists }} embedded searchQuery={query} />
+              </section>
+            )}
+
+            {shows('books') &&
+              (filtered.length === 0 ? (
+                <p className="vibe-hint lib__empty">
+                  {t('no-results', { defaultValue: 'No books match that search.' })}
+                </p>
+              ) : (
+                <>
+                  <Section
+                    title={t('section-curated', { defaultValue: 'Curated' })}
+                    books={curated}
+                    isAdmin={isAdmin}
+                    onEdit={setEditing}
+                    onMove={(book, dir) => move(curated, book, dir)}
+                    onReorder={(draggedId, targetId) => reorderWithin(curated, draggedId, targetId)}
+                    onChanged={refresh}
+                  />
+                  <Section
+                    title={t('section-community', { defaultValue: 'Community uploads' })}
+                    books={community}
+                    isAdmin={isAdmin}
+                    onEdit={setEditing}
+                    onMove={(book, dir) => move(community, book, dir)}
+                    onReorder={(draggedId, targetId) =>
+                      reorderWithin(community, draggedId, targetId)
+                    }
+                    onChanged={refresh}
+                    showAttribution
+                  />
+                </>
+              ))}
+          </LibraryRevealProvider>
+        </div>
       </AnimatedMain>
       <div className="hidden lg:block w-4 shrink-0" />
       {uploadOpen && (
@@ -598,7 +782,7 @@ function Section({
       : undefined;
 
   return (
-    <section className="lib__section lib__section--catalog">
+    <section className="lib__section lib__section--catalog glass-fill lib-section-shell">
       <div className="lib__section-head">
         <h2 className="lib__section-title">{title}</h2>
         <span className="lib__section-count">
@@ -691,7 +875,9 @@ function BookSpine({
       <Link
         to="/library/$slug"
         params={{ slug: book.slug }}
-        className="lib-book"
+        className="lib-book glass-fill glass-interactive lib-orbit-card"
+        data-glass-light=""
+        data-library-orbit=""
         style={style}
         draggable={dnd?.draggable ? false : undefined}
         // §5.48: the book cover liquidly expands into the reader's hero stage.

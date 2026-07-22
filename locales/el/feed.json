@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Μετονομασία λίστας αναπαραγωγής",
   "playlists-empty-desc": "Δημιουργήστε μία παραπάνω, στη συνέχεια προσθέστε κομμάτια από το RMHMusic.",
   "playlists-empty-title": "Δεν υπάρχουν ακόμη λίστες αναπαραγωγής",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Αποθηκεύστε κομμάτια και βίντεο στις δικές σας μόνιμες λίστες αναπαραγωγής.",
   "playlists-signin-title": "Συνδεθείτε για να δημιουργήσετε λίστες αναπαραγωγής",
   "playlists-title": "Λίστες αναπαραγωγής",

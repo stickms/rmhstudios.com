@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Redenumește playlist-ul",
   "playlists-empty-desc": "Creează unul mai sus, apoi adaugă piese din RMHMusic.",
   "playlists-empty-title": "Niciun playlist încă",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Salvează piese și videoclipuri în propriile tale playlisturi permanente.",
   "playlists-signin-title": "Conectează-te pentru a crea playlisturi",
   "playlists-title": "Playlisturi",

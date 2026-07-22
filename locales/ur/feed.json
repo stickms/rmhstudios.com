@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "پلے لسٹ کا نام تبدیل کریں",
   "playlists-empty-desc": "اوپر ایک بنائیں، پھر RMHMusic سے ٹریکس شامل کریں۔",
   "playlists-empty-title": "ابھی تک کوئی پلے لسٹ نہیں",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "ٹریکس اور ویڈیوز اپنی ذاتی مستقل پلے لسٹس میں محفوظ کریں۔",
   "playlists-signin-title": "پلے لسٹس بنانے کے لیے سائن ان کریں",
   "playlists-title": "پلے لسٹس",

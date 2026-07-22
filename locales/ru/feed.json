@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Переименовать плейлист",
   "playlists-empty-desc": "Создайте плейлист выше, затем добавьте треки из RMHMusic.",
   "playlists-empty-title": "Пока нет плейлистов",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Сохраняйте треки и видео в собственные постоянные плейлисты.",
   "playlists-signin-title": "Войдите, чтобы создавать плейлисты",
   "playlists-title": "Плейлисты",

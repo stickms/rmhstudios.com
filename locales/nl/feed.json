@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "Afspeellijst hernoemen",
   "playlists-empty-desc": "Maak er hierboven een aan en voeg vervolgens tracks toe vanuit RMHMusic.",
   "playlists-empty-title": "Nog geen afspeellijsten",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "Sla tracks en video's op in je eigen permanente afspeellijsten.",
   "playlists-signin-title": "Log in om afspeellijsten te maken",
   "playlists-title": "Afspeellijsten",

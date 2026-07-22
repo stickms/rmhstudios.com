@@ -626,6 +626,8 @@
   "playlist-rename-prompt": "প্লেলিস্টের নাম পরিবর্তন করুন",
   "playlists-empty-desc": "উপরে একটি তৈরি করুন, তারপর RMHMusic থেকে ট্র্যাক যোগ করুন।",
   "playlists-empty-title": "এখনো কোনো প্লেলিস্ট নেই",
+  "playlists-search-empty-desc": "Try a different title or music source.",
+  "playlists-search-empty-title": "No matching playlists",
   "playlists-signin-desc": "নিজের স্থায়ী প্লেলিস্টে ট্র্যাক ও ভিডিও সংরক্ষণ করুন।",
   "playlists-signin-title": "প্লেলিস্ট তৈরি করতে সাইন ইন করুন",
   "playlists-title": "প্লেলিস্টসমূহ",

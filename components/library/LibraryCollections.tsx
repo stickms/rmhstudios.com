@@ -32,6 +32,7 @@ export function LibraryCollections({
   isAdmin,
   myHandle,
   canCreate,
+  query = '',
 }: {
   books: LibraryBook[];
   collections: CollectionView[];
@@ -39,6 +40,7 @@ export function LibraryCollections({
   isAdmin: boolean;
   myHandle: string | null;
   canCreate: boolean;
+  query?: string;
 }) {
   const { t } = useTranslation('library');
   const confirm = useConfirm();
@@ -48,7 +50,16 @@ export function LibraryCollections({
   const [generating, setGenerating] = useState<string | null>(null);
 
   // Hide empty collections from people who can't edit them; owners still see theirs.
-  const visible = collections.filter((c) => c.books.length > 0 || c.canEdit);
+  const q = query.trim().toLowerCase();
+  const visible = collections
+    .filter((c) => c.books.length > 0 || c.canEdit)
+    .filter(
+      (c) =>
+        !q ||
+        c.title.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.books.some((book) => book.title.toLowerCase().includes(q)),
+    );
 
   async function createCollection(title: string, description: string) {
     const res = await fetch('/api/library/collections', {
@@ -63,13 +74,26 @@ export function LibraryCollections({
   }
 
   async function removeCollection(c: CollectionView) {
-    if (!(await confirm({ title: t('collection-delete-confirm', { defaultValue: 'Delete this collection? The books are not deleted.' }), danger: true }))) return;
-    const res = await fetch(`/api/library/collection/${c.id}`, { method: 'DELETE' }).catch(() => null);
+    if (
+      !(await confirm({
+        title: t('collection-delete-confirm', {
+          defaultValue: 'Delete this collection? The books are not deleted.',
+        }),
+        danger: true,
+      }))
+    )
+      return;
+    const res = await fetch(`/api/library/collection/${c.id}`, { method: 'DELETE' }).catch(
+      () => null,
+    );
     if (res?.ok) await onChanged();
   }
 
   async function renameCollection(c: CollectionView) {
-    const title = window.prompt(t('collection-rename-prompt', { defaultValue: 'Collection name' }), c.title);
+    const title = window.prompt(
+      t('collection-rename-prompt', { defaultValue: 'Collection name' }),
+      c.title,
+    );
     if (title === null) return;
     const res = await fetch(`/api/library/collection/${c.id}`, {
       method: 'PATCH',
@@ -99,17 +123,21 @@ export function LibraryCollections({
 
   async function generateCover(c: CollectionView) {
     setGenerating(c.id);
-    const res = await fetch(`/api/library/collection/${c.id}/cover`, { method: 'POST' }).catch(() => null);
+    const res = await fetch(`/api/library/collection/${c.id}/cover`, { method: 'POST' }).catch(
+      () => null,
+    );
     setGenerating(null);
     if (res?.ok) {
       await onChanged();
     } else {
       const err = await res?.json().catch(() => null);
-      window.alert(err?.error ?? t('cover-failed', { defaultValue: 'Could not generate a cover.' }));
+      window.alert(
+        err?.error ?? t('cover-failed', { defaultValue: 'Could not generate a cover.' }),
+      );
     }
   }
 
-  if (visible.length === 0 && !canCreate) return null;
+  if (!q && visible.length === 0 && !canCreate) return null;
 
   // Show official/curated series first, then user-made ones below.
   const official = visible.filter((c) => c.official);
@@ -133,18 +161,22 @@ export function LibraryCollections({
   );
 
   // Live versions of the collections referenced by open modals (so edits reflect).
-  const addingLive = addingTo ? collections.find((c) => c.id === addingTo.id) ?? addingTo : null;
-  const openedLive = opened ? collections.find((c) => c.id === opened.id) ?? opened : null;
+  const addingLive = addingTo ? (collections.find((c) => c.id === addingTo.id) ?? addingTo) : null;
+  const openedLive = opened ? (collections.find((c) => c.id === opened.id) ?? opened) : null;
 
   return (
-    <section className="lib__section lib-collections">
+    <section className="lib__section lib-collections glass-fill lib-section-shell">
       <div className="lib-collections__head">
-        <h2 className="lib__section-title">{t('section-collections', { defaultValue: 'Collections' })}</h2>
+        <h2 className="lib__section-title">
+          {t('section-collections', { defaultValue: 'Collections' })}
+        </h2>
         <div className="lib-collections__head-actions">
           {canCreate && (
             <button type="button" className="lib-upload__open" onClick={() => setCreating(true)}>
               <FolderPlus size={14} aria-hidden="true" />
-              <span className="lib-upload__open-label">{t('new-collection', { defaultValue: 'New collection' })}</span>
+              <span className="lib-upload__open-label">
+                {t('new-collection', { defaultValue: 'New collection' })}
+              </span>
             </button>
           )}
         </div>
@@ -152,21 +184,31 @@ export function LibraryCollections({
 
       {visible.length === 0 ? (
         <p className="vibe-hint lib-collections__empty">
-          {t('no-collections', { defaultValue: 'No collections yet — create one to group books into a series.' })}
+          {q
+            ? t('no-collections-match', {
+                defaultValue: 'No collections match that search.',
+              })
+            : t('no-collections', {
+                defaultValue: 'No collections yet — create one to group books into a series.',
+              })}
         </p>
       ) : (
         <>
           {official.length > 0 && (
             <div className="lib-collections__group-wrap">
               {userMade.length > 0 && (
-                <h3 className="lib-collections__subhead">{t('collections-official', { defaultValue: 'Curated series' })}</h3>
+                <h3 className="lib-collections__subhead">
+                  {t('collections-official', { defaultValue: 'Curated series' })}
+                </h3>
               )}
               {renderGroup(official)}
             </div>
           )}
           {userMade.length > 0 && (
             <div className="lib-collections__group-wrap">
-              <h3 className="lib-collections__subhead">{t('collections-community', { defaultValue: 'Reader collections' })}</h3>
+              <h3 className="lib-collections__subhead">
+                {t('collections-community', { defaultValue: 'Reader collections' })}
+              </h3>
               {renderGroup(userMade)}
             </div>
           )}
@@ -220,16 +262,31 @@ function CollectionTile({
 
   const items: MenuItem[] = [
     { type: 'label', label: c.title },
-    { icon: <Plus size={15} />, label: t('add-books', { defaultValue: 'Add books' }), onSelect: onAdd },
+    {
+      icon: <Plus size={15} />,
+      label: t('add-books', { defaultValue: 'Add books' }),
+      onSelect: onAdd,
+    },
     {
       icon: <ImagePlus size={15} />,
-      label: c.coverUrl ? t('regenerate-cover', { defaultValue: 'Regenerate cover' }) : t('generate-cover', { defaultValue: 'Generate cover' }),
+      label: c.coverUrl
+        ? t('regenerate-cover', { defaultValue: 'Regenerate cover' })
+        : t('generate-cover', { defaultValue: 'Generate cover' }),
       onSelect: onCover,
       disabled: generating,
     },
-    { icon: <Pencil size={15} />, label: t('rename', { defaultValue: 'Rename' }), onSelect: onRename },
+    {
+      icon: <Pencil size={15} />,
+      label: t('rename', { defaultValue: 'Rename' }),
+      onSelect: onRename,
+    },
     { type: 'separator' },
-    { icon: <Trash2 size={15} />, label: t('delete', { defaultValue: 'Delete' }), danger: true, onSelect: onDelete },
+    {
+      icon: <Trash2 size={15} />,
+      label: t('delete', { defaultValue: 'Delete' }),
+      danger: true,
+      onSelect: onDelete,
+    },
   ];
 
   return (
@@ -241,7 +298,9 @@ function CollectionTile({
     >
       <button
         type="button"
-        className="lib-book lib-coll-tile__btn"
+        className="lib-book lib-coll-tile__btn glass-fill glass-interactive lib-orbit-card"
+        data-glass-light=""
+        data-library-orbit=""
         onClick={onOpen}
         aria-label={t('open-collection', { title: c.title, defaultValue: 'Open {{title}}' })}
       >
@@ -250,7 +309,15 @@ function CollectionTile({
           <div className={`lib-book__cover ${c.coverUrl ? 'has-cover' : ''}`}>
             <span className="lib-book__edge" aria-hidden="true" />
             {c.coverUrl ? (
-              <BlurImage src={c.coverUrl} alt={c.title} fit="cover" width={150} sizes="150px" className={COVER_WRAP} imgClassName={COVER_IMG} />
+              <BlurImage
+                src={c.coverUrl}
+                alt={c.title}
+                fit="cover"
+                width={150}
+                sizes="150px"
+                className={COVER_WRAP}
+                imgClassName={COVER_IMG}
+              />
             ) : (
               <span className="lib-book__title">{c.title}</span>
             )}
@@ -284,7 +351,13 @@ function CollectionTile({
 }
 
 /** Modal that reveals a collection's member books. */
-function ViewModal({ collection: c, onClose }: { collection: CollectionView; onClose: () => void }) {
+function ViewModal({
+  collection: c,
+  onClose,
+}: {
+  collection: CollectionView;
+  onClose: () => void;
+}) {
   const { t } = useTranslation('library');
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
@@ -294,7 +367,10 @@ function ViewModal({ collection: c, onClose }: { collection: CollectionView; onC
 
   const by =
     c.owner && (c.owner.handle || c.owner.name) && !c.official
-      ? t('collection-by', { who: c.owner.handle ? `@${c.owner.handle}` : c.owner.name, defaultValue: 'by {{who}}' })
+      ? t('collection-by', {
+          who: c.owner.handle ? `@${c.owner.handle}` : c.owner.name,
+          defaultValue: 'by {{who}}',
+        })
       : null;
 
   return (
@@ -306,10 +382,19 @@ function ViewModal({ collection: c, onClose }: { collection: CollectionView; onC
             {c.description && <p className="lib-collections__group-desc">{c.description}</p>}
             {by && <p className="lib-book__by">{by}</p>}
           </div>
-          <button type="button" className="lib-upload__close" onClick={onClose} aria-label={t('close', { defaultValue: 'Close' })}>×</button>
+          <button
+            type="button"
+            className="lib-upload__close"
+            onClick={onClose}
+            aria-label={t('close', { defaultValue: 'Close' })}
+          >
+            ×
+          </button>
         </div>
         {c.books.length === 0 ? (
-          <p className="vibe-hint lib-collections__empty">{t('collection-empty', { defaultValue: 'No books yet.' })}</p>
+          <p className="vibe-hint lib-collections__empty">
+            {t('collection-empty', { defaultValue: 'No books yet.' })}
+          </p>
         ) : (
           <div className="lib__shelf lib-collections__shelf" role="list">
             {c.books.map((b) => (
@@ -341,11 +426,21 @@ function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => 
         <div className={`lib-book__cover ${book.coverUrl ? 'has-cover' : ''}`}>
           <span className="lib-book__edge" aria-hidden="true" />
           {book.coverUrl ? (
-            <BlurImage src={book.coverUrl} alt={book.title} fit="cover" width={150} sizes="150px" className={COVER_WRAP} imgClassName={COVER_IMG} />
+            <BlurImage
+              src={book.coverUrl}
+              alt={book.title}
+              fit="cover"
+              width={150}
+              sizes="150px"
+              className={COVER_WRAP}
+              imgClassName={COVER_IMG}
+            />
           ) : (
             <span className="lib-book__title">{book.title}</span>
           )}
-          {book.pages > 0 && <span className="lib-book__pages-badge">{book.pages.toLocaleString()} pp</span>}
+          {book.pages > 0 && (
+            <span className="lib-book__pages-badge">{book.pages.toLocaleString()} pp</span>
+          )}
           {!book.coverUrl && <span className="lib-book__mark">RMH</span>}
         </div>
       </div>
@@ -357,7 +452,13 @@ function BookCard({ book, onNavigate }: { book: LibraryBook; onNavigate?: () => 
 }
 
 /** Small modal to name + describe a new collection. */
-function CreateModal({ onClose, onCreate }: { onClose: () => void; onCreate: (title: string, description: string) => void }) {
+function CreateModal({
+  onClose,
+  onCreate,
+}: {
+  onClose: () => void;
+  onCreate: (title: string, description: string) => void;
+}) {
   const { t } = useTranslation('library');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -368,10 +469,23 @@ function CreateModal({ onClose, onCreate }: { onClose: () => void; onCreate: (ti
   }, [onClose]);
   return (
     <div className="lib-upload__overlay" role="dialog" aria-modal="true" onMouseDown={onClose}>
-      <div className="lib-upload" onMouseDown={(e) => e.stopPropagation()} style={{ maxWidth: 440 }}>
+      <div
+        className="lib-upload"
+        onMouseDown={(e) => e.stopPropagation()}
+        style={{ maxWidth: 440 }}
+      >
         <div className="lib-upload__head">
-          <h2 className="lib-upload__title">{t('new-collection', { defaultValue: 'New collection' })}</h2>
-          <button type="button" className="lib-upload__close" onClick={onClose} aria-label={t('close', { defaultValue: 'Close' })}>×</button>
+          <h2 className="lib-upload__title">
+            {t('new-collection', { defaultValue: 'New collection' })}
+          </h2>
+          <button
+            type="button"
+            className="lib-upload__close"
+            onClick={onClose}
+            aria-label={t('close', { defaultValue: 'Close' })}
+          >
+            ×
+          </button>
         </div>
         <div className="lib-upload__fields">
           <label className="lib-upload__label">
@@ -382,7 +496,9 @@ function CreateModal({ onClose, onCreate }: { onClose: () => void; onCreate: (ti
               maxLength={120}
               autoFocus
               onChange={(e) => setTitle(e.target.value)}
-              placeholder={t('collection-title-placeholder', { defaultValue: 'e.g. My reading list' })}
+              placeholder={t('collection-title-placeholder', {
+                defaultValue: 'e.g. My reading list',
+              })}
             />
           </label>
           <label className="lib-upload__label">
@@ -440,7 +556,10 @@ function AddBooksModal({
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const inCollection = useMemo(() => new Set(collection.books.map((b) => b.slug)), [collection.books]);
+  const inCollection = useMemo(
+    () => new Set(collection.books.map((b) => b.slug)),
+    [collection.books],
+  );
   // Candidates: your own uploads (matched by handle), or every book for admins.
   const candidates = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -453,8 +572,17 @@ function AddBooksModal({
     <div className="lib-upload__overlay" role="dialog" aria-modal="true" onMouseDown={onClose}>
       <div className="lib-upload" onMouseDown={(e) => e.stopPropagation()}>
         <div className="lib-upload__head">
-          <h2 className="lib-upload__title">{t('add-to-collection', { name: collection.title, defaultValue: 'Add to “{{name}}”' })}</h2>
-          <button type="button" className="lib-upload__close" onClick={onClose} aria-label={t('close', { defaultValue: 'Close' })}>×</button>
+          <h2 className="lib-upload__title">
+            {t('add-to-collection', { name: collection.title, defaultValue: 'Add to “{{name}}”' })}
+          </h2>
+          <button
+            type="button"
+            className="lib-upload__close"
+            onClick={onClose}
+            aria-label={t('close', { defaultValue: 'Close' })}
+          >
+            ×
+          </button>
         </div>
         <input
           className="lib-upload__input"
@@ -479,7 +607,15 @@ function AddBooksModal({
                     onClick={() => (added ? onRemove(b.slug) : onAdd(b.slug))}
                     aria-pressed={added}
                   >
-                    {added ? <><Check size={14} /> {t('added', { defaultValue: 'Added' })}</> : <><Plus size={14} /> {t('add', { defaultValue: 'Add' })}</>}
+                    {added ? (
+                      <>
+                        <Check size={14} /> {t('added', { defaultValue: 'Added' })}
+                      </>
+                    ) : (
+                      <>
+                        <Plus size={14} /> {t('add', { defaultValue: 'Add' })}
+                      </>
+                    )}
                   </button>
                 </li>
               );
@@ -487,7 +623,11 @@ function AddBooksModal({
           )}
         </ul>
         <div className="lib-upload__actions">
-          <button type="button" className="lib-upload__btn lib-upload__btn--primary" onClick={onClose}>
+          <button
+            type="button"
+            className="lib-upload__btn lib-upload__btn--primary"
+            onClick={onClose}
+          >
             {t('done', { defaultValue: 'Done' })}
           </button>
         </div>

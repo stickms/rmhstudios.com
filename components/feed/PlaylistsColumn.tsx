@@ -40,12 +40,15 @@ interface Item {
 export function PlaylistsColumn({
   initialData,
   embedded = false,
+  searchQuery = '',
 }: {
   initialData: { playlists: Summary[] | null };
   // When hosted inside another page (e.g. the Library "Music" section) the host
   // supplies the heading and outer scroll region, so drop our own ColumnHeader
   // and full-height wrapper.
   embedded?: boolean;
+  /** Optional host-level filter (used by the combined Library explorer). */
+  searchQuery?: string;
 }) {
   const { t } = useTranslation('feed');
   const confirm = useConfirm();
@@ -56,6 +59,14 @@ export function PlaylistsColumn({
   const [openId, setOpenId] = useState<string | null>(null);
   const [items, setItems] = useState<Record<string, Item[]>>({});
   const [loadingItems, setLoadingItems] = useState(false);
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const visiblePlaylists = normalizedQuery
+    ? playlists.filter(
+        (playlist) =>
+          playlist.name.toLowerCase().includes(normalizedQuery) ||
+          playlist.kind.toLowerCase().includes(normalizedQuery),
+      )
+    : playlists;
 
   const refresh = useCallback(async () => {
     const res = await fetch('/api/playlists', { credentials: 'include' });
@@ -167,7 +178,10 @@ export function PlaylistsColumn({
   return (
     <div className={embedded ? 'lib-playlists' : 'min-h-screen'}>
       {!embedded && (
-        <ColumnHeader icon={ListMusic} title={t('playlists-title', { defaultValue: 'Playlists' })} />
+        <ColumnHeader
+          icon={ListMusic}
+          title={t('playlists-title', { defaultValue: 'Playlists' })}
+        />
       )}
 
       {!signedIn ? (
@@ -218,22 +232,38 @@ export function PlaylistsColumn({
             </Button>
           </div>
 
-          {playlists.length === 0 ? (
+          {visiblePlaylists.length === 0 ? (
             <EmptyState
               icon={Music2}
-              title={t('playlists-empty-title', { defaultValue: 'No playlists yet' })}
-              description={t('playlists-empty-desc', {
-                defaultValue: 'Create one above, then add tracks from RMHMusic.',
-              })}
+              title={
+                normalizedQuery
+                  ? t('playlists-search-empty-title', { defaultValue: 'No matching playlists' })
+                  : t('playlists-empty-title', { defaultValue: 'No playlists yet' })
+              }
+              description={
+                normalizedQuery
+                  ? t('playlists-search-empty-desc', {
+                      defaultValue: 'Try a different title or music source.',
+                    })
+                  : t('playlists-empty-desc', {
+                      defaultValue: 'Create one above, then add tracks from RMHMusic.',
+                    })
+              }
             />
           ) : (
             <div className="space-y-2">
-              {playlists.map((pl) => {
+              {visiblePlaylists.map((pl) => {
                 const open = openId === pl.id;
                 return (
                   <div
                     key={pl.id}
-                    className="rounded-site border border-site-border bg-site-surface"
+                    className={
+                      embedded
+                        ? 'glass-fill glass-interactive lib-orbit-card rounded-site'
+                        : 'rounded-site border border-site-border bg-site-surface'
+                    }
+                    data-glass-light={embedded ? '' : undefined}
+                    data-library-orbit={embedded ? '' : undefined}
                   >
                     <div className="flex items-center gap-2 p-3">
                       <button
