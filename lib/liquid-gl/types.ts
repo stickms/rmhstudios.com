@@ -113,6 +113,17 @@ export interface LiquidRenderer {
   resize(w: number, h: number, dpr: number): void;
   /** Draw one frame. `bodies`/`count` and `scene` are borrowed — never retained. */
   render(scene: SceneState, bodies: readonly LiquidBody[], count: number): void;
+  /** §16.4b: is the underlying GL/GPU context lost? (verified-frame gate + watchdog). */
+  isLost(): boolean;
+  /**
+   * §16.4b verified-frame health probe, called after `render` during probation.
+   * Returns whether the frame raised no error (`ok`) and — when `deep` (only at
+   * the promotion gate, since the readback forces a GPU sync) — whether the output
+   * was non-blank (real pixels, not an all-black wedged frame). `nonBlank` is
+   * reported `true` for shallow checks and for backends without a cheap sync
+   * readback (WebGPU), per the §16.4b "minimally: no errors + context not lost".
+   */
+  checkFrame(deep: boolean): { ok: boolean; nonBlank: boolean };
   /** Release GL/GPU resources. */
   dispose(): void;
 }

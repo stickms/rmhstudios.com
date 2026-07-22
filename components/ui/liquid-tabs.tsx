@@ -150,7 +150,7 @@ export function LiquidTabs({
   // stays the reduced-motion fallback. The capsule lives inside/behind the active
   // tab (pixel-accurate via layout projection); the underlay mirrors it.
   const capsuleRef = useRef<HTMLSpanElement>(null);
-  const { squashStyle, underlay } = useLiquidMorph({ capsuleRef, axis: 'x', reduced });
+  const { squashStyle, underlay } = useLiquidMorph({ capsuleRef, axis: 'x', reduced, activeKey: value });
 
   const link = Boolean(renderTab);
 

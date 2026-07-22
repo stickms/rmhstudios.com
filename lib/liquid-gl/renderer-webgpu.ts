@@ -228,6 +228,19 @@ export async function createWebGPURenderer(
   const ctx = canvas.getContext('webgpu') as unknown as GPUCanvasContext | null;
   if (!ctx) return null;
 
+  // §16.4b: track device loss + uncaptured GPU errors for the verified-frame gate
+  // and the runtime watchdog. WebGPU has no synchronous readback in a sync frame
+  // path, so the WebGPU health signal is "no uncaptured error + device not lost"
+  // (the mandate's minimal bar); WebKit is routed to WebGL2 (deep readback) anyway.
+  let lost = false;
+  let errored = false;
+  device.lost.then(() => {
+    lost = true;
+  });
+  device.addEventListener('uncapturederror', () => {
+    errored = true;
+  });
+
   const format = gpu.getPreferredCanvasFormat();
   ctx.configure({ device, format, alphaMode: 'opaque' });
 
@@ -275,6 +288,16 @@ export async function createWebGPURenderer(
 
   return {
     tier: 'webgpu',
+    isLost() {
+      return lost;
+    },
+    checkFrame() {
+      // No cheap synchronous readback on WebGPU — health is "no uncaptured error
+      // and device not lost" (§16.4b minimal bar). `errored` latches until read.
+      const ok = !errored && !lost;
+      errored = false;
+      return { ok, nonBlank: true };
+    },
     resize(w: number, h: number, dpr: number) {
       width = w;
       height = h;
